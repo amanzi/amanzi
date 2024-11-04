@@ -1,0 +1,891 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Change Log for Amanzi XML Input Specification (Version 2.x.x) &#8212; Amanzi  1.5.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=362ab14a" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="_static/documentation_options.js?v=7eff24e8"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'AmanziInputSpec-v2.1-ChangeLog';</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="_static/Amanzi-color.png" class="logo__image only-light" alt="Amanzi  1.5.0 documentation - Home"/>
+    <script>document.write(`<img src="_static/Amanzi-Dark.png" class="logo__image only-dark" alt="Amanzi  1.5.0 documentation - Home"/>`);</script>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="input_specs.html">
+    Input Specification
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="input_specs.html">
+    Input Specification
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">Change Log...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="change-log-for-amanzi-xml-input-specification-version-2-x-x">
+<h1><a class="toc-backref" href="#id19" role="doc-backlink">Change Log for Amanzi XML Input Specification (Version 2.x.x)</a><a class="headerlink" href="#change-log-for-amanzi-xml-input-specification-version-2-x-x" title="Link to this heading">#</a></h1>
+<nav class="contents" id="table-of-contents">
+<p class="topic-title"><strong>Table of Contents</strong></p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#change-log-for-amanzi-xml-input-specification-version-2-x-x" id="id19">Change Log for Amanzi XML Input Specification (Version 2.x.x)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#overview" id="id20">Overview</a></p></li>
+<li><p><a class="reference internal" href="#version-2-3-amanzi-release-devel-9089-0bab76c51dee" id="id21">Version 2.3 (Amanzi Release - devel - 9089:0bab76c51dee)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#unstr-chemistry-controls" id="id22">Unstr_Chemistry_Controls</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#version-2-3-amanzi-release-devel" id="id23">Version 2.3 (Amanzi Release - devel - #### )</a></p>
+<ul>
+<li><p><a class="reference internal" href="#process-kernels" id="id24">Process Kernels</a></p></li>
+<li><p><a class="reference internal" href="#phases" id="id25">Phases</a></p></li>
+<li><p><a class="reference internal" href="#geochemistry" id="id26">Geochemistry</a></p></li>
+<li><p><a class="reference internal" href="#materials" id="id27">Materials</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#version-2-2-1-amanzi-release-devel-8925" id="id28">Version 2.2.1 (Amanzi Release - devel - 8925 )</a></p>
+<ul>
+<li><p><a class="reference internal" href="#global-definitions" id="id29">Global Definitions</a></p></li>
+<li><p><a class="reference internal" href="#process-kernels-chemistry" id="id30">process_kernels-&gt;chemistry</a></p></li>
+<li><p><a class="reference internal" href="#id1" id="id31">phases</a></p></li>
+<li><p><a class="reference internal" href="#execution-controls" id="id32">execution_controls</a></p></li>
+<li><p><a class="reference internal" href="#unstr-transport-controls" id="id33">unstr_transport_controls</a></p></li>
+<li><p><a class="reference internal" href="#id2" id="id34">unstr_chemistry_controls</a></p></li>
+<li><p><a class="reference internal" href="#id3" id="id35">geochemistry</a></p></li>
+<li><p><a class="reference internal" href="#id4" id="id36">materials</a></p></li>
+<li><p><a class="reference internal" href="#initial-conditions-boundary-conditions" id="id37">initial_conditions/boundary_conditions</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#version-2-1-1-amanzi-release-devel-8326" id="id38">Version 2.1.1 (Amanzi Release - devel - 8326 )</a></p>
+<ul>
+<li><p><a class="reference internal" href="#viz" id="id39">viz</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#version-2-1-1-amanzi-release-devel-8245" id="id40">Version 2.1.1 (Amanzi Release - devel - 8245 )</a></p>
+<ul>
+<li><p><a class="reference internal" href="#str-amr-controls" id="id41">str_amr_controls</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#version-2-1-1-amanzi-release-devel-8217" id="id42">Version 2.1.1 (Amanzi Release - devel - 8217 )</a></p>
+<ul>
+<li><p><a class="reference internal" href="#regions" id="id43">Regions</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#version-2-1-1-amanzi-release-devel-8153" id="id44">Version 2.1.1 (Amanzi Release - devel - 8153 )</a></p></li>
+<li><p><a class="reference internal" href="#version-2-1-1-amanzi-release-devel-8135" id="id45">Version 2.1.1 (Amanzi Release - devel - 8135 )</a></p>
+<ul>
+<li><p><a class="reference internal" href="#build" id="id46">Build</a></p></li>
+<li><p><a class="reference internal" href="#tools" id="id47">Tools</a></p></li>
+<li><p><a class="reference internal" href="#output" id="id48">Output</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#version-2-1-0-amanzi-release-devel-8061-8064" id="id49">Version 2.1.0 (Amanzi Release - devel - 8061/8064)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#numerical-controls" id="id50">Numerical Controls</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#version-2-1-0-amanzi-release-devel-8005" id="id51">Version 2.1.0 (Amanzi Release - devel - 8005)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#id5" id="id52">Execution Controls</a></p></li>
+<li><p><a class="reference internal" href="#id6" id="id53">Output</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#version-2-1-0-amanzi-release-devel-7926" id="id54">Version 2.1.0 (Amanzi Release - devel - 7926)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#id7" id="id55">Numerical Controls</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#version-2-1-0-amanzi-release-devel-7688" id="id56">Version 2.1.0 (Amanzi Release - devel - 7688)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#id8" id="id57">Process Kernels</a></p></li>
+<li><p><a class="reference internal" href="#id9" id="id58">Numerical Controls</a></p></li>
+<li><p><a class="reference internal" href="#id10" id="id59">Output</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#version-2-1-0-amanzi-release-devel-7478" id="id60">Version 2.1.0 (Amanzi Release - devel - 7478)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#id11" id="id61">Process Kernels</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#version-2-1-0-amanzi-release-devel-7434" id="id62">Version 2.1.0 (Amanzi Release - devel - 7434)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#id12" id="id63">Materials</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#version-2-1-0-amanzi-release-devel-7427" id="id64">Version 2.1.0 (Amanzi Release - devel - 7427)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#id13" id="id65">Output</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#version-2-1-0-amanzi-release-devel-7412" id="id66">Version 2.1.0 (Amanzi Release - devel - 7412)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#id14" id="id67">Output</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#version-2-1-0-amanzi-release-devel-7335" id="id68">Version 2.1.0 (Amanzi Release - devel - 7335)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#sources" id="id69">Sources</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#version-2-1-0-amanzi-release-devel-7298" id="id70">Version 2.1.0 (Amanzi Release - devel - 7298)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#id15" id="id71">Materials</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#version-2-1-0-amanzi-release-devel-7277" id="id72">Version 2.1.0 (Amanzi Release - devel - 7277)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#id16" id="id73">Numerical Controls</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#version-2-1-0-amanzi-release-devel-7266" id="id74">Version 2.1.0 (Amanzi Release - devel - 7266)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#id17" id="id75">Materials</a></p></li>
+<li><p><a class="reference internal" href="#boundary-conditions" id="id76">Boundary Conditions</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#version-2-1-0-amanzi-release-devel-7256" id="id77">Version 2.1.0 (Amanzi Release - devel - 7256)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#id18" id="id78">Numerical Controls</a></p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+<section id="overview">
+<h2><a class="toc-backref" href="#id20" role="doc-backlink">Overview</a><a class="headerlink" href="#overview" title="Link to this heading">#</a></h2>
+<p>The Amanzi simulator will continue to expand the available features and enhance current functionality.  This progress will result in modifications and additions to the XML input specification.  Specific versions of the XML input specification will only work with the corresponding Amanzi release version.  The following is a description of the changes made to the XML input specification and the Amanzi release version(s) that accept the input version.</p>
+</section>
+<section id="version-2-3-amanzi-release-devel-9089-0bab76c51dee">
+<h2><a class="toc-backref" href="#id21" role="doc-backlink">Version 2.3 (Amanzi Release - devel - 9089:0bab76c51dee)</a><a class="headerlink" href="#version-2-3-amanzi-release-devel-9089-0bab76c51dee" title="Link to this heading">#</a></h2>
+<p>Changeset 9089</p>
+<p>NERSC build on  May 24, 2016.</p>
+<p>Edison build path /project/projectdirs/m1012/amanzi/install/edison/mpich-7.3.1-gnu-5.2.0/Release-TPLs-0.92.24/default-160524/</p>
+<section id="unstr-chemistry-controls">
+<h3><a class="toc-backref" href="#id22" role="doc-backlink">Unstr_Chemistry_Controls</a><a class="headerlink" href="#unstr-chemistry-controls" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Including additional chemistry numerical controls for Alquimia-PFloTran.  These values get writting out to the PFloTran input file if automatically generated.  The new controls include the following elements:</p>
+<ul>
+<li><p>activity_coefficients: available values include ‘timestep’ or ‘off’.  The default value is ‘timestep’.  If this is not included the default value is assumed and written to the PFloTran input file.</p></li>
+<li><p>max_relative_change_tolerance: no default is set.  If this is not present no default will be written to the PFloTran input file.</p></li>
+<li><p>max_residual_tolerance: no default is set.  If this is not present no default will be written to the PFloTran input file.</p></li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+<section id="version-2-3-amanzi-release-devel">
+<h2><a class="toc-backref" href="#id23" role="doc-backlink">Version 2.3 (Amanzi Release - devel - #### )</a><a class="headerlink" href="#version-2-3-amanzi-release-devel" title="Link to this heading">#</a></h2>
+<p>Changeset ####</p>
+<p>NERSC build on  April #, 2016.</p>
+<p>Edison build path /project/projectdirs/m1012/amanzi/install/edison/mpich-7.3.1-gnu-5.2.0/Release-TPLs-0.92.24/default-1604##/</p>
+<p>This commit includes major updates to geochemistry.  Therefore, the schema version has been updated to 2.3.</p>
+<section id="process-kernels">
+<h3><a class="toc-backref" href="#id24" role="doc-backlink">Process Kernels</a><a class="headerlink" href="#process-kernels" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>The capability to automatically generate the PFloTran engine input file has been added.  If state=”on” and engine=”pflotran”, but input_filename is missing the PFloTran input file will be written based on information in the XML input file.  Note, that the attribute database=”filename.dat” must still be included and provided by the user or Akuna.</p></li>
+</ul>
+</section>
+<section id="phases">
+<h3><a class="toc-backref" href="#id25" role="doc-backlink">Phases</a><a class="headerlink" href="#phases" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Additionl attributes have been added to the “primary” element.  If the primary is a non-reactive species/solute and Amanzi is auto-generating the PFlotran input file, the attributes forward_rate and backward_rate need to be included.  Dummy values of 0 may be used.  This information need to be included in the PFloTran input file.</p></li>
+</ul>
+</section>
+<section id="geochemistry">
+<h3><a class="toc-backref" href="#id26" role="doc-backlink">Geochemistry</a><a class="headerlink" href="#geochemistry" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>If Amanzi is auto-generating the PFloTran input file, any geochemistry constraints must be named and defined here.  See example.xml for the possible options.</p></li>
+</ul>
+</section>
+<section id="materials">
+<h3><a class="toc-backref" href="#id27" role="doc-backlink">Materials</a><a class="headerlink" href="#materials" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Additional subelements have been added to include information need if Amanzi is auto-generating the PFloTran input file.  Below are the new subelements.  See example.xml for examples of the syntax.</p>
+<ul>
+<li><p>The subelement “minerals” has been added for defining minerals in the current material.  For each mineral, include a subelement “mineral” with the attributes “name”, “volume_fraction”, and “surface_area”.</p></li>
+<li><p>The subelement “ion_exchange” has been added for defining ion exchange in the current material. The subelement “cations” has the attribute “cec” for specifying the cation exchange capacity.  A series of subelements listing the cations and associated selectivity coefficient.</p></li>
+<li><p>The subelement “surface_complexation” has been added for defining surface complexes in the current material.  For each site, the subelement site has the attributes “name” for the site name and “density” for the site density.  A subelement “complexes” is a comma seperated list of complexes for the current site.  Note, the site and complexe names must match the names in the chemistry database file minus leading characters, such as “&gt;”.  Leading characters will be added when Amanzi writes the PFloTran input file.</p></li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+<section id="version-2-2-1-amanzi-release-devel-8925">
+<h2><a class="toc-backref" href="#id28" role="doc-backlink">Version 2.2.1 (Amanzi Release - devel - 8925 )</a><a class="headerlink" href="#version-2-2-1-amanzi-release-devel-8925" title="Link to this heading">#</a></h2>
+<p>Changeset 8925</p>
+<p>NERSC build on  March 2, 2016.</p>
+<p>Edison build path /project/projectdirs/m1012/amanzi/install/edison/mpich-7.3.1-gnu-5.2.0/Release-TPLs-0.92.23/default-160302/</p>
+<section id="global-definitions">
+<h3><a class="toc-backref" href="#id29" role="doc-backlink">Global Definitions</a><a class="headerlink" href="#global-definitions" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Modified pattern for exponential so that expressions such as “1.” and “.1” (no trailing or leading 0) are valid.  This primarily effects importing into Akuna.  This update is also included in the definition of coordinates.</p></li>
+</ul>
+</section>
+<section id="process-kernels-chemistry">
+<h3><a class="toc-backref" href="#id30" role="doc-backlink">process_kernels-&gt;chemistry</a><a class="headerlink" href="#process-kernels-chemistry" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Listing of the engine specific input file and database file have been moved the chemistry element as input_filename and database, respectively.</p></li>
+<li><p>The attribute algorithm for the element transport has been moved to unstr_transport_controls.  This is more consistent with our other process kernel numerical control structure.</p></li>
+</ul>
+</section>
+<section id="id1">
+<h3><a class="toc-backref" href="#id31" role="doc-backlink">phases</a><a class="headerlink" href="#id1" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>The section solutes has been removed.  All non-reactive solutes are now listed as primaries.</p></li>
+</ul>
+</section>
+<section id="execution-controls">
+<h3><a class="toc-backref" href="#id32" role="doc-backlink">execution_controls</a><a class="headerlink" href="#execution-controls" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Moved the restart attribute up a level to a subelement of execution_controls.  This enforces the restriction of only 1 restart file being specified and read.</p></li>
+</ul>
+</section>
+<section id="unstr-transport-controls">
+<h3><a class="toc-backref" href="#id33" role="doc-backlink">unstr_transport_controls</a><a class="headerlink" href="#unstr-transport-controls" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>The subelement algorithm has been moved here.</p></li>
+</ul>
+</section>
+<section id="id2">
+<h3><a class="toc-backref" href="#id34" role="doc-backlink">unstr_chemistry_controls</a><a class="headerlink" href="#id2" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Moved chemistry control options from the geochemistry section (and engine specific subelements) to the numerical_controls section.  This is more consistent with our other numerical control structures.  Note, only some of the options specified in subelements are valid for a given engine.  See the example.xml for comments.</p></li>
+</ul>
+</section>
+<section id="id3">
+<h3><a class="toc-backref" href="#id35" role="doc-backlink">geochemistry</a><a class="headerlink" href="#id3" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Only verbosity and constraints are now specified under this section.  Numerical control options have been moved to the unstr_chemistry_control section.  The engine specific input file and database file have been moved to the process_kernels sections.</p></li>
+<li><p>The constraint attribute initial_guess has been renamed value.  Note, that this is the initial value and may be modified by equilibration in the chemistry engine.</p></li>
+</ul>
+</section>
+<section id="id4">
+<h3><a class="toc-backref" href="#id36" role="doc-backlink">materials</a><a class="headerlink" href="#id4" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Non-reactive solutes are now named as primaries.  Reference to solute in the input file is being changed to primary.</p></li>
+</ul>
+</section>
+<section id="initial-conditions-boundary-conditions">
+<h3><a class="toc-backref" href="#id37" role="doc-backlink">initial_conditions/boundary_conditions</a><a class="headerlink" href="#initial-conditions-boundary-conditions" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>The initial_condition/boundary_condition subelement solute_component has been renamed geochemistry_component.</p></li>
+<li><p>The initial_condition/boundary_condition subelement geochemistry has been removed.</p></li>
+</ul>
+</section>
+</section>
+<section id="version-2-1-1-amanzi-release-devel-8326">
+<h2><a class="toc-backref" href="#id38" role="doc-backlink">Version 2.1.1 (Amanzi Release - devel - 8326 )</a><a class="headerlink" href="#version-2-1-1-amanzi-release-devel-8326" title="Link to this heading">#</a></h2>
+<p>Changeset 8326</p>
+<p>NERSC build on  Aug 18, 2015.</p>
+<p>Edison build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.19/default-150818</p>
+<p>Hopper build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.19/default-150818</p>
+<section id="viz">
+<h3><a class="toc-backref" href="#id39" role="doc-backlink">viz</a><a class="headerlink" href="#viz" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Modification to the write_regions element.  To make this field more useful for production the user can now specify a list of “field” subelements.  The name given to the field will appear in the list of available fields to visualize.  Each region listed for the given field will be assigned and colored by an integer id.</p></li>
+</ul>
+</section>
+</section>
+<section id="version-2-1-1-amanzi-release-devel-8245">
+<h2><a class="toc-backref" href="#id40" role="doc-backlink">Version 2.1.1 (Amanzi Release - devel - 8245 )</a><a class="headerlink" href="#version-2-1-1-amanzi-release-devel-8245" title="Link to this heading">#</a></h2>
+<p>Changeset 8245</p>
+<p>NERSC build on  Aug 6, 2015.</p>
+<p>Edison build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.19/default-150806</p>
+<p>Hopper build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.19/default-150806</p>
+<section id="str-amr-controls">
+<h3><a class="toc-backref" href="#id41" role="doc-backlink">str_amr_controls</a><a class="headerlink" href="#str-amr-controls" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Several options take a series if integer values.  These values were indicated using a sequence of subelements named “int”.  This has been updated to be a space separated list of integers within in the specific element.  The specific options require a minimum number of entries (either equal to the number of amr levels or the number of amr levels -1 ).  Any additional values will be ignored.</p></li>
+</ul>
+</section>
+</section>
+<section id="version-2-1-1-amanzi-release-devel-8217">
+<h2><a class="toc-backref" href="#id42" role="doc-backlink">Version 2.1.1 (Amanzi Release - devel - 8217 )</a><a class="headerlink" href="#version-2-1-1-amanzi-release-devel-8217" title="Link to this heading">#</a></h2>
+<p>Changeset 8217</p>
+<p>NERSC build on  Aug 3, 2015.</p>
+<p>Edison build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.18/default-150803</p>
+<p>Hopper build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.18/default-150803</p>
+<section id="regions">
+<h3><a class="toc-backref" href="#id43" role="doc-backlink">Regions</a><a class="headerlink" href="#regions" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Added tolerance attribute to the region types plane, polygonal_surface.  This attribute is optional.  It species a tolerance either side of the plane/surface that will be explored to find face centroids.</p></li>
+</ul>
+</section>
+</section>
+<section id="version-2-1-1-amanzi-release-devel-8153">
+<h2><a class="toc-backref" href="#id44" role="doc-backlink">Version 2.1.1 (Amanzi Release - devel - 8153 )</a><a class="headerlink" href="#version-2-1-1-amanzi-release-devel-8153" title="Link to this heading">#</a></h2>
+<p>Changeset 8153</p>
+<p>NERSC build on  July 20, 2015.</p>
+<p>Edison build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.18/default-150720</p>
+<p>Hopper build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.18/default-150720</p>
+<ul class="simple">
+<li><p>The version number of the schema has been updated and coincides with the 0.84 release of amanzi.  Note that a new link has been created on the NERSC machines called ‘release-0.84’.  The new ‘devel’ link will continue to be updated as new builds are created and the input schema is updated.  The new version number of the schema for ‘devel’ will be 2.2.0.</p></li>
+</ul>
+</section>
+<section id="version-2-1-1-amanzi-release-devel-8135">
+<h2><a class="toc-backref" href="#id45" role="doc-backlink">Version 2.1.1 (Amanzi Release - devel - 8135 )</a><a class="headerlink" href="#version-2-1-1-amanzi-release-devel-8135" title="Link to this heading">#</a></h2>
+<p>Changeset 8135</p>
+<p>NERSC build on  July 14, 2015.</p>
+<p>Edison build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.18/default-150714</p>
+<p>Hopper build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.18/default-150714</p>
+<section id="build">
+<h3><a class="toc-backref" href="#id46" role="doc-backlink">Build</a><a class="headerlink" href="#build" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>The new python script UpdateSpec_210-211.py is now installed along with the executable and schema file in $INSTALL/bin.  This was added for convenience of users to update their input files as the schema continues to evolve.</p></li>
+</ul>
+</section>
+<section id="tools">
+<h3><a class="toc-backref" href="#id47" role="doc-backlink">Tools</a><a class="headerlink" href="#tools" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Added the python script UpdateSpec_210-211.py to the repository in tools/install.  This script reads in an existing 2.1.0 input file and writes out an updated version consistent with the latest 2.1.0 spec (which will be updated to 2.1.1 soon).</p></li>
+</ul>
+</section>
+<section id="output">
+<h3><a class="toc-backref" href="#id48" role="doc-backlink">Output</a><a class="headerlink" href="#output" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Added <cite>“vis</cite>” element option <cite>“write_regions</cite>” to documentation.  This has been available for awhile but was not included in the documentation.</p></li>
+</ul>
+</section>
+</section>
+<section id="version-2-1-0-amanzi-release-devel-8061-8064">
+<h2><a class="toc-backref" href="#id49" role="doc-backlink">Version 2.1.0 (Amanzi Release - devel - 8061/8064)</a><a class="headerlink" href="#version-2-1-0-amanzi-release-devel-8061-8064" title="Link to this heading">#</a></h2>
+<p>Changeset 8061/8064</p>
+<p>NERSC build on  June 18, 2015.</p>
+<p>Edison build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.18/default-150618</p>
+<p>Hopper build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.18/default-150618</p>
+<section id="numerical-controls">
+<h3><a class="toc-backref" href="#id50" role="doc-backlink">Numerical Controls</a><a class="headerlink" href="#numerical-controls" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Changed <cite>“bdf1_integration_method</cite>” attributes to elements.  This was done for consistency and readability.</p></li>
+<li><p>Changed element name from <cite>“unstr_pseudo_time_integrator</cite>” to <cite>“unstr_initialization</cite>”.</p></li>
+<li><p>Added the parameter <cite>“clipping_pressure</cite>” to the renamed <cite>“unstr_initialization</cite>” list.</p></li>
+<li><p>Removed the parameter <cite>“initialize_with_darcy</cite>” from the section <cite>“unstr_initialization</cite>”.  This section’s parameters are used to initialize the steady time step and <cite>“initialize_with_darcy</cite>” is already specified under the steady-state section.</p></li>
+<li><p>Added the option <cite>“darcy_solver</cite>” the parameter <cite>“method</cite>” in the <cite>“unstr_initialization</cite>” list.</p></li>
+</ul>
+</section>
+</section>
+<section id="version-2-1-0-amanzi-release-devel-8005">
+<h2><a class="toc-backref" href="#id51" role="doc-backlink">Version 2.1.0 (Amanzi Release - devel - 8005)</a><a class="headerlink" href="#version-2-1-0-amanzi-release-devel-8005" title="Link to this heading">#</a></h2>
+<p>Changeset 8005</p>
+<p>NERSC build on  June 2, 2015.</p>
+<p>Edison build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.17/default-150602</p>
+<p>Hopper build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.17/default-150602</p>
+<section id="id5">
+<h3><a class="toc-backref" href="#id52" role="doc-backlink">Execution Controls</a><a class="headerlink" href="#id5" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Added translation of execution time periods to <cite>“Time Period Controls</cite>” in the 1.2.3 input spec.</p></li>
+</ul>
+</section>
+<section id="id6">
+<h3><a class="toc-backref" href="#id53" role="doc-backlink">Output</a><a class="headerlink" href="#id6" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Both the 2.1.0 input schema and 1.2.3 input spec are moving towards using plural macros for time and cycle specifications.  This will affect vis, observations, checkpoint, and walkabout elements.  To help users transition the input translator (2.1.0 to 1.2.3) will read singular <cite>“time_macro</cite>” and <cite>“cycle_macro</cite>” and translate these to <cite>“Time Macros</cite>” and <cite>“Cycle Macros</cite>” with a single macro specified.  Also, the input parser for the unstructured algorithm will continue to read both singular and plural forms.  Note, these are temporary measures to ease transition.  Please updating input files to use the plural forms.</p></li>
+</ul>
+</section>
+</section>
+<section id="version-2-1-0-amanzi-release-devel-7926">
+<h2><a class="toc-backref" href="#id54" role="doc-backlink">Version 2.1.0 (Amanzi Release - devel - 7926)</a><a class="headerlink" href="#version-2-1-0-amanzi-release-devel-7926" title="Link to this heading">#</a></h2>
+<p>Changeset 7926</p>
+<p>NERSC build on  May 12, 2015.</p>
+<p>Edison build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.17/default-150512</p>
+<p>Hopper build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.17/default-150512</p>
+<section id="id7">
+<h3><a class="toc-backref" href="#id55" role="doc-backlink">Numerical Controls</a><a class="headerlink" href="#id7" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Added missing preconditioner options under <cite>“unstr_steady-state_controls</cite>”.  This update also included fixing the translation of the <cite>“preconditioner</cite>” option under <cite>“unstr_linear_solver</cite>”  which was incorrectly being mapped to <cite>“steady preconditioner</cite>” instead of <cite>“linear solver preconditioner</cite>”.</p></li>
+<li><p>Cleaned up preconditioner specification for all locations.  For each unstructured numerical control with a <cite>“preconditioner</cite>” subelement, the valid options are the strings <cite>“trilinos_ml</cite>”, <cite>“hypre_amg</cite>”, or <cite>“block_ilu</cite>”.  Options for each preconditioner have been consolidated in the subelement <cite>“numerical_controls</cite>” -&gt; <cite>“unstructured_controls</cite>” -&gt; <cite>“preconditioners</cite>”.  The element <cite>“preconditioners</cite>” has a subelement for each preconditioner.  Each preconditioner has subelements for its specific options.</p></li>
+</ul>
+</section>
+</section>
+<section id="version-2-1-0-amanzi-release-devel-7688">
+<h2><a class="toc-backref" href="#id56" role="doc-backlink">Version 2.1.0 (Amanzi Release - devel - 7688)</a><a class="headerlink" href="#version-2-1-0-amanzi-release-devel-7688" title="Link to this heading">#</a></h2>
+<p>Changeset 7688</p>
+<p>NERSC build on  May 8, 2015.</p>
+<p>Edison build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.17/default-150508</p>
+<p>Hopper build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.17/default-150508</p>
+<section id="id8">
+<h3><a class="toc-backref" href="#id57" role="doc-backlink">Process Kernels</a><a class="headerlink" href="#id8" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Moved attributes from <cite>“flow</cite>” and <cite>“transport</cite>” elements that were only valid under the unstructured algorithm.  The <cite>“flow</cite>” attributes <cite>“discretization_method</cite>”, <cite>“rel_perm_method</cite>”, <cite>“atmospheric_pressure</cite>”, and <cite>“preconditioning_strategy</cite>” are now subelements located under <cite>“numerical_controls</cite>” -&gt; <cite>“unstructured_controls</cite>” -&gt; <cite>“unstr_flow_controls</cite>”.  The <cite>“transport</cite>” attributes <cite>“algorithm</cite>” and <cite>“sub_cycling</cite>” are now subelements located under <cite>“numerical_controls</cite>” -&gt; <cite>“unstructured_controls</cite>” -&gt; <cite>“unstr_transport_controls</cite>”.</p></li>
+</ul>
+</section>
+<section id="id9">
+<h3><a class="toc-backref" href="#id58" role="doc-backlink">Numerical Controls</a><a class="headerlink" href="#id9" title="Link to this heading">#</a></h3>
+<ul>
+<li><p>Added new sections under <cite>“numerical_controls</cite>” -&gt; <cite>“unstructured_controls</cite>” for process kernel options that are specific to the unstructured algorithm.  The new sections are <cite>“unstr_flow_controls</cite>” and <cite>“unstr_transport_controls</cite>”.  Options currently available were moved from the process kernels under <cite>“process_kernels</cite>”.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><cite>“discretization_method</cite>” is now an element located under <cite>“unstr_flow_controls</cite>”.  Valid options for this element are <cite>“fv-default</cite>”, <cite>“fv-monotone</cite>”, <cite>“fv-multi_point_flux_approximation</cite>”, <cite>“fv-extended_to_boundary_edges</cite>”, <cite>“mfd-default</cite>”, <cite>“mfd-optimized_for_sparsity</cite>”, <cite>“mfd-support_operator</cite>”, <cite>“mfd-optimized_for_monotonicity</cite>”, and <cite>“mfd-two_point_flux_approximation</cite>”.</p></li>
+<li><p><cite>“rel_perm_method</cite>” is now an element located under <cite>“unstr_flow_controls</cite>”.  Valid options for this element are <cite>“upwind-darcy_velocity</cite>”, <cite>“upwind-gravity</cite>”, <cite>“upwind-amanzi</cite>”, <cite>“other-arithmetic_average</cite>”, and <cite>“other-harmonic_average</cite>”.  The default option is <cite>“upwind-darcy_velocity</cite>”.</p></li>
+<li><p><cite>“preconditioning_strategy</cite>” is now an element located under <cite>“unstr_flow_controls</cite>”.  Valid options for this element are <cite>“diffusion_operator</cite>” and <cite>“linearized_operator</cite>”.  The default option is <cite>“linearized_operator</cite>”.</p></li>
+<li><p><cite>“algorithm</cite>” is now an element located under <cite>“unstr_transport_controls</cite>”.  Valid options for this element are <cite>“explicit first-order</cite>”, <cite>“explicit second-order</cite>”, and <cite>“implicit upwind</cite>”.  The default option is <cite>“explicit first-order</cite>”.</p></li>
+<li><p><cite>“sub_cycling</cite>” is now an element located under <cite>“unstr_transport_controls</cite>”.  Valid options for this element are <cite>“on</cite>” and <cite>“off</cite>”.  The default option is <cite>“off</cite>”.</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>Added an element for specifying a petsc options file.  By default, the file named .petsc will automatically be read.  However, if the user wishes to use a different filename this option will specify that filename.  The new element is <cite>“petsc_options_file</cite>” and is located under <cite>“numerical_controls</cite>” -&gt; <cite>“structured_controls</cite>”.</p></li>
+</ul>
+</section>
+<section id="id10">
+<h3><a class="toc-backref" href="#id59" role="doc-backlink">Output</a><a class="headerlink" href="#id10" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>For the observation output options, the element <cite>“time_macro</cite>” has been updated to <cite>“time_macros</cite>” to allow users to provide a list of time macros to be utilized.</p></li>
+</ul>
+</section>
+</section>
+<section id="version-2-1-0-amanzi-release-devel-7478">
+<h2><a class="toc-backref" href="#id60" role="doc-backlink">Version 2.1.0 (Amanzi Release - devel - 7478)</a><a class="headerlink" href="#version-2-1-0-amanzi-release-devel-7478" title="Link to this heading">#</a></h2>
+<p>Changeset 7688</p>
+<section id="id11">
+<h3><a class="toc-backref" href="#id61" role="doc-backlink">Process Kernels</a><a class="headerlink" href="#id11" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Added flow process options <cite>“rel_perm_method</cite>” and <cite>“preconditioning_strategy</cite>” as attributes.  These options are only valid for the unstructured algorithm.</p></li>
+</ul>
+</section>
+</section>
+<section id="version-2-1-0-amanzi-release-devel-7434">
+<h2><a class="toc-backref" href="#id62" role="doc-backlink">Version 2.1.0 (Amanzi Release - devel - 7434)</a><a class="headerlink" href="#version-2-1-0-amanzi-release-devel-7434" title="Link to this heading">#</a></h2>
+<p>Changeset 7434</p>
+<section id="id12">
+<h3><a class="toc-backref" href="#id63" role="doc-backlink">Materials</a><a class="headerlink" href="#id12" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Stubbed in ability for file read for the material properties permeability, porosity, particle_Density, specific_storage, specific_yield, tortuosity, molecular_diffusion, viscosity, density.  Capability current available for only permeability.</p></li>
+</ul>
+</section>
+</section>
+<section id="version-2-1-0-amanzi-release-devel-7427">
+<h2><a class="toc-backref" href="#id64" role="doc-backlink">Version 2.1.0 (Amanzi Release - devel - 7427)</a><a class="headerlink" href="#version-2-1-0-amanzi-release-devel-7427" title="Link to this heading">#</a></h2>
+<p>Changeset 7427</p>
+<section id="id13">
+<h3><a class="toc-backref" href="#id65" role="doc-backlink">Output</a><a class="headerlink" href="#id13" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Added <cite>“write_regions</cite>” sub-element to the vis element. A list of regions can be given in this element similar to assigned_regions.  The specified regions will be written to the visualization file.  This is useful for debugging or easy visualization of regions for demonstrations.</p></li>
+</ul>
+</section>
+</section>
+<section id="version-2-1-0-amanzi-release-devel-7412">
+<h2><a class="toc-backref" href="#id66" role="doc-backlink">Version 2.1.0 (Amanzi Release - devel - 7412)</a><a class="headerlink" href="#version-2-1-0-amanzi-release-devel-7412" title="Link to this heading">#</a></h2>
+<p>Changeset 7412</p>
+<section id="id14">
+<h3><a class="toc-backref" href="#id67" role="doc-backlink">Output</a><a class="headerlink" href="#id14" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Added a new observation called <cite>“solute_volumetric_flow_rate</cite>”.  Subelements include <cite>“filename</cite>”, <cite>‘assigned_regions</cite>”, <cite>“functional</cite>”, <cite>“time_macro</cite>”, and <cite>“solute</cite>”.  The volumetric flow rat for the specified solute will be written out.</p></li>
+</ul>
+</section>
+</section>
+<section id="version-2-1-0-amanzi-release-devel-7335">
+<h2><a class="toc-backref" href="#id68" role="doc-backlink">Version 2.1.0 (Amanzi Release - devel - 7335)</a><a class="headerlink" href="#version-2-1-0-amanzi-release-devel-7335" title="Link to this heading">#</a></h2>
+<p>Changeset 7335</p>
+<section id="sources">
+<h3><a class="toc-backref" href="#id69" role="doc-backlink">Sources</a><a class="headerlink" href="#sources" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Added <cite>“diffusion_dominated_release</cite>” as a solute component for liquid phase sources.</p></li>
+</ul>
+</section>
+</section>
+<section id="version-2-1-0-amanzi-release-devel-7298">
+<h2><a class="toc-backref" href="#id70" role="doc-backlink">Version 2.1.0 (Amanzi Release - devel - 7298)</a><a class="headerlink" href="#version-2-1-0-amanzi-release-devel-7298" title="Link to this heading">#</a></h2>
+<p>Changeset 7298</p>
+<section id="id15">
+<h3><a class="toc-backref" href="#id71" role="doc-backlink">Materials</a><a class="headerlink" href="#id15" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Expanded dispersion tensor models.  New dispersion tensor types are now <cite>“uniform_isotropic</cite>”, <cite>“burnett_frind</cite>”, and <cite>“lichtner_kelkar_robinson</cite>”.</p></li>
+</ul>
+</section>
+</section>
+<section id="version-2-1-0-amanzi-release-devel-7277">
+<h2><a class="toc-backref" href="#id72" role="doc-backlink">Version 2.1.0 (Amanzi Release - devel - 7277)</a><a class="headerlink" href="#version-2-1-0-amanzi-release-devel-7277" title="Link to this heading">#</a></h2>
+<p>Changeset 7277</p>
+<section id="id16">
+<h3><a class="toc-backref" href="#id73" role="doc-backlink">Numerical Controls</a><a class="headerlink" href="#id16" title="Link to this heading">#</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li><p>Added sub-element <cite>“error_control_options</cite>” to both <cite>“unstr_steady-state_controls</cite>” and <cite>“unstr_pseudo_time_integrator</cite>”.</p></li>
+</ul>
+</div></blockquote>
+</section>
+</section>
+<section id="version-2-1-0-amanzi-release-devel-7266">
+<h2><a class="toc-backref" href="#id74" role="doc-backlink">Version 2.1.0 (Amanzi Release - devel - 7266)</a><a class="headerlink" href="#version-2-1-0-amanzi-release-devel-7266" title="Link to this heading">#</a></h2>
+<p>Changeset 7266</p>
+<section id="id17">
+<h3><a class="toc-backref" href="#id75" role="doc-backlink">Materials</a><a class="headerlink" href="#id17" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Started added file read capability for <cite>“permeability</cite>”.</p></li>
+</ul>
+</section>
+<section id="boundary-conditions">
+<h3><a class="toc-backref" href="#id76" role="doc-backlink">Boundary Conditions</a><a class="headerlink" href="#boundary-conditions" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>For hydrostatic boundary condition (uniform and linear) add attribute <cite>“submodel</cite>”.</p></li>
+</ul>
+</section>
+</section>
+<section id="version-2-1-0-amanzi-release-devel-7256">
+<h2><a class="toc-backref" href="#id77" role="doc-backlink">Version 2.1.0 (Amanzi Release - devel - 7256)</a><a class="headerlink" href="#version-2-1-0-amanzi-release-devel-7256" title="Link to this heading">#</a></h2>
+<p>Changeset 7256</p>
+<section id="id18">
+<h3><a class="toc-backref" href="#id78" role="doc-backlink">Numerical Controls</a><a class="headerlink" href="#id18" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Added <cite>“unstr_steady-state_controls</cite>” subelements <cite>“restart_tolerance_factor</cite>” and <cite>“restart_tolerance_relaxation_factor</cite>”.</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 202X, jointly shared by contributor institutions.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

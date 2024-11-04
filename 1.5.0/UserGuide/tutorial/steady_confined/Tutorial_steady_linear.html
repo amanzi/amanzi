@@ -1,0 +1,1227 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" data-theme="auto">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>One-dimensional, steady-state, saturated flow &#8212; Amanzi</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "auto";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "auto";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/fix_eq_position.css?v=19b1522f" />
+    <link rel="stylesheet" type="text/css" href="../../_static/default.css?v=f6536f91" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../_static/documentation_options.js?v=7eff24e8"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorial/steady_confined/Tutorial_steady_linear';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://raw.githubusercontent.com/amanzi/amanzi/gh-pages/versions.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '1.5.0';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = false;
+        </script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Transient vadose zone flow and Tc-99 transport" href="../transient_infiltration/Tutorial_dvz.html" />
+    <link rel="prev" title="Tutorial" href="../index.html" /> 
+ <script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    TeX: {
+        extensions: ["mhchem.js"]
+    }
+  });
+</script>
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="auto">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+
+
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../_static/Amanzi-color.png" class="logo__image only-light" alt="Amanzi - Home"/>
+    <script>document.write(`<img src="../../_static/Amanzi-Dark.png" class="logo__image only-dark" alt="Amanzi - Home"/>`);</script>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../background/index.html">
+    Background
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../background/getting_started.html">
+    Getting Started with Amanzi
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../capabilities/index.html">
+    Amanzi Features and Capabilities
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../input/index.html">
+    Amanzi Input Description
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../install/index.html">
+    Building Amanzi
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="../index.html">
+    Tutorial
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../verification/index.html">
+    Verification Testing
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../benchmarking/index.html">
+    Benchmark Testing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../background/index.html">
+    Background
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../background/getting_started.html">
+    Getting Started with Amanzi
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../capabilities/index.html">
+    Amanzi Features and Capabilities
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../input/index.html">
+    Amanzi Input Description
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../install/index.html">
+    Building Amanzi
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../index.html">
+    Tutorial
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../verification/index.html">
+    Verification Testing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../benchmarking/index.html">
+    Benchmark Testing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item"><!-- This will display the version of the docs -->
+Version  1.5.0</div>
+        <div class="sidebar-primary-item">
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">One-dimensional, steady-state, saturated flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../transient_infiltration/Tutorial_dvz.html">Transient vadose zone flow and Tc-99 transport</a></li>
+</ul>
+</div>
+</nav></div>
+        <div class="sidebar-primary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#problem-definition">Problem definition</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#amanzi-input-specifications"><em>Amanzi</em> input specifications</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#amanzi-execution"><em>Amanzi</em> execution</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#amanzi-results"><em>Amanzi</em> results</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#amanzi-xml-input-file"><em>Amanzi</em> XML input file</a></li>
+</ul>
+  </nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Tutorial</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">One-dimensio...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="one-dimensional-steady-state-saturated-flow">
+<h1>One-dimensional, steady-state, saturated flow<a class="headerlink" href="#one-dimensional-steady-state-saturated-flow" title="Link to this heading">#</a></h1>
+<p>This tutorial uses a simple saturated flow simulation problem to demonstrate the
+basic workflow required to create an input file, run <em>Amanzi</em>, and view results.</p>
+<section id="problem-definition">
+<h2>Problem definition<a class="headerlink" href="#problem-definition" title="Link to this heading">#</a></h2>
+<p>Consider the following steady-state saturated flow scenario:</p>
+<a class="reference internal image-reference" href="../../_images/ProblemDefinition.png"><img alt="../../_images/ProblemDefinition.png" class="align-center" src="../../_images/ProblemDefinition.png" style="width: 470.4px; height: 194.25px;" />
+</a>
+<p>Although the domain is three-dimensional, the imposed boundary conditions create a
+one-dimensional flow in the <span class="math notranslate nohighlight">\(x\)</span>-direction. The Darcy velocity is expected
+to be <span class="math notranslate nohighlight">\(U = 1.688\)</span> m/d = <span class="math notranslate nohighlight">\(1.954 \times 10^{-5}\)</span> m/s throughout the domain
+considering mass conservation. From Darcy’s law</p>
+<blockquote>
+<div><div class="math notranslate nohighlight" id="equation-darcyslaw">
+<span class="eqno">(1)<a class="headerlink" href="#equation-darcyslaw" title="Link to this equation">#</a></span>\[U = \frac{\rho g k}{\mu} \cdot \frac{h_{in} - h_{out}}{L} = K \frac{h_{in} - h_{out}}{L}\]</div>
+</div></blockquote>
+<p>where <span class="math notranslate nohighlight">\(K = \rho g k / \mu\)</span> is hydraulic conductivity,
+the inlet hydraulic head corresponding to the prescribed inlet flux <span class="math notranslate nohighlight">\(U\)</span> is</p>
+<blockquote>
+<div><div class="math notranslate nohighlight" id="equation-inlethead">
+<span class="eqno">(2)<a class="headerlink" href="#equation-inlethead" title="Link to this equation">#</a></span>\[h_{in} = \frac{U L}{K} + h_{out}\]</div>
+</div></blockquote>
+<p>Assuming <span class="math notranslate nohighlight">\(\rho = 998.2\)</span> kg/m<sup>3</sup> and
+<span class="math notranslate nohighlight">\(\mu = 1.002 \times 10^{-3}\)</span> Pa <span class="math notranslate nohighlight">\(\cdot\)</span> s for water at 20C, and
+<span class="math notranslate nohighlight">\(g = 9.807\)</span> m/s<sup>2</sup>,
+the hydraulic conductivity of the porous medium is
+<span class="math notranslate nohighlight">\(K = 9.7698 \times 10^{-6}\)</span> m/s = <span class="math notranslate nohighlight">\(0.844\)</span> m/d
+and the computed hydraulic head at the inlet should be</p>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[h_{in} = \frac{1.688 \text{ m/d} \cdot 100\text{ m}}{0.844 \text{ m/d}} + 120\text{ m} = 320 \text{ m}\]</div>
+</div></blockquote>
+<p>Analogous to Equation <a class="reference internal" href="#equation-inlethead">(2)</a> the expected hydraulic head at an
+arbitary location <span class="math notranslate nohighlight">\(x\)</span> is</p>
+<blockquote>
+<div><div class="math notranslate nohighlight" id="equation-observationhead">
+<span class="eqno">(3)<a class="headerlink" href="#equation-observationhead" title="Link to this equation">#</a></span>\[h(x) = \frac{U (L - x)}{K} + h_{out}\]</div>
+</div></blockquote>
+<p>where <span class="math notranslate nohighlight">\((L - x)\)</span> is the distance upgradient of the outlet.</p>
+</section>
+<section id="amanzi-input-specifications">
+<h2><em>Amanzi</em> input specifications<a class="headerlink" href="#amanzi-input-specifications" title="Link to this heading">#</a></h2>
+<p><em>Amanzi</em> input takes the form of an eXtensible Markup Language (XML) file
+with the extension <code class="docutils literal notranslate"><span class="pre">*.xml</span></code>. Although any text editor may be used to create or
+edit the contents of the file, an editor that provides XML syntax-highlighting
+improves readability and is helpful toward identifying syntax errors.
+The following image is an example of XML syntax-highlighting in the <em>Notepad++</em>
+editor for Microsoft Windows (<a class="reference external" href="http://notepad-plus-plus.org/">http://notepad-plus-plus.org/</a>):</p>
+<a class="reference internal image-reference" href="../../_images/SyntaxHighlightingExample.png"><img alt="../../_images/SyntaxHighlightingExample.png" class="align-center" src="../../_images/SyntaxHighlightingExample.png" style="width: 503.5px; height: 153.0px;" />
+</a>
+<p>The <em>Amanzi</em> input specification document (<strong>insert link</strong>) defines
+the content and format of an XML input file. A complete <em>Amanzi</em> input file
+for this tutorial is listed in a separate section below.
+At the top level is an XML element named <code class="docutils literal notranslate"><span class="pre">amanzi_input</span></code></p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;amanzi_input</span><span class="w"> </span><span class="na">version=</span><span class="s">&quot;1.5-dev&quot;</span><span class="w"> </span><span class="na">type=</span><span class="s">&quot;unstructured&quot;</span><span class="nt">&gt;</span>
+
+<span class="nt">&lt;/amanzi_input&gt;</span>
+</pre></div>
+</div>
+<p>with an attribute <code class="docutils literal notranslate"><span class="pre">type</span></code> that defines the model grid type, either
+<code class="docutils literal notranslate"><span class="pre">unstructured</span></code> or <code class="docutils literal notranslate"><span class="pre">structured</span></code>. A second attribute defines the <em>Amanzi</em> version.
+Nested within this element are additional XML
+elements with associated content and attributes to define other model inputs.
+Model parameters are defined through a combination of element <em>attributes</em>,
+e.g. <code class="docutils literal notranslate"><span class="pre">water</span></code> in the <code class="docutils literal notranslate"><span class="pre">liquid_phase</span></code> element,</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="w">  </span><span class="nt">&lt;liquid_phase</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+</pre></div>
+</div>
+<p>and element <em>content</em>, e.g. <code class="docutils literal notranslate"><span class="pre">998.2</span></code> kg/m<sup>3</sup> in the <code class="docutils literal notranslate"><span class="pre">density</span></code> element,</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="w">  </span><span class="nt">&lt;density&gt;</span>998.2<span class="nt">&lt;/density&gt;</span>
+</pre></div>
+</div>
+<p>as defined by the <em>Amanzi</em> input specification.
+Although not required by the XML standard or <em>Amanzi</em>,
+indentation using tabs and/or spaces is commonly used to indicate
+the hierarchy of elements and improve readibility. Tabs are used in this tutorial
+example to show the file hierarchy. Although <em>Amanzi</em> XML element names and the
+file structure are intended to be reasonably self-explanatory, selective commentary
+is provided here for further guidance.</p>
+<p><em>Amanzi</em> offers the user two numerical gridding approaches.
+The <code class="docutils literal notranslate"><span class="pre">structured</span></code> grid option refers to an orthogonal grid of rectangular (2D) or
+brick (3D) elements that may be further subdivided through
+Adaptive Mesh Refinement (AMR). The <code class="docutils literal notranslate"><span class="pre">unstructured</span></code> grid option can accommodate a
+network of non-orthogonal cells that may not be connected on a regular
+pattern defined by <span class="math notranslate nohighlight">\((i,j,k)\)</span> coordinate indices. The <code class="docutils literal notranslate"><span class="pre">unstructured</span></code>
+option also accommodates structured grids, but not multi-level AMR as with the
+<code class="docutils literal notranslate"><span class="pre">structured</span></code> grid option. A simple orthogonal structured grid with no refinement
+will be used for this tutorial, and either gridding option would suffice.
+However, the <code class="docutils literal notranslate"><span class="pre">unstructured</span></code> option is selected in this example through the
+<code class="docutils literal notranslate"><span class="pre">type</span></code> attribute in the <code class="docutils literal notranslate"><span class="pre">amanzi_input</span></code> XML element:</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;amanzi_input</span><span class="w"> </span><span class="na">version=</span><span class="s">&quot;1.5-dev&quot;</span><span class="w"> </span><span class="na">type=</span><span class="s">&quot;unstructured&quot;</span><span class="nt">&gt;</span>
+</pre></div>
+</div>
+<p>Nested within the <code class="docutils literal notranslate"><span class="pre">amanzi_input</span></code> element are additional XML elements defining
+various attributes of the numerical simulation to be performed. Although the order
+of these elements is arbitrary, users will typically want to sequence elements to
+mirror their conceptualization of the physical problem. For this tutorial we begin
+with the <code class="docutils literal notranslate"><span class="pre">model_description</span></code> element:</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="w">  </span><span class="nt">&lt;model_description</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;SR Test Problem&quot;</span><span class="nt">&gt;</span>
+<span class="w">    </span><span class="nt">&lt;comments&gt;</span>Steady-State<span class="w"> </span>Saturated:<span class="w"> </span>linear<span class="w"> </span>pressure<span class="w"> </span>profile<span class="nt">&lt;/comments&gt;</span>
+<span class="w">    </span><span class="nt">&lt;model_id&gt;</span>Single-Phase<span class="w"> </span>Saturated<span class="nt">&lt;/model_id&gt;</span>
+<span class="w">    </span><span class="nt">&lt;author&gt;</span>Elizabeth<span class="w"> </span>Keating<span class="nt">&lt;/author&gt;</span>
+<span class="w">    </span><span class="nt">&lt;units&gt;</span>
+<span class="w">      </span><span class="nt">&lt;length_unit&gt;</span>m<span class="nt">&lt;/length_unit&gt;</span>
+<span class="w">      </span><span class="nt">&lt;time_unit&gt;</span>s<span class="nt">&lt;/time_unit&gt;</span>
+<span class="w">      </span><span class="nt">&lt;mass_unit&gt;</span>kg<span class="nt">&lt;/mass_unit&gt;</span>
+<span class="w">      </span><span class="nt">&lt;conc_unit&gt;</span>molar<span class="nt">&lt;/conc_unit&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/units&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/model_description&gt;</span>
+</pre></div>
+</div>
+<p>Besides model identification, this block defines the dimensional units to be used
+for the numerical simulation. Currently <em>Amanzi</em> requires the SI units indicated
+in the <code class="docutils literal notranslate"><span class="pre">model_description/units</span></code> element.
+The units of density, viscosity, pressure, hydraulic conductivity, and
+permeability  are thus kg/m<sup>3</sup>, Pa <span class="math notranslate nohighlight">\(\cdot\)</span> s, Pa, m/s,
+and m<sup>2</sup>, respectively.
+Simulation outputs also use these dimensional units.</p>
+<p>The next input block is the <code class="docutils literal notranslate"><span class="pre">process_kernels</span></code> element:</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="w">  </span><span class="nt">&lt;process_kernels&gt;</span>
+<span class="w">    </span><span class="nt">&lt;comments&gt;</span>Single<span class="w"> </span>phase<span class="w"> </span>flow<span class="w"> </span>only<span class="nt">&lt;/comments&gt;</span>
+<span class="w">    </span><span class="nt">&lt;flow</span><span class="w"> </span><span class="na">state =</span><span class="w"> </span><span class="s">&quot;on&quot;</span><span class="w"> </span><span class="na">model =</span><span class="w"> </span><span class="s">&quot;saturated&quot;</span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;transport</span><span class="w"> </span><span class="na">state =</span><span class="w"> </span><span class="s">&quot;off&quot;</span><span class="w"> </span><span class="na">algorithm=</span><span class="s">&quot;none&quot;</span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;chemistry</span><span class="w"> </span><span class="na">state =</span><span class="w"> </span><span class="s">&quot;off&quot;</span><span class="w"> </span><span class="na">engine=</span><span class="s">&quot;none&quot;</span><span class="nt">/&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/process_kernels&gt;</span>
+</pre></div>
+</div>
+<p>The tutorial problem involves only fully-saturated flow, so the <code class="docutils literal notranslate"><span class="pre">saturated</span></code> model
+is selected here, and transport and chemistry are explicitly turned <code class="docutils literal notranslate"><span class="pre">off</span></code>.
+The latter may be implicitly turned off by omitting those two entries.</p>
+<p>In the <code class="docutils literal notranslate"><span class="pre">phases</span></code> element</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="w">  </span><span class="nt">&lt;phases&gt;</span>
+<span class="w">    </span><span class="nt">&lt;liquid_phase</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+<span class="w">      </span><span class="nt">&lt;eos&gt;</span>false<span class="nt">&lt;/eos&gt;</span>
+<span class="w">      </span><span class="nt">&lt;density&gt;</span>998.2<span class="nt">&lt;/density&gt;</span>
+<span class="w">      </span><span class="nt">&lt;viscosity&gt;</span>1.002E-03<span class="nt">&lt;/viscosity&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/liquid_phase&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/phases&gt;</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">water</span></code> is the only phase present (as a liquid), and
+equation-of-state (eos) computations are turned off in favor of direct
+specification of fluid density and viscosity as 998.2 kg/m<sup>3</sup>and 1.002e-03 Pa <span class="math notranslate nohighlight">\(\cdot\)</span> s, respectively.</p>
+<p>Under <code class="docutils literal notranslate"><span class="pre">execution_controls</span></code> the <code class="docutils literal notranslate"><span class="pre">steady</span></code> mode and first-order backward-difference
+(backward Euler) differencing scheme (<code class="docutils literal notranslate"><span class="pre">bdf1</span></code>) are chosen:</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="w">  </span><span class="nt">&lt;execution_controls&gt;</span>
+<span class="w">    </span><span class="nt">&lt;verbosity</span><span class="w"> </span><span class="na">level=</span><span class="s">&quot;high&quot;</span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;execution_control_defaults</span><span class="w"> </span><span class="na">mode=</span><span class="s">&quot;steady&quot;</span><span class="w"> </span><span class="na">method=</span><span class="s">&quot;bdf1&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;execution_control</span><span class="w">  </span><span class="na">start=</span><span class="s">&quot;0.0&quot;</span><span class="w"> </span><span class="na">end=</span><span class="s">&quot;1000 y&quot;</span><span class="w"> </span><span class="na">init_dt=</span><span class="s">&quot;1000 y&quot;</span><span class="w"> </span><span class="na">mode =</span><span class="w"> </span><span class="s">&quot;steady&quot;</span><span class="w"> </span><span class="na">method=</span><span class="s">&quot;bdf1&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/execution_controls&gt;</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">start</span></code> and <code class="docutils literal notranslate"><span class="pre">end</span></code> times may both be zero for a steady-state calculation.
+Controls for the selected numerical scheme are defined in the block</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="w">  </span><span class="nt">&lt;numerical_controls&gt;</span>
+<span class="w">    </span><span class="nt">&lt;linear_solver&gt;</span>
+<span class="w">      </span><span class="nt">&lt;max_iterations&gt;</span>30<span class="nt">&lt;/max_iterations&gt;</span>
+<span class="w">      </span><span class="nt">&lt;tolerance&gt;</span>1.0e-18<span class="nt">&lt;/tolerance&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/linear_solver&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/numerical_controls&gt;</span>
+</pre></div>
+</div>
+<p>Here recommended default values have been selected.</p>
+<p>The computational mesh may be imported (read from file) or, for simple geometries,
+generated by <em>Amanzi</em>. A simple mesh is adequate for this simulation so the
+latter option is selected for this tutorial example in the <code class="docutils literal notranslate"><span class="pre">mesh</span></code> element:</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="w">  </span><span class="nt">&lt;mesh</span><span class="w"> </span><span class="na">framework=</span><span class="s">&quot;mstk&quot;</span><span class="nt">&gt;</span>
+<span class="w">    </span><span class="nt">&lt;comments&gt;</span>Three-dimensional<span class="w"> </span>box<span class="w"> </span>100m<span class="w"> </span>x<span class="w"> </span>50m<span class="w"> </span>x<span class="w"> </span>50m<span class="nt">&lt;/comments&gt;</span>
+<span class="w">    </span><span class="nt">&lt;dimension&gt;</span>3<span class="nt">&lt;/dimension&gt;</span>
+<span class="w">    </span><span class="nt">&lt;generate&gt;</span>
+<span class="w">      </span><span class="nt">&lt;number_of_cells</span><span class="w"> </span><span class="na">nx =</span><span class="w"> </span><span class="s">&quot;100&quot;</span><span class="w">  </span><span class="na">ny =</span><span class="w"> </span><span class="s">&quot;5&quot;</span><span class="w">  </span><span class="na">nz =</span><span class="w"> </span><span class="s">&quot;50&quot;</span><span class="nt">/&gt;</span>
+<span class="w">      </span><span class="nt">&lt;box</span><span class="w">  </span><span class="na">low_coordinates =</span><span class="w"> </span><span class="s">&quot;0.0,0.0,0.0&quot;</span><span class="w"> </span><span class="na">high_coordinates =</span><span class="w"> </span><span class="s">&quot;100.0,50.0,50.0&quot;</span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/generate&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/mesh&gt;</span>
+</pre></div>
+</div>
+<p>Note that a 3D domain is specified through the <code class="docutils literal notranslate"><span class="pre">dimension</span></code> element. The
+coordinates under <code class="docutils literal notranslate"><span class="pre">mesh/generate/box</span></code> refer to the
+<span class="math notranslate nohighlight">\((x_{min}, y_{min}, z_{min})\)</span> and <span class="math notranslate nohighlight">\((x_{max}, y_{max}, z_{max})\)</span>
+corners of the computational domain, and must be
+comma-separated. Whitespace is allowed and parentheses may be used to bracket
+coordinates in the form <code class="docutils literal notranslate"><span class="pre">(x,y,z)</span></code> if desired. The <code class="docutils literal notranslate"><span class="pre">nx</span></code>, <code class="docutils literal notranslate"><span class="pre">ny</span></code>, and <code class="docutils literal notranslate"><span class="pre">nz</span></code>
+values define the number of computational cells in each coordinate direction.
+Discretization is specified for the <span class="math notranslate nohighlight">\(y\)</span> and <span class="math notranslate nohighlight">\(z\)</span> coordinates,
+although no variability is expected in these directions.
+The user could effectively create a one-dimensional simulation by setting
+<code class="docutils literal notranslate"><span class="pre">ny</span> <span class="pre">=</span> <span class="pre">1</span></code> and <code class="docutils literal notranslate"><span class="pre">nz</span> <span class="pre">=</span> <span class="pre">1</span></code>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">regions</span></code> element is used to define volumes for material property assignments</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="w">  </span><span class="nt">&lt;regions&gt;</span>
+<span class="w">    </span><span class="nt">&lt;comments&gt;&lt;/comments&gt;</span>
+<span class="w">    </span><span class="nt">&lt;region</span><span class="w"> </span><span class="na">name =</span><span class="s">&quot;Entire Domain&quot;</span><span class="nt">&gt;</span>
+<span class="w">      </span><span class="nt">&lt;comments&gt;</span>One<span class="w"> </span>region<span class="w"> </span>comprising<span class="w"> </span>the<span class="w"> </span>entire<span class="w"> </span>domain<span class="nt">&lt;/comments&gt;</span>
+<span class="w">      </span><span class="nt">&lt;box</span><span class="w"> </span><span class="na">low_coordinates=</span><span class="w"> </span><span class="s">&quot;0.0,0.0,0.0&quot;</span><span class="w">     </span><span class="na">high_coordinates=</span><span class="s">&quot;100.0,50.0,50.0&quot;</span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/region&gt;</span>
+</pre></div>
+</div>
+<p>surfaces for boundary condition assignments</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="nt">&lt;region</span><span class="w"> </span><span class="na">name =</span><span class="s">&quot;Upstream&quot;</span><span class="nt">&gt;</span>
+<span class="w">      </span><span class="nt">&lt;comments&gt;</span>Upstream<span class="w"> </span>boundary<span class="nt">&lt;/comments&gt;</span>
+<span class="w">      </span><span class="nt">&lt;box</span><span class="w"> </span><span class="na">low_coordinates=</span><span class="w"> </span><span class="s">&quot;0.0,0.0,0.0&quot;</span><span class="w">     </span><span class="na">high_coordinates=</span><span class="s">&quot;0.0,50.0,50.0&quot;</span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/region&gt;</span>
+</pre></div>
+</div>
+<p>and discrete points</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="nt">&lt;point</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;Well 1&quot;</span><span class="w">  </span><span class="na">coordinate=</span><span class="s">&quot; 0.5, 25.0, 25.5&quot;</span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;point</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;Well 2&quot;</span><span class="w">  </span><span class="na">coordinate=</span><span class="s">&quot;50.5, 25.0, 25.5&quot;</span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;point</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;Well 2t&quot;</span><span class="w"> </span><span class="na">coordinate=</span><span class="s">&quot;50.5, 25.0, 49.5&quot;</span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;point</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;Well 2b&quot;</span><span class="w"> </span><span class="na">coordinate=</span><span class="s">&quot;50.5, 25.0,  0.5&quot;</span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;point</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;Well 3&quot;</span><span class="w">  </span><span class="na">coordinate=</span><span class="s">&quot;99.5, 25.0, 25.5&quot;</span><span class="nt">/&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/regions&gt;</span>
+</pre></div>
+</div>
+<p>The location points are defined in anticipation of
+hydraulic head and pressure observations to be specified below.
+To avoid ambiguity and the need for interpolation,
+the observation points are defined so that each
+location coincides exactly with a grid node (computational cell center).
+The grid spacing in the <span class="math notranslate nohighlight">\(x\)</span>-direction is <span class="math notranslate nohighlight">\(1.0\)</span> meter,
+so cell centers are positioned at <span class="math notranslate nohighlight">\(x_i = 0.5, 1.5, 2.5, ..., 99.5\)</span>.
+Similarly, the <span class="math notranslate nohighlight">\(y\)</span>-coordinates of grid
+nodes are <span class="math notranslate nohighlight">\(y_i = 5, 10, 15, 20,\)</span> and <span class="math notranslate nohighlight">\(25\)</span>, and finally
+<span class="math notranslate nohighlight">\(z_i = 0.5, 1.5, 2.5, ..., 49.5\)</span>. Point <code class="docutils literal notranslate"><span class="pre">Well</span> <span class="pre">1</span></code> is located just inside the
+inlet boundary near the center of the face. Point <code class="docutils literal notranslate"><span class="pre">Well</span> <span class="pre">3</span></code> is similarly located
+one-half cell inside the downstream boundary. Point <code class="docutils literal notranslate"><span class="pre">Well</span> <span class="pre">2</span></code> is located near the
+center of the domain (within one-half cell). Points <code class="docutils literal notranslate"><span class="pre">Well</span> <span class="pre">2t</span></code> and <code class="docutils literal notranslate"><span class="pre">Well</span> <span class="pre">2b</span></code> are
+positioned above and below <code class="docutils literal notranslate"><span class="pre">Well</span> <span class="pre">2</span></code> at the top and bottom of the domain.</p>
+<p>Although the simulation problem is steady-state, an initial condition is required
+<strong>? why ?</strong>:</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="w">  </span><span class="nt">&lt;initial_conditions&gt;</span>
+<span class="w">    </span><span class="nt">&lt;initial_condition</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;Initial Condition&quot;</span><span class="nt">&gt;</span>
+<span class="w">      </span><span class="nt">&lt;comments&gt;</span>Uniform<span class="w"> </span>pressure<span class="w"> </span>over<span class="w"> </span>entire<span class="w"> </span>domain<span class="nt">&lt;/comments&gt;</span>
+<span class="w">      </span><span class="nt">&lt;assigned_regions&gt;</span>Entire<span class="w"> </span>Domain<span class="nt">&lt;/assigned_regions&gt;</span>
+<span class="w">      </span><span class="nt">&lt;liquid_phase</span><span class="w"> </span><span class="na">name =</span><span class="w"> </span><span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+<span class="w">	</span><span class="nt">&lt;liquid_component</span><span class="w"> </span><span class="na">name =</span><span class="w"> </span><span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;pressure</span><span class="w"> </span><span class="na">value =</span><span class="w"> </span><span class="s">&quot;101325.0&quot;</span><span class="w"> </span><span class="na">function=</span><span class="s">&quot;uniform&quot;</span><span class="nt">/&gt;</span>
+<span class="w">	</span><span class="nt">&lt;/liquid_component&gt;</span>
+<span class="w">      </span><span class="nt">&lt;/liquid_phase&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/initial_condition&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/initial_conditions&gt;</span>
+</pre></div>
+</div>
+<p>The <em>Amanzi</em> <code class="docutils literal notranslate"><span class="pre">pressure</span></code> variable is absolute pressure.
+Here atmospheric pressure(<code class="docutils literal notranslate"><span class="pre">101325.0</span></code> Pa) is specified  over the modeling domain
+using the <code class="docutils literal notranslate"><span class="pre">Entire</span> <span class="pre">Domain</span></code> region specified above.</p>
+<p>Next boundary conditions are specified as</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="w">  </span><span class="nt">&lt;boundary_conditions&gt;</span>
+<span class="w">    </span><span class="nt">&lt;boundary_condition</span><span class="w"> </span><span class="na">name =</span><span class="w"> </span><span class="s">&quot;Upstream BC&quot;</span><span class="nt">&gt;</span>
+<span class="w">      </span><span class="nt">&lt;comments&gt;</span>Upstream<span class="w"> </span>boundary<span class="w"> </span>condition<span class="nt">&lt;/comments&gt;</span>
+<span class="w">      </span><span class="nt">&lt;assigned_regions&gt;</span>Upstream<span class="nt">&lt;/assigned_regions&gt;</span>
+<span class="w">      </span><span class="nt">&lt;liquid_phase</span><span class="w"> </span><span class="na">name =</span><span class="w"> </span><span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+<span class="w">	</span><span class="nt">&lt;liquid_component</span><span class="w"> </span><span class="na">name =</span><span class="w"> </span><span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;inward_mass_flux</span><span class="w"> </span><span class="na">start=</span><span class="s">&quot;0.0&quot;</span><span class="w"> </span><span class="na">function=</span><span class="w"> </span><span class="s">&quot;constant&quot;</span><span class="w"> </span><span class="na">value=</span><span class="s">&quot;1.950187e-2&quot;</span><span class="nt">/&gt;</span>
+<span class="w">	</span><span class="nt">&lt;/liquid_component&gt;</span>
+<span class="w">      </span><span class="nt">&lt;/liquid_phase&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/boundary_condition&gt;</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="nt">&lt;boundary_condition</span><span class="w"> </span><span class="na">name =</span><span class="w"> </span><span class="s">&quot;Downstream BC&quot;</span><span class="nt">&gt;</span>
+<span class="w">      </span><span class="nt">&lt;assigned_regions&gt;</span>Downstream<span class="nt">&lt;/assigned_regions&gt;</span>
+<span class="w">      </span><span class="nt">&lt;liquid_phase</span><span class="w"> </span><span class="na">name =</span><span class="w"> </span><span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+<span class="w">	</span><span class="nt">&lt;liquid_component</span><span class="w"> </span><span class="na">name =</span><span class="w"> </span><span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;hydrostatic</span><span class="w"> </span><span class="na">start=</span><span class="s">&quot;0.0&quot;</span><span class="w"> </span><span class="na">function=</span><span class="w"> </span><span class="s">&quot;constant&quot;</span><span class="w"> </span><span class="na">value=</span><span class="s">&quot;120.0&quot;</span><span class="nt">/&gt;</span>
+<span class="w">	</span><span class="nt">&lt;/liquid_component&gt;</span>
+<span class="w">      </span><span class="nt">&lt;/liquid_phase&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/boundary_condition&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/boundary_conditions&gt;</span>
+<span class="w">  </span>
+</pre></div>
+</div>
+<p>The boundary condition at <span class="math notranslate nohighlight">\(x=0\)</span> is defined in the problem statement as a
+volumetric flux <span class="math notranslate nohighlight">\(U\)</span> [m<sup>3</sup>/m<sup>2</sup>d = m/d].
+<em>Amanzi</em> currently requires boundary conditions of this type to be specified as
+a mass flux, <span class="math notranslate nohighlight">\(\rho U\)</span> [kg<sup>3</sup>/m<sup>2</sup>s].
+Performing this calculation for <span class="math notranslate nohighlight">\(\rho = 998.2\)</span> kg/m<sup>3</sup> and
+<span class="math notranslate nohighlight">\(U = 1.688\)</span> m/d = <span class="math notranslate nohighlight">\(1.954 \times 10^{-5}\)</span> m/s
+yields <code class="docutils literal notranslate"><span class="pre">1.95e-2</span></code> kg<sup>3</sup>/m<sup>2</sup>s for <code class="docutils literal notranslate"><span class="pre">inward_mass_flux</span></code>.</p>
+<p>Material properties are defined in the <code class="docutils literal notranslate"><span class="pre">materials</span></code> element</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="nt">&lt;material</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;Soil&quot;</span><span class="nt">&gt;</span>
+<span class="w">      </span><span class="nt">&lt;comments&gt;</span>Homogeneous<span class="w"> </span>material<span class="w"> </span>properties<span class="w"> </span>throughout<span class="w"> </span>the<span class="w"> </span>entire<span class="w"> </span>domain<span class="nt">&lt;/comments&gt;</span>
+<span class="w">      </span><span class="nt">&lt;mechanical_properties&gt;</span>
+<span class="w">        </span><span class="nt">&lt;porosity</span><span class="w"> </span><span class="na">value=</span><span class="s">&quot;0.25&quot;</span><span class="nt">/&gt;</span>
+<span class="w">        </span><span class="nt">&lt;specific_storage</span><span class="w"> </span><span class="na">model=</span><span class="s">&quot;constant&quot;</span><span class="w"> </span><span class="na">value=</span><span class="s">&quot;0.0&quot;</span><span class="nt">/&gt;</span>
+<span class="w">      </span><span class="nt">&lt;/mechanical_properties&gt;</span>
+<span class="w">      </span><span class="nt">&lt;permeability</span><span class="w"> </span><span class="na">x=</span><span class="s">&quot;9.998680356931206e-13&quot;</span><span class="w"> </span><span class="na">y=</span><span class="s">&quot;9.998680356931206e-13&quot;</span><span class="w"> </span><span class="na">z=</span><span class="s">&quot;9.998680356931206e-13&quot;</span><span class="nt">/&gt;</span>
+<span class="w">      </span><span class="nt">&lt;assigned_regions&gt;</span>Entire<span class="w"> </span>Domain<span class="nt">&lt;/assigned_regions&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/material&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/materials&gt;</span>
+</pre></div>
+</div>
+<p>For this steady-state saturated flow-only simulation porosity does not affect
+the solution and its value is arbitrarily set to 0.25. The <code class="docutils literal notranslate"><span class="pre">permeability</span></code> values
+are intrinsic permeability <span class="math notranslate nohighlight">\(k\)</span> [m<sup>2</sup>] rather than hydraulic
+conductivity <span class="math notranslate nohighlight">\(K = \rho g k / \mu\)</span> [m/s], which is sometimes loosely referred
+to as “permeability”.</p>
+<p>In the <code class="docutils literal notranslate"><span class="pre">definitions</span></code> element</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="w">  </span><span class="nt">&lt;definitions&gt;</span>
+<span class="w">    </span><span class="nt">&lt;macros&gt;</span>
+<span class="w">      </span><span class="nt">&lt;time_macro</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;Steady State&quot;</span><span class="nt">&gt;</span>
+<span class="w">	</span><span class="nt">&lt;time&gt;</span>1000<span class="w"> </span>y<span class="nt">&lt;/time&gt;</span>
+<span class="w">      </span><span class="nt">&lt;/time_macro&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/macros&gt;</span><span class="w">	</span>
+<span class="w">  </span><span class="nt">&lt;/definitions&gt;</span>
+</pre></div>
+</div>
+<p>the <code class="docutils literal notranslate"><span class="pre">time_macro</span></code> element defines the time at which
+model observations will be written to output according to the
+<code class="docutils literal notranslate"><span class="pre">output/observations</span></code> element that follows. Because the simulation is steady-state,
+the <code class="docutils literal notranslate"><span class="pre">time</span></code> is set to zero.</p>
+<p>The final input is the <code class="docutils literal notranslate"><span class="pre">output</span></code> block</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="w">  </span><span class="nt">&lt;output&gt;</span>
+<span class="w">    </span><span class="nt">&lt;observations&gt;</span>
+<span class="w">      </span><span class="nt">&lt;filename&gt;</span>observation.out<span class="nt">&lt;/filename&gt;</span>
+<span class="w">      </span><span class="nt">&lt;liquid_phase</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+<span class="w">	</span><span class="nt">&lt;hydraulic_head&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;assigned_regions&gt;</span>Well<span class="w"> </span>1<span class="nt">&lt;/assigned_regions&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;functional&gt;</span>point<span class="nt">&lt;/functional&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;time_macro&gt;</span>Steady<span class="w"> </span>State<span class="nt">&lt;/time_macro&gt;</span>
+<span class="w">	</span><span class="nt">&lt;/hydraulic_head&gt;</span>
+<span class="w">	</span><span class="nt">&lt;hydraulic_head&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;assigned_regions&gt;</span>Well<span class="w"> </span>2<span class="nt">&lt;/assigned_regions&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;functional&gt;</span>point<span class="nt">&lt;/functional&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;time_macro&gt;</span>Steady<span class="w"> </span>State<span class="nt">&lt;/time_macro&gt;</span>
+<span class="w">	</span><span class="nt">&lt;/hydraulic_head&gt;</span>
+</pre></div>
+</div>
+<p><span class="math notranslate nohighlight">\(\vdots\)</span></p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="w">	</span><span class="nt">&lt;aqueous_pressure&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;assigned_regions&gt;</span>Well<span class="w"> </span>1<span class="nt">&lt;/assigned_regions&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;functional&gt;</span>point<span class="nt">&lt;/functional&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;time_macro&gt;</span>Steady<span class="w"> </span>State<span class="nt">&lt;/time_macro&gt;</span>
+<span class="w">	</span><span class="nt">&lt;/aqueous_pressure&gt;</span>
+<span class="w">	</span><span class="nt">&lt;aqueous_pressure&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;assigned_regions&gt;</span>Well<span class="w"> </span>2<span class="nt">&lt;/assigned_regions&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;functional&gt;</span>point<span class="nt">&lt;/functional&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;time_macro&gt;</span>Steady<span class="w"> </span>State<span class="nt">&lt;/time_macro&gt;</span>
+<span class="w">	</span><span class="nt">&lt;/aqueous_pressure&gt;</span>
+</pre></div>
+</div>
+<p><span class="math notranslate nohighlight">\(\vdots\)</span></p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="nt">&lt;vis&gt;</span>
+<span class="w">      </span><span class="nt">&lt;base_filename&gt;</span>steady-flow<span class="nt">&lt;/base_filename&gt;</span>
+<span class="w">      </span><span class="nt">&lt;num_digits&gt;</span>5<span class="nt">&lt;/num_digits&gt;</span>
+<span class="w">      </span><span class="nt">&lt;time_macro&gt;</span>Steady<span class="w"> </span>State<span class="nt">&lt;/time_macro&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/vis&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/output&gt;</span>
+</pre></div>
+</div>
+<p>Observations, to be written to <code class="docutils literal notranslate"><span class="pre">observations.out</span></code>, are requested for hydraulic head
+and (absolute) pressure at the five well locations previously defined under
+<code class="docutils literal notranslate"><span class="pre">regions/point</span></code>. The <code class="docutils literal notranslate"><span class="pre">vis</span></code> element specifies 5 significant figures for the
+visualization file with prefix <code class="docutils literal notranslate"><span class="pre">steady-flow</span></code>.</p>
+</section>
+<section id="amanzi-execution">
+<h2><em>Amanzi</em> execution<a class="headerlink" href="#amanzi-execution" title="Link to this heading">#</a></h2>
+<p><em>Amanzi</em> is executed from the command-line using this or analogous command for
+the user’s specific installation:</p>
+<p><code class="docutils literal notranslate"><span class="pre">mpirun</span> <span class="pre">-n</span> <span class="pre">4</span> <span class="pre">install/current/bin/amanzi</span> <span class="pre">--xml_schema=install/current/bin/amanzi.xsd</span> <span class="pre">--xml_file=amanzi_steady_linear-isv2.xml</span></code></p>
+<p>Here execution using 4 processor cores is specified by <code class="docutils literal notranslate"><span class="pre">-n</span> <span class="pre">4</span></code>. Successful completion
+is marked by <code class="docutils literal notranslate"><span class="pre">SIMULATION_SUCCESSFUL</span></code> followed by a timing summary</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Amanzi</span><span class="p">::</span><span class="n">SIMULATION_SUCCESSFUL</span>
+
+<span class="o">**********************************************************</span>
+<span class="o">***</span>                   <span class="n">Timing</span> <span class="n">Summary</span>                   <span class="o">***</span>
+<span class="o">**********************************************************</span>
+</pre></div>
+</div>
+</section>
+<section id="amanzi-results">
+<h2><em>Amanzi</em> results<a class="headerlink" href="#amanzi-results" title="Link to this heading">#</a></h2>
+<p>For the requested observation points, the following results are expected in terms
+of hydraulic head (Equation <a class="reference internal" href="#equation-observationhead">(3)</a>) and pressure
+(<span class="math notranslate nohighlight">\(P = (h - z)\rho g + P_{atm}\)</span>):</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>ID</p></th>
+<th class="head"><p>x (m)</p></th>
+<th class="head"><p>h (m)</p></th>
+<th class="head"><p>P (Pa)</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Well 1</p></td>
+<td><p>0.5</p></td>
+<td><p>319.00</p></td>
+<td><p>2974498</p></td>
+</tr>
+<tr class="row-odd"><td><p>Well 2</p></td>
+<td><p>50.5</p></td>
+<td><p>221.00</p></td>
+<td><p>1995564</p></td>
+</tr>
+<tr class="row-even"><td><p>Well 2t</p></td>
+<td><p>50.5</p></td>
+<td><p>221.00</p></td>
+<td><p>1760619</p></td>
+</tr>
+<tr class="row-odd"><td><p>Well 2b</p></td>
+<td><p>50.5</p></td>
+<td><p>221.00</p></td>
+<td><p>2240297</p></td>
+</tr>
+<tr class="row-even"><td><p>Well 3</p></td>
+<td><p>99.5</p></td>
+<td><p>121.00</p></td>
+<td><p>1036208</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>In output file <code class="docutils literal notranslate"><span class="pre">observations.out</span></code>, <em>Amanzi</em> produces the following results:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>ID</p></th>
+<th class="head"><p>x (m)</p></th>
+<th class="head"><p>h (m)</p></th>
+<th class="head"><p>P (Pa)</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Well 1</p></td>
+<td><p>0.5</p></td>
+<td><p>319.01</p></td>
+<td><p>2974465</p></td>
+</tr>
+<tr class="row-odd"><td><p>Well 2</p></td>
+<td><p>50.5</p></td>
+<td><p>219.00</p></td>
+<td><p>1995306</p></td>
+</tr>
+<tr class="row-even"><td><p>Well 2t</p></td>
+<td><p>50.5</p></td>
+<td><p>219.00</p></td>
+<td><p>1760595</p></td>
+</tr>
+<tr class="row-odd"><td><p>Well 2b</p></td>
+<td><p>50.5</p></td>
+<td><p>219.00</p></td>
+<td><p>2240256</p></td>
+</tr>
+<tr class="row-even"><td><p>Well 3</p></td>
+<td><p>99.5</p></td>
+<td><p>121.00</p></td>
+<td><p>1036175</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The output from <em>Amanzi</em> is observed to agree closely with the expected hydraulic
+head and pressure results from the analytic solution.
+Minor mismatch is due to rounding of input data.</p>
+</section>
+<section id="amanzi-xml-input-file">
+<h2><em>Amanzi</em> XML input file<a class="headerlink" href="#amanzi-xml-input-file" title="Link to this heading">#</a></h2>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;amanzi_input</span><span class="w"> </span><span class="na">version=</span><span class="s">&quot;1.5-dev&quot;</span><span class="w"> </span><span class="na">type=</span><span class="s">&quot;unstructured&quot;</span><span class="nt">&gt;</span>
+
+<span class="w">  </span><span class="nt">&lt;model_description</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;SR Test Problem&quot;</span><span class="nt">&gt;</span>
+<span class="w">    </span><span class="nt">&lt;comments&gt;</span>Steady-State<span class="w"> </span>Saturated:<span class="w"> </span>linear<span class="w"> </span>pressure<span class="w"> </span>profile<span class="nt">&lt;/comments&gt;</span>
+<span class="w">    </span><span class="nt">&lt;model_id&gt;</span>Single-Phase<span class="w"> </span>Saturated<span class="nt">&lt;/model_id&gt;</span>
+<span class="w">    </span><span class="nt">&lt;author&gt;</span>Elizabeth<span class="w"> </span>Keating<span class="nt">&lt;/author&gt;</span>
+<span class="w">    </span><span class="nt">&lt;units&gt;</span>
+<span class="w">      </span><span class="nt">&lt;length_unit&gt;</span>m<span class="nt">&lt;/length_unit&gt;</span>
+<span class="w">      </span><span class="nt">&lt;time_unit&gt;</span>s<span class="nt">&lt;/time_unit&gt;</span>
+<span class="w">      </span><span class="nt">&lt;mass_unit&gt;</span>kg<span class="nt">&lt;/mass_unit&gt;</span>
+<span class="w">      </span><span class="nt">&lt;conc_unit&gt;</span>molar<span class="nt">&lt;/conc_unit&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/units&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/model_description&gt;</span>
+
+<span class="w">  </span><span class="nt">&lt;process_kernels&gt;</span>
+<span class="w">    </span><span class="nt">&lt;comments&gt;</span>Single<span class="w"> </span>phase<span class="w"> </span>flow<span class="w"> </span>only<span class="nt">&lt;/comments&gt;</span>
+<span class="w">    </span><span class="nt">&lt;flow</span><span class="w"> </span><span class="na">state =</span><span class="w"> </span><span class="s">&quot;on&quot;</span><span class="w"> </span><span class="na">model =</span><span class="w"> </span><span class="s">&quot;saturated&quot;</span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;transport</span><span class="w"> </span><span class="na">state =</span><span class="w"> </span><span class="s">&quot;off&quot;</span><span class="w"> </span><span class="na">algorithm=</span><span class="s">&quot;none&quot;</span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;chemistry</span><span class="w"> </span><span class="na">state =</span><span class="w"> </span><span class="s">&quot;off&quot;</span><span class="w"> </span><span class="na">engine=</span><span class="s">&quot;none&quot;</span><span class="nt">/&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/process_kernels&gt;</span>
+<span class="w">  </span>
+<span class="w">  </span><span class="nt">&lt;phases&gt;</span>
+<span class="w">    </span><span class="nt">&lt;liquid_phase</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+<span class="w">      </span><span class="nt">&lt;eos&gt;</span>false<span class="nt">&lt;/eos&gt;</span>
+<span class="w">      </span><span class="nt">&lt;density&gt;</span>998.2<span class="nt">&lt;/density&gt;</span>
+<span class="w">      </span><span class="nt">&lt;viscosity&gt;</span>1.002E-03<span class="nt">&lt;/viscosity&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/liquid_phase&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/phases&gt;</span>
+
+<span class="w">  </span><span class="nt">&lt;execution_controls&gt;</span>
+<span class="w">    </span><span class="nt">&lt;verbosity</span><span class="w"> </span><span class="na">level=</span><span class="s">&quot;high&quot;</span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;execution_control_defaults</span><span class="w"> </span><span class="na">mode=</span><span class="s">&quot;steady&quot;</span><span class="w"> </span><span class="na">method=</span><span class="s">&quot;bdf1&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;execution_control</span><span class="w">  </span><span class="na">start=</span><span class="s">&quot;0.0&quot;</span><span class="w"> </span><span class="na">end=</span><span class="s">&quot;1000 y&quot;</span><span class="w"> </span><span class="na">init_dt=</span><span class="s">&quot;1000 y&quot;</span><span class="w"> </span><span class="na">mode =</span><span class="w"> </span><span class="s">&quot;steady&quot;</span><span class="w"> </span><span class="na">method=</span><span class="s">&quot;bdf1&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/execution_controls&gt;</span>
+<span class="w">  </span>
+<span class="w">  </span><span class="nt">&lt;numerical_controls&gt;</span>
+<span class="w">    </span><span class="nt">&lt;linear_solver&gt;</span>
+<span class="w">      </span><span class="nt">&lt;max_iterations&gt;</span>30<span class="nt">&lt;/max_iterations&gt;</span>
+<span class="w">      </span><span class="nt">&lt;tolerance&gt;</span>1.0e-18<span class="nt">&lt;/tolerance&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/linear_solver&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/numerical_controls&gt;</span>
+<span class="w">  </span>
+<span class="w">  </span><span class="nt">&lt;mesh</span><span class="w"> </span><span class="na">framework=</span><span class="s">&quot;mstk&quot;</span><span class="nt">&gt;</span>
+<span class="w">    </span><span class="nt">&lt;comments&gt;</span>Three-dimensional<span class="w"> </span>box<span class="w"> </span>100m<span class="w"> </span>x<span class="w"> </span>50m<span class="w"> </span>x<span class="w"> </span>50m<span class="nt">&lt;/comments&gt;</span>
+<span class="w">    </span><span class="nt">&lt;dimension&gt;</span>3<span class="nt">&lt;/dimension&gt;</span>
+<span class="w">    </span><span class="nt">&lt;generate&gt;</span>
+<span class="w">      </span><span class="nt">&lt;number_of_cells</span><span class="w"> </span><span class="na">nx =</span><span class="w"> </span><span class="s">&quot;100&quot;</span><span class="w">  </span><span class="na">ny =</span><span class="w"> </span><span class="s">&quot;5&quot;</span><span class="w">  </span><span class="na">nz =</span><span class="w"> </span><span class="s">&quot;50&quot;</span><span class="nt">/&gt;</span>
+<span class="w">      </span><span class="nt">&lt;box</span><span class="w">  </span><span class="na">low_coordinates =</span><span class="w"> </span><span class="s">&quot;0.0,0.0,0.0&quot;</span><span class="w"> </span><span class="na">high_coordinates =</span><span class="w"> </span><span class="s">&quot;100.0,50.0,50.0&quot;</span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/generate&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/mesh&gt;</span>
+<span class="w">  </span>
+<span class="w">  </span><span class="nt">&lt;regions&gt;</span>
+<span class="w">    </span><span class="nt">&lt;comments&gt;&lt;/comments&gt;</span>
+<span class="w">    </span><span class="nt">&lt;region</span><span class="w"> </span><span class="na">name =</span><span class="s">&quot;Entire Domain&quot;</span><span class="nt">&gt;</span>
+<span class="w">      </span><span class="nt">&lt;comments&gt;</span>One<span class="w"> </span>region<span class="w"> </span>comprising<span class="w"> </span>the<span class="w"> </span>entire<span class="w"> </span>domain<span class="nt">&lt;/comments&gt;</span>
+<span class="w">      </span><span class="nt">&lt;box</span><span class="w"> </span><span class="na">low_coordinates=</span><span class="w"> </span><span class="s">&quot;0.0,0.0,0.0&quot;</span><span class="w">     </span><span class="na">high_coordinates=</span><span class="s">&quot;100.0,50.0,50.0&quot;</span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/region&gt;</span>
+<span class="w">    </span><span class="nt">&lt;region</span><span class="w"> </span><span class="na">name =</span><span class="s">&quot;Upstream&quot;</span><span class="nt">&gt;</span>
+<span class="w">      </span><span class="nt">&lt;comments&gt;</span>Upstream<span class="w"> </span>boundary<span class="nt">&lt;/comments&gt;</span>
+<span class="w">      </span><span class="nt">&lt;box</span><span class="w"> </span><span class="na">low_coordinates=</span><span class="w"> </span><span class="s">&quot;0.0,0.0,0.0&quot;</span><span class="w">     </span><span class="na">high_coordinates=</span><span class="s">&quot;0.0,50.0,50.0&quot;</span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/region&gt;</span>
+<span class="w">    </span><span class="nt">&lt;region</span><span class="w"> </span><span class="na">name =</span><span class="s">&quot;Downstream&quot;</span><span class="nt">&gt;</span>
+<span class="w">      </span><span class="nt">&lt;comments&gt;</span>Downstream<span class="w"> </span>boundary<span class="nt">&lt;/comments&gt;</span>
+<span class="w">      </span><span class="nt">&lt;box</span><span class="w"> </span><span class="na">low_coordinates=</span><span class="w"> </span><span class="s">&quot;100.0,0.0,0.0&quot;</span><span class="w">     </span><span class="na">high_coordinates=</span><span class="s">&quot;100.0,50.0,50.0&quot;</span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/region&gt;</span>
+<span class="w">    </span><span class="nt">&lt;point</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;Well 1&quot;</span><span class="w">  </span><span class="na">coordinate=</span><span class="s">&quot; 0.5, 25.0, 25.5&quot;</span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;point</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;Well 2&quot;</span><span class="w">  </span><span class="na">coordinate=</span><span class="s">&quot;50.5, 25.0, 25.5&quot;</span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;point</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;Well 2t&quot;</span><span class="w"> </span><span class="na">coordinate=</span><span class="s">&quot;50.5, 25.0, 49.5&quot;</span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;point</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;Well 2b&quot;</span><span class="w"> </span><span class="na">coordinate=</span><span class="s">&quot;50.5, 25.0,  0.5&quot;</span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;point</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;Well 3&quot;</span><span class="w">  </span><span class="na">coordinate=</span><span class="s">&quot;99.5, 25.0, 25.5&quot;</span><span class="nt">/&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/regions&gt;</span>
+
+<span class="w">  </span><span class="nt">&lt;initial_conditions&gt;</span>
+<span class="w">    </span><span class="nt">&lt;initial_condition</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;Initial Condition&quot;</span><span class="nt">&gt;</span>
+<span class="w">      </span><span class="nt">&lt;comments&gt;</span>Uniform<span class="w"> </span>pressure<span class="w"> </span>over<span class="w"> </span>entire<span class="w"> </span>domain<span class="nt">&lt;/comments&gt;</span>
+<span class="w">      </span><span class="nt">&lt;assigned_regions&gt;</span>Entire<span class="w"> </span>Domain<span class="nt">&lt;/assigned_regions&gt;</span>
+<span class="w">      </span><span class="nt">&lt;liquid_phase</span><span class="w"> </span><span class="na">name =</span><span class="w"> </span><span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+<span class="w">	</span><span class="nt">&lt;liquid_component</span><span class="w"> </span><span class="na">name =</span><span class="w"> </span><span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;pressure</span><span class="w"> </span><span class="na">value =</span><span class="w"> </span><span class="s">&quot;101325.0&quot;</span><span class="w"> </span><span class="na">function=</span><span class="s">&quot;uniform&quot;</span><span class="nt">/&gt;</span>
+<span class="w">	</span><span class="nt">&lt;/liquid_component&gt;</span>
+<span class="w">      </span><span class="nt">&lt;/liquid_phase&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/initial_condition&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/initial_conditions&gt;</span>
+<span class="w">  </span>
+<span class="w">  </span><span class="nt">&lt;boundary_conditions&gt;</span>
+<span class="w">    </span><span class="nt">&lt;boundary_condition</span><span class="w"> </span><span class="na">name =</span><span class="w"> </span><span class="s">&quot;Upstream BC&quot;</span><span class="nt">&gt;</span>
+<span class="w">      </span><span class="nt">&lt;comments&gt;</span>Upstream<span class="w"> </span>boundary<span class="w"> </span>condition<span class="nt">&lt;/comments&gt;</span>
+<span class="w">      </span><span class="nt">&lt;assigned_regions&gt;</span>Upstream<span class="nt">&lt;/assigned_regions&gt;</span>
+<span class="w">      </span><span class="nt">&lt;liquid_phase</span><span class="w"> </span><span class="na">name =</span><span class="w"> </span><span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+<span class="w">	</span><span class="nt">&lt;liquid_component</span><span class="w"> </span><span class="na">name =</span><span class="w"> </span><span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;inward_mass_flux</span><span class="w"> </span><span class="na">start=</span><span class="s">&quot;0.0&quot;</span><span class="w"> </span><span class="na">function=</span><span class="w"> </span><span class="s">&quot;constant&quot;</span><span class="w"> </span><span class="na">value=</span><span class="s">&quot;1.950187e-2&quot;</span><span class="nt">/&gt;</span>
+<span class="w">	</span><span class="nt">&lt;/liquid_component&gt;</span>
+<span class="w">      </span><span class="nt">&lt;/liquid_phase&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/boundary_condition&gt;</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="nt">&lt;boundary_condition</span><span class="w"> </span><span class="na">name =</span><span class="w"> </span><span class="s">&quot;Downstream BC&quot;</span><span class="nt">&gt;</span>
+<span class="w">      </span><span class="nt">&lt;assigned_regions&gt;</span>Downstream<span class="nt">&lt;/assigned_regions&gt;</span>
+<span class="w">      </span><span class="nt">&lt;liquid_phase</span><span class="w"> </span><span class="na">name =</span><span class="w"> </span><span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+<span class="w">	</span><span class="nt">&lt;liquid_component</span><span class="w"> </span><span class="na">name =</span><span class="w"> </span><span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;hydrostatic</span><span class="w"> </span><span class="na">start=</span><span class="s">&quot;0.0&quot;</span><span class="w"> </span><span class="na">function=</span><span class="w"> </span><span class="s">&quot;constant&quot;</span><span class="w"> </span><span class="na">value=</span><span class="s">&quot;120.0&quot;</span><span class="nt">/&gt;</span>
+<span class="w">	</span><span class="nt">&lt;/liquid_component&gt;</span>
+<span class="w">      </span><span class="nt">&lt;/liquid_phase&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/boundary_condition&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/boundary_conditions&gt;</span>
+<span class="w">  </span>
+<span class="w">  </span><span class="nt">&lt;materials&gt;</span>
+<span class="w">    </span><span class="nt">&lt;material</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;Soil&quot;</span><span class="nt">&gt;</span>
+<span class="w">      </span><span class="nt">&lt;comments&gt;</span>Homogeneous<span class="w"> </span>material<span class="w"> </span>properties<span class="w"> </span>throughout<span class="w"> </span>the<span class="w"> </span>entire<span class="w"> </span>domain<span class="nt">&lt;/comments&gt;</span>
+<span class="w">      </span><span class="nt">&lt;mechanical_properties&gt;</span>
+<span class="w">        </span><span class="nt">&lt;porosity</span><span class="w"> </span><span class="na">value=</span><span class="s">&quot;0.25&quot;</span><span class="nt">/&gt;</span>
+<span class="w">        </span><span class="nt">&lt;specific_storage</span><span class="w"> </span><span class="na">model=</span><span class="s">&quot;constant&quot;</span><span class="w"> </span><span class="na">value=</span><span class="s">&quot;0.0&quot;</span><span class="nt">/&gt;</span>
+<span class="w">      </span><span class="nt">&lt;/mechanical_properties&gt;</span>
+<span class="w">      </span><span class="nt">&lt;permeability</span><span class="w"> </span><span class="na">x=</span><span class="s">&quot;9.998680356931206e-13&quot;</span><span class="w"> </span><span class="na">y=</span><span class="s">&quot;9.998680356931206e-13&quot;</span><span class="w"> </span><span class="na">z=</span><span class="s">&quot;9.998680356931206e-13&quot;</span><span class="nt">/&gt;</span>
+<span class="w">      </span><span class="nt">&lt;assigned_regions&gt;</span>Entire<span class="w"> </span>Domain<span class="nt">&lt;/assigned_regions&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/material&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/materials&gt;</span>
+
+<span class="w">  </span><span class="nt">&lt;definitions&gt;</span>
+<span class="w">    </span><span class="nt">&lt;macros&gt;</span>
+<span class="w">      </span><span class="nt">&lt;time_macro</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;Steady State&quot;</span><span class="nt">&gt;</span>
+<span class="w">	</span><span class="nt">&lt;time&gt;</span>1000<span class="w"> </span>y<span class="nt">&lt;/time&gt;</span>
+<span class="w">      </span><span class="nt">&lt;/time_macro&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/macros&gt;</span><span class="w">	</span>
+<span class="w">  </span><span class="nt">&lt;/definitions&gt;</span>
+<span class="w">  </span>
+<span class="w">  </span><span class="nt">&lt;output&gt;</span>
+<span class="w">    </span><span class="nt">&lt;observations&gt;</span>
+<span class="w">      </span><span class="nt">&lt;filename&gt;</span>observation.out<span class="nt">&lt;/filename&gt;</span>
+<span class="w">      </span><span class="nt">&lt;liquid_phase</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+<span class="w">	</span><span class="nt">&lt;hydraulic_head&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;assigned_regions&gt;</span>Well<span class="w"> </span>1<span class="nt">&lt;/assigned_regions&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;functional&gt;</span>point<span class="nt">&lt;/functional&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;time_macro&gt;</span>Steady<span class="w"> </span>State<span class="nt">&lt;/time_macro&gt;</span>
+<span class="w">	</span><span class="nt">&lt;/hydraulic_head&gt;</span>
+<span class="w">	</span><span class="nt">&lt;hydraulic_head&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;assigned_regions&gt;</span>Well<span class="w"> </span>2<span class="nt">&lt;/assigned_regions&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;functional&gt;</span>point<span class="nt">&lt;/functional&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;time_macro&gt;</span>Steady<span class="w"> </span>State<span class="nt">&lt;/time_macro&gt;</span>
+<span class="w">	</span><span class="nt">&lt;/hydraulic_head&gt;</span>
+<span class="w">	</span><span class="nt">&lt;hydraulic_head&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;assigned_regions&gt;</span>Well<span class="w"> </span>2t<span class="nt">&lt;/assigned_regions&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;functional&gt;</span>point<span class="nt">&lt;/functional&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;time_macro&gt;</span>Steady<span class="w"> </span>State<span class="nt">&lt;/time_macro&gt;</span>
+<span class="w">	</span><span class="nt">&lt;/hydraulic_head&gt;</span>
+<span class="w">	</span><span class="nt">&lt;hydraulic_head&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;assigned_regions&gt;</span>Well<span class="w"> </span>2b<span class="nt">&lt;/assigned_regions&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;functional&gt;</span>point<span class="nt">&lt;/functional&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;time_macro&gt;</span>Steady<span class="w"> </span>State<span class="nt">&lt;/time_macro&gt;</span>
+<span class="w">	</span><span class="nt">&lt;/hydraulic_head&gt;</span>
+<span class="w">	</span><span class="nt">&lt;hydraulic_head&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;assigned_regions&gt;</span>Well<span class="w"> </span>3<span class="nt">&lt;/assigned_regions&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;functional&gt;</span>point<span class="nt">&lt;/functional&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;time_macro&gt;</span>Steady<span class="w"> </span>State<span class="nt">&lt;/time_macro&gt;</span>
+<span class="w">	</span><span class="nt">&lt;/hydraulic_head&gt;</span>
+<span class="w">	</span>
+<span class="w">	</span><span class="nt">&lt;aqueous_pressure&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;assigned_regions&gt;</span>Well<span class="w"> </span>1<span class="nt">&lt;/assigned_regions&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;functional&gt;</span>point<span class="nt">&lt;/functional&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;time_macro&gt;</span>Steady<span class="w"> </span>State<span class="nt">&lt;/time_macro&gt;</span>
+<span class="w">	</span><span class="nt">&lt;/aqueous_pressure&gt;</span>
+<span class="w">	</span><span class="nt">&lt;aqueous_pressure&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;assigned_regions&gt;</span>Well<span class="w"> </span>2<span class="nt">&lt;/assigned_regions&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;functional&gt;</span>point<span class="nt">&lt;/functional&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;time_macro&gt;</span>Steady<span class="w"> </span>State<span class="nt">&lt;/time_macro&gt;</span>
+<span class="w">	</span><span class="nt">&lt;/aqueous_pressure&gt;</span>
+<span class="w">	</span><span class="nt">&lt;aqueous_pressure&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;assigned_regions&gt;</span>Well<span class="w"> </span>2t<span class="nt">&lt;/assigned_regions&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;functional&gt;</span>point<span class="nt">&lt;/functional&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;time_macro&gt;</span>Steady<span class="w"> </span>State<span class="nt">&lt;/time_macro&gt;</span>
+<span class="w">	</span><span class="nt">&lt;/aqueous_pressure&gt;</span>
+<span class="w">	</span><span class="nt">&lt;aqueous_pressure&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;assigned_regions&gt;</span>Well<span class="w"> </span>2b<span class="nt">&lt;/assigned_regions&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;functional&gt;</span>point<span class="nt">&lt;/functional&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;time_macro&gt;</span>Steady<span class="w"> </span>State<span class="nt">&lt;/time_macro&gt;</span>
+<span class="w">	</span><span class="nt">&lt;/aqueous_pressure&gt;</span>
+<span class="w">	</span><span class="nt">&lt;aqueous_pressure&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;assigned_regions&gt;</span>Well<span class="w"> </span>3<span class="nt">&lt;/assigned_regions&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;functional&gt;</span>point<span class="nt">&lt;/functional&gt;</span>
+<span class="w">	  </span><span class="nt">&lt;time_macro&gt;</span>Steady<span class="w"> </span>State<span class="nt">&lt;/time_macro&gt;</span>
+<span class="w">	</span><span class="nt">&lt;/aqueous_pressure&gt;</span>
+<span class="w">      </span><span class="nt">&lt;/liquid_phase&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/observations&gt;</span>
+<span class="w">    </span><span class="nt">&lt;vis&gt;</span>
+<span class="w">      </span><span class="nt">&lt;base_filename&gt;</span>steady-flow<span class="nt">&lt;/base_filename&gt;</span>
+<span class="w">      </span><span class="nt">&lt;num_digits&gt;</span>5<span class="nt">&lt;/num_digits&gt;</span>
+<span class="w">      </span><span class="nt">&lt;time_macro&gt;</span>Steady<span class="w"> </span>State<span class="nt">&lt;/time_macro&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/vis&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/output&gt;</span>
+<span class="w">  </span>
+<span class="nt">&lt;/amanzi_input&gt;</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../index.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Tutorial</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../transient_infiltration/Tutorial_dvz.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Transient vadose zone flow and Tc-99 transport</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024, Contributing National Laboratories (LANL, LBNL, ORNL, PNNL).
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
