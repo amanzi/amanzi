@@ -155,7 +155,7 @@ def RecurseCopy(amanzi_home,content,level,logfile):
         content_from=amanzi_home+os.sep+content['from_dir']
         content_dest=amanzi_home+os.sep+content['dest_dir']
         logfile.write('  %s\n  %s\n' % (content_from, content_dest) )
-        shutil.copytree(content_from, content_dest)
+        shutil.copytree(content_from, content_dest, dirs_exist_ok=True)
 
         level=level-1
 
