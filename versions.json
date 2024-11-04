@@ -1,20 +1,23 @@
 [
     {
-        "name": "1.5.0",
+        "name": "1.5.0 User Guide",
         "version": "1.5.0",
-        "url": "https://github.com/amanzi/amanzi/gh-pages/1.5.0/index.html",
+        "url": "https://amanzi.github.io/amanzi/1.5.0/UserGuide/",
         "preferred": "1.5.0"
     },
     {
+        "name": "1.2.0 User Guide",
         "version": "1.2.0",
         "url": "https://amanzi.github.io/amanzi/1.2.0/UserGuide/"
     },
     {
+        "name": "1.1.0 User Guide",
         "version": "1.1.0",
         "url": "https://amanzi.github.io/amanzi/1.1.0/UserGuide/"
 
     },
     {
+        "name": "1.0.0 User Guide",
         "version": "1.0.0",
         "url": "https://amanzi.github.io/amanzi/1.0.0/UserGuide/"
     }
