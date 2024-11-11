@@ -538,7 +538,7 @@ set(PFLOTRAN_VERSION ${PFLOTRAN_VERSION_MAJOR}.${PFLOTRAN_VERSION_MINOR}.${PFLOT
 set(PFLOTRAN_URL_STRING     "https://gitlab.com/pflotran/pflotran/-/archive/v${PFLOTRAN_VERSION}")
 set(PFLOTRAN_ARCHIVE_FILE   pflotran-v${PFLOTRAN_VERSION}.tar.gz)
 set(PFLOTRAN_SAVEAS_FILE    pflotran-${PFLOTRAN_VERSION}.tar.gz)
-set(PFLOTRAN_MD5_SUM        4fa35ad356eab7e6a3fd19f8cde9dd13)
+set(PFLOTRAN_MD5_SUM        d44b5670223ea9e6fbb894a8842161e0)
 #set(PFLOTRAN_GIT_REPOSITORY "https://gitlab.com/pflotran/pflotran.git")
 #set(PFLOTRAN_GIT_TAG        "9e07f41")
 
