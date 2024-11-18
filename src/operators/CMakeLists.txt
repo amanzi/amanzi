@@ -512,5 +512,12 @@ if (ENABLE_TESTS)
     #                 KIND unit
     #                 SOURCE test/Main.cc test/operator_diffusion_tangled.cc
     #                 LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    # Test: many meshes
+    add_amanzi_test(operators_diffusion_schwarz operators_diffusion_schwarz
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_diffusion_schwarz.cc
+                    LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
 endif()
                 

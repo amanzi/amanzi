@@ -29,6 +29,7 @@
               coefficient, coefficient can be zero
   Analytic05: linear solution with non-symmetric, non-constant
               tensor coefficient
+  Analytic07: trigonometric solution with identity coefficients
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_BASE_HH_
