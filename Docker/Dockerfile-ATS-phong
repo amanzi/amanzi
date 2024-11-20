@@ -21,7 +21,7 @@ ARG ats_tests_branch=
 ARG https_proxy=
 ARG http_proxy=
 
-FROM metsi/amanzi-tpls:${amanzi_tpls_ver}-${mpi_flavor}
+FROM phongle/amanzi-tpls:latest
 # Set the default shell to Bash
 SHELL ["/bin/bash", "-c"]
 
@@ -35,19 +35,8 @@ ENV https_proxy=$https_proxy \
 RUN echo "${AMANZI_PREFIX}"
 RUN echo "${AMANZI_TPLS_DIR}"
 
-# Install Miniconda
-RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-aarch64.sh -O ~/miniconda.sh && \
-    /bin/bash ~/miniconda.sh -b -p /home/amanzi_user/miniconda3 && \
-    rm ~/miniconda.sh
-
-# Add conda to path
-ENV PATH="/home/amanzi_user/miniconda3/bin:${PATH}"
-
-# Initialize Conda and create environment
-RUN /bin/bash -c "source /home/amanzi_user/miniconda3/etc/profile.d/conda.sh && conda create -n ideas_env python=3.13 -y"
-
-# Install packages into the environment
-RUN conda run -n ideas_env conda install -y -c conda-forge numpy scipy matplotlib h5py colorcet geopandas pyvista ipywidgets shapely vtk pyproj netcdf4 jupyter ipykernel
+# Note this installs numpy as well
+RUN pip3 install --no-cache-dir RISE jupyterlab-code-formatter jupyterlab_rise
 
 # Change the Working Directory and update amanzi
 WORKDIR /home/amanzi_user/amanzi
@@ -101,9 +90,17 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
 ENV PATH=/home/amanzi_user/install/bin:${PATH}
 RUN echo $PATH
 
-# Create mount point for work on the host
-RUN mkdir /home/amanzi_user/work
+ENV LD_LIBRARY_PATH=/usr/local/lib:/home/amanzi_user/install/tpls/lib
+RUN echo $LD_LIBRARY_PATH
 
 # Unset proxy
 ENV https_proxy= \
     http_proxy=
+
+WORKDIR /home/amanzi_user
+
+# Expose port 8888 for JupyterLab
+EXPOSE 8888
+
+# Set the default command to run JupyterLab on port 8888
+CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root"]

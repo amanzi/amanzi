@@ -153,7 +153,7 @@ then
         ${use_proxy} \
         ${output} \
         -f ${amanzi_src_dir}/Docker/Dockerfile-TPLs \
-        -t metsi/amanzi-tpls:${amanzi_tpls_ver}-${mpi_distro} .
+        -t phongle/amanzi-tpls:${amanzi_tpls_ver}-${mpi_distro} .
 else
     docker build \
         ${cache} \
@@ -167,5 +167,5 @@ else
         ${use_proxy} \
         ${output} \
         -f ${amanzi_src_dir}/Docker/Dockerfile-TPLs \
-        -t metsi/amanzi-tpls:${amanzi_tpls_ver}-${mpi_distro} .
+        -t phongle/amanzi-tpls:${amanzi_tpls_ver}-${mpi_distro} .
 fi

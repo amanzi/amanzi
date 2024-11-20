@@ -1,0 +1,163 @@
+FROM ghcr.io/pyvista/pyvista:latest
+
+# Switch to root user to make modifications
+USER root
+
+# Rename the `jovyan` directory to `amanzi_user`
+RUN mv /home/jovyan /home/amanzi_user
+
+# # Change the ownership of the directory to the new user `amanzi_user`
+# RUN useradd -d /home/amanzi_user -s /bin/bash amanzi_user && \
+#     chown -R amanzi_user:amanzi_user /home/amanzi_user
+
+# Add an unprivileged user and group: amanzi_user, amanzi_user
+RUN groupadd -r amanzi_user \
+  && useradd -r -K UMASK=0022 -K HOME_MODE=0755 -m -g amanzi_user amanzi_user && \
+  chown -R amanzi_user:amanzi_user /home/amanzi_user
+
+# Set environment variable for the new home directory
+ENV HOME=/home/amanzi_user
+WORKDIR /home/amanzi_user
+
+# MPI flavor (mpich|openmpi)
+ARG build_mpi=True
+ARG mpi_flavor=mpich
+ARG mpi_version=4.0.3
+ARG TARGETARCH
+
+# Set timezone:
+RUN ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime && echo $CONTAINER_TIMEZONE > /etc/timezone
+
+RUN apt-get -q update -y && apt-get install -y tzdata && apt-get -q install -y \
+  apt-utils \
+  #  cmake \
+  curl \
+  libcurl4-openssl-dev \
+  emacs \
+  gedit \
+  g++ \
+  gfortran \
+  git \
+  groff \
+  libblas-dev \
+  liblapacke-dev \
+  liblapack-dev \
+  #  lib${mpi_flavor}-dev \
+  libssl-dev \
+  m4 \
+  make \
+  openssl \
+  python3 \
+  python3-distutils \
+  python3-pip \
+  python-is-python3 \
+  rsync \
+  wget \
+  vim \
+  zlib1g-dev \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+
+# install MPI - if mpich, custom compile; if openmpi, install precompiled binary
+RUN if [ "$build_mpi" = "True" ]; then \
+  if [ "$mpi_flavor" = "mpich" ]; then cd / \
+  && wget https://www.mpich.org/static/downloads/${mpi_version}/mpich-${mpi_version}.tar.gz \
+  && tar xvf mpich-${mpi_version}.tar.gz \
+  && cd mpich-${mpi_version} \
+  && FFLAGS="-fallow-argument-mismatch" FCFLAGS="-fallow-argument-mismatch" ./configure --enable-shared --with-device=ch3:sock --enable-fast=all,Os --prefix=/usr \
+  && make \
+  && make install \
+  && cd ../ \
+  && rm -r mpich-${mpi_version}/ \
+  && rm mpich-${mpi_version}.tar.gz ; \
+  elif [ "$mpi_flavor" = "openmpi" ]; then cd / \
+  && export mpi_version_major=`echo ${mpi_version} | cut -c1-3` && echo $mpi_version_major \
+  && wget https://download.open-mpi.org/release/open-mpi/v${mpi_version_major}/openmpi-${mpi_version}.tar.gz \
+  && tar xvf openmpi-${mpi_version}.tar.gz \
+  && cd openmpi-${mpi_version} \
+  && FFLAGS="-fallow-argument-mismatch" FCFLAGS="-fallow-argument-mismatch" ./configure --enable-shared --prefix=/usr \
+  && make \
+  && make install \
+  && cd ../ \
+  && rm -r openmpi-${mpi_version}/ \
+  && rm openmpi-${mpi_version}.tar.gz ; \
+  else \
+  echo "Unknown mpi_flavor - exiting." \
+  && exit 1 ; \
+  fi \
+  else apt-get install -y lib${mpi_flavor}-dev ; fi
+
+# Versions change and we cannot set environment variables from command output.
+ARG petsc_ver
+ARG trilinos_ver
+ARG amanzi_branch=phongle/docker
+
+# Installation paths
+ENV AMANZI_PREFIX=/home/amanzi_user/install \
+  AMANZI_INSTALL_DIR=/home/amanzi_user/install/amanzi \
+  AMANZI_TPLS_DIR=/home/amanzi_user/install/tpls
+
+# TPL versions needed for LD_LIBRARY_PATH
+ENV AMANZI_PETSC_LIBS=$AMANZI_TPLS_DIR/petsc-${petsc_ver}/lib \
+  AMANZI_TRILINOS_LIBS=$AMANZI_TPLS_DIR/trilinos-${trilinos_ver}/lib \
+  AMANZI_SEACAS_LIBS=$AMANZI_TPLS_DIR/SEACAS/lib
+
+USER amanzi_user
+
+# Set the current working directory as the users home directory
+# (creates teh directory if it doesn't exist)
+WORKDIR /home/amanzi_user
+
+# ENV https_proxy=proxyout.lanl.gov:8080 \
+#     http_proxy=proxyout.lanl.gov:8080
+
+# Clone the amanzi git repo.
+RUN git clone https://github.com/amanzi/amanzi.git
+
+# Set the current working directory to the git repo
+# and switch branches if requested.
+WORKDIR /home/amanzi_user/amanzi
+RUN if [ "$amanzi_branch" != "master" ]; then \
+  git checkout $amanzi_branch; \
+  fi; \
+  echo "Amanzi branch = $amanzi_branch"; \
+  git branch --list
+
+# Build and install the TPLs using bootstrap.sh, and remove
+# the source, objects, etc. after installation to save space.
+RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
+  --parallel=4 --opt \
+  --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/amanzi \
+  --tpl-build-dir=/home/amanzi_user/amanzi_builddir/tpls \
+  --tpl-download-dir=/home/amanzi_user/amanzi_builddir/tpls/Downloads \
+  --disable-build_amanzi --disable-build_user_guide \
+  --enable-shared --enable-structured --enable-silo \
+  --enable-alquimia --enable-pflotran --enable-crunchtope \
+  --enable-pf_clm \
+  --with-mpi=/usr \
+  --with-python=/usr/bin/python \
+  && git checkout master \
+  && rm -r /home/amanzi_user/amanzi_builddir \
+  && rm -r /home/amanzi_user/amanzi/build/tools/ \
+  && cd /home/amanzi_user/install \
+  && find . -type f -name '*.pdf' -exec rm {} \; \
+  && find . -type f -name '*.png' -exec rm {} \; \
+  && find . -type f -name '*.html' -exec rm {} \;
+
+ENV HDF5_DIR=/home/amanzi_user/install/tpls
+
+# Note this installs numpy as well
+RUN pip3 install --no-cache-dir --upgrade pip \
+  && pip3 install --no-cache-dir --no-binary=h5py h5py geopandas
+
+# Set the LD_LIBRARY_PATH for Amanzi builds in the next stage
+ENV LD_LIBRARY_PATH=${AMANZI_TPLS_DIR}/lib:${AMANZI_PETSC_LIBS}:${AMANZI_TRILINOS_LIBS}:${AMANZI_SEACAS_LIBS}
+RUN echo $LD_LIBRARY_PATH
+
+# Set path to pick up any tools installed during bootstrap
+ENV PATH=/home/amanzi_user/amanzi/install/tools/bin:${PATH}
+RUN echo $PATH
+
+# Start at the terminal
+CMD ["bash"]

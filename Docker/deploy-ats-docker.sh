@@ -153,8 +153,8 @@ then
         --build-arg amanzi_branch=${amanzi_branch} \
         --build-arg amanzi_tpls_ver=${amanzi_tpls_ver} \
         --build-arg mpi_flavor=${mpi_flavor} \
-        -f ${amanzi_src_dir}/Docker/Dockerfile-ATS-pyvista2 \
-        -t metsi/ats:${ATS_VER} .
+        -f ${amanzi_src_dir}/Docker/Dockerfile-ATS-phong \
+        -t levuvietphong/ats:${ATS_VER} .
 else
    docker build \
         ${cache} \
@@ -164,9 +164,9 @@ else
         --build-arg amanzi_branch=${amanzi_branch} \
         --build-arg amanzi_tpls_ver=${amanzi_tpls_ver} \
         --build-arg mpi_flavor=${mpi_flavor} \
-        -f ${amanzi_src_dir}/Docker/Dockerfile-ATS-pyvista2 \
-        -t metsi/ats:${ATS_VER} .
+        -f ${amanzi_src_dir}/Docker/Dockerfile-ATS-phong \
+        -t levuvietphong/ats:${ATS_VER} .
 fi
 
-docker tag metsi/ats:${ATS_VER} metsi/ats:latest
+docker tag levuvietphong/ats:${ATS_VER} levuvietphong/ats:latest
 
