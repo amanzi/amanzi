@@ -1,9 +1,14 @@
 [
     {
+        "name": "1.6-Dev User Guide",
+        "version": "1.6-dev",
+        "url": "https://amanzi.github.io/amanzi/1.6-dev/UserGuide/",
+        "preferred": "1.6-dev"
+    },
+    {
         "name": "1.5.0 User Guide",
         "version": "1.5.0",
-        "url": "https://amanzi.github.io/amanzi/1.5.0/UserGuide/",
-        "preferred": "1.5.0"
+        "url": "https://amanzi.github.io/amanzi/1.5.0/UserGuide/"
     },
     {
         "name": "1.2.0 User Guide",
