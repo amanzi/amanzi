@@ -1,0 +1,898 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" data-theme="auto">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Steady-State One-Dimensional Flow: Materials in Serial &#8212; Amanzi</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "auto";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "auto";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/fix_eq_position.css?v=19b1522f" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/default.css?v=f6536f91" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../../_static/documentation_options.js?v=7b05baf8"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'verification/confined_flow/linear_materials_serial_1d/amanzi_linear_materials_serial_1d';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://raw.githubusercontent.com/amanzi/amanzi/gh-pages/versions.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '1.5.0';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = false;
+        </script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Steady-State One-Dimensional Flow: Materials in Parallel" href="../linear_materials_parallel_1d/amanzi_linear_materials_parallel_1d.html" />
+    <link rel="prev" title="Steady-State One-Dimensional Flow with Flux and Head Boundary Conditions" href="../linear_flux_head_1d/amanzi_linear_flux_head_1d.html" /> 
+ <script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    TeX: {
+        extensions: ["mhchem.js"]
+    }
+  });
+</script>
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="auto">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+
+
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../_static/Amanzi-color.png" class="logo__image only-light" alt="Amanzi - Home"/>
+    <script>document.write(`<img src="../../../_static/Amanzi-Dark.png" class="logo__image only-dark" alt="Amanzi - Home"/>`);</script>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../background/index.html">
+    Background
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../background/getting_started.html">
+    Getting Started with Amanzi
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../capabilities/index.html">
+    Amanzi Features and Capabilities
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../input/index.html">
+    Amanzi Input Description
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../install/index.html">
+    Building Amanzi
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../tutorial/index.html">
+    Tutorial
+  </a>
+</li>
+
+
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="../../index.html">
+    Verification Testing
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../benchmarking/index.html">
+    Benchmark Testing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../background/index.html">
+    Background
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../background/getting_started.html">
+    Getting Started with Amanzi
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../capabilities/index.html">
+    Amanzi Features and Capabilities
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../input/index.html">
+    Amanzi Input Description
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../install/index.html">
+    Building Amanzi
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorial/index.html">
+    Tutorial
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../../index.html">
+    Verification Testing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../benchmarking/index.html">
+    Benchmark Testing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item"><!-- This will display the version of the docs -->
+Version  1.6-dev</div>
+        <div class="sidebar-primary-item">
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="../index.html">Confined Flow Tests</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../linear_head_head_1d/amanzi_linear_head_head_1d.html">Steady-State One-Dimensional Flow with Head Boundary Conditions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../linear_flux_head_1d/amanzi_linear_flux_head_1d.html">Steady-State One-Dimensional Flow with Flux and Head Boundary Conditions</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">Steady-State One-Dimensional Flow: Materials in Serial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../linear_materials_parallel_1d/amanzi_linear_materials_parallel_1d.html">Steady-State One-Dimensional Flow: Materials in Parallel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../theis_isotropic_1d/amanzi_theis_isotropic_1d.html">Transient One-Dimensional Confined Flow to a Pumping Well (Theis)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../butler_pod_2d/amanzi_butler_pod_2d.html">Transient Flow in a 2D Confined Aquifer with a Disc Embedded in A Matrix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../butler_strip_2d/amanzi_butler_strip_2d.html">Transient Flow in a 2D Confined Aquifer with a Linear Strip</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../hantush_anisotropic_2d/amanzi_hantush_anisotropic_2d.html">Transient Flow to a Pumping Well in an Anisotropic Aquifer (Hantush)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../boundedDomain_2d/amanzi_boundedDomain_2d.html">Transient Drawdown due to Pumping Wells in a Bounded Domain</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../unconfined_flow/index.html">Unconfined Flow Tests</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../unconfined_flow/unconfined_no_recharge_1d/amanzi_unconfined_no_recharge_1d.html">Steady-State Flow in an Unconfined Aquifer: Head, and Flux Boundary Conditions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../unconfined_flow/unconfined_seepage_1d/amanzi_unconfined_seepage_1d.html">Steady-State Unconfined Flow with a Seepage Boundary Condition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../unconfined_flow/unconfined_layered_2d/amanzi_unconfined_layered_2d.html">Steady-State Flow in an Unconfined Multi-Aquifer System</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../infiltration/index.html">Infiltration Flow Tests</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../infiltration/infiltration_1d/amanzi_infiltration_1d.html">Infiltration 1D</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../transport/index.html">Transport of Solutes: Advection, Dispersion and Diffusion</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../transport/dispersion_aligned_point_2d/amanzi_dispersion_aligned_point_2d.html">2D Dispersive Transport in a Uniform Flow Field (aligned)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../transport/dispersion_45_point_2d/amanzi_dispersion_45_point_2d.html">2D Dispersive Transport in a Uniform Flow Field (diagonal)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../transport/dual_porosity_1d/amanzi_dual_porosity_1d.html">1D Dispersive Transport with Dual Porosity Model</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../mechanics/index.html">Mechanics</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../mechanics/consolidation_1d/amanzi_consolidation_1d.html">Soil Consolidation</a></li>
+</ul>
+</details></li>
+</ul>
+</div>
+</nav></div>
+        <div class="sidebar-primary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#capabilities-tested">Capabilities Tested</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#background">Background</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#model">Model</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#problem-specification">Problem Specification</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#schematic">Schematic</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mesh">Mesh</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#variables">Variables</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#results-and-comparison">Results and Comparison</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#references">References</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#about">About</a></li>
+</ul>
+  </nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Verification Testing</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Confined Flow Tests</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">Steady-State...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="steady-state-one-dimensional-flow-materials-in-serial">
+<h1>Steady-State One-Dimensional Flow: Materials in Serial<a class="headerlink" href="#steady-state-one-dimensional-flow-materials-in-serial" title="Link to this heading">#</a></h1>
+<section id="capabilities-tested">
+<h2>Capabilities Tested<a class="headerlink" href="#capabilities-tested" title="Link to this heading">#</a></h2>
+<p>This one-dimensional, steady-state test shows Amanzi’s capability to
+simulate flow through a saturated porous medium with constant properties.
+Capabilities tested include,</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>one-dimensional representation</p></li>
+<li><p>steady-state</p></li>
+<li><p>saturated flow</p></li>
+<li><p>heterogeneous porous medium</p></li>
+<li><p>exactness of the numerical scheme for piecewise linear head</p></li>
+</ul>
+</div></blockquote>
+<p>For details on this test, see <a class="reference internal" href="#about-linear-materials-serial-1d"><span class="std std-ref">About</span></a>.</p>
+</section>
+<section id="background">
+<h2>Background<a class="headerlink" href="#background" title="Link to this heading">#</a></h2>
+<p>For one-dimensional, steady-state, flow through a saturated porous medium with constant properties,
+the general governing differential equation expressing mass conservation and Darcy’s law becomes simply</p>
+<blockquote>
+<div><div class="math notranslate nohighlight" id="equation-ode-materials-serial">
+<span class="eqno">(1)<a class="headerlink" href="#equation-ode-materials-serial" title="Link to this equation">#</a></span>\[\frac{d^2h}{dx^2} = 0\]</div>
+</div></blockquote>
+<p>where the total head (<span class="math notranslate nohighlight">\(h\)</span>, [L]) is the sum of pressure head (<span class="math notranslate nohighlight">\(P/\rho g\)</span>, [L])
+and elevation (<span class="math notranslate nohighlight">\(z\)</span>, [L])</p>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[h = \frac{P}{\rho g}+z\]</div>
+</div></blockquote>
+<p><span class="math notranslate nohighlight">\(\rho\)</span> = density [M/L<sup>3</sup>], <span class="math notranslate nohighlight">\(g\)</span> = gravitational acceleration [L/T<sup>2</sup>],
+and <span class="math notranslate nohighlight">\(x\)</span> = horizontal distance [L]. The ordinary differential equation <a class="reference internal" href="#equation-ode-materials-serial">(1)</a> is easily solved by
+direct integration as</p>
+<blockquote>
+<div><div class="math notranslate nohighlight" id="equation-generalsoln-materials-serial">
+<span class="eqno">(2)<a class="headerlink" href="#equation-generalsoln-materials-serial" title="Link to this equation">#</a></span>\[h = C_1 x + C_2\]</div>
+</div></blockquote>
+<p>where the integration constants <span class="math notranslate nohighlight">\(C_1\)</span> and <span class="math notranslate nohighlight">\(C_2\)</span> depend on the boundary conditions.</p>
+<p>For a simple heterogeneous porous medium composed of two constant-property materials in series,
+Equation <a class="reference internal" href="#equation-generalsoln-materials-serial">(2)</a> can be applied to each subregion separately
+with the interface conditions treated as boundary conditions for the two subregions. To analyze this
+special case, let the subscripts <em>1</em> and <em>2</em> denote the subregions adjoining the <span class="math notranslate nohighlight">\(x = 0\)</span> and <span class="math notranslate nohighlight">\(x = L\)</span>
+boundaries respectively, and the subscript <em>i</em> denote the interface.</p>
+</section>
+<section id="model">
+<h2>Model<a class="headerlink" href="#model" title="Link to this heading">#</a></h2>
+<p>The analytic solution for prescribed inlet and outlet pressures is presented below.</p>
+<p>When hydraulic head is prescribed at both boundaries as</p>
+<blockquote>
+<div><div class="math notranslate nohighlight" id="equation-bc-materials-serial">
+<span class="eqno">(3)<a class="headerlink" href="#equation-bc-materials-serial" title="Link to this equation">#</a></span>\[\begin{split}h(0) &amp;= h_0\\
+h(L) &amp;= h_L\end{split}\]</div>
+</div></blockquote>
+<p>the analytic solutions <a class="reference internal" href="#equation-generalsoln-materials-serial">(2)</a> for hydraulic head in each subregion become</p>
+<blockquote>
+<div><div class="math notranslate nohighlight" id="equation-specificsolns-materials-serial">
+<span class="eqno">(4)<a class="headerlink" href="#equation-specificsolns-materials-serial" title="Link to this equation">#</a></span>\[\begin{split}h_1 &amp;= (h_i - h_0) \frac{x}{L_i} + h_0\\
+h_2 &amp;= (h_L - h_i) \frac{x-L_i}{L-L_i} + h_i\end{split}\]</div>
+</div></blockquote>
+<p>where <span class="math notranslate nohighlight">\(L\)</span> = domain length [L], <span class="math notranslate nohighlight">\(L_i\)</span> = position of interface [L], and <span class="math notranslate nohighlight">\(h_i\)</span>
+is yet to be defined.
+The volumetric flowrate per unit area through a porous medium, or Darcy velocity (<span class="math notranslate nohighlight">\(U\)</span>, [L/T]),
+is defined by Darcy’s law as</p>
+<blockquote>
+<div><div class="math notranslate nohighlight" id="equation-darcyvel-materials-serial">
+<span class="eqno">(5)<a class="headerlink" href="#equation-darcyvel-materials-serial" title="Link to this equation">#</a></span>\[U = -\frac{k}{\mu\rho g}\frac{dh}{dx} = -K\frac{dh}{dx}\]</div>
+</div></blockquote>
+<p>where <span class="math notranslate nohighlight">\(k\)</span> = intrinsic permeability [L<sup>2</sup>],
+<span class="math notranslate nohighlight">\(\mu\)</span> = viscosity [M/LT], and
+<span class="math notranslate nohighlight">\(K\)</span> = hydraulic conductivity [L/T].
+Applying Equation <a class="reference internal" href="#equation-darcyvel-materials-serial">(5)</a> to each subregion using Equations <a class="reference internal" href="#equation-specificsolns-materials-serial">(4)</a> yields</p>
+<blockquote>
+<div><div class="math notranslate nohighlight" id="equation-specificdarcyvels-materials-serial">
+<span class="eqno">(6)<a class="headerlink" href="#equation-specificdarcyvels-materials-serial" title="Link to this equation">#</a></span>\[\begin{split}U_1 &amp;= K_1\frac{h_0 - h_i}{L_i}\\
+U_2 &amp;= K_2\frac{h_i - h_L}{L-L_i}\\\end{split}\]</div>
+</div></blockquote>
+<p>Mass conservation at the interface implies <span class="math notranslate nohighlight">\(U_1 = U_2\)</span>, which after some algebra leads to
+an expression for hydraulic head at the interface:</p>
+<blockquote>
+<div><div class="math notranslate nohighlight" id="equation-interfacehead-materials-serial">
+<span class="eqno">(7)<a class="headerlink" href="#equation-interfacehead-materials-serial" title="Link to this equation">#</a></span>\[h_i = \frac{K_1(L-L_i)h_0+K_2L_ih_L}{K_1(L-L_i)+K_2L_i}\]</div>
+</div></blockquote>
+<p>Equations <a class="reference internal" href="#equation-specificsolns-materials-serial">(4)</a> and <a class="reference internal" href="#equation-interfacehead-materials-serial">(7)</a> collectively define hydraulic head across the domain, and Equation <a class="reference internal" href="#equation-specificdarcyvels-materials-serial">(6)</a> or <a class="reference internal" href="#equation-interfacehead-materials-serial">(7)</a> the Darcy velocity. One can also
+show that</p>
+<blockquote>
+<div><div class="math notranslate nohighlight" id="equation-domaindarcyvel-materials-serial">
+<span class="eqno">(8)<a class="headerlink" href="#equation-domaindarcyvel-materials-serial" title="Link to this equation">#</a></span>\[U = K_h\frac{h_0 - h_L}{L}\]</div>
+</div></blockquote>
+<p>where <span class="math notranslate nohighlight">\(K_h\)</span> is the harmonic mean</p>
+<blockquote>
+<div><div class="math notranslate nohighlight" id="equation-harmonicmean-materials-serial">
+<span class="eqno">(9)<a class="headerlink" href="#equation-harmonicmean-materials-serial" title="Link to this equation">#</a></span>\[K_h = \frac{K_1K_2L}{K_1(L-L_i) + K_2L_i}\]</div>
+</div></blockquote>
+</section>
+<section id="problem-specification">
+<h2>Problem Specification<a class="headerlink" href="#problem-specification" title="Link to this heading">#</a></h2>
+<p>The analytic solutions for hydraulic head and Darcy velocity can be used to test Amanzi
+implementation of prescribed hydraulic head boundary conditions, Darcy’s law, and mass conservation
+on an elementary problem with discrete heterogeneity.</p>
+<section id="schematic">
+<h3>Schematic<a class="headerlink" href="#schematic" title="Link to this heading">#</a></h3>
+<p>The domain is shown in the following schematic.</p>
+<figure class="align-center align-default" id="id2">
+<a class="reference internal image-reference" href="../../../_images/schematic3.png"><img alt="../../../_images/schematic3.png" src="../../../_images/schematic3.png" style="width: 400px;" />
+</a>
+<figcaption>
+<p><span class="caption-text"><strong>One-dimensional, steady-state flow through a saturated porous medium with constant properties.</strong></span><a class="headerlink" href="#id2" title="Link to this image">#</a></p>
+</figcaption>
+</figure>
+</section>
+<section id="mesh">
+<h3>Mesh<a class="headerlink" href="#mesh" title="Link to this heading">#</a></h3>
+<p>A fixed mesh with resolution 1 m is applied.</p>
+</section>
+<section id="variables">
+<h3>Variables<a class="headerlink" href="#variables" title="Link to this heading">#</a></h3>
+<p>To generate numerical results the following specifications are considered:</p>
+<ul>
+<li><p>Domain</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(x_{min} = y_{min} = z_{min} = 0\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(x_{max} = 100 \: m, y_{max} = 2 \: m, z_{max} = 10 \: m\)</span></p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>Horizontal flow in the x-coordinate direction</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>no-flow prescribed at the <span class="math notranslate nohighlight">\(y_{min}, y_{max}, z_{min}, z_{max}\)</span> boundaries</p></li>
+<li><p>prescribed hydraulic head at the x-coordinate boundaries: <span class="math notranslate nohighlight">\(h(0) = 20 \: m, h(L) = 19 \: m\)</span></p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>Material properties:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\rho = 998.2 \: kg/m^3, \mu = 1.002 \times 10^{-3} \: Pa\cdot s, g = 9.807 \: m/s^2\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(L_i = x_{max}/2\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(K_1 = 1.0 m/d\)</span> <span class="math notranslate nohighlight">\((k = 1.1847 \times 10^{-12} \: m^2)\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(K_2 = 10 m/d\)</span> <span class="math notranslate nohighlight">\((k = 1.1847 \times 10^{-11} \: m^2)\)</span></p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>Model discretization</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\Delta x = \: 5 m, \Delta y = 2 \: m, \Delta z = 10 \: m\)</span></p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+<p>For these input specifications, Amanzi simulation output is expected to closely match</p>
+<blockquote>
+<div><div class="math notranslate nohighlight" id="equation-expectedh-i-materials-serial">
+<span class="eqno">(10)<a class="headerlink" href="#equation-expectedh-i-materials-serial" title="Link to this equation">#</a></span>\[h_i = 19.090909 \:m\]</div>
+</div></blockquote>
+<p>and exhibit a linear head profile within each subregion following Equations <a class="reference internal" href="#equation-specificsolns-materials-serial">(4)</a>.
+The harmonic mean is <span class="math notranslate nohighlight">\(1.818181818 \:m/d\)</span> from Equation <a class="reference internal" href="#equation-harmonicmean-materials-serial">(9)</a> and thus the
+expected Darcy velocity is</p>
+<blockquote>
+<div><div class="math notranslate nohighlight" id="equation-expectedu-materials-serial">
+<span class="eqno">(11)<a class="headerlink" href="#equation-expectedu-materials-serial" title="Link to this equation">#</a></span>\[U = 0.0181818 \: m/d\]</div>
+</div></blockquote>
+<p>from Equation <a class="reference internal" href="#equation-domaindarcyvel-materials-serial">(8)</a>.</p>
+</section>
+</section>
+<section id="results-and-comparison">
+<h2>Results and Comparison<a class="headerlink" href="#results-and-comparison" title="Link to this heading">#</a></h2>
+<p>The discretization is exact for linear solutions, and it is clear in the figure that
+Amanzi has reproduced the exact solution inside the materials.
+On the boundary, the observation value is taken from the nearby cell.
+On the material interface, the head is averaged of head in two neighboring cells.
+This will be fixed in the future.</p>
+<p>(<a class="reference download internal" download="" href="../../../_downloads/0c696da6508ddb779d2fd19a86f4e28f/amanzi_linear_materials_serial_1d.py"><code class="xref download docutils literal notranslate"><span class="pre">Source</span> <span class="pre">code</span></code></a>, <a class="reference download internal" download="" href="../../../_downloads/245bff6f93a6dbd9b5697eb2c71aa843/amanzi_linear_materials_serial_1d.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="../../../_downloads/3570ff0c64af2459ce2d53dce43f2ba1/amanzi_linear_materials_serial_1d.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="../../../_downloads/aa5388066a0a326deb53b035346f5797/amanzi_linear_materials_serial_1d.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</p>
+<figure class="align-default">
+<img alt="../../../_images/amanzi_linear_materials_serial_1d.png" class="plot-directive" src="../../../_images/amanzi_linear_materials_serial_1d.png" />
+</figure>
+<p>This is also shown in the table below.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<tbody>
+<tr class="row-odd"><td><p>x [m]</p></td>
+<td><p>z [m]</p></td>
+<td><p>Analytic [m]</p></td>
+<td><p>Amanzi [m]</p></td>
+</tr>
+<tr class="row-even"><td><p>0.0</p></td>
+<td><p>5.0</p></td>
+<td><p>20.0000</p></td>
+<td><p>19.9545</p></td>
+</tr>
+<tr class="row-odd"><td><p>2.5</p></td>
+<td><p>5.0</p></td>
+<td><p>19.9545</p></td>
+<td><p>19.9545</p></td>
+</tr>
+<tr class="row-even"><td><p>47.5</p></td>
+<td><p>5.0</p></td>
+<td><p>19.1364</p></td>
+<td><p>19.1364</p></td>
+</tr>
+<tr class="row-odd"><td><p>50.0</p></td>
+<td><p>5.0</p></td>
+<td><p>19.0909</p></td>
+<td><p>19.1114</p></td>
+</tr>
+<tr class="row-even"><td><p>52.5</p></td>
+<td><p>5.0</p></td>
+<td><p>19.0864</p></td>
+<td><p>19.0864</p></td>
+</tr>
+<tr class="row-odd"><td><p>97.5</p></td>
+<td><p>5.0</p></td>
+<td><p>19.0045</p></td>
+<td><p>19.0045</p></td>
+</tr>
+<tr class="row-even"><td><p>100.0</p></td>
+<td><p>5.0</p></td>
+<td><p>19.0000</p></td>
+<td><p>19.0045</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Link to this heading">#</a></h2>
+</section>
+<section id="about">
+<span id="about-linear-materials-serial-1d"></span><h2>About<a class="headerlink" href="#about" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Directory: testing/verification/flow/saturated/steady-state/linear_materials_serial_1d</p></li>
+<li><p>Authors:  Greg Flach</p></li>
+<li><p>Maintainer(s): David Moulton, <a class="reference external" href="mailto:moulton&#37;&#52;&#48;lanl&#46;gov">moulton<span>&#64;</span>lanl<span>&#46;</span>gov</a></p></li>
+<li><p>Input Files:</p>
+<ul>
+<li><p>amanzi_linear_materials_serial_1d-s.xlm</p>
+<ul>
+<li><p>Spec Version 2.3.0, structured mesh framework</p></li>
+<li><p>mesh: steady-flow_mesh.h5</p></li>
+<li><p>runs</p></li>
+</ul>
+</li>
+<li><p>amanzi_linear_materials_serial_1d-u.xml</p>
+<ul>
+<li><p>Spec Version 2.3.0, unstructured mesh framework</p></li>
+<li><p>runs</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>Mesh Files:</p>
+<ul>
+<li><p>steady-flow_mesh.h5</p></li>
+</ul>
+</li>
+<li><p>Analytic solution computed with golden output</p>
+<ul>
+<li><p>Subdirectory: golden_output</p></li>
+<li><p>Input Files:</p>
+<ul>
+<li><p>steady-flow_data.h5</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<div class="admonition-todo admonition" id="id1">
+<p class="admonition-title">Todo</p>
+<ul class="simple">
+<li><p>keb: List what is expected out of Amanzi simulation output.</p></li>
+<li><p>fixed observation on the boundary and at the material interface.</p></li>
+</ul>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../linear_flux_head_1d/amanzi_linear_flux_head_1d.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Steady-State One-Dimensional Flow with Flux and Head Boundary Conditions</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../linear_materials_parallel_1d/amanzi_linear_materials_parallel_1d.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Steady-State One-Dimensional Flow: Materials in Parallel</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024, Contributing National Laboratories (LANL, LBNL, ORNL, PNNL).
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
