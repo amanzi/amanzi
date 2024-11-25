@@ -54,7 +54,7 @@ The current version of Amanzi is |version|
 
 Older Versions
 ^^^^^^^^^^^^^^
-
+ * Amanzi 1.5.0
  * Amanzi 1.4.0
  * Amanzi 1.2.0
  * Amanzi 1.1.0
