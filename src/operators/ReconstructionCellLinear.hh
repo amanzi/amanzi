@@ -71,7 +71,7 @@ class ReconstructionCellLinear : public Reconstruction {
   }
 
   // -- calculate value, deviation from mean, and full polynomial
-  virtual double getValue(int c, const AmanziGeometry::Point& p) override;
+  virtual double getValue(int c, const AmanziGeometry::Point& p) const override;
   virtual double getValueSlope(int c, const AmanziGeometry::Point& p) override;
   virtual WhetStone::Polynomial getPolynomial(int c) const override;
 

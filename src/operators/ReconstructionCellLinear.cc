@@ -180,7 +180,7 @@ ReconstructionCellLinear::CellFaceAdjCellsManifold_(AmanziMesh::Entity_ID c,
 * Calculates reconstructed value at point p.
 ****************************************************************** */
 double
-ReconstructionCellLinear::getValue(int c, const AmanziGeometry::Point& p)
+ReconstructionCellLinear::getValue(int c, const AmanziGeometry::Point& p) const
 {
   const auto& xc = mesh_->getCellCentroid(c);
 

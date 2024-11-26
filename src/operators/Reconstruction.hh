@@ -105,7 +105,7 @@ class Reconstruction {
     component_ = component;
   }
 
-  virtual double getValue(int c, const AmanziGeometry::Point& p) = 0;
+  virtual double getValue(int c, const AmanziGeometry::Point& p) const = 0;
   virtual double getValueSlope(int c, const AmanziGeometry::Point& p) = 0;
   virtual WhetStone::Polynomial getPolynomial(int c) const = 0;
 
