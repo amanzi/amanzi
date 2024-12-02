@@ -184,8 +184,8 @@ html_theme_options = {
     'prev_next_buttons_location': 'both',
     "secondary_sidebar_items": [],
     "switcher": {
-        "json_url": "_static/versions.json",
-        "version_match": 'v1.5',
+        "json_url": "https://raw.githubusercontent.com/amanzi/amanzi/gh-pages/versions.json",
+        "version_match": '1.6-dev',
     },
 #    "navbar_start" : ["navbar-logo", ],
 }

@@ -838,7 +838,7 @@ The ``sorption_isotherms`` is an optional element for providing Kd models and mo
 .. code-block:: xml
 
     <sorption_isotherms>
-	<solute name="string" />
+  <solute name="string" />
             Required Elements: none
             Optional Elements: kd_model
     </sorption_isotherms>
@@ -849,9 +849,9 @@ The ``kd_model`` element takes the following form:
 .. code-block:: xml
  
     <sorption_isotherms>
-	<primary name="string" />
+  <primary name="string" />
             <kd_model model="linear|langmuir|freundlich" kd="Value" b="Value (langmuir only)" n="Value (freundlich only)" />
-	</primary>
+  </primary>
     </sorption_isotherms>
   
 Minerals
@@ -1333,21 +1333,21 @@ Example:
       <filename>observation.out</filename>
 
       <liquid_phase name="water">
-	<aqueous_pressure>
-	  <assigned_regions>Obs_r1</assigned_regions>
-	  <functional>point</functional>
-	  <time_macros>Observation Times</time_macros>
-	</aqueous_pressure>
-	<aqueous_pressure>
-	  <assigned_regions>Obs_r2</assigned_regions>
-	  <functional>point</functional>
-	  <time_macros>Observation Times</time_macros>
-	</aqueous_pressure>
-	<aqueous_pressure>
-	  <assigned_regions>Obs_r2</assigned_regions>
-	  <functional>point</functional>
-	  <time_macros>Observation Times</time_macros>
-	</aqueous_pressure>
+  <aqueous_pressure>
+    <assigned_regions>Obs_r1</assigned_regions>
+    <functional>point</functional>
+    <time_macros>Observation Times</time_macros>
+  </aqueous_pressure>
+  <aqueous_pressure>
+    <assigned_regions>Obs_r2</assigned_regions>
+    <functional>point</functional>
+    <time_macros>Observation Times</time_macros>
+  </aqueous_pressure>
+  <aqueous_pressure>
+    <assigned_regions>Obs_r2</assigned_regions>
+    <functional>point</functional>
+    <time_macros>Observation Times</time_macros>
+  </aqueous_pressure>
       </liquid_phase>
 
     </observations>

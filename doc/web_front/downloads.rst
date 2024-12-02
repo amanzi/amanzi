@@ -5,5 +5,4 @@ Downloads
 
 |version| - Latest Basic Phase (R&D Branch) version
 
- * `<amanzi-0.83.0.tar.gz>`_
-
+ * `1.5.1 <https://github.com/amanzi/amanzi/archive/refs/tags/amanzi-1.5.1.tar.gz>`_

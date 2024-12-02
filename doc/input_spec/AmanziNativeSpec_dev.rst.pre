@@ -1416,11 +1416,11 @@ The remaining *flow* parameters are
   <ParameterList name="clipping parameters">
      <Parameter name="maximum saturation change" type="double" value="0.25"/>
      <Parameter name="pressure damping factor" type="double" value="0.5"/>
-  </ParameterList>	
+  </ParameterList>  
 
   <Parameter name="plot time history" type="bool" value="false"/>
   <Parameter name="algebraic water storage balance" type="bool" value="false"/>
-  </ParameterList>	
+  </ParameterList>  
 
 
 Explanation of verbose output

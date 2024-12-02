@@ -1260,7 +1260,7 @@ It is supported currently by the Amanzi geochemical engine.
 .. code-block:: xml
 
     <sorption_isotherms>
-	<primary name="string" />
+  <primary name="string" />
             Required Elements: none
             Optional Elements: kd_model
         </primary>
@@ -1271,9 +1271,9 @@ The ``kd_model`` element takes the following form:
 .. code-block:: xml
  
     <sorption_isotherms>
-	<primary name="string" />
+  <primary name="string" />
             <kd_model model="linear|langmuir|freundlich" kd="Value" b="Value (langmuir only)" n="Value (freundlich only)" />
-	</primary>
+  </primary>
     </sorption_isotherms>
   
 Minerals
@@ -1356,7 +1356,7 @@ For each process kernel the element ``state`` indicates whether the solution is 
     <process_kernels>
         <flow model="saturated" state="on"/>
         <transport state="on"/>
-	<chemistry database="farea-full.dat" engine="pflotran" state="on"/>
+  <chemistry database="farea-full.dat" engine="pflotran" state="on"/>
     </process_kernels>
 
 Flow
@@ -2188,16 +2188,16 @@ Example:
     <observations>
       <filename>observation.out</filename>
       <liquid_phase name="water">
-	<aqueous_pressure>
-	  <assigned_regions>Obs_r1</assigned_regions>
-	  <functional>point</functional>
-	  <time_macros>EveryDay</time_macros>
-	</aqueous_pressure>
-	<aqueous_pressure>
-	  <assigned_regions>Obs_r2</assigned_regions>
-	  <functional>point</functional>
-	  <time_macros>EveryYear</time_macros>
-	</aqueous_pressure>
+  <aqueous_pressure>
+    <assigned_regions>Obs_r1</assigned_regions>
+    <functional>point</functional>
+    <time_macros>EveryDay</time_macros>
+  </aqueous_pressure>
+  <aqueous_pressure>
+    <assigned_regions>Obs_r2</assigned_regions>
+    <functional>point</functional>
+    <time_macros>EveryYear</time_macros>
+  </aqueous_pressure>
         <sorbed_conc solute="Ca">
           <assigned_regions>Obs_r2</assigned_regions>
           <functional>point</functional>
