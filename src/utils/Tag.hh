@@ -15,6 +15,7 @@
 #pragma once
 
 #include <iostream>
+#include "errors.hh"
 
 namespace Amanzi {
 
@@ -45,6 +46,14 @@ class Tag {
  private:
   std::string tag_;
 };
+
+
+inline Errors::Message&
+operator<<(Errors::Message& message, const Tag& tag) {
+  message.add_data(tag.get());
+  return message;
+}
+
 
 // non-member function
 inline Tag
