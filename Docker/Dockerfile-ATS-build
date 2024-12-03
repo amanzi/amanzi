@@ -78,7 +78,7 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --enable-geochemistry \
    --disable-amanzi_physics \
    --enable-ats_physics \
-   --enable-elm_api \
+   --enable-elm_ats_api \
    --ats_dev \
    --enable-reg_tests
 
