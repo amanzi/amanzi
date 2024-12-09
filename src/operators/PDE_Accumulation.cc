@@ -374,7 +374,7 @@ PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
         if (surf) {
           op = Teuchos::rcp(new Op_SurfaceCell_SurfaceCell(name, mesh_));
         } else {
-          op = Teuchos::rcp(new Op_Cell_Cell(name, mesh_));
+          op = Teuchos::rcp(new Op_Cell_Cell(name, mesh_, num));
         }
 
       } else if (kind == AmanziMesh::Entity_kind::EDGE) {
@@ -413,7 +413,7 @@ PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
         if (surf) {
           op = Teuchos::rcp(new Op_SurfaceCell_SurfaceCell(name, mesh_));
         } else {
-          op = Teuchos::rcp(new Op_Cell_Cell(name, mesh_));
+          op = Teuchos::rcp(new Op_Cell_Cell(name, mesh_, num));
         }
 
         /*

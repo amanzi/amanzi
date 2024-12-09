@@ -175,7 +175,7 @@ Operator_FaceCellScc::AssembleMatrix(const SuperMap& map,
         // create and fill
         AMANZI_ASSERT(i_schur == diag_ops_.size());
         std::string name = "Scc alt as CELL_CELL";
-        diag_op = Teuchos::rcp(new Op_Cell_Cell(name, mesh_));
+        diag_op = Teuchos::rcp(new Op_Cell_Cell(name, mesh_, 1));
         diag_ops_.push_back(diag_op);
 
         name = "Scc alt as FACE_CELL";
@@ -359,7 +359,7 @@ Operator_FaceCellScc::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
   Operator_Cell::SymbolicAssembleMatrixOp(schur_op, map, graph, my_block_row, my_block_col);
 
   name = "Scc alt as CELL_CELL";
-  Op_Cell_Cell diag_op(name, mesh_);
+  Op_Cell_Cell diag_op(name, mesh_, 1);
   Operator_Cell::SymbolicAssembleMatrixOp(diag_op, map, graph, my_block_row, my_block_col);
 }
 

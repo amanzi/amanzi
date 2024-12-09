@@ -27,7 +27,7 @@ class Op_SurfaceCell_SurfaceCell : public Op_Cell_Cell {
  public:
   Op_SurfaceCell_SurfaceCell(const std::string& name,
                              const Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_)
-    : Op_Cell_Cell(name, surf_mesh_), surf_mesh(surf_mesh_)
+    : Op_Cell_Cell(name, surf_mesh_, 1), surf_mesh(surf_mesh_)
   {}
 
   virtual void

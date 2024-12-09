@@ -354,7 +354,7 @@ Evaluator_OperatorApply::UpdateDerivative_(State& S, const Key& wrt_key, const T
             rhs_key, my_keys_[0].second, wrt_key, wrt_tag, rhs_key);
           for (const auto& comp : drhs) {
             if (AmanziMesh::createEntityKind(comp) == AmanziMesh::Entity_kind::CELL) {
-              auto op_cell = Teuchos::rcp(new Operators::Op_Cell_Cell(rhs_key, drhs.Mesh()));
+              auto op_cell = Teuchos::rcp(new Operators::Op_Cell_Cell(rhs_key, drhs.Mesh(), 1));
               // clobber the diag
               *op_cell->diag = *drhs.ViewComponent(comp, false);
               op_cell->diag->Scale(rhs_scalars_[j]);
