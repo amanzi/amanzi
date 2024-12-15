@@ -42,7 +42,7 @@ add_amanzi_library(whetstone
                           MFD3D_CrouzeixRaviart.cc MFD3D_CrouzeixRaviartAnyOrder.cc
                           MFD3D_CrouzeixRaviartSerendipity.cc
                           MFD3D_Diffusion.cc MFD3D_Diffusion_Surface.cc MFD3D_Diffusion_Other.cc 
-                          MFD3D_Diffusion_CurvedFace.cc
+                          MFD3D_Diffusion_CurvedFace.cc MFD3D_Diffusion_FaceMoments.cc
                           MFD3D_Elasticity.cc MFD3D_ElasticityGradDiv.cc 
                           MFD3D_ElasticityWeakSymmetry.cc 
                           MFD3D_Electromagnetics.cc MFD3D_Electromagnetics_Surface.cc
@@ -72,16 +72,17 @@ add_amanzi_library(whetstone
                            FunctionUpwind.hh
                            FunctionComposite.hh
                            MFD3D.hh
-                           MFD3D_BernardiRaugel.hh
+                           MFD3D_BernardiRaugel.hh MFD3D_BernardiRaugelGradDiv.hh
                            MFD3D_CrouzeixRaviart.hh MFD3D_CrouzeixRaviartAnyOrder.hh
                            MFD3D_CrouzeixRaviartSerendipity.hh
                            MFD3D_Diffusion.hh MFD3D_Diffusion_CurvedFace.hh
-                           MFD3D_Elasticity.hh
+                                              MFD3D_Diffusion_FaceMoments.hh
+                           MFD3D_Elasticity.hh MFD3D_ElasticityGradDiv.hh
                            MFD3D_ElasticityWeakSymmetry.hh
                            MFD3D_Electromagnetics.hh
                            MFD3D_GeneralizedDiffusion.hh
-                           MFD3D_Lagrange.hh MFD3D_LagrangeAnyOrder.hh
-                           MFD3D_LagrangeSerendipity.hh
+                           MFD3D_Lagrange.hh MFD3D_LagrangeAnyOrder.hh 
+                                             MFD3D_LagrangeSerendipity.hh
                            nlfv.hh
                            NumericalIntegration.hh
                            Quadrature1D.hh Quadrature2D.hh Quadrature3D.hh
