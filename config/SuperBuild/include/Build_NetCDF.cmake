@@ -90,7 +90,6 @@ ExternalProject_Add(${NetCDF_BUILD_TARGET}
 # --- Useful variables for packages that depend on NetCDF (Trilinos)
 include(BuildLibraryName)
 build_library_name(netcdf NetCDF_C_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-message(ABORT "ETC: NetCDF_C_LIBRARY = ${NetCDF_C_LIBRARY}")
 
 build_library_name(netcdf_c++ NetCDF_CXX_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
 set(NetCDF_DIR ${TPL_INSTALL_PREFIX})
