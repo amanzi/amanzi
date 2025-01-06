@@ -322,9 +322,9 @@ PDE_DiffusionNLFVwithBndFaces::InitStencils_()
     pp.CopyMasterFace2GhostFace(*stencil_cells_[i]);
   }
 
-  std::cout<<"stencil 9: ";
-  for (int n=0; n<6; n++) std::cout<<(*stencil_faces_[n])[9]<<" ";
-  std::cout<<"\n";
+  // std::cout<<"stencil 9: ";
+  // for (int n=0; n<6; n++) std::cout<<(*stencil_faces_[n])[9]<<" ";
+  // std::cout<<"\n";
 
 
   
@@ -361,7 +361,7 @@ PDE_DiffusionNLFVwithBndFaces::UpdateMatrices(const Teuchos::Ptr<const Composite
   // calculate one-sides flux corrections. Since a flux stencil can
   // occupy (dim_ + 1) cells, we need parallel communications.
   OneSidedFluxCorrections_(1, *u, sideflux_cv);
-  std::cout<<"sideflux\n"<<sideflux<<"\n";
+  //std::cout<<"sideflux\n"<<sideflux<<"\n";
 
   //OneSidedNeumannCorrections_(*u, sideflux_cv);
   sideflux_cv.GatherGhostedToMaster();
@@ -415,13 +415,13 @@ PDE_DiffusionNLFVwithBndFaces::UpdateMatrices(const Teuchos::Ptr<const Composite
         
         tpfa = mu * w1 + (1.0 - mu) * w2;
 
-        if (f==9) std::cout<<"matrix f9 "<<"c"<<c<<" mu "<<mu<<" w1 "<<w1<<" w2 "<<w2<<" kf "<<kf<<"\n";
-        if (f==9) std::cout<<"matrix f9 "<<"c"<<c<<" "<<matrix[0][9]<<" "<<matrix[1][9]<<"\n";
+        //if (f==9) std::cout<<"matrix f9 "<<"c"<<c<<" mu "<<mu<<" w1 "<<w1<<" w2 "<<w2<<" kf "<<kf<<"\n";
+        //if (f==9) std::cout<<"matrix f9 "<<"c"<<c<<" "<<matrix[0][9]<<" "<<matrix[1][9]<<"\n";
         
         matrix[k1][f] += kf * tpfa;
         flux_data[k2][f] = kf * tpfa;
 
-        if (f==9) std::cout<<"matrix f9 "<<"c"<<c<<" "<<matrix[0][9]<<" "<<matrix[1][9]<<"\n";
+        //if (f==9) std::cout<<"matrix f9 "<<"c"<<c<<" "<<matrix[0][9]<<" "<<matrix[1][9]<<"\n";
 
       } else {
         g1 = sideflux[0][f];
@@ -457,7 +457,7 @@ PDE_DiffusionNLFVwithBndFaces::UpdateMatrices(const Teuchos::Ptr<const Composite
           gamma = hap_gamma[0][f1];
           OrderCellsByGlobalId_(cells_tmp, c3, c4);
 
-          if (f1==9) std::cout<<"Aux matrix c="<<c<<" f="<<f<<" stencil "<<(*stencil_faces_[1 + k2])[f]<<" "<<(*stencil_faces_[2 + k2])[f] <<"\n";
+          //if (f1==9) std::cout<<"Aux matrix c="<<c<<" f="<<f<<" stencil "<<(*stencil_faces_[1 + k2])[f]<<" "<<(*stencil_faces_[2 + k2])[f] <<"\n";
           
           k1 = 0;
           if (c3 != c) {
@@ -479,11 +479,8 @@ PDE_DiffusionNLFVwithBndFaces::UpdateMatrices(const Teuchos::Ptr<const Composite
     }
   }
 
-  std::cout<<"matrix 9 " <<matrix[0][9]<<" "<<matrix[1][9]<<"\n";
-
-  exit(0);
-
-
+  //std::cout<<"matrix 9 " <<matrix[0][9]<<" "<<matrix[1][9]<<"\n";
+  //exit(0);
   
   stencil_data_->GatherGhostedToMaster("flux_data");
   matrix_cv.GatherGhostedToMaster();
@@ -515,7 +512,7 @@ PDE_DiffusionNLFVwithBndFaces::UpdateMatrices(const Teuchos::Ptr<const Composite
     local_op_->matrices[f] = Aface;
   }
 
-  exit(0);
+  //exit(0);
 }
 
 
@@ -707,7 +704,7 @@ PDE_DiffusionNLFVwithBndFaces::OneSidedFluxCorrections_(int i0,
 
           tmp = weight[i + k2][f] * gamma;
           sideflux += tmp * (uc[0][c] - uc[0][c3]);
-          std::cout<<"f "<<f<<" c "<<c<<" c3 "<<c3<<" sideflux "<<sideflux<<"\n";
+          //std::cout<<"f "<<f<<" c "<<c<<" c3 "<<c3<<" sideflux "<<sideflux<<"\n";
         } else if (bc_model[f1] == OPERATOR_BC_DIRICHLET) {
           tmp = weight[i + k2][f];
           int bf = mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false)
@@ -726,6 +723,8 @@ PDE_DiffusionNLFVwithBndFaces::OneSidedFluxCorrections_(int i0,
         }
       }
 
+      if (f==9) std::cout<<"k1 "<<k1<<" sideflux "<<sideflux<<"\n";
+      
       flux[k1][f] = kf * sideflux;
     }
   }

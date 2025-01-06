@@ -370,6 +370,9 @@ DiffusionFixture::Go(double tol)
   if (tol > 0.0) {
     // compute pressure error
     Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
+
+    std::cout<<"pressure "<<p<<"\n";
+    
     double pnorm(0.0), pl2_err(0.0), pinf_err(0.0);
     ana->ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 

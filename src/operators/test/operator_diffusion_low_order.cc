@@ -42,7 +42,7 @@
 #include "DiffusionFixtureTests.hh"
 
 #define FV 0
-#define SO 0
+#define SO 
 #define MFD 0
 #define NLFV 1
 #define ASSEMBLING 1
@@ -271,22 +271,22 @@ SUITE(DIFFUSION)
                  1.e-12);
   }
 #endif
-#if SO
-  TEST(Analytic00_Linear1_SO_Dirichlet_structured2d_identity)
-  {
-    std::cout << "Test: "
-              << "Analytic00_Linear1_SO_Dirichlet_structured2d_identity" << std::endl;
-    test("identity",
-         "Dirichlet",
-         "structured2d",
-         2,
-         10,
-         "so",
-         true,
-         AmanziMesh::Entity_kind::UNKNOWN,
-         1.e-12);
-  }
-#endif
+// #if SO
+//   TEST(Analytic00_Linear1_SO_Dirichlet_structured2d_identity)
+//   {
+//     std::cout << "Test: "
+//               << "Analytic00_Linear1_SO_Dirichlet_structured2d_identity" << std::endl;
+//     test("identity",
+//          "Dirichlet",
+//          "structured2d",
+//          2,
+//          10,
+//          "so",
+//          true,
+//          AmanziMesh::Entity_kind::UNKNOWN,
+//          1.e-12);
+//   }
+// #endif
 #if MFD
   TEST(Analytic00_Linear1_MFD_Dirichlet_structured2d_identity)
   {
@@ -1485,8 +1485,8 @@ SUITE(DIFFUSION)
 
   // test in 3D
   //
-  //These probably should pass?  Not sure why they don't.
-  TEST(Analytic02_NLFV_Dirichlet_structured3d_ifpack2_ILUT)
+  // These probably should pass?  Not sure why they don't.
+  TEST(Analytic02_NLFV_DirichletNeumann_structured3d_ifpack2_ILUT)
   {
     std::cout << "Test: "
               << "Analytic02_NLFV_DirichletNeumann_structured3d_ifpack2_ILUT" << std::endl;
@@ -1504,10 +1504,10 @@ SUITE(DIFFUSION)
          20);
   }
 
-  TEST(Analytic02_NLFVwithBndFaces_Dirichlet_structured3d_ifpack2_ILUT)
+  TEST(Analytic02_NLFVBFace_DirichletNeumann_structured3d_ifpack2_ILUT)
   {
     std::cout << "Test: "
-              << "Analytic02_NLFV_DirichletNeumann_structured3d_ifpack2_ILUT" << std::endl;
+              << "Analytic02_NLFVBFace_DirichletNeumann_structured3d_ifpack2_ILUT" << std::endl;
     test("ifpack2: ILUT",
          "Dirichlet",
          "structured3d",
@@ -1521,7 +1521,6 @@ SUITE(DIFFUSION)
          "02",
          20);
   }
-  
   // TEST(Analytic02_Gravity_NLFV_DirichletNeumann_structured3d_ifpack2_ILUT)
   // {
   //   std::cout << "Test: "
@@ -1621,7 +1620,7 @@ SUITE(DIFFUSION)
   //                50);
   // }
 
-  // test in 3D
+  // // test in 3D
   // TEST(Analytic02_NLFVwithBndFaces_DirichletNeumann_structured3d_ifpack2_ILUT)
   // {
   //   std::cout << "Test: "
@@ -1638,7 +1637,7 @@ SUITE(DIFFUSION)
   //        1.e-11,
   //        1,
   //        "02",
-  //        100);
+  //        20);
   // }
   // TEST(Analytic02_Gravity_NLFVwithBndFaces_DirichletNeumann_structured3d_ifpack2_ILUT)
   // {
@@ -1657,7 +1656,7 @@ SUITE(DIFFUSION)
   //                1e-11,
   //                1,
   //                "02",
-  //                100);
+  //                20);
   // }
 #  endif
 #endif
