@@ -16,8 +16,8 @@ segment.  The line segment is allowed to intersect with one or more cells. Zero 
 line segments are allowed. The line segment is defined by its ends
 points.
 
-.. _region-line-segment-spec:
-.. admonition:: region-line-segment-spec
+.. _region_line_segment-spec:
+.. admonition:: region_line_segment-spec
 
     * `"end coordinate`" ``[Array(double)]`` Location of one end of a line
       segment.

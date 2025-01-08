@@ -33,8 +33,8 @@ Equations by Dennis & Schnabel, pg 325.
 
 Note, this always monitors the residual.
 
-.. _solver-line-search-spec:
-.. admonition:: solver-line-search-spec
+.. _solver_line_search-spec:
+.. admonition:: solver_line_search-spec
 
     * `"nonlinear tolerance`" ``[double]`` **1.e-6** defines the required error
       tolerance. The error is calculated by a PK.

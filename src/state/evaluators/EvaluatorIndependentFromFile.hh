@@ -34,8 +34,8 @@ This evaluator is used by providing the option:
 
 `"evaluator type`" == `"independent variable`"
 
-.. _independent-variable-from-file-evaluator-spec:
-.. admonition:: independent-variable-from-file-evaluator-spec
+.. _independent_variable_from_file_evaluator-spec:
+.. admonition:: independent_variable_from_file_evaluator-spec
 
    * `"filename`" ``[string]`` Path to the file.
    * `"variable name`" ``[string]`` Name of the dataset to read from the file.

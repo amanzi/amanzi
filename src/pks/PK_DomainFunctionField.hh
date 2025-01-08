@@ -17,8 +17,8 @@
 This leverages the Arcos DAG to evaluate a user-provided field and use that in
 the domain function.
 
-.. _domain-function-field-spec
-.. admonition:: domain-function-field-spec
+.. _domain_function_field-spec
+.. admonition:: domain_function_field-spec
 
    * `"field key`" ``[string]`` Field used in the domain function.
    * `"component`" ``[string]`` Component of the field. Default is `"cell`".

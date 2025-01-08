@@ -20,8 +20,8 @@ bilinear interpolation on
 are out of those bounds, and constant at the corner value if both are out of
 bounds.
 
-.. _function-bilinear-and-time-spec:
-.. admonition:: function-bilinear-and-time-spec
+.. _function_bilinear_and_time-spec:
+.. admonition:: function_bilinear_and_time-spec
 
   * `"file`" ``[string]`` HDF5 or NetCDF filename of the data
   * `"time header`" ``[string]`` **time** Name of the temporal dimension indices, the :math:`t_i`.

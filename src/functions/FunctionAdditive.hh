@@ -18,8 +18,8 @@ An additive function simply adds two other function results together.
 where :math:`f_1` is defined by the `"function1`" sublist, and
 :math:`f_2` by the `"function2`" sublist.
 
-.. _function-additive-spec:
-.. admonition:: function-additive-spec
+.. _function_additive-spec:
+.. admonition:: function_additive-spec
 
    * `"function1`" ``[function-typedinline-spec]`` :math:`f_1` in :math:`f(x) = f_1(x) + f_2(x)`
    * `"function2`" ``[function-typedinline-spec]`` :math:`f_2` in :math:`f(x) = f_1(x) + f_2(x)`

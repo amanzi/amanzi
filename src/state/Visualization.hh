@@ -31,7 +31,7 @@ DOMAIN-NAME`".
       into for output files.  One of `"s`", `"d`", `"y`", or `"yr 365`"
 
     INCLUDES:
-    - ``[io-event-spec]`` An IOEvent_ spec
+    - ``[io_event-spec]`` An IOEvent_ spec
 
 
 Example:

@@ -31,7 +31,7 @@ is inherited and included by each actual PK, lives in the "PKs" sublist of
 
     * `"PK type`" ``[string]`` One of the registered PK types.  Note this must
       match the corresponding entry in the ``[pk-typed-spec]``
-    * `"verbose object`" ``[verbose-object-spec]`` **optional** See `Verbose Object`_
+    * `"verbose object`" ``[verbose_object-spec]`` **optional** See `Verbose Object`_
 
 Example:
 

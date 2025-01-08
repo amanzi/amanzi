@@ -26,8 +26,8 @@ Note that these operate only on the first coordinate, which is often time.
 Function composition can be used to apply these to other coordinates (or
 better yet a dimension could/should be added upon request).
 
-.. _function-standard-math-spec:
-.. admonition:: function-standard-math-spec
+.. _function_standard_math-spec:
+.. admonition:: function_standard_math-spec
 
    * `"operator`" ``[string]`` specifies the name of a standard mathematical
      function.  Available options are:

@@ -12,8 +12,8 @@
 This allows control of log-file verbosity for a wide variety of objects
 and physics.
 
-.. _verbose-object-spec:
-.. admonition:: verbose-object-spec
+.. _verbose_object-spec:
+.. admonition:: verbose_object-spec
 
    * `"verbosity level`" ``[string]`` **GLOBAL_VERBOSITY**, `"low`",
      `"medium`", `"high`", `"extreme`" The default is set by the global

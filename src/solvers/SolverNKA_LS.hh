@@ -16,8 +16,8 @@ an :math:`\alpha` that minimizes the reduction in the residual.
 
 Note, this always monitors the residual.
 
-.. _solver-nka-ls-spec:
-.. admonition solver-nka-ls-spec
+.. _solver_nka_ls-spec:
+.. admonition solver_nka_ls-spec
 
     * `"nonlinear tolerance`" ``[double]`` **1.e-6** Defines the required error
       tolerance. The error is calculated by a PK.

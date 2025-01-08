@@ -13,8 +13,8 @@ Interpolates between two time tags to compute a value at an intermediate time ta
 
 `"evaluator type`" == `"temporal interpolation`"
 
-.. _temporal-interpolation-evaluator-spec:
-.. admonition:: temporal-interpolation-evaluator-spec
+.. _temporal_interpolation_evaluator-spec:
+.. admonition:: temporal_interpolation_evaluator-spec
 
    * `"current tag`" ``[string]`` Tag for the old or current time.
    * `"next tag`" ``[string]`` Tag for the new or next time.

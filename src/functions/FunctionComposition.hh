@@ -18,8 +18,8 @@ Function composition simply applies one function to the result of another.
 where :math:`f_1` is defined by the `"function1`" sublist, and
 :math:`f_2` by the `"function2`" sublist.
 
-.. _function-composition-spec:
-.. admonition:: function-composition-spec
+.. _function_composition-spec:
+.. admonition:: function_composition-spec
 
    * `"function1`" ``[function-typedinline-spec]`` :math:`f_1` in :math:`f(x) = f_1(f_2(x))`
    * `"function2`" ``[function-typedinline-spec]`` :math:`f_2` in :math:`f(x) = f_1(f_2(x))`

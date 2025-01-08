@@ -16,8 +16,8 @@ paraent domain.  Visualizing this collection of objects can be tricky, but is
 made much easier by first migrating all the domain sets on to the parent mesh
 and visualizing on that mesh.
 
-.. _visualization-domain-set-spec:
-.. admonition:: visualization-domain-set-spec
+.. _visualization_domain_set-spec:
+.. admonition:: visualization_domain_set-spec
 
     INCLUDES:
     - ``[visualization-spec]`` A Visualization_ spec

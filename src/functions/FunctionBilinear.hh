@@ -20,8 +20,8 @@ if :math:`(x,y)` is in :math:`[x_0,x_n] \times [y_0,y_m]`, linear interpolation 
 are out of those bounds, and constant at the corner value if both are out of
 bounds.
 
-.. _function-bilinear-spec:
-.. admonition:: function-bilinear-spec
+.. _function_bilinear-spec:
+.. admonition:: function_bilinear-spec
 
    * `"file`" ``[string]`` HDF5 or NetCDF filename of the data
    * `"row header`" ``[string]`` name of the row dataset, the :math:`x_i`

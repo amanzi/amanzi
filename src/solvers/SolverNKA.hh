@@ -23,8 +23,8 @@ especially with an approximate Jacobian.
   (3) (1998) 766–798.
 
 
-.. _solver-nka-spec:
-.. admonition:: solver-nka-spec
+.. _solver_nka-spec:
+.. admonition:: solver_nka-spec
 
     * `"nonlinear tolerance`" ``[double]`` **1.e-6** Defines the required error
       tolerance. The error is calculated by a PK.

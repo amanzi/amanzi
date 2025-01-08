@@ -17,14 +17,14 @@
 Debugging object for writing vectors to file within an iterative
 process for use with vis tools.
 
-.. _residual-debugger-spec:
-.. admonition:: residual-debugger-spec
+.. _residual_debugger-spec:
+.. admonition:: residual_debugger-spec
 
     * `"file name base`" ``[string]`` **amanzi_dbg** Prefix for output filenames.
 
     INCLUDES:
 
-    - ``[io-event-spec]`` An IOEvent_ spec
+    - ``[io_event-spec]`` An IOEvent_ spec
 
 */
 

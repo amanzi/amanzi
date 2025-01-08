@@ -20,17 +20,17 @@ For example, one might write a dependency:
 
 `"evaluator type`" = `"secondary variable from function`"
 
-.. _secondary-variable-from-function-evaluator-spec:
-.. admonition:: secondary-variable-from-function-evaluator-spec
+.. _secondary_variable_from_function_evaluator-spec:
+.. admonition:: secondary_variable_from_function_evaluator-spec
 
    ONE OF
 
-   * `"functions`" ``[composite-vector-function-spec-list]`` Note this is used
+   * `"functions`" ``[composite_vector_function-spec-list]`` Note this is used
      for multiple Degress of Freedom.
 
    OR
 
-   * `"function`" ``[composite-vector-function-spec]`` Used for a single degree
+   * `"function`" ``[composite_vector_function-spec]`` Used for a single degree
      of freedom.
 
    END

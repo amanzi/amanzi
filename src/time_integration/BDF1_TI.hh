@@ -30,9 +30,9 @@ via the time discretization scheme:
 .. _bdf1-ti-spec:
 .. admonition:: bdf1-ti-spec
 
-    * `"verbose object`" ``[verbose-object-spec]`` A `Verbose Object`_
+    * `"verbose object`" ``[verbose_object-spec]`` A `Verbose Object`_
 
-    * `"residual debugger`" ``[residual-debugger-spec]`` A `Residual Debugger`_ object.
+    * `"residual debugger`" ``[residual_debugger-spec]`` A `Residual Debugger`_ object.
 
     * `"max preconditioner lag iterations`" ``[int]`` **0** specifies frequency
       of preconditioner recalculation.
@@ -63,7 +63,7 @@ via the time discretization scheme:
 
     INCLUDES
     - ``[solver-typed-spec]`` *Uses a* Solver_.
-    - ``[timestep-controller-typed-spec]`` *Uses a* `Timestep Controller`_
+    - ``[timestep_controller-typed-spec]`` *Uses a* `Timestep Controller`_
 
 
 Note this also accepts an object that provides the `BDF1 Solver Interface`_.

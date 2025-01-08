@@ -22,8 +22,8 @@ domain (or boundary of the domain in the case of BCs).
 
 Each entry in that list is a:
 
-.. _composite-vector-function-spec:
-.. admonition:: composite-vector-function-spec
+.. _composite_vector_function-spec:
+.. admonition:: composite_vector_function-spec
 
    ONE OF
 

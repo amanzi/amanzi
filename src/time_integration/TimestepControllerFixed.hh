@@ -13,8 +13,8 @@ A fixed timestep controller simply sets a constant timestep size.
 
 `"timestep controller type`" = `"fixed`"
 
-.. _timestep-controller-fixed-spec:
-.. admonition:: timestep-controller-fixed-spec
+.. _timestep_controller_fixed-spec:
+.. admonition:: timestep_controller_fixed-spec
 
    * `"initial timestep [s]`" ``[double]`` The fixed timestep size.
 

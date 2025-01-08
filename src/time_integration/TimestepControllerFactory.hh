@@ -23,8 +23,8 @@ Available types include:
 - `Timestep Controller From File`_ (type `"from file`"), uses a timestep history loaded from a file.  (Usually only used for regression testing.)
 
 
-.. _timestep-controller-typed-spec:
-.. admonition:: timestep-controller-typed-spec
+.. _timestep_controller-typed-spec:
+.. admonition:: timestep_controller-typed-spec
 
     * `"timestep controller type`" ``[string]`` Set the type.  One of: `"fixed`", `"standard`", `"smarter`", `"adaptive`", or `"from file`"
     * `"timestep controller X parameters`" ``[list]`` List of parameters for a timestep controller of type X.

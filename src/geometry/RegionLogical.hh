@@ -19,8 +19,8 @@ the only case that operates on single region, and returns the complement to it
 within the domain ENTIRE_DOMAIN.  Currently, multi-region booleans are not
 supported in the same expression.
 
-.. _region-logical-spec:
-.. admonition:: region-logical-spec
+.. _region_logical-spec:
+.. admonition:: region_logical-spec
 
     * `"operation`" ``[string]`` defines operation on the list of regions.
       One of: `"union`", `"intersect`", `"subtract`", `"complement`"

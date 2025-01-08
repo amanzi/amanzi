@@ -15,8 +15,8 @@ Based on the methods of Yu. Kuznetsov, 1968; Y.Saad, 1986.  Deflated version of
 GMRES is due to R.Morgan, GMRES with deflated restarting, 2002 SISC; S.Rollin,
 W.Fichtner, Improving accuracy of GMRES with deflated restarting, 2007 SISC.
 
-.. _iterative-method-gmres-spec:
-.. admonition:: iterative-method-gmres-spec
+.. _iterative_method_gmres-spec:
+.. admonition:: iterative_method_gmres-spec
 
     * `"error tolerance`" ``[double]`` **1.e-6** Tolerance on which to declare success.
 

@@ -26,12 +26,12 @@ This evaluator is used by providing the option:
 
 `"evaluator type`" == `"independent variable`"
 
-.. _independent-variable-function-evaluator-spec:
-.. admonition:: independent-variable-function-evaluator-spec
+.. _independent_variable_function_evaluator-spec:
+.. admonition:: independent_variable_function_evaluator-spec
 
    * `"constant in time`" ``[bool]`` **false** If true, only evaluate the
      functions once as they are time-independent.
-   * `"function`" ``[composite-vector-function-spec-list]``
+   * `"function`" ``[composite_vector_function-spec-list]``
 
 */
 

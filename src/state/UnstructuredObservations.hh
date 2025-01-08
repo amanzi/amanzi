@@ -32,7 +32,7 @@
 
     INCLUDES:
 
-    - ``[io-event-spec]`` An IOEvent_ spec
+    - ``[io_event-spec]`` An IOEvent_ spec
 
 Note, for backwards compatibility, an ``observable-spec`` may be directly
 included within the `observation-spec` if it is the only variable to be

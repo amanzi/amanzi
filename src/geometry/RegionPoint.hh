@@ -13,8 +13,8 @@
 List *region: point* defines a point in space.
 This region consists of cells containing this point.
 
-.. _region-point-spec:
-.. admonition:: region-point-spec
+.. _region_point-spec:
+.. admonition:: region_point-spec
 
     * `"coordinate`" ``[Array(double)]`` Location of point in space.
 

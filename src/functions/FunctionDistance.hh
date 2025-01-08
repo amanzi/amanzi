@@ -18,8 +18,8 @@ using by the following expression:
 
 Note that the first parameter in :math:`x` can be time.
 
-.. _function-distance-spec:
-.. admonition:: function-distance-spec
+.. _function_distance-spec:
+.. admonition:: function_distance-spec
 
    * `"x0`" ``[Array(double)]`` Point from which distance is measured.
    * `"metric`" ``[Array(double)]`` Linear scaling metric, typically all 1s.

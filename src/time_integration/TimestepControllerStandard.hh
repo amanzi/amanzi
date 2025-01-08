@@ -23,8 +23,8 @@ The timestep for step :math:`k+1`, :math:`\Delta t_{k+1}`, is given by:
 where :math:`\Delta t_{k}` is the previous timestep and :math:`N_k` is the number of
 nonlinear iterations required to solve step :math:`k`:.
 
-.. _timestep-controller-standard-spec:
-.. admonition:: timestep-controller-standard-spec
+.. _timestep_controller_standard-spec:
+.. admonition:: timestep_controller_standard-spec
 
    * `"max iterations`" ``[int]`` :math:`N^{max}`, decrease the timestep if the previous step took more than this.
    * `"min iterations`" ``[int]`` :math:`N^{min}`, increase the timestep if the previous step took less than this.
@@ -33,7 +33,7 @@ nonlinear iterations required to solve step :math:`k`:.
 
    INCLUDES:
 
-   - ``[timestep-controller-recoverable-spec]``
+   - ``[timestep_controller_recoverable-spec]``
 
 .. code-block:: xml
 

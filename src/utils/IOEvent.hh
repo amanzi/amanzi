@@ -13,8 +13,8 @@
 
 The IOEvent is used for multiple objects that need to indicate simulation times or cycles on which to do something.
 
-.. _io-event-spec:
-.. admonition:: io-event-spec
+.. _io_event-spec:
+.. admonition:: io_event-spec
 
    * `"cycles start period stop`" ``[Array(int)]`` **optional** The first entry
      is the start cycle, the second is the cycle period, and the third is the

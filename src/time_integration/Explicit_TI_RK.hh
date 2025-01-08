@@ -56,10 +56,10 @@ The implemented general Runge Kutta scheme of order s based on this tableau arra
       k_{s-1} = h * f(t_n + c[s-1]*h, y_n + a(s-1,0)*k_0 + ... + a(s-1,s-2)*k_{s-2})
 
 
-.. _explicit-ti-rk-spec:
-.. admonition:: explicit-ti-rk-spec
+.. _explicit_ti_rk-spec:
+.. admonition:: explicit_ti_rk-spec
 
-    * `"verbose object`" ``[verbose-object-spec]`` A `Verbose Object`_
+    * `"verbose object`" ``[verbose_object-spec]`` A `Verbose Object`_
 
     * `"RK method`" ``[string]`` **forward euler**  One of: `"forward Euler`", `"heun euler`", `"midpoint`", `"ralston`", `"tvd 3rd order`", `"kutta 3rd order`", `"runge kutta 4th order`"
 

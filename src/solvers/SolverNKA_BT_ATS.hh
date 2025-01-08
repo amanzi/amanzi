@@ -22,8 +22,8 @@ large (e.g. for steep nonlinearities such as phase change).
 
 Note this always monitors the residual, and the correction is always modified.
 
-.. _solver-nka-bt-ats-spec:
-.. admonition:: solver-nka-bt-ats-spec
+.. _solver_nka_bt_ats-spec:
+.. admonition:: solver_nka_bt_ats-spec
 
     * `"nonlinear tolerance`" ``[double]`` **1.e-6** Defines the required error
       tolerance. The error is calculated by a PK.

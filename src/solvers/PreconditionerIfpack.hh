@@ -38,8 +38,8 @@ documented extensively in the `Trilinos Documentation
 Here we document a subset of the most frequently used parameters -- advanced
 users should read the Ifpack User Guide above to see all options.
 
-.. _preconditioner-ifpack-ilu-spec:
-.. admonition:: preconditioner-ifpack-ilu-spec:
+.. _preconditioner_ifpack_ilu-spec:
+.. admonition:: preconditioner_ifpack_ilu-spec:
 
     * `"schwarz: combine mode`" ``[string]`` **Add** Note that `"Zero`" may
       perform better for nonsymmetric cases.
@@ -52,8 +52,8 @@ users should read the Ifpack User Guide above to see all options.
       diagonal by this value before checking the threshold.
     * `"fact: level-of-fill`" ``[int]`` **0**
 
-.. _preconditioner-ifpack-relaxation-spec:
-.. admonition:: preconditioner-ifpack-relaxation-spec:
+.. _preconditioner_ifpack_relaxation-spec:
+.. admonition:: preconditioner_ifpack_relaxation-spec:
 
     * `"schwarz: combine mode`" ``[string]`` **Add** Note that `"Zero`" may
       perform better for nonsymmetric cases.
@@ -62,8 +62,8 @@ users should read the Ifpack User Guide above to see all options.
     * `"relaxation: sweeps`" ``[int]`` **1**
     * `"relaxation: damping factor`" ``[double]`` **1.0**
 
-.. _preconditioner-ifpack-amesos-spec:
-.. admonition:: preconditioner-amesos-relaxation-spec:
+.. _preconditioner_ifpack_amesos-spec:
+.. admonition:: preconditioner_amesos_relaxation-spec:
 
     * `"schwarz: combine mode`" ``[string]`` **Add** Note that `"Zero`" may
       perform better for nonsymmetric cases.

@@ -16,8 +16,8 @@ step size taken by the simulation.
 Note that most options provided to this class are only used in unit or
 regression testing.
 
-.. _time-step-manager-spec:
-.. admonition:: time-step-manager-spec
+.. _time_step_manager-spec:
+.. admonition:: time_step_manager-spec
 
    * `"prescribed timesteps [s]`" ``Array(string)`` **optional** Array
      of timesteps to take, ignores the PK and all events.

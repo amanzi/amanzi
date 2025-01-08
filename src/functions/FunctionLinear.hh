@@ -20,8 +20,8 @@ If the reference point :math:`x_0` is specified, it must have the same
 number of values as the gradient.  Otherwise, it defaults to zero.
 Note that one of the parameters in a multi-valued linear function can be time.
 
-.. _function-linear-spec:
-.. admonition:: function-linear-spec
+.. _function_linear-spec:
+.. admonition:: function_linear-spec
 
    * `"y0`" ``[double]`` y_0 in f = y0 + g * (x - x0)
    * `"gradient`" ``[Array(double)]`` g in f = y0 + g * (x - x0)

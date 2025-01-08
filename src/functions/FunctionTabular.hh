@@ -42,8 +42,8 @@ one.
 
 Explicitly specifying the data:
 
-.. _function-tabular-spec:
-.. admonition:: function-tabular-spec
+.. _function_tabular-spec:
+.. admonition:: function_tabular-spec
 
    * `"x values`" ``[Array(double)]`` the :math:`x_i`
    * `"y values`" ``[Array(double)]`` the :math:`y_i`
@@ -85,8 +85,8 @@ Example:
 Loading table from file.  (Note that `"USER_DEFINED`" is not an option here,
 but could be made so if requested).
 
-.. _function-tabular-fromfile-spec:
-.. admonition:: function-tabular-fromfile-spec
+.. _function_tabular_fromfile-spec:
+.. admonition:: function_tabular_fromfile-spec
 
    * `"file`" ``[string]`` filename of either HDF5 or NetCDF file.
    * `"x header`" ``[string]`` name of the dataset for the :math:`x_i` in the file

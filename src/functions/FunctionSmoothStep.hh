@@ -15,8 +15,8 @@ defined such that `f(x) = y_0` for `x < x0`, `f(x) = y_1` for `x > x_1`, and
 monotonically increasing for :math:`x \in [x_0, x_1]` through cubic
 interpolation.
 
-.. _function-smooth-step-spec:
-.. admonition:: function-smooth-step-spec
+.. _function_smooth_step-spec:
+.. admonition:: function_smooth_step-spec
 
    * `"x0`" ``[double]`` First fitting point
    * `"y0`" ``[double]`` First fitting value

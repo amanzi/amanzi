@@ -19,8 +19,8 @@ with the constant factor :math:`c`, the reference point :math:`x_0`, and
 integer exponents :math:`p_j`.
 Note that the first parameter in :math:`x` can be time.
 
-.. _function-monomial-spec:
-.. admonition:: function-monomial-spec
+.. _function_monomial-spec:
+.. admonition:: function_monomial-spec
 
    * `"c`" ``[double]`` c in :math:`f = c \prod_{j=0}^{n} (x_j - x_{0,j})^{p_j}`
    * `"x0`" ``[Array(double)]`` x0 in :math:`f = c \prod_{j=0}^{n} (x_j - x_{0,j})^{p_j}`

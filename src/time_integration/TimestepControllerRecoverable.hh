@@ -18,8 +18,8 @@ arbitrarily small steps introduced by events.
 It also provides some basic functionality for adaptive timesteppers, setting a
 max, min, and initial dt.
 
-.. _timestep-controller-recoverable-spec
-.. admonition:: timestep-controller-recoverable-spec
+.. _timestep_controller_recoverable-spec
+.. admonition:: timestep_controller_recoverable-spec
 
    * `"initial timestep [s]`" ``[double]`` The max timestep size allowed.
    * `"max timestep [s]`" ``[double]`` The max timestep size allowed.

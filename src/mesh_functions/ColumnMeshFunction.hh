@@ -23,8 +23,8 @@ Function values u:
 
   /f[:] = (f_0(z_0), f_1(z_1), ..., f_n(z_n))
 
-.. _column-initialization-spec:
-.. admonition:: column-initialization-spec
+.. _column_initialization-spec:
+.. admonition:: column_initialization-spec
 
    * `"file`" ``[string]`` HDF5 filename
    * `"z header`" ``[string]`` name of the z-coordinate data: `z` above.  Depth

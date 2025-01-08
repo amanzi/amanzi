@@ -23,8 +23,8 @@ even machine roundoff can eventually alter number of iterations enough to alter
 the timestep history, resulting in solutions which are enough different to
 cause doubt over their correctness.
 
-.. _timestep-controller-from-file-spec:
-.. admonition:: timestep-controller-from-file-spec
+.. _timestep_controller_from_file-spec:
+.. admonition:: timestep_controller_from_file-spec
 
     * `"file name`" ``[string]`` Path to hdf5 file containing timestep information.
     * `"timestep header`" ``[string]`` Name of the dataset containing the history of timestep sizes.

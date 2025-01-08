@@ -18,8 +18,8 @@ the action of the Jacobian.  They are documented in Knoll & Keyes 2004 paper.
 
 ..todo:: Document these
 
-.. _jf-matrix-spec:
-.. admonition:: jf-matrix-spec
+.. _jf_matrix-spec:
+.. admonition:: jf_matrix-spec
 
     * `"typical solution value`" ``[double]`` **100** Used in relative action
       approximations. OPTION NOT IMPLEMENTED

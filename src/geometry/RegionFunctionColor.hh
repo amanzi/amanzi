@@ -22,8 +22,8 @@ cells sets are then built from all cells with the specified color *Value*.
 In order to avoid, gaps and overlaps in specifying materials, it is strongly
 recommended that regions be defined using a single color function file.
 
-.. _region-color-function-spec:
-.. admonition:: region-color-function-spec
+.. _region_color_function-spec:
+.. admonition:: region_color_function-spec
 
     * `"file`" ``[string]`` File name containing color function.
     * `"value`" ``[int]`` Color that defines the set in the tabulated function file.

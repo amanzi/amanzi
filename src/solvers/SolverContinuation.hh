@@ -20,8 +20,8 @@ value.
 Few if any PKs support this method currently -- it requires the PK to provide more
 interface about how to update the continuation parameter.
 
-.. _solver-continuation-spec:
-.. admonition:: solver-continuation-spec
+.. _solver_continuation-spec:
+.. admonition:: solver_continuation-spec
 
     * `"nonlinear tolerance`" ``[double]`` **1.e-6** defines the required error
       tolerance. The error is calculated by a PK.

@@ -33,7 +33,7 @@ all domains/meshes.
       necessary.
 
     INCLUDES:
-    - ``[io-event-spec]`` An IOEvent_ spec
+    - ``[io_event-spec]`` An IOEvent_ spec
 
 Example:
 

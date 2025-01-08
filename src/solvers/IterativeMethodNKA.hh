@@ -14,8 +14,8 @@
 This is effectively equivalent to GMRES with a rolling restart, where vectors
 fall off the end of the space.
 
-.. _iterative-method-nka-spec:
-.. admonition:: iterative-method-nka-spec
+.. _iterative_method_nka-spec:
+.. admonition:: iterative_method_nka-spec
 
     * `"error tolerance`" ``[double]`` **1.e-6** Tolerance on which to declare success.
 

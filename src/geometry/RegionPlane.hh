@@ -13,8 +13,8 @@
 
 List *region: plane* defines a plane using a point lying on the plane and normal to the plane.
 
-.. _region-plane-spec:
-.. admonition:: region-plane-spec
+.. _region_plane-spec:
+.. admonition:: region_plane-spec
 
     * `"normal`" ``[Array(double)]`` Normal to the plane.
     * `"point`" ``[Array(double)]`` Point in space.

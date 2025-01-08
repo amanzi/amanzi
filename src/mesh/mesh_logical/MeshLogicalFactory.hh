@@ -28,13 +28,13 @@ by the equation:
 
 V_c = sum_{each face in c} length of cell-to-face connector * face area.
 
-``[mesh-logical-spec]``
+``[mesh_logical-spec]``
 
 * `"cell volumes provided`" ``[bool]`` **false** If false, calculate via the
     above formula.  Otherwise each segment must provide the `"cell volume`" or
     `"cell volumes`" parameter described below.
 
-* `"segments`" ``[mesh-logical-segment-spec-list]``  List of segment specs below:
+* `"segments`" ``[mesh_logical_segment-spec-list]``  List of segment specs below:
 
 Each segment consists of a collection of cells, and it is assumed that
 face-to-cell connectors within the segment are half of the cell length.  For
@@ -44,7 +44,7 @@ cell-to-face connectors must be specified:
 Cell volumes are either determined by the above formula if the `"cell volumes
 provided`" option is specified, or through the following option:
 
-``[mesh-logical-segment-spec]``
+``[mesh_logical_segment-spec]``
 
 ONE OF:
 * `"cell volume [m^3]`" ``[double]`` uniform volume of all cells

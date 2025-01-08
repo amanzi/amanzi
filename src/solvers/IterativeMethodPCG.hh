@@ -11,8 +11,8 @@
 //! Preconditioned conjugate gradient method for a linear solver.
 /*!
 
-.. _iterative-method-pcg-spec:
-.. admonition:: iterative-method-pcg-spec
+.. _iterative_method_pcg-spec:
+.. admonition:: iterative_method_pcg-spec
 
     * `"error tolerance`" ``[double]`` **1.e-6** Tolerance on which to declare success.
 

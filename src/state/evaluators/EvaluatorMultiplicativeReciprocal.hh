@@ -21,8 +21,8 @@
 
 /*!
 
-.. _multiplicative-reciprocal-evaluator-spec:
-.. admonition:: multiplicative-reciprocal-evaluator-spec
+.. _multiplicative_reciprocal_evaluator-spec:
+.. admonition:: multiplicative_reciprocal_evaluator-spec
    * `"coefficient`" ``[double]`` **1** A constant prefix to the product.
    * `"enforce positivity`" ``[bool]`` **false** If true, max the result with 0.
 

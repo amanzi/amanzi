@@ -15,36 +15,36 @@
 
 /*!
 
-.. _constants-scalar-spec:
-.. admonition:: constants-scalar-spec
+.. _constants_scalar-spec:
+.. admonition:: constants_scalar-spec
 
    * `"value`" ``[double]`` Value of a scalar constant
 
-.. _constants-dense-vector-spec:
-.. admonition:: constants-dense-vector-spec
+.. _constants_dense_vector-spec:
+.. admonition:: constants_dense_vector-spec
 
    * `"value`" ``[Array(double)]`` Value of a dense, local vector.
 
-.. _constants-point-spec:
-.. admonition:: constants-point-spec
+.. _constants_point-spec:
+.. admonition:: constants_point-spec
 
    * `"value`" ``[Array(double)]`` Array containing the values of the point.
 
 
-.. _constants-composite-vector-spec:
-.. admonition:: constants-composite-vector-spec
+.. _constants_composite_vector-spec:
+.. admonition:: constants_composite_vector-spec
 
    * `"constant`" ``[double]`` **optional** Constant value.
    * `"value`" ``[double]`` **optional** Constant value, same as `"constant`" above.
-   * `"function`" ``[composite-vector-function-spec-list]`` **optional**
+   * `"function`" ``[composite_vector_function-spec-list]`` **optional**
      Initialize from a function, see CompositeVectorFunction_
    * `"restart file`" ``[string]`` **optional** Path to a checkpoint file from
      which to read the values.
    * `"cells from file`" ``[string]`` **optional** Same as `"restart file`",
      but only reads the cell component.
-   * `"exodus file initialization`" ``[exodus-file-initialization-spec]``
+   * `"exodus file initialization`" ``[exodus_file_initialization-spec]``
      **optional** See `Exodus File Initialization`_.
-   * `"initialize from 1D column`" ``[column-file-initialization-spec]``
+   * `"initialize from 1D column`" ``[column_file_initialization-spec]``
      **optional** See `Column File Initialization`_.
 
 */

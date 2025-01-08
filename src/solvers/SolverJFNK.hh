@@ -22,14 +22,14 @@ a new ApplyPreconditioner() which uses the Krylov method with the action of the
 forward operator to (hopefully) improve, relative to the supplied approximate
 inverse, the estimate of the inverse.
 
-.. _solver-jfnk-spec:
-.. admonition:: solver-jfnk-spec
+.. _solver_jfnk-spec:
+.. admonition:: solver_jfnk-spec
 
     * `"nonlinear solver`" ``[solver-typed-spec]`` The outer nonlinear solver to use.
 
     * `"inverse`" ``[inverse-typed-spec]`` The Krylov method to use.
 
-    * `"JF matrix parameters`" ``[jf-matrix-spec]`` See jf-matrix-spec_
+    * `"JF matrix parameters`" ``[jf_matrix-spec]`` See jf_matrix-spec_
 
 .. code-block:: xml
 
