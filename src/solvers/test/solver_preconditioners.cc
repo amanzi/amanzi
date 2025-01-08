@@ -116,11 +116,16 @@ SUITE(SOLVERS)
     Epetra_Vector u(map), v(map);
     for (int i = 0; i < N; i++) u[i] = 1.0 / (i + 2.0);
 
-    for (const auto& prec_name : {
-           "identity", "diagonal", "block ilu", "boomer amg", "ILU", "ml", "MGR"
+    for (const auto& prec_name : { "identity",
+                                   "diagonal",
+                                   "block ilu",
+                                   "boomer amg",
+                                   "ILU",
+                                   "ml",
+                                   "MGR"
 #if defined(HAVE_MUELU_EPETRA)
-             ,
-             "muelu"
+                                   ,
+                                   "muelu"
 #endif
          }) {
       std::cout << "Preconditioner: " << prec_name << std::endl

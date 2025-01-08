@@ -102,7 +102,7 @@ class SolverNewton : public Solver<Vector, VectorSpace> {
 
   // mutators
   void set_tolerance(double tol) { tol_ = tol; }
-  void set_pc_lag(int pc_lag){}; // Newton does not need it
+  void set_pc_lag(int pc_lag) {}; // Newton does not need it
 
   // access
   double tolerance() { return tol_; }
@@ -292,8 +292,8 @@ SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u)
 
     if ((num_itrs_ > 0) && (du_norm > max_du_growth_factor_ * previous_du_norm)) {
       if (vo_->os_OK(Teuchos::VERB_HIGH))
-        *vo_->os() << "Solver threatens to overflow: "
-                   << "  ||du||=" << du_norm << ", ||du_prev||=" << previous_du_norm << std::endl;
+        *vo_->os() << "Solver threatens to overflow: " << "  ||du||=" << du_norm
+                   << ", ||du_prev||=" << previous_du_norm << std::endl;
 
       // If it fails again, give up.
       if ((num_itrs_ > 0) && (du_norm > max_du_growth_factor_ * previous_du_norm)) {

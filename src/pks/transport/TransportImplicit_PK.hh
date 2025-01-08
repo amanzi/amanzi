@@ -121,7 +121,7 @@ class TransportImplicit_PK : public Transport_PK, public PK_BDF {
 
   // -- calling this indicates that the time integration
   //    scheme is changing the value of the solution in state.
-  virtual void ChangedSolution() override{};
+  virtual void ChangedSolution() override {};
 
   void UpdateLinearSystem(double t_old, double t_new, int component);
   void UpdateBoundaryData(double t_old, double t_new, int component);

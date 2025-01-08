@@ -171,7 +171,7 @@ class Multiphase_PK : public PK_PhysicalBDF {
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit) override;
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
-  virtual void CalculateDiagnostics(const Tag& tag) override{};
+  virtual void CalculateDiagnostics(const Tag& tag) override {};
 
   virtual std::string name() override { return "multiphase"; }
 

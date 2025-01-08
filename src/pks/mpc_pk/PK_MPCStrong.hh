@@ -180,8 +180,8 @@ PK_MPCStrong<PK_Base>::Initialize()
     // -- instantiate timestepper
     Teuchos::ParameterList& ts_plist = my_list_->sublist("time integrator").sublist("BDF1");
     ts_plist.set("initial time", S_->get_time());
-    time_stepper_ =
-      Teuchos::rcp(new Amanzi::BDF1_TI<TreeVector, TreeVectorSpace>("BDF1", ts_plist, *this, solution_->get_map(), S_));
+    time_stepper_ = Teuchos::rcp(new Amanzi::BDF1_TI<TreeVector, TreeVectorSpace>(
+      "BDF1", ts_plist, *this, solution_->get_map(), S_));
 
     // -- initialize time derivative
     Teuchos::RCP<TreeVector> solution_dot = Teuchos::rcp(new TreeVector(*solution_));

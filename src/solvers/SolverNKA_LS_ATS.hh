@@ -332,10 +332,8 @@ SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector>& u
           residual_ = error;
           res->Norm2(&l2_error);
           if (vo_->os_OK(Teuchos::VERB_LOW)) {
-            *vo_->os() << num_itrs_ << ": NKA "
-                       << ": error(res) = " << error << std::endl
-                       << num_itrs_ << ": NKA "
-                       << ": L2 error(res) = " << l2_error << std::endl;
+            *vo_->os() << num_itrs_ << ": NKA " << ": error(res) = " << error << std::endl
+                       << num_itrs_ << ": NKA " << ": L2 error(res) = " << l2_error << std::endl;
           }
 
           // Check if we have improved
@@ -385,10 +383,9 @@ SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector>& u
                 residual_ = error;
                 res->Norm2(&l2_error);
                 if (vo_->os_OK(Teuchos::VERB_LOW)) {
-                  *vo_->os() << num_itrs_ << ": PIC "
-                             << ": error(res) = " << error << std::endl
-                             << num_itrs_ << ": PIC "
-                             << ": L2 error(res) = " << l2_error << std::endl;
+                  *vo_->os() << num_itrs_ << ": PIC " << ": error(res) = " << error << std::endl
+                             << num_itrs_ << ": PIC " << ": L2 error(res) = " << l2_error
+                             << std::endl;
                 }
               }
               good_step = true;

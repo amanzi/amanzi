@@ -52,8 +52,8 @@ find_face(const Point& xf1, const Point& ray, const Mesh& mesh2)
   AmanziMesh::cEntity_ID_View block;
   AmanziMesh::cDouble_View vofs;
 
-  Kokkos::tie(block, vofs) = mesh2.getSetEntitiesAndVolumeFractions(
-     rgn, Entity_kind::FACE, Parallel_kind::OWNED);
+  Kokkos::tie(block, vofs) =
+    mesh2.getSetEntitiesAndVolumeFractions(rgn, Entity_kind::FACE, Parallel_kind::OWNED);
   int nblock = block.size();
 
   // check of ray hits interior of a face
@@ -108,11 +108,11 @@ interpolate_fluxes(const Mesh& mesh1, const Mesh& mesh2, const Epetra_MultiVecto
   AmanziMesh::cEntity_ID_View block1, block2;
   AmanziMesh::cDouble_View vofs1, vofs2;
 
-  Kokkos::tie(block1, vofs1) = mesh1.getSetEntitiesAndVolumeFractions(
-     rgn1, Entity_kind::FACE, Parallel_kind::OWNED);
+  Kokkos::tie(block1, vofs1) =
+    mesh1.getSetEntitiesAndVolumeFractions(rgn1, Entity_kind::FACE, Parallel_kind::OWNED);
 
-  Kokkos::tie(block2, vofs2) = mesh2.getSetEntitiesAndVolumeFractions(
-     rgn2, Entity_kind::FACE, Parallel_kind::OWNED);
+  Kokkos::tie(block2, vofs2) =
+    mesh2.getSetEntitiesAndVolumeFractions(rgn2, Entity_kind::FACE, Parallel_kind::OWNED);
 
   int nblock1 = block1.size();
   int nblock2 = block2.size();
@@ -146,15 +146,16 @@ RunTest(int n1, int n2, double gap)
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0)
-    std::cout << "\nTest: Diffusion Schwarz solver on two meshes" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: Diffusion Schwarz solver on two meshes" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion_schwarz.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   std::vector<double> middle2({ 1.0 + gap, 0.0 });
-  plist->sublist("regions").sublist("MIDDLE2").sublist("region: plane")
+  plist->sublist("regions")
+    .sublist("MIDDLE2")
+    .sublist("region: plane")
     .set<Teuchos::Array<double>>("point", middle2);
 
   // create an SIMPLE mesh framework
@@ -165,8 +166,8 @@ RunTest(int n1, int n2, double gap)
   meshfactory.set_preference(Preference({ Framework::MSTK }));
 
   double mid1(1.0), mid2(1.0 + gap);
-  RCP<Mesh> mesh1 = meshfactory.create(0.0,  0.0, mid1, 1.0, n1, n1);
-  RCP<Mesh> mesh2 = meshfactory.create(mid2, 0.0, 2.0,  1.0, n2, n2);
+  RCP<Mesh> mesh1 = meshfactory.create(0.0, 0.0, mid1, 1.0, n1, n1);
+  RCP<Mesh> mesh2 = meshfactory.create(mid2, 0.0, 2.0, 1.0, n2, n2);
 
   int nnodes1_owned = mesh1->getNumEntities(Entity_kind::NODE, Parallel_kind::OWNED);
   int ncells1_owned = mesh1->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
@@ -182,12 +183,12 @@ RunTest(int n1, int n2, double gap)
   AmanziMesh::cDouble_View vofs;
   std::set<int> side1, side2;
 
-  Kokkos::tie(block, vofs) = mesh1->getSetEntitiesAndVolumeFractions(
-     "MIDDLE1", Entity_kind::FACE, Parallel_kind::OWNED);
+  Kokkos::tie(block, vofs) =
+    mesh1->getSetEntitiesAndVolumeFractions("MIDDLE1", Entity_kind::FACE, Parallel_kind::OWNED);
   for (int n = 0; n < block.size(); ++n) side1.insert(block[n]);
 
-  Kokkos::tie(block, vofs) = mesh2->getSetEntitiesAndVolumeFractions(
-     "MIDDLE2", Entity_kind::FACE, Parallel_kind::OWNED);
+  Kokkos::tie(block, vofs) =
+    mesh2->getSetEntitiesAndVolumeFractions("MIDDLE2", Entity_kind::FACE, Parallel_kind::OWNED);
   for (int n = 0; n < block.size(); ++n) side2.insert(block[n]);
 
   // -- modify meshes
@@ -217,18 +218,20 @@ RunTest(int n1, int n2, double gap)
 
   // create solutions
   auto cvs1 = Teuchos::rcp(new CompositeVectorSpace());
-  cvs1->SetMesh(mesh1)->SetGhosted(true)
-      ->AddComponent("cell", Entity_kind::CELL, 1)
-      ->AddComponent("face", Entity_kind::FACE, 1);
+  cvs1->SetMesh(mesh1)
+    ->SetGhosted(true)
+    ->AddComponent("cell", Entity_kind::CELL, 1)
+    ->AddComponent("face", Entity_kind::FACE, 1);
 
   auto sol1 = Teuchos::rcp(new CompositeVector(*cvs1));
   auto flux1 = Teuchos::rcp(new CompositeVector(*cvs1));
   sol1->PutScalar(0.0);
 
   auto cvs2 = Teuchos::rcp(new CompositeVectorSpace());
-  cvs2->SetMesh(mesh2)->SetGhosted(true)
-      ->AddComponent("cell", Entity_kind::CELL, 1)
-      ->AddComponent("face", Entity_kind::FACE, 1);
+  cvs2->SetMesh(mesh2)
+    ->SetGhosted(true)
+    ->AddComponent("cell", Entity_kind::CELL, 1)
+    ->AddComponent("face", Entity_kind::FACE, 1);
 
   auto sol2 = Teuchos::rcp(new CompositeVector(*cvs2));
   sol2->PutScalar(0.0);
@@ -266,7 +269,7 @@ RunTest(int n1, int n2, double gap)
       if (fabs(xf[0]) < 1e-6) {
         bc1_model[f] = OPERATOR_BC_DIRICHLET;
         bc1_value[f] = ana1.pressure_exact(xf, 0.0);
-      // } else if (fabs(xf[0] - mid1) < 1e-6) {
+        // } else if (fabs(xf[0] - mid1) < 1e-6) {
       } else if (side1.find(f) != side1.end()) {
         int f2 = find_face(xf, normal, *mesh2);
         int c2 = getFaceOnBoundaryInternalCell(*mesh2, f2);

@@ -115,7 +115,7 @@ class PDE_Abstract : public PDE_HelperDiscretization {
 
   // optional calculation of flux from potential p
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
-                          const Teuchos::Ptr<CompositeVector>& u) override{};
+                          const Teuchos::Ptr<CompositeVector>& u) override {};
 
  protected:
   // available models for operator coefficient

@@ -62,14 +62,10 @@ class TimestepController {
   // Note, iterations < 0 implies that the previous step failed to converge,
   // while valid implies that both the step converged and the physics deemed
   // the step valid.
-  virtual double getTimestep(double dt_prev,
-                             int iterations,
-                             bool valid) = 0;
+  virtual double getTimestep(double dt_prev, int iterations, bool valid) = 0;
 
   // default method for initial timestep size
-  virtual double getInitialTimestep() {
-    return getTimestep(-1.0, 0, true);
-  }
+  virtual double getInitialTimestep() { return getTimestep(-1.0, 0, true); }
 };
 
 } // namespace Amanzi

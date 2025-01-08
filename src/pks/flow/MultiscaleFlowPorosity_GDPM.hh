@@ -111,7 +111,7 @@ class MultiscaleFlowPorosity_GDPM : public MultiscaleFlowPorosity,
   virtual void UpdatePreconditioner(const Teuchos::RCP<const WhetStone::DenseVector>& u) override;
 
   // -- other required functions
-  virtual void ChangedSolution() override{};
+  virtual void ChangedSolution() override {};
 
   // --  modifies the correction
   virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult

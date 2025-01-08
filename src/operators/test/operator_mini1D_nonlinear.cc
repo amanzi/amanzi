@@ -108,7 +108,7 @@ class NonlinearProblem : public AmanziSolvers::SolverFnBase<DenseVector> {
       op_->AddAccumulationTerm(s1);
     }
   }
-  void ChangedSolution(){};
+  void ChangedSolution() {};
 
   void SetICs(std::shared_ptr<DenseVector>& rhs, Teuchos::RCP<DenseVector>& u0)
   {

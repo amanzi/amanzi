@@ -43,7 +43,7 @@ class EnergyTwoPhase_PK : public Energy_PK {
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) final;
-  virtual void CalculateDiagnostics(const Tag& tag) final{};
+  virtual void CalculateDiagnostics(const Tag& tag) final {};
 
   double get_dt() final { return dt_; }
   void set_dt(double dt) final { dt_ = dt; }

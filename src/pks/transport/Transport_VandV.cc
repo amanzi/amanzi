@@ -204,8 +204,7 @@ Transport_PK::VV_CheckGEDproperty(Epetra_MultiVector& tracer) const
       std::cout << "    min/max values = " << tr_min[i] << " " << tr_max[i] << std::endl;
 
       Errors::Message msg;
-      msg << "Concentration violates GED property."
-          << "\n";
+      msg << "Concentration violates GED property." << "\n";
       Exceptions::amanzi_throw(msg);
     }
   }
@@ -238,8 +237,7 @@ Transport_PK::VV_CheckTracerBounds(Epetra_MultiVector& tracer,
       std::cout << "      value (new) = " << value << std::endl;
 
       Errors::Message msg;
-      msg << "Tracer violates bounds."
-          << "\n";
+      msg << "Tracer violates bounds." << "\n";
       Exceptions::amanzi_throw(msg);
     }
   }

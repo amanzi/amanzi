@@ -100,7 +100,9 @@ ReaderHDF5::read(const std::string& lvarname, Teuchos::Array<int>& vec, int inde
 }
 
 void
-ReaderHDF5::read(const std::string& lvarname, Teuchos::SerialDenseMatrix<int, double>& mat, int index) const
+ReaderHDF5::read(const std::string& lvarname,
+                 Teuchos::SerialDenseMatrix<int, double>& mat,
+                 int index) const
 {
   std::string varname = lvarname;
   if (index >= 0) varname = varname + "/" + std::to_string(index);

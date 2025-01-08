@@ -170,8 +170,7 @@ ActivityModelPitzerHWM::EvaluateVector(
   // Check the number of species
   if (number_species_ != number_species) {
     std::ostringstream error_stream;
-    error_stream << "Error, different number of aqueous species"
-                 << "\n";
+    error_stream << "Error, different number of aqueous species" << "\n";
     Exceptions::amanzi_throw(Errors::Message(error_stream.str()));
   }
   double gcl(1.0);
@@ -183,8 +182,7 @@ ActivityModelPitzerHWM::EvaluateVector(
 
   if (I_ == 0.0 || Z_ == 0.0 || M_ == 0.0) {
     std::ostringstream error_stream;
-    error_stream << "Error, zero concentrations"
-                 << "\n";
+    error_stream << "Error, zero concentrations" << "\n";
     Exceptions::amanzi_throw(Errors::Message(error_stream.str()));
   }
   int isp(-1);
@@ -510,8 +508,7 @@ ActivityModelPitzerHWM::ComputeJFunctions()
 
   } else {
     std::ostringstream error_stream;
-    error_stream << "Name for the J's functions approach not recognized"
-                 << "\n";
+    error_stream << "Name for the J's functions approach not recognized" << "\n";
     Exceptions::amanzi_throw(Errors::Message(error_stream.str()));
   }
 }

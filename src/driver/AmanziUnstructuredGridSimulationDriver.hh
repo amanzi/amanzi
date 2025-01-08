@@ -39,8 +39,10 @@ struct AmanziUnstructuredGridSimulationDriver
   virtual Amanzi::Simulator::ReturnType
   Run(const Amanzi::Comm_ptr_type& comm, Amanzi::ObservationData& observations_data);
 
-  virtual void
-  Summarize() { if (getVerbLevel() > Teuchos::VERB_LOW) Teuchos::TimeMonitor::summarize(); }
+  virtual void Summarize()
+  {
+    if (getVerbLevel() > Teuchos::VERB_LOW) Teuchos::TimeMonitor::summarize();
+  }
 
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> InitGeometricModel();
   int InitMesh(Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel>& gm,

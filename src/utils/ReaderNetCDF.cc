@@ -30,7 +30,7 @@ ReaderNetCDF::~ReaderNetCDF()
 }
 
 
-std::pair<int,int>
+std::pair<int, int>
 ReaderNetCDF::findVarOrGroup_(std::string lvarname) const
 {
   int ncid = file_;

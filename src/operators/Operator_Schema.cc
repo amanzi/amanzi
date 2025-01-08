@@ -242,9 +242,7 @@ Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
 
         for (int k = 0; k < num; ++k) {
           const std::vector<int>& col_inds = map.GhostIndices(my_block_col, name, k);
-          for (int m = 0; m < ndofs; ++m) {
-            lid_c.push_back(col_inds[first + m]);
-          }
+          for (int m = 0; m < ndofs; ++m) { lid_c.push_back(col_inds[first + m]); }
         }
       }
     }
@@ -267,9 +265,7 @@ Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
 
         for (int k = 0; k < num; ++k) {
           const std::vector<int>& row_inds = map.GhostIndices(my_block_row, name, k);
-          for (int m = 0; m < ndofs; ++m) {
-            lid_r.push_back(row_inds[first + m]);
-          }
+          for (int m = 0; m < ndofs; ++m) { lid_r.push_back(row_inds[first + m]); }
         }
       }
     }
@@ -477,9 +473,7 @@ Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
 
         for (int k = 0; k < num; ++k) {
           const std::vector<int>& col_inds = map.GhostIndices(my_block_col, name, k);
-          for (int m = 0; m < ndofs; ++m) {
-            lid_c.push_back(col_inds[first + m]);
-          }
+          for (int m = 0; m < ndofs; ++m) { lid_c.push_back(col_inds[first + m]); }
         }
       }
     }
@@ -502,9 +496,7 @@ Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
 
         for (int k = 0; k < num; ++k) {
           const std::vector<int>& row_inds = map.GhostIndices(my_block_row, name, k);
-          for (int m = 0; m < ndofs; ++m) {
-            lid_r.push_back(row_inds[first + m]);
-          }
+          for (int m = 0; m < ndofs; ++m) { lid_r.push_back(row_inds[first + m]); }
         }
       }
     }

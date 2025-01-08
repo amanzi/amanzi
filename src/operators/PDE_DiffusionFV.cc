@@ -368,8 +368,8 @@ PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
 
   u.ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
-  double dkdp[2] = {0., 0.};
-  double pres[2] = {0., 0.};
+  double dkdp[2] = { 0., 0. };
+  double pres[2] = { 0., 0. };
 
   dkdp_->ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& dKdP_cell = *dkdp_->ViewComponent("cell", true);

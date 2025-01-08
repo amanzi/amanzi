@@ -69,7 +69,6 @@ struct BDF1_State {
 
   // debug tool
   int report_failure;
-
 };
 
 
@@ -78,9 +77,9 @@ struct BDF1_State {
 ****************************************************************** */
 template <class Vector, class VectorSpace>
 BDF1_State<Vector, VectorSpace>::BDF1_State(const std::string& name,
-        Teuchos::ParameterList& plist,
-        const Teuchos::RCP<const VectorSpace>& space,
-        const Teuchos::RCP<State>& S)
+                                            Teuchos::ParameterList& plist,
+                                            const Teuchos::RCP<const VectorSpace>& space,
+                                            const Teuchos::RCP<State>& S)
   : freeze_pc(false),
     maxpclag(0),
     extrapolate_guess(true),
@@ -105,7 +104,7 @@ BDF1_State<Vector, VectorSpace>::BDF1_State(const std::string& name,
 
   // solution history object
   double t0 = plist.get<double>("initial time", 0.0);
-  uhist = Teuchos::rcp(new SolutionHistory<Vector,VectorSpace>(name, uhist_size, t0, space, S));
+  uhist = Teuchos::rcp(new SolutionHistory<Vector, VectorSpace>(name, uhist_size, t0, space, S));
 
   // restart fine control
   tol_multiplier = plist.get<double>("restart tolerance relaxation factor", 1.0);

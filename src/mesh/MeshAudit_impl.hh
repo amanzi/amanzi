@@ -1274,8 +1274,7 @@ MeshAudit_Maps<Mesh_type>::check_face_to_nodes_ghost_data() const
         bad_faces.push_back(j);
 
         os_ << "P " << this->comm_->MyPID() << ": ghost face " << j << " (GID "
-            << face_map_use.GID(j) << "),"
-            << " has different nodes than its master " << std::endl;
+            << face_map_use.GID(j) << ")," << " has different nodes than its master " << std::endl;
         os_ << "ghost face nodes (GIDs): ";
         for (int k = 0; k < lfnode.size(); ++k) os_ << lfnode[k] << " ";
         os_ << std::endl;

@@ -107,7 +107,8 @@ TransportMatrixFractureImplicit_PK::Initialize()
   set_dt(1e+98);
 
   auto ts_list = tp_list_->sublist("time integrator").sublist("BDF1");
-  ts_control_ = createTimestepController<TreeVector>("BDF1", ts_list, S_, Teuchos::null, Teuchos::null);
+  ts_control_ =
+    createTimestepController<TreeVector>("BDF1", ts_list, S_, Teuchos::null, Teuchos::null);
 
   // diagonal blocks in tree operator are the Transport Implicit PKs
   pk_matrix_ = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[0]);
@@ -245,7 +246,8 @@ TransportMatrixFractureImplicit_PK::Initialize()
   // time integrators
   if (nspace_m_ == 2 && nspace_f_ == 2) {
     Teuchos::ParameterList& bdf1_list = ti_list.sublist("BDF1");
-    bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1", bdf1_list, *this, soln_->get_map(), S_));
+    bdf1_dae_ = Teuchos::rcp(
+      new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1", bdf1_list, *this, soln_->get_map(), S_));
   }
 
   // Test SPD properties of the matrix.

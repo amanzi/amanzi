@@ -466,7 +466,8 @@ InputConverterU::TranslateRegions_()
         std::vector<double> low = GetAttributeVectorD_(reg_elem, "corner_coordinates", dim_, "m");
         std::vector<double> high =
           GetAttributeVectorD_(reg_elem, "opposite_corner_coordinates", dim_, "m");
-        std::vector<double> normals = GetAttributeVectorD_(reg_elem, "normals", dim_ * dim_, "", false);
+        std::vector<double> normals =
+          GetAttributeVectorD_(reg_elem, "normals", dim_ * dim_, "", false);
 
         out_list.sublist(reg_name)
           .sublist("region: box volume fractions")
@@ -533,7 +534,8 @@ void
 InputConverterU::CreateSubmesh_(Teuchos::ParameterList& mesh_list, bool all_faces)
 {
   Teuchos::Array<std::string> aux(1, "FRACTURE_NETWORK_INTERNAL");
-  mesh_list.sublist("unstructured").sublist("submesh")
+  mesh_list.sublist("unstructured")
+    .sublist("submesh")
     .set<Teuchos::Array<std::string>>("regions", aux)
     .set<std::string>("extraction method", "manifold mesh")
     .set<std::string>("domain name", "fracture")

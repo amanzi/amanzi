@@ -176,8 +176,8 @@ InputConverter::ParseVersion_()
           << AMANZI_SPEC_VERSION_MICRO;
 
       Errors::Message msg;
-      msg << "The input version " << version << " is not supported. "
-          << "Supported versions is " << ss1.str() << ".\n";
+      msg << "The input version " << version << " is not supported. " << "Supported versions is "
+          << ss1.str() << ".\n";
       Exceptions::amanzi_throw(msg);
     }
   } else {
@@ -915,8 +915,8 @@ InputConverter::GetAttributeValueS_(DOMNode* node, const char* attr_name, const 
   MemoryManager mm;
   char* tagname = mm.transcode(element->getNodeName());
   Errors::Message msg;
-  msg << "Validation of attribute \"" << attr_name << "\""
-      << " for element \"" << tagname << "\" failed.\n";
+  msg << "Validation of attribute \"" << attr_name << "\"" << " for element \"" << tagname
+      << "\" failed.\n";
   msg << "Available options: \"" << options << "\".\n";
   msg << "Please correct and try again.\n";
   Exceptions::amanzi_throw(msg);

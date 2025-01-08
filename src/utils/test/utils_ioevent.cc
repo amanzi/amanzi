@@ -41,9 +41,7 @@ SUITE(IOEVENT)
     int cycles_[31] = { 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     int cycles[31];
-    for (int ic = 0; ic <= 30; ic++) {
-      cycles[ic] = V.DumpRequested(ic);
-    }
+    for (int ic = 0; ic <= 30; ic++) { cycles[ic] = V.DumpRequested(ic); }
     CHECK_ARRAY_EQUAL(cycles_, cycles, 31);
   }
 

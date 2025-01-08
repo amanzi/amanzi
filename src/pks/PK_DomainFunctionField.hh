@@ -132,7 +132,8 @@ PK_DomainFunctionField<FunctionBase>::Init(const Teuchos::ParameterList& plist,
       tags_.push_back(tag);
       // component_key_ = flist.get<std::string>("component", "cell");
     }
-    num_cells_ = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+    num_cells_ =
+      mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
   } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "error in source sublist : " << msg.what();
@@ -165,8 +166,8 @@ template <class FunctionBase>
 void
 PK_DomainFunctionField<FunctionBase>::Compute(double t0, double t1)
 {
-  int num_fields = field_keys_.size();      // number of field evaluators
-  std::vector<double> val_vec(num_fields);  // vector values
+  int num_fields = field_keys_.size();     // number of field evaluators
+  std::vector<double> val_vec(num_fields); // vector values
   std::vector<std::vector<double>> field_all(num_fields, std::vector<double>(num_cells_));
 
   // For multiple field evaluators (fe), loop through each fe to retrieve the values for each cell.
@@ -180,12 +181,11 @@ PK_DomainFunctionField<FunctionBase>::Compute(double t0, double t1)
       S_->GetEvaluator(field_key_, tag).Update(*S_, field_key_);
     }
     // reference to coressponding fe
-    const Epetra_MultiVector& field_vec = *S_->Get<CompositeVector>(field_key_, tag).ViewComponent("cell", false);
+    const Epetra_MultiVector& field_vec =
+      *S_->Get<CompositeVector>(field_key_, tag).ViewComponent("cell", false);
 
     // loop through every cell to update the intermediate variables
-    for (auto c : *entity_ids_) {
-      field_all[ife][c] = field_vec[0][c];
-    }
+    for (auto c : *entity_ids_) { field_all[ife][c] = field_vec[0][c]; }
   }
 
   // Update source values (value_)

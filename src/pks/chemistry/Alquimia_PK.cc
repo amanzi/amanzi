@@ -536,8 +536,7 @@ Alquimia_PK::XMLParameters()
   dt_increase_factor_ = plist_->get<double>("timestep increase factor", 1.2);
   if (dt_increase_factor_ <= 1.0) {
     msg << "Alquimia_PK::XMLParameters(): \n";
-    msg << "  Invalid \"timestep increase factor\": " << dt_increase_factor_
-        << " (must be > 1).\n";
+    msg << "  Invalid \"timestep increase factor\": " << dt_increase_factor_ << " (must be > 1).\n";
     Exceptions::amanzi_throw(msg);
   }
 }
@@ -997,8 +996,7 @@ Alquimia_PK::ComputeNextTimeStep()
       if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
         Teuchos::OSTab tab = vo_->getOSTab();
         *vo_->os() << "Number of successful steps exceeds threshold (" << dt_increase_threshold_
-                   << ") for timestep increase, growing dT by " << dt_increase_factor_
-                   << std::endl;
+                   << ") for timestep increase, growing dT by " << dt_increase_factor_ << std::endl;
       }
       dt_next_ = dt_prev_ * dt_increase_factor_;
       num_successful_steps_ = 0;

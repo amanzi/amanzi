@@ -105,8 +105,8 @@ InputAnalysis::RegionAnalysis()
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
         std::string name(regions[i]);
         name.resize(std::min(40, (int)name.size()));
-        *vo_->os() << "src: \"" << name << "\" has " << nblock << " cells"
-                   << " of " << volume << " [m^3]";
+        *vo_->os() << "src: \"" << name << "\" has " << nblock << " cells" << " of " << volume
+                   << " [m^3]";
         if (nvofs > 0) *vo_->os() << ", vol.fractions: " << vofs_min << "/" << vofs_max;
         *vo_->os() << std::endl;
       }
@@ -165,8 +165,8 @@ InputAnalysis::RegionAnalysis()
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
         std::string name(regions[i]);
         name.resize(std::min(40, (int)name.size()));
-        *vo_->os() << "bc: \"" << name << "\" has " << nblock << " faces"
-                   << " of " << area << " [m^2]";
+        *vo_->os() << "bc: \"" << name << "\" has " << nblock << " faces" << " of " << area
+                   << " [m^2]";
         if (nvofs > 0) *vo_->os() << ", vol.fractions: " << vofs_min << "/" << vofs_max;
         *vo_->os() << std::endl;
       }
@@ -311,9 +311,7 @@ InputAnalysis::OutputBCs()
             std::string filename = ss.str() + ".dat";
             std::ofstream ofile(filename.c_str());
 
-            ofile << "# "
-                  << "time "
-                  << "flux" << std::endl;
+            ofile << "# " << "time " << "flux" << std::endl;
             for (int i = 0; i < np; i++) {
               ofile << times_plot[i] << " " << values_plot[i] << std::endl;
             }
@@ -367,8 +365,7 @@ InputAnalysis::OutputBCs()
             std::string filename = ss.str() + ".dat";
             std::ofstream ofile(filename.c_str());
 
-            ofile << "# time "
-                  << "pressure" << std::endl;
+            ofile << "# time " << "pressure" << std::endl;
             for (int i = 0; i < np; i++) {
               ofile << times_plot[i] << " " << values_plot[i] << std::endl;
             }
@@ -422,8 +419,7 @@ InputAnalysis::OutputBCs()
             std::string filename = ss.str() + ".dat";
             std::ofstream ofile(filename.c_str());
 
-            ofile << "# time "
-                  << "flux" << std::endl;
+            ofile << "# time " << "flux" << std::endl;
             for (int i = 0; i < np; i++) {
               ofile << times_plot[i] << " " << values_plot[i] << std::endl;
             }
@@ -477,8 +473,7 @@ InputAnalysis::OutputBCs()
             std::string filename = ss.str() + ".dat";
             std::ofstream ofile(filename.c_str());
 
-            ofile << "# time "
-                  << "head" << std::endl;
+            ofile << "# time " << "head" << std::endl;
             for (int i = 0; i < np; i++) {
               ofile << times_plot[i] << " " << values_plot[i] << std::endl;
             }

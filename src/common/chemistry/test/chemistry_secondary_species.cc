@@ -96,11 +96,11 @@ SUITE(GeochemistryTestsSecondarySpecies)
     {}
 
     virtual void
-    Update(const std::vector<Species>& primary_species, const Species& water_species){};
-    virtual void AddContributionToTotal(std::vector<double>* total){};
+    Update(const std::vector<Species>& primary_species, const Species& water_species) {};
+    virtual void AddContributionToTotal(std::vector<double>* total) {};
 
     void AddContributionToDTotal(const std::vector<ac::Species>& primary_species,
-                                 ac::MatrixBlock* dtotal){};
+                                 ac::MatrixBlock* dtotal) {};
   };
 
   //

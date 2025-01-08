@@ -129,7 +129,7 @@ SUITE(GeochemistryTestsKineticRate)
     {
       std::cout << this->name() << std::endl;
     }; // end Display()
-  };   // end MockKineticRate
+  }; // end MockKineticRate
 
   // make sure we can create an object with the constructor
   // can we set the identifier?

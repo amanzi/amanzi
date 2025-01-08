@@ -91,7 +91,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
                   const Teuchos::RCP<Teuchos::ParameterList>& glist,
                   const Teuchos::RCP<State>& S,
                   const Teuchos::RCP<TreeVector>& soln);
-  ~ShallowWater_PK() {};
+  ~ShallowWater_PK(){};
 
   virtual void parseParameterList() override {};
   virtual void Setup() override;

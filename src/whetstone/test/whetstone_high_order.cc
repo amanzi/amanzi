@@ -43,8 +43,8 @@ HighOrderCrouzeixRaviart(int dim, std::string file_name)
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "Test: High-order Crouzeix Raviart in " << dim << "D"
-            << " file=" << file_name << std::endl;
+  std::cout << "Test: High-order Crouzeix Raviart in " << dim << "D" << " file=" << file_name
+            << std::endl;
   auto comm = Amanzi::getDefaultComm();
   auto fac_list = Teuchos::rcp(new Teuchos::ParameterList());
   if (dim == 3) fac_list->set<bool>("request edges", true);

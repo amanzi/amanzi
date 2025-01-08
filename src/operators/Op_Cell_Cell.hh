@@ -27,10 +27,10 @@ class Op_Cell_Cell : public Op {
   Op_Cell_Cell(const std::string& name, const Teuchos::RCP<const AmanziMesh::Mesh> mesh, int nvec)
     : Op(OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL, name, mesh)
   {
-    diag = Teuchos::rcp(new Epetra_MultiVector(
-      mesh->getMap(AmanziMesh::Entity_kind::CELL, false), nvec));
-    diag_shadow = Teuchos::rcp(new Epetra_MultiVector(
-      mesh->getMap(AmanziMesh::Entity_kind::CELL, false), nvec));
+    diag = Teuchos::rcp(
+      new Epetra_MultiVector(mesh->getMap(AmanziMesh::Entity_kind::CELL, false), nvec));
+    diag_shadow = Teuchos::rcp(
+      new Epetra_MultiVector(mesh->getMap(AmanziMesh::Entity_kind::CELL, false), nvec));
   }
 
   virtual void

@@ -88,8 +88,8 @@ TEST(NEW_DRIVER_DUMMY_PK)
     if (aerr > 0) { exit(-aerr); }
 
   } else { // If Generate parameters are specified
-    std::cerr << rank << ": error: "
-              << "Neither Read nor Generate options specified for mesh" << std::endl;
+    std::cerr << rank << ": error: " << "Neither Read nor Generate options specified for mesh"
+              << std::endl;
     throw std::exception();
   }
 

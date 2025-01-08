@@ -138,7 +138,7 @@ class ImplicitPK : public Amanzi::PK_PhysicalBDF {
   virtual int
   ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu) override;
   virtual void
-  UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u, double dt) override{};
+  UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u, double dt) override {};
 
   virtual bool
   ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u) override
@@ -160,7 +160,7 @@ class ImplicitPK : public Amanzi::PK_PhysicalBDF {
     return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
   }
 
-  virtual void ChangedSolution() override{};
+  virtual void ChangedSolution() override {};
 
  private:
   double dt_, cfl_;

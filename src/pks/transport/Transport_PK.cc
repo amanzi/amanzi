@@ -330,7 +330,8 @@ Transport_PK::Setup()
 
     Teuchos::ParameterList elist(aux_key);
     elist.set<std::string>("my key", aux_key)
-      .set<Teuchos::Array<std::string>>("multiplicative dependencies", { "total_component_concentration" })
+      .set<Teuchos::Array<std::string>>("multiplicative dependencies",
+                                        { "total_component_concentration" })
       .set<Teuchos::Array<std::string>>("reciprocal dependencies", { "mass_density_liquid" })
       .set<std::string>("tag", "");
     auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
@@ -900,7 +901,8 @@ Transport_PK::CommitStep(double t_old, double t_new, const Tag& tag)
   dt_prev_ = std::min(dt_, t_new - t_old);
   S_->GetW<CV_t>(tcc_key_, Tags::DEFAULT, passwd_) = *tcc_tmp;
   Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
-    S_->GetEvaluatorPtr(tcc_key_, Tags::DEFAULT))->SetChanged();
+    S_->GetEvaluatorPtr(tcc_key_, Tags::DEFAULT))
+    ->SetChanged();
 }
 
 
@@ -995,8 +997,7 @@ Transport_PK::ComputeBCs_(std::vector<int>& bc_model, std::vector<double>& bc_va
           }
         }
       }
-    }
-    else if (bcs_[m]->get_location() == "interface") {
+    } else if (bcs_[m]->get_location() == "interface") {
       for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
         int f = it->first;
         bc_model[f] = Operators::OPERATOR_BC_NEUMANN;

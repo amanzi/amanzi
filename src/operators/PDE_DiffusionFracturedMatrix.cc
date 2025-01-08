@@ -56,8 +56,7 @@ PDE_DiffusionFracturedMatrix::Init(Teuchos::ParameterList& plist)
   // this solver requires faces
   if (!(schema_prec_dofs_ & Operators::OPERATOR_SCHEMA_DOFS_FACE)) {
     Errors::Message msg;
-    msg << "Preconditioner schema for fractured matrix has no faces"
-        << "\n";
+    msg << "Preconditioner schema for fractured matrix has no faces" << "\n";
     Exceptions::amanzi_throw(msg);
   }
 

@@ -50,7 +50,7 @@ class FlattenedTreeOperator : public Operators::TreeOperator {
 
   // modified algorithms that use two supermaps
   virtual void SymbolicAssembleMatrix();
-  virtual void InitializeInverse(){};
+  virtual void InitializeInverse() {};
   virtual void AssembleMatrix();
 
   // only assembled matrix is allowed

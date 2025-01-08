@@ -125,8 +125,9 @@ class BDF1_TI {
           const Teuchos::RCP<State>& S = Teuchos::null);
 
   // initializes the state
-  void
-  SetInitialState(const double h, const Teuchos::RCP<const Vector>& u, const Teuchos::RCP<const Vector>& udot = Teuchos::null);
+  void SetInitialState(const double h,
+                       const Teuchos::RCP<const Vector>& u,
+                       const Teuchos::RCP<const Vector>& udot = Teuchos::null);
 
   // After a successful step, this method commits the new
   // solution to the solution history
@@ -134,9 +135,9 @@ class BDF1_TI {
 
   // Computes a step and returns true whan it fails.
   bool AdvanceStep(double dt,
-                const Teuchos::RCP<const Vector>& u_prev,
-                const Teuchos::RCP<Vector>& u,
-                double& dt_next);
+                   const Teuchos::RCP<const Vector>& u_prev,
+                   const Teuchos::RCP<Vector>& u,
+                   double& dt_next);
 
   bool AdvanceStep(double dt, double& dt_next, const Teuchos::RCP<Vector>& x)
   {
@@ -183,10 +184,10 @@ class BDF1_TI {
 ****************************************************************** */
 template <class Vector, class VectorSpace>
 BDF1_TI<Vector, VectorSpace>::BDF1_TI(const std::string& name,
-        Teuchos::ParameterList& plist,
-        BDFFnBase<Vector>& fn,
-        const Teuchos::RCP<const VectorSpace>& space,
-        const Teuchos::RCP<State>& S)
+                                      Teuchos::ParameterList& plist,
+                                      BDFFnBase<Vector>& fn,
+                                      const Teuchos::RCP<const VectorSpace>& space,
+                                      const Teuchos::RCP<State>& S)
 {
   fn_ = Teuchos::rcpFromRef(fn);
 
@@ -241,8 +242,7 @@ BDF1_TI<Vector, VectorSpace>::SetInitialState(const double t,
 ****************************************************************** */
 template <class Vector, class VectorSpace>
 void
-BDF1_TI<Vector, VectorSpace>::CommitSolution(const double h,
-                                             const Teuchos::RCP<const Vector>& u)
+BDF1_TI<Vector, VectorSpace>::CommitSolution(const double h, const Teuchos::RCP<const Vector>& u)
 {
   double t = h + state_->uhist->MostRecentTime();
 
@@ -276,9 +276,9 @@ BDF1_TI<Vector, VectorSpace>::time()
 template <class Vector, class VectorSpace>
 bool
 BDF1_TI<Vector, VectorSpace>::AdvanceStep(double dt,
-        const Teuchos::RCP<const Vector>& u_prev,
-        const Teuchos::RCP<Vector>& u,
-        double& dt_next)
+                                          const Teuchos::RCP<const Vector>& u_prev,
+                                          const Teuchos::RCP<Vector>& u,
+                                          double& dt_next)
 {
   // initialize the output stream
   Teuchos::OSTab tab = vo_->getOSTab();
@@ -345,8 +345,8 @@ BDF1_TI<Vector, VectorSpace>::AdvanceStep(double dt,
 
   if (ierr == 0) {
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-      *vo_->os() << "success: " << itr << " nonlinear itrs"
-                 << " error=" << solver_->residual() << std::endl;
+      *vo_->os() << "success: " << itr << " nonlinear itrs" << " error=" << solver_->residual()
+                 << std::endl;
     }
   } else {
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {

@@ -138,7 +138,7 @@ class EvaluatorSecondaryMonotype : public EvaluatorSecondary {
   {}
 
   // optional, anything for units
-  virtual void EnsureCompatibility_Units_(State& S){};
+  virtual void EnsureCompatibility_Units_(State& S) {};
 
  protected:
   Teuchos::RCP<Debugger> db_;

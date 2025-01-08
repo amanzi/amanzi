@@ -98,7 +98,7 @@ class Darcy_PK : public Flow_PK {
 
   // -- experimental approach -- calling this indicates that the time
   //    integration scheme is changing the value of the solution in state.
-  virtual void ChangedSolution() override{};
+  virtual void ChangedSolution() override {};
 
   // other members of the PK linear solvers
   void SolveFullySaturatedProblem(CompositeVector& u, bool wells_on);

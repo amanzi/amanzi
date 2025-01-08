@@ -66,8 +66,8 @@ class PK_MPC : virtual public PK {
   virtual void CommitStep(double t_old, double t_new, const Tag& tag);
   virtual void CalculateDiagnostics(const Tag& tag);
 
-  virtual void State_to_Solution(const Tag& tag, TreeVector& soln){};
-  virtual void Solution_to_State(const TreeVector& soln, const Tag& tag){};
+  virtual void State_to_Solution(const Tag& tag, TreeVector& soln) {};
+  virtual void Solution_to_State(const TreeVector& soln, const Tag& tag) {};
 
   // iterator over pks
   typename std::vector<Teuchos::RCP<PK_Base>>::iterator begin() { return sub_pks_.begin(); }

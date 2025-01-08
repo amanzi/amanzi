@@ -266,10 +266,10 @@ class Transport_PK : public PK_Physical {
   virtual void Initialize() override;
 
   virtual double get_dt() override;
-  virtual void set_dt(double dt) override{};
+  virtual void set_dt(double dt) override {};
 
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
-  virtual void CalculateDiagnostics(const Tag& tag) override{};
+  virtual void CalculateDiagnostics(const Tag& tag) override {};
 
   virtual std::string name() override { return "transport"; }
 

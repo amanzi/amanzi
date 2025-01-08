@@ -115,7 +115,7 @@ class NavierStokes_PK : public PK_PhysicalBDF {
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) final;
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) final;
-  virtual void CalculateDiagnostics(const Tag& tag) final{};
+  virtual void CalculateDiagnostics(const Tag& tag) final {};
 
   virtual std::string name() { return passwd_; }
 

@@ -132,8 +132,8 @@ class PDE_DiffusionNLFVwithBndFacesGravity : public PDE_DiffusionNLFVwithBndFace
                           const Teuchos::Ptr<CompositeVector>& flux) override;
 
   // -- modify an operator
-  virtual void ModifyMatrices(const CompositeVector& u) override{};
-  virtual void ScaleMassMatrices(double s) override{};
+  virtual void ModifyMatrices(const CompositeVector& u) override {};
+  virtual void ScaleMassMatrices(double s) override {};
 
   // Developments
   // -- interface to solvers for treating nonlinear BCs.

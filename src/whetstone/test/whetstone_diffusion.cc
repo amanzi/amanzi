@@ -29,12 +29,14 @@
 #include "MFD3D_Lagrange.hh"
 #include "Tensor.hh"
 
-std::pair<double, double> EigenvaluesSVD(Amanzi::WhetStone::DenseMatrix& M)
+std::pair<double, double>
+EigenvaluesSVD(Amanzi::WhetStone::DenseMatrix& M)
 {
   int n(M.NumRows()), lwork(100), info;
-  double U[n*n], V[n*n], S[100], work[lwork];
+  double U[n * n], V[n * n], S[100], work[lwork];
 
-  Amanzi::WhetStone::DGESVD_F77("A", "A", &n, &n, M.Values(), &n, S, U, &n, V, &n, work, &lwork, &info);
+  Amanzi::WhetStone::DGESVD_F77(
+    "A", "A", &n, &n, M.Values(), &n, S, U, &n, V, &n, work, &lwork, &info);
 
   double emin(1e+10), emax(0.0);
   for (int i = 0; i < n; ++i) {
@@ -914,7 +916,8 @@ TEST(DARCY_MASS_DEGENERATE_3D)
 
     // eigenvalues
     auto e0 = EigenvaluesSVD(M0);
-    std::cout << "eig(M0): " << e0.first << " " << e0.second << " " << e0.first / e0.second << std::endl;
+    std::cout << "eig(M0): " << e0.first << " " << e0.second << " " << e0.first / e0.second
+              << std::endl;
 
     auto e1 = EigenvaluesSVD(M1);
     double cond1 = e1.second / e1.first;

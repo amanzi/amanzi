@@ -187,9 +187,9 @@ RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
     std::string vel_method = map_list.get<std::string>("method");
     std::string vel_projector = map_list.get<std::string>("projector");
 
-    std::cout << "\nTest: " << dim << "D remap:"
-              << " mesh=" << ((file_name == "") ? "structured" : file_name) << " deform=" << deform
-              << std::endl;
+    std::cout << "\nTest: " << dim
+              << "D remap:" << " mesh=" << ((file_name == "") ? "structured" : file_name)
+              << " deform=" << deform << std::endl;
 
     std::cout << "      discretization: order=" << order << std::endl;
 

@@ -40,12 +40,11 @@ namespace Amanzi {
 
 class State;
 
-class TimestepControllerRecoverable : public TimestepController
-{
+class TimestepControllerRecoverable : public TimestepController {
  public:
   TimestepControllerRecoverable(const std::string& name,
-          Teuchos::ParameterList& plist,
-          const Teuchos::RCP<State>& S);
+                                Teuchos::ParameterList& plist,
+                                const Teuchos::RCP<State>& S);
 
   double getTimestep(double dt, int iterations, bool valid) override final;
   double getInitialTimestep() override;

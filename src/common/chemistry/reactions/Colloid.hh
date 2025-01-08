@@ -32,8 +32,8 @@ class Colloid {
   virtual ~Colloid(){};
 
   // returns sorbed concentration
-  virtual void Evaluate(const Species& primary_species){};
-  virtual void EvaluateDerivative(const Species& primary_species){};
+  virtual void Evaluate(const Species& primary_species) {};
+  virtual void EvaluateDerivative(const Species& primary_species) {};
 
   // access
   std::string name() const { return name_; }

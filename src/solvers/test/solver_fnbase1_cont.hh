@@ -66,7 +66,7 @@ class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Epetra_Vecto
     std::cout << "Updating lambda = " << lambda_ << std::endl;
   }
 
-  void ChangedSolution(){};
+  void ChangedSolution() {};
 
  protected:
   double atol_, rtol_;

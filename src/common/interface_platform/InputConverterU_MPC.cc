@@ -1145,7 +1145,8 @@ InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
       mesh_list.set<bool>("request edges", true);
 
       Teuchos::Array<std::string> aux(1, pk_region_["shallow_water"]);
-      mesh_list.sublist("unstructured").sublist("submesh")
+      mesh_list.sublist("unstructured")
+        .sublist("submesh")
         .set<Teuchos::Array<std::string>>("regions", aux)
         .set<std::string>("extraction method", "manifold mesh")
         .set<std::string>("domain name", "surface");
@@ -1177,9 +1178,7 @@ InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
       CreateSubmesh_(mesh_list, true);
     }
 
-    if (basename == "coupled multiphase") {
-      CreateSubmesh_(mesh_list, true);
-    }
+    if (basename == "coupled multiphase") { CreateSubmesh_(mesh_list, true); }
 
     if (basename == "coupled flow and energy") {
       std::vector<std::string> name_pks = {

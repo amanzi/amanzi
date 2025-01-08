@@ -15,7 +15,8 @@ TimestepControllerFixed::TimestepControllerFixed(Teuchos::ParameterList& plist)
   : TimestepController()
 {
   if (plist.isParameter("initial timestep [s]")) {
-    Errors::Message msg("Deprecated parameter \"initial timestep [s]\" provided to TimestepControllerFixed, use \"timestep [s]\" instead.");
+    Errors::Message msg("Deprecated parameter \"initial timestep [s]\" provided to "
+                        "TimestepControllerFixed, use \"timestep [s]\" instead.");
     Exceptions::amanzi_throw(msg);
   }
   if (plist.isParameter("timestep [s]")) {

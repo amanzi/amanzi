@@ -114,8 +114,6 @@ TEST(MESH2D)
     df.AddSpec(spec);
     const std::map<AmanziMesh::Entity_ID, double>& ids = df.get_ids(kind);
 
-    for (auto it = ids.begin(); it != ids.end(); ++it) {
-      CHECK_CLOSE(it->second, 1.0, 1e-10);
-    }
+    for (auto it = ids.begin(); it != ids.end(); ++it) { CHECK_CLOSE(it->second, 1.0, 1e-10); }
   }
 }

@@ -83,7 +83,7 @@ class Operator_FaceCellSff : public Operator_FaceCell {
                                         const SuperMap& map,
                                         GraphFE& graph,
                                         int my_block_row,
-                                        int my_block_col) const override{};
+                                        int my_block_col) const override {};
 
  protected:
   mutable std::vector<Teuchos::RCP<Op_Cell_Face>> schur_ops_;

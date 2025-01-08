@@ -41,7 +41,7 @@ Utils::RegisteredFactory<Evaluator, EvaluatorMultiplicativeReciprocal>
 Utils::RegisteredFactory<Evaluator, EvaluatorSecondaryMonotypeFromFunction>
   EvaluatorSecondaryMonotypeFromFunction::fac_("secondary variable from function");
 
-template<>
+template <>
 Utils::RegisteredFactory<Evaluator, EvaluatorPrimaryCV>
   EvaluatorPrimaryCV::fac_("primary variable");
 

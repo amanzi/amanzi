@@ -70,9 +70,7 @@ class Mechanics_PK : public PK_PhysicalBDF {
                const Teuchos::RCP<Teuchos::ParameterList>& glist,
                const Teuchos::RCP<State>& S,
                const Teuchos::RCP<TreeVector>& soln)
-    : PK(pk_tree, glist, S, soln),
-      PK_PhysicalBDF(pk_tree, glist, S, soln),
-      passwd_(""){};
+    : PK(pk_tree, glist, S, soln), PK_PhysicalBDF(pk_tree, glist, S, soln), passwd_(""){};
   ~Mechanics_PK(){};
 
   // methods required for PK interface
@@ -83,7 +81,7 @@ class Mechanics_PK : public PK_PhysicalBDF {
   virtual double get_dt() final { return dt_; }
   virtual void set_dt(double dt) final { dt_ = dt; }
 
-  virtual void CalculateDiagnostics(const Tag& tag) final{};
+  virtual void CalculateDiagnostics(const Tag& tag) final {};
 
   // -- check the admissibility of a solution
   //    override with the actual admissibility check

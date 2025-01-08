@@ -125,7 +125,7 @@ class Mineral : public SecondarySpecies {
   double molar_volume() const { return molar_volume_; }
 
   // not supported yet
-  void UpdateSpecificSurfaceArea(){};
+  void UpdateSpecificSurfaceArea() {};
 
   double volume_fraction() const { return volume_fraction_; }
   void set_volume_fraction(double d) { volume_fraction_ = d; }

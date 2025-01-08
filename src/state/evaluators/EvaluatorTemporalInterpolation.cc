@@ -39,7 +39,8 @@ EvaluatorTemporalInterpolation::Clone() const //override
 
 
 void
-EvaluatorTemporalInterpolation::Evaluate_(const State& S, const std::vector<CompositeVector*>& result)
+EvaluatorTemporalInterpolation::Evaluate_(const State& S,
+                                          const std::vector<CompositeVector*>& result)
 {
   AMANZI_ASSERT(dependencies_.size() == 2);
   double t_current = S.get_time(current_.second);
@@ -52,15 +53,15 @@ EvaluatorTemporalInterpolation::Evaluate_(const State& S, const std::vector<Comp
   AMANZI_ASSERT(t_this <= t_next);
 
   double a = (t_this - t_current) / (t_next - t_current);
-  result[0]->Update(1-a, var_current, a, var_next, 0);
+  result[0]->Update(1 - a, var_current, a, var_next, 0);
 }
 
 void
 EvaluatorTemporalInterpolation::EvaluatePartialDerivative_(
-        const State& S,
-        const Key& wrt_key,
-        const Tag& wrt_tag,
-        const std::vector<CompositeVector*>& result)
+  const State& S,
+  const Key& wrt_key,
+  const Tag& wrt_tag,
+  const std::vector<CompositeVector*>& result)
 {
   AMANZI_ASSERT(dependencies_.size() == 2);
   double t_current = S.get_time(current_.second);
@@ -71,7 +72,7 @@ EvaluatorTemporalInterpolation::EvaluatePartialDerivative_(
 
   double a = (t_this - t_current) / (t_next - t_current);
   if (wrt_tag == current_.second) {
-    result[0]->PutScalar(1-a);
+    result[0]->PutScalar(1 - a);
   } else if (wrt_tag == next_.second) {
     result[0]->PutScalar(a);
   } else {

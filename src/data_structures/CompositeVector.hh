@@ -181,7 +181,10 @@ class CompositeVector {
   // HasImportedComponent() indicates that only a const view may be obtained
   // via a call to the const version of ViewComponent(), as the component may
   // be imported (e.g. boundary_face imported from face).
-  bool HasImportedComponent(const std::string& name) const { return map_->HasImportedComponent(name); }
+  bool HasImportedComponent(const std::string& name) const
+  {
+    return map_->HasImportedComponent(name);
+  }
 
   int NumComponents() const { return size(); }
   AmanziMesh::Entity_kind Location(const std::string& name) const { return map_->Location(name); }

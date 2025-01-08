@@ -83,8 +83,8 @@ class Schema {
   {
     os << "base=" << AmanziMesh::to_string(s.get_base()) << "\n";
     for (auto it = s.begin(); it != s.end(); ++it) {
-      os << " item: kind=" << AmanziMesh::to_string(std::get<0>(*it)) << ", num=" << std::get<2>(*it)
-         << ", type=" << (int)std::get<1>(*it) << "\n";
+      os << " item: kind=" << AmanziMesh::to_string(std::get<0>(*it))
+         << ", num=" << std::get<2>(*it) << ", type=" << (int)std::get<1>(*it) << "\n";
     }
     return os;
   }

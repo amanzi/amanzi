@@ -116,14 +116,14 @@ polyhed_get_vol_centroid(PVT& ccoords,
 
           (*centroid) += tvolume * tcentroid; // sum up 1st moment
           (*volume) += tvolume;               // sum up 0th moment
-        }                                     // for each edge of face
+        } // for each edge of face
       }
 
       offset += nfnodes[i];
     }
 
     (*centroid) /= (*volume); // centroid = 1st moment / 0th moment
-  }                           // end if (np > 4)
+  } // end if (np > 4)
 
   (*volume) /= 6; // Account for multiplier here rather than in
                   // computation of each tet

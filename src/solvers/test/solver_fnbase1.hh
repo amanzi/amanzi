@@ -65,7 +65,7 @@ class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Epetra_Vecto
     }
   }
 
-  void ChangedSolution(){};
+  void ChangedSolution() {};
 
  protected:
   double atol_, rtol_;

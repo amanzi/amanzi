@@ -275,7 +275,8 @@ Debugger::WriteVectors(const std::vector<std::string>& names,
             auto [fnums0, dirs] = mesh_->getCellFacesAndDirections(c0);
 
             for (unsigned int n = 0; n != fnums0.size(); ++n) {
-              AmanziMesh::Entity_ID bf = AmanziMesh::getFaceOnBoundaryBoundaryFace(*mesh_, fnums0[n]);
+              AmanziMesh::Entity_ID bf =
+                AmanziMesh::getFaceOnBoundaryBoundaryFace(*mesh_, fnums0[n]);
               if (bf >= 0) *dcvo_[i]->os() << " " << formatter_.format((*vec_bf)[j][bf]);
             }
           }

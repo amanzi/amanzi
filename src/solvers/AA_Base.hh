@@ -272,9 +272,7 @@ AA_Base<Vector, VectorSpace>::TestQR(int nv)
     std::cout << "norm2 " << norm2 << "\n";
   }
 
-  if (norm2 > 0.0001) {
-    Exceptions::amanzi_throw("AAA: norm2 is too small.");
-  }
+  if (norm2 > 0.0001) { Exceptions::amanzi_throw("AAA: norm2 is too small."); }
 }
 
 

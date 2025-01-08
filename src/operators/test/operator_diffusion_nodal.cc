@@ -203,8 +203,8 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS)
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
   if (MyPID == 0)
-    std::cout << "\nTest: 2D elliptic solver, exactness"
-              << " test for nodal discretization" << std::endl;
+    std::cout << "\nTest: 2D elliptic solver, exactness" << " test for nodal discretization"
+              << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion.xml";

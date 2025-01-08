@@ -178,7 +178,8 @@ createRegion(const std::string& reg_name,
       gids = plist.get<Teuchos::Array<int>>("entity gids");
     }
 
-    region = Teuchos::rcp(new RegionEnumerated(reg_name, reg_id, entity_str, gids.toVector(), lifecycle));
+    region =
+      Teuchos::rcp(new RegionEnumerated(reg_name, reg_id, entity_str, gids.toVector(), lifecycle));
 
   } else if (shape == "enumerated set from file") {
     std::string filename = plist.get<std::string>("read from file");

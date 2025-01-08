@@ -978,11 +978,11 @@ HDF5_MPI::readAttrString(std::string& value, const std::string attrname)
   char* loc_value;
 
   int ierr = parallelIO_read_simple_attr(loc_attrname,
-                              reinterpret_cast<void**>(&loc_value),
-                              PIO_STRING,
-                              data_file_,
-                              loc_h5path,
-                              &IOgroup_);
+                                         reinterpret_cast<void**>(&loc_value),
+                                         PIO_STRING,
+                                         data_file_,
+                                         loc_h5path,
+                                         &IOgroup_);
   if (ierr) {
     Errors::Message msg;
     msg << "Unable to read variable \"" << attrname << "\" from file \"" << H5DataFilename_ << "\"";
@@ -1011,11 +1011,11 @@ HDF5_MPI::readAttrReal(double& value, const std::string attrname)
   double* loc_value;
 
   int ierr = parallelIO_read_simple_attr(loc_attrname,
-                              reinterpret_cast<void**>(&loc_value),
-                              PIO_DOUBLE,
-                              data_file_,
-                              loc_h5path,
-                              &IOgroup_);
+                                         reinterpret_cast<void**>(&loc_value),
+                                         PIO_DOUBLE,
+                                         data_file_,
+                                         loc_h5path,
+                                         &IOgroup_);
   if (ierr) {
     Errors::Message msg;
     msg << "Unable to read variable \"" << attrname << "\" from file \"" << H5DataFilename_ << "\"";
@@ -1046,13 +1046,13 @@ HDF5_MPI::readAttrReal(double** value, int* ndim, const std::string attrname)
   int ndims;
 
   int ierr = parallelIO_read_attr(loc_attrname,
-                       reinterpret_cast<void**>(&loc_value),
-                       PIO_DOUBLE,
-                       &ndims,
-                       &pdims,
-                       data_file_,
-                       loc_h5path,
-                       &IOgroup_);
+                                  reinterpret_cast<void**>(&loc_value),
+                                  PIO_DOUBLE,
+                                  &ndims,
+                                  &pdims,
+                                  data_file_,
+                                  loc_h5path,
+                                  &IOgroup_);
 
   if (ierr) {
     Errors::Message msg;
@@ -1083,11 +1083,11 @@ HDF5_MPI::readAttrInt(int& value, const std::string attrname)
   int* loc_value;
 
   int ierr = parallelIO_read_simple_attr(loc_attrname,
-                              reinterpret_cast<void**>(&loc_value),
-                              PIO_INTEGER,
-                              data_file_,
-                              loc_h5path,
-                              &IOgroup_);
+                                         reinterpret_cast<void**>(&loc_value),
+                                         PIO_INTEGER,
+                                         data_file_,
+                                         loc_h5path,
+                                         &IOgroup_);
 
   if (ierr) {
     Errors::Message msg;
@@ -1118,13 +1118,13 @@ HDF5_MPI::readAttrInt(int** value, int* ndim, const std::string attrname)
   int ndims;
 
   int ierr = parallelIO_read_attr(loc_attrname,
-                       reinterpret_cast<void**>(&loc_value),
-                       PIO_INTEGER,
-                       &ndims,
-                       &pdims,
-                       data_file_,
-                       loc_h5path,
-                       &IOgroup_);
+                                  reinterpret_cast<void**>(&loc_value),
+                                  PIO_INTEGER,
+                                  &ndims,
+                                  &pdims,
+                                  data_file_,
+                                  loc_h5path,
+                                  &IOgroup_);
   if (ierr) {
     Errors::Message msg;
     msg << "Unable to read variable \"" << attrname << "\" from file \"" << H5DataFilename_ << "\"";
@@ -1593,8 +1593,7 @@ HDF5_MPI::addXdmfGeo_(const int cycle)
 
   Teuchos::XMLObject DataItem("DataItem");
   DataItem.addAttribute("DataType", "Float");
-  tmp1 << NumNodes() << " "
-       << " 3";
+  tmp1 << NumNodes() << " " << " 3";
   DataItem.addAttribute("Dimensions", tmp1.str());
   DataItem.addAttribute("Format", "HDF");
   if (dynamic_mesh_) {

@@ -811,8 +811,8 @@ Transient(std::string filename,
     if (MyPID == 0) {
       std::cout << "\nTest: dG transient advection: " << filename << ", order=" << order
                 << ", dt=" << dt0 << "\n      PDE=" << problem << ", basis=" << basis
-                << "\n      weak formulation=\"" << weak_form << "\""
-                << ", limiter=\"" << limiter << "\"" << std::endl;
+                << "\n      weak formulation=\"" << weak_form << "\"" << ", limiter=\"" << limiter
+                << "\"" << std::endl;
     }
   }
 

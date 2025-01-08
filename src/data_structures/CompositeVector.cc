@@ -245,7 +245,8 @@ CompositeVector::operator=(const CompositeVector& other)
       // If both are ghosted, copy the ghosted vector.
       // Exception: boundary_face component created on a fly is not ghosted
       for (name_iterator name = begin(); name != end(); ++name) {
-        bool ghosted = (*name == "boundary_face" && other.HasImportedComponent("face")) ? false : true;
+        bool ghosted =
+          (*name == "boundary_face" && other.HasImportedComponent("face")) ? false : true;
         Teuchos::RCP<Epetra_MultiVector> comp = ViewComponent(*name, ghosted);
         Teuchos::RCP<const Epetra_MultiVector> othercomp = other.ViewComponent(*name, ghosted);
         *comp = *othercomp;

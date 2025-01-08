@@ -483,9 +483,8 @@ Darcy_PK::InitializeStatistics_(bool init_darcy)
     std::string pc_name = ti_list_->get<std::string>("preconditioner");
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "\nTI:\"" << ti_name.c_str() << "\""
-               << " dt:" << ts_name << " LS:\"" << solver_name_.c_str() << "\""
-               << " PC:\"" << pc_name.c_str() << "\"" << std::endl
+    *vo_->os() << "\nTI:\"" << ti_name.c_str() << "\"" << " dt:" << ts_name << " LS:\""
+               << solver_name_.c_str() << "\"" << " PC:\"" << pc_name.c_str() << "\"" << std::endl
                << "matrix: " << op_->PrintDiagnostics() << std::endl;
     *vo_->os() << "constant viscosity model, mu=" << mu << std::endl;
 

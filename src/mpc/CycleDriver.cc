@@ -369,7 +369,8 @@ CycleDriver::ReportMemory()
       const Tag& tag = it->second->begin()->first;
       if (S_->GetRecord(it->first, tag).ValidType<CompositeVector>()) {
         doubles_count +=
-          n_tags * static_cast<double>(S_->Get<CompositeVector>(it->first, tag).GetLocalElementCount());
+          n_tags *
+          static_cast<double>(S_->Get<CompositeVector>(it->first, tag).GetLocalElementCount());
       }
     }
   }

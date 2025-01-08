@@ -122,7 +122,7 @@ class PDE_Advection : public PDE_HelperDiscretization {
 
   // -- standard interface for flux calculation
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
-                          const Teuchos::Ptr<CompositeVector>& u) override{};
+                          const Teuchos::Ptr<CompositeVector>& u) override {};
 
   // -- extended interface for flux calculation
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& h,

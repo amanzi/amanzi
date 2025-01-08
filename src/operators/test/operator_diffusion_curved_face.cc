@@ -55,8 +55,9 @@ RunTestDiffusionCurved(int d,
 
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: elliptic solver, mesh with curved faces, new algorithm: "
-                            << filename << std::endl;
+  if (MyPID == 0)
+    std::cout << "\nTest: elliptic solver, mesh with curved faces, new algorithm: " << filename
+              << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion_curved_face.xml";
@@ -71,10 +72,10 @@ RunTestDiffusionCurved(int d,
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<Mesh> mesh;
   if (filename == "" && d == 2) {
-    mesh = meshfactory.create(0.0,0.0, 1.0,1.0, nx,nx);
+    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, nx);
     DeformMesh(mesh, 7, 1.0);
   } else if (filename == "" && d == 3) {
-    mesh = meshfactory.create(0.0,0.0,0.0, 1.0,1.0,1.0, nx,nx,nx);
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx);
     DeformMesh(mesh, 7, 1.0);
   } else {
     mesh = meshfactory.create(filename);

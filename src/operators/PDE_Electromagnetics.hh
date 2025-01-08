@@ -67,14 +67,14 @@ class PDE_Electromagnetics : public PDE_HelperDiscretization {
 
   // -- postprocessing: calculated flux u from potential p
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
-                          const Teuchos::Ptr<CompositeVector>& u) override{};
+                          const Teuchos::Ptr<CompositeVector>& u) override {};
 
   // new virtual members
   // -- before solving the problem
-  virtual void ModifyMatrices(CompositeVector& E, CompositeVector& B, double dt){};
+  virtual void ModifyMatrices(CompositeVector& E, CompositeVector& B, double dt) {};
 
   // -- after solving the problem
-  virtual void ModifyFields(CompositeVector& E, CompositeVector& B, double dt){};
+  virtual void ModifyFields(CompositeVector& E, CompositeVector& B, double dt) {};
 
   // support of AMS solver
   Teuchos::RCP<Epetra_MultiVector> GraphGeometry();

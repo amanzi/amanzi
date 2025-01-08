@@ -67,7 +67,7 @@ class HeatConduction : public AmanziSolvers::SolverFnBase<CompositeVector> {
   double ErrorNorm(const Teuchos::RCP<const CompositeVector>& u,
                    const Teuchos::RCP<const CompositeVector>& du);
 
-  void ChangedSolution(){};
+  void ChangedSolution() {};
 
   // supporting members
   void UpdateValues(const CompositeVector& u);

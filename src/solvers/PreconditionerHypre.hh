@@ -180,7 +180,7 @@ class PreconditionerHypre : public AmanziSolvers::Preconditioner {
   void InitBoomer_();
   void InitILU_();
   void InitAMS_();
-  void Init_(){};
+  void Init_() {};
   void InitMGR_();
 
   int SetCoordinates_(Teuchos::RCP<Epetra_MultiVector>);

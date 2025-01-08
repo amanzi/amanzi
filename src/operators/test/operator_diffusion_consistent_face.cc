@@ -52,8 +52,8 @@ TEST(OPERATOR_DIFFUSION_MIXED)
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
   if (MyPID == 0)
-    std::cout << "\nTest: 2D elliptic solver, exactness"
-              << " test for mixed discretization" << std::endl;
+    std::cout << "\nTest: 2D elliptic solver, exactness" << " test for mixed discretization"
+              << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion_consistent_face.xml";

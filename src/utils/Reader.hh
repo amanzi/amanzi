@@ -34,25 +34,33 @@ class Reader {
 
   virtual bool hasVariableOrGroup(const std::string& name) const = 0;
 
-  void read(const std::string& varname, std::vector<double>& vec, int index = -1) const {
+  void read(const std::string& varname, std::vector<double>& vec, int index = -1) const
+  {
     Teuchos::Array<double> vec2;
     read(varname, vec2, index);
     vec = vec2.toVector();
   }
-  void read(const std::string& varname, std::vector<int>& vec, int index = -1) const {
+  void read(const std::string& varname, std::vector<int>& vec, int index = -1) const
+  {
     Teuchos::Array<int> vec2;
     read(varname, vec2, index);
     vec = vec2.toVector();
   }
 
-  virtual void read(const std::string& varname, Teuchos::Array<double>& vec, int index = -1) const = 0;
+  virtual void
+  read(const std::string& varname, Teuchos::Array<double>& vec, int index = -1) const = 0;
   virtual void read(const std::string& varname, Teuchos::Array<int>& vec, int index = -1) const = 0;
-  virtual void read(const std::string& varname, Teuchos::SerialDenseMatrix<int, double>& vec, int index = -1) const = 0;
-  virtual void read(const std::string& varname, Teuchos::SerialDenseMatrix<int, int>& vec, int index = -1) const = 0;
+  virtual void read(const std::string& varname,
+                    Teuchos::SerialDenseMatrix<int, double>& vec,
+                    int index = -1) const = 0;
+  virtual void read(const std::string& varname,
+                    Teuchos::SerialDenseMatrix<int, int>& vec,
+                    int index = -1) const = 0;
 };
 
 
 // factory, uses filename extension to figure out the type
-std::unique_ptr<Reader> createReader(const std::string& filename);
+std::unique_ptr<Reader>
+createReader(const std::string& filename);
 
 } // namespace Amanzi

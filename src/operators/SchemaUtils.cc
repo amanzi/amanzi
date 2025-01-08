@@ -49,9 +49,7 @@ AssembleVectorCellOp(int c,
         int ndofs = map->ElementSize(lid);
 
         for (int k = 0; k < num; ++k) {
-          for (int s = 0; s < ndofs; ++s) {
-            Xn[k][first + s] += v(m++);
-          }
+          for (int s = 0; s < ndofs; ++s) { Xn[k][first + s] += v(m++); }
         }
       }
     }
@@ -68,9 +66,7 @@ AssembleVectorCellOp(int c,
         int ndofs = map->ElementSize(lid);
 
         for (int k = 0; k < num; ++k) {
-          for (int s = 0; s < ndofs; ++s) {
-            Xf[k][first + s] += v(m++);
-          }
+          for (int s = 0; s < ndofs; ++s) { Xf[k][first + s] += v(m++); }
         }
       }
     }
@@ -87,9 +83,7 @@ AssembleVectorCellOp(int c,
         int ndofs = map->ElementSize(lid);
 
         for (int k = 0; k < num; ++k) {
-          for (int s = 0; s < ndofs; ++s) {
-            Xe[k][first + s] += v(m++);
-          }
+          for (int s = 0; s < ndofs; ++s) { Xe[k][first + s] += v(m++); }
         }
       }
     }
@@ -197,9 +191,7 @@ ExtractVectorCellOp(int c,
         int ndofs = map->ElementSize(lid);
 
         for (int k = 0; k < num; ++k) {
-          for (int s = 0; s < ndofs; ++s) {
-            v(m++) = Xn[k][first + s];
-          }
+          for (int s = 0; s < ndofs; ++s) { v(m++) = Xn[k][first + s]; }
         }
       }
     }
@@ -216,9 +208,7 @@ ExtractVectorCellOp(int c,
         int ndofs = map->ElementSize(lid);
 
         for (int k = 0; k < num; ++k) {
-          for (int s = 0; s < ndofs; ++s) {
-            v(m++) = Xf[k][first + s];
-          }
+          for (int s = 0; s < ndofs; ++s) { v(m++) = Xf[k][first + s]; }
         }
       }
     }
@@ -235,9 +225,7 @@ ExtractVectorCellOp(int c,
         int ndofs = map->ElementSize(lid);
 
         for (int k = 0; k < num; ++k) {
-          for (int s = 0; s < ndofs; ++s) {
-            v(m++) = Xe[k][first + s];
-          }
+          for (int s = 0; s < ndofs; ++s) { v(m++) = Xe[k][first + s]; }
         }
       }
     }

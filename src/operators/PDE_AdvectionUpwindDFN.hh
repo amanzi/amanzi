@@ -49,7 +49,7 @@ class PDE_AdvectionUpwindDFN : public PDE_AdvectionUpwind {
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& h,
                           const Teuchos::Ptr<const CompositeVector>& u,
                           const Teuchos::RCP<BCs>& bc,
-                          const Teuchos::Ptr<CompositeVector>& flux) override{};
+                          const Teuchos::Ptr<CompositeVector>& flux) override {};
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
 
  private:

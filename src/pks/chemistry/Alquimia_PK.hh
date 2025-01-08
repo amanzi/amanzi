@@ -85,7 +85,10 @@ class Alquimia_PK : public Chemistry_PK {
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override final;
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override final;
-  virtual void CalculateDiagnostics(const Tag& tag) override final { extra_chemistry_output_data(); }
+  virtual void CalculateDiagnostics(const Tag& tag) override final
+  {
+    extra_chemistry_output_data();
+  }
 
   // Ben: the following routine provides the interface for
   // output of auxillary cellwise data from chemistry

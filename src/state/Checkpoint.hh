@@ -165,11 +165,10 @@ Checkpoint::Read<Epetra_Vector>(const std::string& name, Epetra_Vector& t) const
     auto comm_world = getDefaultComm();
     std::string fname = std::string("./err.") + std::to_string(comm_world->MyPID());
     std::fstream str(fname, std::fstream::out | std::fstream::app);
-    str << "rank (" << comm_world->MyPID() << "/"
-        << comm_world->NumProc() << ") on comm ("
+    str << "rank (" << comm_world->MyPID() << "/" << comm_world->NumProc() << ") on comm ("
         << output_.at(domain)->Comm()->MyPID() << "/" << output_.at(domain)->Comm()->NumProc()
-        << ") reading \"" << name << "\" of type Epetra_Vector from domain \"" << domain << "\" in file \""
-        << output_.at(domain)->H5DataFilename() << std::endl;
+        << ") reading \"" << name << "\" of type Epetra_Vector from domain \"" << domain
+        << "\" in file \"" << output_.at(domain)->H5DataFilename() << std::endl;
   }
 #endif
 
@@ -188,8 +187,7 @@ Checkpoint::Read<double>(const std::string& name, double& t) const
     auto comm_world = getDefaultComm();
     std::string fname = std::string("./err.") + std::to_string(comm_world->MyPID());
     std::fstream str(fname, std::fstream::out | std::fstream::app);
-    str << "rank (" << comm_world->MyPID() << "/"
-        << comm_world->NumProc() << ") on comm ("
+    str << "rank (" << comm_world->MyPID() << "/" << comm_world->NumProc() << ") on comm ("
         << output_.at(domain)->Comm()->MyPID() << "/" << output_.at(domain)->Comm()->NumProc()
         << ") reading \"" << name << "\" of type double from domain \"" << domain << "\" in file \""
         << output_.at(domain)->H5DataFilename() << std::endl;
@@ -212,8 +210,7 @@ Checkpoint::Read<int>(const std::string& name, int& t) const
     auto comm_world = getDefaultComm();
     std::string fname = std::string("./err.") + std::to_string(comm_world->MyPID());
     std::fstream str(fname, std::fstream::out | std::fstream::app);
-    str << "rank (" << comm_world->MyPID() << "/"
-        << comm_world->NumProc() << ") on comm ("
+    str << "rank (" << comm_world->MyPID() << "/" << comm_world->NumProc() << ") on comm ("
         << output_.at(domain)->Comm()->MyPID() << "/" << output_.at(domain)->Comm()->NumProc()
         << ") reading \"" << name << "\" of type int from domain \"" << domain << "\" in file \""
         << output_.at(domain)->H5DataFilename() << std::endl;

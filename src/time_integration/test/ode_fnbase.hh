@@ -76,7 +76,7 @@ class nonlinearODE : public Amanzi::BDFFnBase<Epetra_Vector> {
 
   void compute_udot(double t,
                     Teuchos::RCP<const Epetra_Vector> u,
-                    Teuchos::RCP<const Epetra_Vector> udot){};
+                    Teuchos::RCP<const Epetra_Vector> udot) {};
 
 
   bool IsAdmissible(Teuchos::RCP<const Epetra_Vector> up) { return true; }

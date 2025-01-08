@@ -26,14 +26,12 @@
 namespace Amanzi {
 namespace Utils {
 
-TimeStepManager::TimeStepManager()
-  : manual_override_(false)
+TimeStepManager::TimeStepManager() : manual_override_(false)
 {
   vo_ = Teuchos::rcp(new VerboseObject("TimeStepManager", Teuchos::ParameterList()));
 }
 
-TimeStepManager::TimeStepManager(Teuchos::ParameterList& plist)
-  : manual_override_(false)
+TimeStepManager::TimeStepManager(Teuchos::ParameterList& plist) : manual_override_(false)
 {
   // manual override
   if (plist.isParameter("prescribed timesteps [s]")) {
@@ -61,8 +59,7 @@ TimeStepManager::TimeStepManager(Teuchos::ParameterList& plist)
 
 
 TimeStepManager::TimeStepManager(Teuchos::RCP<VerboseObject> vo_cd)
-  : manual_override_(false),
-    vo_(vo_cd)
+  : manual_override_(false), vo_(vo_cd)
 {}
 
 
@@ -82,7 +79,7 @@ TimeStepManager::RegisterTimeEvent(const std::vector<double>& times, bool phys)
 void
 TimeStepManager::RegisterTimeEvent(double time, bool phys)
 {
-  RegisterTimeEvent(std::vector<double>{time});
+  RegisterTimeEvent(std::vector<double>{ time });
 }
 
 void
@@ -104,9 +101,7 @@ TimeStepManager::TimeStep(double T, double dT, bool after_failure)
       Errors::Message msg("TimeStepManager: manually prescribed timestep failed.");
       Exceptions::amanzi_throw(msg);
     }
-    if (manual_dts_i_ != manual_dts_.size()) {
-      dT = manual_dts_[manual_dts_i_++];
-    }
+    if (manual_dts_i_ != manual_dts_.size()) { dT = manual_dts_[manual_dts_i_++]; }
   }
 
   // loop over all events to find the next event time
@@ -169,8 +164,9 @@ TimeStepManager::print(std::ostream& os, double start, double end) const
   }
 
   std::sort(print_times.begin(), print_times.end());
-  print_times.erase(std::unique(print_times.begin(), print_times.end(),
-          [=](double a, double b) { return isNearEqual<double>(a,b); }),
+  print_times.erase(std::unique(print_times.begin(),
+                                print_times.end(),
+                                [=](double a, double b) { return isNearEqual<double>(a, b); }),
                     print_times.end());
   for (auto t : print_times) os << t << " ";
 }

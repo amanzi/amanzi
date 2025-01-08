@@ -479,7 +479,7 @@ TEST(NATIVE_VALOCCHI_INITIAL)
   std::vector<double> icm = { 1.0e-5 };
   std::vector<double> icts = {
     1.607889E+02, 1.415668E+02, 1.530388E+02, 0.000000E+00
-  };                                     // total sorbed
+  }; // total sorbed
   std::vector<double> icie = { 750.0 };  // ion exchange
   std::vector<double> icfi, icsd, icssa; // free ion, side density, specific surface area
   RunBatchNative("test/native/ion-exchange-valocchi.xml",

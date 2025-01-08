@@ -162,9 +162,9 @@ RunTest(int icase, double gravity, int nx = 10, double tol = 1e-12)
   double fnorm;
   global_op->rhs()->Norm2(&fnorm);
   if (MyPID == 0) {
-    std::cout << "pressure solver"
-              << ": ||r||=" << global_op->residual() << " itr=" << global_op->num_itrs()
-              << "  ||f||=" << fnorm << "  #dofs=" << ndofs << std::endl;
+    std::cout << "pressure solver" << ": ||r||=" << global_op->residual()
+              << " itr=" << global_op->num_itrs() << "  ||f||=" << fnorm << "  #dofs=" << ndofs
+              << std::endl;
   }
 
   // calculate error in potential

@@ -57,9 +57,9 @@ MeshExtractedManifold::MeshExtractedManifold(
     flattened_(flattened),
     extract_all_faces_(false)
 {
-  if (plist_.get()) extract_all_faces_ = plist_->sublist("unstructured")
-                                                .sublist("submesh")
-                                                .get<bool>("extract all faces", false);
+  if (plist_.get())
+    extract_all_faces_ =
+      plist_->sublist("unstructured").sublist("submesh").get<bool>("extract all faces", false);
 
   vo_ = Teuchos::rcp(new VerboseObject(comm_, "MeshExtractedManifold", *plist_));
 

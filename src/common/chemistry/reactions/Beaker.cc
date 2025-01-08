@@ -1070,8 +1070,8 @@ Beaker::InitializeMolalities_(const std::vector<double>& initial_molalities)
   if (initial_molalities.size() != primary_species().size()) {
     std::ostringstream error_stream;
     error_stream << "Mismatch in size of initial_molalities array (" << initial_molalities.size()
-                 << ") and the number of "
-                 << "primary species (" << primary_species().size() << ")\n";
+                 << ") and the number of " << "primary species (" << primary_species().size()
+                 << ")\n";
     Exceptions::amanzi_throw(Errors::Message(error_stream.str()));
   }
 

@@ -353,8 +353,8 @@ RemapGCLr(const Amanzi::Explicit_TI::method_t& rk_method,
     std::string limiter = limiter_list.get<std::string>("limiter");
     std::string stencil = limiter_list.get<std::string>("limiter stencil");
 
-    std::cout << "\nTest: " << dim << "D remap with restart:"
-              << " mesh=" << ((file_name == "") ? "structured" : file_name) << " deform=" << deform
+    std::cout << "\nTest: " << dim << "D remap with restart:" << " mesh="
+              << ((file_name == "") ? "structured" : file_name) << " deform=" << deform
               << std::endl;
 
     std::cout << "      discretization: order=" << order << std::endl;

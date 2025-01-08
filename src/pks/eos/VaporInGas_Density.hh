@@ -51,8 +51,14 @@ class VaporInGas_Density : public EOS_Density {
   }
 
   virtual double MolarDensity(double T, double p) override { return gas_eos_->MolarDensity(T, p); }
-  virtual double DMolarDensityDT(double T, double p) override { return gas_eos_->DMolarDensityDT(T, p); }
-  virtual double DMolarDensityDp(double T, double p) override { return gas_eos_->DMolarDensityDp(T, p); }
+  virtual double DMolarDensityDT(double T, double p) override
+  {
+    return gas_eos_->DMolarDensityDT(T, p);
+  }
+  virtual double DMolarDensityDp(double T, double p) override
+  {
+    return gas_eos_->DMolarDensityDp(T, p);
+  }
 
  protected:
   Teuchos::RCP<EOS_Density> gas_eos_;

@@ -295,8 +295,8 @@ AmanziUnstructuredGridSimulationDriver::InitMesh(
     if (aerr > 0) { return Amanzi::Simulator::FAIL; }
 
   } else { // generate parameters are specified
-    std::cerr << rank << ": error: "
-              << "Neither Read nor Generate options specified for mesh" << std::endl;
+    std::cerr << rank << ": error: " << "Neither Read nor Generate options specified for mesh"
+              << std::endl;
     throw std::exception();
   }
 

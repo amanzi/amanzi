@@ -253,8 +253,8 @@ Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S, double dT) const
 
   if (MyPID == 0 && nbcs > 0) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "seepage face: flow=" << outflow << " [kg/s],"
-               << " total=" << seepage_mass_ << " [kg]" << std::endl;
+    *vo_->os() << "seepage face: flow=" << outflow << " [kg/s]," << " total=" << seepage_mass_
+               << " [kg]" << std::endl;
   }
 }
 
@@ -388,12 +388,11 @@ Flow_PK::VV_PrintSourceExtrema() const
     *vo_->os() << "sources: total min/max: " << smin << "/" << smax << std::endl;
     for (int i = 0; i < nsrcs; ++i) {
       if (flow_on_manifold_) {
-        *vo_->os() << " src #" << i << ": area=" << areas[i] << " m^2"
-                   << ", rate=" << rates[i] << " kg/s"
-                   << ", mean aperture=" << volumes[i] / areas[i] << " m" << std::endl;
+        *vo_->os() << " src #" << i << ": area=" << areas[i] << " m^2" << ", rate=" << rates[i]
+                   << " kg/s" << ", mean aperture=" << volumes[i] / areas[i] << " m" << std::endl;
       } else {
-        *vo_->os() << " src #" << i << ": volume=" << volumes[i] << " m^3"
-                   << ", rate=" << rates[i] << " kg/s" << std::endl;
+        *vo_->os() << " src #" << i << ": volume=" << volumes[i] << " m^3" << ", rate=" << rates[i]
+                   << " kg/s" << std::endl;
       }
     }
   }

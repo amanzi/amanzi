@@ -152,8 +152,14 @@ run_test(const std::string& domain, const std::string& filename)
     // observation
     const auto& u0 = *S->Get<CompositeVector>("pressure_liquid").ViewComponent("cell");
     // std::cout << "OBS: " << t << " " << u0[0][0] << std::endl;
-    if (std::fabs(t - 3.2342e+12) < 0.05e+12) { nhit0++; CHECK_CLOSE(u0[0][0], 1.14164e+06, 0.01e+06); }
-    if (std::fabs(t - 1.7521e+13) < 0.01e+13) { nhit1++; CHECK_CLOSE(u0[0][0], 766137, 0.005e+06); }
+    if (std::fabs(t - 3.2342e+12) < 0.05e+12) {
+      nhit0++;
+      CHECK_CLOSE(u0[0][0], 1.14164e+06, 0.01e+06);
+    }
+    if (std::fabs(t - 1.7521e+13) < 0.01e+13) {
+      nhit1++;
+      CHECK_CLOSE(u0[0][0], 766137, 0.005e+06);
+    }
   }
   WriteStateStatistics(*S, *vo);
   CHECK(nhit0 > 0 && nhit1 > 0);

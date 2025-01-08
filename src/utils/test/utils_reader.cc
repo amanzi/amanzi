@@ -15,16 +15,20 @@ using namespace Amanzi;
 
 using Vec = Teuchos::Array<double>;
 using IVec = Teuchos::Array<int>;
-using Mat = Teuchos::SerialDenseMatrix<int,double>;
+using Mat = Teuchos::SerialDenseMatrix<int, double>;
 
-void test_vec1(const Vec& v) {
+void
+test_vec1(const Vec& v)
+{
   CHECK_EQUAL(3, v.length());
   CHECK_CLOSE(0.0, v[0], 1.e-10);
   CHECK_CLOSE(1.0, v[1], 1.e-10);
   CHECK_CLOSE(2.0, v[2], 1.e-10);
 }
 
-void test_vec2(const Vec& v) {
+void
+test_vec2(const Vec& v)
+{
   CHECK_EQUAL(3, v.length());
   CHECK_CLOSE(3.0, v[0], 1.e-10);
   CHECK_CLOSE(4.0, v[1], 1.e-10);
@@ -32,44 +36,54 @@ void test_vec2(const Vec& v) {
 }
 
 
-void test_ivec1(const IVec& v) {
+void
+test_ivec1(const IVec& v)
+{
   CHECK_EQUAL(3, v.length());
   CHECK_EQUAL(0, v[0]);
   CHECK_EQUAL(1, v[1]);
   CHECK_EQUAL(2, v[2]);
 }
 
-void test_mat1(const Mat& v) {
+void
+test_mat1(const Mat& v)
+{
   CHECK_EQUAL(2, v.numRows());
   CHECK_EQUAL(2, v.numCols());
-  CHECK_CLOSE(0.0, v(0,0), 1.e-10);
-  CHECK_CLOSE(1.0, v(1,0), 1.e-10);
-  CHECK_CLOSE(2.0, v(0,1), 1.e-10);
-  CHECK_CLOSE(3.0, v(1,1), 1.e-10);
+  CHECK_CLOSE(0.0, v(0, 0), 1.e-10);
+  CHECK_CLOSE(1.0, v(1, 0), 1.e-10);
+  CHECK_CLOSE(2.0, v(0, 1), 1.e-10);
+  CHECK_CLOSE(3.0, v(1, 1), 1.e-10);
 }
 
-void test_mat2(const Mat& v) {
+void
+test_mat2(const Mat& v)
+{
   CHECK_EQUAL(2, v.numRows());
   CHECK_EQUAL(2, v.numCols());
-  CHECK_CLOSE(2.0, v(0,0), 1.e-10);
-  CHECK_CLOSE(3.0, v(1,0), 1.e-10);
-  CHECK_CLOSE(4.0, v(0,1), 1.e-10);
-  CHECK_CLOSE(5.0, v(1,1), 1.e-10);
+  CHECK_CLOSE(2.0, v(0, 0), 1.e-10);
+  CHECK_CLOSE(3.0, v(1, 0), 1.e-10);
+  CHECK_CLOSE(4.0, v(0, 1), 1.e-10);
+  CHECK_CLOSE(5.0, v(1, 1), 1.e-10);
 }
 
-void test_mat3(const Mat& v) {
+void
+test_mat3(const Mat& v)
+{
   CHECK_EQUAL(3, v.numRows());
   CHECK_EQUAL(2, v.numCols());
-  CHECK_CLOSE(0.0, v(0,0), 1.e-10);
-  CHECK_CLOSE(1.0, v(1,0), 1.e-10);
-  CHECK_CLOSE(2.0, v(2,0), 1.e-10);
-  CHECK_CLOSE(3.0, v(0,1), 1.e-10);
-  CHECK_CLOSE(4.0, v(1,1), 1.e-10);
-  CHECK_CLOSE(5.0, v(2,1), 1.e-10);
+  CHECK_CLOSE(0.0, v(0, 0), 1.e-10);
+  CHECK_CLOSE(1.0, v(1, 0), 1.e-10);
+  CHECK_CLOSE(2.0, v(2, 0), 1.e-10);
+  CHECK_CLOSE(3.0, v(0, 1), 1.e-10);
+  CHECK_CLOSE(4.0, v(1, 1), 1.e-10);
+  CHECK_CLOSE(5.0, v(2, 1), 1.e-10);
 }
 
 
-void testReader(const Amanzi::Reader& r) {
+void
+testReader(const Amanzi::Reader& r)
+{
   // test valid things
   // -------------------
   CHECK(r.hasVariableOrGroup("vec1"));
@@ -134,12 +148,14 @@ void testReader(const Amanzi::Reader& r) {
 }
 
 
-TEST(UTILS_HDF5_READER) {
+TEST(UTILS_HDF5_READER)
+{
   auto r = std::make_shared<ReaderHDF5>("test/utils_reader.h5");
   testReader(*r);
 }
 
-TEST(UTILS_NETCDF_READER) {
+TEST(UTILS_NETCDF_READER)
+{
   auto r = std::make_shared<ReaderNetCDF>("test/utils_reader.nc");
   testReader(*r);
 }

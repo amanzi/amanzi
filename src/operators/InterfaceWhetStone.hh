@@ -32,10 +32,10 @@ class InterfaceWhetStone {
   InterfaceWhetStone(){};
   virtual ~InterfaceWhetStone(){};
 
-  virtual void MassMatrix(int c, WhetStone::DenseMatrix& Acell){};
-  virtual void MassMatrixInverse(int c, WhetStone::DenseMatrix& Acell){};
-  virtual void StiffnessMatrix(int c, WhetStone::DenseMatrix& Acell){};
-  virtual void FaceMatrixJump(int f, int c1, int c2, WhetStone::DenseMatrix& Aface){};
+  virtual void MassMatrix(int c, WhetStone::DenseMatrix& Acell) {};
+  virtual void MassMatrixInverse(int c, WhetStone::DenseMatrix& Acell) {};
+  virtual void StiffnessMatrix(int c, WhetStone::DenseMatrix& Acell) {};
+  virtual void FaceMatrixJump(int f, int c1, int c2, WhetStone::DenseMatrix& Aface) {};
 };
 
 

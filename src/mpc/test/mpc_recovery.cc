@@ -224,8 +224,8 @@ TEST(MPC_RECOVERY_COUPLED_THERMAL_FLOW)
 
   ::Run<FlowEnergyMatrixFracture_PK>(
     "test/mpc_coupled_thermal_flow_richards.xml", 3, { 10.0, 10.0, 10.0 }, 1);
-    // round-off errors are observed between two states/two runs
-    // "test/mpc_coupled_thermal_flow_richards.xml", 3, { 0.1, 0.1, 0.1 }, 1);
+  // round-off errors are observed between two states/two runs
+  // "test/mpc_coupled_thermal_flow_richards.xml", 3, { 0.1, 0.1, 0.1 }, 1);
 }
 
 TEST(MPC_RECOVERY_FLOW_RICHARDS)

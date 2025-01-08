@@ -106,11 +106,11 @@ class SolutionHistory {
 * Constructors
 ****************************************************************** */
 template <class Vector, class VectorSpace>
-SolutionHistory<Vector,VectorSpace>::SolutionHistory(const std::string& name,
-        int mvec,
-        double t,
-        const Teuchos::RCP<const VectorSpace>& space,
-        const Teuchos::RCP<State>& S)
+SolutionHistory<Vector, VectorSpace>::SolutionHistory(const std::string& name,
+                                                      int mvec,
+                                                      double t,
+                                                      const Teuchos::RCP<const VectorSpace>& space,
+                                                      const Teuchos::RCP<State>& S)
   : S_(S), name_(Keys::cleanName(name, true))
 {
   Initialize_(mvec, *space);
@@ -122,7 +122,7 @@ SolutionHistory<Vector,VectorSpace>::SolutionHistory(const std::string& name,
 ****************************************************************** */
 template <class Vector, class VectorSpace>
 void
-SolutionHistory<Vector,VectorSpace>::Initialize_(int mvec, const VectorSpace& space)
+SolutionHistory<Vector, VectorSpace>::Initialize_(int mvec, const VectorSpace& space)
 {
   d_.resize(mvec);
 
@@ -183,7 +183,7 @@ SolutionHistory<Vector,VectorSpace>::Initialize_(int mvec, const VectorSpace& sp
 ****************************************************************** */
 template <class Vector, class VectorSpace>
 void
-SolutionHistory<Vector,VectorSpace>::FlushHistory(double t, const Vector& x, Vector const* xdot)
+SolutionHistory<Vector, VectorSpace>::FlushHistory(double t, const Vector& x, Vector const* xdot)
 {
   *nvec_ = 0;
   RecordSolution(t, x, xdot);
@@ -195,7 +195,7 @@ SolutionHistory<Vector,VectorSpace>::FlushHistory(double t, const Vector& x, Vec
 ****************************************************************** */
 template <class Vector, class VectorSpace>
 void
-SolutionHistory<Vector,VectorSpace>::RecordSolution(double t, const Vector& x, Vector const* xdot)
+SolutionHistory<Vector, VectorSpace>::RecordSolution(double t, const Vector& x, Vector const* xdot)
 {
   // update the number of vectors
   (*nvec_)++;
@@ -261,7 +261,7 @@ SolutionHistory<Vector,VectorSpace>::RecordSolution(double t, const Vector& x, V
 ****************************************************************** */
 template <class Vector, class VectorSpace>
 void
-SolutionHistory<Vector,VectorSpace>::InterpolateSolution(double t, Vector& x)
+SolutionHistory<Vector, VectorSpace>::InterpolateSolution(double t, Vector& x)
 {
   InterpolateSolution(t, x, (*nvec_) - 1);
 }
@@ -269,7 +269,7 @@ SolutionHistory<Vector,VectorSpace>::InterpolateSolution(double t, Vector& x)
 
 template <class Vector, class VectorSpace>
 void
-SolutionHistory<Vector,VectorSpace>::InterpolateSolution(double t, Vector& x, unsigned int order)
+SolutionHistory<Vector, VectorSpace>::InterpolateSolution(double t, Vector& x, unsigned int order)
 {
   AMANZI_ASSERT(order < (*nvec_));
   AMANZI_ASSERT(order >= 0);
@@ -284,7 +284,7 @@ SolutionHistory<Vector,VectorSpace>::InterpolateSolution(double t, Vector& x, un
 ****************************************************************** */
 template <class Vector, class VectorSpace>
 Teuchos::RCP<const Vector>
-SolutionHistory<Vector,VectorSpace>::MostRecentSolution()
+SolutionHistory<Vector, VectorSpace>::MostRecentSolution()
 {
   return d_[0];
 }
@@ -292,7 +292,7 @@ SolutionHistory<Vector,VectorSpace>::MostRecentSolution()
 
 template <class Vector, class VectorSpace>
 double
-SolutionHistory<Vector,VectorSpace>::MostRecentTime()
+SolutionHistory<Vector, VectorSpace>::MostRecentTime()
 {
   return (*times_)[0];
 }
@@ -300,7 +300,7 @@ SolutionHistory<Vector,VectorSpace>::MostRecentTime()
 
 template <class Vector, class VectorSpace>
 void
-SolutionHistory<Vector,VectorSpace>::TimeDeltas(std::vector<double>& h)
+SolutionHistory<Vector, VectorSpace>::TimeDeltas(std::vector<double>& h)
 {
   h.resize((*nvec_) - 1);
   for (unsigned int j = 0; j <= (*nvec_) - 2; j++) { h[j] = (*times_)[0] - (*times_)[j + 1]; }
@@ -312,7 +312,7 @@ SolutionHistory<Vector,VectorSpace>::TimeDeltas(std::vector<double>& h)
 ****************************************************************** */
 template <class Vector, class VectorSpace>
 void
-SolutionHistory<Vector,VectorSpace>::MoveToState()
+SolutionHistory<Vector, VectorSpace>::MoveToState()
 {
   std::string sh_name = name_ + "_solution_history";
   if (S_ != Teuchos::null) {

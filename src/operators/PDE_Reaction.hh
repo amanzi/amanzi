@@ -97,7 +97,7 @@ class PDE_Reaction : public PDE_HelperDiscretization {
 
   // -- flux calculation has yet no meaning for this operator
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
-                          const Teuchos::Ptr<CompositeVector>& u) override{};
+                          const Teuchos::Ptr<CompositeVector>& u) override {};
 
   // boundary conditions
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;

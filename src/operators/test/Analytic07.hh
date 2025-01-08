@@ -26,7 +26,7 @@ const double a = 6.1;
 
 class Analytic07 : public AnalyticBase {
  public:
-  Analytic07(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : AnalyticBase(mesh) {};
+  Analytic07(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : AnalyticBase(mesh){};
   ~Analytic07(){};
 
   Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t)
@@ -36,10 +36,7 @@ class Analytic07 : public AnalyticBase {
     return K;
   }
 
-  double ScalarDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t)
-  {
-    return 1.0;
-  }
+  double ScalarDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) { return 1.0; }
 
   double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) const
   {

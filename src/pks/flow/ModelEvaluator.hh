@@ -44,7 +44,7 @@ class ModelEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Compos
   virtual void EvaluatePartialDerivative_(const State& S,
                                           const Key& wrt_key,
                                           const Tag& wrt_tag,
-                                          const std::vector<CompositeVector*>& results) override{};
+                                          const std::vector<CompositeVector*>& results) override {};
 
  private:
   void Init_();

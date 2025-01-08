@@ -57,7 +57,10 @@ class PK_DomainFunctionParentMeshField : public FunctionBase {
 
   // required member functions
   virtual void Compute(double t0, double t1) override;
-  virtual DomainFunction_kind getType() const override { return DomainFunction_kind::PARENT_MESH_FIELD; }
+  virtual DomainFunction_kind getType() const override
+  {
+    return DomainFunction_kind::PARENT_MESH_FIELD;
+  }
 
  protected:
   using FunctionBase::value_;

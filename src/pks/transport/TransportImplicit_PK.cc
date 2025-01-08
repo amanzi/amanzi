@@ -159,8 +159,8 @@ TransportImplicit_PK::Initialize()
       udot->PutScalar(0.0);
 
       for (int i = 0; i < num_aqueous; i++) {
-        bdf1_dae_.push_back(
-          Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(name_, bdf1_list, *this, soln_->get_map(), S_)));
+        bdf1_dae_.push_back(Teuchos::rcp(
+          new BDF1_TI<TreeVector, TreeVectorSpace>(name_, bdf1_list, *this, soln_->get_map(), S_)));
         bdf1_dae_[i]->SetInitialState(0.0, soln_, udot);
       }
     } else {

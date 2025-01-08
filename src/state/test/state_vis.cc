@@ -134,9 +134,10 @@ SUITE(VISUALIZATION)
     // here we just check that the code does not crash when
     // the mesh and data files are written
     Teuchos::ParameterList plist;
-    Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> mesh_fw = Amanzi::Testing::demoMeshLogicalYManual();
+    Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> mesh_fw =
+      Amanzi::Testing::demoMeshLogicalYManual();
     auto mesh = Teuchos::rcp(new Amanzi::AmanziMesh::MeshCache<Amanzi::MemSpace_kind::HOST>(
-                               mesh_fw, Teuchos::rcp(new Amanzi::AmanziMesh::MeshLogicalAlgorithms()), Teuchos::null));
+      mesh_fw, Teuchos::rcp(new Amanzi::AmanziMesh::MeshLogicalAlgorithms()), Teuchos::null));
 
     Teuchos::ParameterList state_list("state");
     Amanzi::State S0(state_list);
@@ -153,7 +154,7 @@ SUITE(VISUALIZATION)
     S0.set_time(1.02);
 
     Teuchos::ParameterList visualization_list("domain");
-    visualization_list.set<Teuchos::Array<int>>("cycles", Teuchos::Array<int>{0,1,-1});
+    visualization_list.set<Teuchos::Array<int>>("cycles", Teuchos::Array<int>{ 0, 1, -1 });
     visualization_list.set<std::string>("file name base", "amanzi_vis_logical");
     Amanzi::Visualization V(visualization_list);
     V.set_name("domain");

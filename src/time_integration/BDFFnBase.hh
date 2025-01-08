@@ -43,16 +43,12 @@ class BDFFnBase {
   // check the admissibility of a solution
   //
   // If this is true, up is safe to pass into the FunctionalResidual.
-  virtual bool IsAdmissible(Teuchos::RCP<const Vector> up) {
-    return true;
-  }
+  virtual bool IsAdmissible(Teuchos::RCP<const Vector> up) { return true; }
 
   // check the validity of a solution
   //
   // Provides a way for the FnBase to arbitrarily reject a solution.
-  virtual bool IsValid(const Teuchos::RCP<const Vector>& up) {
-    return true;
-  }
+  virtual bool IsValid(const Teuchos::RCP<const Vector>& up) { return true; }
 
   // possibly modifies the predictor that is going to be used as a
   // starting value for the nonlinear solve in the time integrator,
@@ -73,7 +69,7 @@ class BDFFnBase {
                    Teuchos::RCP<Vector> du) = 0;
 
   // update the continuation parameter
-  virtual void UpdateContinuationParameter(double lambda){};
+  virtual void UpdateContinuationParameter(double lambda) {};
 
   // calling this indicates that the time
   // integration scheme is changing the value of the solution in

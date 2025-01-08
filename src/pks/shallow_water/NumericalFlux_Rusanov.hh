@@ -26,7 +26,7 @@ namespace ShallowWater {
 class NumericalFlux_Rusanov : public NumericalFlux {
  public:
   explicit NumericalFlux_Rusanov(Teuchos::ParameterList& plist);
-  ~NumericalFlux_Rusanov() {};
+  ~NumericalFlux_Rusanov(){};
 
   virtual std::vector<double> Compute(const std::vector<double>& UL,
                                       const std::vector<double>& UR,

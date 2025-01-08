@@ -895,7 +895,7 @@ void
 State::SetEvaluator(const Key& key, const Tag& tag, const Teuchos::RCP<Evaluator>& evaluator)
 {
   evaluators_[key][tag] = evaluator;
-//   evaluator->EnsureEvaluators(*this);
+  //   evaluator->EnsureEvaluators(*this);
 }
 
 

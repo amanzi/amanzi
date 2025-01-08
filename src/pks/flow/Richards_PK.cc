@@ -662,7 +662,8 @@ Richards_PK::Initialize()
     if (!bdf1_list.isSublist("verbose object"))
       bdf1_list.sublist("verbose object") = fp_list_->sublist("verbose object");
 
-    bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1", bdf1_list, *this, soln_->get_map(), S_));
+    bdf1_dae_ = Teuchos::rcp(
+      new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1", bdf1_list, *this, soln_->get_map(), S_));
   } else {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "WARNING: BDF1 time integration list is missing..." << std::endl;
@@ -839,7 +840,6 @@ Richards_PK::Initialize()
 }
 
 
-
 /* ****************************************************************
 * This completes initialization of common fields that were not
 * initialized by the state.
@@ -906,8 +906,7 @@ Richards_PK::InitializeStatistics_()
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "\nEC:" << error_control_ << " Upwind:" << op_matrix_diff_->little_k() << " PC:\""
-               << pc_name.c_str() << "\""
-               << " TI:\"" << ti_method_name.c_str() << "\"" << std::endl
+               << pc_name.c_str() << "\"" << " TI:\"" << ti_method_name.c_str() << "\"" << std::endl
                << "matrix: " << op_matrix_->PrintDiagnostics() << std::endl
                << "precon: " << op_preconditioner_->PrintDiagnostics() << std::endl;
 

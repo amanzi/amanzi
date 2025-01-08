@@ -113,7 +113,8 @@ IOEvent::ReadParameters_()
   if (plist_.isParameter("cycles start period stop")) {
     auto c_sps = plist_.get<Teuchos::Array<int>>("cycles start period stop");
     if (c_sps.size() != 3) {
-      Errors::Message msg("Array of incorrect length provided to IOEvent \"cycles start period stop\"");
+      Errors::Message msg(
+        "Array of incorrect length provided to IOEvent \"cycles start period stop\"");
       Exceptions::amanzi_throw(msg);
     }
     cycle_events_.push_back(Teuchos::rcp(new EventSPS<int>(c_sps[0], c_sps[1], c_sps[2])));
@@ -128,8 +129,7 @@ IOEvent::ReadParameters_()
       auto c_sps = plist_.get<Teuchos::Array<int>>(pname.str());
       if (c_sps.size() != 3) {
         Errors::Message msg;
-        msg << "Array of incorrect length provided to IOEvent \""
-            << pname.str() << "\"";
+        msg << "Array of incorrect length provided to IOEvent \"" << pname.str() << "\"";
         Exceptions::amanzi_throw(msg);
       }
       cycle_events_.push_back(Teuchos::rcp(new EventSPS<int>(c_sps[0], c_sps[1], c_sps[2])));
@@ -148,7 +148,8 @@ IOEvent::ReadParameters_()
   if (plist_.isParameter("times start period stop")) {
     auto t_sps = plist_.get<Teuchos::Array<double>>("times start period stop");
     if (t_sps.size() != 3) {
-      Errors::Message msg("Array of incorrect length provided to IOEvent \"times start period stop\"");
+      Errors::Message msg(
+        "Array of incorrect length provided to IOEvent \"times start period stop\"");
       Exceptions::amanzi_throw(msg);
     }
 

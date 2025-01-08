@@ -60,15 +60,12 @@ class TimestepControllerAdaptive : public TimestepControllerRecoverable {
   double reduction_factor_, increase_factor_;
 
   Teuchos::RCP<const Vector> udot_prev_, udot_; // for error estimate
-  double atol_, rtol_, p_;                // error parameters
+  double atol_, rtol_, p_;                      // error parameters
 };
 
 
 inline double
-getTimestepBase_(double dt,
-                 const Epetra_MultiVector& u0,
-                 const Epetra_MultiVector& u1,
-                 double tol)
+getTimestepBase_(double dt, const Epetra_MultiVector& u0, const Epetra_MultiVector& u1, double tol)
 {
   double error_max = 0.0;
   double dTfactor(100.0), dTfactor_cell;
@@ -101,14 +98,13 @@ getTimestepBase_(double dt,
 * Constructor
 ****************************************************************** */
 template <class Vector>
-TimestepControllerAdaptive<Vector>::TimestepControllerAdaptive(const std::string& name,
-        Teuchos::ParameterList& plist,
-        const Teuchos::RCP<State>& S,
-        const Teuchos::RCP<const Vector>& udot,
-        const Teuchos::RCP<const Vector>& udot_prev)
-  : TimestepControllerRecoverable(name, plist, S),
-    udot_prev_(udot_prev),
-    udot_(udot)
+TimestepControllerAdaptive<Vector>::TimestepControllerAdaptive(
+  const std::string& name,
+  Teuchos::ParameterList& plist,
+  const Teuchos::RCP<State>& S,
+  const Teuchos::RCP<const Vector>& udot,
+  const Teuchos::RCP<const Vector>& udot_prev)
+  : TimestepControllerRecoverable(name, plist, S), udot_prev_(udot_prev), udot_(udot)
 {
   max_its_ = plist.get<int>("max iterations");
   min_its_ = plist.get<int>("min iterations");
@@ -137,33 +133,31 @@ template <class Vector>
 double
 TimestepControllerAdaptive<Vector>::getTimestep_(double dt, int iterations, bool valid)
 {
-  if (iterations < 0 || iterations > max_its_ || !valid) {
-    return dt * reduction_factor_;
-  }
+  if (iterations < 0 || iterations > max_its_ || !valid) { return dt * reduction_factor_; }
   double tol = rtol_ * p_ + atol_;
   return getTimestepBase_(dt, *udot_, *udot_prev_, tol);
 }
 
-template<>
+template <>
 inline double
 TimestepControllerAdaptive<CompositeVector>::getTimestep_(double dt, int iterations, bool valid)
 {
-  if (iterations < 0 || iterations > max_its_ || !valid) {
-    return dt * reduction_factor_;
-  }
+  if (iterations < 0 || iterations > max_its_ || !valid) { return dt * reduction_factor_; }
   double tol = rtol_ * p_ + atol_;
-  return getTimestepBase_(dt, *udot_->ViewComponent("cell", false), *udot_prev_->ViewComponent("cell", false), tol);
+  return getTimestepBase_(
+    dt, *udot_->ViewComponent("cell", false), *udot_prev_->ViewComponent("cell", false), tol);
 }
 
-template<>
+template <>
 inline double
 TimestepControllerAdaptive<TreeVector>::getTimestep_(double dt, int iterations, bool valid)
 {
-  if (iterations < 0 || iterations > max_its_ || !valid) {
-    return dt * reduction_factor_;
-  }
+  if (iterations < 0 || iterations > max_its_ || !valid) { return dt * reduction_factor_; }
   double tol = rtol_ * p_ + atol_;
-  return getTimestepBase_(dt, *udot_->Data()->ViewComponent("cell", false), *udot_prev_->Data()->ViewComponent("cell", false), tol);
+  return getTimestepBase_(dt,
+                          *udot_->Data()->ViewComponent("cell", false),
+                          *udot_prev_->Data()->ViewComponent("cell", false),
+                          tol);
 }
 
 } // namespace Amanzi

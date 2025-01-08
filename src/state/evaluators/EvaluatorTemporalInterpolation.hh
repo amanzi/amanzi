@@ -42,7 +42,6 @@ water content at an intermediate time (here called transport_current).
 namespace Amanzi {
 
 class EvaluatorTemporalInterpolation : public EvaluatorSecondaryMonotypeCV {
-
  public:
   explicit EvaluatorTemporalInterpolation(Teuchos::ParameterList& plist);
   EvaluatorTemporalInterpolation(const EvaluatorTemporalInterpolation& other) = default;
@@ -56,12 +55,11 @@ class EvaluatorTemporalInterpolation : public EvaluatorSecondaryMonotypeCV {
                                           const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& result) override;
 
-protected:
+ protected:
   KeyTag current_, next_;
 
-private:
+ private:
   static Utils::RegisteredFactory<Evaluator, EvaluatorTemporalInterpolation> fac_;
-
 };
 
 } // namespace Amanzi
