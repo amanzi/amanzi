@@ -10,14 +10,14 @@
 /*!
 
 The exponential aperture-stress relationship is defined by initial aperture
-:math:`a_0`, overbuden pressure/normal stress :math:`p_{ov}`, fluid pressure 
+:math:`a_0`, overbuden pressure/normal stress :math:`p_{ov}`, fluid pressure
 :math:`p_f`, and fracture compressibility (fitting parameter) :math:`alpha`:
 
 
 .. math::
   a = a_0 \exp{\alpha (p_{ov} - p_f)}
 
-* `"undeformed aperture`" [double] aperture at zero effective normal stress 
+* `"undeformed aperture`" [double] aperture at zero effective normal stress
 
 * `"overburden pressure`" [double] overburden pressure/total normal stress
 

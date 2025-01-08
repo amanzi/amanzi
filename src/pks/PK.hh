@@ -4,7 +4,7 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (coonet@ornl.gov)
 */
 
 //! The interface for a Process Kernel, an equation or system of equations.
@@ -62,10 +62,10 @@ Developer's note:
   (following the Usage notes in src/pks/PK_Factory.hh) to register the
   derived PK with the PK factory.
 
-  By desing, modifications to the “state->evaluators” list should be done 
-  on construction of a PK. For instance, Energy PK should write 
+  By desing, modifications to the “state->evaluators” list should be done
+  on construction of a PK. For instance, Energy PK should write
   state->evaluators->temperature->evaluator type=primary,
-  after having read its domain name and assorted keys, see also ATS 
+  after having read its domain name and assorted keys, see also ATS
   issue 167.
 
 */

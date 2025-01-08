@@ -23,9 +23,9 @@ namespace Utils {
 *
 * Note that a and b must bracket the root, i.e. f(a) * f(b) < 0
 *
-* Two temination criteria are used. First, the bracket size is less 
+* Two temination criteria are used. First, the bracket size is less
 * than tol. Second, function values at bracket ends are ess then ftol.
-* When ftol is missing or negative, it is approximated inside as 
+* When ftol is missing or negative, it is approximated inside as
 *
 *   ftol = (1 + |f(a)| + |f(b)|) * tol.
 *

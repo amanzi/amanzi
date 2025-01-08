@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-           Ethan Coon (ecoon@lanl.gov)
+           Ethan Coon (coonet@ornl.gov)
 */
 
 //! Operator represents a linear map, and typically encapsulates a discretization.

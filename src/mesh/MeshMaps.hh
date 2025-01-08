@@ -8,7 +8,6 @@
 */
 
 //! Collects maps and importers for Mesh objects.
-
 /*
 
   Maps are indexing objects, a way of going from the "local ID", or LID, to

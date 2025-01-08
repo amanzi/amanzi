@@ -29,7 +29,7 @@
 #include "MFD3D_Lagrange.hh"
 #include "Tensor.hh"
 
-std::pair<double, double> EigenvaluesSVD(Amanzi::WhetStone::DenseMatrix& M) 
+std::pair<double, double> EigenvaluesSVD(Amanzi::WhetStone::DenseMatrix& M)
 {
   int n(M.NumRows()), lwork(100), info;
   double U[n*n], V[n*n], S[100], work[lwork];
@@ -926,4 +926,3 @@ TEST(DARCY_MASS_DEGENERATE_3D)
     CHECK(cond1 / cond2 < 2.0 && cond1 / cond2 > 0.5);
   }
 }
-

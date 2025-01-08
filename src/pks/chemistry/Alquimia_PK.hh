@@ -22,7 +22,7 @@ Most details are provided in the trimmed PFloTran file *1d-tritium-trim.in*.
   * `"auxiliary data`" ``[Array(string)]`` defines additional chemistry related data that the user
     can request be saved to vis files.
 
-  * `"min timestep (s)`" ``[double]`` is the minimum timestep that chemistry will allow 
+  * `"min timestep (s)`" ``[double]`` is the minimum timestep that chemistry will allow
     the MPC to take.
 
 .. code-block:: xml

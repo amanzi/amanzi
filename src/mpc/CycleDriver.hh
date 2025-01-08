@@ -52,7 +52,7 @@ to handle multiphysics process kernels (PKs) and multiple time periods.
          * `"start period time`" ``[double]`` is the start time of the current time period.
 
          * `"end period time`" ``[double]`` is the end time of the current time period.
- 
+
          * `"maximum cycle number`" ``[int]`` is the maximum allowed number of cycles in
            the current time period. Special value -1 means unlimited number of cycles.
 

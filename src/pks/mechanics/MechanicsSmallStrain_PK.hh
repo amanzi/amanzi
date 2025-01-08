@@ -17,14 +17,14 @@ Recall that
 .. math::
   \boldsymbol{\sigma} = 2 G {\rm dev}(\varepsilon) + K {\rm trace}(\varepsilon) \boldsymbol{I}
 
-where :math:`K` is the bulk modulus and :math:`G` is the shear modulus. 
+where :math:`K` is the bulk modulus and :math:`G` is the shear modulus.
 The shear modulus is a nonlinear function of shear strain :math:`\gamma`:
 
 .. math::
   G = G_{max} \left(1 + \displaystyle\frac{\gamma}{\gamma_{ref}}\right)^{-1}
 
 where :math:`G_{max}` is the maximum shear modulus and :math:`\gamma_{ref}` is the
-reference shear strain. 
+reference shear strain.
 The model parameters are placed in the following sublist:
 
 .. code-block:: xml

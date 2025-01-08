@@ -6,7 +6,7 @@
 
   Authors: William Perkins
            Rao Garimella
-           Ethan Coon (ecoon@lanl.gov)
+           Ethan Coon (coonet@ornl.gov)
 */
 
 //! RegionBox: a rectangular region in space, defined by two corners

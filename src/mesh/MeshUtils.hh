@@ -6,6 +6,7 @@
 
   Authors: Julien Loiseau
 */
+
 /*
   Note: these utilities are used internally to the mesh library and are not
   needed by client code.

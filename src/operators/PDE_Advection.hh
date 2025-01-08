@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-           Ethan Coon (ecoon@lanl.gov)
+           Ethan Coon (coonet@ornl.gov)
 */
 
 /*!
@@ -19,7 +19,7 @@ matrix of types *advection* and *flux*, respectively.
 .. admonition:: advection_op-spec
 
   * `"pks operator name`" ``[list]`` a PK specific name for the advection operator.
- 
+
     * `"method`" ``[string]`` defines a discretization method. The available option is `"dg modal`".
 
     * `"method order`" ``[int]`` defines method order. For example, the classical low-order finite

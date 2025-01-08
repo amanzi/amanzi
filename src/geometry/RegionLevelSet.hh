@@ -54,7 +54,7 @@ class RegionLevelSet : public Region {
                  const std::string& formula,
                  const LifeCycleType lifecycle = LifeCycleType::PERMANENT);
 
-  // Is the specified point inside this region 
+  // Is the specified point inside this region
   bool inside(const Point& p) const;
 
  protected:

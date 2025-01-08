@@ -16,16 +16,16 @@ The conceptual PDE model for the quasi-static elastic deformation is
   =
   \rho \boldsymbol{g}
 
-where 
+where
 :math:`\boldsymbol{d}` is the displacement [m],
 :math:`\rho` is the rock density [kg/m^3],
 :math:`\boldsymbol{\varepsilon}` is the strain tensor,
 and
 :math:`\boldsymbol{g}` is the gravity vector [:math:`m/s^2`].
 
-For a linear elasticity problem, the stress tensor :math:`C` is a linear operator 
+For a linear elasticity problem, the stress tensor :math:`C` is a linear operator
 acting on the strain tensor.
-In general, the stress tensor is a nonlinear operator. 
+In general, the stress tensor is a nonlinear operator.
 
 
 Global parameters
@@ -49,10 +49,10 @@ This list is often generated or extended by a high-level MPC PK.
 
   * `"use gravity`" ``[bool]`` defines non-zero source term. Default is *false*.
 
-  * `"biot scheme: undrained split`" ``[bool]`` defines iterative coupling with 
+  * `"biot scheme: undrained split`" ``[bool]`` defines iterative coupling with
     a flow PK where mechanics is solved first.
 
-  * `"biot scheme: fixed-stress split`" ``[bool]`` defines iterative coupling with 
+  * `"biot scheme: fixed-stress split`" ``[bool]`` defines iterative coupling with
     a flow PK where flow is solved first.
 
 .. code-block:: xml

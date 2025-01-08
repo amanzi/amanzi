@@ -19,7 +19,7 @@ tcc_matrix = total component concentration in the matrix continuum.
 
   * `"Warren Root parameter`" ``[list]`` scales diffusive solute transport due to
     concentration gradient.
-  * `"tortousity`" ``[double]`` defines tortuosity to correct diffusivity of 
+  * `"tortousity`" ``[double]`` defines tortuosity to correct diffusivity of
     a liquid solute.
 
 */

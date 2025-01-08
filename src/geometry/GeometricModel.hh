@@ -5,18 +5,18 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: William Perkins
-           Ethan Coon (ecoon@lanl.gov)
+           Ethan Coon (coonet@ornl.gov)
 */
 
 /*!
 
 It is not always possible to extract space dimension from provided data.
-Therefore, we require the user to provide simple list *domain* with only 
+Therefore, we require the user to provide simple list *domain* with only
 one parameter *spatial dimension*.
 
 .. admonition:: geometric_model-spec
 
-  * `"spatial dimension`" ``[int]`` defined space dimension. The available 
+  * `"spatial dimension`" ``[int]`` defined space dimension. The available
     values are 2 or 3.
 
 .. code-block:: xml

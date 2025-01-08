@@ -4,11 +4,10 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (coonet@ornl.gov)
 */
 
 //! ReaderHDF5: simple reader for serial reads of HDF5 files.
-
 #include <string>
 
 #include "Teuchos_Array.hpp"

@@ -7,7 +7,6 @@
   Authors: Ethan Coon (coonet@ornl.gov)
 */
 
-
 #include "UnitTest++.h"
 
 #include "Key.hh"

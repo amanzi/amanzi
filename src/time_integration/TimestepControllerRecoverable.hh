@@ -64,5 +64,3 @@ class TimestepControllerRecoverable : public TimestepController
 
 
 } // namespace Amanzi
-
-

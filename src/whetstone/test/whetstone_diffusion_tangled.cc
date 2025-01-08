@@ -125,4 +125,3 @@ TEST(INVERTED_CELL_2D)
   CHECK_CLOSE(T(0, 0) * volume, vxx, 1e-10);
   CHECK_CLOSE(T(1, 0) * volume, vxy, 1e-10);
 }
-

@@ -208,7 +208,7 @@ PDE_Elasticity::ComputeHydrostaticStress(const CompositeVector& u, CompositeVect
 
 
 /* ******************************************************************
-* Cell-centered volumetric strain 
+* Cell-centered volumetric strain
 ****************************************************************** */
 void
 PDE_Elasticity::ComputeVolumetricStrain(const CompositeVector& u, CompositeVector& e)

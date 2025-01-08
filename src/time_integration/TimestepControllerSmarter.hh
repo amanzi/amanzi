@@ -78,5 +78,3 @@ class TimestepControllerSmarter : public TimestepControllerRecoverable {
 };
 
 } // namespace Amanzi
-
-

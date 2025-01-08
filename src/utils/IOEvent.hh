@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Markus Berndt
-           Ethan Coon (ecoon@lanl.gov)
+           Ethan Coon (coonet@ornl.gov)
 */
 
 //! IOEvent: base time/timestep control determing when in time to do something.
@@ -104,4 +104,3 @@ class IOEvent : public Teuchos::VerboseObject<IOEvent> {
 
 } // namespace Utils
 } // namespace Amanzi
-

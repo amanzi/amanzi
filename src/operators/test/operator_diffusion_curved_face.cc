@@ -41,7 +41,7 @@
 * Exactness test for diffusion solver on meshes with curved faces.
 ***************************************************************** */
 void
-RunTestDiffusionCurved(int d, 
+RunTestDiffusionCurved(int d,
                        const std::string& filename,
                        int icase,
                        bool use_weight = false,
@@ -55,7 +55,7 @@ RunTestDiffusionCurved(int d,
 
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: elliptic solver, mesh with curved faces, new algorithm: " 
+  if (MyPID == 0) std::cout << "\nTest: elliptic solver, mesh with curved faces, new algorithm: "
                             << filename << std::endl;
 
   // read parameter list

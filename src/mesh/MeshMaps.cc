@@ -8,7 +8,6 @@
 */
 
 //! Collects maps and importers for Mesh objects.
-
 #include <set>
 #include "Epetra_IntVector.h"
 #include "MeshDefs.hh"

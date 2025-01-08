@@ -61,7 +61,7 @@ find_face(const Point& xf1, const Point& ray, const Mesh& mesh2)
     int f2 = block[n];
     const auto& xf2 = mesh2.getFaceCentroid(f2);
     const auto& normal = mesh2.getFaceNormal(f2);
-    
+
     double angle = ray * normal;
     if (std::fabs(angle) < 1e-12) AMANZI_ASSERT(false);
     double s = ((xf1 - xf2) * normal) / angle;
@@ -79,7 +79,7 @@ find_face(const Point& xf1, const Point& ray, const Mesh& mesh2)
     int f2 = block[n];
     const auto& xf2 = mesh2.getFaceCentroid(f2);
     const auto& normal = mesh2.getFaceNormal(f2);
-    
+
     double angle = ray * normal;
     double s = ((xf1 - xf2) * normal) / angle;
     auto xf1_proj = xf1 - s * ray;
@@ -361,7 +361,7 @@ RunTest(int n1, int n2, double gap)
       std::cout << "loop: " << loop << " err=" << std::sqrt(err)
                 << " itrs: " << global_op1->num_itrs() << " " << global_op2->num_itrs();
       if (global_op1->returned_code() != 1 || global_op2->returned_code() != 1) {
-        std::cout << "||r||=" << global_op1->residual() << " " << global_op2->residual() 
+        std::cout << "||r||=" << global_op1->residual() << " " << global_op2->residual()
                   << " code=" << global_op1->returned_code() << " " << global_op2->returned_code();
       }
       std::cout << std::endl;
@@ -406,4 +406,3 @@ TEST(DIRICHLET_NEUMANN)
   RunTest(19, 13, 0.0025); // gap = 0.0025;
   // RunTest(39, 25, 0.00125);
 }
-

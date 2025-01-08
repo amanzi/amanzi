@@ -9,7 +9,7 @@
 
 /*!
 
-Aperture-stress relations like Batron-Bandis' equation are used to estimate 
+Aperture-stress relations like Batron-Bandis' equation are used to estimate
 changes in fracture aperture due to change in internal fluid/gas pressure.
 
 */

@@ -78,7 +78,7 @@ RunTest(int icase, double mu, double lambda, double tol = 1e-10)
   Teuchos::RCP<const Mesh> mesh;
   if (icase == 1)
     mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 6, 6, 6);
-  else 
+  else
     mesh = meshfactory.create("test/tetrahedra.exo");
 
   // -- general information about mesh
@@ -119,7 +119,7 @@ RunTest(int icase, double mu, double lambda, double tol = 1e-10)
   for (int v = 0; v < nnodes_wghost; ++v) {
     auto xv = mesh->getNodeCoordinate(v);
 
-    if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 || 
+    if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 ||
         fabs(xv[1]) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6 ||
         fabs(xv[2]) < 1e-6 || fabs(xv[2] - 1.0) < 1e-6) {
       bcv_model[v] = OPERATOR_BC_DIRICHLET;
@@ -138,7 +138,7 @@ RunTest(int icase, double mu, double lambda, double tol = 1e-10)
     const Point& normal = mesh->getFaceNormal(f);
     double area = mesh->getFaceArea(f);
 
-    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || 
+    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
         fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
         fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6) {
       bcf_model[f] = OPERATOR_BC_DIRICHLET;

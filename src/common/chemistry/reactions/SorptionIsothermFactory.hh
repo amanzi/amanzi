@@ -18,10 +18,10 @@ Each sublist has two parameters:
 
 .. admonition:: isotherms-spec
 
-  * `"model`" ``[string]`` specifies the model name. The available options are `"linear", 
+  * `"model`" ``[string]`` specifies the model name. The available options are `"linear",
     `"langmuir`", and `"freundlich`".
 
-  * `"parameters`" ``[Array(double)]`` is the list of model parameters. The distribution 
+  * `"parameters`" ``[Array(double)]`` is the list of model parameters. The distribution
     coefficient *K* is in the first position.
 
 .. code-block:: xml

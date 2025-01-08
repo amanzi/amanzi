@@ -56,7 +56,7 @@ using namespace Amanzi::AmanziGeometry;
 using namespace Amanzi::Operators;
 
 /* ****************************************************************
-* Analysis of Failure/Recovery 
+* Analysis of Failure/Recovery
 * ************************************************************** */
 template <class PK>
 void

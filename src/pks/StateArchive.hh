@@ -10,8 +10,8 @@
 /*
   Process Kernels
 
-  Keeps copies of fields which could be restored. e.g. when a time 
-  integration step fails. 
+  Keeps copies of fields which could be restored. e.g. when a time
+  integration step fails.
 */
 
 #ifndef AMANZI_PK_STATE_ARCHIVE_HH_

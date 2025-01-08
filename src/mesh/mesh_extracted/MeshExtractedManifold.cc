@@ -7,7 +7,7 @@
   Authors: Konstantin Lipnikov
 */
 
-//!  Mesh Extracted
+//! Mesh Extracted
 /*!
 
 Extract a manifold mesh defined by a region associated with *setname*.
@@ -16,7 +16,7 @@ Extract a manifold mesh defined by a region associated with *setname*.
 .. admonition:: region-box-spec
 
   * `"extract all_faces`" extract all ghost faces existing in the parent mesh.
-  
+
 */
 
 #include <set>

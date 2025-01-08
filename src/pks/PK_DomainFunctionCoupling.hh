@@ -9,9 +9,9 @@
 
 /*!
 
-This provides coupling of fields located on conforming manifold and 3D meshes. 
-For the 3D mesh, the coupling generates a list of boundary conditions. 
-For the manifold mesh, the coupling creates a list of sources. The manifold 
+This provides coupling of fields located on conforming manifold and 3D meshes.
+For the 3D mesh, the coupling generates a list of boundary conditions.
+For the manifold mesh, the coupling creates a list of sources. The manifold
 mesh has a child to parent map, e.g. a manifold cell to a 3D mesh face.
 For the 3D mesh, we need the reverse map.
 There are a few coupling submodels:

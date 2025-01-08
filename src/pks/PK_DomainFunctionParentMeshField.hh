@@ -11,9 +11,9 @@
 
 This class populates region's data on a derived mesh using a field defined on
 the parent mesh. It extends capabilities provided by the "coupling" class by
-(a) including interpolation on the parent mesh, (b) rigorous treatment of 
-of special cases such as master child entity -> ghost parent entity, which 
-may happen for nodes and edges of the derived mesh. 
+(a) including interpolation on the parent mesh, (b) rigorous treatment of
+of special cases such as master child entity -> ghost parent entity, which
+may happen for nodes and edges of the derived mesh.
 
 */
 

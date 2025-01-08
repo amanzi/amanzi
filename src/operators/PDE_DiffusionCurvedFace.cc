@@ -454,7 +454,7 @@ PDE_DiffusionCurvedFace::LSProblemSetupMatrix_(std::vector<WhetStone::DenseMatri
   // optional weighted l2-norm
   if (weight_.get()) {
     const auto& weight_f = *weight_->ViewComponent("face");
-    for (int f = 0; f < nfaces_owned; ++f) matrices[f] /= weight_f[0][f]; 
+    for (int f = 0; f < nfaces_owned; ++f) matrices[f] /= weight_f[0][f];
   }
 }
 

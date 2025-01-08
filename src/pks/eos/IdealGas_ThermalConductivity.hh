@@ -4,7 +4,7 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (coonet@ornl.gov)
 */
 
 /*
@@ -23,7 +23,7 @@
   H2     1.68e-2      273      120
   Steam  1.81e-2     300     2200
 
-  Air: Rathakrishnan 2013: valid from 0.01 to 100 atm, and between 0 and 3000K. 
+  Air: Rathakrishnan 2013: valid from 0.01 to 100 atm, and between 0 and 3000K.
        Frank White’s "Viscous Fluid Flow":  2% error between 170K and 1900K.
 */
 

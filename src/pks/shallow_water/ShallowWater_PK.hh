@@ -4,10 +4,12 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
+  Authors: Svetlana Tokareva (tokareva@lanl.gov)
+           Giacomo Capodaglio (gcapodaglio@lanl.gov)
+           Naren Vohra (vohra@lanl.gov)
+*/
 
- Authors: Svetlana Tokareva (tokareva@lanl.gov)
-          Giacomo Capodaglio (gcapodaglio@lanl.gov)
-          Naren Vohra (vohra@lanl.gov)
+/*
 
 The mathematical model describing two-dimensional shallow water flow is
 

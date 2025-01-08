@@ -9,7 +9,7 @@
 
 /*!
 
-Sequential coupling of fully flow and mechanics PKs via the fixed stress 
+Sequential coupling of fully flow and mechanics PKs via the fixed stress
 split algorithm.
 The conceptual PDE model of the coupled flow and mechanics equations is
 
@@ -38,7 +38,7 @@ In the first equation,
 :math:`\beta_r` is thermal stress coefficient [:math:`Pa/K`],
 :math:`\boldsymbol{g}` is gravity [:math:`m/s^2`],
 :math:`p` is pressure [Pa],
-and 
+and
 :math:`T` is temperature [K].
 
 In the second equation,

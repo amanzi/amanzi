@@ -4,7 +4,7 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (coonet@ornl.gov)
 */
 
 /*
@@ -12,7 +12,7 @@
 
   Tabulated equations of state.
 
-  The underlying assumption is that all intersections of saturation 
+  The underlying assumption is that all intersections of saturation
   line with non-uniform mesh are of type 6, i.e. through mesh vertices.
 */
 

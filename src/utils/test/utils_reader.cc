@@ -143,8 +143,3 @@ TEST(UTILS_NETCDF_READER) {
   auto r = std::make_shared<ReaderNetCDF>("test/utils_reader.nc");
   testReader(*r);
 }
-
-
-
-
-

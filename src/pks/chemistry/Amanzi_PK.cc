@@ -653,7 +653,7 @@ Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   std::stringstream ss;
   ss << "Newton itrs: " << min_itrs << "/" << max_itrs << "/" << avg_itrs / ncells_total
-     << ", maximum in gid=" << mesh_->getEntityGID(AmanziMesh::CELL, cmax) 
+     << ", maximum in gid=" << mesh_->getEntityGID(AmanziMesh::CELL, cmax)
      << ", dt=" << dt_ << std::endl;
   vo_->Write(Teuchos::VERB_HIGH, ss.str());
 

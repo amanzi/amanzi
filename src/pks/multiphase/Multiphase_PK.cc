@@ -12,7 +12,7 @@
 /*
   MultiPhase PK
 
-  Multiphase multi-component flow. 
+  Multiphase multi-component flow.
 */
 
 
@@ -239,7 +239,7 @@ Multiphase_PK::Setup()
   // conserved quantities
   // -- total water storage
 
-  // water saturation 
+  // water saturation
   for (const auto& name : soln_names_) {
     if (!S_->HasRecord(name)) {
       auto elist = MyRequire_(name, passwd_);

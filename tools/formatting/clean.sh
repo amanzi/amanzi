@@ -3,4 +3,4 @@ cd src/physics/ats
 python ../../../tools/formatting/clean.py --ats .
 cd ../../
 python ../tools/formatting/clean.py --exclude=physics .
-. ../tools/formatting/clang-format.sh
+#. ../tools/formatting/clang-format.sh
