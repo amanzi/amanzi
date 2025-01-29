@@ -64,6 +64,12 @@ class PDE_CouplingFlux : public PDE_HelperDiscretization {
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
                           const Teuchos::Ptr<CompositeVector>& u) override{};
 
+  // not implemented
+  virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override {
+    Errors::Message msg("Coupling operator does not support boundary conditions.");
+    Exceptions::amanzi_throw(msg);
+  }
+
  private:
   void Init_(Teuchos::ParameterList& plist,
              const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,

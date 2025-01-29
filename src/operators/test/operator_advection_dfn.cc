@@ -29,7 +29,6 @@
 // Amanzi
 #include "IterativeMethodGMRES.hh"
 #include "MeshFactory.hh"
-#include "Mesh_MSTK.hh"
 #include "OutputXDMF.hh"
 #include "Tensor.hh"
 #include "WhetStoneDefs.hh"
