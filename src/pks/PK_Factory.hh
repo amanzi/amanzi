@@ -81,6 +81,8 @@ class PKFactory {
                            const Teuchos::RCP<TreeVector>&)>
     map_type;
 
+  void WriteChoices(std::ostream&) const;
+
  protected:
   static map_type* GetMap()
   {

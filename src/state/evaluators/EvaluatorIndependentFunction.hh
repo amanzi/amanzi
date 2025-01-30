@@ -16,7 +16,7 @@
 /*!
 
 This evaluator is typically used for providing data that are functions of space
-and time.  The evaluator consists of a list of region,function pairs, and the
+and time.  The evaluator consists of a list of (region, function) pairs, and the
 functions are evaluated across that region at each timestep.  If the problem is
 time-independent, the `"constant in time`" option results in a performance
 improvement (as the functions need only be evaluated once).  This leverages the

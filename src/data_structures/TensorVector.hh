@@ -34,13 +34,13 @@ namespace Amanzi {
 // -----------------------------------------------------------------------------
 struct TensorVector {
   TensorVector(CompositeVectorSpace map_, bool ghosted_ = false)
-    : map(std::move(map_)), ghosted(ghosted_)
+    : map(std::move(map_)), ghosted(ghosted_), rank(-1), dim(-1)
   {
     data.resize(size_());
   }
 
   TensorVector(CompositeVectorSpace map_, int dim_, int rank_, bool ghosted_ = false)
-    : map(std::move(map_)), ghosted(ghosted_)
+    : map(std::move(map_)), ghosted(ghosted_), rank(rank_), dim(dim_)
   {
     data.resize(size_(), WhetStone::Tensor(dim_, rank_));
   }
@@ -59,6 +59,7 @@ struct TensorVector {
   std::vector<WhetStone::Tensor> data;
   CompositeVectorSpace map;
   bool ghosted;
+  int rank, dim;
 
  private:
   int size_()
@@ -82,11 +83,11 @@ class TensorVector_Factory {
   TensorVector_Factory() : d_(0), rank_(0), ghosted_(false){};
 
   int dimension() const { return d_; }
-  const CompositeVectorSpace& map() const { return map_; }
 
   int get_rank() const { return rank_; }
   void set_rank(int rank) { rank_ = rank; }
 
+  const CompositeVectorSpace& map() const { return map_; }
   void set_map(CompositeVectorSpace map)
   {
     map_ = std::move(map);

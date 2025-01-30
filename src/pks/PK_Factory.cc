@@ -143,9 +143,7 @@ PKFactory::CreatePK(std::string pk_name,
     message << "PK Factory: PK \"" << pk_name << "\" requested type \"" << pk_type
             << "\" which is not a registered PK type.\n";
 
-    for (map_type::iterator it = GetMap()->begin(); it != GetMap()->end(); ++it) {
-      message << std::endl << "  option: " << it->first;
-    }
+    WriteChoices(message);
     Errors::Message msg(message.str());
     Exceptions::amanzi_throw(msg);
   }
@@ -155,6 +153,17 @@ PKFactory::CreatePK(std::string pk_name,
   if (list_pks.size() < 1024) list_pks += "|" + pk_name;
   return Teuchos::rcp(iter->second(pk_subtree, global_list, state, soln));
 }
+
+
+void
+PKFactory::WriteChoices(std::ostream& os) const
+{
+  os << "Valid types:" << std::endl
+     << "--------------------------------------------------" << std::endl;
+  for (auto choice : *GetMap()) os << " - \"" << choice.first << "\"" << std::endl;
+  os << "--------------------------------------------------" << std::endl << std::endl;
+}
+
 
 
 std::string PKFactory::list_pks;

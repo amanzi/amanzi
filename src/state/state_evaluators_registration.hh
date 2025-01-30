@@ -18,6 +18,7 @@
 #include "EvaluatorIndependentFromFile.hh"
 #include "EvaluatorIndependentFunction.hh"
 #include "EvaluatorIndependentConstant.hh"
+#include "EvaluatorIndependentTensorFunction.hh"
 #include "EvaluatorMultiplicativeReciprocal.hh"
 #include "EvaluatorSecondaryMonotypeFromFunction.hh"
 #include "EvaluatorPrimary.hh"
@@ -34,6 +35,9 @@ Utils::RegisteredFactory<Evaluator, EvaluatorIndependentFromFile>
   EvaluatorIndependentFromFile::fac_("independent variable from file");
 Utils::RegisteredFactory<Evaluator, EvaluatorIndependentConstant>
   EvaluatorIndependentConstant::fac_("independent variable constant");
+
+Utils::RegisteredFactory<Evaluator, EvaluatorIndependentTensorFunction>
+  EvaluatorIndependentTensorFunction::fac_("independent variable tensor");
 
 Utils::RegisteredFactory<Evaluator, EvaluatorMultiplicativeReciprocal>
   EvaluatorMultiplicativeReciprocal::fac_("multiplicative reciprocal");
