@@ -125,7 +125,7 @@ class HDF5_MPI {
   void writeDataInt(const Epetra_Vector& x, const std::string& varname);
 
   // Read array data from HDF5 data file.
-  bool readData(Epetra_Vector& x, const std::string varname);
+  void readData(Epetra_Vector& x, const std::string varname);
 
   // Write and read string datasets
   void writeDataString(char** x, int num_entries, const std::string& varname);
@@ -157,7 +157,7 @@ class HDF5_MPI {
                        const std::string& varname,
                        datatype_t type,
                        std::string loc);
-  bool readFieldData_(Epetra_Vector& x, const std::string& varname, datatype_t type);
+  int readFieldData_(Epetra_Vector& x, const std::string& varname, datatype_t type);
 
   bool checkFieldData_(const std::string& varname);
 
@@ -166,6 +166,8 @@ class HDF5_MPI {
   std::set<std::string> extractFields_(const Teuchos::XMLObject& xml);
 
   std::string stripFilename_(std::string filename);
+
+  void checkThrow_(int ierr, const std::string& varname, const std::string& filename);
 
   // mesh
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

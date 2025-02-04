@@ -189,6 +189,7 @@
 #                - update Trilinos to 15.1.0 (6af5f44)
 #                - update Silo to 4.11.1
 #                - remove Boost and Trilinos dependency on Boost
+#   0.98.10      - patch ascem/io to improve error handling
 
 include(CMakeParseArguments)
 
@@ -241,7 +242,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 98)
-set(AMANZI_TPLS_VERSION_PATCH 9)
+set(AMANZI_TPLS_VERSION_PATCH 10)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
