@@ -56,6 +56,12 @@ struct TensorVector {
 
   TensorVector& operator=(const TensorVector& other) = default;
 
+  void Zero() {
+    for (auto& t : data) {
+      t.PutScalar(0.);
+    }
+  }
+
   std::vector<WhetStone::Tensor> data;
   CompositeVectorSpace map;
   bool ghosted;

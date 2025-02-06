@@ -7,10 +7,31 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-/*
-  Transport PK
+/*!
 
-  Isotropic mechanical dispersion model, primarily for code testing.
+Isotropic mechanical dispersion model.
+
+.. _MDM-scalar-spec
+.. admonition:: MDM-scalar-spec
+
+  ONE OF:
+
+  * `"dispersivity [m]`" ``[double]``
+
+  OR
+
+  * `"dispersivity [m]`" ``[function-spec]``
+
+  OR
+
+  * `"dispersion coefficient [m^2 s^-1]`" ``[double]``
+
+  OR
+
+  * `"dispersion coefficient [m^2 s^-1]`" ``[function-spec]``
+
+  END
+
 */
 
 #ifndef AMANZI_MDM_ISOTROPIC_HH_
@@ -58,6 +79,7 @@ class MDM_Isotropic : public MDM {
   bool dispersivity_;
 
   static Utils::RegisteredFactory<MDM, MDM_Isotropic> reg_;
+  static Utils::RegisteredFactory<MDM, MDM_Isotropic> reg2_;
 };
 
 } // namespace Transport

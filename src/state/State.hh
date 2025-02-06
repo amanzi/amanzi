@@ -216,6 +216,7 @@ class State {
   template <typename T, typename F>
   F& Require(const Key& fieldname, const Tag& tag, const Key& owner = "", bool alias_ok = false)
   {
+    AMANZI_ASSERT(fieldname != "");
     CheckIsDebugData_(fieldname, tag);
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
@@ -233,6 +234,7 @@ class State {
              const Key& owner = "",
              bool alias_ok = true)
   {
+    AMANZI_ASSERT(fieldname != "");
     CheckIsDebugData_(fieldname, tag);
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
@@ -246,6 +248,7 @@ class State {
   template <typename T>
   void Require(const Key& fieldname, const Tag& tag, const Key& owner = "", bool alias_ok = true)
   {
+    AMANZI_ASSERT(fieldname != "");
     CheckIsDebugData_(fieldname, tag);
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
@@ -264,6 +267,7 @@ class State {
              const std::vector<std::string>& subfield_names,
              bool alias_ok = true)
   {
+    AMANZI_ASSERT(fieldname != "");
     CheckIsDebugData_(fieldname, tag);
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
@@ -284,6 +288,7 @@ class State {
              const std::vector<std::string>& subfield_names,
              bool alias_ok = true)
   {
+    AMANZI_ASSERT(fieldname != "");
     CheckIsDebugData_(fieldname, tag);
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
