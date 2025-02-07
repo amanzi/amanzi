@@ -61,6 +61,7 @@ class EvaluatorIndependentFunction
 
  protected:
   Teuchos::RCP<Functions::CompositeVectorFunction> func_;
+  bool dot_with_normal_;
 
  private:
   static Utils::RegisteredFactory<Evaluator, EvaluatorIndependentFunction> fac_;

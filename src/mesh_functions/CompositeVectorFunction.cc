@@ -21,8 +21,10 @@ namespace Amanzi {
 namespace Functions {
 
 CompositeVectorFunction::CompositeVectorFunction(const Teuchos::RCP<const MeshFunction>& func,
-                                                 const std::vector<std::string>& names)
-  : func_(func)
+        const std::vector<std::string>& names,
+        bool dot_with_normal)
+  : func_(func),
+    dot_with_normal_(dot_with_normal)
 {
   AMANZI_ASSERT(names.size() == func->size());
 
@@ -36,6 +38,16 @@ CompositeVectorFunction::CompositeVectorFunction(const Teuchos::RCP<const MeshFu
 
 void
 CompositeVectorFunction::Compute(double time,
+                                 const Teuchos::Ptr<CompositeVector>& cv,
+                                 const VerboseObject* vo)
+{
+  if (dot_with_normal_) ComputeDotWithNormal_(time, cv, vo);
+  else Compute_(time, cv, vo);
+}
+
+
+void
+CompositeVectorFunction::Compute_(double time,
                                  const Teuchos::Ptr<CompositeVector>& cv,
                                  const VerboseObject* vo)
 {
@@ -167,6 +179,79 @@ CompositeVectorFunction::Compute(double time,
   }
 #endif
 }
+
+
+void
+CompositeVectorFunction::ComputeDotWithNormal_(double time,
+        const Teuchos::Ptr<CompositeVector>& cv,
+        const VerboseObject* vo)
+{
+  AMANZI_ASSERT(cv->Map().NumComponents() == 1);                              // one comp
+  AMANZI_ASSERT(cv->Map().HasComponent("face"));                              // is named face
+  AMANZI_ASSERT(cv->Map().Location("face") == AmanziMesh::Entity_kind::FACE); // is on face
+  AMANZI_ASSERT(cv->Map().NumVectors("face") == 1);                           // and is scalar
+
+  // create a vector on faces of the appropriate dimension
+  int dim = cv->Mesh()->getSpaceDimension();
+
+  CompositeVectorSpace cvs;
+  cvs.SetMesh(cv->Mesh());
+  cvs.SetComponent("face", AmanziMesh::Entity_kind::FACE, dim);
+  auto vel_vec = Teuchos::rcp(new CompositeVector(cvs));
+
+  // Evaluate the velocity function
+  Compute_(time, vel_vec.ptr(), vo);
+
+  // CV's map may differ from the regular mesh map due to presense of fractures
+  const auto& fmap = *cv->Map().Map("face", true);
+  int nfaces_owned =
+    cv->Mesh()->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+
+  {
+    Epetra_MultiVector& dat_f = *cv->ViewComponent("face");
+    const Epetra_MultiVector& vel_f = *vel_vec->ViewComponent("face");
+
+    // Dot the velocity with the normal
+    // -- two branches: single flux per face, multiple fluxes
+    int dir;
+    AmanziGeometry::Point vel(dim);
+    for (int f = 0; f != nfaces_owned; ++f) {
+      for (int i = 0; i < dim; ++i) vel[i] = vel_f[i][f];
+
+      int ndofs = fmap.ElementSize(f);
+      int g = fmap.FirstPointInElement(f);
+      if (ndofs == 1) {
+        const AmanziGeometry::Point& normal = cv->Mesh()->getFaceNormal(f);
+        dat_f[0][g] = vel * normal;
+      } else {
+        auto cells = cv->Mesh()->getFaceCells(f);
+
+        for (int i = 0; i < ndofs; ++i) {
+          const AmanziGeometry::Point& normal = cv->Mesh()->getFaceNormal(f, cells[i], &dir);
+          dat_f[0][g + i] = (vel * normal) * dir;
+        }
+      }
+    }
+  }
+
+  // // check divergence free
+  // cv->ScatterMasterToGhosted("face");
+  // {
+  //   const Epetra_MultiVector& dat_f = *cv->ViewComponent("face");
+
+  //   int ncells_owned =
+  //     cv->Mesh()->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  //   for (int c = 0; c != ncells_owned; ++c) {
+  //     auto [faces, dirs] = cv->Mesh()->getCellFacesAndDirections(c);
+  //     double flux_tot = 0.;
+  //     for (int i = 0; i != faces.size(); ++i) {
+  //       flux_tot += dat_f[0][faces[i]] * dirs[i];
+  //     }
+  //     AMANZI_ASSERT(std::abs(flux_tot) < 1.e-4);
+  //   }
+  // }
+}
+
 
 } // namespace Functions
 } // namespace Amanzi

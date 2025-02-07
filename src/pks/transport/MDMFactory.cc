@@ -28,7 +28,7 @@ MDMFactory::Create(Teuchos::ParameterList& plist)
   if (plist.isParameter("model")) {
     mdm_typename = plist.get<std::string>("model");
   } else {
-    mdm_typename = plist.get<std::string>("MDM type", "isotropic");
+    mdm_typename = plist.get<std::string>("mechanical dispersion type", "isotropic");
   }
 
   Teuchos::ParameterList& tmp_list = plist.sublist(mdm_typename + " parameters");

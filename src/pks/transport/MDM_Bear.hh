@@ -14,8 +14,17 @@ Anisotropic mechanical dispersion model by Bear.
 .. _MDM-Bear-spec
 .. admonition:: MDM-Bear-spec
 
-   * `"alpha_l`" ``[double]`` Longitudinal dispersivity/dispersion coefficient.
-   * `"alpha_t`" ``[double]`` Transverse dispersivity/dispersion coefficient.
+   ONE OF
+   * `"alpha_l`" ``[double]`` Longitudinal dispersivity.
+   OR
+   * `"longitudinal dispersivity [m]`" ``[double]``
+   END
+
+   ONE OF
+   * `"alpha_t`" ``[double]`` Transverse dispersivity.
+   OR
+   * `"transverse dispersivity [m]`" ``[double]``
+   END
 
 */
 
