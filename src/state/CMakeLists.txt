@@ -165,7 +165,7 @@ if (BUILD_TESTS)
                               ${UnitTest_LIBRARIES} ${NOX_LIBRARIES} ${HDF5_LIBRARIES})
 
     if(ENABLE_MESH_MSTK)
-      add_amanzi_test(state_restart2 state_restart2
+      add_amanzi_test(state_restart2_np2 state_restart2
                     KIND int
                     SOURCE
 	  	          test/Main.cc
