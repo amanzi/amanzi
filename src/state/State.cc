@@ -505,6 +505,28 @@ State::GetMeshPartition_(Key key)
 
 
 void
+State::require_time(const Tag& tag, const Key& owner)
+{
+  Require<double>("time", tag, owner, false);
+  if (!HasEvaluator("time", tag)) {
+    Teuchos::ParameterList time_plist = GetEvaluatorList("time");
+    time_plist.set<std::string>("tag", tag.get());
+    auto evaluator = Teuchos::rcp(new EvaluatorPrimary<double>(time_plist));
+    SetEvaluator("time", tag, evaluator);
+  }
+}
+
+void
+State::set_time(const Tag& tag, double value) {
+  Assign("time", tag, "time", value);
+  auto time_eval = GetEvaluatorPtr("time", tag);
+  auto time_eval_pv = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<double>>(time_eval);
+  AMANZI_ASSERT(time_eval_pv != Teuchos::null);
+  time_eval_pv->SetChanged();
+}
+
+
+void
 State::WriteDependencyGraph() const
 {
   // FIXME -- this is not what it used to be.  This simply writes data

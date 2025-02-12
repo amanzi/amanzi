@@ -582,4 +582,11 @@ readTag(Teuchos::ParameterList& list, const std::string& param, const Tag& defau
 }
 
 } // namespace Keys
+
+std::ostream& operator<<(std::ostream& os, const KeyTag& keytag)
+{
+  os << Keys::getKey(keytag);
+  return os;
+}
+
 } // namespace Amanzi

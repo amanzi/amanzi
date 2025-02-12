@@ -556,15 +556,14 @@ class State {
   // Time tags and vector copies
   // -----------------------------------------------------------------------------
   // Time accessor and mutators.
-  void require_time(const Tag& tag, const Key& owner = "time")
-  {
-    return Require<double>("time", tag, owner, false);
-  }
+  void require_time(const Tag& tag, const Key& owner = "time");
   double get_time(const Tag& tag = Tags::DEFAULT) const { return Get<double>("time", tag); }
-  void set_time(const Tag& tag, double value) { Assign("time", tag, "time", value); }
+  void set_time(const Tag& tag, double value);
   void set_time(double value) { Assign("time", Tags::DEFAULT, "time", value); }
 
-  void advance_time(const Tag& tag, double dt) { Assign("time", tag, "time", get_time(tag) + dt); }
+  void advance_time(const Tag& tag, double dt) {
+    set_time(tag, get_time(tag) + dt);
+  }
   void advance_time(double dt) { advance_time(Tags::DEFAULT, dt); }
 
   // can these go away in favor of time at different tags?

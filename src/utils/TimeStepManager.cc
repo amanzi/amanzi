@@ -22,6 +22,7 @@
 #include "Event.hh"
 #include "Reader.hh"
 #include "VerboseObject.hh"
+#include "Key.hh"
 
 namespace Amanzi {
 namespace Utils {
@@ -56,7 +57,7 @@ TimeStepManager::TimeStepManager(Teuchos::ParameterList& plist)
     manual_override_ = true;
   }
 
-  vo_ = Teuchos::rcp(new VerboseObject("TimeStepManager", plist));
+  vo_ = Teuchos::rcp(new VerboseObject(Keys::cleanPListName(plist), plist));
 }
 
 

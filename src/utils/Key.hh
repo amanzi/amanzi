@@ -89,6 +89,7 @@ using KeyTagSet = Utils::FIFO_Set<KeyTag>;
 typedef std::tuple<Key, Tag, Key> DerivativeTriple;
 typedef std::set<DerivativeTriple> DerivativeTripleSet;
 
+std::ostream& operator<<(std::ostream& os, const KeyTag& keytag);
 
 namespace Keys {
 
