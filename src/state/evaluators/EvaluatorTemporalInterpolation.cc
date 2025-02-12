@@ -51,7 +51,10 @@ EvaluatorTemporalInterpolation::Evaluate_(const State& S, const std::vector<Comp
   AMANZI_ASSERT(t_this >= t_current);
   AMANZI_ASSERT(t_this <= t_next);
 
-  double a = (t_this - t_current) / (t_next - t_current);
+  double a(1); // if dt is 0, default to next value
+  if (t_next - t_current > 0.) {
+    a = (t_this - t_current) / (t_next - t_current);
+  }
   result[0]->Update(1-a, var_current, a, var_next, 0);
 }
 
@@ -69,7 +72,10 @@ EvaluatorTemporalInterpolation::EvaluatePartialDerivative_(
   AMANZI_ASSERT(t_this >= t_current);
   AMANZI_ASSERT(t_this <= t_next);
 
-  double a = (t_this - t_current) / (t_next - t_current);
+  double a(1.);
+  if (t_next - t_current > 0.) {
+    a = (t_this - t_current) / (t_next - t_current);
+  }
   if (wrt_tag == current_.second) {
     result[0]->PutScalar(1-a);
   } else if (wrt_tag == next_.second) {
