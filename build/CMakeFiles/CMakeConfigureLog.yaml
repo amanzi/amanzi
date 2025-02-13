@@ -1,0 +1,1996 @@
+
+---
+events:
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeDetermineSystem.cmake:233 (message)"
+      - "CMakeLists.txt:29 (project)"
+    message: |
+      The system is: Darwin - 23.6.0 - arm64
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:29 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+      Compiler: /usr/bin/clang 
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      
+      
+      Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "a.out"
+      
+      The C compiler identification is AppleClang, found in:
+        /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/3.28.0/CompilerIdC/a.out
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:29 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+      Compiler: /usr/bin/clang++ 
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      
+      
+      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "a.out"
+      
+      The CXX compiler identification is AppleClang, found in:
+        /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/3.28.0/CompilerIdCXX/a.out
+      
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeDetermineCompilerABI.cmake:57 (try_compile)"
+      - "/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:29 (project)"
+    checks:
+      - "Detecting C compiler ABI info"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-cmUw1v"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-cmUw1v"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "CMAKE_C_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-cmUw1v'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_fa438
+        [1/2] /usr/bin/clang   -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7   -v -Wl,-v -MD -MT CMakeFiles/cmTC_fa438.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_fa438.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_fa438.dir/CMakeCCompilerABI.c.o -c /Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeCCompilerABI.c
+        Apple clang version 16.0.0 (clang-1600.0.26.6)
+        Target: arm64-apple-darwin23.6.0
+        Thread model: posix
+        InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin
+        clang: warning: -Wl,-v: 'linker' input unused [-Wunused-command-line-argument]
+         "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang" -cc1 -triple arm64-apple-macosx14.7.0 -Wundef-prefix=TARGET_OS_ -Wdeprecated-objc-isa-usage -Werror=deprecated-objc-isa-usage -Werror=implicit-function-declaration -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -mframe-pointer=non-leaf -fno-strict-return -ffp-contract=on -fno-rounding-math -funwind-tables=1 -fobjc-msgsend-selector-stubs -target-sdk-version=15.2 -fvisibility-inlines-hidden-static-local-var -fno-modulemap-allow-subdirectory-search -target-cpu apple-m1 -target-feature +v8.5a -target-feature +aes -target-feature +crc -target-feature +dotprod -target-feature +fp-armv8 -target-feature +fp16fml -target-feature +lse -target-feature +ras -target-feature +rcpc -target-feature +rdm -target-feature +sha2 -target-feature +sha3 -target-feature +neon -target-feature +zcm -target-feature +zcz -target-feature +fullfp16 -target-abi darwinpcs -debugger-tuning=lldb -target-linker-version 1115.7.3 -v -fcoverage-compilation-dir=/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-cmUw1v -resource-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16 -dependency-file CMakeFiles/cmTC_fa438.dir/CMakeCCompilerABI.c.o.d -skip-unused-modulemap-deps -MT CMakeFiles/cmTC_fa438.dir/CMakeCCompilerABI.c.o -sys-header-deps -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -internal-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/local/include -internal-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include -Wno-reorder-init-list -Wno-implicit-int-float-conversion -Wno-c99-designator -Wno-final-dtor-non-final-class -Wno-extra-semi-stmt -Wno-misleading-indentation -Wno-quoted-include-in-framework-header -Wno-implicit-fallthrough -Wno-enum-enum-conversion -Wno-enum-float-conversion -Wno-elaborated-enum-base -Wno-reserved-identifier -Wno-gnu-folding-constant -fdebug-compilation-dir=/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-cmUw1v -ferror-limit 19 -stack-protector 1 -fstack-check -mdarwin-stkchk-strong-link -fblocks -fencode-extended-block-signature -fregister-global-dtors-with-atexit -fgnuc-version=4.2.1 -fmax-type-align=16 -fcommon -clang-vendor-feature=+disableNonDependentMemberExprInCurrentInstantiation -fno-odr-hash-protocols -clang-vendor-feature=+enableAggressiveVLAFolding -clang-vendor-feature=+revert09abecef7bbf -clang-vendor-feature=+thisNoAlignAttr -clang-vendor-feature=+thisNoNullAttr -clang-vendor-feature=+disableAtImportPrivateFrameworkInImplementationError -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_fa438.dir/CMakeCCompilerABI.c.o -x c /Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeCCompilerABI.c
+        clang -cc1 version 16.0.0 (clang-1600.0.26.6) default target arm64-apple-darwin23.6.0
+        ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/local/include"
+        ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/Library/Frameworks"
+        #include "..." search starts here:
+        #include <...> search starts here:
+         /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include
+         /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include
+         /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include
+         /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/System/Library/Frameworks (framework directory)
+        End of search list.
+        [2/2] : && /usr/bin/clang -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -Wl,-search_paths_first -Wl,-headerpad_max_install_names -v -Wl,-v CMakeFiles/cmTC_fa438.dir/CMakeCCompilerABI.c.o -o cmTC_fa438   && :
+        Apple clang version 16.0.0 (clang-1600.0.26.6)
+        Target: arm64-apple-darwin23.6.0
+        Thread model: posix
+        InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin
+         "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld" -demangle -lto_library /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libLTO.dylib -dynamic -arch arm64 -platform_version macos 14.7.0 15.2 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mllvm -enable-linkonceodr-outlining -o cmTC_fa438 -search_paths_first -headerpad_max_install_names -v CMakeFiles/cmTC_fa438.dir/CMakeCCompilerABI.c.o -lSystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/lib/darwin/libclang_rt.osx.a
+        @(#)PROGRAM:ld PROJECT:ld-1115.7.3
+        BUILD 23:52:02 Dec  5 2024
+        configured to support archs: armv6 armv7 armv7s arm64 arm64e arm64_32 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em
+        will use ld-classic for: armv6 armv7 armv7s i386 armv6m armv7k armv7m armv7em
+        LTO support using: LLVM version 16.0.0 (static support for 29, runtime is 29)
+        TAPI support using: Apple TAPI version 16.0.0 (tapi-1600.0.11.9)
+        Library search paths:
+        	/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/lib
+        	/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/lib/swift
+        Framework search paths:
+        	/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/System/Library/Frameworks
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeDetermineCompilerABI.cmake:127 (message)"
+      - "/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:29 (project)"
+    message: |
+      Parsed C implicit include dir info: rv=done
+        found start of include info
+        found start of implicit include info
+          add: [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include]
+          add: [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include]
+          add: [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include]
+        end of search list found
+        collapse include dir [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include] ==> [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include]
+        collapse include dir [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include] ==> [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include]
+        collapse include dir [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include] ==> [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include]
+        implicit include dirs: [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include;/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include;/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include]
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeDetermineCompilerABI.cmake:159 (message)"
+      - "/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:29 (project)"
+    message: |
+      Parsed C implicit link information:
+        link line regex: [^( *|.*[/\\])(ld|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        ignore line: [Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-cmUw1v']
+        ignore line: []
+        ignore line: [Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_fa438]
+        ignore line: [[1/2] /usr/bin/clang   -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7   -v -Wl -v -MD -MT CMakeFiles/cmTC_fa438.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_fa438.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_fa438.dir/CMakeCCompilerABI.c.o -c /Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeCCompilerABI.c]
+        ignore line: [Apple clang version 16.0.0 (clang-1600.0.26.6)]
+        ignore line: [Target: arm64-apple-darwin23.6.0]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin]
+        ignore line: [clang: warning: -Wl -v: 'linker' input unused [-Wunused-command-line-argument]]
+        ignore line: [ "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang" -cc1 -triple arm64-apple-macosx14.7.0 -Wundef-prefix=TARGET_OS_ -Wdeprecated-objc-isa-usage -Werror=deprecated-objc-isa-usage -Werror=implicit-function-declaration -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -mframe-pointer=non-leaf -fno-strict-return -ffp-contract=on -fno-rounding-math -funwind-tables=1 -fobjc-msgsend-selector-stubs -target-sdk-version=15.2 -fvisibility-inlines-hidden-static-local-var -fno-modulemap-allow-subdirectory-search -target-cpu apple-m1 -target-feature +v8.5a -target-feature +aes -target-feature +crc -target-feature +dotprod -target-feature +fp-armv8 -target-feature +fp16fml -target-feature +lse -target-feature +ras -target-feature +rcpc -target-feature +rdm -target-feature +sha2 -target-feature +sha3 -target-feature +neon -target-feature +zcm -target-feature +zcz -target-feature +fullfp16 -target-abi darwinpcs -debugger-tuning=lldb -target-linker-version 1115.7.3 -v -fcoverage-compilation-dir=/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-cmUw1v -resource-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16 -dependency-file CMakeFiles/cmTC_fa438.dir/CMakeCCompilerABI.c.o.d -skip-unused-modulemap-deps -MT CMakeFiles/cmTC_fa438.dir/CMakeCCompilerABI.c.o -sys-header-deps -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -internal-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/local/include -internal-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include -Wno-reorder-init-list -Wno-implicit-int-float-conversion -Wno-c99-designator -Wno-final-dtor-non-final-class -Wno-extra-semi-stmt -Wno-misleading-indentation -Wno-quoted-include-in-framework-header -Wno-implicit-fallthrough -Wno-enum-enum-conversion -Wno-enum-float-conversion -Wno-elaborated-enum-base -Wno-reserved-identifier -Wno-gnu-folding-constant -fdebug-compilation-dir=/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-cmUw1v -ferror-limit 19 -stack-protector 1 -fstack-check -mdarwin-stkchk-strong-link -fblocks -fencode-extended-block-signature -fregister-global-dtors-with-atexit -fgnuc-version=4.2.1 -fmax-type-align=16 -fcommon -clang-vendor-feature=+disableNonDependentMemberExprInCurrentInstantiation -fno-odr-hash-protocols -clang-vendor-feature=+enableAggressiveVLAFolding -clang-vendor-feature=+revert09abecef7bbf -clang-vendor-feature=+thisNoAlignAttr -clang-vendor-feature=+thisNoNullAttr -clang-vendor-feature=+disableAtImportPrivateFrameworkInImplementationError -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_fa438.dir/CMakeCCompilerABI.c.o -x c /Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeCCompilerABI.c]
+        ignore line: [clang -cc1 version 16.0.0 (clang-1600.0.26.6) default target arm64-apple-darwin23.6.0]
+        ignore line: [ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/local/include"]
+        ignore line: [ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/Library/Frameworks"]
+        ignore line: [#include "..." search starts here:]
+        ignore line: [#include <...> search starts here:]
+        ignore line: [ /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include]
+        ignore line: [ /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include]
+        ignore line: [ /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include]
+        ignore line: [ /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/System/Library/Frameworks (framework directory)]
+        ignore line: [End of search list.]
+        ignore line: [[2/2] : && /usr/bin/clang -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -Wl -search_paths_first -Wl -headerpad_max_install_names -v -Wl -v CMakeFiles/cmTC_fa438.dir/CMakeCCompilerABI.c.o -o cmTC_fa438   && :]
+        ignore line: [Apple clang version 16.0.0 (clang-1600.0.26.6)]
+        ignore line: [Target: arm64-apple-darwin23.6.0]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin]
+        link line: [ "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld" -demangle -lto_library /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libLTO.dylib -dynamic -arch arm64 -platform_version macos 14.7.0 15.2 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mllvm -enable-linkonceodr-outlining -o cmTC_fa438 -search_paths_first -headerpad_max_install_names -v CMakeFiles/cmTC_fa438.dir/CMakeCCompilerABI.c.o -lSystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/lib/darwin/libclang_rt.osx.a]
+          arg [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld] ==> ignore
+          arg [-demangle] ==> ignore
+          arg [-lto_library] ==> ignore, skip following value
+          arg [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libLTO.dylib] ==> skip value of -lto_library
+          arg [-dynamic] ==> ignore
+          arg [-arch] ==> ignore
+          arg [arm64] ==> ignore
+          arg [-platform_version] ==> ignore
+          arg [macos] ==> ignore
+          arg [14.7.0] ==> ignore
+          arg [15.2] ==> ignore
+          arg [-syslibroot] ==> ignore
+          arg [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk] ==> ignore
+          arg [-mllvm] ==> ignore
+          arg [-enable-linkonceodr-outlining] ==> ignore
+          arg [-o] ==> ignore
+          arg [cmTC_fa438] ==> ignore
+          arg [-search_paths_first] ==> ignore
+          arg [-headerpad_max_install_names] ==> ignore
+          arg [-v] ==> ignore
+          arg [CMakeFiles/cmTC_fa438.dir/CMakeCCompilerABI.c.o] ==> ignore
+          arg [-lSystem] ==> lib [System]
+          arg [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/lib/darwin/libclang_rt.osx.a] ==> lib [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/lib/darwin/libclang_rt.osx.a]
+        Library search paths: [;/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/lib;/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/lib/swift]
+        Framework search paths: [;/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/System/Library/Frameworks]
+        remove lib [System]
+        remove lib [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/lib/darwin/libclang_rt.osx.a]
+        collapse library dir [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/lib] ==> [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/lib]
+        collapse library dir [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/lib/swift] ==> [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/lib/swift]
+        collapse framework dir [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/System/Library/Frameworks] ==> [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/System/Library/Frameworks]
+        implicit libs: []
+        implicit objs: []
+        implicit dirs: [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/lib;/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/lib/swift]
+        implicit fwks: [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/System/Library/Frameworks]
+      
+      
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeDetermineCompilerABI.cmake:57 (try_compile)"
+      - "/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:29 (project)"
+    checks:
+      - "Detecting CXX compiler ABI info"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-6bAhcZ"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-6bAhcZ"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: ""
+      CMAKE_CXX_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "CMAKE_CXX_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-6bAhcZ'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_f0108
+        [1/2] /usr/bin/clang++   -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7   -v -Wl,-v -MD -MT CMakeFiles/cmTC_f0108.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_f0108.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_f0108.dir/CMakeCXXCompilerABI.cpp.o -c /Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeCXXCompilerABI.cpp
+        Apple clang version 16.0.0 (clang-1600.0.26.6)
+        Target: arm64-apple-darwin23.6.0
+        Thread model: posix
+        InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin
+        clang++: warning: -Wl,-v: 'linker' input unused [-Wunused-command-line-argument]
+        ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"
+         "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang" -cc1 -triple arm64-apple-macosx14.7.0 -Wundef-prefix=TARGET_OS_ -Wdeprecated-objc-isa-usage -Werror=deprecated-objc-isa-usage -Werror=implicit-function-declaration -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -mframe-pointer=non-leaf -fno-strict-return -ffp-contract=on -fno-rounding-math -funwind-tables=1 -fobjc-msgsend-selector-stubs -target-sdk-version=15.2 -fvisibility-inlines-hidden-static-local-var -fno-modulemap-allow-subdirectory-search -target-cpu apple-m1 -target-feature +v8.5a -target-feature +aes -target-feature +crc -target-feature +dotprod -target-feature +fp-armv8 -target-feature +fp16fml -target-feature +lse -target-feature +ras -target-feature +rcpc -target-feature +rdm -target-feature +sha2 -target-feature +sha3 -target-feature +neon -target-feature +zcm -target-feature +zcz -target-feature +fullfp16 -target-abi darwinpcs -debugger-tuning=lldb -target-linker-version 1115.7.3 -v -fcoverage-compilation-dir=/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-6bAhcZ -resource-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16 -dependency-file CMakeFiles/cmTC_f0108.dir/CMakeCXXCompilerABI.cpp.o.d -skip-unused-modulemap-deps -MT CMakeFiles/cmTC_f0108.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -internal-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include/c++/v1 -internal-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/local/include -internal-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include -Wno-reorder-init-list -Wno-implicit-int-float-conversion -Wno-c99-designator -Wno-final-dtor-non-final-class -Wno-extra-semi-stmt -Wno-misleading-indentation -Wno-quoted-include-in-framework-header -Wno-implicit-fallthrough -Wno-enum-enum-conversion -Wno-enum-float-conversion -Wno-elaborated-enum-base -Wno-reserved-identifier -Wno-gnu-folding-constant -std=gnu++17 -fdeprecated-macro -fdebug-compilation-dir=/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-6bAhcZ -ferror-limit 19 -stack-protector 1 -fstack-check -mdarwin-stkchk-strong-link -fblocks -fencode-extended-block-signature -fregister-global-dtors-with-atexit -fgnuc-version=4.2.1 -fno-cxx-modules -fcxx-exceptions -fexceptions -fmax-type-align=16 -fcommon -clang-vendor-feature=+disableNonDependentMemberExprInCurrentInstantiation -fno-odr-hash-protocols -clang-vendor-feature=+enableAggressiveVLAFolding -clang-vendor-feature=+revert09abecef7bbf -clang-vendor-feature=+thisNoAlignAttr -clang-vendor-feature=+thisNoNullAttr -clang-vendor-feature=+disableAtImportPrivateFrameworkInImplementationError -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_f0108.dir/CMakeCXXCompilerABI.cpp.o -x c++ /Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeCXXCompilerABI.cpp
+        clang -cc1 version 16.0.0 (clang-1600.0.26.6) default target arm64-apple-darwin23.6.0
+        ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/local/include"
+        ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/Library/Frameworks"
+        #include "..." search starts here:
+        #include <...> search starts here:
+         /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include/c++/v1
+         /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include
+         /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include
+         /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include
+         /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/System/Library/Frameworks (framework directory)
+        End of search list.
+        [2/2] : && /usr/bin/clang++ -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -Wl,-search_paths_first -Wl,-headerpad_max_install_names -v -Wl,-v CMakeFiles/cmTC_f0108.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_f0108   && :
+        Apple clang version 16.0.0 (clang-1600.0.26.6)
+        Target: arm64-apple-darwin23.6.0
+        Thread model: posix
+        InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin
+         "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld" -demangle -lto_library /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libLTO.dylib -dynamic -arch arm64 -platform_version macos 14.7.0 15.2 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mllvm -enable-linkonceodr-outlining -o cmTC_f0108 -search_paths_first -headerpad_max_install_names -v CMakeFiles/cmTC_f0108.dir/CMakeCXXCompilerABI.cpp.o -lc++ -lSystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/lib/darwin/libclang_rt.osx.a
+        @(#)PROGRAM:ld PROJECT:ld-1115.7.3
+        BUILD 23:52:02 Dec  5 2024
+        configured to support archs: armv6 armv7 armv7s arm64 arm64e arm64_32 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em
+        will use ld-classic for: armv6 armv7 armv7s i386 armv6m armv7k armv7m armv7em
+        LTO support using: LLVM version 16.0.0 (static support for 29, runtime is 29)
+        TAPI support using: Apple TAPI version 16.0.0 (tapi-1600.0.11.9)
+        Library search paths:
+        	/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/lib
+        	/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/lib/swift
+        Framework search paths:
+        	/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/System/Library/Frameworks
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeDetermineCompilerABI.cmake:127 (message)"
+      - "/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:29 (project)"
+    message: |
+      Parsed CXX implicit include dir info: rv=done
+        found start of include info
+        found start of implicit include info
+          add: [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include/c++/v1]
+          add: [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include]
+          add: [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include]
+          add: [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include]
+        end of search list found
+        collapse include dir [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include/c++/v1] ==> [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include/c++/v1]
+        collapse include dir [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include] ==> [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include]
+        collapse include dir [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include] ==> [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include]
+        collapse include dir [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include] ==> [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include]
+        implicit include dirs: [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include/c++/v1;/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include;/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include;/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include]
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeDetermineCompilerABI.cmake:159 (message)"
+      - "/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:29 (project)"
+    message: |
+      Parsed CXX implicit link information:
+        link line regex: [^( *|.*[/\\])(ld|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        ignore line: [Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-6bAhcZ']
+        ignore line: []
+        ignore line: [Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_f0108]
+        ignore line: [[1/2] /usr/bin/clang++   -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7   -v -Wl -v -MD -MT CMakeFiles/cmTC_f0108.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_f0108.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_f0108.dir/CMakeCXXCompilerABI.cpp.o -c /Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [Apple clang version 16.0.0 (clang-1600.0.26.6)]
+        ignore line: [Target: arm64-apple-darwin23.6.0]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin]
+        ignore line: [clang++: warning: -Wl -v: 'linker' input unused [-Wunused-command-line-argument]]
+        ignore line: [ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"]
+        ignore line: [ "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang" -cc1 -triple arm64-apple-macosx14.7.0 -Wundef-prefix=TARGET_OS_ -Wdeprecated-objc-isa-usage -Werror=deprecated-objc-isa-usage -Werror=implicit-function-declaration -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -mframe-pointer=non-leaf -fno-strict-return -ffp-contract=on -fno-rounding-math -funwind-tables=1 -fobjc-msgsend-selector-stubs -target-sdk-version=15.2 -fvisibility-inlines-hidden-static-local-var -fno-modulemap-allow-subdirectory-search -target-cpu apple-m1 -target-feature +v8.5a -target-feature +aes -target-feature +crc -target-feature +dotprod -target-feature +fp-armv8 -target-feature +fp16fml -target-feature +lse -target-feature +ras -target-feature +rcpc -target-feature +rdm -target-feature +sha2 -target-feature +sha3 -target-feature +neon -target-feature +zcm -target-feature +zcz -target-feature +fullfp16 -target-abi darwinpcs -debugger-tuning=lldb -target-linker-version 1115.7.3 -v -fcoverage-compilation-dir=/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-6bAhcZ -resource-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16 -dependency-file CMakeFiles/cmTC_f0108.dir/CMakeCXXCompilerABI.cpp.o.d -skip-unused-modulemap-deps -MT CMakeFiles/cmTC_f0108.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -internal-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include/c++/v1 -internal-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/local/include -internal-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include -Wno-reorder-init-list -Wno-implicit-int-float-conversion -Wno-c99-designator -Wno-final-dtor-non-final-class -Wno-extra-semi-stmt -Wno-misleading-indentation -Wno-quoted-include-in-framework-header -Wno-implicit-fallthrough -Wno-enum-enum-conversion -Wno-enum-float-conversion -Wno-elaborated-enum-base -Wno-reserved-identifier -Wno-gnu-folding-constant -std=gnu++17 -fdeprecated-macro -fdebug-compilation-dir=/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-6bAhcZ -ferror-limit 19 -stack-protector 1 -fstack-check -mdarwin-stkchk-strong-link -fblocks -fencode-extended-block-signature -fregister-global-dtors-with-atexit -fgnuc-version=4.2.1 -fno-cxx-modules -fcxx-exceptions -fexceptions -fmax-type-align=16 -fcommon -clang-vendor-feature=+disableNonDependentMemberExprInCurrentInstantiation -fno-odr-hash-protocols -clang-vendor-feature=+enableAggressiveVLAFolding -clang-vendor-feature=+revert09abecef7bbf -clang-vendor-feature=+thisNoAlignAttr -clang-vendor-feature=+thisNoNullAttr -clang-vendor-feature=+disableAtImportPrivateFrameworkInImplementationError -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_f0108.dir/CMakeCXXCompilerABI.cpp.o -x c++ /Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [clang -cc1 version 16.0.0 (clang-1600.0.26.6) default target arm64-apple-darwin23.6.0]
+        ignore line: [ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/local/include"]
+        ignore line: [ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/Library/Frameworks"]
+        ignore line: [#include "..." search starts here:]
+        ignore line: [#include <...> search starts here:]
+        ignore line: [ /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include/c++/v1]
+        ignore line: [ /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include]
+        ignore line: [ /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include]
+        ignore line: [ /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include]
+        ignore line: [ /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/System/Library/Frameworks (framework directory)]
+        ignore line: [End of search list.]
+        ignore line: [[2/2] : && /usr/bin/clang++ -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -Wl -search_paths_first -Wl -headerpad_max_install_names -v -Wl -v CMakeFiles/cmTC_f0108.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_f0108   && :]
+        ignore line: [Apple clang version 16.0.0 (clang-1600.0.26.6)]
+        ignore line: [Target: arm64-apple-darwin23.6.0]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin]
+        link line: [ "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld" -demangle -lto_library /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libLTO.dylib -dynamic -arch arm64 -platform_version macos 14.7.0 15.2 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mllvm -enable-linkonceodr-outlining -o cmTC_f0108 -search_paths_first -headerpad_max_install_names -v CMakeFiles/cmTC_f0108.dir/CMakeCXXCompilerABI.cpp.o -lc++ -lSystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/lib/darwin/libclang_rt.osx.a]
+          arg [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld] ==> ignore
+          arg [-demangle] ==> ignore
+          arg [-lto_library] ==> ignore, skip following value
+          arg [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libLTO.dylib] ==> skip value of -lto_library
+          arg [-dynamic] ==> ignore
+          arg [-arch] ==> ignore
+          arg [arm64] ==> ignore
+          arg [-platform_version] ==> ignore
+          arg [macos] ==> ignore
+          arg [14.7.0] ==> ignore
+          arg [15.2] ==> ignore
+          arg [-syslibroot] ==> ignore
+          arg [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk] ==> ignore
+          arg [-mllvm] ==> ignore
+          arg [-enable-linkonceodr-outlining] ==> ignore
+          arg [-o] ==> ignore
+          arg [cmTC_f0108] ==> ignore
+          arg [-search_paths_first] ==> ignore
+          arg [-headerpad_max_install_names] ==> ignore
+          arg [-v] ==> ignore
+          arg [CMakeFiles/cmTC_f0108.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
+          arg [-lc++] ==> lib [c++]
+          arg [-lSystem] ==> lib [System]
+          arg [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/lib/darwin/libclang_rt.osx.a] ==> lib [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/lib/darwin/libclang_rt.osx.a]
+        Library search paths: [;/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/lib;/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/lib/swift]
+        Framework search paths: [;/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/System/Library/Frameworks]
+        remove lib [System]
+        remove lib [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/lib/darwin/libclang_rt.osx.a]
+        collapse library dir [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/lib] ==> [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/lib]
+        collapse library dir [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/lib/swift] ==> [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/lib/swift]
+        collapse framework dir [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/System/Library/Frameworks] ==> [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/System/Library/Frameworks]
+        implicit libs: [c++]
+        implicit objs: []
+        implicit dirs: [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/lib;/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/lib/swift]
+        implicit fwks: [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/System/Library/Frameworks]
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeDetermineFortranCompiler.cmake:186 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "tools/cmake/AmanziOptions.cmake:18 (enable_language)"
+      - "CMakeLists.txt:81 (include)"
+    message: |
+      Compiling the Fortran compiler identification source file "CMakeFortranCompilerId.F" succeeded.
+      Compiler: /opt/homebrew/bin/gfortran 
+      Build flags: 
+      Id flags: -v 
+      
+      The output was:
+      0
+      Driving: /opt/homebrew/bin/gfortran -v CMakeFortranCompilerId.F -mmacosx-version-min=14.0.0 -asm_macosx_version_min=14.0 -nodefaultexport -l gfortran
+      Using built-in specs.
+      COLLECT_GCC=/opt/homebrew/bin/gfortran
+      COLLECT_LTO_WRAPPER=/opt/homebrew/Cellar/gcc/14.2.0/bin/../libexec/gcc/aarch64-apple-darwin23/14/lto-wrapper
+      Target: aarch64-apple-darwin23
+      Configured with: ../configure --prefix=/opt/homebrew/opt/gcc --libdir=/opt/homebrew/opt/gcc/lib/gcc/current --disable-nls --enable-checking=release --with-gcc-major-version-only --enable-languages=c,c++,objc,obj-c++,fortran,m2 --program-suffix=-14 --with-gmp=/opt/homebrew/opt/gmp --with-mpfr=/opt/homebrew/opt/mpfr --with-mpc=/opt/homebrew/opt/libmpc --with-isl=/opt/homebrew/opt/isl --with-zstd=/opt/homebrew/opt/zstd --with-pkgversion='Homebrew GCC 14.2.0' --with-bugurl=https://github.com/Homebrew/homebrew-core/issues --with-system-zlib --build=aarch64-apple-darwin23 --with-sysroot=/Library/Developer/CommandLineTools/SDKs/MacOSX14.sdk
+      Thread model: posix
+      Supported LTO compression algorithms: zlib zstd
+      gcc version 14.2.0 (Homebrew GCC 14.2.0) 
+      COLLECT_GCC_OPTIONS='-v' '-mmacosx-version-min=14.0.0' '-asm_macosx_version_min=14.0' '-nodefaultexport' '-mcpu=apple-m1' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'a-'
+       /opt/homebrew/Cellar/gcc/14.2.0/bin/../libexec/gcc/aarch64-apple-darwin23/14/f951 CMakeFortranCompilerId.F -ffixed-form -cpp=/var/folders/5t/zy7vw0s50pdbmspg54cwyj1mqbzrzg/T//ccQ53c5X.fi -quiet -v -iprefix /opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/ -D__DYNAMIC__ CMakeFortranCompilerId.F -fPIC -quiet -dumpdir a- -dumpbase CMakeFortranCompilerId.F -dumpbase-ext .F -mmacosx-version-min=14.0.0 -mcpu=apple-m1 -mlittle-endian -mabi=lp64 -version -fintrinsic-modules-path /opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/finclude -o /var/folders/5t/zy7vw0s50pdbmspg54cwyj1mqbzrzg/T//ccUFcSdv.s
+      GNU Fortran (Homebrew GCC 14.2.0) version 14.2.0 (aarch64-apple-darwin23)
+      	compiled by GNU C version 14.2.0, GMP version 6.3.0, MPFR version 4.2.1, MPC version 1.3.1, isl version isl-0.27-GMP
+      
+      GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072
+      ignoring nonexistent directory "/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/../../../../../../aarch64-apple-darwin23/include"
+      ignoring duplicate directory "/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/../../../../lib/gcc/current/gcc/aarch64-apple-darwin23/14/include"
+      ignoring nonexistent directory "/Library/Developer/CommandLineTools/SDKs/MacOSX14.sdk/usr/local/include"
+      ignoring duplicate directory "/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/../../../../lib/gcc/current/gcc/aarch64-apple-darwin23/14/include-fixed"
+      ignoring nonexistent directory "/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/../../../../lib/gcc/current/gcc/aarch64-apple-darwin23/14/../../../../../../aarch64-apple-darwin23/include"
+      #include "..." search starts here:
+      #include <...> search starts here:
+       /opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/finclude
+       /opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/include
+       /opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/include-fixed
+       /Library/Developer/CommandLineTools/SDKs/MacOSX14.sdk/usr/include
+      End of search list.
+      COLLECT_GCC_OPTIONS='-v' '-mmacosx-version-min=14.0.0'  '-nodefaultexport' '-mcpu=apple-m1' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'a-'
+       as -arch arm64 -v -mmacosx-version-min=14.0 -o /var/folders/5t/zy7vw0s50pdbmspg54cwyj1mqbzrzg/T//ccUYxORM.o /var/folders/5t/zy7vw0s50pdbmspg54cwyj1mqbzrzg/T//ccUFcSdv.s
+      Apple clang version 16.0.0 (clang-1600.0.26.6)
+      Target: arm64-apple-darwin23.6.0
+      Thread model: posix
+      InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin
+       "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang" -cc1as -triple arm64-apple-macosx14.0.0 -target-sdk-version=15.2 -filetype obj -main-file-name ccUFcSdv.s -target-cpu apple-m1 -target-feature +v8.5a -target-feature +aes -target-feature +crc -target-feature +dotprod -target-feature +fp-armv8 -target-feature +fp16fml -target-feature +lse -target-feature +ras -target-feature +rcpc -target-feature +rdm -target-feature +sha2 -target-feature +sha3 -target-feature +neon -target-feature +zcm -target-feature +zcz -target-feature +fullfp16 -fdebug-compilation-dir=/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/3.28.0/CompilerIdFortran -dwarf-debug-producer "Apple clang version 16.0.0 (clang-1600.0.26.6)" -dwarf-version=4 -mrelocation-model pic -o /var/folders/5t/zy7vw0s50pdbmspg54cwyj1mqbzrzg/T//ccUYxORM.o /var/folders/5t/zy7vw0s50pdbmspg54cwyj1mqbzrzg/T//ccUFcSdv.s
+      Reading specs from /opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/../../../libgfortran.spec
+      rename spec lib to liborig
+      COLLECT_GCC_OPTIONS='-v' '-mmacosx-version-min=14.0.0'  '-nodefaultexport' '-mcpu=apple-m1' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'a-'
+      COMPILER_PATH=/opt/homebrew/Cellar/gcc/14.2.0/bin/../libexec/gcc/aarch64-apple-darwin23/14/:/opt/homebrew/Cellar/gcc/14.2.0/bin/../libexec/gcc/
+      LIBRARY_PATH=/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/:/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/:/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/../../../
+      COLLECT_GCC_OPTIONS='-v' '-mmacosx-version-min=14.0.0'  '-nodefaultexport' '-mcpu=apple-m1' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'a.'
+       /opt/homebrew/Cellar/gcc/14.2.0/bin/../libexec/gcc/aarch64-apple-darwin23/14/collect2 -demangle -syslibroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.sdk/ -dynamic -arch arm64 -platform_version macos 14.0.0 0.0 -o a.out -L/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14 -L/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc -L/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/../../.. -lemutls_w -lheapt_w /var/folders/5t/zy7vw0s50pdbmspg54cwyj1mqbzrzg/T//ccUYxORM.o -lgfortran -lgcc -lquadmath -lSystem -no_compact_unwind -rpath @loader_path -rpath /opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current/gcc/aarch64-apple-darwin23/14 -rpath /opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current/gcc -rpath /opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current
+      
+      
+      Compilation of the Fortran compiler identification source "CMakeFortranCompilerId.F" produced "a.out"
+      
+      The Fortran compiler identification is GNU, found in:
+        /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/3.28.0/CompilerIdFortran/a.out
+      
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeDetermineCompilerABI.cmake:57 (try_compile)"
+      - "/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeTestFortranCompiler.cmake:20 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "tools/cmake/AmanziOptions.cmake:18 (enable_language)"
+      - "CMakeLists.txt:81 (include)"
+    checks:
+      - "Detecting Fortran compiler ABI info"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-i80Fdt"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-i80Fdt"
+    cmakeVariables:
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_Fortran_FLAGS: ""
+      CMAKE_Fortran_FLAGS_DEBUG: "-g"
+      CMAKE_MODULE_PATH: "/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Modules;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Utils"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "CMAKE_Fortran_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-i80Fdt'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_cbef7
+        [1/4] /opt/homebrew/bin/gfortran -cpp   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7   -v -Wl,-v -E /Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeFortranCompilerABI.F90 -o CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90-pp.f90 && /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_depends --tdi=CMakeFiles/cmTC_cbef7.dir/FortranDependInfo.json --lang=Fortran --src=CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90-pp.f90 --out=CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90-pp.f90 --dep=CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90-pp.f90.d --obj=CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90.o --ddi=CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90.o.ddi
+        Using built-in specs.
+        COLLECT_GCC=/opt/homebrew/bin/gfortran
+        Target: aarch64-apple-darwin23
+        Configured with: ../configure --prefix=/opt/homebrew/opt/gcc --libdir=/opt/homebrew/opt/gcc/lib/gcc/current --disable-nls --enable-checking=release --with-gcc-major-version-only --enable-languages=c,c++,objc,obj-c++,fortran,m2 --program-suffix=-14 --with-gmp=/opt/homebrew/opt/gmp --with-mpfr=/opt/homebrew/opt/mpfr --with-mpc=/opt/homebrew/opt/libmpc --with-isl=/opt/homebrew/opt/isl --with-zstd=/opt/homebrew/opt/zstd --with-pkgversion='Homebrew GCC 14.2.0' --with-bugurl=https://github.com/Homebrew/homebrew-core/issues --with-system-zlib --build=aarch64-apple-darwin23 --with-sysroot=/Library/Developer/CommandLineTools/SDKs/MacOSX14.sdk
+        Thread model: posix
+        Supported LTO compression algorithms: zlib zstd
+        gcc version 14.2.0 (Homebrew GCC 14.2.0) 
+        COLLECT_GCC_OPTIONS='-cpp' '-isysroot' '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk' '-v' '-E' '-o' 'CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90-pp.f90' '-mmacosx-version-min=14.7' '-asm_macosx_version_min=14.7' '-nodefaultexport' '-mcpu=apple-m1' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'CMakeFiles/cmTC_cbef7.dir/'
+         /opt/homebrew/Cellar/gcc/14.2.0/bin/../libexec/gcc/aarch64-apple-darwin23/14/f951 /Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeFortranCompilerABI.F90 -cpp=/var/folders/5t/zy7vw0s50pdbmspg54cwyj1mqbzrzg/T//ccf7t40j.fii -E -quiet -v -iprefix /opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/ -D__DYNAMIC__ -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk /Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeFortranCompilerABI.F90 -o CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90-pp.f90 -dumpdir CMakeFiles/cmTC_cbef7.dir/ -dumpbase CMakeFortranCompilerABI.F90-pp.F90 -dumpbase-ext .F90 -fPIC -mmacosx-version-min=14.7 -mcpu=apple-m1 -mlittle-endian -mabi=lp64 -fsyntax-only
+        ignoring nonexistent directory "/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/../../../../../../aarch64-apple-darwin23/include"
+        ignoring duplicate directory "/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/../../../../lib/gcc/current/gcc/aarch64-apple-darwin23/14/include"
+        ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/local/include"
+        ignoring duplicate directory "/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/../../../../lib/gcc/current/gcc/aarch64-apple-darwin23/14/include-fixed"
+        ignoring nonexistent directory "/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/../../../../lib/gcc/current/gcc/aarch64-apple-darwin23/14/../../../../../../aarch64-apple-darwin23/include"
+        #include "..." search starts here:
+        #include <...> search starts here:
+         /opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/include
+         /opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/include-fixed
+         /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include
+        End of search list.
+        COMPILER_PATH=/opt/homebrew/Cellar/gcc/14.2.0/bin/../libexec/gcc/aarch64-apple-darwin23/14/:/opt/homebrew/Cellar/gcc/14.2.0/bin/../libexec/gcc/
+        LIBRARY_PATH=/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/:/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/:/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/../../../
+        COLLECT_GCC_OPTIONS='-cpp' '-isysroot' '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk' '-v' '-E' '-o' 'CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90-pp.f90' '-mmacosx-version-min=14.7' '-asm_macosx_version_min=14.7' '-nodefaultexport' '-mcpu=apple-m1' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90-pp.'
+        [2/4] /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_dyndep --tdi=CMakeFiles/cmTC_cbef7.dir/FortranDependInfo.json --lang=Fortran --dd=CMakeFiles/cmTC_cbef7.dir/Fortran.dd @CMakeFiles/cmTC_cbef7.dir/Fortran.dd.rsp
+        [3/4] /opt/homebrew/bin/gfortran -I/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7   -v -Wl,-v -fpreprocessed -c CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90-pp.f90 -o CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90.o
+        Using built-in specs.
+        COLLECT_GCC=/opt/homebrew/bin/gfortran
+        Target: aarch64-apple-darwin23
+        Configured with: ../configure --prefix=/opt/homebrew/opt/gcc --libdir=/opt/homebrew/opt/gcc/lib/gcc/current --disable-nls --enable-checking=release --with-gcc-major-version-only --enable-languages=c,c++,objc,obj-c++,fortran,m2 --program-suffix=-14 --with-gmp=/opt/homebrew/opt/gmp --with-mpfr=/opt/homebrew/opt/mpfr --with-mpc=/opt/homebrew/opt/libmpc --with-isl=/opt/homebrew/opt/isl --with-zstd=/opt/homebrew/opt/zstd --with-pkgversion='Homebrew GCC 14.2.0' --with-bugurl=https://github.com/Homebrew/homebrew-core/issues --with-system-zlib --build=aarch64-apple-darwin23 --with-sysroot=/Library/Developer/CommandLineTools/SDKs/MacOSX14.sdk
+        Thread model: posix
+        Supported LTO compression algorithms: zlib zstd
+        gcc version 14.2.0 (Homebrew GCC 14.2.0) 
+        COLLECT_GCC_OPTIONS='-I' '/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules' '-isysroot' '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk' '-v' '-fpreprocessed' '-c' '-o' 'CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90.o' '-mmacosx-version-min=14.7' '-asm_macosx_version_min=14.7' '-nodefaultexport' '-mcpu=apple-m1' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'CMakeFiles/cmTC_cbef7.dir/'
+         /opt/homebrew/Cellar/gcc/14.2.0/bin/../libexec/gcc/aarch64-apple-darwin23/14/f951 CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90-pp.f90 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -I /Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules -fPIC -quiet -dumpdir CMakeFiles/cmTC_cbef7.dir/ -dumpbase CMakeFortranCompilerABI.F90.f90 -dumpbase-ext .f90 -mmacosx-version-min=14.7 -mcpu=apple-m1 -mlittle-endian -mabi=lp64 -version -fpreprocessed -fintrinsic-modules-path /opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/finclude -o /var/folders/5t/zy7vw0s50pdbmspg54cwyj1mqbzrzg/T//ccgKORfG.s
+        GNU Fortran (Homebrew GCC 14.2.0) version 14.2.0 (aarch64-apple-darwin23)
+        	compiled by GNU C version 14.2.0, GMP version 6.3.0, MPFR version 4.2.1, MPC version 1.3.1, isl version isl-0.27-GMP
+        
+        GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072
+        COLLECT_GCC_OPTIONS='-I' '/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules' '-isysroot' '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk' '-v' '-fpreprocessed' '-c' '-o' 'CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90.o' '-mmacosx-version-min=14.7'  '-nodefaultexport' '-mcpu=apple-m1' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'CMakeFiles/cmTC_cbef7.dir/'
+         as -arch arm64 -v -I /Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules -mmacosx-version-min=14.7 -o CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90.o /var/folders/5t/zy7vw0s50pdbmspg54cwyj1mqbzrzg/T//ccgKORfG.s
+        Apple clang version 16.0.0 (clang-1600.0.26.6)
+        Target: arm64-apple-darwin23.6.0
+        Thread model: posix
+        InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin
+         "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang" -cc1as -triple arm64-apple-macosx14.7.0 -target-sdk-version=15.2 -filetype obj -main-file-name ccgKORfG.s -target-cpu apple-m1 -target-feature +v8.5a -target-feature +aes -target-feature +crc -target-feature +dotprod -target-feature +fp-armv8 -target-feature +fp16fml -target-feature +lse -target-feature +ras -target-feature +rcpc -target-feature +rdm -target-feature +sha2 -target-feature +sha3 -target-feature +neon -target-feature +zcm -target-feature +zcz -target-feature +fullfp16 -I /Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules -fdebug-compilation-dir=/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-i80Fdt -dwarf-debug-producer "Apple clang version 16.0.0 (clang-1600.0.26.6)" -I /Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules -dwarf-version=4 -mrelocation-model pic -o CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90.o /var/folders/5t/zy7vw0s50pdbmspg54cwyj1mqbzrzg/T//ccgKORfG.s
+        COMPILER_PATH=/opt/homebrew/Cellar/gcc/14.2.0/bin/../libexec/gcc/aarch64-apple-darwin23/14/:/opt/homebrew/Cellar/gcc/14.2.0/bin/../libexec/gcc/
+        LIBRARY_PATH=/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/:/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/:/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/../../../
+        COLLECT_GCC_OPTIONS='-I' '/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules' '-isysroot' '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk' '-v' '-fpreprocessed' '-c' '-o' 'CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90.o' '-mmacosx-version-min=14.7'  '-nodefaultexport' '-mcpu=apple-m1' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90.'
+        [4/4] : && /opt/homebrew/bin/gfortran -v -Wl,-v -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90.o -o cmTC_cbef7   && :
+        Driving: /opt/homebrew/bin/gfortran -v -Wl,-v -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90.o -o cmTC_cbef7 -mmacosx-version-min=14.7 -asm_macosx_version_min=14.7 -nodefaultexport -l gfortran
+        Using built-in specs.
+        COLLECT_GCC=/opt/homebrew/bin/gfortran
+        COLLECT_LTO_WRAPPER=/opt/homebrew/Cellar/gcc/14.2.0/bin/../libexec/gcc/aarch64-apple-darwin23/14/lto-wrapper
+        Target: aarch64-apple-darwin23
+        Configured with: ../configure --prefix=/opt/homebrew/opt/gcc --libdir=/opt/homebrew/opt/gcc/lib/gcc/current --disable-nls --enable-checking=release --with-gcc-major-version-only --enable-languages=c,c++,objc,obj-c++,fortran,m2 --program-suffix=-14 --with-gmp=/opt/homebrew/opt/gmp --with-mpfr=/opt/homebrew/opt/mpfr --with-mpc=/opt/homebrew/opt/libmpc --with-isl=/opt/homebrew/opt/isl --with-zstd=/opt/homebrew/opt/zstd --with-pkgversion='Homebrew GCC 14.2.0' --with-bugurl=https://github.com/Homebrew/homebrew-core/issues --with-system-zlib --build=aarch64-apple-darwin23 --with-sysroot=/Library/Developer/CommandLineTools/SDKs/MacOSX14.sdk
+        Thread model: posix
+        Supported LTO compression algorithms: zlib zstd
+        gcc version 14.2.0 (Homebrew GCC 14.2.0) 
+        Reading specs from /opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/../../../libgfortran.spec
+        rename spec lib to liborig
+        COLLECT_GCC_OPTIONS='-v' '-isysroot' '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk' '-o' 'cmTC_cbef7' '-mmacosx-version-min=14.7' '-asm_macosx_version_min=14.7' '-nodefaultexport' '-mcpu=apple-m1' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'cmTC_cbef7-'
+        COMPILER_PATH=/opt/homebrew/Cellar/gcc/14.2.0/bin/../libexec/gcc/aarch64-apple-darwin23/14/:/opt/homebrew/Cellar/gcc/14.2.0/bin/../libexec/gcc/
+        LIBRARY_PATH=/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/:/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/:/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/../../../
+        COLLECT_GCC_OPTIONS='-v' '-isysroot' '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk' '-o' 'cmTC_cbef7' '-mmacosx-version-min=14.7' '-asm_macosx_version_min=14.7' '-nodefaultexport' '-mcpu=apple-m1' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'cmTC_cbef7.'
+         /opt/homebrew/Cellar/gcc/14.2.0/bin/../libexec/gcc/aarch64-apple-darwin23/14/collect2 -demangle -dynamic -arch arm64 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -platform_version macos 14.7 0.0 -o cmTC_cbef7 -L/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14 -L/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc -L/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/../../.. -lemutls_w -lheapt_w -v CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90.o -lgfortran -lgcc -lquadmath -lSystem -no_compact_unwind -rpath @loader_path -rpath /opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current/gcc/aarch64-apple-darwin23/14 -rpath /opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current/gcc -rpath /opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current
+        collect2 version 14.2.0
+        /usr/bin/ld -demangle -dynamic -arch arm64 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -platform_version macos 14.7 0.0 -o cmTC_cbef7 -L/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14 -L/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc -L/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/../../.. -lemutls_w -lheapt_w -v CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90.o -lgfortran -lgcc -lquadmath -lSystem -no_compact_unwind -rpath @loader_path -rpath /opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current/gcc/aarch64-apple-darwin23/14 -rpath /opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current/gcc -rpath /opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current
+        @(#)PROGRAM:ld PROJECT:ld-1115.7.3
+        BUILD 23:52:02 Dec  5 2024
+        configured to support archs: armv6 armv7 armv7s arm64 arm64e arm64_32 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em
+        will use ld-classic for: armv6 armv7 armv7s i386 armv6m armv7k armv7m armv7em
+        LTO support using: LLVM version 16.0.0 (static support for 29, runtime is 29)
+        TAPI support using: Apple TAPI version 16.0.0 (tapi-1600.0.11.9)
+        Library search paths:
+        	/opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current/gcc/aarch64-apple-darwin23/14
+        	/opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current/gcc
+        	/opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current
+        	/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/lib
+        	/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/lib/swift
+        Framework search paths:
+        	/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/System/Library/Frameworks
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeDetermineCompilerABI.cmake:127 (message)"
+      - "/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeTestFortranCompiler.cmake:20 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "tools/cmake/AmanziOptions.cmake:18 (enable_language)"
+      - "CMakeLists.txt:81 (include)"
+    message: |
+      Parsed Fortran implicit include dir info: rv=done
+        found start of include info
+        found start of implicit include info
+          add: [/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/include]
+          add: [/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/include-fixed]
+          add: [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include]
+        end of search list found
+        collapse include dir [/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/include] ==> [/opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current/gcc/aarch64-apple-darwin23/14/include]
+        collapse include dir [/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/include-fixed] ==> [/opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current/gcc/aarch64-apple-darwin23/14/include-fixed]
+        collapse include dir [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include] ==> [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include]
+        implicit include dirs: [/opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current/gcc/aarch64-apple-darwin23/14/include;/opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current/gcc/aarch64-apple-darwin23/14/include-fixed;/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include]
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeDetermineCompilerABI.cmake:159 (message)"
+      - "/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeTestFortranCompiler.cmake:20 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "tools/cmake/AmanziOptions.cmake:18 (enable_language)"
+      - "CMakeLists.txt:81 (include)"
+    message: |
+      Parsed Fortran implicit link information:
+        link line regex: [^( *|.*[/\\])(ld|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        ignore line: [Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-i80Fdt']
+        ignore line: []
+        ignore line: [Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_cbef7]
+        ignore line: [[1/4] /opt/homebrew/bin/gfortran -cpp   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7   -v -Wl -v -E /Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeFortranCompilerABI.F90 -o CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90-pp.f90 && /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_depends --tdi=CMakeFiles/cmTC_cbef7.dir/FortranDependInfo.json --lang=Fortran --src=CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90-pp.f90 --out=CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90-pp.f90 --dep=CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90-pp.f90.d --obj=CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90.o --ddi=CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90.o.ddi]
+        ignore line: [Using built-in specs.]
+        ignore line: [COLLECT_GCC=/opt/homebrew/bin/gfortran]
+        ignore line: [Target: aarch64-apple-darwin23]
+        ignore line: [Configured with: ../configure --prefix=/opt/homebrew/opt/gcc --libdir=/opt/homebrew/opt/gcc/lib/gcc/current --disable-nls --enable-checking=release --with-gcc-major-version-only --enable-languages=c c++ objc obj-c++ fortran m2 --program-suffix=-14 --with-gmp=/opt/homebrew/opt/gmp --with-mpfr=/opt/homebrew/opt/mpfr --with-mpc=/opt/homebrew/opt/libmpc --with-isl=/opt/homebrew/opt/isl --with-zstd=/opt/homebrew/opt/zstd --with-pkgversion='Homebrew GCC 14.2.0' --with-bugurl=https://github.com/Homebrew/homebrew-core/issues --with-system-zlib --build=aarch64-apple-darwin23 --with-sysroot=/Library/Developer/CommandLineTools/SDKs/MacOSX14.sdk]
+        ignore line: [Thread model: posix]
+        ignore line: [Supported LTO compression algorithms: zlib zstd]
+        ignore line: [gcc version 14.2.0 (Homebrew GCC 14.2.0) ]
+        ignore line: [COLLECT_GCC_OPTIONS='-cpp' '-isysroot' '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk' '-v' '-E' '-o' 'CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90-pp.f90' '-mmacosx-version-min=14.7' '-asm_macosx_version_min=14.7' '-nodefaultexport' '-mcpu=apple-m1' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'CMakeFiles/cmTC_cbef7.dir/']
+        ignore line: [ /opt/homebrew/Cellar/gcc/14.2.0/bin/../libexec/gcc/aarch64-apple-darwin23/14/f951 /Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeFortranCompilerABI.F90 -cpp=/var/folders/5t/zy7vw0s50pdbmspg54cwyj1mqbzrzg/T//ccf7t40j.fii -E -quiet -v -iprefix /opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/ -D__DYNAMIC__ -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk /Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CMakeFortranCompilerABI.F90 -o CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90-pp.f90 -dumpdir CMakeFiles/cmTC_cbef7.dir/ -dumpbase CMakeFortranCompilerABI.F90-pp.F90 -dumpbase-ext .F90 -fPIC -mmacosx-version-min=14.7 -mcpu=apple-m1 -mlittle-endian -mabi=lp64 -fsyntax-only]
+        ignore line: [ignoring nonexistent directory "/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/../../../../../../aarch64-apple-darwin23/include"]
+        ignore line: [ignoring duplicate directory "/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/../../../../lib/gcc/current/gcc/aarch64-apple-darwin23/14/include"]
+        ignore line: [ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/local/include"]
+        ignore line: [ignoring duplicate directory "/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/../../../../lib/gcc/current/gcc/aarch64-apple-darwin23/14/include-fixed"]
+        ignore line: [ignoring nonexistent directory "/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/../../../../lib/gcc/current/gcc/aarch64-apple-darwin23/14/../../../../../../aarch64-apple-darwin23/include"]
+        ignore line: [#include "..." search starts here:]
+        ignore line: [#include <...> search starts here:]
+        ignore line: [ /opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/include]
+        ignore line: [ /opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/include-fixed]
+        ignore line: [ /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include]
+        ignore line: [End of search list.]
+        ignore line: [COMPILER_PATH=/opt/homebrew/Cellar/gcc/14.2.0/bin/../libexec/gcc/aarch64-apple-darwin23/14/:/opt/homebrew/Cellar/gcc/14.2.0/bin/../libexec/gcc/]
+        ignore line: [LIBRARY_PATH=/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/:/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/:/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/../../../]
+        ignore line: [COLLECT_GCC_OPTIONS='-cpp' '-isysroot' '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk' '-v' '-E' '-o' 'CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90-pp.f90' '-mmacosx-version-min=14.7' '-asm_macosx_version_min=14.7' '-nodefaultexport' '-mcpu=apple-m1' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90-pp.']
+        ignore line: [[2/4] /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_dyndep --tdi=CMakeFiles/cmTC_cbef7.dir/FortranDependInfo.json --lang=Fortran --dd=CMakeFiles/cmTC_cbef7.dir/Fortran.dd @CMakeFiles/cmTC_cbef7.dir/Fortran.dd.rsp]
+        ignore line: [[3/4] /opt/homebrew/bin/gfortran -I/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7   -v -Wl -v -fpreprocessed -c CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90-pp.f90 -o CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90.o]
+        ignore line: [Using built-in specs.]
+        ignore line: [COLLECT_GCC=/opt/homebrew/bin/gfortran]
+        ignore line: [Target: aarch64-apple-darwin23]
+        ignore line: [Configured with: ../configure --prefix=/opt/homebrew/opt/gcc --libdir=/opt/homebrew/opt/gcc/lib/gcc/current --disable-nls --enable-checking=release --with-gcc-major-version-only --enable-languages=c c++ objc obj-c++ fortran m2 --program-suffix=-14 --with-gmp=/opt/homebrew/opt/gmp --with-mpfr=/opt/homebrew/opt/mpfr --with-mpc=/opt/homebrew/opt/libmpc --with-isl=/opt/homebrew/opt/isl --with-zstd=/opt/homebrew/opt/zstd --with-pkgversion='Homebrew GCC 14.2.0' --with-bugurl=https://github.com/Homebrew/homebrew-core/issues --with-system-zlib --build=aarch64-apple-darwin23 --with-sysroot=/Library/Developer/CommandLineTools/SDKs/MacOSX14.sdk]
+        ignore line: [Thread model: posix]
+        ignore line: [Supported LTO compression algorithms: zlib zstd]
+        ignore line: [gcc version 14.2.0 (Homebrew GCC 14.2.0) ]
+        ignore line: [COLLECT_GCC_OPTIONS='-I' '/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules' '-isysroot' '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk' '-v' '-fpreprocessed' '-c' '-o' 'CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90.o' '-mmacosx-version-min=14.7' '-asm_macosx_version_min=14.7' '-nodefaultexport' '-mcpu=apple-m1' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'CMakeFiles/cmTC_cbef7.dir/']
+        ignore line: [ /opt/homebrew/Cellar/gcc/14.2.0/bin/../libexec/gcc/aarch64-apple-darwin23/14/f951 CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90-pp.f90 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -I /Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules -fPIC -quiet -dumpdir CMakeFiles/cmTC_cbef7.dir/ -dumpbase CMakeFortranCompilerABI.F90.f90 -dumpbase-ext .f90 -mmacosx-version-min=14.7 -mcpu=apple-m1 -mlittle-endian -mabi=lp64 -version -fpreprocessed -fintrinsic-modules-path /opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/finclude -o /var/folders/5t/zy7vw0s50pdbmspg54cwyj1mqbzrzg/T//ccgKORfG.s]
+        ignore line: [GNU Fortran (Homebrew GCC 14.2.0) version 14.2.0 (aarch64-apple-darwin23)]
+        ignore line: [	compiled by GNU C version 14.2.0  GMP version 6.3.0  MPFR version 4.2.1  MPC version 1.3.1  isl version isl-0.27-GMP]
+        ignore line: []
+        ignore line: [GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072]
+        ignore line: [COLLECT_GCC_OPTIONS='-I' '/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules' '-isysroot' '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk' '-v' '-fpreprocessed' '-c' '-o' 'CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90.o' '-mmacosx-version-min=14.7'  '-nodefaultexport' '-mcpu=apple-m1' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'CMakeFiles/cmTC_cbef7.dir/']
+        ignore line: [ as -arch arm64 -v -I /Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules -mmacosx-version-min=14.7 -o CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90.o /var/folders/5t/zy7vw0s50pdbmspg54cwyj1mqbzrzg/T//ccgKORfG.s]
+        ignore line: [Apple clang version 16.0.0 (clang-1600.0.26.6)]
+        ignore line: [Target: arm64-apple-darwin23.6.0]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin]
+        ignore line: [ "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang" -cc1as -triple arm64-apple-macosx14.7.0 -target-sdk-version=15.2 -filetype obj -main-file-name ccgKORfG.s -target-cpu apple-m1 -target-feature +v8.5a -target-feature +aes -target-feature +crc -target-feature +dotprod -target-feature +fp-armv8 -target-feature +fp16fml -target-feature +lse -target-feature +ras -target-feature +rcpc -target-feature +rdm -target-feature +sha2 -target-feature +sha3 -target-feature +neon -target-feature +zcm -target-feature +zcz -target-feature +fullfp16 -I /Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules -fdebug-compilation-dir=/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-i80Fdt -dwarf-debug-producer "Apple clang version 16.0.0 (clang-1600.0.26.6)" -I /Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules -dwarf-version=4 -mrelocation-model pic -o CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90.o /var/folders/5t/zy7vw0s50pdbmspg54cwyj1mqbzrzg/T//ccgKORfG.s]
+        ignore line: [COMPILER_PATH=/opt/homebrew/Cellar/gcc/14.2.0/bin/../libexec/gcc/aarch64-apple-darwin23/14/:/opt/homebrew/Cellar/gcc/14.2.0/bin/../libexec/gcc/]
+        ignore line: [LIBRARY_PATH=/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/:/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/:/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/../../../]
+        ignore line: [COLLECT_GCC_OPTIONS='-I' '/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules' '-isysroot' '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk' '-v' '-fpreprocessed' '-c' '-o' 'CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90.o' '-mmacosx-version-min=14.7'  '-nodefaultexport' '-mcpu=apple-m1' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90.']
+        ignore line: [[4/4] : && /opt/homebrew/bin/gfortran -v -Wl -v -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90.o -o cmTC_cbef7   && :]
+        ignore line: [Driving: /opt/homebrew/bin/gfortran -v -Wl -v -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90.o -o cmTC_cbef7 -mmacosx-version-min=14.7 -asm_macosx_version_min=14.7 -nodefaultexport -l gfortran]
+        ignore line: [Using built-in specs.]
+        ignore line: [COLLECT_GCC=/opt/homebrew/bin/gfortran]
+        ignore line: [COLLECT_LTO_WRAPPER=/opt/homebrew/Cellar/gcc/14.2.0/bin/../libexec/gcc/aarch64-apple-darwin23/14/lto-wrapper]
+        ignore line: [Target: aarch64-apple-darwin23]
+        ignore line: [Configured with: ../configure --prefix=/opt/homebrew/opt/gcc --libdir=/opt/homebrew/opt/gcc/lib/gcc/current --disable-nls --enable-checking=release --with-gcc-major-version-only --enable-languages=c c++ objc obj-c++ fortran m2 --program-suffix=-14 --with-gmp=/opt/homebrew/opt/gmp --with-mpfr=/opt/homebrew/opt/mpfr --with-mpc=/opt/homebrew/opt/libmpc --with-isl=/opt/homebrew/opt/isl --with-zstd=/opt/homebrew/opt/zstd --with-pkgversion='Homebrew GCC 14.2.0' --with-bugurl=https://github.com/Homebrew/homebrew-core/issues --with-system-zlib --build=aarch64-apple-darwin23 --with-sysroot=/Library/Developer/CommandLineTools/SDKs/MacOSX14.sdk]
+        ignore line: [Thread model: posix]
+        ignore line: [Supported LTO compression algorithms: zlib zstd]
+        ignore line: [gcc version 14.2.0 (Homebrew GCC 14.2.0) ]
+        ignore line: [Reading specs from /opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/../../../libgfortran.spec]
+        ignore line: [rename spec lib to liborig]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-isysroot' '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk' '-o' 'cmTC_cbef7' '-mmacosx-version-min=14.7' '-asm_macosx_version_min=14.7' '-nodefaultexport' '-mcpu=apple-m1' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'cmTC_cbef7-']
+        ignore line: [COMPILER_PATH=/opt/homebrew/Cellar/gcc/14.2.0/bin/../libexec/gcc/aarch64-apple-darwin23/14/:/opt/homebrew/Cellar/gcc/14.2.0/bin/../libexec/gcc/]
+        ignore line: [LIBRARY_PATH=/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/:/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/:/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/../../../]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-isysroot' '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk' '-o' 'cmTC_cbef7' '-mmacosx-version-min=14.7' '-asm_macosx_version_min=14.7' '-nodefaultexport' '-mcpu=apple-m1' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'cmTC_cbef7.']
+        link line: [ /opt/homebrew/Cellar/gcc/14.2.0/bin/../libexec/gcc/aarch64-apple-darwin23/14/collect2 -demangle -dynamic -arch arm64 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -platform_version macos 14.7 0.0 -o cmTC_cbef7 -L/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14 -L/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc -L/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/../../.. -lemutls_w -lheapt_w -v CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90.o -lgfortran -lgcc -lquadmath -lSystem -no_compact_unwind -rpath @loader_path -rpath /opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current/gcc/aarch64-apple-darwin23/14 -rpath /opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current/gcc -rpath /opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current]
+          arg [/opt/homebrew/Cellar/gcc/14.2.0/bin/../libexec/gcc/aarch64-apple-darwin23/14/collect2] ==> ignore
+          arg [-demangle] ==> ignore
+          arg [-dynamic] ==> ignore
+          arg [-arch] ==> ignore
+          arg [arm64] ==> ignore
+          arg [-syslibroot] ==> ignore
+          arg [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk] ==> ignore
+          arg [-platform_version] ==> ignore
+          arg [macos] ==> ignore
+          arg [14.7] ==> ignore
+          arg [0.0] ==> ignore
+          arg [-o] ==> ignore
+          arg [cmTC_cbef7] ==> ignore
+          arg [-L/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14] ==> dir [/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14]
+          arg [-L/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc] ==> dir [/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc]
+          arg [-L/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/../../..] ==> dir [/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/../../..]
+          arg [-lemutls_w] ==> lib [emutls_w]
+          arg [-lheapt_w] ==> lib [heapt_w]
+          arg [-v] ==> ignore
+          arg [CMakeFiles/cmTC_cbef7.dir/CMakeFortranCompilerABI.F90.o] ==> ignore
+          arg [-lgfortran] ==> lib [gfortran]
+          arg [-lgcc] ==> lib [gcc]
+          arg [-lquadmath] ==> lib [quadmath]
+          arg [-lSystem] ==> lib [System]
+          arg [-no_compact_unwind] ==> ignore
+          arg [-rpath] ==> ignore
+          arg [@loader_path] ==> ignore
+          arg [-rpath] ==> ignore
+          arg [/opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current/gcc/aarch64-apple-darwin23/14] ==> ignore
+          arg [-rpath] ==> ignore
+          arg [/opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current/gcc] ==> ignore
+          arg [-rpath] ==> ignore
+          arg [/opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current] ==> ignore
+        Library search paths: [;/opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current/gcc/aarch64-apple-darwin23/14;/opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current/gcc;/opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current;/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/lib;/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/lib/swift]
+        Framework search paths: [;/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/System/Library/Frameworks]
+        remove lib [System]
+        collapse library dir [/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14] ==> [/opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current/gcc/aarch64-apple-darwin23/14]
+        collapse library dir [/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc] ==> [/opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current/gcc]
+        collapse library dir [/opt/homebrew/Cellar/gcc/14.2.0/bin/../lib/gcc/current/gcc/aarch64-apple-darwin23/14/../../..] ==> [/opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current]
+        collapse library dir [/opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current/gcc/aarch64-apple-darwin23/14] ==> [/opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current/gcc/aarch64-apple-darwin23/14]
+        collapse library dir [/opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current/gcc] ==> [/opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current/gcc]
+        collapse library dir [/opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current] ==> [/opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current]
+        collapse library dir [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/lib] ==> [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/lib]
+        collapse library dir [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/lib/swift] ==> [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/lib/swift]
+        collapse framework dir [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/System/Library/Frameworks] ==> [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/System/Library/Frameworks]
+        implicit libs: [emutls_w;heapt_w;gfortran;gcc;quadmath]
+        implicit objs: []
+        implicit dirs: [/opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current/gcc/aarch64-apple-darwin23/14;/opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current/gcc;/opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/current;/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/lib;/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/lib/swift]
+        implicit fwks: [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/System/Library/Frameworks]
+      
+      
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
+      - "/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CheckCSourceCompiles.cmake:52 (cmake_check_source_compiles)"
+      - "tools/cmake/Utils/CheckMPISourceCompiles.cmake:33 (check_c_source_compiles)"
+      - "tools/cmake/AmanziTPL.cmake:67 (check_mpi_source_compiles)"
+      - "CMakeLists.txt:84 (include)"
+    checks:
+      - "Performing Test MPI_C"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-flFGqU"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-flFGqU"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Modules;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Utils"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "MPI_C"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-flFGqU'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_95493
+        [1/2] /usr/bin/clang -DMPI_C  -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -MD -MT CMakeFiles/cmTC_95493.dir/src.c.o -MF CMakeFiles/cmTC_95493.dir/src.c.o.d -o CMakeFiles/cmTC_95493.dir/src.c.o -c /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-flFGqU/src.c
+        FAILED: CMakeFiles/cmTC_95493.dir/src.c.o 
+        /usr/bin/clang -DMPI_C  -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -MD -MT CMakeFiles/cmTC_95493.dir/src.c.o -MF CMakeFiles/cmTC_95493.dir/src.c.o.d -o CMakeFiles/cmTC_95493.dir/src.c.o -c /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-flFGqU/src.c
+        /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-flFGqU/src.c:3:16: fatal error: 'mpi.h' file not found
+            3 |       #include <mpi.h>
+              |                ^~~~~~~
+        1 error generated.
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
+      - "/Users/pvn/miniconda3arm/envs/geos/share/cmake-3.28/Modules/CheckCXXSourceCompiles.cmake:52 (cmake_check_source_compiles)"
+      - "tools/cmake/Utils/CheckMPISourceCompiles.cmake:56 (check_cxx_source_compiles)"
+      - "tools/cmake/AmanziTPL.cmake:67 (check_mpi_source_compiles)"
+      - "CMakeLists.txt:84 (include)"
+    checks:
+      - "Performing Test MPI_CXX"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-IIBiEP"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-IIBiEP"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: ""
+      CMAKE_CXX_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Modules;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Utils"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "MPI_CXX"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-IIBiEP'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_800b8
+        [1/2] /usr/bin/clang++ -DMPI_CXX  -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -MD -MT CMakeFiles/cmTC_800b8.dir/src.cxx.o -MF CMakeFiles/cmTC_800b8.dir/src.cxx.o.d -o CMakeFiles/cmTC_800b8.dir/src.cxx.o -c /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-IIBiEP/src.cxx
+        FAILED: CMakeFiles/cmTC_800b8.dir/src.cxx.o 
+        /usr/bin/clang++ -DMPI_CXX  -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -MD -MT CMakeFiles/cmTC_800b8.dir/src.cxx.o -MF CMakeFiles/cmTC_800b8.dir/src.cxx.o.d -o CMakeFiles/cmTC_800b8.dir/src.cxx.o -c /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-IIBiEP/src.cxx
+        /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeScratch/TryCompile-IIBiEP/src.cxx:3:18: fatal error: 'mpi.h' file not found
+            3 |         #include "mpi.h"
+              |                  ^~~~~~~
+        1 error generated.
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "tools/cmake/Utils/CheckMPISourceCompiles.cmake:80 (try_compile)"
+      - "tools/cmake/AmanziTPL.cmake:67 (check_mpi_source_compiles)"
+      - "CMakeLists.txt:84 (include)"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_Fortran_FLAGS: ""
+      CMAKE_Fortran_FLAGS_DEBUG: "-g"
+      CMAKE_MODULE_PATH: "/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Modules;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Utils"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "MPI_Fortran"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_60eb3
+        [1/4] /opt/homebrew/bin/gfortran -cpp   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -E /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp/test_mpi.f -o CMakeFiles/cmTC_60eb3.dir/test_mpi.f-pp.f && /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_depends --tdi=CMakeFiles/cmTC_60eb3.dir/FortranDependInfo.json --lang=Fortran --src=CMakeFiles/cmTC_60eb3.dir/test_mpi.f-pp.f --out=CMakeFiles/cmTC_60eb3.dir/test_mpi.f-pp.f --dep=CMakeFiles/cmTC_60eb3.dir/test_mpi.f-pp.f.d --obj=CMakeFiles/cmTC_60eb3.dir/test_mpi.f.o --ddi=CMakeFiles/cmTC_60eb3.dir/test_mpi.f.o.ddi
+        [2/4] /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_dyndep --tdi=CMakeFiles/cmTC_60eb3.dir/FortranDependInfo.json --lang=Fortran --dd=CMakeFiles/cmTC_60eb3.dir/Fortran.dd @CMakeFiles/cmTC_60eb3.dir/Fortran.dd.rsp
+        [3/4] /opt/homebrew/bin/gfortran -I/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -fpreprocessed -c CMakeFiles/cmTC_60eb3.dir/test_mpi.f-pp.f -o CMakeFiles/cmTC_60eb3.dir/test_mpi.f.o
+        [4/4] : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_60eb3.dir/test_mpi.f.o -o cmTC_60eb3   && :
+        FAILED: cmTC_60eb3 
+        : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_60eb3.dir/test_mpi.f.o -o cmTC_60eb3   && :
+        Undefined symbols for architecture arm64:
+          "_mpi_finalize_", referenced from:
+              _MAIN__ in test_mpi.f.o
+          "_mpi_init_", referenced from:
+              _MAIN__ in test_mpi.f.o
+        ld: symbol(s) not found for architecture arm64
+        collect2: error: ld returned 1 exit status
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "tools/cmake/Utils/CheckMPISourceCompiles.cmake:80 (try_compile)"
+      - "tools/cmake/AmanziTPL.cmake:67 (check_mpi_source_compiles)"
+      - "CMakeLists.txt:84 (include)"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_Fortran_FLAGS: ""
+      CMAKE_Fortran_FLAGS_DEBUG: "-g"
+      CMAKE_MODULE_PATH: "/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Modules;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Utils"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "MPI_Fortran"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_bd8b1
+        [1/4] /opt/homebrew/bin/gfortran -cpp   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -E /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp/test_mpi.f -o CMakeFiles/cmTC_bd8b1.dir/test_mpi.f-pp.f && /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_depends --tdi=CMakeFiles/cmTC_bd8b1.dir/FortranDependInfo.json --lang=Fortran --src=CMakeFiles/cmTC_bd8b1.dir/test_mpi.f-pp.f --out=CMakeFiles/cmTC_bd8b1.dir/test_mpi.f-pp.f --dep=CMakeFiles/cmTC_bd8b1.dir/test_mpi.f-pp.f.d --obj=CMakeFiles/cmTC_bd8b1.dir/test_mpi.f.o --ddi=CMakeFiles/cmTC_bd8b1.dir/test_mpi.f.o.ddi
+        [2/4] /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_dyndep --tdi=CMakeFiles/cmTC_bd8b1.dir/FortranDependInfo.json --lang=Fortran --dd=CMakeFiles/cmTC_bd8b1.dir/Fortran.dd @CMakeFiles/cmTC_bd8b1.dir/Fortran.dd.rsp
+        [3/4] /opt/homebrew/bin/gfortran -I/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -fpreprocessed -c CMakeFiles/cmTC_bd8b1.dir/test_mpi.f-pp.f -o CMakeFiles/cmTC_bd8b1.dir/test_mpi.f.o
+        [4/4] : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_bd8b1.dir/test_mpi.f.o -o cmTC_bd8b1   && :
+        FAILED: cmTC_bd8b1 
+        : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_bd8b1.dir/test_mpi.f.o -o cmTC_bd8b1   && :
+        Undefined symbols for architecture arm64:
+          "_mpi_finalize_", referenced from:
+              _MAIN__ in test_mpi.f.o
+          "_mpi_init_", referenced from:
+              _MAIN__ in test_mpi.f.o
+        ld: symbol(s) not found for architecture arm64
+        collect2: error: ld returned 1 exit status
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "tools/cmake/Utils/CheckMPISourceCompiles.cmake:80 (try_compile)"
+      - "tools/cmake/AmanziTPL.cmake:67 (check_mpi_source_compiles)"
+      - "CMakeLists.txt:84 (include)"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_Fortran_FLAGS: ""
+      CMAKE_Fortran_FLAGS_DEBUG: "-g"
+      CMAKE_MODULE_PATH: "/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Modules;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Utils"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "MPI_Fortran"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_c8c8e
+        [1/4] /opt/homebrew/bin/gfortran -cpp   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -E /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp/test_mpi.f -o CMakeFiles/cmTC_c8c8e.dir/test_mpi.f-pp.f && /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_depends --tdi=CMakeFiles/cmTC_c8c8e.dir/FortranDependInfo.json --lang=Fortran --src=CMakeFiles/cmTC_c8c8e.dir/test_mpi.f-pp.f --out=CMakeFiles/cmTC_c8c8e.dir/test_mpi.f-pp.f --dep=CMakeFiles/cmTC_c8c8e.dir/test_mpi.f-pp.f.d --obj=CMakeFiles/cmTC_c8c8e.dir/test_mpi.f.o --ddi=CMakeFiles/cmTC_c8c8e.dir/test_mpi.f.o.ddi
+        [2/4] /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_dyndep --tdi=CMakeFiles/cmTC_c8c8e.dir/FortranDependInfo.json --lang=Fortran --dd=CMakeFiles/cmTC_c8c8e.dir/Fortran.dd @CMakeFiles/cmTC_c8c8e.dir/Fortran.dd.rsp
+        [3/4] /opt/homebrew/bin/gfortran -I/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -fpreprocessed -c CMakeFiles/cmTC_c8c8e.dir/test_mpi.f-pp.f -o CMakeFiles/cmTC_c8c8e.dir/test_mpi.f.o
+        [4/4] : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_c8c8e.dir/test_mpi.f.o -o cmTC_c8c8e   && :
+        FAILED: cmTC_c8c8e 
+        : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_c8c8e.dir/test_mpi.f.o -o cmTC_c8c8e   && :
+        Undefined symbols for architecture arm64:
+          "_mpi_finalize_", referenced from:
+              _MAIN__ in test_mpi.f.o
+          "_mpi_init_", referenced from:
+              _MAIN__ in test_mpi.f.o
+        ld: symbol(s) not found for architecture arm64
+        collect2: error: ld returned 1 exit status
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "tools/cmake/Utils/CheckMPISourceCompiles.cmake:80 (try_compile)"
+      - "tools/cmake/AmanziTPL.cmake:67 (check_mpi_source_compiles)"
+      - "CMakeLists.txt:84 (include)"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_Fortran_FLAGS: ""
+      CMAKE_Fortran_FLAGS_DEBUG: "-g"
+      CMAKE_MODULE_PATH: "/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Modules;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Utils"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "MPI_Fortran"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_7e2d4
+        [1/4] /opt/homebrew/bin/gfortran -cpp   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -E /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp/test_mpi.f -o CMakeFiles/cmTC_7e2d4.dir/test_mpi.f-pp.f && /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_depends --tdi=CMakeFiles/cmTC_7e2d4.dir/FortranDependInfo.json --lang=Fortran --src=CMakeFiles/cmTC_7e2d4.dir/test_mpi.f-pp.f --out=CMakeFiles/cmTC_7e2d4.dir/test_mpi.f-pp.f --dep=CMakeFiles/cmTC_7e2d4.dir/test_mpi.f-pp.f.d --obj=CMakeFiles/cmTC_7e2d4.dir/test_mpi.f.o --ddi=CMakeFiles/cmTC_7e2d4.dir/test_mpi.f.o.ddi
+        [2/4] /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_dyndep --tdi=CMakeFiles/cmTC_7e2d4.dir/FortranDependInfo.json --lang=Fortran --dd=CMakeFiles/cmTC_7e2d4.dir/Fortran.dd @CMakeFiles/cmTC_7e2d4.dir/Fortran.dd.rsp
+        [3/4] /opt/homebrew/bin/gfortran -I/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -fpreprocessed -c CMakeFiles/cmTC_7e2d4.dir/test_mpi.f-pp.f -o CMakeFiles/cmTC_7e2d4.dir/test_mpi.f.o
+        [4/4] : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_7e2d4.dir/test_mpi.f.o -o cmTC_7e2d4   && :
+        FAILED: cmTC_7e2d4 
+        : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_7e2d4.dir/test_mpi.f.o -o cmTC_7e2d4   && :
+        Undefined symbols for architecture arm64:
+          "_mpi_finalize_", referenced from:
+              _MAIN__ in test_mpi.f.o
+          "_mpi_init_", referenced from:
+              _MAIN__ in test_mpi.f.o
+        ld: symbol(s) not found for architecture arm64
+        collect2: error: ld returned 1 exit status
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "tools/cmake/Utils/CheckMPISourceCompiles.cmake:80 (try_compile)"
+      - "tools/cmake/AmanziTPL.cmake:67 (check_mpi_source_compiles)"
+      - "CMakeLists.txt:84 (include)"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_Fortran_FLAGS: ""
+      CMAKE_Fortran_FLAGS_DEBUG: "-g"
+      CMAKE_MODULE_PATH: "/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Modules;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Utils"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "MPI_Fortran"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_df10a
+        [1/4] /opt/homebrew/bin/gfortran -cpp   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -E /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp/test_mpi.f -o CMakeFiles/cmTC_df10a.dir/test_mpi.f-pp.f && /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_depends --tdi=CMakeFiles/cmTC_df10a.dir/FortranDependInfo.json --lang=Fortran --src=CMakeFiles/cmTC_df10a.dir/test_mpi.f-pp.f --out=CMakeFiles/cmTC_df10a.dir/test_mpi.f-pp.f --dep=CMakeFiles/cmTC_df10a.dir/test_mpi.f-pp.f.d --obj=CMakeFiles/cmTC_df10a.dir/test_mpi.f.o --ddi=CMakeFiles/cmTC_df10a.dir/test_mpi.f.o.ddi
+        [2/4] /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_dyndep --tdi=CMakeFiles/cmTC_df10a.dir/FortranDependInfo.json --lang=Fortran --dd=CMakeFiles/cmTC_df10a.dir/Fortran.dd @CMakeFiles/cmTC_df10a.dir/Fortran.dd.rsp
+        [3/4] /opt/homebrew/bin/gfortran -I/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -fpreprocessed -c CMakeFiles/cmTC_df10a.dir/test_mpi.f-pp.f -o CMakeFiles/cmTC_df10a.dir/test_mpi.f.o
+        [4/4] : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_df10a.dir/test_mpi.f.o -o cmTC_df10a   && :
+        FAILED: cmTC_df10a 
+        : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_df10a.dir/test_mpi.f.o -o cmTC_df10a   && :
+        Undefined symbols for architecture arm64:
+          "_mpi_finalize_", referenced from:
+              _MAIN__ in test_mpi.f.o
+          "_mpi_init_", referenced from:
+              _MAIN__ in test_mpi.f.o
+        ld: symbol(s) not found for architecture arm64
+        collect2: error: ld returned 1 exit status
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "tools/cmake/Utils/CheckMPISourceCompiles.cmake:80 (try_compile)"
+      - "tools/cmake/AmanziTPL.cmake:67 (check_mpi_source_compiles)"
+      - "CMakeLists.txt:84 (include)"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_Fortran_FLAGS: ""
+      CMAKE_Fortran_FLAGS_DEBUG: "-g"
+      CMAKE_MODULE_PATH: "/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Modules;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Utils"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "MPI_Fortran"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_822c2
+        [1/4] /opt/homebrew/bin/gfortran -cpp   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -E /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp/test_mpi.f -o CMakeFiles/cmTC_822c2.dir/test_mpi.f-pp.f && /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_depends --tdi=CMakeFiles/cmTC_822c2.dir/FortranDependInfo.json --lang=Fortran --src=CMakeFiles/cmTC_822c2.dir/test_mpi.f-pp.f --out=CMakeFiles/cmTC_822c2.dir/test_mpi.f-pp.f --dep=CMakeFiles/cmTC_822c2.dir/test_mpi.f-pp.f.d --obj=CMakeFiles/cmTC_822c2.dir/test_mpi.f.o --ddi=CMakeFiles/cmTC_822c2.dir/test_mpi.f.o.ddi
+        [2/4] /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_dyndep --tdi=CMakeFiles/cmTC_822c2.dir/FortranDependInfo.json --lang=Fortran --dd=CMakeFiles/cmTC_822c2.dir/Fortran.dd @CMakeFiles/cmTC_822c2.dir/Fortran.dd.rsp
+        [3/4] /opt/homebrew/bin/gfortran -I/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -fpreprocessed -c CMakeFiles/cmTC_822c2.dir/test_mpi.f-pp.f -o CMakeFiles/cmTC_822c2.dir/test_mpi.f.o
+        [4/4] : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_822c2.dir/test_mpi.f.o -o cmTC_822c2   && :
+        FAILED: cmTC_822c2 
+        : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_822c2.dir/test_mpi.f.o -o cmTC_822c2   && :
+        Undefined symbols for architecture arm64:
+          "_mpi_finalize_", referenced from:
+              _MAIN__ in test_mpi.f.o
+          "_mpi_init_", referenced from:
+              _MAIN__ in test_mpi.f.o
+        ld: symbol(s) not found for architecture arm64
+        collect2: error: ld returned 1 exit status
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "tools/cmake/Utils/CheckMPISourceCompiles.cmake:80 (try_compile)"
+      - "tools/cmake/AmanziTPL.cmake:67 (check_mpi_source_compiles)"
+      - "CMakeLists.txt:84 (include)"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_Fortran_FLAGS: ""
+      CMAKE_Fortran_FLAGS_DEBUG: "-g"
+      CMAKE_MODULE_PATH: "/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Modules;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Utils"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "MPI_Fortran"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_0062e
+        [1/4] /opt/homebrew/bin/gfortran -cpp   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -E /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp/test_mpi.f -o CMakeFiles/cmTC_0062e.dir/test_mpi.f-pp.f && /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_depends --tdi=CMakeFiles/cmTC_0062e.dir/FortranDependInfo.json --lang=Fortran --src=CMakeFiles/cmTC_0062e.dir/test_mpi.f-pp.f --out=CMakeFiles/cmTC_0062e.dir/test_mpi.f-pp.f --dep=CMakeFiles/cmTC_0062e.dir/test_mpi.f-pp.f.d --obj=CMakeFiles/cmTC_0062e.dir/test_mpi.f.o --ddi=CMakeFiles/cmTC_0062e.dir/test_mpi.f.o.ddi
+        [2/4] /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_dyndep --tdi=CMakeFiles/cmTC_0062e.dir/FortranDependInfo.json --lang=Fortran --dd=CMakeFiles/cmTC_0062e.dir/Fortran.dd @CMakeFiles/cmTC_0062e.dir/Fortran.dd.rsp
+        [3/4] /opt/homebrew/bin/gfortran -I/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -fpreprocessed -c CMakeFiles/cmTC_0062e.dir/test_mpi.f-pp.f -o CMakeFiles/cmTC_0062e.dir/test_mpi.f.o
+        [4/4] : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_0062e.dir/test_mpi.f.o -o cmTC_0062e   && :
+        FAILED: cmTC_0062e 
+        : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_0062e.dir/test_mpi.f.o -o cmTC_0062e   && :
+        Undefined symbols for architecture arm64:
+          "_mpi_finalize_", referenced from:
+              _MAIN__ in test_mpi.f.o
+          "_mpi_init_", referenced from:
+              _MAIN__ in test_mpi.f.o
+        ld: symbol(s) not found for architecture arm64
+        collect2: error: ld returned 1 exit status
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "tools/cmake/Utils/CheckMPISourceCompiles.cmake:80 (try_compile)"
+      - "tools/cmake/AmanziTPL.cmake:67 (check_mpi_source_compiles)"
+      - "CMakeLists.txt:84 (include)"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_Fortran_FLAGS: ""
+      CMAKE_Fortran_FLAGS_DEBUG: "-g"
+      CMAKE_MODULE_PATH: "/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Modules;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Utils"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "MPI_Fortran"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_8e45f
+        [1/4] /opt/homebrew/bin/gfortran -cpp   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -E /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp/test_mpi.f -o CMakeFiles/cmTC_8e45f.dir/test_mpi.f-pp.f && /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_depends --tdi=CMakeFiles/cmTC_8e45f.dir/FortranDependInfo.json --lang=Fortran --src=CMakeFiles/cmTC_8e45f.dir/test_mpi.f-pp.f --out=CMakeFiles/cmTC_8e45f.dir/test_mpi.f-pp.f --dep=CMakeFiles/cmTC_8e45f.dir/test_mpi.f-pp.f.d --obj=CMakeFiles/cmTC_8e45f.dir/test_mpi.f.o --ddi=CMakeFiles/cmTC_8e45f.dir/test_mpi.f.o.ddi
+        [2/4] /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_dyndep --tdi=CMakeFiles/cmTC_8e45f.dir/FortranDependInfo.json --lang=Fortran --dd=CMakeFiles/cmTC_8e45f.dir/Fortran.dd @CMakeFiles/cmTC_8e45f.dir/Fortran.dd.rsp
+        [3/4] /opt/homebrew/bin/gfortran -I/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -fpreprocessed -c CMakeFiles/cmTC_8e45f.dir/test_mpi.f-pp.f -o CMakeFiles/cmTC_8e45f.dir/test_mpi.f.o
+        [4/4] : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_8e45f.dir/test_mpi.f.o -o cmTC_8e45f   && :
+        FAILED: cmTC_8e45f 
+        : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_8e45f.dir/test_mpi.f.o -o cmTC_8e45f   && :
+        Undefined symbols for architecture arm64:
+          "_mpi_finalize_", referenced from:
+              _MAIN__ in test_mpi.f.o
+          "_mpi_init_", referenced from:
+              _MAIN__ in test_mpi.f.o
+        ld: symbol(s) not found for architecture arm64
+        collect2: error: ld returned 1 exit status
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "tools/cmake/Utils/CheckMPISourceCompiles.cmake:80 (try_compile)"
+      - "tools/cmake/AmanziTPL.cmake:67 (check_mpi_source_compiles)"
+      - "CMakeLists.txt:84 (include)"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_Fortran_FLAGS: ""
+      CMAKE_Fortran_FLAGS_DEBUG: "-g"
+      CMAKE_MODULE_PATH: "/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Modules;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Utils"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "MPI_Fortran"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_eae2c
+        [1/4] /opt/homebrew/bin/gfortran -cpp   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -E /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp/test_mpi.f -o CMakeFiles/cmTC_eae2c.dir/test_mpi.f-pp.f && /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_depends --tdi=CMakeFiles/cmTC_eae2c.dir/FortranDependInfo.json --lang=Fortran --src=CMakeFiles/cmTC_eae2c.dir/test_mpi.f-pp.f --out=CMakeFiles/cmTC_eae2c.dir/test_mpi.f-pp.f --dep=CMakeFiles/cmTC_eae2c.dir/test_mpi.f-pp.f.d --obj=CMakeFiles/cmTC_eae2c.dir/test_mpi.f.o --ddi=CMakeFiles/cmTC_eae2c.dir/test_mpi.f.o.ddi
+        [2/4] /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_dyndep --tdi=CMakeFiles/cmTC_eae2c.dir/FortranDependInfo.json --lang=Fortran --dd=CMakeFiles/cmTC_eae2c.dir/Fortran.dd @CMakeFiles/cmTC_eae2c.dir/Fortran.dd.rsp
+        [3/4] /opt/homebrew/bin/gfortran -I/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -fpreprocessed -c CMakeFiles/cmTC_eae2c.dir/test_mpi.f-pp.f -o CMakeFiles/cmTC_eae2c.dir/test_mpi.f.o
+        [4/4] : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_eae2c.dir/test_mpi.f.o -o cmTC_eae2c   && :
+        FAILED: cmTC_eae2c 
+        : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_eae2c.dir/test_mpi.f.o -o cmTC_eae2c   && :
+        Undefined symbols for architecture arm64:
+          "_mpi_finalize_", referenced from:
+              _MAIN__ in test_mpi.f.o
+          "_mpi_init_", referenced from:
+              _MAIN__ in test_mpi.f.o
+        ld: symbol(s) not found for architecture arm64
+        collect2: error: ld returned 1 exit status
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "tools/cmake/Utils/CheckMPISourceCompiles.cmake:80 (try_compile)"
+      - "tools/cmake/AmanziTPL.cmake:67 (check_mpi_source_compiles)"
+      - "CMakeLists.txt:84 (include)"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_Fortran_FLAGS: ""
+      CMAKE_Fortran_FLAGS_DEBUG: "-g"
+      CMAKE_MODULE_PATH: "/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Modules;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Utils"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "MPI_Fortran"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_d9ff7
+        [1/4] /opt/homebrew/bin/gfortran -cpp   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -E /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp/test_mpi.f -o CMakeFiles/cmTC_d9ff7.dir/test_mpi.f-pp.f && /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_depends --tdi=CMakeFiles/cmTC_d9ff7.dir/FortranDependInfo.json --lang=Fortran --src=CMakeFiles/cmTC_d9ff7.dir/test_mpi.f-pp.f --out=CMakeFiles/cmTC_d9ff7.dir/test_mpi.f-pp.f --dep=CMakeFiles/cmTC_d9ff7.dir/test_mpi.f-pp.f.d --obj=CMakeFiles/cmTC_d9ff7.dir/test_mpi.f.o --ddi=CMakeFiles/cmTC_d9ff7.dir/test_mpi.f.o.ddi
+        [2/4] /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_dyndep --tdi=CMakeFiles/cmTC_d9ff7.dir/FortranDependInfo.json --lang=Fortran --dd=CMakeFiles/cmTC_d9ff7.dir/Fortran.dd @CMakeFiles/cmTC_d9ff7.dir/Fortran.dd.rsp
+        [3/4] /opt/homebrew/bin/gfortran -I/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -fpreprocessed -c CMakeFiles/cmTC_d9ff7.dir/test_mpi.f-pp.f -o CMakeFiles/cmTC_d9ff7.dir/test_mpi.f.o
+        [4/4] : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_d9ff7.dir/test_mpi.f.o -o cmTC_d9ff7   && :
+        FAILED: cmTC_d9ff7 
+        : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_d9ff7.dir/test_mpi.f.o -o cmTC_d9ff7   && :
+        Undefined symbols for architecture arm64:
+          "_mpi_finalize_", referenced from:
+              _MAIN__ in test_mpi.f.o
+          "_mpi_init_", referenced from:
+              _MAIN__ in test_mpi.f.o
+        ld: symbol(s) not found for architecture arm64
+        collect2: error: ld returned 1 exit status
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "tools/cmake/Utils/CheckMPISourceCompiles.cmake:80 (try_compile)"
+      - "tools/cmake/AmanziTPL.cmake:67 (check_mpi_source_compiles)"
+      - "CMakeLists.txt:84 (include)"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_Fortran_FLAGS: ""
+      CMAKE_Fortran_FLAGS_DEBUG: "-g"
+      CMAKE_MODULE_PATH: "/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Modules;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Utils"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "MPI_Fortran"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_37281
+        [1/4] /opt/homebrew/bin/gfortran -cpp   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -E /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp/test_mpi.f -o CMakeFiles/cmTC_37281.dir/test_mpi.f-pp.f && /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_depends --tdi=CMakeFiles/cmTC_37281.dir/FortranDependInfo.json --lang=Fortran --src=CMakeFiles/cmTC_37281.dir/test_mpi.f-pp.f --out=CMakeFiles/cmTC_37281.dir/test_mpi.f-pp.f --dep=CMakeFiles/cmTC_37281.dir/test_mpi.f-pp.f.d --obj=CMakeFiles/cmTC_37281.dir/test_mpi.f.o --ddi=CMakeFiles/cmTC_37281.dir/test_mpi.f.o.ddi
+        [2/4] /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_dyndep --tdi=CMakeFiles/cmTC_37281.dir/FortranDependInfo.json --lang=Fortran --dd=CMakeFiles/cmTC_37281.dir/Fortran.dd @CMakeFiles/cmTC_37281.dir/Fortran.dd.rsp
+        [3/4] /opt/homebrew/bin/gfortran -I/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -fpreprocessed -c CMakeFiles/cmTC_37281.dir/test_mpi.f-pp.f -o CMakeFiles/cmTC_37281.dir/test_mpi.f.o
+        [4/4] : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_37281.dir/test_mpi.f.o -o cmTC_37281   && :
+        FAILED: cmTC_37281 
+        : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_37281.dir/test_mpi.f.o -o cmTC_37281   && :
+        Undefined symbols for architecture arm64:
+          "_mpi_finalize_", referenced from:
+              _MAIN__ in test_mpi.f.o
+          "_mpi_init_", referenced from:
+              _MAIN__ in test_mpi.f.o
+        ld: symbol(s) not found for architecture arm64
+        collect2: error: ld returned 1 exit status
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "tools/cmake/Utils/CheckMPISourceCompiles.cmake:80 (try_compile)"
+      - "tools/cmake/AmanziTPL.cmake:67 (check_mpi_source_compiles)"
+      - "CMakeLists.txt:84 (include)"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_Fortran_FLAGS: ""
+      CMAKE_Fortran_FLAGS_DEBUG: "-g"
+      CMAKE_MODULE_PATH: "/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Modules;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Utils"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "MPI_Fortran"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_c3508
+        [1/4] /opt/homebrew/bin/gfortran -cpp   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -E /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp/test_mpi.f -o CMakeFiles/cmTC_c3508.dir/test_mpi.f-pp.f && /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_depends --tdi=CMakeFiles/cmTC_c3508.dir/FortranDependInfo.json --lang=Fortran --src=CMakeFiles/cmTC_c3508.dir/test_mpi.f-pp.f --out=CMakeFiles/cmTC_c3508.dir/test_mpi.f-pp.f --dep=CMakeFiles/cmTC_c3508.dir/test_mpi.f-pp.f.d --obj=CMakeFiles/cmTC_c3508.dir/test_mpi.f.o --ddi=CMakeFiles/cmTC_c3508.dir/test_mpi.f.o.ddi
+        [2/4] /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_dyndep --tdi=CMakeFiles/cmTC_c3508.dir/FortranDependInfo.json --lang=Fortran --dd=CMakeFiles/cmTC_c3508.dir/Fortran.dd @CMakeFiles/cmTC_c3508.dir/Fortran.dd.rsp
+        [3/4] /opt/homebrew/bin/gfortran -I/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -fpreprocessed -c CMakeFiles/cmTC_c3508.dir/test_mpi.f-pp.f -o CMakeFiles/cmTC_c3508.dir/test_mpi.f.o
+        [4/4] : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_c3508.dir/test_mpi.f.o -o cmTC_c3508   && :
+        FAILED: cmTC_c3508 
+        : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_c3508.dir/test_mpi.f.o -o cmTC_c3508   && :
+        Undefined symbols for architecture arm64:
+          "_mpi_finalize_", referenced from:
+              _MAIN__ in test_mpi.f.o
+          "_mpi_init_", referenced from:
+              _MAIN__ in test_mpi.f.o
+        ld: symbol(s) not found for architecture arm64
+        collect2: error: ld returned 1 exit status
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "tools/cmake/Utils/CheckMPISourceCompiles.cmake:80 (try_compile)"
+      - "tools/cmake/AmanziTPL.cmake:67 (check_mpi_source_compiles)"
+      - "CMakeLists.txt:84 (include)"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_Fortran_FLAGS: ""
+      CMAKE_Fortran_FLAGS_DEBUG: "-g"
+      CMAKE_MODULE_PATH: "/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Modules;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Utils"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "MPI_Fortran"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_38399
+        [1/4] /opt/homebrew/bin/gfortran -cpp   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -E /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp/test_mpi.f -o CMakeFiles/cmTC_38399.dir/test_mpi.f-pp.f && /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_depends --tdi=CMakeFiles/cmTC_38399.dir/FortranDependInfo.json --lang=Fortran --src=CMakeFiles/cmTC_38399.dir/test_mpi.f-pp.f --out=CMakeFiles/cmTC_38399.dir/test_mpi.f-pp.f --dep=CMakeFiles/cmTC_38399.dir/test_mpi.f-pp.f.d --obj=CMakeFiles/cmTC_38399.dir/test_mpi.f.o --ddi=CMakeFiles/cmTC_38399.dir/test_mpi.f.o.ddi
+        [2/4] /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_dyndep --tdi=CMakeFiles/cmTC_38399.dir/FortranDependInfo.json --lang=Fortran --dd=CMakeFiles/cmTC_38399.dir/Fortran.dd @CMakeFiles/cmTC_38399.dir/Fortran.dd.rsp
+        [3/4] /opt/homebrew/bin/gfortran -I/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -fpreprocessed -c CMakeFiles/cmTC_38399.dir/test_mpi.f-pp.f -o CMakeFiles/cmTC_38399.dir/test_mpi.f.o
+        [4/4] : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_38399.dir/test_mpi.f.o -o cmTC_38399   && :
+        FAILED: cmTC_38399 
+        : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_38399.dir/test_mpi.f.o -o cmTC_38399   && :
+        Undefined symbols for architecture arm64:
+          "_mpi_finalize_", referenced from:
+              _MAIN__ in test_mpi.f.o
+          "_mpi_init_", referenced from:
+              _MAIN__ in test_mpi.f.o
+        ld: symbol(s) not found for architecture arm64
+        collect2: error: ld returned 1 exit status
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "tools/cmake/Utils/CheckMPISourceCompiles.cmake:80 (try_compile)"
+      - "tools/cmake/AmanziTPL.cmake:67 (check_mpi_source_compiles)"
+      - "CMakeLists.txt:84 (include)"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_Fortran_FLAGS: ""
+      CMAKE_Fortran_FLAGS_DEBUG: "-g"
+      CMAKE_MODULE_PATH: "/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Modules;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Utils"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "MPI_Fortran"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_49888
+        [1/4] /opt/homebrew/bin/gfortran -cpp   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -E /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp/test_mpi.f -o CMakeFiles/cmTC_49888.dir/test_mpi.f-pp.f && /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_depends --tdi=CMakeFiles/cmTC_49888.dir/FortranDependInfo.json --lang=Fortran --src=CMakeFiles/cmTC_49888.dir/test_mpi.f-pp.f --out=CMakeFiles/cmTC_49888.dir/test_mpi.f-pp.f --dep=CMakeFiles/cmTC_49888.dir/test_mpi.f-pp.f.d --obj=CMakeFiles/cmTC_49888.dir/test_mpi.f.o --ddi=CMakeFiles/cmTC_49888.dir/test_mpi.f.o.ddi
+        [2/4] /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_dyndep --tdi=CMakeFiles/cmTC_49888.dir/FortranDependInfo.json --lang=Fortran --dd=CMakeFiles/cmTC_49888.dir/Fortran.dd @CMakeFiles/cmTC_49888.dir/Fortran.dd.rsp
+        [3/4] /opt/homebrew/bin/gfortran -I/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -fpreprocessed -c CMakeFiles/cmTC_49888.dir/test_mpi.f-pp.f -o CMakeFiles/cmTC_49888.dir/test_mpi.f.o
+        [4/4] : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_49888.dir/test_mpi.f.o -o cmTC_49888   && :
+        FAILED: cmTC_49888 
+        : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_49888.dir/test_mpi.f.o -o cmTC_49888   && :
+        Undefined symbols for architecture arm64:
+          "_mpi_finalize_", referenced from:
+              _MAIN__ in test_mpi.f.o
+          "_mpi_init_", referenced from:
+              _MAIN__ in test_mpi.f.o
+        ld: symbol(s) not found for architecture arm64
+        collect2: error: ld returned 1 exit status
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "tools/cmake/Utils/CheckMPISourceCompiles.cmake:80 (try_compile)"
+      - "tools/cmake/AmanziTPL.cmake:67 (check_mpi_source_compiles)"
+      - "CMakeLists.txt:84 (include)"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_Fortran_FLAGS: ""
+      CMAKE_Fortran_FLAGS_DEBUG: "-g"
+      CMAKE_MODULE_PATH: "/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Modules;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Utils"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "MPI_Fortran"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_390bf
+        [1/4] /opt/homebrew/bin/gfortran -cpp   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -E /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp/test_mpi.f -o CMakeFiles/cmTC_390bf.dir/test_mpi.f-pp.f && /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_depends --tdi=CMakeFiles/cmTC_390bf.dir/FortranDependInfo.json --lang=Fortran --src=CMakeFiles/cmTC_390bf.dir/test_mpi.f-pp.f --out=CMakeFiles/cmTC_390bf.dir/test_mpi.f-pp.f --dep=CMakeFiles/cmTC_390bf.dir/test_mpi.f-pp.f.d --obj=CMakeFiles/cmTC_390bf.dir/test_mpi.f.o --ddi=CMakeFiles/cmTC_390bf.dir/test_mpi.f.o.ddi
+        [2/4] /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_dyndep --tdi=CMakeFiles/cmTC_390bf.dir/FortranDependInfo.json --lang=Fortran --dd=CMakeFiles/cmTC_390bf.dir/Fortran.dd @CMakeFiles/cmTC_390bf.dir/Fortran.dd.rsp
+        [3/4] /opt/homebrew/bin/gfortran -I/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -fpreprocessed -c CMakeFiles/cmTC_390bf.dir/test_mpi.f-pp.f -o CMakeFiles/cmTC_390bf.dir/test_mpi.f.o
+        [4/4] : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_390bf.dir/test_mpi.f.o -o cmTC_390bf   && :
+        FAILED: cmTC_390bf 
+        : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_390bf.dir/test_mpi.f.o -o cmTC_390bf   && :
+        Undefined symbols for architecture arm64:
+          "_mpi_finalize_", referenced from:
+              _MAIN__ in test_mpi.f.o
+          "_mpi_init_", referenced from:
+              _MAIN__ in test_mpi.f.o
+        ld: symbol(s) not found for architecture arm64
+        collect2: error: ld returned 1 exit status
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "tools/cmake/Utils/CheckMPISourceCompiles.cmake:80 (try_compile)"
+      - "tools/cmake/AmanziTPL.cmake:67 (check_mpi_source_compiles)"
+      - "CMakeLists.txt:84 (include)"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_Fortran_FLAGS: ""
+      CMAKE_Fortran_FLAGS_DEBUG: "-g"
+      CMAKE_MODULE_PATH: "/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Modules;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Utils"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "MPI_Fortran"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_74239
+        [1/4] /opt/homebrew/bin/gfortran -cpp   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -E /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp/test_mpi.f -o CMakeFiles/cmTC_74239.dir/test_mpi.f-pp.f && /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_depends --tdi=CMakeFiles/cmTC_74239.dir/FortranDependInfo.json --lang=Fortran --src=CMakeFiles/cmTC_74239.dir/test_mpi.f-pp.f --out=CMakeFiles/cmTC_74239.dir/test_mpi.f-pp.f --dep=CMakeFiles/cmTC_74239.dir/test_mpi.f-pp.f.d --obj=CMakeFiles/cmTC_74239.dir/test_mpi.f.o --ddi=CMakeFiles/cmTC_74239.dir/test_mpi.f.o.ddi
+        [2/4] /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_dyndep --tdi=CMakeFiles/cmTC_74239.dir/FortranDependInfo.json --lang=Fortran --dd=CMakeFiles/cmTC_74239.dir/Fortran.dd @CMakeFiles/cmTC_74239.dir/Fortran.dd.rsp
+        [3/4] /opt/homebrew/bin/gfortran -I/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -fpreprocessed -c CMakeFiles/cmTC_74239.dir/test_mpi.f-pp.f -o CMakeFiles/cmTC_74239.dir/test_mpi.f.o
+        [4/4] : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_74239.dir/test_mpi.f.o -o cmTC_74239   && :
+        FAILED: cmTC_74239 
+        : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_74239.dir/test_mpi.f.o -o cmTC_74239   && :
+        Undefined symbols for architecture arm64:
+          "_mpi_finalize_", referenced from:
+              _MAIN__ in test_mpi.f.o
+          "_mpi_init_", referenced from:
+              _MAIN__ in test_mpi.f.o
+        ld: symbol(s) not found for architecture arm64
+        collect2: error: ld returned 1 exit status
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "tools/cmake/Utils/CheckMPISourceCompiles.cmake:80 (try_compile)"
+      - "tools/cmake/AmanziTPL.cmake:67 (check_mpi_source_compiles)"
+      - "CMakeLists.txt:84 (include)"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_Fortran_FLAGS: ""
+      CMAKE_Fortran_FLAGS_DEBUG: "-g"
+      CMAKE_MODULE_PATH: "/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Modules;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Utils"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "MPI_Fortran"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_85a22
+        [1/4] /opt/homebrew/bin/gfortran -cpp   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -E /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp/test_mpi.f -o CMakeFiles/cmTC_85a22.dir/test_mpi.f-pp.f && /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_depends --tdi=CMakeFiles/cmTC_85a22.dir/FortranDependInfo.json --lang=Fortran --src=CMakeFiles/cmTC_85a22.dir/test_mpi.f-pp.f --out=CMakeFiles/cmTC_85a22.dir/test_mpi.f-pp.f --dep=CMakeFiles/cmTC_85a22.dir/test_mpi.f-pp.f.d --obj=CMakeFiles/cmTC_85a22.dir/test_mpi.f.o --ddi=CMakeFiles/cmTC_85a22.dir/test_mpi.f.o.ddi
+        [2/4] /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_dyndep --tdi=CMakeFiles/cmTC_85a22.dir/FortranDependInfo.json --lang=Fortran --dd=CMakeFiles/cmTC_85a22.dir/Fortran.dd @CMakeFiles/cmTC_85a22.dir/Fortran.dd.rsp
+        [3/4] /opt/homebrew/bin/gfortran -I/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -fpreprocessed -c CMakeFiles/cmTC_85a22.dir/test_mpi.f-pp.f -o CMakeFiles/cmTC_85a22.dir/test_mpi.f.o
+        [4/4] : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_85a22.dir/test_mpi.f.o -o cmTC_85a22   && :
+        FAILED: cmTC_85a22 
+        : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_85a22.dir/test_mpi.f.o -o cmTC_85a22   && :
+        Undefined symbols for architecture arm64:
+          "_mpi_finalize_", referenced from:
+              _MAIN__ in test_mpi.f.o
+          "_mpi_init_", referenced from:
+              _MAIN__ in test_mpi.f.o
+        ld: symbol(s) not found for architecture arm64
+        collect2: error: ld returned 1 exit status
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "tools/cmake/Utils/CheckMPISourceCompiles.cmake:80 (try_compile)"
+      - "tools/cmake/AmanziTPL.cmake:67 (check_mpi_source_compiles)"
+      - "CMakeLists.txt:84 (include)"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_Fortran_FLAGS: ""
+      CMAKE_Fortran_FLAGS_DEBUG: "-g"
+      CMAKE_MODULE_PATH: "/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Modules;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Utils"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "MPI_Fortran"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_44c33
+        [1/4] /opt/homebrew/bin/gfortran -cpp   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -E /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp/test_mpi.f -o CMakeFiles/cmTC_44c33.dir/test_mpi.f-pp.f && /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_depends --tdi=CMakeFiles/cmTC_44c33.dir/FortranDependInfo.json --lang=Fortran --src=CMakeFiles/cmTC_44c33.dir/test_mpi.f-pp.f --out=CMakeFiles/cmTC_44c33.dir/test_mpi.f-pp.f --dep=CMakeFiles/cmTC_44c33.dir/test_mpi.f-pp.f.d --obj=CMakeFiles/cmTC_44c33.dir/test_mpi.f.o --ddi=CMakeFiles/cmTC_44c33.dir/test_mpi.f.o.ddi
+        [2/4] /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_dyndep --tdi=CMakeFiles/cmTC_44c33.dir/FortranDependInfo.json --lang=Fortran --dd=CMakeFiles/cmTC_44c33.dir/Fortran.dd @CMakeFiles/cmTC_44c33.dir/Fortran.dd.rsp
+        [3/4] /opt/homebrew/bin/gfortran -I/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -fpreprocessed -c CMakeFiles/cmTC_44c33.dir/test_mpi.f-pp.f -o CMakeFiles/cmTC_44c33.dir/test_mpi.f.o
+        [4/4] : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_44c33.dir/test_mpi.f.o -o cmTC_44c33   && :
+        FAILED: cmTC_44c33 
+        : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_44c33.dir/test_mpi.f.o -o cmTC_44c33   && :
+        Undefined symbols for architecture arm64:
+          "_mpi_finalize_", referenced from:
+              _MAIN__ in test_mpi.f.o
+          "_mpi_init_", referenced from:
+              _MAIN__ in test_mpi.f.o
+        ld: symbol(s) not found for architecture arm64
+        collect2: error: ld returned 1 exit status
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "tools/cmake/Utils/CheckMPISourceCompiles.cmake:80 (try_compile)"
+      - "tools/cmake/AmanziTPL.cmake:67 (check_mpi_source_compiles)"
+      - "CMakeLists.txt:84 (include)"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_Fortran_FLAGS: ""
+      CMAKE_Fortran_FLAGS_DEBUG: "-g"
+      CMAKE_MODULE_PATH: "/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Modules;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Utils"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "MPI_Fortran"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_e080b
+        [1/4] /opt/homebrew/bin/gfortran -cpp   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -E /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp/test_mpi.f -o CMakeFiles/cmTC_e080b.dir/test_mpi.f-pp.f && /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_depends --tdi=CMakeFiles/cmTC_e080b.dir/FortranDependInfo.json --lang=Fortran --src=CMakeFiles/cmTC_e080b.dir/test_mpi.f-pp.f --out=CMakeFiles/cmTC_e080b.dir/test_mpi.f-pp.f --dep=CMakeFiles/cmTC_e080b.dir/test_mpi.f-pp.f.d --obj=CMakeFiles/cmTC_e080b.dir/test_mpi.f.o --ddi=CMakeFiles/cmTC_e080b.dir/test_mpi.f.o.ddi
+        [2/4] /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_dyndep --tdi=CMakeFiles/cmTC_e080b.dir/FortranDependInfo.json --lang=Fortran --dd=CMakeFiles/cmTC_e080b.dir/Fortran.dd @CMakeFiles/cmTC_e080b.dir/Fortran.dd.rsp
+        [3/4] /opt/homebrew/bin/gfortran -I/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -fpreprocessed -c CMakeFiles/cmTC_e080b.dir/test_mpi.f-pp.f -o CMakeFiles/cmTC_e080b.dir/test_mpi.f.o
+        [4/4] : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_e080b.dir/test_mpi.f.o -o cmTC_e080b   && :
+        FAILED: cmTC_e080b 
+        : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_e080b.dir/test_mpi.f.o -o cmTC_e080b   && :
+        Undefined symbols for architecture arm64:
+          "_mpi_finalize_", referenced from:
+              _MAIN__ in test_mpi.f.o
+          "_mpi_init_", referenced from:
+              _MAIN__ in test_mpi.f.o
+        ld: symbol(s) not found for architecture arm64
+        collect2: error: ld returned 1 exit status
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "tools/cmake/Utils/CheckMPISourceCompiles.cmake:80 (try_compile)"
+      - "tools/cmake/AmanziTPL.cmake:67 (check_mpi_source_compiles)"
+      - "CMakeLists.txt:84 (include)"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_Fortran_FLAGS: ""
+      CMAKE_Fortran_FLAGS_DEBUG: "-g"
+      CMAKE_MODULE_PATH: "/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Modules;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Utils"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "MPI_Fortran"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_182c2
+        [1/4] /opt/homebrew/bin/gfortran -cpp   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -E /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp/test_mpi.f -o CMakeFiles/cmTC_182c2.dir/test_mpi.f-pp.f && /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_depends --tdi=CMakeFiles/cmTC_182c2.dir/FortranDependInfo.json --lang=Fortran --src=CMakeFiles/cmTC_182c2.dir/test_mpi.f-pp.f --out=CMakeFiles/cmTC_182c2.dir/test_mpi.f-pp.f --dep=CMakeFiles/cmTC_182c2.dir/test_mpi.f-pp.f.d --obj=CMakeFiles/cmTC_182c2.dir/test_mpi.f.o --ddi=CMakeFiles/cmTC_182c2.dir/test_mpi.f.o.ddi
+        [2/4] /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_dyndep --tdi=CMakeFiles/cmTC_182c2.dir/FortranDependInfo.json --lang=Fortran --dd=CMakeFiles/cmTC_182c2.dir/Fortran.dd @CMakeFiles/cmTC_182c2.dir/Fortran.dd.rsp
+        [3/4] /opt/homebrew/bin/gfortran -I/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -fpreprocessed -c CMakeFiles/cmTC_182c2.dir/test_mpi.f-pp.f -o CMakeFiles/cmTC_182c2.dir/test_mpi.f.o
+        [4/4] : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_182c2.dir/test_mpi.f.o -o cmTC_182c2   && :
+        FAILED: cmTC_182c2 
+        : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_182c2.dir/test_mpi.f.o -o cmTC_182c2   && :
+        Undefined symbols for architecture arm64:
+          "_mpi_finalize_", referenced from:
+              _MAIN__ in test_mpi.f.o
+          "_mpi_init_", referenced from:
+              _MAIN__ in test_mpi.f.o
+        ld: symbol(s) not found for architecture arm64
+        collect2: error: ld returned 1 exit status
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "tools/cmake/Utils/CheckMPISourceCompiles.cmake:80 (try_compile)"
+      - "tools/cmake/AmanziTPL.cmake:67 (check_mpi_source_compiles)"
+      - "CMakeLists.txt:84 (include)"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_Fortran_FLAGS: ""
+      CMAKE_Fortran_FLAGS_DEBUG: "-g"
+      CMAKE_MODULE_PATH: "/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Modules;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Utils"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "MPI_Fortran"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_e858a
+        [1/4] /opt/homebrew/bin/gfortran -cpp   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -E /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp/test_mpi.f -o CMakeFiles/cmTC_e858a.dir/test_mpi.f-pp.f && /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_depends --tdi=CMakeFiles/cmTC_e858a.dir/FortranDependInfo.json --lang=Fortran --src=CMakeFiles/cmTC_e858a.dir/test_mpi.f-pp.f --out=CMakeFiles/cmTC_e858a.dir/test_mpi.f-pp.f --dep=CMakeFiles/cmTC_e858a.dir/test_mpi.f-pp.f.d --obj=CMakeFiles/cmTC_e858a.dir/test_mpi.f.o --ddi=CMakeFiles/cmTC_e858a.dir/test_mpi.f.o.ddi
+        [2/4] /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_dyndep --tdi=CMakeFiles/cmTC_e858a.dir/FortranDependInfo.json --lang=Fortran --dd=CMakeFiles/cmTC_e858a.dir/Fortran.dd @CMakeFiles/cmTC_e858a.dir/Fortran.dd.rsp
+        [3/4] /opt/homebrew/bin/gfortran -I/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -fpreprocessed -c CMakeFiles/cmTC_e858a.dir/test_mpi.f-pp.f -o CMakeFiles/cmTC_e858a.dir/test_mpi.f.o
+        [4/4] : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_e858a.dir/test_mpi.f.o -o cmTC_e858a   && :
+        FAILED: cmTC_e858a 
+        : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_e858a.dir/test_mpi.f.o -o cmTC_e858a   && :
+        Undefined symbols for architecture arm64:
+          "_mpi_finalize_", referenced from:
+              _MAIN__ in test_mpi.f.o
+          "_mpi_init_", referenced from:
+              _MAIN__ in test_mpi.f.o
+        ld: symbol(s) not found for architecture arm64
+        collect2: error: ld returned 1 exit status
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "tools/cmake/Utils/CheckMPISourceCompiles.cmake:80 (try_compile)"
+      - "tools/cmake/AmanziTPL.cmake:67 (check_mpi_source_compiles)"
+      - "CMakeLists.txt:84 (include)"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_Fortran_FLAGS: ""
+      CMAKE_Fortran_FLAGS_DEBUG: "-g"
+      CMAKE_MODULE_PATH: "/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Modules;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Utils"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "MPI_Fortran"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_cca27
+        [1/4] /opt/homebrew/bin/gfortran -cpp   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -E /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp/test_mpi.f -o CMakeFiles/cmTC_cca27.dir/test_mpi.f-pp.f && /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_depends --tdi=CMakeFiles/cmTC_cca27.dir/FortranDependInfo.json --lang=Fortran --src=CMakeFiles/cmTC_cca27.dir/test_mpi.f-pp.f --out=CMakeFiles/cmTC_cca27.dir/test_mpi.f-pp.f --dep=CMakeFiles/cmTC_cca27.dir/test_mpi.f-pp.f.d --obj=CMakeFiles/cmTC_cca27.dir/test_mpi.f.o --ddi=CMakeFiles/cmTC_cca27.dir/test_mpi.f.o.ddi
+        [2/4] /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_dyndep --tdi=CMakeFiles/cmTC_cca27.dir/FortranDependInfo.json --lang=Fortran --dd=CMakeFiles/cmTC_cca27.dir/Fortran.dd @CMakeFiles/cmTC_cca27.dir/Fortran.dd.rsp
+        [3/4] /opt/homebrew/bin/gfortran -I/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -fpreprocessed -c CMakeFiles/cmTC_cca27.dir/test_mpi.f-pp.f -o CMakeFiles/cmTC_cca27.dir/test_mpi.f.o
+        [4/4] : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_cca27.dir/test_mpi.f.o -o cmTC_cca27   && :
+        FAILED: cmTC_cca27 
+        : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_cca27.dir/test_mpi.f.o -o cmTC_cca27   && :
+        Undefined symbols for architecture arm64:
+          "_mpi_finalize_", referenced from:
+              _MAIN__ in test_mpi.f.o
+          "_mpi_init_", referenced from:
+              _MAIN__ in test_mpi.f.o
+        ld: symbol(s) not found for architecture arm64
+        collect2: error: ld returned 1 exit status
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "tools/cmake/Utils/CheckMPISourceCompiles.cmake:80 (try_compile)"
+      - "tools/cmake/AmanziTPL.cmake:67 (check_mpi_source_compiles)"
+      - "CMakeLists.txt:84 (include)"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_Fortran_FLAGS: ""
+      CMAKE_Fortran_FLAGS_DEBUG: "-g"
+      CMAKE_MODULE_PATH: "/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Modules;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Utils"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "MPI_Fortran"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_a1b3c
+        [1/4] /opt/homebrew/bin/gfortran -cpp   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -E /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp/test_mpi.f -o CMakeFiles/cmTC_a1b3c.dir/test_mpi.f-pp.f && /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_depends --tdi=CMakeFiles/cmTC_a1b3c.dir/FortranDependInfo.json --lang=Fortran --src=CMakeFiles/cmTC_a1b3c.dir/test_mpi.f-pp.f --out=CMakeFiles/cmTC_a1b3c.dir/test_mpi.f-pp.f --dep=CMakeFiles/cmTC_a1b3c.dir/test_mpi.f-pp.f.d --obj=CMakeFiles/cmTC_a1b3c.dir/test_mpi.f.o --ddi=CMakeFiles/cmTC_a1b3c.dir/test_mpi.f.o.ddi
+        [2/4] /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_dyndep --tdi=CMakeFiles/cmTC_a1b3c.dir/FortranDependInfo.json --lang=Fortran --dd=CMakeFiles/cmTC_a1b3c.dir/Fortran.dd @CMakeFiles/cmTC_a1b3c.dir/Fortran.dd.rsp
+        [3/4] /opt/homebrew/bin/gfortran -I/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -fpreprocessed -c CMakeFiles/cmTC_a1b3c.dir/test_mpi.f-pp.f -o CMakeFiles/cmTC_a1b3c.dir/test_mpi.f.o
+        [4/4] : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_a1b3c.dir/test_mpi.f.o -o cmTC_a1b3c   && :
+        FAILED: cmTC_a1b3c 
+        : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_a1b3c.dir/test_mpi.f.o -o cmTC_a1b3c   && :
+        Undefined symbols for architecture arm64:
+          "_mpi_finalize_", referenced from:
+              _MAIN__ in test_mpi.f.o
+          "_mpi_init_", referenced from:
+              _MAIN__ in test_mpi.f.o
+        ld: symbol(s) not found for architecture arm64
+        collect2: error: ld returned 1 exit status
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "tools/cmake/Utils/CheckMPISourceCompiles.cmake:80 (try_compile)"
+      - "tools/cmake/AmanziTPL.cmake:67 (check_mpi_source_compiles)"
+      - "CMakeLists.txt:84 (include)"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_Fortran_FLAGS: ""
+      CMAKE_Fortran_FLAGS_DEBUG: "-g"
+      CMAKE_MODULE_PATH: "/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Modules;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Utils"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "MPI_Fortran"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_b502e
+        [1/4] /opt/homebrew/bin/gfortran -cpp   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -E /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp/test_mpi.f -o CMakeFiles/cmTC_b502e.dir/test_mpi.f-pp.f && /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_depends --tdi=CMakeFiles/cmTC_b502e.dir/FortranDependInfo.json --lang=Fortran --src=CMakeFiles/cmTC_b502e.dir/test_mpi.f-pp.f --out=CMakeFiles/cmTC_b502e.dir/test_mpi.f-pp.f --dep=CMakeFiles/cmTC_b502e.dir/test_mpi.f-pp.f.d --obj=CMakeFiles/cmTC_b502e.dir/test_mpi.f.o --ddi=CMakeFiles/cmTC_b502e.dir/test_mpi.f.o.ddi
+        [2/4] /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_dyndep --tdi=CMakeFiles/cmTC_b502e.dir/FortranDependInfo.json --lang=Fortran --dd=CMakeFiles/cmTC_b502e.dir/Fortran.dd @CMakeFiles/cmTC_b502e.dir/Fortran.dd.rsp
+        [3/4] /opt/homebrew/bin/gfortran -I/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -fpreprocessed -c CMakeFiles/cmTC_b502e.dir/test_mpi.f-pp.f -o CMakeFiles/cmTC_b502e.dir/test_mpi.f.o
+        [4/4] : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_b502e.dir/test_mpi.f.o -o cmTC_b502e   && :
+        FAILED: cmTC_b502e 
+        : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_b502e.dir/test_mpi.f.o -o cmTC_b502e   && :
+        Undefined symbols for architecture arm64:
+          "_mpi_finalize_", referenced from:
+              _MAIN__ in test_mpi.f.o
+          "_mpi_init_", referenced from:
+              _MAIN__ in test_mpi.f.o
+        ld: symbol(s) not found for architecture arm64
+        collect2: error: ld returned 1 exit status
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "tools/cmake/Utils/CheckMPISourceCompiles.cmake:80 (try_compile)"
+      - "tools/cmake/AmanziTPL.cmake:67 (check_mpi_source_compiles)"
+      - "CMakeLists.txt:84 (include)"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_Fortran_FLAGS: ""
+      CMAKE_Fortran_FLAGS_DEBUG: "-g"
+      CMAKE_MODULE_PATH: "/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Modules;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Utils"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "MPI_Fortran"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_44738
+        [1/4] /opt/homebrew/bin/gfortran -cpp   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -E /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp/test_mpi.f -o CMakeFiles/cmTC_44738.dir/test_mpi.f-pp.f && /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_depends --tdi=CMakeFiles/cmTC_44738.dir/FortranDependInfo.json --lang=Fortran --src=CMakeFiles/cmTC_44738.dir/test_mpi.f-pp.f --out=CMakeFiles/cmTC_44738.dir/test_mpi.f-pp.f --dep=CMakeFiles/cmTC_44738.dir/test_mpi.f-pp.f.d --obj=CMakeFiles/cmTC_44738.dir/test_mpi.f.o --ddi=CMakeFiles/cmTC_44738.dir/test_mpi.f.o.ddi
+        [2/4] /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_dyndep --tdi=CMakeFiles/cmTC_44738.dir/FortranDependInfo.json --lang=Fortran --dd=CMakeFiles/cmTC_44738.dir/Fortran.dd @CMakeFiles/cmTC_44738.dir/Fortran.dd.rsp
+        [3/4] /opt/homebrew/bin/gfortran -I/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -fpreprocessed -c CMakeFiles/cmTC_44738.dir/test_mpi.f-pp.f -o CMakeFiles/cmTC_44738.dir/test_mpi.f.o
+        [4/4] : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_44738.dir/test_mpi.f.o -o cmTC_44738   && :
+        FAILED: cmTC_44738 
+        : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_44738.dir/test_mpi.f.o -o cmTC_44738   && :
+        Undefined symbols for architecture arm64:
+          "_mpi_finalize_", referenced from:
+              _MAIN__ in test_mpi.f.o
+          "_mpi_init_", referenced from:
+              _MAIN__ in test_mpi.f.o
+        ld: symbol(s) not found for architecture arm64
+        collect2: error: ld returned 1 exit status
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "tools/cmake/Utils/CheckMPISourceCompiles.cmake:80 (try_compile)"
+      - "tools/cmake/AmanziTPL.cmake:67 (check_mpi_source_compiles)"
+      - "CMakeLists.txt:84 (include)"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_Fortran_FLAGS: ""
+      CMAKE_Fortran_FLAGS_DEBUG: "-g"
+      CMAKE_MODULE_PATH: "/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Modules;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Utils"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "MPI_Fortran"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_62319
+        [1/4] /opt/homebrew/bin/gfortran -cpp   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -E /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp/test_mpi.f -o CMakeFiles/cmTC_62319.dir/test_mpi.f-pp.f && /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_depends --tdi=CMakeFiles/cmTC_62319.dir/FortranDependInfo.json --lang=Fortran --src=CMakeFiles/cmTC_62319.dir/test_mpi.f-pp.f --out=CMakeFiles/cmTC_62319.dir/test_mpi.f-pp.f --dep=CMakeFiles/cmTC_62319.dir/test_mpi.f-pp.f.d --obj=CMakeFiles/cmTC_62319.dir/test_mpi.f.o --ddi=CMakeFiles/cmTC_62319.dir/test_mpi.f.o.ddi
+        [2/4] /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_dyndep --tdi=CMakeFiles/cmTC_62319.dir/FortranDependInfo.json --lang=Fortran --dd=CMakeFiles/cmTC_62319.dir/Fortran.dd @CMakeFiles/cmTC_62319.dir/Fortran.dd.rsp
+        [3/4] /opt/homebrew/bin/gfortran -I/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -fpreprocessed -c CMakeFiles/cmTC_62319.dir/test_mpi.f-pp.f -o CMakeFiles/cmTC_62319.dir/test_mpi.f.o
+        [4/4] : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_62319.dir/test_mpi.f.o -o cmTC_62319   && :
+        FAILED: cmTC_62319 
+        : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_62319.dir/test_mpi.f.o -o cmTC_62319   && :
+        Undefined symbols for architecture arm64:
+          "_mpi_finalize_", referenced from:
+              _MAIN__ in test_mpi.f.o
+          "_mpi_init_", referenced from:
+              _MAIN__ in test_mpi.f.o
+        ld: symbol(s) not found for architecture arm64
+        collect2: error: ld returned 1 exit status
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "tools/cmake/Utils/CheckMPISourceCompiles.cmake:80 (try_compile)"
+      - "tools/cmake/AmanziTPL.cmake:67 (check_mpi_source_compiles)"
+      - "CMakeLists.txt:84 (include)"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_Fortran_FLAGS: ""
+      CMAKE_Fortran_FLAGS_DEBUG: "-g"
+      CMAKE_MODULE_PATH: "/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Modules;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Utils"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "MPI_Fortran"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_d6edd
+        [1/4] /opt/homebrew/bin/gfortran -cpp   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -E /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp/test_mpi.f -o CMakeFiles/cmTC_d6edd.dir/test_mpi.f-pp.f && /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_depends --tdi=CMakeFiles/cmTC_d6edd.dir/FortranDependInfo.json --lang=Fortran --src=CMakeFiles/cmTC_d6edd.dir/test_mpi.f-pp.f --out=CMakeFiles/cmTC_d6edd.dir/test_mpi.f-pp.f --dep=CMakeFiles/cmTC_d6edd.dir/test_mpi.f-pp.f.d --obj=CMakeFiles/cmTC_d6edd.dir/test_mpi.f.o --ddi=CMakeFiles/cmTC_d6edd.dir/test_mpi.f.o.ddi
+        [2/4] /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_dyndep --tdi=CMakeFiles/cmTC_d6edd.dir/FortranDependInfo.json --lang=Fortran --dd=CMakeFiles/cmTC_d6edd.dir/Fortran.dd @CMakeFiles/cmTC_d6edd.dir/Fortran.dd.rsp
+        [3/4] /opt/homebrew/bin/gfortran -I/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -fpreprocessed -c CMakeFiles/cmTC_d6edd.dir/test_mpi.f-pp.f -o CMakeFiles/cmTC_d6edd.dir/test_mpi.f.o
+        [4/4] : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_d6edd.dir/test_mpi.f.o -o cmTC_d6edd   && :
+        FAILED: cmTC_d6edd 
+        : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_d6edd.dir/test_mpi.f.o -o cmTC_d6edd   && :
+        Undefined symbols for architecture arm64:
+          "_mpi_finalize_", referenced from:
+              _MAIN__ in test_mpi.f.o
+          "_mpi_init_", referenced from:
+              _MAIN__ in test_mpi.f.o
+        ld: symbol(s) not found for architecture arm64
+        collect2: error: ld returned 1 exit status
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "tools/cmake/Utils/CheckMPISourceCompiles.cmake:80 (try_compile)"
+      - "tools/cmake/AmanziTPL.cmake:67 (check_mpi_source_compiles)"
+      - "CMakeLists.txt:84 (include)"
+    directories:
+      source: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+      binary: "/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_Fortran_FLAGS: ""
+      CMAKE_Fortran_FLAGS_DEBUG: "-g"
+      CMAKE_MODULE_PATH: "/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Modules;/Users/pvn/research/ats/ats-master/repos/amanzi/tools/cmake/Utils"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: "14.7"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+    buildResult:
+      variable: "MPI_Fortran"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /opt/homebrew/bin/ninja -v cmTC_26f28
+        [1/4] /opt/homebrew/bin/gfortran -cpp   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -E /Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp/test_mpi.f -o CMakeFiles/cmTC_26f28.dir/test_mpi.f-pp.f && /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_depends --tdi=CMakeFiles/cmTC_26f28.dir/FortranDependInfo.json --lang=Fortran --src=CMakeFiles/cmTC_26f28.dir/test_mpi.f-pp.f --out=CMakeFiles/cmTC_26f28.dir/test_mpi.f-pp.f --dep=CMakeFiles/cmTC_26f28.dir/test_mpi.f-pp.f.d --obj=CMakeFiles/cmTC_26f28.dir/test_mpi.f.o --ddi=CMakeFiles/cmTC_26f28.dir/test_mpi.f.o.ddi
+        [2/4] /Users/pvn/miniconda3arm/envs/geos/bin/cmake -E cmake_ninja_dyndep --tdi=CMakeFiles/cmTC_26f28.dir/FortranDependInfo.json --lang=Fortran --dd=CMakeFiles/cmTC_26f28.dir/Fortran.dd @CMakeFiles/cmTC_26f28.dir/Fortran.dd.rsp
+        [3/4] /opt/homebrew/bin/gfortran -I/Users/pvn/research/ats/ats-master/repos/amanzi/build/CMakeFiles/CMakeTmp -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 -fpreprocessed -c CMakeFiles/cmTC_26f28.dir/test_mpi.f-pp.f -o CMakeFiles/cmTC_26f28.dir/test_mpi.f.o
+        [4/4] : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_26f28.dir/test_mpi.f.o -o cmTC_26f28   && :
+        FAILED: cmTC_26f28 
+        : && /opt/homebrew/bin/gfortran  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -mmacosx-version-min=14.7 CMakeFiles/cmTC_26f28.dir/test_mpi.f.o -o cmTC_26f28   && :
+        Undefined symbols for architecture arm64:
+          "_mpi_finalize_", referenced from:
+              _MAIN__ in test_mpi.f.o
+          "_mpi_init_", referenced from:
+              _MAIN__ in test_mpi.f.o
+        ld: symbol(s) not found for architecture arm64
+        collect2: error: ld returned 1 exit status
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+...
