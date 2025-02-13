@@ -150,12 +150,12 @@ class Parameter(base.TeuchosBaseXML):
                 if len(vals) == 1 and vals[0] == '':
                     self.value = ['',]
                 else:
-                    self.value = [self._checkSingleValueFromString(val) for val in vals]
+                    self.value = [self._checkSingleValueFromString(val.strip()) for val in vals]
             elif type(value) is list:
                 if len(value) == 1 and value[0] == '':
                     self.value = ['',]
                 else:
-                    self.value = [self._checkSingleValueFromString(val) for val in value]
+                    self.value = [self._checkSingleValueFromString(val.strip()) for val in value]
 
             self.set("value", "{"+",".join([self._checkSingleValueFromType(val) for val in self.value])+"}")
         else:
