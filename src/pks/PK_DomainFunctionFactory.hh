@@ -24,6 +24,7 @@
 #include "PK_DomainFunctionField.hh"
 #include "PK_DomainFunctionFirstOrderExchange.hh"
 #include "PK_DomainFunctionParentMeshField.hh"
+#include "PK_DomainFunctionPeriodic.hh"
 #include "PK_DomainFunctionSimple.hh"
 #include "PK_DomainFunctionSimpleWell.hh"
 #include "PK_DomainFunctionSubgrid.hh"
@@ -158,6 +159,13 @@ PK_DomainFunctionFactory<FunctionBase>::Create(Teuchos::ParameterList& plist,
     Teuchos::RCP<PK_DomainFunctionSimpleWell<FunctionBase>> func =
       Teuchos::rcp(new PK_DomainFunctionSimpleWell<FunctionBase>(mesh_));
     func->Init(plist, keyword, S_);
+    return func;
+  } else if (model == "periodic") {
+    AMANZI_ASSERT(kind == AmanziMesh::Entity_kind::FACE);
+    plist.sublist(keyword).set<std::string>("copy_field_out_tag", tag.get());
+    Teuchos::RCP<PK_DomainFunctionPeriodic<FunctionBase>> func =
+      Teuchos::rcp(new PK_DomainFunctionPeriodic<FunctionBase>(mesh_));
+    func->Init(plist, keyword, kind);
     return func;
   } else {
     Teuchos::RCP<PK_DomainFunctionSimple<FunctionBase>> func =

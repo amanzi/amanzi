@@ -26,6 +26,7 @@ enum class DomainFunction_kind {
   COUPLING,
   FIELD,
   FIRST_ORDER_EXCHANGE,
+  PERIODIC,
   SUBGRID,
   SUBGRID_RETURN,
   WEIGHT,
