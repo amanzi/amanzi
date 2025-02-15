@@ -53,23 +53,23 @@ class LimiterCell {
 
   // -- limit reconstructed data (typically gradeient) using neighboors
   //    and boundary data. Actual work is done by the 4th function down.
-  void ApplyLimiter(Teuchos::RCP<const Epetra_MultiVector> field,
+  void ApplyLimiter(const Teuchos::RCP<const Epetra_MultiVector>& field,
                     int component,
                     const Teuchos::RCP<Reconstruction>& lifting,
                     const Teuchos::RCP<const BCs>& bc);
 
-  void ApplyLimiter(Teuchos::RCP<const Epetra_MultiVector> field,
+  void ApplyLimiter(const Teuchos::RCP<const Epetra_MultiVector>& field,
                     int component,
                     const Teuchos::RCP<Reconstruction>& lifting);
 
-  void ApplyLimiter(Teuchos::RCP<const Epetra_MultiVector> field,
+  void ApplyLimiter(const Teuchos::RCP<const Epetra_MultiVector>& field,
                     int component,
                     const Teuchos::RCP<Reconstruction>& lifting,
                     const std::vector<int>& bc_model,
                     const std::vector<double>& bc_value);
 
   void ApplyLimiter(const AmanziMesh::cEntity_ID_View& ids,
-                    Teuchos::RCP<const Epetra_MultiVector> field,
+                    const Teuchos::RCP<const Epetra_MultiVector>& field,
                     int component,
                     const Teuchos::RCP<Reconstruction>& lifting,
                     const std::vector<int>& bc_model,

@@ -162,7 +162,7 @@ LimiterCell::SetFlux(const Teuchos::RCP<const Epetra_MultiVector>& flux)
 * Apply an internal limiter using BC object
 ****************************************************************** */
 void
-LimiterCell::ApplyLimiter(Teuchos::RCP<const Epetra_MultiVector> field,
+LimiterCell::ApplyLimiter(const Teuchos::RCP<const Epetra_MultiVector>& field,
                           int component,
                           const Teuchos::RCP<Reconstruction>& lifting,
                           const Teuchos::RCP<const BCs>& bc)
@@ -178,7 +178,7 @@ LimiterCell::ApplyLimiter(Teuchos::RCP<const Epetra_MultiVector> field,
 
 
 void
-LimiterCell::ApplyLimiter(Teuchos::RCP<const Epetra_MultiVector> field,
+LimiterCell::ApplyLimiter(const Teuchos::RCP<const Epetra_MultiVector>& field,
                           int component,
                           const Teuchos::RCP<Reconstruction>& lifting,
                           const std::vector<int>& bc_model,
@@ -191,7 +191,7 @@ LimiterCell::ApplyLimiter(Teuchos::RCP<const Epetra_MultiVector> field,
 
 
 void
-LimiterCell::ApplyLimiter(Teuchos::RCP<const Epetra_MultiVector> field,
+LimiterCell::ApplyLimiter(const Teuchos::RCP<const Epetra_MultiVector>& field,
                           int component,
                           const Teuchos::RCP<Reconstruction>& lifting)
 {
@@ -208,7 +208,7 @@ LimiterCell::ApplyLimiter(Teuchos::RCP<const Epetra_MultiVector> field,
 ****************************************************************** */
 void
 LimiterCell::ApplyLimiter(const AmanziMesh::cEntity_ID_View& ids,
-                          Teuchos::RCP<const Epetra_MultiVector> field,
+                          const Teuchos::RCP<const Epetra_MultiVector>& field,
                           int component,
                           const Teuchos::RCP<Reconstruction>& lifting,
                           const std::vector<int>& bc_model,
