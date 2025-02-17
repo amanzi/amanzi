@@ -29,7 +29,6 @@ ${AMANZI_SRC_DIR}/bootstrap.sh \
    ${dbg_option} \
    --with-mpi=${OPENMPI_DIR} \
    --enable-shared \
-   --enable-clm \
    --enable-ecosim \
    --disable-structured  --enable-unstructured \
    --enable-mesh_mstk --disable-mesh_moab \
@@ -50,6 +49,7 @@ ${AMANZI_SRC_DIR}/bootstrap.sh \
    --tools-install-prefix=${ATS_BASE}/install \
    --with-cmake=`which cmake` \
    --with-ctest=`which ctest` \
+   --with-cxx-flags="-std=c++14" \
    --branch_ats=${ATS_VERSION} \
    --parallel=6
 
