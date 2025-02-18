@@ -60,7 +60,8 @@ class PK_Physical : virtual public PK {
   Key domain_;
 
   // solution and evaluator
-  std::string key_;
+  Key key_;
+  Key passwd_;
 
   // debugger for dumping vectors
   Teuchos::RCP<Debugger> db_;

@@ -885,16 +885,18 @@ Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   double dt = t_new - t_old;
   current_time_ = saved_time_ + dt;
 
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_LOW))
+    *vo_->os() << "----------------------------------------------------------------" << std::endl
+               << "Advancing: t0 = " << t_old
+               << " t1 = " << t_new << " h = " << dt << std::endl
+               << "----------------------------------------------------------------" << std::endl;
+
   // If we are given a dt that is less than the one we wanted, we don't record it.
   if (dt < dt_next_) {
     dt_prev_ = dt_next_;
   } else {
     dt_prev_ = dt;
-  }
-
-  if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Starting AdvanceStep ...\n";
   }
 
   // Get the number of owned (non-ghost) cells for the mesh.

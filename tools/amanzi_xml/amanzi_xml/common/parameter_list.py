@@ -127,7 +127,7 @@ class ParameterList(base.TeuchosBaseXML):
         children = list(self)
         for child in children:
             self.remove(child)
-        sorted_children = sorted(children, key=lambda x: x.tag)
+        sorted_children = sorted(children, key=lambda x: str(x.tag))
         self.extend(sorted_children)
 
     def indent(self, ntabs, doublespace=False, doublespace_two=False):
@@ -147,6 +147,7 @@ class ParameterList(base.TeuchosBaseXML):
             for el in self:
                 el.indent(ntabs+1, doublespace_sublists or doublespace_two,
                           doublespace_sublists_two_deep)
+
             self[-1].tail = "\n" + " "*(ntabs)*base._tabsize
             if doublespace_sublists or doublespace_two:
                 self[-1].tail = "\n"+self[-1].tail

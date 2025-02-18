@@ -60,16 +60,16 @@ def _valid_parameter_from_type(ptype, value):
         # small and we can cut off some user-provided but arbitrarily
         # highly precise numbers.  Unfortunately too low of a value
         # then allows tests to break.  This may need rethinking?
-        retval = '%2.14g'%float(value)
+        retval = ('%2.14g'%float(value)).strip()
     elif ptype == "int":
-        retval = str(int(value))
+        retval = str(int(value)).strip()
     elif ptype == "bool":
         if value is True:
             retval = "true"
         elif value is False:
             retval = "false"
     elif ptype == "string":
-        retval = str(value)
+        retval = str(value).strip()
     return retval
 
 
@@ -157,7 +157,7 @@ class Parameter(base.TeuchosBaseXML):
                 else:
                     self.value = [self._checkSingleValueFromString(val.strip()) for val in value]
 
-            self.set("value", "{"+",".join([self._checkSingleValueFromType(val) for val in self.value])+"}")
+            self.set("value", "{" + ", ".join([self._checkSingleValueFromType(val) for val in self.value]) + "}")
         else:
             self.value = self._checkSingleValueFromString(value)
             self.set("value", self._checkSingleValueFromType(self.value))
@@ -183,6 +183,7 @@ class Parameter(base.TeuchosBaseXML):
         cp = self.__copy__()
         memo[id(self)] = cp
         return cp
+
 
 from amanzi_xml.utils import parser
 def make_class(typename, array=False):

@@ -28,8 +28,7 @@ using CVS_t = CompositeVectorSpace;
 * Default constructor that initializes all pointers to NULL
 ****************************************************************** */
 Chemistry_PK::Chemistry_PK()
-  : passwd_("state"),
-    number_minerals_(0),
+  : number_minerals_(0),
     number_aqueous_kinetics_(0),
     number_sorption_sites_(0),
     using_sorption_(false),
@@ -45,7 +44,6 @@ Chemistry_PK::Chemistry_PK(Teuchos::ParameterList& pk_tree,
                            const Teuchos::RCP<TreeVector>& soln)
   : PK(pk_tree, glist, S, soln),
     PK_Physical(pk_tree, glist, S, soln),
-    passwd_("state"),
     glist_(glist),
     number_minerals_(0),
     number_aqueous_kinetics_(0),
@@ -63,6 +61,7 @@ Chemistry_PK::Chemistry_PK(Teuchos::ParameterList& pk_tree,
 void
 Chemistry_PK::parseParameterList()
 {
+  passwd_ = plist_->get<std::string>("primary variable password", "state");
   saturation_tolerance_ = plist_->get<double>("saturation tolerance", 1e-14);
 }
 
