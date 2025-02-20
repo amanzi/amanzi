@@ -59,15 +59,14 @@ class PK_DomainFunctionFirstOrderExchange : public FunctionBase,
   using FunctionBase::value_;
   using FunctionBase::keyword_;
 
-  Teuchos::RCP<const State> S_;
+  Teuchos::RCP<State> S_;
 
  private:
   AmanziMesh::Entity_kind kind_;
   Key tcc_key_;
-  Tag tcc_copy_;
-
-  Key saturation_key_, porosity_key_, molar_density_key_;
-  Tag saturation_copy_, porosity_copy_, molar_density_copy_;
+  Key lwc_key_;
+  Key cv_key_;
+  Tag tag_;
 };
 
 
@@ -87,16 +86,10 @@ PK_DomainFunctionFirstOrderExchange<FunctionBase>::Init(const Teuchos::Parameter
 
   tcc_key_ = Keys::readKey(
     blist, domain_name, "total component concentration", "total_component_concentration");
-  tcc_copy_ = Keys::readTag(blist, "total component concentration copy");
+  tag_ = Keys::readTag(blist, "total component concentration copy");
 
-  saturation_key_ = Keys::readKey(blist, domain_name, "saturation liquid", "ponded_depth");
-  saturation_copy_ = Keys::readTag(blist, "saturation liquid copy");
-
-  porosity_key_ = Keys::readKey(blist, domain_name, "porosity", "porosity");
-  porosity_copy_ = Keys::readTag(blist, "porosity copy");
-
-  molar_density_key_ = Keys::readKey(blist, domain_name, "molar density", "molar_density_liquid");
-  molar_density_copy_ = Keys::readTag(blist, "molar density copy");
+  lwc_key_ = Keys::readKey(blist, domain_name, "liqud water content", "water_content");
+  cv_key_ = Keys::readKey(blist, domain_name, "cell volume", "cell_volume");
 
   // get and check the regions
   auto regions = plist.get<Teuchos::Array<std::string>>("regions").toVector();
@@ -132,12 +125,11 @@ PK_DomainFunctionFirstOrderExchange<FunctionBase>::Compute(double t0, double t1)
   std::vector<double> args(1 + dim);
 
   // get the tcc vector
-  const auto& tcc = *S_->Get<CompositeVector>(tcc_key_, tcc_copy_).ViewComponent("cell");
-  const auto& ws =
-    *S_->Get<CompositeVector>(saturation_key_, saturation_copy_).ViewComponent("cell");
-  const auto& phi = *S_->Get<CompositeVector>(porosity_key_, porosity_copy_).ViewComponent("cell");
-  const auto& mol_dens =
-    *S_->Get<CompositeVector>(molar_density_key_, molar_density_copy_).ViewComponent("cell");
+  // this needs a unique name and doesn't have one!  If only it were an evaluator!
+  S_->GetEvaluator(lwc_key_, tag_).Update(*S_, lwc_key_+"_pk_domain_function_first_order_exchange");
+  const auto& wc = *S_->Get<CompositeVector>(lwc_key_, tag_).ViewComponent("cell");
+  const auto& tcc = *S_->Get<CompositeVector>(tcc_key_, tag_).ViewComponent("cell");
+  const auto& cv = *S_->Get<CompositeVector>(cv_key_, tag_).ViewComponent("cell");
 
   for (UniqueSpecList::const_iterator uspec = unique_specs_.at(kind_)->begin();
        uspec != unique_specs_.at(kind_)->end();
@@ -154,9 +146,8 @@ PK_DomainFunctionFirstOrderExchange<FunctionBase>::Compute(double t0, double t1)
       for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
 
       // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
-      double tmp = ws[0][*c] * phi[0][*c] * mol_dens[0][*c];
       for (int i = 0; i < nfun; ++i) {
-        val_vec[i] = -(*(*uspec)->first->second)(args)[i] * tcc[i][*c] * tmp;
+        val_vec[i] = -(*(*uspec)->first->second)(args)[i] * tcc[i][*c] * wc[0][*c] / cv[0][*c];
       }
       value_[*c] = val_vec;
     }
