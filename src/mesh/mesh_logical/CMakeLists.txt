@@ -49,7 +49,6 @@ add_install_include_file(${mesh_logical_inc_files})
 if (BUILD_TESTS)
   # tests require MSTK
   if (ENABLE_MESH_MSTK)
-    add_definitions("-DMSTK_HAVE_MPI")
     if (WITH_MSTK_2_20rc1_OR_NEWER)
       add_definitions("-DMSTK_2_20rc1_OR_NEWER")
     endif ()

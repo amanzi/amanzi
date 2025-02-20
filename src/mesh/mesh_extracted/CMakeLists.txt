@@ -71,7 +71,7 @@ if (BUILD_TESTS)
     include_directories(${MESH_MSTK_SOURCE_DIR})
     include_directories(${MSTK_INCLUDE_DIR})
     list(APPEND mesh_frameworks mesh_mstk)
-    add_definitions("-DHAVE_MESH_MSTK -DMSTK_HAVE_MPI")
+    add_definitions("-DHAVE_MESH_MSTK")
   endif()
 
   include_directories(${MESH_EXTRACTED_SOURCE_DIR})

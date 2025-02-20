@@ -50,7 +50,7 @@ include_directories(${OPERATORS_SOURCE_DIR})
 
 # Need this define. Errors from MSTK include files 
 # about MPI_COMM_WORLD. --lpritch
-add_definitions("-DMSTK_HAVE_MPI")
+# add_definitions("-DMSTK_HAVE_MPI")
 
 #
 # Library: operators
@@ -334,6 +334,13 @@ if (ENABLE_TESTS)
                         NPROCS 3
                         SOURCE test/Main.cc test/operator_advection_dg.cc
                                             test/operator_advection_dg_transient.cc
+                        LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+        # other tests
+        add_amanzi_test(operators_clone operators_clone
+                        KIND unit
+                        NPROCS 3
+                        SOURCE test/Main.cc test/operator_clone.cc
                         LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
     endif()
 

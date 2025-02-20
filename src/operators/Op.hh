@@ -66,20 +66,11 @@ class Op {
 
   virtual ~Op() = default;
 
-  // Clean the operator without destroying memory
-  void Init()
-  {
-    if (diag != Teuchos::null) {
-      diag->PutScalar(0.0);
-      diag_shadow->PutScalar(0.0);
-    }
+  // deep copy of data (diag and matrices)
+  virtual Teuchos::RCP<Op> Clone() const;
 
-    WhetStone::DenseMatrix null_mat;
-    for (int i = 0; i < matrices.size(); ++i) {
-      matrices[i] = 0.0;
-      matrices_shadow[i] = null_mat;
-    }
-  }
+  // Clean the operator without destroying memory
+  void Init();
 
   // Restore pristine value of the matrices, i.e. before BCs.
   virtual int CopyShadowToMaster()
@@ -186,6 +177,37 @@ Op::Verify() const
   for (int i = 0; i < nmatrices; ++i) {
     AMANZI_ASSERT(matrices[i].NumRows() > 0 && matrices[i].NumCols() > 0);
   }
+}
+
+
+/* ******************************************************************
+* Set allocated memory to zero
+****************************************************************** */
+inline void
+Op::Init()
+{
+  if (diag != Teuchos::null) {
+    diag->PutScalar(0.0);
+    diag_shadow->PutScalar(0.0);
+  }
+
+  WhetStone::DenseMatrix null_mat;
+  for (int i = 0; i < matrices.size(); ++i) {
+    matrices[i] = 0.0;
+    matrices_shadow[i] = null_mat;
+  }
+}
+
+
+/* ******************************************************************
+* Copy constructor.
+****************************************************************** */
+inline Teuchos::RCP<Op>
+Op::Clone() const
+{
+  Errors::Message msg("Clone() of a derived Op class is missing");
+  Exceptions::amanzi_throw(msg);
+  return Teuchos::null;
 }
 
 } // namespace Operators

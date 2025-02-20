@@ -30,10 +30,6 @@ include_directories(${MESH_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 
 
-# Need this define. Errors from MSTK include files 
-# about MPI_COMM_WORLD. --lpritch
-add_definitions("-DMSTK_HAVE_MPI")
-
 if (WITH_MSTK_2_20rc1_OR_NEWER)
   add_definitions("-DMSTK_2_20rc1_OR_NEWER")
 endif ()

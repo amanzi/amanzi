@@ -67,10 +67,8 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC)
   // -- since rho=mu=1.0, we do not need to scale the diffusion tensor
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
-  int nfaces_wghost =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+  int ncells = mesh->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
+  int nfaces_wghost = mesh->getNumEntities(Entity_kind::FACE, Parallel_kind::ALL);
 
   Analytic05 ana(mesh);
 
