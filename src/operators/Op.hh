@@ -205,7 +205,7 @@ Op::Init()
 inline Teuchos::RCP<Op>
 Op::Clone() const
 {
-  Errors::Message msg("Clone() of a derived Op class is missing");
+  Errors::Message msg("Clone of derived Op \"" + schema_string + "\" is missing");
   Exceptions::amanzi_throw(msg);
   return Teuchos::null;
 }

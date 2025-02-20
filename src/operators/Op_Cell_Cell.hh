@@ -33,6 +33,14 @@ class Op_Cell_Cell : public Op {
       mesh->getMap(AmanziMesh::Entity_kind::CELL, false), nvec));
   }
 
+  virtual Teuchos::RCP<Op> Clone() const
+  {
+    auto op = Teuchos::rcp(new Op_Cell_Cell(*this));
+    *op->diag = *diag;
+    *op->diag_shadow = *diag_shadow;
+    return op;
+  }
+
   virtual void
   ApplyMatrixFreeOp(const Operator* assembler, const CompositeVector& X, CompositeVector& Y) const
   {
