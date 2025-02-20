@@ -21,6 +21,7 @@
 #include "Operator_Edge.hh"
 #include "Operator_Node.hh"
 #include "Op_Cell_Cell.hh"
+#include "Op_Face_Face.hh"
 #include "Op_Edge_Edge.hh"
 #include "Op_Node_Node.hh"
 #include "Op_SurfaceCell_SurfaceCell.hh"
@@ -350,7 +351,7 @@ PDE_Accumulation::CalculateEntityVolume_(CompositeVector& volume, const std::str
 * the local local_op_ is not well defined.
 ****************************************************************** */
 void
-PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
+PDE_Accumulation::Init_(const Schema& schema, bool surf)
 {
   int num;
   AmanziMesh::Entity_kind kind;
@@ -416,12 +417,10 @@ PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
           op = Teuchos::rcp(new Op_Cell_Cell(name, mesh_, num));
         }
 
-        /*
       } else if (kind == AmanziMesh::Entity_kind::FACE) {
         old_schema = OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_FACE;
         std::string name("FACE_FACE");
         op = Teuchos::rcp(new Op_Face_Face(name, mesh_));
-      */
 
       } else if (kind == AmanziMesh::Entity_kind::EDGE) {
         old_schema = OPERATOR_SCHEMA_BASE_EDGE | OPERATOR_SCHEMA_DOFS_EDGE;
