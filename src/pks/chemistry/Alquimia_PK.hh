@@ -91,18 +91,12 @@ class Alquimia_PK : public Chemistry_PK {
   // output of auxillary cellwise data from chemistry
   Teuchos::RCP<Epetra_MultiVector> extra_chemistry_output_data() override final;
 
-  // Copies the chemistry state in the given cell to the given Alquimia containers.
-  void CopyToAlquimia(int cell_id,
-                      AlquimiaProperties& mat_props,
-                      AlquimiaState& state,
-                      AlquimiaAuxiliaryData& aux_data,
-                      const Tag& water_tag = Tags::DEFAULT);
+  Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine() { return chem_engine_; }
 
- private:
   // Copy cell state to the given Alquimia containers taking
   // the aqueous components from the given multivector.
   void CopyToAlquimia(int cell_id,
-                      Teuchos::RCP<const Epetra_MultiVector> aqueous_components,
+                      const Epetra_MultiVector& aqueous_components,
                       AlquimiaProperties& mat_props,
                       AlquimiaState& state,
                       AlquimiaAuxiliaryData& aux_data,
@@ -115,10 +109,12 @@ class Alquimia_PK : public Chemistry_PK {
                         const AlquimiaState& state,
                         const AlquimiaAuxiliaryData& aux_data,
                         const AlquimiaAuxiliaryOutputData& aux_output,
-                        Teuchos::RCP<Epetra_MultiVector> aqueous_components);
+                        Epetra_MultiVector& aqueous_components);
 
-  int InitializeSingleCell(int cell, const std::string& condition);
-  int AdvanceSingleCell(double dt, Teuchos::RCP<Epetra_MultiVector>& aquesous_components, int cell);
+ private:
+
+  int InitializeSingleCell(Epetra_MultiVector& aqueous_components, int cell, const std::string& condition);
+  int AdvanceSingleCell(double dt, Epetra_MultiVector& aqueous_components, int cell);
 
   void ParseChemicalConditionRegions(const Teuchos::ParameterList& param_list,
                                      std::map<std::string, std::string>& conditions);
@@ -129,7 +125,7 @@ class Alquimia_PK : public Chemistry_PK {
                                  const AlquimiaState& state,
                                  const AlquimiaAuxiliaryData& aux_data,
                                  const AlquimiaAuxiliaryOutputData& aux_output,
-                                 Teuchos::RCP<Epetra_MultiVector> aquesous_components);
+                                 Epetra_MultiVector& aqueous_components);
 
   void ComputeNextTimeStep();
 
@@ -143,6 +139,7 @@ class Alquimia_PK : public Chemistry_PK {
   bool chem_initialized_;
 
   // Alquimia data structures for interface with Amanzi.
+  Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;
   AlquimiaState alq_state_;
   AlquimiaProperties alq_mat_props_;
   AlquimiaAuxiliaryData alq_aux_data_;

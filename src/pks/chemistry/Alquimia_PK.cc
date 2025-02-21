@@ -64,9 +64,6 @@ Alquimia_PK::parseParameterList()
   Chemistry_PK::parseParameterList();
 
   // obtain key of fields
-  tcc_key_ = Keys::readKey(
-    *plist_, domain_, "total component concentration", "total_component_concentration");
-
   poro_key_ = Keys::readKey(*plist_, domain_, "porosity", "porosity");
   temperature_key_ = Keys::readKey(*plist_, domain_, "temperature", "temperature");
   saturation_key_ = Keys::readKey(*plist_, domain_, "saturation liquid", "saturation_liquid");
@@ -270,6 +267,8 @@ Alquimia_PK::Initialize()
   S_->GetEvaluator(fluid_den_key_, Tags::DEFAULT).Update(*S_, name_);
   S_->GetEvaluator(saturation_key_, Tags::DEFAULT).Update(*S_, name_);
 
+  Epetra_MultiVector& aqueous_components = *S_->GetW<CompositeVector>(key_, tag_next_, passwd_).ViewComponent("cell");
+
   if (fabs(initial_conditions_time_ - S_->get_time()) < 1e-8 * (1.0 + fabs(S_->get_time()))) {
     for (auto it = chem_initial_conditions_.begin(); it != chem_initial_conditions_.end(); ++it) {
       std::string region = it->first;
@@ -290,7 +289,7 @@ Alquimia_PK::Initialize()
       // Loop over the cells.
       for (int i = 0; i < num_cells; ++i) {
         int cell = cell_indices[i];
-        ierr = InitializeSingleCell(cell, condition);
+        ierr = InitializeSingleCell(aqueous_components, cell, condition);
       }
     }
   }
@@ -334,18 +333,19 @@ Alquimia_PK::Initialize()
 * It returns an error code that indicates success (0) or failure (1).
 ******************************************************************* */
 int
-Alquimia_PK::InitializeSingleCell(int cell, const std::string& condition)
+Alquimia_PK::InitializeSingleCell(Epetra_MultiVector& aqueous_components, int cell,
+        const std::string& condition)
 {
   // NOTE: this should get set not to be hard-coded to Tags::DEFAULT, but
   // should use the same tag as transport.  See #673
   CopyToAlquimia(
-    cell, aqueous_components_, alq_mat_props_, alq_state_, alq_aux_data_, Tags::DEFAULT);
+    cell, aqueous_components, alq_mat_props_, alq_state_, alq_aux_data_, Tags::DEFAULT);
 
   chem_engine_->EnforceCondition(
     condition, current_time_, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
 
   CopyAlquimiaStateToAmanzi(
-    cell, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_, aqueous_components_);
+    cell, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_, aqueous_components);
 
 
   // ETC: hacking to get consistent solution -- if there is no water
@@ -355,8 +355,8 @@ Alquimia_PK::InitializeSingleCell(int cell, const std::string& condition)
   // this now.  Previously this happened due to a bug in ATS's reactive
   // transport coupler -- happy accidents.
   if (alq_mat_props_.saturation <= saturation_tolerance_)
-    for (int i = 0; i != aqueous_components_->NumVectors(); ++i)
-      (*aqueous_components_)[i][cell] = 0.;
+    for (int i = 0; i != aqueous_components.NumVectors(); ++i)
+      aqueous_components[i][cell] = 0.;
   return 0;
 }
 
@@ -548,21 +548,7 @@ Alquimia_PK::XMLParameters()
 ******************************************************************* */
 void
 Alquimia_PK::CopyToAlquimia(int cell,
-                            AlquimiaProperties& mat_props,
-                            AlquimiaState& state,
-                            AlquimiaAuxiliaryData& aux_data,
-                            const Tag& water_tag)
-{
-  CopyToAlquimia(cell, aqueous_components_, mat_props, state, aux_data, water_tag);
-}
-
-
-/* *******************************************************************
-*
-******************************************************************* */
-void
-Alquimia_PK::CopyToAlquimia(int cell,
-                            Teuchos::RCP<const Epetra_MultiVector> aqueous_components,
+                            const Epetra_MultiVector& aqueous_components,
                             AlquimiaProperties& mat_props,
                             AlquimiaState& state,
                             AlquimiaAuxiliaryData& aux_data,
@@ -585,7 +571,7 @@ Alquimia_PK::CopyToAlquimia(int cell,
   }
 
   for (int i = 0; i < number_aqueous_components_; i++) {
-    state.total_mobile.data[i] = (*aqueous_components)[i][cell];
+    state.total_mobile.data[i] = aqueous_components[i][cell];
 
     if (using_sorption_) {
       const auto& sorbed =
@@ -692,7 +678,7 @@ Alquimia_PK::CopyAlquimiaStateToAmanzi(const int cell,
                                        const AlquimiaState& state,
                                        const AlquimiaAuxiliaryData& aux_data,
                                        const AlquimiaAuxiliaryOutputData& aux_output,
-                                       Teuchos::RCP<Epetra_MultiVector> aqueous_components)
+                                       Epetra_MultiVector& aqueous_components)
 {
   CopyFromAlquimia(cell, mat_props, state, aux_data, aux_output, aqueous_components);
 
@@ -731,7 +717,7 @@ Alquimia_PK::CopyFromAlquimia(const int cell,
                               const AlquimiaState& state,
                               const AlquimiaAuxiliaryData& aux_data,
                               const AlquimiaAuxiliaryOutputData& aux_output,
-                              Teuchos::RCP<Epetra_MultiVector> aqueous_components)
+                              Epetra_MultiVector& aqueous_components)
 {
   // If the chemistry has modified the porosity and/or density, it needs to
   // be updated here.
@@ -739,7 +725,7 @@ Alquimia_PK::CopyFromAlquimia(const int cell,
   // (this->porosity())[cell] = state.porosity;
 
   for (int i = 0; i < number_aqueous_components_; ++i) {
-    (*aqueous_components)[i][cell] = state.total_mobile.data[i];
+    aqueous_components[i][cell] = state.total_mobile.data[i];
 
     if (using_sorption_) {
       auto& sorbed =
@@ -832,7 +818,7 @@ Alquimia_PK::CopyFromAlquimia(const int cell,
 ******************************************************************* */
 int
 Alquimia_PK::AdvanceSingleCell(double dt,
-                               Teuchos::RCP<Epetra_MultiVector>& aqueous_components,
+                               Epetra_MultiVector& aqueous_components,
                                int cell)
 {
   // Copy the state and property information from Amanzi's state within
@@ -911,10 +897,12 @@ Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   S_->GetEvaluator(fluid_den_key_, Tags::DEFAULT).Update(*S_, name_);
   S_->GetEvaluator(saturation_key_, Tags::DEFAULT).Update(*S_, name_);
 
+  Epetra_MultiVector& aqueous_components = *S_->GetW<CompositeVector>(key_, tag_next_, passwd_).ViewComponent("cell", false);
+
   // Now loop through all the cells and advance the chemistry.
   int convergence_failure = 0;
   for (int cell = 0; cell < num_cells; ++cell) {
-    int num_itrs = AdvanceSingleCell(dt, aqueous_components_, cell);
+    int num_itrs = AdvanceSingleCell(dt, aqueous_components, cell);
     if (num_itrs >= 0) {
       if (max_itrs < num_itrs) {
         max_itrs = num_itrs;

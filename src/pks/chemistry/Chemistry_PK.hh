@@ -107,20 +107,12 @@ class Chemistry_PK : public PK_Physical {
   virtual Teuchos::RCP<Epetra_MultiVector> extra_chemistry_output_data() = 0;
 
   // Basic capabilities
-  // -- get/set auxiliary tcc vector that now contains only aqueous components.
-  Teuchos::RCP<Epetra_MultiVector> aqueous_components() { return aqueous_components_; }
-  void set_aqueous_components(Teuchos::RCP<Epetra_MultiVector> tcc) { aqueous_components_ = tcc; }
-
   // -- process various objects before/during setup phase
   void InitializeMinerals(Teuchos::RCP<Teuchos::ParameterList> plist);
   void InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> plist,
                                Teuchos::ParameterList& ic_list);
 
   virtual void CopyFieldstoNewState(const Teuchos::RCP<State>& S_next);
-  // -- access
-#ifdef ALQUIMIA_ENABLED
-  Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine() { return chem_engine_; }
-#endif
 
   // -- output of error messages.
   void ErrorAnalysis(int ierr, std::string& internal_msg);
@@ -131,7 +123,6 @@ class Chemistry_PK : public PK_Physical {
 
   int number_aqueous_components_;
   std::vector<std::string> comp_names_;
-  Teuchos::RCP<Epetra_MultiVector> aqueous_components_;
 
   int number_minerals_;
   std::vector<std::string> mineral_names_;
@@ -147,7 +138,6 @@ class Chemistry_PK : public PK_Physical {
   double saturation_tolerance_;
 
   // names of state fields
-  Key tcc_key_;
   Key poro_key_, saturation_key_, temperature_key_;
   Key fluid_den_key_, molar_fluid_den_key_;
   Key min_vol_frac_key_, min_ssa_key_;
@@ -161,10 +151,6 @@ class Chemistry_PK : public PK_Physical {
   Key alquimia_aux_data_key_;
   Key mineral_rate_constant_key_;
   Key first_order_decay_constant_key_;
-
-#ifdef ALQUIMIA_ENABLED
-  Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;
-#endif
 
   // time controls
   int dt_cut_threshold_, dt_increase_threshold_;

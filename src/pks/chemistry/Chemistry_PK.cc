@@ -106,8 +106,8 @@ Chemistry_PK::Setup()
 
   // require transport fields
   std::vector<std::string>::const_iterator it;
-  if (!S_->HasRecord(tcc_key_)) {
-    S_->Require<CV_t, CVS_t>(tcc_key_, tag_next_, passwd_, comp_names_)
+  if (!S_->HasRecord(key_)) {
+    S_->Require<CV_t, CVS_t>(key_, tag_next_, passwd_, comp_names_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_components_);
@@ -227,11 +227,9 @@ Chemistry_PK::Initialize()
 {
   // Aqueous species
   if (number_aqueous_components_ > 0) {
-    if (!S_->GetRecordW(tcc_key_, passwd_).initialized()) {
-      InitializeCVField(S_, *vo_, tcc_key_, tag_next_, passwd_, 0.0);
+    if (!S_->GetRecordW(key_, passwd_).initialized()) {
+      InitializeCVField(S_, *vo_, key_, tag_next_, passwd_, 0.0);
     }
-    set_aqueous_components(
-      S_->GetPtrW<CompositeVector>(tcc_key_, tag_next_, passwd_)->ViewComponent("cell", false));
 
     InitializeCVField(S_, *vo_, primary_activity_coeff_key_, tag_next_, passwd_, 1.0);
     InitializeCVField(S_, *vo_, free_ion_species_key_, tag_next_, passwd_, 1.0e-9);

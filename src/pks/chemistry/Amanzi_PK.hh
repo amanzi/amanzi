@@ -104,7 +104,7 @@ class Amanzi_PK : public Chemistry_PK {
   void set_chemistry_output_names(std::vector<std::string>* names);
 
   // functions used in Rransport PK
-  void CopyCellStateToBeakerState(int c, Teuchos::RCP<Epetra_MultiVector> aqueous_components);
+  void CopyCellStateToBeakerState(int c, Epetra_MultiVector& aqueous_components);
 
   // access
   std::shared_ptr<Beaker> get_engine() { return chem_; }
@@ -119,7 +119,7 @@ class Amanzi_PK : public Chemistry_PK {
 
   void InitializeBeakerFields_();
 
-  void CopyBeakerStructuresToCellState(int c, Teuchos::RCP<Epetra_MultiVector> aqueous_components);
+  void CopyBeakerStructuresToCellState(int c, Epetra_MultiVector& aqueous_components);
 
   void EstimateNextTimeStep_(double t_old, double t_new);
 

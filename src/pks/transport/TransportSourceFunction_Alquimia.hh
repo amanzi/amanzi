@@ -38,6 +38,12 @@ class TransportSourceFunction_Alquimia : public TransportDomainFunction {
                                    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                    Teuchos::RCP<AmanziChemistry::Alquimia_PK> alquimia_pk,
                                    Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine);
+
+  TransportSourceFunction_Alquimia(const Teuchos::ParameterList& plist,
+          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+          Teuchos::RCP<AmanziChemistry::Alquimia_PK> alquimia_pk)
+    : TransportSourceFunction_Alquimia(plist, mesh, alquimia_pk, alquimia_pk->chem_engine()) {}
+
   ~TransportSourceFunction_Alquimia();
 
   virtual void Compute(double t_old, double t_new) override;
