@@ -67,29 +67,16 @@ class Op {
   virtual ~Op() = default;
 
   // deep copy of data (diag and matrices)
-  virtual Teuchos::RCP<Op> Clone() const;
+  virtual Teuchos::RCP<Op> DeepClone() const;
 
   // Clean the operator without destroying memory
   void Init();
 
   // Restore pristine value of the matrices, i.e. before BCs.
-  virtual int CopyShadowToMaster()
-  {
-    for (int i = 0; i != matrices.size(); ++i) {
-      if (matrices_shadow[i].NumRows() != 0) { matrices[i] = matrices_shadow[i]; }
-    }
-    *diag = *diag_shadow;
-    return 0;
-  }
+  virtual int CopyShadowToMaster();
 
   // For backward compatibility... must go away
-  virtual void RestoreCheckPoint()
-  {
-    for (int i = 0; i != matrices.size(); ++i) {
-      if (matrices_shadow[i].NumRows() != 0) { matrices[i] = matrices_shadow[i]; }
-    }
-    *diag = *diag_shadow;
-  }
+  virtual void RestoreCheckPoint();
 
   // Matching rules for schemas.
   virtual bool Matches(int match_schema, int matching_rule)
@@ -155,6 +142,30 @@ class Op {
 
 
 /* ******************************************************************
+* Optimization for linear problems
+****************************************************************** */
+inline int
+Op::CopyShadowToMaster()
+{
+  for (int i = 0; i != matrices.size(); ++i) {
+    if (matrices_shadow[i].NumRows() != 0) { matrices[i] = matrices_shadow[i]; }
+  }
+  *diag = *diag_shadow;
+  return 0;
+}
+
+
+inline void
+Op::RestoreCheckPoint()
+{
+  for (int i = 0; i != matrices.size(); ++i) {
+    if (matrices_shadow[i].NumRows() != 0) { matrices[i] = matrices_shadow[i]; }
+  }
+  *diag = *diag_shadow;
+}
+
+
+/* ******************************************************************
 * Default implementation
 ****************************************************************** */
 inline void
@@ -203,9 +214,9 @@ Op::Init()
 * Copy constructor.
 ****************************************************************** */
 inline Teuchos::RCP<Op>
-Op::Clone() const
+Op::DeepClone() const
 {
-  Errors::Message msg("Clone of derived Op \"" + schema_string + "\" is missing");
+  Errors::Message msg("Deep clonig of derived Op \"" + schema_string + "\" is missing");
   Exceptions::amanzi_throw(msg);
   return Teuchos::null;
 }

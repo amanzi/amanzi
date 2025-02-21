@@ -122,7 +122,7 @@ TEST(OPERATOR_CLONE)
 
   // TEST 4
   // clone both ops and add
-  global_op->OpPushBack(opt->Clone());
-  global_op->OpPushBack(ops->Clone());
+  global_op->OpPushBack(opt->DeepClone());
+  global_op->OpPushBack(ops->DeepClone());
   Print(*global_op);
 }
