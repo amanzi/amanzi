@@ -17,7 +17,7 @@
 #include "DenseMatrix.hh"
 #include "Op_Cell_FaceCell.hh"
 #include "Op_Cell_Face.hh"
-#include "Op_Diagonal.hh"
+#include "Op_Face_Face.hh"
 #include "Op_SurfaceCell_SurfaceCell.hh"
 #include "Op_SurfaceFace_SurfaceCell.hh"
 
@@ -109,6 +109,21 @@ Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_Face& op,
 
       for (int n = 0; n != nfaces; ++n) { Yf[0][faces[n]] += av(n); }
     }
+  }
+  return 0;
+}
+
+
+int
+Operator_FaceCell::ApplyMatrixFreeOp(const Op_Face_Face& op,
+                                     const CompositeVector& X,
+                                     CompositeVector& Y) const
+{
+  const Epetra_MultiVector& Xf = *X.ViewComponent("face");
+  Epetra_MultiVector& Yf = *Y.ViewComponent("face");
+
+  for (int k = 0; k != Xf.NumVectors(); ++k) {
+    for (int f = 0; f != nfaces_owned; ++f) { Yf[k][f] += Xf[k][f] * (*op.diag)[k][f]; }
   }
   return 0;
 }
@@ -261,6 +276,27 @@ Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_Face& op,
       }
     }
     ierr |= graph.InsertMyIndices(k, lid_r.data(), k, lid_c.data());
+  }
+  AMANZI_ASSERT(!ierr);
+}
+
+
+void
+Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Face_Face& op,
+                                            const SuperMap& map,
+                                            GraphFE& graph,
+                                            int my_block_row,
+                                            int my_block_col) const
+{
+  const std::vector<int>& face_row_inds = map.GhostIndices(my_block_row, "face", 0);
+  const std::vector<int>& face_col_inds = map.GhostIndices(my_block_col, "face", 0);
+
+  int ierr(0);
+  for (int f = 0; f != nfaces_owned; ++f) {
+    int row = face_row_inds[f];
+    int col = face_col_inds[f];
+
+    ierr |= graph.InsertMyIndices(row, 1, &col);
   }
   AMANZI_ASSERT(!ierr);
 }
@@ -424,6 +460,29 @@ Operator_FaceCell::AssembleMatrixOp(const Op_Cell_Face& op,
     }
 
     ierr |= mat.SumIntoMyValues(lid_r.data(), lid_c.data(), op.matrices[c]);
+  }
+  AMANZI_ASSERT(!ierr);
+}
+
+
+void
+Operator_FaceCell::AssembleMatrixOp(const Op_Face_Face& op,
+                                    const SuperMap& map,
+                                    MatrixFE& mat,
+                                    int my_block_row,
+                                    int my_block_col) const
+{
+  AMANZI_ASSERT(op.diag->NumVectors() == 1);
+
+  const std::vector<int>& face_row_inds = map.GhostIndices(my_block_row, "face", 0);
+  const std::vector<int>& face_col_inds = map.GhostIndices(my_block_col, "face", 0);
+
+  int ierr(0);
+  for (int f = 0; f != nfaces_owned; ++f) {
+    int row = face_row_inds[f];
+    int col = face_col_inds[f];
+
+    ierr |= mat.SumIntoMyValues(row, 1, &(*op.diag)[0][f], &col);
   }
   AMANZI_ASSERT(!ierr);
 }
