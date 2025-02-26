@@ -10,7 +10,7 @@
 /*
   Energy
 
-  Internal energy model for water_vapor, relative to water @237.15K
+  Internal energy model for water_vapor, relative to water at 237.15K
   UNITS: [J/mol]
 */
 
@@ -26,16 +26,12 @@ class IEM_WaterVapor {
  public:
   IEM_WaterVapor(Teuchos::ParameterList& plist);
 
-  double InternalEnergy(double temp, double mol_frac_gas);
-  double DInternalEnergyDT(double temp, double mol_frac_gas);
-  double DInternalEnergyDomega(double temp, double mol_frac_gas);
+  double InternalEnergy(double T, double mol_frac_gas);
+  double DInternalEnergyDT(double T, double mol_frac_gas);
+  double DInternalEnergyDomega(double T, double mol_frac_gas);
 
  private:
-  void InitializeFromPlist_();
-
-  Teuchos::ParameterList plist_;
-
-  double Cv_air_;            // units: J/(mol-K)
+  double Cv_air_;            // units: J/mol/K
   double heat_vaporization_; // units: J/mol
 };
 

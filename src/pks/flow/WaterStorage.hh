@@ -19,7 +19,7 @@
 
     WS = a * phi * (s_liquid * n_liquid + X_gas * s_gas * n_gas)
 
-  where X_gas is the molar fraction of water in the gas phase,
+  where X_gas is the mole fraction of water vapor in the gas phase,
   a is the optional fracture aperture (default is a = 1), and
   s_liquid + s_gas = 1.
 */

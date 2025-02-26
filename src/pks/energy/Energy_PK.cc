@@ -99,7 +99,7 @@ Energy_PK::Setup()
   mass_density_liquid_key_ = Keys::getKey(domain_, "mass_density_liquid");
 
   mol_density_gas_key_ = Keys::getKey(domain_, "molar_density_gas");
-  x_gas_key_ = Keys::getKey(domain_, "molar_fraction_gas");
+  x_gas_key_ = Keys::getKey(domain_, "mole_fraction_gas");
 
   mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
   sat_liquid_key_ = Keys::getKey(domain_, "saturation_liquid");

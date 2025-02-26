@@ -10,7 +10,7 @@
 /*
   EOS
 
-  Determining the molar fraction of a gas component within a gas mixture.
+  Determining the mole fraction of a gas component within a gas mixture.
 */
 
 #include "MolarFractionGasEvaluator.hh"

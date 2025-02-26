@@ -53,7 +53,7 @@ WaterStorage::Init_()
 
   if (water_vapor_) {
     dependencies_.insert(std::make_pair(Keys::getKey(domain, "molar_density_gas"), Tags::DEFAULT));
-    dependencies_.insert(std::make_pair(Keys::getKey(domain, "molar_fraction_gas"), Tags::DEFAULT));
+    dependencies_.insert(std::make_pair(Keys::getKey(domain, "mole_fraction_gas"), Tags::DEFAULT));
   }
 
   if (plist_.isParameter("aperture key")) {
@@ -95,7 +95,7 @@ WaterStorage::Evaluate_(const State& S, const std::vector<CompositeVector*>& res
 
   if (water_vapor_) {
     const auto& n_g = *S.Get<CompositeVector>("molar_density_gas").ViewComponent("cell");
-    const auto& x_g = *S.Get<CompositeVector>("molar_fraction_gas").ViewComponent("cell");
+    const auto& x_g = *S.Get<CompositeVector>("mole_fraction_gas").ViewComponent("cell");
 
     for (int c = 0; c != ncells; ++c) {
       result_v[0][c] =
@@ -130,7 +130,7 @@ WaterStorage::EvaluatePartialDerivative_(const State& S,
 
   if (water_vapor_) {
     const auto& n_g = *S.Get<CompositeVector>("molar_density_gas").ViewComponent("cell");
-    const auto& x_g = *S.Get<CompositeVector>("molar_fraction_gas").ViewComponent("cell");
+    const auto& x_g = *S.Get<CompositeVector>("mole_fraction_gas").ViewComponent("cell");
 
     if (wrt_key == porosity_key_) {
       for (int c = 0; c != ncells; ++c) {
@@ -144,7 +144,7 @@ WaterStorage::EvaluatePartialDerivative_(const State& S,
       for (int c = 0; c != ncells; ++c) {
         result_v[0][c] = phi[0][c] * (1.0 - s_l[0][c]) * x_g[0][c];
       }
-    } else if (wrt_key == "molar_fraction_gas") {
+    } else if (wrt_key == "mole_fraction_gas") {
       for (int c = 0; c != ncells; ++c) {
         result_v[0][c] = phi[0][c] * (1.0 - s_l[0][c]) * n_g[0][c];
       }

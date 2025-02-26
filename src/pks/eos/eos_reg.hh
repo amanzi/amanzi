@@ -45,7 +45,7 @@ Utils::RegisteredFactory<Evaluator, EOSDensityEvaluator> EOSDensityEvaluator::re
 Utils::RegisteredFactory<Evaluator, IsobaricEOSEvaluator>
   IsobaricEOSEvaluator::reg_("isobaric eos");
 Utils::RegisteredFactory<Evaluator, MolarFractionGasEvaluator>
-  MolarFractionGasEvaluator::reg_("molar fraction gas");
+  MolarFractionGasEvaluator::reg_("mole fraction gas");
 Utils::RegisteredFactory<Evaluator, EOSViscosityEvaluator> EOSViscosityEvaluator::reg_("viscosity");
 
 Utils::RegisteredFactory<EOS_Density, IdealGas_Density> IdealGas_Density::reg_("ideal gas");

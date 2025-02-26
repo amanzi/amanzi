@@ -578,7 +578,8 @@
         <Parameter name="pressure key" type="string" value="pressure_liquid"/>
       </ParameterList>
       <ParameterList name="internal_energy_gas">
-        <Parameter name="pressure key" type="string" value="pressure_gas"/>
+        <Parameter name="evaluator type" type="string" value="iem water vapor"/>
+        <Parameter name="internal energy key" type="string" value="internal_energy_gas"/>
       </ParameterList>
       <ParameterList name="internal_energy_rock">
         <Parameter name="pressure key" type="string" value="pressure_liquid"/>

@@ -191,7 +191,7 @@ Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& kvapo
   AMANZI_ASSERT(domain_ == "domain");
   Key temperature_key = Keys::getKey(domain_, "temperature");
   Key mol_density_gas_key = Keys::getKey(domain_, "molar_density_gas");
-  Key x_gas_key = Keys::getKey(domain_, "molar_fraction_gas");
+  Key x_gas_key = Keys::getKey(domain_, "mole_fraction_gas");
 
   S_->GetEvaluator(mol_density_gas_key).Update(*S_, passwd_);
   const auto& n_g = *S_->Get<CompositeVector>(mol_density_gas_key).ViewComponent("cell");

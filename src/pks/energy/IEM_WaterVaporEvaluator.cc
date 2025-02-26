@@ -66,7 +66,7 @@ IEM_WaterVaporEvaluator::InitializeFromPlist_()
 
   // -- molar fraction of water vapor in the gaseous phase
   mol_frac_key_ =
-    plist_.get<std::string>("vapor molar fraction key", Keys::getKey(domain, "molar_fraction_gas"));
+    plist_.get<std::string>("vapor molar fraction key", Keys::getKey(domain, "mole_fraction_gas"));
   dependencies_.insert(std::make_pair(mol_frac_key_, Tags::DEFAULT));
 }
 

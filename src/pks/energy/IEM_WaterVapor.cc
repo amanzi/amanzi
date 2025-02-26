@@ -10,7 +10,7 @@
 /*
   Energy
 
-  Internal energy model for water vapor, relative to water @237.15K
+  Internal energy model for water vapor, relative to water at 237.15K
   UNITS: [J/mol]
 */
 
@@ -19,41 +19,32 @@
 namespace Amanzi {
 namespace Energy {
 
-IEM_WaterVapor::IEM_WaterVapor(Teuchos::ParameterList& plist) : plist_(plist)
+IEM_WaterVapor::IEM_WaterVapor(Teuchos::ParameterList& plist)
 {
-  InitializeFromPlist_();
+  Cv_air_ = plist.get<double>("molar heat capacity of air", 13.0);
+  heat_vaporization_ = plist.get<double>("heat of vaporization of water", 4.065e4);
 };
 
 
 double
-IEM_WaterVapor::InternalEnergy(double temp, double mol_frac_gas)
+IEM_WaterVapor::InternalEnergy(double T, double mol_frac_gas)
 {
-  return (1.0 + 0.622 * mol_frac_gas) * Cv_air_ * (temp - 273.15) +
-         mol_frac_gas * heat_vaporization_;
+  return (1.0 + 0.622 * mol_frac_gas) * Cv_air_ * (T - 273.15) + mol_frac_gas * heat_vaporization_;
 };
 
 
 double
-IEM_WaterVapor::DInternalEnergyDT(double temp, double mol_frac_gas)
+IEM_WaterVapor::DInternalEnergyDT(double T, double mol_frac_gas)
 {
-  // evaluated at constant mol_frac gas for now?
   return (1.0 + 0.622 * mol_frac_gas) * Cv_air_;
 };
 
 
 double
-IEM_WaterVapor::DInternalEnergyDomega(double temp, double mol_frac_gas)
+IEM_WaterVapor::DInternalEnergyDomega(double T, double mol_frac_gas)
 {
   // evaluated at constant mol_frac gas for now?
-  return heat_vaporization_ + 0.622 * Cv_air_ * (temp - 273.15);
-};
-
-
-void
-IEM_WaterVapor::InitializeFromPlist_()
-{
-  Cv_air_ = plist_.get<double>("molar heat capacity of air", 13.0);
-  heat_vaporization_ = plist_.get<double>("heat of vaporization of water [J/mol]", 4.065e4);
+  return heat_vaporization_ + 0.622 * Cv_air_ * (T - 273.15);
 };
 
 } // namespace Energy
