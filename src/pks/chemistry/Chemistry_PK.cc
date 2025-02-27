@@ -13,46 +13,60 @@
   Base class for chemical process kernels.
 */
 
-#include "message.hh"
-
 // Chemistry
+#include "message.hh"
+#include "pk_helpers.hh"
+#include "TimestepControllerFactory.hh"
 #include "Chemistry_PK.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
 
-using CV_t = CompositeVector;
-using CVS_t = CompositeVectorSpace;
-
 /* ******************************************************************
 * Default constructor that initializes all pointers to NULL
 ****************************************************************** */
 Chemistry_PK::Chemistry_PK()
-  : number_minerals_(0),
+  : number_aqueous_components_(0),
+    number_gaseous_components_(0),
+    number_mineral_components_(0),
     number_aqueous_kinetics_(0),
     number_sorption_sites_(0),
     using_sorption_(false),
     using_sorption_isotherms_(false),
     number_ion_exchange_sites_(0),
-    dt_(9.9e+9),
-    dt_max_(9.9e9){};
+    dt_next_(-1.) {};
 
 
 Chemistry_PK::Chemistry_PK(Teuchos::ParameterList& pk_tree,
                            const Teuchos::RCP<Teuchos::ParameterList>& glist,
                            const Teuchos::RCP<State>& S,
                            const Teuchos::RCP<TreeVector>& soln)
-  : PK(pk_tree, glist, S, soln),
-    PK_Physical(pk_tree, glist, S, soln),
-    glist_(glist),
-    number_minerals_(0),
+  : PK_Physical(pk_tree, glist, S, soln),
+    PK(pk_tree, glist, S, soln),
+    number_aqueous_components_(0),
+    number_gaseous_components_(0),
+    number_mineral_components_(0),
     number_aqueous_kinetics_(0),
     number_sorption_sites_(0),
     using_sorption_(false),
     using_sorption_isotherms_(false),
     number_ion_exchange_sites_(0),
-    dt_(9.9e+9),
-    dt_max_(9.9e9){};
+    dt_next_(-1.)
+{
+  // note, we pass in null to the factory here to make sure there is no error
+  // control used, which doesn't make sense for this application.
+  timestep_controller_ = createTimestepController<TreeVector>(name_,
+          plist_->sublist("timestep controller"), S_, Teuchos::null, Teuchos::null);
+};
+
+
+double
+Chemistry_PK::get_dt()
+{
+  if (dt_next_ < 0.) dt_next_ = timestep_controller_->getInitialTimestep();
+  return dt_next_;
+}
+
 
 
 /* ******************************************************************
@@ -61,8 +75,59 @@ Chemistry_PK::Chemistry_PK(Teuchos::ParameterList& pk_tree,
 void
 Chemistry_PK::parseParameterList()
 {
+  PK_Physical::parseParameterList();
+
+  // get all the keys used here
+  // -- external fields
+  poro_key_ = Keys::readKey(*plist_, domain_, "porosity", "porosity");
+  temperature_key_ = Keys::readKey(*plist_, domain_, "temperature", "temperature");
+  saturation_key_ = Keys::readKey(*plist_, domain_, "saturation liquid", "saturation_liquid");
+  fluid_den_key_ = Keys::readKey(*plist_, domain_, "mass density liquid", "mass_density_liquid");
+
+  // -- my fields
+  mineral_vol_frac_key_ =
+    Keys::readKey(*plist_, domain_, "mineral volume fractions", "mineral_volume_fractions");
+  mineral_ssa_key_ = Keys::readKey(
+    *plist_, domain_, "mineral specific surface area", "mineral_specific_surface_area");
+  mineral_rate_constant_key_ =
+    Keys::readKey(*plist_, domain_, "mineral rate constant", "mineral_rate_constant");
+
+  total_sorbed_key_ = Keys::readKey(*plist_, domain_, "total sorbed", "total_sorbed");
+
+  isotherm_kd_key_ = Keys::readKey(*plist_, domain_, "isotherm_kd", "isotherm_kd");
+  isotherm_freundlich_n_key_ =
+    Keys::readKey(*plist_, domain_, "isotherm freundlich_n", "isotherm_freundlich_n");
+  isotherm_langmuir_b_key_ =
+    Keys::readKey(*plist_, domain_, "isotherm langmuir_b", "isotherm_langmuir_b");
+
+  free_ion_species_key_ = Keys::readKey(*plist_, domain_, "free ion species", "free_ion_species");
+  primary_activity_coeff_key_ =
+    Keys::readKey(*plist_, domain_, "primary activity coeff", "primary_activity_coeff");
+
+  ion_exchange_sites_key_ =
+    Keys::readKey(*plist_, domain_, "ion exchange sites", "ion_exchange_sites");
+  ion_exchange_ref_cation_conc_key_ =
+    Keys::readKey(*plist_, domain_, "ion exchange ref cation conc", "ion_exchange_ref_cation_conc");
+  secondary_activity_coeff_key_ =
+    Keys::readKey(*plist_, domain_, "secondary activity coeff", "secondary_activity_coeff");
+
+  alquimia_aux_data_key_ =
+    Keys::readKey(*plist_, domain_, "alquimia aux data", "alquimia_aux_data");
+
+  ion_exchange_ref_cation_conc_key_ =
+    Keys::readKey(*plist_, domain_, "ion exchange ref cation conc", "ion_exchange_ref_cation_conc");
+  secondary_activity_coeff_key_ =
+    Keys::readKey(*plist_, domain_, "secondary activity coeff", "secondary_activity_coeff");
+  first_order_decay_constant_key_ =
+    Keys::readKey(*plist_, domain_, "first order decay constant", "first_order_decay_constant");
+
+  // other parameters
   passwd_ = plist_->get<std::string>("primary variable password", "state");
   saturation_tolerance_ = plist_->get<double>("saturation tolerance", 1e-14);
+
+  // physical models
+  parseMinerals_(*plist_, *plist_);
+  parseSorptionSites_(*plist_, *plist_);
 }
 
 
@@ -72,146 +137,87 @@ Chemistry_PK::parseParameterList()
 void
 Chemistry_PK::Setup()
 {
-  bool amanzi_physics = plist_->isSublist("physical models and assumptions");
-
   // require flow fields
-  S_->Require<CV_t, CVS_t>(poro_key_, Tags::DEFAULT, poro_key_)
-    .SetMesh(mesh_)
-    ->SetGhosted(false)
-    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-  S_->RequireEvaluator(poro_key_, Tags::DEFAULT);
-
-  if (!S_->HasRecord(saturation_key_, Tags::DEFAULT)) {
-    S_->Require<CV_t, CVS_t>(saturation_key_, Tags::DEFAULT, saturation_key_)
-      .SetMesh(mesh_)
-      ->SetGhosted(false)
-      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-    S_->RequireEvaluator(saturation_key_, Tags::DEFAULT);
-  }
-  // REMOVE after #646 is fixed
-  // meanwhile we check for the physics module via presence of a particular sublist
-  if (!S_->HasRecord(saturation_key_, Tags::CURRENT) && !amanzi_physics) {
-    S_->Require<CV_t, CVS_t>(saturation_key_, Tags::CURRENT, saturation_key_)
-      .SetMesh(mesh_)
-      ->SetGhosted(false)
-      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-    S_->RequireEvaluator(saturation_key_, Tags::CURRENT);
+  {
+    auto keys = std::vector<Key>{ poro_key_, saturation_key_, fluid_den_key_ };
+    for (const auto& key : keys) {
+      requireAtCurrent(key, tag_current_, *S_)
+        .SetMesh(mesh_)
+        ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+    }
   }
 
-  S_->Require<CV_t, CVS_t>(fluid_den_key_, Tags::DEFAULT, fluid_den_key_)
-    .SetMesh(mesh_)
-    ->SetGhosted(false)
-    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-  S_->RequireEvaluator(fluid_den_key_, Tags::DEFAULT);
+  // require my keys
+  if (number_aqueous_components_ > 0) {
+    auto keys = std::vector<Key>{ key_, free_ion_species_key_ };
+    for (const auto& key : keys) {
+      requireAtNext(key, tag_next_, *S_, true, passwd_)
+        .SetMesh(mesh_)
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_components_);
+      S_->GetRecordSetW(key).set_subfieldnames(aqueous_comp_names_);
+    }
 
-  // require transport fields
-  std::vector<std::string>::const_iterator it;
-  if (!S_->HasRecord(tcc_key_)) {
-    S_->Require<CV_t, CVS_t>(tcc_key_, tag_next_, passwd_, comp_names_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_components_);
+    // also make sure we can recover previous value of tcc
+    requireAtCurrent(key_, tag_current_, *S_, passwd_);
   }
 
   // require minerals
-  if (number_minerals_ > 0) {
-    S_->Require<CV_t, CVS_t>(min_vol_frac_key_, tag_next_, passwd_, mineral_names_)
-      .SetMesh(mesh_)
-      ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_minerals_);
-
-    S_->Require<CV_t, CVS_t>(min_ssa_key_, tag_next_, passwd_, mineral_names_)
-      .SetMesh(mesh_)
-      ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_minerals_);
-
-    S_->Require<CV_t, CVS_t>(mineral_rate_constant_key_, tag_next_, passwd_, mineral_names_)
-      .SetMesh(mesh_)
-      ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_minerals_);
+  if (number_mineral_components_ > 0) {
+    auto keys = std::vector<Key>{mineral_vol_frac_key_, mineral_ssa_key_, mineral_rate_constant_key_};
+    for (const auto& key : keys) {
+      requireAtNext(key, tag_next_, *S_, true, passwd_)
+        .SetMesh(mesh_)
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_mineral_components_);
+      S_->GetRecordSetW(key).set_subfieldnames(mineral_comp_names_);
+    }
   }
 
   // require aqueous kinetics
   if (number_aqueous_kinetics_ > 0) {
-    std::vector<std::string> subfield_names;
-
-    for (it = aqueous_kinetics_names_.begin(); it != aqueous_kinetics_names_.end(); ++it) {
-      subfield_names.push_back(*it + std::string(" aq kin rate cnst"));
-    }
-
     // -- register field
-    S_->Require<CV_t, CVS_t>(first_order_decay_constant_key_, tag_next_, passwd_, subfield_names)
+    requireAtNext(first_order_decay_constant_key_, tag_next_, *S_, true, passwd_)
       .SetMesh(mesh_)
-      ->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_kinetics_);
+    S_->GetRecordSetW(first_order_decay_constant_key_).set_subfieldnames(aqueous_kinetics_names_);
   }
 
   // require sorption sites
   if (number_sorption_sites_ > 0) {
-    std::vector<std::string> ss_names_cv, scfsc_names_cv;
-    for (it = sorption_site_names_.begin(); it != sorption_site_names_.end(); ++it) {
-      ss_names_cv.push_back(*it + std::string(" sorption site"));
-      scfsc_names_cv.push_back(*it + std::string(" surface complex free site conc"));
+    auto keys = std::vector<Key>{sorp_sites_key_, surf_cfsc_key_};
+    for (const auto& key : keys) {
+      requireAtNext(key, tag_next_, *S_, true, passwd_)
+        .SetMesh(mesh_)
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_sorption_sites_);
+      S_->GetRecordSetW(key).set_subfieldnames(sorption_site_names_);
     }
-
-    // -- register two fields
-    S_->Require<CV_t, CVS_t>(sorp_sites_key_, tag_next_, passwd_, ss_names_cv)
-      .SetMesh(mesh_)
-      ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_sorption_sites_);
-    S_->Require<CV_t, CVS_t>(surf_cfsc_key_, tag_next_, passwd_, scfsc_names_cv)
-      .SetMesh(mesh_)
-      ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_sorption_sites_);
   }
 
   if (using_sorption_) {
-    S_->Require<CV_t, CVS_t>(total_sorbed_key_, tag_next_, passwd_)
+    requireAtNext(total_sorbed_key_, tag_next_, *S_, true, passwd_)
       .SetMesh(mesh_)
-      ->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_components_);
+    S_->GetRecordSetW(total_sorbed_key_).set_subfieldnames(aqueous_comp_names_);
 
     if (using_sorption_isotherms_) {
-      S_->Require<CV_t, CVS_t>(isotherm_kd_key_, tag_next_, passwd_)
-        .SetMesh(mesh_)
-        ->SetGhosted(false)
-        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_components_);
-
-      S_->Require<CV_t, CVS_t>(isotherm_freundlich_n_key_, tag_next_, passwd_)
-        .SetMesh(mesh_)
-        ->SetGhosted(false)
-        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_components_);
-
-      S_->Require<CV_t, CVS_t>(isotherm_langmuir_b_key_, tag_next_, passwd_)
-        .SetMesh(mesh_)
-        ->SetGhosted(false)
-        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_components_);
+      auto keys = std::vector<Key>{ isotherm_kd_key_, isotherm_freundlich_n_key_, isotherm_langmuir_b_key_};
+      for (const auto& key : keys) {
+        requireAtNext(key, tag_next_, *S_, true, passwd_)
+          .SetMesh(mesh_)
+          ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_components_);
+        S_->GetRecordSetW(key).set_subfieldnames(aqueous_comp_names_);
+      }
     }
   }
 
-  // ion
-  if (number_aqueous_components_ > 0) {
-    S_->Require<CV_t, CVS_t>(free_ion_species_key_, tag_next_, passwd_, comp_names_)
-      .SetMesh(mesh_)
-      ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_components_);
-
-    S_->Require<CV_t, CVS_t>(primary_activity_coeff_key_, tag_next_, passwd_, comp_names_)
-      .SetMesh(mesh_)
-      ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_components_);
-  }
-
+  // ion exchange sites
   if (number_ion_exchange_sites_ > 0) {
-    S_->Require<CV_t, CVS_t>(ion_exchange_sites_key_, tag_next_, passwd_)
-      .SetMesh(mesh_)
-      ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_ion_exchange_sites_);
-
-    S_->Require<CV_t, CVS_t>(ion_exchange_ref_cation_conc_key_, tag_next_, passwd_)
-      .SetMesh(mesh_)
-      ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_ion_exchange_sites_);
+    auto keys = std::vector<Key>{ ion_exchange_sites_key_, ion_exchange_ref_cation_conc_key_ };
+    for (const auto& key : keys) {
+      requireAtNext(key, tag_next_, *S_, true, passwd_)
+        .SetMesh(mesh_)
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_ion_exchange_sites_);
+      S_->GetRecordSetW(key).set_subfieldnames(ion_exchange_site_names_);
+    }
   }
 }
 
@@ -227,55 +233,115 @@ Chemistry_PK::Initialize()
 {
   // Aqueous species
   if (number_aqueous_components_ > 0) {
-    if (!S_->GetRecordW(tcc_key_, passwd_).initialized()) {
-      InitializeCVField(S_, *vo_, tcc_key_, tag_next_, passwd_, 0.0);
+    if (!S_->GetRecordW(key_, passwd_).initialized()) {
+      initializeCVField(*S_, *vo_, key_, tag_next_, passwd_, 0.0);
     }
-    set_aqueous_components(
-      S_->GetPtrW<CompositeVector>(tcc_key_, tag_next_, passwd_)->ViewComponent("cell", false));
-
-    InitializeCVField(S_, *vo_, primary_activity_coeff_key_, tag_next_, passwd_, 1.0);
-    InitializeCVField(S_, *vo_, free_ion_species_key_, tag_next_, passwd_, 1.0e-9);
+    initializeCVField(*S_, *vo_, primary_activity_coeff_key_, tag_next_, passwd_, 1.0);
+    initializeCVField(*S_, *vo_, free_ion_species_key_, tag_next_, passwd_, 1.0e-9);
 
     // Sorption sites: all will have a site density, but we can default to zero
     if (using_sorption_) {
-      InitializeCVField(S_, *vo_, total_sorbed_key_, tag_next_, passwd_, 0.0);
+      initializeCVField(*S_, *vo_, total_sorbed_key_, tag_next_, passwd_, 0.0);
     }
 
     // Sorption isotherms: Kd required, Langmuir and Freundlich optional
     if (using_sorption_isotherms_) {
-      InitializeCVField(S_, *vo_, isotherm_kd_key_, tag_next_, passwd_, -1.0);
-      InitializeCVField(S_, *vo_, isotherm_freundlich_n_key_, tag_next_, passwd_, 1.0);
-      InitializeCVField(S_, *vo_, isotherm_langmuir_b_key_, tag_next_, passwd_, 1.0);
+      initializeCVField(*S_, *vo_, isotherm_kd_key_, tag_next_, passwd_, -1.0);
+      initializeCVField(*S_, *vo_, isotherm_freundlich_n_key_, tag_next_, passwd_, 1.0);
+      initializeCVField(*S_, *vo_, isotherm_langmuir_b_key_, tag_next_, passwd_, 1.0);
     }
   }
 
   // Minerals: vol frac and surface areas
-  if (number_minerals_ > 0) {
-    InitializeCVField(S_, *vo_, min_vol_frac_key_, tag_next_, passwd_, 0.0);
-    InitializeCVField(S_, *vo_, min_ssa_key_, tag_next_, passwd_, 1.0);
+  if (number_mineral_components_ > 0) {
+    initializeCVField(*S_, *vo_, mineral_vol_frac_key_, tag_next_, passwd_, 0.0);
+    initializeCVField(*S_, *vo_, mineral_ssa_key_, tag_next_, passwd_, 1.0);
   }
 
   // Aqueous kinetics
   if (number_aqueous_kinetics_ > 0) {
-    InitializeCVField(S_, *vo_, first_order_decay_constant_key_, tag_next_, passwd_, 0.0);
+    initializeCVField(*S_, *vo_, first_order_decay_constant_key_, tag_next_, passwd_, 0.0);
   }
 
   // Ion exchange sites: default to 1
   if (number_ion_exchange_sites_ > 0) {
-    InitializeCVField(S_, *vo_, ion_exchange_sites_key_, tag_next_, passwd_, 1.0);
-    InitializeCVField(S_, *vo_, ion_exchange_ref_cation_conc_key_, tag_next_, passwd_, 1.0);
+    initializeCVField(*S_, *vo_, ion_exchange_sites_key_, tag_next_, passwd_, 1.0);
+    initializeCVField(*S_, *vo_, ion_exchange_ref_cation_conc_key_, tag_next_, passwd_, 1.0);
   }
 
   if (number_sorption_sites_ > 0) {
-    InitializeCVField(S_, *vo_, sorp_sites_key_, tag_next_, passwd_, 1.0);
-    InitializeCVField(S_, *vo_, surf_cfsc_key_, tag_next_, passwd_, 1.0);
+    initializeCVField(*S_, *vo_, sorp_sites_key_, tag_next_, passwd_, 1.0);
+    initializeCVField(*S_, *vo_, surf_cfsc_key_, tag_next_, passwd_, 1.0);
   }
 
-  // auxiliary fields
-  InitializeCVField(S_, *vo_, alquimia_aux_data_key_, tag_next_, passwd_, 0.0);
+}
 
-  // miscaleneous controls
-  initial_conditions_time_ = plist_->get<double>("initial conditions time", S_->get_time());
+
+
+
+/* *******************************************************************
+ * Take a timestep from t_old to t_new
+ ******************************************************************* */
+bool
+Chemistry_PK::AdvanceStep(double t_old, double t_new, bool reinit)
+{
+  double dt = t_new - t_old;
+
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_LOW))
+    *vo_->os() << "----------------------------------------------------------------" << std::endl
+               << "Advancing: t0 = " << t_old
+               << " t1 = " << t_new << " h = " << dt << std::endl
+               << "----------------------------------------------------------------" << std::endl;
+
+  AMANZI_ASSERT(std::abs(S_->get_time(tag_current_) - t_old) < 1.e-4);
+  AMANZI_ASSERT(std::abs(S_->get_time(tag_next_) - t_new) < 1.e-4);
+  State_to_Solution(Tags::NEXT, *solution_);
+
+  // Get the number of owned (non-ghost) cells for the mesh.
+  int num_cells =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+
+  // Ensure dependencies are filled
+  S_->GetEvaluator(poro_key_, tag_current_).Update(*S_, name_);
+  S_->GetEvaluator(fluid_den_key_, tag_current_).Update(*S_, name_);
+  S_->GetEvaluator(saturation_key_, tag_current_).Update(*S_, name_);
+  Epetra_MultiVector& aqueous_components =
+    *S_->GetW<CompositeVector>(key_, tag_next_, passwd_).ViewComponent("cell", false);
+
+  // Now loop through all the cells and advance the chemistry.
+  int max_itrs(0), imax(-1);
+  int convergence_failure = 0;
+  for (int cell = 0; cell < num_cells; ++cell) {
+    int num_itrs = AdvanceSingleCell_(dt, aqueous_components, cell);
+    if (num_itrs >= 0) {
+      if (max_itrs < num_itrs) {
+        max_itrs = num_itrs;
+        imax = cell;
+      }
+    } else {
+      // Convergence failure. Compute the next timestep size.
+      convergence_failure = 1;
+      break;
+    }
+  }
+
+  // broadcast and check for global failed step
+  bool failed = CheckForError_(convergence_failure, max_itrs, imax);
+
+  // Compute the next global timestep.
+  dt_next_ = timestep_controller_->getTimestep(dt, max_itrs, !failed);
+  return failed;
+}
+
+
+
+void
+Chemistry_PK::CommitStep(double t_old, double t_new, const Tag& tag_next)
+{
+  AMANZI_ASSERT(tag_next == tag_next_ || tag_next == Tags::NEXT);
+  Tag tag_current = tag_next == tag_next_ ? tag_current_ : Tags::CURRENT;
+  CopyFields_(tag_current_, tag_next);
 }
 
 
@@ -283,14 +349,13 @@ Chemistry_PK::Initialize()
 * Process names of materials
 ******************************************************************* */
 void
-Chemistry_PK::InitializeMinerals(Teuchos::RCP<Teuchos::ParameterList> plist)
+Chemistry_PK::parseMinerals_(Teuchos::ParameterList& plist,
+                             Teuchos::ParameterList& ic_list)
 {
-  mineral_names_.clear();
-  if (plist->isParameter("minerals")) {
-    mineral_names_ = plist->get<Teuchos::Array<std::string>>("minerals").toVector();
+  if (plist.isParameter("minerals")) {
+    mineral_comp_names_ = plist.get<Teuchos::Array<std::string>>("minerals").toVector();
   }
-
-  number_minerals_ = mineral_names_.size();
+  number_mineral_components_ = mineral_comp_names_.size();
 }
 
 
@@ -299,14 +364,12 @@ Chemistry_PK::InitializeMinerals(Teuchos::RCP<Teuchos::ParameterList> plist)
 * NOTE: Do we need to worry about sorption sites?
 ******************************************************************* */
 void
-Chemistry_PK::InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> plist,
-                                      Teuchos::ParameterList& ic_list)
+Chemistry_PK::parseSorptionSites_(Teuchos::ParameterList& plist,
+        Teuchos::ParameterList& ic_list)
 {
-  sorption_site_names_.clear();
-  if (plist->isParameter("sorption sites")) {
-    sorption_site_names_ = plist->get<Teuchos::Array<std::string>>("sorption sites").toVector();
+  if (plist.isParameter("sorption sites")) {
+    sorption_site_names_ = plist.get<Teuchos::Array<std::string>>("sorption sites").toVector();
   }
-
   number_sorption_sites_ = sorption_site_names_.size();
   using_sorption_ = (number_sorption_sites_ > 0);
 
@@ -336,19 +399,8 @@ Chemistry_PK::InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> plist
     }
   }
 
-  if (ic_list.isSublist(sorp_sites_key_)) { using_sorption_ = true; }
-
-  // in the old version, this was only in the Block sublist... may need work?
-  if (plist->isParameter("Cation Exchange Capacity")) {
+  if (ic_list.isSublist(sorp_sites_key_)) {
     using_sorption_ = true;
-    number_ion_exchange_sites_ = 1;
-  }
-
-  // surely this doesn't need to be in the global plist?
-  if (glist_->isSublist("thermodynamic database")) {
-    if (glist_->sublist("thermodynamic database").isSublist("isotherms")) {
-      using_sorption_ = true;
-    }
   }
 }
 
@@ -356,55 +408,45 @@ Chemistry_PK::InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> plist
 /* *******************************************************************
 * I/O or error messages
 ******************************************************************* */
-void
-Chemistry_PK::ErrorAnalysis(int ierr, std::string& internal_msg)
+bool
+Chemistry_PK::CheckForError_(int ierr, int max_itrs, int max_itrs_cell) const
 {
-  int tmp_out[2], tmp_in[2] = { ierr, (int)internal_msg.size() };
-  mesh_->getComm()->MaxAll(tmp_in, tmp_out, 2);
+  int ierr_l(ierr);
+  mesh_->getComm()->MaxAll(&ierr_l, &ierr, 1);
+  if (ierr) return true;
 
-  if (tmp_out[0] != 0) {
-    // update time control parameters
-    num_successful_steps_ = 0;
-    dt_next_ /= dt_cut_factor_;
+  ENorm_t itrs_l{ (double)max_itrs,
+    mesh_->getMap(AmanziMesh::Entity_kind::CELL, false).GID(max_itrs_cell) };
+  ENorm_t itrs_g;
+  ierr = commMaxValLoc(*mesh_->getComm(), itrs_l, itrs_g);
+  if (ierr) return true;
 
-    // get at least one error message
-    int n = tmp_out[1];
-    int msg_out[n + 1], msg_in[n + 1], m(mesh_->getComm()->MyPID());
-    internal_msg.resize(n);
-
-    Errors::encode_string(internal_msg, n, m, msg_in);
-    mesh_->getComm()->MaxAll(msg_in, msg_out, n + 1);
-    Errors::decode_string(msg_out, n, internal_msg);
-
-    vo_->Write(Teuchos::VERB_HIGH, internal_msg);
-
-    Errors::Message msg(internal_msg);
-    Exceptions::amanzi_throw(msg);
+  if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "max Newton iterations: " << (int) itrs_g.value << " in cell " << itrs_g.gid << std::endl;
   }
+  return false;
 }
 
 
 void
-Chemistry_PK::CopyFieldstoNewState(const Teuchos::RCP<State>& S_next)
+Chemistry_PK::CopyFields_(const Tag& tag_dest, const Tag& tag_source) const
 {
-  std::vector<std::string> fields = { min_vol_frac_key_,
-                                      min_ssa_key_,
-                                      sorp_sites_key_,
-                                      surf_cfsc_key_,
-                                      total_sorbed_key_,
-                                      isotherm_kd_key_,
-                                      isotherm_freundlich_n_key_,
-                                      isotherm_langmuir_b_key_,
-                                      free_ion_species_key_,
-                                      primary_activity_coeff_key_,
-                                      ion_exchange_sites_key_,
-                                      ion_exchange_ref_cation_conc_key_ };
+  std::vector<Key> fields{ mineral_vol_frac_key_,
+    mineral_ssa_key_,
+    sorp_sites_key_,
+    surf_cfsc_key_,
+    total_sorbed_key_,
+    isotherm_kd_key_,
+    isotherm_freundlich_n_key_,
+    isotherm_langmuir_b_key_,
+    free_ion_species_key_,
+    primary_activity_coeff_key_,
+    ion_exchange_sites_key_,
+    ion_exchange_ref_cation_conc_key_ };
 
-  for (int i = 0; i < fields.size(); ++i) {
-    if (S_->HasRecord(fields[i]) && S_next->HasRecord(fields[i])) {
-      *S_next->GetW<CompositeVector>(fields[i], tag_next_, passwd_).ViewComponent("cell") =
-        *S_->Get<CompositeVector>(fields[i]).ViewComponent("cell");
-    }
+  for (const auto& field : fields) {
+    assign(field, tag_dest, tag_source, *S_);
   }
 }
 

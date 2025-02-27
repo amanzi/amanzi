@@ -68,6 +68,65 @@ Most details are provided in the trimmed PFloTran file *1d-tritium-trim.in*.
 namespace Amanzi {
 namespace AmanziChemistry {
 
+namespace Impl {
+
+//
+// NOTE: ATS at least needs both old and new values of these vectors, under the
+// possiblity where chemistry succeeds but transport fails (due to invalid
+// timestep size), and we therefore need to recover old chemistry?
+//
+// It may be worth looking into whether this can actually happen in our
+// assorted coupling schemes.  In particular, I think it is possible that this
+// cannot happen if transport+chemistry is subcycled relative to flow (but it
+// probably can if they are not subcycled) relative to flow.
+//
+// At any rate, we'll support it for now under the assumption it is possible,
+// and then can always construct both the const and non-const versions of these
+// pointers with the same vector/tag.
+// --ETC
+//
+template<class Vector_type>
+struct AlquimiaSubstate {
+  Epetra_MultiVector const * porosity;
+  Epetra_MultiVector const * water_saturation;
+  Epetra_MultiVector const * fluid_density;
+  Epetra_MultiVector const * temperature;
+
+  Epetra_MultiVector const * aqueous_components_old;
+  Epetra_MultiVector* aqueous_components_new_new;
+  Epetra_MultiVector const * total_sorbed_old;
+  Epetra_MultiVector* total_sorbed_new_new;
+
+  Epetra_MultiVector const * mineral_vol_frac_old;
+  Epetra_MultiVector* mineral_vol_frac_new;
+  Epetra_MultiVector const * mineral_ssa_old;
+  Epetra_MultiVector* mineral_ssa_new;
+  Epetra_MultiVector const * mineral_rate_constant_old;
+  Epetra_MultiVector* mineral_rate_constant_new;
+
+  Epetra_MultiVector const * free_ion_species_old;
+  Epetra_MultiVector* free_ion_species_new;
+  Epetra_MultiVector const * ion_exchange_sites_old;
+  Epetra_MultiVector* ion_exchange_sites_new;
+  Epetra_MultiVector const * sorption_sites_old;
+  Epetra_MultiVector* sorption_sites_new;
+
+  Epetra_MultiVector const * isotherm_kd_old;
+  Epetra_MultiVector* isotherm_kd_new;
+  Epetra_MultiVector const * isotherm_freundlich_n_old;
+  Epetra_MultiVector* isotherm_freundlich_n_new;
+  Epetra_MultiVector const * isotherm_langmuir_b_old;
+  Epetra_MultiVector* isotherm_langmuir_b_new;
+
+  Epetra_MultiVector const * first_order_decay_constant_old;
+  Epetra_MultiVector* first_order_decay_constant_new;
+
+  // aux data is only ever copied out, not in
+  Epetra_MultiVector* aux_data;
+};
+} // namespace Impl
+
+
 #ifdef ALQUIMIA_ENABLED
 class Alquimia_PK : public Chemistry_PK {
  public:
@@ -83,87 +142,41 @@ class Alquimia_PK : public Chemistry_PK {
   virtual void Setup() override final;
   virtual void Initialize() override final;
 
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override final;
-  virtual void CommitStep(double t_old, double t_new, const Tag& tag) override final;
-  virtual void CalculateDiagnostics(const Tag& tag) override final { extra_chemistry_output_data(); }
+ protected:
+  // Copies the chemistry state to or from the given cell to the Alquimia containers.
+  void CopyToAlquimia_(int cell_id);
+  void CopyFromAlquimia_(const int cell, bool aux_out);
 
-  // Ben: the following routine provides the interface for
-  // output of auxillary cellwise data from chemistry
-  Teuchos::RCP<Epetra_MultiVector> extra_chemistry_output_data() override final;
+  // initialize the cell using a given condition
+  int InitializeSingleCell_(int cell, const std::string& condition);
 
-  // Copies the chemistry state in the given cell to the given Alquimia containers.
-  void CopyToAlquimia(int cell_id,
-                      AlquimiaProperties& mat_props,
-                      AlquimiaState& state,
-                      AlquimiaAuxiliaryData& aux_data,
-                      const Tag& water_tag = Tags::DEFAULT);
-
- private:
-  // Copy cell state to the given Alquimia containers taking
-  // the aqueous components from the given multivector.
-  void CopyToAlquimia(int cell_id,
-                      Teuchos::RCP<const Epetra_MultiVector> aqueous_components,
-                      AlquimiaProperties& mat_props,
-                      AlquimiaState& state,
-                      AlquimiaAuxiliaryData& aux_data,
-                      const Tag& water_tag = Tags::DEFAULT);
-
-  // Copy the data in the given Alquimia containers to the given cell state.
-  // The aqueous components are placed into the given multivector.
-  void CopyFromAlquimia(const int cell,
-                        const AlquimiaProperties& mat_props,
-                        const AlquimiaState& state,
-                        const AlquimiaAuxiliaryData& aux_data,
-                        const AlquimiaAuxiliaryOutputData& aux_output,
-                        Teuchos::RCP<Epetra_MultiVector> aqueous_components);
-
-  int InitializeSingleCell(int cell, const std::string& condition);
-  int AdvanceSingleCell(double dt, Teuchos::RCP<Epetra_MultiVector>& aquesous_components, int cell);
-
-  void ParseChemicalConditionRegions(const Teuchos::ParameterList& param_list,
-                                     std::map<std::string, std::string>& conditions);
-  void XMLParameters();
-
-  void CopyAlquimiaStateToAmanzi(const int cell,
-                                 const AlquimiaProperties& mat_props,
-                                 const AlquimiaState& state,
-                                 const AlquimiaAuxiliaryData& aux_data,
-                                 const AlquimiaAuxiliaryOutputData& aux_output,
-                                 Teuchos::RCP<Epetra_MultiVector> aquesous_components);
-
-  void ComputeNextTimeStep();
+  void ParseChemicalConditionRegions_(const Teuchos::ParameterList& param_list,
+          std::map<std::string,
+          std::string>& conditions);
 
   // maps
   void InitializeAuxNamesMap_();
 
+  Impl::AlquimiaSubstate createSubState();
+
  private:
-  // Time stepping controls. Some parameters are defined in the base class
-  std::string dt_control_method_;
-
-  bool chem_initialized_;
-
   // Alquimia data structures for interface with Amanzi.
   AlquimiaState alq_state_;
   AlquimiaProperties alq_mat_props_;
   AlquimiaAuxiliaryData alq_aux_data_;
   AlquimiaAuxiliaryOutputData alq_aux_output_;
+  Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;
+  bool chem_initialized_;
 
   // Mapping of region names to geochemical condition names. A region is identified
   // by a string, and all cells within a region will have all geochemical
   // conditions in the corresponding condition vector applied to them.
   std::map<std::string, std::string> chem_initial_conditions_;
 
-  double current_time_;
-  double saved_time_;
-
   // Auxiliary output data, requested by and stored within Amanzi.
   std::vector<std::string> aux_names_;
   std::vector<std::vector<std::string>> aux_subfield_names_;
-  Teuchos::RCP<Epetra_MultiVector> aux_output_;
-  Teuchos::RCP<Epetra_MultiVector> aux_data_;
-
-  std::vector<std::vector<int>> map_;
-  std::vector<std::string> mineral_names_, primary_names_;
+  std::vector<std::vector<int>> aux_subfield_map_;
 
  private:
   // factory registration

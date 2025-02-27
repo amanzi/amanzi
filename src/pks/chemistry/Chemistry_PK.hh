@@ -83,6 +83,9 @@ The following parameters are common for all supported engines.
 #include "State.hh"
 
 namespace Amanzi {
+
+class TimestepController;
+
 namespace AmanziChemistry {
 
 class Chemistry_PK : public PK_Physical {
@@ -98,43 +101,43 @@ class Chemistry_PK : public PK_Physical {
   virtual void parseParameterList() override;
   virtual void Setup() override;
   virtual void Initialize() override;
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit) override;
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
 
-  virtual void set_dt(double dt) override{};
-  virtual double get_dt() override { return dt_next_; }
+  virtual void set_dt(double dt) override {};
+  virtual double get_dt() override;
 
-  // Required members for chemistry interface
-  // -- output of auxillary cellwise data from chemistry
-  virtual Teuchos::RCP<Epetra_MultiVector> extra_chemistry_output_data() = 0;
+  // Extra methods provided in Chemistry_PK for use by coupled PKs or MPCs
+  int num_aqueous_components() const { return number_aqueous_components_; }
+  int num_gaseous_components() const { return number_gaseous_components_; }
+  const std::vector<std::string>& aqueous_names() const { return aqueous_comp_names_; }
 
-  // Basic capabilities
-  // -- get/set auxiliary tcc vector that now contains only aqueous components.
-  Teuchos::RCP<Epetra_MultiVector> aqueous_components() { return aqueous_components_; }
-  void set_aqueous_components(Teuchos::RCP<Epetra_MultiVector> tcc) { aqueous_components_ = tcc; }
-
-  // -- process various objects before/during setup phase
-  void InitializeMinerals(Teuchos::RCP<Teuchos::ParameterList> plist);
-  void InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> plist,
-                               Teuchos::ParameterList& ic_list);
-
-  virtual void CopyFieldstoNewState(const Teuchos::RCP<State>& S_next);
-  // -- access
-#ifdef ALQUIMIA_ENABLED
-  Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine() { return chem_engine_; }
-#endif
-
-  // -- output of error messages.
-  void ErrorAnalysis(int ierr, std::string& internal_msg);
-  int num_aqueous_components() { return number_aqueous_components_; }
+  int num_solid_components() const { return number_mineral_components_; }
+  const std::vector<std::string>& mineral_names() const { return mineral_comp_names_; }
 
  protected:
-  Teuchos::RCP<Teuchos::ParameterList> glist_;
+  // error messages in Chemistry are rank-local.  This method does the
+  // AllReduce to check errors across ranks.
+  bool CheckForError_(int ierr, int max_itrs, int max_itrs_cell) const;
+  virtual void CopyFields_(const Tag& tag_dest, const Tag& tag_source) const;
 
+  void parseMinerals_(Teuchos::ParameterList& my_list,
+                      Teuchos::ParameterList& ic_list);
+
+  void parseSorptionSites_(Teuchos::ParameterList& my_list,
+                      Teuchos::ParameterList& ic_list);
+
+  virtual int AdvanceSingleCell_(double dt,
+          Epetra_MultiVector& aqueous_components,
+          int cell) = 0;
+
+ protected:
   int number_aqueous_components_;
-  std::vector<std::string> comp_names_;
-  Teuchos::RCP<Epetra_MultiVector> aqueous_components_;
+  int number_gaseous_components_;
+  std::vector<std::string> aqueous_comp_names_;
 
-  int number_minerals_;
-  std::vector<std::string> mineral_names_;
+  int number_mineral_components_;
+  std::vector<std::string> mineral_comp_names_;
 
   int number_aqueous_kinetics_;
   std::vector<std::string> aqueous_kinetics_names_;
@@ -144,34 +147,28 @@ class Chemistry_PK : public PK_Physical {
   bool using_sorption_, using_sorption_isotherms_;
 
   int number_free_ion_, number_ion_exchange_sites_;
+  std::vector<std::string> ion_exchange_site_names_;
   double saturation_tolerance_;
 
   // names of state fields
-  Key tcc_key_;
-  Key poro_key_, saturation_key_, temperature_key_;
+  Key poro_key_;
+  Key saturation_key_;
+  Key temperature_key_;
   Key fluid_den_key_, molar_fluid_den_key_;
-  Key min_vol_frac_key_, min_ssa_key_;
-  Key sorp_sites_key_;
-  Key surf_cfsc_key_;
+  Key mineral_vol_frac_key_;
+  Key mineral_ssa_key_;
+  Key mineral_rate_constant_key_;
   Key total_sorbed_key_;
   Key isotherm_kd_key_, isotherm_freundlich_n_key_, isotherm_langmuir_b_key_;
   Key free_ion_species_key_, primary_activity_coeff_key_;
   Key ion_exchange_sites_key_, ion_exchange_ref_cation_conc_key_;
   Key secondary_activity_coeff_key_;
-  Key alquimia_aux_data_key_;
-  Key mineral_rate_constant_key_;
   Key first_order_decay_constant_key_;
 
-#ifdef ALQUIMIA_ENABLED
-  Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;
-#endif
-
   // time controls
-  int dt_cut_threshold_, dt_increase_threshold_;
-  double dt_, dt_min_, dt_max_, dt_prev_, dt_next_, dt_cut_factor_, dt_increase_factor_;
-
+  Teuchos::RCP<TimestepController> timestep_controller_;
+  double dt_next_;
   int num_iterations_, num_successful_steps_;
-  double initial_conditions_time_;
 };
 
 } // namespace AmanziChemistry

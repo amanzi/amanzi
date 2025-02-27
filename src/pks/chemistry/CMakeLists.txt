@@ -47,7 +47,7 @@ include_directories(${OUTPUT_SOURCE_DIR})
 #
 set(chem_inc_files 
                    Alquimia_PK.hh
-                   Amanzi_PK.hh
+                   #Amanzi_PK.hh
                    Chemistry_PK.hh
                    pks_chemistry_reg.hh
 )
@@ -57,8 +57,8 @@ set(chem_inc_files
 #
 set(chem_src_files)
 if (ENABLE_Unstructured)
-  list(APPEND chem_src_files Chemistry_PK.cc
-                             Amanzi_PK.cc)
+  list(APPEND chem_src_files Chemistry_PK.cc)
+                             #Amanzi_PK.cc)
   if (ENABLE_ALQUIMIA)
     list(APPEND chem_src_files Alquimia_PK.cc)
   endif()
@@ -89,14 +89,14 @@ if (BUILD_TESTS AND ENABLE_Unstructured)
         file(COPY ${DataFiles} DESTINATION ${CHEMPK_BINARY_DIR}/test/)
     endif()
 
-    add_amanzi_test(chemistry_amanzi_pk chemistry_amanzi_pk
-                    KIND int
-                    SOURCE test/Main.cc test/chemistry_amanzi_pk.cc
-                    LINK_LIBS chemistry_pk state pks data_structures operators
-                              mesh_functions mesh mesh_factory error_handling
-                              ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES}
-                              ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES} ${NOX_LIBRARIES}
-                              ${HYPRE_LIBRARY})
+    # add_amanzi_test(chemistry_amanzi_pk chemistry_amanzi_pk
+    #                 KIND int
+    #                 SOURCE test/Main.cc test/chemistry_amanzi_pk.cc
+    #                 LINK_LIBS chemistry_pk state pks data_structures operators
+    #                           mesh_functions mesh mesh_factory error_handling
+    #                           ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES}
+    #                           ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES} ${NOX_LIBRARIES}
+    #                           ${HYPRE_LIBRARY})
 
     if (ENABLE_ALQUIMIA)
       add_amanzi_test(chemistry_alquimia_pk chemistry_alquimia_pk
