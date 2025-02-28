@@ -85,6 +85,8 @@ LimiterCell::LimiterCell(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
 void
 LimiterCell::Init(Teuchos::ParameterList& plist, const Teuchos::RCP<const Epetra_MultiVector>& flux)
 {
+  if (flux != Teuchos::null) SetFlux(flux);
+
   // process parameters for limiters
   std::string stencil;
   std::string name = plist.get<std::string>("limiter", "Barth-Jespersen");
@@ -145,8 +147,6 @@ LimiterCell::Init(Teuchos::ParameterList& plist, const Teuchos::RCP<const Epetra
   external_controls_ = plist.get<bool>("use external controls", false);
   limiter_points_ = plist.get<int>("limiter points", 1);
   limiter_correction_ = plist.get<bool>("limiter extension for transport", false);
-
-  if (flux != Teuchos::null) SetFlux(flux);
 }
 
 
@@ -296,9 +296,9 @@ LimiterCell::LimiterTensorial_(const AmanziMesh::cEntity_ID_View& ids,
   // Step 1: limit gradient to a feasiable set excluding Dirichlet boundary
   if (!external_bounds_) {
     if (stencil_id_ == OPERATOR_LIMITER_STENCIL_F2C)
-      bounds_ = BoundsForFaces(*field_, bc_model, bc_value, stencil_id_);
+      BoundsForFaces(*field_, bc_model, bc_value, stencil_id_, bounds_);
     else
-      bounds_ = BoundsForCells(*field_, bc_model, bc_value, stencil_id_);
+      BoundsForCells(*field_, bc_model, bc_value, stencil_id_, bounds_);
   }
 
   for (int n = 0; n < ids.size(); ++n) {
@@ -350,7 +350,7 @@ LimiterCell::LimiterTensorial_(const AmanziMesh::cEntity_ID_View& ids,
 
   // Step 3: enforce a priori timestep estimate (division of dT by 2).
   if (limiter_correction_) {
-    bounds_ = BoundsForCells(*field_, bc_model, bc_value, OPERATOR_LIMITER_STENCIL_C2C_CLOSEST);
+    BoundsForCells(*field_, bc_model, bc_value, OPERATOR_LIMITER_STENCIL_C2C_CLOSEST, bounds_);
     LimiterExtensionTransportTensorial_();
   }
 
@@ -445,9 +445,9 @@ LimiterCell::LimiterScalar_(const AmanziMesh::cEntity_ID_View& ids,
   // limiting gradient inside domain
   if (!external_bounds_) {
     if (stencil_id_ == OPERATOR_LIMITER_STENCIL_F2C)
-      bounds_ = BoundsForFaces(*field_, bc_model, bc_value, stencil_id_);
+      BoundsForFaces(*field_, bc_model, bc_value, stencil_id_, bounds_);
     else
-      bounds_ = BoundsForCells(*field_, bc_model, bc_value, stencil_id_);
+      BoundsForCells(*field_, bc_model, bc_value, stencil_id_, bounds_);
   }
 
   double tol_base = sqrt(OPERATOR_LIMITER_TOLERANCE);
@@ -499,7 +499,7 @@ LimiterCell::LimiterScalar_(const AmanziMesh::cEntity_ID_View& ids,
   // enforce an a priori timestep estimate (dT / 2).
   if (limiter_correction_) {
     if (stencil_id_ == OPERATOR_LIMITER_STENCIL_F2C)
-      bounds_ = BoundsForCells(*field_, bc_model, bc_value, OPERATOR_LIMITER_STENCIL_C2C_CLOSEST);
+      BoundsForCells(*field_, bc_model, bc_value, OPERATOR_LIMITER_STENCIL_C2C_CLOSEST, bounds_);
     LimiterExtensionTransportScalar_(limiter);
   }
 }
@@ -579,7 +579,7 @@ LimiterCell::LimiterKuzmin_(const AmanziMesh::cEntity_ID_View& ids,
   auto& grad = *lifting_->data()->ViewComponent("cell");
 
   // calculate local extrema at nodes
-  if (!external_bounds_) bounds_ = BoundsForNodes(*field_, bc_model, bc_value, stencil_id_);
+  if (!external_bounds_) BoundsForNodes(*field_, bc_model, bc_value, stencil_id_, bounds_);
   auto& bounds_v = *bounds_->ViewComponent("node", true);
 
   // limit reconstructed gradients at cell nodes
@@ -819,19 +819,20 @@ LimiterCell::IdentifyUpwindCells_()
 /* ******************************************************************
 * Calculate internal bounds.
 ****************************************************************** */
-Teuchos::RCP<CompositeVector>
+void
 LimiterCell::BoundsForCells(const Epetra_MultiVector& field,
                             const std::vector<int>& bc_model,
                             const std::vector<double>& bc_value,
-                            int stencil) const
+                            int stencil,
+                            Teuchos::RCP<CompositeVector>& bounds) const
 {
-  if (bounds_ == Teuchos::null || !bounds_->HasComponent("cell")) {
+  if (bounds == Teuchos::null || !bounds->HasComponent("cell")) {
     CompositeVectorSpace cvs;
-    if (bounds_ != Teuchos::null) cvs = bounds_->Map();
+    if (bounds != Teuchos::null) cvs = bounds->Map();
     cvs.SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 2);
-    bounds_ = Teuchos::rcp(new CompositeVector(cvs));
+    bounds = Teuchos::rcp(new CompositeVector(cvs));
   }
-  auto& bounds_c = *bounds_->ViewComponent("cell", true);
+  auto& bounds_c = *bounds->ViewComponent("cell", true);
 
   for (int c = 0; c < ncells_wghost_; ++c) {
     bounds_c[0][c] = OPERATOR_LIMITER_INFINITY;
@@ -885,27 +886,26 @@ LimiterCell::BoundsForCells(const Epetra_MultiVector& field,
       }
     }
   }
-
-  return bounds_;
 }
 
 
 /* ******************************************************************
 * Calculate internal bounds for the face to closest cells stencil.
 ****************************************************************** */
-Teuchos::RCP<CompositeVector>
+void
 LimiterCell::BoundsForFaces(const Epetra_MultiVector& field,
                             const std::vector<int>& bc_model,
                             const std::vector<double>& bc_value,
-                            int stencil)
+                            int stencil,
+                            Teuchos::RCP<CompositeVector>& bounds) const
 {
-  if (bounds_ == Teuchos::null || !bounds_->HasComponent("face")) {
+  if (bounds == Teuchos::null || !bounds->HasComponent("face")) {
     CompositeVectorSpace cvs;
-    if (bounds_ != Teuchos::null) cvs = bounds_->Map();
+    if (bounds != Teuchos::null) cvs = bounds->Map();
     cvs.SetMesh(mesh_)->SetGhosted(true)->AddComponent("face", AmanziMesh::Entity_kind::FACE, 2);
-    bounds_ = Teuchos::rcp(new CompositeVector(cvs));
+    bounds = Teuchos::rcp(new CompositeVector(cvs));
   }
-  auto& bounds_f = *bounds_->ViewComponent("face", true);
+  auto& bounds_f = *bounds->ViewComponent("face", true);
 
   for (int f = 0; f < nfaces_wghost_; ++f) {
     bounds_f[0][f] = OPERATOR_LIMITER_INFINITY;
@@ -932,28 +932,27 @@ LimiterCell::BoundsForFaces(const Epetra_MultiVector& field,
       }
     }
   }
-
-  return bounds_;
 }
 
 
 /* ******************************************************************
 * Calculate internal bounds for the edge to closest cells stencil.
 ****************************************************************** */
-Teuchos::RCP<CompositeVector>
+void
 LimiterCell::BoundsForEdges(const Epetra_MultiVector& field,
                             const std::vector<int>& bc_model,
                             const std::vector<double>& bc_value,
-                            int stencil)
+                            int stencil,
+                            Teuchos::RCP<CompositeVector>& bounds) const
 {
-  if (bounds_ == Teuchos::null || !bounds_->HasComponent("edge")) {
+  if (bounds == Teuchos::null || !bounds->HasComponent("edge")) {
     CompositeVectorSpace cvs;
-    if (bounds_ != Teuchos::null) cvs = bounds_->Map();
-    cvs.SetMesh(mesh_)->SetGhosted(true)->AddComponent("edge", AmanziMesh::Entity_kind::EDGE, 2);
-    bounds_ = Teuchos::rcp(new CompositeVector(cvs));
+    if (bounds != Teuchos::null) cvs = bounds->Map();
+    cvs.SetMesh(mesh_)->SetGhosted(true)->AddComponent("edge", AmanziMesh::Entity_kind::FACE, 2);
+    bounds = Teuchos::rcp(new CompositeVector(cvs));
   }
 
-  auto& bounds_e = *bounds_->ViewComponent("edge", true);
+  auto& bounds_e = *bounds->ViewComponent("edge", true);
 
   for (int e = 0; e < nedges_wghost_; ++e) {
     bounds_e[0][e] = OPERATOR_LIMITER_INFINITY;
@@ -980,27 +979,26 @@ LimiterCell::BoundsForEdges(const Epetra_MultiVector& field,
       }
     }
   }
-
-  return bounds_;
 }
 
 
 /* ******************************************************************
 * Calculate internal bounds for the node to cells stencil.
 ****************************************************************** */
-Teuchos::RCP<CompositeVector>
+void
 LimiterCell::BoundsForNodes(const Epetra_MultiVector& field,
                             const std::vector<int>& bc_model,
                             const std::vector<double>& bc_value,
-                            int stencil)
+                            int stencil,
+                            Teuchos::RCP<CompositeVector>& bounds) const
 {
-  if (bounds_ == Teuchos::null || !bounds_->HasComponent("node")) {
+  if (bounds == Teuchos::null || !bounds->HasComponent("node")) {
     CompositeVectorSpace cvs;
-    if (bounds_ != Teuchos::null) cvs = bounds_->Map();
-    cvs.SetMesh(mesh_)->SetGhosted(true)->AddComponent("node", AmanziMesh::Entity_kind::NODE, 2);
-    bounds_ = Teuchos::rcp(new CompositeVector(cvs));
+    if (bounds != Teuchos::null) cvs = bounds->Map();
+    cvs.SetMesh(mesh_)->SetGhosted(true)->AddComponent("node", AmanziMesh::Entity_kind::FACE, 2);
+    bounds = Teuchos::rcp(new CompositeVector(cvs));
   }
-  auto& bounds_v = *bounds_->ViewComponent("node", true);
+  auto& bounds_v = *bounds->ViewComponent("node", true);
 
   for (int v = 0; v < nnodes_wghost_; ++v) {
     bounds_v[0][v] = OPERATOR_LIMITER_INFINITY;
@@ -1027,8 +1025,6 @@ LimiterCell::BoundsForNodes(const Epetra_MultiVector& field,
       }
     }
   }
-
-  return bounds_;
 }
 
 

@@ -90,7 +90,7 @@ lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
                                            Amanzi::AmanziMesh::Parallel_kind::ALL);
   int nnodes_wghost = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE,
                                            Amanzi::AmanziMesh::Parallel_kind::ALL);
-  std::string passwd("");
+  std::string passwd("state");
 
   auto& B_c =
     *S->GetW<CompositeVector>("surface-bathymetry", Tags::DEFAULT, passwd).ViewComponent("cell");

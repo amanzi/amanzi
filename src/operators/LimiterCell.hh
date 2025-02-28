@@ -79,22 +79,26 @@ class LimiterCell {
   void ApplyLimiter(Teuchos::RCP<Epetra_MultiVector> limiter);
 
   // bounds for cell-centered fields
-  Teuchos::RCP<CompositeVector> BoundsForCells(const Epetra_MultiVector& field,
-                                               const std::vector<int>& bc_model,
-                                               const std::vector<double>& bc_value,
-                                               int stencil) const;
-  Teuchos::RCP<CompositeVector> BoundsForFaces(const Epetra_MultiVector& field,
-                                               const std::vector<int>& bc_model,
-                                               const std::vector<double>& bc_value,
-                                               int stencil);
-  Teuchos::RCP<CompositeVector> BoundsForEdges(const Epetra_MultiVector& field,
-                                               const std::vector<int>& bc_model,
-                                               const std::vector<double>& bc_value,
-                                               int stencil);
-  Teuchos::RCP<CompositeVector> BoundsForNodes(const Epetra_MultiVector& field,
-                                               const std::vector<int>& bc_model,
-                                               const std::vector<double>& bc_value,
-                                               int stencil);
+  void BoundsForCells(const Epetra_MultiVector& field,
+                      const std::vector<int>& bc_model,
+                      const std::vector<double>& bc_value,
+                      int stencil,
+                      Teuchos::RCP<CompositeVector>& bounds) const;
+  void BoundsForFaces(const Epetra_MultiVector& field,
+                      const std::vector<int>& bc_model,
+                      const std::vector<double>& bc_value,
+                      int stencil,
+                      Teuchos::RCP<CompositeVector>& bounds) const;
+  void BoundsForEdges(const Epetra_MultiVector& field,
+                      const std::vector<int>& bc_model,
+                      const std::vector<double>& bc_value,
+                      int stencil,
+                      Teuchos::RCP<CompositeVector>& bounds) const;
+  void BoundsForNodes(const Epetra_MultiVector& field,
+                      const std::vector<int>& bc_model,
+                      const std::vector<double>& bc_value,
+                      int stencil,
+                      Teuchos::RCP<CompositeVector>& bounds) const;
 
   // calculate value of a linear function at the given point p
   void getBounds(int c, int f, int stencil, double* umin, double* umax);

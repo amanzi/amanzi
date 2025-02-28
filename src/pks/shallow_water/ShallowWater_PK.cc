@@ -43,7 +43,10 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
                                  const Teuchos::RCP<Teuchos::ParameterList>& glist,
                                  const Teuchos::RCP<State>& S,
                                  const Teuchos::RCP<TreeVector>& soln)
-  : PK(pk_tree, glist, S, soln), soln_(soln), passwd_(""), iters_(0)
+  : PK(pk_tree, glist, S, soln),
+    soln_(soln),
+    passwd_("state"),
+    iters_(0)
 {
   // Create miscellaneous lists.
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
