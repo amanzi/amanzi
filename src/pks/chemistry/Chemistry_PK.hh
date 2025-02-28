@@ -99,73 +99,37 @@ class Chemistry_PK : public PK_Physical {
 
   // required members for PK interface
   virtual void parseParameterList() override;
-  virtual void Setup() override;
-  virtual void Initialize() override;
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit) override;
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
 
   virtual void set_dt(double dt) override {};
   virtual double get_dt() override;
 
-  // Extra methods provided in Chemistry_PK for use by coupled PKs or MPCs
-  int num_aqueous_components() const { return number_aqueous_components_; }
-  int num_gaseous_components() const { return number_gaseous_components_; }
-  const std::vector<std::string>& aqueous_names() const { return aqueous_comp_names_; }
-
-  int num_solid_components() const { return number_mineral_components_; }
-  const std::vector<std::string>& mineral_names() const { return mineral_comp_names_; }
+  virtual void updateSubstate() = 0;
 
  protected:
   // error messages in Chemistry are rank-local.  This method does the
   // AllReduce to check errors across ranks.
-  bool CheckForError_(int ierr, int max_itrs, int max_itrs_cell) const;
-  virtual void CopyFields_(const Tag& tag_dest, const Tag& tag_source) const;
+  bool checkForError_(int ierr, int max_itrs, int max_itrs_cell) const;
 
-  void parseMinerals_(Teuchos::ParameterList& my_list,
-                      Teuchos::ParameterList& ic_list);
-
-  void parseSorptionSites_(Teuchos::ParameterList& my_list,
-                      Teuchos::ParameterList& ic_list);
-
-  virtual int AdvanceSingleCell_(double dt,
-          Epetra_MultiVector& aqueous_components,
-          int cell) = 0;
+  // customization points for the beaker-level chemistry and substates
+  virtual int advanceSingleCell_(int cell, double dt) = 0;
+  virtual void copyFields_(const Tag& tag_dest, const Tag& tag_source) = 0;
 
  protected:
   int number_aqueous_components_;
-  int number_gaseous_components_;
   std::vector<std::string> aqueous_comp_names_;
+
+  int number_gaseous_components_;
+  std::vector<std::string> gaseous_comp_names_;
 
   int number_mineral_components_;
   std::vector<std::string> mineral_comp_names_;
 
-  int number_aqueous_kinetics_;
-  std::vector<std::string> aqueous_kinetics_names_;
-
-  int number_sorption_sites_, number_total_sorbed_;
-  std::vector<std::string> sorption_site_names_;
-  bool using_sorption_, using_sorption_isotherms_;
-
-  int number_free_ion_, number_ion_exchange_sites_;
-  std::vector<std::string> ion_exchange_site_names_;
   double saturation_tolerance_;
 
-  // names of state fields
-  Key poro_key_;
-  Key saturation_key_;
-  Key temperature_key_;
-  Key fluid_den_key_, molar_fluid_den_key_;
-  Key mineral_vol_frac_key_;
-  Key mineral_ssa_key_;
-  Key mineral_rate_constant_key_;
-  Key total_sorbed_key_;
-  Key isotherm_kd_key_, isotherm_freundlich_n_key_, isotherm_langmuir_b_key_;
-  Key free_ion_species_key_, primary_activity_coeff_key_;
-  Key ion_exchange_sites_key_, ion_exchange_ref_cation_conc_key_;
-  Key secondary_activity_coeff_key_;
-  Key first_order_decay_constant_key_;
-
   // time controls
+  double initial_conditions_time_;
   Teuchos::RCP<TimestepController> timestep_controller_;
   double dt_next_;
   int num_iterations_, num_successful_steps_;

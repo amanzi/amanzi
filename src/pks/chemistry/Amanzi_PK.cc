@@ -33,7 +33,9 @@
 #include "Mesh.hh"
 #include "Beaker.hh"
 #include "errors.hh"
+#include "pk_helpers.hh"
 #include "exceptions.hh"
+#include "message.hh"
 #include "SimpleThermoDatabase.hh"
 #include "VerboseObject.hh"
 
@@ -91,15 +93,15 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
   InitializeSorptionSites(plist_, S_->ICList());
 
   // grab the component names
-  comp_names_.clear();
+  aqueous_comp_names_.clear();
   Teuchos::RCP<Teuchos::ParameterList> cd_list = Teuchos::sublist(glist, "cycle driver", true);
   if (cd_list->isParameter("component names")) {
-    comp_names_ = cd_list->get<Teuchos::Array<std::string>>("component names").toVector();
+    aqueous_comp_names_ = cd_list->get<Teuchos::Array<std::string>>("component names").toVector();
   } else {
     Errors::Message msg("Amanzi_PK: Cycle Driver has no input parameter component names.");
     Exceptions::amanzi_throw(msg);
   }
-  number_aqueous_components_ = comp_names_.size();
+  number_aqueous_components_ = aqueous_comp_names_.size();
   number_free_ion_ = number_aqueous_components_;
   number_total_sorbed_ = number_aqueous_components_;
 
@@ -174,7 +176,7 @@ Amanzi_PK::Initialize()
   // initialization using base class
   Chemistry_PK::Initialize();
 
-  InitializeCVFieldFromCVField(S_, *vo_, prev_saturation_key_, saturation_key_, passwd_);
+  initializeCVFieldFromCVField(*S_, *vo_, prev_saturation_key_, saturation_key_, passwd_);
 
   auto tcc = S_->GetPtrW<CV_t>(tcc_key_, Tags::DEFAULT, passwd_)->ViewComponent("cell", true);
 
@@ -204,12 +206,12 @@ Amanzi_PK::Initialize()
 
   // check names of primary species
   int nprimary = chem_->primary_species().size();
-  if (nprimary == comp_names_.size()) {
+  if (nprimary == aqueous_comp_names_.size()) {
     for (int i = 0; i < nprimary; ++i) {
       std::string species_name = chem_->primary_species().at(i).name();
-      if (comp_names_[i] != species_name) {
+      if (aqueous_comp_names_[i] != species_name) {
         Errors::Message msg;
-        msg << "Amanzi PK: mismatch of name: \"" << comp_names_[i] << "\" and \"" << species_name
+        msg << "Amanzi PK: mismatch of name: \"" << aqueous_comp_names_[i] << "\" and \"" << species_name
             << "\". Compare XML and BGD lists.";
         Exceptions::amanzi_throw(msg);
       }
@@ -381,6 +383,79 @@ Amanzi_PK::XMLParameters()
 }
 
 
+/* ******************************************************************
+* Process names of materials
+******************************************************************* */
+void
+Amanzi_PK::InitializeMinerals(Teuchos::RCP<Teuchos::ParameterList> plist)
+{
+  mineral_comp_names_.clear();
+  if (plist->isParameter("minerals")) {
+    mineral_comp_names_ = plist->get<Teuchos::Array<std::string>>("minerals").toVector();
+  }
+
+  number_mineral_components_ = mineral_comp_names_.size();
+}
+
+
+/* ******************************************************************
+* Process names of sorption sites
+* NOTE: Do we need to worry about sorption sites?
+******************************************************************* */
+void
+Amanzi_PK::InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> plist,
+                                      Teuchos::ParameterList& ic_list)
+{
+  sorption_site_names_.clear();
+  if (plist->isParameter("sorption sites")) {
+    sorption_site_names_ = plist->get<Teuchos::Array<std::string>>("sorption sites").toVector();
+  }
+
+  number_sorption_sites_ = sorption_site_names_.size();
+  using_sorption_ = (number_sorption_sites_ > 0);
+
+  // check if there is an initial condition for ion_exchange_sites
+  number_ion_exchange_sites_ = 0;
+  using_sorption_isotherms_ = false;
+
+  if (ic_list.isSublist(ion_exchange_sites_key_)) {
+    // there is currently only at most one site...
+    using_sorption_ = true;
+    number_ion_exchange_sites_ = 1;
+  }
+
+  if (ic_list.isSublist(isotherm_kd_key_)) {
+    using_sorption_ = true;
+    using_sorption_isotherms_ = true;
+  }
+
+  KeyTriple split;
+  bool is_ds = Keys::splitDomainSet(isotherm_kd_key_, split);
+  if (is_ds) {
+    Key lifted_key = Keys::getKey(std::get<0>(split), "*", std::get<2>(split));
+
+    if (ic_list.isSublist(lifted_key)) {
+      using_sorption_ = true;
+      using_sorption_isotherms_ = true;
+    }
+  }
+
+  if (ic_list.isSublist(sorp_sites_key_)) { using_sorption_ = true; }
+
+  // in the old version, this was only in the Block sublist... may need work?
+  if (plist->isParameter("Cation Exchange Capacity")) {
+    using_sorption_ = true;
+    number_ion_exchange_sites_ = 1;
+  }
+
+  // surely this doesn't need to be in the global plist?
+  if (glist_->isSublist("thermodynamic database")) {
+    if (glist_->sublist("thermodynamic database").isSublist("isotherms")) {
+      using_sorption_ = true;
+    }
+  }
+}
+
 /* *******************************************************************
 * Requires that Beaker::Setup() has already been called!
 ******************************************************************* */
@@ -447,8 +522,8 @@ Amanzi_PK::CopyCellStateToBeakerState(int c, Teuchos::RCP<Epetra_MultiVector> aq
   }
 
   // minerals
-  if (number_minerals_ > 0) {
-    for (int i = 0; i < number_minerals_; ++i) {
+  if (number_mineral_components_ > 0) {
+    for (int i = 0; i < number_mineral_components_; ++i) {
       beaker_state_.mineral_volume_fraction[i] = (*bf_.mineral_vf)[i][c];
       beaker_state_.mineral_specific_surface_area.at(i) = (*bf_.mineral_ssa)[i][c];
     }
@@ -532,8 +607,8 @@ Amanzi_PK::CopyBeakerStructuresToCellState(int c,
   }
 
   // minerals
-  if (number_minerals_ > 0) {
-    for (int i = 0; i < number_minerals_; ++i) {
+  if (number_mineral_components_ > 0) {
+    for (int i = 0; i < number_mineral_components_; ++i) {
       (*bf_.mineral_vf)[i][c] = beaker_state_.mineral_volume_fraction.at(i);
       (*bf_.mineral_ssa)[i][c] = beaker_state_.mineral_specific_surface_area.at(i);
     }
@@ -710,7 +785,7 @@ Amanzi_PK::InitializeBeakerFields_()
       S_->GetW<CV_t>(ion_exchange_ref_cation_conc_key_, tag, passwd_).ViewComponent("cell");
   }
 
-  if (number_minerals_ > 0) {
+  if (number_mineral_components_ > 0) {
     bf_.mineral_vf = S_->GetW<CV_t>(min_vol_frac_key_, tag, passwd_).ViewComponent("cell");
     bf_.mineral_ssa = S_->GetW<CV_t>(min_ssa_key_, tag, passwd_).ViewComponent("cell");
   }
@@ -810,6 +885,38 @@ Amanzi_PK::set_chemistry_output_names(std::vector<std::string>* names)
     names->push_back(*name);
   }
 }
+
+
+/* *******************************************************************
+* I/O or error messages
+******************************************************************* */
+void
+Amanzi_PK::ErrorAnalysis(int ierr, std::string& internal_msg)
+{
+  int tmp_out[2], tmp_in[2] = { ierr, (int)internal_msg.size() };
+  mesh_->getComm()->MaxAll(tmp_in, tmp_out, 2);
+
+  if (tmp_out[0] != 0) {
+    // update time control parameters
+    num_successful_steps_ = 0;
+    dt_next_ /= dt_cut_factor_;
+
+    // get at least one error message
+    int n = tmp_out[1];
+    int msg_out[n + 1], msg_in[n + 1], m(mesh_->getComm()->MyPID());
+    internal_msg.resize(n);
+
+    Errors::encode_string(internal_msg, n, m, msg_in);
+    mesh_->getComm()->MaxAll(msg_in, msg_out, n + 1);
+    Errors::decode_string(msg_out, n, internal_msg);
+
+    vo_->Write(Teuchos::VERB_HIGH, internal_msg);
+
+    Errors::Message msg(internal_msg);
+    Exceptions::amanzi_throw(msg);
+  }
+}
+
 
 } // namespace AmanziChemistry
 } // namespace Amanzi

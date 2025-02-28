@@ -17,7 +17,7 @@ namespace Errors {
 
 #define CHAR_MAX_VALUE 127;
 
-void
+inline void
 encode_string(std::string& s, int n, int m, int* out)
 {
   int mc = m * CHAR_MAX_VALUE;
@@ -25,7 +25,7 @@ encode_string(std::string& s, int n, int m, int* out)
   out[n] = mc;
 }
 
-void
+inline void
 decode_string(int* in, int n, std::string& s)
 {
   int m = in[n];

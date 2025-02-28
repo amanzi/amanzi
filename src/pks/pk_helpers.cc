@@ -283,6 +283,35 @@ initializeCVField(State& S,
 
 
 // -----------------------------------------------------------------------------
+// Helper method to initialize a CV field from a CV field
+// -----------------------------------------------------------------------------
+void
+initializeCVFieldFromCVField(State& S,
+                             const VerboseObject& vo,
+                             const Key& field0,
+                             const Key& field1,
+                             const Key& passwd,
+                             const Tag& tag)
+{
+  if (S.HasRecord(field0, tag)) {
+    if (!S.GetRecord(field0, tag).initialized()) {
+      if (S.HasEvaluator(field1, tag)) S.GetEvaluator(field1, tag).Update(S, passwd);
+
+      const auto& f1 = S.Get<CompositeVector>(field1);
+      auto& f0 = S.GetW<CompositeVector>(field0, tag, passwd);
+      f0 = f1;
+      S.GetRecordW(field0, tag, passwd).set_initialized();
+
+      if (vo.os_OK(Teuchos::VERB_MEDIUM)) {
+        Teuchos::OSTab tab = vo.getOSTab();
+        *vo.os() << "initialized " << field0 << " to " << field1 << std::endl;
+      }
+    }
+  }
+}
+
+
+// -----------------------------------------------------------------------------
 // Require assignment evaluator, which allows tracking old data.
 // -----------------------------------------------------------------------------
 Teuchos::RCP<EvaluatorPrimaryCV>

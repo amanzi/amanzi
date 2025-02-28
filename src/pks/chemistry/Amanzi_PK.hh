@@ -96,14 +96,12 @@ class Amanzi_PK : public Chemistry_PK {
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) final;
   virtual void CalculateDiagnostics(const Tag& tag) final { extra_chemistry_output_data(); }
 
-  virtual std::string name() { return "chemistry amanzi"; }
-
   // The following two routines provide the interface for
   // output of auxillary cellwise data from chemistry
   Teuchos::RCP<Epetra_MultiVector> extra_chemistry_output_data();
   void set_chemistry_output_names(std::vector<std::string>* names);
 
-  // functions used in Rransport PK
+  // functions used in Transport PK
   void CopyCellStateToBeakerState(int c, Teuchos::RCP<Epetra_MultiVector> aqueous_components);
 
   // access
@@ -111,6 +109,14 @@ class Amanzi_PK : public Chemistry_PK {
   const BeakerParameters& beaker_parameters() const { return beaker_parameters_; }
   BeakerState beaker_state() { return beaker_state_; }
 
+  void InitializeMinerals(Teuchos::RCP<Teuchos::ParameterList> plist);
+  void InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> plist, Teuchos::ParameterList& ic_list);
+
+  void ErrorAnalysis(int ierr, std::string& internal_msg);
+
+  virtual void updateSubstate() {}
+
+  
  private:
   void AllocateAdditionalChemistryStorage_();
 
@@ -123,8 +129,32 @@ class Amanzi_PK : public Chemistry_PK {
 
   void EstimateNextTimeStep_(double t_old, double t_new);
 
+  virtual int advanceSingleCell_(int cell, double dt) { return 0; }
+  virtual void copyFields_(const Tag& tag_dest, const Tag& tag_source) {}
+
+  
  protected:
-  Teuchos::RCP<TreeVector> soln_;
+  Key tcc_key_;
+  Key poro_key_;
+  Key saturation_key_;
+  Key fluid_den_key_;
+  Key temperature_key_;
+  Key min_vol_frac_key_;
+  Key min_ssa_key_;
+  Key sorp_sites_key_;
+  Key surf_cfsc_key_;
+  Key total_sorbed_key_;
+  Key isotherm_kd_key_;
+  Key isotherm_freundlich_n_key_;
+  Key isotherm_langmuir_b_key_;
+  Key free_ion_species_key_;
+  Key primary_activity_coeff_key_;
+  Key ion_exchange_sites_key_;
+  Key ion_exchange_ref_cation_conc_key_;
+  Key secondary_activity_coeff_key_;
+  Key alquimia_aux_data_key_;
+  Key mineral_rate_constant_key_;
+  Key first_order_decay_constant_key_;
 
  private:
   std::shared_ptr<Beaker> chem_;
@@ -135,13 +165,26 @@ class Amanzi_PK : public Chemistry_PK {
   Key prev_saturation_key_; // move to base class ???
 
   std::string dt_control_method_;
+  double dt_;
   double dt_int_, dt_global_; // interpolation and global times
+  double dt_max_;
+  double dt_cut_factor_, dt_increase_factor_;
+  double dt_cut_threshold_, dt_increase_threshold_;
 
+  bool using_sorption_;
+  bool using_sorption_isotherms_;
+  int number_free_ion_, number_total_sorbed_;
+  int number_ion_exchange_sites_, number_sorption_sites_;
+  std::vector<std::string> sorption_site_names_;
+
+  Teuchos::RCP<Teuchos::ParameterList> glist_;
   std::vector<std::string> aux_names_;
   std::vector<int> aux_index_;
   Teuchos::RCP<Epetra_MultiVector> aux_data_;
 
   int ncells_owned_;
+
+  Teuchos::RCP<Epetra_MultiVector> aqueous_components_;
 
  private:
   // factory registration

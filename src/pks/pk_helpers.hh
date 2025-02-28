@@ -149,6 +149,14 @@ initializeCVField(State& S,
                   const Key& passwd,
                   Teuchos::ParameterList& ic_plist);
 
+void
+initializeCVFieldFromCVField(State& S,
+                             const VerboseObject& vo,
+                             const Key& field0,
+                             const Key& field1,
+                             const Key& passwd,
+                             const Tag& tag = Tags::DEFAULT);
+
 
 void
 copyMeshCoordinatesToVector(const AmanziMesh::Mesh& mesh, CompositeVector& vec);
