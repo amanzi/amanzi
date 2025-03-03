@@ -69,7 +69,7 @@ add_install_include_file(${chem_inc_files})
 add_amanzi_library(chemistry_pk
                    SOURCE ${chem_src_files}
                    HEADERS ${chem_inc_files}
-                   LINK_LIBS ${GEOCHEM_LIBS} pks ${Epetra_LIBRARIES}
+                   LINK_LIBS ${GEOCHEM_LIBS} pks time_integration ${Epetra_LIBRARIES}
                              ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})
 
 if (BUILD_TESTS AND ENABLE_Unstructured)

@@ -39,7 +39,6 @@ def _listObjectFromElement(elem):
 
     # else try to guess the type from the List name
     cname = elem.get('name')
-    assert cname is not None
     try:
         return objects[cname].from_Element(elem)
 
