@@ -69,12 +69,19 @@ Chemistry_PK::parseParameterList()
 {
   PK_Physical::parseParameterList();
 
-  // miscaleneous controls
-  initial_conditions_time_ = plist_->get<double>("initial conditions time", S_->get_time());
-
   // other parameters
   passwd_ = plist_->get<std::string>("primary variable password", "state");
   saturation_tolerance_ = plist_->get<double>("saturation tolerance", 1e-14);
+}
+
+
+void
+Chemistry_PK::Initialize()
+{
+  PK_Physical::Initialize();
+
+  // note, this is done here to allow the default value to be the time in state
+  initial_conditions_time_ = plist_->get<double>("initial conditions time", S_->get_time());
 }
 
 

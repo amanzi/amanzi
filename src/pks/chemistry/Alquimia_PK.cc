@@ -103,7 +103,7 @@ Alquimia_PK::parseParameterList()
   int num_sorption_components = chem_engine_->NumSorbedSpecies();
   // Amanzi only supports all or nothing sorption
   AMANZI_ASSERT(num_sorption_components == 0 ||
-                num_sorption_components == number_aqueous_kinetics_);
+                num_sorption_components == number_aqueous_components_);
 
   chem_engine_->GetIonExchangeNames(ion_exchange_site_names_);
   number_ion_exchange_sites_ = ion_exchange_site_names_.size();
@@ -111,7 +111,7 @@ Alquimia_PK::parseParameterList()
   int num_isotherm_components = chem_engine_->NumIsothermSpecies();
   // Amanzi only supports all or nothing isotherms
   AMANZI_ASSERT(num_isotherm_components == 0 ||
-                num_isotherm_components == number_aqueous_kinetics_);
+                num_isotherm_components == number_aqueous_components_);
 
   number_aux_data_ = chem_engine_->Sizes().num_aux_integers + chem_engine_->Sizes().num_aux_doubles;
 
@@ -247,7 +247,7 @@ Alquimia_PK::Setup()
       if (!key.empty()) {
         requireAtNext(key, tag_next_, *S_, true, passwd_)
           .SetMesh(mesh_)
-          ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_mineral_components_);
+          ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_components_);
         S_->GetRecordSetW(key).set_subfieldnames(aqueous_comp_names_);
         requireAtCurrent(key, tag_current_, *S_, passwd_);
       }

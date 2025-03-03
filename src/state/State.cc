@@ -443,6 +443,37 @@ State::RequireEvaluator(const Key& key, const Tag& tag, bool alias_ok)
     return RequireEvaluator(key, tag);
   }
 
+  // Amanzi prefers to put constant-in-time values and functions in the
+  // "initial conditions" list... can we make an IndependentVariable or
+  // IndependentVariableConstant from stuff in that list?
+  {
+    if (HasICList(key)) {
+      const Teuchos::ParameterList& ic_list = GetICList(key);
+      if (ic_list.isSublist("function")) {
+        Teuchos::ParameterList& e_list = GetEvaluatorList(key);
+        e_list.set<std::string>("evaluator type", "independent variable");
+        e_list.set<bool>("constant in time", true);
+        e_list.sublist("function") = ic_list.sublist("function");
+
+        if (debug && vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+          *vo_->os() << "  ... (from ICs list)";
+        }
+
+        return RequireEvaluator(key, tag);
+      } else if (ic_list.isType<double>("value")) {
+        Teuchos::ParameterList& e_list = GetEvaluatorList(key);
+        e_list.set<std::string>("evaluator type", "independent variable constant");
+        e_list.set<double>("value", ic_list.get<double>("value"));
+
+        if (debug && vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+          *vo_->os() << "  ... (from ICs list)";
+        }
+
+        return RequireEvaluator(key, tag);
+      }
+    }
+  }
+
   // cannot find the evaluator, error
   Errors::Message message;
   message << "Evaluator \"" << key << "\" @ \"" << tag.get() << "\" cannot be created in State. "
@@ -1026,6 +1057,41 @@ State::HasEvaluatorList(const Key& key) const
   if (is_ds) {
     Key lifted_key = Keys::getKey(std::get<0>(split), "*", std::get<2>(split));
     if (FEList().isSublist(lifted_key)) return true;
+  }
+  return false;
+}
+
+
+Teuchos::ParameterList&
+State::GetICList(const Key& key)
+{
+  if (ICList().isParameter(key)) {
+    return ICList().sublist(key);
+  } else {
+    // check for domain set
+    KeyTriple split;
+    bool is_ds = Keys::splitDomainSet(key, split);
+    if (is_ds) {
+      Key lifted_key = Keys::getKey(std::get<0>(split), "*", std::get<2>(split));
+      if (ICList().isParameter(lifted_key)) { return ICList().sublist(lifted_key); }
+    }
+  }
+
+  // return an empty new list
+  return ICList().sublist(key);
+}
+
+
+bool
+State::HasICList(const Key& key) const
+{
+  if (ICList().isSublist(key)) return true;
+  // check for domain set
+  KeyTriple split;
+  bool is_ds = Keys::splitDomainSet(key, split);
+  if (is_ds) {
+    Key lifted_key = Keys::getKey(std::get<0>(split), "*", std::get<2>(split));
+    if (ICList().isSublist(lifted_key)) return true;
   }
   return false;
 }

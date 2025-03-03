@@ -508,6 +508,9 @@ class State {
 
   // -- allows PKs to add to this list to initial conditions
   Teuchos::ParameterList& ICList() { return state_plist_.sublist("initial conditions"); }
+  const Teuchos::ParameterList& ICList() const { return state_plist_.sublist("initial conditions"); }
+  Teuchos::ParameterList& GetICList(const Key& key);
+  bool HasICList(const Key& key) const;
 
   // Evaluator interface
   Evaluator& RequireEvaluator(const Key& key, const Tag& tag, bool alias_ok = true);

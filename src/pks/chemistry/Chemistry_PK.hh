@@ -99,6 +99,8 @@ class Chemistry_PK : public PK_Physical {
 
   // required members for PK interface
   virtual void parseParameterList() override;
+  virtual void Initialize() override;
+
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit) override;
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
 

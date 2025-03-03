@@ -300,13 +300,13 @@ Key
 readKey(Teuchos::ParameterList& list,
         const Key& domain,
         const Key& basename,
-        const Key& default_name = "");
+        const Key& default_name = "ERROR_NO_DEFAULT_PROVIDED");
 
 KeyTag
 readKeyTag(Teuchos::ParameterList& list,
            const Key& domain,
            const Key& basename,
-           const Key& default_name = "",
+           const Key& default_name = "ERROR_NO_DEFAULT_PROVIDED",
            const Tag& tag_default = Tag(""));
 
 // Convenience function for requesting a list of names of Keys from an input

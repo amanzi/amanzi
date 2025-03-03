@@ -512,11 +512,13 @@ readKey(Teuchos::ParameterList& list,
   if (list.isParameter(basename_key_suffix_arg)) {
     default_key = getKey(domain, list.get<std::string>(basename_key_suffix_arg));
     return list.get<std::string>(basename_key_arg, default_key);
-  } else if (!default_name.empty()) {
+  } else if (default_name == "ERROR_NO_DEFAULT_PROVIDED") {
+    return list.get<std::string>(basename_key_arg);
+  } else if (default_name.empty()) {
+    return list.get<std::string>(basename_key_arg, default_name);
+  } else {
     default_key = getKey(domain, default_name);
     return list.get<std::string>(basename_key_arg, default_key);
-  } else {
-    return list.get<std::string>(basename_key_arg);
   }
 }
 

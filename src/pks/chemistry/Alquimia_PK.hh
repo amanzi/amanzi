@@ -141,6 +141,39 @@ struct AlquimiaSubstate {
   Epetra_MultiVector * secondary_free_ion_concentration; // [mol L^-1]
   Epetra_MultiVector * secondary_activity_coefficient; // [-]
   // Epetra_MultiVector * gas_partial_pressure; // [-]
+
+  AlquimiaSubstate()
+    : mass_density_liquid(nullptr),
+      porosity(nullptr),
+      temperature(nullptr),
+      tcc_old(nullptr),
+      tcc_new(nullptr),
+      total_sorbed_new(nullptr),
+      total_sorbed_old(nullptr),
+      mineral_volume_fraction_old(nullptr),
+      mineral_volume_fraction_new(nullptr),
+      mineral_specific_surface_area_old(nullptr),
+      mineral_specific_surface_area_new(nullptr),
+      sorption_site_density_old(nullptr),
+      sorption_site_density_new(nullptr),
+      cation_exchange_capacity_old(nullptr),
+      cation_exchange_capacity_new(nullptr),
+      saturation_liquid(nullptr),
+      isotherm_kd(nullptr),
+      isotherm_freundlich_n(nullptr),
+      isotherm_langmuir_b(nullptr),
+      mineral_rate_constant(nullptr),
+      aqueous_kinetic_rate_constant(nullptr),
+      aux_data_old(nullptr),
+      aux_data_new(nullptr),
+      pH(nullptr),
+      mineral_saturation_index(nullptr),
+      mineral_reaction_rate(nullptr),
+      aqueous_kinetic_rate(nullptr),
+      primary_free_ion_concentration(nullptr),
+      primary_activity_coefficient(nullptr),
+      secondary_free_ion_concentration(nullptr),
+      secondary_activity_coefficient(nullptr) {}
 };
 
 } // namespace Impl

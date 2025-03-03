@@ -8,6 +8,11 @@ from amanzi_xml.utils import io as aio
 from amanzi_xml.utils import errors as aerrors
 from amanzi_xml.common import parameter, parameter_list
 
+def addPrimaryVariable(pk_list):
+    if not pk_list.isElement("primary variable key") and \
+       not pk_list.isElement("primary variable key suffix"):
+        pk_list.setParameter("primary variable key suffix", "string", "total_component_concentration")
+
 
 def fixTSControl(pk_list):
     ts_control = pk_list.sublist("timestep controller")
@@ -30,6 +35,16 @@ def fixTSControl(pk_list):
         if pk_list.isElement("initial timestep (s)"):
             tsc_params.setParameter("timestep [s]", "double",
                                   pk_list.pop("initial timestep (s)").getValue())
+
+        # remove dead stuff
+        for dead in ["min timestep (s)",
+                     "max timestep (s)",
+                     "timestep cut threshold",
+                     "timestep increase threshold",
+                     "timestep cut factor",
+                     "timestep increase factor"]:
+            if pk_list.isElement(dead):
+                pk_list.pop(dead)
 
     # parameters in the simple timestep controller
     elif method == "standard":
@@ -82,9 +97,11 @@ def findAllPKType(xml, pk_type):
 def fixAll(xml):
     for pk_list in findAllPKType(xml, "chemistry alquimia"):
         fixTSControl(pk_list)
+        addPrimaryVariable(pk_list)
     for pk_list in findAllPKType(xml, "chemistry amanzi"):
         fixTSControl(pk_list)
-
+        addPrimaryVariable(pk_list)
+        
 
 if __name__ == "__main__":
     import argparse
