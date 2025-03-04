@@ -135,6 +135,9 @@ class Chemistry_PK : public PK_Physical {
   Teuchos::RCP<TimestepController> timestep_controller_;
   double dt_next_;
   int num_iterations_, num_successful_steps_;
+
+  // discretization control
+  bool operator_split_;
 };
 
 } // namespace AmanziChemistry

@@ -31,7 +31,9 @@ Chemistry_PK::Chemistry_PK()
   : number_aqueous_components_(0),
     number_gaseous_components_(0),
     number_mineral_components_(0),
-    dt_next_(-1.) {};
+    dt_next_(-1.),
+    operator_split_(false)
+{};
 
 
 Chemistry_PK::Chemistry_PK(Teuchos::ParameterList& pk_tree,
@@ -43,7 +45,8 @@ Chemistry_PK::Chemistry_PK(Teuchos::ParameterList& pk_tree,
     number_aqueous_components_(0),
     number_gaseous_components_(0),
     number_mineral_components_(0),
-    dt_next_(-1.)
+    dt_next_(-1.),
+    operator_split_(false)
 {
   // note, we pass in null to the factory here to make sure there is no error
   // control used, which doesn't make sense for this application.
@@ -72,6 +75,7 @@ Chemistry_PK::parseParameterList()
   // other parameters
   passwd_ = plist_->get<std::string>("primary variable password", "state");
   saturation_tolerance_ = plist_->get<double>("saturation tolerance", 1e-14);
+  operator_split_ = plist_->get<bool>("operator split", false);
 }
 
 
@@ -143,6 +147,8 @@ Chemistry_PK::CommitStep(double t_old, double t_new, const Tag& tag_next)
   AMANZI_ASSERT(tag_next == tag_next_ || tag_next == Tags::NEXT);
   Tag tag_current = tag_next == tag_next_ ? tag_current_ : Tags::CURRENT;
   copyFields_(tag_current_, tag_next);
+
+  PK_Physical::CommitStep(t_old, t_new, tag_next);
 }
 
 

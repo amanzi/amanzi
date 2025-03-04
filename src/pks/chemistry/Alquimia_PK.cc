@@ -374,8 +374,6 @@ Alquimia_PK::Initialize()
 int
 Alquimia_PK::initializeSingleCell_(int cell, const std::string& condition)
 {
-  // NOTE: this should get set not to be hard-coded to Tags::DEFAULT, but
-  // should use the same tag as transport.  See #673
   copyToAlquimia(cell, beaker_);
   chem_engine_->EnforceCondition(condition, S_->get_time(tag_current_),
           beaker_.properties, beaker_.state, beaker_.aux_data, beaker_.aux_output);
@@ -440,7 +438,13 @@ Alquimia_PK::updateSubstate()
   }
 
   // internal things
-  substate_.tcc_old = &*S_->Get<CompositeVector>(key_, tag_current_).ViewComponent("cell", false);
+  if (operator_split_) {
+    // OPERATOR SPLITTING -- TCC old is NEXT here!
+    substate_.tcc_old = &*S_->Get<CompositeVector>(key_, tag_next_).ViewComponent("cell", false);
+  } else {
+    // stand-alone chemistry -- TCC is CURRENT here!
+    substate_.tcc_old = &*S_->Get<CompositeVector>(key_, tag_current_).ViewComponent("cell", false);
+  }
   substate_.tcc_new = &*S_->GetW<CompositeVector>(key_, tag_next_, passwd_).ViewComponent("cell", false);
 
   if (number_mineral_components_ > 0) {
@@ -769,9 +773,6 @@ Alquimia_PK::advanceSingleCell_(int cell, double dt)
 {
   // Copy the state and property information from Amanzi's state within
   // this cell to Alquimia.
-  //
-  // NOTE: this should get set not to be hard-coded to Tags::DEFAULT, but
-  // should use the same tag as transport.  See #673
   copyToAlquimia(cell, beaker_);
 
   int num_iterations = 0;
@@ -793,16 +794,21 @@ Alquimia_PK::advanceSingleCell_(int cell, double dt)
       return -1;
     }
 
-    // Move the information back into Amanzi's state, updating the given total concentration vector.
+    // Copy the information back into Amanzi's state, updating the given total
+    // concentration vector.
     copyFromAlquimia_(cell);
   }
   return num_iterations;
 }
 
 
+/* *******************************************************************
+* Copies all state data from tag_source to tag_dest.
+******************************************************************* */
 void
 Alquimia_PK::copyFields_(const Tag& tag_dest, const Tag& tag_source)
 {
+
   auto keys = std::vector<Key>{ mineral_volume_fraction_key_,
     mineral_specific_surface_area_key_,
     sorp_site_density_key_,
