@@ -11,7 +11,8 @@
 #include "Epetra_SerialDenseMatrix.h"
 
 #include "errors.hh"
-#include "HDF5Reader.hh"
+#include "Key.hh"
+#include "Reader.hh"
 
 #include "FunctionAdditive.hh"
 #include "FunctionBilinear.hh"
@@ -35,74 +36,98 @@
 namespace Amanzi {
 
 std::unique_ptr<Function>
-FunctionFactory::Create(Teuchos::ParameterList& list) const
+FunctionFactory::Create(const std::string& function_type,
+                        Teuchos::ParameterList& function_params) const
 {
-  // Iterate through the parameters in the list.  There should be exactly
-  // one, a sublist, whose name matches one of the known function types.
-  // Anything else is a syntax error and we throw an exception.
   std::unique_ptr<Function> f;
-  for (auto it = list.begin(); it != list.end(); ++it) {
-    std::string function_type = list.name(it);
-    if (list.isSublist(function_type)) { // process the function sublist
-      if (f.get()) {                     // error: already processed a function sublist
-        Errors::Message m;
-        m << "FunctionFactory: extraneous function sublist: " << function_type.c_str();
-        Exceptions::amanzi_throw(m);
-      }
-      Teuchos::ParameterList& function_params = list.sublist(function_type);
-      if (function_type == "function-constant")
-        f = create_constant(function_params);
-      else if (function_type == "function-tabular")
-        f = create_tabular(function_params);
-      else if (function_type == "function-polynomial")
-        f = create_polynomial(function_params);
-      else if (function_type == "function-monomial")
-        f = create_monomial(function_params);
-      else if (function_type == "function-smooth-step")
-        f = create_smooth_step(function_params);
-      else if (function_type == "function-linear")
-        f = create_linear(function_params);
-      else if (function_type == "function-separable")
-        f = create_separable(function_params);
-      else if (function_type == "function-additive")
-        f = create_additive(function_params);
-      else if (function_type == "function-multiplicative")
-        f = create_multiplicative(function_params);
-      else if (function_type == "function-composition")
-        f = create_composition(function_params);
-      else if (function_type == "function-static-head")
-        f = create_static_head(function_params);
-      else if (function_type == "function-standard-math")
-        f = create_standard_math(function_params);
-      else if (function_type == "function-bilinear")
-        f = create_bilinear(function_params);
-      else if (function_type == "function-bilinear-and-time")
-        f = create_bilinear_and_time(function_params);
-      else if (function_type == "function-distance")
-        f = create_distance(function_params);
-      else if (function_type == "function-squaredistance")
-        f = create_squaredistance(function_params);
-      else if (function_type == "function-exprtk")
-        f = create_exprtk(function_params);
-      else { // I don't recognize this function type
-        Errors::Message m;
-        m << "FunctionFactory: unknown function type: " << function_type.c_str();
-        Exceptions::amanzi_throw(m);
-      }
-    } else { // not the expected function sublist
-      Errors::Message m;
-      m << "FunctionFactory: unknown parameter: " << function_type.c_str();
-      Exceptions::amanzi_throw(m);
-    }
-  }
-
-  if (!f) { // no function sublist was found above
+  if (function_type == "constant")
+    f = create_constant(function_params);
+  else if (function_type == "tabular")
+    f = create_tabular(function_params);
+  else if (function_type == "polynomial")
+    f = create_polynomial(function_params);
+  else if (function_type == "monomial")
+    f = create_monomial(function_params);
+  else if (function_type == "smooth step")
+    f = create_smooth_step(function_params);
+  else if (function_type == "linear")
+    f = create_linear(function_params);
+  else if (function_type == "separable")
+    f = create_separable(function_params);
+  else if (function_type == "additive")
+    f = create_additive(function_params);
+  else if (function_type == "multiplicative")
+    f = create_multiplicative(function_params);
+  else if (function_type == "composition")
+    f = create_composition(function_params);
+  else if (function_type == "static head")
+    f = create_static_head(function_params);
+  else if (function_type == "standard math")
+    f = create_standard_math(function_params);
+  else if (function_type == "bilinear")
+    f = create_bilinear(function_params);
+  else if (function_type == "bilinear and time")
+    f = create_bilinear_and_time(function_params);
+  else if (function_type == "distance")
+    f = create_distance(function_params);
+  else if (function_type == "squaredistance")
+    f = create_squaredistance(function_params);
+  else if (function_type == "exprtk")
+    f = create_exprtk(function_params);
+  else { // I don't recognize this function type
     Errors::Message m;
-    m << "FunctionFactory: missing function sublist.";
+    m << "FunctionFactory: unknown function type: " << function_type.c_str();
     Exceptions::amanzi_throw(m);
   }
   return f;
 }
+
+
+std::unique_ptr<Function>
+FunctionFactory::Create(Teuchos::ParameterList& list) const
+{
+  std::unique_ptr<Function> f;
+
+  if (list.isParameter("function type")) {
+    // new standardization of accessing typed things
+    auto function_type = list.get<std::string>("function type");
+    f = Create(function_type, list);
+
+  } else {
+    // Old style, deprecate this see #181
+    //
+    // Iterate through the parameters in the list.  There should be exactly
+    // one, a sublist, whose name matches one of the known function types.
+    // Anything else is a syntax error and we throw an exception.
+    for (auto it = list.begin(); it != list.end(); ++it) {
+      std::string function_type = list.name(it);
+      if (list.isSublist(function_type)) { // process the function sublist
+        if (f.get()) {                     // error: already processed a function sublist
+          Errors::Message m;
+          m << "FunctionFactory: extraneous function sublist: " << function_type.c_str();
+          Exceptions::amanzi_throw(m);
+        }
+      } else { // not the expected function sublist
+        Errors::Message m;
+        m << "FunctionFactory: unknown parameter: " << function_type.c_str();
+        Exceptions::amanzi_throw(m);
+      }
+      // strip the function-
+      Teuchos::ParameterList& function_params = list.sublist(function_type);
+      function_type = function_type.substr(9, std::string::npos);
+      function_type = Keys::replace_all(function_type, "-", " ");
+      f = Create(function_type, function_params);
+    }
+
+    if (!f) { // no function sublist was found above
+      Errors::Message m;
+      m << "FunctionFactory: missing function sublist.";
+      Exceptions::amanzi_throw(m);
+    }
+  }
+  return f;
+}
+
 
 std::unique_ptr<Function>
 FunctionFactory::create_constant(Teuchos::ParameterList& params) const
@@ -127,7 +152,7 @@ FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
   if (params.isParameter("file")) {
     //    try {
     std::string filename = params.get<std::string>("file");
-    HDF5Reader reader(filename);
+    auto reader = createReader(filename);
 
     int xi = 0;
     std::string x = params.get<std::string>("x header");
@@ -142,20 +167,20 @@ FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
       xi = 3;
     std::string y = params.get<std::string>("y header");
 
-    std::vector<double> vec_x;
-    std::vector<double> vec_y;
-    reader.ReadData(x, vec_x);
-    reader.ReadData(y, vec_y);
+    Teuchos::Array<double> vec_x;
+    Teuchos::Array<double> vec_y;
+    reader->read(x, vec_x);
+    reader->read(y, vec_y);
     if (params.isParameter("forms")) {
-      std::vector<FunctionTabular::Form> form;
+      std::vector<Form_kind> form;
       if (params.isType<Teuchos::Array<std::string>>("forms")) {
         Teuchos::Array<std::string> form_strings(params.get<Teuchos::Array<std::string>>("forms"));
         form.resize(form_strings.size());
         for (int i = 0; i < form_strings.size(); ++i) {
           if (form_strings[i] == "linear")
-            form[i] = FunctionTabular::LINEAR;
+            form[i] = Form_kind::LINEAR;
           else if (form_strings[i] == "constant")
-            form[i] = FunctionTabular::CONSTANT;
+            form[i] = Form_kind::CONSTANT;
           else {
             Errors::Message m;
             m << "unknown form \"" << form_strings[i].c_str() << "\"";
@@ -166,9 +191,9 @@ FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
         std::string form_string = params.get<std::string>("forms");
 
         if (form_string == "linear") {
-          form.resize(vec_x.size() - 1, FunctionTabular::LINEAR);
+          form.resize(vec_x.size() - 1, Form_kind::LINEAR);
         } else if (form_string == "constant") {
-          form.resize(vec_x.size() - 1, FunctionTabular::CONSTANT);
+          form.resize(vec_x.size() - 1, Form_kind::CONSTANT);
         } else {
           Errors::Message m;
           m << "unknown form \"" << form_string << "\"";
@@ -183,17 +208,6 @@ FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
       f = std::make_unique<FunctionTabular>(vec_x, vec_y, xi);
     }
 
-    // }
-    // catch (Teuchos::Exceptions::InvalidParameter& msg) {
-    //   Errors::Message m;
-    //   m << "FunctionFactory: function-tabular parameter error: " << msg.what();
-    //   Exceptions::amanzi_throw(m);
-    // }
-    // catch (Errors::Message& msg) {
-    //   Errors::Message m;
-    //   m << "FunctionFactory: function-tabular parameter error: " << msg.what();
-    //   Exceptions::amanzi_throw(m);
-    // }
   } else {
     try {
       std::vector<double> x(params.get<Teuchos::Array<double>>("x values").toVector());
@@ -212,18 +226,18 @@ FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
       if (params.isParameter("forms")) {
         Teuchos::Array<std::string> form_strings(params.get<Teuchos::Array<std::string>>("forms"));
         int nforms = form_strings.size();
-        std::vector<FunctionTabular::Form> form(nforms);
+        std::vector<Form_kind> form(nforms);
 
         bool flag_func(false);
         std::vector<std::unique_ptr<Function>> func(nforms);
 
         for (int i = 0; i < nforms; ++i) {
           if (form_strings[i] == "linear")
-            form[i] = FunctionTabular::LINEAR;
+            form[i] = Form_kind::LINEAR;
           else if (form_strings[i] == "constant")
-            form[i] = FunctionTabular::CONSTANT;
+            form[i] = Form_kind::CONSTANT;
           else {
-            form[i] = FunctionTabular::FUNCTION;
+            form[i] = Form_kind::FUNCTION;
             if (params.isSublist(form_strings[i])) {
               Teuchos::ParameterList& f1_params = params.sublist(form_strings[i]);
 
@@ -537,7 +551,7 @@ FunctionFactory::create_bilinear(Teuchos::ParameterList& params) const
   if (params.isParameter("file")) {
     try {
       std::string filename = params.get<std::string>("file");
-      HDF5Reader reader(filename);
+      auto reader = createReader(filename);
 
       int xi, yi(0); // input indices
       std::string x = params.get<std::string>("row header");
@@ -576,13 +590,13 @@ FunctionFactory::create_bilinear(Teuchos::ParameterList& params) const
         yi = 0;
       }
 
-      std::vector<double> vec_x;
-      std::vector<double> vec_y;
+      Teuchos::Array<double> vec_x;
+      Teuchos::Array<double> vec_y;
       std::string v = params.get<std::string>("value header");
-      Epetra_SerialDenseMatrix mat_v;
-      reader.ReadData(x, vec_x);
-      reader.ReadData(y, vec_y);
-      reader.ReadMatData(v, mat_v);
+      Teuchos::SerialDenseMatrix<int, double> mat_v;
+      reader->read(x, vec_x);
+      reader->read(y, vec_y);
+      reader->read(v, mat_v);
       f = std::make_unique<FunctionBilinear>(vec_x, vec_y, mat_v, xi, yi);
     } catch (Teuchos::Exceptions::InvalidParameter& msg) {
       Errors::Message m;
@@ -660,8 +674,27 @@ FunctionFactory::create_bilinear_and_time(Teuchos::ParameterList& params) const
   }
   std::string time_header = params.get<std::string>("time header");
   std::string value_header = params.get<std::string>("value header");
-  return std::make_unique<FunctionBilinearAndTime>(
-    filename, time_header, row_header, row_coordinate, col_header, col_coordinate, value_header);
+
+  std::string form_string = params.get<std::string>("forms", "linear");
+  Form_kind form;
+  if (form_string == "linear") {
+    form = Form_kind::LINEAR;
+  } else if (form_string == "constant") {
+    form = Form_kind::CONSTANT;
+  } else {
+    Errors::Message m;
+    m << "FunctionFactory: function-bilinear-and-time provided invalid value for \"form\" of \""
+      << form_string << "\" -- valid are \"linear\" and \"constant\"";
+    Exceptions::amanzi_throw(m);
+  }
+  return std::make_unique<FunctionBilinearAndTime>(filename,
+                                                   time_header,
+                                                   row_header,
+                                                   row_coordinate,
+                                                   col_header,
+                                                   col_coordinate,
+                                                   value_header,
+                                                   form);
 }
 
 

@@ -80,6 +80,13 @@ TEST(MULTIPHASE_MODEL_I)
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   auto MPK = Teuchos::rcp(new Multiphase_PK(pk_tree, plist, S, soln));
 
+  // work-around
+  Key key("mass_density_gas");
+  S->Require<CompositeVector, CompositeVectorSpace>(key, Tags::DEFAULT, key)
+    .SetMesh(mesh)
+    ->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, 1);
+
   MPK->Setup();
   S->Setup();
   S->InitializeFields();
@@ -110,15 +117,15 @@ TEST(MULTIPHASE_MODEL_I)
     iloop++;
 
     // output solution
-    if (iloop % 5 == 0) {
+    if (iloop % 10 == 0) {
       io->InitializeCycle(t, iloop, "");
       const auto& u0 = *S->Get<CompositeVector>("pressure_liquid").ViewComponent("cell");
       const auto& u1 = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
       const auto& u2 = *S->Get<CompositeVector>("molar_density_gas").ViewComponent("cell");
 
-      io->WriteVector(*u0(0), "pressure", AmanziMesh::CELL);
-      io->WriteVector(*u1(0), "saturation", AmanziMesh::CELL);
-      io->WriteVector(*u2(0), "mole density gas", AmanziMesh::CELL);
+      io->WriteVector(*u0(0), "pressure", AmanziMesh::Entity_kind::CELL);
+      io->WriteVector(*u1(0), "saturation", AmanziMesh::Entity_kind::CELL);
+      io->WriteVector(*u2(0), "mole density gas", AmanziMesh::Entity_kind::CELL);
       io->FinalizeCycle();
 
       WriteStateStatistics(*S, *vo);

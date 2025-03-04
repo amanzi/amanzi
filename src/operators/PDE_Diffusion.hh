@@ -27,26 +27,113 @@
 
 /*!
 
-A diffusion PDE for generating both local and global operators.
+Diffusion is the most frequently used operator. It employs the old schema.
 
-* `"discretization primary`" ``[string]``
+.. admonition:: diffusion_op-spec
 
+  * `"pks operator name`" ``[list]`` a PK specific name for the diffusion operator.
+
+    * `"discretization primary`" ``[string]`` specifies an advanced discretization method that
+      has useful properties under some a priori conditions on the mesh and/or permeability tensor.
+      The available options are `"mfd: optimized for sparsity`", `"mfd: optimized for monotonicity`",
+      `"mfd: default`", `"mfd: support operator`", `"mfd: two-point flux approximation`",
+      `"fv: default`", and `"nlfv: default`".
+      The first option is recommended for general meshes.
+      The second option is recommended for orthogonal meshes and diagonal absolute
+      permeability tensor.
+
+    * `"discretization secondary`" ``[string]`` specifies the most robust discretization method
+      that is used when the primary selection fails to satisfy all a priori conditions.
+      Default value is equal to that for the primary discretization.
+
+    * `"diffusion tensor`" ``[string]`` specifies additional properties of the diffusion tensor.
+      It allows us to solve problems with non-symmetric but positive definite tensors.
+      Available options are *symmetric* (default) and *nonsymmetric*.
+
+    * `"nonlinear coefficient`" ``[string]`` specifies a method for treating nonlinear diffusion
+      coefficient, if any. Available options are `"none`", `"upwind: face`", `"divk: cell-face`" (default),
+      `"divk: face`", `"standard: cell`", and `"divk: cell-face-twin`".
+      Symmetry preserving methods are the divk-family of methods and the classical cell-centered
+      method (`"standard: cell`"). The first part of the name indicates the base scheme.
+      The second part (after the semi-column) indicates required components of the composite vector
+      that must be provided by a physical PK.
+      Default is `"none`".
+
+    * `"schema`" ``[Array(string)]`` defines the operator stencil. It is a collection of
+      geometric objects. It equals to `"{cell}`" for finite volume schemes.
+      It is typically `"{face, cell}`" for mimetic discretizations.
+
+    * `"preconditioner schema`" [Array(string)] defines the preconditioner stencil.
+      It is needed only when the default assembling procedure is not desirable.
+      If skipped, the `"schema`" is used instead.
+
+    * `"gravity`" ``[bool]`` specifies if flow is driven also by the gravity.
+
+    * `"gravity term discretization`" ``[string]`` selects a model for discretizing the
+      gravity term. Available options are `"hydraulic head`" [default] and `"finite volume`".
+      The first option starts with equation for the shifted solution, i.e. the hydraulic head,
+      and derives gravity discretization by the reserve shifting.
+      The second option is based on the divergence formula.
+
+    * `"gravity magnitude`" ``[double]`` defined magnitude of the gravity vector.
+
+    * `"Newton correction`" ``[string]`` specifies a model for correction (non-physical) terms
+      that must be added to the preconditioner. These terms approximate some Jacobian terms.
+      Available options are `"true Jacobian`" and `"approximate Jacobian`".
+      The FV scheme accepts only the first options. The othre schemes accept only the second option.
+
+    * `"scaled constraint equation`" ``[bool]`` rescales flux continuity equations on mesh faces.
+      These equations are divided by the nonlinear coefficient. This option allows us to
+      treat the case of zero nonlinear coefficient. At moment this feature does not work
+      with non-zero gravity term. Default is *false*.
+
+    * `"constraint equation scaling cutoff"`" ``[double]`` specifies the cutoff value for
+      applying rescaling strategy described above.
+
+    * `"consistent faces`" ``[list]`` may contain a `"preconditioner`" and
+      `"linear operator`" list (see sections Preconditioners_ and LinearSolvers_
+      respectively).  If these lists are provided, and the `"discretization
+      primary`" is of type `"mfd: *`", then the diffusion method
+      UpdateConsistentFaces() can be used.  This method, given a set of cell
+      values, determines the faces constraints that satisfy the constraint
+      equation in MFD by assembling and inverting the face-only system.  This is
+      not currently used by any Amanzi PKs.
+
+    * `"fracture`" ``[Array(string)]`` provides list of regions that defines a fracture network.
+      This parameter is used only by the coupled flow PK.
 
 
 Example:
 
 .. code-block:: xml
 
-    <ParameterList name="OPERATOR_NAME">
-      <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
-      <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
-      <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-      <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
-      <Parameter name="gravity" type="bool" value="true"/>
-      <Parameter name="gravity term discretization" type="string" value="hydraulic head"/>
-      <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
-      <Parameter name="Newton correction" type="string" value="true Jacobian"/>
+  <ParameterList name="pks operator name">
+    <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
+    <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
+    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+    <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+    <Parameter name="gravity" type="bool" value="true"/>
+    <Parameter name="gravity term discretization" type="string" value="hydraulic head"/>
+    <Parameter name="gravity magnitude" type="double" value="9.81"/>
+    <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
+    <Parameter name="Newton correction" type="string" value="true Jacobian"/>
+
+    <ParameterList name="consistent faces">
+      <ParameterList name="linear solver">
+        ...
+      </ParameterList>
+      <ParameterList name="preconditioner">
+        ...
+      </ParameterList>
     </ParameterList>
+  </ParameterList>
+
+This example creates a p-lambda system, i.e. the pressure is
+discretized in mesh cells and on mesh faces.
+The preconditioner is defined on faces only, i.e. cell-based unknowns
+are eliminated explicitly and the preconditioner is applied to the
+Schur complement.
+
 */
 
 
@@ -102,20 +189,12 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
                                  const Teuchos::Ptr<const CompositeVector>& u,
                                  const Teuchos::Ptr<const CompositeVector>& factor) = 0;
 
-  // -- additional interface on non-manifolds
-  virtual void UpdateFluxManifold(const Teuchos::Ptr<const CompositeVector>& u,
-                                  const Teuchos::Ptr<CompositeVector>& flux)
-  {
-    Errors::Message msg;
-    msg << "Missing support for diffusion discretization of manifolds.";
-    Exceptions::amanzi_throw(msg);
-  }
-
   // -- matrix modifications
   virtual void ModifyMatrices(const CompositeVector& u) = 0;
   virtual void ScaleMassMatrices(double s) = 0;
+  virtual void ScaleMatricesColumns(const CompositeVector& s);
 
-  // default implementation
+  // -- default implementation
   virtual void Setup(const Teuchos::RCP<const std::vector<WhetStone::Tensor>>& K,
                      const Teuchos::RCP<const CompositeVector>& k,
                      const Teuchos::RCP<const CompositeVector>& dkdp)
@@ -127,13 +206,13 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   // -- working with consistent faces -- may not be implemented
   virtual int UpdateConsistentFaces(CompositeVector& u)
   {
-    Errors::Message msg(
-      "Diffusion: This diffusion implementation does not support working with consistent faces.");
+    Errors::Message msg("Diffusion implementation does not support working with consistent faces.");
     Exceptions::amanzi_throw(msg);
     return 1;
   }
 
-  // interface to solvers for treating nonlinear BCs.
+  // additional interface
+  // -- interface to solvers for treating nonlinear BCs.
   virtual double ComputeTransmissibility(int f) const = 0;
   virtual double ComputeGravityFlux(int f) const = 0;
 
@@ -147,17 +226,12 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   int schema_jacobian() { return jac_op_schema_; }
 
   int little_k() const { return little_k_; }
-  CompositeVectorSpace little_k_space() const
-  {
-    CompositeVectorSpace out;
-    out.SetMesh(mesh_);
-    out.SetGhosted();
-    if (little_k_ == OPERATOR_LITTLE_K_NONE) { return out; }
-    if (little_k_ != OPERATOR_LITTLE_K_UPWIND) { out.AddComponent("cell", AmanziMesh::CELL, 1); }
-    if (little_k_ != OPERATOR_LITTLE_K_STANDARD) { out.AddComponent("face", AmanziMesh::FACE, 1); }
-    if (little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN) { out.AddComponent("twin", AmanziMesh::FACE, 1); }
-    return out;
-  }
+  CompositeVectorSpace little_k_space() const;
+
+ protected:
+  // -- additional interface on non-manifolds
+  virtual void UpdateFluxManifold_(const Teuchos::Ptr<const CompositeVector>& u,
+                                   const Teuchos::Ptr<CompositeVector>& flux);
 
  protected:
   Teuchos::RCP<const std::vector<WhetStone::Tensor>> K_;
@@ -173,6 +247,66 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   Teuchos::RCP<Op> jac_op_;
   int global_op_schema_, local_op_schema_, jac_op_schema_;
 };
+
+
+/* ******************************************************************
+* Scale face-based matrices.
+****************************************************************** */
+inline void
+PDE_Diffusion::ScaleMatricesColumns(const CompositeVector& s)
+{
+  if (!(local_op_schema_ & OPERATOR_SCHEMA_BASE_FACE)) AMANZI_ASSERT(false);
+  if (!s.HasComponent("cell")) AMANZI_ASSERT(false);
+
+  const auto& s_c = *s.ViewComponent("cell");
+
+  for (int f = 0; f < nfaces_owned; ++f) {
+    WhetStone::DenseMatrix& Aface = local_op_->matrices[f];
+
+    auto cells = mesh_->getFaceCells(f);
+    int ncells = cells.size();
+
+    for (int n = 0; n < ncells; ++n) {
+      double factor = s_c[0][cells[n]];
+      for (int m = 0; m < ncells; ++m) { Aface(m, n) *= factor; }
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Default implementations
+****************************************************************** */
+inline CompositeVectorSpace
+PDE_Diffusion::little_k_space() const
+{
+  CompositeVectorSpace out;
+  out.SetMesh(mesh_);
+  out.SetGhosted();
+  if (little_k_ == OPERATOR_LITTLE_K_NONE) { return out; }
+  if (little_k_ != OPERATOR_LITTLE_K_UPWIND) {
+    out.AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+  }
+  if (little_k_ != OPERATOR_LITTLE_K_STANDARD) {
+    out.AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
+  }
+  if (little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN) {
+    out.AddComponent("twin", AmanziMesh::Entity_kind::FACE, 1);
+  }
+  return out;
+}
+
+
+/* ******************************************************************
+* Default implementations
+****************************************************************** */
+inline void
+PDE_Diffusion::UpdateFluxManifold_(const Teuchos::Ptr<const CompositeVector>& u,
+                                   const Teuchos::Ptr<CompositeVector>& flux)
+{
+  Errors::Message msg("Diffusion does not know how to compute flux on manifolds.");
+  Exceptions::amanzi_throw(msg);
+}
 
 
 /* ******************************************************************

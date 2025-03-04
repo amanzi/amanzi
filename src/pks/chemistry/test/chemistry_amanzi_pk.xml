@@ -95,6 +95,7 @@
     <Parameter name="tolerance" type="double" value="1.50000000000000007e-12"/>
     <Parameter name="maximum Newton iterations" type="int" value="150"/>
     <Parameter name="auxiliary data" type="Array(string)" value="{pH}"/>
+    <Parameter name="log formulation" type="bool" value="true"/>
   </ParameterList>
   </ParameterList>
 

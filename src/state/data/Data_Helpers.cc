@@ -164,34 +164,41 @@ WriteVis<CompositeVector>(const Visualization& vis,
                           const std::vector<std::string>* subfieldnames,
                           const CompositeVector& vec)
 {
-  if (vec.HasComponent("cell")) {
-    const auto& vec_c = *vec.ViewComponent("cell");
-    if (subfieldnames && subfieldnames->size() > 0) {
-      if (vec_c.NumVectors() != subfieldnames->size()) {
-        Errors::Message msg;
-        msg << "While Visualizing \"" << fieldname << "\" a vector of lenth " << vec_c.NumVectors()
-            << ", subfieldnames of length " << (int)subfieldnames->size() << " were provided.";
-        throw(msg);
-      }
+  std::vector<AmanziMesh::Entity_kind> kinds(
+    { AmanziMesh::Entity_kind::CELL, AmanziMesh::Entity_kind::NODE });
 
-      std::vector<Key> full_names;
-      for (int i = 0; i != vec_c.NumVectors(); ++i) {
-        Key full_name = fieldname + "." + (*subfieldnames)[i];
-        full_names.emplace_back(full_name);
-      }
-      vis.WriteVector(vec_c, full_names);
+  for (auto kind : kinds) {
+    std::string comp = to_string(kind);
+    if (vec.HasComponent(comp)) {
+      const auto& vec_c = *vec.ViewComponent(comp);
+      if (subfieldnames && subfieldnames->size() > 0) {
+        if (vec_c.NumVectors() != subfieldnames->size()) {
+          Errors::Message msg;
+          msg << "While Visualizing \"" << fieldname << "\" a vector of lenth "
+              << vec_c.NumVectors() << ", subfieldnames of length " << (int)subfieldnames->size()
+              << " were provided.";
+          throw(msg);
+        }
 
-    } else {
-      std::vector<Key> full_names;
-      if (vec_c.NumVectors() > 1) {
+        std::vector<Key> full_names;
         for (int i = 0; i != vec_c.NumVectors(); ++i) {
-          Key full_name = fieldname + "." + std::to_string(i);
+          Key full_name = fieldname + "." + (*subfieldnames)[i];
           full_names.emplace_back(full_name);
         }
+        vis.WriteVector(vec_c, full_names, kind);
+
       } else {
-        full_names.emplace_back(fieldname);
+        std::vector<Key> full_names;
+        if (vec_c.NumVectors() > 1) {
+          for (int i = 0; i != vec_c.NumVectors(); ++i) {
+            Key full_name = fieldname + "." + std::to_string(i);
+            full_names.emplace_back(full_name);
+          }
+        } else {
+          full_names.emplace_back(fieldname);
+        }
+        vis.WriteVector(vec_c, full_names, kind);
       }
-      vis.WriteVector(vec_c, full_names);
     }
   }
 }
@@ -338,7 +345,7 @@ Initialize<CompositeVector>(Teuchos::ParameterList& plist,
   // ------ Set values using a function -----
   if (plist.isSublist("function")) {
     double t_ini = plist.get<double>("time", 0.0);
-    Teuchos::ParameterList func_plist = plist.sublist("function");
+    Teuchos::ParameterList& func_plist = plist.sublist("function");
 
     std::vector<std::string> complist;
 
@@ -346,17 +353,17 @@ Initialize<CompositeVector>(Teuchos::ParameterList& plist,
     bool map_normal = plist.get<bool>("dot with normal", false);
     if (map_normal) {
       // map_normal take a vector and dots it with face normals
-      AMANZI_ASSERT(t.NumComponents() == 1);                 // one comp
-      AMANZI_ASSERT(t.HasComponent("face"));                 // is named face
-      AMANZI_ASSERT(t.Location("face") == AmanziMesh::FACE); // is on face
-      AMANZI_ASSERT(t.NumVectors("face") == 1);              // and is scalar
+      AMANZI_ASSERT(t.NumComponents() == 1);                              // one comp
+      AMANZI_ASSERT(t.HasComponent("face"));                              // is named face
+      AMANZI_ASSERT(t.Location("face") == AmanziMesh::Entity_kind::FACE); // is on face
+      AMANZI_ASSERT(t.NumVectors("face") == 1);                           // and is scalar
 
       // create a vector on faces of the appropriate dimension
-      int dim = t.Mesh()->space_dimension();
+      int dim = t.Mesh()->getSpaceDimension();
 
       CompositeVectorSpace cvs;
       cvs.SetMesh(t.Mesh());
-      cvs.SetComponent("face", AmanziMesh::FACE, dim);
+      cvs.SetComponent("face", AmanziMesh::Entity_kind::FACE, dim);
       Teuchos::RCP<CompositeVector> vel_vec = Teuchos::rcp(new CompositeVector(cvs));
 
       // Evaluate the velocity function
@@ -365,7 +372,8 @@ Initialize<CompositeVector>(Teuchos::ParameterList& plist,
 
       // CV's map may differ from the regular mesh map due to presense of fractures
       const auto& fmap = *t.Map().Map("face", true);
-      int nfaces_owned = t.Mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+      int nfaces_owned =
+        t.Mesh()->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
       Epetra_MultiVector& dat_f = *t.ViewComponent("face");
       const Epetra_MultiVector& vel_f = *vel_vec->ViewComponent("face");
@@ -380,14 +388,13 @@ Initialize<CompositeVector>(Teuchos::ParameterList& plist,
         int ndofs = fmap.ElementSize(f);
         int g = fmap.FirstPointInElement(f);
         if (ndofs == 1) {
-          const AmanziGeometry::Point& normal = t.Mesh()->face_normal(f);
+          const AmanziGeometry::Point& normal = t.Mesh()->getFaceNormal(f);
           dat_f[0][g] = vel * normal;
         } else {
-          AmanziMesh::Entity_ID_List cells;
-          t.Mesh()->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+          auto cells = t.Mesh()->getFaceCells(f);
 
           for (int i = 0; i < ndofs; ++i) {
-            const AmanziGeometry::Point& normal = t.Mesh()->face_normal(f, false, cells[i], &dir);
+            const AmanziGeometry::Point& normal = t.Mesh()->getFaceNormal(f, cells[i], &dir);
             dat_f[0][g + i] = (vel * normal) * dir;
           }
         }

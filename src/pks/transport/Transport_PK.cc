@@ -32,6 +32,7 @@
 #include "PDE_DiffusionFactory.hh"
 #include "PK_DomainFunctionFactory.hh"
 #include "PK_Utils.hh"
+#include "PKsDefs.hh"
 #include "ReconstructionCellLinear.hh"
 #include "UniqueLocalIndex.hh"
 #include "WhetStoneDefs.hh"
@@ -90,8 +91,13 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
 
   subcycling_ = tp_list_->get<bool>("transport subcycling", true);
 
-  // domain name
+  // domain and primary evaluators
   domain_ = tp_list_->template get<std::string>("domain name", "domain");
+  tcc_key_ = Keys::getKey(domain_, "total_component_concentration");
+  AddDefaultPrimaryEvaluator(S_, tcc_key_);
+
+  // other variables
+  dt_prev_ = 1e+91;
 
   // initialize io
   Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist, "units");
@@ -120,8 +126,13 @@ Transport_PK::Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   linear_solver_list_ = Teuchos::sublist(glist, "solvers");
   nonlinear_solver_list_ = Teuchos::sublist(glist, "nonlinear solvers");
 
-  // domain name
+  // domain and primary evaluators
   domain_ = tp_list_->template get<std::string>("domain name", "domain");
+  tcc_key_ = Keys::getKey(domain_, "total_component_concentration");
+  AddDefaultPrimaryEvaluator(S_, tcc_key_);
+
+  // other variables
+  dt_prev_ = 1e+91;
 
   // initialize io
   Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist, "units");
@@ -168,7 +179,7 @@ Transport_PK::Setup()
   passwd_ = "state"; // owner's password
 
   mesh_ = S_->GetMesh(domain_);
-  dim = mesh_->space_dimension();
+  dim = mesh_->getSpaceDimension();
 
   // cross-coupling of PKs
   auto physical_models = Teuchos::sublist(tp_list_, "physical models and assumptions");
@@ -181,8 +192,6 @@ Transport_PK::Setup()
   use_dispersion_ = physical_models->get<bool>("use dispersion solver", true);
 
   // generate keys here to be available for setup of the base class
-  tcc_key_ = Keys::getKey(domain_, "total_component_concentration");
-
   permeability_key_ = Keys::getKey(domain_, "permeability");
   porosity_key_ = Keys::getKey(domain_, "porosity");
   transport_porosity_key_ = Keys::getKey(domain_, "transport_porosity");
@@ -193,6 +202,8 @@ Transport_PK::Setup()
 
   tmp = physical_models->get<std::string>("saturation key", "saturation_liquid");
   saturation_liquid_key_ = Keys::getKey(domain_, tmp);
+
+  tortuosity_key_ = Keys::getKey(domain_, "tortuosity");
 
   wc_key_ = Keys::getKey(domain_, "water_content");
   prev_wc_key_ = Keys::getKey(domain_, "prev_water_content");
@@ -210,7 +221,7 @@ Transport_PK::Setup()
     S_->Require<CV_t, CVS_t>(permeability_key_, Tags::DEFAULT, permeability_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, dim);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, dim);
   }
   if (!S_->HasRecord(vol_flowrate_key_)) {
     if (transport_on_manifold_) {
@@ -222,7 +233,7 @@ Transport_PK::Setup()
       S_->Require<CV_t, CVS_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)
         ->SetGhosted(true)
-        ->SetComponent("face", AmanziMesh::FACE, 1);
+        ->SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
     }
   }
 
@@ -230,16 +241,22 @@ Transport_PK::Setup()
     S_->Require<CV_t, CVS_t>(saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S_->RequireEvaluator(saturation_liquid_key_, Tags::DEFAULT);
   }
 
+  // require domain specific fields
   if (transport_on_manifold_) {
     S_->Require<CV_t, CVS_t>(aperture_key_, Tags::DEFAULT, aperture_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
+  } else {
+    S_->Require<CV_t, CVS_t>(tortuosity_key_, Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // require state fields when Transport PK is on
@@ -254,7 +271,7 @@ Transport_PK::Setup()
     S_->Require<CV_t, CVS_t>(tcc_key_, Tags::DEFAULT, passwd_, component_names_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, ncomponents);
   }
 
   // porosity evaluators
@@ -262,7 +279,7 @@ Transport_PK::Setup()
     S_->Require<CV_t, CVS_t>(porosity_key_, Tags::DEFAULT, porosity_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S_->RequireEvaluator(porosity_key_, Tags::DEFAULT);
   }
 
@@ -271,7 +288,7 @@ Transport_PK::Setup()
       S_->Require<CV_t, CVS_t>(transport_porosity_key_, Tags::DEFAULT, transport_porosity_key_)
         .SetMesh(mesh_)
         ->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
       S_->RequireEvaluator(transport_porosity_key_, Tags::DEFAULT);
     }
   }
@@ -281,7 +298,7 @@ Transport_PK::Setup()
     S_->Require<CV_t, CVS_t>(wc_key_, Tags::DEFAULT, wc_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
     std::vector<std::string> listm(
       { Keys::getVarName(porosity_key_), Keys::getVarName(saturation_liquid_key_) });
@@ -298,8 +315,26 @@ Transport_PK::Setup()
     S_->Require<CV_t, CVS_t>(prev_wc_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S_->GetRecordW(prev_wc_key_, passwd_).set_io_vis(false);
+  }
+
+  // optional addtional fields
+  if (tp_list_->isParameter("auxiliary data")) {
+    std::string aux_key = Keys::getKey(domain_, "molal_concentration");
+
+    S_->Require<CV_t, CVS_t>(aux_key, Tags::DEFAULT, aux_key)
+      .SetMesh(mesh_)
+      ->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, ncomponents);
+
+    Teuchos::ParameterList elist(aux_key);
+    elist.set<std::string>("my key", aux_key)
+      .set<Teuchos::Array<std::string>>("multiplicative dependencies", { "total_component_concentration" })
+      .set<Teuchos::Array<std::string>>("reciprocal dependencies", { "mass_density_liquid" })
+      .set<std::string>("tag", "");
+    auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
+    S_->SetEvaluator(aux_key, Tags::DEFAULT, eval);
   }
 
   // require multiscale fields
@@ -313,16 +348,16 @@ Transport_PK::Setup()
           "total_component_concentration_msp", Tags::DEFAULT, passwd_, component_names_)
         .SetMesh(mesh_)
         ->SetGhosted(false)
-        ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, ncomponents);
 
       // Secondary matrix nodes are collected here. We assume same order of species.
       int nnodes, nnodes_tmp = NumberMatrixNodes(msp_);
-      mesh_->get_comm()->MaxAll(&nnodes_tmp, &nnodes, 1);
+      mesh_->getComm()->MaxAll(&nnodes_tmp, &nnodes, 1);
       if (nnodes > 1) {
         S_->Require<CV_t, CVS_t>("total_component_concentration_msp_aux", Tags::DEFAULT, passwd_)
           .SetMesh(mesh_)
           ->SetGhosted(false)
-          ->SetComponent("cell", AmanziMesh::CELL, ncomponents * (nnodes - 1));
+          ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, ncomponents * (nnodes - 1));
         S_->GetRecordW("total_component_concentration_msp_aux", passwd_).set_io_vis(false);
       }
     }
@@ -332,13 +367,13 @@ Transport_PK::Setup()
       S_->Require<CV_t, CVS_t>(water_content_msp_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)
         ->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     }
     if (!S_->HasRecord(prev_water_content_msp_key_)) {
       S_->Require<CV_t, CVS_t>(prev_water_content_msp_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)
         ->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
       S_->GetRecordW(prev_water_content_msp_key_, passwd_).set_io_vis(false);
     }
 
@@ -347,7 +382,7 @@ Transport_PK::Setup()
       S_->Require<CV_t, CVS_t>(porosity_msp_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)
         ->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     }
   }
 
@@ -357,6 +392,12 @@ Transport_PK::Setup()
 #ifdef ALQUIMIA_ENABLED
   SetupAlquimia();
 #endif
+
+  // set units
+  S_->GetRecordSetW(tcc_key_).set_units("mol/m^3");
+  S_->GetRecordSetW(porosity_key_).set_units("-");
+  S_->GetRecordSetW(saturation_liquid_key_).set_units("-");
+  if (transport_on_manifold_) { S_->GetRecordSetW(aperture_key_).set_units("m"); }
 }
 
 
@@ -382,21 +423,24 @@ Transport_PK::Initialize()
   vlist.sublist("verbose object") = tp_list_->sublist("verbose object");
   vo_ = Teuchos::rcp(new VerboseObject("Transport-" + domain_, vlist));
 
-  MyPID = mesh_->get_comm()->MyPID();
+  MyPID = mesh_->getComm()->MyPID();
 
   // initialize missed fields
   InitializeFields_();
 
   // Check input parameters. Due to limited amount of checks, we can do it earlier.
-  Policy(S_.ptr());
+  ncells_owned =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  ncells_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
 
-  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  nfaces_owned =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  nfaces_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
-  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-
-  nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+  nnodes_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
   // extract control parameters
   InitializeAll_();
@@ -423,7 +467,7 @@ Transport_PK::Initialize()
   // advection block initialization
   current_component_ = -1;
 
-  const Epetra_Map& cmap_owned = mesh_->cell_map(false);
+  const Epetra_Map& cmap_owned = mesh_->getMap(AmanziMesh::Entity_kind::CELL, false);
   wc_subcycle_start = Teuchos::rcp(new Epetra_Vector(cmap_owned));
   wc_subcycle_end = Teuchos::rcp(new Epetra_Vector(cmap_owned));
 
@@ -446,8 +490,8 @@ Transport_PK::Initialize()
         Teuchos::ParameterList::ConstIterator it1 = bc_list.begin();
         std::string specname = it1->first;
         Teuchos::ParameterList& spec = bc_list.sublist(specname);
-        Teuchos::RCP<TransportDomainFunction> bc =
-          factory.Create(spec, "boundary concentration", AmanziMesh::FACE, Kxy);
+        Teuchos::RCP<TransportDomainFunction> bc = factory.Create(
+          spec, "boundary concentration", AmanziMesh::Entity_kind::FACE, Kxy, Tags::DEFAULT, true);
 
         for (int i = 0; i < component_names_.size(); i++) {
           bc->tcc_names().push_back(component_names_[i]);
@@ -462,8 +506,12 @@ Transport_PK::Initialize()
           for (auto it1 = bc_list.begin(); it1 != bc_list.end(); ++it1) {
             std::string specname = it1->first;
             Teuchos::ParameterList& spec = bc_list.sublist(specname);
-            Teuchos::RCP<TransportDomainFunction> bc =
-              factory.Create(spec, "boundary concentration", AmanziMesh::FACE, Kxy);
+            Teuchos::RCP<TransportDomainFunction> bc = factory.Create(spec,
+                                                                      "boundary concentration",
+                                                                      AmanziMesh::Entity_kind::FACE,
+                                                                      Kxy,
+                                                                      Tags::DEFAULT,
+                                                                      true);
 
             bc->tcc_names().push_back(name);
             bc->tcc_index().push_back(FindComponentNumber(name));
@@ -484,8 +532,8 @@ Transport_PK::Initialize()
         Teuchos::ParameterList& spec = cvlist.sublist(name);
         spec.set<Teuchos::RCP<AmanziChemistry::Chemistry_PK>>("chemical pk", chem_pk_);
 
-        Teuchos::RCP<TransportBoundaryFunction_Chemistry> bc =
-          factory2.Create(spec, "boundary constraints", AmanziMesh::FACE, Kxy);
+        Teuchos::RCP<TransportBoundaryFunction_Chemistry> bc = factory2.Create(
+          spec, "boundary constraints", AmanziMesh::Entity_kind::FACE, Kxy, Tags::DEFAULT, true);
 
         for (int i = 0; i < component_names_.size(); i++) {
           bc->tcc_names().push_back(component_names_[i]);
@@ -546,7 +594,7 @@ Transport_PK::Initialize()
         std::string specname = it1->first;
         Teuchos::ParameterList& spec = src_list.sublist(specname);
         Teuchos::RCP<TransportDomainFunction> src =
-          factory.Create(spec, "sink", AmanziMesh::CELL, Kxy);
+          factory.Create(spec, "sink", AmanziMesh::Entity_kind::CELL, Kxy);
 
         for (int i = 0; i < component_names_.size(); i++) {
           src->tcc_names().push_back(component_names_[i]);
@@ -562,7 +610,8 @@ Transport_PK::Initialize()
           for (auto it1 = src_list.begin(); it1 != src_list.end(); ++it1) {
             std::string specname = it1->first;
             Teuchos::ParameterList& spec = src_list.sublist(specname);
-            Teuchos::RCP<TransportDomainFunction> src = factory.Create(spec, AmanziMesh::CELL, Kxy);
+            Teuchos::RCP<TransportDomainFunction> src =
+              factory.Create(spec, AmanziMesh::Entity_kind::CELL, Kxy);
 
             src->tcc_names().push_back(name);
             src->tcc_index().push_back(FindComponentNumber(name));
@@ -600,7 +649,7 @@ Transport_PK::Initialize()
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Number of components: " << tcc->size() << std::endl
+    *vo_->os() << "Number of components: " << component_names_.size() << std::endl
                << "cfl=" << cfl_ << " spatial/temporal discretization: " << spatial_disc_order
                << " " << temporal_disc_order << std::endl
                << "using transport porosity: " << use_transport_porosity_ << std::endl;
@@ -623,46 +672,23 @@ Transport_PK::InitializeFields_()
   InitializeCVField(S_, *vo_, saturation_liquid_key_, Tags::DEFAULT, passwd_, 1.0);
   InitializeCVField(S_, *vo_, aperture_key_, Tags::DEFAULT, passwd_, 1.0);
 
+  // if tortousity requested but material models are absent, we populate it here
+  InitializeCVField(S_, *vo_, tortuosity_key_, Tags::DEFAULT, passwd_, 1.0);
+
   // we assume that liquid saturation is 1 if wwater content was uninitialized
-  InitializeFieldFromField_(prev_wc_key_, wc_key_, false);
+  InitializeCVFieldFromCVField(S_, *vo_, prev_wc_key_, wc_key_, passwd_);
 
-  InitializeFieldFromField_(water_content_msp_key_, porosity_msp_key_, false);
-  InitializeFieldFromField_(prev_water_content_msp_key_, water_content_msp_key_, false);
+  InitializeCVFieldFromCVField(S_, *vo_, water_content_msp_key_, porosity_msp_key_, passwd_);
+  InitializeCVFieldFromCVField(
+    S_, *vo_, prev_water_content_msp_key_, water_content_msp_key_, passwd_);
 
-  InitializeFieldFromField_("total_component_concentration_msp", tcc_key_, false);
+  InitializeCVFieldFromCVField(S_, *vo_, "total_component_concentration_msp", tcc_key_, passwd_);
   InitializeCVField(S_, *vo_, "total_component_concentration_msp_aux", Tags::DEFAULT, passwd_, 0.0);
 }
 
 
-/* ****************************************************************
-* Auxiliary initialization technique.
-**************************************************************** */
-void
-Transport_PK::InitializeFieldFromField_(const std::string& field0,
-                                        const std::string& field1,
-                                        bool call_evaluator)
-{
-  if (S_->HasRecord(field0)) {
-    if (S_->GetRecord(field0).owner() == passwd_) {
-      if (!S_->GetRecord(field0).initialized()) {
-        if (call_evaluator) S_->GetEvaluator(field1).Update(*S_, passwd_);
-
-        const auto& f1 = S_->Get<CV_t>(field1);
-        auto& f0 = S_->GetW<CV_t>(field0, passwd_);
-        f0 = f1;
-
-        S_->GetRecordW(field0, passwd_).set_initialized();
-
-        if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initialized " << field0 << " to " << field1 << std::endl;
-      }
-    }
-  }
-}
-
-
 /* *******************************************************************
-* Estimation of the time step based on T.Barth (Lecture Notes
+* Estimation of the timestep based on T.Barth (Lecture Notes
 * presented at VKI Lecture Series 1994-05, Theorem 4.2.2.
 * Routine must be called every time we update a flow field.
 *
@@ -703,7 +729,7 @@ Transport_PK::StableTimeStep(int n)
         std::vector<double>& values = it->second;
 
         for (int i = 0; i < values.size(); ++i) {
-          double value = fabs(values[i]) * mesh_->cell_volume(c);
+          double value = fabs(values[i]) * mesh_->getCellVolume(c);
           total_outflux[c] = std::max(total_outflux[c], value);
         }
       }
@@ -718,7 +744,7 @@ Transport_PK::StableTimeStep(int n)
     }
   }
 
-  // loop over wet cells and calculate minimal time step
+  // loop over wet cells and calculate minimal timestep
   // -- to avoid FPEs, we skip calculation for extremely small flux
   double vol, outflux, dt_cell;
   dt_ = dt_cell = TRANSPORT_LARGE_TIME_STEP;
@@ -726,7 +752,7 @@ Transport_PK::StableTimeStep(int n)
   for (int c = 0; c < ncells_owned; c++) {
     outflux = total_outflux[c];
     if (outflux > TRANSPORT_SMALL_CELL_OUTFLUX) {
-      vol = mesh_->cell_volume(c);
+      vol = mesh_->getCellVolume(c);
       if (n == 0)
         dt_cell = vol * wc_prev[0][c] / outflux;
       else if (n == 1)
@@ -740,12 +766,12 @@ Transport_PK::StableTimeStep(int n)
     }
   }
 
-  // correct time step for high-order schemes
+  // correct timestep for high-order schemes
   if (spatial_disc_order == 2) dt_ /= 2;
 
   // no CFL update forsinks, since their are flow dependent.
 
-  // communicate global time step
+  // communicate global timestep
   double dt_tmp = dt_;
   wc_prev.Comm().MinAll(&dt_tmp, &dt_, 1);
 
@@ -760,7 +786,7 @@ Transport_PK::StableTimeStep(int n)
     int cmin_dt_tmp = cmin_dt_unique;
     wc_prev.Comm().MaxAll(&cmin_dt_tmp, &cmin_dt_unique, 1);
     if (cmin_dt == cmin_dt_unique && cmin_dt >= 0) {
-      const AmanziGeometry::Point& p = mesh_->cell_centroid(cmin_dt);
+      const AmanziGeometry::Point& p = mesh_->getCellCentroid(cmin_dt);
 
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "cell " << cmin_dt << " centered at (" << p[0] << ", " << p[1];
@@ -768,12 +794,13 @@ Transport_PK::StableTimeStep(int n)
       *vo_->os() << ") has smallest dt=" << dt_ << std::endl;
     }
   }
+
   return dt_;
 }
 
 
 /* *******************************************************************
-* Estimate returns last time step unless it is zero.
+* Estimate returns last timestep unless it is zero.
 ******************************************************************* */
 double
 Transport_PK::get_dt()
@@ -782,6 +809,7 @@ Transport_PK::get_dt()
     return 1e+99;
   } else {
     StableTimeStep(-1);
+    if (dt_prev_ > 0) dt_ = std::min(dt_, dt_prev_ * 1.2);
     return dt_;
   }
 }
@@ -820,7 +848,6 @@ Transport_PK::AddMultiscalePorosity_(double t_old, double t_new, double t_int1, 
 
   double flux_liquid, wcm0, wcm1, wcf0, wcf1;
   double dtg, dts, t1, t2, tmp0, tmp1, tfp0, tfp1, a, b;
-  std::vector<AmanziMesh::Entity_ID> block;
 
   dtg = t_new - t_old;
   dts = t_int2 - t_int1;
@@ -870,7 +897,10 @@ Transport_PK::AddMultiscalePorosity_(double t_old, double t_new, double t_int1, 
 void
 Transport_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
+  dt_prev_ = std::min(dt_, t_new - t_old);
   S_->GetW<CV_t>(tcc_key_, Tags::DEFAULT, passwd_) = *tcc_tmp;
+  Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
+    S_->GetEvaluatorPtr(tcc_key_, Tags::DEFAULT))->SetChanged();
 }
 
 
@@ -906,15 +936,16 @@ Transport_PK::ComputeSources_(double tp,
         int imap = i;
         if (num_vectors == 1) imap = 0;
 
-        double value = mesh_->cell_volume(c) * values[k];
+        double value = mesh_->getCellVolume(c) * values[k];
         if (srcs_[m]->keyword() == "producer") {
           // correction for an extraction well
           value *= tcc_prev[imap][c];
-        } else if (srcs_[m]->name() == "domain coupling") {
+        } else if (srcs_[m]->getType() == DomainFunction_kind::COUPLING) {
           value = values[k];
         } else {
           // correction for non-SI concentration units
-          if (srcs_[m]->name() == "volume" || srcs_[m]->name() == "weight")
+          if (srcs_[m]->getType() == DomainFunction_kind::VOLUME ||
+              srcs_[m]->getType() == DomainFunction_kind::WEIGHT)
             value /= units_.concentration_factor();
         }
 
@@ -940,9 +971,8 @@ Transport_PK::ComputeBCs_(std::vector<int>& bc_model, std::vector<double>& bc_va
     bc_value[i] = 0.0;
   }
 
-  AmanziMesh::Entity_ID_List cells;
   for (int f = 0; f < nfaces_wghost; f++) {
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    auto cells = mesh_->getFaceCells(f);
     if (cells.size() == 1) bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
   }
 
@@ -964,6 +994,12 @@ Transport_PK::ComputeBCs_(std::vector<int>& bc_model, std::vector<double>& bc_va
             flag = true;
           }
         }
+      }
+    }
+    else if (bcs_[m]->get_location() == "interface") {
+      for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
+        int f = it->first;
+        bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
       }
     }
   }
@@ -997,11 +1033,9 @@ Transport_PK::IdentifyUpwindCells()
   upwind_flux_.resize(nfaces_wghost);
   downwind_flux_.resize(nfaces_wghost);
 
-  AmanziMesh::Entity_ID_List cells;
-
   // the case of fluxes that use unique face normal even if there
   // exists more than one flux on a face
-  if (mesh_->space_dimension() == mesh_->manifold_dimension()) {
+  if (mesh_->getSpaceDimension() == mesh_->getManifoldDimension()) {
     for (int f = 0; f < nfaces_wghost; f++) {
       int ndofs = map->ElementSize(f);
       upwind_cells_[f].assign(ndofs, -1);
@@ -1011,12 +1045,11 @@ Transport_PK::IdentifyUpwindCells()
     }
 
     for (int c = 0; c < ncells_wghost; c++) {
-      const auto& faces = mesh_->cell_get_faces(c);
-      const auto& dirs = mesh_->cell_get_face_dirs(c);
+      const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
 
       for (int i = 0; i < faces.size(); i++) {
         int f = faces[i];
-        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+        auto cells = mesh_->getFaceCells(f);
 
         int g = map->FirstPointInElement(f);
         int ndofs = map->ElementSize(f);
@@ -1058,8 +1091,7 @@ Transport_PK::IdentifyUpwindCells()
     // flux (could be more than one) on a face
   } else {
     for (int c = 0; c < ncells_wghost; c++) {
-      const auto& faces = mesh_->cell_get_faces(c);
-      const auto& dirs = mesh_->cell_get_face_dirs(c);
+      const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
 
       for (int i = 0; i < faces.size(); i++) {
         int f = faces[i];

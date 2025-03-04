@@ -54,6 +54,8 @@ class SorptionIsothermRxn {
   void AddContributionToTotal(std::vector<double>* total);
   void AddContributionToDTotal(const std::vector<Species>& primary_species, MatrixBlock* dtotal);
 
+  void ScaleTotal(double s) { sorbed_concentration_ *= s; }
+
   void Display(const Teuchos::Ptr<VerboseObject> vo) const;
 
  private:

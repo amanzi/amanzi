@@ -37,16 +37,17 @@ namespace Operators {
 void
 ReconstructionCellPolynomial::Init(Teuchos::ParameterList& plist)
 {
-  d_ = mesh_->space_dimension();
+  d_ = mesh_->getSpaceDimension();
 
   CompositeVectorSpace cvs, cvs2;
   cvs.SetMesh(mesh_)->SetGhosted(true)->SetComponent(
-    "cell", AmanziMesh::CELL, d_ * (d_ + 1) / 2 + d_);
+    "cell", AmanziMesh::Entity_kind::CELL, d_ * (d_ + 1) / 2 + d_);
 
   poly_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
   poly_c_ = poly_->ViewComponent("cell", true);
 
-  cvs2.SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, d_ * (d_ + 1) / 2);
+  cvs2.SetMesh(mesh_)->SetGhosted(true)->SetComponent(
+    "cell", AmanziMesh::Entity_kind::CELL, d_ * (d_ + 1) / 2);
   ortho_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs2, true));
   ortho_c_ = ortho_->ViewComponent("cell", true);
 
@@ -61,7 +62,7 @@ ReconstructionCellPolynomial::Init(Teuchos::ParameterList& plist)
 * least-square fit.
 ****************************************************************** */
 void
-ReconstructionCellPolynomial::Compute(const AmanziMesh::Entity_ID_List& ids,
+ReconstructionCellPolynomial::Compute(const AmanziMesh::Entity_ID_View& ids,
                                       const Teuchos::RCP<const Epetra_MultiVector>& field,
                                       int component,
                                       const Teuchos::RCP<const BCs>& bc)
@@ -77,19 +78,17 @@ ReconstructionCellPolynomial::Compute(const AmanziMesh::Entity_ID_List& ids,
   WhetStone::DenseMatrix matrix(npoly, npoly);
   WhetStone::DenseVector rhs(npoly), coef(npoly);
 
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-
   WhetStone::Polynomial quad(d_, 2);
   std::vector<const WhetStone::WhetStoneFunction*> funcs(1);
   funcs[0] = &quad;
   WhetStone::NumericalIntegration numi(mesh_);
 
-  for (int c = 0; c < ncells_owned; c++) {
-    double vol = mesh_->cell_volume(c);
-    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+  for (int c : ids) {
+    double vol = mesh_->getCellVolume(c);
+    const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
     quad.set_origin(xc);
 
-    CellAllAdjCells_(c, AmanziMesh::Parallel_type::ALL, cells);
+    CellAllAdjCells_(c, cells);
 
     // compute othogonality coefficients
     int n(0);
@@ -106,8 +105,8 @@ ReconstructionCellPolynomial::Compute(const AmanziMesh::Entity_ID_List& ids,
     rhs.PutScalar(0.0);
 
     for (int c1 : cells) {
-      double vol1 = mesh_->cell_volume(c1);
-      const AmanziGeometry::Point& xc1 = mesh_->cell_centroid(c1);
+      double vol1 = mesh_->getCellVolume(c1);
+      const AmanziGeometry::Point& xc1 = mesh_->getCellCentroid(c1);
       xcc = xc1 - xc;
 
       // -- gradient terms
@@ -138,7 +137,7 @@ ReconstructionCellPolynomial::Compute(const AmanziMesh::Entity_ID_List& ids,
       CellAllAdjFaces_(c, cells, faces);
       for (int f : faces) {
         if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
-          const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+          const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
           xcc = xf - xc;
 
           // -- gradient
@@ -206,18 +205,14 @@ ReconstructionCellPolynomial::PopulateLeastSquareSystem_(WhetStone::DenseVector&
 ****************************************************************** */
 void
 ReconstructionCellPolynomial::CellAllAdjCells_(AmanziMesh::Entity_ID c,
-                                               AmanziMesh::Parallel_type ptype,
                                                std::set<AmanziMesh::Entity_ID>& cells) const
 {
-  std::set<int> ids;
-  AmanziMesh::Entity_ID_List nodes, vcells;
-
   cells.clear();
 
-  mesh_->cell_get_nodes(c, &nodes);
+  auto nodes = mesh_->getCellNodes(c);
   for (int i = 0; i < nodes.size(); i++) {
     int v = nodes[i];
-    mesh_->node_get_cells(v, AmanziMesh::Parallel_type::ALL, &vcells);
+    auto vcells = mesh_->getNodeCells(v);
 
     for (int k = 0; k < vcells.size(); ++k) {
       int c1 = vcells[k];
@@ -228,17 +223,44 @@ ReconstructionCellPolynomial::CellAllAdjCells_(AmanziMesh::Entity_ID c,
 
 
 void
+ReconstructionCellPolynomial::CellAdjCellsTwoLevels_(AmanziMesh::Entity_ID c,
+                                                     std::set<AmanziMesh::Entity_ID>& cells) const
+{
+  cells.clear();
+
+  // face neighboors
+  auto faces = mesh_->getCellFaces(c);
+  for (int f : faces) {
+    auto fcells = mesh_->getFaceCells(f);
+    for (int c1 : fcells) {
+      if (cells.find(c1) == cells.end() && c != c1) cells.insert(c1);
+    }
+  }
+
+  // neighboors of neighboors
+  auto cells_copy(cells);
+  for (int c1 : cells_copy) {
+    auto faces1 = mesh_->getCellFaces(c1);
+    for (int f : faces1) {
+      auto fcells = mesh_->getFaceCells(f);
+      for (int c2 : fcells) {
+        if (cells.find(c2) == cells.end() && c != c2) cells.insert(c2);
+      }
+    }
+  }
+}
+
+
+void
 ReconstructionCellPolynomial::CellAllAdjFaces_(AmanziMesh::Entity_ID c,
                                                const std::set<AmanziMesh::Entity_ID>& cells,
                                                std::set<AmanziMesh::Entity_ID>& faces) const
 {
-  AmanziMesh::Entity_ID_List cfaces, fcells;
-
   faces.clear();
   for (int c1 : cells) {
-    mesh_->cell_get_faces(c1, &cfaces);
+    auto cfaces = mesh_->getCellFaces(c1);
     for (int f : cfaces) {
-      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &fcells);
+      auto fcells = mesh_->getFaceCells(f);
       if (fcells.size() == 1 && faces.find(f) == faces.end()) faces.insert(f);
     }
   }
@@ -249,9 +271,9 @@ ReconstructionCellPolynomial::CellAllAdjFaces_(AmanziMesh::Entity_ID c,
 * Calculates reconstructed value at point p.
 ****************************************************************** */
 double
-ReconstructionCellPolynomial::getValue(int c, const AmanziGeometry::Point& p)
+ReconstructionCellPolynomial::getValue(int c, const AmanziGeometry::Point& p) const
 {
-  AmanziGeometry::Point xcc = p - mesh_->cell_centroid(c);
+  AmanziGeometry::Point xcc = p - mesh_->getCellCentroid(c);
 
   double value = (*field_)[0][c];
   for (int i = 0; i < d_; i++) value += (*poly_c_)[i][c] * xcc[i];
@@ -273,7 +295,7 @@ ReconstructionCellPolynomial::getValue(int c, const AmanziGeometry::Point& p)
 double
 ReconstructionCellPolynomial::getValueSlope(int c, const AmanziGeometry::Point& p)
 {
-  AmanziGeometry::Point xcc = p - mesh_->cell_centroid(c);
+  AmanziGeometry::Point xcc = p - mesh_->getCellCentroid(c);
 
   double value(0.0);
   for (int i = 0; i < d_; i++) value += (*poly_c_)[i][c] * xcc[i];
@@ -307,8 +329,106 @@ ReconstructionCellPolynomial::getPolynomial(int c) const
     }
   }
 
-  tmp.set_origin(mesh_->cell_centroid(c));
+  tmp.set_origin(mesh_->getCellCentroid(c));
   return tmp;
+}
+
+
+/* ******************************************************************
+* A map from data to polynomial coefficients
+****************************************************************** */
+void
+ReconstructionCellPolynomial::ComputeReconstructionMap(int c,
+                                                       const Teuchos::RCP<const BCs>& bc,
+                                                       WhetStone::DenseMatrix& R,
+                                                       AmanziMesh::Entity_ID_List& ids_c,
+                                                       AmanziMesh::Entity_ID_List& ids_f,
+                                                       int basis)
+{
+  AmanziGeometry::Point xc(d_);
+  if (basis != WhetStone::TAYLOR_BASIS_GLOBAL) xc = mesh_->getCellCentroid(c);
+
+  int ncells, nfaces(0);
+  std::set<AmanziMesh::Entity_ID> cells, faces;
+  try {
+    CellAllAdjCells_(c, cells);
+  } catch (...) {
+    // some meshes have no nodes, so we try a different algorithm based on
+    // cell->face->cell connectivities. It extract two level of cell neighboors
+    CellAdjCellsTwoLevels_(c, cells);
+  }
+  cells.insert(c);
+  ncells = cells.size();
+
+  if (bc.get()) {
+    const auto& bc_model = bc->bc_model();
+
+    CellAllAdjFaces_(c, cells, faces);
+    for (int f : faces) {
+      if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) nfaces++;
+    }
+  }
+
+  // populate least-squate matrix
+  int n(0);
+  int ncol = WhetStone::PolynomialSpaceDimension(d_, degree_);
+  WhetStone::DenseMatrix B(ncells + nfaces, ncol);
+
+  AmanziGeometry::Point xcc(d_);
+
+  ids_c.clear();
+  for (int c1 : cells) {
+    const AmanziGeometry::Point& xc1 = mesh_->getCellCentroid(c1);
+    xcc = xc1 - xc;
+
+    int m = 0;
+    B(n, m++) = 1.0;
+    // -- linear terms
+    for (int i = 0; i < d_; ++i) B(n, m++) = xcc[i];
+    // -- quadratic terms
+    for (int i = 0; i < d_; ++i) {
+      for (int j = i; j < d_; ++j) B(n, m++) = xcc[i] * xcc[j];
+    }
+
+    ids_c.push_back(c1);
+    n++;
+  }
+
+  // -- add boundary faces
+  ids_f.clear();
+  if (bc.get()) {
+    const auto& bc_model = bc->bc_model();
+
+    for (int f : faces) {
+      if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
+        const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
+        xcc = xf - xc;
+
+        int m = 0;
+        B(n, m++) = 1.0;
+        // -- linear terms
+        for (int i = 0; i < d_; ++i) B(n, m++) = xcc[i];
+        // -- quadratic terms
+        for (int i = 0; i < d_; ++i) {
+          for (int j = i; j < d_; ++j) B(n, m++) = xcc[i] * xcc[j];
+        }
+
+        ids_f.push_back(f);
+        n++;
+      }
+    }
+  }
+
+  // final map
+  WhetStone::DenseMatrix BTB(ncol, ncol);
+  BTB.Multiply(B, B, true);
+  BTB.Inverse();
+
+  WhetStone::DenseMatrix BT(ncol, ncells + nfaces);
+  BT.Transpose(B);
+
+  R.Reshape(ncol, ncells + nfaces);
+  R.Multiply(BTB, BT, false);
 }
 
 } // namespace Operators

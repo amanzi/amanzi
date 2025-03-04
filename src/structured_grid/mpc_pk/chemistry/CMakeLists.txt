@@ -24,7 +24,7 @@ include_directories(${ALQUIMIA_INCLUDE_DIRS})
 add_definitions("-DENABLE_Structured")
 
 # External (TPL) include directories
-include_directories(${Teuchos_INCLUDE_DIRS})
+include_directories(${Trilinos_INCLUDE_DIRS})
 include_directories(${PETSc_INCLUDE_DIRS})
 
 set(CXX_header_files AlquimiaHelper_Structured.H AmanziChemHelper_Structured.H)
@@ -65,7 +65,6 @@ if (BUILD_TESTS)
   set(tpl_libs ${amanzi_mesh_libs}
                ${Teuchos_LIBRARIES}
                ${Epetra_LIBRARIES}
-               ${Boost_LIBRARIES}
                ${XERCES_LIBRARIES}
                ${XERCES_ICU_LIBRARIES})
 

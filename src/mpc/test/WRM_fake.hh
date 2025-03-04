@@ -49,7 +49,7 @@ class WRM_fake : public WRM {
  private:
   double m, n, alpha;
 
-  static Utils::RegisteredFactory<WRM, WRM_fake> factory_;
+  static Utils::RegisteredFactory<WRM, WRM_fake> reg_;
 };
 
 } // namespace Flow

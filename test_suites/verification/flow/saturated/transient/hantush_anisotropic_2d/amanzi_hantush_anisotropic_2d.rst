@@ -23,11 +23,11 @@ For details on this test, see :ref:`about_hantush_anisotropic`.
 Background
 ----------
 
-An aquifer is homogeneous and anisotropic when the hydraulic conductivity is a function of
-direction only. Because of this, the transmissivity of such an aquifer varies with direction.
-The transmissivity in the major direction of anisotropy may be 2 - 10 times greater than 
-in the minor direction of anisotripy. Estimates of groundwater flow may be in significant error
-if the effect of such anisotropy is not accounted for. The in-place determination of the
+We consider a homogeneous and anisotropic aquifer where the hydraulic conductivity is a function of
+direction. Because of this, the transmissivity of such an aquifer varies with direction.
+Transmissivity in one direction may be 2 - 10 times greater than in another direction. 
+Estimates of groundwater flow may be in significant error
+if the effect of anisotropy is not accounted for. The in-place determination of the
 hydraulic properties of anisotropic aquifers, then, is of great practical importance. 
 
 Hantush and Thomas :cite:`han-Hantush_1966_method` developed an analytical solution for measuring
@@ -37,15 +37,17 @@ Hantush's previously published work :cite:`han-Hantush_1966_wells`, extending it
 a method for obtaining the transmissivity in any direction and storativity of a homogeneous
 anisotropic non-leaky aquifer by delineating the expected elliptical shape of an equal residual
 drawdown curve. 
+Hantush and Thomas simplifies to the Theis solution :cite:`han-Theis1935relation`, which
+assumes isotropic soil profile, when the hydraulc conductivity is equal in all
+directions for all times. 
 
 
 Model
 -----
 
 The soil permeabilty varies in the *x* and *y* directions; thus, anisotropic
-condictions exist. Hantush and Thomas simplifies to the Theis solution :cite:`han-Theis1935relation`, which
-assumes isotropic soil profile, when the permeabilty is equal in all
-directions for all times. This solution will yield contour lines of
+condictions exist. 
+This solution will yield contour lines of
 equal draw down by an elliptical shape. The problem is described by the following 
 governing groundwater equation:
 

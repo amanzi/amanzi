@@ -26,20 +26,24 @@ set(eos_src_files
     EOSViscosityEvaluator.cc
     H2O_Density.cc
     H2O_DensityFEHM.cc
-    H2O_DensityTabular.cc
     H2O_ThermalConductivity.cc
     H2O_SaturatedVaporPressure.cc
     H2O_Viscosity.cc
-    H2O_ViscosityConstant.cc
     H2O_ViscosityFEHM.cc
-    H2O_ViscosityTabular.cc
     Henry_Solubility.cc
     IdealGas_Density.cc
+    IdealGas_ThermalConductivity.cc
+    IdealGas_Viscosity.cc
     IsobaricEOSEvaluator.cc
     LookupTable.cc
+    LookupTable_Amanzi.cc
+    LookupTable_FEHM.cc
     MolarFractionGasEvaluator.cc
+    NaCl_ThermalConductivity.cc
     VaporInGas_Density.cc
     VaporInGas_Diffusion.cc
+    VaporLiquid_Tabular.cc
+    ViscosityConstant.cc
    )
 
 add_amanzi_library(eos
@@ -54,6 +58,7 @@ endif()
 #
 set(eos_inc_files 
     COM_MillingtonQuirk.hh
+    DensityTabular.hh
     EOSDensityEvaluator.hh
     EOSViscosityEvaluator.hh
     EOS_Density.hh
@@ -62,23 +67,28 @@ set(eos_inc_files
     H2O_ThermalConductivity.hh
     EOS_Utils.hh
     EOS_Viscosity.hh
-    eos_registration.hh
+    eos_reg.hh
     EOSFactory.hh
     H2O_Density.hh
     H2O_DensityFEHM.hh
-    H2O_DensityTabular.hh
     H2O_SaturatedVaporPressure.hh
     H2O_Viscosity.hh
-    H2O_ViscosityConstant.hh
     H2O_ViscosityFEHM.hh
-    H2O_ViscosityTabular.hh
     Henry_Solubility.hh
     IdealGas_Density.hh
+    IdealGas_ThermalConductivity.hh
+    IdealGas_Viscosity.hh
     IsobaricEOSEvaluator.hh
     LookupTable.hh
+    LookupTable_Amanzi.hh
+    LookupTable_FEHM.hh
+    LookupTableFactory.hh
     MolarFractionGasEvaluator.hh
+    NaCl_ThermalConductivity.hh
     VaporInGas_Density.hh
     VaporInGas_Diffusion.hh
+    ViscosityConstant.hh
+    ViscosityTabular.hh
    )
 
 # install headers into a subdirectory

@@ -77,6 +77,13 @@ TEST(MULTIPHASE_SMILES)
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   auto MPK = Teuchos::rcp(new Multiphase_PK(pk_tree, plist, S, soln));
 
+  // work-around
+  Key key("mass_density_gas");
+  S->Require<CompositeVector, CompositeVectorSpace>(key, Tags::DEFAULT, key)
+    .SetMesh(mesh)
+    ->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, 1);
+
   MPK->Setup();
   S->Setup();
   S->InitializeFields();
@@ -120,8 +127,8 @@ TEST(MULTIPHASE_SMILES)
       const auto& u2 = *S->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell");
       const auto& u3 = *S->Get<CompositeVector>("molar_density_gas").ViewComponent("cell");
 
-      io->WriteVector(*u2(0), "liquid tritium", AmanziMesh::CELL);
-      io->WriteVector(*u3(0), "gas tritium", AmanziMesh::CELL);
+      io->WriteVector(*u2(0), "liquid tritium", AmanziMesh::Entity_kind::CELL);
+      io->WriteVector(*u3(0), "gas tritium", AmanziMesh::Entity_kind::CELL);
       io->FinalizeCycle();
     }
     printf("AAA: %g %16.10g %16.10g ... %16.10g   %16.10g\n",

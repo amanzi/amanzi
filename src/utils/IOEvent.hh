@@ -37,7 +37,7 @@ The IOEvent is used for multiple objects that need to indicate simulation times 
      n=0,1,2,... and time < stop if stop != -1.0.
 
    * `"times start period stop units`" ``[string]`` **s** Units corresponding
-     to this spec.  One of `"s`", `"d`", `"yr`", or `"yr 365`"
+     to this spec.  One of `"s`", `"min`", `"h`", `"d`", `"yr`", or `"noleap`"
 
    * `"times start period stop 0`" ``[Array(double)]`` **optional** If multiple
      start period stop parameters are needed, then use this these parameters
@@ -45,8 +45,8 @@ The IOEvent is used for multiple objects that need to indicate simulation times 
      until the Nth one is not found.
 
    * `"times start period stop 0 units`" ``[string]`` **s** Units corresponding
-     to this spec.  One of `"s`", `"d`", `"yr`", or `"yr 365`" See above for
-     continued integer listings.
+     to this spec.  One of `"s`", `"min`", `"h`", `"d`", `"yr`", or `"noleap`"
+     See above for continued integer listings.
 
    * `"times`" ``[Array(double)]`` **optional** An array of discrete times that
      at which a visualization dump shall be written.
@@ -56,17 +56,21 @@ The IOEvent is used for multiple objects that need to indicate simulation times 
 
 */
 
-#ifndef AMANZI_STATE_IO_EVENT_HH_
-#define AMANZI_STATE_IO_EVENT_HH_
+#pragma once
 
+#include <vector>
+
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerboseObject.hpp"
 
 #include "Units.hh"
 
 namespace Amanzi {
+namespace Utils {
 
 class TimeStepManager;
+template<typename T> struct Event;
 
 class IOEvent : public Teuchos::VerboseObject<IOEvent> {
  public:
@@ -77,7 +81,7 @@ class IOEvent : public Teuchos::VerboseObject<IOEvent> {
   bool is_disabled() const;
 
   // public interface for coordinator clients
-  void RegisterWithTimeStepManager(const Teuchos::Ptr<TimeStepManager>& tsm);
+  void RegisterWithTimeStepManager(TimeStepManager& tsm);
   bool DumpRequested(int cycle, double time) const;
   bool DumpRequested(int cycle) const;
   bool DumpRequested(double time) const;
@@ -91,15 +95,13 @@ class IOEvent : public Teuchos::VerboseObject<IOEvent> {
   Utils::Units units_;
 
   // Time step control -- when to do this i/o?
-  Teuchos::Array<int> cycles_;
-  Teuchos::Array<Teuchos::Array<int>> cycles_sps_;
-  Teuchos::Array<double> times_;
-  Teuchos::Array<Teuchos::Array<double>> times_sps_;
+  std::vector<Teuchos::RCP<Event<int>>> cycle_events_;
+  std::vector<Teuchos::RCP<Event<double>>> time_events_;
 
   // disable visualization dumps alltogether
   bool disabled_;
 };
 
+} // namespace Utils
 } // namespace Amanzi
 
-#endif

@@ -61,7 +61,6 @@ OperatorDiffusionDG(std::string solver_name,
                     int dim = 2,
                     int numi_order = 0)
 {
-  using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -76,27 +75,36 @@ OperatorDiffusionDG(std::string solver_name,
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
+  Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
+  Teuchos::ParameterList plist = xmlreader.getParameters();
 
   // create a mesh framework
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
-  RCP<const Mesh> mesh;
+  Teuchos::RCP<const Mesh> mesh;
   if (dim == 2) {
+    MeshFactory meshfactory(comm);
+    meshfactory.set_preference(Preference({ Framework::MSTK }));
+
     // mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 2);
     mesh = meshfactory.create("test/median7x8_filtered.exo");
     // mesh = meshfactory.create("test/triangular8_clockwise.exo");
   } else {
-    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 2.0, 2, 3, 3, true, true);
+    auto fac_list = Teuchos::rcp(new Teuchos::ParameterList());
+    fac_list->set<bool>("request edges", true);
+    fac_list->set<bool>("request faces", true);
+    MeshFactory meshfactory(comm, Teuchos::null, fac_list);
+    meshfactory.set_preference(Preference({ Framework::MSTK }));
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 2.0, 2, 3, 3);
   }
 
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_wghost =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+  int nfaces_wghost =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   // modify diffusion coefficient
-  int d = mesh->space_dimension();
+  int d = mesh->getSpaceDimension();
   auto Kc = std::make_shared<std::vector<WhetStone::Tensor>>();
   auto Kc_poly = std::make_shared<std::vector<WhetStone::MatrixPolynomial>>();
   auto Kc_func = std::make_shared<std::vector<WhetStone::WhetStoneFunction*>>();
@@ -106,7 +114,7 @@ OperatorDiffusionDG(std::string solver_name,
   MyFunction func(&ana);
 
   for (int c = 0; c < ncells_wghost; c++) {
-    const Point& xc = mesh->cell_centroid(c);
+    const Point& xc = mesh->getCellCentroid(c);
     const WhetStone::Tensor& Ktmp = ana.Tensor(xc, 0.0);
     Kc->push_back(Ktmp);
 
@@ -120,28 +128,29 @@ OperatorDiffusionDG(std::string solver_name,
   }
 
   for (int f = 0; f < nfaces_wghost; f++) {
-    double area = mesh->face_area(f);
+    double area = mesh->getFaceArea(f);
     Kf->push_back(40.0 / area);
   }
 
   // create boundary data. We use full Taylor expansion of boundary data in
   // the vicinity of domain boundary.
-  ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator dg");
+  Teuchos::ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator dg");
   int order = op_list.sublist("schema").get<int>("method order");
   int nk = WhetStone::PolynomialSpaceDimension(dim, order);
 
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::VECTOR));
+  Teuchos::RCP<BCs> bc =
+    Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::VECTOR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<std::vector<double>>& bc_value = bc->bc_value_vector(nk);
 
   WhetStone::Polynomial coefs;
   WhetStone::DenseVector data;
 
-  const auto& fmap = mesh->face_map(true);
-  const auto& bmap = mesh->exterior_face_map(true);
+  const auto& fmap = mesh->getMap(AmanziMesh::Entity_kind::FACE, true);
+  const auto& bmap = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true);
   for (int bf = 0; bf < bmap.NumMyElements(); ++bf) {
     int f = fmap.LID(bmap.GID(bf));
-    const Point& xf = mesh->face_centroid(f);
+    const Point& xf = mesh->getFaceCentroid(f);
 
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6) {
       bc_model[f] = OPERATOR_BC_DIRICHLET;
@@ -177,7 +186,7 @@ OperatorDiffusionDG(std::string solver_name,
   WhetStone::NumericalIntegration numi(mesh);
 
   for (int c = 0; c < ncells; ++c) {
-    const Point& xc = mesh->cell_centroid(c);
+    const Point& xc = mesh->getCellCentroid(c);
 
     ana.SourceTaylor(xc, 0.0, coefs);
     coefs.set_origin(xc);

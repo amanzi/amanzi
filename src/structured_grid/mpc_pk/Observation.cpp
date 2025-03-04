@@ -196,7 +196,7 @@ Observation::process(Real t_old,
       obs_data_initialized = true;
   }
 
-  // determine which of the observations are requested at this time step
+  // determine which of the observations are requested at this timestep
   switch (obs_type_list[obs_type] )
     {
     case 2:
@@ -257,7 +257,6 @@ Real
 Observation::point_sample (Real time)
 {
   const int finest_level = amrp->finestLevel();
-  const Array<IntVect>& refRatio = amrp->refRatio();
 
   const Region& region = GetRegion(region_name);
   const PointRegion* ptreg = dynamic_cast<const PointRegion*>(&region);

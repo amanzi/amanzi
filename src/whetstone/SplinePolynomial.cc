@@ -73,6 +73,53 @@ SplineCubic::GradientValue(double x) const
 
 
 /* ******************************************************************
+* Setup quadratic polynomial
+****************************************************************** */
+void
+SplineQuadratic::Setup(double x0, double f0, double df0, double x1, double f1)
+{
+  double dx = x1 - x0;
+  double df = f1 - f0;
+
+  AmanziGeometry::Point p0(1);
+  p0[0] = x0;
+
+  poly_.Reshape(1, 2);
+  poly_.set_origin(p0);
+
+  poly_(0) = f0;
+  poly_(1) = df0;
+  poly_(2) = (df - dx * df0) / (dx * dx);
+
+  grad_ = (Gradient(poly_))[0];
+};
+
+
+/* ******************************************************************
+* Calculate value
+****************************************************************** */
+double
+SplineQuadratic::Value(double x) const
+{
+  AmanziGeometry::Point xp(1);
+  xp[0] = x;
+  return poly_.Value(xp);
+}
+
+
+/* ******************************************************************
+* Calculate value of the gradient
+****************************************************************** */
+double
+SplineQuadratic::GradientValue(double x) const
+{
+  AmanziGeometry::Point xp(1);
+  xp[0] = x;
+  return grad_.Value(xp);
+}
+
+
+/* ******************************************************************
 * Setup of linear exterior interpolants
 ****************************************************************** */
 void

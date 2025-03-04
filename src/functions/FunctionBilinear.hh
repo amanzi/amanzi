@@ -14,17 +14,16 @@ A piecewise bilinear function extends the linear form of the tabular function to
 
 Define :math:`i(x) = i : x_i < x <= x_{{i+1}}` and similarly :math:`j(y) = j : y_j < y <= y_{{j+1}}` for monotonically increasing :math:`x_i` and :math:`y_j`.
 
-Given a two-dimensional array :math:`u_{{i,j}}`, :math:`f` is then defined by
-bilinear interpolation on :math:`u_{{i(x),j(y)}}, u_{{i(x)+1,j(y)}},
-u_{{i(x),j(y)+1}}, u_{{i(x)+1,j(y)+1}}, if :math:`(x,y)` is in
-:math:`[x_0,x_n] \times [y_0,y_m]`, linear interpolation if one of :math:`x,y`
+Given a two-dimensional array :math:`u_{i,j}`, :math:`f` is then defined by
+bilinear interpolation on :math:`u_{i(x),j(y)}, u_{i(x)+1,j(y)}, u_{i(x),j(y)+1}, u_{i(x)+1,j(y)+1}`,
+if :math:`(x,y)` is in :math:`[x_0,x_n] \times [y_0,y_m]`, linear interpolation if one of :math:`x,y`
 are out of those bounds, and constant at the corner value if both are out of
 bounds.
 
 .. _function-bilinear-spec:
 .. admonition:: function-bilinear-spec
 
-   * `"file`" ``[string]`` HDF5 filename of the data
+   * `"file`" ``[string]`` HDF5 or NetCDF filename of the data
    * `"row header`" ``[string]`` name of the row dataset, the :math:`x_i`
    * `"row coordinate`" ``[string]`` one of `"t`",`"x`",`"y`",`"z`"
    * `"column header`" ``[string]`` name of the column dataset, the :math:`y_i`
@@ -50,16 +49,18 @@ Example:
 
 #include <vector>
 
+#include "Teuchos_Array.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+
 #include "Function.hh"
-#include "Epetra_SerialDenseMatrix.h"
 
 namespace Amanzi {
 
 class FunctionBilinear : public Function {
  public:
-  FunctionBilinear(const std::vector<double>& x,
-                   const std::vector<double>& y,
-                   const Epetra_SerialDenseMatrix& v,
+  FunctionBilinear(const Teuchos::Array<double>& x,
+                   const Teuchos::Array<double>& y,
+                   const Teuchos::SerialDenseMatrix<int, double>& v,
                    const int xi,
                    const int yi);
   ~FunctionBilinear(){};
@@ -67,14 +68,14 @@ class FunctionBilinear : public Function {
   double operator()(const std::vector<double>& x) const;
 
  private:
-  std::vector<double> x_, y_;
-  Epetra_SerialDenseMatrix v_;
+  Teuchos::Array<double> x_, y_;
+  Teuchos::SerialDenseMatrix<int, double> v_;
   int xi_, yi_;
 
  private: // helper functions
-  void check_args(const std::vector<double>&,
-                  const std::vector<double>&,
-                  const Epetra_SerialDenseMatrix&) const;
+  void check_args(const Teuchos::Array<double>&,
+                  const Teuchos::Array<double>&,
+                  const Teuchos::SerialDenseMatrix<int, double>&) const;
 };
 
 } // namespace Amanzi

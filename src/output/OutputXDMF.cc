@@ -61,12 +61,24 @@ OutputXDMF::WriteVector(const Epetra_Vector& vec,
                         const std::string& name,
                         const AmanziMesh::Entity_kind& kind) const
 {
-  if (mesh_->is_logical()) {
+  if (mesh_->isLogical()) {
     io_->writeNodeDataReal(vec, name);
-  } else if (kind == AmanziMesh::CELL) {
+  } else if (kind == AmanziMesh::Entity_kind::CELL) {
     io_->writeCellDataReal(vec, name);
-  } else if (kind == AmanziMesh::NODE) {
-    io_->writeNodeDataReal(vec, name);
+  } else if (kind == AmanziMesh::Entity_kind::NODE) {
+    const auto& map = vec.Map();
+    if (map.MaxElementSize() > 1) {
+      Epetra_Vector vec_node(mesh_->getMap(AmanziMesh::Entity_kind::NODE, false));
+      int nnodes = mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
+
+      for (int n = 0; n < nnodes; ++n) {
+        int g = map.FirstPointInElement(n);
+        vec_node[n] = vec[g];
+      }
+      io_->writeNodeDataReal(vec_node, name);
+    } else {
+      io_->writeNodeDataReal(vec, name);
+    }
   }
 }
 
@@ -78,13 +90,7 @@ OutputXDMF::WriteMultiVector(const Epetra_MultiVector& vec,
 {
   AMANZI_ASSERT(names.size() == vec.NumVectors());
   for (int i = 0; i != vec.NumVectors(); ++i) {
-    if (mesh_->is_logical()) {
-      io_->writeNodeDataReal(*vec(i), names[i]);
-    } else if (kind == AmanziMesh::CELL) {
-      io_->writeCellDataReal(*vec(i), names[i]);
-    } else if (kind == AmanziMesh::NODE) {
-      io_->writeNodeDataReal(*vec(i), names[i]);
-    }
+    WriteVector(*vec(i), names[i], kind);
   }
 }
 
@@ -151,7 +157,7 @@ void
 OutputXDMF::Init_(Teuchos::ParameterList& plist)
 {
   // create and set up the HDF5_MPI object
-  io_ = Teuchos::rcp(new HDF5_MPI(mesh_->get_comm(), include_io_set_));
+  io_ = Teuchos::rcp(new HDF5_MPI(mesh_->getComm(), include_io_set_));
   io_->setTrackXdmf(is_vis_);
   io_->setDynMesh(is_dynamic_);
 

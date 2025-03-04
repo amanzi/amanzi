@@ -159,7 +159,22 @@
             <Parameter name="components" type="Array(string)" value="{cell, boundary_face}"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="55397.25419097694"/>
+                <Parameter name="value" type="double" value="55409.38107132945"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="viscosity_liquid">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="components" type="Array(string)" value="{cell, boundary_face}"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.002e-3"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -176,6 +191,9 @@
       </ParameterList>
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="998.2"/>
+      </ParameterList>
+      <ParameterList name="const_fluid_molar_mass">
+        <Parameter name="value" type="double" value="0.018015"/>
       </ParameterList>
       <ParameterList name="permeability">
         <Parameter name="write checkpoint" type="bool" value="false"/>
@@ -215,6 +233,20 @@
               <ParameterList name="function-exprtk">
                 <Parameter name="number of arguments" type="int" value="4"/>
                 <Parameter name="formula" type="string" value="1.01325000000000000e+05"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="temperature">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="*"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="298.15"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -299,16 +331,16 @@
         <Parameter name="start period time" type="double" value="0.0"/>
         <Parameter name="end period time" type="double" value="20.0"/>
         <Parameter name="maximum cycle number" type="int" value="1000"/>
-        <Parameter name="initial time step" type="double" value="1e-2"/>
-        <Parameter name="maximum time step" type="double" value="10.0"/>
+        <Parameter name="initial timestep" type="double" value="1e-2"/>
+        <Parameter name="maximum timestep" type="double" value="10.0"/>
       </ParameterList>
     </ParameterList>
     
     <Parameter name="component names" type="Array(string)" value="{}"/>
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{}"/>
-      <Parameter name="initial time step" type="Array(double)" value="{}"/>
-      <Parameter name="maximum time step" type="Array(double)" value="{}"/>
+      <Parameter name="initial timestep" type="Array(double)" value="{}"/>
+      <Parameter name="maximum timestep" type="Array(double)" value="{}"/>
     </ParameterList>
     <ParameterList name="verbose object">
       <Parameter name="verbosity level" type="string" value="high"/>
@@ -326,7 +358,7 @@
         <Parameter name="error control options" type="Array(string)" value="{residual}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-        <ParameterList name="pressure-lambda constraints">
+        <ParameterList name="dae constraint">
           <Parameter name="method" type="string" value="projection"/>
           <Parameter name="inflow krel correction" type="bool" value="true"/>
           <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
@@ -337,10 +369,10 @@
           <ParameterList name="timestep controller standard parameters">
             <Parameter name="max iterations" type="int" value="15"/>
             <Parameter name="min iterations" type="int" value="10"/>
-            <Parameter name="time step increase factor" type="double" value="1.25"/>
-            <Parameter name="time step reduction factor" type="double" value="0.8"/>
-            <Parameter name="max time step" type="double" value="4.32340000000000000e+17"/>
-            <Parameter name="min time step" type="double" value="9.99999999999999955e-07"/>
+            <Parameter name="timestep increase factor" type="double" value="1.25"/>
+            <Parameter name="timestep reduction factor" type="double" value="0.8"/>
+            <Parameter name="max timestep" type="double" value="4.32340000000000000e+17"/>
+            <Parameter name="min timestep" type="double" value="9.99999999999999955e-07"/>
           </ParameterList>
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
@@ -427,7 +459,7 @@
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
-        <ParameterList name="pressure-lambda constraints">
+        <ParameterList name="dae constraint">
           <Parameter name="method" type="string" value="projection"/>
           <Parameter name="inflow krel correction" type="bool" value="true"/>
           <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
@@ -438,10 +470,10 @@
           <ParameterList name="timestep controller standard parameters">
             <Parameter name="max iterations" type="int" value="15"/>
             <Parameter name="min iterations" type="int" value="10"/>
-            <Parameter name="time step increase factor" type="double" value="1.25"/>
-            <Parameter name="time step reduction factor" type="double" value="0.8"/>
-            <Parameter name="max time step" type="double" value="4.32340000000000000e+17"/>
-            <Parameter name="min time step" type="double" value="9.99999999999999955e-07"/>
+            <Parameter name="timestep increase factor" type="double" value="1.25"/>
+            <Parameter name="timestep reduction factor" type="double" value="0.8"/>
+            <Parameter name="max timestep" type="double" value="4.32340000000000000e+17"/>
+            <Parameter name="min timestep" type="double" value="9.99999999999999955e-07"/>
           </ParameterList>
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
@@ -459,7 +491,6 @@
           <Parameter name="restart tolerance relaxation factor" type="double" value="1.00000000000000000e+00"/>
           <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.00000000000000000e+00"/>
           <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
-          <Parameter name="nonlinear iteration damping factor" type="double" value="1.00000000000000000e+00"/>
           <ParameterList name="verbose object">
             <Parameter name="verbosity level" type="string" value="high"/>
           </ParameterList>
@@ -568,16 +599,6 @@
         <Parameter name="maximum number of iterations" type="int" value="100"/>
         <Parameter name="controller training start" type="int" value="0"/>
         <Parameter name="controller training end" type="int" value="3"/>
-        <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="low"/>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="PCG with Hypre AMG">
-      <Parameter name="iterative method" type="string" value="pcg"/>
-      <ParameterList name="pcg parameters">
-        <Parameter name="error tolerance" type="double" value="1.00000000000000008e-15"/>
-        <Parameter name="maximum number of iterations" type="int" value="100"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>

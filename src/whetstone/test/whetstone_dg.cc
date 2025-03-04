@@ -68,7 +68,7 @@ TEST(DG2D_MASS_MATRIX)
       printf("\n");
     }
 
-    double area = mesh->cell_volume(0);
+    double area = mesh->getCellVolume(0);
     for (int i = 0; i < nk; ++i) { CHECK_CLOSE(M(i, i), area, 1e-12); }
   }
 }
@@ -86,9 +86,12 @@ TEST(DG3D_MASS_MATRIX)
   std::cout << "\nTest: DG3D mass matrices (tensors and polynomials)" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  MeshFactory meshfactory(comm);
+  Teuchos::RCP<Teuchos::ParameterList> factory_plist = Teuchos::rcp(new Teuchos::ParameterList());
+  factory_plist->set<bool>("request edges", true);
+  factory_plist->set<bool>("request faces", true);
+  MeshFactory meshfactory(comm, Teuchos::null, factory_plist);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, true, true);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
 
   DenseMatrix M0, M1;
   Tensor T(3, 1);
@@ -124,7 +127,7 @@ TEST(DG3D_MASS_MATRIX)
     // accuracy test
     if (k > 0) {
       DenseVector v1(nk), v2(nk), v3(nk);
-      const AmanziGeometry::Point& xc = mesh->cell_centroid(0);
+      const AmanziGeometry::Point& xc = mesh->getCellCentroid(0);
       v1.PutScalar(0.0);
       v1(0) = xc[0] + 2 * xc[1] + 3 * xc[2];
       v1(1) = 0.5;
@@ -196,7 +199,7 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL)
 
     // TEST1: accuracy (gradient should be rescaled)
     DenseVector v(nk), av(nk);
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(0);
+    const AmanziGeometry::Point& xc = mesh->getCellCentroid(0);
 
     v.PutScalar(0.0);
     v(0) = xc[0] + 2 * xc[1];
@@ -257,7 +260,7 @@ TEST(DG2D_STIFFNESS_MATRIX)
     }
 
     if (k > 1) {
-      double area = mesh->cell_volume(0);
+      double area = mesh->getCellVolume(0);
       for (int i = 1; i < 2; ++i) { CHECK_CLOSE(M1(i, i), area * 4, 1e-12); }
     }
 
@@ -403,9 +406,12 @@ TEST(DG3D_FLUX_MATRIX)
   std::cout << "\nTest: DG3D flux matrices" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  MeshFactory meshfactory(comm);
+  Teuchos::RCP<Teuchos::ParameterList> factory_plist = Teuchos::rcp(new Teuchos::ParameterList());
+  factory_plist->set<bool>("request edges", true);
+  factory_plist->set<bool>("request faces", true);
+  MeshFactory meshfactory(comm, Teuchos::null, factory_plist);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, true, true);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
 
   for (int k = 0; k < 2; k++) {
     Teuchos::ParameterList plist;
@@ -510,8 +516,8 @@ TEST(DG2D_ADVECTION_MATRIX_CELL)
     // accuracy test for functions 1+x and 1+x
     DenseVector v1(nk), v2(nk), v3(nk);
     if (k > 0) {
-      const AmanziGeometry::Point& xc = mesh->cell_centroid(0);
-      double scale = std::pow(mesh->cell_volume(0), 0.5);
+      const AmanziGeometry::Point& xc = mesh->getCellCentroid(0);
+      double scale = std::pow(mesh->getCellVolume(0), 0.5);
 
       v1.PutScalar(0.0);
       v1(0) = 2 + xc[0] + 3 * xc[1];
@@ -559,9 +565,12 @@ TEST(DG3D_ADVECTION_MATRIX_CELL)
   std::cout << "\nTest: DG3D advection matrices in cells" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  MeshFactory meshfactory(comm);
+  Teuchos::RCP<Teuchos::ParameterList> factory_plist = Teuchos::rcp(new Teuchos::ParameterList());
+  factory_plist->set<bool>("request edges", true);
+  factory_plist->set<bool>("request faces", true);
+  MeshFactory meshfactory(comm, Teuchos::null, factory_plist);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, true, true);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
 
   int d(3);
   for (int k = 0; k < 2; k++) {
@@ -605,8 +614,8 @@ TEST(DG3D_ADVECTION_MATRIX_CELL)
     // accuracy test for functions 1+x and 1+x
     DenseVector v1(nk), v2(nk), v3(nk);
     if (k > 0) {
-      const AmanziGeometry::Point& xc = mesh->cell_centroid(0);
-      double scale = std::pow(mesh->cell_volume(0), 1.0 / 3);
+      const AmanziGeometry::Point& xc = mesh->getCellCentroid(0);
+      double scale = std::pow(mesh->getCellVolume(0), 1.0 / 3);
 
       v1.PutScalar(0.0);
       v1(0) = 2 + xc[0] + 3 * xc[1];
@@ -642,14 +651,13 @@ TEST(DG_LEAST_SQUARE_MAP_CELL)
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
 
   // extract polygon from the mesh
-  Entity_ID_List nodes;
   AmanziGeometry::Point xv;
-  std::vector<AmanziGeometry::Point> x1;
+  AmanziMesh::Point_List x1;
 
-  mesh->cell_get_nodes(0, &nodes);
+  auto nodes = mesh->getCellNodes(0);
 
   for (int i = 0; i < nodes.size(); ++i) {
-    mesh->node_get_coordinates(nodes[i], &xv);
+    xv = mesh->getNodeCoordinate(nodes[i]);
     x1.push_back(xv);
   }
 
@@ -670,7 +678,7 @@ TEST(DG_LEAST_SQUARE_MAP_CELL)
   }
 
   // test linear map
-  std::vector<AmanziGeometry::Point> x2(x1);
+  AmanziMesh::Point_List x2(x1);
   AmanziGeometry::Point shift(0.1, 0.2);
   for (int i = 0; i < nodes.size(); ++i) { x2[i] += shift; }
 

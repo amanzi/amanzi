@@ -43,12 +43,12 @@ class ReconstructionCellLinear : public Reconstruction {
   ReconstructionCellLinear(){};
 
   ReconstructionCellLinear(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
-    : Reconstruction(mesh), dim(mesh->space_dimension()){};
+    : Reconstruction(mesh), dim(mesh->getSpaceDimension()){};
 
   ReconstructionCellLinear(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
                            Teuchos::RCP<CompositeVector>& gradient)
     : Reconstruction(mesh),
-      dim(mesh->space_dimension()),
+      dim(mesh->getSpaceDimension()),
       gradient_(gradient),
       gradient_c_(gradient->ViewComponent("cell")){};
 
@@ -63,14 +63,15 @@ class ReconstructionCellLinear : public Reconstruction {
                        int component = 0,
                        const Teuchos::RCP<const BCs>& bc = Teuchos::null) override
   {
-    int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-    AmanziMesh::Entity_ID_List ids(ncells_wghost);
+    int ncells_wghost =
+      mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+    AmanziMesh::Entity_ID_View ids("ids", ncells_wghost);
     for (int c = 0; c < ncells_wghost; ++c) ids[c] = c;
     Compute(ids, field, component, bc);
   }
 
   // -- calculate value, deviation from mean, and full polynomial
-  virtual double getValue(int c, const AmanziGeometry::Point& p) override;
+  virtual double getValue(int c, const AmanziGeometry::Point& p) const override;
   virtual double getValueSlope(int c, const AmanziGeometry::Point& p) override;
   virtual WhetStone::Polynomial getPolynomial(int c) const override;
 
@@ -78,7 +79,8 @@ class ReconstructionCellLinear : public Reconstruction {
   virtual Teuchos::RCP<CompositeVector> data() override { return gradient_; }
 
   // compute gradient only in specified cells
-  void Compute(const AmanziMesh::Entity_ID_List& ids,
+  // -- NOTE: algorithm uses data in the neighbooring cells
+  void Compute(const AmanziMesh::cEntity_ID_View& ids,
                const Teuchos::RCP<const Epetra_MultiVector>& field,
                int component,
                const Teuchos::RCP<const BCs>& bc = Teuchos::null);
@@ -92,7 +94,6 @@ class ReconstructionCellLinear : public Reconstruction {
   // On intersecting manifolds, we extract neighboors living in the same manifold
   // using a smoothness criterion.
   void CellFaceAdjCellsManifold_(AmanziMesh::Entity_ID c,
-                                 AmanziMesh::Parallel_type ptype,
                                  std::vector<AmanziMesh::Entity_ID>& cells) const;
 
  private:

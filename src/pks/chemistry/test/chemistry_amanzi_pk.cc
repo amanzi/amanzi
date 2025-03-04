@@ -30,7 +30,6 @@
 #include "dbc.hh"
 #include "errors.hh"
 #include "exceptions.hh"
-#include "GenerationSpec.hh"
 #include "MeshFactory.hh"
 #include "State.hh"
 
@@ -87,8 +86,6 @@ SUITE(GeochemistryTestsChemistryPK)
     Teuchos::ParameterList mesh_parameter_list =
       glist_->sublist("mesh").sublist("unstructured").sublist("generate mesh");
 
-    am::GenerationSpec g(mesh_parameter_list);
-
     Teuchos::ParameterList region_parameter_list = glist_->sublist("regions");
     gm_ = Teuchos::rcp(new ag::GeometricModel(3, region_parameter_list, *comm_));
 
@@ -130,9 +127,9 @@ SUITE(GeochemistryTestsChemistryPK)
     // up a chemistry process kernel....
     try {
       cpk_ = new ac::Amanzi_PK(pk_tree_, glist_, state_, Teuchos::null);
-    } catch (Exceptions::Amanzi_exception chem_error) {
+    } catch (Exceptions::Amanzi_exception& chem_error) {
       std::cout << "ERROR test1 " << chem_error.what() << std::endl;
-    } catch (std::exception e) {
+    } catch (std::exception& e) {
       std::cout << "ERROR test1a " << e.what() << std::endl;
     }
   }
@@ -144,12 +141,13 @@ SUITE(GeochemistryTestsChemistryPK)
     // object correctly based on the xml input....
     try {
       cpk_ = new ac::Amanzi_PK(pk_tree_, glist_, state_, Teuchos::null);
+      cpk_->parseParameterList();
       cpk_->Setup();
       state_->Setup();
       state_->InitializeFields();
       state_->InitializeEvaluators();
       cpk_->Initialize();
-    } catch (std::exception e) {
+    } catch (std::exception& e) {
       std::cout << "ERROR test2 " << e.what() << std::endl;
       throw e;
     }
@@ -162,12 +160,13 @@ SUITE(GeochemistryTestsChemistryPK)
   {
     try {
       cpk_ = new ac::Amanzi_PK(pk_tree_, glist_, state_, Teuchos::null);
+      cpk_->parseParameterList();
       cpk_->Setup();
       state_->Setup();
       state_->InitializeFields();
       state_->InitializeEvaluators();
       cpk_->Initialize();
-    } catch (std::exception e) {
+    } catch (std::exception& e) {
       std::cout << "ERROR test3 " << e.what() << std::endl;
       throw e;
     }

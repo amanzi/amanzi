@@ -41,7 +41,8 @@ include_directories(${HDF5_INCLUDE_DIRS})
 #
 set(pks_src_files PK_Factory.cc
                   PK_Utils.cc
-                  PK_Physical.cc)
+                  PK_Physical.cc
+                  StateArchive.cc)
 
 add_amanzi_library(pks
                    SOURCE ${pks_src_files}
@@ -63,17 +64,21 @@ set(pks_inc_files
   PK_PhysicalBDF.hh
   PK_DomainFunction.hh
   PK_DomainFunctionFactory.hh
+  PK_DomainFunctionField.hh
   PK_DomainFunctionSimple.hh
   PK_DomainFunctionVolume.hh
   PK_DomainFunctionVolumeFraction.hh
   PK_DomainFunctionWeight.hh
+  PK_DomainFunctionWeightField.hh
   PK_DomainFunctionCoupling.hh
   PK_DomainFunctionSubgrid.hh
   PK_DomainFunctionSubgridReturn.hh
   PK_DomainFunctionFirstOrderExchange.hh
   PK_DomainFunctionSimpleWell.hh
   PK_Factory.hh
-  PK_Utils.hh)
+  PK_Utils.hh
+  PKsDefs.hh
+  StateArchive.hh)
 
 add_install_include_file(${pks_inc_files})
 
@@ -91,6 +96,7 @@ if (ENABLE_AmanziPhysicsModule)
   add_subdirectory(energy)
   add_subdirectory(multiphase)
   add_subdirectory(navier_stokes)
+  add_subdirectory(mechanics)
 endif()
 
   # chemistry should be processed before transport

@@ -45,7 +45,7 @@ class H2O_DensityFEHM : public EOS_Density {
   double y5_, z5_, y6_, z6_, y7_, z7_, y8_, z8_, y9_, z9_;
   double T0_;
 
-  static Utils::RegisteredFactory<EOS_Density, H2O_DensityFEHM> factory_;
+  static Utils::RegisteredFactory<EOS_Density, H2O_DensityFEHM> reg_;
 };
 
 } // namespace AmanziEOS

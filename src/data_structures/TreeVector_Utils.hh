@@ -26,22 +26,16 @@ template <class T>
 void
 recurseTreeVectorBFS(T& tv, std::vector<Teuchos::RCP<T>>& list)
 {
-  for (typename T::iterator it = tv.begin(); it != tv.end(); ++it) { list.push_back(*it); }
-
-  for (typename T::iterator it = tv.begin(); it != tv.end(); ++it) {
-    recurseTreeVectorBFS<T>(**it, list);
-  }
+  for (auto it : tv) list.emplace_back(it);
+  for (auto it : tv) recurseTreeVectorBFS<T>(*it, list);
 }
 
 template <class T>
 void
 recurseTreeVectorBFS_const(const T& tv, std::vector<Teuchos::RCP<const T>>& list)
 {
-  for (typename T::const_iterator it = tv.begin(); it != tv.end(); ++it) { list.push_back(*it); }
-
-  for (typename T::const_iterator it = tv.begin(); it != tv.end(); ++it) {
-    recurseTreeVectorBFS_const<T>(**it, list);
-  }
+  for (auto it : tv) list.push_back(it);
+  for (auto it : tv) recurseTreeVectorBFS_const<T>(*it, list);
 }
 
 // Create a list of leaf nodes of the TreeVector(Space)
@@ -50,12 +44,12 @@ std::vector<Teuchos::RCP<T>>
 collectTreeVectorLeaves(T& tv)
 {
   std::vector<Teuchos::RCP<T>> list;
-  list.push_back(Teuchos::rcpFromRef(tv));
+  list.emplace_back(Teuchos::rcpFromRef(tv));
   recurseTreeVectorBFS<T>(tv, list);
 
   std::vector<Teuchos::RCP<T>> leaves;
-  for (typename std::vector<Teuchos::RCP<T>>::iterator it = list.begin(); it != list.end(); ++it) {
-    if ((*it)->Data() != Teuchos::null) { leaves.push_back(*it); }
+  for (auto it : list) {
+    if (it->Data() != Teuchos::null) leaves.push_back(it);
   }
   return leaves;
 }
@@ -65,14 +59,12 @@ std::vector<Teuchos::RCP<const T>>
 collectTreeVectorLeaves_const(const T& tv)
 {
   std::vector<Teuchos::RCP<const T>> list;
-  list.push_back(Teuchos::rcpFromRef(tv));
+  list.emplace_back(Teuchos::rcpFromRef(tv));
   recurseTreeVectorBFS_const<T>(tv, list);
 
   std::vector<Teuchos::RCP<const T>> leaves;
-  for (typename std::vector<Teuchos::RCP<const T>>::const_iterator it = list.begin();
-       it != list.end();
-       ++it) {
-    if ((*it)->Data() != Teuchos::null) { leaves.push_back(*it); }
+  for (auto it : list) {
+    if (it->Data() != Teuchos::null) { leaves.emplace_back(it); }
   }
   return leaves;
 }

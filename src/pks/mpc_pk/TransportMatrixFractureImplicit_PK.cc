@@ -15,7 +15,6 @@
 */
 
 #include "InverseFactory.hh"
-#include "Op_Diagonal.hh"
 #include "PDE_CouplingFlux.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
 #include "TransportImplicit_PK.hh"
@@ -42,16 +41,11 @@ TransportMatrixFractureImplicit_PK::TransportMatrixFractureImplicit_PK(
     glist_(glist),
     soln_(soln)
 {
-  std::string pk_name = pk_tree.name();
-  auto found = pk_name.rfind("->");
-  if (found != std::string::npos) pk_name.erase(0, found + 2);
-
   // We need the flow list
   auto pk_list = Teuchos::sublist(glist, "PKs", true);
-  tp_list_ = Teuchos::sublist(pk_list, pk_name, true);
+  tp_list_ = Teuchos::sublist(pk_list, name_, true);
 
-  Teuchos::ParameterList vlist;
-  vo_ = Teuchos::rcp(new VerboseObject("TranCoupledImplicit_PK", vlist));
+  vo_ = Teuchos::rcp(new VerboseObject("TranCoupledImplicit_PK", *tp_list_));
 }
 
 
@@ -78,7 +72,7 @@ TransportMatrixFractureImplicit_PK::Setup()
     S_->Require<CV_t, CVS_t>(matrix_vol_flowrate_key_, Tags::DEFAULT, "state")
       .SetMesh(mesh_domain_)
       ->SetGhosted(true)
-      ->SetComponent("face", AmanziMesh::FACE, mmap, gmap, 1);
+      ->SetComponent("face", AmanziMesh::Entity_kind::FACE, mmap, gmap, 1);
   }
 
   // -- darcy flux in fracture
@@ -89,10 +83,12 @@ TransportMatrixFractureImplicit_PK::Setup()
        ->SetGhosted(true) = *cvs;
   }
 
-  S_->Require<CV_t, CVS_t>("fracture-normal_diffusion", Tags::DEFAULT, "state")
+  S_->Require<CV_t, CVS_t>(
+      "fracture-solute_diffusion_to_matrix", Tags::DEFAULT, "fracture-solute_diffusion_to_matrix")
     .SetMesh(mesh_fracture_)
     ->SetGhosted(true)
-    ->SetComponent("cell", AmanziMesh::CELL, 1);
+    ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 2);
+  S_->RequireEvaluator("fracture-solute_diffusion_to_matrix", Tags::DEFAULT);
 
   // process other PKs
   PK_MPCStrong<PK_BDF>::Setup();
@@ -107,12 +103,11 @@ TransportMatrixFractureImplicit_PK::Initialize()
 {
   PK_MPCStrong<PK_BDF>::Initialize();
 
-  // set a huge time step that will be limited by advance step
+  // set a huge timestep that will be limited by advance step
   set_dt(1e+98);
 
-  TimestepControllerFactory<TreeVector> factory;
   auto ts_list = tp_list_->sublist("time integrator").sublist("BDF1");
-  ts_control_ = factory.Create(ts_list, Teuchos::null, Teuchos::null);
+  ts_control_ = createTimestepController<TreeVector>("BDF1", ts_list, S_, Teuchos::null, Teuchos::null);
 
   // diagonal blocks in tree operator are the Transport Implicit PKs
   pk_matrix_ = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[0]);
@@ -247,13 +242,10 @@ TransportMatrixFractureImplicit_PK::Initialize()
   op_tree_matrix_->set_inverse_parameters(inv_list);
   op_tree_matrix_->InitializeInverse();
 
-  if (!flag_dispersion_)
-    InitializeCVField(S_, *vo_, "fracture-normal_diffusion", Tags::DEFAULT, "state", 0.0);
-
   // time integrators
   if (nspace_m_ == 2 && nspace_f_ == 2) {
     Teuchos::ParameterList& bdf1_list = ti_list.sublist("BDF1");
-    bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
+    bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1", bdf1_list, *this, soln_->get_map(), S_));
   }
 
   // Test SPD properties of the matrix.
@@ -278,13 +270,9 @@ TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new, bool
 {
   bool fail(false);
 
-  // make copy of primary unknowns, i.e. solution
-  auto& tcc_m = S_->GetW<CV_t>("total_component_concentration", Tags::DEFAULT, "state");
-  auto& tcc_f = S_->GetW<CV_t>("fracture-total_component_concentration", Tags::DEFAULT, "state");
+  num_aqueous_ = pk_matrix_->total_component_concentration()->ViewComponent("cell")->NumVectors();
 
-  num_aqueous_ = tcc_m.ViewComponent("cell")->NumVectors();
-  CompositeVector tcc_m_copy(tcc_m), tcc_f_copy(tcc_f);
-
+  S_->Get<CV_t>(matrix_vol_flowrate_key_, Tags::DEFAULT).ScatterMasterToGhosted("face");
   fia_->SetValues(S_->Get<CV_t>(matrix_vol_flowrate_key_));
 
   // fork between low-order and high-order
@@ -298,22 +286,28 @@ TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new, bool
   }
 
   if (fail) {
-    tcc_m = tcc_m_copy;
-    tcc_f = tcc_f_copy;
-    // *my_solution_ = my_solution_copy;
-    ChangedSolution();
-
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Step failed: recover (" << my_solution_->size() << ") primary field"
-               << std::endl;
+    *vo_->os() << "Step failed, but no need to recover primary fields" << std::endl;
   }
 
   // output
-  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-    double dt = t_new - t_old;
+  double dt = t_new - t_old;
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    double sol_norm;
+    pk_fracture_->total_component_concentration()->Norm2(&sol_norm);
+
     Teuchos::OSTab tab = vo_->getOSTab();
-    pk_matrix_->VV_PrintSoluteExtrema(*tcc_m.ViewComponent("cell"), dt, " (m)");
-    pk_fracture_->VV_PrintSoluteExtrema(*tcc_f.ViewComponent("cell"), dt, " (f)");
+    *vo_->os() << "coupled solver: ||sol_f||=" << sol_norm
+               << "  avg itrs=" << tot_itrs / num_aqueous_ << " dt=" << dt << std::endl;
+  }
+
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    auto tcc_m = pk_matrix_->total_component_concentration();
+    auto tcc_f = pk_fracture_->total_component_concentration();
+
+    Teuchos::OSTab tab = vo_->getOSTab();
+    pk_matrix_->VV_PrintSoluteExtrema(*tcc_m->ViewComponent("cell"), dt, " (m)");
+    pk_fracture_->VV_PrintSoluteExtrema(*tcc_f->ViewComponent("cell"), dt, " (f)");
   }
 
   return fail;
@@ -321,14 +315,15 @@ TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new, bool
 
 
 /* *******************************************************************
-* One time step for aqueous components only
+* One timestep for aqueous components only
 ******************************************************************* */
 bool
 TransportMatrixFractureImplicit_PK::AdvanceStepLO_(double t_old, double t_new, int* tot_itrs)
 {
-  auto& tcc_m = S_->GetW<CV_t>("total_component_concentration", Tags::DEFAULT, "state");
-  auto& tcc_f = S_->GetW<CV_t>("fracture-total_component_concentration", Tags::DEFAULT, "state");
+  auto& tcc_m = *pk_matrix_->total_component_concentration();
+  auto& tcc_f = *pk_fracture_->total_component_concentration();
 
+  *tot_itrs = 0;
   for (int i = 0; i < num_aqueous_; i++) {
     pk_matrix_->UpdateLinearSystem(t_old, t_new, i);
     pk_fracture_->UpdateLinearSystem(t_old, t_new, i);
@@ -347,7 +342,7 @@ TransportMatrixFractureImplicit_PK::AdvanceStepLO_(double t_old, double t_new, i
 
     // assemble dispersion/diffusion operators
     if (flag_dispersion_) {
-      const auto& kn = *S_->Get<CV_t>("fracture-normal_diffusion").ViewComponent("cell");
+      const auto& kn = *S_->Get<CV_t>("fracture-solute_diffusion_to_matrix").ViewComponent("cell");
       fid_->SetValues(kn, 1.0);
 
       op_coupling00d_->Setup(fid_->get_values(), 1.0);
@@ -364,7 +359,6 @@ TransportMatrixFractureImplicit_PK::AdvanceStepLO_(double t_old, double t_new, i
     }
 
     // create solver
-    op_tree_matrix_->AssembleMatrix();
     op_tree_matrix_->ComputeInverse();
 
     auto& tvs = op_tree_matrix_->DomainMap();
@@ -372,19 +366,21 @@ TransportMatrixFractureImplicit_PK::AdvanceStepLO_(double t_old, double t_new, i
     *rhs_one.SubVector(0)->Data() = *pk_matrix_->op()->rhs();
     *rhs_one.SubVector(1)->Data() = *pk_fracture_->op()->rhs();
 
+    // solver for component i
     int ierr = op_tree_matrix_->ApplyInverse(rhs_one, sol_one);
+    *tot_itrs += op_tree_matrix_->num_itrs();
 
     *(*tcc_m.ViewComponent("cell"))(i) = *(*sol_one.SubVector(0)->Data()->ViewComponent("cell"))(0);
     *(*tcc_f.ViewComponent("cell"))(i) = *(*sol_one.SubVector(1)->Data()->ViewComponent("cell"))(0);
 
     bool fail = (ierr != 0);
     if (fail) {
-      dt_ = ts_control_->get_timestep(dt_, -1);
+      dt_ = ts_control_->getTimestep(dt_, -1, true);
       return fail;
     }
   }
 
-  dt_ = ts_control_->get_timestep(dt_, 1);
+  dt_ = ts_control_->getTimestep(dt_, 1, true);
   return false;
 }
 
@@ -400,8 +396,8 @@ TransportMatrixFractureImplicit_PK::AdvanceStepHO_(double t_old, double t_new, i
   dt_ = t_new - t_old;
   *tot_itrs = bdf1_dae_->number_nonlinear_steps();
 
-  auto tcc_m = S_->GetPtrW<CV_t>("total_component_concentration", Tags::DEFAULT, "state");
-  auto tcc_f = S_->GetPtrW<CV_t>("fracture-total_component_concentration", Tags::DEFAULT, "state");
+  auto tcc_m = pk_matrix_->total_component_concentration();
+  auto tcc_f = pk_fracture_->total_component_concentration();
 
   num_aqueous_ = tcc_m->ViewComponent("cell")->NumVectors();
   AMANZI_ASSERT(num_aqueous_ == 1);
@@ -413,7 +409,7 @@ TransportMatrixFractureImplicit_PK::AdvanceStepHO_(double t_old, double t_new, i
     *soln_->SubVector(0)->Data() = *tcc_m;
     *soln_->SubVector(1)->Data() = *tcc_f;
 
-    bool fail = bdf1_dae_->TimeStep(dt_, dt_next, soln_);
+    bool fail = bdf1_dae_->AdvanceStep(dt_, dt_next, soln_);
     dt_ = dt_next;
     if (fail) return fail;
   }
@@ -426,14 +422,6 @@ TransportMatrixFractureImplicit_PK::AdvanceStepHO_(double t_old, double t_new, i
 
   return false;
 }
-
-
-/* ******************************************************************
-* Data were copied in the advance step
-****************************************************************** */
-void
-TransportMatrixFractureImplicit_PK::CommitStep(double t_old, double t_new, const Tag& tag)
-{}
 
 
 /* *******************************************************************
@@ -452,7 +440,7 @@ TransportMatrixFractureImplicit_PK::CalculateDiagnostics(const Tag& tag)
 void
 TransportMatrixFractureImplicit_PK::FunctionalResidual(double t_old,
                                                        double t_new,
-                                                       Teuchos::RCP<TreeVector> u_old,
+                                                       Teuchos::RCP<const TreeVector> u_old,
                                                        Teuchos::RCP<TreeVector> u_new,
                                                        Teuchos::RCP<TreeVector> f)
 {
@@ -478,7 +466,7 @@ TransportMatrixFractureImplicit_PK::FunctionalResidual(double t_old,
   op_coupling11_->global_operator()->Apply(*u1, *f1, 1.0);
 
   if (flag_dispersion_) {
-    const auto& kn = *S_->Get<CV_t>("fracture-normal_diffusion").ViewComponent("cell");
+    const auto& kn = *S_->Get<CV_t>("fracture-solute_diffusion_to_matrix").ViewComponent("cell");
     fid_->SetValues(kn, 1.0);
 
     op_coupling00d_->Setup(fid_->get_values(), 1.0);

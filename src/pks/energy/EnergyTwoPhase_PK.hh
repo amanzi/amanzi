@@ -48,13 +48,13 @@ class EnergyTwoPhase_PK : public Energy_PK {
   double get_dt() final { return dt_; }
   void set_dt(double dt) final { dt_ = dt; }
 
-  virtual std::string name() { return "two-phase energy"; }
+  virtual std::string name() final { return Keys::getKey(domain_, "twophase energy"); }
 
   // methods required for time integration interface
   // -- computes the non-linear functional f = f(t,u,udot) and related norm.
   virtual void FunctionalResidual(const double t_old,
                                   double t_new,
-                                  Teuchos::RCP<TreeVector> u_old,
+                                  Teuchos::RCP<const TreeVector> u_old,
                                   Teuchos::RCP<TreeVector> u_new,
                                   Teuchos::RCP<TreeVector> g) final;
   virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du);
@@ -78,7 +78,7 @@ class EnergyTwoPhase_PK : public Energy_PK {
   const Teuchos::RCP<TreeVector> soln_;
   Teuchos::RCP<CompositeVector> solution;
 
-  // time stepping
+  // timestepping
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>> bdf1_dae_;
   int num_itrs_;
   double dt_, dt_next_;

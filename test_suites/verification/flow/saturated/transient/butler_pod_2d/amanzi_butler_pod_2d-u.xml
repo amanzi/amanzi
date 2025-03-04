@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="2.3.0">
+<amanzi_input type="unstructured" version="1.6-dev">
   <misc>
     <echo_translated_input file_name="oldspec.xml" format="unstructured_native" />
   </misc>
@@ -106,9 +106,8 @@
 
   <phases>
     <liquid_phase name="water">
-      <eos>false</eos>
-      <viscosity>1.002E-03</viscosity>
-      <density>1000.0</density>
+      <eos model="constant" viscosity="1.002E-03" density="1000.0"/> 
+      <molar_mass>0.018</molar_mass>
     </liquid_phase>
   </phases>
 
@@ -117,8 +116,8 @@
       <comments>Material properties for zone 1</comments>
       <assigned_regions>cylinder</assigned_regions>
       <mechanical_properties>
-        <porosity value="0.25" />
-        <specific_storage value="2.0e-4" />
+        <porosity model="constant" value="0.25" />
+        <specific_storage model="constant" value="2.0e-4" />
       </mechanical_properties>
       <permeability x="1.187E-10" y="1.187E-10" z="1.187E-10" />
     </material>
@@ -126,8 +125,8 @@
       <comments>Material properties for zone 2</comments>
       <assigned_regions>bg</assigned_regions>
       <mechanical_properties>
-        <porosity value="0.25" />
-        <specific_storage value="2.0e-4" />
+        <porosity model="constant" value="0.25" />
+        <specific_storage model="constant" value="2.0e-4" />
       </mechanical_properties>
       <permeability x="1.187E-9" y="1.187E-9" z="1.187E-9" />
     </material>

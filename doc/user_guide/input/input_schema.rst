@@ -225,7 +225,7 @@ Here is an overall example for the ``definition`` element.
 Execution Control
 -----------------
 
-The ``execution_controls`` section defines the general execution of the Amanzi simulation.  Amanzi can execute in four modes: steady state, transient, transient with static flow, or initialize to a steady state and then continue to transient.  The transient with static flow mode does not compute the flow solution at each time step.  During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity. At present this mode only supports the "Single Phase" flow model.
+The ``execution_controls`` section defines the general execution of the Amanzi simulation.  Amanzi can execute in four modes: steady state, transient, transient with static flow, or initialize to a steady state and then continue to transient.  The transient with static flow mode does not compute the flow solution at each timestep.  During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity. At present this mode only supports the "Single Phase" flow model.
 
 Default values for execution are defined in the ``execution_control_defaults`` element.  These values are used for any time period during the simulation for which the controls were not specified.  Individual time periods of the simulation are defined using ``execution_control`` elements.  For a steady state simulation, only one ``execution_control`` element will be defined.  However, for a transient simulation a series of controls may be defined during which different control values will be used.  For a valid ``execution_controls`` section the ``execution_control_defaults`` element and at least one ``execution_control`` element must appear.
 
@@ -257,9 +257,9 @@ The ``execution_control_defaults`` element has the following attributes.
 +------------------+----------------+----------------------------------+
 | max_dt           | time           | time value(,unit)                |
 +------------------+----------------+----------------------------------+
-| reduction_factor | exponential    | factor for reducing time step    |
+| reduction_factor | exponential    | factor for reducing timestep     |
 +------------------+----------------+----------------------------------+
-| increase_factor  | exponential    | factor for increasing time step  |
+| increase_factor  | exponential    | factor for increasing timestep   |
 +------------------+----------------+----------------------------------+
 | mode             | string         | ``steady, transient``            |
 +------------------+----------------+----------------------------------+
@@ -284,9 +284,9 @@ The ``execution_control`` element has the following attributes.
 +------------------+----------------+-----------------------------------------------------+
 | max_dt           | time           | time value(,unit)                                   |
 +------------------+----------------+-----------------------------------------------------+
-| reduction_factor | exponential    | factor for reducing time step                       |
+| reduction_factor | exponential    | factor for reducing timestep                        |
 +------------------+----------------+-----------------------------------------------------+
-| increase_factor  | exponential    | factor for increasing time step                     |
+| increase_factor  | exponential    | factor for increasing timestep                      |
 +------------------+----------------+-----------------------------------------------------+
 | mode             | string         | ``steady, transient``                               |
 +------------------+----------------+-----------------------------------------------------+
@@ -849,7 +849,7 @@ For ``dispersion_tensor`` several models are available.  The model is specified 
 +--------------------------+-----------------+-------------------+
 | Dispersion Model         | Attribute Names | Attribute Values  |
 +==========================+=================+===================+
-| uniform_isotropic        | alpha_l         | Exponential value |
+| bear                     | alpha_l         | Exponential value |
 |                          | alpha_t         | Exponential value |
 +--------------------------+-----------------+-------------------+
 | burnett_frind            | alpha_l         | Exponential value |
@@ -869,7 +869,7 @@ For ``dispersion_tensor`` several models are available.  The model is specified 
      <particle_density value="Exponential"/>
      <specific_storage value="Exponential"/>
      <specific_yield value="Exponential"/>
-     <dispersion_tensor type="uniform_isotropic" alpha_l="Exponential" alpha_t="Exponential"/>
+     <dispersion_tensor type="bear" alpha_l="Exponential" alpha_t="Exponential"/>
      <tortuosity value="Exponential"/>
    </mechanical_properties>
 
@@ -1009,7 +1009,7 @@ Amanzi current employees three process kernels that need to be defined in the in
 Flow
 ____
 
-Currently three scenarios are available for calculated the flow field.  `"richards`" is a single phase, variably saturated flow assuming constant gas pressure.  `"saturated`" is a single phase, fully saturated flow.  `"constant`" is equivalent to the flow model of single phase (saturated) with the time integration mode of transient with static flow in the version 1.2.1 input specification.  This flow model indicates that the flow field is static so no flow solver is called during time stepping. During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity.
+Currently three scenarios are available for calculated the flow field.  `"richards`" is a single phase, variably saturated flow assuming constant gas pressure.  `"saturated`" is a single phase, fully saturated flow.  `"constant`" is equivalent to the flow model of single phase (saturated) with the time integration mode of transient with static flow in the version 1.2.1 input specification.  This flow model indicates that the flow field is static so no flow solver is called during timestepping. During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity.
 
 .. code-block:: xml
 

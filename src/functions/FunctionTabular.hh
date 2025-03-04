@@ -23,7 +23,8 @@ j=0, ... n-2` a tabular function :math:`f(x)` is defined as:
   f(x) &=& y_{{n-1}}, & x > x_{{n-1}}.
   \end{matrix}
 
-The functional forms :math:`{f_j}` may be constant, which uses the left endpoint, i.e.
+The functional forms :math:`{f_j}` may be constant, which uses the left
+endpoint, i.e.
 
 :math:`f_i(x) = y_i`,
 
@@ -33,7 +34,11 @@ linear, i.e.
 
 or arbitrary, in which the :math:`f_j` must be provided.
 
-The :math:`x_i` and :math:`y_i` may be provided in one of two ways -- explicitly in the input spec or from an HDF5 file.  The length of these must be equal, and the :math:`x_i` must be monotonically increasing.  Forms, as defined on intervals, must be of length equal to the length of the :math:`x_i` less one.
+The :math:`x_i` and :math:`y_i` may be provided in one of two ways --
+explicitly in the input spec or from an HDF5 file.  The length of these must be
+equal, and the :math:`x_i` must be monotonically increasing.  Forms, as defined
+on intervals, must be of length equal to the length of the :math:`x_i` less
+one.
 
 Explicitly specifying the data:
 
@@ -83,13 +88,14 @@ but could be made so if requested).
 .. _function-tabular-fromfile-spec:
 .. admonition:: function-tabular-fromfile-spec
 
-   * `"file`" ``[string]`` filename of the HDF5 data
+   * `"file`" ``[string]`` filename of either HDF5 or NetCDF file.
    * `"x header`" ``[string]`` name of the dataset for the :math:`x_i` in the file
    * `"y header`" ``[string]`` name of the dataset for the :math:`y_i` in the file
    * `"forms`" ``[string]`` **optional**, Form of the interpolant, either
      `"constant`" or `"linear`"
 
-The example below would perform linear-interpolation on the intervals provided by data within the hdf5 file `"my_data.h5`".
+The example below would perform linear-interpolation on the intervals provided
+by data within an hdf5 file `"my_data.h5`".
 
 Example:
 
@@ -110,24 +116,23 @@ Example:
 #include <memory>
 #include <vector>
 
+#include "Teuchos_Array.hpp"
+
 #include "Function.hh"
 
 namespace Amanzi {
 
 class FunctionTabular : public Function {
  public:
-  enum Form { LINEAR, CONSTANT, FUNCTION };
-
- public:
-  FunctionTabular(const std::vector<double>& x, const std::vector<double>& y, const int xi);
-  FunctionTabular(const std::vector<double>& x,
-                  const std::vector<double>& y,
+  FunctionTabular(const Teuchos::Array<double>& x, const Teuchos::Array<double>& y, const int xi);
+  FunctionTabular(const Teuchos::Array<double>& x,
+                  const Teuchos::Array<double>& y,
                   const int xi,
-                  const std::vector<Form>& form);
-  FunctionTabular(const std::vector<double>& x,
-                  const std::vector<double>& y,
+                  const std::vector<Form_kind>& form);
+  FunctionTabular(const Teuchos::Array<double>& x,
+                  const Teuchos::Array<double>& y,
                   const int xi,
-                  const std::vector<Form>& form,
+                  const std::vector<Form_kind>& form,
                   std::vector<std::unique_ptr<Function>> func);
   FunctionTabular(const FunctionTabular& other);
   ~FunctionTabular(){};
@@ -136,15 +141,15 @@ class FunctionTabular : public Function {
   double operator()(const std::vector<double>& x) const;
 
  private:
-  std::vector<double> x_, y_;
+  Teuchos::Array<double> x_, y_;
   int xi_;
-  std::vector<Form> form_;
+  std::vector<Form_kind> form_;
   std::vector<std::unique_ptr<Function>> func_;
 
  private: // helper functions
-  void check_args(const std::vector<double>&,
-                  const std::vector<double>&,
-                  const std::vector<Form>&) const;
+  void check_args(const Teuchos::Array<double>&,
+                  const Teuchos::Array<double>&,
+                  const std::vector<Form_kind>&) const;
 };
 
 } // namespace Amanzi

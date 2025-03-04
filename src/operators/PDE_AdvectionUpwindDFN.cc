@@ -11,8 +11,7 @@
 /*
   Operators
 
-  Upwind operator on a network of fractures
-
+  Upwind-based scalar advection operator on manifolds.
 */
 
 #include <vector>
@@ -50,10 +49,8 @@ PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
 
-  AmanziMesh::Entity_ID_List cells;
-
   for (int f = 0; f < nfaces_owned; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    auto cells = mesh_->getFaceCells(f);
     int ncells = cells.size();
 
     WhetStone::DenseMatrix Aface(ncells, ncells);
@@ -90,7 +87,7 @@ PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>
 
       for (int m = 0; m < nupwind; m++) {
         double v = upwind_flux_dfn_[f][m];
-        for (int j = 0; j < cells.size(); j++) {
+        for (int j = 0; j < ncells; j++) {
           if (cells[j] == c) {
             Aface(j, upwind_loc[m]) = (u / flux_in) * v;
             break;
@@ -98,6 +95,7 @@ PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>
         }
       }
     }
+
     matrix[f] = Aface;
   }
 }
@@ -119,10 +117,8 @@ PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>
   dHdT->ScatterMasterToGhosted("cell");
   const auto& dHdT_c = *dHdT->ViewComponent("cell", true);
 
-  AmanziMesh::Entity_ID_List cells;
-
   for (int f = 0; f < nfaces_owned; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    auto cells = mesh_->getFaceCells(f);
     int ncells = cells.size();
 
     WhetStone::DenseMatrix Aface(ncells, ncells);
@@ -169,6 +165,17 @@ PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>
     }
     matrix[f] = Aface;
   }
+}
+
+
+/* ******************************************************************
+* A first-order upwind method used in Jacobian of the form div (f(u))
+****************************************************************** */
+void
+PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
+                                       double (*func)(double))
+{
+  UpdateMatrices(u);
 }
 
 
@@ -228,7 +235,7 @@ PDE_AdvectionUpwindDFN::ApplyBCs(bool primary, bool eliminate, bool essential_eq
     // treat as essential inflow BC for pure advection
     else if (bc_model[f] == OPERATOR_BC_NEUMANN && primary) {
       if (c1 < 0) {
-        rhs_cell[0][c2] += mesh_->face_area(f) * bc_value[f];
+        rhs_cell[0][c2] += mesh_->getFaceArea(f) * bc_value[f];
         matrix[f] = 0.0;
       }
     }
@@ -272,8 +279,7 @@ PDE_AdvectionUpwindDFN::IdentifyUpwindCells_(const CompositeVector& u)
   const auto& map = u.Map().Map("face", true);
 
   for (int c = 0; c < ncells_wghost; c++) {
-    const auto& faces = mesh_->cell_get_faces(c);
-    const auto& dirs = mesh_->cell_get_face_dirs(c);
+    const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
 
     for (int i = 0; i < faces.size(); i++) {
       int f = faces[i];
@@ -281,7 +287,7 @@ PDE_AdvectionUpwindDFN::IdentifyUpwindCells_(const CompositeVector& u)
       int ndofs = map->ElementSize(f);
       if (ndofs > 1) g += Operators::UniqueIndexFaceToCells(*mesh_, f, c);
 
-      double flux = u_f[0][g] * dirs[i]; // exterior flux
+      double flux = u_f[0][g] * dirs[i]; // exterior flux. Note that dirs could be negative
       if (flux >= 0.0) {
         upwind_cells_dfn_[f].push_back(c);
         upwind_flux_dfn_[f].push_back(flux);

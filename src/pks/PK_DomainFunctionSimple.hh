@@ -7,8 +7,9 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-/*
-  Process Kernels
+/*!
+
+To be written.
 
 */
 
@@ -34,13 +35,22 @@ template <class FunctionBase>
 class PK_DomainFunctionSimple : public FunctionBase, public Functions::UniqueMeshFunction {
  public:
   PK_DomainFunctionSimple(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                          AmanziMesh::Entity_kind kind)
-    : UniqueMeshFunction(mesh), kind_(kind){};
+                          AmanziMesh::Entity_kind entity_kind,
+                          bool ghosted)
+    : UniqueMeshFunction(mesh,
+                         ghosted ? AmanziMesh::Parallel_kind::ALL :
+                                   AmanziMesh::Parallel_kind::OWNED),
+      kind_(entity_kind){};
 
   PK_DomainFunctionSimple(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                           const Teuchos::ParameterList& plist,
-                          AmanziMesh::Entity_kind kind)
-    : FunctionBase(plist), UniqueMeshFunction(mesh), kind_(kind){};
+                          AmanziMesh::Entity_kind entity_kind,
+                          bool ghosted)
+    : FunctionBase(plist),
+      UniqueMeshFunction(mesh,
+                         ghosted ? AmanziMesh::Parallel_kind::ALL :
+                                   AmanziMesh::Parallel_kind::OWNED),
+      kind_(entity_kind){};
 
   ~PK_DomainFunctionSimple(){};
 
@@ -48,8 +58,8 @@ class PK_DomainFunctionSimple : public FunctionBase, public Functions::UniqueMes
   void Init(const Teuchos::ParameterList& plist, const std::string& keyword);
 
   // required member functions
-  virtual void Compute(double t0, double t1);
-  virtual std::string name() const { return "simple"; }
+  virtual void Compute(double t0, double t1) override;
+  virtual DomainFunction_kind getType() const override { return DomainFunction_kind::SIMPLE; }
 
  protected:
   using FunctionBase::value_;
@@ -102,7 +112,7 @@ PK_DomainFunctionSimple<FunctionBase>::Compute(double t0, double t1)
 
   // create the input tuple (time + space)
   double dt = t1 - t0;
-  int dim = mesh_->space_dimension();
+  int dim = mesh_->getSpaceDimension();
   std::vector<double> args(1 + dim);
 
   for (auto uspec = unique_specs_.at(kind_)->begin(); uspec != unique_specs_.at(kind_)->end();

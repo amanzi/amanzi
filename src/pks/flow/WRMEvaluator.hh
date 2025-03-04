@@ -52,7 +52,7 @@ class WRMEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Composit
   Key pressure_key_;
 
  private:
-  static Utils::RegisteredFactory<Evaluator, WRMEvaluator> factory_;
+  static Utils::RegisteredFactory<Evaluator, WRMEvaluator> reg_;
 };
 
 } // namespace Flow

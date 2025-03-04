@@ -31,9 +31,9 @@ Valid methods include:
 Note that all of these can be used without Additive Schwarz by appending
 "stand-alone".
 
-The full list of relevant parameters is somewhat method-dependent, and is documented extensively at
-
-.. url:: https://docs.trilinos.org/dev/packages/ifpack/doc/html/index.html
+The full list of relevant parameters is somewhat method-dependent, and is
+documented extensively in the `Trilinos Documentation
+<https://docs.trilinos.org/dev/packages/ifpack/doc/html/index.html>`_.
 
 Here we document a subset of the most frequently used parameters -- advanced
 users should read the Ifpack User Guide above to see all options.

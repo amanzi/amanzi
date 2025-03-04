@@ -26,7 +26,7 @@ namespace Multiphase {
 * Constructor.
 ****************************************************************** */
 TotalComponentStorage_Tcc::TotalComponentStorage_Tcc(Teuchos::ParameterList& plist)
-  : MultiphaseBaseEvaluator(plist)
+  : MultiphaseEvaluator(plist)
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
@@ -48,7 +48,7 @@ TotalComponentStorage_Tcc::TotalComponentStorage_Tcc(Teuchos::ParameterList& pli
 * Copy constructors.
 ****************************************************************** */
 TotalComponentStorage_Tcc::TotalComponentStorage_Tcc(const TotalComponentStorage_Tcc& other)
-  : MultiphaseBaseEvaluator(other){};
+  : MultiphaseEvaluator(other){};
 
 
 Teuchos::RCP<Evaluator>

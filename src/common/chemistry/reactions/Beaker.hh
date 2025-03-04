@@ -32,6 +32,7 @@
 #include "BeakerState.hh"
 #include "BeakerParameters.hh"
 #include "ChemistryUtilities.hh"
+#include "Colloid.hh"
 #include "GeneralRxn.hh"
 #include "IonExchangeRxn.hh"
 #include "KineticRate.hh"
@@ -59,6 +60,8 @@ class Beaker {
     int num_newton_iterations;
     bool converged;
   };
+
+  typedef enum { PFLOTRAN, LINEAR_ALGEBRA_MAX_NORM } ConvergenceType;
 
   // inheriting classes setup the species, etc
   virtual void Initialize(BeakerState& state, const BeakerParameters& parameters);
@@ -90,8 +93,10 @@ class Beaker {
   DisplayTotalColumns(const double time, const BeakerState& total, const bool display_free) const;
   void DisplayResults() const;
 
-  // access
+  // accessors and modifiers
   SolverStatus status() const { return status_; }
+  void set_use_log_formulation(bool flag) { use_log_formulation_ = flag; }
+  void set_convergence_criterion(const ConvergenceType& i) { convergence_criterion_ = i; }
 
   const std::vector<Mineral>& minerals() const { return minerals_; }
   const std::vector<Species>& primary_species() const { return primary_species_; }
@@ -107,6 +112,8 @@ class Beaker {
   {
     return sorption_isotherm_rxns_;
   }
+
+  const std::vector<Colloid>& colloids() const { return colloids_; }
 
  protected:
   void
@@ -136,8 +143,8 @@ class Beaker {
 
   // equilibrium chemistry
   // update activities, equilibrium complex concentrations, etc.
-  void UpdateEquilibriumChemistry();
-  void CalculateTotal();
+  void UpdateEquilibriumChemistry(const BeakerState& state);
+  void CalculateTotal(const BeakerState& state);
 
   // calculate block of Jacobian corresponding to derivatives of total with
   // respect to free-ion
@@ -191,6 +198,7 @@ class Beaker {
   Species water_;
   std::vector<Species> primary_species_;
   std::vector<Mineral> minerals_;
+  std::vector<Colloid> colloids_;
 
  private:
   double tolerance_;
@@ -203,6 +211,10 @@ class Beaker {
   // Sorbed phase total component concentrations for basis species
   std::vector<double> total_sorbed_; // [mol/m^3 bulk]
   MatrixBlock dtotal_sorbed_;        // derivaties wrt free-ion [kg water/sec]
+
+  // Colloids
+  std::vector<double> total_sorbed_colloid_mobile_;   // [mol/m^3 bulk]
+  std::vector<double> total_sorbed_colloid_immobile_; // [mol/m^3 bulk]
 
   // common parameters among reactions
   double temperature_;         // constant for the Newton solver [K]
@@ -242,6 +254,7 @@ class Beaker {
 
   SolverStatus status_;
   LUSolver lu_solver_;
+  ConvergenceType convergence_criterion_;
 
   bool use_log_formulation_;
 

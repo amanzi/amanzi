@@ -85,7 +85,7 @@
   </ParameterList>
 
   <ParameterList name="cycle driver">
-    <Parameter name="max time step size" type="double" value="1.0e+06"/>    
+    <Parameter name="max timestep size" type="double" value="1.0e+06"/>    
     <ParameterList name="time periods">
       <ParameterList name="TP 0">
         <ParameterList name="PK tree">
@@ -102,8 +102,8 @@
         <Parameter name="start period time" type="double" value="0.0"/>
         <Parameter name="end period time" type="double" value="3.0e+7"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="1.0e+5"/>
-        <Parameter name="maximum time step" type="double" value="1.0e+10"/>        
+        <Parameter name="initial timestep" type="double" value="1.0e+5"/>
+        <Parameter name="maximum timestep" type="double" value="1.0e+10"/>        
       </ParameterList>
       <ParameterList name="TP 1">
 	<ParameterList name="PK tree">
@@ -117,10 +117,10 @@
             </ParameterList>
           </ParameterList>
 	</ParameterList>
-	<Parameter name="initial time step" type="double" value="1.0e+5"/>
+	<Parameter name="initial timestep" type="double" value="1.0e+5"/>
 	<Parameter name="start period time" type="double" value="3.0e+7"/>
 	<Parameter name="end period time" type="double" value="4.0e+7"/>
-        <Parameter name="maximum time step" type="double" value="5e+5"/>
+        <Parameter name="maximum timestep" type="double" value="5e+5"/>
         <Parameter name="maximum cycle number" type="int" value="100"/>
       </ParameterList>
     </ParameterList>
@@ -130,8 +130,8 @@
     
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{6.153732e+10, 6.15688776e+10}"/>
-      <Parameter name="initial time step" type="Array(double)" value="{10.0, 10.0}"/>
-      <Parameter name="maximum time step" type="Array(double)" value="{4.3234e+4, 4.3234e+4}"/>
+      <Parameter name="initial timestep" type="Array(double)" value="{10.0, 10.0}"/>
+      <Parameter name="maximum timestep" type="Array(double)" value="{4.3234e+4, 4.3234e+4}"/>
     </ParameterList>
 
     <ParameterList name="verbose object">
@@ -141,6 +141,27 @@
 
   <ParameterList name="state">
     <ParameterList name="evaluators">
+      <ParameterList name="specific_storage">
+        <Parameter name="evaluator type" type="string" value="specific storage"/>
+	<ParameterList name="specific storage parameters">
+          <ParameterList name="All">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="model" type="string" value="constant"/>
+            <Parameter name="value" type="double" value="1.0e-3"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="fracture-specific_storage">
+        <Parameter name="evaluator type" type="string" value="specific storage"/>
+	<ParameterList name="specific storage parameters">
+          <ParameterList name="All">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="model" type="string" value="constant"/>
+            <Parameter name="value" type="double" value="1.0e-3"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
       <ParameterList name="porosity">
         <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
@@ -241,6 +262,21 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
+      <ParameterList name="fracture-solute_diffusion_to_matrix">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.0e-6"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="initial conditions">
@@ -252,6 +288,9 @@
       </ParameterList>
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="998.2"/>
+      </ParameterList>
+      <ParameterList name="const_fluid_molar_mass">
+        <Parameter name="value" type="double" value="0.018015"/>
       </ParameterList>
       <ParameterList name="temperature">
         <ParameterList name="function">
@@ -267,34 +306,7 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="specific_storage">
-        <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1e-3"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="fracture-specific_storage">
-        <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1e-3"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
-      <ParameterList name="fracture-normal_permeability">
+      <ParameterList name="fracture-diffusion_to_matrix">
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="region" type="string" value="All"/>
@@ -302,19 +314,6 @@
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="3.9240e-07"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="fracture-normal_diffusion">
-        <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.0e-6"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -460,18 +459,6 @@
         <Parameter name="verbosity" type="int" value="0"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Block ILU">
-      <Parameter name="preconditioning method" type="string" value="block ilu"/>
-      <Parameter name="discretization method" type="string" value="mfd: optimized for sparsity"/>
-      <ParameterList name="block ilu parameters">
-        <Parameter name="fact: relax value" type="double" value="1.0"/>
-        <Parameter name="fact: absolute threshold" type="double" value="0.0"/>
-        <Parameter name="fact: relative threshold" type="double" value="1.0"/>
-        <Parameter name="fact: level-of-fill" type="int" value="0"/>
-        <Parameter name="overlap" type="int" value="0"/>
-        <Parameter name="schwarz: combine mode" type="string" value="Add"/>
-      </ParameterList>
-    </ParameterList>
   </ParameterList>
 
   <ParameterList name="solvers">
@@ -514,10 +501,10 @@
           <ParameterList name="timestep controller standard parameters">
             <Parameter name="max iterations" type="int" value="15"/>
             <Parameter name="min iterations" type="int" value="10"/>
-            <Parameter name="time step increase factor" type="double" value="1.5"/>
-            <Parameter name="time step reduction factor" type="double" value="8.0e-01"/>
-            <Parameter name="max time step" type="double" value="6.0e+10"/>
-            <Parameter name="min time step" type="double" value="9.99999999999999945e-21"/>
+            <Parameter name="timestep increase factor" type="double" value="1.5"/>
+            <Parameter name="timestep reduction factor" type="double" value="8.0e-01"/>
+            <Parameter name="max timestep" type="double" value="6.0e+10"/>
+            <Parameter name="min timestep" type="double" value="9.99999999999999945e-21"/>
           </ParameterList>
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
@@ -535,7 +522,6 @@
           </ParameterList>
           <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
           <Parameter name="extrapolate initial guess" type="bool" value="true"/>
-          <Parameter name="nonlinear iteration damping factor" type="double" value="1.0e+00"/>
           <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
           <Parameter name="restart tolerance relaxation factor" type="double" value="1.0e+00"/>
           <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0e+00"/>
@@ -672,10 +658,10 @@
           <ParameterList name="timestep controller standard parameters">
             <Parameter name="max iterations" type="int" value="15"/>
             <Parameter name="min iterations" type="int" value="10"/>
-            <Parameter name="time step increase factor" type="double" value="1.5"/>
-            <Parameter name="time step reduction factor" type="double" value="8.0e-01"/>
-            <Parameter name="max time step" type="double" value="6.0e+10"/>
-            <Parameter name="min time step" type="double" value="9.99999999999999945e-21"/>
+            <Parameter name="timestep increase factor" type="double" value="1.5"/>
+            <Parameter name="timestep reduction factor" type="double" value="8.0e-01"/>
+            <Parameter name="max timestep" type="double" value="6.0e+10"/>
+            <Parameter name="min timestep" type="double" value="9.99999999999999945e-21"/>
           </ParameterList>
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
@@ -690,8 +676,8 @@
     <ParameterList name="transport matrix">
       <Parameter name="domain name" type="string" value="domain"/>      
       <Parameter name="cfl" type="double" value="0.5"/>   
-      <Parameter name="spatial discretization order" type="int" value="1"/>   
-      <Parameter name="temporal discretization order" type="int" value="1"/>
+      <Parameter name="spatial discretization order" type="int" value="2"/>   
+      <Parameter name="temporal discretization order" type="int" value="2"/>
       <Parameter name="transport subcycling" type="bool" value="false"/>      
       <!-- developers parameters --> 
       <Parameter name="enable internal tests" type="bool" value="true"/>   
@@ -788,8 +774,8 @@
     <ParameterList name="transport fracture">
       <Parameter name="domain name" type="string" value="fracture"/>      
       <Parameter name="cfl" type="double" value="0.5"/>   
-      <Parameter name="spatial discretization order" type="int" value="1"/>   
-      <Parameter name="temporal discretization order" type="int" value="1"/>
+      <Parameter name="spatial discretization order" type="int" value="2"/>   
+      <Parameter name="temporal discretization order" type="int" value="2"/>
       <Parameter name="transport subcycling" type="bool" value="false"/>
       <!-- developers parameters --> 
       <Parameter name="enable internal tests" type="bool" value="true"/>   

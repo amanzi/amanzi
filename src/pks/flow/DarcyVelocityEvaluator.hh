@@ -51,6 +51,7 @@ class DarcyVelocityEvaluator
   };
 
  protected:
+  Key domain_;
   Key vol_flowrate_key_;
 };
 

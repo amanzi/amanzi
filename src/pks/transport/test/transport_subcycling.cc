@@ -59,7 +59,6 @@ TEST(ADVANCE_WITH_SUBCYCLING)
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
-  pref.push_back(Framework::STK);
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
@@ -87,9 +86,10 @@ TEST(ADVANCE_WITH_SUBCYCLING)
   auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(1.0, 1.0);
-  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
-    const AmanziGeometry::Point& normal = mesh->face_normal(f);
+    const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
     flux[0][f] = velocity * normal;
   }
 
@@ -103,7 +103,7 @@ TEST(ADVANCE_WITH_SUBCYCLING)
   double t_old(0.0), t_new(0.0), dt;
   int iter = 0;
   while (t_new < 1.0) {
-    // imitation of a small time step relative to flow time step
+    // imitation of a small timestep relative to flow timestep
     dt = TPK.StableTimeStep(-1);
     double dt_MPC = dt * 7.7;
     t_new = t_old + dt_MPC;

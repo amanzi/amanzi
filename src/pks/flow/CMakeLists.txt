@@ -43,18 +43,22 @@ set(flow_src_files Flow_PK.cc
                    Darcy_PK.cc Darcy_TI.cc Darcy_LinearOperator.cc
                    Richards_PK.cc Richards_TI.cc Richards_WRM.cc
                    Richards_Picard.cc Richards_LinearOperator.cc Richards_CNLS.cc
-                   PorosityModelPartition.cc PorosityModelEvaluator.cc
+                   ApertureDarcyEvaluator.cc
+                   ApertureModelPartition.cc ApertureModelEvaluator.cc
+                   PorosityModelPartition.cc PorosityEvaluator.cc
+                   PermeabilityModelPartition.cc PermeabilityEvaluator.cc
                    RelPermEvaluator.cc
-                   WRM_vanGenuchten.cc WRM_BrooksCorey.cc 
+                   WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_linear.cc WRM_tabular.cc
                    WRMPartition.cc WRMFactory.cc WRMEvaluator.cc 
-                   WaterStorage.cc
+                   WaterStorage.cc WaterStorageDarcy.cc
                    DarcyVelocityEvaluator.cc
+                   VolumetricFlowRateEvaluator.cc
                    MultiscaleFlowPorosityFactory.cc MultiscaleFlowPorosityPartition.cc
                    MultiscaleFlowPorosity_DPM.cc
                    MultiscaleFlowPorosity_GDPM.cc
                    FracturePermModelPartition.cc FracturePermModelEvaluator.cc
                    )
-set(flow_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES} ${SEACAS_LIBRARIES})
+set(flow_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${SEACAS_LIBRARIES})
 if (Ifpack_ENABLE_HYPRE)
   list(APPEND flow_tpl_libs ${Ifpack_LIBRARIES} ${HYPRE_LIBRARY})
 endif()
@@ -73,29 +77,39 @@ set(flow_inc_files
   FlowSourceFunction.hh
   Flow_PK.hh
   FlowTypeDefs.hh
+  ApertureModel.hh
+  ApertureModel_BartonBandis.hh
+  ApertureModel_Constant.hh
+  ApertureModel_ExponentialLaw.hh
+  ApertureModelPartition.hh
+  ApertureModelEvaluator.hh
   FracturePermModel.hh
   FracturePermModel_Constant.hh
   FracturePermModel_CubicLaw.hh
   FracturePermModel_Linear.hh
   FracturePermModelPartition.hh
   FracturePermModelEvaluator.hh
+  models_flow_reg.hh
   MultiscaleFlowPorosity.hh
   MultiscaleFlowPorosity_DPM.hh
   MultiscaleFlowPorosity_GDPM.hh
   MultiscaleFlowPorosityFactory.hh
   MultiscaleFlowPorosityPartition.hh
-  PorosityModel.hh
+  Porosity.hh
   PorosityModelPartition.hh
   Richards_PK.hh
+  VolumetricFlowRateEvaluator.hh
   WRM.hh
   WRM_BrooksCorey.hh
+  WRM_linear.hh
   WRM_saturated.hh
+  WRM_tabular.hh
   WRM_vanGenuchten.hh
   WRMEvaluator.hh
   WRMFactory.hh
   WRMPartition.hh)
 
-add_install_include_file(${flow_inc_files} wrm_flow_registration.hh)
+add_install_include_file(${flow_inc_files})
 
 
 if (BUILD_TESTS) 
@@ -131,10 +145,16 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/flow_darcy_dual2D.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
  
-    # Test: transient Darcy flow with a source
+    # Test: transient Darcy flow with wells
     add_amanzi_test(flow_darcy_well flow_darcy_well
                     KIND int
                     SOURCE test/Main.cc test/flow_darcy_well.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    # Test: transient Darcy flow with sources
+    add_amanzi_test(flow_darcy_source flow_darcy_source
+                    KIND int
+                    SOURCE test/Main.cc test/flow_darcy_source.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: convergence analysis
@@ -183,6 +203,12 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/flow_richards_newton_tpfa.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
  
+    # Test: various sources
+    add_amanzi_test(flow_richards_source flow_richards_source
+                    KIND int
+                    SOURCE test/Main.cc test/flow_richards_source.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
     # Test: miscaleneous Darcy flow routines
     add_amanzi_test(flow_darcy_misc flow_darcy_misc 
                     KIND int
@@ -192,11 +218,19 @@ if (BUILD_TESTS)
     add_amanzi_test(flow_darcy_misc_2pe flow_darcy_misc NPROCS 2 KIND unit)
     add_amanzi_test(flow_darcy_misc_4pe flow_darcy_misc NPROCS 4 KIND unit)
 
-    # Test: van Genuchten flow routines
-    add_amanzi_test(flow_vanGenuchten flow_vanGenuchten
+    # Test: model tests
+    add_amanzi_test(flow_wrm flow_wrm
                     KIND int
                     SOURCE test/Main.cc test/flow_vanGenuchten.cc
+                                        test/flow_wrm_tabular.cc
+                                        test/flow_wrm_solvers.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(flow_aperture flow_aperture
+                    KIND int
+                    SOURCE test/Main.cc test/flow_aperture.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
 
     # Test: flow-bc-factory
     add_amanzi_test(flow_bc_factory flow_bc_factory
@@ -242,7 +276,12 @@ if (BUILD_TESTS)
                       SOURCE test/Main.cc test/flow_darcy_fractures_source.cc
                       LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-      add_amanzi_test(flow_richards_fractures flow_richards_fractures 
+      add_amanzi_test(flow_richards_fractures_saturated flow_richards_fractures_saturated 
+                      KIND int
+                      SOURCE test/Main.cc test/flow_richards_fractures_saturated.cc
+                      LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+      add_amanzi_test(flow_richards_fractures flow_richards_fractures
                       KIND int
                       SOURCE test/Main.cc test/flow_richards_fractures.cc
                       LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})

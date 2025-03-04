@@ -38,17 +38,22 @@ class PK_DomainFunctionFirstOrderExchange : public FunctionBase,
   PK_DomainFunctionFirstOrderExchange(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                       const Teuchos::ParameterList& plist,
                                       AmanziMesh::Entity_kind kind)
-    : FunctionBase(plist), UniqueMeshFunction(mesh), kind_(kind){};
+    : FunctionBase(plist),
+      UniqueMeshFunction(mesh, AmanziMesh::Parallel_kind::OWNED),
+      kind_(kind){};
   virtual ~PK_DomainFunctionFirstOrderExchange() = default;
 
   // member functions
   void Init(const Teuchos::ParameterList& plist, const std::string& keyword);
 
-  virtual void set_state(const Teuchos::RCP<State>& S) { S_ = S; }
+  virtual void set_state(const Teuchos::RCP<State>& S) final { S_ = S; }
 
   // required member functions
-  virtual void Compute(double t0, double t1);
-  virtual std::string name() const { return "first order exchange"; }
+  virtual void Compute(double t0, double t1) override;
+  virtual DomainFunction_kind getType() const override
+  {
+    return DomainFunction_kind::FIRST_ORDER_EXCHANGE;
+  }
 
  protected:
   using FunctionBase::value_;
@@ -123,15 +128,15 @@ PK_DomainFunctionFirstOrderExchange<FunctionBase>::Compute(double t0, double t1)
   if (unique_specs_.size() == 0) return;
 
   // create the input tuple (time + space)
-  int dim = mesh_->space_dimension();
+  int dim = mesh_->getSpaceDimension();
   std::vector<double> args(1 + dim);
 
   // get the tcc vector
   const auto& tcc = *S_->Get<CompositeVector>(tcc_key_, tcc_copy_).ViewComponent("cell");
-  const auto& ws_ =
+  const auto& ws =
     *S_->Get<CompositeVector>(saturation_key_, saturation_copy_).ViewComponent("cell");
-  const auto& phi_ = *S_->Get<CompositeVector>(porosity_key_, porosity_copy_).ViewComponent("cell");
-  const auto& mol_dens_ =
+  const auto& phi = *S_->Get<CompositeVector>(porosity_key_, porosity_copy_).ViewComponent("cell");
+  const auto& mol_dens =
     *S_->Get<CompositeVector>(molar_density_key_, molar_density_copy_).ViewComponent("cell");
 
   for (UniqueSpecList::const_iterator uspec = unique_specs_.at(kind_)->begin();
@@ -149,9 +154,9 @@ PK_DomainFunctionFirstOrderExchange<FunctionBase>::Compute(double t0, double t1)
       for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
 
       // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
+      double tmp = ws[0][*c] * phi[0][*c] * mol_dens[0][*c];
       for (int i = 0; i < nfun; ++i) {
-        val_vec[i] = -(*(*uspec)->first->second)(args)[i] * tcc[i][*c] * ws_[0][*c] * phi_[0][*c] *
-                     mol_dens_[0][*c];
+        val_vec[i] = -(*(*uspec)->first->second)(args)[i] * tcc[i][*c] * tmp;
       }
       value_[*c] = val_vec;
     }

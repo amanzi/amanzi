@@ -53,13 +53,11 @@ TEST(FLOW_2D_TRANSIENT_DARCY)
 
   // create SIMPLE mesh framework
   ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
-  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
+  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
-  pref.push_back(Framework::STK);
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
@@ -73,8 +71,9 @@ TEST(FLOW_2D_TRANSIENT_DARCY)
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
+  Teuchos::ParameterList pk_tree("flow");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
+  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(pk_tree, plist, S, soln));
   DPK->Setup();
   std::cout << "Owner of " << S->GetRecord("permeability").fieldname() << " is "
             << S->GetRecord("permeability").owner() << "\n";
@@ -88,20 +87,24 @@ TEST(FLOW_2D_TRANSIENT_DARCY)
   Key passwd("");
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
 
-  AmanziMesh::Entity_ID_List block;
-
-  mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
-  for (int i = 0; i != block.size(); ++i) {
-    int c = block[i];
-    K[0][c] = 0.1;
-    K[1][c] = 2.0;
+  {
+    auto block = mesh->getSetEntities(
+      "Material 1", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+    for (int i = 0; i != block.size(); ++i) {
+      int c = block[i];
+      K[0][c] = 0.1;
+      K[1][c] = 2.0;
+    }
   }
 
-  mesh->get_set_entities("Material 2", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
-  for (int i = 0; i != block.size(); ++i) {
-    int c = block[i];
-    K[0][c] = 0.5;
-    K[1][c] = 0.5;
+  {
+    auto block = mesh->getSetEntities(
+      "Material 2", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+    for (int i = 0; i != block.size(); ++i) {
+      int c = block[i];
+      K[0][c] = 0.5;
+      K[1][c] = 0.5;
+    }
   }
   S->GetRecordW("permeability", "permeability").set_initialized();
 
@@ -112,15 +115,11 @@ TEST(FLOW_2D_TRANSIENT_DARCY)
   S->GetW<double>("const_fluid_viscosity", "state") = 1.0;
   S->GetRecordW("const_fluid_viscosity", "state").set_initialized();
 
-  // -- storativity
-  S->GetW<CompositeVector>("specific_storage", passwd).PutScalar(2.0);
-  S->GetRecordW("specific_storage", passwd).set_initialized();
-
   // create the initial pressure function
   auto& p = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
 
   for (int c = 0; c < p.MyLength(); c++) {
-    const Point& xc = mesh->cell_centroid(c);
+    const Point& xc = mesh->getCellCentroid(c);
     p[0][c] = xc[1] * (xc[1] + 2.0);
   }
   S->GetRecordW("pressure", passwd).set_initialized();
@@ -187,8 +186,9 @@ TEST(FLOW_3D_TRANSIENT_DARCY)
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
+  Teuchos::ParameterList pk_tree("flow");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
+  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(pk_tree, plist, S, soln));
   DPK->Setup();
   S->Setup();
   S->InitializeFields();
@@ -198,34 +198,38 @@ TEST(FLOW_3D_TRANSIENT_DARCY)
   std::string passwd("");
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
 
-  AmanziMesh::Entity_ID_List block;
-  mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
-  for (int i = 0; i != block.size(); ++i) {
-    int c = block[i];
-    K[0][c] = 0.1;
-    K[1][c] = 0.1;
-    K[2][c] = 2.0;
+  {
+    auto block = mesh->getSetEntities(
+      "Material 1", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+    for (int i = 0; i != block.size(); ++i) {
+      int c = block[i];
+      K[0][c] = 0.1;
+      K[1][c] = 0.1;
+      K[2][c] = 2.0;
+    }
   }
 
-  mesh->get_set_entities("Material 2", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
-  for (int i = 0; i != block.size(); ++i) {
-    int c = block[i];
-    K[0][c] = 0.5;
-    K[1][c] = 0.5;
-    K[2][c] = 0.5;
+  {
+    auto block = mesh->getSetEntities(
+      "Material 2", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+    for (int i = 0; i != block.size(); ++i) {
+      int c = block[i];
+      K[0][c] = 0.5;
+      K[1][c] = 0.5;
+      K[2][c] = 0.5;
+    }
   }
 
   S->GetW<double>("const_fluid_density", "state") = 1.0;
   S->GetW<double>("const_fluid_viscosity", "state") = 1.0;
 
-  S->GetW<CompositeVector>("specific_storage", passwd).PutScalar(1.0);
   S->GetW<CompositeVector>("specific_yield", passwd).PutScalar(0.0);
 
   // create the initial pressure function
   auto& p = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
 
   for (int c = 0; c < p.MyLength(); c++) {
-    const Point& xc = mesh->cell_centroid(c);
+    const Point& xc = mesh->getCellCentroid(c);
     p[0][c] = xc[2] * (xc[2] + 2.0) * (xc[1] + 1.0) * (xc[0] - 1.0);
   }
 

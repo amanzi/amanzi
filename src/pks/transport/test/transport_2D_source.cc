@@ -56,7 +56,6 @@ TEST(TRANSPORT_SOURCE_2D_MESH)
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
-  pref.push_back(Framework::STK);
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
@@ -84,9 +83,10 @@ TEST(TRANSPORT_SOURCE_2D_MESH)
   auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(1.0, 0.5);
-  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
-    const AmanziGeometry::Point& normal = mesh->face_normal(f);
+    const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
     flux[0][f] = velocity * normal;
   }
 
@@ -94,13 +94,11 @@ TEST(TRANSPORT_SOURCE_2D_MESH)
   TPK.Initialize();
 
   /* advance the transport state */
-  int iter;
   double t_old(0.0), t_new(0.0), dt;
 
   auto& tcc =
     *S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
 
-  iter = 0;
   bool flag = true;
   while (t_new < 0.3) {
     dt = TPK.StableTimeStep(-1);
@@ -110,7 +108,6 @@ TEST(TRANSPORT_SOURCE_2D_MESH)
     TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
-    iter++;
 
     if (t_new > 0.1 && flag) {
       flag = false;

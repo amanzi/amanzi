@@ -10,7 +10,6 @@
 
 /*
   Input Converter
-
 */
 
 #include <string>
@@ -18,13 +17,20 @@
 
 // TPLs
 #include "Teuchos_ParameterList.hpp"
-
-#include "amanzi_version.hh"
-#include "InputConverterU.hh"
 #include "XMLParameterListWriter.hh"
+
+// Amanzi
+#include "amanzi_version.hh"
+#include "errors.hh"
+#include "Reader.hh"
+
+#include "InputConverterU.hh"
 
 namespace Amanzi {
 namespace AmanziInput {
+
+#define XSTR(s) STR(s)
+#define STR(s) #s
 
 XERCES_CPP_NAMESPACE_USE
 
@@ -37,11 +43,12 @@ InputConverterU::Translate(int rank, int num_proc)
   rank_ = rank;
   num_proc_ = num_proc;
   Teuchos::ParameterList out_list;
+  glist_ = Teuchos::rcpFromRef(out_list);
 
   // grab verbosity early
   verb_list_ = TranslateVerbosity_();
   Teuchos::ParameterList tmp_list(verb_list_);
-  vo_ = new VerboseObject("InputConverter2.3", tmp_list);
+  vo_ = new VerboseObject("InputConverter-u", tmp_list);
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // checks that input XML is structurally sound
@@ -56,7 +63,9 @@ InputConverterU::Translate(int rank, int num_proc)
   ParseGeochemistry_();
   ModifyDefaultPhysicalConstants_();
   ParseModelDescription_();
+  ParseFractureNetwork_();
   ParseGlobalNumericalControls_();
+  ParseMisc_();
 
   out_list.set<bool>("Native Unstructured Input", "true");
 
@@ -97,7 +106,9 @@ InputConverterU::Translate(int rank, int num_proc)
 
   // -- additional saturated flow fields
   //    various data flow scenarios require both ic and ev to be defined FIXME
-  if (pk_model_["flow"] == "darcy") {
+  bool flag1 = HasSubmodel_("flow", "darcy");
+  bool flag2 = !phases_[LIQUID].active && !phases_[GAS].active && phases_[SOLID].active;
+  if (flag1 || flag2) {
     Teuchos::Array<std::string> regions(1, "All");
     auto& ic_m =
       out_list.sublist("state").sublist("initial conditions").sublist("saturation_liquid");
@@ -132,12 +143,36 @@ InputConverterU::Translate(int rank, int num_proc)
     }
   }
 
-  if (pk_model_["flow"] == "richards") {
+  if (flag2) {
+    Teuchos::Array<std::string> regions(1, "All");
+    auto& ev_p = out_list.sublist("state").sublist("evaluators").sublist("pressure");
+    ev_p.set<std::string>("evaluator type", "independent variable");
+    ev_p.sublist("function")
+      .sublist("All")
+      .set<Teuchos::Array<std::string>>("regions", regions)
+      .set<std::string>("component", "cell")
+      .sublist("function")
+      .sublist("function-constant")
+      .set<double>("value", 0.0);
+  }
+
+  // temperature evaluators for systems with constant temperature
+  if (HasSubmodel_("flow", "richards") || pk_model_["chemistry"].size() > 0) {
     auto& out_ev = out_list.sublist("state").sublist("evaluators");
+    auto& out_ic = out_list.sublist("state").sublist("initial conditions");
+
     if (!out_ev.isSublist("temperature")) {
       AddIndependentFieldEvaluator_(out_ev, "temperature", "All", "*", 298.15);
-      if (fractures_)
+      if (out_ic.isSublist("temperature"))
+        out_ev.sublist("temperature").sublist("function") =
+          out_ic.sublist("temperature").sublist("function");
+
+      if (fracture_regions_.size() > 0) {
         AddIndependentFieldEvaluator_(out_ev, "fracture-temperature", "All", "*", 298.15);
+        if (out_ic.isSublist("temperature"))
+          out_ev.sublist("temperature").sublist("function") =
+            out_ic.sublist("temperature").sublist("function");
+      }
     }
   }
 
@@ -149,12 +184,7 @@ InputConverterU::Translate(int rank, int num_proc)
   }
 
   // -- walkabout enforces non-contiguous maps
-  if (io_walkabout_) {
-    out_list.sublist("mesh")
-      .sublist("unstructured")
-      .sublist("expert")
-      .set<bool>("contiguous global ids", false);
-  }
+  if (io_walkabout_) { out_list.sublist("mesh").set<bool>("contiguous global ids", false); }
 
   // -- single region for fracture network
   if (fracture_regions_.size() > 0) {
@@ -195,9 +225,12 @@ InputConverterU::Translate(int rank, int num_proc)
     }
   }
 
-  if (pk_model_["chemistry"] == "amanzi") {
+  if (HasSubmodel_("chemistry", "amanzi")) {
     out_list.sublist("thermodynamic database") = TranslateThermodynamicDatabase_();
   }
+
+  // global verbosity if local is missing
+  out_list.sublist("verbose object") = verb_list_;
 
   // -- final I/O
   PrintStatistics_();
@@ -219,8 +252,6 @@ void
 InputConverterU::VerifyXMLStructure_()
 {
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-#define XSTR(s) STR(s)
-#define STR(s) #s
     *vo_->os() << "Amanzi executable tag: " << XSTR(AMANZI_VERSION) << "\n"
                << "Verify high-level XML structure" << std::endl;
   }
@@ -253,69 +284,90 @@ InputConverterU::ParseSolutes_()
 
   MemoryManager mm;
 
-  DOMNode* node;
-  DOMNode* knode = doc_->getElementsByTagName(mm.transcode("phases"))->item(0);
+  DOMNode *node, *knode;
+  DOMNodeList* children;
 
-  // liquid phase (try solutes, then primaries)
-  std::string species("solute");
-  node = GetUniqueElementByTagsString_(knode, "liquid_phase, dissolved_components, solutes", flag);
-  if (!flag) {
-    node =
-      GetUniqueElementByTagsString_(knode, "liquid_phase, dissolved_components, primaries", flag);
-    species = "primary";
-  }
-
-  DOMNodeList* children = node->getChildNodes();
-  int nchildren = children->getLength();
-
-  for (int i = 0; i < nchildren; ++i) {
-    DOMNode* inode = children->item(i);
-    tagname = mm.transcode(inode->getNodeName());
-    std::string name = TrimString_(mm.transcode(inode->getTextContent()));
-
-    if (species == tagname) {
-      phases_["water"].push_back(name);
-
-      DOMElement* element = static_cast<DOMElement*>(inode);
-      // Polyethylene glycol has a molar mass of 1,000,000 g/mol
-      double mol_mass = GetAttributeValueD_(
-        element, "molar_mass", TYPE_NUMERICAL, 0.0, 1000.0, "kg/mol", false, 1.0);
-      solute_molar_mass_[name] = mol_mass;
-    }
-  }
-
-  comp_names_all_ = phases_["water"];
-
-  // gas phase
-  species = "solute";
-  node = GetUniqueElementByTagsString_(knode, "gas_phase, dissolved_components, solutes", flag);
-  if (!flag) {
-    node = GetUniqueElementByTagsString_(knode, "gas_phase, dissolved_components, primaries", flag);
-    species = "primary";
-  }
+  // liquid phase
+  knode = GetUniqueElementByTagsString_("phases, liquid_phase", flag);
   if (flag) {
+    phases_[LIQUID].active = true;
+
+    node = GetUniqueElementByTagsString_(knode, "primary", flag);
+    if (flag) phases_[LIQUID].primary = TrimString_(mm.transcode(node->getTextContent()));
+
+    // -- try solutes, then primaries (DEPRECATE FIXME)
+    std::string species("solute");
+    node = GetUniqueElementByTagsString_(knode, "dissolved_components, solutes", flag);
+    if (!flag) {
+      node = GetUniqueElementByTagsString_(knode, "dissolved_components, primaries", flag);
+      species = "primary";
+    }
+
     children = node->getChildNodes();
-    nchildren = children->getLength();
+    int nchildren = children->getLength();
 
     for (int i = 0; i < nchildren; ++i) {
       DOMNode* inode = children->item(i);
       tagname = mm.transcode(inode->getNodeName());
-      text_content = mm.transcode(inode->getTextContent());
+      std::string name = TrimString_(mm.transcode(inode->getTextContent()));
 
-      if (species == tagname) { phases_["air"].push_back(TrimString_(text_content)); }
+      if (species == tagname) {
+        phases_[LIQUID].dissolved.push_back(name);
+
+        DOMElement* element = static_cast<DOMElement*>(inode);
+        // Polyethylene glycol has a molar mass of 1,000,000 g/mol
+        double mol_mass = GetAttributeValueD_(
+          element, "molar_mass", TYPE_NUMERICAL, 0.0, 1000.0, "kg/mol", false, 1.0);
+        solute_molar_mass_[name] = mol_mass;
+      }
     }
 
-    comp_names_all_.insert(comp_names_all_.end(), phases_["air"].begin(), phases_["air"].end());
-  }
+    comp_names_all_ = phases_[LIQUID].dissolved;
 
-  // output
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    int nsolutes = phases_["water"].size();
-    *vo_->os() << "Phase 'water' has " << nsolutes << " solutes\n";
-    for (int i = 0; i < nsolutes; ++i) {
-      *vo_->os() << " solute: " << phases_["water"][i] << std::endl;
+    // output
+    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+      int nsolutes = phases_[LIQUID].dissolved.size();
+      *vo_->os() << "Liquid phase has " << nsolutes << " solutes\n";
+      for (int i = 0; i < nsolutes; ++i) {
+        *vo_->os() << " solute: " << phases_[LIQUID].dissolved[i] << std::endl;
+      }
     }
   }
+
+  // gas phase
+  knode = GetUniqueElementByTagsString_("phases, gas_phase", flag);
+  if (flag) {
+    phases_[GAS].active = true;
+
+    std::string species("solute");
+    node = GetUniqueElementByTagsString_(knode, "dissolved_components, solutes", flag);
+    if (!flag) {
+      node = GetUniqueElementByTagsString_(knode, "dissolved_components, primaries", flag);
+      species = "primary";
+    }
+    if (flag) {
+      children = node->getChildNodes();
+      int nchildren = children->getLength();
+
+      for (int i = 0; i < nchildren; ++i) {
+        DOMNode* inode = children->item(i);
+        tagname = mm.transcode(inode->getNodeName());
+        text_content = mm.transcode(inode->getTextContent());
+
+        if (species == tagname) {
+          if (strcmp(text_content, phases_[LIQUID].primary.c_str()) == 0) continue;
+          phases_[GAS].dissolved.push_back(TrimString_(text_content));
+        }
+      }
+
+      comp_names_all_.insert(
+        comp_names_all_.end(), phases_[GAS].dissolved.begin(), phases_[GAS].dissolved.end());
+    }
+  }
+
+  // solid phase
+  knode = GetUniqueElementByTagsString_("phases, solid_phase", flag);
+  if (flag) phases_[SOLID].active = true;
 }
 
 
@@ -330,6 +382,13 @@ InputConverterU::ModifyDefaultPhysicalConstants_()
   auto it = constants_.find("gravity");
   if (it != constants_.end()) const_gravity_ = std::strtod(it->second.c_str(), NULL);
 
+  if (const_gravity_ <= 0.0) {
+    Errors::Message msg;
+    msg << "Modified gravity value must be positive.\n"
+        << "Use unstructured_controls->gravity to turn it off.\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
   // reference atmospheric pressure
   const_atm_pressure_ = ATMOSPHERIC_PRESSURE;
   it = constants_.find("atmospheric_pressure");
@@ -338,7 +397,7 @@ InputConverterU::ModifyDefaultPhysicalConstants_()
 
 
 /* ******************************************************************
-* Extract generic verbosity object for all sublists.
+* Extract model description
 ****************************************************************** */
 void
 InputConverterU::ParseModelDescription_()
@@ -366,6 +425,38 @@ InputConverterU::ParseModelDescription_()
 
 
 /* ******************************************************************
+* Extract high-level info for fracture netwrok
+****************************************************************** */
+void
+InputConverterU::ParseFractureNetwork_()
+{
+  DOMNode* node;
+  DOMNodeList* children;
+
+  bool flag;
+  MemoryManager mm;
+
+  node = GetUniqueElementByTagsString_("fracture_network, materials", fracture_network_);
+  if (fracture_network_) {
+    children = node->getChildNodes();
+
+    for (int i = 0; i < children->getLength(); i++) {
+      DOMNode* inode = children->item(i);
+      if (DOMNode::ELEMENT_NODE != inode->getNodeType()) continue;
+
+      node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
+      std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
+
+      for (int n = 0; n < regions.size(); ++n) { fracture_regions_.push_back(regions[n]); }
+      fracture_regions_.erase(
+        SelectUniqueEntries(fracture_regions_.begin(), fracture_regions_.end()),
+        fracture_regions_.end());
+    }
+  }
+}
+
+
+/* ******************************************************************
 * Simulation-wide control parameters
 ****************************************************************** */
 void
@@ -379,6 +470,22 @@ InputConverterU::ParseGlobalNumericalControls_()
   if (flag) {
     std::string text = GetTextContentS_(node, "on, off");
     gravity_on_ = (text == "on");
+  }
+}
+
+
+/* ******************************************************************
+* Simulation-wide control parameters
+****************************************************************** */
+void
+InputConverterU::ParseMisc_()
+{
+  try {
+    bool flag;
+    GetUniqueElementByTagsString_("process_kernels, pk, multiphase", flag);
+    if (flag) multiphase_ = true;
+  } catch (...) {
+    // do nothing
   }
 }
 
@@ -600,7 +707,7 @@ InputConverterU::SaveXMLFile(Teuchos::ParameterList& out_list, std::string& xmlf
 
   if (filename == "") {
     filename = xmlfilename;
-    std::string new_extension("_native_v9.xml");
+    std::string new_extension("_native.xml");
     size_t pos = filename.find(".xml");
     filename.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)14);
   }
@@ -654,6 +761,17 @@ InputConverterU::PrintStatistics_()
     }
     *vo_->os() << std::endl;
   }
+}
+
+
+/* ******************************************************************
+* Verify that file and variable exist.
+****************************************************************** */
+bool
+InputConverterU::CheckVariableName_(const std::string& filename, const std::string& varname)
+{
+  auto reader = createReader(filename);
+  return reader->hasVariableOrGroup(varname);
 }
 
 } // namespace AmanziInput

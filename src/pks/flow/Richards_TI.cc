@@ -23,7 +23,7 @@
 #include "COM_Tortuosity.hh"
 #include "EOS_Diffusion.hh"
 #include "Key.hh"
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 #include "CommonDefs.hh"
 
 #include "Richards_PK.hh"
@@ -31,13 +31,15 @@
 namespace Amanzi {
 namespace Flow {
 
+using CV_t = CompositeVector;
+
 /* ******************************************************************
 * Calculate f(u, du/dt) = a d(s(u))/dt + A*u - rhs.
 ****************************************************************** */
 void
 Richards_PK::FunctionalResidual(double t_old,
                                 double t_new,
-                                Teuchos::RCP<TreeVector> u_old,
+                                Teuchos::RCP<const TreeVector> u_old,
                                 Teuchos::RCP<TreeVector> u_new,
                                 Teuchos::RCP<TreeVector> f)
 {
@@ -45,8 +47,6 @@ Richards_PK::FunctionalResidual(double t_old,
 
   // verify that u_new = solution@default
   Solution_to_State(*u_new, Tags::DEFAULT);
-
-  std::vector<int>& bc_model = op_bc_->bc_model();
 
   if (S_->HasEvaluator(viscosity_liquid_key_, Tags::DEFAULT)) {
     S_->GetEvaluator(viscosity_liquid_key_).Update(*S_, "flow");
@@ -56,32 +56,33 @@ Richards_PK::FunctionalResidual(double t_old,
   UpdateSourceBoundaryData(t_old, t_new, *u_new->Data());
 
   // upwind diffusion coefficient and its derivative
-  vol_flowrate_copy->ScatterMasterToGhosted("face");
+  mol_flowrate_copy->ScatterMasterToGhosted("face");
 
-  pressure_eval_->SetChanged();
-  auto& alpha = S_->GetW<CompositeVector>(alpha_key_, Tags::DEFAULT, alpha_key_);
   S_->GetEvaluator(alpha_key_).Update(*S_, "flow");
+  auto& alpha = S_->GetW<CV_t>(alpha_key_, Tags::DEFAULT, alpha_key_);
 
   if (!flow_on_manifold_) {
+    std::vector<int>& bc_model = op_bc_->bc_model();
+
     *alpha_upwind_->ViewComponent("cell") = *alpha.ViewComponent("cell");
     Operators::BoundaryFacesToFaces(bc_model, alpha, *alpha_upwind_);
-    upwind_->Compute(*vol_flowrate_copy, *u_new->Data(), bc_model, *alpha_upwind_);
+    upwind_->Compute(*mol_flowrate_copy, bc_model, *alpha_upwind_);
 
     // modify relative permeability coefficient for influx faces
     // UpwindInflowBoundary_New(u_new->Data());
 
     S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
-    auto& alpha_dP = S_->GetDerivativeW<CompositeVector>(
-      alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_);
+    auto& alpha_dP =
+      S_->GetDerivativeW<CV_t>(alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_);
 
     *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP.ViewComponent("cell");
     Operators::BoundaryFacesToFaces(bc_model, alpha_dP, *alpha_upwind_dP_);
-    upwind_->Compute(*vol_flowrate_copy, *u_new->Data(), bc_model, *alpha_upwind_dP_);
+    upwind_->Compute(*mol_flowrate_copy, bc_model, *alpha_upwind_dP_);
   }
 
   // assemble residual for diffusion operator
   op_matrix_->Init();
-  op_matrix_diff_->UpdateMatrices(vol_flowrate_copy.ptr(), solution.ptr());
+  op_matrix_diff_->UpdateMatrices(mol_flowrate_copy.ptr(), solution.ptr());
   op_matrix_diff_->ApplyBCs(true, true, true);
 
   Teuchos::RCP<CompositeVector> rhs = op_matrix_->rhs();
@@ -92,38 +93,34 @@ Richards_PK::FunctionalResidual(double t_old,
   // add accumulation term
   Epetra_MultiVector& f_cell = *f->Data()->ViewComponent("cell");
 
-  pressure_eval_->SetChanged();
   S_->GetEvaluator(porosity_key_).Update(*S_, "flow");
-  const auto& phi_c = *S_->Get<CompositeVector>(porosity_key_).ViewComponent("cell");
+  const auto& phi_c = *S_->Get<CV_t>(porosity_key_).ViewComponent("cell");
 
   S_->GetEvaluator(water_storage_key_).Update(*S_, "flow");
-  const auto& wc_c = *S_->Get<CompositeVector>(water_storage_key_).ViewComponent("cell");
-  const auto& wc_prev_c = *S_->Get<CompositeVector>(prev_water_storage_key_).ViewComponent("cell");
+  const auto& ws_c = *S_->Get<CV_t>(water_storage_key_).ViewComponent("cell");
+  const auto& ws_prev_c = *S_->Get<CV_t>(prev_water_storage_key_).ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; ++c) {
-    double wc1 = wc_c[0][c];
-    double wc2 = wc_prev_c[0][c];
+    double ws1 = ws_c[0][c];
+    double ws2 = ws_prev_c[0][c];
 
-    double factor = mesh_->cell_volume(c) / dt_;
-    f_cell[0][c] += (wc1 - wc2) * factor;
+    double factor = mesh_->getCellVolume(c) / dt_;
+    f_cell[0][c] += (ws1 - ws2) * factor;
   }
 
   // add vapor diffusion
   if (vapor_diffusion_) { Functional_AddVaporDiffusion_(f->Data()); }
 
   // add water storage in matrix
-  if (multiscale_porosity_) {
-    pressure_msp_eval_->SetChanged();
-    Functional_AddMassTransferMatrix_(dt_, f->Data());
-  }
+  if (multiscale_porosity_) { Functional_AddMassTransferMatrix_(dt_, f->Data()); }
 
   // calculate normalized residual
   functional_max_norm = 0.0;
   functional_max_cell = 0;
 
   for (int c = 0; c < ncells_owned; ++c) {
-    const auto& dens_c = *S_->Get<CompositeVector>(mol_density_liquid_key_).ViewComponent("cell");
-    double factor = mesh_->cell_volume(c) * dens_c[0][c] * phi_c[0][c] / dt_;
+    const auto& dens_c = *S_->Get<CV_t>(mol_density_liquid_key_).ViewComponent("cell");
+    double factor = mesh_->getCellVolume(c) * dens_c[0][c] * phi_c[0][c] / dt_;
     double tmp = fabs(f_cell[0][c]) / factor;
     if (tmp > functional_max_norm) {
       functional_max_norm = tmp;
@@ -250,48 +247,63 @@ Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& kvapo
 
 
 /* ******************************************************************
-* Calculate additional conribution to Richards functional:
-*  f += alpha (p_f - p_m)y, where
+* Calculate additional contribution to Richards functional:
+*  f += alpha (p_f - p_m), where
 *    p_f   - pressure in the fracture
 *    p_m   - pressure in the matrix
-*    alpha - piecewise constant mass fransfer coeffiecient
+*    alpha - piecewise constant mass fransfer coefficient
 ****************************************************************** */
 void
 Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<CompositeVector> f)
 {
-  const auto& pcf = *S_->Get<CompositeVector>(pressure_key_).ViewComponent("cell");
-  auto& pcm =
-    *S_->GetW<CompositeVector>(pressure_msp_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+  const auto& mu = *S_->Get<CV_t>(viscosity_liquid_key_).ViewComponent("cell");
+
+  const auto& prf = *S_->Get<CV_t>(pressure_key_).ViewComponent("cell");
+  auto& prm = *S_->GetW<CV_t>(pressure_msp_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
 
   S_->GetEvaluator(porosity_msp_key_).Update(*S_, "flow");
   const auto& phi = *S_->Get<CompositeVector>(porosity_msp_key_).ViewComponent("cell");
 
-  const auto& wcm_prev =
-    *S_->Get<CompositeVector>(prev_water_storage_msp_key_).ViewComponent("cell");
-  auto& wcm = *S_->GetW<CompositeVector>(water_storage_msp_key_, Tags::DEFAULT, passwd_)
-                 .ViewComponent("cell");
+  const auto& wcm_prev = *S_->Get<CV_t>(prev_water_storage_msp_key_).ViewComponent("cell");
+  auto& wcm = *S_->GetW<CV_t>(water_storage_msp_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
 
   Epetra_MultiVector& fc = *f->ViewComponent("cell");
 
-  double phi0, wcm0, wcm1, pcf0;
-  WhetStone::DenseVector pcm0(1);
+  int nnodes = prm.NumVectors();
+  double phi0, prf0;
+  WhetStone::DenseVector prm0(nnodes), wcm0(nnodes), wcm1(nnodes);
+
+  int max_itrs(0);
+  ms_itrs_ = 0;
+
   for (int c = 0; c < ncells_owned; ++c) {
-    pcf0 = atm_pressure_ - pcf[0][c];
-    pcm0(0) = atm_pressure_ - pcm[0][c];
-    wcm0 = wcm_prev[0][c];
+    prf0 = prf[0][c];
+    for (int i = 0; i < nnodes; ++i) {
+      prm0(i) = prm[i][c];
+      wcm0(i) = wcm_prev[i][c];
+    }
     phi0 = phi[0][c];
 
-    int max_itrs(100);
+    int num_itrs(100);
     wcm1 = msp_->second[(*msp_->first)[c]]->WaterContentMatrix(
-      pcf0, pcm0, wcm0, dt, phi0, molar_rho_, max_itrs);
+      prf0, prm0, wcm0, dt, phi0, molar_rho_, mu[0][c], num_itrs);
 
-    fc[0][c] += (wcm1 - wcm0) / dt;
-    wcm[0][c] = wcm1;
-    pcm[0][c] = atm_pressure_ - pcm0(0);
+    fc[0][c] += (wcm1(0) - wcm0(0)) / dt;
 
-    ms_itrs_ += max_itrs;
+    for (int i = 0; i < nnodes; ++i) {
+      wcm[i][c] = wcm1(i);
+      prm[i][c] = prm0(i);
+    }
+
+    ms_itrs_ += num_itrs;
+    max_itrs = std::max(max_itrs, num_itrs);
   }
-  ms_calls_ += ncells_owned;
+
+  // identify convergence failure
+  if (max_itrs >= 100) {
+    Errors::CutTimestep e("GDPM did not converge");
+    amanzi_throw(e);
+  }
 }
 
 
@@ -302,15 +314,15 @@ void
 Richards_PK::CalculateWaterStorageMultiscale_()
 {
   S_->GetEvaluator(porosity_msp_key_).Update(*S_, "flow");
-  const auto& pcm = *S_->Get<CompositeVector>(pressure_msp_key_).ViewComponent("cell");
+  const auto& prm = *S_->Get<CompositeVector>(pressure_msp_key_).ViewComponent("cell");
   const auto& phi = *S_->Get<CompositeVector>(porosity_msp_key_).ViewComponent("cell");
   auto& wcm = *S_->GetW<CompositeVector>(water_storage_msp_key_, passwd_).ViewComponent("cell");
 
-  double phi0, pcm0;
+  int nnodes = prm.NumVectors();
   for (int c = 0; c < ncells_owned; ++c) {
-    pcm0 = atm_pressure_ - pcm[0][c];
-    phi0 = phi[0][c];
-    wcm[0][c] = msp_->second[(*msp_->first)[c]]->ComputeField(phi0, molar_rho_, pcm0);
+    for (int i = 0; i < nnodes; ++i) {
+      wcm[i][c] = msp_->second[(*msp_->first)[c]]->ComputeField(phi[0][c], molar_rho_, prm[i][c]);
+    }
   }
 }
 
@@ -332,10 +344,10 @@ Richards_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, Teuchos::RCP<
 void
 Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, double dtp)
 {
+  double t_old = tp - dtp;
+
   // verify that u = solution@default
   Solution_to_State(*u, Tags::DEFAULT);
-
-  double t_old = tp - dtp;
 
   std::vector<int>& bc_model = op_bc_->bc_model();
   // std::vector<double>& bc_value = op_bc_->bc_value();
@@ -344,22 +356,20 @@ Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, d
   UpdateSourceBoundaryData(t_old, tp, *u->Data());
 
   // -- Darcy flux
+  //    We need only direction of the flux copy
   if (upwind_frequency_ == FLOW_UPWIND_UPDATE_ITERATION) {
-    op_matrix_diff_->UpdateFlux(solution.ptr(), vol_flowrate_copy.ptr());
-    auto& flowrate = *vol_flowrate_copy->ViewComponent("face");
-    flowrate.Scale(1.0 / molar_rho_); // FIXME
+    op_matrix_diff_->UpdateFlux(solution.ptr(), mol_flowrate_copy.ptr());
   }
-  vol_flowrate_copy->ScatterMasterToGhosted("face");
+  mol_flowrate_copy->ScatterMasterToGhosted("face");
 
   // diffusion coefficient and its derivative
-  pressure_eval_->SetChanged();
   auto& alpha = S_->GetW<CompositeVector>(alpha_key_, alpha_key_);
   S_->GetEvaluator(alpha_key_).Update(*S_, "flow");
 
   if (!flow_on_manifold_) {
     *alpha_upwind_->ViewComponent("cell") = *alpha.ViewComponent("cell");
     Operators::BoundaryFacesToFaces(bc_model, alpha, *alpha_upwind_);
-    upwind_->Compute(*vol_flowrate_copy, *u->Data(), bc_model, *alpha_upwind_);
+    upwind_->Compute(*mol_flowrate_copy, bc_model, *alpha_upwind_);
 
     // modify relative permeability coefficient for influx faces
     // UpwindInflowBoundary_New(u->Data());
@@ -370,14 +380,14 @@ Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, d
 
     *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP.ViewComponent("cell");
     Operators::BoundaryFacesToFaces(bc_model, alpha_dP, *alpha_upwind_dP_);
-    upwind_->Compute(*vol_flowrate_copy, *u->Data(), bc_model, *alpha_upwind_dP_);
+    upwind_->Compute(*mol_flowrate_copy, bc_model, *alpha_upwind_dP_);
   }
 
   // create diffusion operators
   op_preconditioner_->Init();
-  op_preconditioner_diff_->UpdateMatrices(vol_flowrate_copy.ptr(), solution.ptr());
+  op_preconditioner_diff_->UpdateMatrices(mol_flowrate_copy.ptr(), solution.ptr());
   op_preconditioner_diff_->UpdateMatricesNewtonCorrection(
-    vol_flowrate_copy.ptr(), solution.ptr(), molar_rho_);
+    mol_flowrate_copy.ptr(), solution.ptr(), 1.0);
   op_preconditioner_diff_->ApplyBCs(true, true, true);
 
   // add time derivative
@@ -495,7 +505,7 @@ Richards_PK::ErrorNormSTOMP(const CompositeVector& u, const CompositeVector& du)
   if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
     if (error == buf) {
       int c = functional_max_cell;
-      const AmanziGeometry::Point& xp = mesh_->cell_centroid(c);
+      const AmanziGeometry::Point& xp = mesh_->getCellCentroid(c);
 
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "residual=" << functional_max_norm << " at point";
@@ -503,7 +513,7 @@ Richards_PK::ErrorNormSTOMP(const CompositeVector& u, const CompositeVector& du)
       *vo_->os() << std::endl;
 
       c = cell_p;
-      const AmanziGeometry::Point& yp = mesh_->cell_centroid(c);
+      const AmanziGeometry::Point& yp = mesh_->getCellCentroid(c);
 
       *vo_->os() << "pressure err=" << error_p << " at point";
       for (int i = 0; i < dim; i++) *vo_->os() << " " << yp[i];
@@ -532,12 +542,13 @@ Richards_PK::ModifyCorrection(double dt,
   Epetra_MultiVector& duc = *du->Data()->ViewComponent("cell");
 
   AmanziGeometry::Point face_centr, cell_cntr;
-  double max_sat_pert(0.25), damping_factor(0.5);
+  double max_sat_pert(0.25), damping_factor(0.5), max_change(-1.0);
 
   if (fp_list_->isSublist("clipping parameters")) {
     Teuchos::ParameterList& clip_list = fp_list_->sublist("clipping parameters");
     max_sat_pert = clip_list.get<double>("maximum saturation change", 0.25);
     damping_factor = clip_list.get<double>("pressure damping factor", 0.5);
+    max_change = clip_list.get<double>("maximum correction change", -1.0);
   }
 
   int nsat_clipped(0), npre_clipped(0);
@@ -579,11 +590,28 @@ Richards_PK::ModifyCorrection(double dt,
     }
   }
 
+  // clipping grow rate
+  if (max_change > 0.0) {
+    for (auto comp = u->Data()->begin(); comp != u->Data()->end(); ++comp) {
+      const auto& pc = *u->Data()->ViewComponent(*comp);
+      auto& dpc = *du->Data()->ViewComponent(*comp);
+
+      int ncomp = u->Data()->size(*comp, false);
+      for (int i = 0; i < ncomp; ++i) {
+        double tmp0 = pc[0][i] * max_change;
+        if (dpc[0][i] < -tmp0) {
+          npre_clipped++;
+          dpc[0][i] = -tmp0;
+        }
+      }
+    }
+  }
+
   // output statistics
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     int nsat_tmp = nsat_clipped, npre_tmp = npre_clipped;
-    mesh_->get_comm()->SumAll(&nsat_tmp, &nsat_clipped, 1);
-    mesh_->get_comm()->SumAll(&npre_tmp, &npre_clipped, 1);
+    mesh_->getComm()->SumAll(&nsat_tmp, &nsat_clipped, 1);
+    mesh_->getComm()->SumAll(&npre_tmp, &npre_clipped, 1);
 
     if (nsat_clipped > 0 || npre_clipped > 0) {
       Teuchos::OSTab tab = vo_->getOSTab();

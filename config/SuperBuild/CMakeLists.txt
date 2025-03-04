@@ -8,13 +8,18 @@
 # Set minimum required version of CMake
 # NB: Must go before project() call.
 # KL: Version used to build Amanzi must be the same!
-cmake_minimum_required(VERSION 3.17.0)
+cmake_minimum_required(VERSION 3.23.0)
+
+# Download timestamp policy
+if(POLICY CMP0135)
+  cmake_policy(SET CMP0135 NEW)
+endif()
 
 #
 # Language standard
 # NB: Seems like a good idea to have this before project() call.
 #
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ############################################################################ #
@@ -156,7 +161,7 @@ set(TPL_VERSIONS_INCLUDE_FILE ${CMAKE_BINARY_DIR}/tpl_versions.h)
 file(WRITE ${TPL_VERSIONS_INCLUDE_FILE} "")
 install(FILES ${CMAKE_BINARY_DIR}/tpl_versions.h DESTINATION include)
 amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
-  PREFIX AMANZI
+  PREFIX AMANZI_TPLS
   VERSION ${AMANZI_TPLS_VERSION_MAJOR} ${AMANZI_TPLS_VERSION_MINOR} ${AMANZI_TPLS_VERSION_PATCH})
 
 # ############################################################################ #
@@ -485,7 +490,7 @@ if ( ${AMANZI_ARCH_NERSC} )
    set(LIBLAPACK_BASE_NAME "sci_${_lib_compiler_id}")
    #string (REPLACE "-" "_" CRAY_CPU_TEMP $ENV{CRAY_CPU_TARGET})
    #string (REPLACE "x86_64" "${CRAY_CPU_TEMP}/lib" BLA_DIR $ENV{CRAY_LIBSCI_PREFIX_DIR})
-   set(BLA_DIR $ENV{CRAY_LIBSCI_PREFIX_DIR}/lib)
+   set(BLA_DIR $ENV{CRAY_PE_LIBSCI_PREFIX_DIR}/lib)
    set(LAPCK_DIR ${BLA_DIR})
 
    message(STATUS ">>> Amanzi: On NERSC system BLA_DIR = ${BLA_DIR}")
@@ -621,26 +626,7 @@ if (ENABLE_Structured)
              -DAMANZI_SPACEDIM:INT=${CCSE_BL_SPACEDIM})
 endif()
 
-# Boost
-if (NOT ENABLE_XSDK)
-    include(${SuperBuild_BUILD_FILES_DIR}/Build_Boost.cmake)
-    append_set(Amanzi_TPL_CMAKE_ARGS
-        -DBOOST_ROOT:FILEPATH=${TPL_INSTALL_PREFIX}
-        -DBOOST_INCLUDEDIR=${TPL_INSTALL_PREFIX}/include/boost
-        -DBoost_NO_SYSTEM_PATHS:BOOL=TRUE)
-else()
-    find_spack_install_location(boost BOOST_INSTALL_PREFIX)
-    message(STATUS "BOOST_INSTALL_PREFIX = ${BOOST_INSTALL_PREFIX}")
-    set(BOOST_ROOT ${BOOST_INSTALL_PREFIX})
-    set(BOOST_INCLUDEDIR ${BOOST_INSTALL_PREFIX}/include/boost)
-    append_set(Amanzi_TPL_CMAKE_ARGS
-        -DBOOST_ROOT:FILEPATH=${BOOST_INSTALL_PREFIX}
-        -DBOOST_INCLUDEDIR=${BOOST_INSTALL_PREFIX}/include/boost
-        -DBoost_USE_STATIC_LIBS:BOOL=TRUE
-        -DBoost_NO_SYSTEM_PATHS:BOOL=TRUE)
-endif()
-
-# HDF5
+# HDF5  
 if (NOT ENABLE_XSDK)
   include(${SuperBuild_BUILD_FILES_DIR}/Build_HDF5.cmake)
 else()

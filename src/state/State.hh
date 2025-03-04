@@ -35,6 +35,9 @@ various fields.
      that `"initial conditions`" is not a particularly descriptive name here --
      PDE initial conditions are generally not here.  This list consists of
 
+   * `"model parameters`" ``[list]`` A list of shared model parameters that can
+     be used across all evaluators.
+
 .. _evaluator-typedinline-spec:
 .. admonition:: evaluator-typedinline-spec
 
@@ -50,6 +53,7 @@ Example:
 .. code-block:: xml
 
     <ParameterList name="state">
+      <Parameter name="initialization filename" type="string" value="_CHECK00123.h5"/>
       <ParameterList name="evaluators">
         <ParameterList name="pressure">
           <Parameter name="evaluator type" type="string" value="primary variable" />
@@ -160,7 +164,7 @@ class State {
   bool IsDeformableMesh(const Key& key) const;
 
   // Mesh accessor.
-  Teuchos::RCP<const AmanziMesh::Mesh> GetMesh(const Key& key = Key("domain")) const;
+  Teuchos::RCP<AmanziMesh::Mesh> GetMesh(const Key& key = Key("domain")) const;
   Teuchos::RCP<AmanziMesh::Mesh> GetDeformableMesh(Key key = Key("domain"));
 
   // Iterate over meshes.
@@ -484,8 +488,9 @@ class State {
   //
   // -- allows PKs to add to this list to custom evaluators
   Teuchos::ParameterList& FEList() { return state_plist_.sublist("evaluators"); }
+  const Teuchos::ParameterList& FEList() const { return state_plist_.sublist("evaluators"); }
   Teuchos::ParameterList& GetEvaluatorList(const Key& key);
-  bool HasEvaluatorList(const Key& key);
+  bool HasEvaluatorList(const Key& key) const;
 
   // -- allows PKs to add to this list to initial conditions
   Teuchos::ParameterList& ICList() { return state_plist_.sublist("initial conditions"); }
@@ -503,7 +508,7 @@ class State {
   const Evaluator& GetEvaluator(const Key& key, const Tag& tag) const;
 #endif
 
-  bool HasEvaluator(const Key& key, const Tag& tag);
+  bool HasEvaluator(const Key& key, const Tag& tag) const;
   void SetEvaluator(const Key& key, const Tag& tag, const Teuchos::RCP<Evaluator>& evaluator);
   Teuchos::RCP<Evaluator> GetEvaluatorPtr(const Key& key, const Tag& tag);
 

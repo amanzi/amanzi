@@ -20,9 +20,10 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "IEM.hh"
 #include "Factory.hh"
-#include "LookupTable.hh"
+#include "LookupTableFactory.hh"
+
+#include "IEM.hh"
 
 namespace Amanzi {
 namespace Energy {
@@ -32,34 +33,36 @@ class IEM_Tabular : public IEM {
  public:
   IEM_Tabular(Teuchos::ParameterList& plist)
   {
-    table_ = Teuchos::rcp(new AmanziEOS::LookupTable(plist));
+    table_ = AmanziEOS::CreateLookupTable(plist);
+    M_ = plist.get<double>("molar mass");
   }
 
   virtual double InternalEnergy(double T, double p) override
   {
     double val = table_->Function(T, p, &ierr_);
     if (ierr_ != 0) error_msg_ = table_->ErrorMessage(T, p);
-    return val;
+    return val / M_;
   }
 
   virtual double DInternalEnergyDT(double T, double p) override
   {
     double val = table_->DFunctionDT(T, p, &ierr_);
     if (ierr_ != 0) error_msg_ = table_->ErrorMessage(T, p);
-    return val;
+    return val / M_;
   }
 
   virtual double DInternalEnergyDp(double T, double p) override
   {
     double val = table_->DFunctionDp(T, p, &ierr_);
     if (ierr_ != 0) error_msg_ = table_->ErrorMessage(T, p);
-    return val;
+    return val / M_;
   }
 
-  static Utils::RegisteredFactory<IEM, IEM_Tabular> factory_;
+  static Utils::RegisteredFactory<IEM, IEM_Tabular> reg_;
 
  private:
   Teuchos::RCP<AmanziEOS::LookupTable> table_;
+  double M_;
 };
 
 } // namespace Energy

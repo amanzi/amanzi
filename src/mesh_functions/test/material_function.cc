@@ -33,7 +33,10 @@ int
 main(int argc, char* argv[])
 {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  return UnitTest::RunAllTests();
+  Kokkos::initialize();
+  auto result = UnitTest::RunAllTests();
+  Kokkos::finalize();
+  return result;
 }
 
 
@@ -94,8 +97,7 @@ TEST(MESH2D)
 
     double vofs[4] = { 1.0, 0.2, 0.2, 0.04 };
     int n(0);
-    for (std::map<AmanziMesh::Entity_ID, double>::const_iterator it = ids.begin(); it != ids.end();
-         ++it) {
+    for (auto it = ids.begin(); it != ids.end(); ++it) {
       CHECK_CLOSE(it->second, vofs[n++], 1e-10);
     }
   }
@@ -112,8 +114,7 @@ TEST(MESH2D)
     df.AddSpec(spec);
     const std::map<AmanziMesh::Entity_ID, double>& ids = df.get_ids(kind);
 
-    for (std::map<AmanziMesh::Entity_ID, double>::const_iterator it = ids.begin(); it != ids.end();
-         ++it) {
+    for (auto it = ids.begin(); it != ids.end(); ++it) {
       CHECK_CLOSE(it->second, 1.0, 1e-10);
     }
   }

@@ -35,9 +35,6 @@
 
 namespace Amanzi {
 
-namespace AmanziMesh {
-class Mesh;
-}
 class CompositeVector;
 
 namespace Operators {
@@ -69,39 +66,17 @@ class Op {
 
   virtual ~Op() = default;
 
-  // Clean the operator without destroying memory
-  void Init()
-  {
-    if (diag != Teuchos::null) {
-      diag->PutScalar(0.0);
-      diag_shadow->PutScalar(0.0);
-    }
+  // deep copy of data (diag and matrices)
+  virtual Teuchos::RCP<Op> DeepClone() const;
 
-    WhetStone::DenseMatrix null_mat;
-    for (int i = 0; i < matrices.size(); ++i) {
-      matrices[i] = 0.0;
-      matrices_shadow[i] = null_mat;
-    }
-  }
+  // Clean the operator without destroying memory
+  void Init();
 
   // Restore pristine value of the matrices, i.e. before BCs.
-  virtual int CopyShadowToMaster()
-  {
-    for (int i = 0; i != matrices.size(); ++i) {
-      if (matrices_shadow[i].NumRows() != 0) { matrices[i] = matrices_shadow[i]; }
-    }
-    *diag = *diag_shadow;
-    return 0;
-  }
+  virtual int CopyShadowToMaster();
 
   // For backward compatibility... must go away
-  virtual void RestoreCheckPoint()
-  {
-    for (int i = 0; i != matrices.size(); ++i) {
-      if (matrices_shadow[i].NumRows() != 0) { matrices[i] = matrices_shadow[i]; }
-    }
-    *diag = *diag_shadow;
-  }
+  virtual void RestoreCheckPoint();
 
   // Matching rules for schemas.
   virtual bool Matches(int match_schema, int matching_rule)
@@ -167,6 +142,30 @@ class Op {
 
 
 /* ******************************************************************
+* Optimization for linear problems
+****************************************************************** */
+inline int
+Op::CopyShadowToMaster()
+{
+  for (int i = 0; i != matrices.size(); ++i) {
+    if (matrices_shadow[i].NumRows() != 0) { matrices[i] = matrices_shadow[i]; }
+  }
+  *diag = *diag_shadow;
+  return 0;
+}
+
+
+inline void
+Op::RestoreCheckPoint()
+{
+  for (int i = 0; i != matrices.size(); ++i) {
+    if (matrices_shadow[i].NumRows() != 0) { matrices[i] = matrices_shadow[i]; }
+  }
+  *diag = *diag_shadow;
+}
+
+
+/* ******************************************************************
 * Default implementation
 ****************************************************************** */
 inline void
@@ -189,6 +188,37 @@ Op::Verify() const
   for (int i = 0; i < nmatrices; ++i) {
     AMANZI_ASSERT(matrices[i].NumRows() > 0 && matrices[i].NumCols() > 0);
   }
+}
+
+
+/* ******************************************************************
+* Set allocated memory to zero
+****************************************************************** */
+inline void
+Op::Init()
+{
+  if (diag != Teuchos::null) {
+    diag->PutScalar(0.0);
+    diag_shadow->PutScalar(0.0);
+  }
+
+  WhetStone::DenseMatrix null_mat;
+  for (int i = 0; i < matrices.size(); ++i) {
+    matrices[i] = 0.0;
+    matrices_shadow[i] = null_mat;
+  }
+}
+
+
+/* ******************************************************************
+* Copy constructor.
+****************************************************************** */
+inline Teuchos::RCP<Op>
+Op::DeepClone() const
+{
+  Errors::Message msg("Deep clonig of derived Op \"" + schema_string + "\" is missing");
+  Exceptions::amanzi_throw(msg);
+  return Teuchos::null;
 }
 
 } // namespace Operators

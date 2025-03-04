@@ -44,13 +44,18 @@ NavierStokes_PK::NavierStokes_PK(Teuchos::ParameterList& pk_tree,
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   ns_list_ = Teuchos::sublist(pk_list, pk_name, true);
 
-  // We also need iscaleneous sublists
+  // We also need miscaleneous sublists
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
   linear_solver_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(ns_list_, "time integrator", true);
 
   // domain name
   domain_ = ns_list_->get<std::string>("domain name", "domain");
+
+  pressure_key_ = Keys::getKey(domain_, "pressure");
+  velocity_key_ = Keys::getKey(domain_, "fluid_velocity");
+  AddDefaultPrimaryEvaluator(S_, pressure_key_);
+  AddDefaultPrimaryEvaluator(S_, velocity_key_);
 }
 
 
@@ -74,6 +79,14 @@ NavierStokes_PK::NavierStokes_PK(const Teuchos::RCP<Teuchos::ParameterList>& gli
   linear_solver_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(ns_list_, "time integrator");
 
+  // domain and primary evaluators
+  domain_ = ns_list_->get<std::string>("domain name", "domain");
+
+  pressure_key_ = Keys::getKey(domain_, "pressure");
+  velocity_key_ = Keys::getKey(domain_, "fluid_velocity");
+  AddDefaultPrimaryEvaluator(S_, pressure_key_);
+  AddDefaultPrimaryEvaluator(S_, velocity_key_);
+
   vo_ = Teuchos::null;
 }
 
@@ -89,10 +102,7 @@ NavierStokes_PK::Setup()
 {
   dt_ = 0.0;
   mesh_ = S_->GetMesh();
-  dim = mesh_->space_dimension();
-
-  pressure_key_ = Keys::getKey(domain_, "pressure");
-  velocity_key_ = Keys::getKey(domain_, "fluid_velocity");
+  dim = mesh_->getSpaceDimension();
 
   // primary fields
   // -- pressure
@@ -100,17 +110,16 @@ NavierStokes_PK::Setup()
     S_->Require<CV_t, CVS_t>(pressure_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
-    Teuchos::ParameterList elist(pressure_key_);
-    elist.set<std::string>("evaluator name", pressure_key_);
-    pressure_eval_ = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
-    S_->SetEvaluator(pressure_key_, Tags::DEFAULT, pressure_eval_);
+    pressure_eval_ = Teuchos::rcp_static_cast<EvaluatorPrimary<CV_t, CVS_t>>(
+      S_->GetEvaluatorPtr(pressure_key_, Tags::DEFAULT));
   }
 
   // -- velocity
   std::vector<std::string> names = { "node", "face" };
-  std::vector<AmanziMesh::Entity_kind> locations = { AmanziMesh::NODE, AmanziMesh::FACE };
+  std::vector<AmanziMesh::Entity_kind> locations = { AmanziMesh::Entity_kind::NODE,
+                                                     AmanziMesh::Entity_kind::FACE };
   std::vector<int> ndofs = { dim, 1 };
 
   if (!S_->HasRecord(velocity_key_)) {
@@ -119,10 +128,8 @@ NavierStokes_PK::Setup()
       ->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
 
-    Teuchos::ParameterList elist(velocity_key_);
-    elist.set<std::string>("evaluator name", velocity_key_);
-    fluid_velocity_eval_ = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
-    S_->SetEvaluator(velocity_key_, Tags::DEFAULT, fluid_velocity_eval_);
+    fluid_velocity_eval_ = Teuchos::rcp_static_cast<EvaluatorPrimary<CV_t, CVS_t>>(
+      S_->GetEvaluatorPtr(velocity_key_, Tags::DEFAULT));
   }
 
   // -- viscosity: if not requested by any PK, we request its constant value.
@@ -147,14 +154,20 @@ NavierStokes_PK::Initialize()
   dt_next_ = dt_;
 
   // -- mesh dimensions
-  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  ncells_owned =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  ncells_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
 
-  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  nfaces_owned =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  nfaces_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
-  nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
-  nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+  nnodes_owned =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
+  nnodes_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
   // Create verbosity object to print out initialiation statistics.
   Teuchos::ParameterList vlist;
@@ -185,13 +198,16 @@ NavierStokes_PK::Initialize()
   if (!bdf1_list.isSublist("verbose object"))
     bdf1_list.sublist("verbose object") = ns_list_->sublist("verbose object");
 
-  bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
+  bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1", bdf1_list, *this, soln_->get_map(), S_));
 
   // Initialize matrix and preconditioner
   // -- create elastic block
   Teuchos::ParameterList& tmp1 = ns_list_->sublist("operators").sublist("elasticity operator");
   op_matrix_elas_ = Teuchos::rcp(new Operators::PDE_Elasticity(tmp1, mesh_));
   op_preconditioner_elas_ = Teuchos::rcp(new Operators::PDE_Elasticity(tmp1, mesh_));
+
+  op_matrix_elas_->Init(tmp1);
+  op_preconditioner_elas_->Init(tmp1);
 
   // -- create divergence block
   Teuchos::ParameterList& tmp2 = ns_list_->sublist("operators").sublist("divergence operator");
@@ -202,7 +218,7 @@ NavierStokes_PK::Initialize()
   op_matrix_grad_ = Teuchos::rcp(new Operators::PDE_Abstract(tmp3, mesh_));
 
   // -- create accumulation term (velocity block, only nodal unknowns)
-  Operators::Schema schema(AmanziMesh::NODE, 2); // FIXME
+  Operators::Schema schema(AmanziMesh::Entity_kind::NODE, 2); // FIXME
   op_matrix_acc_ =
     Teuchos::rcp(new Operators::PDE_Accumulation(schema, op_matrix_elas_->global_operator()));
   op_preconditioner_acc_ = Teuchos::rcp(
@@ -216,7 +232,7 @@ NavierStokes_PK::Initialize()
     Teuchos::rcp(new Operators::PDE_Abstract(tmp4, op_preconditioner_elas_->global_operator()));
 
   // -- create pressure block (for preconditioner)
-  op_mass_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_));
+  op_mass_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, mesh_));
 
   // -- matrix and preconditioner
   op_matrix_ = Teuchos::rcp(new Operators::TreeOperator(Teuchos::rcpFromRef(soln_->Map())));
@@ -251,7 +267,7 @@ NavierStokes_PK::Initialize()
           WhetStone::DOF_Type type;
           std::tie(kind, type, std::ignore) = *jt;
 
-          bc = bc_factory.Create(spec, "no slip", kind, Teuchos::null);
+          bc = bc_factory.Create(spec, "no slip", kind, Teuchos::null, Tags::DEFAULT, true);
           bc->set_bc_name("no slip");
           bc->set_type(type);
           bcs_.push_back(bc);
@@ -262,7 +278,8 @@ NavierStokes_PK::Initialize()
 
   // Populate matrix and preconditioner
   // -- setup phase
-  double mu = S_->Get<double>("const_fluid_viscosity");
+  WhetStone::Tensor mu(dim, 1);
+  mu(0, 0) = S_->Get<double>("const_fluid_viscosity");
   op_matrix_elas_->global_operator()->Init();
   op_matrix_elas_->SetTensorCoefficient(mu);
 
@@ -307,7 +324,7 @@ NavierStokes_PK::Initialize()
                                                                      *preconditioner_list_);
 
   CompositeVector vol(op_mass_->global_operator()->DomainMap());
-  vol.PutScalar(1.0 / mu);
+  vol.PutScalar(1.0 / mu(0, 0));
   op_mass_->AddAccumulationTerm(vol, 1.0, "cell");
   op_mass_->global_operator()->set_inverse_parameters("Diagonal", *preconditioner_list_);
 
@@ -343,7 +360,7 @@ NavierStokes_PK::Initialize()
 
 
 /* *******************************************************************
-* Performs one time step from time t_old to time t_new either for
+* Performs one timestep from time t_old to time t_new either for
 * steady-state or transient simulation.
 ******************************************************************* */
 bool
@@ -367,7 +384,7 @@ NavierStokes_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // trying to make a step
   bool failed(false);
-  failed = bdf1_dae_->TimeStep(dt_, dt_next_, soln_);
+  failed = bdf1_dae_->AdvanceStep(dt_, dt_next_, soln_);
   if (failed) {
     dt_ = dt_next_;
 
@@ -375,7 +392,7 @@ NavierStokes_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     S_->GetW<CV_t>(pressure_key_, Tags::DEFAULT, passwd_) = pressure_copy;
     pressure_eval_->SetChanged();
 
-    S_->GetW<CV_t>("fluid_velocity", Tags::DEFAULT, passwd_) = fluid_velocity_copy;
+    S_->GetW<CV_t>(velocity_key_, Tags::DEFAULT, passwd_) = fluid_velocity_copy;
     fluid_velocity_eval_->SetChanged();
 
     Teuchos::OSTab tab = vo_->getOSTab();
@@ -397,7 +414,7 @@ NavierStokes_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
 
 /* *******************************************************************
-* Performs one time step from time t_old to time t_new either for
+* Performs one timestep from time t_old to time t_new either for
 * steady-state or transient simulation.
 ******************************************************************* */
 void

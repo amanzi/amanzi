@@ -97,7 +97,7 @@ Evaluator_PDE_Diffusion::EnsureCompatibility(State& S)
     // require bcs
     auto& bc_fac = S.Require<Operators::BCs, Operators::BCs_Factory>(bcs_key_, my_tag_);
     bc_fac.set_mesh(rhs_fac.Mesh());
-    bc_fac.set_kind(AmanziMesh::FACE);
+    bc_fac.set_kind(AmanziMesh::Entity_kind::FACE);
     bc_fac.set_type(WhetStone::DOF_Type::SCALAR);
     S.RequireEvaluator(bcs_key_, my_tag_).EnsureCompatibility(S);
 
@@ -105,7 +105,7 @@ Evaluator_PDE_Diffusion::EnsureCompatibility(State& S)
     auto& K_fac = S.Require<TensorVector, TensorVector_Factory>(tensor_coef_key_, my_tag_);
     CompositeVectorSpace K_map;
     K_map.SetMesh(rhs_fac.Mesh());
-    K_map.AddComponent("cell", AmanziMesh::CELL, 1);
+    K_map.AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     K_fac.set_map(K_map);
     S.RequireEvaluator(tensor_coef_key_, my_tag_).EnsureCompatibility(S);
 

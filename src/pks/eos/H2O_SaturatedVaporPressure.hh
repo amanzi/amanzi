@@ -37,7 +37,7 @@ class H2O_SaturatedVaporPressure : public EOS_SaturatedVaporPressure {
   const double ka0_;
   const double ka_, kb_, kc_, kd_;
 
-  static Utils::RegisteredFactory<EOS_SaturatedVaporPressure, H2O_SaturatedVaporPressure> factory_;
+  static Utils::RegisteredFactory<EOS_SaturatedVaporPressure, H2O_SaturatedVaporPressure> reg_;
 };
 
 } // namespace AmanziEOS

@@ -50,13 +50,17 @@ method is Newton.  If it applies an appoximation, it is inexact Newton.
       the solution increment grows on too many consecutive iterations, the
       solver is terminated.
 
+    * `"make one iteration`" ``[bool]`` **false** require at least one iteration
+      to be performed before declaring success. This options makes any effect
+      only when `"monitor residual`" is choose.
+
     * `"modify correction`" ``[bool]`` **true** allows a PK to modify the
       solution increment. One example is a physics-based clipping of extreme
       solution values.
 
     * `"stagnation iteration check`" ``[int]`` **8** determines the number of
       iterations before the stagnation check is turned on. The stagnation
-      happens when the current L2-error exceeds the initial L2-error.
+      happens when the current l2-error exceeds the initial l2-error.
 
  */
 
@@ -107,6 +111,7 @@ class SolverNewton : public Solver<Vector, VectorSpace> {
   int pc_calls() { return pc_calls_; }
   int pc_updates() { return pc_calls_; }
   int returned_code() { return returned_code_; }
+  std::vector<std::pair<double, double>>& history() { return history_; }
 
  private:
   void Init_();
@@ -138,6 +143,8 @@ class SolverNewton : public Solver<Vector, VectorSpace> {
   double residual_;
   ConvergenceMonitor monitor_;
   int norm_type_;
+
+  std::vector<std::pair<double, double>> history_;
 };
 
 
@@ -196,6 +203,7 @@ SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u)
   // initialize the iteration and pc counters
   num_itrs_ = 0;
   pc_calls_ = 0;
+  history_.clear();
 
   // create storage
   Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(*u));
@@ -242,8 +250,8 @@ SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u)
       } else if (num_itrs_ > stagnation_itr_check_) {
         if (l2_error > l2_error_initial) {
           if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-            *vo_->os() << "Solver stagnating, L2-error=" << l2_error << " > " << l2_error_initial
-                       << " (initial L2-error)" << std::endl;
+            *vo_->os() << "Solver stagnating, l2-error=" << l2_error << " > " << l2_error_initial
+                       << " (initial l2-error)" << std::endl;
           return SOLVER_STAGNATING;
         }
       }
@@ -258,7 +266,6 @@ SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u)
 
     // Update the preconditioner.
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) *vo_->os() << "Updating preconditioner" << std::endl;
-    pc_calls_++;
     fn_->UpdatePreconditioner(u);
 
     // Apply the preconditioner to the nonlinear residual.
@@ -305,7 +312,8 @@ SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u)
       // If it does not recover quickly, abort.
       if (divergence_count == max_divergence_count_) {
         if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-          *vo_->os() << "Solver is diverging repeatedly, FAIL." << std::endl;
+          *vo_->os() << "Solver is diverging repeatedly: ||du||=" << du_norm
+                     << ", ||du_prev||=" << previous_du_norm << std::endl;
         return SOLVER_DIVERGING;
       }
     } else {
@@ -325,6 +333,7 @@ SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u)
       previous_error = error;
       error = fn_->ErrorNorm(u, du);
       residual_ = error;
+
       du->Norm2(&l2_error);
 
       int ierr = Newton_ErrorControl_(error, previous_error, l2_error, previous_du_norm, du_norm);
@@ -346,8 +355,10 @@ SolverNewton<Vector, VectorSpace>::Newton_ErrorControl_(double error,
                                                         double previous_du_norm,
                                                         double du_norm)
 {
+  history_.push_back(std::make_pair(error, l2_error));
+
   if (vo_->os_OK(Teuchos::VERB_HIGH))
-    *vo_->os() << num_itrs_ << ": error=" << error << "  L2-error=" << l2_error
+    *vo_->os() << num_itrs_ << ": error=" << error << "  l2-error=" << l2_error
                << " contr. factor=" << du_norm / previous_du_norm << std::endl;
 
   if (error < tol_) {

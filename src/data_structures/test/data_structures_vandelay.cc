@@ -93,7 +93,32 @@ SUITE(VANDELAY_COMPOSITE_VECTOR)
     CHECK_CLOSE((*x)("cell", 1, 0), 2.0, 0.00001);
     CHECK_CLOSE((*x)("face", 0, 0), 2.0, 0.00001);
 
-    *x2->ViewComponent("boundary_face", false) = *x->ViewComponent("boundary_face", false);
+    *x2->ViewComponent("boundary_face", false) = *std::as_const(*x).ViewComponent("boundary_face", false);
     CHECK_CLOSE((*x2)("boundary_face", 0, 0), 2.0, 0.00001);
+  }
+
+  // test owned vs ghosted
+  TEST_FIXTURE(test_cv_vandelay, CVVandelayGhosted)
+  {
+    std::cout << "X has " << x->NumComponents() << " components" << std::endl;
+    x->PutScalar(2.0);
+    CHECK_CLOSE((*x)("cell", 0, 0), 2.0, 0.00001);
+    CHECK_CLOSE((*x)("cell", 1, 0), 2.0, 0.00001);
+    CHECK_CLOSE((*x)("face", 0, 0), 2.0, 0.00001);
+
+    *x2->ViewComponent("boundary_face", false) = *std::as_const(*x).ViewComponent("boundary_face", false);
+
+    // test the scatter of boundary_faces
+    x2->ScatterMasterToGhosted("boundary_face");
+    int nbf_owned = x2->ViewComponent("boundary_face", false)->MyLength();
+    int nbf_all = x2->ViewComponent("boundary_face", true)->MyLength();
+    int size = comm->NumProc();
+    if (size == 1) {
+      CHECK_EQUAL(nbf_all, nbf_owned);
+      CHECK_CLOSE((*x2)("boundary_face", 0, nbf_owned - 1), 2.0, 0.00001);
+    } else {
+      CHECK(nbf_owned < nbf_all);
+      CHECK_CLOSE((*x2)("boundary_face", 0, nbf_all - 1), 2.0, 0.00001);
+    }
   }
 }

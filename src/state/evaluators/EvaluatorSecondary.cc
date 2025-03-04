@@ -245,8 +245,6 @@ EvaluatorSecondary::UpdateDerivative(State& S,
                                      const Key& wrt_key,
                                      const Tag& wrt_tag)
 {
-  AMANZI_ASSERT(IsDependency(S, wrt_key, wrt_tag));
-
   Teuchos::OSTab tab = vo_.getOSTab();
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
     *vo_.os() << "Algebraic Variable d" << my_keys_[0].first << "_d" << wrt_key << " requested by "
@@ -254,10 +252,12 @@ EvaluatorSecondary::UpdateDerivative(State& S,
   }
 
   // If wrt_key is not a dependency, no need to differentiate.
-  if (!IsDependency(S, wrt_key, wrt_tag)) {
+  if (!IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
     if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-      *vo_.os() << wrt_key << " is not a dependency... " << std::endl;
+      *vo_.os() << my_keys_.front().first << " is not differentiable wrt " << wrt_key << std::endl;
     }
+    // this should be checked prior to calling UpdateDerivative
+    AMANZI_ASSERT(false);
     return false;
   }
 
@@ -265,14 +265,16 @@ EvaluatorSecondary::UpdateDerivative(State& S,
   // dependencies.
   bool update = false;
 
-  // -- must update if our our dependencies have changed, as these affect the
+  // -- must update if our our dependencies have changed, as these affect our
   // partial derivatives
   Key my_request = Keys::getDerivKey(my_keys_[0], KeyTag(wrt_key, wrt_tag));
   update |= Update(S, my_request);
 
   // -- must update if any of our dependencies' derivatives have changed
   for (auto& dep : dependencies_) {
-    if (S.GetEvaluator(dep.first, dep.second).IsDependency(S, wrt_key, wrt_tag)) {
+    const auto& dep_evaluator = S.GetEvaluator(dep.first, dep.second);
+    if (!dep_evaluator.ProvidesKey(wrt_key, wrt_tag) &&
+        dep_evaluator.IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
       update |=
         S.GetEvaluator(dep.first, dep.second).UpdateDerivative(S, my_request, wrt_key, wrt_tag);
     }
@@ -292,7 +294,7 @@ EvaluatorSecondary::UpdateDerivative(State& S,
   // Do the update
   DerivativeTriple request = std::make_tuple(wrt_key, wrt_tag, requestor);
   if (update) {
-    if (vo_.os_OK(Teuchos::VERB_EXTREME)) { *vo_.os() << "  ... updating." << std::endl; }
+    if (vo_.os_OK(Teuchos::VERB_EXTREME)) { *vo_.os() << "  ... updating derivative" << std::endl; }
 
     // If so, update ourselves, empty our list of filled requests, and return.
     UpdateDerivative_(S, wrt_key, wrt_tag);
@@ -319,8 +321,7 @@ EvaluatorSecondary::UpdateDerivative(State& S,
 bool
 EvaluatorSecondary::IsDependency(const State& S, const Key& key, const Tag& tag) const
 {
-  if (std::find(dependencies_.begin(), dependencies_.end(), std::make_pair(key, tag)) !=
-      dependencies_.end()) {
+  if (IsDirectDependency(key, tag)) {
     return true;
   } else {
     for (auto& dep : dependencies_) {
@@ -330,12 +331,42 @@ EvaluatorSecondary::IsDependency(const State& S, const Key& key, const Tag& tag)
   return false;
 }
 
+bool
+EvaluatorSecondary::IsDirectDependency(const Key& key, const Tag& tag) const
+{
+  if (std::find(dependencies_.begin(), dependencies_.end(), std::make_pair(key, tag)) !=
+      dependencies_.end()) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 
 bool
 EvaluatorSecondary::ProvidesKey(const Key& key, const Tag& tag) const
 {
   std::pair<Key, Tag> my_key = std::make_pair(key, tag);
   return std::find(my_keys_.begin(), my_keys_.end(), my_key) != my_keys_.end();
+}
+
+
+bool
+EvaluatorSecondary::IsDifferentiableWRT(const State& S,
+                                        const Key& wrt_key,
+                                        const Tag& wrt_tag) const
+{
+  // note, provides key means the value is 1, and there may be times we have to use this value...
+  if (ProvidesKey(wrt_key, wrt_tag)) return true;
+  if (IsDirectDependency(wrt_key, wrt_tag)) return true;
+  for (auto& dep : dependencies_) {
+    auto& dep_eval = S.GetEvaluator(dep.first, dep.second);
+    if (!dep_eval.ProvidesKey(wrt_key, wrt_tag) &&
+        dep_eval.IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 

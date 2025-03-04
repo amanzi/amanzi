@@ -68,16 +68,22 @@ Transport_PK::MakeAirWaterPartitioning_()
     *S_->Get<CompositeVector>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
 
   int ig, il;
-  double sl, total;
+  double sl, sg, total;
   for (int i = 0; i < num_gaseous; ++i) {
     ig = num_aqueous + i;
     il = air_water_map_[i];
 
     for (int c = 0; c < ncells_owned; c++) {
       sl = sat_l[0][c];
+      sg = 1.0 - sl;
       total = tcc_c[il][c] * sl + tcc_c[ig][c] * (1.0 - sl);
-      tcc_c[ig][c] = total / (1.0 + (kH_[i] - 1.0) * sl);
-      tcc_c[il][c] = tcc_c[ig][c] * kH_[i];
+      if (sg > 0) {
+        tcc_c[il][c] = total / (1.0 + sg / kH_[i]);
+        tcc_c[ig][c] = (total - sl * tcc_c[il][c]) / sg;
+      } else {
+        tcc_c[il][c] = total;
+        tcc_c[ig][c] = 0.0;
+      }
     }
   }
 }

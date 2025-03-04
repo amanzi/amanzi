@@ -64,7 +64,6 @@ RunTestConvergence(std::string input_xml)
     Preference pref;
     pref.clear();
     pref.push_back(Framework::MSTK);
-    pref.push_back(Framework::STK);
 
     MeshFactory meshfactory(comm, gm);
     meshfactory.set_preference(pref);
@@ -85,8 +84,9 @@ RunTestConvergence(std::string input_xml)
     Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
     S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
+    Teuchos::ParameterList pk_tree("flow");
     Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-    Richards_PK* RPK = new Richards_PK(plist, "flow", S, soln);
+    Richards_PK* RPK = new Richards_PK(pk_tree, plist, S, soln);
 
     RPK->Setup();
     S->Setup();

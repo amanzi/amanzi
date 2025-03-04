@@ -32,7 +32,7 @@ class Analytic03 : public AnalyticBase {
     a2 = 1.0 / k2;
     b2 = (a1 - a2) / 4;
 
-    dim = mesh_->space_dimension();
+    dim = mesh_->getSpaceDimension();
   }
   ~Analytic03(){};
 
@@ -49,9 +49,9 @@ class Analytic03 : public AnalyticBase {
     double y = p[1];
     double kr;
     if (x < 0.5) {
-      kr = k1 * (1.0 + x * sin(y));
+      kr = k1 * (2.0 + x * sin(y));
     } else {
-      kr = k2 * (1.0 + 2 * x * x * sin(y));
+      kr = k2 * (2.0 + 2 * x * x * sin(y));
     }
     return kr;
   }

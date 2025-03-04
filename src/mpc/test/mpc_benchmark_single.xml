@@ -158,8 +158,8 @@
         <Parameter name="start period time" type="double" value="-100.0"/>
         <Parameter name="end period time" type="double" value="0"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="1.0e"/>
-        <Parameter name="maximum time step" type="double" value="1.0e+9"/>
+        <Parameter name="initial timestep" type="double" value="1.0e"/>
+        <Parameter name="maximum timestep" type="double" value="1.0e+9"/>
       </ParameterList>
       <ParameterList name="TP 1">
 	<ParameterList name="PK tree">
@@ -175,15 +175,15 @@
 	</ParameterList>
 	<Parameter name="start period time" type="double" value="0.00000000000000000e+8"/>
 	<Parameter name="end period time" type="double" value="1.000000000000e+9"/>
-	<Parameter name="initial time step" type="double" value="1.00000000000000000e+04"/>        
-        <Parameter name="maximum time step" type="double" value="1e+7"/>
+	<Parameter name="initial timestep" type="double" value="1.00000000000000000e+04"/>        
+        <Parameter name="maximum timestep" type="double" value="1e+7"/>
         <Parameter name="maximum cycle number" type="int" value="20"/>        
       </ParameterList>      
     </ParameterList>
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{0.0}"/>
-      <Parameter name="initial time step" type="Array(double)" value="{1.0e+7}"/>
-      <Parameter name="maximum time step" type="Array(double)" value="{1.0e+7}"/>
+      <Parameter name="initial timestep" type="Array(double)" value="{1.0e+7}"/>
+      <Parameter name="maximum timestep" type="Array(double)" value="{1.0e+7}"/>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{tracer}"/>
     <Parameter name="component molar masses" type="Array(double)" value="{1.0e-3}"/>
@@ -195,6 +195,27 @@
 
   <ParameterList name="state">
     <ParameterList name="evaluators">
+      <ParameterList name="specific_storage">
+        <Parameter name="evaluator type" type="string" value="specific storage"/>
+	<ParameterList name="specific storage parameters">
+          <ParameterList name="Material 1">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="model" type="string" value="constant"/>
+            <Parameter name="value" type="double" value="0.0e-6"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="fracture-specific_storage">
+        <Parameter name="evaluator type" type="string" value="specific storage"/>
+	<ParameterList name="specific storage parameters">
+          <ParameterList name="Material 1">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="model" type="string" value="constant"/>
+            <Parameter name="value" type="double" value="0.0e-6"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
       <ParameterList name="porosity">
         <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
@@ -301,6 +322,30 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
+      <ParameterList name="fracture-solute_diffusion_to_matrix">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="2"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.0"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 2 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.0"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="initial conditions">
@@ -313,38 +358,14 @@
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="1.0"/>
       </ParameterList>
+      <ParameterList name="const_fluid_molar_mass">
+        <Parameter name="value" type="double" value="0.018015"/>
+      </ParameterList>
       <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="1.0"/>
       </ParameterList>
 
-      <ParameterList name="specific_storage">
-        <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.0e-6"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="fracture-specific_storage">
-        <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.0e-6"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
-      <ParameterList name="fracture-normal_permeability">
+      <ParameterList name="fracture-diffusion_to_matrix">
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="region" type="string" value="All"/>
@@ -357,20 +378,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="fracture-normal_diffusion">
-        <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
       <ParameterList name="permeability">
         <ParameterList name="function">
           <ParameterList name="RegionBottom">
@@ -533,30 +540,9 @@
         <!--Parameter name="relaxation type" type="int" value="6"/-->
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Block ILU">
-      <Parameter name="preconditioning method" type="string" value="block ilu"/>
-      <ParameterList name="block ilu parameters">
-        <Parameter name="fact: relax value" type="double" value="1.0e+00"/>
-        <Parameter name="fact: absolute threshold" type="double" value="0.0e+00"/>
-        <Parameter name="fact: relative threshold" type="double" value="1.0e+00"/>
-        <Parameter name="fact: level-of-fill" type="int" value="0"/>
-        <Parameter name="overlap" type="int" value="0"/>
-        <Parameter name="schwarz: combine mode" type="string" value="Add"/>
-      </ParameterList>
-    </ParameterList>
   </ParameterList>
 
   <ParameterList name="solvers">
-    <ParameterList name="AztecOO">
-      <Parameter name="iterative method" type="string" value="gmres"/>
-      <ParameterList name="gmres parameters">
-        <Parameter name="error tolerance" type="double" value="9.99999999999999979e-17"/>
-        <Parameter name="maximum number of iterations" type="int" value="10"/>
-        <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="extreme"/>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
     <ParameterList name="PCG with Hypre AMG">
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
@@ -585,10 +571,10 @@
           <ParameterList name="timestep controller standard parameters">
             <Parameter name="max iterations" type="int" value="15"/>
             <Parameter name="min iterations" type="int" value="10"/>
-            <Parameter name="time step increase factor" type="double" value="1.25000e+00"/>
-            <Parameter name="time step reduction factor" type="double" value="8.0e-01"/>
-            <Parameter name="max time step" type="double" value="6.0e+10"/>
-            <Parameter name="min time step" type="double" value="9.99999999999999945e-21"/>
+            <Parameter name="timestep increase factor" type="double" value="1.25000e+00"/>
+            <Parameter name="timestep reduction factor" type="double" value="8.0e-01"/>
+            <Parameter name="max timestep" type="double" value="6.0e+10"/>
+            <Parameter name="min timestep" type="double" value="9.99999999999999945e-21"/>
             <Parameter name="restart tolerance relaxation factor" type="double" value="1000.0"/>
             <Parameter name="restart tolerance relaxation factor damping" type="double" value="0.9"/>
           </ParameterList>
@@ -610,7 +596,6 @@
           </ParameterList>
           <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
           <Parameter name="extrapolate initial guess" type="bool" value="true"/>
-          <Parameter name="nonlinear iteration damping factor" type="double" value="1.0e+00"/>
           <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
           <Parameter name="restart tolerance relaxation factor" type="double" value="1.0e+00"/>
           <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0e+00"/>

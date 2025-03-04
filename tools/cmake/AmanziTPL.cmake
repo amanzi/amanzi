@@ -87,48 +87,6 @@ message(STATUS "\tZLIB_LIBRARY      = ${ZLIB_LIBRARY}")
 message(STATUS "\tZLIB_LIBRARIES    = ${ZLIB_LIBRARIES}")
 message(STATUS "")
 
-##############################################################################
-# Boost
-##############################################################################
-#
-# CMake 2.8.6 FindBoost stops at version 1.46
-# Add more versions to the search see cmake --help-module FindBoost for
-# more information.
-# set(Boost_ADDITIONAL_VERSIONS
-#    1.47 1.47.0
-#    1.48 1.48.0
-#    1.49 1.49.0
-#    1.50 1.50.0
-#    1.51 1.51.0
-#    1.52 1.52.0
-#    1.53 1.53.0
-#    1.54 1.55.0)
-find_package(Boost COMPONENTS filesystem system program_options regex atomic REQUIRED)
-set_package_properties(Boost PROPERTIES
-                 DESCRIPTION "C++ Extension library"
-                 URL "http://www.boost.org"
-                 PURPOSE "Required by the MPC")
-
-if (Boost_VERSION)
-  if ( ${Boost_VERSION} VERSION_LESS 1.46 )
-    message(WARNING "Found Boost version ${Boost_VERSION} which"
-                    " is older than the supported (1.46) version.")
-  endif()
-
-  # The Boost filesystem library changed and deprecated some functions.
-  # This define should be used when packages include boost/filesystem.hpp
-  # and packages any of these new or deprecated functions.
-  # The change from version 2 to 3 occurred with the 1.49 Boost release.
-  # Please refer to the online documentation at www.boost.org.
-  if ( "${Boost_VERSION}" VERSION_LESS "1.34" )
-    set(Boost_FILESYSTEM_DEFINES "BOOST_FILESYSTEM_VERSION=1")
-  elseif ( "${Boost_VERSION}" VERSION_LESS "1.49" )
-    set(Boost_FILESYSTEM_DEFINES "BOOST_FILESYSTEM_VERSION=2")
-  else()
-    set(Boost_FILESYSTEM_DEFINES "BOOST_FILESYSTEM_VERSION=3")
-  endif()
-endif()
-
 
 ##############################################################################
 # EXPRTK
@@ -188,7 +146,7 @@ if ( NOT Trilinos_INSTALL_PREFIX )
                   " to define the Trilinos installation location"
 		  "\n-DTrilinos_INSTALL_PREFIX:PATH=<trilinos directory>\n")
 endif()
-set(Trilinos_MINIMUM_VERSION 13.0.0)
+set(Trilinos_MINIMUM_VERSION 15.1.0)
 message(STATUS "Searching for Trilinos at: ${Trilinos_INSTALL_PREFIX}")
 find_package(Trilinos ${Trilinos_MINIMUM_VERSION} REQUIRED
              PATHS ${Trilinos_INSTALL_PREFIX}
@@ -277,7 +235,7 @@ if (Trilinos_FOUND)
   endforeach()
 
   # Now update the Trilinos_LIBRARIES and INCLUDE_DIRS
-  foreach( _inc "${Trilinos_TPL_INCLUDE_DIRS}")
+  foreach(_inc ${Trilinos_TPL_INCLUDE_DIRS})
     list(APPEND Trilinos_INCLUDE_DIRS "${_inc}")
     list(REMOVE_DUPLICATES Trilinos_INCLUDE_DIRS)
   endforeach()

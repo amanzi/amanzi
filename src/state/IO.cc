@@ -12,13 +12,11 @@
 
 */
 
+#include <filesystem>
 #include <iostream>
 #include <ostream>
 #include <string>
 
-#define BOOST_FILESYSTEM_NO_DEPRECATED
-#include "boost/filesystem.hpp"
-#include <boost/format.hpp>
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Epetra_Vector.h"
 #include "exodusII.h"
@@ -41,11 +39,11 @@ namespace Amanzi {
 // Non-member function for visualization.
 // -----------------------------------------------------------------------------
 void
-WriteVis(Visualization& vis, const State& S)
+WriteVis(Visualization& vis, State& S)
 {
   if (!vis.is_disabled()) {
-    // Create the new time step
-    const auto& tag = vis.get_tag();
+    // Create the new timestep
+    Tag tag;
     vis.CreateTimestep(S.get_time(), S.get_cycle(), tag.get());
 
     for (auto r = S.data_begin(); r != S.data_end(); ++r) {
@@ -67,8 +65,8 @@ WriteVis(Visualization& vis, const State& S)
 
           // -- write default tag if it exists, else write another tag with the
           // -- same time
-          Tag tag;
           if (r->second->HasRecord(tag)) {
+            if (S.HasEvaluator(r->first, tag)) { S.GetEvaluator(r->first, tag).Update(S, "vis"); }
             r->second->WriteVis(vis, &tag);
           } else {
             // try to find a record at the same time
@@ -76,6 +74,9 @@ WriteVis(Visualization& vis, const State& S)
             for (const auto& time_record : S.GetRecordSet("time")) {
               if (r->second->HasRecord(time_record.first) &&
                   S.get_time(time_record.first) == time) {
+                if (S.HasEvaluator(r->first, time_record.first)) {
+                  S.GetEvaluator(r->first, time_record.first).Update(S, "vis");
+                }
                 r->second->WriteVis(vis, &time_record.first);
                 break;
               }
@@ -142,7 +143,7 @@ ReadCheckpointInitialTime(const Comm_ptr_type& comm, std::string filename)
 {
   if (!Keys::ends_with(filename, ".h5")) {
     // new style checkpoint
-    boost::filesystem::path filepath = boost::filesystem::path(filename) / "domain.h5";
+    std::filesystem::path filepath = std::filesystem::path(filename) / "domain.h5";
     filename = filepath.string();
   }
   HDF5_MPI checkpoint(comm, filename);
@@ -164,7 +165,7 @@ ReadCheckpointPosition(const Comm_ptr_type& comm, std::string filename)
 {
   if (!Keys::ends_with(filename, ".h5")) {
     // new style checkpoint
-    boost::filesystem::path filepath = boost::filesystem::path(filename) / "domain.h5";
+    std::filesystem::path filepath = std::filesystem::path(filename) / "domain.h5";
     filename = filepath.string();
   }
   HDF5_MPI checkpoint(comm, filename);
@@ -188,7 +189,7 @@ ReadCheckpointObservations(const Comm_ptr_type& comm,
 {
   if (!Keys::ends_with(filename, ".h5")) {
     // new style checkpoint
-    boost::filesystem::path filepath = boost::filesystem::path(filename) / "domain.h5";
+    std::filesystem::path filepath = std::filesystem::path(filename) / "domain.h5";
     filename = filepath.string();
   }
 
@@ -255,26 +256,27 @@ DeformCheckpointMesh(State& S, Key domain)
     const CompositeVector& vc = S.Get<CompositeVector>(vc_key, Tags::DEFAULT);
     vc.ScatterMasterToGhosted("node");
     const Epetra_MultiVector& vc_n = *vc.ViewComponent("node", true);
-
-    int dim = write_access_mesh->space_dimension();
-    Amanzi::AmanziMesh::Entity_ID_List nodeids;
-    Amanzi::AmanziGeometry::Point new_coords(dim);
-    AmanziGeometry::Point_List new_pos, final_pos;
-
     int nV = vc_n.MyLength();
+
+    int dim = write_access_mesh->getSpaceDimension();
+    Amanzi::AmanziMesh::Entity_ID_View nodeids("nodeids", nV);
+    Amanzi::AmanziGeometry::Point new_coords(dim);
+    Amanzi::AmanziMesh::Point_View new_pos("new_pos", nV), final_pos;
+
+
     for (int n = 0; n != nV; ++n) {
       for (int k = 0; k != dim; ++k) new_coords[k] = vc_n[k][n];
 
       // push back for deform method
-      nodeids.push_back(n);
-      new_pos.push_back(new_coords);
+      nodeids[n] = n;
+      new_pos[n] = new_coords;
     }
 
     // deform the mesh
     if (Keys::starts_with(domain, "column"))
-      write_access_mesh->deform(nodeids, new_pos, false, &final_pos);
+      AmanziMesh::deform(*write_access_mesh, nodeids, new_pos);
     else
-      write_access_mesh->deform(nodeids, new_pos, true, &final_pos);
+      AmanziMesh::deform(*write_access_mesh, nodeids, new_pos);
   } else {
     Errors::Message msg;
     msg << "DeformCheckpointMesh: unable to deform mesh because field \"" << vc_key
@@ -303,8 +305,10 @@ ReadVariableFromExodusII(Teuchos::ParameterList& plist, CompositeVector& var)
 
   if (comm->NumProc() > 1) {
     int ndigits = (int)floor(log10(comm->NumProc())) + 1;
-    std::string fmt = boost::str(boost::format("%%s.%%d.%%0%dd") % ndigits);
-    file_name = boost::str(boost::format(fmt) % file_name % comm->NumProc() % comm->MyPID());
+    std::stringstream ss;
+    ss << file_name << "." << std::to_string(comm->NumProc()) << "." << std::setw(ndigits)
+       << std::setfill('0') << comm->MyPID();
+    file_name = ss.str();
   }
 
   int CPU_word_size(8), IO_word_size(0), ierr;
@@ -431,8 +435,9 @@ WriteStateStatistics(const State& S, const VerboseObject& vo, const Teuchos::EVe
     for (auto name : sorted) {
       std::string display_name(name);
       if (name.size() > 33) replace_all(display_name, "temperature", "temp");
-      if (name.size() > 33) replace_all(display_name, "internal_energy", "ie");
       if (name.size() > 33) replace_all(display_name, "molar", "mol");
+      replace_all(display_name, "internal_energy", "ie");
+      replace_all(display_name, "effective", "eff");
       replace_all(display_name, "surface_star", "star");
 
       for (const auto& r : S.GetRecordSet(name)) {
@@ -442,12 +447,18 @@ WriteStateStatistics(const State& S, const VerboseObject& vo, const Teuchos::EVe
           r.second->Get<CompositeVector>().MaxValue(vmax);
           r.second->Get<CompositeVector>().MeanValue(vavg);
 
+          std::string units = S.GetRecordSet(name).units();
+          if (units.size() > 0) units = " [" + units + "]";
+
           for (auto c_it = vmin.begin(); c_it != vmin.end(); ++c_it) {
             std::string namedot(Keys::getKey(display_name, r.first)), name_comp(c_it->first);
-            if (vmin.size() != 1) namedot.append("." + name_comp);
+            std::string name_abbr(name_comp);
+            replace_all(name_abbr, "boundary_face", "bnd_face");
+            if (vmin.size() != 1) namedot.append("." + name_abbr);
             namedot.resize(40, '.');
             *vo.os() << std::defaultfloat << namedot << " " << c_it->second << " / "
-                     << vmax[name_comp] << " / " << vavg[name_comp] << std::endl;
+                     << vmax[name_comp] << " / " << vavg[name_comp] << units << std::endl;
+            ;
           }
 
         } else if (r.second->ValidType<double>()) {

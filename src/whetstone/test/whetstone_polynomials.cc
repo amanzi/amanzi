@@ -140,7 +140,7 @@ TEST(DG_TAYLOR_POLYNOMIALS)
     p2d(m, k) = pos;
   }
   AmanziGeometry::Point x0(0.0, 0.0), v1(1.0, 1.0);
-  std::vector<AmanziGeometry::Point> tau;
+  AmanziMesh::Point_List tau;
   tau.push_back(v1);
 
   Polynomial p1d(p2d);

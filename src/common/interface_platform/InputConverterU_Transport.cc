@@ -206,8 +206,18 @@ InputConverterU::TranslateTransport_(const std::string& domain)
       if (flag) {
         double al, alh, alv, at, ath, atv;
         std::string model = GetAttributeValueS_(
-          node, "type", "uniform_isotropic,burnett_frind,lichtner_kelkar_robinson");
-        if (strcmp(model.c_str(), "uniform_isotropic") == 0) {
+          node, "type", "isotropic,bear,burnett_frind,lichtner_kelkar_robinson");
+        if (strcmp(model.c_str(), "scalar") == 0) {
+          tmp_list.set<std::string>("model", "scalar");
+
+          std::string formula = GetAttributeValueS_(node, "alpha", TYPE_NONE, false, "m");
+
+          tmp_list.sublist("parameters for scalar")
+            .sublist("alpha")
+            .sublist("function-exprtk")
+            .set<int>("number of arguments", dim_ + 1)
+            .set<std::string>("formula", formula);
+        } else if (strcmp(model.c_str(), "bear") == 0) {
           tmp_list.set<std::string>("model", "Bear");
 
           al = GetAttributeValueD_(node, "alpha_l", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
@@ -267,13 +277,6 @@ InputConverterU::TranslateTransport_(const std::string& domain)
 
         std::string mat_name = GetAttributeValueS_(inode, "name");
         mat_list.sublist(mat_name) = tmp_list;
-
-        if (domain == "fracture") {
-          for (int n = 0; n < regions.size(); ++n) fracture_regions_.push_back(regions[n]);
-          fracture_regions_.erase(
-            SelectUniqueEntries(fracture_regions_.begin(), fracture_regions_.end()),
-            fracture_regions_.end());
-        }
       }
     }
   }
@@ -295,7 +298,11 @@ InputConverterU::TranslateTransport_(const std::string& domain)
   disc_methods.append(", mfd-two_point_flux_approximation");
 
   out_list.sublist("operators") =
-    TranslateDiffusionOperator_(disc_methods, "diffusion_operator", "", "", "", false);
+    TranslateDiffusionOperator_(disc_methods, "diffusion_operator", "", "", "", domain, false);
+
+  // auxiliary fields
+  node = GetUniqueElementByTagsString_(tags_default + ", auxiliary_data", flag);
+  if (flag) out_list.set<std::string>("auxiliary data", "molar_concentration");
 
   // multiscale models sublist
   out_list.sublist("multiscale models") = TranslateTransportMSM_();
@@ -309,8 +316,8 @@ InputConverterU::TranslateTransport_(const std::string& domain)
   out_list.sublist("source terms") = TranslateTransportSources_();
 
   // remaining global parameters
-  out_list.set<int>("number of aqueous components", phases_["water"].size());
-  out_list.set<int>("number of gaseous components", phases_["air"].size());
+  out_list.set<int>("number of aqueous components", phases_[LIQUID].dissolved.size());
+  out_list.set<int>("number of gaseous components", phases_[GAS].dissolved.size());
 
   out_list.sublist("physical models and assumptions")
     .set<bool>("effective transport porosity", use_transport_porosity_)
@@ -320,7 +327,7 @@ InputConverterU::TranslateTransport_(const std::string& domain)
   out_list.sublist("physical models and assumptions")
     .set<bool>("permeability field is required", transport_permeability_);
 
-  if (fractures_ && domain == "fracture") {
+  if (fracture_regions_.size() > 0 && domain == "fracture") {
     out_list.sublist("physical models and assumptions")
       .set<bool>("flow and transport in fractures", true);
   }
@@ -354,10 +361,13 @@ InputConverterU::TranslateMolecularDiffusion_()
   DOMNodeList* children;
   DOMNode* node;
 
-  std::vector<std::string> aqueous_names, gaseous_names;
+  std::vector<std::string> aqueous_names, gaseous_names, gaseous_models;
   std::vector<double> aqueous_values, gaseous_values, molar_masses, henry_coef;
 
   // liquid phase
+  node = GetUniqueElementByTagsString_("phases, liquid_phase, primary", flag);
+  if (flag) phases_[LIQUID].primary = TrimString_(mm.transcode(node->getTextContent()));
+
   std::string species("solute");
   node = GetUniqueElementByTagsString_("phases, liquid_phase, dissolved_components, solutes", flag);
   if (!flag) {
@@ -408,9 +418,17 @@ InputConverterU::TranslateMolecularDiffusion_()
       text = mm.transcode(inode->getTextContent());
       double val = GetAttributeValueD_(
         inode, "coefficient_of_diffusion", TYPE_NUMERICAL, 0.0, DVAL_MAX, "", false);
-      double kh = GetAttributeValueD_(inode, "kh", TYPE_NUMERICAL, 0.0, DVAL_MAX);
+      std::string model = GetAttributeValueS_(inode, "model", TYPE_NONE, false, "");
+      double kh =
+        (model == "Henry") ? GetAttributeValueD_(inode, "kh", TYPE_NUMERICAL, 0.0, DVAL_MAX) : 0.0;
+
+      if (strcmp(text, phases_[LIQUID].primary.c_str()) == 0) {
+        phases_[GAS].model = model;
+        continue;
+      }
 
       gaseous_names.push_back(TrimString_(text));
+      gaseous_models.push_back(model);
       gaseous_values.push_back(val);
       henry_coef.push_back(kh);
     }
@@ -421,6 +439,7 @@ InputConverterU::TranslateMolecularDiffusion_()
   out_list.set<Teuchos::Array<double>>("molar masses", molar_masses);
   if (gaseous_names.size() > 0) {
     out_list.set<Teuchos::Array<std::string>>("gaseous names", gaseous_names);
+    out_list.set<Teuchos::Array<std::string>>("gaseous models", gaseous_models);
     out_list.set<Teuchos::Array<double>>("gaseous values", gaseous_values);
     out_list.set<Teuchos::Array<double>>("air-water partitioning coefficient", henry_coef);
     out_list.set<Teuchos::Array<double>>("Henry dimensionless constants", henry_coef);
@@ -622,10 +641,8 @@ InputConverterU::TranslateTransportBCsGroup_(std::string& bcname,
     DOMNode* knode = GetUniqueElementByTagsString_(same_list[0], "space", space_bc);
     DOMNode* lnode = GetUniqueElementByTagsString_(same_list[0], "time", time_bc);
 
-    std::string filename, xheader, yheader;
-    std::vector<double> times, values;
     std::vector<double> data, data_tmp;
-    std::vector<std::string> forms, formulas;
+    BCs bcs(solute_molar_mass_[solute_name]);
 
     if (space_bc) {
       std::string tmp = GetAttributeValueS_(knode, "amplitude");
@@ -642,43 +659,7 @@ InputConverterU::TranslateTransportBCsGroup_(std::string& bcname,
 
       same_list.erase(same_list.begin());
     } else {
-      DOMElement* element = static_cast<DOMElement*>(same_list[0]);
-      filename = GetAttributeValueS_(element, "h5file", TYPE_NONE, false, "");
-      if (filename != "") {
-        xheader = GetAttributeValueS_(element, "times", TYPE_NONE);
-        yheader = GetAttributeValueS_(element, "values", TYPE_NONE);
-
-        same_list.erase(same_list.begin());
-      } else {
-        std::map<double, double> tp_values;
-        std::map<double, std::string> tp_forms, tp_formulas;
-
-        for (std::vector<DOMNode*>::iterator it = same_list.begin(); it != same_list.end(); ++it) {
-          tmp_name = GetAttributeValueS_(*it, "name");
-
-          if (tmp_name == solute_name) {
-            double t0 = GetAttributeValueD_(*it, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s");
-            tp_forms[t0] = GetAttributeValueS_(*it, "function");
-            GetAttributeValueD_(
-              *it, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "molar"); // just a check
-            tp_values[t0] = ConvertUnits_(
-              GetAttributeValueS_(*it, "value"), unit, solute_molar_mass_[solute_name]);
-            tp_formulas[t0] = GetAttributeValueS_(*it, "formula", TYPE_NONE, false, "");
-
-            same_list.erase(it);
-            it--;
-          }
-        }
-
-        // create vectors of values and forms
-        for (std::map<double, double>::iterator it = tp_values.begin(); it != tp_values.end();
-             ++it) {
-          times.push_back(it->first);
-          values.push_back(it->second);
-          forms.push_back(tp_forms[it->first]);
-          formulas.push_back(tp_formulas[it->first]);
-        }
-      }
+      bcs = ParseCondList_(same_list, bctype, DVAL_MIN, DVAL_MAX, "molar", true, solute_name);
     }
 
     // save in the XML files
@@ -689,13 +670,13 @@ InputConverterU::TranslateTransportBCsGroup_(std::string& bcname,
     Teuchos::ParameterList& bcfn = bc.sublist("boundary concentration");
     if (space_bc) {
       TranslateFunctionGaussian_(data, bcfn);
-    } else if (filename != "") {
+    } else if (bcs.filename != "") {
       bcfn.sublist("function-tabular")
-        .set<std::string>("file", filename)
-        .set<std::string>("x header", xheader)
-        .set<std::string>("y header", yheader);
+        .set<std::string>("file", bcs.filename)
+        .set<std::string>("x header", bcs.xheader)
+        .set<std::string>("y header", bcs.yheader);
     } else {
-      TranslateGenericMath_(times, values, forms, formulas, bcfn);
+      TranslateGenericMath_(bcs, bcfn);
     }
 
     // data distribution method
@@ -747,7 +728,9 @@ InputConverterU::TranslateTransportGeochemistry_(DOMNode* node,
   // save in the XML files
   Teuchos::ParameterList& tbc_list = out_list.sublist("geochemical");
   Teuchos::Array<std::string> solute_names;
-  for (int i = 0; i < phases_["water"].size(); ++i) { solute_names.push_back(phases_["water"][i]); }
+  for (int i = 0; i < phases_[LIQUID].dissolved.size(); ++i) {
+    solute_names.push_back(phases_[LIQUID].dissolved[i]);
+  }
   Teuchos::ParameterList& bc = tbc_list.sublist(bcname);
   bc.set<Teuchos::Array<std::string>>("regions", regions)
     .set<Teuchos::Array<std::string>>("solutes", solute_names)
@@ -764,7 +747,7 @@ InputConverterU::TranslateTransportGeochemistry_(DOMNode* node,
 void
 InputConverterU::TranslateTransportBCsAmanziGeochemistry_(Teuchos::ParameterList& out_list)
 {
-  if (out_list.isSublist("geochemical") && pk_model_["chemistry"] == "amanzi") {
+  if (out_list.isSublist("geochemical") && HasSubmodel_("chemistry", "amanzi")) {
     bool flag;
     std::string name, bc_name;
     DOMNode* node;

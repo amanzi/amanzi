@@ -36,7 +36,7 @@ XERCES_CPP_NAMESPACE_USE
 * Create energy list.
 ****************************************************************** */
 Teuchos::ParameterList
-InputConverterU::TranslateEnergy_(const std::string& domain)
+InputConverterU::TranslateEnergy_(const std::string& domain, const std::string& pk_model)
 {
   Teuchos::ParameterList out_list;
 
@@ -54,15 +54,19 @@ InputConverterU::TranslateEnergy_(const std::string& domain)
   // create flow header
   out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
 
-  // insert operator sublist
+  // expert parameters
+  bool include_potential(false);
+  std::string pc_method("linearized_operator");
+  std::string root("unstructured_controls, unstr_energy_controls");
+
+  node = GetUniqueElementByTagsString_(root + ", formulation", flag);
+  if (flag) include_potential = (GetTextContentS_(node, "methalpy, enthalpy") == "methalpy");
+
   std::string disc_method("mfd-optimized_for_sparsity");
-  node = GetUniqueElementByTagsString_(
-    "unstructured_controls, unstr_energy_controls, discretization_method", flag);
+  node = GetUniqueElementByTagsString_(root + ", discretization_method", flag);
   if (flag) disc_method = mm.transcode(node->getNodeName());
 
-  std::string pc_method("linearized_operator");
-  node = GetUniqueElementByTagsString_(
-    "unstructured_controls, unstr_energy_controls, preconditioning_strategy", flag);
+  node = GetUniqueElementByTagsString_(root + ", preconditioning_strategy", flag);
   if (flag) pc_method = mm.transcode(node->getNodeName());
 
   std::string nonlinear_solver("nka");
@@ -74,37 +78,70 @@ InputConverterU::TranslateEnergy_(const std::string& domain)
   node = GetUniqueElementByTagsString_(
     "unstructured_controls, unstr_nonlinear_solver, modify_correction", flag);
 
-  out_list.sublist("operators") =
-    TranslateDiffusionOperator_(disc_method, pc_method, nonlinear_solver, "", "", false, "energy");
+  // insert operator sublist
+  out_list.sublist("operators") = TranslateDiffusionOperator_(
+    disc_method, pc_method, nonlinear_solver, "standard-cell", "", domain, false, "energy");
+
+  auto& adv_list = out_list.sublist("operators").sublist("advection operator");
+  if (fracture_network_ && domain != "fracture")
+    adv_list.set<Teuchos::Array<std::string>>("fracture", fracture_regions_);
+  if (!fracture_network_) adv_list.set<bool>("single domain", true);
 
   // insert thermal conductivity evaluator with the default values (no 2.2 support yet)
-  Teuchos::ParameterList& thermal =
-    out_list.sublist("thermal conductivity evaluator").sublist("thermal conductivity parameters");
-  if (pk_model_["energy"] == "two-phase energy") {
-    thermal.set<std::string>("thermal conductivity type", "two-phase Peters-Lidard");
-    thermal.set<double>("thermal conductivity of gas", 0.02);
-    thermal.set<double>("unsaturated alpha", 1.0);
-    thermal.set<double>("epsilon", 1.0e-10);
-  } else {
-    thermal.set<std::string>("thermal conductivity type", "one-phase polynomial");
-  }
+  Teuchos::ParameterList& thermal = out_list.sublist("thermal conductivity evaluator");
 
-  double cv_f(0.606), cv_r(0.2);
-  node = GetUniqueElementByTagsString_("materials", flag);
+  double cv_l(0.0), cv_s(0.0);
+  std::string prefix = (domain == "fracture") ? "fracture_network," : "";
+  node = GetUniqueElementByTagsString_(prefix + "materials", flag);
   std::vector<DOMNode*> materials = GetChildren_(node, "material", flag);
 
-  node = GetUniqueElementByTagsString_(materials[0], "thermal_properties, rock_conductivity", flag);
-  if (flag) cv_f = GetTextContentD_(node, "W/m/K", true);
+  for (int i = 0; i < materials.size(); ++i) {
+    std::string model_l, model_s;
+    node =
+      GetUniqueElementByTagsString_(materials[i], "thermal_properties, liquid_conductivity", flag);
+    if (flag) {
+      model_l = GetAttributeValueS_(node, "model", "constant, liquid water, ideal gas");
+      cv_l = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "W/m/K");
+    }
 
-  node = GetUniqueElementByTagsString_(materials[0], "thermal_properties, rock_conductivity", flag);
-  if (flag) cv_r = GetTextContentD_(node, "W/m/K", true);
+    node =
+      GetUniqueElementByTagsString_(materials[i], "thermal_properties, solid_conductivity", flag);
+    if (flag) {
+      model_s = GetAttributeValueS_(node, "model", "constant, salt");
+      cv_s = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "W/m/K");
+    }
 
-  thermal.set<double>("thermal conductivity of liquid", cv_f);
-  thermal.set<double>("thermal conductivity of rock", cv_r);
-  thermal.set<double>("reference temperature", 298.15);
+    node = GetUniqueElementByTagsString_(materials[i], "assigned_regions", flag);
+    std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
+
+    Teuchos::ParameterList& tmp = thermal.sublist("TCM_" + std::to_string(i));
+    tmp.set<Teuchos::Array<std::string>>("regions", regions);
+
+    if (pk_model == "two-phase energy") {
+      tmp.set<std::string>("thermal conductivity type", "two-phase Peters-Lidard");
+      tmp.set<double>("thermal conductivity of gas", 0.02)
+        .set<double>("thermal conductivity of liquid", cv_l)
+        .set<double>("thermal conductivity of rock", cv_s)
+        .set<double>("reference temperature", 273.15)
+        .set<double>("unsaturated alpha", 1.0)
+        .set<double>("epsilon", 1.0e-10);
+    } else {
+      tmp.set<std::string>("thermal conductivity type", "one-phase polynomial");
+      tmp.sublist("solid phase")
+        .set<std::string>("eos type", model_s)
+        .set<double>("reference conductivity", cv_s)
+        .set<double>("reference temperature", 273.15);
+      tmp.sublist("liquid phase")
+        .set<std::string>("eos type", model_l)
+        .set<double>("reference conductivity", cv_l)
+        .set<double>("reference temperature", 273.15)
+        .set<double>("Sutherland constant", ref_sutherland_);
+    }
+  }
 
   // insert time integrator
-  std::string err_options("energy"), unstr_controls("unstructured_controls, unstr_energy_controls");
+  std::string err_options("energy"),
+    unstr_controls("unstructured_controls, unstr_transient_controls");
 
   if (pk_master_.find("energy") != pk_master_.end()) {
     out_list.sublist("time integrator") = TranslateTimeIntegrator_(err_options,
@@ -118,13 +155,24 @@ InputConverterU::TranslateEnergy_(const std::string& domain)
 
   // insert boundary conditions and source terms
   out_list.sublist("boundary conditions") = TranslateEnergyBCs_(domain);
-  out_list.sublist("source terms") = TranslateSources_(domain, "energy");
+  out_list.sublist("source terms") = TranslateSources_(domain, "energy", "");
 
   // insert internal evaluators
+  out_list.sublist("energy evaluator").set<bool>("include potential term", include_potential);
   out_list.sublist("energy evaluator").sublist("verbose object") =
     verb_list_.sublist("verbose object");
+
+  out_list.sublist("enthalpy evaluator")
+    .set<bool>("include work term", true)
+    .set<bool>("include potential term", include_potential);
   out_list.sublist("enthalpy evaluator").sublist("verbose object") =
     verb_list_.sublist("verbose object");
+
+  // cross coupling of PKs
+  if (fracture_regions_.size() > 0 && domain == "fracture") {
+    out_list.sublist("physical models and assumptions")
+      .set<bool>("flow and transport in fractures", true);
+  }
 
   out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
   return out_list;
@@ -144,7 +192,6 @@ InputConverterU::TranslateEnergyBCs_(const std::string& domain)
   char* text;
   DOMNodeList* children;
   DOMNode* node;
-  DOMElement* element;
 
   // correct list of boundary conditions for given domain
   bool flag;
@@ -173,50 +220,29 @@ InputConverterU::TranslateEnergyBCs_(const std::string& domain)
     if (!flag) continue;
 
     // process a group of similar elements defined by the first element
-    std::string bctype;
-    std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype, flag, true);
-
-    std::map<double, double> tp_values;
-    std::map<double, std::string> tp_forms, tp_formulas;
-
-    for (int j = 0; j < same_list.size(); ++j) {
-      DOMNode* jnode = same_list[j];
-      element = static_cast<DOMElement*>(jnode);
-      double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "y");
-
-      tp_forms[t0] = GetAttributeValueS_(element, "function");
-      tp_values[t0] =
-        GetAttributeValueD_(element, "value", TYPE_NUMERICAL, 0.0, 1000.0, "K", false, 0.0);
-      tp_formulas[t0] = GetAttributeValueS_(element, "formula", TYPE_NONE, false, "");
-    }
-
     // create vectors of values and forms
-    std::vector<double> times, values;
-    std::vector<std::string> forms, formulas;
-    for (std::map<double, double>::iterator it = tp_values.begin(); it != tp_values.end(); ++it) {
-      times.push_back(it->first);
-      values.push_back(it->second);
-      forms.push_back(tp_forms[it->first]);
-      formulas.push_back(tp_formulas[it->first]);
+    auto bcs = ParseCondList_(node, 0.0, 1000.0, "K");
+
+    std::string bcname;
+    if (bcs.type == "uniform_temperature") {
+      bcs.type = "temperature";
+      bcname = "boundary temperature";
+    } else if (bcs.type == "outward_energy_flux") {
+      bcs.type = "energy flux";
+      bcname = "outward energy flux";
     }
 
-    // create names, modify data
-    std::string bcname;
-    if (bctype == "uniform_temperature") {
-      bctype = "temperature";
-      bcname = "boundary temperature";
-    }
     std::stringstream ss;
     ss << "BC " << ibc++;
 
     // save in the XML files
-    Teuchos::ParameterList& tbc_list = out_list.sublist(bctype);
+    Teuchos::ParameterList& tbc_list = out_list.sublist(bcs.type);
     Teuchos::ParameterList& bc = tbc_list.sublist(ss.str());
     bc.set<Teuchos::Array<std::string>>("regions", regions)
       .set<std::string>("spatial distribution method", "none");
 
     Teuchos::ParameterList& bcfn = bc.sublist(bcname);
-    TranslateGenericMath_(times, values, forms, formulas, bcfn);
+    TranslateGenericMath_(bcs, bcfn);
   }
 
   return out_list;

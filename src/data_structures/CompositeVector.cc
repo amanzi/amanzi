@@ -243,9 +243,11 @@ CompositeVector::operator=(const CompositeVector& other)
 
     if (Ghosted() && other.Ghosted()) {
       // If both are ghosted, copy the ghosted vector.
+      // Exception: boundary_face component created on a fly is not ghosted
       for (name_iterator name = begin(); name != end(); ++name) {
-        Teuchos::RCP<Epetra_MultiVector> comp = ViewComponent(*name, true);
-        Teuchos::RCP<const Epetra_MultiVector> othercomp = other.ViewComponent(*name, true);
+        bool ghosted = (*name == "boundary_face" && other.HasImportedComponent("face")) ? false : true;
+        Teuchos::RCP<Epetra_MultiVector> comp = ViewComponent(*name, ghosted);
+        Teuchos::RCP<const Epetra_MultiVector> othercomp = other.ViewComponent(*name, ghosted);
         *comp = *othercomp;
       }
 
@@ -269,12 +271,13 @@ CompositeVector::operator=(const CompositeVector& other)
 // Ghosted views are simply the vector itself, while non-ghosted views are
 // lazily generated.
 Teuchos::RCP<const Epetra_MultiVector>
-CompositeVector::ViewComponent(std::string name, bool ghosted) const
+CompositeVector::ViewComponent(const std::string& name, bool ghosted) const
 {
-  if (name == std::string("boundary_face")) {
-    if (!mastervec_->HasComponent("boundary_face") && mastervec_->HasComponent("face")) {
+  AMANZI_ASSERT(HasImportedComponent(name));
+  if (name == "boundary_face") {
+    if (!HasComponent("boundary_face") && HasComponent("face")) {
       ApplyVandelay_();
-      return vandelay_vector_;
+      return ghosted ? vandelay_vector_all_ : vandelay_vector_owned_;
     }
   }
 
@@ -287,16 +290,9 @@ CompositeVector::ViewComponent(std::string name, bool ghosted) const
 
 
 Teuchos::RCP<Epetra_MultiVector>
-CompositeVector::ViewComponent(std::string name, bool ghosted)
+CompositeVector::ViewComponent(const std::string& name, bool ghosted)
 {
-  if (name == std::string("boundary_face")) {
-    if (!mastervec_->HasComponent("boundary_face") && mastervec_->HasComponent("face")) {
-      ApplyVandelay_();
-      ChangedValue("face");
-      return vandelay_vector_;
-    }
-  }
-
+  AMANZI_ASSERT(HasComponent(name));
   ChangedValue(name);
   if (ghosted) {
     return ghostvec_->ViewComponent(name);
@@ -308,7 +304,7 @@ CompositeVector::ViewComponent(std::string name, bool ghosted)
 
 // Set data by pointer if possible, otherwise by copy.
 void
-CompositeVector::SetComponent(std::string name, const Teuchos::RCP<Epetra_MultiVector>& data)
+CompositeVector::SetComponent(const std::string& name, const Teuchos::RCP<Epetra_MultiVector>& data)
 {
   ChangedValue(name);
 
@@ -345,7 +341,7 @@ CompositeVector::ScatterMasterToGhosted(bool force) const
 
 
 void
-CompositeVector::ScatterMasterToGhosted(std::string name, bool force) const
+CompositeVector::ScatterMasterToGhosted(const std::string& name, bool force) const
 {
   // NOTE: allowing const is a hack to allow non-owning PKs to nonetheless
   // update ghost cells, which may be necessary for their discretization
@@ -397,7 +393,7 @@ CompositeVector::ScatterMasterToGhosted(Epetra_CombineMode mode) const
 //
 // This Scatter() is not managed, and is always done.  Tags changed.
 void
-CompositeVector::ScatterMasterToGhosted(std::string name, Epetra_CombineMode mode) const
+CompositeVector::ScatterMasterToGhosted(const std::string& name, Epetra_CombineMode mode) const
 {
   ChangedValue(name);
 
@@ -426,7 +422,7 @@ CompositeVector::GatherGhostedToMaster(Epetra_CombineMode mode)
 
 
 void
-CompositeVector::GatherGhostedToMaster(std::string name, Epetra_CombineMode mode)
+CompositeVector::GatherGhostedToMaster(const std::string& name, Epetra_CombineMode mode)
 {
   ChangedValue(name);
 #ifdef HAVE_MPI
@@ -443,14 +439,27 @@ CompositeVector::GatherGhostedToMaster(std::string name, Epetra_CombineMode mode
 void
 CompositeVector::CreateVandelayVector_() const
 {
-  vandelay_vector_ = Teuchos::rcp(new Epetra_MultiVector(
-    Mesh()->exterior_face_map(false), mastervec_->NumVectors("face"), false));
+  vandelay_vector_all_ = Teuchos::rcp(
+    new Epetra_MultiVector(Mesh()->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true),
+                           mastervec_->NumVectors("face"),
+                           false));
+  if (ghosted_) {
+    double** data;
+    vandelay_vector_all_->ExtractView(&data);
+    vandelay_vector_owned_ = Teuchos::rcp(
+      new Epetra_MultiVector(View,
+                             Mesh()->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false),
+                             data,
+                             mastervec_->NumVectors("face")));
+  }
 
   // create new importer from face-component if it has more than one DOF per face
+  //
+  // Note that vandelay operates on OWNED entities, not ALL
   const auto& map = *ComponentMap("face", false);
-  int nfaces = Mesh()->face_map(false).NumMyElements();
+  int nfaces = Mesh()->getMap(AmanziMesh::Entity_kind::FACE, false).NumMyElements();
   if (nfaces != map.NumMyPoints()) {
-    vandelay_import_ = Teuchos::rcp(new Epetra_Import(Mesh()->exterior_face_importer()));
+    vandelay_import_ = Teuchos::rcp(new Epetra_Import(Mesh()->getBoundaryFaceImporter()));
 
     auto data = vandelay_import_->PermuteFromLIDs();
     int n = vandelay_import_->NumPermuteIDs();
@@ -462,21 +471,20 @@ CompositeVector::CreateVandelayVector_() const
 void
 CompositeVector::ApplyVandelay_() const
 {
-  if (vandelay_vector_ == Teuchos::null) { CreateVandelayVector_(); }
-  const auto& map = *ComponentMap("face", false);
+  if (vandelay_vector_owned_ == Teuchos::null) { CreateVandelayVector_(); }
   if (vandelay_import_ == Teuchos::null)
-    vandelay_vector_->Import(
-      *ViewComponent("face", false), Mesh()->exterior_face_importer(), Insert);
+    vandelay_vector_owned_->Import(
+      *ViewComponent("face", false), Mesh()->getBoundaryFaceImporter(), Insert);
   else
-    vandelay_vector_->Import(*ViewComponent("face", false), *vandelay_import_, Insert);
+    vandelay_vector_owned_->Import(*ViewComponent("face", false), *vandelay_import_, Insert);
 }
 
 
 // return non-empty importer
 const Epetra_Import&
-CompositeVector::importer(std::string name) const
+CompositeVector::importer(const std::string& name) const
 {
-  return Mesh()->importer(Location(name));
+  return Mesh()->getImporter(Location(name));
 }
 
 
@@ -487,7 +495,7 @@ CompositeVector::Dot(const CompositeVector& other, double* result) const
 {
   double tmp_result = 0.0;
   for (name_iterator lcv = begin(); lcv != end(); ++lcv) {
-    if (other.HasComponent(*lcv)) {
+    if (other.HasImportedComponent(*lcv)) {
       std::vector<double> intermediate_result(ViewComponent(*lcv, false)->NumVectors(), 0.0);
       int ierr =
         ViewComponent(*lcv, false)->Dot(*other.ViewComponent(*lcv, false), &intermediate_result[0]);
@@ -510,7 +518,7 @@ CompositeVector::Update(double scalarA, const CompositeVector& A, double scalarT
   //  AMANZI_ASSERT(map_->SubsetOf(*A.map_));
   ChangedValue();
   for (name_iterator lcv = begin(); lcv != end(); ++lcv) {
-    if (A.HasComponent(*lcv))
+    if (A.HasImportedComponent(*lcv))
       ViewComponent(*lcv, false)->Update(scalarA, *A.ViewComponent(*lcv, false), scalarThis);
   }
   return *this;
@@ -525,11 +533,9 @@ CompositeVector::Update(double scalarA,
                         const CompositeVector& B,
                         double scalarThis)
 {
-  //  AMANZI_ASSERT(map_->SubsetOf(*A.map_));
-  //  AMANZI_ASSERT(map_->SubsetOf(*B.map_));
   ChangedValue();
   for (name_iterator lcv = begin(); lcv != end(); ++lcv) {
-    if (A.HasComponent(*lcv) && B.HasComponent(*lcv))
+    if (A.HasImportedComponent(*lcv) && B.HasImportedComponent(*lcv))
       ViewComponent(*lcv, false)
         ->Update(scalarA,
                  *A.ViewComponent(*lcv, false),
@@ -553,7 +559,7 @@ CompositeVector::Multiply(double scalarAB,
   ChangedValue();
   int ierr = 0;
   for (name_iterator lcv = begin(); lcv != end(); ++lcv) {
-    if (A.HasComponent(*lcv) && B.HasComponent(*lcv))
+    if (A.HasImportedComponent(*lcv) && B.HasImportedComponent(*lcv))
       ierr |=
         ViewComponent(*lcv, false)
           ->Multiply(
@@ -575,7 +581,7 @@ CompositeVector::ReciprocalMultiply(double scalarAB,
   ChangedValue();
   int ierr = 0;
   for (name_iterator lcv = begin(); lcv != end(); ++lcv) {
-    if (A.HasComponent(*lcv) && B.HasComponent(*lcv))
+    if (A.HasImportedComponent(*lcv) && B.HasImportedComponent(*lcv))
       ierr |=
         ViewComponent(*lcv, false)
           ->ReciprocalMultiply(
@@ -659,8 +665,7 @@ DeriveFaceValuesFromCellValues(CompositeVector& cv)
 
     int f_owned = cv_f.MyLength();
     for (int f = 0; f != f_owned; ++f) {
-      AmanziMesh::Entity_ID_List cells;
-      cv.Mesh()->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      auto cells = cv.Mesh()->getFaceCells(f);
       int ncells = cells.size();
 
       double face_value = 0.0;
@@ -671,17 +676,16 @@ DeriveFaceValuesFromCellValues(CompositeVector& cv)
     const Epetra_MultiVector& cv_c = *cv.ViewComponent("cell", true);
     Epetra_MultiVector& cv_f = *cv.ViewComponent("boundary_face", false);
 
-    const Epetra_BlockMap& fb_map = cv.Mesh()->exterior_face_map(false);
-    const Epetra_BlockMap& f_map = cv.Mesh()->face_map(false);
+    const Epetra_BlockMap& fb_map =
+      cv.Mesh()->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false);
+    const Epetra_BlockMap& f_map = cv.Mesh()->getMap(AmanziMesh::Entity_kind::FACE, false);
 
     int fb_owned = cv_f.MyLength();
     for (int fb = 0; fb != fb_owned; ++fb) {
-      AmanziMesh::Entity_ID_List cells;
-
       int f_gid = fb_map.GID(fb);
       int f_lid = f_map.LID(f_gid);
 
-      cv.Mesh()->face_get_cells(f_lid, AmanziMesh::Parallel_type::ALL, &cells);
+      auto cells = cv.Mesh()->getFaceCells(f_lid);
       int ncells = cells.size();
 
       AMANZI_ASSERT((ncells == 1));

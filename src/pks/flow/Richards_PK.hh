@@ -48,11 +48,6 @@ class Richards_PK : public Flow_PK {
               const Teuchos::RCP<State>& S,
               const Teuchos::RCP<TreeVector>& soln);
 
-  Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-              const std::string& pk_list_name,
-              Teuchos::RCP<State> S,
-              const Teuchos::RCP<TreeVector>& soln);
-
   ~Richards_PK(){};
 
   // methods required for PK interface
@@ -68,15 +63,14 @@ class Richards_PK : public Flow_PK {
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
-  virtual void CalculateDiagnostics(const Tag& tag) override;
 
-  virtual std::string name() override { return "richards"; }
+  virtual std::string name() override { return Keys::getKey(domain_, "richards"); }
 
   // methods required for time integration interface
   // -- computes the non-linear functional f = f(t,u,udot) and related norm.
   virtual void FunctionalResidual(const double t_old,
                                   double t_new,
-                                  Teuchos::RCP<TreeVector> u_old,
+                                  Teuchos::RCP<const TreeVector> u_old,
                                   Teuchos::RCP<TreeVector> u_new,
                                   Teuchos::RCP<TreeVector> f) override;
   virtual double
@@ -92,10 +86,10 @@ class Richards_PK : public Flow_PK {
   virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> up) override { return true; }
 
   // -- possibly modifies the predictor that is going to be used as a
-  //    starting value for the nonlinear solve in the time integrator,
+  //    starting value for the nonlinear solve in the time integrator;
   //    the time integrator will pass the predictor that is computed
-  //    using extrapolation and the time step that is used to compute
-  //    this predictor this function returns true if the predictor was
+  //    using extrapolation and the timestep that is used to compute
+  //    this predictor; this function returns true if the predictor was
   //    modified, false if not
   virtual bool ModifyPredictor(double dt,
                                Teuchos::RCP<const TreeVector> u0,
@@ -113,7 +107,11 @@ class Richards_PK : public Flow_PK {
 
   // -- calling this indicates that the time integration
   //    scheme is changing the value of the solution in state.
-  virtual void ChangedSolution() override { pressure_eval_->SetChanged(); }
+  virtual void ChangedSolution() override
+  {
+    pressure_eval_->SetChanged();
+    if (multiscale_porosity_) { pressure_msp_eval_->SetChanged(); }
+  }
 
   // -- returns the number of linear iterations.
   virtual int ReportStatistics() override { return op_preconditioner_->apply_calls(); }
@@ -148,7 +146,7 @@ class Richards_PK : public Flow_PK {
     return op_matrix_diff_;
   }
 
-  Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>> get_bdf1_dae() { return bdf1_dae_; }
+  Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>>& get_bdf1_dae() { return bdf1_dae_; }
 
   // -- verbose output and visualization methods
   void PlotWRMcurves(Teuchos::ParameterList& plist);
@@ -166,6 +164,8 @@ class Richards_PK : public Flow_PK {
                                       Teuchos::RCP<CompositeVector>& kvapor_temp);
 
   void Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<CompositeVector> f);
+
+  void MolarFlowRateToVolumetricFlowRate_();
 
   // The water storage change in a cell equals exactly to the balance of Darcy fluxes.
   // This balance leads to a monotone translport.
@@ -190,20 +190,24 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Operators::PDE_Diffusion> op_matrix_diff_, op_preconditioner_diff_;
   Teuchos::RCP<Operators::PDE_Accumulation> op_acc_;
   Teuchos::RCP<Operators::Upwind> upwind_;
-  std::string solver_name_, solver_name_constraint_;
+  std::string solver_name_;
 
   // coupling with energy
   Teuchos::RCP<Operators::Operator> op_vapor_;
   Teuchos::RCP<Operators::PDE_Diffusion> op_vapor_diff_;
   bool vapor_diffusion_;
 
+  // miscaleneous models
+  Key ppfactor_key_, vol_strain_key_;
+  bool poroelasticity_, thermoelasticity_;
+
   // multiscale models
   Key pressure_msp_key_, porosity_msp_key_;
   Key water_storage_msp_key_, prev_water_storage_msp_key_;
-  Key mass_density_liquid_key_, temperature_key_;
+  Key temperature_key_;
 
   bool multiscale_porosity_;
-  int ms_itrs_, ms_calls_;
+  int ms_itrs_;
   Teuchos::RCP<MultiscaleFlowPorosityPartition> msp_;
 
   // time integrators
@@ -220,7 +224,7 @@ class Richards_PK : public Flow_PK {
   int functional_max_cell;
 
   // copies of state fields
-  Teuchos::RCP<CompositeVector> vol_flowrate_copy;
+  Teuchos::RCP<CompositeVector> mol_flowrate_copy;
 
   // upwind
   int upwind_frequency_;

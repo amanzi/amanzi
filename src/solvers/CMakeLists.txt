@@ -28,6 +28,9 @@ include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
+include_directories(${MFUNCS_SOURCE_DIR})
+include_directories(${STATE_SOURCE_DIR})
+include_directories(${STATE_SOURCE_DIR}/data)
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
@@ -65,13 +68,14 @@ set(solvers_link_libs data_structures
 		      geometry
 		      error_handling
 		      whetstone
-		      atk)
+		      atk
+                      state
+                      mesh_functions)
 
 add_amanzi_library(solvers
                    SOURCE ${solvers_source_files} 
                    HEADERS ${solvers_inc_files}
-		   LINK_LIBS data_structures output whetstone atk
-                             ${solver_depends} ${solvers_tpl_libs} ${Epetra_LIBRARIES})
+		   LINK_LIBS ${solvers_link_libs} ${solvers_tpl_libs})
 
 if (BUILD_TESTS)
     set(solvers_test_link_libs solvers ${solvers_link_libs})
@@ -118,9 +122,19 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/solver_linear_nox_jfnk.cc
                     LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
-    add_amanzi_test(solver_nka solver_nka
+    add_amanzi_test(solver_nonlinear solver_nonlinear
                     KIND unit
-                    SOURCE test/Main.cc test/solver_nka.cc
+                    SOURCE test/Main.cc test/solver_nonlinear.cc
+                    LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
+
+    add_amanzi_test(solver_newton solver_newton
+                    KIND unit
+                    SOURCE test/Main.cc test/solver_newton.cc
+                    LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
+
+    add_amanzi_test(solver_jfnk solver_jfnk
+                    KIND unit
+                    SOURCE test/Main.cc test/solver_jfnk.cc
                     LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
     add_amanzi_test(solver_continuation solver_continuation

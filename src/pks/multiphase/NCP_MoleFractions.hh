@@ -20,12 +20,12 @@
 
 #include "Factory.hh"
 
-#include "MultiphaseBaseEvaluator.hh"
+#include "MultiphaseEvaluator.hh"
 
 namespace Amanzi {
 namespace Multiphase {
 
-class NCP_MoleFractions : public MultiphaseBaseEvaluator {
+class NCP_MoleFractions : public MultiphaseEvaluator {
  public:
   NCP_MoleFractions(Teuchos::ParameterList& plist);
   NCP_MoleFractions(const NCP_MoleFractions& other);

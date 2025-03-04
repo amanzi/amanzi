@@ -52,7 +52,7 @@ class IEM_WaterVaporEvaluator
   Teuchos::RCP<IEM_WaterVapor> iem_;
 
  private:
-  static Utils::RegisteredFactory<Evaluator, IEM_WaterVaporEvaluator> factory_;
+  static Utils::RegisteredFactory<Evaluator, IEM_WaterVaporEvaluator> reg_;
 };
 
 } // namespace Energy

@@ -16,6 +16,7 @@
 
 #include "DenseMatrix.hh"
 #include "Op_Diagonal.hh"
+#include "Op_Cell_Cell.hh"
 
 #include "SuperMap.hh"
 #include "GraphFE.hh"
@@ -35,6 +36,8 @@ Operator_Diagonal::ApplyMatrixFreeOp(const Op_Diagonal& op,
                                      const CompositeVector& X,
                                      CompositeVector& Y) const
 {
+  AMANZI_ASSERT(nvec_ == 1);
+
   const Epetra_MultiVector& Xi = *X.ViewComponent(op.col_compname(), true);
   Epetra_MultiVector& Yi = *Y.ViewComponent(op.row_compname(), true);
 
@@ -81,9 +84,6 @@ Operator_Diagonal::SymbolicAssembleMatrixOp(const Op_Diagonal& op,
                                             int my_block_row,
                                             int my_block_col) const
 {
-  const std::vector<int>& row_gids = map.GhostIndices(my_block_row, op.row_compname(), 0);
-  const std::vector<int>& col_gids = map.GhostIndices(my_block_col, op.col_compname(), 0);
-
   const auto& col_lids = op.col_inds();
   const auto& row_lids = op.row_inds();
 
@@ -91,16 +91,49 @@ Operator_Diagonal::SymbolicAssembleMatrixOp(const Op_Diagonal& op,
 
   int ierr(0);
   for (int n = 0; n != col_lids.size(); ++n) {
-    int ndofs = col_lids[n].size();
+    int ncols = col_lids[n].size();
+    int nrows = row_lids[n].size();
 
     lid_r.clear();
     lid_c.clear();
 
-    for (int i = 0; i != ndofs; ++i) {
-      lid_r.push_back(row_gids[row_lids[n][i]]);
-      lid_c.push_back(col_gids[col_lids[n][i]]);
+    for (int i = 0; i != ncols; ++i) {
+      for (int k = 0; k < nvec_; ++k) {
+        const std::vector<int>& col_gids = map.GhostIndices(my_block_col, op.col_compname(), k);
+        lid_c.push_back(col_gids[col_lids[n][i]]);
+      }
     }
-    ierr |= graph.InsertMyIndices(ndofs, lid_r.data(), ndofs, lid_c.data());
+    for (int i = 0; i != nrows; ++i) {
+      for (int k = 0; k < nvec_; ++k) {
+        const std::vector<int>& row_gids = map.GhostIndices(my_block_row, op.row_compname(), k);
+        lid_r.push_back(row_gids[row_lids[n][i]]);
+      }
+    }
+
+    ierr |= graph.InsertMyIndices(nvec_ * nrows, lid_r.data(), nvec_ * ncols, lid_c.data());
+  }
+  AMANZI_ASSERT(!ierr);
+}
+
+
+void
+Operator_Diagonal::SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
+                                            const SuperMap& map,
+                                            GraphFE& graph,
+                                            int my_block_row,
+                                            int my_block_col) const
+{
+  int ierr(0);
+  for (int c = 0; c != ncells_owned; ++c) {
+    for (int k = 0; k < nvec_; ++k) {
+      const std::vector<int>& cell_row_inds = map.GhostIndices(my_block_row, "cell", k);
+      const std::vector<int>& cell_col_inds = map.GhostIndices(my_block_col, "cell", k);
+
+      int row = cell_row_inds[c];
+      int col = cell_col_inds[c];
+
+      ierr |= graph.InsertMyIndices(row, 1, &col);
+    }
   }
   AMANZI_ASSERT(!ierr);
 }
@@ -116,9 +149,6 @@ Operator_Diagonal::AssembleMatrixOp(const Op_Diagonal& op,
                                     int my_block_row,
                                     int my_block_col) const
 {
-  const std::vector<int>& row_gids = map.GhostIndices(my_block_row, op.row_compname(), 0);
-  const std::vector<int>& col_gids = map.GhostIndices(my_block_col, op.col_compname(), 0);
-
   const auto& col_lids = op.col_inds();
   const auto& row_lids = op.row_inds();
 
@@ -126,17 +156,48 @@ Operator_Diagonal::AssembleMatrixOp(const Op_Diagonal& op,
 
   int ierr(0);
   for (int n = 0; n != col_lids.size(); ++n) {
-    int ndofs = col_lids[n].size();
+    int ncols = col_lids[n].size();
+    int nrows = row_lids[n].size();
 
     lid_r.clear();
     lid_c.clear();
 
-    for (int i = 0; i != ndofs; ++i) {
-      lid_r.push_back(row_gids[row_lids[n][i]]);
-      lid_c.push_back(col_gids[col_lids[n][i]]);
+    for (int i = 0; i != ncols; ++i) {
+      for (int k = 0; k < nvec_; ++k) {
+        const std::vector<int>& col_gids = map.GhostIndices(my_block_col, op.col_compname(), k);
+        lid_c.push_back(col_gids[col_lids[n][i]]);
+      }
+    }
+    for (int i = 0; i != nrows; ++i) {
+      for (int k = 0; k < nvec_; ++k) {
+        const std::vector<int>& row_gids = map.GhostIndices(my_block_row, op.row_compname(), k);
+        lid_r.push_back(row_gids[row_lids[n][i]]);
+      }
     }
 
     ierr |= mat.SumIntoMyValues(lid_r.data(), lid_c.data(), op.matrices[n]);
+  }
+  AMANZI_ASSERT(!ierr);
+}
+
+
+void
+Operator_Diagonal::AssembleMatrixOp(const Op_Cell_Cell& op,
+                                    const SuperMap& map,
+                                    MatrixFE& mat,
+                                    int my_block_row,
+                                    int my_block_col) const
+{
+  int ierr(0);
+  for (int c = 0; c != ncells_owned; ++c) {
+    for (int k = 0; k < nvec_; ++k) {
+      const std::vector<int>& cell_row_inds = map.GhostIndices(my_block_row, "cell", k);
+      const std::vector<int>& cell_col_inds = map.GhostIndices(my_block_col, "cell", k);
+
+      int row = cell_row_inds[c];
+      int col = cell_col_inds[c];
+      ierr |= mat.SumIntoMyValues(row, 1, &(*op.diag)[k][c], &col);
+    }
   }
   AMANZI_ASSERT(!ierr);
 }

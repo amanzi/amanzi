@@ -46,10 +46,11 @@ HighOrderCrouzeixRaviart(int dim, std::string file_name)
   std::cout << "Test: High-order Crouzeix Raviart in " << dim << "D"
             << " file=" << file_name << std::endl;
   auto comm = Amanzi::getDefaultComm();
-
-  MeshFactory meshfactory(comm);
+  auto fac_list = Teuchos::rcp(new Teuchos::ParameterList());
+  if (dim == 3) fac_list->set<bool>("request edges", true);
+  MeshFactory meshfactory(comm, Teuchos::null, fac_list);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name, true, (dim == 3));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name);
 
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);
@@ -134,19 +135,21 @@ HighOrderCrouzeixRaviartSerendipity(int dim, std::string file_name)
             << "D, file=" << file_name << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm, gm);
+  Teuchos::RCP<AmanziGeometry::GeometricModel> gm;
+  auto fac_list = Teuchos::rcp(new Teuchos::ParameterList());
+  if (dim == 3) fac_list->set<bool>("request edges", true);
+  MeshFactory meshfactory(comm, gm, fac_list);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name, true, (dim == 3));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name);
 
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
 
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);
   MFD3D_CrouzeixRaviartSerendipity mfd(plist, mesh);
 
   for (int c = 0; c < ncells; ++c) {
-    if (mesh->cell_get_num_faces(c) < 4) continue;
+    if (mesh->getCellNumFaces(c) < 4) continue;
 
     Tensor T(dim, 1);
     T(0, 0) = 1.0;
@@ -194,7 +197,7 @@ TEST(HIGH_ORDER_CROUZEIX_RAVIART_SERENDIPITY)
 {
   HighOrderCrouzeixRaviartSerendipity(2, "test/two_cell2_dist.exo");
   HighOrderCrouzeixRaviartSerendipity(2, "test/one_pentagon.exo");
-  // HighOrderCrouzeixRaviartSerendipity(3, "test/cube_unit.exo");
+  HighOrderCrouzeixRaviartSerendipity(3, "test/cube_unit.exo");
 }
 
 
@@ -211,12 +214,14 @@ HighOrderLagrange2D(std::string file_name)
   std::cout << "\nTest: High-order Lagrange element, file=" << file_name << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm, gm);
+  Teuchos::RCP<AmanziGeometry::GeometricModel> gm;
+  auto fac_list = Teuchos::rcp(new Teuchos::ParameterList());
+  fac_list->set<bool>("request edges", true);
+  MeshFactory meshfactory(comm, gm, fac_list);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name, true, true);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name);
 
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
 
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);
@@ -263,7 +268,7 @@ HighOrderLagrange2D(std::string file_name)
       NumericalIntegration numi(mesh);
       numi.UpdateMonomialIntegralsCell(c, 2 * k, integrals);
 
-      Polynomial ptmp, poly(mesh->space_dimension(), k);
+      Polynomial ptmp, poly(mesh->getSpaceDimension(), k);
       Basis_Regularized basis;
       basis.Init(mesh, c, k, ptmp);
 
@@ -300,11 +305,13 @@ HighOrderLagrange3D(const std::string& filename1, const std::string& filename2)
             << filename2 << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm, gm);
+  Teuchos::RCP<AmanziGeometry::GeometricModel> gm;
+  auto fac_list = Teuchos::rcp(new Teuchos::ParameterList());
+  fac_list->set<bool>("request edges", true);
+  MeshFactory meshfactory(comm, gm, fac_list);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  Teuchos::RCP<Mesh> mesh1 = meshfactory.create(filename1, true, true);
-  Teuchos::RCP<Mesh> mesh2 = meshfactory.create(filename2, true, true);
+  Teuchos::RCP<Mesh> mesh1 = meshfactory.create(filename1);
+  Teuchos::RCP<Mesh> mesh2 = meshfactory.create(filename2);
 
   DenseMatrix G1, A1, A2;
   Teuchos::ParameterList plist;
@@ -394,13 +401,15 @@ HighOrderLagrangeSerendipity(const std::string& filename)
   std::cout << "\nTest: High-order Lagrange Serendipity element, file=" << filename << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm, gm);
+  Teuchos::RCP<AmanziGeometry::GeometricModel> gm;
+  auto fac_list = Teuchos::rcp(new Teuchos::ParameterList());
+  fac_list->set<bool>("request edges", true);
+  MeshFactory meshfactory(comm, gm, fac_list);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(filename, true, true);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(filename);
 
-  int d = mesh->space_dimension();
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int d = mesh->getSpaceDimension();
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
 
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);
@@ -409,7 +418,7 @@ HighOrderLagrangeSerendipity(const std::string& filename)
   MFD3D_LagrangeSerendipity mfd_ho(plist, mesh);
 
   for (int c = 0; c < ncells; ++c) {
-    if (mesh->cell_get_num_faces(c) < 4) continue;
+    if (mesh->getCellNumFaces(c) < 4) continue;
 
     int rank = (d == 3) ? 1 : 2;
     Tensor T(d, rank);
@@ -488,11 +497,16 @@ TEST(HIGH_ORDER_LAGRANGE_SURFACE)
   std::cout << "\nTest: High-order Lagrange element on surface" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({ Framework::MSTK }));
-  Teuchos::RCP<Mesh> mesh2d = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1);
-  Teuchos::RCP<Mesh> mesh3d = meshfactory.create("test/cube_unit.exo", true, true);
+  Teuchos::RCP<AmanziGeometry::GeometricModel> gm;
+  auto fac_list = Teuchos::rcp(new Teuchos::ParameterList());
+  MeshFactory meshfactory1(comm, gm, fac_list);
+  meshfactory1.set_preference(Preference({ Framework::MSTK }));
+  fac_list->set<bool>("request edges", true);
+  fac_list->set<bool>("request faces", true);
+  MeshFactory meshfactory2(comm, gm, fac_list);
+  meshfactory2.set_preference(Preference({ Framework::MSTK }));
+  Teuchos::RCP<Mesh> mesh2d = meshfactory1.create(0.0, 0.0, 1.0, 1.0, 1, 1);
+  Teuchos::RCP<Mesh> mesh3d = meshfactory2.create("test/cube_unit.exo");
 
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 2);

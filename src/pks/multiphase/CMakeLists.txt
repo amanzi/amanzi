@@ -52,7 +52,7 @@ set(multiphase_src_files Multiphase_PK.cc Multiphase_TI.cc
                          MultiphaseBoundaryFunction.cc
                          Multiphase_Utils.cc Multiphase_BCs.cc
                          NCP_F.cc NCP_HenryLaw.cc NCP_MoleFractions.cc NCP_MolarDensities.cc
-                         SaturationGasEvaluator.cc
+                         SaturationEvaluator.cc
                          TotalWaterStorage.cc 
                          TotalComponentStorage.cc TotalComponentStorage_Tcc.cc
                          TotalComponentStorage_Jaffre.cc
@@ -60,6 +60,7 @@ set(multiphase_src_files Multiphase_PK.cc Multiphase_TI.cc
                          WRMmp_Simple.cc WRMmp_vanGenuchten.cc WRMmp_BrooksCorey.cc WRMmp_Corey.cc
                          MoleFractionLiquid.cc TccLiquid.cc TccGas.cc PressureGasEvaluator.cc
                          RelPermEvaluator.cc ProductEvaluator.cc
+                         MassDensityGas.cc
                          FlattenedTreeOperator.cc)
 
 add_amanzi_library(multiphase 
@@ -72,15 +73,17 @@ add_amanzi_library(multiphase
 # Install Targets
 #
 set(multiphase_inc_files 
+  MassDensityGas.hh
   Multiphase_PK.hh
   Multiphase_Utils.hh
   MultiphaseBoundaryFunction.hh
+  MultiphaseEvaluator.hh
   ModelMeshPartition.hh
   MoleFractionLiquid.hh TccLiquid.hh TccGas.hh
   NCP_F.hh NCP_HenryLaw.hh NCP_MoleFractions.hh NCP_MolarDensities.hh
   PressureGasEvaluator.hh
   RelPermEvaluator.hh ProductEvaluator.hh
-  SaturationGasEvaluator.hh
+  SaturationEvaluator.hh
   VaporPressureEvaluator.hh
   TotalWaterStorage.hh
   TotalComponentStorage.hh TotalComponentStorage_Tcc.hh
@@ -111,10 +114,21 @@ if (BUILD_TESTS)
   set(amanzi_libs multiphase state mesh_factory whetstone operators 
                   geometry mesh_functions functions eos pks)
 
-  # Unit tests: Jaffre
+  # Unit tests: Jaffre 
   add_amanzi_test(multiphase_jaffre multiphase_jaffre
                   KIND      int
                   SOURCE    test/Main.cc test/multiphase_jaffre.cc
+                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+  add_amanzi_test(multiphase_jaffre_nlfv multiphase_jaffre_nlfv
+                  KIND      int
+                  SOURCE    test/Main.cc test/multiphase_jaffre_nlfv.cc
+                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+  # Jaffre model with fractures
+  add_amanzi_test(multiphase_jaffre_fractures multiphase_jaffre_fractures
+                  KIND      int
+                  SOURCE    test/Main.cc test/multiphase_jaffre_fractures.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
   # Unit tests: Pl-Sl-Xg
@@ -133,6 +147,11 @@ if (BUILD_TESTS)
                   SOURCE    test/Main.cc test/multiphase_model1c.cc
                   LINK_LIBS ${amanzi_libs} energy ${UnitTest_LIBRARIES})
 
+  add_amanzi_test(multiphase_jacobian1a multiphase_jacobian1a
+                  KIND      int
+                  SOURCE    test/Main.cc test/multiphase_jacobian1a.cc
+                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
   # Unit tests: Pl-Sl-Cg
   add_amanzi_test(multiphase_model2a multiphase_model2a
                   KIND      int
@@ -144,6 +163,13 @@ if (BUILD_TESTS)
                   KIND      int
                   SOURCE    test/Main.cc test/multiphase_smiles.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+  # Misc. (external source term implementation)  
+  add_amanzi_test(multiphase_source multiphase_source
+                  KIND      int
+                  SOURCE    test/Main.cc test/multiphase_source.cc
+                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})  
+  
 
 endif()
 

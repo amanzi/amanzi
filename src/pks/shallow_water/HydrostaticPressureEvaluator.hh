@@ -43,7 +43,7 @@ class HydrostaticPressureEvaluator
                                           const std::vector<CompositeVector*>& results) override;
 
  private:
-  std::string ponded_depth_key_;
+  std::string primary_variable_key_;
 };
 
 } // namespace ShallowWater

@@ -43,7 +43,7 @@ class WRMmp_Simple : public WRMmp {
  private:
   double S_rw_, S_rn_, coef_, exponent_;
 
-  static Utils::RegisteredFactory<WRMmp, WRMmp_Simple> factory_;
+  static Utils::RegisteredFactory<WRMmp, WRMmp_Simple> reg_;
 };
 
 } // namespace Multiphase

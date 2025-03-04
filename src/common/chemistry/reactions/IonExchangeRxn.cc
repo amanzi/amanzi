@@ -92,7 +92,6 @@ IonExchangeRxn::Update(const std::vector<Species>& primary_species)
 
   double omega = ionx_site_[0].get_cation_exchange_capacity();
   if (!uniform_z_) { // Z_i /= Z_j for all i,j
-    int interation_count = 0;
     int ref_cation = ionx_complexes_[0].primary_id();
     double ref_cation_act = primary_species[ref_cation].activity();
     double ref_cation_Z = primary_species[ref_cation].charge();
@@ -113,7 +112,6 @@ IonExchangeRxn::Update(const std::vector<Species>& primary_species)
         total += value;
       }
       if (false) { std::cout << "-- ionx total: " << total << std::endl; }
-      ++interation_count;
       if (one_more) break;
 
       double res = 1.0 - total;

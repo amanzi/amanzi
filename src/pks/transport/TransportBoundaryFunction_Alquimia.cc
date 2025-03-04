@@ -27,7 +27,7 @@ TransportBoundaryFunction_Alquimia::TransportBoundaryFunction_Alquimia(
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
   Teuchos::RCP<AmanziChemistry::Alquimia_PK> alquimia_pk,
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine)
-  : mesh_(mesh), alquimia_pk_(alquimia_pk), chem_engine_(chem_engine)
+  : name_("alquimia bc"), mesh_(mesh), alquimia_pk_(alquimia_pk), chem_engine_(chem_engine)
 {
   // Check arguments.
   if (chem_engine_ != Teuchos::null) {
@@ -71,20 +71,19 @@ TransportBoundaryFunction_Alquimia::Init_(const std::vector<std::string>& region
   for (int i = 0; i < regions.size(); ++i) {
     // Get the faces that belong to this region (since boundary conditions
     // are applied on faces).
-    assert(mesh_->valid_set_name(regions[i], AmanziMesh::FACE));
+    assert(mesh_->isValidSetName(regions[i], AmanziMesh::Entity_kind::FACE));
 
-    AmanziMesh::Entity_ID_List block;
-    mesh_->get_set_entities(regions[i], AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &block);
+    auto block = mesh_->getSetEntities(
+      regions[i], AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
     int nblock = block.size();
 
     // Now get the cells that are attached to these faces.
-    AmanziMesh::Entity_ID_List cells;
     for (int n = 0; n < nblock; ++n) {
       int f = block[n];
       value_[f].resize(chem_engine_->NumPrimarySpecies());
 
-      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::OWNED, &cells);
-
+      const auto& cells = mesh_->getFaceCells(f);
+      AMANZI_ASSERT(cells.size() == 1);
       cell_for_face_[f] = cells[0];
     }
   }

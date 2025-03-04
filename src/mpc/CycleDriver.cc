@@ -8,25 +8,13 @@
            Daniil Svyatskiy
 */
 
-/*
-  Multi-Process Coordinator
-
-  Implementation for the CycleDriver.  CycleDriver is basically just a class to hold
-  the cycle driver, which runs the overall, top level timestep loop.  It
-  instantiates states, ensures they are initialized, and runs the timestep loop
-  including Vis and restart/checkpoint dumps.  It contains one and only one PK
-  -- most likely this PK is an MPC of some type -- to do the actual work.
-*/
-
+#include <filesystem>
 #include <ios>
 #include <iostream>
 #include <unistd.h>
 #include <sys/resource.h>
 
 // TPLs
-#define BOOST_FILESYSTEM_NO_DEPRECATED
-#include "boost/filesystem/operations.hpp"
-
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -86,6 +74,8 @@ CycleDriver::CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist,
                          Amanzi::ObservationData& observations_data)
   : S_(S),
     glist_(glist),
+    initialized_(false),
+    time_period_id_(0),
     comm_(comm),
     observations_data_(observations_data),
     restart_requested_(false)
@@ -238,23 +228,23 @@ CycleDriver::Setup()
     }
   }
 
+  pk_->parseParameterList();
   pk_->Setup();
-  pk_->set_tags(Tags::CURRENT, Tags::NEXT);
   S_->Require<double>("dt", Tags::NEXT, "dt");
   S_->Setup();
 
-  // create the time step manager
-  tsm_ = Teuchos::rcp(new TimeStepManager(glist_->sublist("cycle driver")));
+  // create the timestep manager
+  tsm_ = Teuchos::rcp(new Utils::TimeStepManager(glist_->sublist("cycle driver")));
 
   // set up the TSM
   // -- register visualization times
   for (auto vis = visualization_.begin(); vis != visualization_.end(); ++vis) {
-    (*vis)->RegisterWithTimeStepManager(tsm_.ptr());
+    (*vis)->RegisterWithTimeStepManager(*tsm_);
   }
   // -- register checkpoint times
-  if (checkpoint_ != Teuchos::null) checkpoint_->RegisterWithTimeStepManager(tsm_.ptr());
+  if (checkpoint_ != Teuchos::null) checkpoint_->RegisterWithTimeStepManager(*tsm_);
   // -- register observation times
-  if (observations_ != Teuchos::null) observations_->RegisterWithTimeStepManager(tsm_.ptr());
+  if (observations_ != Teuchos::null) observations_->RegisterWithTimeStepManager(*tsm_);
   // -- register reset_times
   for (auto it = reset_info_.begin(); it != reset_info_.end(); ++it)
     tsm_->RegisterTimeEvent(it->first);
@@ -322,9 +312,14 @@ CycleDriver::ReportMemory()
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     double global_ncells(0.0);
     double local_ncells(0.0);
+    std::vector<int> counts;
     for (State::mesh_iterator mesh = S_->mesh_begin(); mesh != S_->mesh_end(); ++mesh) {
-      Epetra_Map cell_map = (mesh->second.first)->cell_map(false);
-      global_ncells += cell_map.NumGlobalElements();
+      const auto& cell_map = (mesh->second.first)->getMap(AmanziMesh::Entity_kind::CELL, false);
+
+      int ncells = cell_map.NumGlobalElements();
+      counts.push_back(ncells);
+
+      global_ncells += ncells;
       local_ncells += cell_map.NumMyElements();
     }
 
@@ -351,7 +346,8 @@ CycleDriver::ReportMemory()
     *vo_->os() << "======================================================================"
                << std::endl;
     *vo_->os() << "Simulation made " << S_->get_cycle() << " cycles.\n";
-    *vo_->os() << "All meshes combined have " << global_ncells << " cells.\n";
+    *vo_->os() << "All meshes combined have " << global_ncells << " cells (1st mesh has "
+               << counts[0] << " cells).\n";
     *vo_->os() << "Memory usage (high water mark):\n";
     *vo_->os() << std::fixed << std::setprecision(1);
     *vo_->os() << "  Maximum per core:   " << std::setw(7) << max_mem
@@ -368,9 +364,13 @@ CycleDriver::ReportMemory()
 
   double doubles_count(0.0);
   for (auto it = S_->data_begin(); it != S_->data_end(); ++it) {
-    if (S_->GetRecord(it->first).ValidType<CompositeVector>()) {
-      doubles_count +=
-        static_cast<double>(S_->Get<CompositeVector>(it->first).GetLocalElementCount());
+    auto n_tags = std::size(*it->second);
+    if (n_tags > 0) {
+      const Tag& tag = it->second->begin()->first;
+      if (S_->GetRecord(it->first, tag).ValidType<CompositeVector>()) {
+        doubles_count +=
+          n_tags * static_cast<double>(S_->Get<CompositeVector>(it->first, tag).GetLocalElementCount());
+      }
     }
   }
   double global_doubles_count(0.0);
@@ -399,15 +399,14 @@ CycleDriver::ReportMemory()
 void
 CycleDriver::ReadParameterList_()
 {
-  max_dt_ = coordinator_list_->get<double>("max time step size", 1.0e+99);
-  min_dt_ = coordinator_list_->get<double>("min time step size", 1.0e-12);
+  max_dt_ = coordinator_list_->get<double>("max timestep size", 1.0e+99);
+  min_dt_ = coordinator_list_->get<double>("min timestep size", 1.0e-12);
   cycle0_ = coordinator_list_->get<int>("start cycle", 0);
   cycle1_ = coordinator_list_->get<int>("end cycle", -1);
 
   Teuchos::ParameterList time_periods_list = coordinator_list_->sublist("time periods");
 
   num_time_periods_ = time_periods_list.numParams();
-  Teuchos::ParameterList::ConstIterator item;
   tp_start_.resize(num_time_periods_);
   tp_end_.resize(num_time_periods_);
   tp_dt_.resize(num_time_periods_);
@@ -415,12 +414,12 @@ CycleDriver::ReadParameterList_()
   tp_max_dt_.resize(num_time_periods_);
 
   int i = 0;
-  for (item = time_periods_list.begin(); item != time_periods_list.end(); ++item) {
+  for (auto item = time_periods_list.begin(); item != time_periods_list.end(); ++item) {
     const std::string& tp_name = time_periods_list.name(item);
     tp_start_[i] = time_periods_list.sublist(tp_name).get<double>("start period time");
     tp_end_[i] = time_periods_list.sublist(tp_name).get<double>("end period time");
-    tp_dt_[i] = time_periods_list.sublist(tp_name).get<double>("initial time step", 1.0);
-    tp_max_dt_[i] = time_periods_list.sublist(tp_name).get<double>("maximum time step", 1.0e+99);
+    tp_dt_[i] = time_periods_list.sublist(tp_name).get<double>("initial timestep", 1.0);
+    tp_max_dt_[i] = time_periods_list.sublist(tp_name).get<double>("maximum timestep", 1.0e+99);
     tp_max_cycle_[i] = time_periods_list.sublist(tp_name).get<int>("maximum cycle number", -1);
     i++;
   }
@@ -437,8 +436,8 @@ CycleDriver::ReadParameterList_()
     restart_filename_ = restart_list.get<std::string>("file name");
 
     // make sure that the restart file actually exists, if not throw an error
-    boost::filesystem::path restart_from_filename_path(restart_filename_);
-    if (!boost::filesystem::exists(restart_from_filename_path)) {
+    std::filesystem::path restart_from_filename_path(restart_filename_);
+    if (!std::filesystem::exists(restart_from_filename_path)) {
       Errors::Message msg;
       msg << "CycleDriver: restart file \"" << restart_filename_
           << "\" does not exist or is not a regular file.";
@@ -450,7 +449,7 @@ CycleDriver::ReadParameterList_()
     Teuchos::ParameterList& tpc_list = coordinator_list_->sublist("time period control");
     Teuchos::Array<double> reset_times = tpc_list.get<Teuchos::Array<double>>("start times");
     Teuchos::Array<double> reset_times_dt =
-      tpc_list.get<Teuchos::Array<double>>("initial time step");
+      tpc_list.get<Teuchos::Array<double>>("initial timestep");
     AMANZI_ASSERT(reset_times.size() == reset_times_dt.size());
 
     {
@@ -463,9 +462,9 @@ CycleDriver::ReadParameterList_()
       }
     }
 
-    if (tpc_list.isParameter("maximum time step")) {
+    if (tpc_list.isParameter("maximum timestep")) {
       Teuchos::Array<double> reset_max_dt =
-        tpc_list.get<Teuchos::Array<double>>("maximum time step");
+        tpc_list.get<Teuchos::Array<double>>("maximum timestep");
       AMANZI_ASSERT(reset_times.size() == reset_max_dt.size());
 
       Teuchos::Array<double>::const_iterator it_tim;
@@ -483,6 +482,9 @@ CycleDriver::ReadParameterList_()
 
   // verification (move this to state ?)
   S_->GetMeshPartition("materials");
+
+  // io
+  io_frequency_ = coordinator_list_->get<int>("io frequency", 100);
 }
 
 
@@ -544,7 +546,7 @@ CycleDriver::get_dt(bool after_failure)
     dt = max_dt_;
     Utils::Units units("molar");
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Resetting time step to the maximum allowed of " << units.OutputTime(dt) << "\n";
+    *vo_->os() << "Resetting timestep to the maximum allowed of " << units.OutputTime(dt) << "\n";
   }
 
   return dt;
@@ -675,8 +677,10 @@ CycleDriver::Observations(bool force, bool integrate)
     if (observations_->DumpRequested(S_->get_cycle(), S_->get_time()) || force) {
       // continuous observations are not updated here
       int n = observations_->MakeObservations(*S_);
-      Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "Cycle " << S_->get_cycle() << ": writing observations... " << n << std::endl;
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *vo_->os() << "writing observations... " << n << std::endl;
+      }
     }
   }
 }
@@ -699,10 +703,11 @@ CycleDriver::Visualize(bool force, const Tag& tag)
 
   for (const auto& vis : visualization_) {
     if (force || vis->DumpRequested(S_->get_cycle(), S_->get_time())) {
-      vis->set_tag(tag);
       WriteVis(*vis, *S_);
-      Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "writing visualization file: " << vis->get_name() << std::endl;
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *vo_->os() << "writing visualization file: " << vis->get_name() << std::endl;
+      }
     }
   }
 }
@@ -780,6 +785,7 @@ CycleDriver::Go()
     max_dt_ = tp_max_dt_[time_period_id_];
     dt = tsm_->TimeStep(S_->get_time(), dt);
     pk_->set_dt(dt);
+    dt = get_dt(); // pk may reset the timestep
 
   } else {
     // Read restart file
@@ -866,7 +872,6 @@ CycleDriver::Go()
 #if !DEBUG_MODE
     try {
 #endif
-
       while (time_period_id_ < num_time_periods_) {
         int start_cycle_num = S_->get_cycle();
         //  do
@@ -874,12 +879,14 @@ CycleDriver::Go()
                ((tp_max_cycle_[time_period_id_] == -1) ||
                 (S_->get_cycle() - start_cycle_num < tp_max_cycle_[time_period_id_]))) {
           if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-            if (S_->get_cycle() % 100 == 0 && S_->get_cycle() > 0) {
-              WriteStateStatistics(*S_, *vo_);
-              Teuchos::OSTab tab = vo_->getOSTab();
-              *vo_->os() << "\nSimulation end time: " << tp_end_[time_period_id_] << " sec."
-                         << std::endl;
-              *vo_->os() << "CPU time stamp: " << vo_->clock() << std::endl;
+            if (S_->get_cycle() % io_frequency_ == 0 && S_->get_cycle() > 0) {
+              WriteStateStatistics_();
+              if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+                Teuchos::OSTab tab = vo_->getOSTab();
+                *vo_->os() << "\nSimulation end time: " << tp_end_[time_period_id_] << " sec."
+                           << std::endl;
+                *vo_->os() << "CPU time stamp: " << vo_->clock() << std::endl;
+              }
             }
             Utils::Units units("molar");
             Teuchos::OSTab tab = vo_->getOSTab();
@@ -897,7 +904,6 @@ CycleDriver::Go()
           // dt = get_dt(fail);
         } // while not finished
 
-
         time_period_id_++;
         if (time_period_id_ < num_time_periods_) {
           WriteStateStatistics(*S_, *vo_);
@@ -905,9 +911,8 @@ CycleDriver::Go()
           dt = get_dt(false);
         }
       }
-    }
 #if !DEBUG_MODE
-    catch (Exceptions::Amanzi_exception& e) {
+    } catch (Exceptions::Amanzi_exception& e) {
       // write one more vis for help debugging
       S_->advance_cycle();
       Visualize(true); // force vis
@@ -922,92 +927,195 @@ CycleDriver::Go()
       throw e;
     }
 #endif
-
-    // finalizing simulation
-    WriteStateStatistics(*S_, *vo_);
-    ReportMemory();
-    // Finalize();
-
-    return S_;
   }
 
+  // finalizing simulation
+  WriteStateStatistics(*S_, *vo_);
+  ReportMemory();
+  // Finalize();
 
-  /* ******************************************************************
-* TBW.
+  return S_;
+}
+
+
+/* ******************************************************************
+* simplified timestep loop
 ****************************************************************** */
-  void CycleDriver::ResetDriver(int time_pr_id)
-  {
-    if (vo_->os_OK(Teuchos::VERB_LOW)) {
-      Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "Reseting CD: TP " << time_pr_id - 1 << " -> TP " << time_pr_id << "."
-                 << std::endl;
-    }
+Teuchos::RCP<State>
+CycleDriver::Go(double t_old, double t_new, double* dt0)
+{
+  double dt;
 
-    Teuchos::RCP<AmanziMesh::Mesh> mesh =
-      Teuchos::rcp_const_cast<AmanziMesh::Mesh>(S_->GetMesh("domain"));
+  if (!initialized_) {
+    initialized_ = true;
 
-    S_old_ = S_;
+    Init_PK(time_period_id_);
+    Setup();
 
-    Teuchos::ParameterList state_plist = glist_->sublist("state");
-    S_ = Teuchos::rcp(new Amanzi::State(state_plist));
-
-    for (auto it = S_old_->mesh_begin(); it != S_old_->mesh_end(); ++it) {
-      S_->RegisterMesh(it->first, it->second.first);
-    }
-
-    // delete the old global solution vector
-    pk_ = Teuchos::null;
-    soln_ = Teuchos::null;
-
-    // create the global solution vector
-    soln_ = Teuchos::rcp(new TreeVector());
-
-    // create new pk
-    Init_PK(time_pr_id);
-
-    // register observation times with the time step manager
-    //if (observations_ != Teuchos::null) observations_->RegisterWithTimeStepManager(tsm_);
-
-    // Setup
-    pk_->Setup();
-    pk_->set_tags(Tags::CURRENT, Tags::NEXT);
-
-    S_->Require<double>("dt", Tags::NEXT, "dt");
-    S_->Setup();
-
-    S_->set_cycle(S_old_->get_cycle());
-    S_->set_time(tp_start_[time_pr_id]);
+    S_->set_time(tp_start_[time_period_id_]);
+    S_->set_cycle(cycle0_);
     S_->set_position(TIME_PERIOD_START);
 
-    S_->GetW<double>("dt", Tags::NEXT, "dt") = tp_dt_[time_pr_id];
-    S_->GetRecordW("dt", Tags::NEXT, "dt").set_initialized();
+    Initialize();
 
-    // Initialize
-    S_->InitializeFields();
     S_->InitializeEvaluators();
-
-    // Initialize the state from the old state.
-    S_->Initialize(*S_old_);
-
-    // Initialize the process kernels and verify
-    pk_->Initialize();
     S_->CheckAllFieldsInitialized();
-
-    S_->GetMeshPartition("materials");
-
-    pk_->CalculateDiagnostics(Tags::DEFAULT);
-    Observations();
-
-    pk_->set_dt(tp_dt_[time_pr_id]);
-    max_dt_ = tp_max_dt_[time_pr_id];
-
-    // conditional i/o after initialization is performed only when
-    // new fields are added/removed to/from the state
-    auto fields_old = StateVisFields(*S_old_);
-    auto fields = StateVisFields(*S_);
-    if (fields_old != fields) Visualize(true, make_tag("ic"));
-
-    S_old_ = Teuchos::null;
+    S_->InitializeIOFlags();
   }
+
+  tsm_->RegisterTimeEvent(t_new);
+
+  dt = (*dt0 < 0.0) ? std::min(t_new - t_old, tp_dt_[time_period_id_]) : *dt0;
+  max_dt_ = tp_max_dt_[time_period_id_];
+  dt = tsm_->TimeStep(S_->get_time(), dt);
+  pk_->set_dt(dt);
+
+  // enfoce consistent physics after initialization
+  // this is optional but helps with statistics
+  S_->GetW<double>("dt", Tags::NEXT, "dt") = dt;
+  S_->GetRecordW("dt", Tags::NEXT, "dt").set_initialized();
+
+  pk_->CalculateDiagnostics(Tags::DEFAULT);
+  Visualize();
+  Observations();
+  WriteCheckpoint(dt);
+  WriteStateStatistics(*S_, *vo_);
+
+  // iterate process kernels
+  int start_cycle_num = S_->get_cycle();
+
+  while ((S_->get_time() < std::min(t_new, tp_end_[time_period_id_])) &&
+         ((tp_max_cycle_[time_period_id_] == -1) ||
+          (S_->get_cycle() - start_cycle_num < tp_max_cycle_[time_period_id_]))) {
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+      if (S_->get_cycle() % io_frequency_ == 0 && S_->get_cycle() > 0) {
+        WriteStateStatistics(*S_, *vo_);
+      }
+      Utils::Units units("molar");
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "\nCycle " << S_->get_cycle() << ": time = " << units.OutputTime(S_->get_time())
+                 << ", dt = " << units.OutputTime(dt) << "\n";
+    }
+    S_->GetW<double>("dt", Tags::DEFAULT, "dt") = dt;
+    S_->set_initial_time(S_->get_time());
+    S_->set_final_time(S_->get_time() + dt);
+    S_->set_intermediate_time(S_->get_time());
+    S_->set_position(TIME_PERIOD_INSIDE);
+
+    dt = Advance(dt);
+  }
+
+  if (t_new == tp_end_[time_period_id_]) {
+    time_period_id_++;
+    if (time_period_id_ < num_time_periods_) {
+      WriteStateStatistics(*S_, *vo_);
+      ResetDriver(time_period_id_);
+      dt = get_dt(false);
+    }
+  }
+
+  // finalizing simulation
+  WriteStateStatistics(*S_, *vo_);
+  *dt0 = dt;
+
+  return S_;
+}
+
+
+/* ******************************************************************
+* TBW.
+****************************************************************** */
+void
+CycleDriver::ResetDriver(int time_pr_id)
+{
+  if (vo_->os_OK(Teuchos::VERB_LOW)) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "Reseting CD: TP " << time_pr_id - 1 << " -> TP " << time_pr_id << "."
+               << std::endl;
+  }
+
+  Teuchos::RCP<AmanziMesh::Mesh> mesh =
+    Teuchos::rcp_const_cast<AmanziMesh::Mesh>(S_->GetMesh("domain"));
+
+  S_old_ = S_;
+
+  Teuchos::ParameterList state_plist = glist_->sublist("state");
+  S_ = Teuchos::rcp(new Amanzi::State(state_plist));
+
+  for (auto it = S_old_->mesh_begin(); it != S_old_->mesh_end(); ++it) {
+    S_->RegisterMesh(it->first, it->second.first);
+  }
+
+  // delete the old global solution vector
+  pk_ = Teuchos::null;
+  soln_ = Teuchos::null;
+
+  // create the global solution vector
+  soln_ = Teuchos::rcp(new TreeVector());
+
+  // create new pk
+  Init_PK(time_pr_id);
+
+  // register observation times with the timestep manager
+  //if (observations_ != Teuchos::null) observations_->RegisterWithTimeStepManager(tsm_);
+
+  // Setup
+  pk_->set_tags(Tags::CURRENT, Tags::NEXT);
+  pk_->parseParameterList();
+  pk_->Setup();
+
+  S_->Require<double>("dt", Tags::NEXT, "dt");
+  S_->Setup();
+
+  S_->set_cycle(S_old_->get_cycle());
+  S_->set_time(tp_start_[time_pr_id]);
+  S_->set_position(TIME_PERIOD_START);
+
+  S_->GetW<double>("dt", Tags::NEXT, "dt") = tp_dt_[time_pr_id];
+  S_->GetRecordW("dt", Tags::NEXT, "dt").set_initialized();
+
+  // Initialize
+  S_->InitializeFields();
+  S_->InitializeEvaluators();
+
+  // Initialize the state from the old state.
+  S_->Initialize(*S_old_);
+
+  // Initialize the process kernels and verify
+  pk_->Initialize();
+  S_->CheckAllFieldsInitialized();
+
+  S_->GetMeshPartition("materials");
+
+  pk_->CalculateDiagnostics(Tags::DEFAULT);
+  Observations();
+  WriteStateStatistics(*S_, *vo_);
+
+  pk_->set_dt(tp_dt_[time_pr_id]);
+  max_dt_ = tp_max_dt_[time_pr_id];
+
+  // conditional i/o after initialization is performed only when
+  // new fields are added/removed to/from the state
+  auto fields_old = StateVisFields(*S_old_);
+  auto fields = StateVisFields(*S_);
+  if (fields_old != fields) Visualize(true, make_tag("ic"));
+
+  S_old_ = Teuchos::null;
+}
+
+
+/* ******************************************************************
+* Auxiliary function: update all evaluators
+****************************************************************** */
+void
+CycleDriver::WriteStateStatistics_()
+{
+  for (auto r = S_->data_begin(); r != S_->data_end(); ++r) {
+    if (S_->HasEvaluator(r->first, Tags::DEFAULT)) {
+      S_->GetEvaluator(r->first, Tags::DEFAULT).Update(*S_, "cycle driver");
+    }
+  }
+  WriteStateStatistics(*S_, *vo_);
+}
 
 } // namespace Amanzi

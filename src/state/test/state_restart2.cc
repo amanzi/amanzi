@@ -44,15 +44,20 @@ SUITE(RESTART2)
 
     int size = comm->NumProc();
     int rank = comm->MyPID();
-    auto domain_mesh =
+    auto domain_mesh_mstk =
       Teuchos::rcp(new AmanziMesh::Mesh_MSTK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4 * size, 1, 1, comm));
-    auto serial_mesh =
+    auto serial_mesh_mstk =
       Teuchos::rcp(new AmanziMesh::Mesh_MSTK(0, 0, 0, 1, 1, 1, 4, 1, 1, comm_serial));
+    auto domain_mesh = Teuchos::rcp(new AmanziMesh::Mesh(
+      domain_mesh_mstk, Teuchos::rcp(new Amanzi::AmanziMesh::MeshAlgorithms()), Teuchos::null));
+    auto serial_mesh = Teuchos::rcp(new AmanziMesh::Mesh(
+      serial_mesh_mstk, Teuchos::rcp(new Amanzi::AmanziMesh::MeshAlgorithms()), Teuchos::null));
+
 
     auto S = Teuchos::rcp(new State());
     S->RegisterDomainMesh(domain_mesh);
     std::stringstream serial_dname_ss;
-    serial_dname_ss << "serial_" << rank;
+    serial_dname_ss << "serial:" << rank;
 
     std::string serial_dname = serial_dname_ss.str();
     Key serial_fname = Keys::getKey(serial_dname, "field");
@@ -99,7 +104,7 @@ SUITE(RESTART2)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S2.Require<CompositeVector, CompositeVectorSpace>(serial_fname, Tags::DEFAULT, serial_fname)
-      .SetMesh(domain_mesh)
+      .SetMesh(serial_mesh)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S2.Setup();

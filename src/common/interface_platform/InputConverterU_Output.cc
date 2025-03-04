@@ -18,8 +18,6 @@
 #include <string>
 #include <algorithm>
 
-#define BOOST_FILESYTEM_NO_DEPRECATED
-
 // TPLs
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "xercesc/dom/DOM.hpp"
@@ -183,6 +181,9 @@ InputConverterU::TranslateOutput_()
       } else if (strcmp(tagname, "time_macros") == 0 || strcmp(tagname, "time_macro") == 0) {
         text = mm.transcode(jnode->getTextContent());
         ProcessMacros_("times", text, tmPL, visPL);
+      } else if (strcmp(tagname, "time_units") == 0) {
+        text = mm.transcode(jnode->getTextContent());
+        visPL.set<std::string>("time units", TrimString_(text));
       } else if (strcmp(tagname, "write_regions") == 0) {
         DOMNodeList* kids = jnode->getChildNodes();
         for (int k = 0; k < kids->getLength(); ++k) {
@@ -316,6 +317,10 @@ InputConverterU::TranslateOutput_()
         unit = GetAttributeValueS_(inode, "length", TYPE_NONE, false, units_.system().length);
         obsPL.set<std::string>("length unit", unit);
 
+        unit =
+          GetAttributeValueS_(inode, "temperature", TYPE_NONE, false, units_.system().temperature);
+        obsPL.set<std::string>("temperature unit", unit);
+
         unit = GetAttributeValueS_(
           inode, "concentration", TYPE_NONE, false, units_.system().concentration);
         obsPL.set<std::string>("concentration unit", unit);
@@ -391,6 +396,8 @@ InputConverterU::TranslateOutput_()
             obPL.set<std::string>("variable", name.str());
           } else if (strcmp(obs_type, "fractures_aqueous_volumetric_flow_rate") == 0) {
             obPL.set<std::string>("variable", "fractures aqueous volumetric flow rate");
+          } else if (strcmp(obs_type, "temperature") == 0) {
+            obPL.set<std::string>("variable", "temperature");
           }
 
           std::vector<std::string> regions;

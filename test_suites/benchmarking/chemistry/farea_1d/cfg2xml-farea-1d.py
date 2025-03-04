@@ -54,18 +54,18 @@ boilerplate_main_xml = Template(
         <Parameter name="steady min iterations" type="int" value="10"/>
         <Parameter name="steady limit iterations" type="int" value="20"/>
         <Parameter name="steady nonlinear tolerance" type="double" value="1e-12"/>
-        <Parameter name="steady max time step" type="double" value="6.0e+10"/>
+        <Parameter name="steady max timestep" type="double" value="6.0e+10"/>
         <Parameter name="steady max preconditioner lag iterations" type="int" value="4"/>
-        <Parameter name="steady time step reduction factor" type="double" value="0.8"/>
-        <Parameter name="steady time step increase factor" type="double" value="1.25"/>
+        <Parameter name="steady timestep reduction factor" type="double" value="0.8"/>
+        <Parameter name="steady timestep increase factor" type="double" value="1.25"/>
         <Parameter name="transient max iterations" type="int" value="15"/>
         <Parameter name="transient min iterations" type="int" value="10"/>
         <Parameter name="transient limit iterations" type="int" value="20"/>
         <Parameter name="transient nonlinear tolerance" type="double" value="1e-12"/>
-        <Parameter name="transient max time step" type="double" value="6.0e+10"/>
+        <Parameter name="transient max timestep" type="double" value="6.0e+10"/>
         <Parameter name="transient max preconditioner lag iterations" type="int" value="4"/>
-        <Parameter name="transient time step reduction factor" type="double" value="0.8"/>
-        <Parameter name="transient time step increase factor" type="double" value="1.25"/>
+        <Parameter name="transient timestep reduction factor" type="double" value="0.8"/>
+        <Parameter name="transient timestep increase factor" type="double" value="1.25"/>
         <Parameter name="linear solver tolerance" type="double" value="1e-22"/>
       </ParameterList>
     </ParameterList> <!-- Numerical Control Parameters -->

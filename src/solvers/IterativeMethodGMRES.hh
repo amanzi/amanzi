@@ -45,6 +45,34 @@ W.Fichtner, Improving accuracy of GMRES with deflated restarting, 2007 SISC.
 
     * `"maximum size of deflation space`" ``[int]`` **0** Size of the deflation space, see Rollin et al.
 
+.. code-block:: xml
+
+  <ParameterList name="_GMRES with HYPRE AMG">  <!-- parent list -->
+  <ParameterList name="gmres parameters">
+    <Parameter name="error tolerance" type="double" value="1e-12"/>
+    <Parameter name="maximum number of iterations" type="int" value="400"/>
+    <Parameter name="convergence criteria" type="Array(string)" value="{relative residual}"/>
+    <Parameter name="size of Krylov space" type="int" value="10"/>
+    <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
+    <Parameter name="maximum size of deflation space" type="int" value="0"/>
+    <Parameter name="preconditioning strategy`" type="string" value="left"/>
+    <Parameter name="release Krylov vectors" type="bool" value="false"/>
+
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
+    </ParameterList>
+  </ParameterList>
+
+  <!-- Alternative implementation
+  <ParameterList name="belos gmres parameters">
+    <Parameter name="error tolerance" type="double" value="1e-12"/>
+    <Parameter name="maximum number of iterations" type="int" value="400"/>
+    <Parameter name="convergence criteria" type="Array(string)" value="{relative residual}"/>
+    <Parameter name="size of Krylov space" type="int" value="10"/>
+    <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
+  </ParameterList-->
+  </ParameterList>
+
 */
 
 #ifndef AMANZI_GMRES_OPERATOR_HH_

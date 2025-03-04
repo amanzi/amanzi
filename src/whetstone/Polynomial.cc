@@ -99,7 +99,7 @@ Polynomial::Polynomial(const Monomial& mono)
 ****************************************************************** */
 Polynomial::Polynomial(int d,
                        int order,
-                       const std::vector<AmanziGeometry::Point>& xyz,
+                       const AmanziMesh::Point_List& xyz,
                        const DenseVector& values)
   : PolynomialBase(d, order)
 {
@@ -402,8 +402,7 @@ Polynomial::Value(const AmanziGeometry::Point& xp) const
 * Note: the resulting polynomial is centered at the new local origin.
 ****************************************************************** */
 void
-Polynomial::ChangeCoordinates(const AmanziGeometry::Point& x0,
-                              const std::vector<AmanziGeometry::Point>& B)
+Polynomial::ChangeCoordinates(const AmanziGeometry::Point& x0, const AmanziMesh::Point_List& B)
 {
   int dnew = B.size();
   AMANZI_ASSERT(dnew > 0);
@@ -477,7 +476,7 @@ Polynomial::ChangeCoordinates(const AmanziGeometry::Point& x0,
 ****************************************************************** */
 void
 Polynomial::InverseChangeCoordinates(const AmanziGeometry::Point& x0,
-                                     const std::vector<AmanziGeometry::Point>& B)
+                                     const AmanziMesh::Point_List& B)
 {
   int dnew = x0.dim();
 

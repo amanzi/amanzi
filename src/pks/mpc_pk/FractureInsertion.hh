@@ -42,6 +42,8 @@ class FractureInsertion {
   void InitMatrixCellToFractureCell();
 
   // -- compute coupling coefficients
+  //    values may have two columns for two fracture sides unless they
+  //    are iquel and only one number is needed
   void SetValues(const Epetra_MultiVector& values, double scale);
   void SetValues(const CompositeVector& flux);
 

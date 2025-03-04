@@ -29,7 +29,7 @@ include_directories(${CHEM_INCLUDES_DIR})
 include_directories(${Alquimia_INCLUDE_DIRS})
 
 # External (TPL) include directories
-include_directories(${Teuchos_INCLUDE_DIRS})
+include_directories(${Trilinos_INCLUDE_DIRS})
 include_directories(${HDF5_INCLUDE_DIRS})
 
 set(CXX_source_files Observation.cpp

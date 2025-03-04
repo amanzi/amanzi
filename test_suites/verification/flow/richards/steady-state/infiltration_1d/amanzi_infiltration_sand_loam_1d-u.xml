@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="2.3.0">
+<amanzi_input type="unstructured" version="1.6-dev">
     <model_description name="Richards-1D-infiltration_sand_loam" />
     <definitions>
       <macros>
@@ -90,7 +90,7 @@
     <materials>
       <material name="loam">
         <mechanical_properties>
-          <porosity value="0.43" />
+          <porosity model="constant" value="0.43" />
           <particle_density value="2720.0" />
         </mechanical_properties>
         <permeability x="5.92360e-13" y="5.92360e-13" z="5.92360e-13" />
@@ -102,7 +102,7 @@
       </material>
       <material name="sand">
         <mechanical_properties>
-          <porosity value="0.43" />
+          <porosity model="constant" value="0.43" />
           <particle_density value="2720.0" />
         </mechanical_properties>
         <permeability x="1.18472E-11" y="1.18472E-11" z="1.18472E-11" />
@@ -115,8 +115,8 @@
     </materials>
     <phases>
       <liquid_phase name="water">
-        <viscosity>1.002e-3</viscosity>
-        <density>998.2</density>
+        <eos model="constant" viscosity="1.002e-03" density="998.2"/> 
+        <molar_mass>0.018015</molar_mass>
         <dissolved_components>
         </dissolved_components>
       </liquid_phase>
@@ -129,6 +129,7 @@
             <uniform_pressure value="81747.0" />
           </liquid_component>
         </liquid_phase>
+        <uniform_temperature value="298.0"/>
       </initial_condition>
     </initial_conditions>
     <boundary_conditions>

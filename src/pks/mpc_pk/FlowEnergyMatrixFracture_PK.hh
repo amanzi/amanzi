@@ -46,30 +46,27 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
 
   // -- advance each sub pk from t_old to t_new.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
-  // virtual void CommitStep(double t_old, double t_new, const Tag& tag);
 
   virtual void FunctionalResidual(double t_old,
                                   double t_new,
-                                  Teuchos::RCP<TreeVector> u_old,
+                                  Teuchos::RCP<const TreeVector> u_old,
                                   Teuchos::RCP<TreeVector> u_new,
                                   Teuchos::RCP<TreeVector> f) override;
 
-  // updates the preconditioner
+  // -- preconditioner
   virtual void
   UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt) override;
 
-  // preconditioner application
   virtual int
   ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) override;
 
+  // -- error norm for coupled system
   virtual double
   ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) override;
 
   std::string name() override { return "thermal flow matrix fracture"; }
 
  private:
-  void AddDefaultPrimaryEvaluator_(const Key& key, const Tag& tag);
-
   // use flag to avoid double counting of coupling terms for Darcy PK
   std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux>>
   AddCouplingFluxes_(const Teuchos::RCP<CompositeVectorSpace>& cvs_matrix,
@@ -79,9 +76,6 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
                      std::shared_ptr<const std::vector<double>> values,
                      int i,
                      Teuchos::RCP<Operators::TreeOperator>& op_tree);
-
-  void
-  UpdateCouplingFluxes_(const std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux>>& adv_coupling);
 
   void SwapEvaluatorField_(const Key& key,
                            Teuchos::RCP<CompositeVector>& fdm_copy,
@@ -97,8 +91,8 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   const Teuchos::RCP<Teuchos::ParameterList>& glist_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain_, mesh_fracture_;
 
-  Key normal_permeability_key_, normal_conductivity_key_;
-  Key matrix_vol_flowrate_key_, fracture_vol_flowrate_key_;
+  Key matrix_mol_flowrate_key_;
+  Key diffusion_to_matrix_key_, heat_diffusion_to_matrix_key_;
 
   std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux>> adv_coupling_matrix_, adv_coupling_pc_;
 

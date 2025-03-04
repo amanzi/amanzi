@@ -27,42 +27,16 @@
 
 namespace Amanzi {
 
-class StateArchive {
- public:
-  StateArchive() = delete;
-  StateArchive(Teuchos::RCP<State>& S, Teuchos::RCP<VerboseObject>& vo) : S_(S), vo_(vo){};
-
-  void Add(std::vector<std::string> fields,
-           std::vector<std::string> evals,
-           std::vector<std::string> primary,
-           const Tag& tag,
-           const std::string& requestor);
-
-  void Restore(const std::string& passwd);
-
-  void Swap(const std::string& passwd);
-
-  // access
-  const CompositeVector& get(const std::string& name);
-
- private:
-  Teuchos::RCP<State> S_;
-  Teuchos::RCP<VerboseObject> vo_;
-
-  Tag tag_;
-  std::vector<std::string> primary_;
-  std::map<std::string, CompositeVector> fields_, evals_;
-};
-
-
-// Miscalleneous functions.
 // Average permeability tensor in horizontal direction.
 void
 PKUtils_CalculatePermeabilityFactorInWell(const Teuchos::Ptr<State>& S,
-                                          Teuchos::RCP<Epetra_Vector>& Kxy);
+                                          Teuchos::RCP<Epetra_MultiVector>& Kxy);
 
 AmanziGeometry::Point
 PKUtils_EntityCoordinates(int id, AmanziMesh::Entity_ID kind, const AmanziMesh::Mesh& mesh);
+
+void
+PKUtils_FluxToVector(const State& S, const CompositeVector& flux, CompositeVector& grad);
 
 } // namespace Amanzi
 

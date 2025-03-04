@@ -35,6 +35,7 @@ Chemistry_PK::Chemistry_PK()
     using_sorption_(false),
     using_sorption_isotherms_(false),
     number_ion_exchange_sites_(0),
+    dt_(9.9e+9),
     dt_max_(9.9e9){};
 
 
@@ -52,7 +53,18 @@ Chemistry_PK::Chemistry_PK(Teuchos::ParameterList& pk_tree,
     using_sorption_(false),
     using_sorption_isotherms_(false),
     number_ion_exchange_sites_(0),
+    dt_(9.9e+9),
     dt_max_(9.9e9){};
+
+
+/* ******************************************************************
+* Parser
+******************************************************************* */
+void
+Chemistry_PK::parseParameterList()
+{
+  saturation_tolerance_ = plist_->get<double>("saturation tolerance", 1e-14);
+}
 
 
 /* ******************************************************************
@@ -61,35 +73,36 @@ Chemistry_PK::Chemistry_PK(Teuchos::ParameterList& pk_tree,
 void
 Chemistry_PK::Setup()
 {
-  saturation_tolerance_ = plist_->get<double>("saturation tolerance", 1e-14);
+  bool amanzi_physics = plist_->isSublist("physical models and assumptions");
 
   // require flow fields
   S_->Require<CV_t, CVS_t>(poro_key_, Tags::DEFAULT, poro_key_)
     .SetMesh(mesh_)
     ->SetGhosted(false)
-    ->AddComponent("cell", AmanziMesh::CELL, 1);
+    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   S_->RequireEvaluator(poro_key_, Tags::DEFAULT);
 
   if (!S_->HasRecord(saturation_key_, Tags::DEFAULT)) {
     S_->Require<CV_t, CVS_t>(saturation_key_, Tags::DEFAULT, saturation_key_)
       .SetMesh(mesh_)
       ->SetGhosted(false)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S_->RequireEvaluator(saturation_key_, Tags::DEFAULT);
   }
   // REMOVE after #646 is fixed
-  if (!S_->HasRecord(saturation_key_, Tags::CURRENT)) {
+  // meanwhile we check for the physics module via presence of a particular sublist
+  if (!S_->HasRecord(saturation_key_, Tags::CURRENT) && !amanzi_physics) {
     S_->Require<CV_t, CVS_t>(saturation_key_, Tags::CURRENT, saturation_key_)
       .SetMesh(mesh_)
       ->SetGhosted(false)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S_->RequireEvaluator(saturation_key_, Tags::CURRENT);
   }
 
   S_->Require<CV_t, CVS_t>(fluid_den_key_, Tags::DEFAULT, fluid_den_key_)
     .SetMesh(mesh_)
     ->SetGhosted(false)
-    ->AddComponent("cell", AmanziMesh::CELL, 1);
+    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   S_->RequireEvaluator(fluid_den_key_, Tags::DEFAULT);
 
   // require transport fields
@@ -98,7 +111,7 @@ Chemistry_PK::Setup()
     S_->Require<CV_t, CVS_t>(tcc_key_, tag_next_, passwd_, comp_names_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, number_aqueous_components_);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_components_);
   }
 
   // require minerals
@@ -106,17 +119,17 @@ Chemistry_PK::Setup()
     S_->Require<CV_t, CVS_t>(min_vol_frac_key_, tag_next_, passwd_, mineral_names_)
       .SetMesh(mesh_)
       ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::CELL, number_minerals_);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_minerals_);
 
     S_->Require<CV_t, CVS_t>(min_ssa_key_, tag_next_, passwd_, mineral_names_)
       .SetMesh(mesh_)
       ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::CELL, number_minerals_);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_minerals_);
 
     S_->Require<CV_t, CVS_t>(mineral_rate_constant_key_, tag_next_, passwd_, mineral_names_)
       .SetMesh(mesh_)
       ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::CELL, number_minerals_);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_minerals_);
   }
 
   // require aqueous kinetics
@@ -131,7 +144,7 @@ Chemistry_PK::Setup()
     S_->Require<CV_t, CVS_t>(first_order_decay_constant_key_, tag_next_, passwd_, subfield_names)
       .SetMesh(mesh_)
       ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::CELL, number_aqueous_kinetics_);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_kinetics_);
   }
 
   // require sorption sites
@@ -146,34 +159,34 @@ Chemistry_PK::Setup()
     S_->Require<CV_t, CVS_t>(sorp_sites_key_, tag_next_, passwd_, ss_names_cv)
       .SetMesh(mesh_)
       ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::CELL, number_sorption_sites_);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_sorption_sites_);
     S_->Require<CV_t, CVS_t>(surf_cfsc_key_, tag_next_, passwd_, scfsc_names_cv)
       .SetMesh(mesh_)
       ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::CELL, number_sorption_sites_);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_sorption_sites_);
   }
 
   if (using_sorption_) {
     S_->Require<CV_t, CVS_t>(total_sorbed_key_, tag_next_, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::CELL, number_aqueous_components_);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_components_);
 
     if (using_sorption_isotherms_) {
       S_->Require<CV_t, CVS_t>(isotherm_kd_key_, tag_next_, passwd_)
         .SetMesh(mesh_)
         ->SetGhosted(false)
-        ->SetComponent("cell", AmanziMesh::CELL, number_aqueous_components_);
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_components_);
 
       S_->Require<CV_t, CVS_t>(isotherm_freundlich_n_key_, tag_next_, passwd_)
         .SetMesh(mesh_)
         ->SetGhosted(false)
-        ->SetComponent("cell", AmanziMesh::CELL, number_aqueous_components_);
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_components_);
 
       S_->Require<CV_t, CVS_t>(isotherm_langmuir_b_key_, tag_next_, passwd_)
         .SetMesh(mesh_)
         ->SetGhosted(false)
-        ->SetComponent("cell", AmanziMesh::CELL, number_aqueous_components_);
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_components_);
     }
   }
 
@@ -182,24 +195,24 @@ Chemistry_PK::Setup()
     S_->Require<CV_t, CVS_t>(free_ion_species_key_, tag_next_, passwd_, comp_names_)
       .SetMesh(mesh_)
       ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::CELL, number_aqueous_components_);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_components_);
 
     S_->Require<CV_t, CVS_t>(primary_activity_coeff_key_, tag_next_, passwd_, comp_names_)
       .SetMesh(mesh_)
       ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::CELL, number_aqueous_components_);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_components_);
   }
 
   if (number_ion_exchange_sites_ > 0) {
     S_->Require<CV_t, CVS_t>(ion_exchange_sites_key_, tag_next_, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::CELL, number_ion_exchange_sites_);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_ion_exchange_sites_);
 
     S_->Require<CV_t, CVS_t>(ion_exchange_ref_cation_conc_key_, tag_next_, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::CELL, number_ion_exchange_sites_);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_ion_exchange_sites_);
   }
 }
 
@@ -348,7 +361,7 @@ void
 Chemistry_PK::ErrorAnalysis(int ierr, std::string& internal_msg)
 {
   int tmp_out[2], tmp_in[2] = { ierr, (int)internal_msg.size() };
-  mesh_->get_comm()->MaxAll(tmp_in, tmp_out, 2);
+  mesh_->getComm()->MaxAll(tmp_in, tmp_out, 2);
 
   if (tmp_out[0] != 0) {
     // update time control parameters
@@ -357,11 +370,11 @@ Chemistry_PK::ErrorAnalysis(int ierr, std::string& internal_msg)
 
     // get at least one error message
     int n = tmp_out[1];
-    int msg_out[n + 1], msg_in[n + 1], m(mesh_->get_comm()->MyPID());
+    int msg_out[n + 1], msg_in[n + 1], m(mesh_->getComm()->MyPID());
     internal_msg.resize(n);
 
     Errors::encode_string(internal_msg, n, m, msg_in);
-    mesh_->get_comm()->MaxAll(msg_in, msg_out, n + 1);
+    mesh_->getComm()->MaxAll(msg_in, msg_out, n + 1);
     Errors::decode_string(msg_out, n, internal_msg);
 
     vo_->Write(Teuchos::VERB_HIGH, internal_msg);

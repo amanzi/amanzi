@@ -15,22 +15,14 @@
 
 #include <algorithm>
 #include <cfloat>
+#include <filesystem>
 #include <fstream>
 #include <locale>
-#include <cfloat>
 #include <sstream>
 #include <string>
 #include <sys/stat.h>
 
 // TPLs
-#include <boost/filesystem/operations.hpp>
-
-#include "errors.hh"
-#include "exceptions.hh"
-#include "dbc.hh"
-
-#define BOOST_FILESYTEM_NO_DEPRECATED
-
 #include "xercesc/dom/DOM.hpp"
 #include "xercesc/util/XMLString.hpp"
 #include "xercesc/util/PlatformUtils.hpp"
@@ -40,9 +32,12 @@
 #include "xercesc/util/OutOfMemoryException.hpp"
 
 // Amanzi's
+#include "dbc.hh"
 #include "ErrorHandler.hpp"
-#include "StringExt.hh"
+#include "errors.hh"
+#include "exceptions.hh"
 #include "InputConverter.hh"
+#include "StringExt.hh"
 
 namespace Amanzi {
 namespace AmanziInput {
@@ -153,7 +148,7 @@ InputConverter::ParseVersion_()
   if (node_list->getLength() > 0) {
     std::string version = GetAttributeValueS_(node_list->item(0), "version");
 
-    int major, minor, micro;
+    int major, minor;
 
     std::stringstream ss;
     ss << version;
@@ -163,26 +158,26 @@ InputConverter::ParseVersion_()
       getline(ss, ver, '.');
       major = std::stoi(ver);
 
-      getline(ss, ver, '.');
+      getline(ss, ver, '-');
       minor = std::stoi(ver);
 
       getline(ss, ver);
-      micro = std::stoi(ver);
+      // micro = std::stoi(ver);
     } catch (...) {
       Errors::Message msg("The version string in the input file '" + version +
-                          "' has the wrong format, use I.J.K.");
+                          "' has the wrong format, use I.J.K. or I.J-dev");
       Exceptions::amanzi_throw(msg);
     }
 
     if ((major != AMANZI_SPEC_VERSION_MAJOR) || (minor != AMANZI_SPEC_VERSION_MINOR) ||
-        (micro < AMANZI_SPEC_VERSION_MICRO)) {
+        (ver != AMANZI_SPEC_VERSION_MICRO)) {
       std::stringstream ss1;
-      ss1 << AMANZI_SPEC_VERSION_MAJOR << "." << AMANZI_SPEC_VERSION_MINOR << "."
+      ss1 << AMANZI_SPEC_VERSION_MAJOR << "." << AMANZI_SPEC_VERSION_MINOR << "-"
           << AMANZI_SPEC_VERSION_MICRO;
 
       Errors::Message msg;
       msg << "The input version " << version << " is not supported. "
-          << "Supported versions: " << ss1.str() << " and higher.\n";
+          << "Supported versions is " << ss1.str() << ".\n";
       Exceptions::amanzi_throw(msg);
     }
   } else {
@@ -586,6 +581,17 @@ InputConverter::GetSameChildNodes_(DOMNode* node, std::string& name, bool& flag,
 
 
 /* ******************************************************************
+* Verifies existance
+****************************************************************** */
+bool
+InputConverter::HasAttribute_(DOMElement* elem, const char* attr_name)
+{
+  MemoryManager mm;
+  return elem->hasAttribute(mm.transcode(attr_name));
+}
+
+
+/* ******************************************************************
 * Extract attribute of type double.
 ****************************************************************** */
 double
@@ -633,8 +639,8 @@ InputConverter::GetAttributeValueD_(DOMElement* elem,
     }
 
     if (!(val >= valmin && val <= valmax)) {
-      msg << "Value of attribute \"" << attr_name << "\"=" << val
-          << "\" is out of range: " << valmin << " " << valmax << " [" << unit << "].\n";
+      msg << "Value of attribute \"" << attr_name << "\"=" << val << " is out of range: " << valmin
+          << " " << valmax << " [" << unit << "].\n";
       Exceptions::amanzi_throw(msg);
     }
 
@@ -958,8 +964,7 @@ InputConverter::GetTextContentD_(DOMNode* node,
   } else if (!exception) {
     val = default_val;
   } else {
-    char* tagname = mm.transcode(node->getNodeName());
-    ThrowErrorMisschild_("unknown", tagname, "unknwon");
+    ThrowErrorMisschild_("unknown", "unknown", "unknwon");
   }
 
   return val;
@@ -993,6 +998,34 @@ InputConverter::GetTextContentS_(DOMNode* node, const char* options, bool except
   }
 
   return val;
+}
+
+
+/* ******************************************************************
+* Extract text content and verify its boolean meaning.
+****************************************************************** */
+bool
+InputConverter::GetTextContentL_(DOMNode* node, bool exception)
+{
+  std::string val;
+
+  MemoryManager mm;
+  std::string text = TrimString_(mm.transcode(node->getTextContent()));
+  GetConstantType_(text, val);
+
+  if (val == "false") return false;
+  if (val == "true") return true;
+
+  if (exception) {
+    char* tagname = mm.transcode(node->getNodeName());
+    Errors::Message msg;
+    msg << "Validation of content \"" << val << "\" for node \"" << tagname << "\" failed.\n";
+    msg << "Available options: \"false\" or \"true\".\n";
+    msg << "Please correct and try again.\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  return false;
 }
 
 
@@ -1149,7 +1182,7 @@ InputConverter::TimeCharToValue_(const char* time_value)
   char* tmp2 = strtok(tmp1, ";, ");
 
   time = std::strtod(tmp2, NULL);
-  tmp2 = strtok(NULL, ";,");
+  tmp2 = strtok(NULL, ";, ");
 
   // if units were found
   if (tmp2 != NULL) {
@@ -1367,7 +1400,7 @@ InputConverter::CreateINFile_(std::string& filename, int rank)
   else
     path.erase(path.begin() + pos0, path.end());
 
-  controls << "  DATABASE " << boost::filesystem::relative(datfilename, path).string().c_str()
+  controls << "  DATABASE " << std::filesystem::relative(datfilename, path).string().c_str()
            << "\n";
 
   base = GetUniqueElementByTagsString_(

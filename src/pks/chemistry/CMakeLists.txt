@@ -49,7 +49,7 @@ set(chem_inc_files
                    Alquimia_PK.hh
                    Amanzi_PK.hh
                    Chemistry_PK.hh
-                   pks_chemistry_registration.hh
+                   pks_chemistry_reg.hh
 )
 
 #
@@ -114,7 +114,7 @@ if (BUILD_TESTS AND ENABLE_Unstructured)
       
       # The following test is disabled in parallel environments. It has to be rewritten in order 
       # to function properly there.
-      add_amanzi_test(chemistry_benchmarks_1d chemistry_benchmark_1d
+      add_amanzi_test(chemistry_benchmarks_1d chemistry_benchmarks_1d
                       KIND int
                       SOURCE test/chemistry_benchmarks_1d.cc
                       LINK_LIBS chemistry_pk state pks data_structures operators

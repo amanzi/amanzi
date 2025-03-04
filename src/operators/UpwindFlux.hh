@@ -28,7 +28,7 @@
 // Amanzi
 #include "CompositeVector.hh"
 #include "Mesh.hh"
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 
 // Operators
 #include "UniqueLocalIndex.hh"
@@ -45,10 +45,8 @@ class UpwindFlux : public Upwind {
   // main methods
   void Init(Teuchos::ParameterList& plist);
 
-  void Compute(const CompositeVector& flux,
-               const CompositeVector& solution,
-               const std::vector<int>& bc_model,
-               CompositeVector& field);
+  void
+  Compute(const CompositeVector& flux, const std::vector<int>& bc_model, CompositeVector& field);
 
  private:
   int method_, order_;

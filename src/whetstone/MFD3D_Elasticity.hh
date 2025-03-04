@@ -22,7 +22,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 #include "Point.hh"
 
 #include "BilinearFormFactory.hh"
@@ -33,29 +33,32 @@
 namespace Amanzi {
 namespace WhetStone {
 
+class Polynomial;
+
 class MFD3D_Elasticity : public MFD3D {
  public:
   MFD3D_Elasticity(const Teuchos::ParameterList& plist,
-                   const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
+                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : MFD3D(mesh){};
 
   // required methods
   // -- schema
   virtual std::vector<SchemaItem> schema() const override
   {
-    return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::NODE, DOF_Type::SCALAR, d_));
+    return std::vector<SchemaItem>(
+      1, std::make_tuple(AmanziMesh::Entity_kind::NODE, DOF_Type::POINT, d_));
   }
 
-  // -- mass matrices
-  int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
-
-  // -- stiffness matrix
+  // -- stiffness matrices
   int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 
   // optimization methods (mainly for research, since the maximum principle does not exists)
   int StiffnessMatrixOptimized(int c, const Tensor& T, DenseMatrix& A);
   int StiffnessMatrixMMatrix(int c, const Tensor& T, DenseMatrix& A);
+
+  // projectors
+  virtual void H1Cell(int c, const DenseVector& dofs, Tensor& vc) override;
 
  private:
   void MatrixMatrixProduct_(const DenseMatrix& A,
@@ -64,7 +67,9 @@ class MFD3D_Elasticity : public MFD3D {
                             DenseMatrix& AB);
 
  private:
-  static RegisteredFactory<MFD3D_Elasticity> factory_;
+  DenseMatrix coefM_, R_;
+
+  static RegisteredFactory<MFD3D_Elasticity> reg_;
 };
 
 } // namespace WhetStone

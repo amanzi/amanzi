@@ -44,10 +44,8 @@ class UpwindSecondOrder : public Upwind {
 
   // -- upwind of a given cell-centered field on mesh faces
   // -- not all input parameters are use by some algorithms
-  void Compute(const CompositeVector& flux,
-               const CompositeVector& solution,
-               const std::vector<int>& bc_model,
-               CompositeVector& field);
+  void
+  Compute(const CompositeVector& flux, const std::vector<int>& bc_model, CompositeVector& field);
 
   // -- returns combined map for the original and upwinded fields.
   // -- Currently, composite vector cannot be extended on a fly.
@@ -56,9 +54,9 @@ class UpwindSecondOrder : public Upwind {
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)
       ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->AddComponent("face", AmanziMesh::FACE, 1)
-      ->AddComponent("grad", AmanziMesh::CELL, mesh_->space_dimension());
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1)
+      ->AddComponent("grad", AmanziMesh::Entity_kind::CELL, mesh_->getSpaceDimension());
     return cvs;
   }
 

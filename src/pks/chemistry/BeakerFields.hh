@@ -22,7 +22,7 @@ namespace AmanziChemistry {
 struct BeakerFields {
   Teuchos::RCP<const Epetra_MultiVector> porosity;
   Teuchos::RCP<const Epetra_MultiVector> density;
-  Teuchos::RCP<const Epetra_MultiVector> saturation;
+  Teuchos::RCP<const Epetra_MultiVector> saturation, prev_saturation;
   Teuchos::RCP<const Epetra_MultiVector> temperature;
 
   Teuchos::RCP<Epetra_MultiVector> free_ion;

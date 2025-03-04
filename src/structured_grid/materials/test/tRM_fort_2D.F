@@ -25,7 +25,7 @@
       REAL_T  s(DIMV(s))
       integer m(DIMV(m))
       REAL_T  p(DIMV(p))
-      integer i,j,Nx
+      integer j,Nx
 
       Nx = hi(1) - lo(1) + 1
       do j = lo(2),hi(2)
@@ -48,7 +48,7 @@
       REAL_T  p(DIMV(p))
       integer m(DIMV(m))
       REAL_T  s(DIMV(s))
-      integer i,j,Nx
+      integer j,Nx
 
       Nx = hi(1) - lo(1) + 1
       do j = lo(2),hi(2)
@@ -71,7 +71,7 @@
       REAL_T  s(DIMV(s))
       integer m(DIMV(m))
       REAL_T  kr(DIMV(kr))
-      integer i,j,Nx
+      integer j,Nx
 
       Nx = hi(1) - lo(1) + 1
       do j = lo(2),hi(2)
@@ -94,7 +94,7 @@
       REAL_T  s(DIMV(s))
       integer m(DIMV(m))
       REAL_T  dsdp(DIMV(dsdp))
-      integer i,j,Nx
+      integer j,Nx
 
       Nx = hi(1) - lo(1) + 1
       do j = lo(2),hi(2)

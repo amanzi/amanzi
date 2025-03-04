@@ -87,7 +87,7 @@ class HDF5_MPI {
 
   // Create h5 file for data output, create accompanying Xdmf files for Visit
   void createDataFile(const std::string& data_filename);
-  // Adds time step attributes to VisIt Xdmf files.  Creates
+  // Adds timestep attributes to VisIt Xdmf files.  Creates
   // individual Xdmf for the current step.
   // TODO(barker): Consolidate into a singel Xdmf file, after VisIt updates.
   void createTimestep(double time, int iteration, const std::string& tag);
@@ -125,7 +125,7 @@ class HDF5_MPI {
   void writeDataInt(const Epetra_Vector& x, const std::string& varname);
 
   // Read array data from HDF5 data file.
-  bool readData(Epetra_Vector& x, const std::string varname);
+  void readData(Epetra_Vector& x, const std::string varname);
 
   // Write and read string datasets
   void writeDataString(char** x, int num_entries, const std::string& varname);
@@ -157,15 +157,17 @@ class HDF5_MPI {
                        const std::string& varname,
                        datatype_t type,
                        std::string loc);
-  bool readFieldData_(Epetra_Vector& x, const std::string& varname, datatype_t type);
+  int readFieldData_(Epetra_Vector& x, const std::string& varname, datatype_t type);
 
   bool checkFieldData_(const std::string& varname);
 
-  int getCellTypeID_(AmanziMesh::Cell_type type);
+  int getCellTypeID_(AmanziMesh::Cell_kind type);
 
   std::set<std::string> extractFields_(const Teuchos::XMLObject& xml);
 
   std::string stripFilename_(std::string filename);
+
+  void checkThrow_(int ierr, const std::string& varname, const std::string& filename);
 
   // mesh
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

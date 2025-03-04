@@ -16,6 +16,7 @@
 #ifndef AMANZI_MULTIPHASE_MOLAR_FRACTION_LIQUID_HH_
 #define AMANZI_MULTIPHASE_MOLAR_FRACTION_LIQUID_HH_
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -26,13 +27,13 @@
 #include "Factory.hh"
 
 // Multiphase
-#include "MultiphaseBaseEvaluator.hh"
+#include "MultiphaseEvaluator.hh"
 #include "MultiphaseTypeDefs.hh"
 
 namespace Amanzi {
 namespace Multiphase {
 
-class MoleFractionLiquid : public MultiphaseBaseEvaluator {
+class MoleFractionLiquid : public MultiphaseEvaluator {
  public:
   MoleFractionLiquid(Teuchos::ParameterList& plist);
 
@@ -47,7 +48,7 @@ class MoleFractionLiquid : public MultiphaseBaseEvaluator {
                                           const std::vector<CompositeVector*>& results) override;
 
  private:
-  std::string x_gas_key_, pressure_gas_key_;
+  std::string x_gas_key_, pressure_gas_key_, temperature_key_;
 
   static Utils::RegisteredFactory<Evaluator, MoleFractionLiquid> fac_;
 };

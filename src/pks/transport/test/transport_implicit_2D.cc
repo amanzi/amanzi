@@ -103,13 +103,13 @@ runTest(int order, const std::string& linsolver)
 
   double err(0.0);
   for (int c = 0; c < tcc.MyLength(); ++c) {
-    const auto& xc = mesh->cell_centroid(c);
+    const auto& xc = mesh->getCellCentroid(c);
     err += fabs(tcc[0][c] - std::erfc(xc[0] / 2));
     // std::cout << xc << " " << tcc[0][c] << std::endl;
   }
 
   double err_tmp(err);
-  mesh->get_comm()->SumAll(&err_tmp, &err, 1);
+  mesh->getComm()->SumAll(&err_tmp, &err, 1);
   err /= tcc.GlobalLength();
   std::cout << "Mean error in fracture: " << err << std::endl;
   CHECK(err < 1e-3);

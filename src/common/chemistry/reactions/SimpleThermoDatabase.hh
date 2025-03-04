@@ -7,8 +7,9 @@
   Authors:
 */
 
-/*
-  Chemistry
+/*!
+
+The thermodynamic database has a few sections, some of them are optional.
 
 */
 

@@ -13,6 +13,7 @@
 
 */
 
+#include <filesystem>
 #include <sstream>
 #include <fstream>
 #include <string>
@@ -20,11 +21,6 @@
 #include <climits>
 
 // TPLs
-#define BOOST_FILESYTEM_NO_DEPRECATED
-#include "boost/filesystem/operations.hpp"
-#include "boost/filesystem/path.hpp"
-#include "boost/format.hpp"
-
 #include <xercesc/dom/DOM.hpp>
 #include <xercesc/util/PlatformUtils.hpp>
 #include <xercesc/parsers/DOMLSParserImpl.hpp>
@@ -66,7 +62,7 @@ InputConverterU::TranslateMesh_()
 
   bool flag, read(false), generate(false);
   std::string framework, verify;
-  std::string partitioner = "NOT_SPECIFIED";
+  std::string partitioner = "metis";
   Errors::Message msg;
   Teuchos::ParameterList mesh_list;
 
@@ -128,6 +124,12 @@ InputConverterU::TranslateMesh_()
         mesh_list.set<Teuchos::Array<int>>("number of cells", ncells);
         mesh_list.set<Teuchos::Array<double>>("domain low coordinate", low);
         mesh_list.set<Teuchos::Array<double>>("domain high coordinate", high);
+
+        node = GetUniqueElementByTagsString_(inode, "submesh", flag);
+        if (flag) {
+          auto regions = GetAttributeVectorS_(node, "regions");
+          mesh_list.set<Teuchos::Array<std::string>>("regions", regions);
+        }
       }
 
       // Un unstructured mesh will be read from a file.
@@ -158,11 +160,12 @@ InputConverterU::TranslateMesh_()
               // attach the right extensions as required by Nemesis file naming conventions
               // in which files are named as mymesh.par.N.r where N = numproc and r is rank
               int ndigits = (int)floor(log10(num_proc_)) + 1;
-              std::string fmt = boost::str(boost::format("%%s.%%d.%%0%dd") % ndigits);
-              std::string tmp = boost::str(boost::format(fmt) % par_filename % num_proc_ % rank_);
-              boost::filesystem::path p(tmp);
+              std::stringstream ss;
+              ss << par_filename << "." << std::to_string(num_proc_) << "." << std::setw(ndigits)
+                 << std::setfill('0') << rank_;
+              std::filesystem::path p(ss.str());
 
-              if (boost::filesystem::exists(p)) filename = par_filename;
+              if (std::filesystem::exists(p)) filename = par_filename;
             }
             mesh_list.set<std::string>("file", filename);
           }
@@ -175,24 +178,23 @@ InputConverterU::TranslateMesh_()
   }
 
   if (generate || read) {
-    Teuchos::ParameterList& tmp_list = out_list.sublist("unstructured").sublist("expert");
     if (strcmp(framework.c_str(), "mstk") == 0) {
-      tmp_list.set<std::string>("framework", "MSTK");
+      out_list.set<std::string>("framework", "MSTK");
     } else if (strcmp(framework.c_str(), "moab") == 0) {
-      tmp_list.set<std::string>("framework", "MOAB");
+      out_list.set<std::string>("framework", "MOAB");
     } else if (strcmp(framework.c_str(), "simple") == 0) {
-      tmp_list.set<std::string>("framework", "Simple");
-    } else if (strcmp(framework.c_str(), "stk::mesh") == 0) {
-      tmp_list.set<std::string>("framework", "stk::mesh");
+      out_list.set<std::string>("framework", "Simple");
     } else {
       msg << "Amanzi::InputConverter: an error occurred during parsing mesh.\n"
           << "  Unknown framework \"" << framework << "\".\n";
       Exceptions::amanzi_throw(msg);
     }
     if (strcmp(verify.c_str(), "true") == 0) {
-      tmp_list.set<bool>("verify mesh", (strcmp(verify.c_str(), "true") == 0));
+      out_list.sublist("unstructured")
+        .sublist("expert")
+        .set<bool>("verify mesh", (strcmp(verify.c_str(), "true") == 0));
     }
-    if (partitioner != "") tmp_list.set<std::string>("partitioner", partitioner);
+    if (partitioner != "") out_list.set<std::string>("partitioner", partitioner);
   }
 
   if (generate) {
@@ -358,6 +360,18 @@ InputConverterU::TranslateRegions_()
           .set<Teuchos::Array<double>>("coordinate", coord);
       }
 
+      else if (strcmp(node_name, "level_set") == 0) {
+        tree_["regions"].push_back(reg_name);
+
+        int dim = GetAttributeValueL_(reg_elem, "dimension");
+        std::string formula = GetAttributeValueS_(reg_elem, "formula");
+
+        out_list.sublist(reg_name)
+          .sublist("region: level set")
+          .set<int>("dimension", dim)
+          .set<std::string>("formula", formula);
+      }
+
       else if (strcmp(node_name, "polygonal_surface") == 0) {
         tree_["regions"].push_back(reg_name);
 
@@ -452,7 +466,7 @@ InputConverterU::TranslateRegions_()
         std::vector<double> low = GetAttributeVectorD_(reg_elem, "corner_coordinates", dim_, "m");
         std::vector<double> high =
           GetAttributeVectorD_(reg_elem, "opposite_corner_coordinates", dim_, "m");
-        std::vector<double> normals = GetAttributeVectorD_(reg_elem, "normals", dim_, "", false);
+        std::vector<double> normals = GetAttributeVectorD_(reg_elem, "normals", dim_ * dim_, "", false);
 
         out_list.sublist(reg_name)
           .sublist("region: box volume fractions")
@@ -509,6 +523,23 @@ InputConverterU::CreateRegionAll_()
   all.set<Teuchos::Array<double>>("high coordinate", high);
 
   return out_list;
+}
+
+
+/* ******************************************************************
+* Create global region.
+****************************************************************** */
+void
+InputConverterU::CreateSubmesh_(Teuchos::ParameterList& mesh_list, bool all_faces)
+{
+  Teuchos::Array<std::string> aux(1, "FRACTURE_NETWORK_INTERNAL");
+  mesh_list.sublist("unstructured").sublist("submesh")
+    .set<Teuchos::Array<std::string>>("regions", aux)
+    .set<std::string>("extraction method", "manifold mesh")
+    .set<std::string>("domain name", "fracture")
+    .set<bool>("extract all faces", all_faces);
+
+  if (dim_ == 3) mesh_list.set<bool>("request edges", true);
 }
 
 } // namespace AmanziInput

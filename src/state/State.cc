@@ -22,9 +22,6 @@
 #include <ostream>
 #include <regex>
 
-#include "boost/algorithm/string/predicate.hpp"
-#include "boost/filesystem.hpp"
-
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Epetra_Vector.h"
 
@@ -57,6 +54,10 @@ State::State()
 State::State(Teuchos::ParameterList& state_plist) : state_plist_(state_plist)
 {
   vo_ = Teuchos::rcp(new VerboseObject("State", state_plist_));
+
+  // touch the "evaluators" list to make sure it exists, even in tests that
+  // don't use it, to make sure that const calls to FEList() can work.
+  state_plist_.sublist("evaluators");
 };
 
 
@@ -99,20 +100,19 @@ State::IsAliasedMesh(const Key& key) const
 }
 
 
-Teuchos::RCP<const AmanziMesh::Mesh>
+Teuchos::RCP<AmanziMesh::Mesh>
 State::GetMesh(const Key& key) const
 {
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh;
+  Teuchos::RCP<AmanziMesh::Mesh> mesh;
   if (key.empty()) {
     mesh = GetMesh_("domain");
   } else {
     mesh = GetMesh_(key);
   }
   if (mesh == Teuchos::null) {
-    std::stringstream messagestream;
-    messagestream << "Mesh " << key << " does not exist in the state.";
-    Errors::Message message(messagestream.str());
-    Exceptions::amanzi_throw(message);
+    Errors::Message msg;
+    msg << "Mesh \"" << key << "\" does not exist in the state.";
+    Exceptions::amanzi_throw(msg);
   }
   return mesh;
 };
@@ -128,16 +128,14 @@ State::GetDeformableMesh(Key key)
     if (lb->second.second) {
       return lb->second.first;
     } else {
-      std::stringstream messagestream;
-      messagestream << "Mesh " << key << " is not deformable.";
-      Errors::Message message(messagestream.str());
-      Exceptions::amanzi_throw(message);
+      Errors::Message msg;
+      msg << "Mesh " << key << " is not deformable.";
+      Exceptions::amanzi_throw(msg);
     }
   } else {
-    std::stringstream messagestream;
-    messagestream << "Mesh " << key << " does not exist in the state.";
-    Errors::Message message(messagestream.str());
-    Exceptions::amanzi_throw(message);
+    Errors::Message msg;
+    msg << "Mesh \"" << key << "\" does not exist in the state.";
+    Exceptions::amanzi_throw(msg);
   }
   return Teuchos::null;
 }
@@ -151,7 +149,7 @@ State::IsDeformableMesh(const Key& key) const
     return lb->second.second;
   } else {
     Errors::Message msg;
-    msg << "Mesh " << key << " does not exist in the state.";
+    msg << "Mesh \"" << key << "\" does not exist in the state.";
     Exceptions::amanzi_throw(msg);
   }
   return false;
@@ -330,6 +328,7 @@ State::RequireEvaluator(const Key& key, const Tag& tag)
     if (Keys::hasKey(e.second, tag) && e.second.at(tag)->ProvidesKey(key, tag)) {
       auto& evaluator = e.second.at(tag);
       SetEvaluator(key, tag, evaluator);
+      evaluator->EnsureEvaluators(*this);
       return *evaluator;
     }
   }
@@ -360,21 +359,12 @@ State::RequireEvaluator(const Key& key, const Tag& tag)
     // -- Get this evaluator's plist.
     Teuchos::ParameterList sublist = GetEvaluatorList(key);
     sublist.setName(key);
-
     // -- Insert any model parameters.
-    if (sublist.isParameter("model parameters")) {
+    if (sublist.isParameter("model parameters") &&
+        sublist.isType<std::string>("model parameters")) {
       std::string modelname = sublist.get<std::string>("model parameters");
       Teuchos::ParameterList modellist = GetModelParameters(modelname);
-      std::string modeltype = modellist.get<std::string>("model type");
-      sublist.set(modeltype, modellist);
-    } else if (sublist.isParameter("models parameters")) {
-      Teuchos::Array<std::string> modelnames =
-        sublist.get<Teuchos::Array<std::string>>("models parameters");
-      for (auto modelname = modelnames.begin(); modelname != modelnames.end(); ++modelname) {
-        Teuchos::ParameterList modellist = GetModelParameters(*modelname);
-        std::string modeltype = modellist.get<std::string>("model type");
-        sublist.set(modeltype, modellist);
-      }
+      sublist.set(modelname, modellist);
     }
 
     // -- Create and set the evaluator.
@@ -382,6 +372,7 @@ State::RequireEvaluator(const Key& key, const Tag& tag)
     sublist.set("tag", tag.get());
     auto evaluator = evaluator_factory.createEvaluator(sublist);
     SetEvaluator(key, tag, evaluator);
+    evaluator->EnsureEvaluators(*this);
     return *evaluator;
   }
 
@@ -394,16 +385,16 @@ State::RequireEvaluator(const Key& key, const Tag& tag)
   }
 
   // cannot find the evaluator, error
-  Errors::Message message;
-  message << "Evaluator \"" << key << "@" << tag.get() << "\" cannot be created in State. "
-          << "Verify (1) SetEvaluator is called or (2) name exists in state->evaluators.";
-  Exceptions::amanzi_throw(message);
+  Errors::Message msg;
+  msg << "Evaluator \"" << key << "\" @ \"" << tag.get() << "\" cannot be created in State. "
+      << "Verify (1) SetEvaluator is called or (2) name exists in state->evaluators.";
+  Exceptions::amanzi_throw(msg);
   return *Evaluator_Factory().createEvaluator(fm_plist); // silences warning
 }
 
 
 bool
-State::HasEvaluator(const Key& key, const Tag& tag)
+State::HasEvaluator(const Key& key, const Tag& tag) const
 {
   if (Keys::hasKey(evaluators_, key)) {
     return Keys::hasKey(evaluators_.at(key), tag);
@@ -418,10 +409,9 @@ State::GetMeshPartition(Key key)
 {
   Teuchos::RCP<const Functions::MeshPartition> mp = GetMeshPartition_(key);
   if (mp == Teuchos::null) {
-    std::stringstream messagestream;
-    messagestream << "Mesh partition " << key << " does not exist in the state.";
-    Errors::Message message(messagestream.str());
-    Exceptions::amanzi_throw(message);
+    Errors::Message msg;
+    msg << "Mesh partition \"" << key << "\" does not exist in the state.";
+    Exceptions::amanzi_throw(msg);
   }
   return mp;
 }
@@ -541,20 +531,16 @@ State::Setup()
   // Note that the first pass may modify the graph, but since it is a DAG, and
   // this is called recursively, we can just call it on the nodes that appear
   // initially.
+  //
+  // Note this is done only because EnsureEvaluators() is called only in
+  // RequireEvaluators(), and not in SetEvaluators().  See #654
   { // scope for copy
     EvaluatorMap evaluators_copy(evaluators_);
     for (auto& e : evaluators_copy) {
       for (auto& r : e.second) {
-        // if (!r.second->ProvidesKey(e.first, r.first)) {
-        //   Errors::Message msg;
-        //   msg << "Evaluator \"" << e.first << "\" with tag \"" << r.first.get()
-        //       << "\" does not provide its own key.";
-        //   Exceptions::amanzi_throw(msg);
-        // }
-
         if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
           Teuchos::OSTab tab1 = vo_->getOSTab();
-          *vo_->os() << "ensure evaluators: \"" << e.first << "\" @ \"" << r.first << "\""
+          *vo_->os() << "verify evaluator (DAG): \"" << e.first << "\" @ \"" << r.first << "\""
                      << std::endl;
         }
         r.second->EnsureEvaluators(*this);
@@ -565,7 +551,14 @@ State::Setup()
   // Second pass calls EnsureCompatibility, which checks data consistency.
   // This pass does not modify the graph.
   for (auto& e : evaluators_) {
-    for (auto& r : e.second) { r.second->EnsureCompatibility(*this); }
+    for (auto& r : e.second) {
+      if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+        Teuchos::OSTab tab1 = vo_->getOSTab();
+        *vo_->os() << "verify evaluator (compatibility): \"" << e.first << "\" @ \"" << r.first
+                   << "\"" << std::endl;
+      }
+      r.second->EnsureCompatibility(*this);
+    }
   }
 
   // Create the data for all fields.
@@ -634,7 +627,7 @@ State::Initialize(const State& other)
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
     Teuchos::OSTab tab1 = vo_->getOSTab();
-    *vo_->os() << "copying fields to new state.." << std::endl;
+    *vo_->os() << "copying fields to new state..." << std::endl;
   }
 
   for (auto& e : data_) {
@@ -726,7 +719,7 @@ State::InitializeFields(const Tag& tag)
       auto owner = GetRecord(it->first, tag).owner();
       auto& r = GetRecordW(it->first, tag, owner);
       if (r.ValidType<CompositeVector>()) {
-        r.ReadCheckpoint(file_input, tag);
+        r.ReadCheckpoint(file_input, tag, it->second->subfieldnames());
 
         // this is pretty hacky -- why are these ICs not in the PK's list?  And
         // if they aren't owned by a PK, they should be independent variables
@@ -800,10 +793,9 @@ State::CheckAllFieldsInitialized()
   Tag failed;
   for (auto& e : data_) {
     if (!e.second->isInitialized(failed)) {
-      std::stringstream ss;
-      ss << "Variable \"" << e.first << "\" with tag \"" << failed.get()
-         << "\" was not initialized\n";
-      Errors::Message msg(ss.str());
+      Errors::Message msg;
+      msg << "Variable \"" << e.first << "\" with tag \"" << failed.get()
+          << "\" was not initialized\n";
       Exceptions::amanzi_throw(msg);
       return false;
     }
@@ -862,13 +854,14 @@ State::GetEvaluator(const Key& key, const Tag& tag) const
 {
   try {
     return *evaluators_.at(key).at(tag);
-  } catch (std::out_of_range) {
-    std::stringstream ss;
-    ss << "Evaluator for field \"" << key << "\" at tag \"" << tag
-       << "\" does not exist in the state.";
-    Errors::Message message(ss.str());
-    throw(message);
+  } catch (const std::out_of_range&) {
+    Errors::Message msg;
+    msg << "Evaluator for field \"" << key << "\" at tag \"" << tag
+        << "\" does not exist in the state.";
+    Exceptions::amanzi_throw(msg);
   }
+  // silence warnings
+  return *evaluators_.at(key).at(tag);
 }
 
 
@@ -877,13 +870,14 @@ State::GetEvaluatorPtr(const Key& key, const Tag& tag)
 {
   try {
     return evaluators_.at(key).at(tag);
-  } catch (std::out_of_range) {
-    std::stringstream ss;
-    ss << "Evaluator for field \"" << key << "\" at tag \"" << tag
-       << "\" does not exist in the state.";
-    Errors::Message message(ss.str());
-    throw(message);
+  } catch (const std::out_of_range&) {
+    Errors::Message msg;
+    msg << "Evaluator for field \"" << key << "\" at tag \"" << tag
+        << "\" does not exist in the state.";
+    Exceptions::amanzi_throw(msg);
   }
+  // silence warnings
+  return evaluators_.at(key).at(tag);
 }
 
 
@@ -892,6 +886,7 @@ void
 State::SetEvaluator(const Key& key, const Tag& tag, const Teuchos::RCP<Evaluator>& evaluator)
 {
   evaluators_[key][tag] = evaluator;
+//   evaluator->EnsureEvaluators(*this);
 }
 
 
@@ -916,7 +911,7 @@ State::GetEvaluatorList(const Key& key)
 
 
 bool
-State::HasEvaluatorList(const Key& key)
+State::HasEvaluatorList(const Key& key) const
 {
   if (FEList().isSublist(key)) return true;
   // check for domain set

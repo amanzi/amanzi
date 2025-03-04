@@ -21,11 +21,11 @@
 #include "IO.hh"
 #include "MeshFactory.hh"
 #include "Mesh.hh"
-#include "mpc_pks_registration.hh"
 #include "lapack.hh"
 #include "PK.hh"
 #include "PK_Factory.hh"
 #include "PK_PhysicalBDF.hh"
+#include "pks_mpc_reg.hh"
 #include "State.hh"
 
 static int NEQN = 12;
@@ -119,6 +119,7 @@ class ImplicitPK : public Amanzi::PK_PhysicalBDF {
       cfl_(1.0),
       soln_(soln){};
 
+  virtual void parseParameterList() override {};
   virtual void Setup() override;
   virtual void Initialize() override;
 
@@ -130,7 +131,7 @@ class ImplicitPK : public Amanzi::PK_PhysicalBDF {
 
   virtual void FunctionalResidual(double t_old,
                                   double t_new,
-                                  Teuchos::RCP<TreeVector> u_old,
+                                  Teuchos::RCP<const TreeVector> u_old,
                                   Teuchos::RCP<TreeVector> u_new,
                                   Teuchos::RCP<TreeVector> f) override;
 
@@ -199,12 +200,12 @@ ImplicitPK::Setup()
     S_->Require<CV_t, CVS_t>(field, tag_next_, "state")
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, n);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, n);
 
     S_->Require<CV_t, CVS_t>(field, tag_current_, "state")
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, n);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, n);
 
     S_->Require<double>("time", Tag(field + "@" + tag_current_.get()), "time");
     S_->Require<double>("time", Tag(field + "@" + tag_next_.get()), "time");
@@ -303,7 +304,7 @@ ImplicitPK::AdvanceStep(double t_old, double t_new, bool reinit)
 void
 ImplicitPK::FunctionalResidual(double t_old,
                                double t_new,
-                               Teuchos::RCP<TreeVector> u_old,
+                               Teuchos::RCP<const TreeVector> u_old,
                                Teuchos::RCP<TreeVector> u_new,
                                Teuchos::RCP<TreeVector> f)
 {
@@ -409,7 +410,7 @@ RunTest(int test, double dt)
   plist->sublist("cycle driver")
     .sublist("time periods")
     .sublist("TP 0")
-    .set<double>("initial time step", dt);
+    .set<double>("initial timestep", dt);
 
   Amanzi::ObservationData obs_data;
   CycleDriver cd(plist, S, comm, obs_data);

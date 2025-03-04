@@ -67,7 +67,7 @@ class MeshLogicalEmbeddedSperry : public MeshLogicalFactory {
   int n_shells_;
   Teuchos::RCP<AmanziMesh::Mesh> bg_mesh_;
 
-  std::vector<Entity_ID_List> rheizosphere_to_bg_;
+  std::vector<Entity_ID_View> rheizosphere_to_bg_;
 };
 
 

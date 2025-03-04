@@ -42,7 +42,6 @@ PDE_CouplingFlux::Init_(Teuchos::ParameterList& plist,
   if (global_op_ == Teuchos::null) {
     global_op_ =
       Teuchos::rcp(new Operator_Diagonal(cvs_row, cvs_col, plist, OPERATOR_SCHEMA_INDICES));
-    std::string name("Coupling_DIAGONAL");
   }
 
   // register the advection Op

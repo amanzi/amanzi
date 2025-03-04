@@ -15,7 +15,6 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
-#include "Teuchos_TimeMonitor.hpp"
 
 #include "ErrorHandler.hpp"
 #include "SimulatorFactory.hh"
@@ -28,27 +27,15 @@
 #include "VerboseObject_objs.hh"
 #include "AmanziComm.hh"
 
-// include fenv if it exists
-#include "boost/version.hpp"
-#if (BOOST_VERSION / 100 % 1000 >= 46)
-#  include "boost/config.hpp"
-#  ifndef BOOST_NO_FENV_H
-#    ifdef _GNU_SOURCE
-#      define AMANZI_USE_FENV
-#      include "boost/detail/fenv.hpp"
-#    endif
-#  endif
-#endif
-
 #ifdef ENABLE_Unstructured
 #  include "state_evaluators_registration.hh"
+#  include "AmanziUnstructuredGridSimulationDriver.hh"
 #endif
 
 #include "tpl_versions.h"
 
 #include <iostream>
-#include <boost/filesystem.hpp>
-using namespace boost::filesystem;
+#include <filesystem>
 
 
 int
@@ -59,6 +46,7 @@ main(int argc, char* argv[])
 #endif
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, 0);
+  Kokkos::initialize();
   int rank = mpiSession.getRank();
 
   try {
@@ -131,12 +119,12 @@ main(int argc, char* argv[])
 
     if (print_tpl_versions) {
       if (rank == 0) {
-#ifdef AMANZI_MAJOR
-        std::cout << "Amanzi TPL collection version " << XSTR(AMANZI_MAJOR) << "."
-                  << XSTR(AMANZI_MINOR) << "." << XSTR(AMANZI_PATCH) << std::endl;
-#endif
-        std::cout << "Third party libraries that this amanzi binary is linked against:"
+        std::cout << "Third party libraries that above amanzi binary is linked against:"
                   << std::endl;
+#ifdef AMANZI_TPLS_MAJOR
+        std::cout << "Amanzi TPL collection version " << XSTR(AMANZI_TPLS_MAJOR) << "."
+                  << XSTR(AMANZI_TPLS_MINOR) << "." << XSTR(AMANZI_TPLS_PATCH) << std::endl;
+#endif
 #ifdef ALQUIMIA_MAJOR
         std::cout << "  ALQUIMIA       " << XSTR(ALQUIMIA_MAJOR) << "." << XSTR(ALQUIMIA_MINOR)
                   << "." << XSTR(ALQUIMIA_PATCH) << std::endl;
@@ -144,10 +132,6 @@ main(int argc, char* argv[])
 #ifdef ASCEMIO_MAJOR
         std::cout << "  ASCEMIO        " << XSTR(ASCEMIO_MAJOR) << "." << XSTR(ASCEMIO_MINOR) << "."
                   << XSTR(ASCEMIO_PATCH) << std::endl;
-#endif
-#ifdef Boost_MAJOR
-        std::cout << "  Boost          " << XSTR(Boost_MAJOR) << "." << XSTR(Boost_MINOR) << "."
-                  << XSTR(Boost_PATCH) << std::endl;
 #endif
 #ifdef CCSE_MAJOR
         std::cout << "  CCSE           " << XSTR(CCSE_MAJOR) << "." << XSTR(CCSE_MINOR) << "."
@@ -254,7 +238,7 @@ main(int argc, char* argv[])
     }
 
     // check if the input file actually exists
-    if (!exists(xmlInFileName)) {
+    if (!std::filesystem::exists(xmlInFileName)) {
       if (rank == 0) {
         std::cout << "ERROR: The xml input file \"" << xmlInFileName
                   << "\" specified with the command line option --xml_file does not exist."
@@ -269,7 +253,7 @@ main(int argc, char* argv[])
     auto comm = Amanzi::getDefaultComm();
     Amanzi::ObservationData observations_data;
     Amanzi::Simulator::ReturnType ret = simulator->Run(comm, observations_data);
-    Teuchos::TimeMonitor::summarize();
+    simulator->Summarize();
 
     if (ret == Amanzi::Simulator::FAIL) {
       amanzi_throw(Errors::Message("The amanzi simulator returned an error code, this is most "
@@ -281,6 +265,7 @@ main(int argc, char* argv[])
     if (rank == 0) {
       if (s == "Amanzi not run") { std::cout << "Amanzi::SIMULATION_DID_NOT_RUN\n"; }
     }
+    Kokkos::finalize();
     return 1;
   } catch (std::exception& e) {
     if (rank == 0) {
@@ -291,6 +276,7 @@ main(int argc, char* argv[])
         std::cout << "Amanzi::SIMULATION_FAILED\n";
       }
     }
+    Kokkos::finalize();
     return 1;
   } catch (int& ierr) {
     if (rank == 0) {
@@ -298,6 +284,7 @@ main(int argc, char* argv[])
                 << ". Known sources: Epetra_MultiVector::AllocateForCopy" << std::endl;
       std::cout << "Amanzi::SIMULATION_FAILED\n";
     }
+    Kokkos::finalize();
     return 1;
   }
 
@@ -307,8 +294,9 @@ main(int argc, char* argv[])
       std::cout << "Unknown exception" << std::endl;
       std::cout << "Amanzi::SIMULATION_FAILED\n";
     }
+    Kokkos::finalize();
     return 1;
   }
-
+  Kokkos::finalize();
   return 0;
 }

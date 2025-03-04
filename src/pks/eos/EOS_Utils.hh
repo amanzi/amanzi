@@ -33,7 +33,7 @@ ErrorAnalysis(const Comm_ptr_type& comm, int ierr, const std::string& msg)
   comm->MaxAll(&ierr, &ierr_glb, 1);
 
   if (ierr_glb != 0) {
-    Errors::CutTimeStep e;
+    Errors::CutTimestep e;
     e << msg;
     amanzi_throw(e);
   }

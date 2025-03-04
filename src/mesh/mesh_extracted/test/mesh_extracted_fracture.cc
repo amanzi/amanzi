@@ -22,6 +22,8 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include <UnitTest++.h>
 
+#include "exceptions.hh"
+
 // Amanzi::Mesh
 #include "MeshAudit.hh"
 #include "MeshExtractedManifold.hh"
@@ -33,9 +35,10 @@
 #endif
 #include "Mesh_simple.hh"
 
+
 /* **************************************************************** */
 void
-RunTest(const std::string regname, int* cells, int* edges)
+RunTest(const std::string regname, int* cells, int* edges, const std::vector<int> framework_ids)
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -53,48 +56,86 @@ RunTest(const std::string regname, int* cells, int* edges)
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
   auto mesh_list = Teuchos::sublist(plist, "mesh", false);
+  mesh_list->set<bool>("request edges", true);
 
-  for (int i = 0; i < 3; ++i) {
-    RCP<const Mesh> mesh3D;
+  for (int i : framework_ids) {
+    RCP<MeshFramework> mesh3D;
     if (i == 0) {
 #ifdef HAVE_MESH_MSTK
       std::cout << "\nMesh framework: MSTK (" << regname << ")\n";
-      // mesh3D = Teuchos::rcp(new Mesh_MSTK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, comm, gm, mesh_list, true, true));
-      mesh3D = Teuchos::rcp(
-        new Mesh_MSTK("test/mesh_extracted_fracture.exo", comm, gm, mesh_list, true, true));
+      // mesh3D = Teuchos::rcp(new Mesh_MSTK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, comm, gm, mesh_list));
+      mesh3D = Teuchos::rcp(new Mesh_MSTK("test/mesh_extracted_fracture.exo", comm, gm, mesh_list));
 #endif
     } else if (i == 1 && comm->NumProc() == 1) {
       std::cout << "\nMesh framework: simple\n";
       mesh3D = Teuchos::rcp(
-        new Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, comm, gm, mesh_list, true, true));
+        new Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, comm, gm, mesh_list));
     } else if (i == 2) {
 #ifdef HAVE_MESH_MOAB
       if (comm->NumProc() > 1) continue;
       std::cout << "\nMesh framework: MOAB\n";
-      mesh3D = Teuchos::rcp(
-        new Mesh_MOAB("test/mesh_extracted_fracture.exo", comm, gm, mesh_list, true, true));
+      mesh3D = Teuchos::rcp(new Mesh_MOAB("test/mesh_extracted_fracture.exo", comm, gm, mesh_list));
 #endif
     }
     if (mesh3D == Teuchos::null) continue;
+    {
+      int ncells_tmp =
+        mesh3D->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+      int nfaces_tmp =
+        mesh3D->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+      int nedges_tmp =
+        mesh3D->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_kind::OWNED);
+
+      int ncells(ncells_tmp), nfaces(nfaces_tmp), nedges(nedges_tmp);
+      comm->SumAll(&ncells_tmp, &ncells, 1);
+      comm->SumAll(&nfaces_tmp, &nfaces, 1);
+      comm->SumAll(&nedges_tmp, &nedges, 1);
+      std::cout << "PARENT mesh: " << i << "\n  pid=" << comm->MyPID() << " cells: " << ncells
+                << " faces: " << nfaces << " edges: " << nedges << std::endl;
+    }
 
     // extract fractures mesh
     try {
-      RCP<Mesh> mesh = Teuchos::rcp(
-        new MeshExtractedManifold(mesh3D, setname, AmanziMesh::FACE, comm, gm, plist, true, false));
+      auto mesh3D_cache = Teuchos::rcp(
+        new Mesh(mesh3D, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
+      cacheAll(*mesh3D_cache);
 
-      int ncells = mesh->cell_map(false).NumGlobalElements();
-      int nfaces = mesh->face_map(false).NumGlobalElements();
-      int mfaces = (i == 0) ? mesh->exterior_face_map(false).NumGlobalElements() : 0;
-      std::cout << i << " pid=" << comm->MyPID() << " cells: " << ncells << " faces: " << nfaces
-                << " bnd faces: " << mfaces << std::endl;
+      RCP<MeshFramework> mesh = Teuchos::rcp(new MeshExtractedManifold(
+        mesh3D_cache, setname, AmanziMesh::Entity_kind::FACE, comm, gm, plist));
+
+      MeshMaps maps;
+      maps.initialize(*mesh);
+
+      int ncells_tmp =
+        mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+      int nfaces_tmp =
+        mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+      int mfaces_tmp = maps.getNBoundaryFaces(AmanziMesh::Parallel_kind::OWNED);
+
+      int ncells(ncells_tmp), nfaces(nfaces_tmp), mfaces(mfaces_tmp);
+      comm->SumAll(&ncells_tmp, &ncells, 1);
+      comm->SumAll(&nfaces_tmp, &nfaces, 1);
+      comm->SumAll(&mfaces_tmp, &mfaces, 1);
+
+      std::cout << "EXTRACTED mesh: " << i << "\n  pid=" << comm->MyPID() << " cells: " << ncells
+                << " faces: " << nfaces << " bnd faces: " << mfaces << std::endl
+                << std::endl;
       CHECK(cells[i] == ncells);
       CHECK(edges[i] == mfaces);
 
+      auto plist_tmp = Teuchos::rcp(new Teuchos::ParameterList);
+      plist_tmp->set<bool>("natural map ordering", true);
+      RCP<Mesh> mesh_cache =
+        Teuchos::rcp(new Mesh(mesh, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), plist_tmp));
+      cacheAll(*mesh_cache);
+
       // verify mesh
-      MeshAudit audit(mesh);
+      MeshAudit audit(mesh_cache);
       int ok = audit.Verify();
       CHECK(ok == 0);
 
+    } catch (const std::exception& e) {
+      std::cout << "Framework failed with error: " << e.what() << "\n";
     } catch (...) {
       std::cout << "Framework failed.\n";
     }
@@ -105,20 +146,20 @@ RunTest(const std::string regname, int* cells, int* edges)
 TEST(MESH_EXTRACTED_FRACTURE_NETWORK2)
 {
   int cells[3] = { 108, 200, 0 };
-  int edges[3] = { 48, 0, 0 };
-  RunTest("fractures-two", cells, edges);
+  int edges[3] = { 48, 80, 0 };
+  RunTest("fractures-two", cells, edges, { 0, 1, 2 });
 }
 
 TEST(MESH_EXTRACTED_SURFACE)
 {
   int cells[3] = { 9, 25, 0 };
-  int edges[3] = { 12, 0, 0 };
-  RunTest("Left side", cells, edges);
+  int edges[3] = { 12, 20, 0 };
+  RunTest("Left side", cells, edges, { 0, 1, 2 });
 }
 
 TEST(MESH_EXTRACTED_FRACTURE_NETWORK3)
 {
   int cells[3] = { 108, 200, 0 };
   int edges[3] = { 72, 0, 0 };
-  RunTest("fractures-three", cells, edges);
+  RunTest("fractures-three", cells, edges, { 0, 2 });
 }

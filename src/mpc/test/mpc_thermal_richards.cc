@@ -21,19 +21,18 @@
 
 // Amanzi
 #include "CycleDriver.hh"
-#include "energy_tcm_registration.hh"
-#include "energy_iem_registration.hh"
-#include "eos_registration.hh"
+#include "eos_reg.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "mpc_pks_registration.hh"
+#include "models_energy_reg.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
-#include "pks_energy_registration.hh"
-#include "pks_flow_registration.hh"
-#include "pks_transport_registration.hh"
+#include "pks_energy_reg.hh"
+#include "pks_flow_reg.hh"
+#include "pks_mpc_reg.hh"
+#include "pks_transport_reg.hh"
 #include "State.hh"
-#include "wrm_flow_registration.hh"
+#include "models_flow_reg.hh"
 
 
 void
@@ -78,6 +77,8 @@ RunTest(const std::string& flow)
 
   Amanzi::CycleDriver cycle_driver(plist, S, comm, obs_data);
   cycle_driver.Go();
+
+  CHECK(S->Get<double>("time") > 1.7e+6);
 }
 
 

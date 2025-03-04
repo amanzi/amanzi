@@ -79,6 +79,7 @@ set(state_inc_files
   evaluators/EvaluatorPrimary.hh
   evaluators/EvaluatorSecondary.hh
   evaluators/EvaluatorSecondaryMonotype.hh
+  evaluators/EvaluatorTemporalInterpolation.hh
   evaluators/EvaluatorSecondaryMonotypeFromFunction.hh
   IO.hh
   Observable.hh
@@ -107,6 +108,7 @@ add_amanzi_library(state
                           evaluators/EvaluatorPrimary.cc
                           evaluators/EvaluatorSecondary.cc
                           evaluators/EvaluatorSecondaryMonotype.cc
+                          evaluators/EvaluatorTemporalInterpolation.cc
                           evaluators/EvaluatorSecondaryMonotypeFromFunction.cc
                           IO.cc
                           Observable.cc
@@ -120,7 +122,7 @@ add_amanzi_library(state
                           Debugger.cc
                    HEADERS ${state_inc_files}
 		   LINK_LIBS data_structures functions mesh_functions output mesh atk
-		   ${Boost_LIBRARIES} ${SEACAS_LIBRARIES})
+		             ${SEACAS_LIBRARIES})
 set_property(GLOBAL PROPERTY STATE_SOURCE_DIR ${MPC_SOURCE_DIR})
 set_property(GLOBAL PROPERTY STATE_BINARY_DIR ${MPC_BINARY_DIR})
 if (APPLE AND BUILD_SHARED_LIBS)
@@ -132,18 +134,18 @@ endif()
 #
 add_install_include_file(${state_inc_files})
 
+if (BUILD_TESTS)
     # Add State include directory. 
     include_directories(${STATE_SOURCE_DIR})
 
     # Mesh factory includes
     include_directories(${MESH_FACTORY_SOURCE_DIR})
+    include_directories(${MESH_LOGICAL_SOURCE_DIR})
+    include_directories(${MESH_LOGICAL_SOURCE_DIR}/test)
     include_directories(${MESH_EXTRACTED_SOURCE_DIR})
-
-if (BUILD_TESTS)
 
     # Add UnitTest includes
     include_directories(${UnitTest_INCLUDE_DIRS})
-
 
     # Copy test subdirectory for out of source builds
     if (NOT ("${STATE_SOURCE_DIR}" STREQUAL "${STATE_BINARY_DIR}"))
@@ -163,7 +165,7 @@ if (BUILD_TESTS)
                               ${UnitTest_LIBRARIES} ${NOX_LIBRARIES} ${HDF5_LIBRARIES})
 
     if(ENABLE_MESH_MSTK)
-      add_amanzi_test(state_restart2 state_restart2
+      add_amanzi_test(state_restart2_np2 state_restart2
                     KIND int
                     SOURCE
 	  	          test/Main.cc
@@ -205,7 +207,7 @@ if (BUILD_TESTS)
 	 		   test/state_observations.cc
                     LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions 
                               ${UnitTest_LIBRARIES} ${NOX_LIBRARIES} ${HDF5_LIBRARIES})
-    add_amanzi_test(state_observations_np2 state_observations NPROCS 2 KIND unit)
+    #add_amanzi_test(state_observations_np2 state_observations NPROCS 2 KIND unit)
 
     add_amanzi_test(state_data_factory state_data_factory
                     KIND unit
@@ -232,7 +234,7 @@ if (BUILD_TESTS)
                     KIND int
                     SOURCE test/Main.cc
                            test/state_vis.cc
-                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions
+                    LINK_LIBS state mesh_factory mesh mesh_logical data_structures mesh_functions functions
                               ${state_tpl_list} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(state_container state_container

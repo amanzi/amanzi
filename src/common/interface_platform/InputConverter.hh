@@ -19,9 +19,6 @@
 #include <climits>
 #include <list>
 
-#define BOOST_FILESYTEM_NO_DEPRECATED
-#include "boost/format.hpp"
-
 // Xerces
 #include "xercesc/dom/DOM.hpp"
 #include "xercesc/parsers/XercesDOMParser.hpp"
@@ -34,9 +31,9 @@ namespace Amanzi {
 namespace AmanziInput {
 
 // Amanzi version
-#define AMANZI_SPEC_VERSION_MAJOR 2
-#define AMANZI_SPEC_VERSION_MINOR 3
-#define AMANZI_SPEC_VERSION_MICRO 0
+#define AMANZI_SPEC_VERSION_MAJOR 1
+#define AMANZI_SPEC_VERSION_MINOR 6
+#define AMANZI_SPEC_VERSION_MICRO "dev"
 
 // constants
 const std::string TYPE_TIME = "time";
@@ -143,6 +140,11 @@ class InputConverter {
   xercesc::DOMNode*
   GetUniqueElementByTagsString_(const xercesc::DOMNode* node, const std::string& tags, bool& flag);
 
+  xercesc::DOMNode* GetUniqueElementByTagsString_(const xercesc::DOMNode* node,
+                                                  const std::string& tags,
+                                                  bool& flag,
+                                                  std::string& model);
+
   // -- extract child with the given attribute
   xercesc::DOMElement* GetUniqueChildByAttribute_(xercesc::DOMNode* node,
                                                   const char* attr_name,
@@ -155,6 +157,11 @@ class InputConverter {
                                        const std::string& childName,
                                        bool& flag,
                                        bool exception = false);
+
+  // ----------------
+  //   Attributes
+  // ----------------
+  bool HasAttribute_(DOMElement* elem, const char* attr_name);
 
   // -- extract and verify children
   // -- extract existing attribute value and verify it optionally against expected units
@@ -256,6 +263,15 @@ class InputConverter {
     return GetAttributeVectorS_(element, attr_name, exception);
   }
 
+  // -- extract existing attribute value and verify it
+  std::string
+  GetAttributeValueS_(xercesc::DOMNode* node, const char* attr_name, const char* options);
+
+
+  // --------------
+  //    Other
+  // -------------
+
   // -- extract the text content of the child of the given node with the given name.
   std::string GetChildValueS_(xercesc::DOMNode* node,
                               const std::string& childName,
@@ -265,10 +281,6 @@ class InputConverter {
                                             const std::string& childName,
                                             bool& flag,
                                             bool exception = false);
-
-  // -- extract existing attribute value and verify it
-  std::string
-  GetAttributeValueS_(xercesc::DOMNode* node, const char* attr_name, const char* options);
 
   // -- extract all children of the given node that share the given common name.
   std::vector<xercesc::DOMNode*> GetChildren_(xercesc::DOMNode* node,
@@ -287,6 +299,8 @@ class InputConverter {
     bool exception = false,
     double val = 0.0);
   std::string GetTextContentS_(xercesc::DOMNode* node, const char* options, bool exception = true);
+
+  bool GetTextContentL_(xercesc::DOMNode* node, bool exception = true);
 
   // data streaming/trimming/converting
   // -- units. Molar mass is required for converting ppm and ppb units.

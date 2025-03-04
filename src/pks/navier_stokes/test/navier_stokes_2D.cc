@@ -19,6 +19,7 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "IO.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "OutputXDMF.hh"
@@ -76,7 +77,7 @@ TEST(NAVIER_STOKES_2D)
   int itrs(0);
   int max_itrs = plist->get<int>("max iterations", 50);
   double T1 = plist->get<double>("end time", 100.0);
-  double dT = plist->get<double>("initial time step", 1.0);
+  double dT = plist->get<double>("initial timestep", 1.0);
   double T(0.0), T0(0.0), dT0(dT), dTnext;
 
   // T = T1;
@@ -89,7 +90,7 @@ TEST(NAVIER_STOKES_2D)
       NSPK->UpdatePreconditioner(T0, soln, dT0);
     }
 
-    while (NSPK->bdf1_dae()->TimeStep(dT, dTnext, soln)) { dT = dTnext; }
+    while (NSPK->bdf1_dae()->AdvanceStep(dT, dTnext, soln)) { dT = dTnext; }
     NSPK->bdf1_dae()->CommitSolution(dT, soln);
 
     T = NSPK->bdf1_dae()->time();
@@ -99,7 +100,7 @@ TEST(NAVIER_STOKES_2D)
     // reset primary fields
     auto fluid_velocity_eval =
       Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>(
-        S->GetEvaluatorPtr("pressure", Tags::DEFAULT));
+        S->GetEvaluatorPtr("fluid_velocity", Tags::DEFAULT));
     S->GetW<CompositeVector>("fluid_velocity", Tags::DEFAULT, "navier stokes") =
       *soln->SubVector(0)->Data();
     fluid_velocity_eval->SetChanged();
@@ -123,8 +124,13 @@ TEST(NAVIER_STOKES_2D)
   io.InitializeCycle(T, 1, "");
   const auto& u = *S->Get<CompositeVector>("fluid_velocity").ViewComponent("node");
   const auto& p = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
-  io.WriteVector(*u(0), "velocity_x", AmanziMesh::NODE);
-  io.WriteVector(*u(1), "velocity_y", AmanziMesh::NODE);
-  io.WriteVector(*p(0), "pressure", AmanziMesh::CELL);
+  io.WriteVector(*u(0), "velocity_x", AmanziMesh::Entity_kind::NODE);
+  io.WriteVector(*u(1), "velocity_y", AmanziMesh::Entity_kind::NODE);
+  io.WriteVector(*p(0), "pressure", AmanziMesh::Entity_kind::CELL);
   io.FinalizeCycle();
+
+  // summary
+  WriteStateStatistics(*S);
+
+  AMANZI_ASSERT(itrs < 10);
 }

@@ -82,7 +82,6 @@
 #  define NKA_NUM_VECTORS 10
 
 // nonlinear solver: Picard
-#  define PICARD_SOLVER "AztecOO"
 #  define PICARD_TOLERANCE 1.0e-8
 #  define PICARD_MAX_ITERATIONS 400
 #  define PIC_PRECONDITIONER "Hypre AMG"
@@ -108,6 +107,10 @@
 #  define FLOW_BOTH_REGIMES 3
 #  define TRANSPORT_SUBCYCLING true
 
-#  define MOLAR_MASS_WATER 0.0180153333333
+// phases
+#  define LIQUID "liquid"
+#  define GAS "gas"
+#  define NAPL "napl"
+#  define SOLID "solid"
 
 #endif

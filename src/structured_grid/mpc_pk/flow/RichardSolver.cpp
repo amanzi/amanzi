@@ -115,18 +115,18 @@ RichardSolver::RichardSolver(RSdata& _rs_data, NLScontrol& _nlsc)
   BuildOpSkel(Jac,calcSpace);
 
   // Estmated number of nonzero local columns of J
-  //int d_nz = (nlsc.use_dense_Jacobian ? N : 1 + (rs_data.pressure_maxorder-1)*(2*BL_SPACEDIM));
-  int d_nz = MAX_NUM_COLS;
-  //int o_nz = 2*BL_SPACEDIM + rs_data.pressure_maxorder - 1; // Estimated number of nonzero nonlocal (off-diagonal) columns of J
-  int o_nz = MAX_NUM_COLS;
+  // int d_nz = (nlsc.use_dense_Jacobian ? N : 1 + (rs_data.pressure_maxorder-1)*(2*BL_SPACEDIM));
+  // int d_nz = MAX_NUM_COLS;
+  // int o_nz = 2*BL_SPACEDIM + rs_data.pressure_maxorder - 1; // Estimated number of nonzero nonlocal (off-diagonal) columns of J
+  // int o_nz = MAX_NUM_COLS;
 
   ierr = MatCreate(comm, &Jac); CHKPETSC(ierr);
   ierr = MatSetSizes(Jac,n,n,N,N);  CHKPETSC(ierr);
   ierr = MatSetFromOptions(Jac); CHKPETSC(ierr);
-  //ierr = MatSeqAIJSetPreallocation(Jac, d_nz*d_nz, PETSC_NULL); CHKPETSC(ierr);
-  //ierr = MatMPIAIJSetPreallocation(Jac, d_nz, PETSC_NULL, o_nz, PETSC_NULL); CHKPETSC(ierr);
-  ierr = MatSeqAIJSetPreallocation(Jac, MAX_NUM_COLS, PETSC_NULL); CHKPETSC(ierr);
-  ierr = MatMPIAIJSetPreallocation(Jac, MAX_NUM_COLS, PETSC_NULL, MAX_NUM_COLS, PETSC_NULL); CHKPETSC(ierr);
+  //ierr = MatSeqAIJSetPreallocation(Jac, d_nz*d_nz, PETSC_NULLPTR); CHKPETSC(ierr);
+  //ierr = MatMPIAIJSetPreallocation(Jac, d_nz, PETSC_NULLPTR, o_nz, PETSC_NULLPTR); CHKPETSC(ierr);
+  ierr = MatSeqAIJSetPreallocation(Jac, MAX_NUM_COLS, PETSC_NULLPTR); CHKPETSC(ierr);
+  ierr = MatMPIAIJSetPreallocation(Jac, MAX_NUM_COLS, PETSC_NULLPTR, MAX_NUM_COLS, PETSC_NULLPTR); CHKPETSC(ierr);
 
   calcSpace = false;
   BuildOpSkel(Jac, calcSpace);
@@ -422,12 +422,12 @@ PetscErrorCode
   nlsc->ls_reason = "In Progress";
 
   PetscErrorCode ierr;
-  PetscReal fnorm, xnorm, ynorm, gnorm;
+  PetscReal fnorm, gnorm;
 
   PetscErrorCode (*func)(SNES,Vec,Vec,void*);
   void *fctx;
 
-  ierr = SNESGetFunction(snes,PETSC_NULL,&func,&fctx); CHKPETSC(ierr);
+  ierr = SNESGetFunction(snes,PETSC_NULLPTR,&func,&fctx); CHKPETSC(ierr);
 
   Vec& F = rs->GetResidualV();
   Vec& G = rs->GetTrialResV();
@@ -527,8 +527,6 @@ PetscErrorCode
       nlsc->ls_reason = "Damped step successful";
     }
     nlsc->ls_success = true;
-
-    int iters = nlsc->NLIterationsTaken() + 1;
   }
 
   if (!(rs->GetRecordFile().empty())) {
@@ -569,14 +567,12 @@ AltUpdate(SNES snes,Vec pk,Vec dp,Vec pkp1,void *ctx,Real ls_factor,PetscBool *c
   MFTower& P_MFT = rs->GetPressureNp1();
   MFTower& RS_MFT = rs->GetRhoSatNp1();
   MFTower& DP_MFT = rs->GetLambda(); //Handy data container
-  const MFTower& K_MFT = rs->GetKappaCCavg();
 
   Layout& layout = rs->GetLayout();
   ierr = layout.VecToMFTower(P_MFT,pk,0); CHKPETSC(ierr);
   ierr = layout.VecToMFTower(DP_MFT,dp,0); CHKPETSC(ierr);
 
   Real cur_time = rs->GetTime();
-  Real dt = rs->GetDt();
 
   // Fill (rho.sat)^{n+1,k} from p^{n+1,k}
   rs->GetRSdata().calcInvPressure(RS_MFT,P_MFT,cur_time,0,0,0);
@@ -656,13 +652,13 @@ PetscErrorCode
   nlsc->ls_reason = "In Progress";
 
   PetscErrorCode ierr;
-  PetscReal fnorm, xnorm, ynorm, gnorm;
+  PetscReal fnorm, gnorm;
   PetscErrorCode (*func)(SNES,Vec,Vec,void*);
   void *fctx;
 
   Real ls_factor = 1;
   ierr = AltUpdate(snes,p,dp,pnew,ctx,ls_factor,changed_dp,changed_pnew);CHKPETSC(ierr);
-  ierr = SNESGetFunction(snes,PETSC_NULL,&func,&fctx);CHKPETSC(ierr);
+  ierr = SNESGetFunction(snes,PETSC_NULLPTR,&func,&fctx);CHKPETSC(ierr);
 
   Vec& F = rs->GetResidualV();
   Vec& G = rs->GetTrialResV();
@@ -755,8 +751,6 @@ PetscErrorCode
       nlsc->ls_reason = reason;
     }
     nlsc->ls_success = true;
-
-    int iters = nlsc->NLIterationsTaken() + 1;
   }
 
   if (!(rs->GetRecordFile().empty())) {
@@ -842,7 +836,7 @@ RichardSolver::Solve(Real prev_time, Real cur_time, int timestep, NLScontrol& nl
     ierr = SNESLineSearchSetPostCheck(snes->linesearch,PostCheck,(void *)(&check_ctx));CHKPETSC(ierr);
   }
 
-  ierr = SNESSetConvergenceTest(snes,Richard_SNESConverged,(void*)(&check_ctx),PETSC_NULL); CHKPETSC(ierr);
+  ierr = SNESSetConvergenceTest(snes,Richard_SNESConverged,(void*)(&check_ctx),PETSC_NULLPTR); CHKPETSC(ierr);
 
   UnsetRemainingJacobianReuses();
 
@@ -855,7 +849,7 @@ RichardSolver::Solve(Real prev_time, Real cur_time, int timestep, NLScontrol& nl
   // Evaluate the function
   PetscErrorCode (*func)(SNES,Vec,Vec,void*);
   void *fctx;
-  ierr = SNESGetFunction(snes,PETSC_NULL,&func,&fctx);
+  ierr = SNESGetFunction(snes,PETSC_NULLPTR,&func,&fctx);
   ierr = (*func)(snes,SolnV,RhsV,fctx); CHKPETSC(ierr);
   ierr = VecNorm(RhsV,NORM_2,&norm0); CHKPETSC(ierr); // Save initial norm FIXME: This is already done internally, better to access that
 
@@ -865,7 +859,7 @@ RichardSolver::Solve(Real prev_time, Real cur_time, int timestep, NLScontrol& nl
   BL_PROFILE_VAR_STOP(p_prep);
 
   BL_PROFILE_VAR("RichardSolver::Solve::SNESSolve", p_solve);
-  ierr = SNESSolve(snes,PETSC_NULL,SolnV);// CHKPETSC(ierr);
+  ierr = SNESSolve(snes,PETSC_NULLPTR,SolnV);// CHKPETSC(ierr);
   BL_PROFILE_VAR_STOP(p_solve);
   RichardSolver::SetTheRichardSolver(0);
 
@@ -903,17 +897,14 @@ RichardSolver::BuildOpSkel(Mat& J, bool calcSpace)
   Array<int> cols;
 
   Layout& layout = GetLayout();
-  const Array<Geometry>& geomArray = layout.GeomArray();
   const Array<BoxArray>& gridArray = layout.GridArray();
   const Array<IntVect>& refRatio = layout.RefRatio();
   const PArray<Layout::MultiNodeFab>& nodes = layout.Nodes();
   const PArray<Layout::MultiIntFab>& nodeIds = layout.NodeIds();
-  const Array<BoxArray>& bndryCells = layout.BndryCells();
   const Array<Array<IVSMap> >& growCellStencil = mftfp->GrowCellStencil();
   int nLevs = layout.NumLevels();
 
   PetscErrorCode ierr;
-  int num_nbrs_reg = 2*BL_SPACEDIM+1;
   Layout::IntFab reg_neighbors;
   std::set<int> neighbors;
   typedef BaseFab<std::set<int> > ISetFab;
@@ -1220,8 +1211,6 @@ RichardSolver::XmultYZ(MFTower&       X,
   BL_ASSERT(X.NGrow()>=nGrow);
   BL_ASSERT(Y.NGrow()>=nGrow);
   BL_ASSERT(Z.NGrow()>=nGrow);
-  const Array<BoxArray>& gridArray = GridArray();
-  const Array<Geometry>& geomArray = GeomArray();
   const Array<IntVect>& refRatio = RefRatio();
 
   FArrayBox tfabY, tfabZ;
@@ -1487,10 +1476,7 @@ RichardSolver::CalcResidual(MFTower& residual,
   DivRhoU(residual,pressure,t);
 
   if (dt>0) {
-    int sComp=0;
-    int dComp=0;
     int nComp=1;
-    int nGrow=0;
 
     Real gInv = 0;
     const Array<Real>& g = rs_data.GetGravity();
@@ -1558,8 +1544,6 @@ void RichardSolver::CreateJac(Mat& J,
   BL_PROFILE("RichardSolver::CreateJac()");
 
   Layout& layout = GetLayout();
-  const Array<BoxArray>& gridArray = layout.GridArray();
-  const Array<IntVect>& refRatio   = layout.RefRatio();
   BaseFab<int> nodeNums;
   PetscErrorCode ierr;
   const BCRec& theBC = rs_data.pressure_bc;
@@ -1569,7 +1553,6 @@ void RichardSolver::CreateJac(Mat& J,
   for (int lev=0; lev<nLevs; ++lev) {
     kr_rs_data.set(lev, &(GetKrParams()[lev]));
   }
-  MFTower& PCapParamsaMFT = GetPCapParams();
   MFTower KrParamsMFT(layout,kr_rs_data,nLevs);
 
   const Array<int>& rinflow_bc_lo = rs_data.rinflowBCLo();
@@ -1833,10 +1816,10 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
   BL_PROFILE("RichardSolver::RichardMatFDColoringApply()");
 
   PetscErrorCode ierr;
-  PetscInt       k,start,end,l,row,col,srow,m1,m2;
-  PetscScalar    dx,*y,*w3_array;
+  PetscInt       k,start,end,l,row,col;
+  PetscScalar    *y,*w3_array;
   PetscScalar    *vscale_array, *solnTyp_array;
-  PetscReal      epsilon = coloring->error_rel,umin = coloring->umin,unorm;
+  PetscReal      epsilon = coloring->error_rel;
   Vec            w1=coloring->w1,w2=coloring->w2,w3;
   PetscBool      flg = PETSC_FALSE;
   PetscInt       ctype=coloring->ctype,N,col_start=0,col_end=0;
@@ -1856,7 +1839,7 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
 
   ierr = PetscLogEventBegin(MAT_FDColoringApply,coloring,J,x1,0);CHKPETSC(ierr);
   ierr = MatSetUnfactored(J);CHKPETSC(ierr);
-  ierr = PetscOptionsGetBool(PETSC_NULL,"","-mat_fd_coloring_dont_rezero",&flg,PETSC_NULL);CHKPETSC(ierr);
+  ierr = PetscOptionsGetBool(PETSC_NULLPTR,"","-mat_fd_coloring_dont_rezero",&flg,PETSC_NULLPTR);CHKPETSC(ierr);
   if (flg) {
     ierr = PetscInfo(coloring,"Not calling MatZeroEntries()\n");CHKPETSC(ierr);
   } else {
@@ -1930,7 +1913,6 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
   /*
     Loop over each color
   */
-  int p = ParallelDescriptor::MyProc();
   if (rs->GetNLScontrol().scale_soln_before_solve) {
     //
     // In this case, since the soln is scaled, the perturbation is a simple constant, epsilon
@@ -2051,9 +2033,9 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
   }
 
   flg  = PETSC_FALSE;
-  ierr = PetscOptionsGetBool(PETSC_NULL,"","-mat_null_space_test",&flg,PETSC_NULL);CHKPETSC(ierr);
+  ierr = PetscOptionsGetBool(PETSC_NULLPTR,"","-mat_null_space_test",&flg,PETSC_NULLPTR);CHKPETSC(ierr);
   if (flg) {
-    ierr = MatNullSpaceTest(J->nullsp,J,PETSC_NULL);CHKPETSC(ierr);
+    ierr = MatNullSpaceTest(J->nullsp,J,PETSC_NULLPTR);CHKPETSC(ierr);
   }
 
   PetscFunctionReturn(0);
@@ -2068,7 +2050,6 @@ RichardSolver::ComputeRichardAlpha(Vec& Alpha,const Vec& Pressure,Real t)
 {
   BL_PROFILE("RichardSolver::ComputeRichardAlpha()");
 
-  MFTower& PCapParamsMFT = GetPCapParams();
   MFTower& PMFT = GetPressureNp1();
   MFTower& aMFT = GetAlpha();
   PetscErrorCode ierr = GetLayout().VecToMFTower(PMFT,Pressure,0); CHKPETSC(ierr);
@@ -2090,14 +2071,14 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
 
   PetscErrorCode (*f)(void*,Vec,Vec,void*) = (PetscErrorCode (*)(void*,Vec,Vec,void *))coloring->f;
   PetscErrorCode ierr;
-  PetscInt       k,start,end,l,row,col,srow,m1,m2;
-  PetscScalar    dx,*y,*w3_array;
-  PetscScalar    *solnTyp_array, *a_array;
-  PetscReal      epsilon = coloring->error_rel,umin = coloring->umin,unorm;
+  PetscInt       k,start,end,l,row,col;
+  PetscScalar    *y,*w3_array;
+  PetscScalar    *a_array;
+  PetscReal      epsilon = coloring->error_rel;
   Vec            w1=coloring->w1,w2=coloring->w2,w3;
   void           *fctx = coloring->fctx;
   PetscBool      flg = PETSC_FALSE;
-  PetscInt       ctype=coloring->ctype,N,col_start=0,col_end=0;
+  PetscInt       ctype=coloring->ctype,N;
   MatEntry       *Jentry=coloring->matentry;
   Vec            x1_tmp;
 
@@ -2109,7 +2090,7 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
 
   ierr = PetscLogEventBegin(MAT_FDColoringApply,coloring,J,x1,0);CHKPETSC(ierr);
   ierr = MatSetUnfactored(J);CHKPETSC(ierr);
-  ierr = PetscOptionsGetBool(PETSC_NULL,"","-mat_fd_coloring_dont_rezero",&flg,PETSC_NULL);CHKPETSC(ierr);
+  ierr = PetscOptionsGetBool(PETSC_NULLPTR,"","-mat_fd_coloring_dont_rezero",&flg,PETSC_NULLPTR);CHKPETSC(ierr);
   if (flg) {
     ierr = PetscInfo(coloring,"Not calling MatZeroEntries()\n");CHKPETSC(ierr);
   } else {
@@ -2177,7 +2158,6 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
   /*
     Loop over each color
   */
-  int p = ParallelDescriptor::MyProc();
   //
   // In this case, since the soln is scaled, the perturbation is a simple constant, epsilon
   // Compared to the case where dx=dx_i, the logic cleans up quite a bit here.
@@ -2288,9 +2268,9 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
   }
 
   flg  = PETSC_FALSE;
-  ierr = PetscOptionsGetBool(PETSC_NULL,"","-mat_null_space_test",&flg,PETSC_NULL);CHKPETSC(ierr);
+  ierr = PetscOptionsGetBool(PETSC_NULLPTR,"","-mat_null_space_test",&flg,PETSC_NULLPTR);CHKPETSC(ierr);
   if (flg) {
-    ierr = MatNullSpaceTest(J->nullsp,J,PETSC_NULL);CHKPETSC(ierr);
+    ierr = MatNullSpaceTest(J->nullsp,J,PETSC_NULLPTR);CHKPETSC(ierr);
   }
 
   PetscFunctionReturn(0);
@@ -2320,7 +2300,7 @@ RichardComputeJacobianColor(SNES snes,Vec x1,Mat J,Mat B,void *ctx)
   }
 
   ierr  = SNESGetFunction(snes,&f,(PetscErrorCode (**)(SNES,Vec,Vec,void*))&ff,0);CHKPETSC(ierr);
-  ierr  = MatFDColoringGetFunction(color,&fd,PETSC_NULL);CHKPETSC(ierr);
+  ierr  = MatFDColoringGetFunction(color,&fd,PETSC_NULLPTR);CHKPETSC(ierr);
   if (fd == ff) { /* reuse function value computed in SNES */
     ierr  = MatFDColoringSetF(color,f);CHKPETSC(ierr);
   }
@@ -2359,8 +2339,7 @@ MatSqueeze(Mat& J,
 
   int rstart, rend;
   ierr = MatGetOwnershipRange(J,&rstart,&rend);CHKPETSC(ierr);
-  int nrows = 0;
-  int Jncols, Ancols;
+  int Jncols;
   const PetscInt *Jcols;
   const PetscScalar *Jvals;
   PetscReal dtol = 1.e-20;

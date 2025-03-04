@@ -99,7 +99,7 @@ int main(int argc, char* argv[])
             eventList.clear();
         }
 
-        // The time stepper advances from time_old to time_new, arriving at cycle=iter+dcycle
+        // The timestepper advances from time_old to time_new, arriving at cycle=iter+dcycle
         // If time_old+dt_def would step over an event, we will reduce the interval, and set
         // time_new to when that event(s) would occur.  At this new cycle and time, we would
         // typically then process the list of events that have occurred:

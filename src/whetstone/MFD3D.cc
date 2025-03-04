@@ -17,7 +17,7 @@
 #include <cmath>
 #include <vector>
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 #include "Point.hh"
 
 #include "MFD3D.hh"
@@ -29,7 +29,7 @@ namespace WhetStone {
 /* ******************************************************************
 * Constructors
 ****************************************************************** */
-MFD3D::MFD3D(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh) : BilinearForm(mesh)
+MFD3D::MFD3D(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : BilinearForm(mesh)
 {
   stability_method_ = WHETSTONE_STABILITY_GENERIC;
   scaling_factor_ = 1.0;
@@ -656,13 +656,12 @@ MFD3D::SimplexExchangeVariables_(DenseMatrix& T, int kp, int ip)
 * Modify the stability space by extending matrix N.
 ****************************************************************** */
 void
-AddGradient(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh, int c, DenseMatrix& N)
+AddGradient(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, DenseMatrix& N)
 {
-  const auto& edges = mesh->cell_get_edges(c);
+  const auto& edges = mesh->getCellEdges(c);
   int nedges = edges.size();
 
-  Entity_ID_List nodes;
-  mesh->cell_get_nodes(c, &nodes);
+  auto nodes = mesh->getCellNodes(c);
   int nnodes = nodes.size();
 
   // reserve map: gid -> lid
@@ -676,8 +675,10 @@ AddGradient(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh, int c, DenseM
 
   for (int m = 0; m < nedges; ++m) {
     int e = edges[m];
-    double length = mesh->edge_length(e);
-    mesh->edge_get_nodes(e, &v1, &v2);
+    double length = mesh->getEdgeLength(e);
+    auto nodes = mesh->getEdgeNodes(e);
+    v1 = nodes[0];
+    v2 = nodes[1];
 
     G(m, lid[v1]) += 1.0 / length;
     G(m, lid[v2]) -= 1.0 / length;

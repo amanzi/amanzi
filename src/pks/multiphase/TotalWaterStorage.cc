@@ -23,7 +23,7 @@ namespace Multiphase {
 /* ******************************************************************
 * Constructor.
 ****************************************************************** */
-TotalWaterStorage::TotalWaterStorage(Teuchos::ParameterList& plist) : MultiphaseBaseEvaluator(plist)
+TotalWaterStorage::TotalWaterStorage(Teuchos::ParameterList& plist) : MultiphaseEvaluator(plist)
 {
   Init_();
 }
@@ -55,8 +55,7 @@ TotalWaterStorage::Init_()
 /* ******************************************************************
 * Copy constructors.
 ****************************************************************** */
-TotalWaterStorage::TotalWaterStorage(const TotalWaterStorage& other)
-  : MultiphaseBaseEvaluator(other){};
+TotalWaterStorage::TotalWaterStorage(const TotalWaterStorage& other) : MultiphaseEvaluator(other){};
 
 
 Teuchos::RCP<Evaluator>

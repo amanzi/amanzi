@@ -107,7 +107,6 @@ Beaker::EnforceConstraint(BeakerState* state,
       msg << "Unknown geochemical constraint: " << names[i] << "\n";
       Exceptions::amanzi_throw(msg);
     }
-
     // total_.at(i) = state->total.at(i);
   }
 
@@ -120,7 +119,7 @@ Beaker::EnforceConstraint(BeakerState* state,
 
   do {
     UpdateActivityCoefficients_();
-    UpdateEquilibriumChemistry();
+    UpdateEquilibriumChemistry(*state);
     UpdateKineticChemistry();
     CalculateDTotal();
 
@@ -193,8 +192,10 @@ Beaker::EnforceConstraint(BeakerState* state,
     // scale and solve
     rhs_ = residual_;
 
-    for (int i = 0; i < ncomp_; i++) {
-      jacobian_.ScaleColumn(i, primary_species().at(i).molality());
+    if (use_log_formulation_) {
+      for (int i = 0; i < ncomp_; i++) {
+        jacobian_.ScaleColumn(i, primary_species().at(i).molality());
+      }
     }
 
     lu_solver_.Solve(&jacobian_, &rhs_);
@@ -214,7 +215,7 @@ Beaker::EnforceConstraint(BeakerState* state,
 
   // for now, initialize total sorbed concentrations based on the current free
   // ion concentrations
-  UpdateEquilibriumChemistry();
+  UpdateEquilibriumChemistry(*state);
   CopyBeakerToState(state);
   status_.num_newton_iterations = num_iterations;
   if (max_rel_change < tolerance_) { status_.converged = true; }

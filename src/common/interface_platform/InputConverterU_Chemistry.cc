@@ -203,17 +203,16 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
           ss << "dof " << j + 1 << " function";
 
           node = GetUniqueElementByTagsString_(inode, "aqueous_reactions", flag);
-          double arc(0.0);
           if (flag) {
             element = GetUniqueChildByAttribute_(node, "name", aqueous_reactions[j], flag, true);
-            arc = GetAttributeValueD_(element,
-                                      "first_order_rate_constant",
-                                      TYPE_NUMERICAL,
-                                      DVAL_MIN,
-                                      DVAL_MAX,
-                                      "",
-                                      false,
-                                      0.0);
+            GetAttributeValueD_(element,
+                                "first_order_rate_constant",
+                                TYPE_NUMERICAL,
+                                DVAL_MIN,
+                                DVAL_MAX,
+                                "",
+                                false,
+                                0.0);
           }
           aux3_list.sublist(ss.str())
             .sublist("function-constant")
@@ -298,7 +297,7 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
     }
 
     // sorption
-    int nsolutes = phases_["water"].size();
+    int nsolutes = phases_[LIQUID].dissolved.size();
     node = GetUniqueElementByTagsString_(inode, "sorption_isotherms", flag);
     if (flag && nsolutes > 0) {
       Teuchos::ParameterList& kd = ic_list.sublist("isotherm_kd");
@@ -329,7 +328,7 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
         aux3_list.set<int>("number of dofs", nsolutes).set("function type", "composite function");
 
         for (int j = 0; j < nsolutes; ++j) {
-          std::string solute_name = phases_["water"][j];
+          std::string solute_name = phases_[LIQUID].dissolved[j];
           element = GetUniqueChildByAttribute_(node, "name", solute_name, flag, false);
           if (flag) {
             DOMNode* jnode = GetUniqueElementByTagsString_(element, "kd_model", flag);
@@ -398,7 +397,8 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
   double tol(1e-12), dt_max(1e+10), dt_min(1e+10), dt_init(1e+7), dt_cut(2.0), dt_increase(1.2);
 
   double ion_value;
-  bool ion_guess(false);
+  bool ion_guess(false), log_form(true);
+  std::string conv_criterion("pflotran");
 
   std::string activity_model("unit"), dt_method("fixed"), pitzer_database;
   std::vector<std::string> aux_data;
@@ -415,12 +415,12 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
         activity_model = GetTextContentS_(inode, "unit, debye-huckel, pitzer-hwm");
       } else if (strcmp(text, "maximum_newton_iterations") == 0) {
         max_itrs = strtol(mm.transcode(inode->getTextContent()), NULL, 10);
-      } else if (strcmp(text, "tolerance") == 0) {
+      } else if (strcmp(text, "max_residual_tolerance") == 0) {
         tol = strtod(mm.transcode(inode->getTextContent()), NULL);
       } else if (strcmp(text, "min_time_step") == 0) {
         dt_min = strtod(mm.transcode(inode->getTextContent()), NULL);
       } else if (strcmp(text, "max_time_step") == 0) {
-        dt_max = strtod(mm.transcode(inode->getTextContent()), NULL);
+        dt_max = GetTextContentD_(inode, "", true);
       } else if (strcmp(text, "initial_time_step") == 0) {
         dt_init = strtod(mm.transcode(inode->getTextContent()), NULL);
       } else if (strcmp(text, "time_step_control_method") == 0) {
@@ -433,6 +433,10 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
         increase_threshold = strtol(mm.transcode(inode->getTextContent()), NULL, 10);
       } else if (strcmp(text, "time_step_increase_factor") == 0) {
         dt_increase = strtod(mm.transcode(inode->getTextContent()), NULL);
+      } else if (strcmp(text, "log_formulation") == 0) {
+        log_form = strcmp(mm.transcode(inode->getTextContent()), "on") == 0;
+      } else if (strcmp(text, "convergence_criterion") == 0) {
+        conv_criterion = GetTextContentS_(inode, "pflotran, linear algebra: max norm");
       } else if (strcmp(text, "auxiliary_data") == 0) {
         aux_data = CharToStrings_(mm.transcode(inode->getTextContent()));
       } else if (strcmp(text, "free_ion_guess") == 0) {
@@ -448,14 +452,16 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
     out_list.set<std::string>("Pitzer database file", pitzer_database);
   out_list.set<int>("maximum Newton iterations", max_itrs);
   out_list.set<double>("tolerance", tol);
-  out_list.set<double>("max time step (s)", dt_max);
-  out_list.set<double>("min time step (s)", dt_min);
-  out_list.set<double>("initial time step (s)", dt_init);
-  out_list.set<int>("time step cut threshold", cut_threshold);
-  out_list.set<double>("time step cut factor", dt_cut);
-  out_list.set<int>("time step increase threshold", increase_threshold);
-  out_list.set<double>("time step increase factor", dt_increase);
-  out_list.set<std::string>("time step control method", dt_method);
+  out_list.set<double>("max timestep (s)", dt_max);
+  out_list.set<double>("min timestep (s)", dt_min);
+  out_list.set<double>("initial timestep (s)", dt_init);
+  out_list.set<int>("timestep cut threshold", cut_threshold);
+  out_list.set<double>("timestep cut factor", dt_cut);
+  out_list.set<int>("timestep increase threshold", increase_threshold);
+  out_list.set<double>("timestep increase factor", dt_increase);
+  out_list.set<std::string>("timestep control method", dt_method);
+  out_list.set<bool>("log formulation", log_form);
+  out_list.set<std::string>("convergence criterion", conv_criterion);
   if (aux_data.size() > 0) out_list.set<Teuchos::Array<std::string>>("auxiliary data", aux_data);
   if (sorption_sites.size() > 0)
     out_list.set<Teuchos::Array<std::string>>("sorption sites", sorption_sites);
@@ -463,7 +469,7 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
   // free ion has optional initialization. Default initialization is tight
   // to the valus of the initial value of the total component concentration.
   if (ion_guess) {
-    int nsolutes = phases_["water"].size();
+    int nsolutes = phases_[LIQUID].dissolved.size();
     Teuchos::ParameterList& free_ion = ic_list.sublist("free_ion_species");
 
     Teuchos::ParameterList& aux1_list = free_ion.sublist("function")
@@ -474,7 +480,7 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
     aux1_list.set<int>("number of dofs", nsolutes).set("function type", "composite function");
 
     for (int j = 0; j < nsolutes; ++j) {
-      std::string solute_name = phases_["water"][j];
+      std::string solute_name = phases_[LIQUID].dissolved[j];
 
       std::stringstream ss;
       ss << "dof " << j + 1 << " function";
@@ -486,6 +492,9 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
   // miscalleneous
   out_list.set<double>("initial conditions time", ic_time_);
   out_list.set<int>("number of component concentrations", comp_names_all_.size());
+
+  // assumption
+  out_list.sublist("physical models and assumptions").set<std::string>("physics module", "Amanzi");
 
   out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
   return out_list;

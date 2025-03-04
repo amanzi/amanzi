@@ -12,7 +12,7 @@
 
 */
 
-#include "HDF5Reader.hh"
+#include "Reader.hh"
 
 #include "EvaluatorIndependentFromFile.hh"
 #include "Function.hh"
@@ -105,11 +105,13 @@ EvaluatorIndependentFromFile::EnsureCompatibility(State& S)
 
   // load times, ensure file is valid
   // if there exists no times, default value is set to +infinity
-  HDF5Reader reader(filename_);
+  auto reader = createReader(filename_);
   times_.clear();
   if (temporally_variable_) {
     try {
-      reader.ReadData("/time", times_);
+      Teuchos::Array<double> times;
+      reader->read("/time", times);
+      times_ = times.toVector();
     } catch (...) {
       std::stringstream messagestream;
       messagestream << "Variable " << my_key_ << " is defined as a field changing in time.\n"
@@ -255,13 +257,7 @@ EvaluatorIndependentFromFile::LoadFile_(int i)
   for (int j = 0; j != ndofs_; ++j) {
     std::stringstream varname;
     varname << varname_ << "." << locname_ << "." << j << "//" << i;
-    bool successful = file_input->readData(*vec(j), varname.str());
-    if (!successful) {
-      Errors::Message msg;
-      msg << "EvaluatorIndependentFromFile for \"" << my_key_ << "\" cannot read variable \""
-          << varname.str() << "\" from file \"" << filename_ << "\"";
-      Exceptions::amanzi_throw(msg);
-    }
+    file_input->readData(*vec(j), varname.str());
   }
 
   // close file

@@ -20,14 +20,14 @@
 
 #include "IO.hh"
 #include "CycleDriver.hh"
-#include "eos_registration.hh"
+#include "eos_reg.hh"
 #include "MeshFactory.hh"
 #include "Mesh.hh"
+#include "models_flow_reg.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
-#include "pks_flow_registration.hh"
+#include "pks_flow_reg.hh"
 #include "State.hh"
-#include "wrm_flow_registration.hh"
 
 
 TEST(MPC_DRIVER_FLOW)
@@ -69,16 +69,16 @@ TEST(MPC_DRIVER_FLOW)
 
   {
     Amanzi::CycleDriver cycle_driver(glist, S, comm, obs_data);
-    try {
+    // try {
       cycle_driver.Go();
       S->Get<CompositeVector>("saturation_liquid").MeanValue(&avg1);
-    } catch (const std::exception& e) {
-      std::cerr << e.what() << "\n\n";
-      ;
-      CHECK(false);
-    } catch (...) {
-      CHECK(false);
-    }
+    // } catch (const std::exception& e) {
+    //   std::cerr << e.what() << "\n\n";
+    //   ;
+    //   CHECK(false);
+    // } catch (...) {
+    //   CHECK(false);
+    // }
   }
   WriteStateStatistics(*S);
   S = Teuchos::null;
@@ -87,7 +87,7 @@ TEST(MPC_DRIVER_FLOW)
   glist->sublist("cycle driver")
     .sublist("restart")
     .set<std::string>("file name", "chk_flow00010.h5");
-  avg2 = 0.;
+  avg2 = 0.0;
   S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
 
@@ -102,6 +102,7 @@ TEST(MPC_DRIVER_FLOW)
   }
   WriteStateStatistics(*S);
 
+  std::cout << "avg = " << avg1 << "," << avg2 << std::endl;
   CHECK_CLOSE(avg1, avg2, 1e-6 * avg1);
 
   // checking that we created only two pks

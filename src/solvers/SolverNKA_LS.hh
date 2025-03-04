@@ -48,13 +48,10 @@ Note, this always monitors the residual.
       allowed orthogonality between vectors in the local space. If a new vector
       does not satisfy this requirement, the space is modified.
 
-
 */
 
 #ifndef AMANZI_NKA_LINESEARCH_SOLVER_
 #define AMANZI_NKA_LINESEARCH_SOLVER_
-
-#include "boost/math/tools/minima.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -65,7 +62,9 @@ Note, this always monitors the residual.
 #include "SolverFnBase.hh"
 #include "SolverDefs.hh"
 #include "NKA_Base.hh"
-#include "BackTracking.hh"
+#include "LineSearchFunctor.hh"
+#include "Brent.hh"
+
 
 namespace Amanzi {
 namespace AmanziSolvers {
@@ -103,6 +102,7 @@ class SolverNKA_LS : public Solver<Vector, VectorSpace> {
   int pc_calls() { return pc_calls_; }
   int pc_updates() { return pc_updates_; }
   int returned_code() { return returned_code_; }
+  std::vector<std::pair<double, double>>& history() { return history_; }
 
  private:
   void Init_();
@@ -143,34 +143,7 @@ class SolverNKA_LS : public Solver<Vector, VectorSpace> {
   int fun_calls_, pc_calls_, solve_calls_;
   int pc_updates_;
 
-
-  // functor for minimization in boost
-  struct Functor {
-    Functor(const Teuchos::RCP<SolverFnBase<Vector>>& my_fn) : fn(my_fn) {}
-
-    void setup(const Teuchos::RCP<Vector>& u_,
-               const Teuchos::RCP<Vector>& u0_,
-               const Teuchos::RCP<Vector>& du_)
-    {
-      u = u_;
-      du = du_;
-      u0 = u0_;
-      if (r == Teuchos::null) { r = Teuchos::rcp(new Vector(*u)); }
-      *u0 = *u;
-    }
-
-    double operator()(double x)
-    {
-      *u = *u0;
-      u->Update(-x, *du, 1.);
-      fn->ChangedSolution();
-      fn->Residual(u, r);
-      return fn->ErrorNorm(u, r);
-    }
-
-    Teuchos::RCP<Vector> u, r, u0, du;
-    Teuchos::RCP<SolverFnBase<Vector>> fn;
-  };
+  std::vector<std::pair<double, double>> history_;
 };
 
 
@@ -297,8 +270,7 @@ SolverNKA_LS<Vector, VectorSpace>::NKA_LS_(const Teuchos::RCP<Vector>& u)
   }
 
   // set up the functor for minimization in line search
-  Functor linesearch_func(fn_);
-  linesearch_func.setup(u, u_prev, du);
+  LineSearchFunctor<Vector> linesearch_func(fn_, u_prev, du, u, r);
 
   do {
     // Check for too many nonlinear iterations.
@@ -389,35 +361,31 @@ SolverNKA_LS<Vector, VectorSpace>::NKA_LS_(const Teuchos::RCP<Vector>& u)
     if ((!good_iterate) && (hacked != FnBaseDefs::CORRECTION_MODIFIED_LAG_BACKTRACKING)) {
       // find an admissible endpoint alpha, starting from ten times the full correction
       alpha = max_alpha_;
-      *u = *u_prev;
-      u->Update(-alpha, *du, 1.0);
+      u->Update(-alpha, *du, 1.0, *u_prev, 0.);
       fn_->ChangedSolution();
       while (!fn_->IsAdmissible(u)) {
         alpha *= 0.3;
-        *u = *u_prev;
-        u->Update(-alpha, *du, 1.);
+        u->Update(-alpha, *du, 1., *u_prev, 0.);
         fn_->ChangedSolution();
       }
       admissible_iterate = true;
 
       // minimize along the search path from min_alpha to endpoint
       double left = min_alpha_;
-      std::uintmax_t ls_itrs(max_ls_itrs_);
-      std::pair<double, double> result =
-        boost::math::tools::brent_find_minima(linesearch_func, left, alpha, bits_, ls_itrs);
-      fun_calls_ += ls_itrs;
+      int ls_itrs(max_ls_itrs_);
+      double eps = std::pow(2, -bits_);
+      double result = Utils::findMinimumBrent(linesearch_func, left, alpha, eps, &ls_itrs);
+      fun_calls_ += linesearch_func.fun_calls;
 
       if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-        *vo_->os() << "  Brent algorithm in: " << ls_itrs << " itrs (alpha=" << result.first
-                   << ") Error = " << result.second << "(old error=" << previous_error << ")"
-                   << std::endl;
+        *vo_->os() << "  Brent algorithm in: " << ls_itrs << " itrs (alpha=" << result
+                   << ") Error = " << linesearch_func.error << "(old error=" << previous_error
+                   << ")" << std::endl;
       }
-      alpha = result.first;
-      error = result.second;
+      alpha = result;
 
       // update the correction -- unclear if this is necessary -- TEST
-      linesearch_func(result.first);
-      fun_calls_++;
+      error = linesearch_func.error;
 
       // report error
       r->Norm2(&l2_error);

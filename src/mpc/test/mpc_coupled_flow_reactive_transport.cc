@@ -22,21 +22,19 @@
 // Amanzi
 #include "CycleDriver.hh"
 #include "MeshAudit.hh"
-#include "energy_tcm_registration.hh"
-#include "energy_iem_registration.hh"
-#include "eos_registration.hh"
+#include "eos_reg.hh"
+#include "evaluators_flow_reg.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
-#include "mpc_pks_registration.hh"
+#include "models_flow_reg.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
-#include "pks_chemistry_registration.hh"
-#include "pks_energy_registration.hh"
-#include "pks_flow_registration.hh"
-#include "pks_transport_registration.hh"
+#include "pks_chemistry_reg.hh"
+#include "pks_flow_reg.hh"
+#include "pks_mpc_reg.hh"
+#include "pks_transport_reg.hh"
 #include "State.hh"
-#include "wrm_flow_registration.hh"
 
 
 TEST(MPC_DRIVER_FLOW_RACTIVE_TRANSPORT_MATRIX_FRACTURE)
@@ -57,7 +55,9 @@ TEST(MPC_DRIVER_FLOW_RACTIVE_TRANSPORT_MATRIX_FRACTURE)
 
   // create mesh
   auto mesh_list = Teuchos::sublist(plist, "mesh", true);
-  MeshFactory factory(comm, gm, mesh_list);
+  auto mesh_list2 = Teuchos::sublist(mesh_list, "unstructured", true);
+  auto mesh_list3 = Teuchos::sublist(mesh_list2, "expert", true);
+  MeshFactory factory(comm, gm, mesh_list3);
   factory.set_preference(Preference({ Framework::MSTK }));
   auto mesh = factory.create("test/single_fracture_tet.exo");
 
@@ -71,7 +71,7 @@ TEST(MPC_DRIVER_FLOW_RACTIVE_TRANSPORT_MATRIX_FRACTURE)
   // create additional mesh for fracture
   std::vector<std::string> names;
   names.push_back("fracture");
-  auto mesh_fracture = factory.create(mesh, names, AmanziMesh::FACE);
+  auto mesh_fracture = factory.create(mesh, names, AmanziMesh::Entity_kind::FACE);
 
   S->RegisterMesh("fracture", mesh_fracture);
 

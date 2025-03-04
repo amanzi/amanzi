@@ -172,7 +172,7 @@
  ----> No update of porosity
  --> Extended Debye-Huckel activity model used
  --> Activity coefficients only computed
-     at beginning of time step 
+     at beginning of timestep 
 
   Temperature (C) at J = 1            25.00
   Temperature gradient (C/m) =         0.00

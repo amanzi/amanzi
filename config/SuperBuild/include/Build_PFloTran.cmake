@@ -16,7 +16,8 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   VERSION ${PFLOTRAN_VERSION_MAJOR} ${PFLOTRAN_VERSION_MINOR} ${PFLOTRAN_VERSION_PATCH})
   
 # --- Patch the original code
-set(PFLOTRAN_patch_file pflotran-program.patch)
+# set(PFLOTRAN_patch_file pflotran-program.patch)
+set(PFLOTRAN_patch_file )
 set(PFLOTRAN_sh_patch ${PFLOTRAN_prefix_dir}/pflotran-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/pflotran-patch-step.sh.in
                ${PFLOTRAN_sh_patch}
@@ -84,9 +85,13 @@ ExternalProject_Add(${PFLOTRAN_BUILD_TARGET}
                     TMP_DIR   ${PFLOTRAN_tmp_dir}                # Temporary files directory
                     STAMP_DIR ${PFLOTRAN_stamp_dir}              # Timestamp and log directory
                     # -- Download and URL definitions
+                    DOWNLOAD_DIR  ${TPL_DOWNLOAD_DIR}
+                    URL           ${PFLOTRAN_URL}                # URL may be a web site OR a local file
+                    URL_MD5       ${PFLOTRAN_MD5_SUM}            # md5sum of the archive file
+                    DOWNLOAD_NAME ${PFLOTRAN_SAVEAS_FILE}        # file name to store (if not end of URL)
                     # -- Note: The repo is cloned into the ${PFLOTRAN_source_dir} directory
-                    GIT_REPOSITORY ${PFLOTRAN_GIT_REPOSITORY_TEMP}              
-                    GIT_TAG        ${PFLOTRAN_GIT_TAG}      
+                    # GIT_REPOSITORY ${PFLOTRAN_GIT_REPOSITORY_TEMP}
+                    # GIT_TAG        ${PFLOTRAN_GIT_TAG}
                     # -- Update (one way to skip this step is use null command)
                     UPDATE_COMMAND ""
                     # -- Patch 

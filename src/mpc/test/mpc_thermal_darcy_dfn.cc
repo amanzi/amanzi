@@ -21,19 +21,19 @@
 
 // Amanzi
 #include "CycleDriver.hh"
-#include "energy_tcm_registration.hh"
-#include "energy_iem_registration.hh"
-#include "eos_registration.hh"
+#include "eos_reg.hh"
+#include "evaluators_flow_reg.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "mpc_pks_registration.hh"
+#include "models_energy_reg.hh"
+#include "models_flow_reg.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
-#include "pks_energy_registration.hh"
-#include "pks_flow_registration.hh"
-#include "pks_transport_registration.hh"
+#include "pks_energy_reg.hh"
+#include "pks_flow_reg.hh"
+#include "pks_mpc_reg.hh"
+#include "pks_transport_reg.hh"
 #include "State.hh"
-#include "wrm_flow_registration.hh"
 
 
 TEST(MPC_DRIVER_THERMAL_DARCY_DFN)
@@ -61,7 +61,7 @@ TEST(MPC_DRIVER_THERMAL_DARCY_DFN)
   setnames.push_back("fracture 1");
   setnames.push_back("fracture 2");
 
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(mesh3D, setnames, AmanziMesh::FACE);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(mesh3D, setnames, AmanziMesh::Entity_kind::FACE);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;

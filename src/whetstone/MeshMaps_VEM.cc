@@ -38,7 +38,8 @@ MeshMaps_VEM::VelocityCell(int c,
 {
   Teuchos::ParameterList plist;
   plist.set<std::string>("method", method_).set<int>("method order", order_);
-  auto mfd = BilinearFormFactory::Create(plist, mesh0_);
+  auto form = BilinearFormFactory::Create(plist, mesh0_);
+  auto mfd = Teuchos::rcp_dynamic_cast<MFD3D>(form);
 
   vc.resize(d_);
 
@@ -68,18 +69,16 @@ void
 MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& vf) const
 {
   if (d_ == 2) {
-    MeshMaps::VelocityFace(f, vf);
+    MeshMapsBase::VelocityFace(f, vf);
   } else {
-    AmanziMesh::Entity_ID_List edges;
-    std::vector<int> dirs;
-
-    mesh0_->face_get_edges_and_dirs(f, &edges, &dirs);
+    auto [edges, dirs] = mesh0_->getFaceEdgesAndDirections(f);
     int nedges = edges.size();
 
     Teuchos::ParameterList plist;
     plist.set<std::string>("method", method_).set<int>("method order", order_);
-    auto mfd = BilinearFormFactory::Create(plist, mesh0_);
-    mfd->set_order(order_);
+    auto form = BilinearFormFactory::Create(plist, mesh0_);
+    auto mfd = Teuchos::rcp_dynamic_cast<MFD3D>(form);
+    form->set_order(order_);
 
     vf.resize(d_);
     for (int i = 0; i < d_; ++i) {
@@ -88,7 +87,7 @@ MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& vf) const
 
       for (int n = 0; n < nedges; ++n) {
         int e = edges[n];
-        MeshMaps::VelocityEdge(e, v);
+        MeshMapsBase::VelocityEdge(e, v);
         ve.push_back(v[i]);
       }
 
@@ -115,27 +114,26 @@ MeshMaps_VEM::LeastSquareProjector_Cell_(int order,
   vc.Reshape(d_, d_, order);
 
   AmanziGeometry::Point px1, px2;
-  std::vector<AmanziGeometry::Point> x1, x2;
+  AmanziMesh::Point_List x1, x2;
 
-  Entity_ID_List nodes;
-  mesh0_->cell_get_nodes(c, &nodes);
+  auto nodes = mesh0_->getCellNodes(c);
   int nnodes = nodes.size();
 
   for (int n = 0; n < nnodes; ++n) {
-    mesh0_->node_get_coordinates(nodes[n], &px1);
+    px1 = mesh0_->getNodeCoordinate(nodes[n]);
     x1.push_back(px1);
 
-    mesh1_->node_get_coordinates(nodes[n], &px2);
+    px2 = mesh1_->getNodeCoordinate(nodes[n]);
     x2.push_back(px2 - px1);
   }
 
   // FIXME
   if (order > 1) {
-    const auto& faces = mesh0_->cell_get_faces(c);
+    const auto& faces = mesh0_->getCellFaces(c);
     int nfaces = faces.size();
 
     for (int n = 0; n < nfaces; ++n) {
-      const auto& xf = mesh0_->face_centroid(faces[n]);
+      const auto& xf = mesh0_->getFaceCentroid(faces[n]);
       x1.push_back(xf);
 
       for (int i = 0; i < d_; ++i) { px2[i] = vf[n][i].Value(xf); }

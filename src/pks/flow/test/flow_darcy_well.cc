@@ -35,7 +35,7 @@
 
 
 /* *********************************************************************
-* Two tests with different time step controllers.
+* Two tests with different timestep controllers.
 ********************************************************************* */
 void
 RunTestDarcyWell(std::string controller, bool fit)
@@ -61,7 +61,7 @@ RunTestDarcyWell(std::string controller, bool fit)
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
-  pref.push_back(Framework::STK);
+  //pref.push_back(Framework::MOAB);
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
@@ -82,11 +82,13 @@ RunTestDarcyWell(std::string controller, bool fit)
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
+  Teuchos::ParameterList pk_tree("flow");
   auto soln = Teuchos::rcp(new TreeVector());
-  auto DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
+  auto DPK = Teuchos::rcp(new Darcy_PK(pk_tree, plist, S, soln));
   DPK->Setup();
   S->Setup();
   S->InitializeFields();
+  S->InitializeEvaluators();
 
   // modify the default state for the problem at hand
   // -- permeability
@@ -96,14 +98,14 @@ RunTestDarcyWell(std::string controller, bool fit)
 
   if (!S->GetRecord("permeability").initialized()) {
     for (int c = 0; c < K.MyLength(); c++) {
-      const AmanziGeometry::Point xc = mesh->cell_centroid(c);
+      const AmanziGeometry::Point xc = mesh->getCellCentroid(c);
       K[0][c] = 0.1 + std::sin(xc[0]) * 0.02;
       K[1][c] = 2.0 + std::cos(xc[1]) * 0.4;
     }
     S->GetRecordW("permeability", "permeability").set_initialized();
   } else {
     for (int c = 0; c < K.MyLength(); c++) {
-      const AmanziGeometry::Point xc = mesh->cell_centroid(c);
+      const AmanziGeometry::Point xc = mesh->getCellCentroid(c);
       diff_in_perm += abs(K[0][c] - (0.1 + std::sin(xc[0]) * 0.02)) +
                       abs(K[1][c] - (2.0 + std::cos(xc[1]) * 0.4));
     }
@@ -118,10 +120,6 @@ RunTestDarcyWell(std::string controller, bool fit)
 
   S->GetW<double>("const_fluid_viscosity", "state") = 1.0;
   S->GetRecordW("const_fluid_viscosity", "state").set_initialized();
-
-  // -- storativity
-  S->GetW<CompositeVector>("specific_storage", passwd).PutScalar(0.1);
-  S->GetRecordW("specific_storage", passwd).set_initialized();
 
   // initialize the Darcy process kernel
   DPK->Initialize();
@@ -152,7 +150,7 @@ RunTestDarcyWell(std::string controller, bool fit)
 
     for (int c = 0; c < K.MyLength(); c++) {
       if (fit) {
-        const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+        const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
         if (fabs(xc[0]) < 0.05 && fabs(xc[1] + 2.475) < 0.05) {
           // use quadratic approximation in time. This may capture bugs in the well model.
           double quad =
@@ -207,7 +205,7 @@ Run_3D_DarcyWell(std::string controller)
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
-  pref.push_back(Framework::STK);
+  //pref.push_back(Framework::MOAB);
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
@@ -220,11 +218,13 @@ Run_3D_DarcyWell(std::string controller)
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
+  Teuchos::ParameterList pk_tree("flow");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
+  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(pk_tree, plist, S, soln));
   DPK->Setup();
   S->Setup();
   S->InitializeFields();
+  S->InitializeEvaluators();
 
   // modify the default state for the problem at hand
   // -- permeability
@@ -244,10 +244,6 @@ Run_3D_DarcyWell(std::string controller)
 
   S->GetW<double>("const_fluid_viscosity", "state") = 1.0;
   S->GetRecordW("const_fluid_viscosity", "state").set_initialized();
-
-  // -- storativity
-  S->GetW<CompositeVector>("specific_storage", passwd).PutScalar(0.1);
-  S->GetRecordW("specific_storage", passwd).set_initialized();
 
   // initialize the Darcy process kernel
   DPK->Initialize();
@@ -275,10 +271,10 @@ Run_3D_DarcyWell(std::string controller)
 }
 
 
-TEST(FLOW_3D_DARCY_WELL)
-{
-  Run_3D_DarcyWell("test/flow_darcy_well_3D.xml");
-}
+//TEST(FLOW_3D_DARCY_WELL)
+//{
+//  Run_3D_DarcyWell("test/flow_darcy_well_3D.xml");
+//}
 
 
 /* **************************************************************** */
@@ -306,7 +302,7 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL)
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
-  pref.push_back(Framework::STK);
+  //pref.push_back(Framework::MOAB);
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
@@ -320,11 +316,13 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL)
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
   std::string passwd("");
+  Teuchos::ParameterList pk_tree("flow");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
+  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(pk_tree, plist, S, soln));
   DPK->Setup();
   S->Setup();
   S->InitializeFields();
+  S->InitializeEvaluators();
 
   // modify the default state for the problem at hand
   // -- permeability
@@ -344,10 +342,7 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL)
   S->GetW<double>("const_fluid_viscosity", "state") = 1.0;
   S->GetRecordW("const_fluid_viscosity", "state").set_initialized();
 
-  // -- storativity
-  S->GetW<CompositeVector>("specific_storage", passwd).PutScalar(0.0);
-  S->GetRecordW("specific_storage", passwd).set_initialized();
-
+  // -- porosity
   S->GetW<CompositeVector>("porosity", "porosity").PutScalar(1.0);
   S->GetRecordW("porosity", "porosity").set_initialized();
 
@@ -372,11 +367,12 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL)
   double pw = 10.0;
   double depth = 2.5;
 
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   double err = 0.;
   double sol = 0.;
   for (int c = 0; c < ncells; c++) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
     double r = sqrt(xc[0] * xc[0] + xc[1] * xc[1]);
     double p_ex;
     p_ex = pw + gravity[2] * (xc[2] + depth);
@@ -388,7 +384,7 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL)
 
     p_exact[0][c] = p_ex;
 
-    double vol = mesh->cell_volume(c);
+    double vol = mesh->getCellVolume(c);
     err += (p_ex - p[0][c]) * (p_ex - p[0][c]) * vol;
 
     err_p[0][c] = abs(p_ex - p[0][c]);

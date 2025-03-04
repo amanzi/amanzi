@@ -56,7 +56,7 @@ class TransportMatrixFracture_PK : public PK_MPCWeak {
   Teuchos::RCP<Operators::TreeOperator> op_dispersion_;
 
   Key tcc_matrix_key_, tcc_fracture_key_;
-  Key normal_diffusion_key_;
+  Key solute_diffusion_to_matrix_key_;
 
   // factory registration
   static RegisteredPKFactory<TransportMatrixFracture_PK> reg_;

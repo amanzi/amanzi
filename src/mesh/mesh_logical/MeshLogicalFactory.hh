@@ -242,8 +242,8 @@ class MeshLogicalFactory {
                   MeshLogicalFactory::LogicalTip_t first_tip_type,
                   MeshLogicalFactory::LogicalTip_t last_tip_type,
                   std::string const& name,
-                  std::vector<Entity_ID>* const cells,
-                  std::vector<Entity_ID>* const faces);
+                  Entity_ID_List* const cells,
+                  Entity_ID_List* const faces);
 
 
   // Add a segment
@@ -252,16 +252,16 @@ class MeshLogicalFactory {
   //
   // Cells and faces are optional return values containing the list of
   // entities in the new segment.
-  void AddSegment(std::vector<AmanziGeometry::Point> const* const cell_centroids,
-                  std::vector<double> const* const cell_volumes,
-                  std::vector<double> const& cell_lengths,
-                  std::vector<double> const& face_areas,
+  void AddSegment(Point_List const* const cell_centroids,
+                  Double_List const* const cell_volumes,
+                  Double_List const& cell_lengths,
+                  Double_List const& face_areas,
                   AmanziGeometry::Point const& orientation,
                   MeshLogicalFactory::LogicalTip_t first_tip_type,
                   MeshLogicalFactory::LogicalTip_t last_tip_type,
                   std::string const& name,
-                  std::vector<Entity_ID>* const cells,
-                  std::vector<Entity_ID>* const faces);
+                  Entity_ID_List* const cells,
+                  Entity_ID_List* const faces);
 
   // Add segment from sublist
   void AddSegment(Teuchos::ParameterList& sublist);
@@ -271,7 +271,7 @@ class MeshLogicalFactory {
   // Manually add a connection, returning the face id.
   int AddFace(int f,
               const Entity_ID_List& cells,
-              const std::vector<AmanziGeometry::Point>& bisectors,
+              const Point_List& bisectors,
               const std::vector<int>& dirs,
               double area);
 
@@ -287,14 +287,14 @@ class MeshLogicalFactory {
   AmanziGeometry::Point GetPoint_(Teuchos::ParameterList& plist, const std::string& pname);
 
  protected:
-  std::vector<double> cell_volumes_;
-  std::vector<double> cell_lengths_;
-  std::vector<double> face_areas_;
+  Double_List cell_volumes_;
+  Double_List cell_lengths_;
+  Double_List face_areas_;
   std::vector<Entity_ID_List> face_cell_list_;
-  std::vector<std::vector<AmanziGeometry::Point>> face_cell_bisectors_;
+  std::vector<Point_List> face_cell_bisectors_;
   std::vector<std::vector<int>> face_cell_dirs_;
 
-  std::vector<AmanziGeometry::Point> cell_centroids_;
+  Point_List cell_centroids_;
 
   Comm_ptr_type comm_;
   Teuchos::RCP<AmanziGeometry::GeometricModel> gm_;

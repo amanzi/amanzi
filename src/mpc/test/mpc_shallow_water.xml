@@ -50,13 +50,13 @@
 	</ParameterList>
 	<Parameter name="start period time" type="double" value="0.0"/>
 	<Parameter name="end period time" type="double" value="0.2"/>
-	<Parameter name="initial time step" type="double" value="0.01"/>
+	<Parameter name="initial timestep" type="double" value="0.01"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{10.0, 20.0, 30.0}"/>
-      <Parameter name="initial time step" type="Array(double)" value="{0.2, 0.4, 0.6}"/>
-      <Parameter name="maximum time step" type="Array(double)" value="{5.0, 25.0, 15.0}"/>		 
+      <Parameter name="initial timestep" type="Array(double)" value="{0.2, 0.4, 0.6}"/>
+      <Parameter name="maximum timestep" type="Array(double)" value="{5.0, 25.0, 15.0}"/>		 
     </ParameterList>
 
     <ParameterList name="verbose object">

@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="2.3.0">
+<amanzi_input type="unstructured" version="1.6-dev">
   <model_description name="unconfined_head_head_no_recharge_2d">
     <comments>Steady-State Richards: unconfined_head_head_no_recharge_2d</comments>
     <model_id>1SSUncFlow1/PORFLOW 4.2.1</model_id>
@@ -33,8 +33,8 @@
 
   <phases>
     <liquid_phase name="water">
-    <viscosity>1.002E-03</viscosity>
-    <density>998.2</density>
+      <eos model="constant" viscosity="1.002e-03" density="998.2"/> 
+      <molar_mass>0.018</molar_mass>
     </liquid_phase>
   </phases>
 
@@ -123,7 +123,7 @@
     <material name="Aquifer">
       <comments>Aquifer</comments>
       <mechanical_properties>
-        <porosity value="0.43" />
+        <porosity model="constant" value="0.43" />
       </mechanical_properties>
       <permeability x="3.1198e-11" y="3.1198e-10" />
       <cap_pressure model="van_genuchten">
@@ -143,6 +143,7 @@
         <uniform_pressure value="101325.0" />
         </liquid_component>
       </liquid_phase>
+      <uniform_temperature value="298.0"/>
     </initial_condition>
   </initial_conditions>
 

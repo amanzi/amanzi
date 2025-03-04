@@ -31,12 +31,12 @@ class MeshMapsFactory {
   ~MeshMapsFactory(){};
 
   // select numerical scheme using its name and order
-  std::shared_ptr<MeshMaps> Create(const Teuchos::ParameterList& plist,
-                                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh0,
-                                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh1)
+  std::shared_ptr<MeshMapsBase> Create(const Teuchos::ParameterList& plist,
+                                       const Teuchos::RCP<const AmanziMesh::Mesh>& mesh0,
+                                       const Teuchos::RCP<const AmanziMesh::Mesh>& mesh1)
   {
     std::string name = plist.get<std::string>("map name");
-    std::shared_ptr<MeshMaps> maps(NULL);
+    std::shared_ptr<MeshMapsBase> maps(NULL);
 
     if (name == "FEM") {
       maps = std::make_shared<MeshMaps_FEM>(mesh0, mesh1);

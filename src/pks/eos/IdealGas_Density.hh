@@ -38,12 +38,10 @@ class IdealGas_Density : public EOS_Density {
   virtual double DDensityDp(double T, double p) { return DMolarDensityDp(T, p) * M_; }
 
  protected:
-  virtual void InitializeFromPlist_();
-
   double R_;
 
  private:
-  static Utils::RegisteredFactory<EOS_Density, IdealGas_Density> factory_;
+  static Utils::RegisteredFactory<EOS_Density, IdealGas_Density> reg_;
 };
 
 } // namespace AmanziEOS

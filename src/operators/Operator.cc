@@ -43,6 +43,7 @@
 #include "Op_Edge_Edge.hh"
 #include "Op_Face_Cell.hh"
 #include "Op_Face_CellBndFace.hh"
+#include "Op_Face_Face.hh"
 #include "Op_Face_Schema.hh"
 #include "Op_Node_Node.hh"
 #include "Op_Node_Schema.hh"
@@ -81,17 +82,25 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
   mesh_ = cvs_col_->Mesh();
   rhs_ = Teuchos::rcp(new CompositeVector(*cvs_row_, true));
 
-  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
+  ncells_owned =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  nfaces_owned =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  nnodes_owned =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
 
-  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+  ncells_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+  nfaces_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+  nnodes_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
-  if (mesh_->valid_edges()) {
-    nedges_owned = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::OWNED);
-    nedges_wghost = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::ALL);
+  if (mesh_->hasEdges()) {
+    nedges_owned =
+      mesh_->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_kind::OWNED);
+    nedges_wghost =
+      mesh_->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_kind::ALL);
   } else {
     nedges_owned = 0;
     nedges_wghost = 0;
@@ -137,17 +146,25 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
   mesh_ = cvs_col_->Mesh();
   rhs_ = Teuchos::rcp(new CompositeVector(*cvs_row_, true));
 
-  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
+  ncells_owned =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  nfaces_owned =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  nnodes_owned =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
 
-  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+  ncells_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+  nfaces_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+  nnodes_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
-  if (mesh_->valid_edges()) {
-    nedges_owned = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::OWNED);
-    nedges_wghost = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::ALL);
+  if (mesh_->hasEdges()) {
+    nedges_owned =
+      mesh_->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_kind::OWNED);
+    nedges_wghost =
+      mesh_->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_kind::ALL);
   } else {
     nedges_owned = 0;
     nedges_wghost = 0;
@@ -287,10 +304,11 @@ Operator::AssembleMatrix()
   }
 
   compute_complete_ = false;
+
   // std::stringstream filename_s2;
   // filename_s2 << "assembled_matrix" << 0 << ".txt";
   // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *Amat_ ->Matrix());
-  // exit(0);
+  // throw("dumped matrix");
 }
 
 
@@ -429,7 +447,7 @@ Operator::Apply(const CompositeVector& X, CompositeVector& Y, double scalar) con
 
 
 /* ******************************************************************
-* Matvec product Y = A * X using containers
+* Matvec product Y := s * Y + A * X
 ******************************************************************* */
 int
 Operator::ApplyUnassembled(const CompositeVector& X, CompositeVector& Y, double scalar) const
@@ -879,6 +897,15 @@ Operator::ApplyMatrixFreeOp(const Op_Face_Schema& op,
 }
 
 
+int
+Operator::ApplyMatrixFreeOp(const Op_Face_Face& op,
+                            const CompositeVector& X,
+                            CompositeVector& Y) const
+{
+  return SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
 /* ******************************************************************
 * Visit methods for Apply: Edges
 ****************************************************************** */
@@ -1042,6 +1069,17 @@ Operator::SymbolicAssembleMatrixOp(const Op_Face_CellBndFace& op,
 
 void
 Operator::SymbolicAssembleMatrixOp(const Op_Face_Schema& op,
+                                   const SuperMap& map,
+                                   GraphFE& graph,
+                                   int my_block_row,
+                                   int my_block_col) const
+{
+  SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
+void
+Operator::SymbolicAssembleMatrixOp(const Op_Face_Face& op,
                                    const SuperMap& map,
                                    GraphFE& graph,
                                    int my_block_row,
@@ -1226,6 +1264,17 @@ Operator::AssembleMatrixOp(const Op_Face_CellBndFace& op,
 
 void
 Operator::AssembleMatrixOp(const Op_Face_Schema& op,
+                           const SuperMap& map,
+                           MatrixFE& mat,
+                           int my_block_row,
+                           int my_block_col) const
+{
+  SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
+void
+Operator::AssembleMatrixOp(const Op_Face_Face& op,
                            const SuperMap& map,
                            MatrixFE& mat,
                            int my_block_row,

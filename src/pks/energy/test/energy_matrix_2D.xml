@@ -3,6 +3,12 @@
 
   <!--  REGIONS  -->
   <ParameterList name="regions">
+    <ParameterList name="All">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0}"/>
+      </ParameterList>
+    </ParameterList>
     <ParameterList name="Computational domain">
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0}"/>
@@ -54,13 +60,14 @@
       </ParameterList>
       <ParameterList name="thermal conductivity evaluator">
 	<ParameterList name="thermal conductivity parameters">
-	  <Parameter name="thermal conductivity type" type="string" value="two-phase Peters-Lidard"/>
-	  <Parameter name="thermal conductivity of rock" type="double" value="0.2"/>
-	  <Parameter name="thermal conductivity of liquid" type="double" value="0.1"/>
-	  <Parameter name="thermal conductivity of gas" type="double" value="0.02"/>
-
-	  <Parameter name="unsaturated alpha" type="double" value="1.0"/>
-	  <Parameter name="epsilon" type="double" value="1.e-10"/>
+	  <ParameterList name="TCM_0">
+	    <Parameter name="thermal conductivity type" type="string" value="two-phase Peters-Lidard"/>
+	    <Parameter name="thermal conductivity of rock" type="double" value="0.2"/>
+	    <Parameter name="thermal conductivity of liquid" type="double" value="0.1"/>
+	    <Parameter name="thermal conductivity of gas" type="double" value="0.02"/>
+	    <Parameter name="unsaturated alpha" type="double" value="1.0"/>
+	    <Parameter name="epsilon" type="double" value="1.e-10"/>
+	  </ParameterList>
 	</ParameterList>
       </ParameterList>
 
@@ -245,6 +252,8 @@
         <Parameter name="mass density key" type="string" value="mass_density_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="liquid water 0-30C"/>
+          <Parameter name="molar mass" type="double" value="18.0153e-03"/>
+          <Parameter name="density" type="double" value="997.0"/>
         </ParameterList>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="extreme"/>
@@ -257,9 +266,10 @@
         <Parameter name="molar density key" type="string" value="molar_density_gas"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="vapor in gas"/>
-          <ParameterList name="gas EOS parameters">
+          <ParameterList name="EOS parameters">
             <Parameter name="eos type" type="string" value="ideal gas"/>
-            <Parameter name="molar mass of gas" type="double" value="28.9647e-03"/>
+            <Parameter name="molar mass" type="double" value="28.9647e-03"/>
+            <Parameter name="density" type="double" value="1.0"/>
           </ParameterList>
         </ParameterList>
         <ParameterList name="verbose object">
@@ -277,9 +287,27 @@
           <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
       </ParameterList>
+
+      <ParameterList name="molar_flow_rate">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="face"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="initial conditions">
+      <ParameterList name="const_fluid_molar_mass">
+        <Parameter name="value" type="double" value="0.018015"/>
+      </ParameterList>
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="101325.0"/>
       </ParameterList>
@@ -298,19 +326,6 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="volumetric_flow_rate">
-        <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
-            <Parameter name="component" type="string" value="face"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
       <ParameterList name="temperature">
         <ParameterList name="function">
           <ParameterList name="All">

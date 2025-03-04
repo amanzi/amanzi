@@ -12,22 +12,27 @@
 
 #include "BoxLib.H"
 #include "ParallelDescriptor.H"
+#include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_TimeMonitor.hpp"
+
 #include "ObservationData.hh"
 #include "Simulator.hh"
 
 XERCES_CPP_NAMESPACE_USE
 
-struct AmanziStructuredGridSimulationDriver : Amanzi::Simulator {
- public:
+struct AmanziStructuredGridSimulationDriver
+  : public Amanzi::Simulator,
+    public Teuchos::VerboseObject<AmanziStructuredGridSimulationDriver> {
 
-  // v2 constructor
+ public:
   AmanziStructuredGridSimulationDriver(const std::string& input_file, DOMDocument* input,
                                        const std::string& ouput_prefix);
-
-  // Destructor
   ~AmanziStructuredGridSimulationDriver();
 
-  ReturnType Run(const Amanzi::Comm_ptr_type& comm,
-                 Amanzi::ObservationData& output_observations);
+  virtual ReturnType
+  Run(const Amanzi::Comm_ptr_type& comm, Amanzi::ObservationData& output_observations);
+
+  virtual void
+  Summarize() { if (getVerbLevel() > Teuchos::VERB_LOW) Teuchos::TimeMonitor::summarize(); }
 };
 #endif

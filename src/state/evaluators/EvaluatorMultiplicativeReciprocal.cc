@@ -150,4 +150,31 @@ EvaluatorMultiplicativeReciprocal::EvaluatePartialDerivative_(
   }
 }
 
+
+/* ******************************************************************
+* Units are calculated if field has none. Otherwise, units are compared.
+****************************************************************** */
+void
+EvaluatorMultiplicativeReciprocal::EnsureCompatibility_Units_(State& S)
+{
+  std::string data("-");
+  Utils::Units system;
+  auto& r = S.GetRecordSetW(my_keys_[0].first);
+
+  for (auto it = list0_.begin(); it != list0_.end(); ++it) {
+    auto tmp = S.GetRecordSet(*it).units();
+    data = system.MultiplyUnits(data, tmp);
+  }
+  for (auto it = list1_.begin(); it != list1_.end(); ++it) {
+    auto tmp = S.GetRecordSet(*it).units();
+    data = system.DivideUnits(data, tmp);
+  }
+
+  auto tmp = r.units();
+  if (tmp != "")
+    AMANZI_ASSERT(system.CompareUnits(tmp, data));
+  else
+    r.set_units(data);
+}
+
 } // namespace Amanzi

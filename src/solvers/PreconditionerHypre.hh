@@ -76,18 +76,17 @@ Example:
   </ParameterList>
 
 
-Euclid is a Parallel Incomplete LU, provided as part of the HYPRE project
+ILU is a Parallel Incomplete LU, provided as part of the HYPRE project
 through the Ifpack interface.
 
-This is provided when using the `"preconditioning method`"=`"euclid`" or
-=`"hypre: euclid`" in the `Preconditioner`_ spec.
+This is provided when using the `"preconditioning method`"=`"ILU`" or
+=`"hypre: ILU`" in the `Preconditioner`_ spec.
 
-.. _preconditioner-euclid-spec:
-.. admonition:: preconditioner-euclid-spec:
+.. _preconditioner-ILU-spec:
+.. admonition:: preconditioner-ILU-spec:
 
     * `"ilu(k) fill level`" ``[int]`` **1** The factorization level.
     * `"ilut drop tolerance`" ``[double]`` **0** Defines a drop tolerance relative to the largest absolute value of any entry in the row being factored.
-    * `"rescale row`" ``[bool]`` **false** If true, values are scaled prior to factorization so that largest value in any row is +1 or -1. Note that this can destroy matrix symmetry.
     * `"verbosity`" ``[int]`` **0** Prints a summary of runtime settings and timing information to stdout.
 
 
@@ -103,6 +102,23 @@ This is provided when using the `"preconditioning method`"=`"euclid`" or
 #include "Epetra_RowMatrix.h"
 #include "Ifpack_Hypre.h"
 
+#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_Vector.hpp"
+#include "Tpetra_CrsGraph.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+
+#include "AmanziTypes.hh"
+
+#include "HYPRE_IJ_mv.h"
+#include "HYPRE_parcsr_ls.h"
+#include "krylov.h"
+#include "_hypre_parcsr_mv.h"
+#include "_hypre_IJ_mv.h"
+#include "HYPRE_parcsr_mv.h"
+#include "HYPRE.h"
+
 #include "exceptions.hh"
 #include "Preconditioner.hh"
 
@@ -113,14 +129,41 @@ class VerboseObject;
 namespace AmanziSolvers {
 
 class PreconditionerHypre : public AmanziSolvers::Preconditioner {
+  enum HyprePreconditioners { Boomer, ILU, MGR, AMS };
+
  public:
   PreconditionerHypre()
     : AmanziSolvers::Preconditioner(),
       block_indices_(Teuchos::null),
       num_blocks_(0),
-      returned_code_(0),
-      IfpHypre_(Teuchos::null)
+      returned_code_(0)
   {}
+
+  ~PreconditionerHypre()
+  {
+    HYPRE_IJVectorDestroy(XHypre_);
+    HYPRE_IJVectorDestroy(YHypre_);
+    HYPRE_IJMatrixDestroy(HypreA_);
+    if (method_type_ == Boomer) {
+      HYPRE_BoomerAMGDestroy(method_);
+    } else if (method_type_ == ILU) {
+      HYPRE_ILUDestroy(method_);
+    } else if (method_type_ == AMS) {
+      HYPRE_AMSDestroy(method_);
+      if (plist_.isParameter("graph coordinates") &&
+          plist_.isType<Teuchos::RCP<Epetra_MultiVector>>("graph coordinates")) {
+        HYPRE_IJVectorDestroy(xHypre_);
+        HYPRE_IJVectorDestroy(yHypre_);
+        HYPRE_IJVectorDestroy(zHypre_);
+      }
+      if (plist_.isParameter("discrete gradient operator") &&
+          plist_.isType<Teuchos::RCP<Epetra_CrsMatrix>>("discrete gradient operator")) {
+        HYPRE_IJMatrixDestroy(HypreG_);
+      }
+    } else if (method_type_ == MGR) {
+      HYPRE_MGRDestroy(method_);
+    }
+  }
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& list) override final;
   virtual void InitializeInverse() override final;
@@ -131,20 +174,60 @@ class PreconditionerHypre : public AmanziSolvers::Preconditioner {
   virtual std::string returned_code_string() const override final { return "success"; }
 
  private:
+  void copy_matrix_();
+
+
   void InitBoomer_();
-  void InitEuclid_();
+  void InitILU_();
   void InitAMS_();
+  void Init_(){};
+  void InitMGR_();
+
+  int SetCoordinates_(Teuchos::RCP<Epetra_MultiVector>);
+  int SetDiscreteGradient_(Teuchos::RCP<const Epetra_CrsMatrix>);
+  Teuchos::RCP<const Epetra_Map>
+  MakeContiguousColumnMap_(Teuchos::RCP<const Epetra_RowMatrix>&) const;
 
   Teuchos::ParameterList plist_;
   Teuchos::RCP<VerboseObject> vo_;
 
-  Hypre_Solver method_;
+  HYPRE_Solver method_;
   Teuchos::RCP<std::vector<int>> block_indices_;
   int num_blocks_;
 
   mutable int returned_code_;
-  Teuchos::RCP<Ifpack_Hypre> IfpHypre_;
   Teuchos::RCP<Epetra_RowMatrix> A_;
+
+  Teuchos::RCP<const Map_type> GloballyContiguousRowMap_;
+  Teuchos::RCP<const Map_type> GloballyContiguousColMap_;
+
+  Teuchos::RCP<const Map_type> GloballyContiguousNodeRowMap_;
+  Teuchos::RCP<const Map_type> GloballyContiguousNodeColMap_;
+
+  HYPRE_ParCSRMatrix ParMatrix_;
+  HYPRE_IJMatrix HypreA_;
+  HYPRE_ParVector ParX_;
+  HYPRE_ParVector ParY_;
+  HYPRE_IJVector XHypre_;
+  HYPRE_IJVector YHypre_;
+
+  HYPRE_ParCSRMatrix ParMatrixG_;
+  HYPRE_IJMatrix HypreG_;
+
+  HYPRE_IJVector xHypre_;
+  HYPRE_IJVector yHypre_;
+  HYPRE_IJVector zHypre_;
+  HYPRE_ParVector xPar_;
+  HYPRE_ParVector yPar_;
+  HYPRE_ParVector zPar_;
+
+  Teuchos::RCP<hypre_ParVector> XVec_;
+  Teuchos::RCP<hypre_ParVector> YVec_;
+
+  static bool inited;
+  HyprePreconditioners method_type_ = Boomer;
+
+  Teuchos::RCP<const Epetra_CrsMatrix> G_;
 };
 
 } // namespace AmanziSolvers

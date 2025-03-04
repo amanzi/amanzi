@@ -7,12 +7,12 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-/*
-  Process Kernels
+/*!
 
-  Prototype class for computing boundary and source terms. PK's classes
-  for source and boundary terms may inherit from this class or mimic
-  its functionality.
+Prototype class for computing boundary and source terms. PK's classes
+for source and boundary terms may inherit from this class or mimic
+its functionality.
+
 */
 
 #ifndef AMANZI_PK_DOMAIN_FUNCTION_HH_
@@ -25,21 +25,29 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 
+#include "Key.hh"
+#include "PKsDefs.hh"
+
+#include "CompositeVector.hh"
+
+
 namespace Amanzi {
 
 class PK_DomainFunction {
  public:
   PK_DomainFunction() : domain_volume_(-1.0){};
 
-  PK_DomainFunction(const Teuchos::ParameterList& plist) : domain_volume_(-1.0){};
+  PK_DomainFunction(const Teuchos::ParameterList& plist)
+    : domain_volume_(-1.0), name_(Keys::cleanPListName(plist)){};
 
   virtual ~PK_DomainFunction() = default;
 
   // source term on time interval (t0, t1]
   virtual void Compute(double t0, double t1) { AMANZI_ASSERT(false); }
 
-  // model name
-  virtual std::string name() const { return "undefined"; }
+  // model name and type
+  virtual std::string getName() const { return name_; }
+  virtual DomainFunction_kind getType() const = 0;
 
   // access
   // -- volume of the regions
@@ -58,6 +66,7 @@ class PK_DomainFunction {
   std::map<int, double> linear_term_;
   double domain_volume_;
   std::string keyword_;
+  std::string name_;
 };
 
 } // namespace Amanzi

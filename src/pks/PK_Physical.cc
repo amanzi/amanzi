@@ -7,7 +7,7 @@
   Authors: Daniil Svyatsky
 */
 
-/* -------------------------------------------------------------------------
+/*
   Process Kernels
 
 */
@@ -41,14 +41,14 @@ PK_Physical::Solution_to_State(const TreeVector& solution, const Tag& tag)
 // Helper method to add a primary variable evaluator
 // -----------------------------------------------------------------------------
 void
-PK_Physical::AddDefaultPrimaryEvaluator_(const Key& key, const Tag& tag)
+AddDefaultPrimaryEvaluator(const Teuchos::RCP<State>& S, const Key& key, const Tag& tag)
 {
-  AMANZI_ASSERT(S_ != Teuchos::null);
-  Teuchos::ParameterList elist = S_->GetEvaluatorList(key);
+  AMANZI_ASSERT(S != Teuchos::null);
+  Teuchos::ParameterList elist = S->GetEvaluatorList(key);
   elist.set<std::string>("tag", tag.get());
   elist.setName(key);
   auto eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(elist));
-  S_->SetEvaluator(key, tag, eval);
+  S->SetEvaluator(key, tag, eval);
 }
 
 
@@ -56,10 +56,14 @@ PK_Physical::AddDefaultPrimaryEvaluator_(const Key& key, const Tag& tag)
 // Helper method to add an independent variable evaluator
 // -----------------------------------------------------------------------------
 void
-PK_Physical::AddDefaultIndependentEvaluator_(const Key& key, const Tag& tag, double val)
+AddDefaultIndependentEvaluator(const Teuchos::RCP<State>& S,
+                               const Key& key,
+                               const Tag& tag,
+                               double val)
 {
   Teuchos::ParameterList elist(key);
   elist.set<std::string>("evaluator type", "independent variable")
+    .set<bool>("constant in time", true)
     .sublist("function")
     .sublist("ALL")
     .set<std::string>("region", "All")
@@ -69,7 +73,7 @@ PK_Physical::AddDefaultIndependentEvaluator_(const Key& key, const Tag& tag, dou
     .set<double>("value", val);
 
   auto eval = Teuchos::rcp(new EvaluatorIndependentFunction(elist));
-  S_->SetEvaluator(key, tag, eval);
+  S->SetEvaluator(key, tag, eval);
 }
 
 
@@ -84,16 +88,45 @@ InitializeCVField(const Teuchos::RCP<State>& S,
                   const Key& passwd,
                   double default_val)
 {
-  Teuchos::OSTab tab = vo.getOSTab();
-
   if (S->HasRecord(key, tag)) {
     if (S->GetRecord(key, tag).owner() == passwd) {
       if (!S->GetRecord(key, tag).initialized()) {
         S->GetW<CompositeVector>(key, tag, passwd).PutScalar(default_val);
         S->GetRecordW(key, tag, passwd).set_initialized();
 
-        if (vo.os_OK(Teuchos::VERB_MEDIUM))
+        if (vo.os_OK(Teuchos::VERB_MEDIUM)) {
+          Teuchos::OSTab tab = vo.getOSTab();
           *vo.os() << "initialized \"" << key << "\" to value " << default_val << std::endl;
+        }
+      }
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Helper method to initialize a CV field from a CV field
+// -----------------------------------------------------------------------------
+void
+InitializeCVFieldFromCVField(const Teuchos::RCP<State>& S,
+                             const VerboseObject& vo,
+                             const Key& field0,
+                             const Key& field1,
+                             const Key& passwd,
+                             const Tag& tag)
+{
+  if (S->HasRecord(field0, tag)) {
+    if (!S->GetRecord(field0, tag).initialized()) {
+      if (S->HasEvaluator(field1, tag)) S->GetEvaluator(field1, tag).Update(*S, passwd);
+
+      const auto& f1 = S->Get<CompositeVector>(field1);
+      auto& f0 = S->GetW<CompositeVector>(field0, tag, passwd);
+      f0 = f1;
+
+      S->GetRecordW(field0, tag, passwd).set_initialized();
+
+      if (vo.os_OK(Teuchos::VERB_MEDIUM)) {
+        Teuchos::OSTab tab = vo.getOSTab();
+        *vo.os() << "initialized " << field0 << " to " << field1 << std::endl;
       }
     }
   }

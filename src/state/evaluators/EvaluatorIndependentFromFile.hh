@@ -40,7 +40,7 @@ This evaluator is used by providing the option:
    * `"filename`" ``[string]`` Path to the file.
    * `"variable name`" ``[string]`` Name of the dataset to read from the file.
    * `"domain name`" ``[string]`` **domain** Name of the domain on which the
-      field is defined.
+     field is defined.
    * `"component name`" ``[string]`` **cell** Name of the component in the
      field to populate.
    * `"mesh entity`" ``[string]`` **cell** Name of the entity on which the
@@ -50,6 +50,27 @@ This evaluator is used by providing the option:
      first manipulated by this function before interpolation.  This is useful
      for things like cyclic data, which can use a modulo time function to
      repeat the same data.
+
+.. code-block:: xml
+
+  <ParameterList name="field_evaluators">  <!-- parent list -->
+  <ParameterList name="porosity">
+    <Parameter name="field evaluator type" type="string" value="independent variable from file"/>
+    <Parameter name="filename" type="string" value="_DATA_FILE.h5"/>
+    <Parameter name="domain name" type="string" value="domain"/>
+    <Parameter name="variable name" type="string" value="porosity"/>
+    <Parameter name="component name" type="string" value="cell"/>
+    <Parameter name="mesh entity" type="string" value="cell"/>
+    <Parameter name="number of dofs" type="int" value="1"/>
+
+    <ParameterList name="time function">
+      <Parameter name="times" type="Array(double)" value="{1.0, 2.0, 3.0}"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
+
+The field *porosity* is defined as a cell-based variable and
+interpolated between three time intervals.
 
 */
 

@@ -45,7 +45,9 @@ class TotalEnergyEvaluator
                                           const std::vector<CompositeVector*>& results) override;
 
  private:
-  bool vapor_diffusion_;
+  bool vapor_diffusion_, include_potential_;
+  double liquid_molar_mass_;
+
   Key particle_density_key_, porosity_key_, sat_liquid_key_;
   Key ie_rock_key_, ie_liquid_key_, ie_gas_key_;
   Key mol_density_liquid_key_, mol_density_gas_key_;

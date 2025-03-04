@@ -41,6 +41,8 @@ ReactiveTransportMatrixFracture_PK::ReactiveTransportMatrixFracture_PK(
   subcycling_ = my_list_->get<bool>("subcycle chemistry", true);
 
   AMANZI_ASSERT(master_ == 1);
+
+  vo_ = Teuchos::rcp(new VerboseObject("CoupledRT_PK", *global_list));
 }
 
 
@@ -62,7 +64,7 @@ ReactiveTransportMatrixFracture_PK::Setup()
     S_->Require<CV_t, CVS_t>("volumetric_flow_rate", Tags::DEFAULT, "transport")
       .SetMesh(mesh_domain_)
       ->SetGhosted(true)
-      ->SetComponent("face", AmanziMesh::FACE, mmap, gmap, 1);
+      ->SetComponent("face", AmanziMesh::Entity_kind::FACE, mmap, gmap, 1);
   }
 
   // -- darcy flux for fracture
@@ -77,20 +79,22 @@ ReactiveTransportMatrixFracture_PK::Setup()
   tcc_fracture_key_ = "fracture-total_component_concentration";
 
   // evaluators in fracture
-  Teuchos::ParameterList& elist = S_->FEList();
-  Teuchos::ParameterList& ilist = S_->ICList();
+  if (!S_->HasRecord("fracture-mass_density_liquid")) {
+    Teuchos::ParameterList& elist = S_->FEList();
+    Teuchos::ParameterList& ilist = S_->ICList();
 
-  double rho = ilist.sublist("const_fluid_density").get<double>("value");
-  elist.sublist("fracture-mass_density_liquid")
-    .sublist("function")
-    .sublist("All")
-    .set<std::string>("region", "All")
-    .set<std::string>("component", "cell")
-    .sublist("function")
-    .sublist("function-constant")
-    .set<double>("value", rho);
-  elist.sublist("fracture-mass_density_liquid")
-    .set<std::string>("evaluator type", "independent variable");
+    double rho = ilist.sublist("const_fluid_density").get<double>("value");
+    elist.sublist("fracture-mass_density_liquid")
+      .sublist("function")
+      .sublist("All")
+      .set<std::string>("region", "All")
+      .set<std::string>("component", "cell")
+      .sublist("function")
+      .sublist("function-constant")
+      .set<double>("value", rho);
+    elist.sublist("fracture-mass_density_liquid")
+      .set<std::string>("evaluator type", "independent variable");
+  }
 
   // copies
   S_->Require<CV_t, CVS_t>(tcc_matrix_key_, Tags::COPY, "state");
@@ -226,7 +230,7 @@ ReactiveTransportMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool
 
       // no state recovery is made, so the only option is to fail
       if (dt_next < min_dt_)
-        Exceptions::amanzi_throw("Failure in coupled reactive transport PK: small time step.");
+        Exceptions::amanzi_throw("Failure in coupled reactive transport PK: small timestep.");
 
       // check for subcycling condition
       done = std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1 * min_dt_;
@@ -241,6 +245,11 @@ ReactiveTransportMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool
     fail = true;
   } catch (...) {
     fail = true;
+  }
+
+  if (fail) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "\nStep failed. Recovered two tcc fields. Last dt=" << dt_next << "\n\n";
   }
 
   return fail;

@@ -28,7 +28,9 @@ DarcyVelocityEvaluator::DarcyVelocityEvaluator(Teuchos::ParameterList& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   AMANZI_ASSERT(my_keys_.size() > 0);
-  vol_flowrate_key_ = plist.get<std::string>("volumetric flow rate key");
+
+  domain_ = Keys::getDomain(my_keys_[0].first);
+  vol_flowrate_key_ = Keys::getKey(domain_, "volumetric_flow_rate");
   dependencies_.insert(std::make_pair(vol_flowrate_key_, Tags::DEFAULT));
 }
 
@@ -58,7 +60,6 @@ DarcyVelocityEvaluator::Clone() const
 void
 DarcyVelocityEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
-  Key domain = plist_.get<std::string>("domain name");
   S.Get<CompositeVector>(vol_flowrate_key_).ScatterMasterToGhosted("face");
 
   const auto& flux = *S.Get<CompositeVector>(vol_flowrate_key_).ViewComponent("face", true);
@@ -66,17 +67,17 @@ DarcyVelocityEvaluator::Evaluate_(const State& S, const std::vector<CompositeVec
 
   const auto& fmap = *S.Get<CompositeVector>(vol_flowrate_key_).Map().Map("face", true);
 
-  auto mesh = S.GetMesh(domain);
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int dim = mesh->space_dimension();
+  auto mesh = S.GetMesh(domain_);
+  int ncells_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int dim = mesh->getSpaceDimension();
 
   WhetStone::MFD3D_Diffusion mfd(mesh);
 
   WhetStone::Polynomial gradient(dim, 1);
-  AmanziMesh::Entity_ID_List cells;
 
   for (int c = 0; c < ncells_owned; c++) {
-    const auto& faces = mesh->cell_get_faces(c);
+    const auto& faces = mesh->getCellFaces(c);
     int nfaces = faces.size();
     std::vector<WhetStone::Polynomial> solution(nfaces);
 
@@ -85,9 +86,9 @@ DarcyVelocityEvaluator::Evaluate_(const State& S, const std::vector<CompositeVec
       int g = fmap.FirstPointInElement(f);
 
       // the case of two DOFs on the face:
-      if (fmap.ElementSize(f) == 2) {
-        mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-        if (cells.size() == 2) { g += Operators::UniqueIndexFaceToCells(*mesh, f, c); }
+      if (fmap.ElementSize(f) > 1) {
+        auto cells = mesh->getFaceCells(f);
+        if (cells.size() > 1) { g += Operators::UniqueIndexFaceToCells(*mesh, f, c); }
       }
       solution[n].Reshape(dim, 0);
       solution[n](0) = flux[0][g];

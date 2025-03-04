@@ -38,7 +38,7 @@ class COM_MillingtonQuirk : public COM_Tortuosity {
  private:
   double a_, b_;
 
-  static Utils::RegisteredFactory<COM_Tortuosity, COM_MillingtonQuirk> factory_;
+  static Utils::RegisteredFactory<COM_Tortuosity, COM_MillingtonQuirk> reg_;
 };
 
 } // namespace AmanziEOS

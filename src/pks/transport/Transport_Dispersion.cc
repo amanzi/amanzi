@@ -36,7 +36,8 @@ namespace Transport {
 * assumed to be scaled by face area.
 ******************************************************************* */
 void
-Transport_PK::CalculateDispersionTensor_(const Epetra_MultiVector& porosity,
+Transport_PK::CalculateDispersionTensor_(double t,
+                                         const Epetra_MultiVector& porosity,
                                          const Epetra_MultiVector& water_content)
 {
   if (!flag_dispersion_) {
@@ -54,7 +55,8 @@ Transport_PK::CalculateDispersionTensor_(const Epetra_MultiVector& porosity,
   WhetStone::Polynomial poly(dim, 1);
 
   for (int c = 0; c < ncells_owned; ++c) {
-    const auto& faces = mesh_->cell_get_faces(c);
+    const auto& xc = mesh_->getCellCentroid(c);
+    const auto& faces = mesh_->getCellFaces(c);
     int nfaces = faces.size();
 
     std::vector<WhetStone::Polynomial> flux(nfaces);
@@ -66,7 +68,7 @@ Transport_PK::CalculateDispersionTensor_(const Epetra_MultiVector& porosity,
 
     for (int k = 0; k < dim; ++k) velocity[k] = poly(k + 1);
     D_[c] = mdm_->second[(*mdm_->first)[c]]->mech_dispersion(
-      velocity, axi_symmetry_[c], water_content[0][c], porosity[0][c]);
+      t, xc, velocity, axi_symmetry_[c], water_content[0][c], porosity[0][c]);
   }
 }
 
@@ -89,10 +91,10 @@ Transport_PK::CalculateDiffusionTensor_(double md,
   for (int mb = 0; mb < mat_properties_.size(); mb++) {
     Teuchos::RCP<MaterialProperties> spec = mat_properties_[mb];
 
-    std::vector<AmanziMesh::Entity_ID> block;
     for (int r = 0; r < (spec->regions).size(); r++) {
       std::string region = (spec->regions)[r];
-      mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
+      auto block = mesh_->getSetEntities(
+        region, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
       if (phase == TRANSPORT_PHASE_LIQUID) {
         for (auto c = block.begin(); c != block.end(); c++) {
@@ -139,16 +141,18 @@ Transport_PK::CalculateAxiSymmetryDirection()
   if (S_->HasRecord(permeability_key_) && dim == 3) {
     const auto& perm = *S_->Get<CompositeVector>(permeability_key_).ViewComponent("cell");
 
-    for (int c = 0; c < ncells_owned; ++c) {
-      int k = -1;
-      if (perm[0][c] != perm[1][c] && perm[1][c] == perm[2][c]) {
-        k = 0;
-      } else if (perm[1][c] != perm[2][c] && perm[2][c] == perm[0][c]) {
-        k = 1;
-      } else if (perm[2][c] != perm[0][c] && perm[0][c] == perm[1][c]) {
-        k = 2;
+    if (perm.NumVectors() == 3) {
+      for (int c = 0; c < ncells_owned; ++c) {
+        int k = -1;
+        if (perm[0][c] != perm[1][c] && perm[1][c] == perm[2][c]) {
+          k = 0;
+        } else if (perm[1][c] != perm[2][c] && perm[2][c] == perm[0][c]) {
+          k = 1;
+        } else if (perm[2][c] != perm[0][c] && perm[0][c] == perm[1][c]) {
+          k = 2;
+        }
+        axi_symmetry_[c] = k;
       }
-      axi_symmetry_[c] = k;
     }
   }
 }
@@ -171,15 +175,16 @@ Transport_PK::DispersionSolver(const Epetra_MultiVector& tcc_prev,
   const auto& sat_c =
     *S_->Get<CompositeVector>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
 
-  CalculateDispersionTensor_(*transport_phi, wc_c);
+  double t = (t_old + t_new) / 2;
+  CalculateDispersionTensor_(t, *transport_phi, wc_c);
 
   int i0 = (comp0 >= 0) ? comp0 : 0;
 
   int num_components = tcc_prev.NumVectors();
   double dt_MPC = t_new - t_old;
 
-  auto bc_dummy =
-    Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  auto bc_dummy = Teuchos::rcp(
+    new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
 
   // create the Dispersion and Accumulation operators
   Teuchos::ParameterList& op_list =
@@ -189,7 +194,7 @@ Transport_PK::DispersionSolver(const Epetra_MultiVector& tcc_prev,
 
   op1->SetBCs(bc_dummy, bc_dummy);
   auto op = op1->global_operator();
-  auto op2 = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op));
+  auto op2 = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, op));
 
   // Create the preconditioner and solver.
   //
@@ -248,8 +253,8 @@ Transport_PK::DispersionSolver(const Epetra_MultiVector& tcc_prev,
     CompositeVector& rhs = *op->rhs();
     int ierr = op->ApplyInverse(rhs, sol);
 
-    if (ierr < 0) {
-      Errors::Message msg("TransportExplicit_PK solver failed with message: \"");
+    if (ierr != 0) {
+      Errors::Message msg("Transport solver failed with message: \"");
       msg << op->returned_code_string() << "\"";
       Exceptions::amanzi_throw(msg);
     }
@@ -310,8 +315,8 @@ Transport_PK::DispersionSolver(const Epetra_MultiVector& tcc_prev,
     CompositeVector& rhs = *op->rhs();
     int ierr = op->ApplyInverse(rhs, sol);
 
-    if (ierr < 0) {
-      Errors::Message msg("TransportExplicit_PK solver failed with message: \"");
+    if (ierr != 0) {
+      Errors::Message msg("Transport solver failed with message: \"");
       msg << op->returned_code_string() << "\"";
       Exceptions::amanzi_throw(msg);
     }

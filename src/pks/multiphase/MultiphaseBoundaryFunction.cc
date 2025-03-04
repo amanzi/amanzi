@@ -13,7 +13,6 @@
 */
 
 #include <algorithm>
-#include <iterator>
 
 #include "MultiphaseBoundaryFunction.hh"
 
@@ -45,12 +44,12 @@ MultiphaseBoundaryFunction::MultiphaseBoundaryFunction(const Teuchos::ParameterL
 void
 MultiphaseBoundaryFunction::ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
 {
-  int dim = mesh->space_dimension();
+  int dim = mesh->getSpaceDimension();
 
   if (rainfall_) {
     for (auto it = begin(); it != end(); ++it) {
       int f = it->first;
-      const AmanziGeometry::Point& normal = mesh->face_normal(f);
+      const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
       it->second[0] *= fabs(normal[dim - 1]) / norm(normal);
     }
   }
@@ -66,6 +65,7 @@ MultiphaseBoundaryFunction::SetComponentId(const std::vector<std::string>& names
   auto it = std::find(names.begin(), names.end(), component_name_);
   component_id_ = (it == names.end()) ? -1 : std::distance(names.begin(), it);
 }
+
 
 } // namespace Multiphase
 } // namespace Amanzi

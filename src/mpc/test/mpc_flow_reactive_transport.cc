@@ -20,15 +20,17 @@
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
 #include "CycleDriver.hh"
-#include "eos_registration.hh"
+#include "eos_reg.hh"
+#include "evaluators_flow_reg.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "mpc_pks_registration.hh"
+#include "models_flow_reg.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
-#include "pks_flow_registration.hh"
-#include "pks_transport_registration.hh"
-#include "pks_chemistry_registration.hh"
+#include "pks_chemistry_reg.hh"
+#include "pks_flow_reg.hh"
+#include "pks_mpc_reg.hh"
+#include "pks_transport_reg.hh"
 #include "State.hh"
 
 
@@ -54,7 +56,6 @@ TEST(MPC_DRIVER_FLOW_REACTIVE_TRANSPORT)
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
-  pref.push_back(Framework::STK);
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);

@@ -17,7 +17,7 @@
 #include <cmath>
 #include <vector>
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 
 #include "MFD3D_Diffusion.hh"
 #include "Tensor.hh"
@@ -37,18 +37,18 @@ MFD3D_Diffusion::L2consistencyInverseSurface(int c,
                                              DenseMatrix& R,
                                              DenseMatrix& Wc)
 {
-  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& faces = mesh_->getCellFaces(c);
   int nfaces = faces.size();
 
   R.Reshape(nfaces, d_ - 1);
   Wc.Reshape(nfaces, nfaces);
 
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->getCellVolume(c);
 
   // calculate cell normal
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  const AmanziGeometry::Point& xf1 = mesh_->face_centroid(faces[0]);
-  const AmanziGeometry::Point& xf2 = mesh_->face_centroid(faces[1]);
+  const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
+  const AmanziGeometry::Point& xf1 = mesh_->getFaceCentroid(faces[0]);
+  const AmanziGeometry::Point& xf2 = mesh_->getFaceCentroid(faces[1]);
   AmanziGeometry::Point v1(d_), v2(d_), v3(d_);
 
   v1 = (xf1 - xc) ^ (xf2 - xc);
@@ -72,23 +72,23 @@ MFD3D_Diffusion::L2consistencyInverseSurface(int c,
 
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
-    const AmanziGeometry::Point& normal = mesh_face_normal(f, c);
+    const AmanziGeometry::Point& normal = mesh_getFaceNormal(f, c);
 
     v1 = PTP * normal;
 
     for (int j = i; j < nfaces; j++) {
       f = faces[j];
-      const AmanziGeometry::Point& v4 = mesh_face_normal(f, c);
+      const AmanziGeometry::Point& v4 = mesh_getFaceNormal(f, c);
       Wc(i, j) = (v1 * v4) / volume;
     }
   }
 
   // calculate matrix R
-  const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
+  const AmanziGeometry::Point& cm = mesh_->getCellCentroid(c);
 
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
-    const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
+    const AmanziGeometry::Point& fm = mesh_->getFaceCentroid(f);
 
     R(i, 0) = v2 * (fm - cm);
     R(i, 1) = v3 * (fm - cm);
@@ -143,17 +143,16 @@ MFD3D_Diffusion::MassMatrixInverseSurfaceMMatrix(int c, const Tensor& K, DenseMa
 * Exterior normal to 2D face in 3D space.
 ****************************************************************** */
 AmanziGeometry::Point
-MFD3D_Diffusion::mesh_face_normal(int f, int c)
+MFD3D_Diffusion::mesh_getFaceNormal(int f, int c)
 {
   AmanziGeometry::Point v0(d_), v1(d_);
-  Entity_ID_List nodes;
 
-  mesh_->face_get_nodes(f, &nodes);
-  mesh_->node_get_coordinates(nodes[0], &v0);
-  mesh_->node_get_coordinates(nodes[1], &v1);
+  auto nodes = mesh_->getFaceNodes(f);
+  v0 = mesh_->getNodeCoordinate(nodes[0]);
+  v1 = mesh_->getNodeCoordinate(nodes[1]);
 
   AmanziGeometry::Point tau(v1 - v0);
-  AmanziGeometry::Point normal = v0 - mesh_->cell_centroid(c);
+  AmanziGeometry::Point normal = v0 - mesh_->getCellCentroid(c);
 
   // orthogonalize and rescale normal
   double len = norm(tau);
@@ -171,22 +170,22 @@ MFD3D_Diffusion::mesh_face_normal(int f, int c)
 int
 MFD3D_Diffusion::MassMatrixInverseSurfaceTPFA(int c, const Tensor& K, DenseMatrix& W)
 {
-  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& faces = mesh_->getCellFaces(c);
   int nfaces = faces.size();
 
   W.Reshape(nfaces, nfaces);
   W.PutScalar(0.0);
 
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+  const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
   AmanziGeometry::Point a(d_);
 
   for (int n = 0; n < nfaces; n++) {
     int f = faces[n];
-    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c);
+    const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
+    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f, c);
 
     a = xf - xc;
-    double s = mesh_->face_area(f) / norm(a);
+    double s = mesh_->getFaceArea(f) / norm(a);
     double Knn = ((K * a) * normal) * s;
     double dxn = a * normal;
     W(n, n) = Knn / fabs(dxn);

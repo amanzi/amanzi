@@ -55,8 +55,8 @@ curl_binary=`which curl`
 # CMake
 cmake_binary=`which cmake`
 ctest_binary=`which ctest`
-cmake_version=3.17.0
-cmake_url=https://cmake.org/files/v3.17
+cmake_version=3.23.0
+cmake_url=https://cmake.org/files/v3.23
 cmake_archive_file=cmake-${cmake_version}.tar.gz
 
 # Build configuration
@@ -140,6 +140,9 @@ unstructured=$TRUE
 geochemistry=$TRUE
 amanzi_physics=${TRUE}
 ats_physics=${FALSE}
+
+# -- ats components
+elm_ats_api=${FALSE}
 clm=${FALSE}
 
 # -- mesh frameworks
@@ -336,7 +339,7 @@ Configuration:
                           option is selected, '"$0"' will NOT build the TPLs.
 
   --opt                   build optimized TPLs and Amanzi binaries. This the default
-                          configuration.
+                          configuration. Produces no debug info.
 
   --relwithdebinfo        build optimized TPLs and Amanzi binaries with debug info
                           (for profiling)
@@ -350,6 +353,8 @@ Configuration:
   --branch_ats=BRANCH     build ATS found in BRANCH ['"${ats_branch}"']
   --branch_ats_tests=BRAN build ATS found in BRANCH ['"${ats_tests_branch}"']
   --ats_dev               prevent cloning remote repository when building ATS ['"${ats_devs}"']
+
+  --elm_ats_api           build ELM-ATS API feature
 
   --spacedim=DIM          dimension of structured build (DIM=2 or 3) ['"${spacedim}"']
 
@@ -381,6 +386,7 @@ Value in brackets indicates default setting.
   amanzi_physics          build Amanzi native physics package ['"${amanzi_physics}"']
   ats_physics             build ATS physics package (currently mutually exclusive) ['"${ats_physics}"']
   clm                     build CLM library for surface processes (currently only ATS) ['"${clm}"']
+  elm_ats_api             build ATS interface for ELM
 
   dbc                     design-by-contract.  Extra (potentially time-consuming) error-checking
                           intended for developers ['"${dbc}"']
@@ -404,6 +410,8 @@ Value in brackets indicates default setting.
 
   build_amanzi            build TPLs and Amanzi ['"${build_amanzi}"']
   build_user_guide        build TPLs, Amanzi, and UserGuide ['"${build_user_guide}"']
+
+
 
 
 Tool definitions:
@@ -575,8 +583,11 @@ Amanzi Components:
     unstructured   = '"${unstructured}"'
     amanzi_physics = '"${amanzi_physics}"'
     ats_physics    = '"${ats_physics}"'
-    clm            = '"${clm}"'
     geochemistry   = '"${geochemistry}"'
+
+ATS Components:
+    elm_ats_api    = '"${elm_ats_api}"'
+    clm            = '"${clm}"'
 
 Amanzi TPLs:
     alquimia     = '"${alquimia}"'
@@ -1532,7 +1543,7 @@ function check_tools
     ( version_compare "$ver_string" "$cmake_version" )
     result=$?
     if [ ${result} -eq 2 ]; then
-      status_message "CMake version is less than required version. Will build CMake version 3.11.4"
+      status_message "CMake version is less than required version. Will build CMake version ≥ ${cmake_version}"
       build_cmake ${tools_build_dir} ${tools_install_prefix} ${tools_download_dir}
     fi
   fi
@@ -1884,6 +1895,7 @@ if [ -z "${tpl_config_file}" ]; then
       -DENABLE_ECOSIM:BOOL=${ecosim}\
       -DENABLE_Silo:BOOL=${silo} \
       -DENABLE_CLM:BOOL=${clm} \
+      -DENABLE_ELM_ATS_API:BOOL=${elm_ats_api} \
       -DENABLE_SPACK:BOOL=${Spack} \
       -DENABLE_Epetra:BOOL=${epetra} \
       -DENABLE_Tpetra:BOOL=${tpetra} \
@@ -2013,6 +2025,7 @@ cmd_configure="${cmake_binary} \
     -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
     -DENABLE_ECOSIM:BOOL=${ecosim} \
     -DENABLE_CLM:BOOL=${clm} \
+    -DENABLE_ELM_ATS_API:BOOL=${elm_ats_api} \
     -DENABLE_Silo:BOOL=${silo} \
     -DENABLE_Epetra:BOOL=${epetra} \
     -DENABLE_Tpetra:BOOL=${tpetra} \

@@ -27,6 +27,7 @@ Note that the first parameter in :math:`x` can be time.
 Here is an example of a distance function using isotropic metric:
 
 Example:
+
 .. code-block:: xml
 
   <ParameterList name="function-distance">

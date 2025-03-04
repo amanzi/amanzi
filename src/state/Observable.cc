@@ -16,12 +16,15 @@ This class calculates the actual observation value.
 #include <cmath>
 #include <string>
 #include <algorithm>
+#include <regex>
 
 #include "mpi.h"
 #include "Key.hh"
 #include "errors.hh"
 #include "Key.hh"
 #include "Mesh.hh"
+#include "Function.hh"
+#include "FunctionFactory.hh"
 
 // Amanzi::State
 #include "Evaluator.hh"
@@ -81,19 +84,36 @@ Observable::Observable(Teuchos::ParameterList& plist)
 
   time_integrated_ = plist.get<bool>("time integrated", false);
 
-  functional_ = plist.get<std::string>("functional");
-  if (functional_ == "point" || functional_ == "integral" || functional_ == "average") {
-    function_ = &Impl::ObservableIntensiveSum;
-  } else if (functional_ == "extensive integral") {
-    function_ = &Impl::ObservableExtensiveSum;
-  } else if (functional_ == "minimum") {
-    function_ = &Impl::ObservableMin;
-  } else if (functional_ == "maximum") {
-    function_ = &Impl::ObservableMax;
+  // reduction combines values across the region
+  // deprecate "functional" --> "reduction"
+  if (!plist.isParameter("reduction") && plist.isParameter("functional"))
+    plist.set<std::string>("reduction", plist.get<std::string>("functional"));
+  reduction_ = plist.get<std::string>("reduction");
+  if (reduction_ == "point" || reduction_ == "integral" || reduction_ == "average") {
+    reducer_ = &Impl::ObservableIntensiveSum;
+  } else if (reduction_ == "extensive integral") {
+    reducer_ = &Impl::ObservableExtensiveSum;
+  } else if (reduction_ == "minimum") {
+    reducer_ = &Impl::ObservableMin;
+  } else if (reduction_ == "maximum") {
+    reducer_ = &Impl::ObservableMax;
   } else {
     Errors::Message msg;
-    msg << "Observable: unrecognized functional " << functional_;
+    msg << "Observable: unrecognized reduction " << reduction_;
     Exceptions::amanzi_throw(msg);
+  }
+
+  // function modifies the values
+  if (plist.isSublist("modifier")) {
+    FunctionFactory fac;
+    modifier_ = fac.Create(plist.sublist("modifier"));
+
+    // convert the list to a string for printing in the file, so there is some
+    // hope of tracibility
+    std::stringstream stream;
+    plist.sublist("modifier").print(stream);
+    modifier_str_ = stream.str();
+    modifier_str_ = std::regex_replace(modifier_str_, std::regex("\n"), "\n#   ");
   }
 
   // hack to orient flux to outward-normal along a boundary only
@@ -148,7 +168,7 @@ Observable::Setup(const Teuchos::Ptr<State>& S)
 
     // on the domain set's reference mesh
     auto ds = S->GetDomainSet(std::get<0>(ds_names));
-    mesh = ds->get_referencing_parent();
+    mesh = ds->getReferencingParent();
     AMANZI_ASSERT(mesh != Teuchos::null);
 
     if (!S->HasEvaluatorList(variable_)) {
@@ -203,7 +223,7 @@ Observable::Setup(const Teuchos::Ptr<State>& S)
     }
 
     // require the component on location_ with num_vectors_
-    cvs.AddComponent(location_, AmanziMesh::entity_kind(location_), num_vectors_);
+    cvs.AddComponent(location_, AmanziMesh::createEntityKind(location_), num_vectors_);
   }
 
   // communicate so that all ranks know number of vectors
@@ -269,9 +289,9 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
   // communicated to rank 0 to write.  We do know that get_num_vectors() is valid though.
   AMANZI_ASSERT(get_num_vectors() >= 0);
   std::vector<double> value;
-  if (functional_ == "minimum") {
+  if (reduction_ == "minimum") {
     value.resize(get_num_vectors() + 1, 1.e20);
-  } else if (functional_ == "maximum") {
+  } else if (reduction_ == "maximum") {
     value.resize(get_num_vectors() + 1, -1.e20);
   } else {
     value.resize(get_num_vectors() + 1, 0.);
@@ -284,6 +304,7 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
   if (has_record && S->GetRecord(variable_, tag_).ValidType<double>()) {
     // scalars, just return the value
     value[0] = S->GetRecord(variable_, tag_).Get<double>();
+    if (modifier_) value[0] = (*modifier_)(std::vector<double>(1, value[0]));
     value[1] = 1;
 
   } else if (has_record && S->GetRecord(variable_, tag_).ValidType<CompositeVector>()) {
@@ -292,49 +313,49 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
     AMANZI_ASSERT(vec.HasComponent(location_));
 
     // get the region
-    AmanziMesh::Entity_kind entity = AmanziMesh::entity_kind(location_);
-    AmanziMesh::Entity_ID_List ids;
+    AmanziMesh::Entity_kind entity = AmanziMesh::createEntityKind(location_);
 
     // get the vector component
-    vec.Mesh()->get_set_entities(region_, entity, AmanziMesh::Parallel_type::OWNED, &ids);
+    auto ids = vec.Mesh()->getSetEntities(region_, entity, AmanziMesh::Parallel_kind::OWNED);
     const Epetra_MultiVector& subvec = *vec.ViewComponent(location_, false);
 
-    if (entity == AmanziMesh::CELL) {
+    if (entity == AmanziMesh::Entity_kind::CELL) {
       for (auto id : ids) {
-        double vol = vec.Mesh()->cell_volume(id);
+        double vol = vec.Mesh()->getCellVolume(id);
 
         if (dof_ < 0) {
           for (int i = 0; i != get_num_vectors(); ++i) {
-            value[i] = (*function_)(value[i], subvec[i][id], vol);
+            double val = subvec[i][id];
+            if (modifier_) val = (*modifier_)(std::vector<double>(1, val));
+            value[i] = (*reducer_)(value[i], val, vol);
           }
         } else {
-          value[0] = (*function_)(value[0], subvec[dof_][id], vol);
+          double val = subvec[dof_][id];
+          if (modifier_) val = (*modifier_)(std::vector<double>(1, val));
+          value[0] = (*reducer_)(value[0], val, vol);
         }
         value[get_num_vectors()] += vol;
       }
-    } else if (entity == AmanziMesh::FACE) {
+    } else if (entity == AmanziMesh::Entity_kind::FACE) {
       for (auto id : ids) {
-        double vol = vec.Mesh()->face_area(id);
+        double vol = vec.Mesh()->getFaceArea(id);
 
         // hack to orient flux to outward-normal along a boundary only
         double sign = 1;
         if (flux_normalize_) {
           if (direction_.get()) {
             // normalize to the provided vector
-            AmanziGeometry::Point normal = vec.Mesh()->face_normal(id);
+            AmanziGeometry::Point normal = vec.Mesh()->getFaceNormal(id);
             sign = (normal * (*direction_)) / AmanziGeometry::norm(normal);
 
           } else if (!flux_normalize_region_.empty()) {
             // normalize to outward normal relative to a volumetric region
-            AmanziMesh::Entity_ID_List vol_cells;
-            vec.Mesh()->get_set_entities(flux_normalize_region_,
-                                         AmanziMesh::Entity_kind::CELL,
-                                         AmanziMesh::Parallel_type::ALL,
-                                         &vol_cells);
+            auto vol_cells = vec.Mesh()->getSetEntities(flux_normalize_region_,
+                                                        AmanziMesh::Entity_kind::CELL,
+                                                        AmanziMesh::Parallel_kind::ALL);
 
             // which cell of the face is "inside" the volume
-            AmanziMesh::Entity_ID_List cells;
-            vec.Mesh()->face_get_cells(id, AmanziMesh::Parallel_type::ALL, &cells);
+            auto cells = vec.Mesh()->getFaceCells(id);
             AmanziMesh::Entity_ID c = -1;
             for (const auto& cc : cells) {
               if (std::find(vol_cells.begin(), vol_cells.end(), cc) != vol_cells.end()) {
@@ -346,27 +367,22 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
               Errors::Message msg;
               msg << "Observeable on face region \"" << region_
                   << "\" flux normalized relative to volumetric region \"" << flux_normalize_region_
-                  << "\" but face " << vec.Mesh()->face_map(true).GID(id)
+                  << "\" but face "
+                  << vec.Mesh()->getMap(AmanziMesh::Entity_kind::FACE, true).GID(id)
                   << " does not border the volume region.";
               Exceptions::amanzi_throw(msg);
             }
 
             // normalize with respect to that cell's direction
-            AmanziMesh::Entity_ID_List faces;
-            std::vector<int> dirs;
-
-            vec.Mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
+            auto [faces, dirs] = vec.Mesh()->getCellFacesAndDirections(c);
             int i = std::find(faces.begin(), faces.end(), id) - faces.begin();
 
             sign = dirs[i];
 
           } else {
             // normalize to outward normal
-            AmanziMesh::Entity_ID_List cells;
-            vec.Mesh()->face_get_cells(id, AmanziMesh::Parallel_type::ALL, &cells);
-            AmanziMesh::Entity_ID_List faces;
-            std::vector<int> dirs;
-            vec.Mesh()->cell_get_faces_and_dirs(cells[0], &faces, &dirs);
+            auto cells = vec.Mesh()->getFaceCells(id);
+            auto [faces, dirs] = vec.Mesh()->getCellFacesAndDirections(cells[0]);
             int i = std::find(faces.begin(), faces.end(), id) - faces.begin();
             sign = dirs[i];
           }
@@ -374,23 +390,31 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
 
         if (dof_ < 0) {
           for (int i = 0; i != get_num_vectors(); ++i) {
-            value[i] = (*function_)(value[i], sign * subvec[i][id], vol);
+            double val = sign * subvec[i][id];
+            if (modifier_) val = (*modifier_)(std::vector<double>(1, val));
+            value[i] = (*reducer_)(value[i], val, vol);
           }
         } else {
-          value[0] = (*function_)(value[0], sign * subvec[dof_][id], vol);
+          double val = sign * subvec[dof_][id];
+          if (modifier_) val = (*modifier_)(std::vector<double>(1, val));
+          value[0] = (*reducer_)(value[0], val, vol);
         }
         value[get_num_vectors()] += std::abs(vol);
       }
-    } else if (entity == AmanziMesh::NODE) {
+    } else if (entity == AmanziMesh::Entity_kind::NODE) {
       for (auto id : ids) {
         double vol = 1.0;
 
         if (dof_ < 0) {
           for (int i = 0; i != get_num_vectors(); ++i) {
-            value[i] = (*function_)(value[i], subvec[i][id], vol);
+            double val = subvec[i][id];
+            if (modifier_) val = (*modifier_)(std::vector<double>(1, val));
+            value[i] = (*reducer_)(value[i], val, vol);
           }
         } else {
-          value[0] = (*function_)(value[0], subvec[dof_][id], vol);
+          double val = subvec[dof_][id];
+          if (modifier_) val = (*modifier_)(std::vector<double>(1, val));
+          value[0] = (*reducer_)(value[0], val, vol);
         }
         value[get_num_vectors()] += vol;
       }
@@ -398,27 +422,27 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
   }
 
   // syncronize the result across all processes on the provided comm
-  if (functional_ == "point" || functional_ == "integral" || functional_ == "average" ||
-      functional_ == "extensive integral") {
+  if (reduction_ == "point" || reduction_ == "integral" || reduction_ == "average" ||
+      reduction_ == "extensive integral") {
     std::vector<double> global_value(value);
     comm_->SumAll(value.data(), global_value.data(), value.size());
 
     if (global_value[get_num_vectors()] > 0) {
-      if (functional_ == "point" || functional_ == "average") {
+      if (reduction_ == "point" || reduction_ == "average") {
         for (int i = 0; i != get_num_vectors(); ++i) {
           value[i] = global_value[i] / global_value[get_num_vectors()];
         }
-      } else if (functional_ == "integral" || functional_ == "extensive integral") {
+      } else if (reduction_ == "integral" || reduction_ == "extensive integral") {
         for (int i = 0; i != get_num_vectors(); ++i) { value[i] = global_value[i]; }
       }
     } else {
       for (int i = 0; i != get_num_vectors(); ++i) { value[i] = nan; }
     }
-  } else if (functional_ == "minimum") {
+  } else if (reduction_ == "minimum") {
     std::vector<double> global_value(value);
     comm_->MinAll(value.data(), global_value.data(), value.size() - 1);
     value = global_value;
-  } else if (functional_ == "maximum") {
+  } else if (reduction_ == "maximum") {
     std::vector<double> global_value(value);
     comm_->MaxAll(value.data(), global_value.data(), value.size() - 1);
     value = global_value;

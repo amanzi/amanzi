@@ -52,14 +52,23 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
     chem_initialized_(false),
     current_time_(0.0),
     saved_time_(0.0)
+{}
+
+
+/* *******************************************************************
+* Parser
+******************************************************************* */
+void
+Alquimia_PK::parseParameterList()
 {
-  domain_ = plist_->get<std::string>("domain name", "domain");
+  Chemistry_PK::parseParameterList();
 
   // obtain key of fields
   tcc_key_ = Keys::readKey(
     *plist_, domain_, "total component concentration", "total_component_concentration");
 
   poro_key_ = Keys::readKey(*plist_, domain_, "porosity", "porosity");
+  temperature_key_ = Keys::readKey(*plist_, domain_, "temperature", "temperature");
   saturation_key_ = Keys::readKey(*plist_, domain_, "saturation liquid", "saturation_liquid");
   fluid_den_key_ = Keys::readKey(*plist_, domain_, "mass density liquid", "mass_density_liquid");
 
@@ -179,7 +188,7 @@ Alquimia_PK::Setup()
           aux_names_[i], tag_next_, passwd_, aux_subfield_names_[i])
         .SetMesh(mesh_)
         ->SetGhosted(false)
-        ->SetComponent("cell", AmanziMesh::CELL, aux_subfield_names_[i].size());
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, aux_subfield_names_[i].size());
     }
   }
 
@@ -192,7 +201,7 @@ Alquimia_PK::Setup()
         S_->Require<CompositeVector, CompositeVectorSpace>(aux_field_name, tag_next_, passwd_)
           .SetMesh(mesh_)
           ->SetGhosted(false)
-          ->SetComponent("cell", AmanziMesh::CELL, 1);
+          ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
       }
     }
   }
@@ -204,7 +213,7 @@ Alquimia_PK::Setup()
     S_->Require<CompositeVector, CompositeVectorSpace>(alquimia_aux_data_key_, tag_next_, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::CELL, num_aux_data);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, num_aux_data);
 
     S_->GetRecordW(alquimia_aux_data_key_, tag_next_, passwd_).set_io_vis(false);
   }
@@ -223,7 +232,8 @@ Alquimia_PK::Initialize()
   if (!aux_names_.empty()) {
     int n_total = 0;
     for (const auto& subfield_name : aux_subfield_names_) n_total += subfield_name.size();
-    aux_output_ = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(false), n_total));
+    aux_output_ = Teuchos::rcp(
+      new Epetra_MultiVector(mesh_->getMap(AmanziMesh::Entity_kind::CELL, false), n_total));
   } else {
     aux_output_ = Teuchos::null;
   }
@@ -273,10 +283,9 @@ Alquimia_PK::Initialize()
 
       // Get the cells that belong to this region.
       int num_cells =
-        mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-      AmanziMesh::Entity_ID_List cell_indices;
-      mesh_->get_set_entities(
-        region, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &cell_indices);
+        mesh_->getSetSize(region, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+      auto cell_indices = mesh_->getSetEntities(
+        region, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
       // Loop over the cells.
       for (int i = 0; i < num_cells; ++i) {
@@ -288,7 +297,7 @@ Alquimia_PK::Initialize()
 
   // figure out if any of the processes threw an error, if so all processes will re-throw
   int recv = 0;
-  mesh_->get_comm()->MaxAll(&ierr, &recv, 1);
+  mesh_->getComm()->MaxAll(&ierr, &recv, 1);
   if (recv != 0) {
     Errors::Message msg("Error in Alquimia_PK::Initialize()");
     Exceptions::amanzi_throw(msg);
@@ -301,7 +310,7 @@ Alquimia_PK::Initialize()
       auto& aux_state =
         *S_->GetW<CompositeVector>(aux_names_[i], tag_next_, passwd_).ViewComponent("cell");
       for (int j = 0; j < aux_subfield_names_[i].size(); ++j) {
-        *aux_state[j] = *(*aux_output_)[counter++];
+        *aux_state(j) = *(*aux_output_)(counter++);
       }
     }
   }
@@ -379,8 +388,8 @@ Alquimia_PK::ParseChemicalConditionRegions(const Teuchos::ParameterList& param_l
     for (size_t r = 0; r < regions.size(); ++r) {
       // We allow for cell-based and face-based regions to accommodate both
       // initial and boundary conditions.
-      if (!mesh_->valid_set_name(regions[r], AmanziMesh::CELL) &&
-          !mesh_->valid_set_name(regions[r], AmanziMesh::FACE)) {
+      if (!mesh_->isValidSetName(regions[r], AmanziMesh::Entity_kind::CELL) &&
+          !mesh_->isValidSetName(regions[r], AmanziMesh::Entity_kind::FACE)) {
         msg << "Alquimia_PK::ParseChemicalConditionRegions(): \n";
         msg << "  Invalid region '" << regions[r] << "' given for geochemical condition '"
             << cond_name << "'.\n";
@@ -493,9 +502,9 @@ Alquimia_PK::XMLParameters()
   }
 
   // Other settings.
-  dt_max_ = plist_->get<double>("max time step (s)", 9.9e9);
-  dt_min_ = plist_->get<double>("min time step (s)", 9.9e9);
-  dt_prev_ = plist_->get<double>("initial time step (s)", std::min(dt_min_, dt_max_));
+  dt_max_ = plist_->get<double>("max timestep (s)", 9.9e9);
+  dt_min_ = plist_->get<double>("min timestep (s)", 9.9e9);
+  dt_prev_ = plist_->get<double>("initial timestep (s)", std::min(dt_min_, dt_max_));
 
   if (dt_prev_ > dt_max_) {
     msg << "Alquimia_PK::XMLParameters(): \n";
@@ -504,30 +513,30 @@ Alquimia_PK::XMLParameters()
   }
 
   dt_next_ = dt_prev_;
-  dt_control_method_ = plist_->get<std::string>("time step control method", "fixed");
-  dt_cut_threshold_ = plist_->get<int>("time step cut threshold", 8);
+  dt_control_method_ = plist_->get<std::string>("timestep control method", "fixed");
+  dt_cut_threshold_ = plist_->get<int>("timestep cut threshold", 8);
   if (dt_cut_threshold_ <= 0) {
     msg << "Alquimia_PK::XMLParameters(): \n";
-    msg << "  Invalid \"time step cut threshold\": " << dt_cut_threshold_ << " (must be > 1).\n";
+    msg << "  Invalid \"timestep cut threshold\": " << dt_cut_threshold_ << " (must be > 1).\n";
     Exceptions::amanzi_throw(msg);
   }
-  dt_increase_threshold_ = plist_->get<int>("time step increase threshold", 4);
+  dt_increase_threshold_ = plist_->get<int>("timestep increase threshold", 4);
   if (dt_increase_threshold_ <= 0) {
     msg << "Alquimia_PK::XMLParameters(): \n";
-    msg << "  Invalid \"time step increase threshold\": " << dt_increase_threshold_
+    msg << "  Invalid \"timestep increase threshold\": " << dt_increase_threshold_
         << " (must be > 1).\n";
     Exceptions::amanzi_throw(msg);
   }
-  dt_cut_factor_ = plist_->get<double>("time step cut factor", 2.0);
+  dt_cut_factor_ = plist_->get<double>("timestep cut factor", 2.0);
   if (dt_cut_factor_ <= 1.0) {
     msg << "Alquimia_PK::XMLParameters(): \n";
-    msg << "  Invalid \"time step cut factor\": " << dt_cut_factor_ << " (must be > 1).\n";
+    msg << "  Invalid \"timestep cut factor\": " << dt_cut_factor_ << " (must be > 1).\n";
     Exceptions::amanzi_throw(msg);
   }
-  dt_increase_factor_ = plist_->get<double>("time step increase factor", 1.2);
+  dt_increase_factor_ = plist_->get<double>("timestep increase factor", 1.2);
   if (dt_increase_factor_ <= 1.0) {
     msg << "Alquimia_PK::XMLParameters(): \n";
-    msg << "  Invalid \"time step increase factor\": " << dt_increase_factor_
+    msg << "  Invalid \"timestep increase factor\": " << dt_increase_factor_
         << " (must be > 1).\n";
     Exceptions::amanzi_throw(msg);
   }
@@ -568,6 +577,12 @@ Alquimia_PK::CopyToAlquimia(int cell,
 
   state.water_density = fluid_density[0][cell];
   state.porosity = porosity[0][cell];
+
+  if (S_->HasRecord(temperature_key_)) {
+    const auto& temp =
+      *S_->Get<CompositeVector>(temperature_key_, water_tag).ViewComponent("cell", true);
+    state.temperature = temp[0][cell];
+  }
 
   for (int i = 0; i < number_aqueous_components_; i++) {
     state.total_mobile.data[i] = (*aqueous_components)[i][cell];
@@ -638,7 +653,7 @@ Alquimia_PK::CopyToAlquimia(int cell,
     }
   }
 
-  mat_props.volume = mesh_->cell_volume(cell);
+  mat_props.volume = mesh_->getCellVolume(cell);
   mat_props.saturation = water_saturation[0][cell];
 
   // sorption isotherms
@@ -830,12 +845,19 @@ Alquimia_PK::AdvanceSingleCell(double dt,
 
   int num_iterations = 0;
   if (alq_mat_props_.saturation > saturation_tolerance_) {
-    bool success = chem_engine_->Advance(
-      dt, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_, num_iterations);
+    bool success =
+      chem_engine_->Advance(dt,
+                            alq_mat_props_,
+                            alq_state_,
+                            alq_aux_data_,
+                            alq_aux_output_,
+                            num_iterations,
+                            mesh_->getMap(AmanziMesh::Entity_kind::CELL, false).GID(cell));
     if (not success) {
       if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
         Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << "no convergence in cell: " << mesh_->cell_map(false).GID(cell) << std::endl;
+        *vo_->os() << "no convergence in cell: "
+                   << mesh_->getMap(AmanziMesh::Entity_kind::CELL, false).GID(cell) << std::endl;
       }
       return -1;
     }
@@ -876,7 +898,8 @@ Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   // Get the number of owned (non-ghost) cells for the mesh.
-  int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int num_cells =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   int max_itrs(0), avg_itrs(0), min_itrs(1000), imax(-1);
 
@@ -898,7 +921,7 @@ Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       min_itrs = std::min(min_itrs, num_itrs);
       avg_itrs += num_itrs;
     } else {
-      // Convergence failure. Compute the next time step size.
+      // Convergence failure. Compute the next timestep size.
       convergence_failure = 1;
       break;
     }
@@ -909,15 +932,15 @@ Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   int send[3], recv[3];
   send[0] = convergence_failure;
   send[1] = max_itrs;
-  send[2] = mesh_->cell_map(false).GID(imax);
-  mesh_->get_comm()->MaxAll(send, recv, 3);
+  send[2] = mesh_->getMap(AmanziMesh::Entity_kind::CELL, false).GID(imax);
+  mesh_->getComm()->MaxAll(send, recv, 3);
 
   int tmp(min_itrs);
-  mesh_->get_comm()->MinAll(&tmp, &min_itrs, 1);
+  mesh_->getComm()->MinAll(&tmp, &min_itrs, 1);
 
   tmp = avg_itrs;
-  mesh_->get_comm()->SumAll(&tmp, &avg_itrs, 1);
-  avg_itrs /= mesh_->cell_map(false).NumGlobalElements();
+  mesh_->getComm()->SumAll(&tmp, &avg_itrs, 1);
+  avg_itrs /= mesh_->getMap(AmanziMesh::Entity_kind::CELL, false).NumGlobalElements();
 
   if (recv[0] != 0)
     num_successful_steps_ = 0;
@@ -926,7 +949,7 @@ Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   num_iterations_ = recv[1];
   imax = recv[2];
 
-  // Compute the next time step.
+  // Compute the next timestep.
   ComputeNextTimeStep();
 
   if (recv[0] != 0) {
@@ -947,7 +970,7 @@ Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       auto& aux_state =
         *S_->GetW<CompositeVector>(aux_names_[i], tag_next_, passwd_).ViewComponent("cell");
       for (int j = 0; j < aux_subfield_names_[i].size(); ++j) {
-        *aux_state[j] = *(*aux_output_)[counter++];
+        *aux_state(j) = *(*aux_output_)(counter++);
       }
     }
   }
@@ -967,14 +990,14 @@ Alquimia_PK::ComputeNextTimeStep()
       if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
         Teuchos::OSTab tab = vo_->getOSTab();
         *vo_->os() << "Number of Newton iterations exceeds threshold (" << dt_cut_threshold_
-                   << ") for time step cut, cutting dT by " << dt_cut_factor_ << std::endl;
+                   << ") for timestep cut, cutting dT by " << dt_cut_factor_ << std::endl;
       }
       dt_next_ = dt_prev_ / dt_cut_factor_;
     } else if (num_successful_steps_ >= dt_increase_threshold_) {
       if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
         Teuchos::OSTab tab = vo_->getOSTab();
         *vo_->os() << "Number of successful steps exceeds threshold (" << dt_increase_threshold_
-                   << ") for time step increase, growing dT by " << dt_increase_factor_
+                   << ") for timestep increase, growing dT by " << dt_increase_factor_
                    << std::endl;
       }
       dt_next_ = dt_prev_ * dt_increase_factor_;

@@ -43,7 +43,6 @@ UpwindFlux::Init(Teuchos::ParameterList& plist)
 ****************************************************************** */
 void
 UpwindFlux::Compute(const CompositeVector& flux,
-                    const CompositeVector& solution,
                     const std::vector<int>& bc_model,
                     CompositeVector& field)
 {
@@ -56,7 +55,7 @@ UpwindFlux::Compute(const CompositeVector& flux,
   const Epetra_MultiVector& flux_f = *flux.ViewComponent("face", true);
 
   const Epetra_MultiVector& field_c = *field.ViewComponent("cell", true);
-  const Epetra_MultiVector& field_bf = *field.ViewComponent("boundary_face", true);
+  const Epetra_MultiVector& field_bf = *std::as_const(field).ViewComponent("boundary_face");
   Epetra_MultiVector& field_f = *field.ViewComponent(face_comp_, true);
 
   double flxmin, flxmax, tol;
@@ -64,8 +63,10 @@ UpwindFlux::Compute(const CompositeVector& flux,
   flux_f.MaxValue(&flxmax);
   tol = tolerance_ * std::max(fabs(flxmin), fabs(flxmax));
 
-  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  AmanziMesh::Entity_ID_List cells;
+  int nfaces_owned =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   // multiple DOFs on faces require usage of block map
   const auto& fmap = *flux.ComponentMap("face", true);
@@ -73,7 +74,7 @@ UpwindFlux::Compute(const CompositeVector& flux,
   int c1, c2, dir;
   double kc1, kc2;
   for (int f = 0; f < nfaces_wghost; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    auto cells = mesh_->getFaceCells(f);
     int ncells = cells.size();
 
     int g = fmap.FirstPointInElement(f);
@@ -82,7 +83,7 @@ UpwindFlux::Compute(const CompositeVector& flux,
     c1 = cells[0];
     kc1 = field_c[0][c1];
 
-    mesh_->face_normal(f, false, c1, &dir);
+    mesh_->getFaceNormal(f, c1, &dir);
     bool flag = (flux_f[0][g] * dir <= -tol); // upwind flag
 
     // average field on almost vertical faces
@@ -91,8 +92,8 @@ UpwindFlux::Compute(const CompositeVector& flux,
       kc2 = field_c[0][c2];
 
       if (fabs(flux_f[0][g]) <= tol) {
-        double v1 = mesh_->cell_volume(c1);
-        double v2 = mesh_->cell_volume(c2);
+        double v1 = mesh_->getCellVolume(c1);
+        double v2 = mesh_->getCellVolume(c2);
 
         double tmp = v2 / (v1 + v2);
         field_f[0][g] = kc1 * tmp + kc2 * (1.0 - tmp);
@@ -100,7 +101,7 @@ UpwindFlux::Compute(const CompositeVector& flux,
         field_f[0][g] = (flag) ? kc2 : kc1;
       }
 
-      // copy cell value on fractures
+      // copy cell value on fractures (matrix only)
     } else if (ncells == 2 && ndofs == 2) {
       c2 = cells[1];
       kc2 = field_c[0][c2];
@@ -110,7 +111,8 @@ UpwindFlux::Compute(const CompositeVector& flux,
       field_f[0][g + 1 - k] = kc2;
 
       // upwind only on inflow dirichlet faces
-    } else {
+      // owned cells have owned boundary faces, so we may safely limit here
+    } else if (f < nfaces_owned) {
       field_f[0][g] = kc1;
       if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
         int bf = getFaceOnBoundaryBoundaryFace(*mesh_, f);

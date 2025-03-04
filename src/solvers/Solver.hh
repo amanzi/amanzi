@@ -8,15 +8,20 @@
            Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-/*
-  Solvers
+/*!
 
-  Interface for a nonlinear solver.
+Amanzi supports a few nonlinear solvers.
+Typically, a process kernel uses a factory to select a nonlinear solver.
+This factory uses parameter *solver type* to find parameters for
+the selected solver.
+
 */
 
 
 #ifndef AMANZI_SOLVER_BASE_
 #define AMANZI_SOLVER_BASE_
+
+#include <utility>
 
 #include "Teuchos_RCP.hpp"
 
@@ -48,6 +53,7 @@ class Solver {
   virtual int returned_code() = 0;
   virtual int pc_calls() = 0;
   virtual int pc_updates() = 0;
+  virtual std::vector<std::pair<double, double>>& history() = 0;
 };
 
 

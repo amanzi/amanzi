@@ -22,20 +22,18 @@
 // Amanzi
 #include "CycleDriver.hh"
 #include "MeshAudit.hh"
-#include "energy_tcm_registration.hh"
-#include "energy_iem_registration.hh"
-#include "eos_registration.hh"
+#include "eos_reg.hh"
+#include "evaluators_flow_reg.hh"
 #include "Mesh.hh"
 #include "MeshExtractedManifold.hh"
 #include "MeshFactory.hh"
-#include "mpc_pks_registration.hh"
+#include "models_flow_reg.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
-#include "pks_energy_registration.hh"
-#include "pks_flow_registration.hh"
-#include "pks_transport_registration.hh"
+#include "pks_flow_reg.hh"
+#include "pks_mpc_reg.hh"
+#include "pks_transport_reg.hh"
 #include "State.hh"
-#include "wrm_flow_registration.hh"
 
 
 TEST(MPC_DRIVER_FLOW_MATRIX_FRACTURE)
@@ -56,9 +54,11 @@ TEST(MPC_DRIVER_FLOW_MATRIX_FRACTURE)
 
   // create mesh
   auto mesh_list = Teuchos::sublist(plist, "mesh", true);
+  mesh_list->set<bool>("request edges", true);
+  mesh_list->set<bool>("request faces", true);
   MeshFactory factory(comm, gm, mesh_list);
   factory.set_preference(Preference({ Framework::MSTK }));
-  auto mesh = factory.create(0.0, 0.0, 0.0, 10.0, 10.0, 10.0, 11, 11, 10, true, true);
+  auto mesh = factory.create(0.0, 0.0, 0.0, 10.0, 10.0, 10.0, 11, 11, 10);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;
@@ -70,8 +70,10 @@ TEST(MPC_DRIVER_FLOW_MATRIX_FRACTURE)
   // create mesh for fracture
   std::vector<std::string> names;
   names.push_back("fracture");
-  auto mesh_fracture = Teuchos::rcp(new MeshExtractedManifold(
-    mesh, "fracture", AmanziMesh::FACE, comm, gm, mesh_list, true, false));
+  auto mesh_fracture_framework = Teuchos::rcp(new MeshExtractedManifold(
+    mesh, "fracture", AmanziMesh::Entity_kind::FACE, comm, gm, mesh_list));
+  auto mesh_fracture = Teuchos::rcp(new Mesh(
+    mesh_fracture_framework, Teuchos::rcp(new Amanzi::AmanziMesh::MeshAlgorithms()), mesh_list));
 
   S->RegisterMesh("fracture", mesh_fracture);
 
@@ -79,8 +81,8 @@ TEST(MPC_DRIVER_FLOW_MATRIX_FRACTURE)
   cycle_driver.Go();
 
   // verify solution symmetry
-  int ncells =
-    mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
+                                    Amanzi::AmanziMesh::Parallel_kind::OWNED);
   const auto& pc = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
 
   Amanzi::AmanziGeometry::Point x0(5.0, 5.0, 5.0);
@@ -88,7 +90,7 @@ TEST(MPC_DRIVER_FLOW_MATRIX_FRACTURE)
   for (double d : dist) {
     double pmin(1e+10), pmax(-1e+10);
     for (int c = 0; c < ncells; ++c) {
-      const auto& xc = mesh->cell_centroid(c);
+      const auto& xc = mesh->getCellCentroid(c);
       if (std::fabs(norm(xc - x0) - d) < 1e-4 && std::fabs(xc[2] - 4.5) < 1e-6) {
         pmin = std::min(pmin, pc[0][c]);
         pmax = std::max(pmax, pc[0][c]);

@@ -13,9 +13,10 @@
 List *region: halfspace* defines a halfspace determined by a plane and
 outward normal to the plane.
 
-* `"normal`" ``[Array(double)]`` Normal to the plane.
+.. admonition:: region_half_space-spec
 
-* `"point`" ``[Array(double)]`` Point in space.
+  * `"normal`" ``[Array(double)]`` Normal to the plane.
+  * `"point`" ``[Array(double)]`` Point in space.
 
 Example:
 

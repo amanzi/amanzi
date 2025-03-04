@@ -94,8 +94,8 @@ class PDE_DiffusionNLFVwithBndFaces : public virtual PDE_Diffusion {
 
   // -- modify an operator
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
-  virtual void ModifyMatrices(const CompositeVector& u) override{};
-  virtual void ScaleMassMatrices(double s) override{};
+  virtual void ModifyMatrices(const CompositeVector& u) override { AMANZI_ASSERT(false); }
+  virtual void ScaleMassMatrices(double s) override { AMANZI_ASSERT(false); }
 
   // -- interface to solvers for treating nonlinear BCs.
   virtual double ComputeTransmissibility(int f) const override { return 0.0; }
@@ -114,11 +114,11 @@ class PDE_DiffusionNLFVwithBndFaces : public virtual PDE_Diffusion {
   void OneSidedFluxCorrections_(int i0, const CompositeVector& u, CompositeVector& sideflux);
   void OneSidedWeightFluxes_(int i0, const CompositeVector& u, CompositeVector& sideflux);
   void OneSidedNeumannCorrections_(const CompositeVector& u, CompositeVector& sideflux);
-  int OrderCellsByGlobalId_(const AmanziMesh::Entity_ID_List& cells, int& c1, int& c2);
+  int OrderCellsByGlobalId_(const AmanziMesh::cEntity_ID_View& cells, int& c1, int& c2);
   int NLTPFAContributions_(int f, double& tc1, double& tc2);
 
  protected:
-  int dim_;
+  int dim_, manifold_dim_;
   int newton_correction_;
 
   bool stencil_initialized_;

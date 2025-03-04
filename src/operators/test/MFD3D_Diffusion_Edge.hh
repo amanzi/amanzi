@@ -25,7 +25,7 @@
   2. Add variable for the static registry. In this example MyMethod
   is Diffusion_Edge:
 
-  static RegisteredFactory<MFD3D_My_Method> factory_;
+  static RegisteredFactory<MFD3D_My_Method> reg_;
 
   3. Explicitly instantiate the static registry (in .cc file) with
      the unique name "my unique method". The factory takes this name
@@ -41,7 +41,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 #include "Point.hh"
 
 #include "BilinearFormFactory.hh"
@@ -56,14 +56,15 @@ namespace WhetStone {
 class MFD3D_Diffusion_Edge : public MFD3D {
  public:
   MFD3D_Diffusion_Edge(const Teuchos::ParameterList& plist,
-                       const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
+                       const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : MFD3D(mesh){};
 
   // main methods
   // -- symmetric schema
   virtual std::vector<SchemaItem> schema() const override
   {
-    return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::EDGE, DOF_Type::SCALAR, 1));
+    return std::vector<SchemaItem>(
+      1, std::make_tuple(AmanziMesh::Entity_kind::EDGE, DOF_Type::SCALAR, 1));
   }
 
   // -- stiffness matrix
@@ -71,7 +72,7 @@ class MFD3D_Diffusion_Edge : public MFD3D {
   virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A) override;
 
  private:
-  static RegisteredFactory<MFD3D_Diffusion_Edge> factory_;
+  static RegisteredFactory<MFD3D_Diffusion_Edge> reg_;
 };
 
 } // namespace WhetStone

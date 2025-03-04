@@ -26,12 +26,35 @@ nonlinear iterations required to solve step :math:`k`:.
 .. _timestep-controller-standard-spec:
 .. admonition:: timestep-controller-standard-spec
 
-    * `"max iterations`" ``[int]`` :math:`N^{max}`, decrease the timestep if the previous step took more than this.
-    * `"min iterations`" ``[int]`` :math:`N^{min}`, increase the timestep if the previous step took less than this.
-    * `"time step reduction factor`" ``[double]`` :math:`f_{reduction}`, reduce the previous timestep by this multiple.
-    * `"time step increase factor`" ``[double]`` :math:`f_{increase}`, increase the previous timestep by this multiple.
-    * `"max time step`" ``[double]`` The max timestep size allowed.
-    * `"min time step`" ``[double]`` The min timestep size allowed.  If the step has failed and the new step is below this cutoff, the simulation fails.
+   * `"max iterations`" ``[int]`` :math:`N^{max}`, decrease the timestep if the previous step took more than this.
+   * `"min iterations`" ``[int]`` :math:`N^{min}`, increase the timestep if the previous step took less than this.
+   * `"timestep reduction factor`" ``[double]`` :math:`f_{reduction}`, reduce the previous timestep by this multiple.
+   * `"timestep increase factor`" ``[double]`` :math:`f_{increase}`, increase the previous timestep by this multiple.
+
+   INCLUDES:
+
+   - ``[timestep-controller-recoverable-spec]``
+
+.. code-block:: xml
+
+  <ParameterList name="BDF1"> <!-- parent list -->
+    <Parameter name="timestep controller type" type="string" value="standard"/>
+    <ParameterList name="timestep controller standard parameters">
+      <Parameter name="min iterations" type="int" value="10"/>
+      <Parameter name="max iterations" type="int" value="15"/>
+      <Parameter name="timestep increase factor" type="double" value="1.2"/>
+      <Parameter name="timestep reduction factor" type="double" value="0.5"/>
+      <Parameter name="max timestep [s]" type="double" value="1e+9"/>
+      <Parameter name="min timestep [s]" type="double" value="0.0"/>
+      <Parameter name="initial timestep [s]" type="double" value="86400"/>
+    </ParameterList>
+  </ParameterList>
+
+In this example, the timestep is increased by factor 1.2 when the nonlinear
+solver converges in 10 or less iterations.
+The timestep is not changed when the number of nonlinear iterations is
+between 11 and 15.
+The timestep will be cut twice if the number of nonlinear iterations exceeds 15.
 
 */
 
@@ -41,26 +64,25 @@ nonlinear iterations required to solve step :math:`k`:.
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "TimestepController.hh"
+#include "TimestepControllerRecoverable.hh"
 
 namespace Amanzi {
 
-class TimestepControllerStandard : public TimestepController {
+class TimestepControllerStandard : public TimestepControllerRecoverable {
  public:
-  TimestepControllerStandard(Teuchos::ParameterList& plist);
-
-  // single method for timestep control
-  double get_timestep(double dt, int iterations);
+  TimestepControllerStandard(const std::string& name,
+                             Teuchos::ParameterList& plist,
+                             const Teuchos::RCP<State>& S);
 
  protected:
-  Teuchos::ParameterList plist_;
+  // single method for timestep control
+  double getTimestep_(double dt, int iterations, bool valid) override;
 
+ protected:
   int max_its_;
   int min_its_;
   double reduction_factor_;
   double increase_factor_;
-  double max_dt_;
-  double min_dt_;
 };
 
 } // namespace Amanzi

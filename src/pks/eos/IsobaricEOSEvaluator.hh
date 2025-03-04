@@ -53,7 +53,7 @@ class IsobaricEOSEvaluator
   Tag tag_;
 
  private:
-  static Utils::RegisteredFactory<Evaluator, IsobaricEOSEvaluator> factory_;
+  static Utils::RegisteredFactory<Evaluator, IsobaricEOSEvaluator> reg_;
 };
 
 } // namespace AmanziEOS

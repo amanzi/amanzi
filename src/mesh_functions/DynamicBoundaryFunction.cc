@@ -34,11 +34,11 @@ DynamicBoundaryFunction::Func_ID(double time)
 
   if (unique_specs_.size() == 0) return 0;
 
-  int dim = mesh_->space_dimension();
+  int dim = mesh_->getSpaceDimension();
   std::vector<double> args(1 + dim);
   args[0] = time;
 
-  UniqueSpecList::const_iterator uspec = unique_specs_[AmanziMesh::FACE]->begin();
+  UniqueSpecList::const_iterator uspec = unique_specs_[AmanziMesh::Entity_kind::FACE]->begin();
   int val = std::floor((*(*uspec)->first->second)(args)[0]);
 
   return val;

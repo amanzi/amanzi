@@ -58,7 +58,6 @@ TEST(FLOW_3D_RICHARDS)
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
-  pref.push_back(Framework::STK);
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
@@ -74,8 +73,9 @@ TEST(FLOW_3D_RICHARDS)
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
+  Teuchos::ParameterList pk_tree("flow");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  Richards_PK* RPK = new Richards_PK(plist, "flow", S, soln);
+  Richards_PK* RPK = new Richards_PK(pk_tree, plist, S, soln);
 
   RPK->Setup();
   S->Setup();
@@ -103,8 +103,9 @@ TEST(FLOW_3D_RICHARDS)
   GMV::close_data_file();
 
   /* check the pressure profile */
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  //for (int c = 0; c < ncells; c++) std::cout << (mesh->cell_centroid(c))[2] << " " << pressure[c] << std::endl;
+  int ncells =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  //for (int c = 0; c < ncells; c++) std::cout << (mesh->getCellCentroid(c))[2] << " " << pressure[c] << std::endl;
   for (int c = 0; c < ncells; c++) CHECK(p[0][c] > 4500.0 && p[0][c] < 101325.0);
 
   delete RPK;

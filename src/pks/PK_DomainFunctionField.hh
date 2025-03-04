@@ -21,7 +21,8 @@ the domain function.
 .. admonition:: domain-function-field-spec
 
    * `"field key`" ``[string]`` Field used in the domain function.
-   * `"component`" ``[string]`` **cell** Component of the field.
+   * `"component`" ``[string]`` Component of the field. Default is `"cell`".
+   * `"scaling factor`" ``[double]`` Constant multiplication factor. Default is 1.
 
 */
 
@@ -36,10 +37,10 @@ the domain function.
 
 #include "CommonDefs.hh"
 #include "Mesh.hh"
-#include "UniqueMeshFunction.hh"
 #include "Evaluator.hh"
 
 #include "PK_Utils.hh"
+#include "PKsDefs.hh"
 
 namespace Amanzi {
 
@@ -55,7 +56,7 @@ class PK_DomainFunctionField : public FunctionBase {
                          const Teuchos::RCP<State>& S,
                          const Teuchos::ParameterList& plist,
                          AmanziMesh::Entity_kind kind)
-    : S_(S), mesh_(mesh), FunctionBase(plist), kind_(kind){};
+    : FunctionBase(plist), S_(S), mesh_(mesh), kind_(kind){};
 
   ~PK_DomainFunctionField(){};
 
@@ -68,8 +69,8 @@ class PK_DomainFunctionField : public FunctionBase {
   void Init(const Teuchos::ParameterList& plist, const std::string& keyword);
 
   // required member functions
-  virtual void Compute(double t0, double t1);
-  virtual std::string name() const { return "field"; }
+  virtual void Compute(double t0, double t1) override;
+  virtual DomainFunction_kind getType() const override { return DomainFunction_kind::FIELD; }
 
  protected:
   using FunctionBase::value_;
@@ -81,9 +82,10 @@ class PK_DomainFunctionField : public FunctionBase {
   std::string submodel_;
   Teuchos::RCP<MeshIDs> entity_ids_;
   AmanziMesh::Entity_kind kind_;
-  Key field_key_;
-  Tag tag_;
   Key component_key_;
+  int num_cells_;
+  std::vector<Key> field_keys_;
+  std::vector<Tag> tags_;
 };
 
 
@@ -96,20 +98,41 @@ PK_DomainFunctionField<FunctionBase>::Init(const Teuchos::ParameterList& plist,
                                            const std::string& keyword)
 {
   Errors::Message msg;
-
   keyword_ = keyword;
-
   submodel_ = "rate";
+
   if (plist.isParameter("submodel")) submodel_ = plist.get<std::string>("submodel");
   std::vector<std::string> regions = plist.get<Teuchos::Array<std::string>>("regions").toVector();
 
-  // Teuchos::RCP<Amanzi::MultiFunction> f;
   try {
     Teuchos::ParameterList flist = plist.sublist(keyword);
-    field_key_ = flist.get<std::string>("field key");
-    tag_ = Keys::readTag(flist, "tag");
-    component_key_ = flist.get<std::string>("component", "cell");
-    ;
+    if (flist.isParameter("number of fields")) {
+      // for multiple (>1) field evaluators. This requires "number of fields" sublist
+      if (flist.isType<int>("number of fields")) {
+        int num_fields = flist.get<int>("number of fields");
+        if (num_fields < 2) { // ERROR -- invalid number of fields
+          std::cout << "Number of fields must be > 1" << std::endl << std::flush;
+          AMANZI_ASSERT(0);
+        }
+
+        // Get corresponding field_keys to global memory
+        for (int lcv = 1; lcv != (num_fields + 1); ++lcv) {
+          std::stringstream sublist_name;
+          sublist_name << "field " << lcv << " info";
+          Key field_key_ = flist.sublist(sublist_name.str()).get<std::string>("field key");
+          Tag tag = Keys::readTag(flist.sublist(sublist_name.str()), "tag");
+          field_keys_.push_back(field_key_);
+          tags_.push_back(tag);
+        }
+      }
+    } else { // for only ONE field evaluator (without number of fields sublist)
+      Key field_key_ = flist.get<std::string>("field key");
+      field_keys_.push_back(field_key_);
+      Tag tag = Keys::readTag(flist, "tag");
+      tags_.push_back(tag);
+      // component_key_ = flist.get<std::string>("component", "cell");
+    }
+    num_cells_ = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
   } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "error in source sublist : " << msg.what();
@@ -118,15 +141,13 @@ PK_DomainFunctionField<FunctionBase>::Init(const Teuchos::ParameterList& plist,
 
   // Add this source specification to the domain function.
   Teuchos::RCP<Domain> domain = Teuchos::rcp(new Domain(regions, kind_));
-  //AddSpec(Teuchos::rcp(new Spec(domain, f)));
 
   entity_ids_ = Teuchos::rcp(new MeshIDs());
   AmanziMesh::Entity_kind kind = domain->second;
 
   for (auto region = domain->first.begin(); region != domain->first.end(); ++region) {
-    if (mesh_->valid_set_name(*region, kind)) {
-      AmanziMesh::Entity_ID_List id_list;
-      mesh_->get_set_entities(*region, kind, AmanziMesh::Parallel_type::OWNED, &id_list);
+    if (mesh_->isValidSetName(*region, kind)) {
+      auto id_list = mesh_->getSetEntities(*region, kind, AmanziMesh::Parallel_kind::OWNED);
       entity_ids_->insert(id_list.begin(), id_list.end());
     } else {
       msg << "Unknown region in processing coupling source: name=" << *region << ", kind=" << kind
@@ -144,16 +165,32 @@ template <class FunctionBase>
 void
 PK_DomainFunctionField<FunctionBase>::Compute(double t0, double t1)
 {
-  if (S_->HasEvaluator(field_key_, tag_)) {
-    S_->GetEvaluator(field_key_, tag_).Update(*S_, field_key_);
+  int num_fields = field_keys_.size();      // number of field evaluators
+  std::vector<double> val_vec(num_fields);  // vector values
+  std::vector<std::vector<double>> field_all(num_fields, std::vector<double>(num_cells_));
+
+  // For multiple field evaluators (fe), loop through each fe to retrieve the values for each cell.
+  // Copy the retrieved values to intermediate variables.
+  // Finally, update the source values (value_) for each cell.
+  for (size_t ife = 0; ife < num_fields; ++ife) { // fe counter
+    Key field_key_ = field_keys_[ife];
+    Tag tag = tags_[ife];
+
+    if (S_->HasEvaluator(field_key_, tag)) {
+      S_->GetEvaluator(field_key_, tag).Update(*S_, field_key_);
+    }
+    // reference to coressponding fe
+    const Epetra_MultiVector& field_vec = *S_->Get<CompositeVector>(field_key_, tag).ViewComponent("cell", false);
+
+    // loop through every cell to update the intermediate variables
+    for (auto c : *entity_ids_) {
+      field_all[ife][c] = field_vec[0][c];
+    }
   }
 
-  const auto& field_vec = *S_->Get<CompositeVector>(field_key_, tag_).ViewComponent("cell", false);
-  int nvalues = field_vec.NumVectors();
-  std::vector<double> val_vec(nvalues);
-
+  // Update source values (value_)
   for (auto c : *entity_ids_) {
-    for (int i = 0; i < nvalues; ++i) { val_vec[i] = field_vec[i][c]; }
+    for (int i = 0; i < num_fields; ++i) { val_vec[i] = field_all[i][c]; }
     value_[c] = val_vec;
   }
 }

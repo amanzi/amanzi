@@ -290,15 +290,14 @@ PMAmr::LinkFinalCheckpoint (int step)
     bool link_exists = ::lstat(linkName.c_str(), &statbuff) != -1;
     if (link_exists) {
       std::cout << "Unlinking \"" << linkName << "\""<< std::endl;
-      int ret = unlink(linkName.c_str()); BL_ASSERT(ret == 0);
+      BL_ASSERT(unlink(linkName.c_str()) == 0);
     }
 
     std::cout << "Symbolic link, \"" << linkName
 	      << "\" created to final checkpoint, \"" << finalCheckpointName
 	      << "\""<< std::endl;
 
-    int ret = symlink(finalCheck_filePart.c_str(),linkName.c_str());
-    BL_ASSERT(ret == 0);
+    BL_ASSERT(symlink(finalCheck_filePart.c_str(),linkName.c_str()) == );
   }
 }
 
@@ -564,7 +563,7 @@ PMAmr::pm_timeStep (int  level,
                 if (old_finest < finest_level)
                 {
                     //
-                    // The new levels will not have valid time steps
+                    // The new levels will not have valid timesteps
                     // and iteration counts.
                     //
                     for (int k = old_finest+1; k <= finest_level; k++)
@@ -680,7 +679,7 @@ PMAmr::coarseTimeStep (Real _stop_time)
     Array<int> observations_to_process;
 
     // NOTE: This is a hack to help keep dt from jumping too much.  Normally, the event processing
-    // will only detect an even during the current time step.  If one is detected, the time step
+    // will only detect an even during the current timestep.  If one is detected, the timestep
     // is cut to hit the event.  Here, we check the current time interval, but also a guess for
     // the next one.  If one is detected during the next interval, we split the time remaining
     // between the two steps.  Under normal conditions, this will ensure that dt doesn't abruptly
@@ -707,7 +706,7 @@ PMAmr::coarseTimeStep (Real _stop_time)
     if (dt_red > 0  &&  dt_red < dt_level[0]) {
 
         if (begin_ecp) {
-            dt0_before_event_cut = -1; // "forget" current time step, we're headed into a Time Period Control interval
+            dt0_before_event_cut = -1; // "forget" current timestep, we're headed into a Time Period Control interval
         }
         else if (dt0_before_event_cut < 0) {
             dt0_before_event_cut = dt_level[0];
@@ -732,14 +731,13 @@ PMAmr::coarseTimeStep (Real _stop_time)
       }
     }
 
-    // Do time step
+    // Do timestep
     pm_timeStep(0,cumtime,1,1);
 
     cumtime += dt_level[0];
 
     amr_level[0].postCoarseTimeStep(cumtime);
 
-    static int cnt = 0;
     if (cumtime == ec->end) {
       if (ParallelDescriptor::IOProcessor()) {
 	std::cout << "Exiting Exceution Control Period \"" << ec->label << "\" at time: "
@@ -1325,8 +1323,6 @@ void PMAmr::InitializeControlEvents()
 {
   // Build time macros
   ParmParse ppa("amr");
-
-  EventCoord& event_coord = PMAmr::eventCoord();
 
   int n_cmac = ppa.countval("cycle_macros");
   Array<std::string> cmacroNames;

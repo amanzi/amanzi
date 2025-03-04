@@ -11,14 +11,20 @@
 
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "numerical_flux_registration.hh"
-#include "pks_shallow_water_registration.hh"
+#include "models_shallow_water_reg.hh"
+#include "pks_shallow_water_reg.hh"
 #include "VerboseObject_objs.hh"
+
+#include "state_evaluators_registration.hh"
+
+#include "Kokkos_Core.hpp"
 
 int
 main(int argc, char* argv[])
 {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
-  return UnitTest::RunAllTests();
+  Kokkos::initialize();
+  int status = UnitTest::RunAllTests();
+  Kokkos::finalize();
+  return status;
 }

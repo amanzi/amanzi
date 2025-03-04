@@ -21,7 +21,7 @@ include_directories(${CCSE_INCLUDE_DIRS})
 include_directories(${SAMR_SOURCE_DIR})
 
 # External (TPL) include directories
-include_directories(${Teuchos_INCLUDE_DIRS})
+include_directories(${Trilinos_INCLUDE_DIRS})
 include_directories(${PETSC_INCLUDE_DIRS})
 include_directories(${PMAMR_INCLUDE_DIRS})
 
@@ -73,8 +73,7 @@ if (BUILD_TESTS)
     endif()
   endif()
 
-  set(tpl_libs ${Teuchos_LIBRARIES} ${Boost_LIBRARIES} 
-               ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES}
+  set(tpl_libs ${Teuchos_LIBRARIES} ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES}
                ${CCSE_LIBRARIES} ${PETSC_LIBRARIES} ${HDF5_LIBRARIES})
 
   if (BUILD_SHARED_LIBS)

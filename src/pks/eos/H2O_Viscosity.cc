@@ -84,9 +84,7 @@ H2O_Viscosity::DViscosityDT(double T, double p)
 double
 H2O_Viscosity::DViscosityDp(double T, double p)
 {
-  Errors::Message message("EOS viscosity of water: dVis/dP is not implemented");
-  Exceptions::amanzi_throw(message);
-  return -1.0;
+  return 0.0;
 };
 
 } // namespace AmanziEOS

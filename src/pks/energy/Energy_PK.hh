@@ -7,9 +7,65 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-/*
-  This is the energy component of the Amanzi code.
-  This is a base class for energy equations.
+/*!
+
+The conceptual PDE model for the energy equation is
+
+.. math::
+  \frac{\partial \varepsilon}{\partial t}
+  =
+  \boldsymbol{\nabla} \cdot (\kappa \nabla T) -
+  \boldsymbol{\nabla} \cdot (\eta_l H_l \boldsymbol{q}_l) + Q
+
+where
+:math:`\varepsilon` is the energy density [:math:`J/m^3`],
+:math:`\eta_l` is molar density of liquid [:math:`mol/m^3`],
+:math:`Q` is heat source term,
+:math:`\boldsymbol{q}_l` is the Darcy velocity [m/s],
+:math:`\kappa` is thermal conductivity,
+and :math:`H_l` is molar enthalpy of liquid [J/mol].
+We define
+
+.. math::
+   \varepsilon = \phi (\eta_l s_l U_l + \eta_g s_g U_g) +
+   (1 - \phi) \rho_r c_r T
+
+where
+:math:`s_l` is liquid saturation [-],
+:math:`s_g` is gas saturation (water vapor),
+:math:`\eta_l` is molar density of liquid [:math:`mol/m^3`],
+:math:`\eta_g` is molar density of gas,
+:math:`U_l` is molar internal energy of liquid [J/mol],
+:math:`U_g` is molar internal energy of gas (water vapor) [J/mol],
+:math:`\phi` is porosity [-],
+:math:`\rho_r` is rock density [:math:`kg/m^3`],
+:math:`c_r` is specific heat of rock [J/kg/K],
+and :math:`T` is temperature [K].
+
+
+Physical models and assumptions
+...............................
+This list is used to summarize physical models and assumptions, such as
+coupling with other PKs.
+This list is often generated on a fly by a high-level MPC PK.
+
+.. admonition:: energy_pk-spec
+
+  * `"vapor diffusion`" ``[bool]`` is set up automatically by a high-level PK,
+    e.g. by EnergyFlow PK. The default value is `"false`".
+
+  * `"eos lookup table`" ``[string]`` provides the name for optional EOS lookup table.
+
+.. code-block:: xml
+
+  <ParameterList>  <!-- parent list -->
+  <ParameterList name="_ENERGY">
+    <ParameterList name="physical models and assumptions">
+      <Parameter name="vapor diffusion" type="bool" value="false"/>
+      <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 */
 
@@ -50,6 +106,7 @@ class Energy_PK : public PK_PhysicalBDF {
   virtual ~Energy_PK(){};
 
   // methods required by PK interface
+  virtual void parseParameterList() override {};
   virtual void Setup() override;
   virtual void Initialize() override;
   virtual std::string name() override { return passwd_; }
@@ -69,7 +126,7 @@ class Energy_PK : public PK_PhysicalBDF {
   // -- possibly modifies the predictor that is going to be used as a
   //    starting value for the nonlinear solve in the time integrator,
   //    the time integrator will pass the predictor that is computed
-  //    using extrapolation and the time step that is used to compute
+  //    using extrapolation and the timestep that is used to compute
   //    this predictor this function returns true if the predictor was
   //    modified, false if not
   bool
@@ -111,9 +168,6 @@ class Energy_PK : public PK_PhysicalBDF {
   // -- for unit tests
   std::vector<WhetStone::Tensor>& get_K() { return K; }
 
- private:
-  void InitializeFields_();
-
  public:
   int ncells_owned, ncells_wghost;
   int nfaces_owned, nfaces_wghost;
@@ -135,7 +189,7 @@ class Energy_PK : public PK_PhysicalBDF {
   Key energy_key_, prev_energy_key_;
   Key enthalpy_key_, aperture_key_;
   Key ie_liquid_key_, ie_gas_key_, ie_rock_key_;
-  Key vol_flowrate_key_, particle_density_key_;
+  Key pressure_key_, mol_flowrate_key_, particle_density_key_, sat_liquid_key_;
   Key mol_density_liquid_key_, mass_density_liquid_key_;
   Key mol_density_gas_key_, x_gas_key_;
   Key conductivity_gen_key_, conductivity_key_, conductivity_eff_key_;

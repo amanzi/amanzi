@@ -21,14 +21,14 @@
 
 // Amanzi
 #include "CycleDriver.hh"
-#include "eos_registration.hh"
+#include "eos_reg.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
-#include "mpc_pks_registration.hh"
-#include "pks_chemistry_registration.hh"
-#include "pks_transport_registration.hh"
+#include "pks_chemistry_reg.hh"
+#include "pks_mpc_reg.hh"
+#include "pks_transport_reg.hh"
 #include "State.hh"
 
 
@@ -53,7 +53,6 @@ RunTestReactiveTransport(const std::string& xmlInFileName, int npks)
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
-  pref.push_back(Framework::STK);
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
@@ -81,7 +80,6 @@ RunTestReactiveTransport(const std::string& xmlInFileName, int npks)
   S = Teuchos::null;
   avg2 = 0.;
 
-  /*
   state_plist = glist->sublist("state");
   S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
@@ -89,7 +87,7 @@ RunTestReactiveTransport(const std::string& xmlInFileName, int npks)
   {
     Amanzi::CycleDriver cycle_driver(glist, S, comm, obs_data);
     cycle_driver.Go();
-    S->GetFieldData("total_component_concentration")->MeanValue(&avg2);
+    S->Get<CompositeVector>("total_component_concentration").MeanValue(&avg2);
   }
 
   CHECK_CLOSE(avg1, avg2, 1e-5 * avg1);
@@ -97,7 +95,6 @@ RunTestReactiveTransport(const std::string& xmlInFileName, int npks)
   // checking that we created only two PKs and one MPC PK two times
   CHECK(PKFactory::num_pks == npks);
   std::cout << PKFactory::list_pks << std::endl;
-  */
 }
 
 

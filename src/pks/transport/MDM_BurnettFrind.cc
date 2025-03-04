@@ -39,7 +39,9 @@ MDM_BurnettFrind::MDM_BurnettFrind(Teuchos::ParameterList& plist)
 * Anisotropic tensor defined by three parameters.
 ****************************************************************** */
 WhetStone::Tensor
-MDM_BurnettFrind::mech_dispersion(const AmanziGeometry::Point& u,
+MDM_BurnettFrind::mech_dispersion(double t,
+                                  const AmanziGeometry::Point& xc,
+                                  const AmanziGeometry::Point& u,
                                   int axi_symmetry,
                                   double wc,
                                   double phi) const

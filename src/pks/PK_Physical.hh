@@ -38,7 +38,7 @@ class PK_Physical : virtual public PK {
               const Teuchos::RCP<TreeVector>& soln)
     : PK(pk_tree, glist, S, soln)
   {
-    domain_ = plist_->get<std::string>("domain name", "domain");
+    domain_ = Keys::readDomain(*plist_, "domain", "domain");
     mesh_ = S_->GetMesh(domain_);
   };
 
@@ -53,17 +53,6 @@ class PK_Physical : virtual public PK {
   // access
   Key domain() { return domain_; }
   Teuchos::RCP<Debugger> debugger() { return db_; }
-
- protected:
-  // Helper methods
-  void AddDefaultPrimaryEvaluator_(const Key& key, const Tag& tag = Tags::DEFAULT);
-  void AddDefaultPrimaryEvaluator_(const Tag& tag = Tags::DEFAULT)
-  {
-    AddDefaultPrimaryEvaluator_(key_, tag);
-  }
-
-  void
-  AddDefaultIndependentEvaluator_(const Key& key, const Tag& tag = Tags::DEFAULT, double val = 0.0);
 
  protected:
   // name of domain, associated mesh
@@ -86,6 +75,26 @@ InitializeCVField(const Teuchos::RCP<State>& S,
                   const Tag& tag,
                   const Key& passwd,
                   double default_val);
+
+void
+InitializeCVFieldFromCVField(const Teuchos::RCP<State>& S,
+                             const VerboseObject& vo,
+                             const Key& field0,
+                             const Key& field1,
+                             const Key& passwd,
+                             const Tag& tag = Tags::DEFAULT);
+
+// add default evaluators
+void
+AddDefaultPrimaryEvaluator(const Teuchos::RCP<State>& S,
+                           const Key& key,
+                           const Tag& tag = Tags::DEFAULT);
+
+void
+AddDefaultIndependentEvaluator(const Teuchos::RCP<State>& S,
+                               const Key& key,
+                               const Tag& tag = Tags::DEFAULT,
+                               double val = 0.0);
 
 } // namespace Amanzi
 

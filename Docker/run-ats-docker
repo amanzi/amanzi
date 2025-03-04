@@ -6,16 +6,23 @@
 #  Customize as you like, this is a simple example and assumes you want to run
 #  in your current / present working directory:
 #
-#  - v mount_point_on_host:mount_point_on_container
-#  - w sets current working directory on the container
-#  --rm deletes the container on exit
+#  --mount provides the mount type,source, and target, e.g.,
+#          --mount type=bind,source=mount_point_on_host,target=mount_point_on_container
+#  -w      sets current working directory on the container
+#  -it     -i and -t together provide an interactive terminal (a tty) for the container
+#  -p      map host_port:container_port, e.g., -p 8899:8899 
+#  --rm    deletes the container on exit
 #
 #  There's not effort here to parse arguments.  Just assumes you are providing an xml file.
 #
 
 HOST_MNT=`pwd -P`
 echo $HOST_MNT
-CONT_MNT=/home/amanzi_usr/work
-CONT_PWD=/home/amanzi_usr/work
+CONT_MNT=/home/amanzi_user/work
+CONT_PWD=/home/amanzi_user/work
 
-docker run --rm -v $HOST_MNT:$CONT_MNT:delegated -w $CONT_PWD metsi/ats:latest mpirun -n 4 ats "$@"
+docker run -it --mount type=bind,source=$HOST_MNT,target=$CONT_MNT -w $CONT_PWD metsi/ats:master-latest /bin/bash
+
+# docker run --mount type=bind,source=/Volumes/Data/amanzi/docker/host,target=/home/amanzi_usr/work -w $CONT_PWD metsi/amanzi-tpls:base /bin/bash
+
+# docker run  -it -w $CONT_PWD metsi/amanzi-tpls:base /bin/bash

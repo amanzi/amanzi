@@ -52,7 +52,7 @@ Each entry in that list is a:
 
    END
 
-   * `"function`" ``[function-typedsublist-spec]`` The spec to provide the actual algebraic function.
+   * `"function`" ``[function-typedinline-spec]`` The spec to provide the actual algebraic function.
 
  */
 

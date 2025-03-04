@@ -4,7 +4,9 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Svetlana Tokareva (tokareva@lanl.gov)
+ Authors: Svetlana Tokareva (tokareva@lanl.gov)
+          Giacomo Capodaglio (gcapodaglio@lanl.gov)
+          Naren Vohra (vohra@lanl.gov)
 */
 
 /*
@@ -28,10 +30,12 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVec
   auto& f_temp0 = *fun.SubVector(0)->Data()->ViewComponent("cell");
   auto& f_temp1 = *fun.SubVector(1)->Data()->ViewComponent("cell");
 
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  int nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+  int ncells_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+  int nfaces_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+  int nnodes_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
   // distribute data to ghost cells
   A.SubVector(0)->Data()->ScatterMasterToGhosted("cell");
@@ -64,37 +68,89 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVec
   // update boundary conditions given by [h u v]
   for (int i = 0; i < bcs_.size(); ++i) { bcs_[i]->Compute(t, t); }
 
-  std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
+  std::vector<int> bc_model_scalar(nfaces_wghost, Operators::OPERATOR_BC_NONE);
+  std::vector<int> bc_model_vector(nfaces_wghost, Operators::OPERATOR_BC_NONE);
   std::vector<double> bc_value_hn(nnodes_wghost, 0.0);
   std::vector<double> bc_value_h(nfaces_wghost, 0.0);
+  std::vector<double> bc_value_b(nfaces_wghost, 0.0);
   std::vector<double> bc_value_ht(nfaces_wghost, 0.0);
   std::vector<double> bc_value_qx(nfaces_wghost, 0.0);
   std::vector<double> bc_value_qy(nfaces_wghost, 0.0);
+  bool outward_discharge_flag = false;
+  unsigned primary_variable_Dirichlet = 0;
 
-  // extract velocity and compute qx, qy, h BC at faces
+  // ponded depth BC
   for (int i = 0; i < bcs_.size(); ++i) {
-    if (bcs_[i]->get_bc_name() == "ponded depth") {
+    if (bcs_[i]->get_bc_name() == "ponded depth") { // shallow water
+      // BC is at nodes
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int n = it->first;
         bc_value_hn[n] = it->second[0];
       }
+      primary_variable_Dirichlet = 1;
     }
   }
 
-  AmanziMesh::Entity_ID_List nodes;
-  // extract ponded depth BC at nodes to ensure well-balancedness
+  // velocity or discharge BCs
+  // extract primary variable BC at nodes to ensure well-balancedness
   for (int i = 0; i < bcs_.size(); ++i) {
     if (bcs_[i]->get_bc_name() == "velocity") {
+      if (!primary_variable_Dirichlet) {
+        if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+          Teuchos::OSTab tab = vo_->getOSTab();
+          *vo_->os() << "Dirichlet BCs not set for primary variable" << std::endl;
+          *vo_->os() << "Supply Dirichlet BCs for primary variable or" << std::endl;
+          *vo_->os() << "alternatively set Dirichlet BCs for discharge only" << std::endl;
+        }
+        abort();
+      } else {
+        for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+          int f = it->first;
+          bc_model_vector[f] = Operators::OPERATOR_BC_DIRICHLET;
+          auto nodes = mesh_->getFaceNodes(f);
+          int n0 = nodes[0], n1 = nodes[1];
+          bc_model_scalar[f] = Operators::OPERATOR_BC_DIRICHLET;
+          bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
+          bc_value_qx[f] = bc_value_h[f] * it->second[0];
+          bc_value_qy[f] = bc_value_h[f] * it->second[1];
+          bc_model_scalar[f] = Operators::OPERATOR_BC_DIRICHLET;
+          bc_value_b[f] = (B_n[0][n0] + B_n[0][n1]) / 2.0;
+          bc_value_ht[f] = bc_value_h[f] + bc_value_b[f];
+        }
+      }
+    }
+    if (bcs_[i]->get_bc_name() == "discharge") {
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int f = it->first;
-        mesh_->face_get_nodes(f, &nodes);
-        int n0 = nodes[0], n1 = nodes[1];
+        bc_model_vector[f] = Operators::OPERATOR_BC_DIRICHLET;
+        bc_value_qx[f] = it->second[0];
+        bc_value_qy[f] = it->second[1];
+        if (primary_variable_Dirichlet) {
+          auto nodes = mesh_->getFaceNodes(f);
+          int n0 = nodes[0], n1 = nodes[1];
+          bc_model_scalar[f] = Operators::OPERATOR_BC_DIRICHLET;
+          bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
+          bc_value_b[f] = (B_n[0][n0] + B_n[0][n1]) / 2.0;
+          bc_value_ht[f] = bc_value_h[f] + bc_value_b[f];
+        }
+      }
+    }
 
-        bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
-        bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
-        bc_value_qx[f] = bc_value_h[f] * it->second[0];
-        bc_value_qy[f] = bc_value_h[f] * it->second[1];
-        bc_value_ht[f] = bc_value_h[f] + (B_n[0][n0] + B_n[0][n1]) / 2.0;
+    else if (bcs_[i]->get_bc_name() == "outward discharge") {
+      outward_discharge_flag = true;
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        int f = it->first;
+        bc_model_vector[f] = Operators::OPERATOR_BC_DIRICHLET;
+        bc_value_qx[f] = it->second[0];
+        bc_value_qy[f] = it->second[1];
+        if (primary_variable_Dirichlet) {
+          auto nodes = mesh_->getFaceNodes(f);
+          int n0 = nodes[0], n1 = nodes[1];
+          bc_model_scalar[f] = Operators::OPERATOR_BC_DIRICHLET;
+          bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
+          bc_value_b[f] = (B_n[0][n0] + B_n[0][n1]) / 2.0;
+          bc_value_ht[f] = bc_value_h[f] + bc_value_b[f];
+        }
       }
     }
   }
@@ -104,15 +160,15 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVec
   auto tmp1 =
     S_->GetW<CompositeVector>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
   total_depth_grad_->Compute(tmp1);
-  if (use_limiter_) limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_, bc_model, bc_value_ht);
+  if (use_limiter_)
+    limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_, bc_model_scalar, bc_value_ht);
   total_depth_grad_->data()->ScatterMasterToGhosted("cell");
 
   // additional depth-positivity correction limiting for fully flooded cells
   auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
 
   for (int c = 0; c < ncells_wghost; ++c) {
-    Amanzi::AmanziMesh::Entity_ID_List cnodes, cfaces;
-    mesh_->cell_get_nodes(c, &cnodes);
+    auto cnodes = mesh_->getCellNodes(c);
 
     // calculate maximum bathymetry value on cell nodes
     double Bmax = 0.0;
@@ -120,12 +176,11 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVec
 
     // check if cell is fully flooded and proceed with limiting
     if ((ht_c[0][c] > Bmax) && (ht_c[0][c] - B_c[0][c] > 0.0)) {
-      Amanzi::AmanziMesh::Entity_ID_List cfaces;
-      mesh_->cell_get_faces(c, &cfaces);
+      auto cfaces = mesh_->getCellFaces(c);
 
       double alpha = 1.0; // limiter value
       for (int f = 0; f < cfaces.size(); ++f) {
-        const auto& xf = mesh_->face_centroid(cfaces[f]);
+        const auto& xf = mesh_->getFaceCentroid(cfaces[f]);
         double ht_rec = total_depth_grad_->getValue(c, xf);
         if (ht_rec - BathymetryEdgeValue(cfaces[f], B_n) < 0.0) {
           alpha = std::min(alpha,
@@ -142,12 +197,14 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVec
   // flux
   auto tmp5 = A.SubVector(1)->Data()->ViewComponent("cell", true);
   discharge_x_grad_->Compute(tmp5, 0);
-  if (use_limiter_) limiter_->ApplyLimiter(tmp5, 0, discharge_x_grad_, bc_model, bc_value_qx);
+  if (use_limiter_)
+    limiter_->ApplyLimiter(tmp5, 0, discharge_x_grad_, bc_model_vector, bc_value_qx);
   discharge_x_grad_->data()->ScatterMasterToGhosted("cell");
 
   auto tmp6 = A.SubVector(1)->Data()->ViewComponent("cell", true);
   discharge_y_grad_->Compute(tmp6, 1);
-  if (use_limiter_) limiter_->ApplyLimiter(tmp6, 1, discharge_y_grad_, bc_model, bc_value_qy);
+  if (use_limiter_)
+    limiter_->ApplyLimiter(tmp6, 1, discharge_y_grad_, bc_model_vector, bc_value_qy);
   discharge_y_grad_->data()->ScatterMasterToGhosted("cell");
 
   // update source (external) terms
@@ -155,88 +212,101 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVec
 
   // compute source (external) values
   // coupling submodel="rate" returns volumetric flux [m^3/s] integrated over
-  // the time step in the last (the second) component of local data vector
-  std::vector<double> ext_S_cell(ncells_owned, 0.0);
-  for (int i = 0; i < srcs_.size(); ++i) {
-    for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) {
-      int c = it->first;
-      ext_S_cell[c] = it->second[0]; // data unit is [m]
-    }
-  }
+  // the timestep in the last (the second) component of local data vector
+  std::vector<double> ext_S_cell(ncells_owned_, 0.0);
+  ComputeExternalForcingOnCells(ext_S_cell);
 
   // Shallow water equations have the form
   // U_t + F_x(U) + G_y(U) = S(U)
 
   int dir, c1, c2, ierr;
   double h, qx, qy, factor;
-  AmanziMesh::Entity_ID_List cells;
 
-  std::vector<double> FNum_rot;        // fluxes
-  std::vector<double> S;               // source term
-  std::vector<double> UL(3), UR(3), U; // local state vectors
+  std::vector<double> FNum_rot(3, 0.0); // fluxes
+  std::vector<double> BedSlopeSource;   // bed slope source
+  std::vector<double> UL(3), UR(3);     // local state vectors
+  std::vector<double> DL(1), DR(1);     // data to compute the hydrostatic pressure forces
 
   // Simplest flux form
   // U_i^{n+1} = U_i^n - dt/vol * (F_{i+1/2}^n - F_{i-1/2}^n) + dt * S_i
 
   for (int f = 0; f < nfaces_wghost; ++f) {
-    double farea = mesh_->face_area(f);
-    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+    double farea = mesh_->getFaceArea(f);
+    const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
 
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    auto cells = mesh_->getFaceCells(f);
     c1 = cells[0];
     c2 = (cells.size() == 2) ? cells[1] : -1;
-    if (c1 > ncells_owned && c2 == -1) continue;
-    if (c2 > ncells_owned) std::swap(c1, c2);
+    if (c1 > ncells_owned_ && c2 == -1) continue;
+    if (c2 > ncells_owned_) std::swap(c1, c2);
 
-    AmanziGeometry::Point normal = mesh_->face_normal(f, false, c1, &dir);
+    AmanziGeometry::Point normal = mesh_->getFaceNormal(f, c1, &dir);
     normal /= farea;
 
-    double ht_rec = TotalDepthEdgeValue(c1, f, ht_c[0][c1], B_c[0][c1], B_max[0][c1], B_n);
+    // primary field at the edge
+    double V_rec = 0.0;
 
-    double B_rec = BathymetryEdgeValue(f, B_n);
-
-    double h_rec = ht_rec - B_rec;
-    ierr = ErrorDiagnostics_(t, c1, h_rec, B_rec, ht_rec);
+    V_rec = ComputeFieldOnEdge(c1, f, ht_c[0][c1], B_c[0][c1], B_max[0][c1], B_n);
+    ierr = ErrorDiagnostics_(t, c1, V_rec);
     if (ierr < 0) break;
 
     double qx_rec = discharge_x_grad_->getValue(c1, xf);
     double qy_rec = discharge_y_grad_->getValue(c1, xf);
 
-    factor = inverse_with_tolerance(h_rec, cell_area2_max_);
+    factor = inverse_with_tolerance(V_rec, cell_area2_max_);
 
     double vx_rec = factor * qx_rec;
     double vy_rec = factor * qy_rec;
 
     // rotating velocity to the face-based coordinate system
+    // note: this implicitly assumes that the velocity and the
+    // normal and tangent to the face are expressed with respect
+    // to the same reference frame.
+    // for SW, that is the standard reference frame
     double vn, vt;
     vn = vx_rec * normal[0] + vy_rec * normal[1];
     vt = -vx_rec * normal[1] + vy_rec * normal[0];
 
-    UL[0] = h_rec;
-    UL[1] = h_rec * vn;
-    UL[2] = h_rec * vt;
+    UL[0] = V_rec;
+    UL[1] = V_rec * vn;
+    UL[2] = V_rec * vt;
+    DL[0] = V_rec;
 
     if (c2 == -1) {
-      if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
+      if (bc_model_scalar[f] == Operators::OPERATOR_BC_DIRICHLET) {
         UR[0] = bc_value_h[f];
-        UR[1] = bc_value_qx[f] * normal[0] + bc_value_qy[f] * normal[1];
-        UR[2] = -bc_value_qx[f] * normal[1] + bc_value_qy[f] * normal[0];
+        UL[0] = UR[0];
+        DR[0] = bc_value_h[f];
+        DL[0] = DR[0];
+      } else {
+        UR[0] = UL[0];
+        DR[0] = DL[0];
+      }
+      if (bc_model_vector[f] == Operators::OPERATOR_BC_DIRICHLET) {
+        if (outward_discharge_flag == true) {
+          UR[1] = bc_value_qx[f]; // This assumes that BC value is specified by taking the dot product with face normal
+          UR[2] = bc_value_qy[f]; // This should probably be 0.
+        } else {
+          UR[1] = bc_value_qx[f] * normal[0] + bc_value_qy[f] * normal[1];
+          UR[2] = -bc_value_qx[f] * normal[1] + bc_value_qy[f] * normal[0];
+        }
 
+        UL[1] = UR[1];
+        UL[2] = UR[2];
       } else {
         // default outflow BC
-        UR = UL;
+        UR[1] = UL[1];
+        UR[2] = UL[2];
       }
     } else {
-      ht_rec = TotalDepthEdgeValue(c2, f, ht_c[0][c2], B_c[0][c2], B_max[0][c2], B_n);
-
-      h_rec = ht_rec - B_rec;
-      ierr = ErrorDiagnostics_(t, c2, h_rec, B_rec, ht_rec);
+      V_rec = ComputeFieldOnEdge(c2, f, ht_c[0][c2], B_c[0][c2], B_max[0][c2], B_n);
+      ierr = ErrorDiagnostics_(t, c2, V_rec);
       if (ierr < 0) break;
 
       qx_rec = discharge_x_grad_->getValue(c2, xf);
       qy_rec = discharge_y_grad_->getValue(c2, xf);
 
-      factor = inverse_with_tolerance(h_rec, cell_area2_max_);
+      factor = inverse_with_tolerance(V_rec, cell_area2_max_);
 
       vx_rec = factor * qx_rec;
       vy_rec = factor * qy_rec;
@@ -244,12 +314,16 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVec
       vn = vx_rec * normal[0] + vy_rec * normal[1];
       vt = -vx_rec * normal[1] + vy_rec * normal[0];
 
-      UR[0] = h_rec;
-      UR[1] = h_rec * vn;
-      UR[2] = h_rec * vt;
+      UR[0] = V_rec;
+      UR[1] = V_rec * vn;
+      UR[2] = V_rec * vt;
+      DR[0] = V_rec;
     }
 
-    FNum_rot = numerical_flux_->Compute(UL, UR);
+    double HPFL = ComputeHydrostaticPressureForce(DL);
+    double HPFR = ComputeHydrostaticPressureForce(DR);
+
+    FNum_rot = numerical_flux_->Compute(UL, UR, HPFL, HPFR);
 
     h = FNum_rot[0];
     qx = FNum_rot[1] * normal[0] - FNum_rot[2] * normal[1];
@@ -259,14 +333,14 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVec
     riemann_f[0][f] = FNum_rot[0] * farea * dir;
 
     // add fluxes to temporary fields
-    double vol = mesh_->cell_volume(c1);
+    double vol = mesh_->getCellVolume(c1);
     factor = farea / vol;
     h_c_tmp[0][c1] -= h * factor;
     q_c_tmp[0][c1] -= qx * factor;
     q_c_tmp[1][c1] -= qy * factor;
 
     if (c2 != -1) {
-      vol = mesh_->cell_volume(c2);
+      vol = mesh_->getCellVolume(c2);
       factor = farea / vol;
       h_c_tmp[0][c2] += h * factor;
       q_c_tmp[0][c2] += qx * factor;
@@ -277,27 +351,20 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVec
   // sync errors across processors, otherwise any MPI call
   // will lead to an error.
   int ierr_tmp(ierr);
-  mesh_->get_comm()->MinAll(&ierr_tmp, &ierr, 1);
+  mesh_->getComm()->MinAll(&ierr_tmp, &ierr, 1);
   if (ierr < 0) {
     Errors::Message msg;
-    msg << "Negative ponded depth.\n";
+    msg << "Negative primary variable.\n";
     Exceptions::amanzi_throw(msg);
   }
 
   // sources (bathymetry, flux exchange, etc)
-  // the code should not fail after that
-  U.resize(3);
+  for (int c = 0; c < ncells_owned_; ++c) {
+    BedSlopeSource = NumericalSourceBedSlope(c, ht_c[0][c], B_c[0][c], B_max[0][c], B_n);
 
-  for (int c = 0; c < ncells_owned; ++c) {
-    U[0] = h_temp[0][c];
-    U[1] = q_temp[0][c];
-    U[2] = q_temp[1][c];
-
-    S = NumericalSource(c, U[0] + B_c[0][c], B_c[0][c], B_max[0][c], B_n);
-
-    h = h_c_tmp[0][c] + (S[0] + ext_S_cell[c]);
-    qx = q_c_tmp[0][c] + S[1];
-    qy = q_c_tmp[1][c] + S[2];
+    h = h_c_tmp[0][c] + BedSlopeSource[0] + ext_S_cell[c];
+    qx = q_c_tmp[0][c] + BedSlopeSource[1];
+    qy = q_c_tmp[1][c] + BedSlopeSource[2];
 
     f_temp0[0][c] = h;
     f_temp1[0][c] = qx;
@@ -310,15 +377,14 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVec
 // Error diagnostics
 //--------------------------------------------------------------
 int
-ShallowWater_PK::ErrorDiagnostics_(double t, int c, double h, double B, double ht)
+ShallowWater_PK::ErrorDiagnostics_(double t, int c, double h)
 {
   if (h < 0.0) {
-    const auto& xc = mesh_->cell_centroid(c);
-
+    const auto& xc = mesh_->getCellCentroid(c);
     if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
       Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "negative height in cell " << c << ", xc=(" << xc[0] << ", " << xc[1] << ")"
-                 << ", total=" << ht << ", bathymetry=" << B << ", height=" << h << std::endl;
+      *vo_->os() << "negative primary variable in cell " << c << ", xc=(" << xc[0] << ", " << xc[1]
+                 << "), primary variable=" << h << std::endl;
     }
     return -1;
   }

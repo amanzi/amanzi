@@ -27,6 +27,7 @@ namespace AmanziInput {
 Teuchos::ParameterList
 InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::ParameterList& state_list)
 {
+  Errors::Message msg;
   Teuchos::ParameterList out_list;
   multiphase_ = true;
 
@@ -38,10 +39,19 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
   bool flag;
   DOMNode* node;
 
+  // checks
+  if (eos_model_ == "") {
+    msg << "EOS model is required.\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  // header
+  out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
+
   // solver data
   out_list.set<std::string>("Jacobian type", "analytic")
     .set<std::string>("linear solver", "GMRES for Newton-0")
-    .set<std::string>("preconditioner", "Euclid")
+    .set<std::string>("preconditioner", "ILU")
     .set<std::string>("NCP function", "min")
     .set<bool>("CPR enhancement", false);
 
@@ -55,28 +65,32 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
   // chemical species
   out_list.sublist("molecular diffusion") = TranslateMolecularDiffusion_();
 
-  out_list.set<int>("number of aqueous components", phases_["water"].size())
-    .set<int>("number of gaseous components", phases_["air"].size())
+  out_list.set<int>("number of aqueous components", phases_[LIQUID].dissolved.size())
+    .set<int>("number of gaseous components", phases_[GAS].dissolved.size())
     .set<double>("molar mass of water", 18.0e-3);
 
   // water retention models
   out_list.sublist("water retention models") = TranslateWRM_("multiphase");
 
   // time integrator
-  std::string err_options("residual"), nonlinear_solver("newton");
-  std::string unstr_controls("unstructured_controls, unstr_multiphase_controls");
-
   bool modify_correction(false);
+  std::string err_options("residual"), nonlinear_solver("newton");
+
+  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_nonlinear_solver", flag);
+  if (flag) nonlinear_solver = GetAttributeValueS_(node, "name", TYPE_NONE, false, "newton");
+
   node = GetUniqueElementByTagsString_(
     "unstructured_controls, unstr_nonlinear_solver, modify_correction", flag);
+  if (flag) modify_correction = GetTextContentL_(node);
 
+  std::string unstr_controls("unstructured_controls, unstr_multiphase_controls");
   out_list.sublist("time integrator") = TranslateTimeIntegrator_(err_options,
                                                                  nonlinear_solver,
                                                                  modify_correction,
                                                                  unstr_controls,
                                                                  TI_SOLVER,
-                                                                 TI_TS_REDUCTION_FACTOR,
-                                                                 TI_TS_INCREASE_FACTOR);
+                                                                 dt_cut_["transient"],
+                                                                 dt_inc_["transient"]);
 
   // boundary and initial conditions
   out_list.sublist("boundary conditions") = TranslateMultiphaseBCs_();
@@ -84,205 +98,385 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
   // operators
   std::string disc_method("fv-default, fv-default");
   out_list.sublist("operators") =
-    TranslateDiffusionOperator_(disc_method, "", "", "upwind: face", "vapor matrix", true);
+    TranslateDiffusionOperator_(disc_method, "", "", "upwind-face", "vapor matrix", domain, true);
 
-  out_list.sublist("operators").sublist("molecular diffusion operator") =
-    out_list.sublist("operators").sublist("diffusion operator");
+  auto& tmp1 = out_list.sublist("operators").sublist("diffusion operator");
+  auto& tmp2 = out_list.sublist("operators").sublist("molecular diffusion operator");
+  tmp2.sublist("matrix") = tmp1.sublist("matrix");
+  tmp2.sublist("preconditioner") = tmp1.sublist("preconditioner");
+
+  tmp2.sublist("matrix").set<bool>("gravity", false);
+  tmp2.sublist("preconditioner").set<bool>("gravity", false);
 
   out_list.sublist("operators")
     .sublist("advection operator")
     .set<std::string>("discretization primary", "upwind")
     .set<int>("reconstruction order", 0);
 
+  // -- upwind
+  tmp1.sublist("upwind").set<std::string>("upwind method", "upwind: darcy velocity");
+  tmp1.sublist("upwind").sublist("upwind parameters").set<double>("tolerance", 1e-12);
+
   // additional state list
   auto& fic = state_list.sublist("initial conditions");
   auto& fev = state_list.sublist("evaluators");
 
+  // -- keys
+  Key pressure_liquid_key = Keys::getKey(domain, "pressure_liquid");
+  Key pressure_gas_key = Keys::getKey(domain, "pressure_gas");
+  Key pressure_vapor_key = Keys::getKey(domain, "pressure_vapor");
+
+  Key sat_liquid_key = Keys::getKey(domain, "saturation_liquid");
+  Key sat_gas_key = Keys::getKey(domain, "saturation_gas");
+
+  Key porosity_key = Keys::getKey(domain, "porosity");
+
+  Key mol_density_liquid_key = Keys::getKey(domain, "molar_density_liquid");
+  Key mol_density_gas_key = Keys::getKey(domain, "molar_density_gas");
+
+  Key mass_density_liquid_key = Keys::getKey(domain, "mass_density_liquid");
+
+  Key mole_xl_key = Keys::getKey(domain, "mole_fraction_liquid");
+  Key mole_xg_key = Keys::getKey(domain, "mole_fraction_gas");
+  Key mole_xv_key = Keys::getKey(domain, "mole_fraction_vapor");
+
+  Key viscosity_liquid_key = Keys::getKey(domain, "viscosity_liquid");
+  Key viscosity_gas_key = Keys::getKey(domain, "viscosity_gas");
+
+  Key temperature_key = Keys::getKey(domain, "temperature");
+  Key enthalpy_liquid_key = Keys::getKey(domain, "enthalpy_liquid");
+  Key enthalpy_gas_key = Keys::getKey(domain, "enthalpy_gas");
+  Key ie_liquid_key = Keys::getKey(domain, "internal_energy_liquid");
+  Key ie_gas_key = Keys::getKey(domain, "internal_energy_gas");
+  Key ie_rock_key = Keys::getKey(domain, "internal_energy_rock");
+
+  Key diff_liquid_key = Keys::getKey(domain, "diffusion_liquid");
+  Key diff_gas_key = Keys::getKey(domain, "diffusion_gas");
+  Key diff_vapor_key = Keys::getKey(domain, "diffusion_vapor");
+  Key conductivity_key = Keys::getKey(domain, "thermal_conductivity");
+
+  Key adv_liquid_key = Keys::getKey(domain, "advection_liquid");
+  Key adv_gas_key = Keys::getKey(domain, "advection_gas");
+  Key adv_water_key = Keys::getKey(domain, "advection_water");
+  Key adv_energy_liquid_key = Keys::getKey(domain, "adv_energy_liquid");
+  Key adv_energy_gas_key = Keys::getKey(domain, "adv_energy_gas");
+
+  Key mol_diff_liquid_key = Keys::getKey(domain, "molecular_diff_liquid");
+  Key mol_diff_gas_key = Keys::getKey(domain, "molecular_diff_gas");
+
+  Key storage_tcc_key = Keys::getKey(domain, "total_component_storage");
+  Key storage_water_key = Keys::getKey(domain, "total_water_storage");
+  Key energy_key = Keys::getKey(domain, "energy");
+
+  Key ncp_f_key = Keys::getKey(domain, "ncp_f");
+  Key ncp_g_key = Keys::getKey(domain, "ncp_g");
+
+  Key relperm_liquid_key = Keys::getKey(domain, "rel_permeability_liquid");
+  Key relperm_gas_key = Keys::getKey(domain, "rel_permeability_gas");
+
   // -- density
-  auto& tmp = fev.sublist("molar_density_gas");
+  auto& tmp = fev.sublist(mol_density_gas_key);
   tmp.set<std::string>("evaluator type", "eos")
     .set<std::string>("eos basis", "molar")
-    .set<std::string>("molar density key", "molar_density_gas")
-    .set<std::string>("pressure key", "pressure_gas");
+    .set<std::string>("molar density key", mol_density_gas_key)
+    .set<std::string>("pressure key", pressure_gas_key);
   tmp.sublist("EOS parameters")
     .set<std::string>("eos type", "ideal gas")
-    .set<double>("molar mass of gas", 28.9647e-03); // dry air (not used ?)
+    .set<double>("molar mass", 28.9647e-03) // dry air (not used ?)
+    .set<double>("density", 1.0);           // not used ?
 
-  AddIndependentFieldEvaluator_(
-    fev, "molar_density_liquid", "All", "cell", rho_ / MOLAR_MASS_WATER);
+  fev.sublist(mol_density_liquid_key).set<std::string>("pressure key", pressure_liquid_key);
 
   // -- viscosity
-  double viscosity = fic.sublist("const_fluid_viscosity").template get<double>("value");
-  AddIndependentFieldEvaluator_(fev, "viscosity_liquid", "All", "cell", viscosity);
+  if (!fev.isParameter(viscosity_liquid_key)) {
+    double viscosity = fic.sublist("const_fluid_viscosity").template get<double>("value");
+    AddIndependentFieldEvaluator_(fev, viscosity_liquid_key, "All", "cell", viscosity);
+  }
 
   // -- diffusion
-  auto diff = out_list.sublist("molecular diffusion")
-                .get<Teuchos::Array<double>>("aqueous values")
-                .toVector();
-  AddIndependentFieldEvaluator_(fev, "molecular_diff_liquid", "All", "cell", diff[0]);
+  auto diff_l = out_list.sublist("molecular diffusion")
+                  .get<Teuchos::Array<double>>("aqueous values")
+                  .toVector();
+  auto diff_g = out_list.sublist("molecular diffusion")
+                  .get<Teuchos::Array<double>>("gaseous values")
+                  .toVector();
 
-  diff = out_list.sublist("molecular diffusion")
-           .get<Teuchos::Array<double>>("gaseous values")
-           .toVector();
-  AddIndependentFieldEvaluator_(fev, "molecular_diff_gas", "All", "cell", diff[0]);
+  if (diff_l.size() == 0 || diff_l.size() != diff_g.size()) {
+    msg << "Incomplete definition of species: #aqueous=" << diff_l.size()
+        << ", #gaseous=" << diff_g.size() << ".\n";
+    Exceptions::amanzi_throw(msg);
+  }
 
-  // -- pressure
-  fic.sublist("pressure_liquid") = fic.sublist("pressure");
-  fic.remove("pressure");
+  AddIndependentFieldEvaluator_(fev, mol_diff_liquid_key, "All", "cell", diff_l[0]);
+  AddIndependentFieldEvaluator_(fev, mol_diff_gas_key, "All", "cell", diff_g[0]);
 
-  // -- saturation
-  fic.sublist("saturatiob_liquid") = fic.sublist("saturation");
-  fic.remove("saturation");
+  // -- pressure (why do we use IC? FIXME)
+  fic.sublist(pressure_liquid_key) = fic.sublist(Keys::getKey(domain, "pressure"));
+  fic.remove(Keys::getKey(domain, "pressure"));
 
   // -- temperature
-  fev.sublist("temperature") = fic.sublist("temperature");
-  fev.sublist("temperature").set<std::string>("evaluator type", "independent variable");
-  fic.remove("temperature");
+  if (isothermal_) {
+    fev.sublist(temperature_key) = fic.sublist(temperature_key);
+    fev.sublist(temperature_key).set<std::string>("evaluator type", "independent variable");
+    fic.remove(temperature_key);
+  }
 
   // system of equations (fixed at the moment)
-  // -- equations
-  std::string pl("pressure_liquid"), xg("mole_fraction_gas");
+  // -- equation for pressure
+  std::string pl(pressure_liquid_key), pg(pressure_gas_key), xg(mole_xg_key);
 
-  auto evals = Teuchos::Array<std::string>({ "ncp_g",
-                                             "total_water_storage",
-                                             "total_component_storage",
-                                             "advection_water",
-                                             "advection_liquid",
-                                             "advection_gas",
-                                             "diffusion_liquid",
-                                             "diffusion_gas",
-                                             "diffusion_vapor",
-                                             "saturation_gas",
-                                             "mole_fraction_liquid",
-                                             "mole_fraction_vapor" });
-  out_list.set<Teuchos::Array<std::string>>("evaluators", evals);
-
+  // liquid phase: primary component
   Teuchos::ParameterList& peqn = out_list.sublist("system").sublist("pressure eqn");
-  peqn.set<std::string>("primary unknown", pl)
-    .set<Teuchos::Array<std::string>>("advection liquid",
-                                      std::vector<std::string>({ "advection_water", pl }))
-    .set<Teuchos::Array<double>>("advection factors", std::vector<double>({ 1.0, 1.0 }))
-    .set<Teuchos::Array<std::string>>(
-      "diffusion liquid", std::vector<std::string>({ "diffusion_vapor", "mole_fraction_vapor" }))
-    .set<Teuchos::Array<double>>("diffusion factors", std::vector<double>({ 1.0, 1.0 }))
-    .set<std::string>("accumulation", "total_water_storage");
+  Teuchos::ParameterList& pterms = peqn.sublist("terms");
 
+  peqn.set<std::string>("primary unknown", pl).set<std::string>("accumulation", storage_water_key);
+
+  pterms.sublist("advection 0")
+    .set<std::string>("coefficient", adv_water_key)
+    .set<std::string>("argument", pl)
+    .set<double>("scaling factor", 1.0)
+    .set<int>("phase", 0);
+
+  if (phases_[GAS].active) {
+    pterms.sublist("diffusion 1")
+      .set<std::string>("coefficient", diff_vapor_key)
+      .set<std::string>("argument", mole_xv_key)
+      .set<double>("scaling factor", 1.0)
+      .set<int>("phase", 1);
+
+    fev.sublist(storage_water_key)
+      .set<std::string>("evaluator type", "storage water")
+      .set<std::string>("molar density liquid key", mol_density_liquid_key)
+      .set<std::string>("molar density gas key", mol_density_gas_key)
+      .set<std::string>("porosity key", porosity_key)
+      .set<std::string>("saturation liquid key", sat_liquid_key)
+      .set<std::string>("mole fraction vapor key", mole_xv_key)
+      .set<std::string>("tag", "");
+
+    fev.sublist(mole_xv_key)
+      .set<std::string>("evaluator type", "product")
+      .set<Teuchos::Array<std::string>>(
+        "dependencies", std::vector<std::string>({ pressure_gas_key, pressure_vapor_key }))
+      .set<Teuchos::Array<int>>("powers", std::vector<int>({ -1, 1 }))
+      .set<std::string>("tag", "");
+  } else {
+    fev.sublist(storage_water_key)
+      .set<std::string>("evaluator type", "product")
+      .set<Teuchos::Array<std::string>>(
+        "dependencies",
+        std::vector<std::string>({ mol_density_liquid_key, sat_liquid_key, porosity_key }))
+      .set<Teuchos::Array<int>>("powers", std::vector<int>({ 1, 1, 1 }))
+      .set<std::string>("tag", "");
+
+    AddIndependentFieldEvaluator_(fev, mole_xv_key, "All", "cell", 0.0);
+  }
+
+  // -- equation for solute
   Teuchos::ParameterList& seqn = out_list.sublist("system").sublist("solute eqn");
-  seqn.set<std::string>("primary unknown", xg)
-    .set<Teuchos::Array<std::string>>("advection liquid",
-                                      std::vector<std::string>({ "advection_liquid", pl }))
-    .set<Teuchos::Array<std::string>>("advection gas",
-                                      std::vector<std::string>({ "advection_gas", "pressure_gas" }))
-    .set<Teuchos::Array<double>>("advection factors", std::vector<double>({ 1.0, 1.0 }))
-    .set<Teuchos::Array<std::string>>(
-      "diffusion liquid", std::vector<std::string>({ "diffusion_liquid", "mole_fraction_liquid" }))
-    .set<Teuchos::Array<std::string>>(
-      "diffusion gas", std::vector<std::string>({ "diffusion_gas", "mole_fraction_gas" }))
-    .set<Teuchos::Array<double>>("diffusion factors", std::vector<double>({ 1.0, 1.0 }))
-    .set<std::string>("accumulation", "total_component_storage");
+  Teuchos::ParameterList& sterms = seqn.sublist("terms");
+  seqn.set<std::string>("primary unknown", xg).set<std::string>("accumulation", storage_tcc_key);
 
+  sterms.sublist("advection 0")
+    .set<std::string>("coefficient", adv_liquid_key)
+    .set<std::string>("argument", pl)
+    .set<double>("scaling factor", 1.0)
+    .set<int>("phase", 0);
 
+  sterms.sublist("advection 1")
+    .set<std::string>("coefficient", adv_gas_key)
+    .set<std::string>("argument", pg)
+    .set<double>("scaling factor", 1.0)
+    .set<int>("phase", 1);
+
+  sterms.sublist("diffusion 2")
+    .set<std::string>("coefficient", diff_liquid_key)
+    .set<std::string>("argument", mole_xl_key)
+    .set<double>("scaling factor", 1.0)
+    .set<int>("phase", 0);
+
+  sterms.sublist("diffusion 3")
+    .set<std::string>("coefficient", diff_gas_key)
+    .set<std::string>("argument", mole_xg_key)
+    .set<double>("scaling factor", 1.0)
+    .set<int>("phase", 1);
+
+  // -- equation for constraints
   Teuchos::ParameterList& ceqn = out_list.sublist("system").sublist("constraint eqn");
-  ceqn.set<std::string>("primary unknown", "saturation_liquid")
+  ceqn.set<std::string>("primary unknown", sat_liquid_key)
     .set<Teuchos::Array<std::string>>("ncp evaluators",
-                                      std::vector<std::string>({ "ncp_f", "ncp_g" }));
+                                      std::vector<std::string>({ ncp_f_key, ncp_g_key }));
+
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "primary unknwons:" << pl << ", " << xg << ", " << sat_liquid_key << std::endl;
+  }
+
+  // -- equation for energy
+  if (isothermal_ == false) {
+    Teuchos::ParameterList& teqn = out_list.sublist("system").sublist("energy eqn");
+    Teuchos::ParameterList& tterms = teqn.sublist("terms");
+
+    teqn.set<std::string>("primary unknown", temperature_key)
+      .set<std::string>("accumulation", energy_key);
+
+    tterms.sublist("advection 0")
+      .set<std::string>("coefficient", adv_energy_liquid_key)
+      .set<std::string>("argument", pl)
+      .set<double>("scaling factor", 1.0)
+      .set<int>("phase", 0);
+
+    // tterms.sublist("advection 1")
+    //   .set<std::string>("coefficient", adv_energy_gas_key).set<std::string>("argument", pg)
+    //   .set<double>("scaling factor", 1.0).set<int>("phase", 1);
+
+    tterms.sublist("diffusion 2")
+      .set<std::string>("coefficient", conductivity_key)
+      .set<std::string>("argument", temperature_key)
+      .set<double>("scaling factor", 1.0)
+      .set<int>("phase", 0);
+
+    Teuchos::ParameterList& thermal =
+      out_list.sublist("thermal conductivity evaluator").sublist("thermal conductivity parameters");
+    thermal.set<std::string>("thermal conductivity type", "two-phase Peters-Lidard");
+    thermal.set<double>("thermal conductivity of gas", 0.02);
+    thermal.set<double>("unsaturated alpha", 1.0);
+    thermal.set<double>("epsilon", 1.0e-10);
+
+    double cv_f(0.606), cv_r(0.2);
+    node = GetUniqueElementByTagsString_("materials", flag);
+    std::vector<DOMNode*> materials = GetChildren_(node, "material", flag);
+
+    node =
+      GetUniqueElementByTagsString_(materials[0], "thermal_properties, liquid_conductivity", flag);
+    if (flag) cv_f = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "W/m/K");
+
+    node =
+      GetUniqueElementByTagsString_(materials[0], "thermal_properties, solid_conductivity", flag);
+    if (flag) cv_r = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "W/m/K");
+
+    thermal.set<double>("thermal conductivity of liquid", cv_f);
+    thermal.set<double>("thermal conductivity of rock", cv_r);
+    thermal.set<double>("reference temperature", 273.15);
+
+    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "primary unknwons:" << temperature_key << std::endl;
+    }
+  }
 
   // -- evaluators
-  fev.sublist("ncp_g")
+  auto evals = Teuchos::Array<std::string>({ ncp_g_key,
+                                             storage_water_key,
+                                             storage_tcc_key,
+                                             adv_water_key,
+                                             adv_liquid_key,
+                                             adv_gas_key,
+                                             diff_liquid_key,
+                                             diff_gas_key,
+                                             diff_vapor_key,
+                                             mole_xl_key,
+                                             mole_xv_key });
+  if (isothermal_ == false) {
+    evals.push_back(adv_energy_liquid_key);
+    // evals.push_back(adv_energy_gas_key);
+  }
+  out_list.set<Teuchos::Array<std::string>>("evaluators", evals);
+
+  fev.sublist(ncp_g_key)
     .set<std::string>("evaluator type", "ncp mole fraction gas")
-    .set<std::string>("mole fraction vapor key", "mole_fraction_vapor")
-    .set<std::string>("mole fraction gas key", "mole_fraction_gas")
+    .set<std::string>("mole fraction vapor key", mole_xv_key)
+    .set<std::string>("mole fraction gas key", mole_xg_key)
     .set<std::string>("tag", "");
 
-  fev.sublist("total_water_storage")
-    .set<std::string>("evaluator type", "storage water")
-    .set<std::string>("molar density liquid key", "molar_density_liquid")
-    .set<std::string>("molar density gas key", "molar_density_gas")
-    .set<std::string>("porosity key", "porosity")
-    .set<std::string>("saturation liquid key", "saturation_liquid")
-    .set<std::string>("mole fraction vapor key", "mole_fraction_vapor")
-    .set<std::string>("tag", "");
-
-  fev.sublist("total_component_storage")
+  fev.sublist(storage_tcc_key)
     .set<std::string>("evaluator type", "storage component")
-    .set<std::string>("saturation liquid key", "saturation_liquid")
-    .set<std::string>("porosity key", "porosity")
-    .set<std::string>("molar density liquid key", "molar_density_liquid")
-    .set<std::string>("molar density gas key", "molar_density_gas")
-    .set<std::string>("mole fraction liquid key", "mole_fraction_liquid")
-    .set<std::string>("mole fraction gas key", "mole_fraction_gas")
+    .set<std::string>("saturation liquid key", sat_liquid_key)
+    .set<std::string>("porosity key", porosity_key)
+    .set<std::string>("molar density liquid key", mol_density_liquid_key)
+    .set<std::string>("molar density gas key", mol_density_gas_key)
+    .set<std::string>("mole fraction liquid key", mole_xl_key)
+    .set<std::string>("mole fraction gas key", mole_xg_key)
     .set<std::string>("tag", "");
 
-  fev.sublist("advection_water")
+  fev.sublist(adv_water_key)
     .set<std::string>("evaluator type", "product")
     .set<Teuchos::Array<std::string>>(
       "dependencies",
       std::vector<std::string>(
-        { "molar_density_liquid", "rel_permeability_liquid", "viscosity_liquid" }))
+        { mol_density_liquid_key, relperm_liquid_key, viscosity_liquid_key }))
     .set<Teuchos::Array<int>>("powers", std::vector<int>({ 1, 1, -1 }))
     .set<std::string>("tag", "");
 
-  fev.sublist("advection_liquid")
+  fev.sublist(adv_liquid_key)
     .set<std::string>("evaluator type", "product")
-    .set<Teuchos::Array<std::string>>("dependencies",
-                                      std::vector<std::string>({ "molar_density_liquid",
-                                                                 "mole_fraction_liquid",
-                                                                 "rel_permeability_liquid",
-                                                                 "viscosity_liquid" }))
+    .set<Teuchos::Array<std::string>>(
+      "dependencies",
+      std::vector<std::string>(
+        { mol_density_liquid_key, mole_xl_key, relperm_liquid_key, viscosity_liquid_key }))
     .set<Teuchos::Array<int>>("powers", std::vector<int>({ 1, 1, 1, -1 }))
     .set<std::string>("tag", "");
 
-  fev.sublist("advection_gas")
+  fev.sublist(adv_gas_key)
     .set<std::string>("evaluator type", "product")
     .set<Teuchos::Array<std::string>>(
       "dependencies",
       std::vector<std::string>(
-        { "molar_density_gas", "mole_fraction_gas", "rel_permeability_gas", "viscosity_gas" }))
+        { mol_density_gas_key, mole_xg_key, relperm_gas_key, viscosity_gas_key }))
     .set<Teuchos::Array<int>>("powers", std::vector<int>({ 1, 1, 1, -1 }))
     .set<std::string>("tag", "");
 
-  fev.sublist("diffusion_liquid")
+  fev.sublist(diff_liquid_key)
     .set<std::string>("evaluator type", "product")
     .set<Teuchos::Array<std::string>>(
-      "dependencies",
-      std::vector<std::string>(
-        { "molecular_diff_liquid", "molar_density_liquid", "saturation_liquid" }))
-    .set<Teuchos::Array<int>>("powers", std::vector<int>({ 1, 1, 1 }))
+      "dependencies", std::vector<std::string>({ mol_diff_liquid_key, mol_density_liquid_key }))
+    .set<Teuchos::Array<int>>("powers", std::vector<int>({ 1, 1 }))
     .set<std::string>("tag", "");
 
-  fev.sublist("diffusion_gas")
+  fev.sublist(diff_gas_key)
     .set<std::string>("evaluator type", "product")
     .set<Teuchos::Array<std::string>>(
-      "dependencies",
-      std::vector<std::string>({ "molecular_diff_gas", "molar_density_gas", "saturation_gas" }))
-    .set<Teuchos::Array<int>>("powers", std::vector<int>({ 1, 1, 1 }))
+      "dependencies", std::vector<std::string>({ mol_diff_gas_key, mol_density_gas_key }))
+    .set<Teuchos::Array<int>>("powers", std::vector<int>({ 1, 1 }))
     .set<std::string>("tag", "");
 
-  fev.sublist("diffusion_vapor")
+  fev.sublist(diff_vapor_key)
     .set<std::string>("evaluator type", "product")
     .set<Teuchos::Array<std::string>>(
-      "dependencies",
-      std::vector<std::string>(
-        { "molecular_diff_gas", "molar_density_gas", "porosity", "saturation_gas" }))
-    .set<Teuchos::Array<int>>("powers", std::vector<int>({ 1, 1, 1, 1 }))
+      "dependencies", std::vector<std::string>({ mol_diff_gas_key, mol_density_gas_key }))
+    .set<Teuchos::Array<int>>("powers", std::vector<int>({ 1, 1 }))
     .set<std::string>("tag", "");
 
-  fev.sublist("saturation_gas")
-    .set<std::string>("evaluator type", "saturation gas")
-    .set<std::string>("saturation liquid key", "saturation_liquid");
-
-  fev.sublist("mole_fraction_liquid")
+  fev.sublist(mole_xl_key)
     .set<std::string>("evaluator type", "mole fraction liquid")
-    .set<std::string>("pressure gas key", "pressure_gas")
-    .set<std::string>("mole fraction gas key", "mole_fraction_gas")
+    .set<std::string>("pressure gas key", pressure_gas_key)
+    .set<std::string>("mole fraction gas key", mole_xg_key)
+    .set<std::string>("temperature key", temperature_key)
     .set<std::string>("tag", "");
 
-  fev.sublist("mole_fraction_vapor")
-    .set<std::string>("evaluator type", "product")
-    .set<Teuchos::Array<std::string>>(
-      "dependencies", std::vector<std::string>({ "pressure_gas", "pressure_vapor" }))
-    .set<Teuchos::Array<int>>("powers", std::vector<int>({ -1, 1 }))
-    .set<std::string>("tag", "");
+  if (isothermal_ == false) {
+    fev.sublist(adv_energy_liquid_key)
+      .set<std::string>("evaluator type", "product")
+      .set<Teuchos::Array<std::string>>("dependencies",
+                                        std::vector<std::string>({ mol_density_liquid_key,
+                                                                   relperm_liquid_key,
+                                                                   enthalpy_liquid_key,
+                                                                   viscosity_liquid_key }))
+      .set<Teuchos::Array<int>>("powers", std::vector<int>({ 1, 1, 1, -1 }))
+      .set<std::string>("tag", "");
+
+    fev.sublist(adv_energy_gas_key)
+      .set<std::string>("evaluator type", "product")
+      .set<Teuchos::Array<std::string>>(
+        "dependencies",
+        std::vector<std::string>(
+          { mol_density_gas_key, relperm_gas_key, enthalpy_gas_key, viscosity_gas_key }))
+      .set<Teuchos::Array<int>>("powers", std::vector<int>({ 1, 1, 1, -1 }))
+      .set<std::string>("tag", "");
+
+    fev.sublist(ie_liquid_key).set<std::string>("pressure key", pl);
+    fev.sublist(ie_gas_key).set<std::string>("pressure key", pg);
+    fev.sublist(ie_rock_key).set<std::string>("pressure key", pl);
+  }
 
   return out_list;
 }
@@ -296,9 +490,10 @@ InputConverterU::TranslateMultiphaseBCs_()
 {
   Teuchos::ParameterList out_list;
 
+  Errors::Message msg;
   MemoryManager mm;
 
-  char *text, *tagname;
+  char* text;
   DOMNodeList *node_list, *children;
   DOMNode* node;
 
@@ -312,7 +507,6 @@ InputConverterU::TranslateMultiphaseBCs_()
   for (int i = 0; i < nchildren; ++i) {
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
-    tagname = mm.transcode(inode->getNodeName());
 
     // read the assigned regions
     bool flag;
@@ -363,7 +557,7 @@ InputConverterU::TranslateMultiphaseBCs_()
 
       // create names, modify data
       std::string bcname;
-      if (bctype_in == "uniform_pressure") {
+      if (bctype_in == "uniform_pressure" || bctype_in == "linear_pressure") {
         bctype = "pressure liquid";
         bcname = "boundary pressure";
       } else if (bctype_in == "inward_volumetric_flux") {
@@ -373,6 +567,9 @@ InputConverterU::TranslateMultiphaseBCs_()
       } else if (bctype_in == "saturation") {
         bctype = "saturation";
         bcname = "boundary saturation";
+      } else {
+        msg << "Unsupported multiphase BC:\"" << bctype_in << "\"\n";
+        Exceptions::amanzi_throw(msg);
       }
 
       std::stringstream ss;
@@ -386,7 +583,17 @@ InputConverterU::TranslateMultiphaseBCs_()
       if (solute_name != "") bc.set<std::string>("name", solute_name);
 
       Teuchos::ParameterList& bcfn = bc.sublist(bcname);
-      if (times.size() == 1) {
+      if (bctype_in == "linear_pressure") {
+        double refv;
+        std::vector<double> grad, refc;
+        auto element = static_cast<DOMElement*>(same_list[0]);
+
+        refv = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "Pa");
+        grad = GetAttributeVectorD_(element, "gradient", dim_, "Pa/m");
+        refc = GetAttributeVectorD_(element, "reference_coord", dim_, "m");
+
+        TranslateFunctionGradient_(refv, grad, refc, bcfn);
+      } else if (times.size() == 1) {
         bcfn.sublist("function-constant").set<double>("value", values[0]);
       } else {
         bcfn.sublist("function-tabular")

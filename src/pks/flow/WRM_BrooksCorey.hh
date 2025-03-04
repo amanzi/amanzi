@@ -48,7 +48,7 @@ class WRM_BrooksCorey : public WRM {
   double pc0_;                        // regularization threshold (usually 0 to 500 Pa)
   double a_, b_, factor_, pc_bubble_; // frequently used constant
 
-  static Utils::RegisteredFactory<WRM, WRM_BrooksCorey> factory_;
+  static Utils::RegisteredFactory<WRM, WRM_BrooksCorey> reg_;
 };
 
 } // namespace Flow

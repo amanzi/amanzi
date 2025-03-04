@@ -59,15 +59,16 @@ TEST(DARCY_TWO_FRACTURES)
 
   // extract fractures mesh
   std::vector<std::string> setnames({ "fracture 1" });
-  RCP<Mesh> mesh = meshfactory.create(mesh3D, setnames, AmanziMesh::FACE);
+  RCP<Mesh> mesh = meshfactory.create(mesh3D, setnames, AmanziMesh::Entity_kind::FACE);
 
   // create state and initialize
   Teuchos::ParameterList state_list = plist->sublist("state");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterMesh("fracture", mesh);
 
+  Teuchos::ParameterList pk_tree("flow");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
+  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(pk_tree, plist, S, soln));
   DPK->Setup();
 
   S->Setup();
@@ -78,7 +79,7 @@ TEST(DARCY_TWO_FRACTURES)
   S->CheckAllFieldsInitialized();
   WriteStateStatistics(*S);
 
-  // time stepping
+  // timestepping
   double t_old(0.0), t_new, dt(1.0);
   for (int n = 0; n < 100; n++) {
     t_new = t_old + dt;
@@ -93,18 +94,18 @@ TEST(DARCY_TWO_FRACTURES)
 
   // double V = 0.25;  // fracture area [m^2]
   double a = 0.01; // aperture [m]
-  double dadt = 0.0;
+  double dadt = 0.00001;
   double Q = 8.0e-2; // source [kg/s]
   double Ss = 0.002; // specific storage [m^-1]
   double g = 10.0;   // gravity [m/s^2]
   double p_old = 200000.0;
-  double rho = 1000.0;
   double T = 100;
   // double p_new = p_old + (dt * 10) * (Q / V) * g / (Ss * a);
-  double p_new = p_old + (T * Q - rho * std::log(1.0 + dadt * T / a)) * g / (Ss);
+  // double p_new = p_old + (T * Q - rho * std::log(1.0 + dadt * T / a)) * g / (Ss);
+  double p_new = (p_old + T * Q * g / Ss) / (1.0 + dadt * T / a);
 
   std::string passwd("");
   auto& p =
     *S->GetW<CompositeVector>("fracture-pressure", Tags::DEFAULT, passwd).ViewComponent("cell");
-  for (int c = 0; c < p.MyLength(); c++) { CHECK_CLOSE(p_new, p[0][c], 0.02 * std::fabs(p_new)); }
+  for (int c = 0; c < p.MyLength(); c++) { CHECK_CLOSE(p_new, p[0][c], 0.01 * std::fabs(p_new)); }
 }

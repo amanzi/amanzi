@@ -10,7 +10,8 @@
 
 //! Trilinos/Belos implementations of iterative methods.
 /*!
-Includes GMRES
+
+Includes GMRES and other Belos methods.
 
 .. warning:: undocumented
 

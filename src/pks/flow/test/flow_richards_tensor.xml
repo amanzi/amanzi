@@ -89,7 +89,7 @@
 	<Parameter name="preconditioner" type="string" value="Trilinos ML"/>
 	<Parameter name="error control options" type="Array(string)" value="{pressure}"/>
 
-	<ParameterList name="pressure-lambda constraints">
+	<ParameterList name="dae constraint">
 	  <Parameter name="method" type="string" value="projection"/>
 	  <Parameter name="linear solver" type="string" value="AztecOO"/>
 	</ParameterList>
@@ -98,16 +98,16 @@
 	<ParameterList name="BDF1">
 	  <Parameter name="nonlinear tolerance" type="double" value="1e-4"/>
 	  <Parameter name="max preconditioner lag iterations" type="int" value="1"/>
-	  <Parameter name="time step increase factor" type="double" value="1.2"/>
+	  <Parameter name="timestep increase factor" type="double" value="1.2"/>
 
 	  <Parameter name="timestep controller type" type="string" value="standard"/>
 	  <ParameterList name="timestep controller standard parameters">
 	    <Parameter name="min iterations" type="int" value="2"/>
 	    <Parameter name="max iterations" type="int" value="5"/>
-	    <Parameter name="time step increase factor" type="double" value="2.0"/>
-	    <Parameter name="time step reduction factor" type="double" value="0.5"/>
-	    <Parameter name="max time step" type="double" value="100.0"/>
-	    <Parameter name="min time step" type="double" value="0.0"/>
+	    <Parameter name="timestep increase factor" type="double" value="2.0"/>
+	    <Parameter name="timestep reduction factor" type="double" value="0.5"/>
+	    <Parameter name="max timestep" type="double" value="100.0"/>
+	    <Parameter name="min timestep" type="double" value="0.0"/>
 	  </ParameterList>
 
 	  <Parameter name="solver type" type="string" value="nka"/>
@@ -273,7 +273,7 @@
             <Parameter name="components" type="Array(string)" value="{cell, boundary_face}"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="111.0165414648836"/>
+                <Parameter name="value" type="double" value="111.0185956147655"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -293,15 +293,15 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="temperature">
+      <ParameterList name="viscosity_liquid">
         <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="region" type="string" value="All"/>
+          <ParameterList name="All">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
             <Parameter name="components" type="Array(string)" value="{cell, boundary_face}"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="298.15"/>
+                <Parameter name="value" type="double" value="0.3"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -312,6 +312,9 @@
     <ParameterList name="initial conditions">
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="2.0"/>
+      </ParameterList>
+      <ParameterList name="const_fluid_molar_mass">
+        <Parameter name="value" type="double" value="0.018015"/>
       </ParameterList>
       <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="0.3"/>
@@ -370,7 +373,6 @@
         </ParameterList>
       </ParameterList>
 
-
       <ParameterList name="specific_storage">
         <ParameterList name="function">
           <ParameterList name="domain">
@@ -427,14 +429,14 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="prev_saturation_liquid">
+      <ParameterList name="temperature">
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.0"/>
+                <Parameter name="value" type="double" value="298.15"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

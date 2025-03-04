@@ -26,9 +26,9 @@ as:
 Example:
 ..xml:
     <ParameterList name="VARNAME">
-      <Parameter name="field evaluator type" type="string" value="secondary
-variable from function"/> <Parameter name="evaluator dependencies"
-type="Array{string}" value="{DEP1, DEP2}"/> <ParameterList name="function">
+      <Parameter name="field evaluator type" type="string" value="secondary variable from function"/>
+      <Parameter name="evaluator dependencies" type="Array{string}" value="{DEP1, DEP2}"/>
+      <ParameterList name="function">
         <ParameterList name="function-linear">
           <Parameter name="x0" type="Array(double)" value="{0.0,0.0}" />
           <Parameter name="y0" type="double" value="3." />
@@ -52,6 +52,13 @@ EvaluatorSecondaryMonotypeFromFunction::EvaluatorSecondaryMonotypeFromFunction(
   Teuchos::ParameterList& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
+  if (dependencies_.size() == 0) {
+    Errors::Message message;
+    message << "EvaluatorSecondaryMonotypeFromFunction: for " << my_keys_[0].first
+            << " was provided no dependencies";
+    throw(message);
+  }
+
   FunctionFactory fac;
   if (plist.isSublist("functions")) {
     auto& flist = plist.sublist("functions");

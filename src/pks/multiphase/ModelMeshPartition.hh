@@ -57,7 +57,7 @@ CreateModelPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
   }
 
   auto partition = Teuchos::rcp(new Functions::MeshPartition());
-  partition->Initialize(mesh, AmanziMesh::CELL, region_list, -1);
+  partition->Initialize(mesh, AmanziMesh::Entity_kind::CELL, region_list, -1);
   partition->Verify();
 
   return Teuchos::rcp(new ModelPartition<Model>(partition, model_list));

@@ -4,7 +4,7 @@
 # -----------------------------------------------------------------------------
 # Observation Name: obsA
 # Region: middle
-# Functional: extensive integral
+# Reduction: extensive integral
 # Variable: flux
 # Number of Vectors: 1
 # =============================================================================

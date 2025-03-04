@@ -21,6 +21,24 @@
         <Parameter name="normal" type="Array(double)" value="{0.0,0.0,1.0}"/>
       </ParameterList>
     </ParameterList>
+    <ParameterList name="fracture 1">
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.0,0.0,0.5}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0,0.0,1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="fracture 2">
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.0,0.5,0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0,1.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="fractures">
+      <ParameterList name="region: logical">
+        <Parameter name="operation" type="string" value="union"/>
+        <Parameter name="regions" type="Array(string)" value="{fracture 1, fracture 2}"/>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
 
   <ParameterList name="upwind">

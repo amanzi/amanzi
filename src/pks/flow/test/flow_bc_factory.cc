@@ -79,8 +79,9 @@ TEST_FIXTURE(bits_and_pieces, empty_parameter_list)
   PK_DomainFunctionFactory<PK_DomainFunction> bc_fact(mesh, Teuchos::null);
 
   Teuchos::ParameterList plist;
-  CHECK_THROW(bc_fact.Create(plist, "boundary pressure", AmanziMesh::FACE, Teuchos::null),
-              Errors::Message);
+  CHECK_THROW(
+    bc_fact.Create(plist, "boundary pressure", AmanziMesh::Entity_kind::FACE, Teuchos::null),
+    Errors::Message);
 }
 
 
@@ -90,8 +91,9 @@ TEST_FIXTURE(bits_and_pieces, pressure_not_list)
   plist.set("pressure", 0); // wrong -- this should be a sublist
 
   PK_DomainFunctionFactory<PK_DomainFunction> bc_fact(mesh, Teuchos::null);
-  CHECK_THROW(bc_fact.Create(plist, "boundary pressure", AmanziMesh::FACE, Teuchos::null),
-              Errors::Message);
+  CHECK_THROW(
+    bc_fact.Create(plist, "boundary pressure", AmanziMesh::Entity_kind::FACE, Teuchos::null),
+    Errors::Message);
 }
 
 
@@ -103,13 +105,15 @@ TEST_FIXTURE(bits_and_pieces, bad_region)
   // wrong - missing regions parameter
   PK_DomainFunctionFactory<PK_DomainFunction> bc_fact(mesh, Teuchos::null);
 
-  CHECK_THROW(bc_fact.Create(plist, "boundary pressure", AmanziMesh::FACE, Teuchos::null),
-              Errors::Message);
+  CHECK_THROW(
+    bc_fact.Create(plist, "boundary pressure", AmanziMesh::Entity_kind::FACE, Teuchos::null),
+    Errors::Message);
 
   foo.set("spatial distribution method", "none");
   foo.set("regions", 0.0); // wrong -- type should be Array<std::string>
-  CHECK_THROW(bc_fact.Create(plist, "boundary pressure", AmanziMesh::FACE, Teuchos::null),
-              Errors::Message);
+  CHECK_THROW(
+    bc_fact.Create(plist, "boundary pressure", AmanziMesh::Entity_kind::FACE, Teuchos::null),
+    Errors::Message);
 }
 
 
@@ -123,17 +127,20 @@ TEST_FIXTURE(bits_and_pieces, bad_function)
   // wrong - missing boundary pressure list
 
   PK_DomainFunctionFactory<PK_DomainFunction> bc_fact(mesh, Teuchos::null);
-  CHECK_THROW(bc_fact.Create(plist, "boundary pressure", AmanziMesh::FACE, Teuchos::null),
-              Errors::Message);
+  CHECK_THROW(
+    bc_fact.Create(plist, "boundary pressure", AmanziMesh::Entity_kind::FACE, Teuchos::null),
+    Errors::Message);
 
   foo.set("boundary pressure", 0); // wrong - not a sublist
-  CHECK_THROW(bc_fact.Create(plist, "boundary pressure", AmanziMesh::FACE, Teuchos::null),
-              Errors::Message);
+  CHECK_THROW(
+    bc_fact.Create(plist, "boundary pressure", AmanziMesh::Entity_kind::FACE, Teuchos::null),
+    Errors::Message);
 
   foo.remove("boundary pressure");
   foo.sublist("boundary pressure").sublist("function-constant"); // incomplete
-  CHECK_THROW(bc_fact.Create(plist, "boundary pressure", AmanziMesh::FACE, Teuchos::null),
-              Errors::Message);
+  CHECK_THROW(
+    bc_fact.Create(plist, "boundary pressure", AmanziMesh::Entity_kind::FACE, Teuchos::null),
+    Errors::Message);
 }
 
 
@@ -150,7 +157,7 @@ TEST_FIXTURE(bits_and_pieces, pressure)
 
   PK_DomainFunctionFactory<PK_DomainFunction> bc_fact(mesh, Teuchos::null);
   Teuchos::RCP<PK_DomainFunction> bc =
-    bc_fact.Create(plist, "boundary pressure", AmanziMesh::FACE, Teuchos::null);
+    bc_fact.Create(plist, "boundary pressure", AmanziMesh::Entity_kind::FACE, Teuchos::null);
 
   bc->Compute(0.0, 0.0);
   CHECK_EQUAL(8, bc->size());
@@ -163,7 +170,7 @@ TEST_FIXTURE(bits_and_pieces, static_head_empty)
   AmanziGeometry::Point gravity(0.0, 0.0, -1.0);
 
   PK_DomainFunctionFactory<PK_DomainFunction> bc_fact(mesh, Teuchos::null);
-  CHECK_THROW(bc_fact.Create(plist, "static head", AmanziMesh::FACE, Teuchos::null),
+  CHECK_THROW(bc_fact.Create(plist, "static head", AmanziMesh::Entity_kind::FACE, Teuchos::null),
               Errors::Message);
 }
 
@@ -199,9 +206,9 @@ TEST_FIXTURE(bits_and_pieces, static_head)
   PK_DomainFunctionFactory<FlowBoundaryFunction> bc_fact(mesh, Teuchos::null);
 
   Teuchos::RCP<FlowBoundaryFunction> bc0 =
-    bc_fact.Create(foo, "static head", AmanziMesh::FACE, Teuchos::null);
+    bc_fact.Create(foo, "static head", AmanziMesh::Entity_kind::FACE, Teuchos::null);
   Teuchos::RCP<FlowBoundaryFunction> bc1 =
-    bc_fact.Create(bar, "static head", AmanziMesh::FACE, Teuchos::null);
+    bc_fact.Create(bar, "static head", AmanziMesh::Entity_kind::FACE, Teuchos::null);
 
   bc0->Compute(0.0, 0.0);
   bc0->ComputeSubmodel(mesh);

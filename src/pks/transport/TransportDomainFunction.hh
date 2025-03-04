@@ -23,19 +23,25 @@
 
 #include "Epetra_MultiVector.h"
 #include "Teuchos_RCP.hpp"
-#include "State.hh"
 
 #include "CommonDefs.hh"
 #include "Mesh.hh"
+#include "PKsDefs.hh"
+#include "State.hh"
+
+#include "CompositeVector.hh"
 
 namespace Amanzi {
 namespace Transport {
 
 class TransportDomainFunction {
  public:
-  TransportDomainFunction() : domain_volume_(-1.0), location_("boundary"){};
+  TransportDomainFunction() : domain_volume_(-1.0), location_("boundary"), name_("undefined"){};
+
   TransportDomainFunction(const Teuchos::ParameterList& plist)
-    : domain_volume_(-1.0), location_("boundary"){};
+    : domain_volume_(-1.0), location_("boundary"), name_(Keys::cleanPListName(plist))
+  {}
+
   virtual ~TransportDomainFunction(){};
 
   // source term on time interval (t0, t1]
@@ -43,8 +49,9 @@ class TransportDomainFunction {
   virtual void ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                Teuchos::RCP<CompositeVector> tcc){};
 
-  // model name
-  virtual std::string name() const { return "undefined"; }
+  // model name and type
+  virtual std::string getName() const { return name_; }
+  virtual DomainFunction_kind getType() const = 0;
 
   // location where model is applied (boundary or interface)
   void set_location(const std::string& location) { location_ = location; }
@@ -66,13 +73,16 @@ class TransportDomainFunction {
   Iterator begin() { return value_.begin(); }
   Iterator end() { return value_.end(); }
   std::map<int, std::vector<double>>::size_type size() { return value_.size(); }
+  typename std::map<int, std::vector<double>>::const_iterator begin() const { return value_.begin(); }
+  typename std::map<int, std::vector<double>>::const_iterator end() const { return value_.end(); }
+
 
   // derivatives
   const std::map<int, double>& linear_term() const { return linear_term_; }
 
  protected:
   double domain_volume_;
-  std::string location_;
+  std::string location_, name_;
 
   std::map<int, std::vector<double>> value_; // tcc values on boundary faces or
                                              // src values in domain cells
@@ -84,6 +94,19 @@ class TransportDomainFunction {
   std::vector<std::string> tcc_names_; // list of component names
   std::vector<int> tcc_index_;         // index of component in the global list
 };
+
+
+void inline copyToCompositeVector(const TransportDomainFunction& df, CompositeVector& cv)
+{
+  Epetra_MultiVector& mv = *cv.ViewComponent("cell", true);
+  for (const auto& val : df) {
+    AMANZI_ASSERT(val.second.size() == mv.NumVectors());
+    for (int j=0; j!=mv.NumVectors(); ++j) {
+      mv[j][val.first] = val.second[j];
+    }
+  }
+}
+
 
 } // namespace Transport
 } // namespace Amanzi

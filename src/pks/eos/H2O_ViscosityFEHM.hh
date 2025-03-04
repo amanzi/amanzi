@@ -41,7 +41,7 @@ class H2O_ViscosityFEHM : public EOS_Viscosity {
   double T0_;
 
  private:
-  static Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityFEHM> factory_;
+  static Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityFEHM> reg_;
 };
 
 } // namespace AmanziEOS

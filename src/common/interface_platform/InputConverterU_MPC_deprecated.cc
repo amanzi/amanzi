@@ -193,18 +193,18 @@ InputConverterU::TranslateCycleDriver_()
 
     if (strcmp(tagname, "flow") == 0) {
       flow_model_ = GetAttributeValueS_(inode, "model", "richards, saturated, constant");
-      pk_model_["flow"] = (flow_model_ == "richards") ? "richards" : "darcy";
+      pk_model_["flow"].push_back((flow_model_ == "richards") ? "richards" : "darcy");
       pk_master_["flow"] = true;
       if (flow_model_ != "constant") transient_model += 4 * pk_state[tagname];
 
     } else if (strcmp(tagname, "chemistry") == 0) {
       std::string model = GetAttributeValueS_(inode, "engine", TYPE_NONE, false, "none");
-      pk_model_["chemistry"] = model;
+      pk_model_["chemistry"].push_back(model);
       transient_model += pk_state[tagname];
 
     } else if (strcmp(tagname, "transport") == 0) {
       transient_model += 2 * pk_state[tagname];
-      pk_model_["transport"] = "transport";
+      pk_model_["transport"].push_back("transport");
       pk_domain_["transport"] = "domain";
     }
   }
@@ -236,7 +236,7 @@ InputConverterU::TranslateCycleDriver_()
     if (!coupled_flow_) {
       tmp_list.sublist("PK tree")
         .sublist("steady:flow")
-        .set<std::string>("PK type", pk_model_["flow"]);
+        .set<std::string>("PK type", *pk_model_["flow"].rbegin());
     } else {
       Teuchos::ParameterList& aux_list = tmp_list.sublist("PK tree").sublist("steady:coupled flow");
       aux_list.set<std::string>("PK type", "darcy matrix fracture");
@@ -245,8 +245,8 @@ InputConverterU::TranslateCycleDriver_()
     }
     tmp_list.set<double>("start period time", t0_steady);
     tmp_list.set<double>("end period time", t1_steady);
-    tmp_list.set<double>("initial time step", dt0_steady);
-    tmp_list.set<double>("maximum time step", dt_max_steady);
+    tmp_list.set<double>("initial timestep", dt0_steady);
+    tmp_list.set<double>("maximum timestep", dt_max_steady);
     tmp_list.set<int>("maximum cycle number", max_cycles_steady);
 
     tp_id++;
@@ -313,8 +313,8 @@ InputConverterU::TranslateCycleDriver_()
     tmp_list.set<double>("start period time", it->first);
     tmp_list.set<double>("end period time", tp_t1[it->first]);
     tmp_list.set<int>("maximum cycle number", tp_max_cycles[it->first]);
-    tmp_list.set<double>("initial time step", tp_dt0[it->first]);
-    tmp_list.set<double>("maximum time step", tp_dt_max[it->first]);
+    tmp_list.set<double>("initial timestep", tp_dt0[it->first]);
+    tmp_list.set<double>("maximum timestep", tp_dt_max[it->first]);
 
     tp_id++;
     it++;
@@ -323,7 +323,7 @@ InputConverterU::TranslateCycleDriver_()
   if (transient_model & 2 || transient_model & 1) {
     // names
     out_list.set<Teuchos::Array<std::string>>("component names", comp_names_all_);
-    out_list.set<int>("number of liquid components", phases_["water"].size());
+    out_list.set<int>("number of liquid components", phases_[LIQUID].dissolved.size());
 
     // available molar masses
     std::string name;

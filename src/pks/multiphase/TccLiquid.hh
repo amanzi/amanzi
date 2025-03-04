@@ -26,13 +26,13 @@
 #include "Factory.hh"
 
 // Multiphase
-#include "MultiphaseBaseEvaluator.hh"
+#include "MultiphaseEvaluator.hh"
 #include "MultiphaseTypeDefs.hh"
 
 namespace Amanzi {
 namespace Multiphase {
 
-class TccLiquid : public MultiphaseBaseEvaluator {
+class TccLiquid : public MultiphaseEvaluator {
  public:
   TccLiquid(Teuchos::ParameterList& plist);
 
@@ -47,7 +47,7 @@ class TccLiquid : public MultiphaseBaseEvaluator {
                                           const std::vector<CompositeVector*>& results) override;
 
  private:
-  std::string tcc_gas_key_;
+  std::string tcc_gas_key_, temperature_key_;
 
   static Utils::RegisteredFactory<Evaluator, TccLiquid> fac_;
 };

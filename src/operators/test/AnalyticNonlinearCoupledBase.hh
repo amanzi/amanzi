@@ -120,13 +120,13 @@ class AnalyticNonlinearCoupledBase {
     l2_err = 0.0;
     inf_err = 0.0;
 
-    int ncells =
-      mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+    int ncells = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
+                                       Amanzi::AmanziMesh::Parallel_kind::OWNED);
     for (int c = 0; c < ncells; c++) {
-      const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+      const Amanzi::AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
       double u_tmp = exact0(xc, t);
       double v_tmp = exact1(xc, t);
-      double volume = mesh_->cell_volume(c);
+      double volume = mesh_->getCellVolume(c);
 
       // std::cout << c << " " << tmp << " " << p[0][c] << std::endl;
       l2_err += std::pow(u_tmp - u[0][c], 2.0) * volume;
@@ -138,11 +138,11 @@ class AnalyticNonlinearCoupledBase {
     }
 #ifdef HAVE_MPI
     double tmp = pnorm;
-    mesh_->get_comm()->SumAll(&tmp, &pnorm, 1);
+    mesh_->getComm()->SumAll(&tmp, &pnorm, 1);
     tmp = l2_err;
-    mesh_->get_comm()->SumAll(&tmp, &l2_err, 1);
+    mesh_->getComm()->SumAll(&tmp, &l2_err, 1);
     tmp = inf_err;
-    mesh_->get_comm()->MaxAll(&tmp, &inf_err, 1);
+    mesh_->getComm()->MaxAll(&tmp, &inf_err, 1);
 #endif
     pnorm = sqrt(pnorm);
     l2_err = sqrt(l2_err);
@@ -159,12 +159,12 @@ class AnalyticNonlinearCoupledBase {
     l2_err = 0.0;
     inf_err = 0.0;
 
-    int nfaces =
-      mesh_->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+    int nfaces = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE,
+                                       Amanzi::AmanziMesh::Parallel_kind::OWNED);
     for (int f = 0; f < nfaces; f++) {
-      double area = mesh_->face_area(f);
-      const Amanzi::AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      const Amanzi::AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+      double area = mesh_->getFaceArea(f);
+      const Amanzi::AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
+      const Amanzi::AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
       const Amanzi::AmanziGeometry::Point& u_velocity = velocity_exact0(xf, t);
       const Amanzi::AmanziGeometry::Point& v_velocity = velocity_exact1(xf, t);
       double u_tmp = u_velocity * normal;
@@ -180,11 +180,11 @@ class AnalyticNonlinearCoupledBase {
     }
 #ifdef HAVE_MPI
     double tmp = qnorm;
-    mesh_->get_comm()->SumAll(&tmp, &qnorm, 1);
+    mesh_->getComm()->SumAll(&tmp, &qnorm, 1);
     tmp = l2_err;
-    mesh_->get_comm()->SumAll(&tmp, &l2_err, 1);
+    mesh_->getComm()->SumAll(&tmp, &l2_err, 1);
     tmp = inf_err;
-    mesh_->get_comm()->MaxAll(&tmp, &inf_err, 1);
+    mesh_->getComm()->MaxAll(&tmp, &inf_err, 1);
 #endif
     qnorm = sqrt(qnorm);
     l2_err = sqrt(l2_err);

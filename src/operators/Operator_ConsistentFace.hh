@@ -33,7 +33,7 @@ class Operator_ConsistentFace : public Operator {
                           Teuchos::ParameterList& plist)
     : Operator(cvs, plist, OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_FACE)
   {
-    cell_max_faces_ = mesh_->cell_get_max_faces();
+    cell_max_faces_ = mesh_->getCellMaxFaces();
   }
 
   // copy constructor

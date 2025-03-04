@@ -26,12 +26,12 @@
 
 #include "Factory.hh"
 
-#include "MultiphaseBaseEvaluator.hh"
+#include "MultiphaseEvaluator.hh"
 
 namespace Amanzi {
 namespace Multiphase {
 
-class TotalComponentStorage : public MultiphaseBaseEvaluator {
+class TotalComponentStorage : public MultiphaseEvaluator {
  public:
   TotalComponentStorage(Teuchos::ParameterList& plist);
   TotalComponentStorage(const TotalComponentStorage& other);

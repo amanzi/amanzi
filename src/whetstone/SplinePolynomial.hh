@@ -30,8 +30,6 @@ class SplinePolynomial {
   SplinePolynomial(){};
   ~SplinePolynomial(){};
 
-  virtual void Setup(double x0, double f0, double df0, double x1, double f1, double df1) = 0;
-
   virtual double Value(double x) const = 0;
   virtual double GradientValue(double x) const = 0;
 };
@@ -43,7 +41,28 @@ class SplineCubic : public SplinePolynomial {
   SplineCubic(){};
   ~SplineCubic(){};
 
-  virtual void Setup(double x0, double f0, double df0, double x1, double f1, double df1);
+  void Setup(double x0, double f0, double df0, double x1, double f1, double df1);
+
+  virtual double Value(double x) const;
+  virtual double GradientValue(double x) const;
+
+  // access
+  const Polynomial poly() const { return poly_; }
+  const Polynomial grad() const { return grad_; }
+
+ private:
+  Polynomial poly_;
+  Polynomial grad_;
+};
+
+
+// quadratic interpolant between two points
+class SplineQuadratic : public SplinePolynomial {
+ public:
+  SplineQuadratic(){};
+  ~SplineQuadratic(){};
+
+  void Setup(double x0, double f0, double df0, double x1, double f1);
 
   virtual double Value(double x) const;
   virtual double GradientValue(double x) const;
@@ -64,7 +83,7 @@ class SplineExteriorLinear : public SplinePolynomial {
   SplineExteriorLinear(){};
   ~SplineExteriorLinear(){};
 
-  virtual void Setup(double x0, double f0, double df0, double x1, double f1, double df1);
+  void Setup(double x0, double f0, double df0, double x1, double f1, double df1);
 
   virtual double Value(double x) const;
   virtual double GradientValue(double x) const;

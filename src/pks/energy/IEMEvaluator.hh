@@ -47,6 +47,8 @@ class IEMEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Composit
                                           const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
+  virtual void EnsureCompatibility_Units_(State& S) override;
+
   Teuchos::RCP<IEMPartition> iem_partition() { return iem_; }
 
   double EvaluateFieldSingle(int c, double T, double p);
@@ -69,7 +71,7 @@ class IEMEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Composit
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
-  static Utils::RegisteredFactory<Evaluator, IEMEvaluator> factory_;
+  static Utils::RegisteredFactory<Evaluator, IEMEvaluator> reg_;
 };
 
 } // namespace Energy

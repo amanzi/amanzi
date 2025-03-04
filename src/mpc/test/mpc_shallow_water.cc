@@ -22,15 +22,15 @@
 // Amanzi
 #include "CycleDriver.hh"
 #include "MeshAudit.hh"
-#include "eos_registration.hh"
+#include "eos_reg.hh"
 #include "Mesh.hh"
 #include "MeshExtractedManifold.hh"
 #include "MeshFactory.hh"
-#include "mpc_pks_registration.hh"
-#include "numerical_flux_registration.hh"
+#include "models_shallow_water_reg.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
-#include "pks_shallow_water_registration.hh"
+#include "pks_mpc_reg.hh"
+#include "pks_shallow_water_reg.hh"
 #include "State.hh"
 
 
@@ -52,9 +52,11 @@ TEST(MPC_DRIVER_SHALLOW_WATER)
 
   // create mesh
   auto mesh_list = Teuchos::sublist(plist, "mesh", true);
+  mesh_list->set<bool>("request edges", true);
+  mesh_list->set<bool>("request faces", true);
   MeshFactory factory(comm, gm, mesh_list);
   factory.set_preference(Preference({ Framework::MSTK }));
-  auto mesh = factory.create(0.0, 0.0, 10.0, 10.0, 20, 20, true, true);
+  auto mesh = factory.create(0.0, 0.0, 10.0, 10.0, 20, 20);
 
   // create dummy observation data object
   double vmin;

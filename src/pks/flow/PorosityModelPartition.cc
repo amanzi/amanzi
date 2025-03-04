@@ -16,8 +16,8 @@
 
 #include "dbc.hh"
 
-#include "PorosityModel_Constant.hh"
-#include "PorosityModel_Compressible.hh"
+#include "Porosity_Constant.hh"
+#include "Porosity_Compressible.hh"
 #include "PorosityModelPartition.hh"
 
 namespace Amanzi {
@@ -30,7 +30,7 @@ Teuchos::RCP<PorosityModelPartition>
 CreatePorosityModelPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                              Teuchos::RCP<Teuchos::ParameterList> plist)
 {
-  std::vector<Teuchos::RCP<PorosityModel>> pom_list;
+  std::vector<Teuchos::RCP<Porosity>> pom_list;
   std::vector<std::vector<std::string>> region_list;
 
   for (auto lcv = plist->begin(); lcv != plist->end(); ++lcv) {
@@ -41,9 +41,9 @@ CreatePorosityModelPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 
       std::string model = sublist.get<std::string>("porosity model");
       if (model == "constant") {
-        pom_list.push_back(Teuchos::rcp(new PorosityModel_Constant(sublist)));
+        pom_list.push_back(Teuchos::rcp(new Porosity_Constant(sublist)));
       } else if (model == "compressible") {
-        pom_list.push_back(Teuchos::rcp(new PorosityModel_Compressible(sublist)));
+        pom_list.push_back(Teuchos::rcp(new Porosity_Compressible(sublist)));
       } else {
         AMANZI_ASSERT(0);
       }
@@ -53,7 +53,7 @@ CreatePorosityModelPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
   }
 
   auto partition = Teuchos::rcp(new Functions::MeshPartition());
-  partition->Initialize(mesh, AmanziMesh::CELL, region_list, -1);
+  partition->Initialize(mesh, AmanziMesh::Entity_kind::CELL, region_list, -1);
   partition->Verify();
 
   return Teuchos::rcp(new PorosityModelPartition(partition, pom_list));

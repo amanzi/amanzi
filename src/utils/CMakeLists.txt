@@ -10,6 +10,7 @@
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
 include(LibraryManager)
+include(BinaryManager)
 
 #
 # Define a project name
@@ -20,15 +21,26 @@ include(LibraryManager)
 # through these variables.
 project(ATK)
 
-include_directories(${Boost_INCLUDE_DIRS})
+include_directories(${EXPRTK_INLUCDE_DIR})
 include_directories(${Teuchos_INCLUDE_DIRS})
+include_directories(${Epetra_INCLUDE_DIRS})
+
 include_directories(${DBC_SOURCE_DIR})
-include_directories(${EXPRTK_INLCUDE_DIR})
+
+set(tpl_link_libs
+  ${Epetra_LIBRARIES}
+  ${Teuchos_LIBRARIES}
+  ${HDF5_LIBRARIES}
+  ${NetCDF_C_LIBRARIES}
+)
 
 add_amanzi_library(atk
                    SOURCE AmanziComm.cc
                           ExprTK.cc
-                          HDF5Reader.cc
+                          Formatter.cc
+                          ReaderHDF5.cc
+                          ReaderNetCDF.cc
+                          Reader.cc
                           IOEvent.cc
                           Key.cc
                           LeastSquare.cc 
@@ -41,13 +53,19 @@ add_amanzi_library(atk
                    HEADERS Abbreviations.hh
                            AmanziComm.hh
                            AmanziTypes.hh
+                           Brent.hh
                            ExprTK.hh
                            Factory.hh
                            FIFO_Set.hh
-                           HDF5Reader.hh
+                           Formatter.hh
+                           Reader.hh
+                           ReaderHDF5.hh
+                           ReaderNetCDF.hh
+                           Event.hh
                            IOEvent.hh
                            Iterators.hh
                            Key.hh
+                           MeshView.hh
                            LeastSquare.hh
                            ObservationData.hh
                            Spline.hh
@@ -59,13 +77,27 @@ add_amanzi_library(atk
                            Utils.hh
                            VerboseObject.hh
                            VerboseObject_objs.hh
+                           ViewUtils.hh
                            XMLParameterListWriter.hh
                            StringReducer.hh
-                    LINK_LIBS error_handling ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES} ${HDF5_LIBRARIES})
+                    LINK_LIBS error_handling ${tpl_link_libs})
 
 if (APPLE AND BUILD_SHARED_LIBS)
   set_target_properties(atk PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
 endif()			  
+
+add_amanzi_executable(xml_to_yaml
+  SOURCE XmlToYaml.cc
+  LINK_LIBS ${tpl_link_libs}
+  OUTPUT_NAME xml_to_yaml
+  OUTPUT_DIRECTORY ${ATS_BINARY_DIR})
+
+add_amanzi_executable(yaml_to_xml
+  SOURCE YamlToXml.cc
+  LINK_LIBS ${tpl_link_libs}
+  OUTPUT_NAME yaml_to_xml
+  OUTPUT_DIRECTORY ${ATS_BINARY_DIR})
+
 
 if (BUILD_TESTS)
     # Add UnitTest include directoy
@@ -73,8 +105,8 @@ if (BUILD_TESTS)
 
     # Copy test directory files if an out of source build
     if (NOT (${ATK_SOURCE_DIR} EQUAL ${ATK_BINARY_DIR}))
-      # file(GLOB DataFiles "${ATK_SOURCE_DIR}/test/*.xml")
-      # file(COPY ${DataFiles} DESTINATION ${ATK_BINARY_DIR}/test/)
+      file(GLOB DataFiles "${ATK_SOURCE_DIR}/test/*")
+      file(COPY ${DataFiles} DESTINATION ${ATK_BINARY_DIR}/test/)
     endif()
 
     # Add the utils directory to the include paths
@@ -93,6 +125,11 @@ if (BUILD_TESTS)
     add_amanzi_test(utils_verbosity utils_verbosity
                     KIND unit
                     SOURCE test/Main.cc test/utils_verboseobject.cc
+                    LINK_LIBS atk ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(utils_formatter utils_formatter
+                    KIND unit
+                    SOURCE test/Main.cc test/utils_formatter.cc
                     LINK_LIBS atk ${UnitTest_LIBRARIES})
 
     add_amanzi_test(utils_units utils_units
@@ -115,12 +152,22 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/utils_exprtk.cc
                     LINK_LIBS atk ${UnitTest_LIBRARIES})
 
+    add_amanzi_test(utils_reader utils_reader
+                    KIND unit
+                    SOURCE test/Main.cc test/utils_reader.cc
+                    LINK_LIBS atk ${UnitTest_LIBRARIES})
+
     add_amanzi_test(utils_reducer utils_reducer
                     KIND unit
                     SOURCE test/Main.cc test/utils_reducer.cc
                     LINK_LIBS atk ${UnitTest_LIBRARIES})
     add_amanzi_test(utils_reducer_np2 utils_reducer NPROCS 2 KIND unit)
     add_amanzi_test(utils_reducer_np5 utils_reducer NPROCS 5 KIND unit)
+
+    add_amanzi_test(utils_brent utils_brent
+                    KIND unit
+                    SOURCE test/Main.cc test/utils_brent.cc
+                    LINK_LIBS atk ${UnitTest_LIBRARIES})
 
 endif()
 

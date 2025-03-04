@@ -65,7 +65,6 @@ include_directories(${DBC_SOURCE_DIR})
 include_directories(${CHEM_INCLUDES_DIR})
 
 # External (TPL) include directories
-include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${PETSC_INCLUDE_DIRS})
@@ -98,7 +97,7 @@ if (BUILD_TESTS)
 
   set(tpl_libs ${CCSE_LIBRARIES} ${PETSC_LIBRARIES} ${CCSE_LIBRARIES}
                ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES}
-               ${Boost_LIBRARIES} ${HDF5_LIBRARIES})
+               ${HDF5_LIBRARIES})
 
   include_directories(${SMATERIALS_SOURCE_DIR}/test) 
 

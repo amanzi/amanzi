@@ -30,7 +30,7 @@
 
 namespace Amanzi {
 
-class Observable : public IOEvent {
+class Observable : public Utils::IOEvent {
  public:
   Observable(std::string variable,
              std::string region,
@@ -38,7 +38,7 @@ class Observable : public IOEvent {
              Teuchos::ParameterList& plist,
              Teuchos::ParameterList& units_plist,
              Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-    : IOEvent(plist),
+    : Utils::IOEvent(plist),
       variable_(variable),
       functional_(functional),
       sum_(0.0),
@@ -72,7 +72,7 @@ class Observable : public IOEvent {
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
-  AmanziMesh::Entity_ID_List entity_ids_;
+  AmanziMesh::cEntity_ID_View entity_ids_;
   int region_size_;
 
   std::string region_;

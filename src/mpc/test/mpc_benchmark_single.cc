@@ -22,20 +22,19 @@
 // Amanzi
 #include "CycleDriver.hh"
 #include "MeshAudit.hh"
-#include "energy_tcm_registration.hh"
-#include "energy_iem_registration.hh"
-#include "eos_registration.hh"
+#include "eos_reg.hh"
+#include "evaluators_flow_reg.hh"
 #include "Mesh.hh"
 #include "MeshExtractedManifold.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
-#include "mpc_pks_registration.hh"
+#include "models_flow_reg.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
-#include "pks_flow_registration.hh"
-#include "pks_transport_registration.hh"
+#include "pks_flow_reg.hh"
+#include "pks_mpc_reg.hh"
+#include "pks_transport_reg.hh"
 #include "State.hh"
-#include "wrm_flow_registration.hh"
 
 
 void
@@ -57,9 +56,10 @@ MPC_CoupledFlowTransport(const std::string& xmlfile, const std::string& exofile)
   // create mesh
   auto mesh_list = Teuchos::sublist(plist, "mesh", true);
   MeshFactory factory(comm, gm, mesh_list);
-
+  mesh_list->set<bool>("request edges", true);
+  mesh_list->set<bool>("request faces", true);
   factory.set_preference(Preference({ Framework::MSTK }));
-  auto mesh = factory.create(exofile, true, true);
+  auto mesh = factory.create(exofile);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;
@@ -82,9 +82,12 @@ MPC_CoupledFlowTransport(const std::string& xmlfile, const std::string& exofile)
   std::vector<std::string> names;
   names.push_back("fracture");
 
-  // auto mesh_fracture = factory.create(mesh, names, AmanziMesh::FACE);
-  auto mesh_fracture = Teuchos::rcp(new MeshExtractedManifold(
-    mesh, "fracture", AmanziMesh::FACE, comm, gm, mesh_list, true, false));
+  // auto mesh_fracture = factory.create(mesh, names, AmanziMesh::Entity_kind::FACE);
+  auto mesh_fracture_framework = Teuchos::rcp(new MeshExtractedManifold(
+    mesh, "fracture", AmanziMesh::Entity_kind::FACE, comm, gm, mesh_list));
+  auto mesh_fracture = Teuchos::rcp(new Mesh(
+    mesh_fracture_framework, Teuchos::rcp(new Amanzi::AmanziMesh::MeshAlgorithms()), mesh_list));
+
   S->RegisterMesh("fracture", mesh_fracture);
 
   Amanzi::CycleDriver cycle_driver(plist, S, comm, obs_data);

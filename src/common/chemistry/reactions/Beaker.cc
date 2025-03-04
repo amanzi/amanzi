@@ -31,6 +31,7 @@
 #include "ActivityModelFactory.hh"
 #include "AqueousEquilibriumComplex.hh"
 #include "ChemistryUtilities.hh"
+#include "Colloid.hh"
 #include "GeneralRxn.hh"
 #include "IonExchangeRxn.hh"
 #include "KineticRate.hh"
@@ -76,6 +77,7 @@ Beaker::Beaker(const Teuchos::Ptr<VerboseObject> vo)
     rhs_(),
     jacobian_(),
     lu_solver_(),
+    convergence_criterion_(ConvergenceType::PFLOTRAN),
     use_log_formulation_(true),
     sorption_isotherm_params_(4, 0.0)
 {
@@ -89,6 +91,8 @@ Beaker::Beaker(const Teuchos::Ptr<VerboseObject> vo)
   sorption_isotherm_rxns_.clear();
   total_.clear();
   total_sorbed_.clear();
+  total_sorbed_colloid_mobile_.clear();
+  total_sorbed_colloid_immobile_.clear();
 }
 
 
@@ -130,6 +134,11 @@ Beaker::Initialize(BeakerState& state, const BeakerParameters& parameters)
     dtotal_sorbed_.Zero();
 
     state.total_sorbed.resize(ncomp_, 0.0);
+
+    if (colloids_.size() > 0) {
+      total_sorbed_colloid_mobile_.resize(ncomp_, 0.0);
+      total_sorbed_colloid_immobile_.resize(ncomp_, 0.0);
+    }
   } else {
     total_sorbed_.clear();
   }
@@ -229,7 +238,7 @@ Beaker::Speciate(BeakerState* state)
 
   do {
     UpdateActivityCoefficients_();
-    UpdateEquilibriumChemistry();
+    UpdateEquilibriumChemistry(*state);
     CalculateDTotal();
 
     // calculate residual
@@ -277,7 +286,7 @@ Beaker::Speciate(BeakerState* state)
 
   // for now, initialize total sorbed concentrations based on the current free
   // ion concentrations
-  UpdateEquilibriumChemistry();
+  UpdateEquilibriumChemistry(*state);
   CopyBeakerToState(state);
   status_.num_newton_iterations = num_iterations;
   if (max_rel_change < tolerance_) { status_.converged = true; }
@@ -310,9 +319,7 @@ Beaker::ReactionStep(BeakerState* state, const BeakerParameters& parameters, dou
   int max_rel_index = -1;
   unsigned int num_iterations = 0;
 
-  // set_use_log_formulation(false);
-
-  // lagging activity coefficients by a time step in this case
+  // lagging activity coefficients by a timestep in this case
   // UpdateActivityCoefficients_();
 
   // calculate portion of residual at time level t
@@ -321,7 +328,7 @@ Beaker::ReactionStep(BeakerState* state, const BeakerParameters& parameters, dou
   do {
     // update equilibrium and kinetic chemistry (rates, ion activity, etc.)
     // if (parameters.update_activity_newton) UpdateActivityCoefficients_();
-    UpdateEquilibriumChemistry();
+    UpdateEquilibriumChemistry(*state);
     UpdateKineticChemistry();
 
     // units of residual: mol/sec
@@ -343,11 +350,11 @@ Beaker::ReactionStep(BeakerState* state, const BeakerParameters& parameters, dou
       }
     }
 
-    // solve J dlnc = r
+    // solve J d(ln C) = r
     lu_solver_.Solve(&jacobian_, &rhs_);
 
     // units of solution: mol/kg water (change in molality)
-    // calculate update truncating at a maximum of 5 in nat log space
+    // calculate update truncating at a maximum of 5 in natural log space
     // update with exp(-dlnc)
     UpdateMolalitiesWithTruncation(5.0);
     // calculate maximum relative change in concentration over all species
@@ -372,7 +379,7 @@ Beaker::ReactionStep(BeakerState* state, const BeakerParameters& parameters, dou
   if (max_rel_change < tolerance_) { status_.converged = true; }
 
   // update total concentrations
-  UpdateEquilibriumChemistry();
+  UpdateEquilibriumChemistry(*state);
   UpdateKineticMinerals();
 
   // TODO(bandre): not convinced this is the correct place to call
@@ -380,7 +387,7 @@ Beaker::ReactionStep(BeakerState* state, const BeakerParameters& parameters, dou
   // UpdateEquilibriumChemistry()? But that changes the numerical
   // results and I need to look more closely at what is going on.
 
-  // lagging activity coefficients by a time step
+  // lagging activity coefficients by a timestep
   UpdateActivityCoefficients_();
 
   CopyBeakerToState(state);
@@ -405,6 +412,11 @@ Beaker::CopyBeakerToState(BeakerState* state)
   // totals
   state->total = total_;
   state->total_sorbed = total_sorbed_;
+
+  if (colloids_.size() > 0) {
+    state->total_sorbed_colloid_mobile = total_sorbed_colloid_mobile_;
+    state->total_sorbed_colloid_immobile = total_sorbed_colloid_immobile_;
+  }
 
   // free ion
   state->free_ion.resize(ncomp_);
@@ -557,7 +569,11 @@ Beaker::DisplayComponents(const BeakerState& state) const
     message << std::setw(15) << "Name" << std::setw(15) << "Moles / m^3" << std::endl;
     for (int i = 0; i < ncomp_; i++) {
       message << std::setw(15) << primary_species().at(i).name() << std::scientific
-              << std::setprecision(5) << std::setw(15) << state.total_sorbed.at(i) << std::endl;
+              << std::setprecision(5) << std::setw(15) << state.total_sorbed.at(i);
+      if (colloids_.size() > 0)
+        message << "  (" << colloids_[0].name() << "): " << state.total_sorbed_colloid_mobile.at(i)
+                << " " << state.total_sorbed_colloid_immobile.at(i);
+      message << std::endl;
     }
   }
   message << "------------------------------------------------- Input Components ---" << std::endl;
@@ -577,6 +593,19 @@ Beaker::DisplayResults() const
     message << std::setw(15) << primary_species().at(i).name() << std::scientific
             << std::setprecision(5) << std::setw(15) << total_.at(i) / water_density_kg_L_
             << std::setw(15) << total_.at(i) << std::endl;
+  }
+
+  if (total_sorbed_.size() > 0 && colloids_.size() > 0) {
+    message << "---- Sorbed Components" << std::endl;
+    message << std::setw(15) << "Name" << std::setw(15) << "Moles / m^3" << std::endl;
+    for (int i = 0; i < ncomp_; i++) {
+      message << std::setw(15) << primary_species().at(i).name() << std::scientific
+              << std::setprecision(5) << std::setw(15) << total_sorbed_.at(i);
+      if (colloids_.size() > 0)
+        message << "  (" << colloids_[0].name() << "): " << total_sorbed_colloid_mobile_.at(i)
+                << " " << total_sorbed_colloid_immobile_.at(i);
+      message << std::endl;
+    }
   }
 
   message << "---- Charge Balance\n";
@@ -1006,7 +1035,7 @@ Beaker::UpdateTemperatureDependentCoefs_()
 
 /* ******************************************************************
 * Need to move this into the N-R loop and cut the reaction rate or
-* time step if volume fractions go negative. Right now we are just
+* timestep if volume fractions go negative. Right now we are just
 * setting volume fraction to zero and introducing mass balance errors!
 ****************************************************************** */
 void
@@ -1054,7 +1083,7 @@ Beaker::InitializeMolalities_(const std::vector<double>& initial_molalities)
 
 
 void
-Beaker::UpdateEquilibriumChemistry()
+Beaker::UpdateEquilibriumChemistry(const BeakerState& state)
 {
   // update primary species activities
   for (auto it = primary_species_.begin(); it != primary_species_.end(); ++it) { it->update(); }
@@ -1085,12 +1114,12 @@ Beaker::UpdateEquilibriumChemistry()
   }
 
   // calculate total component concentrations
-  CalculateTotal();
+  CalculateTotal(state);
 }
 
 
 void
-Beaker::CalculateTotal()
+Beaker::CalculateTotal(const BeakerState& state)
 {
   // add in primaries
   for (unsigned int i = 0; i < total_.size(); i++) {
@@ -1115,7 +1144,11 @@ Beaker::CalculateTotal()
   }
 
   // add in isotherm contributions
+  double scale = 1.0;
+  if (colloids_.size() > 0) scale += state.colloid_mobile_conc[0] + state.colloid_immobile_conc[0];
+
   for (auto it = sorption_isotherm_rxns_.begin(); it != sorption_isotherm_rxns_.end(); ++it) {
+    it->ScaleTotal(scale);
     it->AddContributionToTotal(&total_sorbed_);
   }
 
@@ -1318,11 +1351,9 @@ Beaker::ScaleRHSAndJacobian()
 {
   for (int i = 0; i < jacobian_.size(); i++) {
     double max = jacobian_.GetRowAbsMax(i);
-    if (max > 1.0) {
-      double scale = 1.0 / max;
-      rhs_.at(i) *= scale;
-      jacobian_.ScaleRow(i, scale);
-    }
+    double scale = 1.0 / max;
+    rhs_.at(i) *= scale;
+    jacobian_.ScaleRow(i, scale);
   }
 }
 
@@ -1354,8 +1385,8 @@ Beaker::UpdateMolalitiesWithTruncation(const double max_ln_change)
   }
 
   // update primary species molalities (log formulation)
+  double molality;
   for (int i = 0; i < ncomp_; ++i) {
-    double molality;
     if (use_log_formulation_) {
       molality = prev_molal_.at(i) * std::exp(-rhs_.at(i));
     } else {
@@ -1375,9 +1406,15 @@ Beaker::CalculateMaxRelChangeInMolality(double* max_rel_change, int* max_rel_ind
 {
   *max_rel_change = 0.0;
   *max_rel_index = -1;
+
+  double floor(0.0);
+  if (convergence_criterion_ == ConvergenceType::LINEAR_ALGEBRA_MAX_NORM) {
+    for (int i = 0; i < ncomp_; i++) floor = std::max(floor, prev_molal_.at(i));
+  }
+
   for (int i = 0; i < ncomp_; i++) {
-    double delta =
-      std::fabs(primary_species().at(i).molality() - prev_molal_.at(i)) / prev_molal_.at(i);
+    double delta = std::fabs(primary_species().at(i).molality() - prev_molal_.at(i)) /
+                   (prev_molal_.at(i) + floor);
     if (delta > *max_rel_change) {
       *max_rel_change = delta;
       *max_rel_index = i;

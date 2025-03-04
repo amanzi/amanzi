@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "lapack.hh"
+#include "MeshDefs.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -43,7 +44,7 @@ class DenseVector {
 
   // primary members
   // -- smart memory management: preserves data only for vector reduction
-  void Reshape(int mrow);
+  void Reshape(int mrow, double val = 0.0);
 
   // -- initialization
   DenseVector& operator=(const DenseVector& B);

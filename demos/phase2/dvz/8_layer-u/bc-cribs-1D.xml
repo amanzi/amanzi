@@ -156,7 +156,7 @@
     <Parameter name="temporal discretization order" type="int" value="1"/>
     <Parameter name="enable internal tests" type="string" value="no"/>
     <Parameter name="internal tests tolerance" type="double" value="1e-06"/>
-    <Parameter name="maximal time step" type="double" value="1e+99"/>
+    <Parameter name="maximal timestep" type="double" value="1e+99"/>
     <Parameter name="verbosity level" type="int" value="1"/>
 
     <ParameterList name="Transport BCs">
@@ -188,7 +188,7 @@ p = p_atmospheric - 9.8 * rho * (z - height)
 
       <Parameter name="Steady state calculation initial time" type="double" value="0.0"/>
       <Parameter name="Steady state calculation final time" type="double" value="3e10"/>
-      <Parameter name="Steady state calculation initial time step" type="double" value="1.0e-7"/>
+      <Parameter name="Steady state calculation initial timestep" type="double" value="1.0e-7"/>
       <Parameter name="Steady state calculation initial hydrostatic pressure height" type ="double" value="103.2"/>
 
       <Parameter name="Atmospheric pressure" type="double" value="101325.0"/>

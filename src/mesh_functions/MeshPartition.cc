@@ -36,26 +36,32 @@ MeshPartition::Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, cons
 {
   default_value_ = default_value;
 
-  const Epetra_BlockMap mmap(mesh->map(kind_, false));
-  const Epetra_BlockMap mmap_ghost(mesh->map(kind_, true));
+  const Epetra_BlockMap mmap(mesh->getMap(kind_, false));
+  const Epetra_BlockMap mmap_ghost(mesh->getMap(kind_, true));
 
   // Create and initialize the data
   map_ = Teuchos::rcp(new Epetra_IntVector(mmap_ghost, false));
   map_->PutValue(default_value);
 
+  int fail(0);
   for (int lcv = 0; lcv != regions_.size(); ++lcv) {
-    AmanziMesh::Entity_ID_List block;
-    mesh->get_set_entities(regions_[lcv], kind_, AmanziMesh::Parallel_type::OWNED, &block);
+    auto block = mesh->getSetEntities(regions_[lcv], kind_, AmanziMesh::Parallel_kind::OWNED);
 
     for (auto id : block) {
-      // Check regions are non-overlapping
-      if ((*map_)[id] >= 0) {
-        Errors::Message msg("MeshPartition regions are overlapping");
-        Exceptions::amanzi_throw(msg);
-      }
+      if ((*map_)[id] >= 0) fail = 1;
       (*map_)[id] = lcv;
     }
   }
+
+#ifdef HAVE_MPI
+  // Check regions are non-overlapping
+  int tmp(fail);
+  mesh->getComm()->MaxAll(&tmp, &fail, 1);
+  if (fail == 1) {
+    Errors::Message msg("MeshPartition regions are overlapping");
+    Exceptions::amanzi_throw(msg);
+  }
+#endif
 
 #ifdef HAVE_MPI
   // Scatter to ghost cells
@@ -84,29 +90,36 @@ MeshPartition::Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
   kind_ = kind;
   default_value_ = default_value;
 
-  const Epetra_BlockMap mmap(mesh->map(kind_, false));
-  const Epetra_BlockMap mmap_ghost(mesh->map(kind_, true));
+  const Epetra_BlockMap mmap(mesh->getMap(kind_, false));
+  const Epetra_BlockMap mmap_ghost(mesh->getMap(kind_, true));
 
   // Initialize the data
   map_ = Teuchos::rcp(new Epetra_IntVector(mmap_ghost, false));
   map_->PutValue(default_value);
 
+  int fail(0);
   for (int lcv = 0; lcv != regions.size(); ++lcv) {
     const std::vector<std::string>& regs = regions[lcv];
     for (int r = 0; r < regs.size(); ++r) {
-      AmanziMesh::Entity_ID_List block;
-      mesh->get_set_entities(regs[r], kind_, AmanziMesh::Parallel_type::OWNED, &block);
+      auto block = mesh->getSetEntities(regs[r], kind_, AmanziMesh::Parallel_kind::OWNED);
       regions_.push_back(regs[r]);
 
       for (auto id : block) {
-        if ((*map_)[id] >= 0) {
-          Errors::Message msg("MeshPartition regions are overlapping");
-          Exceptions::amanzi_throw(msg);
-        }
+        if ((*map_)[id] >= 0) fail = 1;
         (*map_)[id] = lcv;
       }
     }
   }
+
+#ifdef HAVE_MPI
+  // Check regions are non-overlapping
+  int tmp(fail);
+  mesh->getComm()->MaxAll(&tmp, &fail, 1);
+  if (fail == 1) {
+    Errors::Message msg("MeshPartition regions are overlapping");
+    Exceptions::amanzi_throw(msg);
+  }
+#endif
 
 #ifdef HAVE_MPI
   // Scatter to ghost cells

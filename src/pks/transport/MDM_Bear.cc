@@ -38,7 +38,9 @@ MDM_Bear::MDM_Bear(Teuchos::ParameterList& plist)
 * Anisotropic tensor defined by two parameters.
 ****************************************************************** */
 WhetStone::Tensor
-MDM_Bear::mech_dispersion(const AmanziGeometry::Point& u,
+MDM_Bear::mech_dispersion(double t,
+                          const AmanziGeometry::Point& xc,
+                          const AmanziGeometry::Point& u,
                           int axi_symmetry,
                           double wc,
                           double phi) const

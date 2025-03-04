@@ -31,7 +31,6 @@ include_directories(${DBG_SOURCE_DIR})
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
-include_directories(${Boost_INCLUDE_DIRS})
 
 #
 # Library: whetstone
@@ -39,11 +38,13 @@ include_directories(${Boost_INCLUDE_DIRS})
 add_amanzi_library(whetstone
                    SOURCE DeRham_Node.cc DeRham_Edge.cc DeRham_Face.cc
                           MFD3D.cc
-                          MFD3D_BernardiRaugel.cc
+                          MFD3D_BernardiRaugel.cc MFD3D_BernardiRaugelGradDiv.cc
                           MFD3D_CrouzeixRaviart.cc MFD3D_CrouzeixRaviartAnyOrder.cc
                           MFD3D_CrouzeixRaviartSerendipity.cc
                           MFD3D_Diffusion.cc MFD3D_Diffusion_Surface.cc MFD3D_Diffusion_Other.cc 
-                          MFD3D_Elasticity.cc 
+                          MFD3D_Diffusion_CurvedFace.cc 
+                          MFD3D_Elasticity.cc MFD3D_ElasticityGradDiv.cc 
+                          MFD3D_ElasticityWeakSymmetry.cc 
                           MFD3D_Electromagnetics.cc MFD3D_Electromagnetics_Surface.cc
                           MFD3D_GeneralizedDiffusion.cc
                           MFD3D_Lagrange.cc MFD3D_LagrangeAnyOrder.cc
@@ -56,10 +57,9 @@ add_amanzi_library(whetstone
                           NumericalIntegration.cc
                           Tensor.cc DenseMatrix.cc DenseVector.cc
                           Polynomial.cc SpaceTimePolynomial.cc VectorObjects.cc
-                          MeshMaps.cc
+                          MeshMapsBase.cc
                           MeshMaps_FEM.cc MeshMaps_VEM.cc
                           SplinePolynomial.cc
-                          SurfaceCoordinateSystem.cc
                    HEADERS DenseMatrix.hh DenseVector.hh
                            DG_Modal.hh
                            Basis.hh BasisFactory.hh
@@ -72,30 +72,29 @@ add_amanzi_library(whetstone
                            FunctionUpwind.hh
                            FunctionComposite.hh
                            MFD3D.hh
-                           MFD3D_BernardiRaugel.hh
+                           MFD3D_BernardiRaugel.hh MFD3D_BernardiRaugelGradDiv.hh
                            MFD3D_CrouzeixRaviart.hh MFD3D_CrouzeixRaviartAnyOrder.hh
                            MFD3D_CrouzeixRaviartSerendipity.hh
-                           MFD3D_Diffusion.hh
-                           MFD3D_Elasticity.hh
+                           MFD3D_Diffusion.hh MFD3D_Diffusion_CurvedFace.hh
+                           MFD3D_Elasticity.hh MFD3D_ElasticityGradDiv.hh
+                           MFD3D_ElasticityWeakSymmetry.hh
                            MFD3D_Electromagnetics.hh
                            MFD3D_GeneralizedDiffusion.hh
-                           MFD3D_Lagrange.hh MFD3D_LagrangeAnyOrder.hh
-                           MFD3D_LagrangeSerendipity.hh
+                           MFD3D_Lagrange.hh MFD3D_LagrangeAnyOrder.hh 
+                                             MFD3D_LagrangeSerendipity.hh
                            nlfv.hh
                            NumericalIntegration.hh
                            Quadrature1D.hh Quadrature2D.hh Quadrature3D.hh
-                           MeshMaps.hh MeshMapsFactory.hh
+                           MeshMapsBase.hh MeshMapsFactory.hh
                            MeshMaps_FEM.hh MeshMaps_VEM.hh MeshMaps_VEM.hh
                            Monomial.hh Polynomial.hh PolynomialIterator.hh PolynomialBase.hh
                            SpaceTimePolynomial.hh
                            SplinePolynomial.hh
-                           SurfaceCoordinateSystem.hh
-                           SingleFaceMesh.hh
                            VectorObjects.hh MatrixObjects.hh PolynomialOnMesh.hh
                            Tensor.hh
                            WhetStoneDefs.hh
                            WhetStoneFunction.hh WhetStoneMeshUtils.hh
-                           bilinear_form_registration.hh
+                           bilinear_form_reg.hh
                    LINK_LIBS geometry mesh error_handling ${Epetra_LIBRARIES})
 
 
@@ -110,12 +109,13 @@ if (BUILD_TESTS)
         file(COPY ${DataFiles} DESTINATION ${WHETSTONE_BINARY_DIR}/test/)
     endif()
 
-    set(amanzi_libs geometry mesh mesh_audit mesh_factory whetstone)
+    set(amanzi_libs geometry mesh mesh_factory whetstone)
 
     # Test: matrices for diffusion
     add_amanzi_test(whetstone_diffusion whetstone_diffusion
                     KIND unit
-                    SOURCE test/Main.cc test/whetstone_diffusion.cc
+                    SOURCE test/Main.cc test/whetstone_diffusion.cc 
+                           test/whetstone_diffusion_tangled.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: matrices for elasticity
@@ -158,7 +158,6 @@ if (BUILD_TESTS)
                                         test/whetstone_polynomials.cc
                                         test/whetstone_dg.cc
                                         test/whetstone_numi.cc
-                                        test/whetstone_high_order.cc
                                         test/whetstone_maps.cc
                                         test/whetstone_projectors.cc
                                         test/whetstone_high_order.cc

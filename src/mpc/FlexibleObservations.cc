@@ -41,7 +41,7 @@ FlexibleObservations::FlexibleObservations(Teuchos::RCP<Teuchos::ParameterList> 
                                            Teuchos::RCP<const State> S)
   : obs_list_(obs_list), coordinator_list_(coordinator_list), observation_data_(observation_data)
 {
-  rank_ = S->GetMesh("domain")->get_comm()->MyPID();
+  rank_ = S->GetMesh("domain")->getComm()->MyPID();
 
   // initialize units
   units_.Init(*units_list);
@@ -149,7 +149,7 @@ FlexibleObservations::MakeObservations(State& S)
 
       // syncronize the result across processors
       double data_out[2], data_in[2] = { value, volume };
-      S.GetMesh()->get_comm()->SumAll(data_in, data_out, 2);
+      S.GetMesh()->getComm()->SumAll(data_in, data_out, 2);
 
       if ((i->second)->functional_ == "observation data: integral") {
         data_quad.value = data_out[0];
@@ -241,7 +241,7 @@ FlexibleObservations::DumpRequested(const int cycle, const double time)
 * step manager.
 ******************************************************************/
 void
-FlexibleObservations::RegisterWithTimeStepManager(const Teuchos::Ptr<TimeStepManager>& tsm)
+FlexibleObservations::RegisterWithTimeStepManager(Utils::TimeStepManager& tsm)
 {
   for (std::map<std::string, Teuchos::RCP<Observable>>::iterator i = observations.begin();
        i != observations.end();
@@ -268,6 +268,7 @@ FlexibleObservations::FlushObservations()
     system.mass = obs_list_->get<std::string>("mass unit", system.mass);
     system.length = obs_list_->get<std::string>("length unit", system.length);
     system.concentration = obs_list_->get<std::string>("concentration unit", system.concentration);
+    system.temperature = obs_list_->get<std::string>("temperature unit", system.temperature);
 
     if (rank_ == 0) {
       std::ofstream out;
@@ -277,7 +278,8 @@ FlexibleObservations::FlushObservations()
       out.setf(std::ios::scientific);
 
       out << "Observation Name, Region, Functional, Variable, Time [" << system.time << "], Value ["
-          << system.mass << " " << system.length << " " << system.concentration << "]\n";
+          << system.mass << " " << system.length << " " << system.concentration << " "
+          << system.temperature << "]\n";
       out << "============================================================================\n";
 
       for (auto it = obs_list_->begin(); it != obs_list_->end(); ++it) {

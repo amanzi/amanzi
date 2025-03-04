@@ -16,7 +16,6 @@
 
 #include <map>
 #include <memory>
-#include "boost/filesystem/operations.hpp"
 
 #include "UnstructuredObservations.hh"
 
@@ -82,7 +81,7 @@ UnstructuredObservations::Setup(const Teuchos::Ptr<State>& S)
 {
   // set the communicator
   comm_ = Teuchos::null;
-  if (S->HasMesh(writing_domain_)) comm_ = S->GetMesh(writing_domain_)->get_comm();
+  if (S->HasMesh(writing_domain_)) comm_ = S->GetMesh(writing_domain_)->getComm();
 
   // require fields, evaluators
   for (auto& obs : observables_) {
@@ -183,7 +182,7 @@ UnstructuredObservations::MakeObservations(const Teuchos::Ptr<State>& S)
 void
 UnstructuredObservations::InitFile_(const Teuchos::Ptr<const State>& S)
 {
-  if (boost::filesystem::portable_file_name(filename_)) {
+  if (portable_filename(filename_)) {
     fid_ = std::make_unique<std::ofstream>(filename_.c_str());
 
     *fid_ << "# Observation File: " << filename_ << " column names:" << std::endl
@@ -196,9 +195,13 @@ UnstructuredObservations::InitFile_(const Teuchos::Ptr<const State>& S)
             << std::endl
             << "# Observation Name: " << obs->get_name() << std::endl
             << "# Region: " << obs->get_region() << std::endl
-            << "# Functional: " << obs->get_functional() << std::endl
-            << "# Variable: " << obs->get_variable() << std::endl
+            << "# Reduction: " << obs->get_reduction() << std::endl;
+      if (!obs->get_modifier().empty()) {
+        *fid_ << "# Modifier:" << std::endl << "#   " << obs->get_modifier() << std::endl;
+      }
+      *fid_ << "# Variable: " << obs->get_variable() << std::endl
             << "# Number of Vectors: " << obs->get_num_vectors() << std::endl;
+
       if (obs->get_degree_of_freedom() >= 0)
         *fid_ << "# DoF: " << obs->get_degree_of_freedom() << std::endl;
     }
@@ -257,6 +260,23 @@ void
 UnstructuredObservations::Flush()
 {
   if (fid_.get()) fid_->flush();
+}
+
+
+bool
+portable_name(const std::string& name)
+{
+  return !(name.empty() && (name == "." || name == ".."));
+}
+
+
+bool
+portable_filename(const std::string& filename)
+{
+  std::string::size_type pos;
+  return portable_name(filename) && filename != "." && filename != ".." &&
+         ((pos = filename.find('.')) == std::string::npos ||
+          (filename.find('.', pos + 1) == std::string::npos && (pos + 5) > filename.size()));
 }
 
 } // namespace Amanzi

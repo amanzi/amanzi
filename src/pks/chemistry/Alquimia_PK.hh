@@ -7,10 +7,42 @@
   Authors:
 */
 
-/*
-  Chemistry PK
+/*!
 
-  Trilinos based chemistry process kernel for the unstructured mesh.
+The Alquimia chemistry process kernel only requires the *Engine* and *Engine Input File*
+entries, but will also accept and respect the value given for *max timestep (s)*.
+Most details are provided in the trimmed PFloTran file *1d-tritium-trim.in*.
+
+.. admonition:: alquimia-spec
+
+  * `"minerals`" ``[Array(string)]`` is the list of mineral names.
+
+  * `"sorption sites`" ``[Array(string)]`` is the list of sorption sites.
+
+  * `"auxiliary data`" ``[Array(string)]`` defines additional chemistry related data that the user
+    can request be saved to vis files.
+
+  * `"min timestep (s)`" ``[double]`` is the minimum timestep that chemistry will allow 
+    the MPC to take.
+
+.. code-block:: xml
+
+  <ParameterList>  <!-- parent list -->
+  <ParameterList name="_CHEMISTRY">
+    <Parameter name="engine" type="string" value="PFloTran"/>
+    <Parameter name="engine input file" type="string" value="_TRITIUM.in"/>
+    <Parameter name="minerals" type="Array(string)" value="{quartz, kaolinite, goethite, opal}"/>
+    <Parameter name="min timestep (s)" type="double" value="1.5778463e-07"/>
+    <Parameter name="max timestep (s)" type="double" value="1.5778463e+07"/>
+    <Parameter name="initial timestep (s)" type="double" value="1.0e-02"/>
+    <Parameter name="timestep control method" type="string" value="simple"/>
+    <Parameter name="timestep cut threshold" type="int" value="8"/>
+    <Parameter name="timestep cut factor" type="double" value="2.0"/>
+    <Parameter name="timestep increase threshold" type="int" value="4"/>
+    <Parameter name="timestep increase factor" type="double" value="1.2"/>
+  </ParameterList>
+  </ParameterList>
+
 */
 
 #ifndef AMANZI_CHEMISTRY_ALQUIMIA_PK_HH_
@@ -47,16 +79,17 @@ class Alquimia_PK : public Chemistry_PK {
   ~Alquimia_PK();
 
   // members required by PK interface
-  virtual void Setup() final;
-  virtual void Initialize() final;
+  virtual void parseParameterList() override;
+  virtual void Setup() override final;
+  virtual void Initialize() override final;
 
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) final;
-  virtual void CommitStep(double t_old, double t_new, const Tag& tag) final;
-  virtual void CalculateDiagnostics(const Tag& tag) final { extra_chemistry_output_data(); }
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override final;
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag) override final;
+  virtual void CalculateDiagnostics(const Tag& tag) override final { extra_chemistry_output_data(); }
 
   // Ben: the following routine provides the interface for
   // output of auxillary cellwise data from chemistry
-  Teuchos::RCP<Epetra_MultiVector> extra_chemistry_output_data();
+  Teuchos::RCP<Epetra_MultiVector> extra_chemistry_output_data() override final;
 
   // Copies the chemistry state in the given cell to the given Alquimia containers.
   void CopyToAlquimia(int cell_id,

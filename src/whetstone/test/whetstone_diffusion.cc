@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <cmath>
 #include <iostream>
+#include <utility>
 #include <vector>
 
 #include "Teuchos_ParameterList.hpp"
@@ -27,6 +28,21 @@
 #include "MFD3D_GeneralizedDiffusion.hh"
 #include "MFD3D_Lagrange.hh"
 #include "Tensor.hh"
+
+std::pair<double, double> EigenvaluesSVD(Amanzi::WhetStone::DenseMatrix& M) 
+{
+  int n(M.NumRows()), lwork(100), info;
+  double U[n*n], V[n*n], S[100], work[lwork];
+
+  Amanzi::WhetStone::DGESVD_F77("A", "A", &n, &n, M.Values(), &n, S, U, &n, V, &n, work, &lwork, &info);
+
+  double emin(1e+10), emax(0.0);
+  for (int i = 0; i < n; ++i) {
+    emin = std::min(emin, S[i]);
+    emax = std::max(emax, S[i]);
+  }
+  return std::pair<double, double>(emin, emax);
+}
 
 
 /* **************************************************************** */
@@ -73,25 +89,23 @@ TEST(DARCY_MASS_2D)
     for (int i = 0; i < nfaces; i++) CHECK(M(i, i) > 0.0);
 
     // verify exact integration property
-    AmanziMesh::Entity_ID_List faces;
-    std::vector<int> dirs;
-    mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
+    auto [faces, dirs] = mesh->getCellFacesAndDirections(cell);
 
     double xi, yi, xj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell);
+    double vxx = 0.0, vxy = 0.0, volume = mesh->getCellVolume(cell);
     for (int i = 0; i < nfaces; i++) {
       int f1 = faces[i];
       for (int j = 0; j < nfaces; j++) {
         int f2 = faces[j];
 
-        xi = mesh->face_normal(f1)[0] * dirs[i];
-        yi = mesh->face_normal(f1)[1] * dirs[i];
-        xj = mesh->face_normal(f2)[0] * dirs[j];
+        xi = mesh->getFaceNormal(f1)[0] * dirs[i];
+        yi = mesh->getFaceNormal(f1)[1] * dirs[i];
+        xj = mesh->getFaceNormal(f2)[0] * dirs[j];
 
         if (method == 0 || method == 2) {
-          xi /= mesh->face_area(f1);
-          yi /= mesh->face_area(f1);
-          xj /= mesh->face_area(f2);
+          xi /= mesh->getFaceArea(f1);
+          yi /= mesh->getFaceArea(f1);
+          xj /= mesh->getFaceArea(f2);
         }
 
         vxx += M(i, j) * xi * xj;
@@ -150,25 +164,23 @@ TEST(DARCY_MASS_3D)
     for (int i = 0; i < nfaces; ++i) CHECK(M(i, i) > 0.0);
 
     // verify exact integration property
-    AmanziMesh::Entity_ID_List faces;
-    std::vector<int> dirs;
-    mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
+    auto [faces, dirs] = mesh->getCellFacesAndDirections(cell);
 
     double xi, xj, yj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell);
+    double vxx = 0.0, vxy = 0.0, volume = mesh->getCellVolume(cell);
     for (int i = 0; i < nfaces; i++) {
       int f1 = faces[i];
       for (int j = 0; j < nfaces; j++) {
         int f2 = faces[j];
 
-        xi = mesh->face_normal(f1)[0] * dirs[i];
-        xj = mesh->face_normal(f2)[0] * dirs[j];
-        yj = mesh->face_normal(f2)[1] * dirs[j];
+        xi = mesh->getFaceNormal(f1)[0] * dirs[i];
+        xj = mesh->getFaceNormal(f2)[0] * dirs[j];
+        yj = mesh->getFaceNormal(f2)[1] * dirs[j];
 
         if (method == 1) {
-          xi /= mesh->face_area(f1);
-          xj /= mesh->face_area(f2);
-          yj /= mesh->face_area(f2);
+          xi /= mesh->getFaceArea(f1);
+          xj /= mesh->getFaceArea(f2);
+          yj /= mesh->getFaceArea(f2);
         }
 
         vxx += M(i, j) * xi * xj;
@@ -194,15 +206,13 @@ TEST(DARCY_MASS_3D_GENERALIZED_POLYHEDRON)
 
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  // Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1);
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/hex_random.exo");
-  // Teuchos::RCP<Mesh> mesh = meshfactory.create("test/random3D_05.exo");
 
   Teuchos::ParameterList plist;
   MFD3D_GeneralizedDiffusion mfd(plist, mesh);
 
   int nfaces = 6, cell = 0;
-  double volume = mesh->cell_volume(cell);
+  double volume = mesh->getCellVolume(cell);
   DenseMatrix N, R, M;
   DenseMatrix B(3, 3);
 
@@ -213,8 +223,8 @@ TEST(DARCY_MASS_3D_GENERALIZED_POLYHEDRON)
   T(1, 2) = T(2, 1) = -0.03448275862069;
 
   // consistency condition
-  mfd.L2consistency(cell, T, N, M, true);
-  mfd.L2consistencyInverse(cell, T, R, M, true);
+  mfd.L2consistency(cell, T, N, M);
+  mfd.L2consistencyInverse(cell, T, R, M);
 
   B.Multiply(N, R, true);
   for (int i = 0; i < 3; ++i) {
@@ -287,25 +297,23 @@ TEST(DARCY_INVERSE_MASS_3D)
     // verify exact integration property
     W.Inverse();
 
-    AmanziMesh::Entity_ID_List faces;
-    std::vector<int> dirs;
-    mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
+    auto [faces, dirs] = mesh->getCellFacesAndDirections(cell);
 
     double xi, yi, xj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell);
+    double vxx = 0.0, vxy = 0.0, volume = mesh->getCellVolume(cell);
     for (int i = 0; i < nfaces; i++) {
       int f1 = faces[i];
       for (int j = 0; j < nfaces; j++) {
         int f2 = faces[j];
 
-        xi = mesh->face_normal(f1)[0] * dirs[i];
-        yi = mesh->face_normal(f1)[1] * dirs[i];
-        xj = mesh->face_normal(f2)[0] * dirs[j];
+        xi = mesh->getFaceNormal(f1)[0] * dirs[i];
+        yi = mesh->getFaceNormal(f1)[1] * dirs[i];
+        xj = mesh->getFaceNormal(f2)[0] * dirs[j];
 
         if (method == 4) {
-          xi /= mesh->face_area(f1);
-          yi /= mesh->face_area(f1);
-          xj /= mesh->face_area(f2);
+          xi /= mesh->getFaceArea(f1);
+          yi /= mesh->getFaceArea(f1);
+          xj /= mesh->getFaceArea(f2);
         }
 
         vxx += W(i, j) * xi * xj;
@@ -334,7 +342,6 @@ TEST(DARCY_FULL_TENSOR_2D)
 
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  // Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1);
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/two_cell2.exo");
 
   DenseMatrix W;
@@ -347,7 +354,7 @@ TEST(DARCY_FULL_TENSOR_2D)
       T(1, 1) = 2.0;
       T(0, 1) = T(1, 0) = 1.0;
 
-      int ok, nfaces = mesh->cell_get_num_faces(cell);
+      int ok, nfaces = mesh->getCellNumFaces(cell);
 
       if (method == 0) {
         mfd.MassMatrixInverse(cell, T, W);
@@ -381,17 +388,15 @@ TEST(DARCY_FULL_TENSOR_2D)
       // verify exact integration property
       W.Inverse();
 
-      AmanziMesh::Entity_ID_List faces;
-      std::vector<int> dirs;
-      mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
+      auto [faces, dirs] = mesh->getCellFacesAndDirections(cell);
 
       AmanziGeometry::Point v(1.0, 2.0);
       double xi, xj;
-      double vxx = 0.0, volume = mesh->cell_volume(cell);
+      double vxx = 0.0, volume = mesh->getCellVolume(cell);
       for (int i = 0; i < nfaces; i++) {
-        xi = (v * mesh->face_normal(faces[i])) * dirs[i];
+        xi = (v * mesh->getFaceNormal(faces[i])) * dirs[i];
         for (int j = 0; j < nfaces; j++) {
-          xj = (v * mesh->face_normal(faces[j])) * dirs[j];
+          xj = (v * mesh->getFaceNormal(faces[j])) * dirs[j];
           vxx += W(i, j) * xi * xj;
         }
       }
@@ -402,9 +407,9 @@ TEST(DARCY_FULL_TENSOR_2D)
         if (method == 2 || method == 5) continue;
         vxx = 0.0;
         for (int i = 0; i < nfaces; i++) {
-          xi = (v * mesh->face_normal(faces[i])) * dirs[i];
+          xi = (v * mesh->getFaceNormal(faces[i])) * dirs[i];
           for (int j = 0; j < nfaces; j++) {
-            xj = ((j == 2) ? mesh->face_area(faces[j]) : 0.0) * dirs[j];
+            xj = ((j == 2) ? mesh->getFaceArea(faces[j]) : 0.0) * dirs[j];
             vxx += W(i, j) * xi * xj;
           }
         }
@@ -476,24 +481,22 @@ TEST(DARCY_FULL_TENSOR_3D)
     // verify exact integration property
     W.Inverse();
 
-    AmanziMesh::Entity_ID_List faces;
-    std::vector<int> dirs;
-    mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
+    auto [faces, dirs] = mesh->getCellFacesAndDirections(cell);
 
     AmanziGeometry::Point v(1.0, 2.0, 3.0);
     double xi, xj;
-    double vxx = 0.0, volume = mesh->cell_volume(cell);
+    double vxx = 0.0, volume = mesh->getCellVolume(cell);
     for (int i = 0; i < nfaces; i++) {
       int f1 = faces[i];
       for (int j = 0; j < nfaces; j++) {
         int f2 = faces[j];
 
-        xi = (v * mesh->face_normal(f1)) * dirs[i];
-        xj = (v * mesh->face_normal(f2)) * dirs[j];
+        xi = (v * mesh->getFaceNormal(f1)) * dirs[i];
+        xj = (v * mesh->getFaceNormal(f2)) * dirs[j];
 
         if (method == 5) {
-          xi /= mesh->face_area(f1);
-          xj /= mesh->face_area(f2);
+          xi /= mesh->getFaceArea(f1);
+          xj /= mesh->getFaceArea(f2);
         }
 
         vxx += W(i, j) * xi * xj;
@@ -522,7 +525,6 @@ TEST(DARCY_STIFFNESS_2D_NODE)
 
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1);
   RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
 
   MFD3D_Diffusion mfd(mesh);
@@ -550,22 +552,21 @@ TEST(DARCY_STIFFNESS_2D_NODE)
     for (int i = 0; i < nnodes; i++) CHECK(A(i, i) > 0.0);
 
     // verify exact integration property
-    AmanziMesh::Entity_ID_List nodes;
-    mesh->cell_get_nodes(cell, &nodes);
+    auto nodes = mesh->getCellNodes(cell);
 
-    int d = mesh->space_dimension();
+    int d = mesh->getSpaceDimension();
     Point p(d);
 
     double xi, yi, xj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell);
+    double vxx = 0.0, vxy = 0.0, volume = mesh->getCellVolume(cell);
     for (int i = 0; i < nnodes; i++) {
       int v = nodes[i];
-      mesh->node_get_coordinates(v, &p);
+      p = mesh->getNodeCoordinate(v);
       xi = p[0];
       yi = p[1];
       for (int j = 0; j < nnodes; j++) {
         v = nodes[j];
-        mesh->node_get_coordinates(v, &p);
+        p = mesh->getNodeCoordinate(v);
         xj = p[0];
         vxx += A(i, j) * xi * xj;
         vxy += A(i, j) * yi * xj;
@@ -593,10 +594,12 @@ TEST(DARCY_STIFFNESS_2D_EDGE)
   auto comm = Amanzi::getCommSelf();
 #endif
 
-  MeshFactory meshfactory(comm);
+  Teuchos::RCP<Teuchos::ParameterList> factory_plist = Teuchos::rcp(new Teuchos::ParameterList());
+  factory_plist->set<bool>("request edges", true);
+  factory_plist->set<bool>("request faces", true);
+  MeshFactory meshfactory(comm, Teuchos::null, factory_plist);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1);
-  RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo", true, true);
+  RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
 
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);
@@ -617,22 +620,21 @@ TEST(DARCY_STIFFNESS_2D_EDGE)
     for (int i = 0; i < nedges; i++) CHECK(A(i, i) > 0.0);
 
     // verify exact integration property
-    AmanziMesh::Entity_ID_List edges;
-    mesh->cell_get_edges(cell, &edges);
+    auto edges = mesh->getCellEdges(cell);
 
-    int d = mesh->space_dimension();
+    int d = mesh->getSpaceDimension();
     Point p(d);
 
     double xi, yi, xj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell);
+    double vxx = 0.0, vxy = 0.0, volume = mesh->getCellVolume(cell);
     for (int i = 0; i < nedges; i++) {
       int e = edges[i];
-      const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
+      const AmanziGeometry::Point& xe = mesh->getEdgeCentroid(e);
       xi = xe[0];
       yi = xe[1];
       for (int j = 0; j < nedges; j++) {
         e = edges[j];
-        const AmanziGeometry::Point& ye = mesh->edge_centroid(e);
+        const AmanziGeometry::Point& ye = mesh->getEdgeCentroid(e);
         xj = ye[0];
         vxx += A(i, j) * xi * xj;
         vxy += A(i, j) * yi * xj;
@@ -662,8 +664,6 @@ TEST(DARCY_STIFFNESS_3D)
 
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1);
-  // RCP<Mesh> mesh = meshfactory.create("test/one_trapezoid.exo");
   RCP<Mesh> mesh = meshfactory.create("test/dodecahedron.exo");
 
   MFD3D_Diffusion mfd(mesh);
@@ -684,22 +684,21 @@ TEST(DARCY_STIFFNESS_3D)
   for (int i = 0; i < nnodes; i++) CHECK(A(i, i) > 0.0);
 
   // verify exact integration property
-  AmanziMesh::Entity_ID_List nodes;
-  mesh->cell_get_nodes(cell, &nodes);
+  auto nodes = mesh->getCellNodes(cell);
 
-  int d = mesh->space_dimension();
+  int d = mesh->getSpaceDimension();
   Point p(d);
 
   double xi, yi, xj;
-  double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell);
+  double vxx = 0.0, vxy = 0.0, volume = mesh->getCellVolume(cell);
   for (int i = 0; i < nnodes; i++) {
     int v = nodes[i];
-    mesh->node_get_coordinates(v, &p);
+    p = mesh->getNodeCoordinate(v);
     xi = p[0];
     yi = p[1];
     for (int j = 0; j < nnodes; j++) {
       v = nodes[j];
-      mesh->node_get_coordinates(v, &p);
+      p = mesh->getNodeCoordinate(v);
       xj = p[0];
       vxx += A(i, j) * xi * xj;
       vxy += A(i, j) * yi * xj;
@@ -733,17 +732,15 @@ TEST(RECOVER_GRADIENT_MIXED)
   MFD3D_Diffusion mfd(mesh);
 
   // create Darcy fluxes
-  AmanziMesh::Entity_ID_List faces;
-
   int nfaces = 6, cell = 0;
-  mesh->cell_get_faces(cell, &faces);
+  auto faces = mesh->getCellFaces(cell);
 
   Point flux(1.0, 2.0, 3.0);
   std::vector<Polynomial> solution(nfaces);
 
   for (int n = 0; n < nfaces; n++) {
     int f = faces[n];
-    const Point& normal = mesh->face_normal(f);
+    const Point& normal = mesh->getFaceNormal(f);
     solution[n].Reshape(3, 0);
     solution[n](0) = -normal * flux;
   }
@@ -785,9 +782,8 @@ TEST(RECOVER_GRADIENT_NODAL)
   MFD3D_Lagrange mfd(plist, mesh);
 
   // create pressure solution
-  AmanziMesh::Entity_ID_List nodes;
   int nnodes = 8, cell = 0;
-  mesh->cell_get_nodes(cell, &nodes);
+  auto nodes = mesh->getCellNodes(cell);
 
   Point slope(1.0, 2.0, 3.0);
   std::vector<Polynomial> solution(nnodes);
@@ -795,7 +791,7 @@ TEST(RECOVER_GRADIENT_NODAL)
 
   for (int n = 0; n < nnodes; n++) {
     int v = nodes[n];
-    mesh->node_get_coordinates(v, &xv);
+    xv = mesh->getNodeCoordinate(v);
     solution[n].Reshape(3, 0);
     solution[n](0) = slope * xv;
   }
@@ -829,14 +825,11 @@ TEST(DARCY_INVERSE_MASS_2D)
 
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1);
-  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3);
-  // RCP<Mesh> mesh = meshfactory.create("test/cube_triangulated.exo");
   RCP<Mesh> mesh = meshfactory.create("test/dodecahedron.exo");
 
   MFD3D_Diffusion mfd(mesh);
 
-  int ok, nfaces = 12, cell = 0, dim = mesh->space_dimension();
+  int ok, nfaces = 12, cell = 0, dim = mesh->getSpaceDimension();
   Tensor T(dim, 2); // tensor of rank 1
   T(0, 0) = 1.0;
   T(1, 1) = 1.0;
@@ -864,19 +857,17 @@ TEST(DARCY_INVERSE_MASS_2D)
     W.Inverse();
     T.Inverse();
 
-    AmanziMesh::Entity_ID_List faces;
-    std::vector<int> dirs;
-    mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
+    auto [faces, dirs] = mesh->getCellFacesAndDirections(cell);
 
     double xi, yi, xj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell);
+    double vxx = 0.0, vxy = 0.0, volume = mesh->getCellVolume(cell);
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
-      xi = mesh->face_normal(f)[0] * dirs[i];
-      yi = mesh->face_normal(f)[1] * dirs[i];
+      xi = mesh->getFaceNormal(f)[0] * dirs[i];
+      yi = mesh->getFaceNormal(f)[1] * dirs[i];
       for (int j = 0; j < nfaces; j++) {
         f = faces[j];
-        xj = mesh->face_normal(f)[0] * dirs[j];
+        xj = mesh->getFaceNormal(f)[0] * dirs[j];
         vxx += W(i, j) * xi * xj;
         vxy += W(i, j) * yi * xj;
       }
@@ -886,3 +877,53 @@ TEST(DARCY_INVERSE_MASS_2D)
     CHECK_CLOSE(mfd.simplex_functional(), 60.0, 1e-2);
   }
 }
+
+
+/* **************************************************************** */
+TEST(DARCY_MASS_DEGENERATE_3D)
+{
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "\n\nTest: Sequence of degenerate mass matrices" << std::endl;
+  auto comm = Amanzi::getDefaultComm();
+
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+
+  Tensor T(3, 2);
+  T(0, 0) = T(1, 1) = T(2, 2) = 1.0;
+  T(0, 1) = T(1, 0) = 0.3;
+  T(0, 2) = T(2, 0) = 0.4;
+  T(1, 2) = T(2, 1) = 0.5;
+
+  double z(0.1);
+
+  for (int loop = 0; loop < 10; ++loop) {
+    Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, z, 1, 1, 1);
+    z /= 4;
+
+    MFD3D_Diffusion mfd(mesh);
+    DenseMatrix M0, M1, M2;
+
+    mfd.MassMatrix(0, T, M0); // not used by Amanzi
+    mfd.MassMatrixInverse(0, T, M1);
+    mfd.MassMatrixInverseOptimized(0, T, M2);
+    for (int i = 0; i < 4; ++i) CHECK(M1(i, i) > 0.0 && M2(i, i) > 0.0);
+
+    // eigenvalues
+    auto e0 = EigenvaluesSVD(M0);
+    std::cout << "eig(M0): " << e0.first << " " << e0.second << " " << e0.first / e0.second << std::endl;
+
+    auto e1 = EigenvaluesSVD(M1);
+    double cond1 = e1.second / e1.first;
+    std::cout << "eig(M1): " << e1.first << " " << e1.second << " " << cond1 << std::endl;
+
+    auto e2 = EigenvaluesSVD(M2);
+    double cond2 = e2.second / e2.first;
+    std::cout << "eig(M2): " << e2.first << " " << e2.second << " " << cond2 << std::endl;
+    CHECK(cond1 / cond2 < 2.0 && cond1 / cond2 > 0.5);
+  }
+}
+

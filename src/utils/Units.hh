@@ -7,8 +7,28 @@
   Authors: Konstantin Lipnikov
 */
 
-/*
-  Utils
+/*!
+
+Amanzi's internal default units are SI units except for the concentration.
+
+Curently format of units is very rigid, we need to use multiplication and
+division operators, e.g. Pa*s and kg/s. However, this allows to mix and match,
+e.g. m/s^2 or ms^-2 or s^-2*m.
+
+* `"concentration`" [string] defines units for concentration. Available options
+  are `"molar`" (default) which is `"mol/L`" and `"SI`" which is `"mol/m^3`".
+
+.. code-block:: xml
+
+  <ParameterList>  <!-- parent list -->
+  <ParameterList name="units">
+    <Parameter name="length" type="string" value="m"/>
+    <Parameter name="time" type="string" value="s"/>
+    <Parameter name="mass" type="string" value="kg"/>
+    <Parameter name="temperature" type="string" value="K"/>
+    <Parameter name="concentration" type="string" value="molar"/>
+  </ParameterList>
+  </ParameterList>
 
 */
 
@@ -177,6 +197,8 @@ class Units {
   // -- strings
   std::string ConvertUnitS(const std::string& in_unit, const UnitsSystem& system);
   bool CompareUnits(const std::string& unit1, const std::string& unit2);
+  std::string MultiplyUnits(const std::string& unit1, const std::string& unit2);
+  std::string DivideUnits(const std::string& unit1, const std::string& unit2);
 
   // fancy output
   std::string OutputTime(double val);
@@ -245,8 +267,12 @@ class Units {
   UnitsSystem& system() { return system_; }
 
  private:
-  AtomicUnitForm ComputeAtomicUnitForm_(const std::string& unit, bool* flag);
+  AtomicUnitForm StringToAtomicUnitForm_(const std::string& unit, bool* flag);
+  std::string AtomicUnitFormToString_(const AtomicUnitForm& auf);
+
   bool CompareAtomicUnitForms_(const AtomicUnitForm& auf1, const AtomicUnitForm& auf2);
+  AtomicUnitForm MultiplyAtomicUnitForms_(const AtomicUnitForm& auf1, const AtomicUnitForm& auf2);
+  AtomicUnitForm DivideAtomicUnitForms_(const AtomicUnitForm& auf1, const AtomicUnitForm& auf2);
 
  private:
   double concentration_factor_;

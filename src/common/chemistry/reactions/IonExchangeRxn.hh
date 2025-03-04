@@ -7,10 +7,24 @@
   Authors:
 */
 
-/*
-  Chemistry
+/*!
 
-  Class for ion exchange reaction
+The `"ion exchange sites`" section is the list of ion exchange reactions.
+Each sublist is named after the exchanger site and has the following parameters:
+
+.. admonition:: ion_exchange-spec
+
+  * `"location`" ``[string]`` is the mineral name.
+  * `"charge`" ``[int]`` is the exchanger charge.
+
+.. code-block:: xml
+
+  <ParameterList name="ion exchange sites">
+    <ParameterList name="X-">
+      <Parameter name="location" type="string" value="Bulk"/>
+      <Parameter name="charge" type="int" value="-1"/>
+    </ParameterList>
+  </ParameterList>
 */
 
 #ifndef AMANZI_CHEMISTRY_IONEXCHANGERXN_HH_

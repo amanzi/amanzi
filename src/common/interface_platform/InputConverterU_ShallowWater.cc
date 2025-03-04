@@ -54,28 +54,31 @@ InputConverterU::TranslateShallowWater_(const std::string& domain)
   // process expert parameters
   bool flag;
   std::string flux("Rusanov"), weight("constant");
-  node =
-    GetUniqueElementByTagsString_("unstructured_controls, unstr_shallow_water_controls, cfl", flag);
+  std::string controls("unstructured_controls, unstr_shallow_water_controls");
+  node = GetUniqueElementByTagsString_(controls + ", cfl", flag);
   if (flag) {
     text = mm.transcode(node->getTextContent());
     cfl = strtod(text, NULL);
   }
-  node = GetUniqueElementByTagsString_(
-    "unstructured_controls, unstr_shallow_water_controls, limiter_cfl", flag);
+  node = GetUniqueElementByTagsString_(controls + ", limiter_cfl", flag);
   if (flag) {
     text = mm.transcode(node->getTextContent());
     limiter_cfl = strtod(text, NULL);
   }
 
-  node = GetUniqueElementByTagsString_(
-    "unstructured_controls, unstr_shallow_water_controls, reconstruction_weight", flag);
+  node = GetUniqueElementByTagsString_(controls + ", reconstruction_weight", flag);
   if (flag) {
     weight = GetTextContentS_(node, "constant, inverse-distance");
     std::replace(weight.begin(), weight.end(), '-', ' ');
   }
 
+  node = GetUniqueElementByTagsString_(controls + ", numerical_flux", flag);
+  if (flag) {
+    flux = GetTextContentS_(node, "Rusanov, central upwind");
+  }
+
   out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain)
-    .set<std::string>("numerical flux", pk_model_["shallow_water"])
+    .set<std::string>("numerical flux", flux)
     .set<int>("number of reduced cfl cycles", 10)
     .set<double>("cfl", cfl);
 
@@ -106,6 +109,13 @@ InputConverterU::TranslateShallowWater_(const std::string& domain)
   // boundary conditions
   out_list.sublist("boundary conditions") = TranslateShallowWaterBCs_();
 
+  // pipe extension
+  if (strcmp(pk_model_["shallow_water"].begin()->c_str(), "pipe flow") == 0) {
+    out_list.set<std::string>("domain name", "domain");
+    out_list.set<std::string>("diameter key", "diameter")
+            .set<std::string>("direction key", "direction");
+  }
+
   out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
 
   return out_list;
@@ -125,7 +135,6 @@ InputConverterU::TranslateShallowWaterBCs_()
   char* text;
   DOMNodeList* children;
   DOMNode* node;
-  DOMElement* element;
 
   // correct list of boundary conditions for given domain
   bool flag;
@@ -149,36 +158,14 @@ InputConverterU::TranslateShallowWaterBCs_()
     if (!flag) continue;
 
     // process a group of similar elements defined by the first element
-    std::string bctype;
+    std::string bctype, bcname;
     std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype, flag, true);
     if (bctype != "ponded_depth") continue;
 
-    std::map<double, double> tp_values;
-    std::map<double, std::string> tp_forms, tp_formulas;
-
-    for (int j = 0; j < same_list.size(); ++j) {
-      DOMNode* jnode = same_list[j];
-      element = static_cast<DOMElement*>(jnode);
-      double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "y");
-
-      tp_forms[t0] = GetAttributeValueS_(element, "function");
-      tp_values[t0] =
-        GetAttributeValueD_(element, "value", TYPE_NUMERICAL, 0.0, 1000.0, "m", false, 0.0);
-      tp_formulas[t0] = GetAttributeValueS_(element, "formula", TYPE_NONE, false, "");
-    }
-
     // create vectors of values and forms
-    std::vector<double> times, values;
-    std::vector<std::string> forms, formulas;
-    for (std::map<double, double>::iterator it = tp_values.begin(); it != tp_values.end(); ++it) {
-      times.push_back(it->first);
-      values.push_back(it->second);
-      forms.push_back(tp_forms[it->first]);
-      formulas.push_back(tp_formulas[it->first]);
-    }
+    auto bcs = ParseCondList_(node, 0.0, 1000.0, "m");
 
-    // create names, modify data
-    std::string bcname;
+    // .. modify data
     if (bctype == "ponded_depth") {
       bctype = "ponded depth";
       bcname = "ponded depth";
@@ -194,7 +181,7 @@ InputConverterU::TranslateShallowWaterBCs_()
         .set<std::string>("spatial distribution method", "none");
 
       Teuchos::ParameterList& bcfn = bc.sublist(bcname);
-      TranslateGenericMath_(times, values, forms, formulas, bcfn);
+      TranslateGenericMath_(bcs, bcfn);
     }
 
     // velocity FIXME

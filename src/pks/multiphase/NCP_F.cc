@@ -21,7 +21,7 @@ namespace Multiphase {
 /* ******************************************************************
 * Constructor.
 ****************************************************************** */
-NCP_F::NCP_F(Teuchos::ParameterList& plist) : MultiphaseBaseEvaluator(plist)
+NCP_F::NCP_F(Teuchos::ParameterList& plist) : MultiphaseEvaluator(plist)
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
@@ -34,7 +34,7 @@ NCP_F::NCP_F(Teuchos::ParameterList& plist) : MultiphaseBaseEvaluator(plist)
 /* ******************************************************************
 * Copy constructors.
 ****************************************************************** */
-NCP_F::NCP_F(const NCP_F& other) : MultiphaseBaseEvaluator(other){};
+NCP_F::NCP_F(const NCP_F& other) : MultiphaseEvaluator(other){};
 
 
 Teuchos::RCP<Evaluator>

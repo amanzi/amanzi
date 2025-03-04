@@ -11,7 +11,7 @@
 /*
   Operators
 
-  Upwind-based advection operator for a scalar field in fractured rock.
+  Upwind-based scalar advection operator on manifolds.
 */
 
 #ifndef AMANZI_OPERATOR_PDE_ADVECTION_UPWIND_FRACTURE_HH_
@@ -42,6 +42,9 @@ class PDE_AdvectionUpwindDFN : public PDE_AdvectionUpwind {
 
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
                               const Teuchos::Ptr<const CompositeVector>& dhdT) override;
+
+  virtual void
+  UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u, double (*)(double)) override;
 
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& h,
                           const Teuchos::Ptr<const CompositeVector>& u,

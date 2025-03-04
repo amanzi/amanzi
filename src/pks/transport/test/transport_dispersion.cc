@@ -111,18 +111,20 @@ TEST(DISPERSION)
   auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
-  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
-    const AmanziGeometry::Point& normal = mesh->face_normal(f);
+    const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
     flux[0][f] = velocity * normal;
   }
 
   auto tcc =
     S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
 
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   for (int c = 0; c < ncells_owned; c++) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
     (*tcc)[0][c] = f_step(xc, 0.0);
   }
 
@@ -136,7 +138,6 @@ TEST(DISPERSION)
   double dt0;
   dt0 = TPK.StableTimeStep(-1);
 
-  int iter = 0;
   double t_old(0.0), t_new(0.0), dt, T1(1.0);
   while (t_new < T1) {
     dt = std::min(TPK.StableTimeStep(-1), T1 - t_old);
@@ -149,7 +150,6 @@ TEST(DISPERSION)
     TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
-    iter++;
 
     TPK.VV_CheckTracerBounds(*tcc, 0, 0.0, 1.0, 1e-12);
   }
@@ -214,9 +214,10 @@ TEST(DIFFUSION)
   auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(0.5, 0.0);
-  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
-    const AmanziGeometry::Point& normal = mesh->face_normal(f);
+    const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
     flux[0][f] = velocity * normal;
   }
 
@@ -233,7 +234,6 @@ TEST(DIFFUSION)
   double dt0;
   dt0 = TPK.StableTimeStep(-1);
 
-  int iter = 0;
   double t_old(0.0), t_new(0.0), dt, T1(1.0);
   while (t_new < T1) {
     dt = std::min(TPK.StableTimeStep(-1), T1 - t_old);
@@ -246,7 +246,6 @@ TEST(DIFFUSION)
     TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
-    iter++;
 
     TPK.VV_CheckTracerBounds(*tcc, 0, 0.0, 1.0, 1e-12);
   }
@@ -317,9 +316,10 @@ TEST(GAS_DIFFUSION)
   auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(0.1, 0.0);
-  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
-    const AmanziGeometry::Point& normal = mesh->face_normal(f);
+    const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
     flux[0][f] = velocity * normal;
   }
 
@@ -336,7 +336,6 @@ TEST(GAS_DIFFUSION)
   double dt0;
   dt0 = TPK.StableTimeStep(-1);
 
-  int iter = 0;
   double t_old(0.0), t_new(0.0), dt, T1(0.99);
   while (t_new < T1) {
     dt = std::min(TPK.StableTimeStep(-1), T1 - t_old);
@@ -347,7 +346,6 @@ TEST(GAS_DIFFUSION)
     TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
-    iter++;
 
     TPK.VV_CheckTracerBounds(tcc, 0, 0.0, 1.0, 1e-12);
     TPK.VV_CheckTracerBounds(tcc, 1, 0.0, 1.0, 1e-12);
@@ -358,7 +356,8 @@ TEST(GAS_DIFFUSION)
   CHECK_CLOSE(tcc[1][218], tcc[1][222], 1e-12);
 
   // check for bounds
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   for (int c = 0; c < ncells_owned; ++c) {
     CHECK(tcc[0][c] >= 0.0 && tcc[0][c] <= 1.0);
     CHECK(tcc[1][c] >= 0.0 && tcc[1][c] <= 1.0);

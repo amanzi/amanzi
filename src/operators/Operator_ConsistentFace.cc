@@ -41,9 +41,8 @@ Operator_ConsistentFace::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
   {
     Epetra_MultiVector& Yf = *Y.ViewComponent("face", true);
 
-    AmanziMesh::Entity_ID_List faces;
     for (int c = 0; c != ncells_owned; ++c) {
-      mesh_->cell_get_faces(c, &faces);
+      auto faces = mesh_->getCellFaces(c);
       int nfaces = faces.size();
 
       WhetStone::DenseVector v(nfaces), av(nfaces);
@@ -84,9 +83,8 @@ Operator_ConsistentFace::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
   const std::vector<int>& face_col_inds = map.GhostIndices(my_block_col, "face", 0);
 
   int ierr(0);
-  AmanziMesh::Entity_ID_List faces;
   for (int c = 0; c != ncells_owned; ++c) {
-    mesh_->cell_get_faces(c, &faces);
+    auto faces = mesh_->getCellFaces(c);
     int nfaces = faces.size();
 
     for (int n = 0; n != nfaces; ++n) {
@@ -121,9 +119,8 @@ Operator_ConsistentFace::AssembleMatrixOp(const Op_Cell_FaceCell& op,
   const std::vector<int>& face_col_inds = map.GhostIndices(my_block_col, "face", 0);
 
   int ierr(0);
-  AmanziMesh::Entity_ID_List faces;
   for (int c = 0; c != ncells_owned; ++c) {
-    mesh_->cell_get_faces(c, &faces);
+    auto faces = mesh_->getCellFaces(c);
 
     int nfaces = faces.size();
     for (int n = 0; n != nfaces; ++n) {

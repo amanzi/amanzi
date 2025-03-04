@@ -1,0 +1,47 @@
+<ParameterList>
+<ParameterList name="primary species">
+  <ParameterList name="A">
+    <Parameter name="ion size parameter" type="double" value="1.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="1.0"/>
+  </ParameterList>
+  <ParameterList name="B">
+    <Parameter name="ion size parameter" type="double" value="1.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="1.0"/>
+  </ParameterList>
+  <ParameterList name="C">
+    <Parameter name="ion size parameter" type="double" value="1.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="1.0"/>
+  </ParameterList>
+</ParameterList>
+
+<ParameterList name="colloids">
+  <ParameterList name="colloid">
+    <Parameter name="gram molecular weight" type="double" value="5000.0"/>
+  </ParameterList>
+</ParameterList>
+
+<ParameterList name="isotherms">
+  <ParameterList name="A">
+    <Parameter name="model" type="string" value="linear"/>
+    <Parameter name="parameters" type="Array(double)" value="{ 250.0 }"/>
+  </ParameterList>
+  <ParameterList name="B">
+    <Parameter name="model" type="string" value="freundlich"/>
+    <Parameter name="parameters" type="Array(double)" value="{ 1.25, 0.8 }"/>
+  </ParameterList>
+  <ParameterList name="C">
+    <Parameter name="model" type="string" value="langmuir"/>
+    <Parameter name="parameters" type="Array(double)" value="{ 0.1, 30.0 }"/>
+  </ParameterList>
+</ParameterList>
+
+<ParameterList name="verbose object">
+  <Parameter name="verbosity level" type="string" value="high"/>
+  <Parameter name="hide line prefix" type="bool" value="true"/>
+  <Parameter name="output filename" type="string" value="batch_native.test"/>
+</ParameterList>
+</ParameterList>
+

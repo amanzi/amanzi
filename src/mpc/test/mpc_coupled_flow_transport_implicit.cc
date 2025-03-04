@@ -21,18 +21,19 @@
 
 // Amanzi
 #include "CycleDriver.hh"
-#include "eos_registration.hh"
-#include "mdm_transport_registration.hh"
+#include "eos_reg.hh"
+#include "evaluators_flow_reg.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
-#include "mpc_pks_registration.hh"
+#include "models_flow_reg.hh"
+#include "models_transport_reg.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
-#include "pks_flow_registration.hh"
-#include "pks_transport_registration.hh"
+#include "pks_flow_reg.hh"
+#include "pks_mpc_reg.hh"
+#include "pks_transport_reg.hh"
 #include "State.hh"
-#include "wrm_flow_registration.hh"
 
 
 void
@@ -75,7 +76,7 @@ runTest(int order)
   //create additional mesh for fracture
   std::vector<std::string> names;
   names.push_back("fracture");
-  auto mesh_fracture = factory.create(mesh, names, AmanziMesh::FACE);
+  auto mesh_fracture = factory.create(mesh, names, AmanziMesh::Entity_kind::FACE);
 
   S->RegisterMesh("fracture", mesh_fracture);
 

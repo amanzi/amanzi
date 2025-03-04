@@ -20,7 +20,7 @@
 
 #include "GMVMesh.hh"
 #include "Mesh.hh"
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 #include "OperatorDefs.hh"
 #include "State.hh"
 
@@ -84,7 +84,7 @@ Flow_PK::SeepageFacePFloTran(const CompositeVector& u, int* nseepage, double* ar
         int f = it->first;
         if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
           (*nseepage)++;
-          (*area_seepage) += mesh_->face_area(f);
+          (*area_seepage) += mesh_->getFaceArea(f);
         }
       }
     }
@@ -133,7 +133,7 @@ Flow_PK::SeepageFaceFACT(const CompositeVector& u, int* nseepage, double* area_s
           bc_value[f] = -I * ref_pressure;
           bc_mixed[f] = I; // Impedance I should be positive.
           (*nseepage)++;
-          (*area_seepage) += mesh_->face_area(f);
+          (*area_seepage) += mesh_->getFaceArea(f);
         }
       }
     }

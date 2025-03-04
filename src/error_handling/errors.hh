@@ -12,11 +12,12 @@
 
 #include "exceptions.hh"
 
-#include <sstream>
+#include <iostream>
 
 namespace Errors {
 
-class Message : public Exceptions::Amanzi_exception {
+class Message : public Exceptions::Amanzi_exception
+{
  public:
   explicit Message() : message_(){};
   explicit Message(const char* message) : message_(message){};
@@ -43,10 +44,10 @@ operator<<(Message& message, int datum);
 Message&
 operator<<(Message& message, std::size_t datum);
 
-class CutTimeStep : public Message {
+class CutTimestep : public Message {
   using Message::Message;
 };
-class TimeStepCrash : public Message {
+class TimestepCrash : public Message {
   using Message::Message;
 };
 

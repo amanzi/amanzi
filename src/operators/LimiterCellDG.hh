@@ -26,7 +26,7 @@ class LimiterCellDG : public LimiterCell {
   LimiterCellDG(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh);
   ~LimiterCellDG(){};
 
-  void ApplyLimiterDG(const AmanziMesh::Entity_ID_List& ids,
+  void ApplyLimiterDG(const AmanziMesh::Entity_ID_View& ids,
                       Teuchos::RCP<const Epetra_MultiVector> field,
                       const WhetStone::DG_Modal& dg,
                       const std::vector<int>& bc_model,
@@ -37,20 +37,20 @@ class LimiterCellDG : public LimiterCell {
                       const std::vector<int>& bc_model,
                       const std::vector<double>& bc_value)
   {
-    AmanziMesh::Entity_ID_List ids(ncells_owned_);
+    AmanziMesh::Entity_ID_View ids("ids", ncells_owned_);
     for (int c = 0; c < ncells_owned_; ++c) ids[c] = c;
     ApplyLimiterDG(ids, field, dg, bc_model, bc_value);
   }
 
  private:
   void LimiterScalarDG_(const WhetStone::DG_Modal& dg,
-                        const AmanziMesh::Entity_ID_List& ids,
+                        const AmanziMesh::Entity_ID_View& ids,
                         const std::vector<int>& bc_model,
                         const std::vector<double>& bc_value,
                         double (*)(double));
 
   void LimiterHierarchicalDG_(const WhetStone::DG_Modal& dg,
-                              const AmanziMesh::Entity_ID_List& ids,
+                              const AmanziMesh::Entity_ID_View& ids,
                               const std::vector<int>& bc_model,
                               const std::vector<double>& bc_value,
                               double (*)(double));

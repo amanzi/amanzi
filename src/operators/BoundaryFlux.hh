@@ -15,7 +15,7 @@
 #ifndef AMANZI_BOUNDARY_FLUX_FUNC
 #define AMANZI_BOUNDARY_FLUX_FUNC
 
-#include <boost/math/tools/roots.hpp>
+#include "Brent.hh"
 
 
 namespace Amanzi {
@@ -53,7 +53,7 @@ class BoundaryFluxFn {
     nonlinfunc_ = nonlinfunc;
   }
 
-  double operator()(double face_p)
+  double operator()(double face_p) const
   {
     lambda_ = face_p;
     double krel = ((*model_).*nonlinfunc_)(patm_ - lambda_);
@@ -64,7 +64,7 @@ class BoundaryFluxFn {
 
  protected:
   double trans_f_;
-  double lambda_;
+  mutable double lambda_;
   int face_index_;
   double face_Mff_;
   double cell_p_;
@@ -74,16 +74,6 @@ class BoundaryFluxFn {
   double patm_;
   Teuchos::RCP<const Model> model_;
   NonlinFunc nonlinfunc_;
-};
-
-
-/* ******************************************************************
-* Auxiliaty class for toms748: convergence criteria.
-****************************************************************** */
-struct Tol_ {
-  Tol_(double eps) : eps_(eps){};
-  bool operator()(const double& a, const double& b) const { return std::abs(a - b) <= eps_; }
-  double eps_;
 };
 
 
@@ -125,17 +115,15 @@ class BoundaryFaceSolver {
                         double min_val,
                         double max_val,
                         BoundaryFluxFn<Model>& func,
-                        Tol_& tol,
-                        boost::uintmax_t max_it,
-                        boost::uintmax_t& actual_it);
+                        int max_it,
+                        int& actual_it);
 
   double FaceValue()
   {
-    Tol_ tol(eps_);
-    boost::uintmax_t max_it = 100;
-    boost::uintmax_t actual_it(max_it);
+    int max_it = 100;
+    int actual_it(max_it);
 
-    return SolveBisection(lambda_, min_val_, max_val_, *func_, tol, max_it, actual_it);
+    return SolveBisection(lambda_, min_val_, max_val_, *func_, max_it, actual_it);
   }
 
   double lambda_;                                     // initial guess
@@ -152,9 +140,8 @@ BoundaryFaceSolver<Model>::SolveBisection(double face_val,
                                           double min_val,
                                           double max_val,
                                           BoundaryFluxFn<Model>& func,
-                                          Tol_& tol,
-                                          boost::uintmax_t max_it,
-                                          boost::uintmax_t& actual_it)
+                                          int max_it,
+                                          int& actual_it)
 {
   double res = func(face_val);
   double left(0.0), right(0.0), lres(0.0), rres(0.0);
@@ -200,16 +187,12 @@ BoundaryFaceSolver<Model>::SolveBisection(double face_val,
             << ")\n";
 #endif
 
-  if (tol(left, right)) {
+  if (std::fabs(right - left) <= eps_) {
     face_val = right;
     actual_it = 0;
   } else {
-    std::pair<double, double> result;
-    result = boost::math::tools::toms748_solve(func, left, right, lres, rres, tol, actual_it);
-    // if (actual_it >= max_it) {
-    //   std::cout << " Failed to converged in " << actual_it << " steps." << std::endl;
-    // }
-    face_val = (result.first + result.second) / 2.0;
+    actual_it = max_it;
+    face_val = Utils::findRootBrent(func, left, right, eps_, &actual_it, eps_);
   }
 
 #if DEBUG_FLAG

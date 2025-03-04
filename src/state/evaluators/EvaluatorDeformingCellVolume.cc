@@ -69,17 +69,18 @@ void
 EvaluatorDeformingCellVolume::Update_(State& S)
 {
   auto key_tag = my_keys_.front();
-  auto& cv =
-    *S.GetW<CompositeVector>(key_tag.first, key_tag.second, key_tag.first).ViewComponent("cell");
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh = S.GetMesh(domain_);
+  auto& cv = S.GetW<CompositeVector>(key_tag.first, key_tag.second, key_tag.first);
+  {
+    auto& comp = *cv.ViewComponent("cell");
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh = S.GetMesh(domain_);
 
-  // initialize from mesh
-  int ncells = cv.MyLength();
-  for (int c = 0; c != ncells; ++c) {
-    cv[0][c] = mesh->cell_volume(c);
-    if (cv[0][c] < 0.0)
-      std::cout << "NEGATIVE CELL VOLUME cell " << c << ": " << cv[0][c] << std::endl;
+    // initialize from mesh
+    for (int c = 0; c != comp.MyLength(); ++c) {
+      comp[0][c] = mesh->getCellVolume(c);
+      AMANZI_ASSERT(comp[0][c] >= 0.0);
+    }
   }
+  cv.ScatterMasterToGhosted();
 }
 
 } // namespace Amanzi

@@ -76,10 +76,11 @@ TEST(FLOW_BOUNDARY_SOLVER)
   S1->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh1));
   S2->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh2));
 
+  Teuchos::ParameterList pk_tree("flow");
   Teuchos::RCP<TreeVector> soln1 = Teuchos::rcp(new TreeVector());
-  Teuchos::RCP<Richards_PK> RPK1 = Teuchos::rcp(new Richards_PK(plist, "flow", S1, soln1));
+  Teuchos::RCP<Richards_PK> RPK1 = Teuchos::rcp(new Richards_PK(pk_tree, plist, S1, soln1));
   Teuchos::RCP<TreeVector> soln2 = Teuchos::rcp(new TreeVector());
-  Teuchos::RCP<Richards_PK> RPK2 = Teuchos::rcp(new Richards_PK(plist, "flow", S2, soln2));
+  Teuchos::RCP<Richards_PK> RPK2 = Teuchos::rcp(new Richards_PK(pk_tree, plist, S2, soln2));
 
   RPK1->Setup();
   S1->Setup();
@@ -95,23 +96,28 @@ TEST(FLOW_BOUNDARY_SOLVER)
   std::string passwd("");
   auto& K1 = *S1->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
 
-  AmanziMesh::Entity_ID_List block;
-  mesh1->get_set_entities("All", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
-  for (int i = 0; i != block.size(); ++i) {
-    int c = block[i];
-    K1[0][c] = 1e-9;
-    K1[1][c] = 1e-9;
-    K1[2][c] = 1e-9;
+  {
+    auto block =
+      mesh1->getSetEntities("All", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+    for (int i = 0; i != block.size(); ++i) {
+      int c = block[i];
+      K1[0][c] = 1e-9;
+      K1[1][c] = 1e-9;
+      K1[2][c] = 1e-9;
+    }
   }
   S1->GetRecordW("permeability", "permeability").set_initialized();
 
   auto& K2 = *S2->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
-  mesh2->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
-  for (int i = 0; i != block.size(); ++i) {
-    int c = block[i];
-    K2[0][c] = 1e-9;
-    K2[1][c] = 1e-9;
-    K2[2][c] = 1e-9;
+  {
+    auto block = mesh2->getSetEntities(
+      "Material 1", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+    for (int i = 0; i != block.size(); ++i) {
+      int c = block[i];
+      K2[0][c] = 1e-9;
+      K2[1][c] = 1e-9;
+      K2[2][c] = 1e-9;
+    }
   }
   S2->GetRecordW("permeability", "permeability").set_initialized();
 
@@ -128,7 +134,7 @@ TEST(FLOW_BOUNDARY_SOLVER)
   auto& p2 = *S2->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
 
   for (int c = 0; c < p1.MyLength(); c++) {
-    const Point& xc = mesh1->cell_centroid(c);
+    const Point& xc = mesh1->getCellCentroid(c);
     p1[0][c] = 0.6 * atm_pressure + rho * gravity1[1] * (xc[1] - bottom);
     p2[0][c] = 0.6 * atm_pressure + rho * gravity2[1] * (xc[1] - bottom);
   }
@@ -146,12 +152,12 @@ TEST(FLOW_BOUNDARY_SOLVER)
 
   std::cout << "MESH1\n";
 
-  int nfaces = mesh1->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces =
+    mesh1->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f < nfaces; f++) {
-    AmanziMesh::Entity_ID_List cells;
-    mesh1->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    auto cells = mesh1->getFaceCells(f);
     int dir;
-    const Point& norm = mesh1->face_normal(f, false, cells[0], &dir);
+    const Point& norm = mesh1->getFaceNormal(f, cells[0], &dir);
     if ((cells.size() == 1) && (norm[2] * dir > 0)) {
       bnd_val1 = RPK1->BoundaryFaceValue(f, S1->GetW<CompositeVector>("pressure", passwd));
       std::cout << ": " << f << " " << bnd_val1 << "\n";
@@ -160,12 +166,11 @@ TEST(FLOW_BOUNDARY_SOLVER)
 
   std::cout << "MESH2\n";
 
-  nfaces = mesh2->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  nfaces = mesh2->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f < nfaces; f++) {
-    AmanziMesh::Entity_ID_List cells;
-    mesh2->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    auto cells = mesh2->getFaceCells(f);
     int dir;
-    const Point& norm = mesh2->face_normal(f, false, cells[0], &dir);
+    const Point& norm = mesh2->getFaceNormal(f, cells[0], &dir);
     if ((cells.size() == 1) && (norm[2] * dir > 0)) {
       bnd_val2 = RPK2->BoundaryFaceValue(f, S2->GetW<CompositeVector>("pressure", passwd));
       std::cout << ": " << f << " " << bnd_val2 << "\n";

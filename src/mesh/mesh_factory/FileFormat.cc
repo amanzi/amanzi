@@ -8,13 +8,10 @@
 */
 
 //! Utility functions for working with various file formats and names.
-#include <regex>
+#include <filesystem>
 #include <fstream>
-
-#define BOOST_FILESYSTEM_NO_DEPRECATED
-#include "boost/filesystem.hpp"
-#include "boost/format.hpp"
-namespace bfs = boost::filesystem;
+#include <regex>
+#include <sstream>
 
 #include "FileFormat.hh"
 #include "MeshException.hh"
@@ -95,14 +92,17 @@ fileFormatFromFilename(const Comm_type& comm, std::string fname)
   } else if (std::regex_match(fname, NemesisExt)) {
     result = FileFormat::NEMESIS;
     int ndigits = (int)floor(log10(np)) + 1;
-    std::string fmt = boost::str(boost::format("%%s.%%d.%%0%dd") % ndigits);
-    fname = boost::str(boost::format(fmt) % fname % np % me);
+
+    std::stringstream ss;
+    ss << fname << "." << std::to_string(np) << "." << std::setw(ndigits) << std::setfill('0')
+       << me;
+    fname = ss.str();
   }
 
   // check to see if there is actually a file first
   FileMessage e(fname.c_str());
-  bfs::path p(fname);
-  if (!bfs::exists(p)) {
+  std::filesystem::path p(fname);
+  if (!std::filesystem::exists(p)) {
     e.add_data(": path not found");
     amanzi_throw(e);
   }

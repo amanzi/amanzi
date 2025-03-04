@@ -31,7 +31,7 @@ class Operator_Node : public Operator {
     : Operator(cvs, plist, OPERATOR_SCHEMA_DOFS_NODE)
   {
     set_schema_string("NODE");
-    cell_max_nodes = mesh_->cell_get_max_nodes();
+    cell_max_nodes = mesh_->getCellMaxNodes();
   }
 
   // copy constructor

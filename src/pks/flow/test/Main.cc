@@ -7,13 +7,14 @@
   Authors:
 */
 
-#include <UnitTest++.h>
-
 #include "Teuchos_GlobalMPISession.hpp"
+#include "UnitTest++.h"
 
-#include "VerboseObject_objs.hh"
 #include "state_evaluators_registration.hh"
-#include "wrm_flow_registration.hh"
+#include "VerboseObject_objs.hh"
+
+#include "evaluators_flow_reg.hh"
+#include "models_flow_reg.hh"
 
 // a fake model for testing
 #include "WRM_fake.hh"
@@ -21,7 +22,7 @@
 namespace Amanzi {
 namespace Flow {
 
-Utils::RegisteredFactory<WRM, WRM_fake> WRM_fake::factory_("fake");
+Utils::RegisteredFactory<WRM, WRM_fake> WRM_fake::reg_("fake");
 
 } // namespace Flow
 } // namespace Amanzi
@@ -32,7 +33,9 @@ main(int argc, char* argv[])
   int res = 0;
   {
     Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+    Kokkos::initialize();
     res = UnitTest::RunAllTests();
+    Kokkos::finalize();
   }
   return res;
 }

@@ -11,20 +11,32 @@
 
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "eos_registration.hh"
-#include "energy_iem_registration.hh"
-#include "energy_tcm_registration.hh"
-#include "multiphase_evaluators_registration.hh"
-#include "pks_multiphase_registration.hh"
+#include "eos_reg.hh"
+#include "evaluators_multiphase_reg.hh"
+#include "models_energy_reg.hh"
+#include "models_multiphase_reg.hh"
+#include "pks_multiphase_reg.hh"
 #include "state_evaluators_registration.hh"
-#include "wrmmp_registration.hh"
 
 #include "VerboseObject_objs.hh"
+
+// a custom model for testing
+#include "WRMmp_Custom.hh"
+
+namespace Amanzi {
+namespace Multiphase {
+
+Utils::RegisteredFactory<WRMmp, WRMmp_Custom> WRMmp_Custom::reg_("Custom");
+
+} // namespace Multiphase
+} // namespace Amanzi
 
 int
 main(int argc, char* argv[])
 {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
-  return UnitTest::RunAllTests();
+  Kokkos::initialize();
+  int status = UnitTest::RunAllTests();
+  Kokkos::finalize();
+  return status;
 }

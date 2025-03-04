@@ -7,8 +7,51 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-/*
-  Navier Stokes PK
+/*!
+
+The conceptual PDE model for the incompressible Navier Stokes equations are
+
+.. math::
+  \frac{\partial (\rho \boldsymbol{u})}{\partial t}
+  + \boldsymbol{\nabla} \cdot (\rho \boldsymbol{u} \otimes \boldsymbol{u})
+  =
+  - \boldsymbol{\nabla} p
+  + \boldsymbol{\nabla} \cdot \boldsymbol{\sigma}
+  + \rho \boldsymbol{g}
+
+where
+:math:`\rho` is the fluid density [kg/m^3],
+:math:`p` is the pressure [Pa],
+:math:`\boldsymbol{\sigma}` is the deviatoric stress tensor,
+:math:`\boldsymbol{g}` is the gravity vector [:math:`m/s^2`],
+and :math:`u \otimes v = u \times v^T`.
+The Stokes stress contitutive law for incompressible viscous fluid is
+
+.. math::
+  \boldsymbol{\sigma} =
+  \mu \left(\boldsymbol{\nabla} \boldsymbol{u} +
+            \boldsymbol{\nabla} \boldsymbol{u}^{T}\right),
+
+where
+:math:`\mu` is the dynamic viscosity [:math:`Pa \cdot s`]. It can depend on density and pressure.
+
+
+Physical models and assumptions
+...............................
+This list is used to summarize physical models and assumptions, such as
+coupling with other PKs.
+This list is often generated on a fly by a high-level MPC PK.
+
+* `"gravity`" [bool] is set up automatically by a high-level PK.
+  The default value is `"false`".
+
+.. code-block:: xml
+
+  <ParameterList name="_NAVIER_STOKES">  <!-- parent list -->
+  <ParameterList name="physical models and assumptions">
+    <Parameter name="gravity" type="bool" value="false"/>
+  </ParameterList>
+  </ParameterList>
 
 */
 
@@ -59,6 +102,7 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   ~NavierStokes_PK(){};
 
   // methods required for PK interface
+  virtual void parseParameterList() final {};
   virtual void Setup() final;
   virtual void Initialize() final;
 
@@ -79,7 +123,7 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   // -- computes the non-linear functional f = f(t,u,udot) and related norm.
   void FunctionalResidual(const double t_old,
                           double t_new,
-                          Teuchos::RCP<TreeVector> u_old,
+                          Teuchos::RCP<const TreeVector> u_old,
                           Teuchos::RCP<TreeVector> u_new,
                           Teuchos::RCP<TreeVector> f);
   double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du);
@@ -95,7 +139,7 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   // -- possibly modifies the predictor that is going to be used as a
   //    starting value for the nonlinear solve in the time integrator,
   //    the time integrator will pass the predictor that is computed
-  //    using extrapolation and the time step that is used to compute
+  //    using extrapolation and the timestep that is used to compute
   //    this predictor this function returns true if the predictor was
   //    modified, false if not
   bool ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u)

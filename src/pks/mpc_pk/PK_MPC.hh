@@ -9,7 +9,7 @@
 */
 
 /*
-  This is the mpc_pk component of the Amanzi code.
+  MPC PK
 
   Interface for the Base MPC class.  A multi process coordinator (MPC)
   is a PK which coordinates other PKs.  Each of these coordinated PKs
@@ -53,6 +53,7 @@ class PK_MPC : virtual public PK {
 
   // PK methods
   // -- sets up sub-PKs
+  virtual void parseParameterList();
   virtual void Setup();
 
   // -- calls all sub-PK initialize() methods
@@ -141,6 +142,19 @@ PK_MPC<PK_Base>::PK_MPC(Teuchos::ParameterList& pk_tree,
     Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(pk_name[i], pk_tree, global_list, S, pk_soln);
     Teuchos::RCP<PK_Base> pk = Teuchos::rcp_dynamic_cast<PK_Base>(pk_notype);
     sub_pks_.push_back(pk);
+  }
+}
+
+
+// -----------------------------------------------------------------------------
+// Setup of PK hierarchy from PList
+// -----------------------------------------------------------------------------
+template <class PK_Base>
+void
+PK_MPC<PK_Base>::parseParameterList()
+{
+  for (typename SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
+    (*pk)->parseParameterList();
   }
 }
 

@@ -28,14 +28,14 @@
   class DerivedPK : public Amanzi::PK {
     ...
    private:
-    static Amanzi::RegisteredPKFactory<DerivedPK> factory_;
+    static Amanzi::RegisteredPKFactory<DerivedPK> reg_;
     ...
   };
 
   // pk_implementation_reg.hh
   #include "pk_implementation.hh"
   template<>
-  Amanzi::RegisteredPKFactory<DerivedPK> DerivedPK::factory_("pk unique id");
+  Amanzi::RegisteredPKFactory<DerivedPK> DerivedPK::reg_("pk unique id");
 
 
   ETC: this was somewhat a poor interface decision.  The pk_tree list should

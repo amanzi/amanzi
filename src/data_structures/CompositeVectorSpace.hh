@@ -60,7 +60,7 @@ class CompositeVectorSpace {
   // -------------------------------------
 
   // CompositeVectors exist on a single communicator.
-  Comm_ptr_type Comm() const { return mesh_->get_comm(); }
+  Comm_ptr_type Comm() const { return mesh_->getComm(); }
 
   // mesh specification
   Teuchos::RCP<const AmanziMesh::Mesh> Mesh() const { return mesh_; }
@@ -84,6 +84,10 @@ class CompositeVectorSpace {
   bool HasComponent(const std::string& name) const
   {
     return indexmap_.find(name) != indexmap_.end();
+  }
+  bool HasImportedComponent(const std::string& name) const
+  {
+    return HasComponent(name) || (name == "boundary_face" && HasComponent("face"));
   }
   int NumComponents() const { return size(); }
 
@@ -156,7 +160,8 @@ class CompositeVectorSpace {
   {
     for (int i = 0; i != names_.size(); ++i) {
       os << "comp=" << names_[i] << " location=" << locations_[i] << " dofs=" << num_dofs_[i]
-         << std::endl;
+         << " size=" << mastermaps_.at(names_[i])->NumMyElements()
+         << " points=" << mastermaps_.at(names_[i])->NumMyPoints() << std::endl;
     }
   }
 

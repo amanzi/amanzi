@@ -23,7 +23,7 @@ namespace Transport {
 void
 TransportImplicit_PK::FunctionalResidual(double t_old,
                                          double t_new,
-                                         Teuchos::RCP<TreeVector> u_old,
+                                         Teuchos::RCP<const TreeVector> u_old,
                                          Teuchos::RCP<TreeVector> u_new,
                                          Teuchos::RCP<TreeVector> f)
 {
@@ -50,7 +50,7 @@ TransportImplicit_PK::FunctionalResidual(double t_old,
   if (use_dispersion_) {
     int phase;
     double md;
-    CalculateDispersionTensor_(*transport_phi, *wc_c);
+    CalculateDispersionTensor_(t_old + dtp / 2, *transport_phi, *wc_c);
     FindDiffusionValue(component_names_[current_component_], &md, &phase);
     if (md != 0.0) CalculateDiffusionTensor_(md, phase, *transport_phi, sat_c, *wc_c);
 
@@ -65,7 +65,7 @@ TransportImplicit_PK::FunctionalResidual(double t_old,
 
   // storage term
   for (int c = 0; c < ncells_owned; ++c) {
-    double factor = mesh_->cell_volume(c) / dtp;
+    double factor = mesh_->getCellVolume(c) / dtp;
     f_c[0][c] += ((*wc_c)[0][c] * unew_c[0][c] - (*wcprev_c)[0][c] * uold_c[0][c]) * factor;
   }
 }

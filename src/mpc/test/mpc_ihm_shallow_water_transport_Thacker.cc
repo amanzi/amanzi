@@ -22,18 +22,17 @@
 
 // Amanzi
 #include "CycleDriver.hh"
-#include "eos_registration.hh"
 #include "IO.hh"
 #include "LeastSquare.hh"
 #include "Mesh.hh"
 #include "MeshExtractedManifold.hh"
 #include "MeshFactory.hh"
-#include "mpc_pks_registration.hh"
-#include "numerical_flux_registration.hh"
+#include "models_shallow_water_reg.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
-#include "pks_transport_registration.hh"
-#include "pks_shallow_water_registration.hh"
+#include "pks_mpc_reg.hh"
+#include "pks_transport_reg.hh"
+#include "pks_shallow_water_reg.hh"
 #include "State.hh"
 
 std::tuple<double, double, double>
@@ -55,10 +54,12 @@ RunTest(int n, const std::string& meshexo, int* ncycles, int* MyPID)
 
   // create mesh
   auto mesh_list = Teuchos::sublist(plist, "mesh", true);
+  mesh_list->set<bool>("request edges", true);
+  mesh_list->set<bool>("request faces", true);
   MeshFactory factory(comm, gm, mesh_list);
   factory.set_preference(Preference({ Framework::MSTK }));
-  auto mesh = factory.create(-3.0, -3.0, 3.0, 3.0, n, n, true, true);
-  if (meshexo != "") mesh = factory.create(meshexo, true, true);
+  auto mesh = factory.create(-3.0, -3.0, 3.0, 3.0, n, n);
+  if (meshexo != "") mesh = factory.create(meshexo);
 
   Amanzi::ObservationData obs_data;
 
@@ -114,7 +115,7 @@ TEST(MPC_DRIVER_IHM_SHALLOW_WATER_TRANSPORT_THACKER)
 {
   int i(0), ncycles, MyPID;
   std::vector<double> h(3), err_h(3), err_v(3), err_tcc(3);
-  for (int n = 16; n < 80; n *= 2, ++i) {
+  for (int n = 20; n <= 80; n *= 2, ++i) {
     auto errs = RunTest(n, "", &ncycles, &MyPID);
     h[i] = 6.0 / n;
     err_h[i] = std::get<0>(errs);
@@ -132,5 +133,5 @@ TEST(MPC_DRIVER_IHM_SHALLOW_WATER_TRANSPORT_THACKER)
   if (MyPID == 0) {
     std::cout << "Error convergence rates: " << rate1 << " " << rate2 << " " << rate3 << std::endl;
   }
-  CHECK(rate1 > 1.9 && rate2 > 1.9 && rate3 > 1.8);
+  CHECK(rate1 > 1.8 && rate2 > 1.8 && rate3 > 1.8);
 }

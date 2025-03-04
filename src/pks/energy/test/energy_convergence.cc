@@ -136,14 +136,15 @@ TEST(ENERGY_CONVERGENCE)
     Teuchos::ParameterList ev_list;
     ev_list.set<std::string>("enthalpy key", "enthalpy")
       .set<bool>("include work term", false)
+      .set<double>("liquid molar mass", 0.018015)
       .set<std::string>("tag", "");
     ev_list.setName("enthalpy");
 
     S->Require<CompositeVector, CompositeVectorSpace>("enthalpy", Tags::DEFAULT, "enthalpy")
       .SetMesh(mesh)
       ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
 
     S->RequireDerivative<CompositeVector, CompositeVectorSpace>(
        "enthalpy", Tags::DEFAULT, "temperature", Tags::DEFAULT, "enthalpy")
@@ -160,7 +161,7 @@ TEST(ENERGY_CONVERGENCE)
     EPK->Initialize();
     S->CheckAllFieldsInitialized();
 
-    // constant time stepping
+    // constant timestepping
     std::string passwd("");
     int itrs(0);
     double t(0.0), t1(0.5), dt_next;
@@ -177,7 +178,7 @@ TEST(ENERGY_CONVERGENCE)
         EPK->UpdatePreconditioner(t, soln, dt);
       }
 
-      bool failed = EPK->bdf1_dae()->TimeStep(dt, dt_next, soln);
+      bool failed = EPK->bdf1_dae()->AdvanceStep(dt, dt_next, soln);
       CHECK(!failed);
       CHECK(dt_next >= dt);
       EPK->bdf1_dae()->CommitSolution(dt, soln);
@@ -251,21 +252,21 @@ TEST(ENERGY_PRECONDITIONER)
 
     Teuchos::ParameterList pk_tree = plist->sublist("PKs").sublist("energy");
     Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-    Teuchos::RCP<EnergyOnePhase_PK> EPK =
-      Teuchos::rcp(new EnergyOnePhase_PK(pk_tree, plist, S, soln));
+    auto EPK = Teuchos::rcp(new EnergyOnePhase_PK(pk_tree, plist, S, soln));
 
     // overwrite enthalpy with a different model
     Teuchos::ParameterList ev_list;
     ev_list.set<std::string>("enthalpy key", "enthalpy")
       .set<bool>("include work term", false)
+      .set<double>("liquid molar mass", 0.018015)
       .set<std::string>("tag", "");
     ev_list.setName("enthalpy");
 
     S->Require<CompositeVector, CompositeVectorSpace>("enthalpy", Tags::DEFAULT, "enthalpy")
       .SetMesh(mesh)
       ->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
 
     S->RequireDerivative<CompositeVector, CompositeVectorSpace>(
        "enthalpy", Tags::DEFAULT, "temperature", Tags::DEFAULT, "enthalpy")
@@ -282,7 +283,7 @@ TEST(ENERGY_PRECONDITIONER)
     EPK->Initialize();
     S->CheckAllFieldsInitialized();
 
-    // constant time stepping
+    // constant timestepping
     std::string passwd("");
     int itrs(0);
     double t(0.0), t1(0.5), dt(0.02), dt_next;
@@ -299,7 +300,7 @@ TEST(ENERGY_PRECONDITIONER)
         EPK->UpdatePreconditioner(t, soln, dt);
       }
 
-      EPK->bdf1_dae()->TimeStep(dt, dt_next, soln);
+      EPK->bdf1_dae()->AdvanceStep(dt, dt_next, soln);
       CHECK(dt_next >= dt);
       EPK->bdf1_dae()->CommitSolution(dt, soln);
       Teuchos::rcp_static_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>(

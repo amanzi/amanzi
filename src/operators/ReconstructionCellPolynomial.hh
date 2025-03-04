@@ -10,7 +10,7 @@
 /*
   Operators
 
-  Polynomials conservative reconstrution on cell data.
+  Polynomial conservative reconstrution on cell data.
   Due to conservation, only slope data have to be stored.
 */
 
@@ -51,14 +51,15 @@ class ReconstructionCellPolynomial : public Reconstruction {
                        int component = 0,
                        const Teuchos::RCP<const BCs>& bc = Teuchos::null) override
   {
-    int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-    AmanziMesh::Entity_ID_List ids(ncells_wghost);
+    int ncells_wghost =
+      mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+    AmanziMesh::Entity_ID_View ids("ids", ncells_wghost);
     for (int c = 0; c < ncells_wghost; ++c) ids[c] = c;
     Compute(ids, field, component, bc);
   }
 
   // -- calculate value, deviation from mean, and full polynomial
-  virtual double getValue(int c, const AmanziGeometry::Point& p) override;
+  virtual double getValue(int c, const AmanziGeometry::Point& p) const override;
   virtual double getValueSlope(int c, const AmanziGeometry::Point& p) override;
   virtual WhetStone::Polynomial getPolynomial(int c) const override;
 
@@ -66,10 +67,20 @@ class ReconstructionCellPolynomial : public Reconstruction {
   virtual Teuchos::RCP<CompositeVector> data() override { return poly_; }
 
   // compute gradient only in specified cells
-  void Compute(const AmanziMesh::Entity_ID_List& ids,
+  // -- NOTE: algorithm uses data in the neighbooring cells
+  void Compute(const AmanziMesh::Entity_ID_View& ids,
                const Teuchos::RCP<const Epetra_MultiVector>& field,
                int component,
                const Teuchos::RCP<const BCs>& bc = Teuchos::null);
+
+  // A map (a rectangular matrix) from data, cell and boundary, to polynomial
+  // coefficients.
+  void ComputeReconstructionMap(int c,
+                                const Teuchos::RCP<const BCs>& bc,
+                                WhetStone::DenseMatrix& R,
+                                AmanziMesh::Entity_ID_List& ids_c,
+                                AmanziMesh::Entity_ID_List& ids_f,
+                                int basis = WhetStone::TAYLOR_BASIS_NATURAL);
 
  private:
   void PopulateLeastSquareSystem_(WhetStone::DenseVector& coef,
@@ -79,9 +90,10 @@ class ReconstructionCellPolynomial : public Reconstruction {
 
   // On intersecting manifolds, we extract neighboors living in the same manifold
   // using a smoothness criterion.
-  void CellAllAdjCells_(AmanziMesh::Entity_ID c,
-                        AmanziMesh::Parallel_type ptype,
-                        std::set<AmanziMesh::Entity_ID>& cells) const;
+  void CellAllAdjCells_(AmanziMesh::Entity_ID c, std::set<AmanziMesh::Entity_ID>& cells) const;
+
+  void
+  CellAdjCellsTwoLevels_(AmanziMesh::Entity_ID c, std::set<AmanziMesh::Entity_ID>& cells) const;
 
   void CellAllAdjFaces_(AmanziMesh::Entity_ID c,
                         const std::set<AmanziMesh::Entity_ID>& cells,

@@ -62,7 +62,7 @@ Operator_FaceCellScc::ApplyInverse(const CompositeVector& X, CompositeVector& Y)
     if ((*it)->schema_old() ==
         (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
       for (int c = 0; c != ncells_owned; c++) {
-        const auto& faces = mesh_->cell_get_faces(c);
+        const auto& faces = mesh_->getCellFaces(c);
         int nfaces = faces.size();
 
         WhetStone::DenseMatrix& Acell = (*it)->matrices[c];
@@ -84,7 +84,7 @@ Operator_FaceCellScc::ApplyInverse(const CompositeVector& X, CompositeVector& Y)
     if ((*it)->schema_old() ==
         (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
       for (int c = 0; c < ncells_owned; c++) {
-        const auto& faces = mesh_->cell_get_faces(c);
+        const auto& faces = mesh_->getCellFaces(c);
         int nfaces = faces.size();
 
         WhetStone::DenseMatrix& Acell = (*it)->matrices[c];
@@ -112,7 +112,7 @@ Operator_FaceCellScc::ApplyInverse(const CompositeVector& X, CompositeVector& Y)
       if ((*it)->schema_old() ==
           (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
         for (int c = 0; c < ncells_owned; c++) {
-          const auto& faces = mesh_->cell_get_faces(c);
+          const auto& faces = mesh_->getCellFaces(c);
           int nfaces = faces.size();
 
           WhetStone::DenseMatrix& Acell = (*it)->matrices[c];
@@ -170,20 +170,19 @@ Operator_FaceCellScc::AssembleMatrix(const SuperMap& map,
       if (diag_ops_.size() > i_schur) {
         // get existing
         diag_op = diag_ops_[i_schur];
-        schur_ops_[i_schur];
+        schur_op = schur_ops_[i_schur];
       } else {
         // create and fill
         AMANZI_ASSERT(i_schur == diag_ops_.size());
         std::string name = "Scc alt as CELL_CELL";
-        diag_op = Teuchos::rcp(new Op_Cell_Cell(name, mesh_));
+        diag_op = Teuchos::rcp(new Op_Cell_Cell(name, mesh_, 1));
         diag_ops_.push_back(diag_op);
 
         name = "Scc alt as FACE_CELL";
         schur_op = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
         schur_ops_.push_back(schur_op);
-        AmanziMesh::Entity_ID_List cells;
         for (int f = 0; f != nfaces_owned; ++f) {
-          mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+          auto cells = mesh_->getFaceCells(f);
           int ncells = cells.size();
           schur_op->matrices[f] = WhetStone::DenseMatrix(ncells, ncells);
         }
@@ -202,28 +201,26 @@ Operator_FaceCellScc::AssembleMatrix(const SuperMap& map,
 
       // populate the schur component
       // -- populate coefficients that form the transmissibilities
-      const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
+      const Epetra_Map& cmap_wghost = mesh_->getMap(AmanziMesh::Entity_kind::CELL, true);
 
       CompositeVectorSpace cv_space;
       cv_space.SetMesh(mesh_);
       cv_space.SetGhosted(true);
-      cv_space.SetComponent("face", AmanziMesh::FACE, 2);
+      cv_space.SetComponent("face", AmanziMesh::Entity_kind::FACE, 2);
 
       CompositeVector T(cv_space, true);
       Epetra_MultiVector& Ttmp = *T.ViewComponent("face", true);
 
-      AmanziMesh::Entity_ID_List cells;
-
       Ttmp.PutScalar(0.0);
       for (int c = 0; c < ncells_owned; c++) {
-        const auto& faces = mesh_->cell_get_faces(c);
+        const auto& faces = mesh_->getCellFaces(c);
         int nfaces = faces.size();
 
         int c0 = cmap_wghost.GID(c);
         WhetStone::DenseMatrix& Acell = (*it)->matrices[c];
         for (int n = 0; n < nfaces; n++) {
           int f = faces[n];
-          mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+          auto cells = mesh_->getFaceCells(f);
 
           if (cells.size() == 1) {
             Ttmp[0][f] = Acell(n, nfaces);
@@ -246,7 +243,7 @@ Operator_FaceCellScc::AssembleMatrix(const SuperMap& map,
       for (int f = 0; f < nfaces_owned; f++) {
         WhetStone::DenseMatrix& mat = mats[f];
 
-        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+        auto cells = mesh_->getFaceCells(f);
         int ncells = cells.size();
 
         for (int n = 0; n != ncells; ++n) { gid[n] = cmap_wghost.GID(cells[n]); }
@@ -302,7 +299,7 @@ Operator_FaceCellScc::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
     Epetra_MultiVector& Yc = *Y.ViewComponent("cell");
 
     for (int c = 0; c != ncells_owned; ++c) {
-      const auto& faces = mesh_->cell_get_faces(c);
+      const auto& faces = mesh_->getCellFaces(c);
       int nfaces = faces.size();
 
       WhetStone::DenseVector v(nfaces + 1), av(nfaces + 1);
@@ -328,7 +325,7 @@ Operator_FaceCellScc::SymbolicAssembleMatrix()
 {
   // SuperMap for Sff is face only
   CompositeVectorSpace smap_space;
-  smap_space.SetMesh(mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
+  smap_space.SetMesh(mesh_)->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   smap_ = createSuperMap(smap_space);
 
   // create the graph
@@ -362,7 +359,7 @@ Operator_FaceCellScc::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
   Operator_Cell::SymbolicAssembleMatrixOp(schur_op, map, graph, my_block_row, my_block_col);
 
   name = "Scc alt as CELL_CELL";
-  Op_Cell_Cell diag_op(name, mesh_);
+  Op_Cell_Cell diag_op(name, mesh_, 1);
   Operator_Cell::SymbolicAssembleMatrixOp(diag_op, map, graph, my_block_row, my_block_col);
 }
 

@@ -28,6 +28,21 @@
       - `"absolute residual`" : measure error directly, norm of error
       - `"make one iteration`" : require at least one iteration to be performed before declaring success
 
+.. code-block:: xml
+
+  <ParameterList name="_PCG with HYPRE AMG">  <!-- parent list -->
+  <ParameterList name="pcg parameters">
+    <Parameter name="error tolerance" type="double" value="1e-12"/>
+    <Parameter name="maximum number of iterations" type="int" value="400"/>
+    <Parameter name="convergence criteria" type="Array(string)" value="{relative residual,make one iteration}"/>
+    <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
+
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
+
 */
 
 #ifndef AMANZI_PCG_OPERATOR_HH_

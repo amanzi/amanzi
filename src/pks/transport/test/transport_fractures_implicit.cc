@@ -68,19 +68,22 @@ runTest(int order, const std::string& linsolver)
 
   // create meshes
   MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<const Mesh> mesh3D = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
 
   std::vector<std::string> setnames;
   setnames.push_back("fracture 1");
   setnames.push_back("fracture 2");
 
-  // RCP<const Mesh> mesh = meshfactory.create(mesh3D, setnames, AmanziMesh::FACE);
+  // RCP<const Mesh> mesh = meshfactory.create(mesh3D, setnames, AmanziMesh::Entity_kind::FACE);
   RCP<const Mesh> mesh = meshfactory.create("test/fractures.exo");
 
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_wghost =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+  int nfaces_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   std::cout << "pid=" << comm->MyPID() << " cells: " << ncells_owned << " faces: " << nfaces_owned
             << std::endl;
 
@@ -123,7 +126,7 @@ runTest(int order, const std::string& linsolver)
   velocity /= 4e+5;
 
   for (int c = 0; c < ncells_wghost; c++) {
-    const auto& faces = mesh->cell_get_faces(c);
+    const auto& faces = mesh->getCellFaces(c);
     int nfaces = faces.size();
 
     for (int n = 0; n < nfaces; ++n) {
@@ -132,7 +135,7 @@ runTest(int order, const std::string& linsolver)
       int ndofs = flux_map->ElementSize(f);
       if (ndofs > 1) g += Operators::UniqueIndexFaceToCells(*mesh, f, c);
 
-      const AmanziGeometry::Point& normal = mesh->face_normal(f, false, c, &dir);
+      const AmanziGeometry::Point& normal = mesh->getFaceNormal(f, c, &dir);
       flux[0][g] = (velocity * normal) * dir;
     }
   }
@@ -164,14 +167,14 @@ runTest(int order, const std::string& linsolver)
 
     if (iter % 2 == 0) {
       io.InitializeCycle(t_new, iter, "");
-      io.WriteVector(*tcc(0), "tcc", AmanziMesh::CELL);
+      io.WriteVector(*tcc(0), "tcc", AmanziMesh::Entity_kind::CELL);
       io.FinalizeCycle();
     }
   }
 
   // test the maximum principle
-  AmanziMesh::Entity_ID_List block;
-  mesh->get_set_entities("fracture 2", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
+  auto block = mesh->getSetEntities(
+    "fracture 2", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   // test that solute enter the second fracture
   double tcc_max(0.0);
@@ -180,7 +183,7 @@ runTest(int order, const std::string& linsolver)
     // std::cout << n << " " << tcc[0][block[n]] << " " << tcc_max << std::endl;
   }
   double tmp = tcc_max;
-  mesh->get_comm()->MaxAll(&tmp, &tcc_max, 1);
+  mesh->getComm()->MaxAll(&tmp, &tcc_max, 1);
   CHECK(tcc_max > 0.25);
 
   WriteStateStatistics(*S);

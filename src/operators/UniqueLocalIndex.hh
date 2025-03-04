@@ -27,9 +27,15 @@
 namespace Amanzi {
 namespace Operators {
 
-// unique index for array returned by face_get_cells
+// unique local index in array returned by getXxxxCells
 int
 UniqueIndexFaceToCells(const AmanziMesh::Mesh& mesh, int f, int c);
+
+std::vector<int>
+UniqueIndexNodeToCells(const AmanziMesh::Mesh& mesh,
+                       const std::set<int>& faces_int,
+                       int vm,
+                       int cm);
 
 } // namespace Operators
 } // namespace Amanzi

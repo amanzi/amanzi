@@ -67,7 +67,6 @@ class Upwind {
   // -- upwind of a given cell-centered field on mesh faces
   // -- not all input parameters are use by some algorithms
   virtual void Compute(const CompositeVector& flux,
-                       const CompositeVector& solution,
                        const std::vector<int>& bc_model,
                        CompositeVector& field) = 0;
 
@@ -78,8 +77,8 @@ class Upwind {
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)
       ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->AddComponent("face", AmanziMesh::FACE, 1);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
     return cvs;
   }
 

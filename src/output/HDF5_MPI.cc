@@ -25,10 +25,10 @@ namespace Amanzi {
 
 HDF5_MPI::HDF5_MPI(const Comm_ptr_type& comm, bool include_io_set)
   : viz_comm_(Teuchos::rcp_dynamic_cast<const MpiComm_type>(comm)),
+    data_file_(-1),
     dynamic_mesh_(false),
     mesh_written_(false),
     static_mesh_cycle_(0),
-    data_file_(-1),
     include_io_set_(include_io_set)
 {
   AMANZI_ASSERT(viz_comm_.get());
@@ -40,17 +40,18 @@ HDF5_MPI::HDF5_MPI(const Comm_ptr_type& comm, bool include_io_set)
   NumNodes_ = 0;
   NumElems_ = 0;
   ConnLength_ = 0;
+  Iteration_ = 0;
 }
 
 
 HDF5_MPI::HDF5_MPI(const Comm_ptr_type& comm, std::string dataFilename, bool include_io_set)
   : viz_comm_(Teuchos::rcp_dynamic_cast<const MpiComm_type>(comm)),
     H5DataFilename_(dataFilename),
+    data_file_(-1),
     dynamic_mesh_(false),
     mesh_written_(false),
     static_mesh_cycle_(0),
-    include_io_set_(include_io_set),
-    data_file_(-1)
+    include_io_set_(include_io_set)
 {
   AMANZI_ASSERT(viz_comm_.get());
   H5DataFilename_ = dataFilename;
@@ -105,12 +106,12 @@ HDF5_MPI::createMeshFile(Teuchos::RCP<const AmanziMesh::Mesh> mesh, const std::s
 void
 HDF5_MPI::writeMesh(const double time, const int iteration)
 {
-  if (mesh_->is_logical()) {
+  if (mesh_->isLogical()) {
     writeDualMesh(time, iteration);
     return;
   }
 
-  const AmanziMesh::Mesh& vis_mesh = mesh_->vis_mesh();
+  const AmanziMesh::Mesh& vis_mesh = mesh_->getVisMesh();
 
   std::string xmfFilename;
   int globaldims[2], localdims[2];
@@ -123,17 +124,17 @@ HDF5_MPI::writeMesh(const double time, const int iteration)
   int mesh_file = parallelIO_open_file(h5Filename_.c_str(), &IOgroup_, FILE_READWRITE);
 
   // get num_nodes, num_cells
-  const Epetra_Map& nmap = vis_mesh.node_map(false);
+  const Epetra_Map& nmap = vis_mesh.getMap(AmanziMesh::Entity_kind::NODE, false);
   int nnodes_local = nmap.NumMyElements();
   int nnodes_global = nmap.NumGlobalElements();
-  const Epetra_Map& ngmap = vis_mesh.node_map(true);
+  const Epetra_Map& ngmap = vis_mesh.getMap(AmanziMesh::Entity_kind::NODE, true);
 
-  const Epetra_Map& cmap = vis_mesh.cell_map(false);
+  const Epetra_Map& cmap = vis_mesh.getMap(AmanziMesh::Entity_kind::CELL, false);
   int ncells_local = cmap.NumMyElements();
 
   // get space dimension
-  int space_dim = vis_mesh.space_dimension();
-  int topo_dim = vis_mesh.manifold_dimension();
+  int space_dim = vis_mesh.getSpaceDimension();
+  int topo_dim = vis_mesh.getManifoldDimension();
 
   // Get and write node coordinate info
   // -- get coords
@@ -145,7 +146,7 @@ HDF5_MPI::writeMesh(const double time, const int iteration)
 
   AmanziGeometry::Point xc(space_dim);
   for (int i = 0; i < nnodes_local; i++) {
-    vis_mesh.node_get_coordinates(i, &xc);
+    xc = vis_mesh.getNodeCoordinate(i);
     // VisIt and ParaView require all mesh entities to be in 3D space
     xyz[i * 3 + 0] = xc[0];
     xyz[i * 3 + 1] = xc[1];
@@ -232,33 +233,32 @@ HDF5_MPI::writeMesh(const double time, const int iteration)
   // -- pass 1: count total connections, total entities
   int local_conn(0);     // length of MixedElements
   int local_entities(0); // length of ElementMap (num_cells if non-POLYHEDRON mesh)
-  AmanziMesh::Entity_ID_List faces, nodes;
 
   for (int c = 0; c != ncells_local; ++c) {
-    AmanziMesh::Cell_type ctype = vis_mesh.cell_get_type(c);
-    if (getCellTypeID_(ctype) == getCellTypeID_(AmanziMesh::POLYHED)) {
-      vis_mesh.cell_get_faces(c, &faces);
+    AmanziMesh::Cell_kind ctype = vis_mesh.getCellType(c);
+    if (getCellTypeID_(ctype) == getCellTypeID_(AmanziMesh::Cell_kind::POLYHED)) {
+      auto faces = vis_mesh.getCellFaces(c);
       for (int i = 0; i != faces.size(); ++i) {
-        vis_mesh.face_get_nodes(faces[i], &nodes);
+        auto nodes = vis_mesh.getFaceNodes(faces[i]);
         local_conn += nodes.size() + 1;
       }
       local_conn += 2;
       local_entities++;
 
-    } else if (getCellTypeID_(ctype) != getCellTypeID_(AmanziMesh::POLYGON)) {
-      vis_mesh.cell_get_nodes(c, &nodes);
+    } else if (getCellTypeID_(ctype) != getCellTypeID_(AmanziMesh::Cell_kind::POLYGON)) {
+      auto nodes = vis_mesh.getCellNodes(c);
       local_conn += nodes.size() + 1;
       local_entities++;
 
     } else if (topo_dim == 2) {
-      vis_mesh.cell_get_nodes(c, &nodes);
+      auto nodes = vis_mesh.getCellNodes(c);
       local_conn += nodes.size() + 2;
       local_entities++;
 
     } else {
-      vis_mesh.cell_get_faces(c, &faces);
+      auto faces = vis_mesh.getCellFaces(c);
       for (int i = 0; i != faces.size(); ++i) {
-        vis_mesh.face_get_nodes(faces[i], &nodes);
+        auto nodes = vis_mesh.getFaceNodes(faces[i]);
         local_conn += nodes.size() + 2;
       }
       local_entities += faces.size();
@@ -286,9 +286,9 @@ HDF5_MPI::writeMesh(const double time, const int iteration)
   int lcv = 0;
   int lcv_entity = 0;
   for (int c = 0; c != ncells_local; ++c) {
-    AmanziMesh::Cell_type ctype = vis_mesh.cell_get_type(c);
-    if (getCellTypeID_(ctype) == getCellTypeID_(AmanziMesh::POLYHED)) {
-      vis_mesh.cell_get_faces(c, &faces);
+    AmanziMesh::Cell_kind ctype = vis_mesh.getCellType(c);
+    if (getCellTypeID_(ctype) == getCellTypeID_(AmanziMesh::Cell_kind::POLYHED)) {
+      auto faces = vis_mesh.getCellFaces(c);
 
       // store cell type id and number of faces
       conn[lcv++] = getCellTypeID_(ctype);
@@ -296,7 +296,7 @@ HDF5_MPI::writeMesh(const double time, const int iteration)
 
       for (int j = 0; j != faces.size(); ++j) {
         // store node count, then nodes in the correct order
-        vis_mesh.face_get_nodes(faces[j], &nodes);
+        auto nodes = vis_mesh.getFaceNodes(faces[j]);
         conn[lcv++] = nodes.size();
 
         for (int i = 0; i != nodes.size(); ++i) {
@@ -311,12 +311,12 @@ HDF5_MPI::writeMesh(const double time, const int iteration)
       // store entity
       entities[lcv_entity++] = cmap.GID(c);
 
-    } else if (getCellTypeID_(ctype) != getCellTypeID_(AmanziMesh::POLYGON)) {
+    } else if (getCellTypeID_(ctype) != getCellTypeID_(AmanziMesh::Cell_kind::POLYGON)) {
       // store cell type id
       conn[lcv++] = getCellTypeID_(ctype);
 
       // store nodes in the correct order
-      vis_mesh.cell_get_nodes(c, &nodes);
+      auto nodes = vis_mesh.getCellNodes(c);
 
       for (int i = 0; i != nodes.size(); ++i) {
         if (nmap.MyLID(nodes[i])) {
@@ -334,7 +334,7 @@ HDF5_MPI::writeMesh(const double time, const int iteration)
       conn[lcv++] = getCellTypeID_(ctype);
 
       // store node count, then nodes in the correct order
-      vis_mesh.cell_get_nodes(c, &nodes);
+      auto nodes = vis_mesh.getCellNodes(c);
       conn[lcv++] = nodes.size();
 
       for (int i = 0; i != nodes.size(); ++i) {
@@ -349,14 +349,14 @@ HDF5_MPI::writeMesh(const double time, const int iteration)
       entities[lcv_entity++] = cmap.GID(c);
 
     } else {
-      vis_mesh.cell_get_faces(c, &faces);
+      auto faces = vis_mesh.getCellFaces(c);
 
       for (int j = 0; j != faces.size(); ++j) {
         // store cell type id
         conn[lcv++] = getCellTypeID_(ctype);
 
         // store node count, then nodes in the correct order
-        vis_mesh.face_get_nodes(faces[j], &nodes);
+        auto nodes = vis_mesh.getFaceNodes(faces[j]);
         conn[lcv++] = nodes.size();
 
         for (int i = 0; i != nodes.size(); ++i) {
@@ -451,7 +451,7 @@ HDF5_MPI::writeDualMesh(const double time, const int iteration)
   int globaldims[2], localdims[2];
   int* ids;
 
-  const AmanziMesh::Mesh& vis_mesh = mesh_->vis_mesh();
+  const AmanziMesh::Mesh& vis_mesh = mesh_->getVisMesh();
 
   // if this is a static mesh simulation, we only write the mesh once
   if (!dynamic_mesh_ && mesh_written_) return;
@@ -460,13 +460,13 @@ HDF5_MPI::writeDualMesh(const double time, const int iteration)
   int mesh_file = parallelIO_open_file(h5Filename_.c_str(), &IOgroup_, FILE_READWRITE);
 
   // get num_nodes, num_cells
-  const Epetra_Map& nmap = vis_mesh.cell_map(false);
+  const Epetra_Map& nmap = vis_mesh.getMap(AmanziMesh::Entity_kind::CELL, false);
   int nnodes_local = nmap.NumMyElements();
   int nnodes_global = nmap.NumGlobalElements();
-  const Epetra_Map& ngmap = vis_mesh.cell_map(true);
+  const Epetra_Map& ngmap = vis_mesh.getMap(AmanziMesh::Entity_kind::CELL, true);
 
   // get space dimension
-  int space_dim = vis_mesh.space_dimension();
+  int space_dim = vis_mesh.getSpaceDimension();
 
   // Get and write node coordinate info
   // -- get coords
@@ -477,7 +477,7 @@ HDF5_MPI::writeDualMesh(const double time, const int iteration)
   localdims[1] = 3;
 
   for (int i = 0; i < nnodes_local; i++) {
-    const AmanziGeometry::Point& xc = vis_mesh.cell_centroid(i);
+    const AmanziGeometry::Point& xc = vis_mesh.getCellCentroid(i);
     // VisIt and ParaView require all mesh entities to be in 3D space
     nodes[i * 3 + 0] = xc[0];
     nodes[i * 3 + 1] = xc[1];
@@ -545,13 +545,12 @@ HDF5_MPI::writeDualMesh(const double time, const int iteration)
   // For the dual, connections are all faces with > 1 cells.
   int local_conn(0);     // length of MixedElements
   int local_entities(0); // length of ElementMap (num_cells if non-POLYHEDRON mesh)
-  AmanziMesh::Entity_ID_List cells;
 
-  const Epetra_Map& fmap = vis_mesh.face_map(false);
+  const Epetra_Map& fmap = vis_mesh.getMap(AmanziMesh::Entity_kind::FACE, false);
   int nfaces_local = fmap.NumMyElements();
 
   for (int f = 0; f != nfaces_local; ++f) {
-    vis_mesh.face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    auto cells = vis_mesh.getFaceCells(f);
     if (cells.size() > 1) {
       local_conn += cells.size();
       local_entities++;
@@ -580,7 +579,7 @@ HDF5_MPI::writeDualMesh(const double time, const int iteration)
   int lcv_entity = 0;
   int internal_f = 0;
   for (int f = 0; f != nfaces_local; ++f) {
-    vis_mesh.face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    auto cells = vis_mesh.getFaceCells(f);
     if (cells.size() > 1) {
       // store cell type id
       // conn[lcv++] = 2;
@@ -603,8 +602,8 @@ HDF5_MPI::writeDualMesh(const double time, const int iteration)
       //   conn[lcv++] = getCellTypeID_(ctype);
 
       //   // store node count, then nodes in the correct order
-      //   AmanziMesh::Entity_ID_List nodes;
-      //   vis_mesh.cell_get_nodes(c, &nodes);
+      //   AmanziMesh::Entity_ID_View nodes;
+      // nodes = vis_mesh.getCellNodes(c);
       //   conn[lcv++] = nodes.size();
 
       //   for (int i=0; i!=nodes.size(); ++i) {
@@ -756,16 +755,17 @@ HDF5_MPI::close_h5file()
 void
 HDF5_MPI::createTimestep(double time, int iteration, const std::string& tag)
 {
+  std::string tag_tmp = (iteration == Iteration() && tag == "" && iteration > 0) ? "ic" : "";
   setIteration(iteration);
   setTime(time);
-  set_tag(tag);
+  set_tag(tag_tmp);
 
   if (TrackXdmf() && viz_comm_->MyPID() == 0) {
     // create single step xdmf file
     Teuchos::XMLObject tmp("Xdmf");
     tmp.addChild(addXdmfHeaderLocal_("Mesh", time, iteration));
     std::stringstream filename;
-    filename << H5DataFilename() << "." << iteration << tag << ".xmf";
+    filename << H5DataFilename() << "." << iteration << tag_tmp << ".xmf";
     of_timestep_.open(filename.str().c_str());
     // channel will be closed when the endTimestep() is called
     setxdmfStepFilename(filename.str());
@@ -791,7 +791,7 @@ HDF5_MPI::endTimestep()
 
     xmlStep_prev_ = xmlStep_;
 
-    // add a new time step to global VisIt xdmf files
+    // add a new timestep to global VisIt xdmf files
     // TODO(barker): how to get to grid collection node, rather than root???
     std::string record = H5DataFilename() + "." + std::to_string(Iteration()) + tag_ + ".xmf";
     writeXdmfVisitGrid_(record);
@@ -977,13 +977,13 @@ HDF5_MPI::readAttrString(std::string& value, const std::string attrname)
 
   char* loc_value;
 
-  parallelIO_read_simple_attr(loc_attrname,
+  int ierr = parallelIO_read_simple_attr(loc_attrname,
                               reinterpret_cast<void**>(&loc_value),
                               PIO_STRING,
                               data_file_,
                               loc_h5path,
                               &IOgroup_);
-
+  checkThrow_(ierr, attrname, H5DataFilename_);
   value = std::string(loc_value);
 
   free(loc_value);
@@ -1005,12 +1005,13 @@ HDF5_MPI::readAttrReal(double& value, const std::string attrname)
 
   double* loc_value;
 
-  parallelIO_read_simple_attr(loc_attrname,
+  int ierr = parallelIO_read_simple_attr(loc_attrname,
                               reinterpret_cast<void**>(&loc_value),
                               PIO_DOUBLE,
                               data_file_,
                               loc_h5path,
                               &IOgroup_);
+  checkThrow_(ierr, attrname, H5DataFilename_);
 
   value = *loc_value;
 
@@ -1035,7 +1036,7 @@ HDF5_MPI::readAttrReal(double** value, int* ndim, const std::string attrname)
   int* pdims;
   int ndims;
 
-  parallelIO_read_attr(loc_attrname,
+  int ierr = parallelIO_read_attr(loc_attrname,
                        reinterpret_cast<void**>(&loc_value),
                        PIO_DOUBLE,
                        &ndims,
@@ -1043,6 +1044,7 @@ HDF5_MPI::readAttrReal(double** value, int* ndim, const std::string attrname)
                        data_file_,
                        loc_h5path,
                        &IOgroup_);
+  checkThrow_(ierr, attrname, H5DataFilename_);
 
   *value = loc_value;
   *ndim = pdims[0]; // works only for one-dimensional vectors.
@@ -1066,12 +1068,13 @@ HDF5_MPI::readAttrInt(int& value, const std::string attrname)
 
   int* loc_value;
 
-  parallelIO_read_simple_attr(loc_attrname,
+  int ierr = parallelIO_read_simple_attr(loc_attrname,
                               reinterpret_cast<void**>(&loc_value),
                               PIO_INTEGER,
                               data_file_,
                               loc_h5path,
                               &IOgroup_);
+  checkThrow_(ierr, attrname, H5DataFilename_);
 
   value = *loc_value;
 
@@ -1095,7 +1098,7 @@ HDF5_MPI::readAttrInt(int** value, int* ndim, const std::string attrname)
   int *loc_value, *pdims;
   int ndims;
 
-  parallelIO_read_attr(loc_attrname,
+  int ierr = parallelIO_read_attr(loc_attrname,
                        reinterpret_cast<void**>(&loc_value),
                        PIO_INTEGER,
                        &ndims,
@@ -1103,6 +1106,7 @@ HDF5_MPI::readAttrInt(int** value, int* ndim, const std::string attrname)
                        data_file_,
                        loc_h5path,
                        &IOgroup_);
+  checkThrow_(ierr, attrname, H5DataFilename_);
 
   *value = loc_value;
   *ndim = pdims[0]; // works only for one-dimensional vectors.
@@ -1271,10 +1275,12 @@ HDF5_MPI::writeDatasetReal(double* data, int nloc, int nglb, const std::string& 
 }
 
 
-bool
+void
 HDF5_MPI::readData(Epetra_Vector& x, const std::string varname)
 {
-  return readFieldData_(x, varname, PIO_DOUBLE);
+  int ierr = readFieldData_(x, varname, PIO_DOUBLE);
+  checkThrow_(ierr, varname, H5DataFilename_);
+  return;
 }
 
 
@@ -1305,39 +1311,40 @@ HDF5_MPI::checkFieldData_(const std::string& varname)
 }
 
 
-bool
+int
 HDF5_MPI::readFieldData_(Epetra_Vector& x, const std::string& varname, datatype_t type)
 {
-  if (!checkFieldData_(varname)) return false;
+  if (!checkFieldData_(varname)) return -1;
 
   char* h5path = new char[varname.size() + 1];
   strcpy(h5path, varname.c_str());
 
   int ndims;
   parallelIO_get_dataset_ndims(&ndims, data_file_, h5path, &IOgroup_);
-
-  if (ndims < 0) {
-    if (viz_comm_->MyPID() == 0) {
-      std::cout << "Dimension of the field " << h5path << " is negative.\n";
-    }
-    return false;
-  }
+  if (ndims < 0) return -3;
+  if (ndims > 2) return -3;
 
   int globaldims[ndims], localdims[ndims];
   parallelIO_get_dataset_dims(globaldims, data_file_, h5path, &IOgroup_);
   localdims[0] = x.MyLength();
-  localdims[1] = globaldims[1];
+  if (ndims == 2) {
+    // note, could be 1D array or 2D array where second dim is 1
+    localdims[1] = globaldims[1];
+    if (localdims[1] != 1) return -3;
+  }
+  if (globaldims[0] != x.GlobalLength()) return -3;
 
-  double* data = new double[localdims[0] * localdims[1]];
-  parallelIO_read_dataset(data,
-                          type,
-                          ndims,
-                          globaldims,
-                          localdims,
-                          data_file_,
-                          h5path,
-                          &IOgroup_,
-                          NONUNIFORM_CONTIGUOUS_READ);
+  double* data = new double[localdims[0]];
+  int ierr = parallelIO_read_dataset(data,
+          type,
+          ndims,
+          globaldims,
+          localdims,
+          data_file_,
+          h5path,
+          &IOgroup_,
+          NONUNIFORM_CONTIGUOUS_READ);
+  if (ierr) return -4;
 
   // Trilinos' ReplaceMyValues() works with elements only and cannot
   // be used here for points
@@ -1346,7 +1353,7 @@ HDF5_MPI::readFieldData_(Epetra_Vector& x, const std::string& varname, datatype_
   delete[] data;
   delete[] h5path;
 
-  return true;
+  return 0;
 }
 
 
@@ -1393,29 +1400,27 @@ HDF5_MPI::readDatasetReal(double** data, int nloc, const std::string& varname)
 
 
 int
-HDF5_MPI::getCellTypeID_(AmanziMesh::Cell_type type)
+HDF5_MPI::getCellTypeID_(AmanziMesh::Cell_kind type)
 {
   //TODO(barker): how to return polyhedra?
   // cell type id's defined in Xdmf/include/XdmfTopology.h
 
-  AMANZI_ASSERT(cell_valid_type(type));
-
   switch (type) {
-  case AmanziMesh::POLYGON:
+  case AmanziMesh::Cell_kind::POLYGON:
     return 3;
-  case AmanziMesh::TRI:
+  case AmanziMesh::Cell_kind::TRI:
     return 4;
-  case AmanziMesh::QUAD:
+  case AmanziMesh::Cell_kind::QUAD:
     return 5;
-  case AmanziMesh::TET:
+  case AmanziMesh::Cell_kind::TET:
     return 6;
-  case AmanziMesh::PYRAMID:
+  case AmanziMesh::Cell_kind::PYRAMID:
     return 7;
-  case AmanziMesh::PRISM:
+  case AmanziMesh::Cell_kind::PRISM:
     return 8; //wedge
-  case AmanziMesh::HEX:
+  case AmanziMesh::Cell_kind::HEX:
     return 9;
-  case AmanziMesh::POLYHED:
+  case AmanziMesh::Cell_kind::POLYHED:
     return 16; // see http://www.xdmf.org/index.php/XDMF_Model_and_Format
   default:
     return 3; // unknown, for now same as polygon
@@ -1704,6 +1709,28 @@ HDF5_MPI::stripFilename_(std::string filename)
   // while(std::getline(ss, name, delim)) {}
 
   return name;
+}
+
+void
+HDF5_MPI::checkThrow_(int ierr, const std::string& varname, const std::string& filename)
+{
+  if (ierr == -1) {
+    Errors::Message msg;
+    msg << "No such variable \"" << varname << "\" in file \"" << filename << "\"";
+    Exceptions::amanzi_throw(msg);
+  } else if (ierr == -2) {
+    Errors::Message msg;
+    msg << "Incorrect type of variable \"" << varname << "\" in file \"" << filename << "\"";
+    Exceptions::amanzi_throw(msg);
+  } else if (ierr == -3) {
+    Errors::Message msg;
+    msg << "Incorrect dimension of field \"" << varname << "\" in file \"" << filename << "\"";
+    Exceptions::amanzi_throw(msg);
+  } else if (ierr != 0) {
+    Errors::Message msg;
+    msg << "Unable to read variable \"" << varname << "\" in file \"" << filename << "\" (unknown reason)";
+    Exceptions::amanzi_throw(msg);
+  }
 }
 
 std::string HDF5_MPI::xdmfHeader_ =

@@ -59,9 +59,10 @@ class WRMmp_vanGenuchten : public WRMmp {
   WhetStone::SplineCubic spline_kl_;
 
   double reg_pc_;
-  WhetStone::SplineExteriorLinear spline_pc_;
+  WhetStone::SplineExteriorLinear spline_pc_left_;
+  WhetStone::SplineQuadratic spline_pc_right_;
 
-  static Utils::RegisteredFactory<WRMmp, WRMmp_vanGenuchten> factory_;
+  static Utils::RegisteredFactory<WRMmp, WRMmp_vanGenuchten> reg_;
 };
 
 } // namespace Multiphase

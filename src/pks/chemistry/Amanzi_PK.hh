@@ -7,8 +7,52 @@
   Authors:
 */
 
-/*
-  Chemistry PK
+/*!
+
+The Amanzi chemistry process kernel uses the following parameters.
+
+.. admonition:: chemistry_amanzi-spec
+
+  * `"thermodynamic database`" ``[list]``
+
+    * `"file`" ``[string]`` is the name of the chemistry database file, relative to the execution directory.
+
+    * `"format`" ``[string]`` is the format of the database file. Actual database format is not XML and
+      is the same as described for the 2010 demo with additions for the new chemical processes.
+      Valid values: "simple".
+
+  * `"minerals`" ``[Array(string)]`` is the list of mineral names.
+
+  * `"sorption sites`" ``[Array(string)]`` is the list of sorption sites.
+
+  * `"activity model`" ``[string]`` is the type of model used for activity corrections.
+    Valid options are `"unit`", `"debye-huckel`", and `"pitzer-hwm`",
+
+  * `"tolerance`" ``[double]`` defines tolerance in Newton solves inside the chemistry library.
+
+  * `"maximum Newton iterations`" ``[int]`` is the maximum number of iteration the chemistry
+    library can take.
+
+  * `"auxiliary data`" ``[Array(string)]`` defines additional chemistry related data that the user
+    can request be saved to vis files. Currently `"pH`" is the only variable supported.
+
+.. code-block:: xml
+
+  <ParameterList>  <!-- parent list -->
+  <ParameterList name="_CHEMISTRY">
+    <ParameterList name="thermodynamic database">
+      <Parameter name="file" type="string" value="_TRITIUM.bgd"/>
+      <Parameter name="format" type="string" value="simple"/>
+    </ParameterList>
+    <Parameter name="activity model" type="string" value="unit"/>
+    <Parameter name="tolerance" type="double" value="1.5e-12"/>
+    <Parameter name="maximum Newton iterations" type="int" value="25"/>
+    <Parameter name="max timestep (s)" type="double" value="1.5e+07"/>
+    <Parameter name="auxiliary data" type="Array(string)" value="{pH}"/>
+    <Parameter name="number of component concentrations" type="int" value="1"/>
+    <Parameter name="timestep control method" type="string" value="simple"/>
+  </ParameterList>
+  </ParameterList>
 
 */
 
@@ -28,6 +72,7 @@
 #include "BeakerFields.hh"
 #include "BeakerState.hh"
 #include "Chemistry_PK.hh"
+#include "Key.hh"
 #include "PK_Factory.hh"
 #include "Mesh.hh"
 #include "TreeVector.hh"
@@ -76,6 +121,8 @@ class Amanzi_PK : public Chemistry_PK {
 
   void CopyBeakerStructuresToCellState(int c, Teuchos::RCP<Epetra_MultiVector> aqueous_components);
 
+  void EstimateNextTimeStep_(double t_old, double t_new);
+
  protected:
   Teuchos::RCP<TreeVector> soln_;
 
@@ -85,8 +132,10 @@ class Amanzi_PK : public Chemistry_PK {
   BeakerState beaker_state_, beaker_state_copy_;
   BeakerFields bf_;
 
+  Key prev_saturation_key_; // move to base class ???
+
   std::string dt_control_method_;
-  double current_time_, saved_time_;
+  double dt_int_, dt_global_; // interpolation and global times
 
   std::vector<std::string> aux_names_;
   std::vector<int> aux_index_;

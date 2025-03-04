@@ -52,7 +52,7 @@ class FracturePermModelEvaluator
   Key aperture_key_;
 
  private:
-  static Utils::RegisteredFactory<Evaluator, FracturePermModelEvaluator> factory_;
+  static Utils::RegisteredFactory<Evaluator, FracturePermModelEvaluator> reg_;
 };
 
 } // namespace Flow

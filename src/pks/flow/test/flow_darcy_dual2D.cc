@@ -62,7 +62,6 @@ TEST(FLOW_2D_TRANSIENT_DARCY)
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
-  pref.push_back(Framework::STK);
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
@@ -73,8 +72,9 @@ TEST(FLOW_2D_TRANSIENT_DARCY)
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
+  Teuchos::ParameterList pk_tree("flow");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
+  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(pk_tree, plist, S, soln));
 
   DPK->Setup();
   S->Setup();
@@ -107,7 +107,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY)
   auto& p = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
 
   for (int c = 0; c < p.MyLength(); c++) {
-    const Point& xc = mesh->cell_centroid(c);
+    const Point& xc = mesh->getCellCentroid(c);
     p[0][c] = xc[1] * (xc[1] + 2.0);
   }
   S->GetRecordW("pressure", passwd).set_initialized();

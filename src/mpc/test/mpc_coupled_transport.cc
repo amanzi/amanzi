@@ -22,14 +22,14 @@
 // Amanzi
 #include "CycleDriver.hh"
 #include "MeshAudit.hh"
-#include "eos_registration.hh"
+#include "eos_reg.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
-#include "mpc_pks_registration.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
-#include "pks_transport_registration.hh"
+#include "pks_mpc_reg.hh"
+#include "pks_transport_reg.hh"
 #include "State.hh"
 
 std::pair<Epetra_MultiVector, Epetra_MultiVector>
@@ -81,7 +81,7 @@ RunTest(int order, double cfl)
   //create additional mesh for fracture
   std::vector<std::string> names;
   names.push_back("fracture");
-  auto mesh_fracture = factory.create(mesh, names, AmanziMesh::FACE);
+  auto mesh_fracture = factory.create(mesh, names, AmanziMesh::Entity_kind::FACE);
 
   S->RegisterMesh("fracture", mesh_fracture);
 
@@ -93,7 +93,7 @@ RunTest(int order, double cfl)
     *S->Get<CompositeVector>("total_component_concentration").ViewComponent("cell");
   double cmin(1e+99), cmax(-1e+99), xc0(6.0 - 3.0 / n);
   for (int c = 0; c < n * n * n; ++c) {
-    const auto& xc = mesh->cell_centroid(c);
+    const auto& xc = mesh->getCellCentroid(c);
     if (std::fabs(xc[0] - xc0) < 1e-3) {
       cmin = std::min(cmin, tcc_m[0][c]);
       cmax = std::max(cmin, tcc_m[0][c]);
@@ -108,7 +108,7 @@ RunTest(int order, double cfl)
   for (int c = 0; c < n * n; ++c) {
     CHECK(tcc_f[0][c] <= 1.0);
     CHECK(tcc_f[0][c] >= 0.0);
-    const auto& xc = mesh_fracture->cell_centroid(c);
+    const auto& xc = mesh_fracture->getCellCentroid(c);
     if (std::fabs(xc[0] - xc0) < 1e-3) {
       cmin = std::min(cmin, tcc_f[0][c]);
       cmax = std::max(cmin, tcc_f[0][c]);

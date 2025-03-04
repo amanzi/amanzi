@@ -193,21 +193,21 @@ SurfaceComplexationRxn::AddContributionToDTotal(const std::vector<Species>& prim
     nu_li_nu_i_Si.at(i) /= primary_species.at(i).molality();
   }
 
-  for (auto srfcplx = surface_complexes_.begin(); srfcplx != surface_complexes_.end(); ++srfcplx) {
-    double surface_concentration = srfcplx->surface_concentration();
-    double nui_Si_over_Sx = srfcplx->free_site_stoichiometry() * surface_concentration /
+  for (auto it = surface_complexes_.begin(); it != surface_complexes_.end(); ++it) {
+    double surface_concentration = it->surface_concentration();
+    double nui_Si_over_Sx = it->free_site_stoichiometry() * surface_concentration /
                             surface_site_.at(0).free_site_concentration();
-    for (int icomp = 0; icomp < srfcplx->ncomp(); icomp++) {
-      int primary_species_id_i = srfcplx->species_id(icomp);
+    for (int icomp = 0; icomp < it->ncomp(); icomp++) {
+      int primary_species_id_i = it->species_id(icomp);
       // 2.3-47c converted to non-log form
-      double dSi_mi = (srfcplx->stoichiometry(icomp) * surface_concentration /
+      double dSi_mi = (it->stoichiometry(icomp) * surface_concentration /
                        primary_species.at(primary_species_id_i).molality()) +
                       nu_li_nu_i_Si.at(icomp) * nui_Si_over_Sx;
-      for (int jcomp = 0; jcomp < srfcplx->ncomp(); jcomp++) {
+      for (int jcomp = 0; jcomp < it->ncomp(); jcomp++) {
         // 2.3-48a converted to non-log form
-        double dPsij_dmi = dSi_mi * srfcplx->stoichiometry(jcomp);
+        double dPsij_dmi = dSi_mi * it->stoichiometry(jcomp);
         // NOTE: is this the correct i,j indexing...?
-        dtotal->AddValue(srfcplx->species_id(jcomp), primary_species_id_i, dPsij_dmi);
+        dtotal->AddValue(it->species_id(jcomp), primary_species_id_i, dPsij_dmi);
       }
     }
   }

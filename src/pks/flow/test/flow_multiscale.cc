@@ -32,12 +32,12 @@
 #include "State.hh"
 
 // Flow
-#include "multiscale_flow_registration.hh"
 #include "Richards_PK.hh"
 #include "Richards_SteadyState.hh"
 
 /* **************************************************************** */
-TEST(FLOW_2D_MULTISCALE)
+void
+RunTest(const std::string& filename, double tol)
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -49,7 +49,7 @@ TEST(FLOW_2D_MULTISCALE)
   if (MyPID == 0) std::cout << "Test: 2D Richards, 2-layer model" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/flow_multiscale.xml";
+  std::string xmlFileName = filename;
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create a mesh framework
@@ -70,8 +70,9 @@ TEST(FLOW_2D_MULTISCALE)
   Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
   S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
+  Teuchos::ParameterList pk_tree("flow");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  Teuchos::RCP<Richards_PK> RPK = Teuchos::rcp(new Richards_PK(plist, "flow", S, soln));
+  Teuchos::RCP<Richards_PK> RPK = Teuchos::rcp(new Richards_PK(pk_tree, plist, S, soln));
 
   RPK->Setup();
   S->Setup();
@@ -108,7 +109,18 @@ TEST(FLOW_2D_MULTISCALE)
   }
 
   // check the pressure
-  for (int c = 0; c < 60; c++) CHECK_CLOSE(pm[0][c], pf[0][c], 0.2);
+  for (int c = 0; c < 60; c++) CHECK_CLOSE(pm[0][c], pf[0][c], tol);
 
   WriteStateStatistics(*S);
+}
+
+
+TEST(FLOW_2D_MULTISCALE_DPM)
+{
+  RunTest("test/flow_multiscale.xml", 0.2);
+}
+
+TEST(FLOW_2D_MULTISCALE_GDPM)
+{
+  RunTest("test/flow_multiscale_gdpm.xml", 0.8);
 }

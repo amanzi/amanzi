@@ -23,6 +23,7 @@
 #include "EnergyOnePhase_PK.hh"
 #include "EnthalpyEvaluator.hh"
 #include "IEMEvaluator.hh"
+#include "StateArchive.hh"
 #include "TCMEvaluator_OnePhase.hh"
 #include "TotalEnergyEvaluator.hh"
 
@@ -39,7 +40,11 @@ EnergyOnePhase_PK::EnergyOnePhase_PK(Teuchos::ParameterList& pk_tree,
                                      const Teuchos::RCP<Teuchos::ParameterList>& glist,
                                      const Teuchos::RCP<State>& S,
                                      const Teuchos::RCP<TreeVector>& soln)
-  : PK(pk_tree, glist, S, soln), Energy_PK(pk_tree, glist, S, soln), soln_(soln), dt_(0.0)
+  : PK(pk_tree, glist, S, soln),
+    Energy_PK(pk_tree, glist, S, soln),
+    soln_(soln),
+    num_itrs_(0),
+    dt_(0.0)
 {
   // verbose object
   Teuchos::ParameterList vlist;
@@ -60,19 +65,22 @@ EnergyOnePhase_PK::Setup()
   // basic class setup
   Energy_PK::Setup();
 
+  double molar_mass = S_->ICList().sublist("const_fluid_molar_mass").get<double>("value");
+
   // Get data and evaluators needed by the PK
   // -- energy, the conserved quantity
   if (!S_->HasRecord(energy_key_)) {
     S_->Require<CV_t, CVS_t>(energy_key_, Tags::DEFAULT, energy_key_)
       .SetMesh(mesh_)
       ->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
     Teuchos::ParameterList elist = ep_list_->sublist("energy evaluator");
     elist.set<std::string>("energy key", energy_key_)
       .set<std::string>("particle density key", particle_density_key_)
       .set<std::string>("internal energy rock key", ie_rock_key_)
       .set<bool>("vapor diffusion", false)
+      .set<double>("liquid molar mass", molar_mass)
       .set<std::string>("tag", "");
     if (flow_on_manifold_) elist.set<std::string>("aperture key", aperture_key_);
 
@@ -90,11 +98,13 @@ EnergyOnePhase_PK::Setup()
     S_->Require<CV_t, CVS_t>(enthalpy_key_, Tags::DEFAULT, enthalpy_key_)
       .SetMesh(mesh_)
       ->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
 
     Teuchos::ParameterList elist = ep_list_->sublist("enthalpy evaluator");
-    elist.set("enthalpy key", enthalpy_key_).set<std::string>("tag", "");
+    elist.set("enthalpy key", enthalpy_key_)
+      .set<double>("liquid molar mass", molar_mass)
+      .set<std::string>("tag", "");
     elist.setName(enthalpy_key_);
     auto enth = Teuchos::rcp(new EnthalpyEvaluator(elist));
     S_->SetEvaluator(enthalpy_key_, Tags::DEFAULT, enth);
@@ -109,15 +119,19 @@ EnergyOnePhase_PK::Setup()
     S_->Require<CV_t, CVS_t>(conductivity_key_, Tags::DEFAULT, conductivity_key_)
       .SetMesh(mesh_)
       ->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
     Teuchos::ParameterList elist = ep_list_->sublist("thermal conductivity evaluator");
     elist.set("thermal conductivity key", conductivity_key_).set<std::string>("tag", "");
     elist.setName(conductivity_key_);
 
-    auto tcm = Teuchos::rcp(new TCMEvaluator_OnePhase(elist));
+    auto tcm = Teuchos::rcp(new TCMEvaluator_OnePhase(mesh_, elist));
     S_->SetEvaluator(conductivity_key_, Tags::DEFAULT, tcm);
   }
+
+  // set units
+  S_->GetRecordSetW(energy_key_).set_units("J/m^3");
+  S_->GetRecordSetW(enthalpy_key_).set_units("J/mol");
 }
 
 
@@ -130,7 +144,7 @@ EnergyOnePhase_PK::Initialize()
   // Call the base class initialize.
   Energy_PK::Initialize();
 
-  // Create pointers to the primary flow field pressure.
+  // Create pointers to the primary field, temperature
   solution = S_->GetPtrW<CV_t>(temperature_key_, Tags::DEFAULT, passwd_);
   soln_->SetData(solution);
 
@@ -153,7 +167,7 @@ EnergyOnePhase_PK::Initialize()
   Teuchos::ParameterList oplist_adv = ep_list_->sublist("operators").sublist("advection operator");
   op_matrix_advection_ = opfactory_adv.Create(oplist_adv, mesh_);
 
-  const CompositeVector& flux = *S_->GetPtr<CV_t>(vol_flowrate_key_, Tags::DEFAULT);
+  const CompositeVector& flux = *S_->GetPtr<CV_t>(mol_flowrate_key_, Tags::DEFAULT);
   op_matrix_advection_->Setup(flux);
   op_matrix_advection_->SetBCs(op_bc_enth_, op_bc_enth_);
   op_advection_ = op_matrix_advection_->global_operator();
@@ -179,13 +193,17 @@ EnergyOnePhase_PK::Initialize()
       S_->GetPtr<CV_t>(conductivity_gen_key_, Tags::DEFAULT), Teuchos::null);
   }
 
-  op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_preconditioner_));
+  op_acc_ = Teuchos::rcp(
+    new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, op_preconditioner_));
   if (prec_include_enthalpy_) {
     op_preconditioner_advection_ = opfactory_adv.Create(oplist_adv, op_preconditioner_);
     op_preconditioner_advection_->SetBCs(op_bc_enth_, op_bc_enth_);
   }
 
   // initialize preconditioner
+  op_matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op_preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+
   AMANZI_ASSERT(ti_list_->isParameter("preconditioner"));
   std::string name = ti_list_->get<std::string>("preconditioner");
   Teuchos::ParameterList slist = preconditioner_list_->sublist(name);
@@ -200,12 +218,12 @@ EnergyOnePhase_PK::Initialize()
     if (!bdf1_list.isSublist("verbose object"))
       bdf1_list.sublist("verbose object") = ep_list_->sublist("verbose object");
 
-    bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
+    bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1", bdf1_list, *this, soln_->get_map(), S_));
   }
 
   // initialize boundary conditions
   double t_ini = S_->get_time();
-  auto temperature = S_->GetW<CV_t>(temperature_key_, passwd_);
+  auto& temperature = S_->GetW<CV_t>(temperature_key_, passwd_);
   UpdateSourceBoundaryData(t_ini, t_ini, temperature);
 
   // output of initialization summary
@@ -257,7 +275,7 @@ EnergyOnePhase_PK::InitializeFields_()
 
 
 /* *******************************************************************
-* Performs one time step of size dt_ either for steady-state or
+* Performs one timestep of size dt_ either for steady-state or
 * transient sumulation.
 ******************************************************************* */
 bool
@@ -265,16 +283,10 @@ EnergyOnePhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   dt_ = t_new - t_old;
 
-  // save a copy of primary unknwon
-  CompositeVector temperature_copy(S_->Get<CV_t>(temperature_key_));
-
-  // swap conserved field (i.e., energy) and save
-  S_->GetEvaluator(energy_key_).Update(*S_, passwd_);
-  const CompositeVector& e = S_->Get<CV_t>(energy_key_);
-  CompositeVector& e_prev = S_->GetW<CV_t>(prev_energy_key_, passwd_);
-
-  CompositeVector e_prev_copy(e_prev);
-  e_prev = e;
+  // save a copy of primary and conservative fields
+  std::vector<std::string> fields({ temperature_key_, energy_key_ });
+  StateArchive archive(S_, vo_);
+  archive.Add(fields, Tags::DEFAULT);
 
   // initialization
   if (num_itrs_ == 0) {
@@ -287,21 +299,12 @@ EnergyOnePhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   // trying to make a step
-  bool failed(false);
-  failed = bdf1_dae_->TimeStep(dt_, dt_next_, soln_);
+  bool failed = bdf1_dae_->AdvanceStep(dt_, dt_next_, soln_);
   if (failed) {
     dt_ = dt_next_;
 
-    // restore the original primary solution, temperature
-    S_->GetW<CV_t>(temperature_key_, passwd_) = temperature_copy;
+    archive.Restore("");
     temperature_eval_->SetChanged();
-
-    // restore the original fields
-    S_->GetW<CV_t>(prev_energy_key_, passwd_) = e_prev_copy;
-
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Step failed. Restored temperature, prev_energy." << std::endl;
-
     return failed;
   }
 
@@ -323,6 +326,11 @@ void
 EnergyOnePhase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
   dt_ = dt_next_;
+
+  // update previous fields
+  std::vector<std::string> fields({ energy_key_ });
+  StateArchive archive(S_, vo_);
+  archive.CopyFieldsToPrevFields(fields, "", false);
 }
 
 } // namespace Energy

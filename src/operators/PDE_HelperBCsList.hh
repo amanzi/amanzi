@@ -46,6 +46,10 @@ class PDE_HelperBCsList {
     bcs_test_.push_back(bc_test);
   }
 
+  // const access
+  const std::vector<Teuchos::RCP<const BCs>>& get_bcs_trial() { return bcs_trial_; }
+  const std::vector<Teuchos::RCP<const BCs>>& get_bcs_test() { return bcs_test_; }
+
  protected:
   std::vector<Teuchos::RCP<const BCs>> bcs_trial_, bcs_test_;
 };

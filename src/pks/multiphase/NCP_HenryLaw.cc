@@ -21,23 +21,27 @@ namespace Multiphase {
 /* ******************************************************************
 * Constructor.
 ****************************************************************** */
-NCP_HenryLaw::NCP_HenryLaw(Teuchos::ParameterList& plist) : MultiphaseBaseEvaluator(plist)
+NCP_HenryLaw::NCP_HenryLaw(Teuchos::ParameterList& plist) : MultiphaseEvaluator(plist)
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
   }
   pressure_gas_key_ = plist_.get<std::string>("pressure gas key");
   mol_density_liquid_key_ = plist_.get<std::string>("molar density liquid key");
+  temperature_key_ = plist_.get<std::string>("temperature key");
 
   dependencies_.insert(std::make_pair(pressure_gas_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(mol_density_liquid_key_, Tags::DEFAULT));
+
+  // only non-zero pointer is needed FIXME
+  vapor_liquid_ = std::make_shared<AmanziEOS::VaporLiquid_Constant>(1.0);
 }
 
 
 /* ******************************************************************
 * Copy constructors.
 ****************************************************************** */
-NCP_HenryLaw::NCP_HenryLaw(const NCP_HenryLaw& other) : MultiphaseBaseEvaluator(other){};
+NCP_HenryLaw::NCP_HenryLaw(const NCP_HenryLaw& other) : MultiphaseEvaluator(other){};
 
 
 Teuchos::RCP<Evaluator>
@@ -55,11 +59,15 @@ NCP_HenryLaw::Evaluate_(const State& S, const std::vector<CompositeVector*>& res
 {
   const auto& pg = *S.Get<CompositeVector>(pressure_gas_key_).ViewComponent("cell");
   const auto& nl = *S.Get<CompositeVector>(mol_density_liquid_key_).ViewComponent("cell");
+  const auto& temp_c = *S.Get<CompositeVector>(temperature_key_).ViewComponent("cell");
 
   auto& result_c = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell", false);
 
-  for (int c = 0; c != ncells; ++c) { result_c[0][c] = pg[0][c] * kH_ - nl[0][c]; }
+  for (int c = 0; c != ncells; ++c) {
+    double kH = vapor_liquid_->k(temp_c[0][c]);
+    result_c[0][c] = pg[0][c] * kH - nl[0][c];
+  }
 }
 
 
@@ -72,11 +80,13 @@ NCP_HenryLaw::EvaluatePartialDerivative_(const State& S,
                                          const Tag& wrt_tag,
                                          const std::vector<CompositeVector*>& results)
 {
+  const auto& temp_c = *S.Get<CompositeVector>(temperature_key_).ViewComponent("cell");
+
   auto& result_c = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell", false);
 
   if (wrt_key == pressure_gas_key_) {
-    for (int c = 0; c != ncells; ++c) result_c[0][c] = kH_;
+    for (int c = 0; c != ncells; ++c) result_c[0][c] = vapor_liquid_->k(temp_c[0][c]);
   } else if (wrt_key == mol_density_liquid_key_) {
     for (int c = 0; c != ncells; ++c) result_c[0][c] = -1.0;
   }

@@ -79,7 +79,7 @@
         <Parameter name="start period time" type="double" value="0.0"/>
         <Parameter name="end period time" type="double" value="1.0e+7"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="1.0e+5"/>
+        <Parameter name="initial timestep" type="double" value="1.0e+5"/>
       </ParameterList>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{}"/>
@@ -93,6 +93,16 @@
       <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
     <ParameterList name="evaluators">
+      <ParameterList name="specific_storage">
+        <Parameter name="evaluator type" type="string" value="specific storage"/>
+	<ParameterList name="specific storage parameters">
+          <ParameterList name="ALL">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="model" type="string" value="constant"/>
+            <Parameter name="value" type="double" value="0.0"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
       <ParameterList name="aperture">
         <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
@@ -172,6 +182,8 @@
         <Parameter name="mass density key" type="string" value="mass_density_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="liquid water 0-30C"/>
+          <Parameter name="molar mass" type="double" value="0.018015"/>
+          <Parameter name="density" type="double" value="1000.0"/>
         </ParameterList>
       </ParameterList>
 
@@ -180,6 +192,8 @@
         <Parameter name="viscosity key" type="string" value="viscosity_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="liquid water 0-30C"/>
+          <Parameter name="molar mass" type="double" value="0.018015"/>
+          <Parameter name="density" type="double" value="1000.0"/>
         </ParameterList>
       </ParameterList>
 
@@ -200,6 +214,19 @@
           <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
+      <ParameterList name="internal_energy_rock">
+        <Parameter name="evaluator type" type="string" value="iem"/>
+        <Parameter name="internal energy key" type="string" value="internal_energy_rock"/>
+        <ParameterList name="IEM parameters">
+          <ParameterList name="Material 1">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <ParameterList name="IEM parameters">
+              <Parameter name="iem type" type="string" value="linear"/>
+              <Parameter name="heat capacity" type="double" value="620.0"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="initial conditions">
@@ -212,6 +239,9 @@
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="1000.0"/>
       </ParameterList>
+      <ParameterList name="const_fluid_molar_mass">
+        <Parameter name="value" type="double" value="0.018015"/>
+      </ParameterList>
       <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="1.0e-3"/>
       </ParameterList>
@@ -223,19 +253,6 @@
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="300.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="specific_storage">
-        <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -323,10 +340,10 @@
           <ParameterList name="timestep controller standard parameters">
             <Parameter name="max iterations" type="int" value="20"/>
             <Parameter name="min iterations" type="int" value="15"/>
-            <Parameter name="time step increase factor" type="double" value="1.2"/>
-            <Parameter name="time step reduction factor" type="double" value="0.8"/>
-            <Parameter name="max time step" type="double" value="6.0e+10"/>
-            <Parameter name="min time step" type="double" value="9.99999999999999945e-21"/>
+            <Parameter name="timestep increase factor" type="double" value="1.2"/>
+            <Parameter name="timestep reduction factor" type="double" value="0.8"/>
+            <Parameter name="max timestep" type="double" value="6.0e+10"/>
+            <Parameter name="min timestep" type="double" value="9.99999999999999945e-21"/>
           </ParameterList>
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
@@ -340,7 +357,6 @@
           </ParameterList>
           <Parameter name="max preconditioner lag iterations" type="int" value="1"/>
           <Parameter name="extrapolate initial guess" type="bool" value="true"/>
-          <Parameter name="nonlinear iteration damping factor" type="double" value="1.0e+00"/>
           <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
           <ParameterList name="verbose object">
             <Parameter name="verbosity level" type="string" value="high"/>
@@ -368,14 +384,18 @@
 	</ParameterList>
       </ParameterList>
       <ParameterList name="thermal conductivity evaluator">
-	<ParameterList name="thermal conductivity parameters">
-	  <!--Parameter name="thermal conductivity type" type="string" value="two-phase Peters-Lidard"/-->
-	  <Parameter name="thermal conductivity of rock" type="double" value="0.2"/>
-	  <Parameter name="thermal conductivity of liquid" type="double" value="0.1"/>
-	  <Parameter name="thermal conductivity of gas" type="double" value="0.02"/>
-
-	  <Parameter name="unsaturated alpha" type="double" value="1.0"/>
-	  <Parameter name="epsilon" type="double" value="1.e-10"/>
+	<ParameterList name="All">
+	  <Parameter name="regions" type="Array(string)" value="{All}"/>
+          <ParameterList name="solid phase">
+            <Parameter name="eos type" type="string" value="constant"/>
+            <Parameter name="reference conductivity" type="double" value="0.2"/>
+            <Parameter name="reference temperature" type="double" value="298.15"/>
+          </ParameterList>
+          <ParameterList name="liquid phase">
+	    <Parameter name="eos type" type="string" value="liquid water"/>
+            <Parameter name="reference conductivity" type="double" value="0.1"/>
+            <Parameter name="reference temperature" type="double" value="298.15"/>
+	  </ParameterList>
 	</ParameterList>
       </ParameterList>
 
@@ -430,7 +450,7 @@
 	<Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
 	<Parameter name="linear solver" type="string" value="none"/>
 	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-	<ParameterList name="pressure-lambda constraints">
+	<ParameterList name="dae constraint">
 	  <Parameter name="method" type="string" value="projection"/>
 	  <Parameter name="inflow krel correction" type="bool" value="true"/>
 	  <Parameter name="linear solver" type="string" value="AztecOO"/>
@@ -507,7 +527,7 @@
 	<Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
         <Parameter name="linear solver" type="string" value="PCG with Hypre AMG"/>
 	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-	<ParameterList name="pressure-lambda constraints">
+	<ParameterList name="dae constraint">
 	  <Parameter name="method" type="string" value="projection"/>
 	  <Parameter name="inflow krel correction" type="bool" value="true"/>
 	  <Parameter name="linear solver" type="string" value="AztecOO"/>

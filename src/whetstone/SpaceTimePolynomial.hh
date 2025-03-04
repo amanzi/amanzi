@@ -99,14 +99,12 @@ class SpaceTimePolynomial {
 
   // Change of coordinates:
   // --  x = xf + B * s
-  void
-  ChangeCoordinates(const AmanziGeometry::Point& xf, const std::vector<AmanziGeometry::Point>& B)
+  void ChangeCoordinates(const AmanziGeometry::Point& xf, const AmanziMesh::Point_List& B)
   {
     for (int i = 1; i < size_; ++i) coefs_[i].ChangeCoordinates(xf, B);
   }
   // --  s = B^+ (x - xf)
-  void InverseChangeCoordinates(const AmanziGeometry::Point& xf,
-                                const std::vector<AmanziGeometry::Point>& B)
+  void InverseChangeCoordinates(const AmanziGeometry::Point& xf, const AmanziMesh::Point_List& B)
   {
     for (int i = 1; i < size_; ++i) coefs_[i].InverseChangeCoordinates(xf, B);
   }
@@ -124,7 +122,7 @@ class SpaceTimePolynomial {
   double NormInf() const
   {
     double val(0.0);
-    for (int i = 0; i < size_; ++i) std::max(val, coefs_[i].NormInf());
+    for (int i = 0; i < size_; ++i) val = std::max(val, coefs_[i].NormInf());
     return val;
   }
 

@@ -7,10 +7,50 @@
   Authors:
 */
 
-/*
-  Chemistry
+/*!
 
-  Class for general forward/reverse reaction
+The `"general kinetics`" section describes kinetic (slow) reactions in the form
+
+.. code-block:: asc
+
+  3 A(aq) + 2 B(aq) <-> C(aq) + 3 D(aq) + 4 E(aq)
+
+where a number (stoichiometic coefficient) is followed by a species name.
+Implementation of the generalized kinetic formulation is based of publication
+"Multicomponent reactive transport modeling in variably saturated porous media 
+using a generalized formulation for kinetically controlled reactions" by K. Ulrich 
+Mayer (Water Res. Research, Vol.38:9, 1174, doi:10.1029/2001WR000862, 2002).
+
+The list of parameters for each reaction includes
+
+.. admonition:: general_kinetics-spec
+
+  * `"reactants`" ``[string]`` is the left-hand side of the above equation.
+
+  * `"products`" ``[string]`` is the right-hand side of the above equation.
+
+  * `"forward rate`" ``[double]`` is the forward reaction rate.
+
+  * `"backward rate`" ``[double]`` is the reverse reaction rate.
+
+  * `"reaction orders (reactants/products)`" ``[Array(double)]`` is the list of
+    reaction orders with respect to activies of dissolved species. The list
+    includes orders for reactants (first) and products (second).
+
+.. code-block:: xml
+
+  <ParameterList name="general kinetics">
+    <ParameterList name="general_0">
+      <Parameter name="reactants" type="string" value="1.0 Tritium"/>
+      <Parameter name="products" type="string" value=""/>
+      <Parameter name="forward rate" type="double" value="1.78577e-09"/>
+      <Parameter name="backward rate" type="double" value="0.0"/>
+      <Parameter name="reaction orders (reactants/products)" type="Array(double)" value="{3.0, 2.0, 0.0, 0.0, 0.0}"/>
+    </ParameterList>
+  </ParameterList>
+
+This example describes decay of *Tritium*.
+
 */
 
 #ifndef AMANZI_CHEMISTRY_GENERAL_RXN_HH_
@@ -46,10 +86,9 @@ class GeneralRxn {
   int ncomp_backward_; // # components in backward reaction
 
   std::vector<std::string> species_names_;
-  std::vector<int> species_ids_;      // ids of primary species in rxn
-  std::vector<double> stoichiometry_; // stoich of primary species in rxn
-  std::vector<int> species_ids_f_,
-    species_ids_b_; // ids species used in forward and backward reactions
+  std::vector<int> species_ids_;                   // ids of primary species in rxn
+  std::vector<double> stoichiometry_;              // stoich of primary species in rxn
+  std::vector<int> species_ids_f_, species_ids_b_; // species ids in forward and backward reactions
   std::vector<double> stoichiometry_f_,
     stoichiometry_b_; // forward and backward stoichometries of primary species
 

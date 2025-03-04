@@ -8,6 +8,18 @@
         <Parameter name="high coordinate" type="Array(double)" value="{5.0,1.0,1.0}"/>
       </ParameterList>
     </ParameterList>
+    <ParameterList name="Part1">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{5.0,0.5,1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Part2">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.5,0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{5.0,1.0,1.0}"/>
+      </ParameterList>
+    </ParameterList>
     <ParameterList name="Left side">
       <ParameterList name="region: plane">
         <Parameter name="point" type="Array(double)" value="{0.0,0.0,0.0}"/>
@@ -42,12 +54,25 @@
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
       <ParameterList name="material properties">
-        <ParameterList name="Brown soil">
-          <Parameter name="regions" type="Array(string)" value="{Computational domain}"/>
+        <ParameterList name="Soil1">
+          <Parameter name="regions" type="Array(string)" value="{Part1}"/>
           <Parameter name="model" type="string" value="Bear"/>
           <ParameterList name="parameters for Bear">
             <Parameter name="alpha_l" type="double" value="0.1"/>
             <Parameter name="alpha_t" type="double" value="0.01"/>
+          </ParameterList>
+          <Parameter name="aqueous tortuosity" type="double" value="0.0"/>
+        </ParameterList>
+        <ParameterList name="Soil2">
+          <Parameter name="regions" type="Array(string)" value="{Part2}"/>
+          <Parameter name="model" type="string" value="scalar"/>
+          <ParameterList name="parameters for scalar">
+            <ParameterList name="alpha">
+              <ParameterList name="function-exprtk">
+                <Parameter name="number of arguments" type="int" value="4"/>
+                <Parameter name="formula" type="string" value="0.1"/>
+              </ParameterList>
+            </ParameterList>
           </ParameterList>
           <Parameter name="aqueous tortuosity" type="double" value="0.0"/>
         </ParameterList>

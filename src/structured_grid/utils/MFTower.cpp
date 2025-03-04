@@ -269,7 +269,6 @@ MFTower::CCtoECavg(PArray<MFTower>& mfte,
     }
     if (numLevs<0) numLevs = numLevs_tmp;
     BL_ASSERT(numLevs<=mftc.NumLevels());
-    const Array<Geometry>& geomArray = theLayout.GeomArray();
     for (int lev=0; lev<numLevs; ++lev) {
         const MultiFab& mfc = mftc[lev];
         BL_ASSERT(mfc.nGrow()>=1);
@@ -314,7 +313,6 @@ MFTower::ECtoCCdiv(MFTower&               mftc,
         BL_ASSERT(mfte[d].NumLevels()>=numLevs);
     }
 
-    const Array<Geometry>& geomArray = theLayout.GeomArray();
     for (int lev=0; lev<numLevs; ++lev) {
         MultiFab& mfc = mftc[lev];
         BL_ASSERT(dComp+nComp<=mfc.nComp());
@@ -602,8 +600,6 @@ MFTFillPatch::BuildStencil(const BCRec& bc,
         return 0; // we have already made what we need
     }
 
-    int myproc = ParallelDescriptor::MyProc();
-
     BuildCFParallelInterpStencil();
     const PArray<Layout::MultiNodeFab>& nodes = layout.Nodes();
 
@@ -752,7 +748,6 @@ MFTFillPatch::DoCoarseFineParallelInterp(MFTower& mft,
 
     const Array<Geometry>& geomArray = layout.GeomArray();
     const Array<IntVect>& refRatio = layout.RefRatio();
-    const Array<BoxArray>& gridArray = layout.GridArray();
     for (int lev=1; lev<numLevs; ++lev) {
 
         MultiFab& mf = mft[lev];
@@ -768,8 +763,6 @@ MFTFillPatch::DoCoarseFineParallelInterp(MFTower& mft,
         const Array<IVSMap>& parInterpLev = parallelInterpStencil[lev];
 
         for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
-
-            int gridIdx = mfi.index();
 
             FArrayBox& crseFab = crseMF[mfi];
             FArrayBox& fineFab = mf[mfi];
@@ -946,8 +939,7 @@ MFTFillPatch::FillGrowCellsSimple(MFTower& mft,
                         const Box& bndrySect = isects[i].second;
                         for (IntVect iv=bndrySect.smallEnd(), End=bndrySect.bigEnd(); iv<=End; bndrySect.next(iv)) {
                             const Node& node = nodesFab(iv,0);
-                            int slev = node.level;
-                            BL_ASSERT(slev == lev-1);
+                            BL_ASSERT(node.level == lev-1);
                             const IntVect& ivs = node.iv;
                             BL_ASSERT(crseFab.box().contains(ivs));
                             for (int n=0; n<nComp; ++n) {
@@ -972,9 +964,7 @@ MFTower::SetVal(Real     val,
   BL_PROFILE("MFTower::SetVal()");
     if (numLevs<0) numLevs=nLevs;
     BL_ASSERT(numLevs <= nLevs);
-    const Layout& layout = GetLayout();
-    for (int lev=0; lev<numLevs; ++lev)
-    {
+    for (int lev=0; lev<numLevs; ++lev) {
         int nGrow = mft[lev].nGrow();
         mft[lev].setVal(val,sComp,nComp,nGrow);
     }

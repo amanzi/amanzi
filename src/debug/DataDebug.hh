@@ -31,7 +31,7 @@ class DataDebug {
                                std::string& description);
 
  private:
-  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<AmanziMesh::MeshHost> mesh_;
 };
 
 } // namespace Amanzi

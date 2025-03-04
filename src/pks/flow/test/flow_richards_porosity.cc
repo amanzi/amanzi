@@ -26,6 +26,7 @@
 
 // Amanzi
 #include "GMVMesh.hh"
+#include "IO.hh"
 #include "MeshAudit.hh"
 #include "MeshFactory.hh"
 #include "State.hh"
@@ -59,7 +60,6 @@ TEST(FLOW_POROSITY_MODELS)
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
-  pref.push_back(Framework::STK);
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
@@ -70,8 +70,9 @@ TEST(FLOW_POROSITY_MODELS)
   Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
   S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
+  Teuchos::ParameterList pk_tree("flow");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  Teuchos::RCP<Richards_PK> RPK = Teuchos::rcp(new Richards_PK(plist, "flow", S, soln));
+  Teuchos::RCP<Richards_PK> RPK = Teuchos::rcp(new Richards_PK(pk_tree, plist, S, soln));
 
   RPK->Setup();
   S->Setup();
@@ -82,19 +83,24 @@ TEST(FLOW_POROSITY_MODELS)
   std::string passwd("");
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
 
-  AmanziMesh::Entity_ID_List block;
-  mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
-  for (int i = 0; i != block.size(); ++i) {
-    int c = block[i];
-    K[0][c] = 0.1;
-    K[1][c] = 2.0;
+  {
+    auto block = mesh->getSetEntities(
+      "Material 1", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+    for (int i = 0; i != block.size(); ++i) {
+      int c = block[i];
+      K[0][c] = 0.1;
+      K[1][c] = 2.0;
+    }
   }
 
-  mesh->get_set_entities("Material 2", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
-  for (int i = 0; i != block.size(); ++i) {
-    int c = block[i];
-    K[0][c] = 0.5;
-    K[1][c] = 0.5;
+  {
+    auto block = mesh->getSetEntities(
+      "Material 2", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+    for (int i = 0; i != block.size(); ++i) {
+      int c = block[i];
+      K[0][c] = 0.5;
+      K[1][c] = 0.5;
+    }
   }
   S->GetRecordW("permeability", "permeability").set_initialized();
 
@@ -105,7 +111,7 @@ TEST(FLOW_POROSITY_MODELS)
   auto& p = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
 
   for (int c = 0; c < p.MyLength(); c++) {
-    const Point& xc = mesh->cell_centroid(c);
+    const Point& xc = mesh->getCellCentroid(c);
     p[0][c] = xc[1] * (xc[1] + 2.0);
   }
 
@@ -137,6 +143,8 @@ TEST(FLOW_POROSITY_MODELS)
   std::cout << "Porosity min = " << pmin << std::endl;
   std::cout << "Porosity max = " << pmax << std::endl;
 
+  // WriteStateStatistics(*S);
+
   if (MyPID == 0) {
     GMV::open_data_file(*mesh, (std::string) "flow.gmv");
     GMV::start_data();
@@ -145,6 +153,7 @@ TEST(FLOW_POROSITY_MODELS)
   }
 
   // check the pressure
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   for (int c = 0; c < ncells; c++) CHECK(p[0][c] > -4.0 && p[0][c] < 0.01);
 }

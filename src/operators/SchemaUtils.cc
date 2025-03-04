@@ -29,48 +29,72 @@ AssembleVectorCellOp(int c,
                      const WhetStone::DenseVector& v,
                      CompositeVector& X)
 {
-  AmanziMesh::Entity_ID_List nodes, edges;
-
   int m(0);
   for (auto it = schema.begin(); it != schema.end(); ++it) {
     int num;
     AmanziMesh::Entity_kind kind;
     std::tie(kind, std::ignore, num) = *it;
 
-    if (kind == AmanziMesh::NODE) {
+    auto map = X.ComponentMap(to_string(kind), true);
+
+    if (kind == AmanziMesh::Entity_kind::NODE) {
       Epetra_MultiVector& Xn = *X.ViewComponent("node", true);
 
-      mesh.cell_get_nodes(c, &nodes);
+      auto nodes = mesh.getCellNodes(c);
       int nnodes = nodes.size();
 
       for (int n = 0; n != nnodes; ++n) {
-        for (int k = 0; k < num; ++k) { Xn[k][nodes[n]] += v(m++); }
+        int lid = nodes[n];
+        int first = map->FirstPointInElement(lid);
+        int ndofs = map->ElementSize(lid);
+
+        for (int k = 0; k < num; ++k) {
+          for (int s = 0; s < ndofs; ++s) {
+            Xn[k][first + s] += v(m++);
+          }
+        }
       }
     }
 
-    else if (kind == AmanziMesh::FACE) {
+    else if (kind == AmanziMesh::Entity_kind::FACE) {
       Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
 
-      const auto& faces = mesh.cell_get_faces(c);
+      const auto& faces = mesh.getCellFaces(c);
       int nfaces = faces.size();
 
       for (int n = 0; n != nfaces; ++n) {
-        for (int k = 0; k < num; ++k) { Xf[k][faces[n]] += v(m++); }
+        int lid = faces[n];
+        int first = map->FirstPointInElement(lid);
+        int ndofs = map->ElementSize(lid);
+
+        for (int k = 0; k < num; ++k) {
+          for (int s = 0; s < ndofs; ++s) {
+            Xf[k][first + s] += v(m++);
+          }
+        }
       }
     }
 
-    else if (kind == AmanziMesh::EDGE) {
+    else if (kind == AmanziMesh::Entity_kind::EDGE) {
       Epetra_MultiVector& Xe = *X.ViewComponent("edge", true);
 
-      mesh.cell_get_edges(c, &edges);
+      auto edges = mesh.getCellEdges(c);
       int nedges = edges.size();
 
       for (int n = 0; n != nedges; ++n) {
-        for (int k = 0; k < num; ++k) { Xe[k][edges[n]] += v(m++); }
+        int lid = edges[n];
+        int first = map->FirstPointInElement(lid);
+        int ndofs = map->ElementSize(lid);
+
+        for (int k = 0; k < num; ++k) {
+          for (int s = 0; s < ndofs; ++s) {
+            Xe[k][first + s] += v(m++);
+          }
+        }
       }
     }
 
-    else if (kind == AmanziMesh::CELL) {
+    else if (kind == AmanziMesh::Entity_kind::CELL) {
       Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
 
       for (int k = 0; k < num; ++k) { Xc[k][c] += v(m++); }
@@ -93,18 +117,16 @@ AssembleVectorFaceOp(int f,
                      const WhetStone::DenseVector& v,
                      CompositeVector& X)
 {
-  AmanziMesh::Entity_ID_List cells;
-
   int m(0);
   for (auto it = schema.begin(); it != schema.end(); ++it) {
     int num;
     AmanziMesh::Entity_kind kind;
     std::tie(kind, std::ignore, num) = *it;
 
-    if (kind == AmanziMesh::CELL) {
+    if (kind == AmanziMesh::Entity_kind::CELL) {
       Epetra_MultiVector& Xf = *X.ViewComponent("cell", true);
 
-      mesh.face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      auto cells = mesh.getFaceCells(f);
       int ncells = cells.size();
 
       for (int n = 0; n != ncells; ++n) {
@@ -125,18 +147,16 @@ AssembleVectorNodeOp(int n,
                      const WhetStone::DenseVector& v,
                      CompositeVector& X)
 {
-  AmanziMesh::Entity_ID_List cells;
-
   int m(0);
   for (auto it = schema.begin(); it != schema.end(); ++it) {
     int num;
     AmanziMesh::Entity_kind kind;
     std::tie(kind, std::ignore, num) = *it;
 
-    if (kind == AmanziMesh::CELL) {
+    if (kind == AmanziMesh::Entity_kind::CELL) {
       Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
 
-      mesh.node_get_cells(n, AmanziMesh::Parallel_type::ALL, &cells);
+      auto cells = mesh.getNodeCells(n);
       int ncells = cells.size();
 
       for (int i = 0; i != ncells; ++i) {
@@ -157,48 +177,72 @@ ExtractVectorCellOp(int c,
                     WhetStone::DenseVector& v,
                     const CompositeVector& X)
 {
-  AmanziMesh::Entity_ID_List nodes, edges;
-
   int m(0);
   for (auto it = schema.begin(); it != schema.end(); ++it) {
     int num;
     AmanziMesh::Entity_kind kind;
     std::tie(kind, std::ignore, num) = *it;
 
-    if (kind == AmanziMesh::NODE) {
+    auto map = X.ComponentMap(to_string(kind), true);
+
+    if (kind == AmanziMesh::Entity_kind::NODE) {
       const Epetra_MultiVector& Xn = *X.ViewComponent("node", true);
 
-      mesh.cell_get_nodes(c, &nodes);
+      auto nodes = mesh.getCellNodes(c);
       int nnodes = nodes.size();
 
       for (int n = 0; n != nnodes; ++n) {
-        for (int k = 0; k < num; ++k) { v(m++) = Xn[k][nodes[n]]; }
+        int lid = nodes[n];
+        int first = map->FirstPointInElement(lid);
+        int ndofs = map->ElementSize(lid);
+
+        for (int k = 0; k < num; ++k) {
+          for (int s = 0; s < ndofs; ++s) {
+            v(m++) = Xn[k][first + s];
+          }
+        }
       }
     }
 
-    else if (kind == AmanziMesh::FACE) {
+    else if (kind == AmanziMesh::Entity_kind::FACE) {
       const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
 
-      const auto& faces = mesh.cell_get_faces(c);
+      const auto& faces = mesh.getCellFaces(c);
       int nfaces = faces.size();
 
       for (int n = 0; n != nfaces; ++n) {
-        for (int k = 0; k < num; ++k) { v(m++) = Xf[k][faces[n]]; }
+        int lid = faces[n];
+        int first = map->FirstPointInElement(lid);
+        int ndofs = map->ElementSize(lid);
+
+        for (int k = 0; k < num; ++k) {
+          for (int s = 0; s < ndofs; ++s) {
+            v(m++) = Xf[k][first + s];
+          }
+        }
       }
     }
 
-    else if (kind == AmanziMesh::EDGE) {
+    else if (kind == AmanziMesh::Entity_kind::EDGE) {
       const Epetra_MultiVector& Xe = *X.ViewComponent("edge", true);
 
-      mesh.cell_get_edges(c, &edges);
+      auto edges = mesh.getCellEdges(c);
       int nedges = edges.size();
 
       for (int n = 0; n != nedges; ++n) {
-        for (int k = 0; k < num; ++k) { v(m++) = Xe[k][edges[n]]; }
+        int lid = edges[n];
+        int first = map->FirstPointInElement(lid);
+        int ndofs = map->ElementSize(lid);
+
+        for (int k = 0; k < num; ++k) {
+          for (int s = 0; s < ndofs; ++s) {
+            v(m++) = Xe[k][first + s];
+          }
+        }
       }
     }
 
-    else if (kind == AmanziMesh::CELL) {
+    else if (kind == AmanziMesh::Entity_kind::CELL) {
       const Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
 
       for (int k = 0; k < num; ++k) { v(m++) = Xc[k][c]; }
@@ -208,6 +252,8 @@ ExtractVectorCellOp(int c,
       AMANZI_ASSERT(false);
     }
   }
+
+  v.Reshape(m);
 }
 
 
@@ -221,18 +267,16 @@ ExtractVectorFaceOp(int f,
                     WhetStone::DenseVector& v,
                     const CompositeVector& X)
 {
-  AmanziMesh::Entity_ID_List cells;
-
   int m(0);
   for (auto it = schema.begin(); it != schema.end(); ++it) {
     int num;
     AmanziMesh::Entity_kind kind;
     std::tie(kind, std::ignore, num) = *it;
 
-    if (kind == AmanziMesh::CELL) {
+    if (kind == AmanziMesh::Entity_kind::CELL) {
       const Epetra_MultiVector& Xf = *X.ViewComponent("cell", true);
 
-      mesh.face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      auto cells = mesh.getFaceCells(f);
       int ncells = cells.size();
 
       for (int n = 0; n != ncells; ++n) {
@@ -253,18 +297,16 @@ ExtractVectorNodeOp(int n,
                     WhetStone::DenseVector& v,
                     const CompositeVector& X)
 {
-  AmanziMesh::Entity_ID_List cells;
-
   int m(0);
   for (auto it = schema.begin(); it != schema.end(); ++it) {
     int num;
     AmanziMesh::Entity_kind kind;
     std::tie(kind, std::ignore, num) = *it;
 
-    if (kind == AmanziMesh::CELL) {
+    if (kind == AmanziMesh::Entity_kind::CELL) {
       const Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
 
-      mesh.node_get_cells(n, AmanziMesh::Parallel_type::ALL, &cells);
+      auto cells = mesh.getNodeCells(n);
       int ncells = cells.size();
 
       for (int i = 0; i != ncells; ++i) {

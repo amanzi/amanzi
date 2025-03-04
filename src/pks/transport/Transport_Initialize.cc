@@ -107,6 +107,14 @@ Transport_PK::InitializeAll_()
       Teuchos::sublist(tp_list_, "material properties");
     mdm_ = CreateMDMPartition(mesh_, mdm_list, flag_dispersion_);
     if (flag_dispersion_) CalculateAxiSymmetryDirection();
+
+    if (S_->HasRecord(tortuosity_key_, Tags::DEFAULT)) {
+      auto& tortuosity_c =
+        *S_->GetW<CompositeVector>(tortuosity_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+      for (int c = 0; c < ncells_owned; ++c)
+        tortuosity_c[0][c] = mat_properties_[(*mdm_->first)[c]]->tau[0];
+      S_->GetRecordW(tortuosity_key_, passwd_).set_initialized();
+    }
   }
 
   // do we really have molecular diffusion?
@@ -146,7 +154,7 @@ Transport_PK::InitializeAll_()
   internal_tests_ = tp_list_->get<bool>("enable internal tests", false);
   internal_tests_tol_ =
     tp_list_->get<double>("internal tests tolerance", TRANSPORT_CONCENTRATION_OVERSHOOT);
-  dt_debug_ = tp_list_->get<double>("maximum time step", TRANSPORT_LARGE_TIME_STEP);
+  dt_debug_ = tp_list_->get<double>("maximum timestep", TRANSPORT_LARGE_TIME_STEP);
 
   if (spatial_disc_order < 1 || spatial_disc_order > 2 || temporal_disc_order < 1 ||
       temporal_disc_order > 4) {
