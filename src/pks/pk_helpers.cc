@@ -269,8 +269,8 @@ initializeCVField(State& S,
     Record& record = S.GetRecordW(key, tag, passwd);
     if (record.owner() == passwd) {
       if (!record.initialized()) {
-        record.Initialize(ic_plist);
-        S.GetRecordW(key, tag, passwd).set_initialized();
+        bool inited = record.Initialize(ic_plist);
+        if (inited) S.GetRecordW(key, tag, passwd).set_initialized();
 
         if (vo.os_OK(Teuchos::VERB_MEDIUM)) {
           Teuchos::OSTab tab = vo.getOSTab();

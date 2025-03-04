@@ -89,7 +89,7 @@ PK_Physical::FailStep(double t_old, double t_new, const Tag& tag_next)
 //  Marks as changed
 // -----------------------------------------------------------------------------
 void
-PK_Physical::ChangedSolutionPK_(const Tag& tag)
+PK_Physical::ChangedSolutionPK(const Tag& tag)
 {
   changedEvaluatorPrimary(key_, tag, *S_);
 }
@@ -108,9 +108,9 @@ PK_Physical::Initialize()
   if (!record.initialized()) {
     // initial conditions
     // -- Get the IC function plist.
-    if (!plist_->isSublist("initial condition")) {
+    if (!plist_->isSublist("initial conditions")) {
       Errors::Message message;
-      message << name() << " has no initial condition parameter list.";
+      message << name() << " has no \"initial conditions\" sublist.";
       Exceptions::amanzi_throw(message);
     }
 
@@ -123,7 +123,8 @@ PK_Physical::Initialize()
     ChangedSolutionPK(tag_next_);
   }
 
-  solution_->SetData(record.GetPtrW<CompositeVector>(passwd_));
+  if (solution_ != Teuchos::null)
+    solution_->SetData(record.GetPtrW<CompositeVector>(passwd_));
 };
 
 

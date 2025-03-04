@@ -89,17 +89,20 @@ class Amanzi_PK : public Chemistry_PK {
             const Teuchos::RCP<TreeVector>& soln);
 
   // members required by PK interface
-  virtual void Setup() final;
-  virtual void Initialize() final;
+  virtual void parseParameterList() override;
+  virtual void Setup() override final;
+  virtual void Initialize() override final;
 
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) final;
-  virtual void CommitStep(double t_old, double t_new, const Tag& tag) final;
-  virtual void CalculateDiagnostics(const Tag& tag) final { extra_chemistry_output_data(); }
+  virtual void CalculateDiagnostics(const Tag& tag) override final { extra_chemistry_output_data(); }
 
   // The following two routines provide the interface for
   // output of auxillary cellwise data from chemistry
   Teuchos::RCP<Epetra_MultiVector> extra_chemistry_output_data();
   void set_chemistry_output_names(std::vector<std::string>* names);
+
+  // -- get/set auxiliary tcc vector that now contains only aqueous components.
+  Teuchos::RCP<Epetra_MultiVector> aqueous_components() { return aqueous_components_; }
+  void set_aqueous_components(Teuchos::RCP<Epetra_MultiVector> tcc) { aqueous_components_ = tcc; }
 
   // functions used in Transport PK
   void CopyCellStateToBeakerState(int c, Teuchos::RCP<Epetra_MultiVector> aqueous_components);
@@ -114,9 +117,8 @@ class Amanzi_PK : public Chemistry_PK {
 
   void ErrorAnalysis(int ierr, std::string& internal_msg);
 
-  virtual void updateSubstate() {}
+  virtual void updateSubstate() override {}
 
-  
  private:
   void AllocateAdditionalChemistryStorage_();
 
@@ -126,13 +128,9 @@ class Amanzi_PK : public Chemistry_PK {
   void InitializeBeakerFields_();
 
   void CopyBeakerStructuresToCellState(int c, Teuchos::RCP<Epetra_MultiVector> aqueous_components);
+  virtual int advanceSingleCell_(int cell, double dt) override;
+  virtual void copyFields_(const Tag& tag_dest, const Tag& tag_source) override {}
 
-  void EstimateNextTimeStep_(double t_old, double t_new);
-
-  virtual int advanceSingleCell_(int cell, double dt) { return 0; }
-  virtual void copyFields_(const Tag& tag_dest, const Tag& tag_source) {}
-
-  
  protected:
   Key tcc_key_;
   Key poro_key_;
@@ -164,18 +162,16 @@ class Amanzi_PK : public Chemistry_PK {
 
   Key prev_saturation_key_; // move to base class ???
 
-  std::string dt_control_method_;
   double dt_;
   double dt_int_, dt_global_; // interpolation and global times
-  double dt_max_;
-  double dt_cut_factor_, dt_increase_factor_;
-  double dt_cut_threshold_, dt_increase_threshold_;
 
   bool using_sorption_;
   bool using_sorption_isotherms_;
   int number_free_ion_, number_total_sorbed_;
   int number_ion_exchange_sites_, number_sorption_sites_;
+  int number_aqueous_kinetics_;
   std::vector<std::string> sorption_site_names_;
+  std::vector<std::string> aqueous_kinetics_names_;
 
   Teuchos::RCP<Teuchos::ParameterList> glist_;
   std::vector<std::string> aux_names_;

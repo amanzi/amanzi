@@ -35,6 +35,8 @@ def fixTSControl(pk_list):
         if pk_list.isElement("initial timestep (s)"):
             tsc_params.setParameter("timestep [s]", "double",
                                   pk_list.pop("initial timestep (s)").getValue())
+        else:
+            tsc_params.setParameter("timestep [s]", "double", 1.e16);
 
         # remove dead stuff
         for dead in ["min timestep (s)",

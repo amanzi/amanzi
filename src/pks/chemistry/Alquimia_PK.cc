@@ -64,7 +64,7 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
 
   // Amanzi stores many things in the state->initial conditions list, not locally.  Move them locally.
   if (global_list->sublist("state").sublist("initial conditions").isSublist("geochemical conditions")) {
-    plist_->sublist("initial condition").sublist("geochemical conditions") =
+    plist_->sublist("initial conditions").sublist("geochemical conditions") =
       global_list->sublist("state").sublist("initial conditions").sublist("geochemical conditions");
   }
 
@@ -600,13 +600,13 @@ Alquimia_PK::XMLParameters()
 
   // Now associate regions with chemical conditions based on initial
   // condition specifications in the file.
-  auto initial_conditions = Teuchos::sublist(plist_, "initial condition");
+  auto initial_conditions = Teuchos::sublist(plist_, "initial conditions");
   if (initial_conditions->isSublist("geochemical conditions")) {
     Teuchos::ParameterList& geochem_conditions =
       initial_conditions->sublist("geochemical conditions");
     ParseChemicalConditionRegions_(geochem_conditions, chem_initial_conditions_);
     if (chem_initial_conditions_.empty()) {
-      if (plist_->isSublist("initial condition")) {
+      if (plist_->isSublist("initial conditions")) {
         msg << "Alquimia_PK::XMLParameters(): No geochemical conditions were found in "
                "\"PK->initial condition->geochemical conditions\"";
       } else {
@@ -792,10 +792,10 @@ Alquimia_PK::advanceSingleCell_(int cell, double dt)
       }
       return -1;
     }
-  }
 
-  // Move the information back into Amanzi's state, updating the given total concentration vector.
-  copyFromAlquimia_(cell);
+    // Move the information back into Amanzi's state, updating the given total concentration vector.
+    copyFromAlquimia_(cell);
+  }
   return num_iterations;
 }
 

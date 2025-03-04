@@ -62,9 +62,9 @@ class PK_Physical : virtual public PK {
   Key domain() { return domain_; }
   Teuchos::RCP<Debugger> debugger() { return db_; }
 
- protected:
-  void ChangedSolutionPK_(const Tag& tag);
+  void ChangedSolutionPK(const Tag& tag) override;
 
+ protected:
   // name of domain, associated mesh
   Key domain_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

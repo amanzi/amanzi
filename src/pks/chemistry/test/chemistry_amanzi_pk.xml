@@ -90,10 +90,59 @@
       <Parameter name="maximum Newton iterations" type="int" value="150" />
       <Parameter name="auxiliary data" type="Array(string)" value="{pH}" />
       <Parameter name="log formulation" type="bool" value="true" />
+      <Parameter name="primary variable key suffix" type="string" value="total_component_concentration" />
       <ParameterList name="verbose object" type="ParameterList">
         <Parameter name="verbosity level" type="string" value="low" />
       </ParameterList>
 
+      <ParameterList name="timestep controller" type="ParameterList">
+        <Parameter name="timestep controller type" type="string" value="fixed" />
+        <ParameterList name="timestep controller fixed parameters" type="ParameterList">
+          <Parameter name="timestep [s]" type="double" value="1e+16" />
+        </ParameterList>
+      </ParameterList>
+
+
+      <ParameterList name="intiial condition">
+        <Parameter name="names" type="Array(string)" value="{total, pH, total, total, total}" />
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All" />
+            <Parameter name="component" type="string" value="cell" />
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="5" />
+              <Parameter name="function type" type="string" value="composite function" />
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1e-16" />
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 2 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="5" />
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 3 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1e-16" />
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 4 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1e-16" />
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 5 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1e-16" />
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      
     </ParameterList>
 
   </ParameterList>
@@ -340,45 +389,6 @@
               <ParameterList name="dof 3 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="0.00436" />
-                </ParameterList>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
-      <ParameterList name="total_component_concentration">
-        <Parameter name="names" type="Array(string)" value="{total, pH, total, total, total}" />
-        <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="region" type="string" value="All" />
-            <Parameter name="component" type="string" value="cell" />
-            <ParameterList name="function">
-              <Parameter name="number of dofs" type="int" value="5" />
-              <Parameter name="function type" type="string" value="composite function" />
-              <ParameterList name="dof 1 function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1e-16" />
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="dof 2 function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="5" />
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="dof 3 function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1e-16" />
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="dof 4 function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1e-16" />
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="dof 5 function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1e-16" />
                 </ParameterList>
               </ParameterList>
             </ParameterList>
