@@ -216,13 +216,36 @@ Alquimia_PK::Setup()
   }
 
   { // parameters, only at the current
-    auto keys = std::vector<Key>{ isotherm_kd_key_, isotherm_freundlich_n_key_, isotherm_langmuir_b_key_ };
-    for (const auto& key : keys) {
-      if (!key.empty()) {
-        requireAtCurrent(key, tag_current_, *S_)
+    if (!isotherm_kd_key_.empty()) {
+      if (S_->HasEvaluatorList(isotherm_freundlich_n_key_) ||
+          S_->HasICList(isotherm_langmuir_b_key_)) {
+        requireAtCurrent(isotherm_kd_key_, tag_current_, *S_)
           .SetMesh(mesh_)
           ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_components_);
-        S_->GetRecordSetW(key).set_subfieldnames(aqueous_comp_names_);
+        S_->GetRecordSetW(isotherm_kd_key_).set_subfieldnames(aqueous_comp_names_);
+      } else {
+        isotherm_kd_key_ = "";
+      }
+
+      // but freundlich n and langmuir b are NOT required
+      if (S_->HasEvaluatorList(isotherm_freundlich_n_key_) ||
+          S_->HasICList(isotherm_langmuir_b_key_)) {
+        requireAtCurrent(isotherm_freundlich_n_key_, tag_current_, *S_)
+          .SetMesh(mesh_)
+          ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_components_);
+        S_->GetRecordSetW(isotherm_freundlich_n_key_).set_subfieldnames(aqueous_comp_names_);
+      } else {
+        isotherm_freundlich_n_key_ = "";
+      }
+
+      if (S_->HasEvaluatorList(isotherm_langmuir_b_key_) ||
+          S_->HasICList(isotherm_langmuir_b_key_)) {
+        requireAtCurrent(isotherm_langmuir_b_key_, tag_current_, *S_)
+          .SetMesh(mesh_)
+          ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_components_);
+        S_->GetRecordSetW(isotherm_langmuir_b_key_).set_subfieldnames(aqueous_comp_names_);
+      } else {
+        isotherm_langmuir_b_key_ = "";
       }
     }
 
@@ -234,10 +257,17 @@ Alquimia_PK::Setup()
     }
 
     if (!aqueous_kinetic_rate_constant_key_.empty()) {
-      requireAtCurrent(aqueous_kinetic_rate_constant_key_, tag_current_, *S_)
-        .SetMesh(mesh_)
-        ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_kinetics_);
-      S_->GetRecordSetW(aqueous_kinetic_rate_constant_key_).set_subfieldnames(aqueous_kinetics_names_);
+      if (S_->HasEvaluatorList(aqueous_kinetic_rate_constant_key_) ||
+          S_->HasICList(aqueous_kinetic_rate_constant_key_)) {
+        requireAtCurrent(aqueous_kinetic_rate_constant_key_, tag_current_, *S_)
+          .SetMesh(mesh_)
+          ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_kinetics_);
+        S_->GetRecordSetW(aqueous_kinetic_rate_constant_key_).set_subfieldnames(aqueous_kinetics_names_);
+      } else {
+        // User has not provided this list, instead it must be in the chemical
+        // engine card.  We will not provide it.
+        aqueous_kinetic_rate_constant_key_ = "";
+      }
     }
   }
 
@@ -419,10 +449,14 @@ Alquimia_PK::updateSubstate()
   if (!isotherm_kd_key_.empty()) {
     S_->GetEvaluator(isotherm_kd_key_, tag_current_).Update(*S_, name_);
     substate_.isotherm_kd = &*S_->Get<CompositeVector>(isotherm_kd_key_, tag_current_).ViewComponent("cell", false);
+  }
 
+  if (!isotherm_freundlich_n_key_.empty()) {
     S_->GetEvaluator(isotherm_freundlich_n_key_, tag_current_).Update(*S_, name_);
     substate_.isotherm_freundlich_n = &*S_->Get<CompositeVector>(isotherm_freundlich_n_key_, tag_current_).ViewComponent("cell", false);
+  }
 
+  if (!isotherm_langmuir_b_key_.empty()) {
     S_->GetEvaluator(isotherm_langmuir_b_key_, tag_current_).Update(*S_, name_);
     substate_.isotherm_langmuir_b = &*S_->Get<CompositeVector>(isotherm_langmuir_b_key_, tag_current_).ViewComponent("cell", false);
   }
@@ -662,17 +696,21 @@ Alquimia_PK::copyToAlquimia(int cell, AlquimiaBeaker& beaker)
     beaker.state.cation_exchange_capacity.data[i] = (*substate_.cation_exchange_capacity_old)[i][cell];
 
   // sorption isotherms
-  if (substate_.isotherm_kd) {
-    for (unsigned int i = 0; i < number_aqueous_components_; ++i) {
+  if (substate_.isotherm_kd)
+    for (unsigned int i = 0; i < number_aqueous_components_; ++i)
       beaker.properties.isotherm_kd.data[i] = (*substate_.isotherm_kd)[i][cell];
+  if (substate_.isotherm_freundlich_n)
+    for (unsigned int i = 0; i < number_aqueous_components_; ++i)
       beaker.properties.freundlich_n.data[i] = (*substate_.isotherm_freundlich_n)[i][cell];
+  if (substate_.isotherm_langmuir_b)
+    for (unsigned int i = 0; i < number_aqueous_components_; ++i)
       beaker.properties.langmuir_b.data[i] = (*substate_.isotherm_langmuir_b)[i][cell];
-    }
-  }
 
   // aqueous kinetics
-  for (unsigned int i = 0; i != number_aqueous_kinetics_; ++i) {
-    beaker.properties.aqueous_kinetic_rate_cnst.data[i] = (*substate_.aqueous_kinetic_rate_constant)[i][cell];
+  if (substate_.aqueous_kinetic_rate_constant != nullptr) {
+    for (unsigned int i = 0; i != number_aqueous_kinetics_; ++i) {
+      beaker.properties.aqueous_kinetic_rate_cnst.data[i] = (*substate_.aqueous_kinetic_rate_constant)[i][cell];
+    }
   }
 
   // Auxiliary data
@@ -809,7 +847,9 @@ void
 Alquimia_PK::copyFields_(const Tag& tag_dest, const Tag& tag_source)
 {
 
-  auto keys = std::vector<Key>{ mineral_volume_fraction_key_,
+  auto keys = std::vector<Key>{
+    total_sorbed_key_,
+    mineral_volume_fraction_key_,
     mineral_specific_surface_area_key_,
     sorp_site_density_key_,
     cation_exchange_capacity_key_,
