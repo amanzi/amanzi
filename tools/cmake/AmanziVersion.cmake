@@ -93,7 +93,11 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) )
   endif()
 
   # Get the latest amanzi-* version number tag
-  set(GIT_ARGS tag -l amanzi-*)
+  # ASG - this line doesn't seem to work for my forked version
+  # attemption to replace with what I had before:
+  # set(GIT_ARGS tag -l amanzi-*)
+  set(GIT_ARGS status)
+
   execute_process(COMMAND  ${GIT_EXECUTABLE} ${GIT_ARGS}
                   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                   RESULT_VARIABLE err_occurred
