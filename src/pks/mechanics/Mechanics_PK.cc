@@ -18,6 +18,7 @@
 #include "PK_DomainFunctionFactory.hh"
 #include "PorosityEvaluator.hh"
 #include "StateArchive.hh"
+#include "PK_Helpers.hh"
 
 #include "HydrostaticStressEvaluator.hh"
 #include "MechanicsElasticity_PK.hh"
@@ -65,12 +66,11 @@ Mechanics_PK::Setup()
   eval_ = Teuchos::rcp_static_cast<EvaluatorPrimary<CV_t, CVS_t>>(
     S_->GetEvaluatorPtr(displacement_key_, Tags::DEFAULT));
 
-  if (!S_->HasRecord(hydrostatic_stress_key_)) {
-    S_->Require<CV_t, CVS_t>(hydrostatic_stress_key_, Tags::DEFAULT, hydrostatic_stress_key_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-  }
+  // needed secondary variables
+  S_->Require<CV_t, CVS_t>(hydrostatic_stress_key_, Tags::DEFAULT)
+    .SetMesh(mesh_)
+    ->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, 1);
   {
     Teuchos::ParameterList elist(hydrostatic_stress_key_);
     elist.set<std::string>("tag", "");
@@ -78,38 +78,36 @@ Mechanics_PK::Setup()
     S_->SetEvaluator(hydrostatic_stress_key_, Tags::DEFAULT, eval_hydro_stress_);
   }
 
-  if (!S_->HasRecord(vol_strain_key_)) {
-    S_->Require<CV_t, CVS_t>(vol_strain_key_, Tags::DEFAULT, vol_strain_key_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1); // copy of states needs it
-  }
+  S_->Require<CV_t, CVS_t>(vol_strain_key_, Tags::DEFAULT)
+    .SetMesh(mesh_)
+    ->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, 1)
+    ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1); // copy of states needs it
   {
     Teuchos::ParameterList elist(vol_strain_key_);
     elist.set<std::string>("tag", "");
-    // elist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     eval_vol_strain_ = Teuchos::rcp(new VolumetricStrainEvaluator(elist));
     S_->SetEvaluator(vol_strain_key_, Tags::DEFAULT, eval_vol_strain_);
   }
 
+  
+  
   // -- rock properties
   S_->Require<CV_t, CVS_t>(young_modulus_key_, Tags::DEFAULT, passwd_)
     .SetMesh(mesh_)
     ->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::CELL, 1);
+    ->SetComponent("cell", AmanziMesh::CELL, 1);
 
   S_->Require<CV_t, CVS_t>(poisson_ratio_key_, Tags::DEFAULT, passwd_)
     .SetMesh(mesh_)
     ->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::CELL, 1);
+    ->SetComponent("cell", AmanziMesh::CELL, 1);
 
   if (!S_->HasRecord(particle_density_key_)) {
-    S_->Require<CV_t, CVS_t>(particle_density_key_, Tags::DEFAULT, particle_density_key_)
+    requireAtNext(particle_density_key_, Tags::DEFAULT, *S_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-    S_->RequireEvaluator(particle_density_key_, Tags::DEFAULT);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   }
 
   // set units
@@ -423,6 +421,7 @@ Mechanics_PK::AddPressureGradient(CompositeVector& rhs)
 {
   int d = mesh_->getSpaceDimension();
   const auto& p = S_->Get<CV_t>("pressure", Tags::DEFAULT);
+
   const auto& b_c = *S_->Get<CV_t>("biot_coefficient", Tags::DEFAULT).ViewComponent("cell");
 
   if (p.HasComponent("face")) {

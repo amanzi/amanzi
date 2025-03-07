@@ -74,7 +74,8 @@ PK_Physical::CommitStep(double t_old, double t_new, const Tag& tag_next)
 
   AMANZI_ASSERT(tag_next == tag_next_ || tag_next == Tags::NEXT);
   Tag tag_current = tag_next == tag_next_ ? tag_current_ : Tags::CURRENT;
-  assign(key_, tag_current, tag_next, *S_);
+  if (!key_.empty() && S_->HasRecord(key_, tag_current) && S_->HasRecord(key_, tag_next))
+    assign(key_, tag_current, tag_next, *S_);
 }
 
 
@@ -83,7 +84,8 @@ PK_Physical::FailStep(double t_old, double t_new, const Tag& tag_next)
 {
   AMANZI_ASSERT(tag_next == tag_next_ || tag_next == Tags::NEXT);
   Tag tag_current = tag_next == tag_next_ ? tag_current_ : Tags::CURRENT;
-  assign(key_, tag_next, tag_current, *S_);
+  if (!key_.empty() && S_->HasRecord(key_, tag_current) && S_->HasRecord(key_, tag_next))
+    assign(key_, tag_next, tag_current, *S_);
 }
 
 

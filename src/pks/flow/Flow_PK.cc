@@ -57,7 +57,6 @@ Flow_PK::Flow_PK(Teuchos::ParameterList& pk_tree,
   units_.Init(*units_list);
 };
 
-
 Flow_PK::Flow_PK()
 {
   vo_ = Teuchos::null;
@@ -107,10 +106,10 @@ Flow_PK::Setup()
   mass_density_liquid_key_ = Keys::getKey(domain_, "mass_density_liquid");
 
   // constant fields
-  S_->Require<double>("const_fluid_density", Tags::DEFAULT, "state");
-  S_->Require<double>("const_fluid_molar_mass", Tags::DEFAULT, "state");
-  S_->Require<double>("atmospheric_pressure", Tags::DEFAULT, "state");
-  S_->Require<AmanziGeometry::Point>("gravity", Tags::DEFAULT, "state");
+  S_->Require<double>("const_fluid_density", Tags::DEFAULT);
+  S_->Require<double>("const_fluid_molar_mass", Tags::DEFAULT);
+  S_->Require<double>("atmospheric_pressure", Tags::DEFAULT);
+  S_->Require<AmanziGeometry::Point>("gravity", Tags::DEFAULT);
 
   // fields and evaluators
   // -- effective fracture permeability

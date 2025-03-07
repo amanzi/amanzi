@@ -46,12 +46,12 @@ Richards_PK::SolveFullySaturatedProblem(double t_old,
 
   // create diffusion operator
   op_matrix_->Init();
-  op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
+  op_matrix_diff_->UpdateMatrices(Teuchos::null, cv_solution_.ptr());
   op_matrix_diff_->ApplyBCs(true, true, true);
 
   // create diffusion preconditioner
   op_preconditioner_->Init();
-  op_preconditioner_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
+  op_preconditioner_diff_->UpdateMatrices(Teuchos::null, cv_solution_.ptr());
   op_preconditioner_diff_->ApplyBCs(true, true, true);
 
   Teuchos::ParameterList plist = linear_operator_list_->sublist(solver_name);
@@ -74,7 +74,7 @@ Richards_PK::SolveFullySaturatedProblem(double t_old,
                << " itr=" << num_itrs << " code=" << code << std::endl;
 
     CompositeVector r(rhs);
-    op_matrix_->ComputeResidual(*solution, r);
+    op_matrix_->ComputeResidual(*cv_solution_, r);
     double residual;
     r.Norm2(&residual);
     *vo_->os() << "true l2 residual: ||r||=" << residual << std::endl;
@@ -132,13 +132,13 @@ Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector> u)
 
   // calculate diffusion operator
   op_matrix_->Init();
-  op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
+  op_matrix_diff_->UpdateMatrices(Teuchos::null, cv_solution_.ptr());
   op_matrix_diff_->ApplyBCs(true, true, true);
   op_matrix_diff_->ModifyMatrices(*u);
 
   // calculate diffusion preconditioner
   op_preconditioner_->Init();
-  op_preconditioner_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
+  op_preconditioner_diff_->UpdateMatrices(Teuchos::null, cv_solution_.ptr());
   op_preconditioner_diff_->ApplyBCs(true, true, true);
   op_preconditioner_diff_->ModifyMatrices(*u);
 

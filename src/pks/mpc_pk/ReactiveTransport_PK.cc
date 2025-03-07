@@ -38,6 +38,12 @@ ReactiveTransport_PK::ReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
   // communicate chemistry engine to transport.
   transport_pk_->SetupChemistry(chemistry_pk_);
 
+
+  // the primary variable is shared across multiple PKs -- set the password so
+  // that both have access
+  getSubPKPlist_(0)->set<std::string>("primary variable password", name_);
+  getSubPKPlist_(1)->set<std::string>("primary variable password", name_);
+
   // master_ = 1;  // Transport;
   // slave_ = 0;  // Chemistry;
 }

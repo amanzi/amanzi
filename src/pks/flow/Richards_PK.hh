@@ -177,9 +177,8 @@ class Richards_PK : public Flow_PK {
  private:
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
 
-  // pointerds to primary field
-  const Teuchos::RCP<TreeVector> soln_;
-  Teuchos::RCP<CompositeVector> solution;
+  // pointers to primary field
+  Teuchos::RCP<CompositeVector> cv_solution_;
 
   // water retention models
   Teuchos::RCP<WRMPartition> wrm_;

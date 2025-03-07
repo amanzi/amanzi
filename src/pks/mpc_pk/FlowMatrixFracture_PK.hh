@@ -128,6 +128,7 @@ class FlowMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   Teuchos::RCP<Teuchos::ParameterList> ti_list_;
 
  private:
+  std::string passwd_;
   const Teuchos::RCP<Teuchos::ParameterList>& glist_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_matrix_, mesh_fracture_;
 

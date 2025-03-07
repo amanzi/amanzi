@@ -62,7 +62,9 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& pk_tree,
                          const Teuchos::RCP<Teuchos::ParameterList>& glist,
                          const Teuchos::RCP<State>& S,
                          const Teuchos::RCP<TreeVector>& soln)
-  : PK(pk_tree, glist, S, soln), Flow_PK(pk_tree, glist, S, soln), glist_(glist), soln_(soln)
+  : PK(pk_tree, glist, S, soln),
+    Flow_PK(pk_tree, glist, S, soln),
+    glist_(glist)
 {
   // We need the flow list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
@@ -75,7 +77,7 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& pk_tree,
 
   // domain and primary evaluators
   domain_ = fp_list_->template get<std::string>("domain name", "domain");
-  pressure_key_ = Keys::getKey(domain_, "pressure");
+
   mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
 
   requireAtNext(pressure_key_, Tags::DEFAULT, *S_, passwd_);
@@ -612,8 +614,8 @@ Richards_PK::Initialize()
   }
 
   // Create pointers to the primary flow field pressure.
-  solution = S_->GetPtrW<CV_t>(pressure_key_, Tags::DEFAULT, passwd_);
-  soln_->SetData(solution);
+  cv_solution_ = S_->GetPtrW<CV_t>(pressure_key_, Tags::DEFAULT, passwd_);
+  solution_->SetData(cv_solution_);
 
   // Create auxiliary vectors for time history and error estimates.
   const Epetra_BlockMap& cmap_owned = mesh_->getMap(AmanziMesh::Entity_kind::CELL, false);
@@ -663,7 +665,7 @@ Richards_PK::Initialize()
     if (!bdf1_list.isSublist("verbose object"))
       bdf1_list.sublist("verbose object") = fp_list_->sublist("verbose object");
 
-    bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1", bdf1_list, *this, soln_->get_map(), S_));
+    bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1", bdf1_list, *this, solution_->get_map(), S_));
   } else {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "WARNING: BDF1 time integration list is missing..." << std::endl;
@@ -682,14 +684,14 @@ Richards_PK::Initialize()
 
   op_matrix_->Init();
   op_matrix_diff_->SetBCs(op_bc_, op_bc_);
-  op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
+  op_matrix_diff_->UpdateMatrices(Teuchos::null, cv_solution_.ptr());
   op_matrix_diff_->ApplyBCs(true, true, true);
 
   op_preconditioner_->Init();
   op_preconditioner_diff_->SetBCs(op_bc_, op_bc_);
-  op_preconditioner_diff_->UpdateMatrices(mol_flowrate_copy.ptr(), solution.ptr());
+  op_preconditioner_diff_->UpdateMatrices(mol_flowrate_copy.ptr(), cv_solution_.ptr());
   op_preconditioner_diff_->UpdateMatricesNewtonCorrection(
-    mol_flowrate_copy.ptr(), solution.ptr(), 1.0);
+    mol_flowrate_copy.ptr(), cv_solution_.ptr(), 1.0);
   op_preconditioner_diff_->ApplyBCs(true, true, true);
 
   if (vapor_diffusion_) {
@@ -714,20 +716,20 @@ Richards_PK::Initialize()
     std::string ini_method_name = ini_list.get<std::string>("method", "none");
     if (ini_method_name == "saturated solver") {
       name = ini_list.get<std::string>("linear solver");
-      SolveFullySaturatedProblem(t_ini, *solution, name);
+      SolveFullySaturatedProblem(t_ini, *cv_solution_, name);
 
       bool clip(false);
       double clip_saturation = ini_list.get<double>("clipping saturation value", -1.0);
       if (clip_saturation > 0.0) {
         double pmin = atm_pressure_;
-        Epetra_MultiVector& p = *solution->ViewComponent("cell");
+        Epetra_MultiVector& p = *cv_solution_->ViewComponent("cell");
         ClipHydrostaticPressure(pmin, clip_saturation, p);
         clip = true;
       }
 
       double clip_pressure = ini_list.get<double>("clipping pressure value", -1e+10);
       if (clip_pressure > -5 * atm_pressure_) {
-        Epetra_MultiVector& p = *solution->ViewComponent("cell");
+        Epetra_MultiVector& p = *cv_solution_->ViewComponent("cell");
         ClipHydrostaticPressure(clip_pressure, p);
         clip = true;
       }
@@ -737,9 +739,9 @@ Richards_PK::Initialize()
         *vo_->os() << "\nClipped pressure field.\n" << std::endl;
       }
 
-      if (clip && solution->HasComponent("face")) {
-        Epetra_MultiVector& p = *solution->ViewComponent("cell");
-        Epetra_MultiVector& lambda = *solution->ViewComponent("face", true);
+      if (clip && cv_solution_->HasComponent("face")) {
+        Epetra_MultiVector& p = *cv_solution_->ViewComponent("cell");
+        Epetra_MultiVector& lambda = *cv_solution_->ViewComponent("face", true);
         DeriveFaceValuesFromCellValues(p, lambda);
       }
     } else if (ini_method_name == "picard") {
@@ -782,17 +784,17 @@ Richards_PK::Initialize()
   }
 
   // Subspace entering: re-initialize lambdas.
-  if (ti_list_->isSublist("dae constraint") && solution->HasComponent("face") &&
+  if (ti_list_->isSublist("dae constraint") && cv_solution_->HasComponent("face") &&
       !flow_on_manifold_) {
     if (S_->get_position() == Amanzi::TIME_PERIOD_START) {
-      EnforceConstraints(t_ini, solution);
+      EnforceConstraints(t_ini, cv_solution_);
       pressure_eval_->SetChanged();
 
       // update mass flux
       op_matrix_->Init();
-      op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
+      op_matrix_diff_->UpdateMatrices(Teuchos::null, cv_solution_.ptr());
       op_matrix_diff_->ApplyBCs(true, true, true);
-      op_matrix_diff_->UpdateFlux(solution.ptr(), mol_flowrate_copy.ptr());
+      op_matrix_diff_->UpdateFlux(cv_solution_.ptr(), mol_flowrate_copy.ptr());
     }
   }
 
@@ -923,7 +925,7 @@ Richards_PK::InitializeStatistics_()
     *vo_->os() << "default (no-flow) BC assigned to " << missed_bc_faces_ << " faces" << std::endl
                << std::endl;
 
-    VV_PrintHeadExtrema(*solution);
+    VV_PrintHeadExtrema(*cv_solution_);
     VV_PrintSourceExtrema();
 
     if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
@@ -968,24 +970,24 @@ Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   archive.Add(fields, Tags::DEFAULT);
 
   // enter subspace
-  if (reinit && solution->HasComponent("face")) {
-    EnforceConstraints(t_new, solution);
-    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) { VV_PrintHeadExtrema(*solution); }
+  if (reinit && cv_solution_->HasComponent("face")) {
+    EnforceConstraints(t_new, cv_solution_);
+    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) { VV_PrintHeadExtrema(*cv_solution_); }
   }
 
   // initialization
   if (num_itrs_ == 0) {
-    auto udot = Teuchos::rcp(new TreeVector(*soln_));
+    auto udot = Teuchos::rcp(new TreeVector(*solution_));
     udot->PutScalar(0.0);
-    bdf1_dae_->SetInitialState(t_old, soln_, udot);
+    bdf1_dae_->SetInitialState(t_old, solution_, udot);
 
-    UpdatePreconditioner(t_old, soln_, dt_);
+    UpdatePreconditioner(t_old, solution_, dt_);
     num_itrs_++;
   }
 
   // trying to make a step
   bool failed(false);
-  failed = bdf1_dae_->AdvanceStep(dt_, dt_next_, soln_);
+  failed = bdf1_dae_->AdvanceStep(dt_, dt_next_, solution_);
   if (failed) {
     dt_ = dt_next_;
 
@@ -996,7 +998,7 @@ Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   // commit solution (should we do it here ?)
-  bdf1_dae_->CommitSolution(dt_, soln_);
+  bdf1_dae_->CommitSolution(dt_, solution_);
   pressure_eval_->SetChanged();
 
   dt_tuple times(t_old, dt_);

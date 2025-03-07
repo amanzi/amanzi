@@ -82,7 +82,7 @@ Richards_PK::FunctionalResidual(double t_old,
 
   // assemble residual for diffusion operator
   op_matrix_->Init();
-  op_matrix_diff_->UpdateMatrices(mol_flowrate_copy.ptr(), solution.ptr());
+  op_matrix_diff_->UpdateMatrices(mol_flowrate_copy.ptr(), cv_solution_.ptr());
   op_matrix_diff_->ApplyBCs(true, true, true);
 
   Teuchos::RCP<CompositeVector> rhs = op_matrix_->rhs();
@@ -358,7 +358,7 @@ Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, d
   // -- Darcy flux
   //    We need only direction of the flux copy
   if (upwind_frequency_ == FLOW_UPWIND_UPDATE_ITERATION) {
-    op_matrix_diff_->UpdateFlux(solution.ptr(), mol_flowrate_copy.ptr());
+    op_matrix_diff_->UpdateFlux(cv_solution_.ptr(), mol_flowrate_copy.ptr());
   }
   mol_flowrate_copy->ScatterMasterToGhosted("face");
 
@@ -385,9 +385,9 @@ Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, d
 
   // create diffusion operators
   op_preconditioner_->Init();
-  op_preconditioner_diff_->UpdateMatrices(mol_flowrate_copy.ptr(), solution.ptr());
+  op_preconditioner_diff_->UpdateMatrices(mol_flowrate_copy.ptr(), cv_solution_.ptr());
   op_preconditioner_diff_->UpdateMatricesNewtonCorrection(
-    mol_flowrate_copy.ptr(), solution.ptr(), 1.0);
+    mol_flowrate_copy.ptr(), cv_solution_.ptr(), 1.0);
   op_preconditioner_diff_->ApplyBCs(true, true, true);
 
   // add time derivative

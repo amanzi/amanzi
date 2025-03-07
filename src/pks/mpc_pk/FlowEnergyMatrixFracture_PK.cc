@@ -65,6 +65,8 @@ FlowEnergyMatrixFracture_PK::FlowEnergyMatrixFracture_PK(
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = plist_->sublist("verbose object");
   vo_ = Teuchos::rcp(new VerboseObject("CoupledThermalFlow_PK", vlist));
+
+  passwd_ = plist_->get<std::string>("primary variable password", name_);
 }
 
 
@@ -87,13 +89,13 @@ FlowEnergyMatrixFracture_PK::Setup()
   // -- flow: pressure and flux
   auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
   if (!S_->HasRecord("pressure")) {
-    requireAtNext("pressure", Tags::DEFAULT, *S_, "state") = *cvs;
+    requireAtNext("pressure", Tags::DEFAULT, *S_, passwd_) = *cvs;
   }
 
   if (!S_->HasRecord(matrix_mol_flowrate_key_)) {
     auto mmap = cvs->Map("face", false);
     auto gmap = cvs->Map("face", true);
-    requireAtNext(matrix_mol_flowrate_key_, Tags::DEFAULT, *S_, "state")
+    requireAtNext(matrix_mol_flowrate_key_, Tags::DEFAULT, *S_, passwd_)
       .SetMesh(mesh_domain_)
       ->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::Entity_kind::FACE, mmap, gmap, 1);
@@ -101,12 +103,12 @@ FlowEnergyMatrixFracture_PK::Setup()
 
   // -- energy: temperature
   if (!S_->HasRecord("temperature")) {
-    requireAtNext("temperature", Tags::DEFAULT, *S_, "state") = *cvs;
+    requireAtNext("temperature", Tags::DEFAULT, *S_, passwd_) = *cvs;
   }
 
   // additional fields and evaluators
   if (!S_->HasRecord(diffusion_to_matrix_key_)) {
-    requireAtNext(diffusion_to_matrix_key_, Tags::DEFAULT, *S_, "state")
+    requireAtNext(diffusion_to_matrix_key_, Tags::DEFAULT, *S_, passwd_)
       .SetMesh(mesh_fracture_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
@@ -325,7 +327,7 @@ FlowEnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit
   };
   StateArchive archive(S_, vo_);
   archive.Add(names, Tags::DEFAULT);
-  archive.CopyFieldsToPrevFields(fields, "state", true);
+  archive.CopyFieldsToPrevFields(fields, passwd_, true);
 
   bool fail;
   try {
@@ -508,11 +510,10 @@ FlowEnergyMatrixFracture_PK::SwapEvaluatorField_(const Key& key,
   ev_key = key;
   fd_key = "prev_" + key;
 
-  std::string passwd("state");
-  S_->GetEvaluator(ev_key).Update(*S_, passwd);
+  S_->GetEvaluator(ev_key).Update(*S_, passwd_);
   {
     const auto& ev = S_->Get<CV_t>(ev_key);
-    auto& fd = S_->GetW<CV_t>(fd_key, passwd);
+    auto& fd = S_->GetW<CV_t>(fd_key, passwd_);
     fdm_copy = Teuchos::rcp(new CompositeVector(fd));
     fd = ev;
   }
@@ -522,10 +523,10 @@ FlowEnergyMatrixFracture_PK::SwapEvaluatorField_(const Key& key,
   fd_key = "fracture-prev_" + key;
   if (!S_->HasRecord(ev_key)) return;
 
-  S_->GetEvaluator(ev_key).Update(*S_, passwd);
+  S_->GetEvaluator(ev_key).Update(*S_, passwd_);
   {
     const auto& ev = S_->Get<CV_t>(ev_key);
-    auto& fd = S_->GetW<CV_t>(fd_key, passwd);
+    auto& fd = S_->GetW<CV_t>(fd_key, passwd_);
 
     fdf_copy = Teuchos::rcp(new CompositeVector(fd));
     fd = ev;

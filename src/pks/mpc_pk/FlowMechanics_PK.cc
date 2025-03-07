@@ -19,6 +19,7 @@
 #include "StateArchive.hh"
 #include "StateHelpers.hh"
 #include "Transport_PK.hh"
+#include "PK_Helpers.hh"
 
 #include "FlowMechanics_PK.hh"
 #include "WaterStorageStressSplit.hh"
@@ -52,7 +53,6 @@ FlowMechanics_PK::FlowMechanics_PK(Teuchos::ParameterList& pk_tree,
 void
 FlowMechanics_PK::Setup()
 {
-  std::string passwd("state");
   pressure_key_ = Keys::getKey(domain_, "pressure");         // primary
   displacement_key_ = Keys::getKey(domain_, "displacement"); // primary
 
@@ -68,17 +68,9 @@ FlowMechanics_PK::Setup()
 
   // mechanics
   auto mesh = S_->GetMesh(domain_);
-  S_->Require<CV_t, CVS_t>(hydrostatic_stress_key_, Tags::DEFAULT, passwd)
-    .SetMesh(mesh)
-    ->SetGhosted(true)
-    ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
-  S_->Require<CV_t, CVS_t>(vol_strain_key_, Tags::DEFAULT, passwd)
-    .SetMesh(mesh)
-    ->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-
-  S_->Require<CV_t, CVS_t>(biot_key_, Tags::DEFAULT, passwd)
+  // this should probably get moved to the appropriate Mechanics PK(s)
+  requireAtNext(biot_key_, Tags::DEFAULT, *S_)
     .SetMesh(S_->GetMesh())
     ->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);

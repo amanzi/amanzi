@@ -63,6 +63,12 @@ EnergyMatrixFracture_PK::EnergyMatrixFracture_PK(Teuchos::ParameterList& pk_tree
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = plist_->sublist("verbose object");
   vo_ = Teuchos::rcp(new VerboseObject("CoupledEnergy_PK", vlist));
+
+  // the primary variable is shared across multiple PKs -- set the password so
+  // that both have access
+  passwd_ = plist_->get<std::string>("primary variable password", name_);
+  getSubPKPlist_(0)->set<std::string>("primary variable password", passwd_);
+  getSubPKPlist_(1)->set<std::string>("primary variable password", passwd_);
 }
 
 
@@ -82,14 +88,14 @@ EnergyMatrixFracture_PK::Setup()
   // -- temperature
   auto cvs = Operators::CreateFracturedMatrixCVS(mesh_matrix_, mesh_fracture_);
   if (!S_->HasRecord("temperature")) {
-    requireAtNext("temperature", Tags::DEFAULT, *S_, "state") = *cvs;
+    requireAtNext("temperature", Tags::DEFAULT, *S_, name()) = *cvs;
   }
 
   // -- molar flow rates
   if (!S_->HasRecord("molar_flow_rate")) {
     auto mmap = cvs->Map("face", false);
     auto gmap = cvs->Map("face", true);
-    requireAtNext("molar_flow_rate", Tags::DEFAULT, *S_, "state")
+    requireAtNext("molar_flow_rate", Tags::DEFAULT, *S_, name())
       .SetMesh(mesh_matrix_)
       ->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, mmap, gmap, 1);
@@ -97,7 +103,7 @@ EnergyMatrixFracture_PK::Setup()
 
   if (!S_->HasRecord("fracture-molar_flow_rate")) {
     auto cvs2 = Operators::CreateManifoldCVS(mesh_fracture_);
-    requireAtNext("fracture-molar_flow_rate", Tags::DEFAULT, *S_, "state") = *cvs2;
+    requireAtNext("fracture-molar_flow_rate", Tags::DEFAULT, *S_, name()) = *cvs2;
   }
 
   // inform dependent PKs about coupling

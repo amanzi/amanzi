@@ -35,9 +35,9 @@ Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
   // create verbosity object
   VerboseObject* vo = new VerboseObject("Amanzi::Picard", *fp_list_);
 
-  CompositeVector solution_old(*solution);
-  CompositeVector& solution_new = *solution;
-  CompositeVector residual(*solution);
+  CompositeVector solution_old(*cv_solution_);
+  CompositeVector& solution_new = *cv_solution_;
+  CompositeVector residual(*cv_solution_);
 
   Epetra_MultiVector& pold_cell = *solution_old.ViewComponent("cell");
   Epetra_MultiVector& pnew_cell = *solution_new.ViewComponent("cell");
@@ -76,7 +76,7 @@ Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
         bcs_[i]->ComputeSubmodel(mesh_);
       }
     }
-    ComputeOperatorBCs(*solution);
+    ComputeOperatorBCs(*cv_solution_);
 
     // update diffusion coefficients
     // -- function
@@ -101,7 +101,7 @@ Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
 
     // create algebraic problem (matrix = preconditioner)
     op_preconditioner_->Init();
-    op_preconditioner_diff_->UpdateMatrices(mol_flowrate_copy.ptr(), solution.ptr());
+    op_preconditioner_diff_->UpdateMatrices(mol_flowrate_copy.ptr(), cv_solution_.ptr());
     op_preconditioner_diff_->UpdateMatricesNewtonCorrection(
       mol_flowrate_copy.ptr(), Teuchos::null, 1.0);
     op_preconditioner_diff_->ApplyBCs(true, true, true);
@@ -119,7 +119,7 @@ Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
     rhs->Norm2(&L2norm);
     L2error /= L2norm;
 
-    solver->ApplyInverse(*rhs, *solution);
+    solver->ApplyInverse(*rhs, *cv_solution_);
 
     int num_itrs_linear = solver->num_itrs();
     double linear_residual = solver->residual();
