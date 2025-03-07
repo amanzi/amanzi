@@ -127,7 +127,6 @@ class Chemistry_PK : public PK_Physical {
   int num_aqueous_components() { return number_aqueous_components_; }
 
  protected:
-  std::string passwd_;
   Teuchos::RCP<Teuchos::ParameterList> glist_;
 
   int number_aqueous_components_;

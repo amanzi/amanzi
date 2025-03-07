@@ -27,6 +27,7 @@
 #include "DischargeEvaluator.hh"
 #include "HydrostaticPressureEvaluator.hh"
 #include "NumericalFluxFactory.hh"
+#include "pk_helpers.hh"
 #include "ShallowWater_PK.hh"
 
 namespace Amanzi {
@@ -42,7 +43,10 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
                                  const Teuchos::RCP<Teuchos::ParameterList>& glist,
                                  const Teuchos::RCP<State>& S,
                                  const Teuchos::RCP<TreeVector>& soln)
-  : PK(pk_tree, glist, S, soln), soln_(soln), passwd_(""), iters_(0)
+  : PK(pk_tree, glist, S, soln),
+    soln_(soln),
+    passwd_("state"),
+    iters_(0)
 {
   // Create miscellaneous lists.
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
@@ -104,20 +108,18 @@ ShallowWater_PK::Setup()
   //-------------------------------
   // -- ponded depth for shallow water, wetted area for pipe flow
   if (!S_->HasRecord(primary_variable_key_)) {
-    S_->Require<CV_t, CVS_t>(primary_variable_key_, Tags::DEFAULT, passwd_)
+    requireAtCurrent(primary_variable_key_, Tags::DEFAULT, *S_, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    AddDefaultPrimaryEvaluator(S_, primary_variable_key_);
   }
 
   // -- velocity
   if (!S_->HasRecord(velocity_key_)) {
-    S_->Require<CV_t, CVS_t>(velocity_key_, Tags::DEFAULT, passwd_)
+    requireAtCurrent(velocity_key_, Tags::DEFAULT, *S_, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 2);
-    AddDefaultPrimaryEvaluator(S_, velocity_key_);
   }
 
   // -- discharge
@@ -330,7 +332,7 @@ ShallowWater_PK::Initialize()
 
   // default
   if (!S_->GetRecord(bathymetry_key_).initialized()) {
-    InitializeCVField(S_, *vo_, bathymetry_key_, Tags::DEFAULT, passwd_, 0.0);
+    initializeCVField(*S_, *vo_, bathymetry_key_, Tags::DEFAULT, passwd_, 0.0);
   }
 
   const auto& B_n = *S_->Get<CV_t>(bathymetry_key_).ViewComponent("node");
@@ -378,15 +380,15 @@ ShallowWater_PK::Initialize()
 
   InitializeFields();
 
-  InitializeCVField(S_, *vo_, velocity_key_, Tags::DEFAULT, passwd_, 0.0);
-  InitializeCVField(S_, *vo_, discharge_key_, Tags::DEFAULT, discharge_key_, 0.0);
+  initializeCVField(*S_, *vo_, velocity_key_, Tags::DEFAULT, passwd_, 0.0);
+  initializeCVField(*S_, *vo_, discharge_key_, Tags::DEFAULT, discharge_key_, 0.0);
 
   // secondary fields
   S_->GetEvaluator(hydrostatic_pressure_key_).Update(*S_, passwd_);
 
-  InitializeCVField(S_, *vo_, riemann_flux_key_, Tags::DEFAULT, passwd_, 0.0);
-  InitializeCVFieldFromCVField(
-    S_, *vo_, prev_primary_variable_key_, primary_variable_key_, passwd_);
+  initializeCVField(*S_, *vo_, riemann_flux_key_, Tags::DEFAULT, passwd_, 0.0);
+  initializeCVFieldFromCVField(
+    *S_, *vo_, prev_primary_variable_key_, primary_variable_key_, passwd_, Tags::DEFAULT);
 
   // soln_ is the TreeVector of conservative variables [h hu hv]
   Teuchos::RCP<TreeVector> tmp_h = Teuchos::rcp(new TreeVector());

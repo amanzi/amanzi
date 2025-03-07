@@ -26,11 +26,19 @@ namespace Functions {
 class CompositeVectorFunction final {
  public:
   CompositeVectorFunction(const Teuchos::RCP<const MeshFunction>& func,
-                          const std::vector<std::string>& names);
+                          const std::vector<std::string>& names,
+                          bool dot_with_normal = false);
   ~CompositeVectorFunction() = default;
 
   void
   Compute(double time, const Teuchos::Ptr<CompositeVector>& vec, const VerboseObject* vo = nullptr);
+
+ protected:
+  void
+  Compute_(double time, const Teuchos::Ptr<CompositeVector>& vec, const VerboseObject* vo);
+
+  void
+  ComputeDotWithNormal_(double time, const Teuchos::Ptr<CompositeVector>& vec, const VerboseObject* vo);
 
  protected:
   typedef std::pair<std::string, Teuchos::RCP<MeshFunction::Spec>> CompositeVectorSpec;
@@ -38,6 +46,7 @@ class CompositeVectorFunction final {
 
   Teuchos::RCP<const MeshFunction> func_;
   CompositeVectorSpecList cv_spec_list_;
+  bool dot_with_normal_;
 };
 
 } // namespace Functions

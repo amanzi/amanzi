@@ -93,6 +93,14 @@ createTimestepController(const std::string& name,
           "TimestepControllerFactory: missing sublist \"timestep controller adaptive parameters\"");
         Exceptions::amanzi_throw(msg);
       }
+
+      if (udot == Teuchos::null) {
+        Errors::Message msg;
+        msg << "TimestepControllerFactory: \"adaptive\" timestep control requires a global solution"
+            << " vector and should not be used with PK \"" << name << "\"";
+        Exceptions::amanzi_throw(msg);
+      }
+
       Teuchos::ParameterList& tslist = slist.sublist("timestep controller adaptive parameters");
       return Teuchos::rcp(new TimestepControllerAdaptive<Vector>(name, tslist, S, udot, udot_prev));
 

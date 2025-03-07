@@ -117,9 +117,7 @@ PreconditionerHypre::InitBoomer_()
 
   // verbosity
   int vlevel_int = 0;
-  if (vo_->getVerbLevel() == Teuchos::VERB_HIGH) {
-    vlevel_int = 1;
-  } else if (vo_->getVerbLevel() == Teuchos::VERB_EXTREME) {
+  if (vo_->getVerbLevel() == Teuchos::VERB_EXTREME) {
     vlevel_int = 3;
   }
 

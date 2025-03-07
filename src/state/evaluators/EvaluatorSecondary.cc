@@ -177,7 +177,7 @@ EvaluatorSecondary::Update(State& S, const Key& request)
   Teuchos::OSTab tab = vo_.getOSTab();
 
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-    *vo_.os() << "SecondaryVariable " << my_keys_[0].first << " requested by " << request
+    *vo_.os() << "SecondaryVariable " << my_keys_[0] << " requested by " << request
               << std::endl;
   }
 
@@ -208,7 +208,7 @@ EvaluatorSecondary::Update(State& S, const Key& request)
 
   if (update) {
     if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-      *vo_.os() << "Updating " << my_keys_[0].first << " value... " << std::endl;
+      *vo_.os() << "Updating " << my_keys_[0] << " value... " << std::endl;
     }
 
     // If so, update ourselves, empty our list of filled requests, and return.
@@ -221,12 +221,12 @@ EvaluatorSecondary::Update(State& S, const Key& request)
     if (requests_.find(request) == requests_.end()) {
       requests_.insert(request);
       if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-        *vo_.os() << my_keys_[0].first << " has changed, but no need to update... " << std::endl;
+        *vo_.os() << my_keys_[0] << " has changed, but no need to update... " << std::endl;
       }
       return true;
     } else {
       if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-        *vo_.os() << my_keys_[0].first << " has not changed... " << std::endl;
+        *vo_.os() << my_keys_[0] << " has not changed... " << std::endl;
       }
       return false;
     }
@@ -247,14 +247,14 @@ EvaluatorSecondary::UpdateDerivative(State& S,
 {
   Teuchos::OSTab tab = vo_.getOSTab();
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-    *vo_.os() << "Algebraic Variable d" << my_keys_[0].first << "_d" << wrt_key << " requested by "
+    *vo_.os() << "Algebraic Variable d" << my_keys_[0] << "_d" << KeyTag{wrt_key, wrt_tag} << " requested by "
               << requestor << std::endl;
   }
 
   // If wrt_key is not a dependency, no need to differentiate.
   if (!IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
     if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-      *vo_.os() << my_keys_.front().first << " is not differentiable wrt " << wrt_key << std::endl;
+      *vo_.os() << my_keys_.front() << " is not differentiable wrt " << KeyTag{wrt_key, wrt_tag} << std::endl;
     }
     // this should be checked prior to calling UpdateDerivative
     AMANZI_ASSERT(false);
@@ -374,10 +374,10 @@ std::string
 EvaluatorSecondary::WriteToString() const
 {
   std::stringstream result;
-  for (const auto& key : my_keys_) { result << Keys::getKey(key.first, key.second); }
+  for (const auto& key : my_keys_) { result << key; }
   result << std::endl << "  type: secondary" << std::endl;
   for (const auto& dep : dependencies_) {
-    result << "  dep: " << dep.first << ", tag=\"" << dep.second.get() << "\"" << std::endl;
+    result << "  dep: \"" << dep << "\"" << std::endl;
   }
   return result.str();
 }

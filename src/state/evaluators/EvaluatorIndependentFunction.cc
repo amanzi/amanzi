@@ -24,7 +24,9 @@ namespace Amanzi {
 // Constructor
 // ---------------------------------------------------------------------------
 EvaluatorIndependentFunction::EvaluatorIndependentFunction(Teuchos::ParameterList& plist)
-  : EvaluatorIndependent<CompositeVector, CompositeVectorSpace>(plist){};
+  : EvaluatorIndependent<CompositeVector, CompositeVectorSpace>(plist),
+    dot_with_normal_(plist.get<bool>("dot with normal", false))
+{};
 
 
 // ---------------------------------------------------------------------------
@@ -77,7 +79,7 @@ EvaluatorIndependentFunction::Update_(State& S)
 
     std::vector<std::string> complist;
     func_ =
-      Functions::CreateCompositeVectorFunction(plist_.sublist("function"), cv.Map(), complist);
+      Functions::CreateCompositeVectorFunction(plist_.sublist("function"), cv.Map(), complist, dot_with_normal_);
   }
 
   // NOTE: EvaluatorIndependentFunctions own their own data.

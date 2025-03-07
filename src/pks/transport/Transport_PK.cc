@@ -32,6 +32,7 @@
 #include "PDE_DiffusionFactory.hh"
 #include "PK_DomainFunctionFactory.hh"
 #include "PK_Utils.hh"
+#include "pk_helpers.hh"
 #include "PKsDefs.hh"
 #include "ReconstructionCellLinear.hh"
 #include "UniqueLocalIndex.hh"
@@ -94,7 +95,7 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
   // domain and primary evaluators
   domain_ = tp_list_->template get<std::string>("domain name", "domain");
   tcc_key_ = Keys::getKey(domain_, "total_component_concentration");
-  AddDefaultPrimaryEvaluator(S_, tcc_key_);
+  requireAtNext(tcc_key_, Tags::NEXT, *S_, passwd_);
 
   // other variables
   dt_prev_ = 1e+91;
@@ -129,7 +130,7 @@ Transport_PK::Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   // domain and primary evaluators
   domain_ = tp_list_->template get<std::string>("domain name", "domain");
   tcc_key_ = Keys::getKey(domain_, "total_component_concentration");
-  AddDefaultPrimaryEvaluator(S_, tcc_key_);
+  requireAtCurrent(tcc_key_, Tags::DEFAULT, *S_, passwd_);
 
   // other variables
   dt_prev_ = 1e+91;
@@ -152,7 +153,7 @@ Transport_PK::SetupAlquimia()
   if (chem_pk_ == Teuchos::null) return;
 
   alquimia_pk_ = Teuchos::rcp_dynamic_cast<AmanziChemistry::Alquimia_PK>(chem_pk_);
-  chem_engine_ = chem_pk_->chem_engine();
+  chem_engine_ = alquimia_pk_->chem_engine();
 
   if (chem_engine_ != Teuchos::null) {
     // Retrieve the component names (primary and secondary) from the chemistry
@@ -669,21 +670,21 @@ Transport_PK::InitializeFields_()
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // set popular default values when flow PK is off
-  InitializeCVField(S_, *vo_, saturation_liquid_key_, Tags::DEFAULT, passwd_, 1.0);
-  InitializeCVField(S_, *vo_, aperture_key_, Tags::DEFAULT, passwd_, 1.0);
+  initializeCVField(*S_, *vo_, saturation_liquid_key_, Tags::DEFAULT, passwd_, 1.0);
+  initializeCVField(*S_, *vo_, aperture_key_, Tags::DEFAULT, passwd_, 1.0);
 
   // if tortousity requested but material models are absent, we populate it here
-  InitializeCVField(S_, *vo_, tortuosity_key_, Tags::DEFAULT, passwd_, 1.0);
+  initializeCVField(*S_, *vo_, tortuosity_key_, Tags::DEFAULT, passwd_, 1.0);
 
   // we assume that liquid saturation is 1 if wwater content was uninitialized
-  InitializeCVFieldFromCVField(S_, *vo_, prev_wc_key_, wc_key_, passwd_);
+  initializeCVFieldFromCVField(*S_, *vo_, prev_wc_key_, wc_key_, passwd_);
 
-  InitializeCVFieldFromCVField(S_, *vo_, water_content_msp_key_, porosity_msp_key_, passwd_);
-  InitializeCVFieldFromCVField(
-    S_, *vo_, prev_water_content_msp_key_, water_content_msp_key_, passwd_);
+  initializeCVFieldFromCVField(*S_, *vo_, water_content_msp_key_, porosity_msp_key_, passwd_);
+  initializeCVFieldFromCVField(
+    *S_, *vo_, prev_water_content_msp_key_, water_content_msp_key_, passwd_);
 
-  InitializeCVFieldFromCVField(S_, *vo_, "total_component_concentration_msp", tcc_key_, passwd_);
-  InitializeCVField(S_, *vo_, "total_component_concentration_msp_aux", Tags::DEFAULT, passwd_, 0.0);
+  initializeCVFieldFromCVField(*S_, *vo_, "total_component_concentration_msp", tcc_key_, passwd_);
+  initializeCVField(*S_, *vo_, "total_component_concentration_msp_aux", Tags::DEFAULT, passwd_, 0.0);
 }
 
 

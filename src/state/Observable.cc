@@ -207,8 +207,8 @@ Observable::Setup(const Teuchos::Ptr<State>& S)
 
   // try to set requirements on the field, if they are not already set
   if (!S->HasRecord(variable_, tag_)) {
-    // require the field
-    auto& cvs = S->Require<CompositeVector, CompositeVectorSpace>(variable_, tag_);
+    // require the field, aliases are ok here
+    auto& cvs = S->Require<CompositeVector, CompositeVectorSpace>(variable_, tag_, "", true);
 
     // we have to set the mesh now -- assume it is provided by the domain
     cvs.SetMesh(mesh);

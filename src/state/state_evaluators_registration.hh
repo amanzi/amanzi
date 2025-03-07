@@ -18,9 +18,11 @@
 #include "EvaluatorIndependentFromFile.hh"
 #include "EvaluatorIndependentFunction.hh"
 #include "EvaluatorIndependentConstant.hh"
+#include "EvaluatorIndependentTensorFunction.hh"
 #include "EvaluatorMultiplicativeReciprocal.hh"
 #include "EvaluatorSecondaryMonotypeFromFunction.hh"
 #include "EvaluatorPrimary.hh"
+#include "EvaluatorTemporalInterpolation.hh"
 
 namespace Amanzi {
 
@@ -35,6 +37,9 @@ Utils::RegisteredFactory<Evaluator, EvaluatorIndependentFromFile>
 Utils::RegisteredFactory<Evaluator, EvaluatorIndependentConstant>
   EvaluatorIndependentConstant::fac_("independent variable constant");
 
+Utils::RegisteredFactory<Evaluator, EvaluatorIndependentTensorFunction>
+  EvaluatorIndependentTensorFunction::fac_("independent variable tensor");
+
 Utils::RegisteredFactory<Evaluator, EvaluatorMultiplicativeReciprocal>
   EvaluatorMultiplicativeReciprocal::fac_("multiplicative reciprocal");
 
@@ -44,5 +49,8 @@ Utils::RegisteredFactory<Evaluator, EvaluatorSecondaryMonotypeFromFunction>
 template<>
 Utils::RegisteredFactory<Evaluator, EvaluatorPrimaryCV>
   EvaluatorPrimaryCV::fac_("primary variable");
+
+Utils::RegisteredFactory<Evaluator, EvaluatorTemporalInterpolation>
+  EvaluatorTemporalInterpolation::fac_("temporal interpolation");
 
 } // namespace Amanzi

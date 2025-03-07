@@ -1,13 +1,11 @@
 from . import parser, errors
-try:
-    import elementtree.ElementTree as etree
-except ImportError:
-    import xml.etree.ElementTree as etree
+import xml.etree.ElementTree as etree
 
+etree_parser = etree.XMLParser(target=etree.TreeBuilder(insert_comments=True))
 
 def fromFile(file_or_filename, ensure_is_plistable=False):
     """Reads a amanzi-xml hierarchy from a file or file handle"""
-    elem = etree.parse(file_or_filename)
+    elem = etree.parse(file_or_filename, etree_parser)
 
     if ensure_is_plistable:
         return parser.fromElement(elem.getroot())
@@ -23,7 +21,7 @@ def fromFile(file_or_filename, ensure_is_plistable=False):
 
 def fromString(string):
     """Reads a amanzi-xml hierarchy from a string"""
-    elem = etree.fromstring(string)
+    elem = etree.fromstring(string, etree_parser)
     return parser.fromElement(elem)
 
 def toString(plist):

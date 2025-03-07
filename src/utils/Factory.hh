@@ -97,14 +97,19 @@ class Factory {
     typename map_type::iterator iter = GetMap()->find(s);
     if (iter == GetMap()->end()) {
       std::cout << "Factory: cannot get item of type: " << s << std::endl;
-
-      for (typename map_type::iterator piter = GetMap()->begin(); piter != GetMap()->end();
-           ++piter) {
-        std::cout << "  option: " << piter->first << std::endl;
-      }
+      WriteChoices(std::cout);
       return 0;
     }
     return iter->second(plist);
+  }
+
+  static void WriteChoices(std::ostream& os)
+  {
+    os << "Valid types" << std::endl
+       << "--------------------------------------------------" << std::endl;
+    for (auto choice : *GetMap())
+      os << " - \"" << choice.first << "\"" << std::endl;
+    os << "--------------------------------------------------" << std::endl << std::endl;
   }
 
  protected:

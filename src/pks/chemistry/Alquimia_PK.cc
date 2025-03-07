@@ -33,6 +33,7 @@
 #include "errors.hh"
 #include "exceptions.hh"
 #include "Mesh.hh"
+#include "pk_helpers.hh"
 
 // Chemistry
 #include "Alquimia_PK.hh"
@@ -243,7 +244,7 @@ Alquimia_PK::Initialize()
 
   // initialize fields as soon as possible
   for (size_t i = 0; i < aux_names_.size(); ++i) {
-    InitializeCVField(S_, *vo_, aux_names_[i], tag_next_, passwd_, 0.0);
+    initializeCVField(*S_, *vo_, aux_names_[i], tag_next_, passwd_, 0.0);
   }
 
   // Initialize the data structures that we will use to traffic data between
@@ -478,9 +479,9 @@ Alquimia_PK::XMLParameters()
   }
 
   Teuchos::RCP<Teuchos::ParameterList> initial_conditions;
-  if (plist_->isSublist("initial condition")) {
+  if (plist_->isSublist("initial conditions")) {
     // ATS-style input spec -- initial conditions in the PK
-    initial_conditions = Teuchos::sublist(plist_, "initial condition");
+    initial_conditions = Teuchos::sublist(plist_, "initial conditions");
   } else {
     // Amanzi-style input spec -- initial conditions in State
     initial_conditions = Teuchos::sublist(Teuchos::sublist(glist_, "state"), "initial conditions");
@@ -490,7 +491,7 @@ Alquimia_PK::XMLParameters()
       initial_conditions->sublist("geochemical conditions");
     ParseChemicalConditionRegions(geochem_conditions, chem_initial_conditions_);
     if (chem_initial_conditions_.empty()) {
-      if (plist_->isSublist("initial condition")) {
+      if (plist_->isSublist("initial conditions")) {
         msg << "Alquimia_PK::XMLParameters(): No geochemical conditions were found in "
                "\"PK->initial condition->geochemical conditions\"";
       } else {

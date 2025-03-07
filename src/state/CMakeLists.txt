@@ -47,12 +47,6 @@ if(ENABLE_Silo)
   add_definitions(-DENABLE_Silo)
 endif(ENABLE_Silo)
 
-# This state library will move to a new location 
-# once Markus has created the data manager.
-# I use global properties since all the PROJECT_NAME
-# variables in this directory are tied to the MPC.
-# These properties will be replaced with the appropriate
-# directory project name once it is moved.
 #
 # Library: state
 #
@@ -75,12 +69,14 @@ set(state_inc_files
   evaluators/EvaluatorIndependentFromFile.hh
   evaluators/EvaluatorIndependentFunction.hh
   evaluators/EvaluatorIndependentConstant.hh
+  evaluators/EvaluatorIndependentTensorFunction.hh
   evaluators/EvaluatorMultiplicativeReciprocal.hh
   evaluators/EvaluatorPrimary.hh
   evaluators/EvaluatorSecondary.hh
   evaluators/EvaluatorSecondaryMonotype.hh
   evaluators/EvaluatorTemporalInterpolation.hh
   evaluators/EvaluatorSecondaryMonotypeFromFunction.hh
+  evaluators/EvaluatorAlias.hh
   IO.hh
   Observable.hh
   StateDefs.hh
@@ -104,12 +100,14 @@ add_amanzi_library(state
                           evaluators/EvaluatorIndependentFromFile.cc
                           evaluators/EvaluatorIndependentFunction.cc
                           evaluators/EvaluatorIndependentConstant.cc
+                          evaluators/EvaluatorIndependentTensorFunction.cc
                           evaluators/EvaluatorMultiplicativeReciprocal.cc
                           evaluators/EvaluatorPrimary.cc
                           evaluators/EvaluatorSecondary.cc
                           evaluators/EvaluatorSecondaryMonotype.cc
                           evaluators/EvaluatorTemporalInterpolation.cc
                           evaluators/EvaluatorSecondaryMonotypeFromFunction.cc
+                          evaluators/EvaluatorAlias.cc
                           IO.cc
                           Observable.cc
                           UnstructuredObservations.cc
@@ -121,7 +119,7 @@ add_amanzi_library(state
                           MeshInfo.cc
                           Debugger.cc
                    HEADERS ${state_inc_files}
-		   LINK_LIBS data_structures functions mesh_functions output mesh atk
+		   LINK_LIBS whetstone data_structures functions mesh_functions output mesh atk
 		             ${SEACAS_LIBRARIES})
 set_property(GLOBAL PROPERTY STATE_SOURCE_DIR ${MPC_SOURCE_DIR})
 set_property(GLOBAL PROPERTY STATE_BINARY_DIR ${MPC_BINARY_DIR})
