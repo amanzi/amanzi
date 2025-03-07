@@ -15,7 +15,7 @@
 #include "WaterDepthEvaluator.hh"
 #include "PressureHeadEvaluator.hh"
 #include "NumericalFluxFactory.hh"
-#include "pk_helpers.hh"
+#include "PK_Helpers.hh"
 #include "PK_DomainFunctionFactory.hh"
 
 namespace Amanzi {

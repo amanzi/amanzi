@@ -36,7 +36,7 @@
 #include "exceptions.hh"
 #include "SimpleThermoDatabase.hh"
 #include "VerboseObject.hh"
-#include "pk_helpers.hh"
+#include "PK_Helpers.hh"
 
 // Chemistry
 #include "Amanzi_PK.hh"

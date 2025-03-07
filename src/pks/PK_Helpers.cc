@@ -9,7 +9,7 @@
 
 //! A set of helper functions for doing common things in PKs.
 #include "MeshAlgorithms.hh"
-#include "pk_helpers.hh"
+#include "PK_Helpers.hh"
 
 namespace Amanzi {
 

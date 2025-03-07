@@ -27,7 +27,7 @@
 #include "DischargeEvaluator.hh"
 #include "HydrostaticPressureEvaluator.hh"
 #include "NumericalFluxFactory.hh"
-#include "pk_helpers.hh"
+#include "PK_Helpers.hh"
 #include "ShallowWater_PK.hh"
 
 namespace Amanzi {

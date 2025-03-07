@@ -33,7 +33,7 @@
 #include "errors.hh"
 #include "exceptions.hh"
 #include "Mesh.hh"
-#include "pk_helpers.hh"
+#include "PK_Helpers.hh"
 
 // Chemistry
 #include "Alquimia_PK.hh"

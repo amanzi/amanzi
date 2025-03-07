@@ -42,7 +42,7 @@ include_directories(${HDF5_INCLUDE_DIRS})
 set(pks_src_files PK_Factory.cc
                   PK_Utils.cc
                   PK_Physical.cc
-                  pk_helpers.cc
+                  PK_Helpers.cc
                   StateArchive.cc)
 
 add_amanzi_library(pks
@@ -56,7 +56,7 @@ add_amanzi_library(pks
 #
 set(pks_inc_files 
   CommonDefs.hh
-  pk_helpers.hh
+  PK_Helpers.hh
   PK.hh
   PK_BDF.hh
   PK_Implicit.hh

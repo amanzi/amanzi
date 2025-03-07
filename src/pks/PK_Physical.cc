@@ -15,7 +15,7 @@
 #include "EvaluatorIndependentFunction.hh"
 #include "State.hh"
 #include "TreeVector.hh"
-#include "pk_helpers.hh"
+#include "PK_Helpers.hh"
 
 #include "PK_Physical.hh"
 

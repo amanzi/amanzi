@@ -32,7 +32,7 @@
 #include "PDE_DiffusionFactory.hh"
 #include "PK_DomainFunctionFactory.hh"
 #include "PK_Utils.hh"
-#include "pk_helpers.hh"
+#include "PK_Helpers.hh"
 #include "PKsDefs.hh"
 #include "ReconstructionCellLinear.hh"
 #include "UniqueLocalIndex.hh"

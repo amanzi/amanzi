@@ -14,7 +14,7 @@
 */
 
 #include "message.hh"
-#include "pk_helpers.hh"
+#include "PK_Helpers.hh"
 
 // Chemistry
 #include "Chemistry_PK.hh"
