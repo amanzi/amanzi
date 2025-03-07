@@ -93,7 +93,7 @@ TEST(FLOW_BOUNDARY_SOLVER)
   S2->InitializeEvaluators();
 
   // modify the default state for the problem at hand
-  std::string passwd("");
+  std::string passwd("state");
   auto& K1 = *S1->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
 
   {

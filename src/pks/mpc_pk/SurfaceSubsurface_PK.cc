@@ -60,7 +60,7 @@ SurfaceSubsurface_PK::Initialize()
   int nsurf_cells =
     mesh_surface_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
-  std::string passwd("");
+  std::string passwd("state");
   auto& B_n = *S_->GetW<CompositeVector>("surface-bathymetry", passwd).ViewComponent("node");
   auto& B_c = *S_->GetW<CompositeVector>("surface-bathymetry", passwd).ViewComponent("cell");
 

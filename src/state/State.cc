@@ -59,6 +59,7 @@ State::State(Teuchos::ParameterList& state_plist) : state_plist_(state_plist)
   // touch the "evaluators" list to make sure it exists, even in tests that
   // don't use it, to make sure that const calls to FEList() can work.
   state_plist_.sublist("evaluators");
+  state_plist_.sublist("initial conditions");
 };
 
 

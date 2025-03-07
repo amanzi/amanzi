@@ -22,6 +22,7 @@
 #include "StateArchive.hh"
 #include "SuperMap.hh"
 #include "UniqueLocalIndex.hh"
+#include "PK_Helpers.hh"
 
 #include "FlowEnergyMatrixFracture_PK.hh"
 #include "FractureInsertion.hh"
@@ -86,32 +87,26 @@ FlowEnergyMatrixFracture_PK::Setup()
   // -- flow: pressure and flux
   auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
   if (!S_->HasRecord("pressure")) {
-    *S_->Require<CV_t, CVS_t>("pressure", Tags::DEFAULT).SetMesh(mesh_domain_)->SetGhosted(true) =
-      *cvs;
-    AddDefaultPrimaryEvaluator(S_, "pressure", Tags::DEFAULT);
+    requireAtNext("pressure", Tags::DEFAULT, *S_, "state") = *cvs;
   }
 
   if (!S_->HasRecord(matrix_mol_flowrate_key_)) {
     auto mmap = cvs->Map("face", false);
     auto gmap = cvs->Map("face", true);
-    S_->Require<CV_t, CVS_t>(matrix_mol_flowrate_key_, Tags::DEFAULT)
+    requireAtNext(matrix_mol_flowrate_key_, Tags::DEFAULT, *S_, "state")
       .SetMesh(mesh_domain_)
       ->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::Entity_kind::FACE, mmap, gmap, 1);
-    AddDefaultPrimaryEvaluator(S_, matrix_mol_flowrate_key_, Tags::DEFAULT);
   }
 
   // -- energy: temperature
   if (!S_->HasRecord("temperature")) {
-    *S_->Require<CV_t, CVS_t>("temperature", Tags::DEFAULT)
-       .SetMesh(mesh_domain_)
-       ->SetGhosted(true) = *cvs;
-    AddDefaultPrimaryEvaluator(S_, "temperature", Tags::DEFAULT);
+    requireAtNext("temperature", Tags::DEFAULT, *S_, "state") = *cvs;
   }
 
   // additional fields and evaluators
   if (!S_->HasRecord(diffusion_to_matrix_key_)) {
-    S_->Require<CV_t, CVS_t>(diffusion_to_matrix_key_, Tags::DEFAULT)
+    requireAtNext(diffusion_to_matrix_key_, Tags::DEFAULT, *S_, "state")
       .SetMesh(mesh_fracture_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
@@ -330,7 +325,7 @@ FlowEnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit
   };
   StateArchive archive(S_, vo_);
   archive.Add(names, Tags::DEFAULT);
-  archive.CopyFieldsToPrevFields(fields, "", true);
+  archive.CopyFieldsToPrevFields(fields, "state", true);
 
   bool fail;
   try {
@@ -513,7 +508,7 @@ FlowEnergyMatrixFracture_PK::SwapEvaluatorField_(const Key& key,
   ev_key = key;
   fd_key = "prev_" + key;
 
-  std::string passwd("");
+  std::string passwd("state");
   S_->GetEvaluator(ev_key).Update(*S_, passwd);
   {
     const auto& ev = S_->Get<CV_t>(ev_key);

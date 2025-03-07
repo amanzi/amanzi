@@ -144,7 +144,7 @@ class TransportImplicit_PK : public Transport_PK, public PK_BDF {
   Teuchos::RCP<Operators::BCs> op_bc_;
   std::string solver_name_, solver_name_constraint_;
 
-  Teuchos::RCP<CompositeVector> solution_;
+  Teuchos::RCP<CompositeVector> cv_solution_;
   std::vector<Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>>> bdf1_dae_;
   Teuchos::RCP<Matrix<CompositeVector, CompositeVectorSpace>> op_pc_solver_;
 

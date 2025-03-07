@@ -80,7 +80,7 @@ RunTest(const std::string& filename, double tol)
   S->InitializeEvaluators();
 
   // create the initial pressure function
-  std::string passwd("");
+  std::string passwd("state");
   auto& pf = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
   auto& pm = *S->GetW<CompositeVector>("pressure_msp", passwd).ViewComponent("cell");
 

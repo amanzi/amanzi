@@ -84,7 +84,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY)
 
   // modify the default state for the problem at hand
   // -- permeability
-  Key passwd("");
+  Key passwd("state");
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
 
   {
@@ -195,7 +195,7 @@ TEST(FLOW_3D_TRANSIENT_DARCY)
   S->InitializeEvaluators();
 
   /* modify the default state for the problem at hand */
-  std::string passwd("");
+  std::string passwd("state");
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
 
   {

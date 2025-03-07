@@ -75,7 +75,7 @@ TEST(FLOW_2D_RICHARDS)
     S->InitializeEvaluators();
 
     // modify the default state for the problem at hand
-    std::string passwd("");
+    std::string passwd("state");
     auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
 
     {

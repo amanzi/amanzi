@@ -24,6 +24,7 @@
 #include "OperatorDefs.hh"
 #include "PK_DomainFunctionFactory.hh"
 #include "PK_Utils.hh"
+#include "PK_Helpers.hh"
 #include "State.hh"
 #include "StateHelpers.hh"
 #include "WhetStoneDefs.hh"
@@ -49,7 +50,6 @@ Flow_PK::Flow_PK(Teuchos::ParameterList& pk_tree,
                  const Teuchos::RCP<TreeVector>& soln)
   : PK(pk_tree, glist, S, soln),
     PK_PhysicalBDF(pk_tree, glist, S, soln),
-    passwd_(""),
     peaceman_model_(false)
 {
   vo_ = Teuchos::null;
@@ -58,7 +58,7 @@ Flow_PK::Flow_PK(Teuchos::ParameterList& pk_tree,
 };
 
 
-Flow_PK::Flow_PK() : passwd_("")
+Flow_PK::Flow_PK()
 {
   vo_ = Teuchos::null;
 }
@@ -246,18 +246,12 @@ Flow_PK::Setup_FlowRates_(bool mass_to_molar, double molar_rho)
   }
 
   // primary filed: molar flow rate
-  if (!S_->HasRecord(mol_flowrate_key_)) {
-    *S_->Require<CV_t, CVS_t>(mol_flowrate_key_, tag, passwd_).SetMesh(mesh_)->SetGhosted(true) =
-      cvs;
-    AddDefaultPrimaryEvaluator(S_, mol_flowrate_key_);
-  }
+  requireAtNext(mol_flowrate_key_, tag, *S_, passwd_) = cvs;
 
   // volumetric flow rate
   if (!S_->HasRecord(vol_flowrate_key_)) {
-    auto cvs1 = S_->Require<CV_t, CVS_t>(mol_flowrate_key_, tag, passwd_);
-
-    *S_->Require<CV_t, CVS_t>(vol_flowrate_key_, tag, passwd_).SetMesh(mesh_)->SetGhosted(true) =
-      cvs1;
+    const auto& cvs1 = S_->Require<CV_t, CVS_t>(mol_flowrate_key_, tag);
+    S_->Require<CV_t, CVS_t>(vol_flowrate_key_, tag) = cvs1;
 
     Teuchos::ParameterList elist(vol_flowrate_key_);
     elist.set<std::string>("tag", tag.get());
@@ -393,15 +387,15 @@ Flow_PK::InitializeFields_()
       *vo_->os() << "initialized gravity to default value -9.8" << std::endl;
   }
 
-  InitializeCVField(S_, *vo_, porosity_key_, Tags::DEFAULT, porosity_key_, 0.2);
+  initializeCVField(*S_, *vo_, porosity_key_, Tags::DEFAULT, porosity_key_, 0.2);
 
-  InitializeCVField(S_, *vo_, specific_storage_key_, Tags::DEFAULT, passwd_, 0.0);
-  InitializeCVField(S_, *vo_, specific_yield_key_, Tags::DEFAULT, passwd_, 0.0);
+  initializeCVField(*S_, *vo_, specific_storage_key_, Tags::DEFAULT, passwd_, 0.0);
+  initializeCVField(*S_, *vo_, specific_yield_key_, Tags::DEFAULT, passwd_, 0.0);
 
-  InitializeCVField(S_, *vo_, hydraulic_head_key_, Tags::DEFAULT, passwd_, 0.0);
-  InitializeCVField(S_, *vo_, pressure_head_key_, Tags::DEFAULT, passwd_, 0.0);
+  initializeCVField(*S_, *vo_, hydraulic_head_key_, Tags::DEFAULT, passwd_, 0.0);
+  initializeCVField(*S_, *vo_, pressure_head_key_, Tags::DEFAULT, passwd_, 0.0);
 
-  InitializeCVField(S_, *vo_, vol_flowrate_key_, Tags::DEFAULT, passwd_, 0.0);
+  initializeCVField(*S_, *vo_, vol_flowrate_key_, Tags::DEFAULT, passwd_, 0.0);
 }
 
 
@@ -440,7 +434,7 @@ Flow_PK::UpdateLocalFields_(const Teuchos::Ptr<State>& S)
   }
 
   // calculate full velocity vector
-  S->GetEvaluator(darcy_velocity_key_, Tags::DEFAULT).Update(*S, darcy_velocity_key_);
+  S->GetEvaluator(darcy_velocity_key_, Tags::DEFAULT).Update(*S, name_);
 }
 
 

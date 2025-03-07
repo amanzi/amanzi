@@ -20,6 +20,7 @@
 #include "PDE_DiffusionFracturedMatrix.hh"
 #include "StateArchive.hh"
 #include "TreeOperator.hh"
+#include "PK_Helpers.hh"
 
 #include "FractureInsertion.hh"
 #include "FlowMatrixFracture_PK.hh"
@@ -75,9 +76,7 @@ FlowMatrixFracture_PK::Setup()
   // -- pressure
   auto cvs = Operators::CreateFracturedMatrixCVS(mesh_matrix_, mesh_fracture_);
   if (!S_->HasRecord("pressure")) {
-    *S_->Require<CV_t, CVS_t>("pressure", Tags::DEFAULT).SetMesh(mesh_matrix_)->SetGhosted(true) =
-      *cvs;
-    AddDefaultPrimaryEvaluator(S_, "pressure", Tags::DEFAULT);
+    requireAtNext("pressure", Tags::DEFAULT, *S_, "state") = *cvs;
     S_->GetRecordSetW("pressure").set_units("Pa");
   }
 
@@ -85,20 +84,16 @@ FlowMatrixFracture_PK::Setup()
   if (!S_->HasRecord("molar_flow_rate")) {
     auto mmap = cvs->Map("face", false);
     auto gmap = cvs->Map("face", true);
-    S_->Require<CV_t, CVS_t>("molar_flow_rate", Tags::DEFAULT)
+    requireAtNext("molar_flow-rate", Tags::DEFAULT, *S_, "state")
       .SetMesh(mesh_matrix_)
       ->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, mmap, gmap, 1);
-    AddDefaultPrimaryEvaluator(S_, "molar_flow_rate", Tags::DEFAULT);
   }
 
   // -- darcy flux for fracture
   if (!S_->HasRecord("fracture-molar_flow_rate")) {
     auto cvs2 = Operators::CreateManifoldCVS(mesh_fracture_);
-    *S_->Require<CV_t, CVS_t>("fracture-molar_flow_rate", Tags::DEFAULT)
-       .SetMesh(mesh_fracture_)
-       ->SetGhosted(true) = *cvs2;
-    AddDefaultPrimaryEvaluator(S_, "fracture-molar_flow_rate", Tags::DEFAULT);
+    requireAtNext("fracture-molar_flow_rate", Tags::DEFAULT, *S_, "state") = *cvs2;
   }
 
   // additional fields and evaluators related to coupling

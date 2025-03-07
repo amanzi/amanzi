@@ -82,7 +82,7 @@ TEST(FLOW_3D_RICHARDS)
 
   // modify the default state for the problem at hand
   // -- permeability
-  std::string passwd("");
+  std::string passwd("state");
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
 
   {

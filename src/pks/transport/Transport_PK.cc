@@ -59,10 +59,9 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
                            const Teuchos::RCP<Teuchos::ParameterList>& glist,
                            const Teuchos::RCP<State>& S,
                            const Teuchos::RCP<TreeVector>& soln)
-  : soln_(soln)
+  : PK_Physical(pk_tree, glist, S, soln),
+    PK(pk_tree, glist, S, soln)
 {
-  S_ = S;
-
   std::string pk_name = pk_tree.name();
   auto found = pk_name.rfind("->");
   if (found != std::string::npos) pk_name.erase(0, found + 2);
@@ -77,9 +76,6 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
       Errors::Message msg("Transport PK: parameter \"component names\" is missing.");
       Exceptions::amanzi_throw(msg);
     }
-  } else {
-    Errors::Message msg("Transport PK: sublist \"cycle driver\" is missing.");
-    Exceptions::amanzi_throw(msg);
   }
 
   // Create miscaleneous lists.
@@ -115,32 +111,36 @@ Transport_PK::Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
                            Teuchos::RCP<State> S,
                            const std::string& pk_list_name,
                            std::vector<std::string>& component_names)
-  : component_names_(component_names)
+  : Transport_PK(glist->sublist("PKs").sublist(pk_list_name),
+                 glist, S, Teuchos::null)
 {
-  S_ = S;
-
-  // Create miscaleneous lists.
-  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  tp_list_ = Teuchos::sublist(pk_list, pk_list_name, true);
-
-  preconditioner_list_ = Teuchos::sublist(glist, "preconditioners");
-  linear_solver_list_ = Teuchos::sublist(glist, "solvers");
-  nonlinear_solver_list_ = Teuchos::sublist(glist, "nonlinear solvers");
-
-  // domain and primary evaluators
-  domain_ = tp_list_->template get<std::string>("domain name", "domain");
-  tcc_key_ = Keys::getKey(domain_, "total_component_concentration");
-  requireAtCurrent(tcc_key_, Tags::DEFAULT, *S_, passwd_);
-
-  // other variables
-  dt_prev_ = 1e+91;
-
-  // initialize io
-  Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist, "units");
-  units_.Init(*units_list);
-
-  vo_ = Teuchos::null;
+  component_names_ = component_names;
 }
+    // PK(*glist, glist, S, Teuchos::null),
+    // component_names_(component_names)
+// {
+//   // Create miscaleneous lists.
+//   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
+//   tp_list_ = Teuchos::sublist(pk_list, pk_list_name, true);
+
+//   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners");
+//   linear_solver_list_ = Teuchos::sublist(glist, "solvers");
+//   nonlinear_solver_list_ = Teuchos::sublist(glist, "nonlinear solvers");
+
+//   // domain and primary evaluators
+//   domain_ = tp_list_->template get<std::string>("domain name", "domain");
+//   tcc_key_ = Keys::getKey(domain_, "total_component_concentration");
+//   requireAtCurrent(tcc_key_, Tags::DEFAULT, *S_, passwd_);
+
+//   // other variables
+//   dt_prev_ = 1e+91;
+
+//   // initialize io
+//   Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist, "units");
+//   units_.Init(*units_list);
+
+//   vo_ = Teuchos::null;
+// }
 
 
 /* ******************************************************************
@@ -177,8 +177,6 @@ Transport_PK::SetupAlquimia()
 void
 Transport_PK::Setup()
 {
-  passwd_ = "state"; // owner's password
-
   mesh_ = S_->GetMesh(domain_);
   dim = mesh_->getSpaceDimension();
 
@@ -268,12 +266,11 @@ Transport_PK::Setup()
   }
 
   int ncomponents = component_names_.size();
-  if (!S_->HasRecord(tcc_key_)) {
-    S_->Require<CV_t, CVS_t>(tcc_key_, Tags::DEFAULT, passwd_, component_names_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, ncomponents);
-  }
+  requireAtNext(tcc_key_, Tags::DEFAULT, *S_, passwd_)
+    .SetMesh(mesh_)
+    ->SetGhosted(true)
+    ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, ncomponents);
+  S_->GetRecordSetW(tcc_key_).set_subfieldnames(component_names_);
 
   // porosity evaluators
   if (!S_->HasRecord(porosity_key_)) {

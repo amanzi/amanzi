@@ -164,7 +164,7 @@ TEST(ENERGY_CONVERGENCE_SRC)
     S->CheckAllFieldsInitialized();
 
     // constant timestepping
-    std::string passwd("");
+    std::string passwd("state");
     int itrs(0);
     double t(0.0), t1(100), dt_next;
     while (t < t1) {

@@ -22,6 +22,7 @@
 #include "Mesh.hh"
 #include "MeshAlgorithms.hh"
 #include "PK_DomainFunctionFactory.hh"
+#include "PK_Helpers.hh"
 #include "State.hh"
 #include "WhetStoneDefs.hh"
 
@@ -41,7 +42,7 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
                      const Teuchos::RCP<Teuchos::ParameterList>& glist,
                      const Teuchos::RCP<State>& S,
                      const Teuchos::RCP<TreeVector>& soln)
-  : PK_PhysicalBDF(pk_tree, glist, S, soln), glist_(glist), passwd_(""), flow_on_manifold_(false)
+  : PK_PhysicalBDF(pk_tree, glist, S, soln), glist_(glist), flow_on_manifold_(false)
 {
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   ep_list_ = Teuchos::sublist(pk_list, name_, true);
@@ -53,7 +54,7 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
   // domain name
   domain_ = ep_list_->get<std::string>("domain name", "domain");
   temperature_key_ = Keys::getKey(domain_, "temperature");
-  AddDefaultPrimaryEvaluator(S_, temperature_key_);
+  requireAtNext(temperature_key_, Tags::DEFAULT, *S_, passwd_);
 
   // create verbosity object
   mesh_ = S->GetMesh(domain_);
@@ -200,10 +201,7 @@ Energy_PK::Setup()
       cvs.SetMesh(mesh_)->SetGhosted(true)->SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
     }
 
-    *S_->Require<CV_t, CVS_t>(mol_flowrate_key_, Tags::DEFAULT, passwd_)
-       .SetMesh(mesh_)
-       ->SetGhosted(true) = cvs;
-    AddDefaultPrimaryEvaluator(S_, mol_flowrate_key_, Tags::DEFAULT);
+    requireAtNext(mol_flowrate_key_, Tags::DEFAULT, *S_, passwd_) = cvs;
   }
 
   // -- effective fracture conductivity
@@ -232,21 +230,18 @@ Energy_PK::Setup()
   // if flow is missing, we need more fields
   // -- saturation
   if (!S_->HasRecord(sat_liquid_key_)) {
-    S_->Require<CV_t, CVS_t>(sat_liquid_key_, Tags::DEFAULT, sat_liquid_key_)
+    requireIndependentEvaluatorConstant(sat_liquid_key_, Tags::DEFAULT, *S_, 1.0)
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-    AddDefaultIndependentEvaluator(S_, sat_liquid_key_, Tags::DEFAULT, 1.0);
   }
 
   // -- pressure
   if (!S_->HasRecord(pressure_key_)) {
-    S_->Require<CV_t, CVS_t>(pressure_key_, Tags::DEFAULT, pressure_key_)
+    requireAtNext(pressure_key_, Tags::DEFAULT, *S_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-    // S_->RequireEvaluator(pressure_key_, Tags::DEFAULT);
-    AddDefaultPrimaryEvaluator(S_, pressure_key_);
   }
 
   // -- fracture aperture
@@ -345,7 +340,7 @@ Energy_PK::Initialize()
 bool
 Energy_PK::UpdateConductivityData(const Teuchos::Ptr<State>& S)
 {
-  bool update = S->GetEvaluator(conductivity_gen_key_).Update(*S, passwd_);
+  bool update = S->GetEvaluator(conductivity_gen_key_).Update(*S, name_);
   if (update) {
     const auto& conductivity = *S->Get<CV_t>(conductivity_gen_key_).ViewComponent("cell");
     WhetStone::Tensor Ktmp(dim, 1);
@@ -441,7 +436,7 @@ Energy_PK::ComputeBCs(const CompositeVector& u)
   // BoundaryDataToFaces(op_bc_, *S_->GetFieldData(temperature_key_, passwd_));
 
   // -- populate BCs
-  S_->GetEvaluator(enthalpy_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(enthalpy_key_).Update(*S_, name_);
   const auto& enth = *S_->Get<CV_t>(enthalpy_key_).ViewComponent("boundary_face", true);
 
   std::vector<int>& bc_model_enth_ = op_bc_enth_->bc_model();

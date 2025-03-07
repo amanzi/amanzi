@@ -70,7 +70,7 @@ MultiphaseMatrixFracture_PK::MultiphaseMatrixFracture_PK(
 void
 MultiphaseMatrixFracture_PK::Setup()
 {
-  std::string passwd("");
+  std::string passwd("state");
   mesh_domain_ = S_->GetMesh();
   mesh_fracture_ = S_->GetMesh("fracture");
 
@@ -226,7 +226,7 @@ MultiphaseMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit
 
   StateArchive archive(S_, vo_);
   archive.Add(fields, Tags::DEFAULT);
-  archive.CopyFieldsToPrevFields(fields, "", true);
+  archive.CopyFieldsToPrevFields(fields, "state", true);
 
   bool fail = PK_MPCStrong<PK_BDF>::AdvanceStep(t_old, t_new, reinit);
 

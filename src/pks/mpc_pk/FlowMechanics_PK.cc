@@ -52,7 +52,7 @@ FlowMechanics_PK::FlowMechanics_PK(Teuchos::ParameterList& pk_tree,
 void
 FlowMechanics_PK::Setup()
 {
-  std::string passwd("");
+  std::string passwd("state");
   pressure_key_ = Keys::getKey(domain_, "pressure");         // primary
   displacement_key_ = Keys::getKey(domain_, "displacement"); // primary
 

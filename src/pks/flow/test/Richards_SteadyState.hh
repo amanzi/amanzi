@@ -38,7 +38,7 @@ AdvanceToSteadyState(Teuchos::RCP<State> S,
 {
   bool last_step = false;
 
-  std::string passwd("");
+  std::string passwd("state");
 
   int max_itrs = ti_specs.max_itrs;
   double T0 = ti_specs.T0;

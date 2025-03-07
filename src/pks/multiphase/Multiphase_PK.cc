@@ -33,6 +33,7 @@
 #include "StateArchive.hh"
 #include "TCMEvaluator_TwoPhase.hh"
 #include "UpwindFactory.hh"
+#include "PK_Helpers.hh"
 
 // Multiphase
 #include "MassDensityGas.hh"
@@ -893,8 +894,8 @@ Multiphase_PK::Initialize()
   // upwind_ = Teuchos::rcp(new Operators::UpwindFlux(mesh_));
 
   // initialize other fields and evaluators
-  S_->GetEvaluator(relperm_liquid_key_).Update(*S_, passwd_);
-  S_->GetEvaluator(relperm_gas_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(relperm_liquid_key_).Update(*S_, name_);
+  S_->GetEvaluator(relperm_gas_key_).Update(*S_, name_);
 
   InitializeFields_();
 
@@ -905,7 +906,7 @@ Multiphase_PK::Initialize()
   std::vector<int> bcnone(nfaces_wghost_, Operators::OPERATOR_BC_NONE);
 
   for (int phase = 0; phase < 2; ++phase) {
-    S_->GetEvaluator(adv_names_[phase]).Update(*S_, passwd_);
+    S_->GetEvaluator(adv_names_[phase]).Update(*S_, name_);
     kr_c = *S_->Get<CV_t>(adv_names_[phase]).ViewComponent("cell");
 
     auto var = S_->GetPtr<CV_t>(pressure_names_[phase], Tags::DEFAULT);
@@ -947,13 +948,13 @@ Multiphase_PK::InitializeFields_()
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  InitializeCVFieldFromCVField(S_, *vo_, prev_tws_key_, tws_key_, passwd_);
-  InitializeCVFieldFromCVField(S_, *vo_, prev_tcs_key_, tcs_key_, passwd_);
+  initializeCVFieldFromCVField(*S_, *vo_, prev_tws_key_, tws_key_, passwd_);
+  initializeCVFieldFromCVField(*S_, *vo_, prev_tcs_key_, tcs_key_, passwd_);
   if (system_["energy eqn"])
-    InitializeCVFieldFromCVField(S_, *vo_, prev_energy_key_, energy_key_, passwd_);
+    initializeCVFieldFromCVField(*S_, *vo_, prev_energy_key_, energy_key_, passwd_);
 
-  InitializeCVField(S_, *vo_, mol_flowrate_liquid_key_, Tags::DEFAULT, passwd_, 0.0);
-  InitializeCVField(S_, *vo_, mol_flowrate_gas_key_, Tags::DEFAULT, passwd_, 0.0);
+  initializeCVField(*S_, *vo_, mol_flowrate_liquid_key_, Tags::DEFAULT, passwd_, 0.0);
+  initializeCVField(*S_, *vo_, mol_flowrate_gas_key_, Tags::DEFAULT, passwd_, 0.0);
 }
 
 
@@ -975,7 +976,7 @@ Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   StateArchive archive(S_, vo_);
   archive.Add(names, Tags::DEFAULT);
-  archive.CopyFieldsToPrevFields(fields, "", true);
+  archive.CopyFieldsToPrevFields(fields, passwd_, true);
 
   // initialization
   if (num_ns_itrs_ == 0) {
@@ -988,14 +989,14 @@ Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // update fields from previous timestep
   // KL: calling Update here may lead to an incorrect prev_field when the
   //     field has dependencies on fields handled by other weakly coupled PKs.
-  S_->GetEvaluator(tws_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(tws_key_).Update(*S_, name_);
   S_->GetW<CV_t>(prev_tws_key_, Tags::DEFAULT, passwd_) = S_->Get<CV_t>(tws_key_);
 
-  S_->GetEvaluator(tcs_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(tcs_key_).Update(*S_, name_);
   S_->GetW<CV_t>(prev_tcs_key_, Tags::DEFAULT, passwd_) = S_->Get<CV_t>(tcs_key_);
 
   if (system_["energy eqn"]) {
-    S_->GetEvaluator(energy_key_).Update(*S_, passwd_);
+    S_->GetEvaluator(energy_key_).Update(*S_, name_);
     S_->GetW<CV_t>(prev_energy_key_, Tags::DEFAULT, passwd_) = S_->Get<CV_t>(energy_key_);
   }
 
@@ -1040,7 +1041,7 @@ Multiphase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
   // Using form div [K k grad(p)] to compute u = -K k grad(p)
   // NOTE: k is upwinded using flux from last iteration
   for (int phase = 0; phase < 2; ++phase) {
-    S_->GetEvaluator(adv_names_[phase]).Update(*S_, passwd_);
+    S_->GetEvaluator(adv_names_[phase]).Update(*S_, name_);
 
     auto var = S_->GetPtr<CV_t>(pressure_names_[phase], Tags::DEFAULT);
     auto flux = S_->GetPtrW<CV_t>(flux_names_[phase], Tags::DEFAULT, passwd_);
@@ -1058,7 +1059,7 @@ Multiphase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 
   // other fields
   if (S_->HasEvaluator(ncp_fg_key_, Tags::DEFAULT)) {
-    S_->GetEvaluator(ncp_fg_key_).Update(*S_, passwd_);
+    S_->GetEvaluator(ncp_fg_key_).Update(*S_, name_);
   }
 }
 
@@ -1224,26 +1225,26 @@ Multiphase_PK::ModifyEvaluators(int neqn)
     if (S_->HasEvaluator(tcs_key_, Tags::DEFAULT)) {
       auto eval = S_->GetEvaluatorPtr(tcs_key_, Tags::DEFAULT);
       Teuchos::rcp_dynamic_cast<MultiphaseEvaluator>(eval)->set_subvector(ifield, n, name, plist);
-      Teuchos::rcp_dynamic_cast<MultiphaseEvaluator>(eval)->Update(*S_, passwd_, true);
+      Teuchos::rcp_dynamic_cast<MultiphaseEvaluator>(eval)->Update(*S_, name_, true);
     }
 
     if (S_->HasEvaluator(ncp_g_key_, Tags::DEFAULT)) {
       auto eval = S_->GetEvaluatorPtr(ncp_g_key_, Tags::DEFAULT);
       Teuchos::rcp_dynamic_cast<MultiphaseEvaluator>(eval)->set_subvector(ifield, n, name, plist);
-      Teuchos::rcp_dynamic_cast<MultiphaseEvaluator>(eval)->Update(*S_, passwd_, true);
+      Teuchos::rcp_dynamic_cast<MultiphaseEvaluator>(eval)->Update(*S_, name_, true);
     }
 
     if (S_->HasEvaluator(x_liquid_key_, Tags::DEFAULT)) {
       auto eval = S_->GetEvaluatorPtr(x_liquid_key_, Tags::DEFAULT);
       Teuchos::rcp_dynamic_cast<MoleFractionLiquid>(eval)->set_subvector(ifield, n, name, plist);
-      Teuchos::rcp_dynamic_cast<MoleFractionLiquid>(eval)->Update(*S_, passwd_, true);
+      Teuchos::rcp_dynamic_cast<MoleFractionLiquid>(eval)->Update(*S_, name_, true);
     }
 
     if (S_->HasEvaluator(tcc_liquid_key_, Tags::DEFAULT)) {
       auto eval = S_->GetEvaluatorPtr(tcc_liquid_key_, Tags::DEFAULT);
       if (eval->get_type() != EvaluatorType::PRIMARY) {
         Teuchos::rcp_dynamic_cast<MultiphaseEvaluator>(eval)->set_subvector(ifield, n, name, plist);
-        Teuchos::rcp_dynamic_cast<MultiphaseEvaluator>(eval)->Update(*S_, passwd_, true);
+        Teuchos::rcp_dynamic_cast<MultiphaseEvaluator>(eval)->Update(*S_, name_, true);
       }
     }
 
@@ -1251,7 +1252,7 @@ Multiphase_PK::ModifyEvaluators(int neqn)
       auto eval = S_->GetEvaluatorPtr(tcc_gas_key_, Tags::DEFAULT);
       if (eval->get_type() != EvaluatorType::PRIMARY) {
         Teuchos::rcp_dynamic_cast<MultiphaseEvaluator>(eval)->set_subvector(ifield, n, name, plist);
-        Teuchos::rcp_dynamic_cast<MultiphaseEvaluator>(eval)->Update(*S_, passwd_, true);
+        Teuchos::rcp_dynamic_cast<MultiphaseEvaluator>(eval)->Update(*S_, name_, true);
       }
     }
   }

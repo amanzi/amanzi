@@ -19,6 +19,7 @@
 #include "PorosityEvaluator.hh"
 #include "PDE_ElasticityFactory.hh"
 #include "StateArchive.hh"
+#include "PK_Helpers.hh"
 
 #include "HydrostaticStressEvaluator.hh"
 #include "MechanicsElasticity_PK.hh"
@@ -49,7 +50,7 @@ MechanicsElasticity_PK::MechanicsElasticity_PK(Teuchos::ParameterList& pk_tree,
   // domain and primary evaluators
   domain_ = ec_list_->get<std::string>("domain name", "domain");
   displacement_key_ = Keys::getKey(domain_, "displacement");
-  AddDefaultPrimaryEvaluator(S_, displacement_key_);
+  requireAtNext(displacement_key_, Tags::DEFAULT, *S_, passwd_);
 
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = ec_list_->sublist("verbose object");

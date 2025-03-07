@@ -34,7 +34,7 @@ MechanicsSmallStrain_PK::FunctionalResidual(double t_old,
 {
   UpdateSourceBoundaryData(t_old, t_new);
 
-  S_->GetEvaluator(shear_modulus_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(shear_modulus_key_).Update(*S_, name_);
 
   op_matrix_elas_->global_operator()->Init();
 

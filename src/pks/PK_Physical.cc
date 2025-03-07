@@ -41,12 +41,14 @@ PK_Physical::Solution_to_State(const TreeVector& solution, const Tag& tag)
 void
 PK_Physical::parseParameterList()
 {
-  key_ = Keys::readKey(*plist_, domain_, "primary variable");
   passwd_ = plist_->get<std::string>("primary variable password", name_);
+  key_ = Keys::readKey(*plist_, domain_, "primary variable", key_);
 
   // require primary variable evaluators
-  requireAtNext(key_, tag_next_, *S_, passwd_);
-  requireAtCurrent(key_, tag_current_, *S_, passwd_);
+  if (!key_.empty()) {
+    requireAtNext(key_, tag_next_, *S_, passwd_);
+    requireAtCurrent(key_, tag_current_, *S_, passwd_);
+  }
 }
 
 void

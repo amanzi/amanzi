@@ -17,6 +17,7 @@
 #include "PK_DomainFunctionFactory.hh"
 
 // Amanzi::NavierStokes
+#include "PK_Helpers.hh"
 #include "NavierStokes_PK.hh"
 
 namespace Amanzi {
@@ -32,7 +33,7 @@ NavierStokes_PK::NavierStokes_PK(Teuchos::ParameterList& pk_tree,
                                  const Teuchos::RCP<Teuchos::ParameterList>& glist,
                                  const Teuchos::RCP<State>& S,
                                  const Teuchos::RCP<TreeVector>& soln)
-  : soln_(soln), passwd_("navier stokes")
+  : soln_(soln)
 {
   S_ = S;
 
@@ -54,8 +55,8 @@ NavierStokes_PK::NavierStokes_PK(Teuchos::ParameterList& pk_tree,
 
   pressure_key_ = Keys::getKey(domain_, "pressure");
   velocity_key_ = Keys::getKey(domain_, "fluid_velocity");
-  AddDefaultPrimaryEvaluator(S_, pressure_key_);
-  AddDefaultPrimaryEvaluator(S_, velocity_key_);
+  requireAtNext(pressure_key_, Tags::DEFAULT, *S_, passwd_);
+  requireAtNext(velocity_key_, Tags::DEFAULT, *S_, passwd_);
 }
 
 
@@ -66,7 +67,7 @@ NavierStokes_PK::NavierStokes_PK(const Teuchos::RCP<Teuchos::ParameterList>& gli
                                  const std::string& pk_list_name,
                                  Teuchos::RCP<State> S,
                                  const Teuchos::RCP<TreeVector>& soln)
-  : glist_(glist), soln_(soln), passwd_("navier stokes")
+  : glist_(glist), soln_(soln)
 {
   S_ = S;
 
@@ -84,8 +85,8 @@ NavierStokes_PK::NavierStokes_PK(const Teuchos::RCP<Teuchos::ParameterList>& gli
 
   pressure_key_ = Keys::getKey(domain_, "pressure");
   velocity_key_ = Keys::getKey(domain_, "fluid_velocity");
-  AddDefaultPrimaryEvaluator(S_, pressure_key_);
-  AddDefaultPrimaryEvaluator(S_, velocity_key_);
+  requireAtNext(pressure_key_, Tags::DEFAULT, *S_, passwd_);
+  requireAtNext(velocity_key_, Tags::DEFAULT, *S_, passwd_);
 
   vo_ = Teuchos::null;
 }

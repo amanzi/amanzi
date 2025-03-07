@@ -98,7 +98,7 @@ TEST(ENERGY_2D_MATRIX)
 
   // modify the default state for the problem at hand
   // create the initial temperature function
-  std::string passwd("");
+  std::string passwd("state");
   auto& temperature =
     *S->GetW<CompositeVector>("temperature", Tags::DEFAULT, passwd).ViewComponent("cell");
   temperature.PutScalar(273.0);

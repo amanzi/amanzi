@@ -104,7 +104,7 @@ TEST(DARCY_TWO_FRACTURES)
   // double p_new = p_old + (T * Q - rho * std::log(1.0 + dadt * T / a)) * g / (Ss);
   double p_new = (p_old + T * Q * g / Ss) / (1.0 + dadt * T / a);
 
-  std::string passwd("");
+  std::string passwd("state");
   auto& p =
     *S->GetW<CompositeVector>("fracture-pressure", Tags::DEFAULT, passwd).ViewComponent("cell");
   for (int c = 0; c < p.MyLength(); c++) { CHECK_CLOSE(p_new, p[0][c], 0.01 * std::fabs(p_new)); }

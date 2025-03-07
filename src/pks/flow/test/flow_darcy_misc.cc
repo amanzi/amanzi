@@ -58,7 +58,7 @@ class DarcyProblem {
 
   DarcyProblem()
   {
-    passwd = "";
+    passwd = "state";
     comm = Amanzi::getDefaultComm();
     MyPID = comm->MyPID();
 

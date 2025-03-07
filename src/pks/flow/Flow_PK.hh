@@ -347,7 +347,6 @@ class Flow_PK : public PK_PhysicalBDF {
  protected:
   int dim;
 
-  std::string passwd_;
   bool peaceman_model_, use_bulk_modulus_;
 
   // Stationary physical quantatities

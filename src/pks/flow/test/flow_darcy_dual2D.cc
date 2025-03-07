@@ -83,7 +83,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY)
 
   // modify the default state for the problem at hand
   // -- permeability
-  std::string passwd("");
+  std::string passwd("state");
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
   for (int c = 0; c < K.MyLength(); c++) {
     K[0][c] = 0.1;

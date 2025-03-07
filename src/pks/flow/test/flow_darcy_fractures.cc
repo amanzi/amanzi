@@ -81,7 +81,7 @@ TEST(DARCY_TWO_FRACTURES)
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(mesh);
 
-  std::string passwd("");
+  std::string passwd("state");
   Teuchos::ParameterList pk_tree("flow");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(pk_tree, plist, S, soln));

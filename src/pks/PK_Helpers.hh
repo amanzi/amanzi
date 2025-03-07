@@ -125,6 +125,14 @@ requireAtNext(const Key& key,
 Teuchos::RCP<EvaluatorPrimaryCV>
 requireEvaluatorAssign(const Key& key, const Tag& tag, State& S);
 
+
+CompositeVectorSpace&
+requireIndependentEvaluatorConstant(const Key& key,
+        const Tag& tag,
+        State& S,
+        double val = 0.0);
+
+
 // -----------------------------------------------------------------------------
 // Assign if it is an assignment evaluator.
 // -----------------------------------------------------------------------------

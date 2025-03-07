@@ -779,8 +779,8 @@ PipeFlow_PK::ScatterMasterToGhostedExtraEvaluators()
 void
 PipeFlow_PK::UpdateExtraEvaluators()
 {
-  S_->GetEvaluator(water_depth_key_).Update(*S_, passwd_);
-  S_->GetEvaluator(pressure_head_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(water_depth_key_).Update(*S_, name_);
+  S_->GetEvaluator(pressure_head_key_).Update(*S_, name_);
 }
 
 //--------------------------------------------------------------

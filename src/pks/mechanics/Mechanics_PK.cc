@@ -57,15 +57,13 @@ Mechanics_PK::Setup()
   const auto& list = ec_list_->sublist("operators").sublist("elasticity operator");
   auto schema = Operators::schemaFromPList(list, mesh_);
 
-  if (!S_->HasRecord(displacement_key_)) {
-    auto cvs = Operators::cvsFromSchema(schema, mesh_, true);
-    *S_->Require<CV_t, CVS_t>(displacement_key_, Tags::DEFAULT, passwd_)
-       .SetMesh(mesh_)
-       ->SetGhosted(true) = cvs;
+  auto cvs = Operators::cvsFromSchema(schema, mesh_, true);
+  *S_->Require<CV_t, CVS_t>(displacement_key_, Tags::DEFAULT, passwd_)
+    .SetMesh(mesh_)
+    ->SetGhosted(true) = cvs;
 
-    eval_ = Teuchos::rcp_static_cast<EvaluatorPrimary<CV_t, CVS_t>>(
-      S_->GetEvaluatorPtr(displacement_key_, Tags::DEFAULT));
-  }
+  eval_ = Teuchos::rcp_static_cast<EvaluatorPrimary<CV_t, CVS_t>>(
+    S_->GetEvaluatorPtr(displacement_key_, Tags::DEFAULT));
 
   if (!S_->HasRecord(hydrostatic_stress_key_)) {
     S_->Require<CV_t, CVS_t>(hydrostatic_stress_key_, Tags::DEFAULT, hydrostatic_stress_key_)

@@ -37,10 +37,10 @@ EnergyTwoPhase_PK::FunctionalResidual(double t_old,
   temperature_eval_->SetChanged();
   UpdateSourceBoundaryData(t_old, t_new, *u_new->Data());
 
-  S_->GetEvaluator(mol_flowrate_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(mol_flowrate_key_).Update(*S_, name_);
   auto flux = S_->GetPtr<CompositeVector>(mol_flowrate_key_, Tags::DEFAULT);
 
-  S_->GetEvaluator(conductivity_gen_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(conductivity_gen_key_).Update(*S_, name_);
   if (upwind_.get()) {
     const auto& conductivity = S_->Get<CompositeVector>(conductivity_gen_key_);
     *upw_conductivity_->ViewComponent("cell") = *conductivity.ViewComponent("cell");
@@ -65,7 +65,7 @@ EnergyTwoPhase_PK::FunctionalResidual(double t_old,
   double dt = t_new - t_old;
 
   // update the energy at the new time.
-  S_->GetEvaluator(energy_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(energy_key_).Update(*S_, name_);
 
   const auto& e1 = *S_->Get<CompositeVector>(energy_key_).ViewComponent("cell");
   const auto& e0 = *S_->Get<CompositeVector>(prev_energy_key_).ViewComponent("cell");
@@ -77,7 +77,7 @@ EnergyTwoPhase_PK::FunctionalResidual(double t_old,
   }
 
   // advect tmp = molar_density_liquid * enthalpy
-  S_->GetEvaluator(enthalpy_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(enthalpy_key_).Update(*S_, name_);
   const auto& enthalpy = S_->Get<CompositeVector>(enthalpy_key_);
 
   op_advection_->Init();
@@ -104,7 +104,7 @@ EnergyTwoPhase_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
 
   // update BCs and conductivity
   UpdateSourceBoundaryData(t, t + dt, *up->Data());
-  S_->GetEvaluator(conductivity_gen_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(conductivity_gen_key_).Update(*S_, name_);
 
   if (upwind_.get()) {
     const auto& conductivity = S_->Get<CompositeVector>(conductivity_gen_key_);

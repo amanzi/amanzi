@@ -18,6 +18,7 @@
 #include "PK_Physical.hh"
 #include "PK_Utils.hh"
 #include "StateArchive.hh"
+#include "PK_Helpers.hh"
 
 #include "MechanicsFlow_PK.hh"
 
@@ -49,7 +50,7 @@ MechanicsFlow_PK::MechanicsFlow_PK(Teuchos::ParameterList& pk_tree,
 void
 MechanicsFlow_PK::Setup()
 {
-  std::string passwd("");
+  std::string passwd("state");
 
   displacement_key_ = Keys::getKey(domain_, "displacement"); // primaries
   pressure_key_ = Keys::getKey(domain_, "pressure");
@@ -104,7 +105,7 @@ MechanicsFlow_PK::Setup()
 void
 MechanicsFlow_PK::Initialize()
 {
-  InitializeCVField(S_, *vo_, undrained_split_coef_key_, Tags::DEFAULT, "", 0.0);
+  initializeCVField(*S_, *vo_, undrained_split_coef_key_, Tags::DEFAULT, "", 0.0);
   PK_MPCSequential::Initialize();
 }
 

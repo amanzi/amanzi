@@ -109,7 +109,6 @@ class Energy_PK : public PK_PhysicalBDF {
   virtual void parseParameterList() override {};
   virtual void Setup() override;
   virtual void Initialize() override;
-  virtual std::string name() override { return passwd_; }
 
   // methods required for time integration
   // -- management of the preconditioner
@@ -181,7 +180,6 @@ class Energy_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Teuchos::ParameterList> ti_list_;
 
   // primary field
-  std::string passwd_;
   Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>> temperature_eval_;
 
   // names of state fields

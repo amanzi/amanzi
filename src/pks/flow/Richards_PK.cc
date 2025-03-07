@@ -38,6 +38,7 @@
 #include "VolumetricFlowRateEvaluator.hh"
 #include "UpwindFactory.hh"
 #include "XMLParameterListWriter.hh"
+#include "PK_Helpers.hh"
 
 // Amanzi::Flow
 #include "ApertureModelEvaluator.hh"
@@ -77,8 +78,8 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& pk_tree,
   pressure_key_ = Keys::getKey(domain_, "pressure");
   mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
 
-  AddDefaultPrimaryEvaluator(S_, pressure_key_);
-  AddDefaultPrimaryEvaluator(S_, mol_flowrate_key_);
+  requireAtNext(pressure_key_, Tags::DEFAULT, *S_, passwd_);
+  requireAtNext(mol_flowrate_key_, Tags::DEFAULT, *S_, passwd_);
 
   vo_ = Teuchos::null;
 }
@@ -825,9 +826,9 @@ Richards_PK::Initialize()
   op_pc_solver_->InitializeInverse();
 
   // initialize previous fields
-  InitializeCVFieldFromCVField(
-    S_, *vo_, prev_saturation_liquid_key_, saturation_liquid_key_, passwd_);
-  InitializeCVFieldFromCVField(S_, *vo_, prev_water_storage_key_, water_storage_key_, passwd_);
+  initializeCVFieldFromCVField(
+    *S_, *vo_, prev_saturation_liquid_key_, saturation_liquid_key_, passwd_);
+  initializeCVFieldFromCVField(*S_, *vo_, prev_water_storage_key_, water_storage_key_, passwd_);
 
   // set up operators for evaluators
   auto eval = S_->GetEvaluatorPtr(vol_flowrate_key_, Tags::DEFAULT);
@@ -889,8 +890,8 @@ Richards_PK::InitializeFields_()
     }
   }
 
-  InitializeCVFieldFromCVField(
-    S_, *vo_, prev_water_storage_msp_key_, water_storage_msp_key_, passwd_);
+  initializeCVFieldFromCVField(
+    *S_, *vo_, prev_water_storage_msp_key_, water_storage_msp_key_, passwd_);
 }
 
 
@@ -1032,13 +1033,13 @@ Richards_PK::CommitStep(double t_old, double t_new, const Tag& tag)
   // update previous fields
   std::vector<std::string> fields({ saturation_liquid_key_, water_storage_key_, aperture_key_ });
   StateArchive archive(S_, vo_);
-  archive.CopyFieldsToPrevFields(fields, "", false);
+  archive.CopyFieldsToPrevFields(fields, passwd_, false);
 
   // update flow rates
   ComputeMolarFlowRate_(false);
   *mol_flowrate_copy = S_->Get<CV_t>(mol_flowrate_key_, Tags::DEFAULT);
 
-  S_->GetEvaluator(vol_flowrate_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(vol_flowrate_key_).Update(*S_, name_);
 
   if (coupled_to_matrix_ || flow_on_manifold_) VV_FractureConservationLaw();
 

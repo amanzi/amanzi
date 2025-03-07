@@ -259,7 +259,7 @@ EnergyOnePhase_PK::InitializeFields_()
   if (S_->HasRecord(prev_energy_key_)) {
     if (!S_->GetRecord(prev_energy_key_).initialized()) {
       temperature_eval_->SetChanged();
-      S_->GetEvaluator(energy_key_).Update(*S_, passwd_);
+      S_->GetEvaluator(energy_key_).Update(*S_, name_);
 
       const auto& e1 = S_->Get<CV_t>(energy_key_);
       auto& e0 = S_->GetW<CV_t>(prev_energy_key_, passwd_);
@@ -330,7 +330,7 @@ EnergyOnePhase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
   // update previous fields
   std::vector<std::string> fields({ energy_key_ });
   StateArchive archive(S_, vo_);
-  archive.CopyFieldsToPrevFields(fields, "", false);
+  archive.CopyFieldsToPrevFields(fields, passwd_, false);
 }
 
 } // namespace Energy

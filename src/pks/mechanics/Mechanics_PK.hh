@@ -71,8 +71,7 @@ class Mechanics_PK : public PK_PhysicalBDF {
                const Teuchos::RCP<State>& S,
                const Teuchos::RCP<TreeVector>& soln)
     : PK(pk_tree, glist, S, soln),
-      PK_PhysicalBDF(pk_tree, glist, S, soln),
-      passwd_(""){};
+      PK_PhysicalBDF(pk_tree, glist, S, soln) {}
   ~Mechanics_PK(){};
 
   // methods required for PK interface
@@ -161,7 +160,6 @@ class Mechanics_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Operators::Operator> op_matrix_;
   Teuchos::RCP<Operators::PDE_Elasticity> op_matrix_elas_, op_matrix_graddiv_;
 
-  std::string passwd_;
   int dim_;
 
   Key displacement_key_, hydrostatic_stress_key_, vol_strain_key_;

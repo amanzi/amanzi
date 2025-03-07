@@ -117,8 +117,6 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) final;
   virtual void CalculateDiagnostics(const Tag& tag) final{};
 
-  virtual std::string name() { return passwd_; }
-
   // methods required for time integration interface
   // -- computes the non-linear functional f = f(t,u,udot) and related norm.
   void FunctionalResidual(const double t_old,
@@ -209,7 +207,6 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   std::string solver_name_;
 
  private:
-  std::string passwd_;
   int dim;
 
   Key pressure_key_, velocity_key_;

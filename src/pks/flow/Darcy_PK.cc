@@ -27,6 +27,7 @@
 #include "MeshAlgorithms.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "PK_Utils.hh"
+#include "PK_Helpers.hh"
 #include "TreeVector.hh"
 #include "TimestepControllerFactory.hh"
 #include "Tensor.hh"
@@ -71,8 +72,8 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& pk_tree,
   pressure_key_ = Keys::getKey(domain_, "pressure");
   mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
 
-  AddDefaultPrimaryEvaluator(S_, pressure_key_);
-  AddDefaultPrimaryEvaluator(S_, mol_flowrate_key_);
+  requireAtNext(pressure_key_, Tags::DEFAULT, *S_, passwd_);
+  requireAtNext(mol_flowrate_key_, Tags::DEFAULT, *S_, passwd_);
 }
 
 
@@ -269,7 +270,7 @@ Darcy_PK::Setup()
 
   // to force other PKs to use density, we define it here
   if (S_->HasEvaluator(mol_density_liquid_key_, Tags::DEFAULT))
-    AddDefaultIndependentEvaluator(S_, mol_density_liquid_key_, Tags::DEFAULT, molar_rho);
+    requireIndependentEvaluatorConstant(mol_density_liquid_key_, Tags::DEFAULT, *S_, molar_rho);
 
   if (!S_->HasRecord(mass_density_liquid_key_)) {
     S_->Require<CV_t, CVS_t>(mass_density_liquid_key_, Tags::DEFAULT, mass_density_liquid_key_)
@@ -278,7 +279,7 @@ Darcy_PK::Setup()
       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
       ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
 
-    AddDefaultIndependentEvaluator(S_, mass_density_liquid_key_, Tags::DEFAULT, rho);
+    requireIndependentEvaluatorConstant(mass_density_liquid_key_, Tags::DEFAULT, *S_, rho);
   }
 
   // -- hyadraulic head and full Darcy velocity
@@ -454,16 +455,16 @@ Darcy_PK::InitializeFields_()
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  InitializeCVField(S_, *vo_, saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_key_, 1.0);
-  InitializeCVField(S_, *vo_, prev_saturation_liquid_key_, Tags::DEFAULT, passwd_, 1.0);
+  initializeCVField(*S_, *vo_, saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_key_, 1.0);
+  initializeCVField(*S_, *vo_, prev_saturation_liquid_key_, Tags::DEFAULT, passwd_, 1.0);
 
   if (flow_on_manifold_)
-    InitializeCVField(S_, *vo_, compliance_key_, Tags::DEFAULT, compliance_key_, 0.0);
+    initializeCVField(*S_, *vo_, compliance_key_, Tags::DEFAULT, compliance_key_, 0.0);
 
   if (flow_on_manifold_ && external_aperture_)
-    InitializeCVFieldFromCVField(S_, *vo_, ref_pressure_key_, pressure_key_, passwd_);
+    initializeCVFieldFromCVField(*S_, *vo_, ref_pressure_key_, pressure_key_, passwd_);
 
-  InitializeCVFieldFromCVField(S_, *vo_, prev_water_storage_key_, water_storage_key_, passwd_);
+  initializeCVFieldFromCVField(*S_, *vo_, prev_water_storage_key_, water_storage_key_, passwd_);
 }
 
 
@@ -627,7 +628,7 @@ void
 Darcy_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
   ComputeMolarFlowRate_(true);
-  S_->GetEvaluator(vol_flowrate_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(vol_flowrate_key_).Update(*S_, name_);
 
   S_->GetEvaluator(water_storage_key_).Update(*S_, "flow");
   S_->GetW<CV_t>(prev_water_storage_key_, Tags::DEFAULT, passwd_) =

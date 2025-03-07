@@ -81,7 +81,7 @@ TEST(FLOW_3D_RICHARDS)
   S->InitializeEvaluators();
 
   // modify the default state for the problem at hand
-  std::string passwd("");
+  std::string passwd("state");
 
   S->GetW<double>("const_fluid_density", "state") = 1.0;
   S->GetW<CompositeVector>("viscosity_liquid", Tags::DEFAULT, "viscosity_liquid").PutScalar(1.0);

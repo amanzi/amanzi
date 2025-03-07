@@ -87,7 +87,7 @@ TEST(MULTIPHASE_MODEL_I)
   int ncells_owned =
     mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
-  std::string passwd("");
+  std::string passwd("state");
   std::vector<std::string> names({ "pressure_liquid", "mole_fraction_gas", "saturation_liquid" });
   auto& pl = *S->GetW<CompositeVector>(names[0], passwd).ViewComponent("cell");
   auto& xg = *S->GetW<CompositeVector>(names[1], passwd).ViewComponent("cell");

@@ -46,7 +46,7 @@ MechanicsFlowMatrixFracture_PK::MechanicsFlowMatrixFracture_PK(
 void
 MechanicsFlowMatrixFracture_PK::Setup()
 {
-  std::string passwd("");
+  std::string passwd("state");
   hydrostatic_stress_key_ = "hydrostatic_stress";
 
   S_->Require<CV_t, CVS_t>(hydrostatic_stress_key_, Tags::DEFAULT, passwd)

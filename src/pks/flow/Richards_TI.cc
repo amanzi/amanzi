@@ -49,7 +49,7 @@ Richards_PK::FunctionalResidual(double t_old,
   Solution_to_State(*u_new, Tags::DEFAULT);
 
   if (S_->HasEvaluator(viscosity_liquid_key_, Tags::DEFAULT)) {
-    S_->GetEvaluator(viscosity_liquid_key_).Update(*S_, "flow");
+    S_->GetEvaluator(viscosity_liquid_key_).Update(*S_, name_);
   }
 
   // compute BCs and source terms, update primary field
@@ -58,7 +58,7 @@ Richards_PK::FunctionalResidual(double t_old,
   // upwind diffusion coefficient and its derivative
   mol_flowrate_copy->ScatterMasterToGhosted("face");
 
-  S_->GetEvaluator(alpha_key_).Update(*S_, "flow");
+  S_->GetEvaluator(alpha_key_).Update(*S_, name_);
   auto& alpha = S_->GetW<CV_t>(alpha_key_, Tags::DEFAULT, alpha_key_);
 
   if (!flow_on_manifold_) {
@@ -71,7 +71,7 @@ Richards_PK::FunctionalResidual(double t_old,
     // modify relative permeability coefficient for influx faces
     // UpwindInflowBoundary_New(u_new->Data());
 
-    S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
+    S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, name_, pressure_key_, Tags::DEFAULT);
     auto& alpha_dP =
       S_->GetDerivativeW<CV_t>(alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_);
 
@@ -93,10 +93,10 @@ Richards_PK::FunctionalResidual(double t_old,
   // add accumulation term
   Epetra_MultiVector& f_cell = *f->Data()->ViewComponent("cell");
 
-  S_->GetEvaluator(porosity_key_).Update(*S_, "flow");
+  S_->GetEvaluator(porosity_key_).Update(*S_, name_);
   const auto& phi_c = *S_->Get<CV_t>(porosity_key_).ViewComponent("cell");
 
-  S_->GetEvaluator(water_storage_key_).Update(*S_, "flow");
+  S_->GetEvaluator(water_storage_key_).Update(*S_, name_);
   const auto& ws_c = *S_->Get<CV_t>(water_storage_key_).ViewComponent("cell");
   const auto& ws_prev_c = *S_->Get<CV_t>(prev_water_storage_key_).ViewComponent("cell");
 
@@ -193,19 +193,19 @@ Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& kvapo
   Key mol_density_gas_key = Keys::getKey(domain_, "molar_density_gas");
   Key x_gas_key = Keys::getKey(domain_, "molar_fraction_gas");
 
-  S_->GetEvaluator(mol_density_gas_key).Update(*S_, passwd_);
+  S_->GetEvaluator(mol_density_gas_key).Update(*S_, name_);
   const auto& n_g = *S_->Get<CompositeVector>(mol_density_gas_key).ViewComponent("cell");
 
-  S_->GetEvaluator(porosity_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(porosity_key_).Update(*S_, name_);
   const auto& phi = *S_->Get<CompositeVector>(porosity_key_).ViewComponent("cell");
 
-  S_->GetEvaluator(saturation_liquid_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(saturation_liquid_key_).Update(*S_, name_);
   const auto& s_l = *S_->Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
 
-  S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, name_);
   const auto& n_l = *S_->Get<CompositeVector>(mol_density_liquid_key_).ViewComponent("cell");
 
-  S_->GetEvaluator(x_gas_key).Update(*S_, passwd_);
+  S_->GetEvaluator(x_gas_key).Update(*S_, name_);
   const auto& x_g = *S_->Get<CompositeVector>(x_gas_key).ViewComponent("cell");
 
   S_->GetEvaluator(x_gas_key).UpdateDerivative(*S_, passwd_, temperature_key, Tags::DEFAULT);

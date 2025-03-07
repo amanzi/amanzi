@@ -162,7 +162,7 @@ TEST(ENERGY_CONVERGENCE)
     S->CheckAllFieldsInitialized();
 
     // constant timestepping
-    std::string passwd("");
+    std::string passwd("state");
     int itrs(0);
     double t(0.0), t1(0.5), dt_next;
     while (std::fabs(t - t1) > 1e-6) {
@@ -284,7 +284,7 @@ TEST(ENERGY_PRECONDITIONER)
     S->CheckAllFieldsInitialized();
 
     // constant timestepping
-    std::string passwd("");
+    std::string passwd("state");
     int itrs(0);
     double t(0.0), t1(0.5), dt(0.02), dt_next;
     while (t < t1) {

@@ -275,7 +275,7 @@ FlowEnergy_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
   PK_MPCStrong<PK_BDF>::UpdatePreconditioner(t, up, dt);
 
   if (include_pt_coupling_) {
-    std::string passwd("");
+    std::string passwd("state");
     S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd, pressure_key_, Tags::DEFAULT);
     const auto& dEdP =
       S_->GetDerivative<CV_t>(energy_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT);

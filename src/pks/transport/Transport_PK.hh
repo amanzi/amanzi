@@ -402,8 +402,6 @@ class Transport_PK : public PK_Physical {
   double internal_tests_tol_;
 
  protected:
-  Teuchos::RCP<TreeVector> soln_;
-
   // names of state fields
   Key tcc_key_;
   Key vol_flowrate_key_, aperture_key_;
@@ -431,7 +429,6 @@ class Transport_PK : public PK_Physical {
 
   double cfl_, dt_, dt_debug_, t_physics_, dt_prev_;
 
-  std::string passwd_;
   Method_t method_;
 
   bool transport_on_manifold_;

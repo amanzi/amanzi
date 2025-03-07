@@ -43,9 +43,9 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
                                  const Teuchos::RCP<Teuchos::ParameterList>& glist,
                                  const Teuchos::RCP<State>& S,
                                  const Teuchos::RCP<TreeVector>& soln)
-  : PK(pk_tree, glist, S, soln),
+  : PK_Physical(pk_tree, glist, S, soln),
+    PK(pk_tree, glist, S, soln),
     soln_(soln),
-    passwd_("state"),
     iters_(0)
 {
   // Create miscellaneous lists.
@@ -384,7 +384,7 @@ ShallowWater_PK::Initialize()
   initializeCVField(*S_, *vo_, discharge_key_, Tags::DEFAULT, discharge_key_, 0.0);
 
   // secondary fields
-  S_->GetEvaluator(hydrostatic_pressure_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(hydrostatic_pressure_key_).Update(*S_, name_);
 
   initializeCVField(*S_, *vo_, riemann_flux_key_, Tags::DEFAULT, passwd_, 0.0);
   initializeCVFieldFromCVField(
@@ -427,7 +427,7 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   double dt = t_new - t_old;
   iters_++;
 
-  S_->GetEvaluator(discharge_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(discharge_key_).Update(*S_, name_);
 
   // distribute data to ghost cells
   S_->Get<CV_t>(total_depth_key_).ScatterMasterToGhosted("cell");
@@ -441,7 +441,7 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
   auto& vel_c = *S_->GetW<CV_t>(velocity_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
 
-  S_->GetEvaluator(discharge_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(discharge_key_).Update(*S_, name_);
   auto& q_c =
     *S_->GetW<CV_t>(discharge_key_, Tags::DEFAULT, discharge_key_).ViewComponent("cell", true);
 
@@ -551,7 +551,7 @@ ShallowWater_PK::CommitStep(double t_old, double t_new, const Tag& tag)
   UpdateSecondaryFields();
 
   if (!source_key_.empty()) {
-    S_->GetEvaluator(source_key_).Update(*S_, passwd_); // in this evaluator when running pipe flow
+    S_->GetEvaluator(source_key_).Update(*S_, name_); // in this evaluator when running pipe flow
   }
 
   Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
@@ -562,7 +562,7 @@ ShallowWater_PK::CommitStep(double t_old, double t_new, const Tag& tag)
     S_->GetEvaluatorPtr(velocity_key_, Tags::DEFAULT))
     ->SetChanged();
 
-  S_->GetEvaluator(hydrostatic_pressure_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(hydrostatic_pressure_key_).Update(*S_, name_);
 
   UpdateExtraEvaluators();
 

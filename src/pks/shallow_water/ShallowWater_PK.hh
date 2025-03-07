@@ -185,8 +185,6 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   Key riemann_flux_key_;
   Key source_key_;
 
-  std::string passwd_;
-
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int dim_;
   int ncells_owned_;

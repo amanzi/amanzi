@@ -56,7 +56,8 @@ TransportImplicit_PK::TransportImplicit_PK(Teuchos::ParameterList& pk_tree,
                                            const Teuchos::RCP<Teuchos::ParameterList>& glist,
                                            const Teuchos::RCP<State>& S,
                                            const Teuchos::RCP<TreeVector>& soln)
-  : Transport_PK(pk_tree, glist, S, soln)
+  : Transport_PK(pk_tree, glist, S, soln),
+    PK(pk_tree, glist, S, soln)
 {
   if (tp_list_->isSublist("time integrator"))
     ti_list_ = Teuchos::sublist(tp_list_, "time integrator", true);
@@ -74,17 +75,23 @@ TransportImplicit_PK::TransportImplicit_PK(const Teuchos::RCP<Teuchos::Parameter
                                            Teuchos::RCP<State> S,
                                            const std::string& pk_list_name,
                                            std::vector<std::string>& component_names)
-  : Transport_PK(glist, S, pk_list_name, component_names)
+  : TransportImplicit_PK(glist->sublist("PKs").sublist(pk_list_name),
+                 glist, S, Teuchos::null)
 {
-  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  tp_list_ = Teuchos::sublist(pk_list, pk_list_name, true);
-
-  // We also need miscaleneous sublists
-  preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
-  linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
-  if (tp_list_->isSublist("time integrator"))
-    ti_list_ = Teuchos::sublist(tp_list_, "time integrator", true);
+  component_names_ = component_names;
 }
+//   : Transport_PK(glist, S, pk_list_name, component_names)
+//     PK(
+// {
+//   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
+//   tp_list_ = Teuchos::sublist(pk_list, pk_list_name, true);
+
+//   // We also need miscaleneous sublists
+//   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
+//   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
+//   if (tp_list_->isSublist("time integrator"))
+//     ti_list_ = Teuchos::sublist(tp_list_, "time integrator", true);
+// }
 
 
 /* ******************************************************************
@@ -125,8 +132,8 @@ TransportImplicit_PK::Initialize()
   cvs.SetMesh(mesh_)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)->SetGhosted(true);
   if (use_dispersion_) cvs = op_diff_->global_operator()->DomainMap();
 
-  solution_ = Teuchos::rcp(new CompositeVector(cvs));
-  soln_->SetData(solution_);
+  cv_solution_ = Teuchos::rcp(new CompositeVector(cvs));
+  solution_->SetData(cv_solution_);
 
   // -- advection
   Teuchos::ParameterList& oplist_a =
@@ -155,13 +162,13 @@ TransportImplicit_PK::Initialize()
     std::string ti_name = ti_list_->get<std::string>("time integration method", "none");
     if (ti_name == "BDF1") {
       Teuchos::ParameterList& bdf1_list = ti_list_->sublist("BDF1");
-      auto udot = Teuchos::rcp(new TreeVector(*soln_));
+      auto udot = Teuchos::rcp(new TreeVector(*solution_));
       udot->PutScalar(0.0);
 
       for (int i = 0; i < num_aqueous; i++) {
         bdf1_dae_.push_back(
-          Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(name_, bdf1_list, *this, soln_->get_map(), S_)));
-        bdf1_dae_[i]->SetInitialState(0.0, soln_, udot);
+          Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(name_, bdf1_list, *this, solution_->get_map(), S_)));
+        bdf1_dae_[i]->SetInitialState(0.0, solution_, udot);
       }
     } else {
       Teuchos::OSTab tab = vo_->getOSTab();
@@ -304,23 +311,23 @@ TransportImplicit_PK::AdvanceStepHO_(double t_old, double t_new, int* tot_itrs)
     current_component_ = i;
 
     int num_itrs = bdf1_dae_[i]->number_nonlinear_steps();
-    *(*solution_->ViewComponent("cell"))(0) = *(*tcc->ViewComponent("cell"))(i);
+    *(*cv_solution_->ViewComponent("cell"))(0) = *(*tcc->ViewComponent("cell"))(i);
 
-    failed = bdf1_dae_[i]->AdvanceStep(dt_, dt_next, soln_);
+    failed = bdf1_dae_[i]->AdvanceStep(dt_, dt_next, solution_);
     if (failed) {
       dt_ = dt_next;
       return failed;
     }
 
-    *(*tcc_tmp->ViewComponent("cell"))(i) = *(*solution_->ViewComponent("cell"))(0);
+    *(*tcc_tmp->ViewComponent("cell"))(i) = *(*cv_solution_->ViewComponent("cell"))(0);
     *tot_itrs += bdf1_dae_[i]->number_nonlinear_steps() - num_itrs;
   }
   dt_ = dt_next;
 
   // if we reach this point, we can commit solution
   for (int i = 0; i < num_aqueous; i++) {
-    *(*solution_->ViewComponent("cell"))(0) = *(*tcc_tmp->ViewComponent("cell"))(i);
-    bdf1_dae_[i]->CommitSolution(dt_, soln_);
+    *(*cv_solution_->ViewComponent("cell"))(0) = *(*tcc_tmp->ViewComponent("cell"))(i);
+    bdf1_dae_[i]->CommitSolution(dt_, solution_);
   }
 
   if (vo_->getVerbLevel() > Teuchos::VERB_MEDIUM) {

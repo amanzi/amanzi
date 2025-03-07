@@ -16,6 +16,7 @@
 
 // Amanzi
 #include "UniqueLocalIndex.hh"
+#include "PK_Helpers.hh"
 
 // Amanzi::Mechanics
 #include "MechanicsFracturedMatrix_PK.hh"
@@ -47,7 +48,7 @@ MechanicsFracturedMatrix_PK::MechanicsFracturedMatrix_PK(
   // domain and primary evaluators
   domain_ = ec_list_->get<std::string>("domain name", "domain");
   displacement_key_ = Keys::getKey(domain_, "displacement");
-  AddDefaultPrimaryEvaluator(S_, displacement_key_);
+  requireAtNext(displacement_key_, Tags::DEFAULT, *S_, passwd_);
 
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = ec_list_->sublist("verbose object");
@@ -137,7 +138,7 @@ MechanicsFracturedMatrix_PK::Initialize()
 {
   MechanicsSmallStrain_PK::Initialize();
 
-  InitializeCVField(S_, *vo_, ref_aperture_key_, Tags::DEFAULT, "", 1.0);
+  initializeCVField(*S_, *vo_, ref_aperture_key_, Tags::DEFAULT, "", 1.0);
 }
 
 
@@ -153,7 +154,7 @@ MechanicsFracturedMatrix_PK::FunctionalResidual(double t_old,
 {
   UpdateSourceBoundaryData(t_old, t_new);
 
-  S_->GetEvaluator(shear_modulus_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(shear_modulus_key_).Update(*S_, name_);
 
   op_matrix_elas_->global_operator()->Init();
 

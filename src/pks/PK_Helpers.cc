@@ -201,29 +201,19 @@ requireAtNext(const Key& key, const Tag& tag, State& S, bool managed_here, const
 }
 
 
-// // -----------------------------------------------------------------------------
-// // Helper method to add an independent variable evaluator
-// // -----------------------------------------------------------------------------
-// void
-// AddDefaultIndependentEvaluator(const Teuchos::RCP<State>& S,
-//                                const Key& key,
-//                                const Tag& tag,
-//                                double val)
-// {
-//   Teuchos::ParameterList elist(key);
-//   elist.set<std::string>("evaluator type", "independent variable")
-//     .set<bool>("constant in time", true)
-//     .sublist("function")
-//     .sublist("ALL")
-//     .set<std::string>("region", "All")
-//     .set<std::string>("component", "*")
-//     .sublist("function")
-//     .sublist("function-constant")
-//     .set<double>("value", val);
-
-//   auto eval = Teuchos::rcp(new EvaluatorIndependentFunction(elist));
-//   S->SetEvaluator(key, tag, eval);
-// }
+CompositeVectorSpace&
+requireIndependentEvaluatorConstant(const Key& key,
+        const Tag& tag,
+        State& S,
+        double val)
+{
+  if (!S.HasEvaluatorList(key)) {
+    Teuchos::ParameterList& plist = S.GetEvaluatorList(key);
+    plist.set<std::string>("evaluator type", "independent variable constant");
+    plist.set("value", val);
+  }
+  return requireAtNext(key, tag, S);
+}
 
 
 

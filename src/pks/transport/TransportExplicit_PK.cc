@@ -53,7 +53,8 @@ TransportExplicit_PK::TransportExplicit_PK(Teuchos::ParameterList& pk_tree,
                                            const Teuchos::RCP<Teuchos::ParameterList>& glist,
                                            const Teuchos::RCP<State>& S,
                                            const Teuchos::RCP<TreeVector>& soln)
-  : Transport_PK(pk_tree, glist, S, soln)
+  : Transport_PK(pk_tree, glist, S, soln),
+    PK(pk_tree, glist, S, soln)
 {}
 
 
@@ -64,8 +65,11 @@ TransportExplicit_PK::TransportExplicit_PK(const Teuchos::RCP<Teuchos::Parameter
                                            Teuchos::RCP<State> S,
                                            const std::string& pk_list_name,
                                            std::vector<std::string>& component_names)
-  : Transport_PK(glist, S, pk_list_name, component_names)
-{}
+  : TransportExplicit_PK(glist->sublist("PKs").sublist(pk_list_name),
+                 glist, S, Teuchos::null)
+{
+  component_names_ = component_names;
+}
 
 
 /* *******************************************************************

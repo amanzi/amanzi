@@ -54,17 +54,17 @@ Multiphase_PK::FunctionalResidual(double t_old,
 
   // miscalleneous fields
   // -- gas pressure
-  S_->GetEvaluator(pressure_gas_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(pressure_gas_key_).Update(*S_, name_);
   auto pg = S_->GetPtrW<CompositeVector>(pressure_gas_key_, Tags::DEFAULT, pressure_gas_key_);
 
   // -- mass and molar densities
-  S_->GetEvaluator(mass_density_gas_key_).Update(*S_, passwd_);
-  S_->GetEvaluator(mol_density_gas_key_).Update(*S_, passwd_);
-  S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(mass_density_gas_key_).Update(*S_, name_);
+  S_->GetEvaluator(mol_density_gas_key_).Update(*S_, name_);
+  S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, name_);
 
   // -- storage
-  S_->GetEvaluator(tws_key_).Update(*S_, passwd_);
-  S_->GetEvaluator(tcs_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(tws_key_).Update(*S_, name_);
+  S_->GetEvaluator(tcs_key_).Update(*S_, name_);
 
   // work memory for miscalleneous operator
   auto kr = CreateCVforUpwind_();
@@ -102,8 +102,8 @@ Multiphase_PK::FunctionalResidual(double t_old,
       int phase = eqns_[n].phases[i];
 
       if (type == 0) CheckCompatibilityBCs(keyr, gname);
-      S_->GetEvaluator(fname).Update(*S_, passwd_);
-      S_->GetEvaluator(gname).Update(*S_, passwd_);
+      S_->GetEvaluator(fname).Update(*S_, name_);
+      S_->GetEvaluator(gname).Update(*S_, name_);
 
       // -- upwind cell-centered coefficient
       auto var = S_->GetPtr<CompositeVector>(gname, Tags::DEFAULT);
@@ -142,7 +142,7 @@ Multiphase_PK::FunctionalResidual(double t_old,
     // add storage terms
     if ((key = eqns_[n].storage) != "") {
       std::string prev_key = "prev_" + key;
-      S_->GetEvaluator(key).Update(*S_, passwd_);
+      S_->GetEvaluator(key).Update(*S_, name_);
 
       const auto& total_c = *S_->Get<CompositeVector>(key).ViewComponent("cell");
       const auto& total_prev_c = *S_->Get<CompositeVector>(prev_key).ViewComponent("cell");
@@ -176,11 +176,11 @@ Multiphase_PK::FunctionalResidual(double t_old,
   if (nncps > 0) {
     int n = neqns - 1;
     key = eqns_[n].constraint.first;
-    S_->GetEvaluator(key).Update(*S_, passwd_);
+    S_->GetEvaluator(key).Update(*S_, name_);
     const auto& ncp_fc = *S_->Get<CompositeVector>(key).ViewComponent("cell");
 
     key = eqns_[n].constraint.second;
-    S_->GetEvaluator(key).Update(*S_, passwd_);
+    S_->GetEvaluator(key).Update(*S_, name_);
     const auto& ncp_gc = *S_->Get<CompositeVector>(key).ViewComponent("cell");
 
     auto& fci = *fp[eqns_flattened_[n][0]]->ViewComponent("cell");
@@ -211,11 +211,11 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
 
   // miscalleneous fields
   // -- molar densities
-  S_->GetEvaluator(mol_density_gas_key_).Update(*S_, passwd_);
-  S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(mol_density_gas_key_).Update(*S_, name_);
+  S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, name_);
 
   // -- gas pressure
-  S_->GetEvaluator(pressure_gas_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(pressure_gas_key_).Update(*S_, name_);
   auto pg = S_->GetPtrW<CompositeVector>(pressure_gas_key_, Tags::DEFAULT, pressure_gas_key_);
 
   // -- wrapper for absolute permeability
@@ -238,7 +238,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
   // update fluxes
   /*
   for (int phase = 0; phase < 2; ++phase) {
-    S_->GetEvaluator(adv_names_[phase]).Update(*S_, passwd_);
+    S_->GetEvaluator(adv_names_[phase]).Update(*S_, name_);
 
     auto var = S_->GetPtr<CompositeVector>(pressure_names_[phase], Tags::DEFAULT);
     auto flux = S_->GetPtrW<CompositeVector>(flux_names_[phase], Tags::DEFAULT, passwd_);
@@ -301,7 +301,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
           Teuchos::RCP<Operators::PDE_Diffusion> pde;
           pde = (type == 0) ? fac_diffK_->Create(global_op) : fac_diffD_->Create(global_op);
 
-          S_->GetEvaluator(fname).Update(*S_, passwd_);
+          S_->GetEvaluator(fname).Update(*S_, name_);
           kr_c = *S_->Get<CompositeVector>(fname).ViewComponent("cell");
 
           auto var = S_->GetPtr<CompositeVector>(gname, Tags::DEFAULT);
@@ -335,7 +335,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
                     .ViewComponent("cell");
 
           // --- upwind derivative
-          S_->GetEvaluator(gname).Update(*S_, passwd_);
+          S_->GetEvaluator(gname).Update(*S_, name_);
           auto var = S_->GetPtr<CompositeVector>(gname, Tags::DEFAULT);
           auto flux = S_->GetPtr<CompositeVector>(flux_names_[phase], Tags::DEFAULT);
           upwind_->Compute(*flux, bcnone, *kr);
@@ -391,7 +391,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
       Teuchos::RCP<const Epetra_MultiVector> der_fc, der_gc;
 
       key = eqns_[n].constraint.first;
-      S_->GetEvaluator(key).Update(*S_, passwd_);
+      S_->GetEvaluator(key).Update(*S_, name_);
       const auto& ncp_fc = *S_->Get<CompositeVector>(key).ViewComponent("cell");
 
       Key keyc = soln_names_[eqns_flattened_[i][0]];
@@ -402,7 +402,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
       }
 
       key = eqns_[n].constraint.second;
-      S_->GetEvaluator(key).Update(*S_, passwd_);
+      S_->GetEvaluator(key).Update(*S_, name_);
       const auto& ncp_gc = *S_->Get<CompositeVector>(key).ViewComponent("cell");
 
       keyc = soln_names_[eqns_flattened_[i][0]];
