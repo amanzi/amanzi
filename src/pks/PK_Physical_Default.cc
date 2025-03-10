@@ -23,18 +23,18 @@ namespace Amanzi {
 
 
 void
-PK_Physical::parseParameterList()
+PK_Physical_Default::parseParameterList()
 {
   key_ = Keys::readKey(*plist_, domain_, "primary variable");
   passwd_ = plist_->get<std::string>("primary variable password", name());
 
   // require primary variable evaluators
-  requireAtNext(key_, tag_next_, *S_, passwd_);
-  requireAtCurrent(key_, tag_current_, *S_, passwd_);
+  requireEvaluatorAtNext(key_, tag_next_, *S_, passwd_);
+  requireEvaluatorAtCurrent(key_, tag_current_, *S_, passwd_);
 }
 
 void
-PK_Physical::Setup()
+PK_Physical_Default::Setup()
 {
   // set up the debugger
   Teuchos::RCP<Teuchos::ParameterList> vo_plist = plist_;
@@ -48,7 +48,7 @@ PK_Physical::Setup()
 
 
 void
-PK_Physical::CommitStep(double t_old, double t_new, const Tag& tag_next)
+PK_Physical_Default::CommitStep(double t_old, double t_new, const Tag& tag_next)
 {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
@@ -61,7 +61,7 @@ PK_Physical::CommitStep(double t_old, double t_new, const Tag& tag_next)
 
 
 void
-PK_Physical::FailStep(double t_old, double t_new, const Tag& tag_next)
+PK_Physical_Default::FailStep(double t_old, double t_new, const Tag& tag_next)
 {
   AMANZI_ASSERT(tag_next == tag_next_ || tag_next == Tags::NEXT);
   Tag tag_current = tag_next == tag_next_ ? tag_current_ : Tags::CURRENT;
@@ -73,7 +73,7 @@ PK_Physical::FailStep(double t_old, double t_new, const Tag& tag_next)
 //  Marks as changed
 // -----------------------------------------------------------------------------
 void
-PK_Physical::ChangedSolutionPK(const Tag& tag)
+PK_Physical_Default::ChangedSolutionPK(const Tag& tag)
 {
   changedEvaluatorPrimary(key_, tag, *S_);
 }
@@ -83,7 +83,7 @@ PK_Physical::ChangedSolutionPK(const Tag& tag)
 // Initialization of the PK data.
 // -----------------------------------------------------------------------------
 void
-PK_Physical::Initialize()
+PK_Physical_Default::Initialize()
 {
   // Get the record
   Record& record = S_->GetRecordW(key_, tag_next_, passwd_);
@@ -98,8 +98,9 @@ PK_Physical::Initialize()
       Exceptions::amanzi_throw(message);
     }
 
-    // initialize the value
-    initializeCVField(*S_, *vo_, key_, tag_next_, passwd_, plist_->sublist("initial conditions"));
+    // -- Calculate the IC.
+    Teuchos::ParameterList ic_plist = plist_->sublist("initial conditions");
+    record.Initialize(ic_plist);
 
     // communicate just to make sure values are initialized for valgrind's sake
     if (record.Get<CompositeVector>().Ghosted())

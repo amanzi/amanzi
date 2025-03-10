@@ -13,8 +13,7 @@
   Default base with a few methods implemented in standard ways.
 */
 
-#ifndef AMANZI_PK_PHYSICAL_HH_
-#define AMANZI_PK_PHYSICAL_HH_
+#pragma once
 
 #include <string>
 
@@ -57,4 +56,4 @@ class PK_Physical_Default : public PK_Physical {
 
 } // namespace Amanzi
 
-#endif
+

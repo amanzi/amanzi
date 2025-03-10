@@ -42,6 +42,7 @@ include_directories(${HDF5_INCLUDE_DIRS})
 set(pks_src_files PK_Factory.cc
                   PK_Utils.cc
                   PK_Physical.cc
+                  PK_Physical_Default.cc
                   PK_Helpers.cc
                   StateArchive.cc)
 
@@ -62,6 +63,7 @@ set(pks_inc_files
   PK_Implicit.hh
   PK_Explicit.hh
   PK_Physical.hh
+  PK_Physical_Default.hh
   PK_PhysicalExplicit.hh
   PK_PhysicalBDF.hh
   PK_DomainFunction.hh
