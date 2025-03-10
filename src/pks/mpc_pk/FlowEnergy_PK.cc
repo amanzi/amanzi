@@ -76,6 +76,28 @@ FlowEnergy_PK::Setup()
   mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid");
   mass_density_liquid_key_ = Keys::getKey(domain_, "mass_density_liquid");
 
+  // inform other PKs about strong coupling
+  // -- flow
+  auto pks =
+    glist_->sublist("PKs").sublist(name_).get<Teuchos::Array<std::string>>("PKs order").toVector();
+  std::string model = (vapor_diff) ? "two-phase" : "one-phase";
+  Teuchos::ParameterList& flow =
+    glist_->sublist("PKs").sublist(pks[0]).sublist("physical models and assumptions");
+  flow.set<bool>("vapor diffusion", vapor_diff)
+    .set<bool>("thermoelasticity", thermoelasticity)
+    .set<bool>("biot scheme: undrained split",
+               physical_models->get<bool>("biot scheme: undrained split", false))
+    .set<bool>("biot scheme: fixed stress split",
+               physical_models->get<bool>("biot scheme: fixed stress split", false));
+
+  // -- energy
+  Teuchos::ParameterList& energy =
+    glist_->sublist("PKs").sublist(pks[1]).sublist("physical models and assumptions");
+  energy.set<bool>("vapor diffusion", vapor_diff);
+
+  // process other PKs
+  PK_MPCStrong<PK_BDF>::Setup();
+
   // Fields for solids
   // -- rock
   if (!S_->HasRecord(particle_density_key_)) {
@@ -108,28 +130,6 @@ FlowEnergy_PK::Setup()
   }
 
   S_->RequireEvaluator(mass_density_liquid_key_, Tags::DEFAULT);
-
-  // inform other PKs about strong coupling
-  // -- flow
-  auto pks =
-    glist_->sublist("PKs").sublist(name_).get<Teuchos::Array<std::string>>("PKs order").toVector();
-  std::string model = (vapor_diff) ? "two-phase" : "one-phase";
-  Teuchos::ParameterList& flow =
-    glist_->sublist("PKs").sublist(pks[0]).sublist("physical models and assumptions");
-  flow.set<bool>("vapor diffusion", vapor_diff)
-    .set<bool>("thermoelasticity", thermoelasticity)
-    .set<bool>("biot scheme: undrained split",
-               physical_models->get<bool>("biot scheme: undrained split", false))
-    .set<bool>("biot scheme: fixed stress split",
-               physical_models->get<bool>("biot scheme: fixed stress split", false));
-
-  // -- energy
-  Teuchos::ParameterList& energy =
-    glist_->sublist("PKs").sublist(pks[1]).sublist("physical models and assumptions");
-  energy.set<bool>("vapor diffusion", vapor_diff);
-
-  // process other PKs
-  PK_MPCStrong<PK_BDF>::Setup();
 
   // extend state structure
   S_->RequireDerivative<CV_t, CVS_t>(
@@ -225,7 +225,7 @@ FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // try timestep
   bool fail = PK_MPCStrong<PK_BDF>::AdvanceStep(t_old, t_new, reinit);
-  if (fail) archive.Restore("");
+  if (fail) archive.Restore();
 
   return fail;
 }
@@ -249,7 +249,7 @@ FlowEnergy_PK::FunctionalResidual(double t_old,
 
   // update molar flux
   Key key = Keys::getKey(domain_, "molar_flow_rate");
-  auto mol_flowrate = S_->GetPtrW<CV_t>(key, Tags::DEFAULT, "");
+  const auto& mol_flowrate = S_->GetPtrW<CV_t>(key, Tags::DEFAULT, sub_pks_[0]->name());
   auto op0 = sub_pks_[0]->my_pde(Operators::PDEType::PDE_DIFFUSION);
   op0->UpdateFlux(u_new0->Data().ptr(), mol_flowrate.ptr());
 

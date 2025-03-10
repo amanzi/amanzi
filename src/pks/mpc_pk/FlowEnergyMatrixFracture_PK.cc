@@ -339,7 +339,7 @@ FlowEnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit
     }
     fail = false;
   }
-  if (fail) archive.Restore("");
+  if (fail) archive.Restore();
 
   return fail;
 }

@@ -425,11 +425,9 @@ Richards_PK::Setup()
   Setup_FlowRates_(false, 0.0);
 
   // -- temperature for EOSs
-  if (!S_->HasRecord(temperature_key_)) {
-    auto cvs = S_->GetRecordSetW(pressure_key_).GetFactory<CV_t, CVS_t>();
-    *S_->Require<CV_t, CVS_t>(temperature_key_, Tags::DEFAULT, passwd_)
-       .SetMesh(mesh_)
-       ->SetGhosted(true) = cvs;
+  {
+    const auto& cvs = S_->GetRecordSetW(pressure_key_).GetFactory<CV_t, CVS_t>();
+    S_->Require<CV_t, CVS_t>(temperature_key_, Tags::DEFAULT).Update(cvs);
   }
 
   // Require additional components for the existing fields
@@ -983,7 +981,7 @@ Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   if (failed) {
     dt_ = dt_next_;
 
-    archive.Restore("");
+    archive.Restore();
     pressure_eval_->SetChanged();
 
     return failed;

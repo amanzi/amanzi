@@ -28,16 +28,12 @@ StateArchive::Add(const std::vector<std::string>& fields, const Tag& tag)
 * Deep copy of state fields.
 ****************************************************************** */
 void
-StateArchive::Restore(const std::string& passwd)
+StateArchive::Restore()
 {
   std::stringstream ss1, ss2;
 
   for (auto it = fields_.begin(); it != fields_.end(); ++it) {
-    std::string owner(passwd);
-    if (S_->HasEvaluator(it->first, tag_)) {
-      auto type = S_->GetEvaluatorPtr(it->first, tag_)->get_type();
-      if (type == EvaluatorType::SECONDARY || type == EvaluatorType::INDEPENDENT) owner = it->first;
-    }
+    std::string owner = S_->GetRecord(it->first, tag_).owner();
     S_->GetW<CompositeVector>(it->first, tag_, owner) = it->second;
 
     ss1 << "\"" << it->first << "\", ";

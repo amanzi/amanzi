@@ -123,6 +123,9 @@
     <ParameterList name="verbose object">
       <Parameter name="verbosity level" type="string" value="extreme"/>
     </ParameterList>
+    <ParameterList name="debug">
+      <Parameter name="evaluators" type="Array(string)" value="{pressure}"/>
+    </ParameterList>
     <ParameterList name="evaluators">
       <ParameterList name="particle_density">
         <Parameter name="evaluator type" type="string" value="independent variable"/>

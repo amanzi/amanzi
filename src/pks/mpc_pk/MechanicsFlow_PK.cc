@@ -131,7 +131,7 @@ MechanicsFlow_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   bool fail = PK_MPCSequential::AdvanceStep(t_old, t_new, reinit);
-  if (fail) archive.Restore("");
+  if (fail) archive.Restore();
 
   return fail;
 }

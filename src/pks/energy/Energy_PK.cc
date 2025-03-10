@@ -54,6 +54,7 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
   // domain name
   domain_ = ep_list_->get<std::string>("domain name", "domain");
   temperature_key_ = Keys::getKey(domain_, "temperature");
+  key_ = temperature_key_;
 
   // create verbosity object
   mesh_ = S->GetMesh(domain_);

@@ -507,7 +507,7 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // recover state in case of error
   if (ierr < 0) {
-    archive.Restore(passwd_);
+    archive.Restore();
     cfl_ *= 0.75;
     return true;
   }

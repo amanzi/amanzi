@@ -58,6 +58,7 @@ Flow_PK::Flow_PK(Teuchos::ParameterList& pk_tree,
 
   pressure_key_ = Keys::getKey(domain_, "pressure");
   mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
+  key_ = pressure_key_;
 };
 
 Flow_PK::Flow_PK()

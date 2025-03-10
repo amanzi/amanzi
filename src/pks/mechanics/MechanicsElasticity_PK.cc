@@ -223,7 +223,7 @@ MechanicsElasticity_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   if (ierr != 0) {
-    archive.Restore("");
+    archive.Restore();
     dt_ /= 2;
     return true;
   }

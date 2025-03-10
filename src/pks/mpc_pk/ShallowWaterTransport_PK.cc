@@ -88,7 +88,7 @@ ShallowWaterTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // brings challenges. FIXME
   double dt1 = Teuchos::rcp_dynamic_cast<Transport::Transport_PK>(sub_pks_[1])->StableTimeStep(1);
   if (dt1 < dt0 / 100) {
-    archive.Restore("");
+    archive.Restore();
 
     cfl_ /= 2.0;
     failed_steps_++;

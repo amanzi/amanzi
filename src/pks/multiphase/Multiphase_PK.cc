@@ -1003,7 +1003,7 @@ Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   if (failed) {
     dt_ = dt_next_;
 
-    archive.Restore(passwd_);
+    archive.Restore();
     ChangedSolution();
 
     return failed;

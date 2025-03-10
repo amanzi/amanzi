@@ -128,6 +128,7 @@ TEST(ENERGY_JACOBIAN)
   Teuchos::ParameterList pk_tree = plist->sublist("PK tree").sublist("flow and energy");
   auto soln = Teuchos::rcp(new TreeVector());
   auto MPC = Teuchos::rcp(new FlowEnergy_PK(pk_tree, plist, S, soln));
+  MPC->parseParameterList();
 
   Key ws_key("water_storage"), temperature_key("temperature");
   S->RequireDerivative<CompositeVector, CompositeVectorSpace>(
@@ -152,8 +153,8 @@ TEST(ENERGY_JACOBIAN)
   auto u1e = Teuchos::rcp(new TreeVector());
   u1->PushBack(u1f);
   u1->PushBack(u1e);
-  u1f->SetData(S->GetPtrW<CompositeVector>("pressure", Tags::DEFAULT, ""));
-  u1e->SetData(S->GetPtrW<CompositeVector>("temperature", Tags::DEFAULT, ""));
+  u1f->SetData(S->GetPtrW<CompositeVector>("pressure", Tags::DEFAULT, "flow"));
+  u1e->SetData(S->GetPtrW<CompositeVector>("temperature", Tags::DEFAULT, "energy"));
 
   auto u0 = Teuchos::rcp(new TreeVector(*u1));
   auto f0 = Teuchos::rcp(new TreeVector(*u1));

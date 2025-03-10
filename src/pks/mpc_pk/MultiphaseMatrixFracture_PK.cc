@@ -234,7 +234,7 @@ MultiphaseMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "Step failed." << std::endl;
 
-    archive.Restore("");
+    archive.Restore();
   }
 
   return fail;

@@ -35,7 +35,7 @@ class StateArchive {
 
   void Add(const std::vector<std::string>& fields, const Tag& tag);
 
-  void Restore(const std::string& passwd);
+  void Restore();
 
   void
   CopyFieldsToPrevFields(std::vector<std::string>& fields, const std::string& passwd, bool add);

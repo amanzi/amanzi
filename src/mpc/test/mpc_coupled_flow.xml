@@ -129,6 +129,9 @@
   </ParameterList>
 
   <ParameterList name="state">
+    <ParameterList name="debug">
+      <Parameter name="data" type="Array(string)" value="fracture-fracture-pressure"/>
+    </ParameterList>
     <ParameterList name="evaluators">
       <ParameterList name="specific_storage">
         <Parameter name="evaluator type" type="string" value="specific storage"/>

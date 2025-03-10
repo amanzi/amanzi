@@ -42,7 +42,7 @@ void
 PK_Physical::parseParameterList()
 {
   passwd_ = plist_->get<std::string>("primary variable password", name_);
-  key_ = Keys::readKey(*plist_, domain_, "primary variable", key_);
+  key_ = Keys::readKey(*plist_, domain_, "primary variable", Keys::getVarName(key_));
 
   // require primary variable evaluators
   if (!key_.empty()) {
