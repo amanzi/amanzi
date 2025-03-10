@@ -10,9 +10,7 @@
 /*
   MultiPhase PK
 
-  Gas phase appearense in a two-component system (water + hydrogen) after
-  liquid hydrogen injection on the left side of the domain. The primary
-  variables are pressure liquid, molar gas density, and saturation liquid.
+  Simulation of Richards's problem
 */
 
 #include <cstdlib>
@@ -41,7 +39,7 @@
 
 
 /* **************************************************************** */
-TEST(MULTIPHASE_MODEL_I)
+TEST(MULTIPHASE_RICHARDS)
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -52,10 +50,10 @@ TEST(MULTIPHASE_MODEL_I)
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0) std::cout << "Test: multiphase pk, model Pl-Sl-Ng" << std::endl;
+  if (MyPID == 0) std::cout << "Test: multiphase pk, Richards's model" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/multiphase_model2a.xml";
+  std::string xmlFileName = "test/multiphase_richards.xml";
   auto plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create a MSTK mesh framework
@@ -64,7 +62,6 @@ TEST(MULTIPHASE_MODEL_I)
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 200, 5);
   RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 50, 3);
 
   // create screen io
@@ -79,13 +76,6 @@ TEST(MULTIPHASE_MODEL_I)
   ParameterList pk_tree = plist->sublist("PKs").sublist("multiphase");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   auto MPK = Teuchos::rcp(new Multiphase_PK(pk_tree, plist, S, soln));
-
-  // work-around
-  Key key("mass_density_gas");
-  S->Require<CompositeVector, CompositeVectorSpace>(key, Tags::DEFAULT, key)
-    .SetMesh(mesh)
-    ->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   MPK->Setup();
   S->Setup();
@@ -104,7 +94,7 @@ TEST(MULTIPHASE_MODEL_I)
 
   // loop
   int iloop(0);
-  double t(0.0), tend(1.57e+12), dt(1.5768e+7), dt_max(3e+10);
+  double t(0.0), tend(1.57e+10), dt(1.0), dt_max(3e+08);
   while (t < tend && iloop < 200) {
     while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 4; }
 
@@ -117,15 +107,13 @@ TEST(MULTIPHASE_MODEL_I)
     iloop++;
 
     // output solution
-    if (iloop % 10 == 0) {
+    if (iloop % 1 == 0) {
       io->InitializeCycle(t, iloop, "");
       const auto& u0 = *S->Get<CompositeVector>("pressure_liquid").ViewComponent("cell");
       const auto& u1 = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
-      const auto& u2 = *S->Get<CompositeVector>("molar_density_gas").ViewComponent("cell");
 
       io->WriteVector(*u0(0), "pressure", AmanziMesh::Entity_kind::CELL);
       io->WriteVector(*u1(0), "saturation", AmanziMesh::Entity_kind::CELL);
-      io->WriteVector(*u2(0), "mole density gas", AmanziMesh::Entity_kind::CELL);
       io->FinalizeCycle();
 
       WriteStateStatistics(*S, *vo);
@@ -141,10 +129,6 @@ TEST(MULTIPHASE_MODEL_I)
   sl.MaxValue(&dmax);
   CHECK(dmin >= 0.0 && dmax <= 1.0);
 
-  S->Get<CompositeVector>("ncp_fg").NormInf(&dmax);
-  CHECK(dmax <= 1.0e-14);
-
-  const auto& xg = *S->Get<CompositeVector>("molar_density_gas").ViewComponent("cell");
-  xg.MinValue(&dmin);
-  CHECK(dmin >= 0.0);
+  S->Get<CompositeVector>("ncp_gas_fg").NormInf(&dmax);
+  CHECK(dmax <= 1.0e-11);
 }

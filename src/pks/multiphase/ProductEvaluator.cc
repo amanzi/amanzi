@@ -25,7 +25,8 @@ namespace Multiphase {
 /* ******************************************************************
 * Two constructors.
 ****************************************************************** */
-ProductEvaluator::ProductEvaluator(Teuchos::ParameterList& plist) : MultiphaseEvaluator(plist)
+ProductEvaluator::ProductEvaluator(Teuchos::ParameterList& plist)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
@@ -41,7 +42,7 @@ ProductEvaluator::ProductEvaluator(Teuchos::ParameterList& plist) : MultiphaseEv
 
 
 ProductEvaluator::ProductEvaluator(const ProductEvaluator& other)
-  : MultiphaseEvaluator(other), field_n_(other.field_n_){};
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other){};
 
 
 /* ******************************************************************

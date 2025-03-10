@@ -20,14 +20,12 @@
 #define AMANZI_MULTIPHASE_PRODUCT_EVALUATOR_HH_
 
 #include "Factory.hh"
-
-// Multiphase
-#include "MultiphaseEvaluator.hh"
+#include "EvaluatorSecondaryMonotype.hh"
 
 namespace Amanzi {
 namespace Multiphase {
 
-class ProductEvaluator : public MultiphaseEvaluator {
+class ProductEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   ProductEvaluator(Teuchos::ParameterList& plist);
   ProductEvaluator(const ProductEvaluator& other);
@@ -41,15 +39,6 @@ class ProductEvaluator : public MultiphaseEvaluator {
                                           const Key& wrt_key,
                                           const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
-
-  // extended interface
-  virtual void
-  set_subvector(int ifield, int n, const std::string& name, Teuchos::ParameterList& plist) override
-  {
-    field_n_[ifield] = n;
-    AmanziEOS::VaporLiquidFactory factory(plist);
-    vapor_liquid_ = factory.Create(name);
-  }
 
  private:
   std::vector<int> powers_;

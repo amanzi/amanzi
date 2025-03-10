@@ -25,15 +25,17 @@
 
 // Amanzi
 #include "Factory.hh"
+#include "EvaluatorSecondaryMonotype.hh"
+#include "VaporLiquidFactory.hh"
 
 // Multiphase
-#include "MultiphaseEvaluator.hh"
+#include "Fugacity.hh"
 #include "MultiphaseTypeDefs.hh"
 
 namespace Amanzi {
 namespace Multiphase {
 
-class MoleFractionLiquid : public MultiphaseEvaluator {
+class MoleFractionLiquid : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   MoleFractionLiquid(Teuchos::ParameterList& plist);
 
@@ -49,6 +51,7 @@ class MoleFractionLiquid : public MultiphaseEvaluator {
 
  private:
   std::string x_gas_key_, pressure_gas_key_, temperature_key_;
+  std::shared_ptr<Fugacity> fugacity_;
 
   static Utils::RegisteredFactory<Evaluator, MoleFractionLiquid> fac_;
 };

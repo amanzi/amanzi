@@ -231,12 +231,9 @@
         <Parameter name="eos basis" type="string" value="molar"/>
         <Parameter name="molar density key" type="string" value="molar_density_gas"/>
         <ParameterList name="EOS parameters">
-          <Parameter name="eos type" type="string" value="vapor in gas"/>
-          <ParameterList name="EOS parameters">
-            <Parameter name="eos type" type="string" value="ideal gas"/>
-            <Parameter name="molar mass" type="double" value="28.9647e-03"/>  <!-- dry air -->
-            <Parameter name="density" type="double" value="1.0"/>
-          </ParameterList>
+          <Parameter name="eos type" type="string" value="ideal gas"/>
+          <Parameter name="molar mass" type="double" value="28.9647e-03"/>  <!-- dry air -->
+          <Parameter name="density" type="double" value="1.0"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="mole_fraction_gas">

@@ -27,21 +27,23 @@ namespace Multiphase {
 * Constructor.
 ****************************************************************** */
 TotalComponentStorage::TotalComponentStorage(Teuchos::ParameterList& plist)
-  : MultiphaseEvaluator(plist)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
   }
 
   saturation_liquid_key_ = plist_.get<std::string>("saturation liquid key");
+  saturation_gas_key_ = plist_.get<std::string>("saturation gas key");
   porosity_key_ = plist_.get<std::string>("porosity key");
   mol_density_liquid_key_ = plist_.get<std::string>("molar density liquid key");
   mol_density_gas_key_ = plist_.get<std::string>("molar density gas key");
   x_liquid_key_ = plist_.get<std::string>("mole fraction liquid key");
-  x_gas_key_ = plist_.get<std::string>("mole fraction gas key");
+  x_gas_key_ = plist_.get<std::string>("mole fraction gas key"); // FIXME
 
   dependencies_.insert(std::make_pair(porosity_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(saturation_liquid_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(saturation_gas_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(mol_density_liquid_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(mol_density_gas_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(x_liquid_key_, Tags::DEFAULT));
@@ -53,7 +55,7 @@ TotalComponentStorage::TotalComponentStorage(Teuchos::ParameterList& plist)
 * Copy constructors.
 ****************************************************************** */
 TotalComponentStorage::TotalComponentStorage(const TotalComponentStorage& other)
-  : MultiphaseEvaluator(other){};
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other){};
 
 
 Teuchos::RCP<Evaluator>
@@ -71,6 +73,7 @@ TotalComponentStorage::Evaluate_(const State& S, const std::vector<CompositeVect
 {
   const auto& phi = *S.Get<CompositeVector>(porosity_key_).ViewComponent("cell");
   const auto& sl = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
+  const auto& sg = *S.Get<CompositeVector>(saturation_gas_key_).ViewComponent("cell");
   const auto& nl = *S.Get<CompositeVector>(mol_density_liquid_key_).ViewComponent("cell");
   const auto& ng = *S.Get<CompositeVector>(mol_density_gas_key_).ViewComponent("cell");
   const auto& xl = *S.Get<CompositeVector>(x_liquid_key_).ViewComponent("cell");
@@ -81,8 +84,8 @@ TotalComponentStorage::Evaluate_(const State& S, const std::vector<CompositeVect
 
   for (int c = 0; c != ncells; ++c) {
     double tmpl = phi[0][c] * nl[0][c] * sl[0][c];
-    double tmpg = phi[0][c] * ng[0][c] * (1.0 - sl[0][c]);
-    result_c[0][c] = tmpl * xl[0][c] + tmpg * xg[n_][c];
+    double tmpg = phi[0][c] * ng[0][c] * sg[0][c];
+    result_c[0][c] = tmpl * xl[0][c] + tmpg * xg[0][c];
   }
 }
 
@@ -98,6 +101,7 @@ TotalComponentStorage::EvaluatePartialDerivative_(const State& S,
 {
   const auto& phi = *S.Get<CompositeVector>(porosity_key_).ViewComponent("cell");
   const auto& sl = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
+  const auto& sg = *S.Get<CompositeVector>(saturation_gas_key_).ViewComponent("cell");
   const auto& nl = *S.Get<CompositeVector>(mol_density_liquid_key_).ViewComponent("cell");
   const auto& ng = *S.Get<CompositeVector>(mol_density_gas_key_).ViewComponent("cell");
   const auto& xl = *S.Get<CompositeVector>(x_liquid_key_).ViewComponent("cell");
@@ -108,24 +112,37 @@ TotalComponentStorage::EvaluatePartialDerivative_(const State& S,
 
   if (wrt_key == porosity_key_) {
     for (int c = 0; c != ncells; ++c) {
-      result_c[0][c] = sl[0][c] * nl[0][c] * xl[0][c] + (1.0 - sl[0][c]) * ng[0][c] * xg[n_][c];
+      result_c[0][c] = sl[0][c] * nl[0][c] * xl[0][c] + sg[0][c] * ng[0][c] * xg[0][c];
     }
+
   } else if (wrt_key == saturation_liquid_key_) {
     for (int c = 0; c != ncells; ++c) {
-      result_c[0][c] = phi[0][c] * (nl[0][c] * xl[0][c] - ng[0][c] * xg[n_][c]);
+      result_c[0][c] = phi[0][c] * nl[0][c] * xl[0][c];
+    }
+  } else if (wrt_key == saturation_gas_key_) {
+    for (int c = 0; c != ncells; ++c) {
+      result_c[0][c] = phi[0][c] * ng[0][c] * xg[0][c];
     }
   }
 
   else if (wrt_key == mol_density_liquid_key_) {
-    for (int c = 0; c != ncells; ++c) { result_c[0][c] = phi[0][c] * sl[0][c] * xl[0][c]; }
+    for (int c = 0; c != ncells; ++c) {
+      result_c[0][c] = phi[0][c] * sl[0][c] * xl[0][c];
+    }
   } else if (wrt_key == mol_density_gas_key_) {
-    for (int c = 0; c != ncells; ++c) { result_c[0][c] = phi[0][c] * (1.0 - sl[0][c]) * xg[n_][c]; }
+    for (int c = 0; c != ncells; ++c) {
+      result_c[0][c] = phi[0][c] * sg[0][c] * xg[0][c];
+    }
   }
 
   else if (wrt_key == x_liquid_key_) {
-    for (int c = 0; c != ncells; ++c) { result_c[0][c] = phi[0][c] * sl[0][c] * nl[0][c]; }
+    for (int c = 0; c != ncells; ++c) {
+      result_c[0][c] = phi[0][c] * sl[0][c] * nl[0][c];
+    }
   } else if (wrt_key == x_gas_key_) {
-    for (int c = 0; c != ncells; ++c) { result_c[0][c] = phi[0][c] * (1.0 - sl[0][c]) * ng[0][c]; }
+    for (int c = 0; c != ncells; ++c) {
+      result_c[0][c] = phi[0][c] * sg[0][c] * ng[0][c];
+    }
   }
 }
 

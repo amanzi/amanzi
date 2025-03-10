@@ -21,20 +21,22 @@ namespace Multiphase {
 /* ******************************************************************
 * Constructor.
 ****************************************************************** */
-NCP_F::NCP_F(Teuchos::ParameterList& plist) : MultiphaseEvaluator(plist)
+NCP_F::NCP_F(Teuchos::ParameterList& plist)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
   }
-  saturation_liquid_key_ = plist_.get<std::string>("saturation liquid key");
-  dependencies_.insert(std::make_pair(saturation_liquid_key_, Tags::DEFAULT));
+  saturation_key_ = plist_.get<std::string>("saturation key");
+  dependencies_.insert(std::make_pair(saturation_key_, Tags::DEFAULT));
 }
 
 
 /* ******************************************************************
 * Copy constructors.
 ****************************************************************** */
-NCP_F::NCP_F(const NCP_F& other) : MultiphaseEvaluator(other){};
+NCP_F::NCP_F(const NCP_F& other)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other){};
 
 
 Teuchos::RCP<Evaluator>
@@ -50,12 +52,12 @@ NCP_F::Clone() const
 void
 NCP_F::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
-  const auto& sl = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
+  const auto& sat = *S.Get<CompositeVector>(saturation_key_).ViewComponent("cell");
 
   auto& result_c = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell", false);
 
-  for (int c = 0; c != ncells; ++c) { result_c[0][c] = 1.0 - sl[0][c]; }
+  for (int c = 0; c != ncells; ++c) result_c[0][c] = sat[0][c];
 }
 
 
@@ -71,8 +73,8 @@ NCP_F::EvaluatePartialDerivative_(const State& S,
   auto& result_c = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell", false);
 
-  if (wrt_key == saturation_liquid_key_) {
-    for (int c = 0; c != ncells; ++c) result_c[0][c] = -1.0;
+  if (wrt_key == saturation_key_) {
+    for (int c = 0; c != ncells; ++c) result_c[0][c] = 1.0;
   }
 }
 

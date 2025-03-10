@@ -20,13 +20,13 @@
 
 // Amanzi
 #include "Factory.hh"
-
-#include "MultiphaseEvaluator.hh"
+#include "EvaluatorSecondaryMonotype.hh"
+#include "VaporLiquidFactory.hh"
 
 namespace Amanzi {
 namespace Multiphase {
 
-class NCP_HenryLaw : public MultiphaseEvaluator {
+class NCP_HenryLaw : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   NCP_HenryLaw(Teuchos::ParameterList& plist);
   NCP_HenryLaw(const NCP_HenryLaw& other);
@@ -43,6 +43,7 @@ class NCP_HenryLaw : public MultiphaseEvaluator {
 
  protected:
   Key pressure_gas_key_, mol_density_liquid_key_, temperature_key_;
+  std::shared_ptr<AmanziEOS::VaporLiquid> vapor_liquid_;
 
   static Utils::RegisteredFactory<Evaluator, NCP_HenryLaw> fac_;
 };

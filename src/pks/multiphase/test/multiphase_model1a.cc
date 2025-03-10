@@ -114,7 +114,7 @@ TEST(MULTIPHASE_MODEL_I)
       io->InitializeCycle(t, iloop, "");
       const auto& u0 = *S->Get<CompositeVector>("pressure_liquid").ViewComponent("cell");
       const auto& u1 = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
-      const auto& u2 = *S->Get<CompositeVector>("mole_fraction_gas").ViewComponent("cell");
+      const auto& u2 = *S->Get<CompositeVector>("mole_fraction_gas_H2").ViewComponent("cell");
 
       io->WriteVector(*u0(0), "pressure", AmanziMesh::Entity_kind::CELL);
       io->WriteVector(*u1(0), "saturation", AmanziMesh::Entity_kind::CELL);
@@ -137,7 +137,7 @@ TEST(MULTIPHASE_MODEL_I)
   S->Get<CompositeVector>("ncp_fg").NormInf(&dmax);
   CHECK(dmax <= 1.0e-14);
 
-  const auto& xg = *S->Get<CompositeVector>("mole_fraction_gas").ViewComponent("cell");
+  const auto& xg = *S->Get<CompositeVector>("mole_fraction_gas_H2").ViewComponent("cell");
   xg.MinValue(&dmin);
   xg.MaxValue(&dmax);
   CHECK(dmin >= 0.0 && dmax <= 1.0);

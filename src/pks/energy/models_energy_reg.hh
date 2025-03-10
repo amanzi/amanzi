@@ -18,6 +18,7 @@
 #include "IEM_Linear.hh"
 #include "IEM_Tabular.hh"
 #include "IEM_WaterVaporEvaluator.hh"
+#include "MoleFractionGasEvaluator.hh"
 
 #include "TCMFactory_TwoPhase.hh"
 #include "TCM_PetersLidard_TwoPhase.hh"
@@ -48,6 +49,8 @@ Utils::RegisteredFactory<Evaluator, IEM_WaterVaporEvaluator>
 Utils::RegisteredFactory<IEM, IEM_Linear> IEM_Linear::reg_("linear");
 Utils::RegisteredFactory<IEM, IEM_Tabular> IEM_Tabular::reg_("lookup table");
 
+Utils::RegisteredFactory<Evaluator, MoleFractionGasEvaluator>
+  MoleFractionGasEvaluator::reg_("mole fraction gas");
 
 // linear interpolant of thermal conductivity.
 Utils::RegisteredFactory<TCM_TwoPhase, TCM_PetersLidard_TwoPhase>

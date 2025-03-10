@@ -24,15 +24,15 @@
 
 // Amanzi
 #include "Factory.hh"
+#include "EvaluatorSecondaryMonotype.hh"
 
 // Multiphase
-#include "MultiphaseEvaluator.hh"
 #include "MultiphaseTypeDefs.hh"
 
 namespace Amanzi {
 namespace Multiphase {
 
-class MassDensityGas : public MultiphaseEvaluator {
+class MassDensityGas : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   MassDensityGas(Teuchos::ParameterList& plist);
 
@@ -48,8 +48,8 @@ class MassDensityGas : public MultiphaseEvaluator {
 
  private:
   Key x_vapor_key_, x_gas_key_, mol_density_gas_key_;
-  double mol_mass_H2O_;
   std::vector<double> mol_mass_;
+  std::vector<std::string> components_;
 
   static Utils::RegisteredFactory<Evaluator, MassDensityGas> fac_;
 };

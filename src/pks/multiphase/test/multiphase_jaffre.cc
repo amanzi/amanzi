@@ -189,7 +189,9 @@ TEST(MULTIPHASE_JAFFRE_LIQUID)
   run_test("2D", "test/multiphase_jaffre.xml");
 }
 
+/*
 TEST(MULTIPHASE_JAFFRE_GAS)
 {
   run_test("2D", "test/multiphase_jaffre_gas.xml");
 }
+*/

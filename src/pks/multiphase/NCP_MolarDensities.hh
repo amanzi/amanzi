@@ -19,13 +19,12 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "Factory.hh"
-
-#include "MultiphaseEvaluator.hh"
+#include "EvaluatorSecondaryMonotype.hh"
 
 namespace Amanzi {
 namespace Multiphase {
 
-class NCP_MolarDensities : public MultiphaseEvaluator {
+class NCP_MolarDensities : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   NCP_MolarDensities(Teuchos::ParameterList& plist);
   NCP_MolarDensities(const NCP_MolarDensities& other);
@@ -41,7 +40,7 @@ class NCP_MolarDensities : public MultiphaseEvaluator {
                                           const std::vector<CompositeVector*>& results) override;
 
  protected:
-  Key x_vapor_key_, tcc_gas_key_, mol_density_gas_key_;
+  Key tcc_gas_key_, mol_density_gas_key_;
 
  private:
   static Utils::RegisteredFactory<Evaluator, NCP_MolarDensities> fac_;

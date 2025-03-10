@@ -50,6 +50,7 @@ set(energy_src_files Energy_PK.cc
                      IEM_WaterVaporEvaluator.cc
                      IEMFactory.cc IEMEvaluator.cc 
                      EnthalpyEvaluator.cc
+                     MoleFractionGasEvaluator.cc
                      TCM_WetDry_TwoPhase.cc
                      TCM_PetersLidard_TwoPhase.cc
                      TCMEvaluator_OnePhase.cc
@@ -83,6 +84,7 @@ set(energy_inc_files
   IEMFactory.hh
   IEMEvaluator.hh
   models_energy_reg.hh
+  MoleFractionGasEvaluator.hh
   TotalEnergyEvaluator.hh
   TCM_PetersLidard_TwoPhase.hh
   TCM_TwoPhase.hh

@@ -35,7 +35,7 @@ double
 H2O_SaturatedVaporPressure::Pressure(double T)
 {
   ierr_ = 0;
-  if (T < 100.0 || T > 373.0) {
+  if (T < 100.0 || T > 373.15) {
     ierr_ = 1;
     std::stringstream ss;
     ss << "invalid T = " << T;
@@ -51,7 +51,7 @@ double
 H2O_SaturatedVaporPressure::DPressureDT(double T)
 {
   ierr_ = 0;
-  if (T < 100.0 || T > 373.0) {
+  if (T < 100.0 || T > 373.15) {
     ierr_ = 1;
     std::stringstream ss;
     ss << "invalid T = " << T;

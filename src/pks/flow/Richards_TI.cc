@@ -225,15 +225,13 @@ Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& kvapo
   AmanziEOS::EOSFactory<AmanziEOS::COM_Tortuosity> com_fac;
   auto tau_model = com_fac.Create(plist);
 
-  AmanziEOS::EOSFactory<AmanziEOS::EOS_Diffusion> eos_fac;
-  plist.set<std::string>("eos type", "vapor in gas");
-  auto eos_model = eos_fac.Create(plist);
+  double Dref(0.282e-4), Tref(298.0); // FIXME
 
   for (int c = 0; c != ncells_owned; ++c) {
     double tau = tau_model->Tortuosity(phi[0][c], s_l[0][c]);
     double tau_phi_sat = tau * phi[0][c] * (1.0 - s_l[0][c]);
 
-    double D_g = eos_model->Diffusion(temp[0][c], pres[0][c]);
+    double D_g = Dref * std::pow(temp[0][c] / Tref, 1.8);
     double tmp = tau_phi_sat * n_g[0][c] * D_g;
 
     double nRT = n_l[0][c] * temp[0][c] * CommonDefs::IDEAL_GAS_CONSTANT_R;

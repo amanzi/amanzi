@@ -22,8 +22,8 @@
   advective fluxes (1-terms) from molecular diffusion fluxes (2-terms).
 */
 
-#ifndef AMANZI_EQUATION_STRUCTURE_PK_HH_
-#define AMANZI_EQUATION_STRUCTURE_PK_HH_
+#ifndef AMANZI_EQUATION_SYSTEM_PK_HH_
+#define AMANZI_EQUATION_SYSTEM_PK_HH_
 
 #include <string>
 #include <vector>
@@ -34,21 +34,19 @@
 namespace Amanzi {
 namespace Multiphase {
 
-typedef std::pair<Key, Key> EquationTerm;
-
-struct EquationStructure {
+struct EquationSystem {
  public:
-  std::vector<EquationTerm> terms;
+  std::vector<KeyPair> terms;
   std::vector<double> factors;
   std::vector<int> types, phases;
 
   Key storage;
-  EquationTerm constraint;
+  KeyPair constraint;
 
-  bool has_component = false;
-  int component_id; // Water has component_id = -1; other solutes have
-  // component_id \in \{0, 1, \dots}, sorted in the order as in
-  // "molecular diffusion"
+  Key primary;
+
+  Key component;
+  int component_id; 
 };
 
 } // namespace Multiphase

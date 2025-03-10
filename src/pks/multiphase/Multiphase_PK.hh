@@ -130,7 +130,6 @@ The available boundary conditions include the prescibed pressure, total influx, 
 #include "BDFFnBase.hh"
 #include "Evaluator.hh"
 #include "EvaluatorPrimary.hh"
-#include "FlattenedTreeOperator.hh"
 #include "Key.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_AdvectionUpwindFactory.hh"
@@ -140,12 +139,12 @@ The available boundary conditions include the prescibed pressure, total influx, 
 #include "PK_Factory.hh"
 #include "PK_PhysicalBDF.hh"
 #include "State.hh"
+#include "TreeOperator.hh"
 #include "TreeVector.hh"
 #include "Upwind.hh"
 
 // Multiphase
-#include "EquationStructure.hh"
-#include "MultiphaseEvaluator.hh"
+#include "EquationSystem.hh"
 #include "MultiphaseBoundaryFunction.hh"
 #include "MultiphaseTypeDefs.hh"
 
@@ -227,7 +226,6 @@ class Multiphase_PK : public PK_PhysicalBDF {
   // multiphase submodels
   void PopulateBCs(int comp_id, bool flag);
   void CheckCompatibilityBCs(const Key& keyr, const Key& gname);
-  void ModifyEvaluators(int neqn);
 
   Teuchos::RCP<TreeVector> soln() { return soln_; }
   Teuchos::RCP<Operators::TreeOperator> op_tree_pc() { return op_preconditioner_; }
@@ -246,7 +244,7 @@ class Multiphase_PK : public PK_PhysicalBDF {
   Teuchos::ParameterList MyRequire_(const Key& key, const std::string& owner);
 
  private:
-  int InitMPSystem_(const std::string& eqn_name, int enq_id, int enq_num);
+  int InitMPSystem_(const std::string& eqn_name, int enq_id);
   void InitializeFields_();
 
   void PopulateSecondaryBCs_();
@@ -266,37 +264,37 @@ class Multiphase_PK : public PK_PhysicalBDF {
   std::vector<std::string> soln_names_;
   std::set<std::string> secondary_names_;
   std::vector<std::string> component_names_;
-  int num_primary_, num_phases_;
+  int num_phases_;
 
   Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>> x_gas_eval_;
 
   // variable evaluators
-  Teuchos::RCP<Evaluator> eval_tws_, eval_tcs_;
+  Teuchos::RCP<Evaluator> eval_tcs_;
 
   // complimentarity problem
   std::string ncp_;
 
   // keys
-  Key pressure_liquid_key_, x_liquid_key_, x_vapor_key_, x_gas_key_;
+  Key pressure_liquid_key_, x_liquid_key_, x_gas_key_;
   Key saturation_liquid_key_, saturation_gas_key_, temperature_key_;
   Key energy_key_, prev_energy_key_;
-  Key porosity_key_, pressure_gas_key_, pressure_vapor_key_;
-  Key tcc_liquid_key_, tcc_gas_key_;
+  Key porosity_key_, pressure_gas_key_;
   Key permeability_key_, relperm_liquid_key_, relperm_gas_key_;
   Key advection_liquid_key_, advection_gas_key_;
   Key viscosity_liquid_key_, viscosity_gas_key_;
   Key mol_flowrate_liquid_key_, mol_flowrate_gas_key_;
   Key mol_density_liquid_key_, mol_density_gas_key_;
   Key mass_density_liquid_key_, mass_density_gas_key_;
-  Key tws_key_, tcs_key_, prev_tws_key_, prev_tcs_key_;
-  Key ncp_f_key_, ncp_g_key_, ncp_fg_key_;
+  Key tcs_key_, prev_tcs_key_;
+  Key ncp_gas_f_key_, ncp_gas_g_key_, ncp_gas_fg_key_;
+  Key ncp_liquid_f_key_, ncp_liquid_g_key_, ncp_liquid_fg_key_;
   Key ie_rock_key_, ie_liquid_key_, ie_gas_key_;
   Key conductivity_key_, particle_density_key_;
   Key enthalpy_liquid_key_, enthalpy_gas_key_;
   Key advection_enthalpy_liquid_key_, advection_enthalpy_gas_key_;
 
   // matrix and preconditioner
-  Teuchos::RCP<Operators::FlattenedTreeOperator> op_preconditioner_;
+  Teuchos::RCP<Operators::TreeOperator> op_preconditioner_;
   Teuchos::RCP<Matrix<TreeVector, TreeVectorSpace>> op_pc_solver_;
   bool op_pc_assembled_;
 
@@ -306,8 +304,7 @@ class Multiphase_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Operators::PDE_Diffusion> pde_diff_D_;
 
   std::map<std::string, bool> system_;
-  std::vector<EquationStructure> eqns_;
-  std::vector<std::vector<int>> eqns_flattened_;
+  std::vector<EquationSystem> eqns_;
   std::vector<std::string> eval_flattened_;
 
   // boundary conditions
@@ -315,7 +312,6 @@ class Multiphase_PK : public PK_PhysicalBDF {
   std::map<std::string, Teuchos::RCP<Operators::BCs>> op_bcs_;
 
   // physical parameters
-  double mol_mass_H2O_;
   std::vector<WhetStone::Tensor> K_;
   std::vector<double> mol_diff_l_, mol_diff_g_, mol_mass_;
 

@@ -10,8 +10,8 @@
 /*
   Multiphase PK
 
-  Field evaluator for a total component stirage (water, hydrogen,
-  etc) storage, the conserved quantity:
+  Field evaluator for a total component (water, hydrogen, etc) storage.
+  The conserved quantity:
 
     TCS = phi * (rho_l * s_l * x_l + rho_g * s_g * x_g)
 
@@ -25,13 +25,13 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "Factory.hh"
-
-#include "MultiphaseEvaluator.hh"
+#include "EvaluatorSecondaryMonotype.hh"
 
 namespace Amanzi {
 namespace Multiphase {
 
-class TotalComponentStorage : public MultiphaseEvaluator {
+class TotalComponentStorage
+   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   TotalComponentStorage(Teuchos::ParameterList& plist);
   TotalComponentStorage(const TotalComponentStorage& other);
@@ -47,7 +47,7 @@ class TotalComponentStorage : public MultiphaseEvaluator {
                                           const std::vector<CompositeVector*>& results) override;
 
  protected:
-  Key saturation_liquid_key_, porosity_key_;
+  Key saturation_liquid_key_, saturation_gas_key_, porosity_key_;
   Key mol_density_liquid_key_, mol_density_gas_key_;
   Key x_liquid_key_, x_gas_key_;
 

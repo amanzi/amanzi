@@ -8,27 +8,27 @@
 */
 
 /*
-  EOS
+  Energy
 
-  Determining the mole fraction of a gas component within a gas mixture.
+  Determining the molar fraction of a gas component within a gas mixture.
 */
-
-#include "MolarFractionGasEvaluator.hh"
 
 #include "EOSFactory.hh"
 
+#include "MoleFractionGasEvaluator.hh"
+
 namespace Amanzi {
-namespace AmanziEOS {
+namespace Energy {
 
 /* ******************************************************************
 * Initialize various PK objects
 ****************************************************************** */
-MolarFractionGasEvaluator::MolarFractionGasEvaluator(Teuchos::ParameterList& plist)
+MoleFractionGasEvaluator::MoleFractionGasEvaluator(Teuchos::ParameterList& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   // set up the actual model
   AMANZI_ASSERT(plist_.isSublist("vapor pressure model parameters"));
-  EOSFactory<EOS_SaturatedVaporPressure> svp_fac;
+  AmanziEOS::EOSFactory<AmanziEOS::EOS_SaturatedVaporPressure> svp_fac;
   svp_model_ = svp_fac.Create(plist_.sublist("vapor pressure model parameters"));
 
   // process the list for my provided field.
@@ -45,21 +45,21 @@ MolarFractionGasEvaluator::MolarFractionGasEvaluator(Teuchos::ParameterList& pli
 }
 
 
-MolarFractionGasEvaluator::MolarFractionGasEvaluator(const MolarFractionGasEvaluator& other)
+MoleFractionGasEvaluator::MoleFractionGasEvaluator(const MoleFractionGasEvaluator& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
     temp_key_(other.temp_key_),
     svp_model_(other.svp_model_){};
 
 
 Teuchos::RCP<Evaluator>
-MolarFractionGasEvaluator::Clone() const
+MoleFractionGasEvaluator::Clone() const
 {
-  return Teuchos::rcp(new MolarFractionGasEvaluator(*this));
+  return Teuchos::rcp(new MoleFractionGasEvaluator(*this));
 }
 
 
 void
-MolarFractionGasEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
+MoleFractionGasEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   // Pull dependencies out of state.
   auto temp = S.GetPtr<CompositeVector>(temp_key_, tag_);
@@ -79,10 +79,10 @@ MolarFractionGasEvaluator::Evaluate_(const State& S, const std::vector<Composite
 
 
 void
-MolarFractionGasEvaluator::EvaluatePartialDerivative_(const State& S,
-                                                      const Key& wrt_key,
-                                                      const Tag& wrt_tag,
-                                                      const std::vector<CompositeVector*>& results)
+MoleFractionGasEvaluator::EvaluatePartialDerivative_(const State& S,
+                                                     const Key& wrt_key,
+                                                     const Tag& wrt_tag,
+                                                     const std::vector<CompositeVector*>& results)
 {
   AMANZI_ASSERT(wrt_key == temp_key_);
 
@@ -90,8 +90,8 @@ MolarFractionGasEvaluator::EvaluatePartialDerivative_(const State& S,
   double p_atm = S.Get<double>("atmospheric_pressure");
 
   for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
-    const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp);
-    Epetra_MultiVector& result_v = *results[0]->ViewComponent(*comp);
+    const auto& temp_v = *temp->ViewComponent(*comp);
+    auto& result_v = *results[0]->ViewComponent(*comp);
 
     int count = results[0]->size(*comp);
     for (int i = 0; i != count; ++i) {
@@ -100,5 +100,5 @@ MolarFractionGasEvaluator::EvaluatePartialDerivative_(const State& S,
   }
 }
 
-} // namespace AmanziEOS
+} // namespace Energy
 } // namespace Amanzi

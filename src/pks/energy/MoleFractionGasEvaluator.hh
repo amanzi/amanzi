@@ -4,37 +4,31 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
 /*
-  MultiPhase PK
+  Energy
 
-  Calculates liquid component concentration from gas concentration.
+  Determining the molar fraction of a gas component within a gas mixture.
 */
 
-#ifndef AMANZI_MULTIPHASE_TCC_LIQUID_HH_
-#define AMANZI_MULTIPHASE_TCC_LIQUID_HH_
+#ifndef AMANZI_ENERGY_MOLE_FRACTION_GAS_EVALUATOR_HH_
+#define AMANZI_ENERGY_MOLE_FRACTION_GAS_EVALUATOR_HH_
 
-#include <string>
-#include <vector>
-
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_ParameterList.hpp"
-
-// Amanzi
 #include "Factory.hh"
+#include "EvaluatorSecondaryMonotype.hh"
 
-// Multiphase
-#include "MultiphaseEvaluator.hh"
-#include "MultiphaseTypeDefs.hh"
+#include "EOS_SaturatedVaporPressure.hh"
 
 namespace Amanzi {
-namespace Multiphase {
+namespace Energy {
 
-class TccLiquid : public MultiphaseEvaluator {
+class MoleFractionGasEvaluator
+  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  TccLiquid(Teuchos::ParameterList& plist);
+  explicit MoleFractionGasEvaluator(Teuchos::ParameterList& plist);
+  MoleFractionGasEvaluator(const MoleFractionGasEvaluator& other);
 
   // required inteface functions
   virtual Teuchos::RCP<Evaluator> Clone() const override;
@@ -46,13 +40,17 @@ class TccLiquid : public MultiphaseEvaluator {
                                           const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
- private:
-  std::string tcc_gas_key_, temperature_key_;
+ protected:
+  Key temp_key_;
+  Tag tag_;
 
-  static Utils::RegisteredFactory<Evaluator, TccLiquid> fac_;
+  Teuchos::RCP<AmanziEOS::EOS_SaturatedVaporPressure> svp_model_;
+
+ private:
+  static Utils::RegisteredFactory<Evaluator, MoleFractionGasEvaluator> reg_;
 };
 
-} // namespace Multiphase
+} // namespace Energy
 } // namespace Amanzi
 
 #endif

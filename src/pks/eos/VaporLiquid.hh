@@ -8,7 +8,7 @@
 */
 
 /*
-  Base class for vapor-liquid distribution coefficeint
+  Base class for the vapor-liquid distribution coefficient
 
    kD = xg / xl
 

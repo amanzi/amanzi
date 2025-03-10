@@ -46,16 +46,16 @@
   <ParameterList name="PKs"> <!-- no shift -->
   <ParameterList name="multiphase">
     <Parameter name="evaluators" type="Array(string)" value="{ ncp_g,
-                                                               total_water_storage,
                                                                total_component_storage,
                                                                advection_water,
                                                                advection_liquid,
                                                                advection_gas,
                                                                diffusion_liquid }"/>
     <ParameterList name="system">
-      <ParameterList name="pressure eqn">
+      <ParameterList name="H2O eqn">
         <Parameter name="primary unknown" type="string" value="pressure_liquid"/>
-        <Parameter name="accumulation" type="string" value="total_water_storage"/>
+        <Parameter name="subfields" type="Array(string)" value="{ H2O }"/>
+        <Parameter name="accumulation" type="string" value="total_component_storage"/>
 
         <ParameterList name="terms">
           <ParameterList name="advection">
@@ -73,8 +73,9 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="solute eqn">
+      <ParameterList name="H2 eqn">
         <Parameter name="primary unknown" type="string" value="molar_density_liquid"/>
+        <Parameter name="subfields" type="Array(string)" value="{ H2 }"/>
         <Parameter name="accumulation" type="string" value="total_component_storage"/>
 
         <ParameterList name="terms">
@@ -382,7 +383,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.0"/>
+                <Parameter name="value" type="double" value="55500.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -450,14 +451,6 @@
         <Parameter name="temperature key" type="string" value="temperature"/>
       </ParameterList>
 
-      <ParameterList name="total_water_storage">
-        <Parameter name="evaluator type" type="string" value="product"/>
-        <Parameter name="dependencies" type="Array(string)" value="{ molar_density_water,
-                                                                     porosity,
-                                                                     saturation_liquid }"/>
-        <Parameter name="powers" type="Array(int)" value="{ 1, 1, 1 }"/>
-        <Parameter name="tag" type="string" value=""/>
-      </ParameterList>
 
       <ParameterList name="total_component_storage">
         <Parameter name="evaluator type" type="string" value="storage component jaffre"/>

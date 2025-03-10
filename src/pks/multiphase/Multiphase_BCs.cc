@@ -43,7 +43,7 @@ namespace Multiphase {
 
 /* *******************************************************************
 * Populate boundary conditions for various bc types
-* comp_id = position in a list of solutes (-1 for water)
+* comp_id = position in a list of solutes (-1 for water) // FIXME
 ******************************************************************* */
 void
 Multiphase_PK::PopulateBCs(int comp_id, bool flag)
@@ -84,7 +84,7 @@ Multiphase_PK::PopulateBCs(int comp_id, bool flag)
 
     // flux condition is populated only for one component (water or solute)
     if (bcs_[i]->get_bc_name() == "flux") {
-      if (bcs_[i]->component_name() == "water" && comp_id == -1) {
+      if (bcs_[i]->component_name() == "H2O") {
         auto& bc_model = op_bcs_[pressure_liquid_key_]->bc_model();
         auto& bc_value = op_bcs_[pressure_liquid_key_]->bc_value();
 
@@ -94,8 +94,8 @@ Multiphase_PK::PopulateBCs(int comp_id, bool flag)
           bc_value[f] = it->second[0] * factor;
         }
       } else if (bcs_[i]->component_id() == comp_id) {
-        Key x_key_base = splitPhase(soln_names_[n0]).first;
-        Key x_key = mergePhase(x_key_base, bcs_[i]->component_phase());
+        auto base = splitPhase(soln_names_[n0]);
+        Key x_key = mergePhase(splitPhase(base.first).first, bcs_[i]->component_phase()) + "_" + base.second;
 
         auto& bc_model = op_bcs_[x_key]->bc_model();
         auto& bc_value = op_bcs_[x_key]->bc_value();
@@ -109,8 +109,8 @@ Multiphase_PK::PopulateBCs(int comp_id, bool flag)
     }
 
     if (bcs_[i]->get_bc_name() == "concentration" && bcs_[i]->component_id() == comp_id) {
-      Key x_key_base = splitPhase(soln_names_[n0]).first;
-      Key x_key = mergePhase(x_key_base, bcs_[i]->component_phase());
+      auto base = splitPhase(soln_names_[n0]);
+      Key x_key = mergePhase(splitPhase(base.first).first, bcs_[i]->component_phase()) + "_" + base.second;
 
       auto& bc_model = op_bcs_[x_key]->bc_model();
       auto& bc_value = op_bcs_[x_key]->bc_value();
@@ -126,8 +126,8 @@ Multiphase_PK::PopulateBCs(int comp_id, bool flag)
       auto& bc_model_s = op_bcs_[saturation_liquid_key_]->bc_model();
       auto& bc_value_s = op_bcs_[saturation_liquid_key_]->bc_value();
 
-      Key x_key_base = splitPhase(soln_names_[n0]).first;
-      Key x_key = mergePhase(x_key_base, MULTIPHASE_PHASE_LIQUID);
+      auto base = splitPhase(soln_names_[n0]);
+      Key x_key = mergePhase(splitPhase(base.first).first, MULTIPHASE_PHASE_LIQUID) + "_" + base.second;
       auto& bc_model_x = op_bcs_[x_key]->bc_model();
       auto& bc_value_x = op_bcs_[x_key]->bc_value();
 

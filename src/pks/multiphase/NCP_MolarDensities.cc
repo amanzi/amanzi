@@ -21,16 +21,15 @@ namespace Multiphase {
 /* ******************************************************************
 * Constructor.
 ****************************************************************** */
-NCP_MolarDensities::NCP_MolarDensities(Teuchos::ParameterList& plist) : MultiphaseEvaluator(plist)
+NCP_MolarDensities::NCP_MolarDensities(Teuchos::ParameterList& plist)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
   }
-  x_vapor_key_ = plist_.get<std::string>("mole fraction vapor key");
   mol_density_gas_key_ = plist_.get<std::string>("molar density gas key");
   tcc_gas_key_ = plist_.get<std::string>("tcc gas key");
 
-  dependencies_.insert(std::make_pair(x_vapor_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(mol_density_gas_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(tcc_gas_key_, Tags::DEFAULT));
 }
@@ -40,7 +39,7 @@ NCP_MolarDensities::NCP_MolarDensities(Teuchos::ParameterList& plist) : Multipha
 * Copy constructors.
 ****************************************************************** */
 NCP_MolarDensities::NCP_MolarDensities(const NCP_MolarDensities& other)
-  : MultiphaseEvaluator(other){};
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other){};
 
 
 Teuchos::RCP<Evaluator>
@@ -56,7 +55,6 @@ NCP_MolarDensities::Clone() const
 void
 NCP_MolarDensities::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
-  const auto& xg = *S.Get<CompositeVector>(x_vapor_key_).ViewComponent("cell");
   const auto& ng = *S.Get<CompositeVector>(mol_density_gas_key_).ViewComponent("cell");
   const auto& tcc = *S.Get<CompositeVector>(tcc_gas_key_).ViewComponent("cell");
 
@@ -64,7 +62,7 @@ NCP_MolarDensities::Evaluate_(const State& S, const std::vector<CompositeVector*
   int ncells = results[0]->size("cell", false);
 
   for (int c = 0; c != ncells; ++c) {
-    double sum = ng[0][c] * xg[0][c];
+    double sum(0.0);
     for (int i = 0; i < tcc.NumVectors(); ++i) sum += tcc[i][c];
     result_c[0][c] = ng[0][c] - sum;
   }
@@ -80,16 +78,13 @@ NCP_MolarDensities::EvaluatePartialDerivative_(const State& S,
                                                const Tag& wrt_tag,
                                                const std::vector<CompositeVector*>& results)
 {
-  const auto& xg = *S.Get<CompositeVector>(x_vapor_key_).ViewComponent("cell");
   const auto& ng = *S.Get<CompositeVector>(mol_density_gas_key_).ViewComponent("cell");
 
   auto& result_c = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell", false);
 
-  if (wrt_key == x_vapor_key_) {
-    for (int c = 0; c != ncells; ++c) result_c[0][c] = -ng[0][c];
-  } else if (wrt_key == mol_density_gas_key_) {
-    for (int c = 0; c != ncells; ++c) result_c[0][c] = 1.0 - xg[0][c];
+  if (wrt_key == mol_density_gas_key_) {
+    for (int c = 0; c != ncells; ++c) result_c[0][c] = 1.0;
   } else if (wrt_key == tcc_gas_key_) {
     for (int c = 0; c != ncells; ++c) result_c[0][c] = -1.0;
   }
