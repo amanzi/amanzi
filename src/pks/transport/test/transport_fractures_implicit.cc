@@ -106,6 +106,7 @@ runTest(int order, const std::string& linsolver)
     plist->sublist("cycle driver").sublist("pk_tree").sublist("transport");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   TransportImplicit_PK TPK(pk_tree, plist, S, soln);
+  TPK.parseParameterList();
   TPK.Setup();
   S->Setup();
   S->InitializeFields();
@@ -116,10 +117,11 @@ runTest(int order, const std::string& linsolver)
   S->set_final_time(0.0);
 
   // modify the default state
+  std::string passwd("transport");
   auto& flux =
-    *S->GetW<CompositeVector>("volumetric_flow_rate", "state").ViewComponent("face", true);
+    *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face", true);
   const auto flux_map =
-    S->GetW<CompositeVector>("volumetric_flow_rate", "state").Map().Map("face", true);
+    S->GetW<CompositeVector>("volumetric_flow_rate", passwd).Map().Map("face", true);
 
   int dir;
   AmanziGeometry::Point velocity(1.0, 0.2, -0.2);
@@ -139,7 +141,7 @@ runTest(int order, const std::string& linsolver)
       flux[0][g] = (velocity * normal) * dir;
     }
   }
-  S->GetRecordW("volumetric_flow_rate", "state").set_initialized();
+  S->GetRecordW("volumetric_flow_rate", passwd).set_initialized();
 
   // initialize the transport process kernel
   TPK.Initialize();
@@ -149,7 +151,7 @@ runTest(int order, const std::string& linsolver)
   double tol = (order == 1) ? 1e-8 : 1e-4;
   double t_old(0.0), t_new(0.0), dt(2.0e+3);
   auto& tcc =
-    *S->GetW<CompositeVector>("total_component_concentration", "state").ViewComponent("cell");
+    *S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
 
   while (t_new < 1.0e+5) {
     t_new = t_old + dt;

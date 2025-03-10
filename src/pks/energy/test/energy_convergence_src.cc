@@ -133,6 +133,7 @@ TEST(ENERGY_CONVERGENCE_SRC)
     Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
     Teuchos::RCP<EnergyOnePhase_PK> EPK =
       Teuchos::rcp(new EnergyOnePhase_PK(pk_tree, plist, S, soln));
+    EPK->parseParameterList();
 
     // overwrite enthalpy with a different model
     Teuchos::ParameterList ev_list;
@@ -164,7 +165,7 @@ TEST(ENERGY_CONVERGENCE_SRC)
     S->CheckAllFieldsInitialized();
 
     // constant timestepping
-    std::string passwd("state");
+    std::string passwd("energy");
     int itrs(0);
     double t(0.0), t1(100), dt_next;
     while (t < t1) {

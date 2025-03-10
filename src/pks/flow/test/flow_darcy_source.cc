@@ -71,6 +71,7 @@ RunTestDarcySource(const std::string& xmlFileName)
   Teuchos::ParameterList pk_tree("flow");
   auto soln = Teuchos::rcp(new TreeVector());
   auto DPK = Teuchos::rcp(new Darcy_PK(pk_tree, plist, S, soln));
+  DPK->parseParameterList();
   DPK->Setup();
   S->Setup();
   S->InitializeFields();
@@ -78,7 +79,7 @@ RunTestDarcySource(const std::string& xmlFileName)
 
   // modify the default state for the problem at hand
   // -- permeability
-  std::string passwd("state");
+  std::string passwd("flow");
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
 
   if (!S->GetRecord("permeability").initialized()) {

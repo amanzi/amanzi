@@ -58,6 +58,7 @@ TEST(COOK_MEMBRANE_2D)
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::ParameterList pk_tree = plist->sublist("PK tree").sublist("mechanics small strain");
   auto MPK = Teuchos::rcp(new MechanicsSmallStrain_PK(pk_tree, plist, S, soln));
+  MPK->parseParameterList();
 
   MPK->Setup();
   S->Setup();

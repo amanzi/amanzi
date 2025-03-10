@@ -54,7 +54,6 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
   // domain name
   domain_ = ep_list_->get<std::string>("domain name", "domain");
   temperature_key_ = Keys::getKey(domain_, "temperature");
-  requireAtNext(temperature_key_, Tags::DEFAULT, *S_, passwd_);
 
   // create verbosity object
   mesh_ = S->GetMesh(domain_);
@@ -116,10 +115,10 @@ Energy_PK::Setup()
   std::vector<AmanziMesh::Entity_kind> locations(
     { AmanziMesh::Entity_kind::CELL, AmanziMesh::Entity_kind::FACE });
 
-  S_->Require<CV_t, CVS_t>(temperature_key_, Tags::DEFAULT)
+  requireAtNext(temperature_key_, Tags::DEFAULT, *S_, passwd_)
     .SetMesh(mesh_)
     ->SetGhosted(true)
-    ->AddComponents(names, locations, ndofs);
+    ->SetComponents(names, locations, ndofs);
 
   temperature_eval_ = Teuchos::rcp_static_cast<EvaluatorPrimary<CV_t, CVS_t>>(
     S_->GetEvaluatorPtr(temperature_key_, Tags::DEFAULT));
@@ -135,35 +134,32 @@ Energy_PK::Setup()
 
   // other fields
   // -- energies (liquid, rock)
-  S_->Require<CV_t, CVS_t>(ie_liquid_key_, Tags::DEFAULT, ie_liquid_key_)
+  requireAtNext(ie_liquid_key_, Tags::DEFAULT, *S_)
     .SetMesh(mesh_)
     ->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
-  S_->RequireEvaluator(ie_liquid_key_, Tags::DEFAULT);
 
   S_->RequireDerivative<CV_t, CVS_t>(
       ie_liquid_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, ie_liquid_key_)
     .SetGhosted();
 
-  S_->Require<CV_t, CVS_t>(ie_rock_key_, Tags::DEFAULT, ie_rock_key_)
+  requireAtNext(ie_rock_key_, Tags::DEFAULT, *S_)
     .SetMesh(mesh_)
     ->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
-  S_->RequireEvaluator(ie_rock_key_, Tags::DEFAULT);
 
   S_->RequireDerivative<CV_t, CVS_t>(
       ie_rock_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, ie_rock_key_)
     .SetGhosted();
 
   // -- densities
-  S_->Require<CV_t, CVS_t>(mol_density_liquid_key_, Tags::DEFAULT, mol_density_liquid_key_)
+  requireAtNext(mol_density_liquid_key_, Tags::DEFAULT, *S_)
     .SetMesh(mesh_)
     ->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
-  S_->RequireEvaluator(mol_density_liquid_key_, Tags::DEFAULT);
 
   if (S_->GetEvaluator(mol_density_liquid_key_)
         .IsDifferentiableWRT(*S_, temperature_key_, Tags::DEFAULT)) {
@@ -175,12 +171,11 @@ Energy_PK::Setup()
       .SetGhosted();
   }
 
-  S_->Require<CV_t, CVS_t>(mass_density_liquid_key_, Tags::DEFAULT, mass_density_liquid_key_)
+  requireAtNext(mass_density_liquid_key_, Tags::DEFAULT, *S_)
     .SetMesh(mesh_)
     ->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
-  S_->RequireEvaluator(mass_density_liquid_key_, Tags::DEFAULT);
 
   if (S_->GetEvaluator(mass_density_liquid_key_)
         .IsDifferentiableWRT(*S_, temperature_key_, Tags::DEFAULT)) {
@@ -211,11 +206,10 @@ Energy_PK::Setup()
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
-    S_->Require<CV_t, CVS_t>(aperture_key_, Tags::DEFAULT, aperture_key_)
+    requireAtNext(aperture_key_, Tags::DEFAULT, *S_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-    S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
 
     Teuchos::ParameterList elist(conductivity_eff_key_);
     std::vector<std::string> listm(
@@ -246,11 +240,10 @@ Energy_PK::Setup()
 
   // -- fracture aperture
   if (flow_on_manifold_) {
-    S_->Require<CV_t, CVS_t>(aperture_key_, Tags::DEFAULT, aperture_key_)
+    requireAtNext(aperture_key_, Tags::DEFAULT, *S_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // set units

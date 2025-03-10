@@ -41,10 +41,10 @@ dam_break_1D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   int ncells_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
                                           Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
-  std::string passwd("state");
+  std::string passwd("shallow water");
 
-  auto& B_vec_c =
-    *S->GetW<CompositeVector>("surface-bathymetry", Tags::DEFAULT, passwd).ViewComponent("cell");
+  const auto& B_vec_c =
+    *S->Get<CompositeVector>("surface-bathymetry", Tags::DEFAULT).ViewComponent("cell");
   auto& h_vec_c =
     *S->GetW<CompositeVector>("surface-ponded_depth", Tags::DEFAULT, passwd).ViewComponent("cell");
   auto& ht_vec_c =
@@ -216,6 +216,7 @@ TEST(SHALLOW_WATER_1D)
 
   // create a shallow water PK
   ShallowWater_PK SWPK(sw_list, plist, S, soln);
+  SWPK.parseParameterList();
   SWPK.Setup();
   S->Setup();
   S->InitializeFields();
@@ -245,7 +246,7 @@ TEST(SHALLOW_WATER_1D)
   iolist.get<std::string>("file name base", fname);
   OutputXDMF io(iolist, mesh, true, false);
 
-  std::string passwd("state");
+  std::string passwd("shallow water");
 
   int iter = 0;
   double TEini, TEfin;

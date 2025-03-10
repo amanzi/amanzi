@@ -131,6 +131,7 @@ TEST(ENERGY_CONVERGENCE)
     Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
     Teuchos::RCP<EnergyOnePhase_PK> EPK =
       Teuchos::rcp(new EnergyOnePhase_PK(pk_tree, plist, S, soln));
+    EPK->parseParameterList();
 
     // overwrite enthalpy with a different model
     Teuchos::ParameterList ev_list;
@@ -162,7 +163,7 @@ TEST(ENERGY_CONVERGENCE)
     S->CheckAllFieldsInitialized();
 
     // constant timestepping
-    std::string passwd("state");
+    std::string passwd("energy");
     int itrs(0);
     double t(0.0), t1(0.5), dt_next;
     while (std::fabs(t - t1) > 1e-6) {
@@ -253,6 +254,7 @@ TEST(ENERGY_PRECONDITIONER)
     Teuchos::ParameterList pk_tree = plist->sublist("PKs").sublist("energy");
     Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
     auto EPK = Teuchos::rcp(new EnergyOnePhase_PK(pk_tree, plist, S, soln));
+    EPK->parseParameterList();
 
     // overwrite enthalpy with a different model
     Teuchos::ParameterList ev_list;
@@ -284,7 +286,7 @@ TEST(ENERGY_PRECONDITIONER)
     S->CheckAllFieldsInitialized();
 
     // constant timestepping
-    std::string passwd("state");
+    std::string passwd("energy");
     int itrs(0);
     double t(0.0), t1(0.5), dt(0.02), dt_next;
     while (t < t1) {

@@ -75,6 +75,7 @@ TEST(FLOW_3D_RICHARDS)
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Richards_PK* RPK = new Richards_PK(pk_tree, plist, S, soln);
 
+  RPK->parseParameterList();
   RPK->Setup();
   S->Setup();
   S->InitializeFields();
@@ -82,7 +83,7 @@ TEST(FLOW_3D_RICHARDS)
 
   // modify the default state for the problem at hand
   // -- permeability
-  std::string passwd("state");
+  std::string passwd("flow");
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
 
   {

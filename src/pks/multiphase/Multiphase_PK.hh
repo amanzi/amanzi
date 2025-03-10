@@ -162,7 +162,6 @@ class Multiphase_PK : public PK_PhysicalBDF {
   ~Multiphase_PK(){};
 
   // method required for abstract PK interface
-  virtual void parseParameterList() override {};
   virtual void Setup() override;
   virtual void Initialize() override;
 
@@ -229,7 +228,7 @@ class Multiphase_PK : public PK_PhysicalBDF {
   void CheckCompatibilityBCs(const Key& keyr, const Key& gname);
   void ModifyEvaluators(int neqn);
 
-  Teuchos::RCP<TreeVector> soln() { return soln_; }
+  Teuchos::RCP<TreeVector> soln() { return solution_; }
   Teuchos::RCP<Operators::TreeOperator> op_tree_pc() { return op_preconditioner_; }
 
   // debug tool
@@ -258,11 +257,9 @@ class Multiphase_PK : public PK_PhysicalBDF {
   int nfaces_owned_, nfaces_wghost_;
   int dim_;
 
-  std::string passwd_;
   double dt_, dt_next_;
 
   // unknowns
-  Teuchos::RCP<TreeVector> soln_;
   std::vector<std::string> soln_names_;
   std::set<std::string> secondary_names_;
   std::vector<std::string> component_names_;

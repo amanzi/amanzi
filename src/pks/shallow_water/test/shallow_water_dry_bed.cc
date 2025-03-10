@@ -51,7 +51,7 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
                                            Amanzi::AmanziMesh::Parallel_kind::ALL);
   int nnodes_wghost = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE,
                                            Amanzi::AmanziMesh::Parallel_kind::ALL);
-  std::string passwd("state");
+  std::string passwd("shallow water");
 
   auto& B_c =
     *S->GetW<CompositeVector>("surface-bathymetry", Tags::DEFAULT, passwd).ViewComponent("cell");
@@ -172,6 +172,7 @@ RunTest(int icase)
   Teuchos::ParameterList sw_list = plist->sublist("PKs").sublist("shallow water");
 
   ShallowWater_PK SWPK(sw_list, plist, S, soln);
+  SWPK.parseParameterList();
   SWPK.Setup();
   S->Setup();
   S->InitializeFields();

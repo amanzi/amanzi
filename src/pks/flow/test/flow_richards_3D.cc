@@ -75,13 +75,14 @@ TEST(FLOW_3D_RICHARDS)
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Richards_PK* RPK = new Richards_PK(pk_tree, plist, S, soln);
 
+  RPK->parseParameterList();
   RPK->Setup();
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
 
   // modify the default state for the problem at hand
-  std::string passwd("state");
+  std::string passwd("flow");
 
   S->GetW<double>("const_fluid_density", "state") = 1.0;
   S->GetW<CompositeVector>("viscosity_liquid", Tags::DEFAULT, "viscosity_liquid").PutScalar(1.0);

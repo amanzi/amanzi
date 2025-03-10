@@ -63,10 +63,10 @@ Multiphase_PK::Multiphase_PK(Teuchos::ParameterList& pk_tree,
                              const Teuchos::RCP<Teuchos::ParameterList>& glist,
                              const Teuchos::RCP<State>& S,
                              const Teuchos::RCP<TreeVector>& soln)
-  : passwd_(""), soln_(soln), num_phases_(2), op_pc_assembled_(false), glist_(glist)
+  : PK_PhysicalBDF(pk_tree, glist, S, soln),
+    PK(pk_tree, glist, S, soln),
+    num_phases_(2), op_pc_assembled_(false), glist_(glist)
 {
-  S_ = S;
-
   std::string pk_name = pk_tree.name();
   auto found = pk_name.rfind("->");
   if (found != std::string::npos) pk_name.erase(0, found + 2);
@@ -193,10 +193,7 @@ Multiphase_PK::Setup()
   // primary unknowns
   // -- pressure liquid
   if (!S_->HasRecord(pressure_liquid_key_)) {
-    auto elist = MyRequire_(pressure_liquid_key_, passwd_);
-    auto eval = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
-    S_->SetEvaluator(pressure_liquid_key_, Tags::DEFAULT, eval);
-
+    requireAtNext(pressure_liquid_key_, Tags::DEFAULT, *S_, passwd_);
     S_->RequireDerivative<CV_t, CVS_t>(pressure_liquid_key_,
                                        Tags::DEFAULT,
                                        pressure_liquid_key_,
@@ -660,7 +657,7 @@ Multiphase_PK::Initialize()
   // create solution vector
   for (const auto& primary_name : soln_names_) {
     auto field = Teuchos::rcp(new TreeVector());
-    soln_->PushBack(field);
+    solution_->PushBack(field);
     field->SetData(S_->GetPtrW<CompositeVector>(primary_name, Tags::DEFAULT, passwd_));
   }
 
@@ -873,7 +870,7 @@ Multiphase_PK::Initialize()
   inv_list.setName(pc_name);
 
   op_preconditioner_ =
-    Teuchos::rcp(new Operators::FlattenedTreeOperator(Teuchos::rcpFromRef(soln_->Map())));
+    Teuchos::rcp(new Operators::FlattenedTreeOperator(Teuchos::rcpFromRef(solution_->Map())));
   op_preconditioner_->AddColoring(inv_list);
   op_pc_solver_ = AmanziSolvers::createInverse(inv_list, op_preconditioner_);
 
@@ -885,7 +882,7 @@ Multiphase_PK::Initialize()
   if (!bdf1_list.isSublist("verbose object"))
     bdf1_list.sublist("verbose object") = mp_list_->sublist("verbose object");
 
-  bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1", bdf1_list, *this, soln_->get_map(), S_));
+  bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1", bdf1_list, *this, solution_->get_map(), S_));
 
   // upwind operator with a face model (FIXME)
   Operators::UpwindFactory upwfact;
@@ -929,7 +926,7 @@ Multiphase_PK::Initialize()
                  << std::endl;
     }
     // WriteStateStatistics(*S_);
-    UpdatePreconditioner(0.0, soln_, 1.0);
+    UpdatePreconditioner(0.0, solution_, 1.0);
     *vo_->os() << "preconditioner:" << std::endl
                << op_preconditioner_->PrintDiagnostics() << std::endl;
     *vo_->os() << vo_->color("green")
@@ -980,9 +977,9 @@ Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // initialization
   if (num_ns_itrs_ == 0) {
-    auto udot = Teuchos::rcp(new TreeVector(*soln_));
+    auto udot = Teuchos::rcp(new TreeVector(*solution_));
     udot->PutScalar(0.0);
-    bdf1_dae_->SetInitialState(t_old, soln_, udot);
+    bdf1_dae_->SetInitialState(t_old, solution_, udot);
     num_ns_itrs_++;
   }
 
@@ -1002,17 +999,17 @@ Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // trying to make a step
   bool failed(false);
-  failed = bdf1_dae_->AdvanceStep(dt_, dt_next_, soln_);
+  failed = bdf1_dae_->AdvanceStep(dt_, dt_next_, solution_);
   if (failed) {
     dt_ = dt_next_;
 
-    archive.Restore("");
+    archive.Restore(passwd_);
     ChangedSolution();
 
     return failed;
   }
 
-  bdf1_dae_->CommitSolution(t_new - t_old, soln_);
+  bdf1_dae_->CommitSolution(t_new - t_old, solution_);
   ChangedSolution();
 
   dt_ = dt_next_;

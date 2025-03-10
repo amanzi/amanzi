@@ -84,6 +84,7 @@ Richards2D_SourceTest(std::string filename, bool deform)
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Richards_PK* RPK = new Richards_PK(pk_tree, plist, S, soln);
 
+  RPK->parseParameterList();
   RPK->Setup();
   S->Setup();
   S->InitializeFields();

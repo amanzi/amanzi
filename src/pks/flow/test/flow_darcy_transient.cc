@@ -74,6 +74,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY)
   Teuchos::ParameterList pk_tree("flow");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(pk_tree, plist, S, soln));
+  DPK->parseParameterList();
   DPK->Setup();
   std::cout << "Owner of " << S->GetRecord("permeability").fieldname() << " is "
             << S->GetRecord("permeability").owner() << "\n";
@@ -84,7 +85,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY)
 
   // modify the default state for the problem at hand
   // -- permeability
-  Key passwd("state");
+  Key passwd("flow");
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
 
   {
@@ -189,13 +190,14 @@ TEST(FLOW_3D_TRANSIENT_DARCY)
   Teuchos::ParameterList pk_tree("flow");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(pk_tree, plist, S, soln));
+  DPK->parseParameterList();
   DPK->Setup();
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
 
   /* modify the default state for the problem at hand */
-  std::string passwd("state");
+  std::string passwd("flow");
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
 
   {

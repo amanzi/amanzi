@@ -58,6 +58,7 @@ TEST(ELASTIC_2D)
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::ParameterList pk_tree = plist->sublist("PK tree").sublist("mechanics elasticity");
   auto EPK = Teuchos::rcp(new MechanicsElasticity_PK(pk_tree, plist, S, soln));
+  EPK->parseParameterList();
 
   EPK->Setup();
   S->Setup();

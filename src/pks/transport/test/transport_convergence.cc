@@ -92,6 +92,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING)
     S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
     TransportExplicit_PK TPK(plist, S, "transport", component_names);
+    TPK.parseParameterList();
     TPK.Setup();
     S->Setup();
     S->InitializeFields();
@@ -99,7 +100,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING)
     S->set_time(0.0);
 
     /* modify the default state for the problem at hand */
-    std::string passwd("state");
+    std::string passwd("transport");
     auto& flux =
       *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face", true);
 
@@ -121,7 +122,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING)
       (*tcc)[0][c] = f_cubic(xc, 0.0);
     }
 
-    S->GetW<double>("const_fluid_density", passwd) = 1.0;
+    S->GetW<double>("const_fluid_density", "state") = 1.0;
 
     /* initialize a transport process kernel */
     TPK.Initialize();
@@ -219,6 +220,7 @@ ConvergenceBoxMeshes(int order, double tol, std::string limiter)
       .sublist("reconstruction")
       .set<std::string>("limiter", limiter);
     TransportExplicit_PK TPK(plist, S, "transport", component_names);
+    TPK.parseParameterList();
     TPK.Setup();
     S->Setup();
     S->InitializeFields();
@@ -226,7 +228,7 @@ ConvergenceBoxMeshes(int order, double tol, std::string limiter)
     S->set_time(0.0);
 
     // modify the default state for the problem at hand
-    std::string passwd("state");
+    std::string passwd("transport");
     auto& flux =
       *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face", true);
 
@@ -248,7 +250,7 @@ ConvergenceBoxMeshes(int order, double tol, std::string limiter)
       (*tcc)[0][c] = f_cubic(xc, 0.0);
     }
 
-    S->GetW<double>("const_fluid_density", passwd) = 1.0;
+    S->GetW<double>("const_fluid_density", "state") = 1.0;
 
     // initialize transport process kernel
     TPK.Initialize();
@@ -367,6 +369,7 @@ ConvergencePolyMeshes(int order, double tol, std::string limiter)
       .sublist("reconstruction")
       .set<std::string>("limiter", limiter);
     TransportExplicit_PK TPK(plist, S, "transport", component_names);
+    TPK.parseParameterList();
     TPK.Setup();
     S->Setup();
     S->InitializeFields();
@@ -374,7 +377,7 @@ ConvergencePolyMeshes(int order, double tol, std::string limiter)
     S->set_time(0.0);
 
     /* modify the default state for the problem at hand */
-    std::string passwd("state");
+    std::string passwd("transport");
     auto& flux =
       *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face", true);
 
@@ -396,7 +399,7 @@ ConvergencePolyMeshes(int order, double tol, std::string limiter)
       (*tcc)[0][c] = f_cubic_unit(xc, 0.0);
     }
 
-    S->GetW<double>("const_fluid_density", passwd) = 1.0;
+    S->GetW<double>("const_fluid_density", "state") = 1.0;
 
     /* initialize a transport process kernel */
     TPK.Initialize();

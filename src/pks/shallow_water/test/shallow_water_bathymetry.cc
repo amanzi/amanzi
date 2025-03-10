@@ -82,6 +82,7 @@ RunTest(int ntest)
 
   // create a shallow water PK
   ShallowWater_PK SWPK(pk_tree, plist, S, soln);
+  SWPK.parseParameterList();
   SWPK.Setup();
   S->Setup();
   S->InitializeFields();

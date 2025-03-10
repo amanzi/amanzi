@@ -79,6 +79,7 @@ TEST(MULTIPHASE_MODEL_I)
   ParameterList pk_tree = plist->sublist("PKs").sublist("multiphase");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   auto MPK = Teuchos::rcp(new Multiphase_PK(pk_tree, plist, S, soln));
+  MPK->parseParameterList();
 
   MPK->Setup();
   S->Setup();

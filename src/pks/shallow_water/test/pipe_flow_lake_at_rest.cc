@@ -46,8 +46,7 @@ dam_break_1D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 {
   int ncells_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
                                           Amanzi::AmanziMesh::Parallel_kind::OWNED);
-
-  std::string passwd("state");
+  std::string passwd("pipe flow");
 
   auto& B_vec_c =
     *S->GetW<CompositeVector>("pipe-bathymetry", Tags::DEFAULT, passwd).ViewComponent("cell");
@@ -102,6 +101,7 @@ TEST(PIPE_FLOW_1D)
 
   // create a pipe flow PK
   PipeFlow_PK PFPK(pf_list, plist, S, soln);
+  PFPK.parseParameterList();
   PFPK.Setup();
   S->Setup();
   S->InitializeFields();

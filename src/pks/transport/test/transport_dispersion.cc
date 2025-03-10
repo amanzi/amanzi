@@ -97,6 +97,7 @@ TEST(DISPERSION)
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
   TransportExplicit_PK TPK(plist, S, "transport", component_names);
+  TPK.parseParameterList();
   TPK.Setup();
   S->Setup();
   S->InitializeFields();
@@ -107,7 +108,7 @@ TEST(DISPERSION)
   S->set_final_time(0.0);
 
   /* modify the default state for the problem at hand */
-  std::string passwd("state");
+  std::string passwd("transport");
   auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
@@ -128,7 +129,7 @@ TEST(DISPERSION)
     (*tcc)[0][c] = f_step(xc, 0.0);
   }
 
-  S->GetW<double>("const_fluid_density", passwd) = 1.0;
+  S->GetW<double>("const_fluid_density", "state") = 1.0;
 
   /* initialize a transport process kernel */
   Amanzi::VerboseObject::global_hide_line_prefix = true;
@@ -200,6 +201,7 @@ TEST(DIFFUSION)
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
   TransportExplicit_PK TPK(plist, S, "transport", component_names);
+  TPK.parseParameterList();
   TPK.Setup();
   S->Setup();
   S->InitializeFields();
@@ -210,7 +212,7 @@ TEST(DIFFUSION)
   S->set_final_time(0.0);
 
   /* modify the default state for the problem at hand */
-  std::string passwd("state");
+  std::string passwd("transport");
   auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(0.5, 0.0);
@@ -224,7 +226,7 @@ TEST(DIFFUSION)
   auto tcc =
     S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
 
-  S->GetW<double>("const_fluid_density", passwd) = 1.0;
+  S->GetW<double>("const_fluid_density", "state") = 1.0;
 
   /* initialize a transport process kernel */
   Amanzi::VerboseObject::global_hide_line_prefix = true;
@@ -302,6 +304,7 @@ TEST(GAS_DIFFUSION)
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
   TransportExplicit_PK TPK(plist, S, "transport", component_names);
+  TPK.parseParameterList();
   TPK.Setup();
   S->Setup();
   S->InitializeFields();
@@ -312,7 +315,7 @@ TEST(GAS_DIFFUSION)
   S->set_final_time(0.0);
 
   /* modify the default state for the problem at hand */
-  std::string passwd("state");
+  std::string passwd("transport");
   auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(0.1, 0.0);
@@ -326,7 +329,7 @@ TEST(GAS_DIFFUSION)
   auto& tcc =
     *S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
 
-  S->GetW<double>("const_fluid_density", passwd) = 1.0;
+  S->GetW<double>("const_fluid_density", "state") = 1.0;
 
   /* initialize a transport process kernel */
   Amanzi::VerboseObject::global_hide_line_prefix = true;

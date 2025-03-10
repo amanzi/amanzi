@@ -91,7 +91,6 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
   // domain and primary evaluators
   domain_ = tp_list_->template get<std::string>("domain name", "domain");
   tcc_key_ = Keys::getKey(domain_, "total_component_concentration");
-  requireAtNext(tcc_key_, Tags::NEXT, *S_, passwd_);
 
   // other variables
   dt_prev_ = 1e+91;

@@ -102,7 +102,6 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   ~NavierStokes_PK(){};
 
   // methods required for PK interface
-  virtual void parseParameterList() final {};
   virtual void Setup() final;
   virtual void Initialize() final;
 
@@ -192,7 +191,6 @@ class NavierStokes_PK : public PK_PhysicalBDF {
 
  protected:
   // pointers to primary fields and their evaluators
-  Teuchos::RCP<TreeVector> soln_;
   Teuchos::RCP<CompositeVector> soln_p_, soln_u_;
 
   Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>> pressure_eval_,

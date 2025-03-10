@@ -100,7 +100,7 @@ vortex_2D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuchos::RCP<
   int ncells_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
                                           Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
-  std::string passwd("state");
+  std::string passwd("shallow water");
 
   const auto& B_vec_c = *S->Get<CompositeVector>("surface-bathymetry").ViewComponent("cell");
   auto& h_vec_c =
@@ -206,6 +206,7 @@ TEST(SHALLOW_WATER_2D_SMOOTH)
 
     // create a shallow water PK
     ShallowWater_PK SWPK(pk_tree, plist, S, soln);
+    SWPK.parseParameterList();
     SWPK.Setup();
     S->Setup();
     S->InitializeFields();
@@ -233,7 +234,7 @@ TEST(SHALLOW_WATER_2D_SMOOTH)
     iolist.get<std::string>("file name base", fname);
     OutputXDMF io(iolist, mesh, true, false);
 
-    std::string passwd("state");
+    std::string passwd("shallow water");
 
     int iter = 0;
 

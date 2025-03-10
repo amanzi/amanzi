@@ -59,10 +59,7 @@ Mechanics_PK::Setup()
   auto schema = Operators::schemaFromPList(list, mesh_);
 
   auto cvs = Operators::cvsFromSchema(schema, mesh_, true);
-  *S_->Require<CV_t, CVS_t>(displacement_key_, Tags::DEFAULT, passwd_)
-    .SetMesh(mesh_)
-    ->SetGhosted(true) = cvs;
-
+  requireAtNext(displacement_key_, Tags::DEFAULT, *S_, passwd_) = cvs;
   eval_ = Teuchos::rcp_static_cast<EvaluatorPrimary<CV_t, CVS_t>>(
     S_->GetEvaluatorPtr(displacement_key_, Tags::DEFAULT));
 
@@ -90,8 +87,6 @@ Mechanics_PK::Setup()
     S_->SetEvaluator(vol_strain_key_, Tags::DEFAULT, eval_vol_strain_);
   }
 
-  
-  
   // -- rock properties
   S_->Require<CV_t, CVS_t>(young_modulus_key_, Tags::DEFAULT, passwd_)
     .SetMesh(mesh_)

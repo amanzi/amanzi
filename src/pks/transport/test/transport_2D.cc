@@ -89,6 +89,7 @@ runTest(double switch_time,
     .set<std::string>("limiter", limiter)
     .set<std::string>("limiter stencil", stencil);
   TransportExplicit_PK TPK(plist, S, "transport", component_names);
+  TPK.parseParameterList();
   TPK.Setup();
   S->Setup();
   S->InitializeFields();
@@ -96,7 +97,7 @@ runTest(double switch_time,
   S->set_time(0.0);
 
   // modify the default state for the problem at hand
-  std::string passwd("state");
+  std::string passwd("transport");
   auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(1.0, 1.0);

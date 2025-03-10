@@ -261,7 +261,6 @@ class Transport_PK : public PK_Physical {
   virtual ~Transport_PK(){};
 
   // members required by PK interface
-  virtual void parseParameterList() override {};
   virtual void Setup() override;
   virtual void Initialize() override;
 

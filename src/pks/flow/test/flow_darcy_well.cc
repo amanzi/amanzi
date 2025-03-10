@@ -85,6 +85,7 @@ RunTestDarcyWell(std::string controller, bool fit)
   Teuchos::ParameterList pk_tree("flow");
   auto soln = Teuchos::rcp(new TreeVector());
   auto DPK = Teuchos::rcp(new Darcy_PK(pk_tree, plist, S, soln));
+  DPK->parseParameterList();
   DPK->Setup();
   S->Setup();
   S->InitializeFields();
@@ -92,7 +93,7 @@ RunTestDarcyWell(std::string controller, bool fit)
 
   // modify the default state for the problem at hand
   // -- permeability
-  std::string passwd("state");
+  std::string passwd("flow");
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
   double diff_in_perm = 0.0;
 
@@ -221,6 +222,7 @@ Run_3D_DarcyWell(std::string controller)
   Teuchos::ParameterList pk_tree("flow");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(pk_tree, plist, S, soln));
+  DPK->parseParameterList();
   DPK->Setup();
   S->Setup();
   S->InitializeFields();
@@ -228,7 +230,7 @@ Run_3D_DarcyWell(std::string controller)
 
   // modify the default state for the problem at hand
   // -- permeability
-  std::string passwd("state");
+  std::string passwd("flow");
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
 
   for (int c = 0; c < K.MyLength(); c++) {
@@ -315,10 +317,11 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL)
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  std::string passwd("state");
+  std::string passwd("flow");
   Teuchos::ParameterList pk_tree("flow");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(pk_tree, plist, S, soln));
+  DPK->parseParameterList();
   DPK->Setup();
   S->Setup();
   S->InitializeFields();

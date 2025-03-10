@@ -74,6 +74,7 @@ TEST(ENERGY_JACOBIAN)
   Teuchos::ParameterList pk_tree = plist->sublist("PK tree").sublist("energy");
   auto soln = Teuchos::rcp(new TreeVector());
   auto EPK = Teuchos::rcp(new EnergyOnePhase_PK(pk_tree, plist, S, soln));
+  EPK->parseParameterList();
 
   EPK->Setup();
   S->Setup();
@@ -88,7 +89,7 @@ TEST(ENERGY_JACOBIAN)
 
   // finite difference Jacobian
   auto u1 = Teuchos::rcp(new TreeVector());
-  u1->SetData(S->GetPtrW<CompositeVector>("temperature", Tags::DEFAULT, ""));
+  u1->SetData(S->GetPtrW<CompositeVector>("temperature", Tags::DEFAULT, "energy"));
 
   auto u0 = Teuchos::rcp(new TreeVector(*u1));
   auto f0 = Teuchos::rcp(new TreeVector(*u1));

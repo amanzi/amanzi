@@ -77,6 +77,7 @@ TEST(MULTIPHASE_MODEL_I)
   ParameterList pk_tree = plist->sublist("PKs").sublist("multiphase");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   auto MPK = Teuchos::rcp(new Multiphase_PK(pk_tree, plist, S, soln));
+  MPK->parseParameterList();
 
   // initialize the multiphase process kernel
   MPK->Setup();
@@ -87,7 +88,7 @@ TEST(MULTIPHASE_MODEL_I)
   int ncells_owned =
     mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
-  std::string passwd("state");
+  std::string passwd("multiphase");
   std::vector<std::string> names({ "pressure_liquid", "mole_fraction_gas", "saturation_liquid" });
   auto& pl = *S->GetW<CompositeVector>(names[0], passwd).ViewComponent("cell");
   auto& xg = *S->GetW<CompositeVector>(names[1], passwd).ViewComponent("cell");

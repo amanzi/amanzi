@@ -79,6 +79,7 @@ TEST(ENERGY_ONE_PHASE)
   Teuchos::ParameterList pk_tree = plist->sublist("PK tree").sublist("energy");
   auto soln = Teuchos::rcp(new TreeVector());
   auto EPK = Teuchos::rcp(new EnergyOnePhase_PK(pk_tree, plist, S, soln));
+  EPK->parseParameterList();
 
   EPK->Setup();
   S->Setup();
@@ -101,7 +102,7 @@ TEST(ENERGY_ONE_PHASE)
   AMANZI_ASSERT(n1 == n2);
 
   // constant timestepping
-  std::string passwd("state");
+  std::string passwd("energy");
   int itrs(0);
   double t(0.0), dt(0.1), t1(5.5), dt_next;
   while (t < t1) {

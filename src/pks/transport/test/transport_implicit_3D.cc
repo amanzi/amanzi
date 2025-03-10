@@ -88,6 +88,7 @@ runTest(int order, const std::string& linsolver)
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   TransportImplicit_PK TPK(pk_tree, plist, S, soln);
 
+  TPK.parseParameterList();
   TPK.Setup();
   S->Setup();
   S->InitializeFields();
@@ -96,7 +97,7 @@ runTest(int order, const std::string& linsolver)
   S->set_intermediate_time(0.0);
 
   // modify the default state for the problem at hand
-  std::string passwd("state");
+  std::string passwd("transport implicit");
   auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(1.0, 1.0, 0.0);

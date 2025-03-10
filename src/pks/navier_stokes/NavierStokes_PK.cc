@@ -33,10 +33,9 @@ NavierStokes_PK::NavierStokes_PK(Teuchos::ParameterList& pk_tree,
                                  const Teuchos::RCP<Teuchos::ParameterList>& glist,
                                  const Teuchos::RCP<State>& S,
                                  const Teuchos::RCP<TreeVector>& soln)
-  : soln_(soln)
+  : PK_PhysicalBDF(pk_tree, glist, S, soln),
+    PK(pk_tree, glist, S, soln)
 {
-  S_ = S;
-
   std::string pk_name = pk_tree.name();
   auto found = pk_name.rfind("->");
   if (found != std::string::npos) pk_name.erase(0, found + 2);
@@ -51,12 +50,8 @@ NavierStokes_PK::NavierStokes_PK(Teuchos::ParameterList& pk_tree,
   ti_list_ = Teuchos::sublist(ns_list_, "time integrator", true);
 
   // domain name
-  domain_ = ns_list_->get<std::string>("domain name", "domain");
-
   pressure_key_ = Keys::getKey(domain_, "pressure");
   velocity_key_ = Keys::getKey(domain_, "fluid_velocity");
-  requireAtNext(pressure_key_, Tags::DEFAULT, *S_, passwd_);
-  requireAtNext(velocity_key_, Tags::DEFAULT, *S_, passwd_);
 }
 
 
@@ -67,28 +62,28 @@ NavierStokes_PK::NavierStokes_PK(const Teuchos::RCP<Teuchos::ParameterList>& gli
                                  const std::string& pk_list_name,
                                  Teuchos::RCP<State> S,
                                  const Teuchos::RCP<TreeVector>& soln)
-  : glist_(glist), soln_(soln)
+  : NavierStokes_PK(glist->sublist("PKs").sublist(pk_list_name), glist, S, soln)
 {
-  S_ = S;
+  // S_ = S;
 
-  // We need the flow list
-  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  ns_list_ = Teuchos::sublist(pk_list, "Navier Stokes", true);
+  // // We need the flow list
+  // Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
+  // ns_list_ = Teuchos::sublist(pk_list, "Navier Stokes", true);
 
-  // We also need miscaleneous sublists
-  preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
-  linear_solver_list_ = Teuchos::sublist(glist, "solvers", true);
-  ti_list_ = Teuchos::sublist(ns_list_, "time integrator");
+  // // We also need miscaleneous sublists
+  // preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
+  // linear_solver_list_ = Teuchos::sublist(glist, "solvers", true);
+  // ti_list_ = Teuchos::sublist(ns_list_, "time integrator");
 
-  // domain and primary evaluators
-  domain_ = ns_list_->get<std::string>("domain name", "domain");
+  // // domain and primary evaluators
+  // domain_ = ns_list_->get<std::string>("domain name", "domain");
 
-  pressure_key_ = Keys::getKey(domain_, "pressure");
-  velocity_key_ = Keys::getKey(domain_, "fluid_velocity");
-  requireAtNext(pressure_key_, Tags::DEFAULT, *S_, passwd_);
-  requireAtNext(velocity_key_, Tags::DEFAULT, *S_, passwd_);
+  // pressure_key_ = Keys::getKey(domain_, "pressure");
+  // velocity_key_ = Keys::getKey(domain_, "fluid_velocity");
+  // requireAtNext(pressure_key_, Tags::DEFAULT, *S_, passwd_);
+  // requireAtNext(velocity_key_, Tags::DEFAULT, *S_, passwd_);
 
-  vo_ = Teuchos::null;
+  // vo_ = Teuchos::null;
 }
 
 
@@ -108,7 +103,7 @@ NavierStokes_PK::Setup()
   // primary fields
   // -- pressure
   if (!S_->HasRecord(pressure_key_)) {
-    S_->Require<CV_t, CVS_t>(pressure_key_, Tags::DEFAULT, passwd_)
+    requireAtNext(pressure_key_, Tags::DEFAULT, *S_, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
@@ -124,7 +119,7 @@ NavierStokes_PK::Setup()
   std::vector<int> ndofs = { dim, 1 };
 
   if (!S_->HasRecord(velocity_key_)) {
-    S_->Require<CV_t, CVS_t>(velocity_key_, Tags::DEFAULT, passwd_)
+    requireAtNext(velocity_key_, Tags::DEFAULT, *S_, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
@@ -183,13 +178,13 @@ NavierStokes_PK::Initialize()
   // Create pointers to the primary flow field pressure.
   Teuchos::RCP<TreeVector> tmp_u = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<TreeVector> tmp_p = Teuchos::rcp(new TreeVector());
-  soln_->PushBack(tmp_u);
-  soln_->PushBack(tmp_p);
+  solution_->PushBack(tmp_u);
+  solution_->PushBack(tmp_p);
 
   soln_p_ = S_->GetPtrW<CV_t>(pressure_key_, Tags::DEFAULT, passwd_);
   soln_u_ = S_->GetPtrW<CV_t>(velocity_key_, Tags::DEFAULT, passwd_);
-  soln_->SubVector(0)->SetData(soln_u_);
-  soln_->SubVector(1)->SetData(soln_p_);
+  solution_->SubVector(0)->SetData(soln_u_);
+  solution_->SubVector(1)->SetData(soln_p_);
 
   // Initialize time integrator.
   std::string ti_method_name = ti_list_->get<std::string>("time integration method", "none");
@@ -199,7 +194,7 @@ NavierStokes_PK::Initialize()
   if (!bdf1_list.isSublist("verbose object"))
     bdf1_list.sublist("verbose object") = ns_list_->sublist("verbose object");
 
-  bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1", bdf1_list, *this, soln_->get_map(), S_));
+  bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1", bdf1_list, *this, solution_->get_map(), S_));
 
   // Initialize matrix and preconditioner
   // -- create elastic block
@@ -236,12 +231,12 @@ NavierStokes_PK::Initialize()
   op_mass_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, mesh_));
 
   // -- matrix and preconditioner
-  op_matrix_ = Teuchos::rcp(new Operators::TreeOperator(Teuchos::rcpFromRef(soln_->Map())));
+  op_matrix_ = Teuchos::rcp(new Operators::TreeOperator(Teuchos::rcpFromRef(solution_->Map())));
   op_matrix_->set_operator_block(0, 0, op_matrix_elas_->global_operator());
   op_matrix_->set_operator_block(1, 0, op_matrix_div_->global_operator());
   op_matrix_->set_operator_block(0, 1, op_matrix_grad_->global_operator());
 
-  op_preconditioner_ = Teuchos::rcp(new Operators::TreeOperator(Teuchos::rcpFromRef(soln_->Map())));
+  op_preconditioner_ = Teuchos::rcp(new Operators::TreeOperator(Teuchos::rcpFromRef(solution_->Map())));
   op_preconditioner_->set_operator_block(0, 0, op_preconditioner_elas_->global_operator());
   op_preconditioner_->set_operator_block(1, 1, op_mass_->global_operator());
 
@@ -375,17 +370,17 @@ NavierStokes_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // initialization
   if (num_itrs_ == 0) {
-    Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*soln_));
+    Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*solution_));
     udot->PutScalar(0.0);
-    bdf1_dae_->SetInitialState(t_old, soln_, udot);
+    bdf1_dae_->SetInitialState(t_old, solution_, udot);
 
-    UpdatePreconditioner(t_old, soln_, dt_);
+    UpdatePreconditioner(t_old, solution_, dt_);
     num_itrs_++;
   }
 
   // trying to make a step
   bool failed(false);
-  failed = bdf1_dae_->AdvanceStep(dt_, dt_next_, soln_);
+  failed = bdf1_dae_->AdvanceStep(dt_, dt_next_, solution_);
   if (failed) {
     dt_ = dt_next_;
 
@@ -403,7 +398,7 @@ NavierStokes_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   // commit solution (should we do it here ?)
-  bdf1_dae_->CommitSolution(dt_, soln_);
+  bdf1_dae_->CommitSolution(dt_, solution_);
   pressure_eval_->SetChanged();
   fluid_velocity_eval_->SetChanged();
 

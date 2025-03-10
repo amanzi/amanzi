@@ -91,6 +91,7 @@ TEST(ADVANCE_TWO_FRACTURES)
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
   TransportExplicit_PK TPK(plist, S, "transport", component_names);
+  TPK.parseParameterList();
   TPK.Setup();
   S->Setup();
   S->InitializeFields();
@@ -101,10 +102,11 @@ TEST(ADVANCE_TWO_FRACTURES)
   S->set_final_time(0.0);
 
   // modify the default state
+  std::string passwd("transport");
   auto& flux =
-    *S->GetW<CompositeVector>("volumetric_flow_rate", "state").ViewComponent("face", true);
+    *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face", true);
   const auto flux_map =
-    S->GetW<CompositeVector>("volumetric_flow_rate", "state").Map().Map("face", true);
+    S->GetW<CompositeVector>("volumetric_flow_rate", passwd).Map().Map("face", true);
 
   int dir;
   AmanziGeometry::Point velocity(1.0, 0.2, -0.1);
@@ -123,7 +125,7 @@ TEST(ADVANCE_TWO_FRACTURES)
       flux[0][g] = (velocity * normal) * dir;
     }
   }
-  S->GetRecordW("volumetric_flow_rate", "state").set_initialized();
+  S->GetRecordW("volumetric_flow_rate", passwd).set_initialized();
 
   // initialize the transport process kernel
   TPK.Initialize();
@@ -131,7 +133,7 @@ TEST(ADVANCE_TWO_FRACTURES)
   // advance the transport state
   double t_old(0.0), t_new(0.0), dt;
   auto& tcc =
-    *S->GetW<CompositeVector>("total_component_concentration", "state").ViewComponent("cell");
+    *S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
 
   while (t_new < 0.2) {
     dt = TPK.StableTimeStep(-1);

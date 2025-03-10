@@ -74,6 +74,7 @@ TEST(ADVANCE_WITH_SUBCYCLING)
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
   TransportExplicit_PK TPK(plist, S, "transport", component_names);
+  TPK.parseParameterList();
   TPK.Setup();
   S->Setup();
   S->InitializeFields();
@@ -82,7 +83,7 @@ TEST(ADVANCE_WITH_SUBCYCLING)
   S->set_intermediate_time(0.0);
 
   /* modify the default state for the problem at hand */
-  std::string passwd("state");
+  std::string passwd("transport");
   auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(1.0, 1.0);

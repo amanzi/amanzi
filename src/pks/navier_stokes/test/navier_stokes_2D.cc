@@ -62,8 +62,8 @@ TEST(NAVIER_STOKES_2D)
 
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<NavierStokes_PK> NSPK =
-    Teuchos::rcp(new NavierStokes_PK(plist, "navier stokes", S, soln));
-
+    Teuchos::rcp(new NavierStokes_PK(plist, "Navier Stokes", S, soln));
+  NSPK->parseParameterList();
   NSPK->Setup();
   S->Setup();
   S->InitializeFields();
@@ -101,14 +101,14 @@ TEST(NAVIER_STOKES_2D)
     auto fluid_velocity_eval =
       Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>(
         S->GetEvaluatorPtr("fluid_velocity", Tags::DEFAULT));
-    S->GetW<CompositeVector>("fluid_velocity", Tags::DEFAULT, "navier stokes") =
+    S->GetW<CompositeVector>("fluid_velocity", Tags::DEFAULT, "Navier Stokes") =
       *soln->SubVector(0)->Data();
     fluid_velocity_eval->SetChanged();
 
     auto pressure_eval =
       Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>(
         S->GetEvaluatorPtr("pressure", Tags::DEFAULT));
-    S->GetW<CompositeVector>("pressure", Tags::DEFAULT, "navier stokes") =
+    S->GetW<CompositeVector>("pressure", Tags::DEFAULT, "Navier Stokes") =
       *soln->SubVector(1)->Data();
     pressure_eval->SetChanged();
 

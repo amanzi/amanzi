@@ -90,7 +90,7 @@ lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
                                            Amanzi::AmanziMesh::Parallel_kind::ALL);
   int nnodes_wghost = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE,
                                            Amanzi::AmanziMesh::Parallel_kind::ALL);
-  std::string passwd("state");
+  std::string passwd("shallow water");
 
   auto& B_c =
     *S->GetW<CompositeVector>("surface-bathymetry", Tags::DEFAULT, passwd).ViewComponent("cell");
@@ -308,6 +308,7 @@ RunTest(int icase)
 
   // Create a shallow water PK
   ShallowWater_PK SWPK(sw_list, plist, S, soln);
+  SWPK.parseParameterList();
   SWPK.Setup();
   S->Setup();
   S->InitializeFields();
@@ -335,7 +336,7 @@ RunTest(int icase)
   iolist.get<std::string>("file name base", fname);
   OutputXDMF io(iolist, mesh, true, false);
 
-  std::string passwd("state");
+  std::string passwd("shallow water");
 
   int iter = 0;
   std::vector<double> dx, Linferror, L1error, L2error;

@@ -58,7 +58,7 @@ class DarcyProblem {
 
   DarcyProblem()
   {
-    passwd = "state";
+    passwd = "flow";
     comm = Amanzi::getDefaultComm();
     MyPID = comm->MyPID();
 
@@ -94,6 +94,7 @@ class DarcyProblem {
     Teuchos::ParameterList pk_tree("flow");
     Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
     DPK = new Darcy_PK(pk_tree, plist, S, soln);
+    DPK->parseParameterList();
     DPK->Setup();
     S->Setup();
     S->set_time(0.0);

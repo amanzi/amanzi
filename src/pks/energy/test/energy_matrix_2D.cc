@@ -83,6 +83,8 @@ TEST(ENERGY_2D_MATRIX)
   Teuchos::ParameterList pk_tree = plist->sublist("PKs").sublist("energy");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   EnergyTwoPhase_PK* EPK = new EnergyTwoPhase_PK(pk_tree, plist, S, soln);
+  EPK->parseParameterList();
+
   EPK->Setup();
   std::cout << "Passes EPK.Setup()" << std::endl;
   S->Setup();
@@ -98,7 +100,7 @@ TEST(ENERGY_2D_MATRIX)
 
   // modify the default state for the problem at hand
   // create the initial temperature function
-  std::string passwd("state");
+  std::string passwd("energy");
   auto& temperature =
     *S->GetW<CompositeVector>("temperature", Tags::DEFAULT, passwd).ViewComponent("cell");
   temperature.PutScalar(273.0);

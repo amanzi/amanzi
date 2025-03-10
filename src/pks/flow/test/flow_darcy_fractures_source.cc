@@ -69,6 +69,7 @@ TEST(DARCY_TWO_FRACTURES)
   Teuchos::ParameterList pk_tree("flow");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(pk_tree, plist, S, soln));
+  DPK->parseParameterList();
   DPK->Setup();
 
   S->Setup();
@@ -104,7 +105,7 @@ TEST(DARCY_TWO_FRACTURES)
   // double p_new = p_old + (T * Q - rho * std::log(1.0 + dadt * T / a)) * g / (Ss);
   double p_new = (p_old + T * Q * g / Ss) / (1.0 + dadt * T / a);
 
-  std::string passwd("state");
+  std::string passwd("flow");
   auto& p =
     *S->GetW<CompositeVector>("fracture-pressure", Tags::DEFAULT, passwd).ViewComponent("cell");
   for (int c = 0; c < p.MyLength(); c++) { CHECK_CLOSE(p_new, p[0][c], 0.01 * std::fabs(p_new)); }

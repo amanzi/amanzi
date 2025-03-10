@@ -68,6 +68,7 @@ runTest(std::string xmlfile)
   S->RegisterDomainMesh(mesh);
 
   TransportExplicit_PK TPK(plist, S, "transport", component_names);
+  TPK.parseParameterList();
   TPK.Setup();
   S->Setup();
   S->InitializeFields();
@@ -80,7 +81,7 @@ runTest(std::string xmlfile)
   int iter(0);
   double t_old(0.0), t_new(0.0), dt;
   auto tcc =
-    S->GetW<CompositeVector>("total_component_concentration", "state").ViewComponent("cell");
+    S->GetW<CompositeVector>("total_component_concentration", "transport").ViewComponent("cell");
 
   while (t_new < 0.5) {
     dt = TPK.StableTimeStep(-1);

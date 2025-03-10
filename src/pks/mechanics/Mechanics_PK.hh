@@ -75,7 +75,6 @@ class Mechanics_PK : public PK_PhysicalBDF {
   ~Mechanics_PK(){};
 
   // methods required for PK interface
-  virtual void parseParameterList() override {};
   virtual void Setup() override;
   virtual void Initialize() override;
 

@@ -79,14 +79,14 @@ Chemistry_PK::Setup()
   bool amanzi_physics = plist_->isSublist("physical models and assumptions");
 
   // require flow fields
-  S_->Require<CV_t, CVS_t>(poro_key_, Tags::DEFAULT, poro_key_)
+  S_->Require<CV_t, CVS_t>(poro_key_, Tags::DEFAULT)
     .SetMesh(mesh_)
     ->SetGhosted(false)
     ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   S_->RequireEvaluator(poro_key_, Tags::DEFAULT);
 
   if (!S_->HasRecord(saturation_key_, Tags::DEFAULT)) {
-    S_->Require<CV_t, CVS_t>(saturation_key_, Tags::DEFAULT, saturation_key_)
+    S_->Require<CV_t, CVS_t>(saturation_key_, Tags::DEFAULT)
       .SetMesh(mesh_)
       ->SetGhosted(false)
       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
@@ -95,14 +95,14 @@ Chemistry_PK::Setup()
   // REMOVE after #646 is fixed
   // meanwhile we check for the physics module via presence of a particular sublist
   if (!S_->HasRecord(saturation_key_, Tags::CURRENT) && !amanzi_physics) {
-    S_->Require<CV_t, CVS_t>(saturation_key_, Tags::CURRENT, saturation_key_)
+    S_->Require<CV_t, CVS_t>(saturation_key_, Tags::CURRENT)
       .SetMesh(mesh_)
       ->SetGhosted(false)
       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S_->RequireEvaluator(saturation_key_, Tags::CURRENT);
   }
 
-  S_->Require<CV_t, CVS_t>(fluid_den_key_, Tags::DEFAULT, fluid_den_key_)
+  S_->Require<CV_t, CVS_t>(fluid_den_key_, Tags::DEFAULT)
     .SetMesh(mesh_)
     ->SetGhosted(false)
     ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
@@ -110,12 +110,10 @@ Chemistry_PK::Setup()
 
   // require transport fields
   std::vector<std::string>::const_iterator it;
-  if (!S_->HasRecord(tcc_key_)) {
-    S_->Require<CV_t, CVS_t>(tcc_key_, tag_next_, passwd_, comp_names_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_components_);
-  }
+  S_->Require<CV_t, CVS_t>(tcc_key_, tag_next_, passwd_, comp_names_)
+    .SetMesh(mesh_)
+    ->SetGhosted(true)
+    ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_components_);
 
   // require minerals
   if (number_minerals_ > 0) {

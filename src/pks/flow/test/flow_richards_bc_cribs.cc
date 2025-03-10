@@ -77,6 +77,7 @@ TEST(FLOW_3D_RICHARDS)
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Richards_PK* RPK = new Richards_PK(pk_tree, plist, S, soln);
 
+  RPK->parseParameterList();
   RPK->Setup();
   S->Setup();
   S->InitializeFields();

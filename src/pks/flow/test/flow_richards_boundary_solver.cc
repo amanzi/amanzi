@@ -82,18 +82,20 @@ TEST(FLOW_BOUNDARY_SOLVER)
   Teuchos::RCP<TreeVector> soln2 = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Richards_PK> RPK2 = Teuchos::rcp(new Richards_PK(pk_tree, plist, S2, soln2));
 
+  RPK1->parseParameterList();
   RPK1->Setup();
   S1->Setup();
   S1->InitializeFields();
   S1->InitializeEvaluators();
 
+  RPK2->parseParameterList();
   RPK2->Setup();
   S2->Setup();
   S2->InitializeFields();
   S2->InitializeEvaluators();
 
   // modify the default state for the problem at hand
-  std::string passwd("state");
+  std::string passwd("flow");
   auto& K1 = *S1->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
 
   {

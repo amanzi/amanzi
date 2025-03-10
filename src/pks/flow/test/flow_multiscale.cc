@@ -74,13 +74,14 @@ RunTest(const std::string& filename, double tol)
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Richards_PK> RPK = Teuchos::rcp(new Richards_PK(pk_tree, plist, S, soln));
 
+  RPK->parseParameterList();
   RPK->Setup();
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
 
   // create the initial pressure function
-  std::string passwd("state");
+  std::string passwd("flow");
   auto& pf = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
   auto& pm = *S->GetW<CompositeVector>("pressure_msp", passwd).ViewComponent("cell");
 

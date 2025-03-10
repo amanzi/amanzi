@@ -48,7 +48,6 @@ MechanicsFracturedMatrix_PK::MechanicsFracturedMatrix_PK(
   // domain and primary evaluators
   domain_ = ec_list_->get<std::string>("domain name", "domain");
   displacement_key_ = Keys::getKey(domain_, "displacement");
-  requireAtNext(displacement_key_, Tags::DEFAULT, *S_, passwd_);
 
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = ec_list_->sublist("verbose object");
@@ -86,37 +85,31 @@ MechanicsFracturedMatrix_PK::Setup()
   auto cvs = Operators::CreateFracturedMatrixCVS(mesh_, mesh_fracture_, names[0], items);
 
   if (!S_->HasRecord(displacement_key_)) {
-    *S_->Require<CV_t, CVS_t>(displacement_key_, Tags::DEFAULT).SetMesh(mesh_)->SetGhosted(true) =
-      *cvs;
-
+    requireAtNext(displacement_key_, Tags::DEFAULT, *S_, passwd_) = *cvs;
     eval_ = Teuchos::rcp_static_cast<EvaluatorPrimary<CV_t, CVS_t>>(
       S_->GetEvaluatorPtr(displacement_key_, Tags::DEFAULT));
   }
 
   // aperture fields
   if (!S_->HasRecord(aperture_key_)) {
-    S_->Require<CV_t, CVS_t>(aperture_key_, Tags::DEFAULT)
+    requireAtNext(aperture_key_, Tags::DEFAULT, *S_)
       .SetMesh(mesh_fracture_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-
-    S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   }
 
   if (!S_->HasRecord(ref_aperture_key_)) {
     S_->Require<CV_t, CVS_t>(ref_aperture_key_, Tags::DEFAULT)
       .SetMesh(mesh_fracture_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   }
 
   if (!S_->HasRecord(compliance_key_)) {
-    S_->Require<CV_t, CVS_t>(compliance_key_, Tags::DEFAULT)
+    requireAtNext(compliance_key_, Tags::DEFAULT, *S_)
       .SetMesh(mesh_fracture_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-
-    S_->RequireEvaluator(compliance_key_, Tags::DEFAULT);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   }
 
   if (!S_->HasRecord(pressure_key_)) {
@@ -181,6 +174,7 @@ MechanicsFracturedMatrix_PK::FunctionalResidual(double t_old,
 void
 MechanicsFracturedMatrix_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
+  // SURELY THIS IS WRONG?!?!
   MechanicsSmallStrain_PK::Setup();
 
   // compute aperture as diference of twin face DoFs

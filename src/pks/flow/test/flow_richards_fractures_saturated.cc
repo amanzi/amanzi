@@ -79,6 +79,7 @@ TEST(RICHARDS_TWO_FRACTURES)
   Teuchos::ParameterList pk_tree("flow");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Richards_PK> RPK = Teuchos::rcp(new Richards_PK(pk_tree, plist, S, soln));
+  RPK->parseParameterList();
   RPK->Setup();
 
   S->Setup();

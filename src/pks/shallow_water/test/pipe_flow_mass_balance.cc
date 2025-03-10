@@ -73,6 +73,7 @@ TEST(PIPE_FLOW_1D)
 
   // create a pipe flow PK
   PipeFlow_PK PFPK(pf_list, plist, S, soln);
+  PFPK.parseParameterList();
   PFPK.Setup();
   S->Setup();
   S->InitializeFields();
@@ -99,7 +100,7 @@ TEST(PIPE_FLOW_1D)
   iolist.get<std::string>("file name base", "plot");
   auto io = Teuchos::rcp(new OutputXDMF(iolist, mesh, true, false));
 
-  std::string passwd("state");
+  std::string passwd("pipe flow");
 
   int iter = 0;
   double Tend = 1.0;
@@ -111,11 +112,11 @@ TEST(PIPE_FLOW_1D)
   int ncells_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
                                           Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
-  auto& wac_init = *S->GetW<CompositeVector>("pipe-wetted_area", Tags::DEFAULT, "state")
+  auto& wac_init = *S->GetW<CompositeVector>("pipe-wetted_area", Tags::DEFAULT, passwd)
                       .ViewComponent("cell"); // wetted area
-  auto& htc_init = *S->GetW<CompositeVector>("pipe-total_depth", Tags::DEFAULT, "state")
+  auto& htc_init = *S->GetW<CompositeVector>("pipe-total_depth", Tags::DEFAULT, passwd)
                       .ViewComponent("cell"); // total depth for junction
-  auto& Bc = *S->GetW<CompositeVector>("pipe-bathymetry", Tags::DEFAULT, "state")
+  auto& Bc = *S->GetW<CompositeVector>("pipe-bathymetry", Tags::DEFAULT, passwd)
                 .ViewComponent("cell"); // bathymetry for junction
   const auto& dirc = *S->Get<CompositeVector>("pipe-direction")
                         .ViewComponent("cell"); // direction to identify junction
@@ -166,9 +167,9 @@ TEST(PIPE_FLOW_1D)
     }
   }
 
-  auto& wac = *S->GetW<CompositeVector>("pipe-wetted_area", Tags::DEFAULT, "state")
+  const auto& wac = *S->Get<CompositeVector>("pipe-wetted_area", Tags::DEFAULT)
                  .ViewComponent("cell"); // wetted area
-  auto& htc = *S->GetW<CompositeVector>("pipe-total_depth", Tags::DEFAULT, "state")
+  const auto& htc = *S->Get<CompositeVector>("pipe-total_depth", Tags::DEFAULT)
                  .ViewComponent("cell"); // total depth for junction
 
   for (int c = 0; c < ncells_owned; ++c) {

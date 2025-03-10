@@ -72,6 +72,7 @@ TEST(MECHANICS_FRACTURED_MATRIX)
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::ParameterList pk_tree = plist->sublist("PK tree").sublist("mechanics matrix fracture");
   auto MPK = Teuchos::rcp(new MechanicsFracturedMatrix_PK(pk_tree, plist, S, soln));
+  MPK->parseParameterList();
 
   MPK->Setup();
   S->Setup();

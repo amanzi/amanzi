@@ -75,14 +75,6 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& pk_tree,
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(fp_list_, "time integrator");
 
-  // domain and primary evaluators
-  domain_ = fp_list_->template get<std::string>("domain name", "domain");
-
-  mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
-
-  requireAtNext(pressure_key_, Tags::DEFAULT, *S_, passwd_);
-  requireAtNext(mol_flowrate_key_, Tags::DEFAULT, *S_, passwd_);
-
   vo_ = Teuchos::null;
 }
 
@@ -150,10 +142,10 @@ Richards_PK::Setup()
   }
 
   {
-    S_->Require<CV_t, CVS_t>(pressure_key_, Tags::DEFAULT, passwd_)
+    requireAtNext(pressure_key_, Tags::DEFAULT, *S_, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->AddComponents(names, locations, ndofs);
+      ->SetComponents(names, locations, ndofs);
   }
 
   // Require conserved quantity.

@@ -50,7 +50,6 @@ MechanicsElasticity_PK::MechanicsElasticity_PK(Teuchos::ParameterList& pk_tree,
   // domain and primary evaluators
   domain_ = ec_list_->get<std::string>("domain name", "domain");
   displacement_key_ = Keys::getKey(domain_, "displacement");
-  requireAtNext(displacement_key_, Tags::DEFAULT, *S_, passwd_);
 
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = ec_list_->sublist("verbose object");

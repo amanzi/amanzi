@@ -66,14 +66,6 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& pk_tree,
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(fp_list_, "time integrator", true);
-
-  // domain and primary evaluators
-  domain_ = fp_list_->template get<std::string>("domain name", "domain");
-  pressure_key_ = Keys::getKey(domain_, "pressure");
-  mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
-
-  requireAtNext(pressure_key_, Tags::DEFAULT, *S_, passwd_);
-  requireAtNext(mol_flowrate_key_, Tags::DEFAULT, *S_, passwd_);
 }
 
 
@@ -130,7 +122,7 @@ Darcy_PK::Setup()
       ndofs.push_back(1);
     }
 
-    S_->Require<CV_t, CVS_t>(pressure_key_, Tags::DEFAULT, passwd_)
+    requireAtNext(pressure_key_, Tags::DEFAULT, *S_, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->AddComponents(names, locations, ndofs);

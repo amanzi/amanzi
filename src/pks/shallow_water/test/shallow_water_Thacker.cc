@@ -82,7 +82,7 @@ analytical_setIC(Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::RCP<State>&
   int ncells_owned =
     mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
-  std::string passwd("state");
+  std::string passwd("shallow water");
 
   auto& B_vec_c =
     *S->GetW<CompositeVector>("surface-bathymetry", Tags::DEFAULT, passwd).ViewComponent("cell");
@@ -241,6 +241,7 @@ RunTest(int icase)
 
     // create a shallow water PK
     ShallowWater_PK SWPK(pk_tree, plist, S, soln);
+    SWPK.parseParameterList();
     SWPK.Setup();
     S->Setup();
     S->InitializeFields();
@@ -268,7 +269,7 @@ RunTest(int icase)
     iolist.get<std::string>("file name base", fname);
     OutputXDMF io(iolist, mesh, true, false);
 
-    std::string passwd("state");
+    std::string passwd("shallow water");
 
     int iter = 0;
 
