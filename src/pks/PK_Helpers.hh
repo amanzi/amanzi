@@ -59,15 +59,6 @@ bool
 aliasVector(State& S, const Key& key, const Tag& target, const Tag& alias);
 
 // -----------------------------------------------------------------------------
-// Get a primary variable evaluator for a key at tag
-//
-// If or_die is true, throw an error if the xml has a sublist for this key.
-// -----------------------------------------------------------------------------
-Teuchos::RCP<EvaluatorPrimaryCV>
-requireEvaluatorPrimary(const Key& key, const Tag& tag, State& S, bool or_die = true);
-
-
-// -----------------------------------------------------------------------------
 // Mark primary variable evaluator as changed.
 //
 // If or_die is true, throw an error if GetEvaluator(key,tag) is not castable
@@ -75,6 +66,22 @@ requireEvaluatorPrimary(const Key& key, const Tag& tag, State& S, bool or_die = 
 // -----------------------------------------------------------------------------
 bool
 changedEvaluatorPrimary(const Key& key, const Tag& tag, State& S, bool or_die = true);
+
+
+// -----------------------------------------------------------------------------
+// Get a primary variable evaluator for a key at tag
+//
+// If or_die is true, throw an error if the xml has a sublist for this key.
+// -----------------------------------------------------------------------------
+CompositeVectorSpace&
+requireEvaluatorPrimary(const Key& key, const Tag& tag, State& S, const Key& owner, bool or_die = true);
+
+
+// -----------------------------------------------------------------------------
+// Require assignment evaluator, which allows tracking old data.
+// -----------------------------------------------------------------------------
+CompositeVectorSpace&
+requireEvaluatorAssign(const Key& key, const Tag& tag, State& S, const Key& owner);
 
 
 // -----------------------------------------------------------------------------
@@ -86,10 +93,10 @@ changedEvaluatorPrimary(const Key& key, const Tag& tag, State& S, bool or_die = 
 // separate copy of data, and an "assigment" evaluator.
 // -----------------------------------------------------------------------------
 CompositeVectorSpace&
-requireAtCurrent(const Key& key,
-                 const Tag& tag,
-                 State& S,
-                 const Key& owner = "");
+requireEvaluatorAtCurrent(const Key& key,
+                          const Tag& tag,
+                          State& S,
+                          const Key& owner = "");
 
 // -----------------------------------------------------------------------------
 // Require a vector and a primary variable evaluator at next tag(s).
@@ -104,58 +111,27 @@ requireAtCurrent(const Key& key,
 // is created.  This also implies managed_here.
 // -----------------------------------------------------------------------------
 CompositeVectorSpace&
-requireAtNext(const Key& key,
-              const Tag& tag,
-              State& S,
-              bool managed_here,
-              const Key& owner = "");
+requireEvaluatorAtNext(const Key& key,
+                       const Tag& tag,
+                       State& S,
+                       bool managed_here,
+                       const Key& owner = "");
+
 
 inline CompositeVectorSpace&
-requireAtNext(const Key& key,
+requireEvaluatorAtNext(const Key& key,
               const Tag& tag,
               State& S,
               const Key& owner = "") {
-  return requireAtNext(key, tag, S, false, owner);
+  return requireEvaluatorAtNext(key, tag, S, false, owner);
 }
 
-
-// -----------------------------------------------------------------------------
-// Require assignment evaluator, which allows tracking old data.
-// -----------------------------------------------------------------------------
-Teuchos::RCP<EvaluatorPrimaryCV>
-requireEvaluatorAssign(const Key& key, const Tag& tag, State& S);
 
 // -----------------------------------------------------------------------------
 // Assign if it is an assignment evaluator.
 // -----------------------------------------------------------------------------
 void
 assign(const Key& key, const Tag& tag_dest, const Tag& tag_source, State& S);
-
-
-void
-initializeCVField(State& S,
-                  const VerboseObject& vo,
-                  const Key& key,
-                  const Tag& tag,
-                  const Key& passwd,
-                  double default_val);
-
-
-void
-initializeCVField(State& S,
-                  const VerboseObject& vo,
-                  const Key& key,
-                  const Tag& tag,
-                  const Key& passwd,
-                  Teuchos::ParameterList& ic_plist);
-
-void
-initializeCVFieldFromCVField(State& S,
-                             const VerboseObject& vo,
-                             const Key& field0,
-                             const Key& field1,
-                             const Key& passwd,
-                             const Tag& tag = Tags::DEFAULT);
 
 
 void

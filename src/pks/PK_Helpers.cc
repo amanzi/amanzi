@@ -9,7 +9,7 @@
 
 //! A set of helper functions for doing common things in PKs.
 #include "MeshAlgorithms.hh"
-#include "pk_helpers.hh"
+#include "PK_Helpers.hh"
 
 namespace Amanzi {
 
@@ -95,39 +95,6 @@ getBoundaryDirection(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_ID f)
 
 
 // -----------------------------------------------------------------------------
-// Get a primary variable evaluator for a key at tag
-// -----------------------------------------------------------------------------
-Teuchos::RCP<EvaluatorPrimaryCV>
-requireEvaluatorPrimary(const Key& key, const Tag& tag, State& S, bool or_die)
-{
-  // first check, is there one already
-  if (S.HasEvaluator(key, tag)) {
-    // if so, make sure it is primary
-    Teuchos::RCP<Evaluator> eval = S.GetEvaluatorPtr(key, tag);
-    Teuchos::RCP<EvaluatorPrimaryCV> eval_pv = Teuchos::rcp_dynamic_cast<EvaluatorPrimaryCV>(eval);
-    if (or_die && eval_pv == Teuchos::null) {
-      Errors::Message msg;
-      msg << "Expected primary variable evaluator for " << key << " @ " << tag.get();
-      Exceptions::amanzi_throw(msg);
-    }
-    return eval_pv;
-  }
-
-  // if not, create one, only at this tag, not to be shared across tags.  By
-  // this, we mean we don't stick the "type" = "primary" back into the
-  // evaluator list -- this allows "copy evaluators" e.g. "water content at the
-  // old tag" to differ from the standard evalulator, e.g. "water content at
-  // the new tag" which is likely a secondary variable evaluator.
-  Teuchos::ParameterList plist(key);
-  plist.set("evaluator type", "primary variable");
-  plist.set("tag", tag.get());
-  auto eval_pv = Teuchos::rcp(new EvaluatorPrimaryCV(plist));
-  S.SetEvaluator(key, tag, eval_pv);
-  return eval_pv;
-}
-
-
-// -----------------------------------------------------------------------------
 // Marks a primary evaluator as changed.
 // -----------------------------------------------------------------------------
 bool
@@ -151,17 +118,52 @@ changedEvaluatorPrimary(const Key& key, const Tag& tag, State& S, bool or_die)
 
 
 // -----------------------------------------------------------------------------
+// Get a primary variable evaluator for a key at tag
+// -----------------------------------------------------------------------------
+CompositeVectorSpace&
+requireEvaluatorPrimary(const Key& key, const Tag& tag, State& S, const Key& owner, bool or_die)
+{
+  CompositeVectorSpace& cvs = S.Require<CompositeVector, CompositeVectorSpace>(key, tag, owner);
+
+  // first check, is there one already
+  if (S.HasEvaluator(key, tag)) {
+    // if so, make sure it is primary
+    Teuchos::RCP<Evaluator> eval = S.GetEvaluatorPtr(key, tag);
+    Teuchos::RCP<EvaluatorPrimaryCV> eval_pv = Teuchos::rcp_dynamic_cast<EvaluatorPrimaryCV>(eval);
+    if (or_die && eval_pv == Teuchos::null) {
+      Errors::Message msg;
+      msg << "Expected primary variable evaluator for " << key << " @ " << tag.get();
+      Exceptions::amanzi_throw(msg);
+    }
+
+  } else {
+    // if not, create one, only at this tag, not to be shared across tags.  By
+    // this, we mean we don't stick the "type" = "primary" back into the
+    // evaluator list -- this allows "copy evaluators" e.g. "water content at the
+    // old tag" to differ from the standard evalulator, e.g. "water content at
+    // the new tag" which is likely a secondary variable evaluator.
+    Teuchos::ParameterList plist(key);
+    plist.set("evaluator type", "primary variable");
+    plist.set("tag", tag.get());
+    auto eval_pv = Teuchos::rcp(new EvaluatorPrimaryCV(plist));
+    S.SetEvaluator(key, tag, eval_pv);
+  }
+  return cvs;
+}
+
+
+// -----------------------------------------------------------------------------
 // Require a vector and a primary variable evaluator at current tag(s).
 // -----------------------------------------------------------------------------
 CompositeVectorSpace&
-requireAtCurrent(const Key& key, const Tag& tag, State& S, const Key& owner)
+requireEvaluatorAtCurrent(const Key& key, const Tag& tag, State& S, const Key& owner)
 {
   CompositeVectorSpace& cvs = S.Require<CompositeVector, CompositeVectorSpace>(key, tag);
   if (!owner.empty()) {
     Key tag_current_owner = S.GetRecord(key, tag).owner();
     if (tag_current_owner.empty()) {
       S.Require<CompositeVector, CompositeVectorSpace>(key, tag, owner);
-      requireEvaluatorPrimary(key, tag, S);
+      requireEvaluatorPrimary(key, tag, S, owner);
     }
 
     if (tag != Tags::CURRENT) {
@@ -170,8 +172,7 @@ requireAtCurrent(const Key& key, const Tag& tag, State& S, const Key& owner)
       S.Require<CompositeVector, CompositeVectorSpace>(key, Tags::CURRENT);
       Key current_owner = S.GetRecord(key, Tags::CURRENT).owner();
       if (current_owner.empty()) {
-        S.Require<CompositeVector, CompositeVectorSpace>(key, Tags::CURRENT, owner);
-        requireEvaluatorAssign(key, Tags::CURRENT, S);
+        requireEvaluatorAssign(key, Tags::CURRENT, S, owner);
       }
     }
   } else {
@@ -185,142 +186,34 @@ requireAtCurrent(const Key& key, const Tag& tag, State& S, const Key& owner)
 // Require a vector and a primary variable evaluator at next tag(s).
 // -----------------------------------------------------------------------------
 CompositeVectorSpace&
-requireAtNext(const Key& key, const Tag& tag, State& S, bool managed_here, const Key& owner)
+requireEvaluatorAtNext(const Key& key, const Tag& tag, State& S, bool managed_here, const Key& owner)
 {
   CompositeVectorSpace& cvs = S.Require<CompositeVector, CompositeVectorSpace>(key, tag);
   if (!owner.empty()) {
     managed_here = true;
-    S.Require<CompositeVector, CompositeVectorSpace>(key, tag, owner);
-    requireEvaluatorPrimary(key, tag, S);
+    requireEvaluatorPrimary(key, tag, S, owner);
   } else {
     S.RequireEvaluator(key, tag);
   }
 
-  if (managed_here && tag != Tags::NEXT) { aliasVector(S, key, tag, Tags::NEXT); }
+  if (managed_here && tag != Tags::NEXT) {
+    aliasVector(S, key, tag, Tags::NEXT);
+  }
   return cvs;
-}
-
-
-// // -----------------------------------------------------------------------------
-// // Helper method to add an independent variable evaluator
-// // -----------------------------------------------------------------------------
-// void
-// AddDefaultIndependentEvaluator(const Teuchos::RCP<State>& S,
-//                                const Key& key,
-//                                const Tag& tag,
-//                                double val)
-// {
-//   Teuchos::ParameterList elist(key);
-//   elist.set<std::string>("evaluator type", "independent variable")
-//     .set<bool>("constant in time", true)
-//     .sublist("function")
-//     .sublist("ALL")
-//     .set<std::string>("region", "All")
-//     .set<std::string>("component", "*")
-//     .sublist("function")
-//     .sublist("function-constant")
-//     .set<double>("value", val);
-
-//   auto eval = Teuchos::rcp(new EvaluatorIndependentFunction(elist));
-//   S->SetEvaluator(key, tag, eval);
-// }
-
-
-
-// -----------------------------------------------------------------------------
-// Helper method to initialize a CV field
-// -----------------------------------------------------------------------------
-void
-initializeCVField(State& S,
-                  const VerboseObject& vo,
-                  const Key& key,
-                  const Tag& tag,
-                  const Key& passwd,
-                  double default_val)
-{
-  if (S.HasRecord(key, tag)) {
-    if (S.GetRecord(key, tag).owner() == passwd) {
-      if (!S.GetRecord(key, tag).initialized()) {
-        S.GetW<CompositeVector>(key, tag, passwd).PutScalar(default_val);
-        S.GetRecordW(key, tag, passwd).set_initialized();
-
-        if (vo.os_OK(Teuchos::VERB_MEDIUM)) {
-          Teuchos::OSTab tab = vo.getOSTab();
-          *vo.os() << "initialized \"" << key << "\" to value " << default_val << std::endl;
-        }
-      }
-    }
-  }
-}
-
-
-// -----------------------------------------------------------------------------
-// Helper method to initialize a CV field
-// -----------------------------------------------------------------------------
-void
-initializeCVField(State& S,
-                  const VerboseObject& vo,
-                  const Key& key,
-                  const Tag& tag,
-                  const Key& passwd,
-                  Teuchos::ParameterList& ic_plist)
-{
-  if (S.HasRecord(key, tag)) {
-    Record& record = S.GetRecordW(key, tag, passwd);
-    if (record.owner() == passwd) {
-      if (!record.initialized()) {
-        bool inited = record.Initialize(ic_plist);
-        if (inited) S.GetRecordW(key, tag, passwd).set_initialized();
-
-        if (vo.os_OK(Teuchos::VERB_MEDIUM)) {
-          Teuchos::OSTab tab = vo.getOSTab();
-          *vo.os() << "initialized \"" << key << std::endl;
-        }
-      }
-    }
-  }
-}
-
-
-// -----------------------------------------------------------------------------
-// Helper method to initialize a CV field from a CV field
-// -----------------------------------------------------------------------------
-void
-initializeCVFieldFromCVField(State& S,
-                             const VerboseObject& vo,
-                             const Key& field0,
-                             const Key& field1,
-                             const Key& passwd,
-                             const Tag& tag)
-{
-  if (S.HasRecord(field0, tag)) {
-    if (!S.GetRecord(field0, tag).initialized()) {
-      if (S.HasEvaluator(field1, tag)) S.GetEvaluator(field1, tag).Update(S, passwd);
-
-      const auto& f1 = S.Get<CompositeVector>(field1);
-      auto& f0 = S.GetW<CompositeVector>(field0, tag, passwd);
-      f0 = f1;
-      S.GetRecordW(field0, tag, passwd).set_initialized();
-
-      if (vo.os_OK(Teuchos::VERB_MEDIUM)) {
-        Teuchos::OSTab tab = vo.getOSTab();
-        *vo.os() << "initialized " << field0 << " to " << field1 << std::endl;
-      }
-    }
-  }
 }
 
 
 // -----------------------------------------------------------------------------
 // Require assignment evaluator, which allows tracking old data.
 // -----------------------------------------------------------------------------
-Teuchos::RCP<EvaluatorPrimaryCV>
-requireEvaluatorAssign(const Key& key, const Tag& tag, State& S)
+CompositeVectorSpace&
+requireEvaluatorAssign(const Key& key, const Tag& tag, State& S, const Key& owner)
 {
   // in the future, this will likely derive from primary instead of just being
   // primary.  This will allow confirming that the times are the same.
-  return requireEvaluatorPrimary(key, tag, S, false);
+  return requireEvaluatorPrimary(key, tag, S, owner, false);
 }
+
 
 // -----------------------------------------------------------------------------
 // Assign if it is an assignment evaluator.

@@ -36,7 +36,6 @@
 #include "exceptions.hh"
 #include "SimpleThermoDatabase.hh"
 #include "VerboseObject.hh"
-#include "pk_helpers.hh"
 
 // Chemistry
 #include "Amanzi_PK.hh"
@@ -175,7 +174,7 @@ Amanzi_PK::Initialize()
   // initialization using base class
   Chemistry_PK::Initialize();
 
-  initializeCVFieldFromCVField(*S_, *vo_, prev_saturation_key_, saturation_key_, passwd_);
+  InitializeCVFieldFromCVField(S_, *vo_, prev_saturation_key_, saturation_key_, passwd_);
 
   auto tcc = S_->GetPtrW<CV_t>(tcc_key_, Tags::DEFAULT, passwd_)->ViewComponent("cell", true);
 

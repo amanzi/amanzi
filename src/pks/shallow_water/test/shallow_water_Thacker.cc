@@ -82,7 +82,7 @@ analytical_setIC(Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::RCP<State>&
   int ncells_owned =
     mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
-  std::string passwd("state");
+  std::string passwd("");
 
   auto& B_vec_c =
     *S->GetW<CompositeVector>("surface-bathymetry", Tags::DEFAULT, passwd).ViewComponent("cell");

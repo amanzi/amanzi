@@ -100,7 +100,7 @@ vortex_2D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuchos::RCP<
   int ncells_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
                                           Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
-  std::string passwd("state");
+  std::string passwd("");
 
   const auto& B_vec_c = *S->Get<CompositeVector>("surface-bathymetry").ViewComponent("cell");
   auto& h_vec_c =

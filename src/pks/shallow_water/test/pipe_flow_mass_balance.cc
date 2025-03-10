@@ -111,11 +111,11 @@ TEST(PIPE_FLOW_1D)
   int ncells_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
                                           Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
-  auto& wac_init = *S->GetW<CompositeVector>("pipe-wetted_area", Tags::DEFAULT, "state")
+  auto& wac_init = *S->GetW<CompositeVector>("pipe-wetted_area", Tags::DEFAULT, "")
                       .ViewComponent("cell"); // wetted area
-  auto& htc_init = *S->GetW<CompositeVector>("pipe-total_depth", Tags::DEFAULT, "state")
+  auto& htc_init = *S->GetW<CompositeVector>("pipe-total_depth", Tags::DEFAULT, "")
                       .ViewComponent("cell"); // total depth for junction
-  auto& Bc = *S->GetW<CompositeVector>("pipe-bathymetry", Tags::DEFAULT, "state")
+  auto& Bc = *S->GetW<CompositeVector>("pipe-bathymetry", Tags::DEFAULT, "")
                 .ViewComponent("cell"); // bathymetry for junction
   const auto& dirc = *S->Get<CompositeVector>("pipe-direction")
                         .ViewComponent("cell"); // direction to identify junction
@@ -166,9 +166,9 @@ TEST(PIPE_FLOW_1D)
     }
   }
 
-  auto& wac = *S->GetW<CompositeVector>("pipe-wetted_area", Tags::DEFAULT, "state")
+  auto& wac = *S->GetW<CompositeVector>("pipe-wetted_area", Tags::DEFAULT, "")
                  .ViewComponent("cell"); // wetted area
-  auto& htc = *S->GetW<CompositeVector>("pipe-total_depth", Tags::DEFAULT, "state")
+  auto& htc = *S->GetW<CompositeVector>("pipe-total_depth", Tags::DEFAULT, "")
                  .ViewComponent("cell"); // total depth for junction
 
   for (int c = 0; c < ncells_owned; ++c) {

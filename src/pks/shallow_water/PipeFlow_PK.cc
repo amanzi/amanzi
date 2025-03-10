@@ -15,7 +15,6 @@
 #include "WaterDepthEvaluator.hh"
 #include "PressureHeadEvaluator.hh"
 #include "NumericalFluxFactory.hh"
-#include "pk_helpers.hh"
 #include "PK_DomainFunctionFactory.hh"
 
 namespace Amanzi {
@@ -60,10 +59,11 @@ PipeFlow_PK::Setup()
 
   // -- wetted angle
   if (!S_->HasRecord(wetted_angle_key_)) {
-    requireAtCurrent(wetted_angle_key_, Tags::DEFAULT, *S_, passwd_)
+    S_->Require<CV_t, CVS_t>(wetted_angle_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
+    AddDefaultPrimaryEvaluator(S_, wetted_angle_key_);
   }
 
   // -- pipe diameter

@@ -51,7 +51,7 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
                                            Amanzi::AmanziMesh::Parallel_kind::ALL);
   int nnodes_wghost = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE,
                                            Amanzi::AmanziMesh::Parallel_kind::ALL);
-  std::string passwd("state");
+  std::string passwd("");
 
   auto& B_c =
     *S->GetW<CompositeVector>("surface-bathymetry", Tags::DEFAULT, passwd).ViewComponent("cell");

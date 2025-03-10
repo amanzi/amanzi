@@ -14,7 +14,6 @@
 */
 
 #include "message.hh"
-#include "pk_helpers.hh"
 
 // Chemistry
 #include "Chemistry_PK.hh"
@@ -29,7 +28,8 @@ using CVS_t = CompositeVectorSpace;
 * Default constructor that initializes all pointers to NULL
 ****************************************************************** */
 Chemistry_PK::Chemistry_PK()
-  : number_minerals_(0),
+  : passwd_("state"),
+    number_minerals_(0),
     number_aqueous_kinetics_(0),
     number_sorption_sites_(0),
     using_sorption_(false),
@@ -45,6 +45,7 @@ Chemistry_PK::Chemistry_PK(Teuchos::ParameterList& pk_tree,
                            const Teuchos::RCP<TreeVector>& soln)
   : PK(pk_tree, glist, S, soln),
     PK_Physical(pk_tree, glist, S, soln),
+    passwd_("state"),
     glist_(glist),
     number_minerals_(0),
     number_aqueous_kinetics_(0),
@@ -62,7 +63,6 @@ Chemistry_PK::Chemistry_PK(Teuchos::ParameterList& pk_tree,
 void
 Chemistry_PK::parseParameterList()
 {
-  PK_Physical::parseParameterList();
   saturation_tolerance_ = plist_->get<double>("saturation tolerance", 1e-14);
 }
 
@@ -229,51 +229,51 @@ Chemistry_PK::Initialize()
   // Aqueous species
   if (number_aqueous_components_ > 0) {
     if (!S_->GetRecordW(tcc_key_, passwd_).initialized()) {
-      initializeCVField(*S_, *vo_, tcc_key_, tag_next_, passwd_, 0.0);
+      InitializeCVField(S_, *vo_, tcc_key_, tag_next_, passwd_, 0.0);
     }
     set_aqueous_components(
       S_->GetPtrW<CompositeVector>(tcc_key_, tag_next_, passwd_)->ViewComponent("cell", false));
 
-    initializeCVField(*S_, *vo_, primary_activity_coeff_key_, tag_next_, passwd_, 1.0);
-    initializeCVField(*S_, *vo_, free_ion_species_key_, tag_next_, passwd_, 1.0e-9);
+    InitializeCVField(S_, *vo_, primary_activity_coeff_key_, tag_next_, passwd_, 1.0);
+    InitializeCVField(S_, *vo_, free_ion_species_key_, tag_next_, passwd_, 1.0e-9);
 
     // Sorption sites: all will have a site density, but we can default to zero
     if (using_sorption_) {
-      initializeCVField(*S_, *vo_, total_sorbed_key_, tag_next_, passwd_, 0.0);
+      InitializeCVField(S_, *vo_, total_sorbed_key_, tag_next_, passwd_, 0.0);
     }
 
     // Sorption isotherms: Kd required, Langmuir and Freundlich optional
     if (using_sorption_isotherms_) {
-      initializeCVField(*S_, *vo_, isotherm_kd_key_, tag_next_, passwd_, -1.0);
-      initializeCVField(*S_, *vo_, isotherm_freundlich_n_key_, tag_next_, passwd_, 1.0);
-      initializeCVField(*S_, *vo_, isotherm_langmuir_b_key_, tag_next_, passwd_, 1.0);
+      InitializeCVField(S_, *vo_, isotherm_kd_key_, tag_next_, passwd_, -1.0);
+      InitializeCVField(S_, *vo_, isotherm_freundlich_n_key_, tag_next_, passwd_, 1.0);
+      InitializeCVField(S_, *vo_, isotherm_langmuir_b_key_, tag_next_, passwd_, 1.0);
     }
   }
 
   // Minerals: vol frac and surface areas
   if (number_minerals_ > 0) {
-    initializeCVField(*S_, *vo_, min_vol_frac_key_, tag_next_, passwd_, 0.0);
-    initializeCVField(*S_, *vo_, min_ssa_key_, tag_next_, passwd_, 1.0);
+    InitializeCVField(S_, *vo_, min_vol_frac_key_, tag_next_, passwd_, 0.0);
+    InitializeCVField(S_, *vo_, min_ssa_key_, tag_next_, passwd_, 1.0);
   }
 
   // Aqueous kinetics
   if (number_aqueous_kinetics_ > 0) {
-    initializeCVField(*S_, *vo_, first_order_decay_constant_key_, tag_next_, passwd_, 0.0);
+    InitializeCVField(S_, *vo_, first_order_decay_constant_key_, tag_next_, passwd_, 0.0);
   }
 
   // Ion exchange sites: default to 1
   if (number_ion_exchange_sites_ > 0) {
-    initializeCVField(*S_, *vo_, ion_exchange_sites_key_, tag_next_, passwd_, 1.0);
-    initializeCVField(*S_, *vo_, ion_exchange_ref_cation_conc_key_, tag_next_, passwd_, 1.0);
+    InitializeCVField(S_, *vo_, ion_exchange_sites_key_, tag_next_, passwd_, 1.0);
+    InitializeCVField(S_, *vo_, ion_exchange_ref_cation_conc_key_, tag_next_, passwd_, 1.0);
   }
 
   if (number_sorption_sites_ > 0) {
-    initializeCVField(*S_, *vo_, sorp_sites_key_, tag_next_, passwd_, 1.0);
-    initializeCVField(*S_, *vo_, surf_cfsc_key_, tag_next_, passwd_, 1.0);
+    InitializeCVField(S_, *vo_, sorp_sites_key_, tag_next_, passwd_, 1.0);
+    InitializeCVField(S_, *vo_, surf_cfsc_key_, tag_next_, passwd_, 1.0);
   }
 
   // auxiliary fields
-  initializeCVField(*S_, *vo_, alquimia_aux_data_key_, tag_next_, passwd_, 0.0);
+  InitializeCVField(S_, *vo_, alquimia_aux_data_key_, tag_next_, passwd_, 0.0);
 
   // miscaleneous controls
   initial_conditions_time_ = plist_->get<double>("initial conditions time", S_->get_time());

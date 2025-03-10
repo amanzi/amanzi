@@ -50,33 +50,51 @@ class PK_Physical : virtual public PK {
   virtual void State_to_Solution(const Tag& tag, TreeVector& soln) override;
   virtual void Solution_to_State(const TreeVector& soln, const Tag& tag) override;
 
-  virtual void parseParameterList() override;
-  virtual void Setup() override;
-  virtual void Initialize() override;
-
-
-  virtual void CommitStep(double t_old, double t_new, const Tag& tag_next) override;
-  virtual void FailStep(double t_old, double t_new, const Tag& tag_next) override;
-
   // access
   Key domain() { return domain_; }
   Teuchos::RCP<Debugger> debugger() { return db_; }
 
-  void ChangedSolutionPK(const Tag& tag) override;
-
  protected:
   // name of domain, associated mesh
-  Key domain_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  Key domain_;
 
   // solution and evaluator
-  Key key_;
-  Key passwd_;
+  std::string key_;
 
   // debugger for dumping vectors
   Teuchos::RCP<Debugger> db_;
 };
 
+
+// non-meber Helper method to initialize a CV field
+void
+InitializeCVField(const Teuchos::RCP<State>& S,
+                  const VerboseObject& vo,
+                  const Key& key,
+                  const Tag& tag,
+                  const Key& passwd,
+                  double default_val);
+
+void
+InitializeCVFieldFromCVField(const Teuchos::RCP<State>& S,
+                             const VerboseObject& vo,
+                             const Key& field0,
+                             const Key& field1,
+                             const Key& passwd,
+                             const Tag& tag = Tags::DEFAULT);
+
+// add default evaluators
+void
+AddDefaultPrimaryEvaluator(const Teuchos::RCP<State>& S,
+                           const Key& key,
+                           const Tag& tag = Tags::DEFAULT);
+
+void
+AddDefaultIndependentEvaluator(const Teuchos::RCP<State>& S,
+                               const Key& key,
+                               const Tag& tag = Tags::DEFAULT,
+                               double val = 0.0);
 
 } // namespace Amanzi
 
