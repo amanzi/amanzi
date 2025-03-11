@@ -218,6 +218,13 @@
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
 
+      <ParameterList name="timestep controller" type="ParameterList">
+        <Parameter name="timestep controller type" type="string" value="fixed"/>
+        <ParameterList name="timestep controller fixed parameters" type="ParameterList">
+          <Parameter name="timestep [s]" type="double" value="10000000000000000.0"/>
+        </ParameterList>
+      </ParameterList>
+
     </ParameterList>
 
     <ParameterList name="transport">

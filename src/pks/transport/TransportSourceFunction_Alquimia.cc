@@ -31,7 +31,7 @@ TransportSourceFunction_Alquimia::TransportSourceFunction_Alquimia(
 {
   // Check arguments.
   if (chem_engine_ != Teuchos::null) {
-    chem_engine_->InitState(alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
+    chem_engine_->InitState(beaker_.properties, beaker_.state, beaker_.aux_data, beaker_.aux_output);
     chem_engine_->GetPrimarySpeciesNames(tcc_names_);
   } else {
     Errors::Message msg;
@@ -58,7 +58,7 @@ TransportSourceFunction_Alquimia::TransportSourceFunction_Alquimia(
 ****************************************************************** */
 TransportSourceFunction_Alquimia::~TransportSourceFunction_Alquimia()
 {
-  chem_engine_->FreeState(alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
+  chem_engine_->FreeState(beaker_.properties, beaker_.state, beaker_.aux_data, beaker_.aux_output);
 }
 
 
@@ -95,16 +95,16 @@ TransportSourceFunction_Alquimia::Compute(double t_old, double t_new)
     int cell = it->first;
 
     // Dump the contents of the chemistry state into our Alquimia containers.
-    alquimia_pk_->CopyToAlquimia(cell, alq_mat_props_, alq_state_, alq_aux_data_);
+    alquimia_pk_->copyToAlquimia(cell, beaker_);
 
     // Enforce the condition.
-    chem_engine_->EnforceCondition(
-      cond_name, t_new, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
+    chem_engine_->EnforceCondition(cond_name, t_new,
+      beaker_.properties, beaker_.state, beaker_.aux_data, beaker_.aux_output);
 
     // Move the concentrations into place.
     std::vector<double>& values = it->second;
     for (int i = 0; i < values.size(); i++) {
-      values[i] = alq_state_.total_mobile.data[i] / domain_volume_;
+      values[i] = beaker_.state.total_mobile.data[i] / domain_volume_;
     }
   }
 }
