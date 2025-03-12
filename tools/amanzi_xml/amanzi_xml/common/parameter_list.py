@@ -132,8 +132,6 @@ class ParameterList(base.TeuchosBaseXML):
 
     def indent(self, ntabs, doublespace=False, doublespace_two=False):
         """Properly indent this list (and its Parameters/sublists) with [ntabs] tabs."""
-        self.sort()
-
         doublespace_sublists = self.get("name") in _doublespace
         doublespace_sublists_two_deep = self.get("name") in _doublespace_two
         postspace = doublespace or self.get("name") in _postspace
