@@ -233,23 +233,6 @@ CompositeVectorFunction::ComputeDotWithNormal_(double time,
       }
     }
   }
-
-  // // check divergence free
-  // cv->ScatterMasterToGhosted("face");
-  // {
-  //   const Epetra_MultiVector& dat_f = *cv->ViewComponent("face");
-
-  //   int ncells_owned =
-  //     cv->Mesh()->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
-  //   for (int c = 0; c != ncells_owned; ++c) {
-  //     auto [faces, dirs] = cv->Mesh()->getCellFacesAndDirections(c);
-  //     double flux_tot = 0.;
-  //     for (int i = 0; i != faces.size(); ++i) {
-  //       flux_tot += dat_f[0][faces[i]] * dirs[i];
-  //     }
-  //     AMANZI_ASSERT(std::abs(flux_tot) < 1.e-4);
-  //   }
-  // }
 }
 
 

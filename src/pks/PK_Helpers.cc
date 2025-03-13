@@ -70,27 +70,10 @@ getFaceOnBoundaryValue(AmanziMesh::Entity_ID f, const CompositeVector& u, const 
     return (*u.ViewComponent("face", false))[0][f];
   } else if (bcs.bc_model()[f] == Operators::OPERATOR_BC_DIRICHLET) {
     return bcs.bc_value()[f];
-    // } else if (u.HasComponent("boundary_face")) {
-    //   AmanziMesh::Entity_ID bf = getFaceOnBoundaryBoundaryFace(*u.Mesh(), f);
-    //   return (*u.ViewComponent("boundary_face",false))[0][bf];
   } else {
     auto c = getFaceOnBoundaryInternalCell(*u.Mesh(), f);
     return (*u.ViewComponent("cell", false))[0][c];
   }
-  return -1;
-}
-
-
-// -----------------------------------------------------------------------------
-// Get the directional int for a face that is on the boundary.
-// -----------------------------------------------------------------------------
-int
-getBoundaryDirection(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_ID f)
-{
-  auto cells = mesh.getFaceCells(f);
-  AMANZI_ASSERT(cells.size() == 1);
-  const auto& [faces, dirs] = mesh.getCellFacesAndDirections(cells[0]);
-  return dirs[std::find(faces.begin(), faces.end(), f) - faces.begin()];
 }
 
 
@@ -248,41 +231,17 @@ copyVectorToMeshCoordinates(const CompositeVector& vec, AmanziMesh::Mesh& mesh)
   const Epetra_MultiVector& nodes = *vec.ViewComponent("node", true);
   int ndim = mesh.getSpaceDimension();
 
-  Amanzi::AmanziMesh::Entity_ID_View node_ids("node_ids", nodes.MyLength());
-  Amanzi::AmanziMesh::Point_View new_positions("new_positions", nodes.MyLength());
+  AmanziMesh::Entity_ID_View node_ids("node_ids", nodes.MyLength());
+  AmanziMesh::Point_View new_positions("new_positions", nodes.MyLength());
   for (int n = 0; n != nodes.MyLength(); ++n) {
     node_ids[n] = n;
     if (mesh.getSpaceDimension() == 2) {
-      new_positions[n] = Amanzi::AmanziGeometry::Point{ nodes[0][n], nodes[1][n] };
+      new_positions[n] = AmanziGeometry::Point{ nodes[0][n], nodes[1][n] };
     } else {
-      new_positions[n] = Amanzi::AmanziGeometry::Point{ nodes[0][n], nodes[1][n], nodes[2][n] };
+      new_positions[n] = AmanziGeometry::Point{ nodes[0][n], nodes[1][n], nodes[2][n] };
     }
   }
-  Amanzi::AmanziMesh::deform(mesh, node_ids, new_positions);
-}
-
-int
-commMaxValLoc(const Comm_type& comm, const ValLoc& local, ValLoc& global)
-{
-  MpiComm_type const* mpi_comm = dynamic_cast<const MpiComm_type*>(&comm);
-  const MPI_Comm& mpi_comm_raw = mpi_comm->Comm();
-  return MPI_Allreduce(&local, &global, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mpi_comm_raw);
-}
-
-ValLoc
-maxValLoc(const Epetra_Vector& vec)
-{
-  ValLoc local{ 0., 0 };
-  for (int i = 0; i != vec.MyLength(); ++i) {
-    if (vec[i] > local.value) {
-      local.value = vec[i];
-      local.gid = vec.Map().GID(i);
-    }
-  }
-  ValLoc global{ 0., 0 };
-  int ierr = commMaxValLoc(vec.Comm(), local, global);
-  AMANZI_ASSERT(!ierr);
-  return global;
+  AmanziMesh::deform(mesh, node_ids, new_positions);
 }
 
 } // namespace Amanzi

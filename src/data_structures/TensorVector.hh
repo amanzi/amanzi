@@ -56,9 +56,9 @@ struct TensorVector {
 
   TensorVector& operator=(const TensorVector& other) = default;
 
-  void Zero() {
+  void PutScalar(double val) {
     for (auto& t : data) {
-      t.PutScalar(0.);
+      t.PutScalar(val);
     }
   }
 

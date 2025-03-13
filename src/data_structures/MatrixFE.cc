@@ -47,11 +47,11 @@ MatrixFE::MatrixFE(const Teuchos::RCP<const GraphFE>& graph) : graph_(graph)
 
 // zero for summation
 int
-MatrixFE::Zero()
+MatrixFE::PutScalar(double val)
 {
   int ierr(0);
-  ierr = matrix_->PutScalar(0.);
-  if (graph_->includes_offproc()) ierr |= offproc_matrix_->PutScalar(0.);
+  ierr = matrix_->PutScalar(val);
+  if (graph_->includes_offproc()) ierr |= offproc_matrix_->PutScalar(val);
   return ierr;
 }
 

@@ -293,7 +293,7 @@ Operator::AssembleMatrix()
   // override this because ApplyAssembled is not valid for them.
   assembly_complete_ = true;
 
-  Amat_->Zero();
+  Amat_->PutScalar(0.);
   AssembleMatrix(*smap_, *Amat_, 0, 0);
   Amat_->FillComplete();
 

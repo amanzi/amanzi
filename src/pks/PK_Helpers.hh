@@ -139,16 +139,4 @@ copyMeshCoordinatesToVector(const AmanziMesh::Mesh& mesh, CompositeVector& vec);
 void
 copyVectorToMeshCoordinates(const CompositeVector& vec, AmanziMesh::Mesh& mesh);
 
-
-// Compute pairs of value + location
-typedef struct ValLoc {
-  double value;
-  AmanziMesh::Entity_GID gid;
-} ENorm_t;
-
-int
-commMaxValLoc(const Comm_type& comm, const ValLoc& local, ValLoc& global);
-ValLoc
-maxValLoc(const Epetra_Vector& vec);
-
 } // namespace Amanzi
