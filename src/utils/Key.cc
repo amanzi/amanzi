@@ -400,16 +400,21 @@ getDerivKey(const KeyTag& var, const KeyTag& wrt)
 // Helper functions for reading keys and domains from parameter lists
 // -----------------------------------------------------------------------------
 Key
-cleanPListName(const std::string& name)
+cleanPListName(const std::string& name, const std::string& default_name)
 {
   auto pos = name.rfind("->");
+  std::string out;
   if (pos == name.size()) {
-    return "";
+    out = default_name;
   } else if (pos == std::string::npos) {
-    return name;
+    out = name;
   } else {
-    return name.substr(pos + 2, std::string::npos);
+    out = name.substr(pos + 2, std::string::npos);
   }
+
+  // ANONYMOUS is what Teuchos names a PList with an empty name
+  if (out == "ANONYMOUS") out = default_name;
+  return out;
 }
 
 

@@ -45,13 +45,6 @@ getFaceOnBoundaryValue(AmanziMesh::Entity_ID f,
 
 
 // -----------------------------------------------------------------------------
-// Get the directional int for a face that is on the boundary.
-// -----------------------------------------------------------------------------
-int
-getBoundaryDirection(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_ID f);
-
-
-// -----------------------------------------------------------------------------
 // Create an alias -- a pointer is copied such that Tag alias's evaluator and
 // data both point to Tag target's.
 // -----------------------------------------------------------------------------

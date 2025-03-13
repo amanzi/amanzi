@@ -256,12 +256,12 @@ getDerivKey(const KeyTag& var, const KeyTag& wrt);
 // Trilinos ParameterList includes the full tree of the name
 // (main->sublist->name), clean this and just return the final name.
 Key
-cleanPListName(const std::string& name);
+cleanPListName(const std::string& name, const std::string& default_name="");
 
 inline Key
-cleanPListName(const Teuchos::ParameterList& plist)
+cleanPListName(const Teuchos::ParameterList& plist, const std::string& default_name="")
 {
-  return cleanPListName(plist.name());
+  return cleanPListName(plist.name(), default_name);
 }
 
 // Read a domain name in a standard way, potentially with a dtype

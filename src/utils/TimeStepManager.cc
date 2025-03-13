@@ -57,7 +57,7 @@ TimeStepManager::TimeStepManager(Teuchos::ParameterList& plist)
     manual_override_ = true;
   }
 
-  vo_ = Teuchos::rcp(new VerboseObject(Keys::cleanPListName(plist), plist));
+  vo_ = Teuchos::rcp(new VerboseObject(Keys::cleanPListName(plist, "TimeStepManager"), plist));
 }
 
 
