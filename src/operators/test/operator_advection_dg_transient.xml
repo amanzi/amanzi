@@ -1,6 +1,5 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-
   <!-- MAPS -->
   <ParameterList name="maps">
     <Parameter name="method" type="string" value="Lagrange serendipity"/>
@@ -8,16 +7,13 @@
     <Parameter name="projector" type="string" value="L2"/>
     <Parameter name="map name" type="string" value="VEM"/>
   </ParameterList>
-
   <!--  OPERATORS: dual formulation -->
   <ParameterList name="PK operator">
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-
     <ParameterList name="flux operator">
       <Parameter name="matrix type" type="string" value="flux"/>
       <Parameter name="flux formula" type="string" value="upwind"/>
       <Parameter name="jump operator on test function" type="bool" value="true"/>
-
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="face"/>
         <Parameter name="method" type="string" value="dg modal"/>
@@ -25,11 +21,9 @@
         <Parameter name="dg basis" type="string" value="regularized"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="advection operator">
       <Parameter name="matrix type" type="string" value="advection"/>
       <Parameter name="gradient operator on test function" type="bool" value="true"/>
-
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
         <Parameter name="method" type="string" value="dg modal"/>
@@ -37,10 +31,8 @@
         <Parameter name="dg basis" type="string" value="regularized"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="inverse mass operator">
       <Parameter name="matrix type" type="string" value="mass inverse"/>
-
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
         <Parameter name="method" type="string" value="dg modal"/>
@@ -48,10 +40,8 @@
         <Parameter name="dg basis" type="string" value="regularized"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="reaction operator">
       <Parameter name="matrix type" type="string" value="mass"/>
-
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
         <Parameter name="method" type="string" value="dg modal"/>
@@ -60,16 +50,13 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <!--  OPERATORS: primal formulation -->
   <ParameterList name="PK operator: primal">
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-
     <ParameterList name="flux operator">
       <Parameter name="matrix type" type="string" value="flux"/>
       <Parameter name="flux formula" type="string" value="downwind"/>
       <Parameter name="jump operator on test function" type="bool" value="false"/>
-
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="face"/>
         <Parameter name="method" type="string" value="dg modal"/>
@@ -77,11 +64,9 @@
         <Parameter name="dg basis" type="string" value="regularized"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="advection operator">
       <Parameter name="matrix type" type="string" value="advection"/>
       <Parameter name="gradient operator on test function" type="bool" value="false"/>
-
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
         <Parameter name="method" type="string" value="dg modal"/>
@@ -89,10 +74,8 @@
         <Parameter name="dg basis" type="string" value="regularized"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="inverse mass operator">
       <Parameter name="matrix type" type="string" value="mass inverse"/>
-
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
         <Parameter name="method" type="string" value="dg modal"/>
@@ -100,10 +83,8 @@
         <Parameter name="dg basis" type="string" value="regularized"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="reaction operator">
       <Parameter name="matrix type" type="string" value="mass"/>
-
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
         <Parameter name="method" type="string" value="dg modal"/>
@@ -112,16 +93,13 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <!--  OPERATORS: primal formulation, gauss points -->
   <ParameterList name="PK operator: gauss points">
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-
     <ParameterList name="flux operator">
       <Parameter name="matrix type" type="string" value="flux"/>
       <Parameter name="flux formula" type="string" value="downwind at gauss points"/>
       <Parameter name="jump operator on test function" type="bool" value="false"/>
-
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="face"/>
         <Parameter name="method" type="string" value="dg modal"/>
@@ -129,11 +107,9 @@
         <Parameter name="dg basis" type="string" value="orthonormalized"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="advection operator">
       <Parameter name="matrix type" type="string" value="advection"/>
       <Parameter name="gradient operator on test function" type="bool" value="false"/>
-
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
         <Parameter name="method" type="string" value="dg modal"/>
@@ -141,10 +117,8 @@
         <Parameter name="dg basis" type="string" value="orthonormalized"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="inverse mass operator">
       <Parameter name="matrix type" type="string" value="mass inverse"/>
-
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
         <Parameter name="method" type="string" value="dg modal"/>
@@ -152,10 +126,8 @@
         <Parameter name="dg basis" type="string" value="orthonormalized"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="reaction operator">
       <Parameter name="matrix type" type="string" value="mass"/>
-
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
         <Parameter name="method" type="string" value="dg modal"/>
@@ -165,4 +137,3 @@
     </ParameterList>
   </ParameterList>
 </ParameterList>
-

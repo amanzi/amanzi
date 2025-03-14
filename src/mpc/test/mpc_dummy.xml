@@ -1,6 +1,5 @@
 <ParameterList>
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-
   <ParameterList name="checkpoint data">
     <Parameter name="file name base" type="string" value="chk_dummy"/>
     <Parameter name="file name digits" type="int" value="5"/>
@@ -13,44 +12,44 @@
   <ParameterList name="regions">
     <ParameterList name="Bottom Surface">
       <ParameterList name="region: box">
-        <Parameter name="high coordinate" type="Array(double)" value="{2.16000e+02, 0.0e+00}"/>
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0e+00, 0.0e+00}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{216.000, 0.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="RegionBottom">
       <ParameterList name="region: box">
-        <Parameter name="high coordinate" type="Array(double)" value="{2.16000e+02, 4.0e+01}"/>
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0e+00, 0.0e+00}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{216.000, 40.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="RegionMiddle">
       <ParameterList name="region: box">
-        <Parameter name="high coordinate" type="Array(double)" value="{2.16000e+02, 8.0e+01}"/>
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0e+00, 4.0e+01}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{216.000, 80.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 40.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="RegionTop">
       <ParameterList name="region: box">
-        <Parameter name="high coordinate" type="Array(double)" value="{2.16000e+02, 1.20000e+02}"/>
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0e+00, 8.0e+01}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{216.000, 120.000}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 80.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top Surface West">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0e+00, 1.20000e+02}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{7.20000e+01, 1.20000e+02}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 120.000}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{72.0000, 120.000}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Crib-1">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{7.20000e+01, 1.20000e+02}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{8.0e+01, 1.20000e+02}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{72.0000, 120.000}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{80.0, 120.000}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top Surface East">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{8.0e+01, 1.20000e+02}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{2.16000e+02, 1.20000e+02}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{80.0, 120.000}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{216.000, 120.000}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="All">
@@ -65,8 +64,8 @@
     <ParameterList name="unstructured">
       <ParameterList name="generate mesh">
         <Parameter name="number of cells" type="Array(int)" value="{54, 60}"/>
-        <Parameter name="domain low coordinate" type="Array(double)" value="{0.0e+00, 0.0e+00}"/>
-        <Parameter name="domain high coordinate" type="Array(double)" value="{2.16000e+02, 1.20000e+02}"/>
+        <Parameter name="domain low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="domain high coordinate" type="Array(double)" value="{216.000, 120.000}"/>
       </ParameterList>
       <ParameterList name="expert">
         <Parameter name="framework" type="string" value="MSTK"/>
@@ -77,7 +76,6 @@
   <ParameterList name="domain">
     <Parameter name="spatial dimension" type="int" value="2"/>
   </ParameterList>
-
   <ParameterList name="cycle driver">
     <ParameterList name="time periods">
       <ParameterList name="TP 0">
@@ -104,27 +102,30 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="time period control">
-      <Parameter name="start times" type="Array(double)" value="{ 6.0e+4, 6.5e+4, 6.9e+4}"/>
-      <Parameter name="initial timestep" type="Array(double)" value="{100.0, 50, 50}"/>
-      <Parameter name="maximum timestep" type="Array(double)" value="{1e+10, 1e+10, 1e+10 }"/>
+      <Parameter name="start times" type="Array(double)" value="{6.0e+4, 6.5e+4, 6.9e+4}"/>
+      <Parameter name="initial timestep" type="Array(double)" value="{100.0, 50.0, 50.0}"/>
+      <Parameter name="maximum timestep" type="Array(double)" value="{1e+10, 1e+10, 1e+10}"/>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{}"/>
     <ParameterList name="verbose object">
       <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="state">
     <ParameterList name="initial conditions">
+
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="101325.0"/>
       </ParameterList>
+
       <ParameterList name="gravity">
-        <Parameter name="value" type="Array(double)" value="{0.0, -9.80665e+00}"/>
+        <Parameter name="value" type="Array(double)" value="{0.0, -9.80665}"/>
       </ParameterList>
+
       <ParameterList name="const_fluid_density">
-        <Parameter name="value" type="double" value="9.9820e+02"/>
+        <Parameter name="value" type="double" value="998.20"/>
       </ParameterList>
+
     </ParameterList>
     <ParameterList name="mesh partitions">
       <ParameterList name="materials">
@@ -132,7 +133,6 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
       <Parameter name="preconditioning method" type="string" value="boomer amg"/>
@@ -141,7 +141,7 @@
         <Parameter name="tolerance" type="double" value="0.001"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>
         <Parameter name="cycle applications" type="int" value="5"/>
-        <Parameter name="strong threshold" type="double" value="5.0e-01"/>
+        <Parameter name="strong threshold" type="double" value="0.50"/>
         <Parameter name="cycle type" type="int" value="1"/>
         <Parameter name="coarsen type" type="int" value="0"/>
         <Parameter name="verbosity" type="int" value="0"/>
@@ -152,16 +152,15 @@
       <Parameter name="preconditioning method" type="string" value="block ilu"/>
       <Parameter name="discretization method" type="string" value="mfd: optimized for sparsity"/>
       <ParameterList name="block ilu parameters">
-        <Parameter name="fact: relax value" type="double" value="1.0e+00"/>
-        <Parameter name="fact: absolute threshold" type="double" value="0.0e+00"/>
-        <Parameter name="fact: relative threshold" type="double" value="1.0e+00"/>
+        <Parameter name="fact: relax value" type="double" value="1.0"/>
+        <Parameter name="fact: absolute threshold" type="double" value="0.0"/>
+        <Parameter name="fact: relative threshold" type="double" value="1.0"/>
         <Parameter name="fact: level-of-fill" type="int" value="0"/>
         <Parameter name="overlap" type="int" value="0"/>
         <Parameter name="schwarz: combine mode" type="string" value="Add"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="solvers">
     <ParameterList name="PCG with Hypre AMG">
       <Parameter name="iterative method" type="string" value="pcg"/>
@@ -174,9 +173,10 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="PKs">
+
     <ParameterList name="Dummy">
     </ParameterList>
+
   </ParameterList>
 </ParameterList>

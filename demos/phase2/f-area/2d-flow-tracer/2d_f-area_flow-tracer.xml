@@ -1,6 +1,5 @@
 <ParameterList name="Main">
   <Parameter name="Amanzi Input Format Version" type="string" value="1.2.1"/>
-
   <ParameterList name="General Description">
     <Parameter name="Model ID" type="string" value="Transient Richards"/>
     <Parameter name="Model name" type="string" value="ASCEM-F-Area"/>
@@ -9,24 +8,24 @@
     <Parameter name="Creation date" type="string" value="06.15.12"/>
     <Parameter name="Last modified" type="string" value="06.15.12"/>
   </ParameterList>
-
   <!-- Execution control -->
   <ParameterList name="Execution Control">
     <Parameter name="Flow Model" type="string" value="Richards"/>
-    <Parameter name="Transport Model" type="string" value="On"/> 
+    <Parameter name="Transport Model" type="string" value="On"/>
     <Parameter name="Chemistry Model" type="string" value="Off"/>
     <Parameter name="Verbosity" type="string" value="High"/>
     <ParameterList name="Time Integration Mode">
       <ParameterList name="Initialize To Steady">
         <Parameter name="Start" type="double" value="0.0"/>
-	<Parameter name="Switch" type="double" value="6.16635504e+10"/> <!-- Jan 1955 -->
-	<Parameter name="End" type="double" value="6.6271e+10"/> <!-- 2100 year-->
-   	<Parameter name="Steady Initial Time Step" type="double" value="100.0"/>
-	<Parameter name="Transient Initial Time Step" type="double" value="100.0"/>
+        <Parameter name="Switch" type="double" value="6.16635504e+10"/>
+        <!-- Jan 1955 -->
+        <Parameter name="End" type="double" value="6.6271e+10"/>
+        <!-- 2100 year-->
+        <Parameter name="Steady Initial Time Step" type="double" value="100.0"/>
+        <Parameter name="Transient Initial Time Step" type="double" value="100.0"/>
         <Parameter name="Use Picard" type="bool" value="true"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="Numerical Control Parameters">
       <ParameterList name="Unstructured Algorithm">
         <ParameterList name="Transport Process Kernel">
@@ -38,7 +37,7 @@
           <Parameter name="steady max iterations" type="int" value="50"/>
           <Parameter name="steady min iterations" type="int" value="8"/>
           <Parameter name="steady limit iterations" type="int" value="100"/>
-          <Parameter name="steady nonlinear tolerance" type="double" value="1.0e-5"/>
+          <Parameter name="steady nonlinear tolerance" type="double" value="0.000010"/>
           <Parameter name="steady timestep reduction factor" type="double" value="0.5"/>
           <Parameter name="steady timestep increase factor" type="double" value="2.0"/>
         </ParameterList>
@@ -46,7 +45,7 @@
           <Parameter name="transient max iterations" type="int" value="15"/>
           <Parameter name="transient min iterations" type="int" value="10"/>
           <Parameter name="transient limit iterations" type="int" value="20"/>
-          <Parameter name="transient nonlinear tolerance" type="double" value="1.0e-5"/>
+          <Parameter name="transient nonlinear tolerance" type="double" value="0.000010"/>
           <Parameter name="transient max timestep" type="double" value="6.0e+10"/>
           <Parameter name="transient max preconditioner lag iterations" type="int" value="20"/>
           <Parameter name="transient timestep reduction factor" type="double" value="0.8"/>
@@ -62,7 +61,7 @@
           <Parameter name="pseudo time integrator picard convergence tolerance" type="double" value="1e-9"/>
           <Parameter name="pseudo time integrator picard maximum number of iterations" type="int" value="400"/>
         </ParameterList>
-          <ParameterList name="Preconditioners">
+        <ParameterList name="Preconditioners">
           <ParameterList name="Trilinos ML">
             <Parameter name="pseudo time integrator preconditioner" type="string" value="Trilinos ML"/>
             <Parameter name="ML cycle applications" type="int" value="3"/>
@@ -71,11 +70,9 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="Domain">
     <Parameter name="Spatial Dimension" type="int" value="2"/>
   </ParameterList>
-         
   <!-- Mesh in exodus format -->
   <ParameterList name="Mesh">
     <ParameterList name="Unstructured">
@@ -90,133 +87,130 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-               
   <!-- Regions: Each region is coincident  with those specified in the exodus II format. -->
   <ParameterList name="Regions">
     <ParameterList name="Upper aquifer">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label"  type="string" value="50000"/>
-        <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
+        <Parameter name="Label" type="string" value="50000"/>
+        <Parameter name="File" type="string" value="f_area_mesh_2D.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Cell"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Lower aquifer">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label"  type="string" value="30000"/>
-        <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
+        <Parameter name="Label" type="string" value="30000"/>
+        <Parameter name="File" type="string" value="f_area_mesh_2D.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Cell"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Tan clay">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label"  type="string" value="40000"/>
-        <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
+        <Parameter name="Label" type="string" value="40000"/>
+        <Parameter name="File" type="string" value="f_area_mesh_2D.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Cell"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Gordon confining">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label"  type="string" value="20000"/>
-        <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
+        <Parameter name="Label" type="string" value="20000"/>
+        <Parameter name="File" type="string" value="f_area_mesh_2D.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Cell"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Gordon aquifer">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label"  type="string" value="10000"/>
-        <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
+        <Parameter name="Label" type="string" value="10000"/>
+        <Parameter name="File" type="string" value="f_area_mesh_2D.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Cell"/>
       </ParameterList>
     </ParameterList>
-
-<!-- This face is corresponding to natural recharge (left side) (Bc1) -->
+    <!-- This face is corresponding to natural recharge (left side) (Bc1) -->
     <ParameterList name="Natural recharge (left)">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label"  type="string" value="1"/>
-        <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
+        <Parameter name="Label" type="string" value="1"/>
+        <Parameter name="File" type="string" value="f_area_mesh_2D.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
     </ParameterList>
-<!-- This face is corresponding to natural recharge (right side) (Bc3) -->
+    <!-- This face is corresponding to natural recharge (right side) (Bc3) -->
     <ParameterList name="Natural recharge (right)">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label"  type="string" value="3"/>
-        <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
+        <Parameter name="Label" type="string" value="3"/>
+        <Parameter name="File" type="string" value="f_area_mesh_2D.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
     </ParameterList>
-<!-- This face is corresponding to Seepage basin (Bc2) -->
+    <!-- This face is corresponding to Seepage basin (Bc2) -->
     <ParameterList name="Seepage basin">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label"  type="string" value="2"/>
-        <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
+        <Parameter name="Label" type="string" value="2"/>
+        <Parameter name="File" type="string" value="f_area_mesh_2D.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
     </ParameterList>
-<!-- This face is corresponding to seepage face (Bc4) -->
+    <!-- This face is corresponding to seepage face (Bc4) -->
     <ParameterList name="Seepage face">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label"  type="string" value="4"/>
-        <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
+        <Parameter name="Label" type="string" value="4"/>
+        <Parameter name="File" type="string" value="f_area_mesh_2D.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
     </ParameterList>
-<!-- This face is corresponding to UTRA (UUTRA + TCCZ + LUTRA) upstream side (Bc8) -->
+    <!-- This face is corresponding to UTRA (UUTRA + TCCZ + LUTRA) upstream side (Bc8) -->
     <ParameterList name="UTRA upstream">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label"  type="string" value="8"/>
-        <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
+        <Parameter name="Label" type="string" value="8"/>
+        <Parameter name="File" type="string" value="f_area_mesh_2D.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
     </ParameterList>
-<!-- This face is corresponding to UTRA (UUTRA + TCCZ + LUTRA) downstream side (Bc5) -->
+    <!-- This face is corresponding to UTRA (UUTRA + TCCZ + LUTRA) downstream side (Bc5) -->
     <ParameterList name="UTRA downstream">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label"  type="string" value="5"/>
-        <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
+        <Parameter name="Label" type="string" value="5"/>
+        <Parameter name="File" type="string" value="f_area_mesh_2D.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
     </ParameterList>
-<!-- This face is corresponding to Gordon aquifer (GA) upstream side (Bc7) -->
+    <!-- This face is corresponding to Gordon aquifer (GA) upstream side (Bc7) -->
     <ParameterList name="GA upstream">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label"  type="string" value="7"/>
-        <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
+        <Parameter name="Label" type="string" value="7"/>
+        <Parameter name="File" type="string" value="f_area_mesh_2D.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
     </ParameterList>
-<!-- This face is corresponding to Gordon aquifer (GA) downstream side (Bc6) -->
+    <!-- This face is corresponding to Gordon aquifer (GA) downstream side (Bc6) -->
     <ParameterList name="GA downstream">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label"  type="string" value="6"/>
-        <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
+        <Parameter name="Label" type="string" value="6"/>
+        <Parameter name="File" type="string" value="f_area_mesh_2D.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
     </ParameterList>
-<!-- This face is corresponding to vadose zone (Bc9, no flux) -->
+    <!-- This face is corresponding to vadose zone (Bc9, no flux) -->
     <ParameterList name="VZ">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label"  type="string" value="9"/>
-        <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
+        <Parameter name="Label" type="string" value="9"/>
+        <Parameter name="File" type="string" value="f_area_mesh_2D.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="Material Properties">
     <!-- Upper aquifer (UUTRA) -->
     <ParameterList name="Mesh block 1">
@@ -224,83 +218,79 @@
         <Parameter name="Value" type="double" value="0.39"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="y" type="double" value="5.0e-12"/> 
+        <Parameter name="y" type="double" value="5.0e-12"/>
         <Parameter name="x" type="double" value="5.0e-12"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha" type="double" value="4.0e-4"/> 
+        <Parameter name="alpha" type="double" value="0.00040"/>
         <Parameter name="Sr" type="double" value="0.18"/>
         <Parameter name="m" type="double" value="0.27"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{Upper aquifer}"/>
     </ParameterList>
-
-    <!-- Lower aquifer (LUTRA) -->           
+    <!-- Lower aquifer (LUTRA) -->
     <ParameterList name="Mesh block 2">
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.39"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="y" type="double" value="5.0e-12"/> 
+        <Parameter name="y" type="double" value="5.0e-12"/>
         <Parameter name="x" type="double" value="5.0e-12"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha" type="double" value="5.1e-5"/> 
+        <Parameter name="alpha" type="double" value="0.000051"/>
         <Parameter name="Sr" type="double" value="0.41"/>
         <Parameter name="m" type="double" value="0.5"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{Lower aquifer}"/>
     </ParameterList>
-
     <!-- Tan clay (TCCZ) -->
     <ParameterList name="Mesh block 3">
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.39"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="y" type="double" value="1.98e-14"/> 
-        <Parameter name="x" type="double" value="1.98e-14"/> 
+        <Parameter name="y" type="double" value="1.98e-14"/>
+        <Parameter name="x" type="double" value="1.98e-14"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha" type="double" value="5.1e-5"/> 
+        <Parameter name="alpha" type="double" value="0.000051"/>
         <Parameter name="Sr" type="double" value="0.39"/>
         <Parameter name="m" type="double" value="0.5"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{Tan clay}"/>
     </ParameterList>
-
     <!-- Gordon confining (GC) -->
     <ParameterList name="Mesh block 4">
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.39"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="y" type="double" value="1.0e-17"/> 
+        <Parameter name="y" type="double" value="1.0e-17"/>
         <Parameter name="x" type="double" value="1.0e-17"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha" type="double" value="5.1e-5"/>
+        <Parameter name="alpha" type="double" value="0.000051"/>
         <Parameter name="Sr" type="double" value="0.39"/>
         <Parameter name="m" type="double" value="0.5"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{Gordon confining}"/>
     </ParameterList>
-
     <!-- Gordon aquifer (GA) -->
     <ParameterList name="Mesh block 5">
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.39"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="y" type="double" value="1.0e-17"/> 
+        <Parameter name="y" type="double" value="1.0e-17"/>
         <Parameter name="x" type="double" value="1.0e-17"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha" type="double" value="5.1e-5"/>
+        <Parameter name="alpha" type="double" value="0.000051"/>
         <Parameter name="Sr" type="double" value="0.39"/>
         <Parameter name="m" type="double" value="0.5"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
@@ -308,16 +298,14 @@
       <Parameter name="Assigned Regions" type="Array(string)" value="{Gordon aquifer}"/>
     </ParameterList>
   </ParameterList>
-  
-     
   <ParameterList name="Phase Definitions">
     <ParameterList name="Aqueous">
       <ParameterList name="Phase Properties">
         <ParameterList name="Viscosity: Uniform">
-          <Parameter name="Viscosity" type="double" value="1.0e-3"/>
+          <Parameter name="Viscosity" type="double" value="0.0010"/>
         </ParameterList>
         <ParameterList name="Density: Uniform">
-          <Parameter name="Density" type="double" value="997.16e0"/>
+          <Parameter name="Density" type="double" value="997.16"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="Phase Components">
@@ -327,17 +315,15 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
-  
   <ParameterList name="Initial Conditions">
     <ParameterList name="IC For Domain">
       <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
       <ParameterList name="IC: Linear Pressure">
         <Parameter name="Phase" type="string" value="Aqueous"/>
         <Parameter name="Reference Value" type="double" value="101325.0"/>
-        <Parameter name="Reference Coordinate" type="Array(double)" value="{0., 60.0}"/>
+        <Parameter name="Reference Coordinate" type="Array(double)" value="{0.0, 60.0}"/>
         <!-- SABEA: Units for the gradient are Pa/m = rho*g = 998.32 kg/m^3 * 9.81 m/s^2 -->
-        <Parameter name="Gradient Value" type="Array(double)" value="{0., -9793.5192}"/>
+        <Parameter name="Gradient Value" type="Array(double)" value="{0.0, -9793.5192}"/>
       </ParameterList>
       <ParameterList name="Solute IC">
         <ParameterList name="Aqueous">
@@ -346,30 +332,29 @@
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="0.0"/>
               </ParameterList>
-            </ParameterList>     
+            </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
-
-<!-- Boundary conditions -->
+  <!-- Boundary conditions -->
   <ParameterList name="Boundary Conditions">
-<!-- Boundary corresponding to the Natural recharge (left side) -->
+    <!-- Boundary corresponding to the Natural recharge (left side) -->
     <ParameterList name="BC for natural  recharge (left)">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Natural recharge (left)}"/>
       <ParameterList name="BC: Flux">
-        <Parameter name="Times" type="Array(double)" value="{0., 3.1536e9}"/>
+        <Parameter name="Times" type="Array(double)" value="{0.0, 3.1536e+9}"/>
         <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Inward Mass Flux" type="Array(double)" value="{4.743e-6, 4.743e-6}"/>  <!-- 0.15 [m3 m-2 yr-1] => [kg m-2 s-1] -->
+        <Parameter name="Inward Mass Flux" type="Array(double)" value="{0.000004743, 0.000004743}"/>
+        <!-- 0.15 [m3 m-2 yr-1] => [kg m-2 s-1] -->
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
             <ParameterList name="3H">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0., 3.1536e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 3.1536e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{0.0, 0.0}"/>
               </ParameterList>
@@ -378,21 +363,21 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
-
-<!-- Boundary corresponding to the Natural recharge (right side) -->
+    <!-- Boundary corresponding to the Natural recharge (right side) -->
     <ParameterList name="BC for natural  recharge (right)">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Natural recharge (right)}"/>
       <ParameterList name="BC: Flux">
-        <Parameter name="Times" type="Array(double)" value="{0., 3.1536e9}"/>
+        <Parameter name="Times" type="Array(double)" value="{0.0, 3.1536e+9}"/>
         <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Inward Mass Flux" type="Array(double)" value="{4.743e-6, 4.743e-6}"/>  <!-- 0.15 [m3 m-2 yr-1] -->
+        <Parameter name="Inward Mass Flux" type="Array(double)" value="{0.000004743, 0.000004743}"/>
+        <!-- 0.15 [m3 m-2 yr-1] -->
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
             <ParameterList name="3H">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0., 3.1536e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 3.1536e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{0.0, 0.0}"/>
               </ParameterList>
@@ -401,25 +386,25 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
-       
-<!-- Boundary corresponding to the seepage basin -->
+    <!-- Boundary corresponding to the seepage basin -->
     <ParameterList name="BC for F-3 basin">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Seepage basin}"/>
       <ParameterList name="BC: Flux">
-         <!-- 
+        <!-- 
              1955.0 [y] = 6.16635504e+10 [s]   - basin turns on
              1988.0 [y] = 6.27365088e+10 [s]   - basin turns off 
         -->
         <Parameter name="Times" type="Array(double)" value="{0.0, 6.16635504e+10, 6.27365088e+10}"/>
-        <Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
-        <Parameter name="Inward Mass Flux" type="Array(double)" value="{4.743e-6, 1.2648e-4, 4.743e-6}"/>  <!-- 4 [m3 m-2 yr-1] -->
+        <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
+        <Parameter name="Inward Mass Flux" type="Array(double)" value="{0.000004743, 0.00012648, 0.000004743}"/>
+        <!-- 4 [m3 m-2 yr-1] -->
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
             <ParameterList name="3H">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0., 3.1536e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 3.1536e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{2.17e-9, 2.17e-9}"/>
               </ParameterList>
@@ -428,21 +413,21 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
-
-<!-- Boundary corresponding to the seepage face -->
+    <!-- Boundary corresponding to the seepage face -->
     <ParameterList name="BC for seepage face">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Seepage face, Natural recharge (right)}"/>
       <ParameterList name="BC: Seepage">
-        <Parameter name="Times" type="Array(double)" value="{0., 3.1536e9}"/>
+        <Parameter name="Times" type="Array(double)" value="{0.0, 3.1536e+9}"/>
         <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Inward Mass Flux" type="Array(double)" value="{4.743e-6, 4.743e-6}"/>  <!-- 0.15 [m3 m-2 yr-1] -->
+        <Parameter name="Inward Mass Flux" type="Array(double)" value="{0.000004743, 0.000004743}"/>
+        <!-- 0.15 [m3 m-2 yr-1] -->
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
             <ParameterList name="3H">
               <ParameterList name="BC: Outflow">
-                <Parameter name="Times" type="Array(double)" value="{0., 0.}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 0.0}"/>
                 <Parameter name="Time functions" type="Array(string)" value="{Constant}"/>
               </ParameterList>
             </ParameterList>
@@ -451,53 +436,45 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
-       
   <ParameterList name="Output">
-
     <!-- define some handy cycle macros -->
     <ParameterList name="Cycle Macros">
       <ParameterList name="Every-1000-steps">
         <Parameter name="Start_Period_Stop" type="Array(int)" value="{0, 1000, -1}"/>
       </ParameterList>
     </ParameterList>
-
     <!-- define some handy time macros -->
     <ParameterList name="Time Macros">
-
       <ParameterList name="Every-two-month">
-        <Parameter name="Start_Period_Stop" type="Array(double)" value="{6.16635504e+10, 5.184e+06, 6.6271e+10}"/>
+        <Parameter name="Start_Period_Stop" type="Array(double)" value="{6.16635504e+10, 5.184e+6, 6.6271e+10}"/>
       </ParameterList>
-
       <ParameterList name="Active Basin">
-	<!--
+        <!--
 	    Start:    t=1955.00  [y] = 6.16635504e+10 [s]
 	    Period:  dt=   2.00  [m] = 5.18400000e+06 [s]
 	    End:      t=1988.00  [y] = 6.27365088e+10 [s]
 	  -->
-	<Parameter name="Start_Period_Stop" type="Array(double)" value="{6.16635504e+10, 5.18400000e+06, 6.27365088e+10}"/>
+        <Parameter name="Start_Period_Stop" type="Array(double)" value="{6.16635504e+10, 5184000.00, 6.27365088e+10}"/>
       </ParameterList>
       <ParameterList name="Plume evolution: every year">
-	<!--
+        <!--
 	    Start:    t=1989.00  [y] = 6.276806640e+10 [s]
 	    Period:  dt=   1.00  [y] = 3.155760000e+7  [s]
 	    End:      t=2010.00  [y] = 6.343077600e+10 [s]
 	  -->
-	<Parameter name="Start_Period_Stop" type="Array(double)" value="{6.276806640e+10, 3.155760000e+7, 6.343077600e+10}"/>
+        <Parameter name="Start_Period_Stop" type="Array(double)" value="{6.276806640e+10, 31557600.00, 6.343077600e+10}"/>
       </ParameterList>
       <ParameterList name="Plume evolution: every five years">
-	<!--
+        <!--
 	    Start:    t=2015.00  [y] = 6.358856400e+10 [s]
 	    Period:  dt=   5.00  [y] = 1.577880000e+8  [s]
 	    End:      t=2100.00  [y] = 6.627096000e+10 [s]
 	  -->
-	<Parameter name="Start_Period_Stop" type="Array(double)" value="{6.358856400e+10, 1.577880000e+8, 6.627096000e+10}"/>
+        <Parameter name="Start_Period_Stop" type="Array(double)" value="{6.358856400e+10, 157788000.0, 6.627096000e+10}"/>
       </ParameterList>
-      
     </ParameterList>
-
-<!-- For now we have desactivated the observation data -->
-<!--
+    <!-- For now we have desactivated the observation data -->
+    <!--
     <ParameterList name="Observation Data">
       <Parameter name="Observation Output Filename" type="string" value="observation.out"/>
       <ParameterList name="output01">
@@ -508,16 +485,13 @@
       </ParameterList>
     </ParameterList>
 -->
-
     <ParameterList name="Visualization Data">
       <Parameter name="File Name Base" type="string" value="plot"/>
       <Parameter name="Time Macros" type="Array(string)" value="{Active Basin, Plume evolution: every year, Plume evolution: every five years}"/>
     </ParameterList>
-
     <ParameterList name="Checkpoint Data">
       <Parameter name="File Name Base" type="string" value="chkpoint"/>
       <Parameter name="Cycle Macro" type="string" value="Every-1000-steps"/>
     </ParameterList>
-  </ParameterList>     
-</ParameterList> 
-       
+  </ParameterList>
+</ParameterList>

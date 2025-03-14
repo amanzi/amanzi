@@ -1,6 +1,5 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-
   <ParameterList name="mesh">
     <ParameterList name="unstructured">
       <ParameterList name="Read">
@@ -12,8 +11,8 @@
         <Parameter name="partitioner" type="string" value="zoltan_rcb"/>
       </ParameterList>
     </ParameterList>
-  </ParameterList>    
-   
+  </ParameterList>
+
   <!--  REGIONS  -->
   <ParameterList name="regions">
     <ParameterList name="Universe">
@@ -22,20 +21,20 @@
     </ParameterList>
     <ParameterList name="ALL">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0,1.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0, 1.0, 1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="fracture 1">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{0.0,0.0,0.5}"/>
-        <Parameter name="normal" type="Array(double)" value="{0.0,0.0,1.0}"/>
+        <Parameter name="point" type="Array(double)" value="{0.0, 0.0, 0.5}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0, 0.0, 1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="fracture 2">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{0.0,0.5,0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{0.0,1.0,0.0}"/>
+        <Parameter name="point" type="Array(double)" value="{0.0, 0.5, 0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0, 1.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="fractures">
@@ -49,22 +48,19 @@
   <!--  OPERATORS  -->
   <ParameterList name="PK operator">
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-
     <ParameterList name="diffusion operator">
       <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-      <Parameter name="schema" type="Array(string)" value="{cell,face}"/>
+      <Parameter name="schema" type="Array(string)" value="{cell, face}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
       <Parameter name="use manifold flux" type="bool" value="true"/>
     </ParameterList>
-
     <ParameterList name="advection operator">
       <Parameter name="schema" type="Array(string)" value="{cell}"/>
       <Parameter name="method order" type="int" value="0"/>
       <Parameter name="matrix type" type="string" value="advection"/>
     </ParameterList>
   </ParameterList>
-
   <!-- SOLVERS -->
   <ParameterList name="solvers">
     <ParameterList name="PCG">
@@ -83,7 +79,6 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
@@ -102,4 +97,3 @@
     </ParameterList>
   </ParameterList>
 </ParameterList>
-

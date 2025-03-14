@@ -8,14 +8,13 @@
     <Parameter name="amount" type="string" value="mol"/>
     <Parameter isUsed="true" name="temperature" type="string" value="K"/>
   </ParameterList>
-
   <ParameterList name="mesh">
     <Parameter name="framework" type="string" value="MSTK"/>
     <Parameter name="partitioner" type="string" value="metis"/>
     <ParameterList name="unstructured">
       <ParameterList name="generate mesh">
         <Parameter name="number of cells" type="Array(int)" value="{40, 6}"/>
-        <Parameter name="domain low coordinate" type="Array(double)" value="{  0.0, 0.0}"/>
+        <Parameter name="domain low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
         <Parameter name="domain high coordinate" type="Array(double)" value="{10.0, 3.0}"/>
       </ParameterList>
     </ParameterList>
@@ -24,38 +23,38 @@
   <ParameterList name="regions">
     <ParameterList name="EntireDomain">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{  0.0, 0.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{10.0, 3.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="SurfaceLeft">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{ 0.0, 0.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{0.0, 3.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="SurfaceRight">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{ 10.0, 0.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{10.0, 0.0}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{10.0, 3.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="SurfaceBottom">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{  0.0, 0.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{10.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="SurfaceTop">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{  0.0, 3.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 3.0}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{10.0, 3.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="All">
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{-9.999e+98, -9.999e+98}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{9.999e+98,  9.999e+98}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{9.999e+98, 9.999e+98}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -154,20 +153,24 @@
         <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="initial conditions">
+
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, -10.0}"/>
       </ParameterList>
+
       <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="0.001"/>
       </ParameterList>
+
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="1000.0"/>
       </ParameterList>
+
       <ParameterList name="const_fluid_molar_mass">
         <Parameter name="value" type="double" value="0.018015"/>
       </ParameterList>
+
       <ParameterList name="poisson_ratio">
         <ParameterList name="function">
           <ParameterList name="EntireDomain">
@@ -181,6 +184,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="young_modulus">
         <ParameterList name="function">
           <ParameterList name="EntireDomain">
@@ -194,6 +198,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="biot_coefficient">
         <ParameterList name="function">
           <ParameterList name="EntireDomain">
@@ -207,6 +212,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="permeability">
         <Parameter name="write checkpoint" type="bool" value="false"/>
         <ParameterList name="function">
@@ -230,6 +236,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="pressure">
         <ParameterList name="function">
           <ParameterList name="EntireDomain">
@@ -243,6 +250,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="saturation_liquid">
         <ParameterList name="function">
           <ParameterList name="EntireDomain">
@@ -256,6 +264,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="temperature">
         <ParameterList name="function">
           <ParameterList name="EntireDomain">
@@ -270,9 +279,11 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="atmospheric_pressure">
-        <Parameter name="value" type="double" value="1.01325e+05"/>
+        <Parameter name="value" type="double" value="101325.0"/>
       </ParameterList>
+
     </ParameterList>
     <ParameterList name="mesh partitions">
       <ParameterList name="materials">
@@ -283,12 +294,10 @@
       <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="visualization data">
     <Parameter name="file name base" type="string" value="plot"/>
     <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 20.0, -1.0}"/>
   </ParameterList>
-
   <ParameterList name="cycle driver">
     <ParameterList name="time periods">
       <ParameterList name="TP 0">
@@ -321,8 +330,8 @@
       <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="PKs">
+
     <ParameterList name="transient:flow and mechanics">
       <Parameter isUsed="true" name="PK type" type="string" value="flow and mechanics"/>
       <Parameter name="PKs order" type="Array(string)" value="{transient:flow, transient:mechanics}"/>
@@ -340,14 +349,14 @@
             <Parameter name="timestep increase factor" type="double" value="1.2"/>
             <Parameter name="timestep reduction factor" type="double" value="0.8"/>
             <Parameter name="max timestep" type="double" value="4.3234e+17"/>
-            <Parameter name="min timestep" type="double" value="1.0e-06"/>
+            <Parameter name="min timestep" type="double" value="0.0000010"/>
           </ParameterList>
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1.0e-07"/>
+            <Parameter name="nonlinear tolerance" type="double" value="1.0e-7"/>
             <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
             <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
-            <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
+            <Parameter name="max du growth factor" type="double" value="1.0e+3"/>
             <Parameter name="max divergent iterations" type="int" value="5"/>
             <Parameter name="max nka vectors" type="int" value="10"/>
             <Parameter name="limit iterations" type="int" value="20"/>
@@ -363,11 +372,13 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="maximum number of iterations" type="int" value="200"/>
-        <Parameter name="error tolerance" type="double" value="2e-6"/>
+        <Parameter name="error tolerance" type="double" value="0.000002"/>
       </ParameterList>
+
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
+
     </ParameterList>
 
     <ParameterList name="transient:flow">
@@ -382,30 +393,35 @@
           <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="water retention models">
         <ParameterList name="WRM_0">
           <Parameter name="water retention model" type="string" value="saturated"/>
           <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="porosity models">
         <ParameterList name="POM 0">
           <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
           <Parameter name="porosity model" type="string" value="compressible"/>
           <Parameter name="undeformed soil porosity" type="double" value="0.1"/>
-          <Parameter name="reference pressure" type="double" value="1.0e+07"/>
+          <Parameter name="reference pressure" type="double" value="1.0e+7"/>
           <Parameter name="pore compressibility" type="double" value="1.0e-10"/>
           <Parameter name="biot coefficient" type="double" value="0.9"/>
           <Parameter name="rock thermal dilation" type="double" value="0.0"/>
           <Parameter name="liquid thermal dilation" type="double" value="0.0"/>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="physical models and assumptions">
         <Parameter name="porosity model" type="string" value="compressible"/>
       </ParameterList>
+
       <ParameterList name="absolute permeability">
         <Parameter name="coordinate system" type="string" value="cartesian"/>
       </ParameterList>
+
       <ParameterList name="operators">
         <ParameterList name="diffusion operator">
           <ParameterList name="matrix">
@@ -425,6 +441,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
@@ -443,14 +460,14 @@
             <Parameter name="timestep increase factor" type="double" value="1.2"/>
             <Parameter name="timestep reduction factor" type="double" value="0.8"/>
             <Parameter name="max timestep" type="double" value="4.3234e+17"/>
-            <Parameter name="min timestep" type="double" value="1.0e-06"/>
+            <Parameter name="min timestep" type="double" value="0.0000010"/>
           </ParameterList>
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1.0e-06"/>
+            <Parameter name="nonlinear tolerance" type="double" value="0.0000010"/>
             <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
             <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
-            <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
+            <Parameter name="max du growth factor" type="double" value="1.0e+3"/>
             <Parameter name="max divergent iterations" type="int" value="5"/>
             <Parameter name="max nka vectors" type="int" value="10"/>
             <Parameter name="limit iterations" type="int" value="20"/>
@@ -466,6 +483,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="boundary conditions">
         <ParameterList name="pressure">
           <ParameterList name="BC 0">
@@ -480,9 +498,11 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
+
     </ParameterList>
 
     <ParameterList name="transient:mechanics">
@@ -500,14 +520,14 @@
             <Parameter name="timestep increase factor" type="double" value="1.2"/>
             <Parameter name="timestep reduction factor" type="double" value="0.8"/>
             <Parameter name="max timestep" type="double" value="4.3234e+17"/>
-            <Parameter name="min timestep" type="double" value="1.0e-06"/>
+            <Parameter name="min timestep" type="double" value="0.0000010"/>
           </ParameterList>
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1.0e-06"/>
+            <Parameter name="nonlinear tolerance" type="double" value="0.0000010"/>
             <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
             <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
-            <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
+            <Parameter name="max du growth factor" type="double" value="1.0e+3"/>
             <Parameter name="max divergent iterations" type="int" value="5"/>
             <Parameter name="max nka vectors" type="int" value="10"/>
             <Parameter name="limit iterations" type="int" value="20"/>
@@ -523,6 +543,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="operators">
         <ParameterList name="elasticity operator">
           <Parameter name="matrix type" type="string" value="stiffness"/>
@@ -533,11 +554,13 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="physical models and assumptions">
         <Parameter name="use gravity" type="bool" value="false"/>
         <Parameter name="biot scheme: undrained split" type="bool" value="false"/>
         <Parameter name="biot scheme: fixed stress split" type="bool" value="false"/>
       </ParameterList>
+
       <ParameterList name="boundary conditions">
         <ParameterList name="displacement">
           <ParameterList name="BC 0">
@@ -569,7 +592,7 @@
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-exprtk">
                   <Parameter name="number of arguments" type="int" value="2"/>
-                  <Parameter name="formula" type="string" value="if (t > 100, 1.0e+7, 1.0e+5 * t)"/>
+                  <Parameter name="formula" type="string" value="if (t &gt; 100, 1.0e+7, 1.0e+5 * t)"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 2 function">
@@ -581,10 +604,13 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
+
     </ParameterList>
+
   </ParameterList>
 
   <ParameterList name="solvers">
@@ -624,7 +650,6 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
       <Parameter name="preconditioning method" type="string" value="boomer amg"/>

@@ -5,7 +5,6 @@
       <Parameter name="entity" type="string" value="cell"/>
     </ParameterList>
   </ParameterList>
-
   <!-- CELL REGIONS -->
   <!-- labeled set, material IDs -->
   <ParameterList name="Top LS">
@@ -16,9 +15,9 @@
       <Parameter name="entity" type="string" value="cell"/>
     </ParameterList>
   </ParameterList>
-
   <!-- labeled set, cell sets -->
-  <ParameterList name="Cell Set 3"> <!-- same as Top LS -->
+  <ParameterList name="Cell Set 3">
+    <!-- same as Top LS -->
     <ParameterList name="region: labeled set">
       <Parameter name="label" type="string" value="3"/>
       <Parameter name="file" type="string" value="hex_3x3x3.exo"/>
@@ -26,7 +25,6 @@
       <Parameter name="entity" type="string" value="cell"/>
     </ParameterList>
   </ParameterList>
-
   <!-- color functions -->
   <!-- NOT SUPPORTED IN TPETRA
   <ParameterList name="Top ColFunc">
@@ -36,26 +34,23 @@
     </ParameterList>
   </ParameterList>
   -->
-
   <!-- geometric regions -->
   <ParameterList name="Box">
     <ParameterList name="region: box">
-      <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.}"/>
-      <Parameter name="high coordinate" type="Array(double)" value="{1.0,0.35}"/>
+      <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
+      <Parameter name="high coordinate" type="Array(double)" value="{1.0, 0.35}"/>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="Point">
     <ParameterList name="region: point">
-      <Parameter name="coordinate" type="Array(double)" value="{0.5,0.5}"/>
+      <Parameter name="coordinate" type="Array(double)" value="{0.5, 0.5}"/>
     </ParameterList>
   </ParameterList>
-
   <!-- logical sets -->
   <ParameterList name="Box+Point">
     <ParameterList name="region: logical">
       <Parameter name="operation" type="string" value="union"/>
-      <Parameter name="regions" type="Array(string)" value="{Box,Point}"/>
+      <Parameter name="regions" type="Array(string)" value="{Box, Point}"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="NOT_Box">
@@ -76,23 +71,20 @@
       <Parameter name="regions" type="Array(string)" value="{Point, NOT_Box}"/>
     </ParameterList>
   </ParameterList>
-
   <!-- enumerated sets -->
   <ParameterList name="Enumerated">
     <ParameterList name="region: enumerated set">
       <Parameter name="entity" type="string" value="CELL"/>
-      <Parameter name="entity gids" type="Array(int)" value="{1,2,3}"/>
+      <Parameter name="entity gids" type="Array(int)" value="{1, 2, 3}"/>
     </ParameterList>
   </ParameterList>
-
   <!-- empty sets -->
   <ParameterList name="Empty Geometric">
     <ParameterList name="region: box">
-      <Parameter name="low coordinate" type="Array(double)" value="{-2.0,-2.0}"/>
-      <Parameter name="high coordinate" type="Array(double)" value="{-1.0,-1.0}"/>
+      <Parameter name="low coordinate" type="Array(double)" value="{-2.0, -2.0}"/>
+      <Parameter name="high coordinate" type="Array(double)" value="{-1.0, -1.0}"/>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="Empty Labeled Set">
     <ParameterList name="region: labeled set">
       <Parameter name="label" type="string" value="99999"/>
@@ -101,8 +93,6 @@
       <Parameter name="entity" type="string" value="cell"/>
     </ParameterList>
   </ParameterList>
-
-  
   <!-- sidesets -->
   <ParameterList name="Face 103">
     <ParameterList name="region: labeled set">
@@ -122,14 +112,14 @@
   </ParameterList>
   <ParameterList name="Side Plane">
     <ParameterList name="region: plane">
-      <Parameter name="point" type="Array(double)" value="{0.0,0.0}"/>
-      <Parameter name="normal" type="Array(double)" value="{-1.0,0.0}"/>
+      <Parameter name="point" type="Array(double)" value="{0.0, 0.0}"/>
+      <Parameter name="normal" type="Array(double)" value="{-1.0, 0.0}"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Central Face Box">
     <ParameterList name="region: box">
-      <Parameter name="low coordinate" type="Array(double)" value="{0.,0.4}"/>
-      <Parameter name="high coordinate" type="Array(double)" value="{0.,0.6}"/>
+      <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.4}"/>
+      <Parameter name="high coordinate" type="Array(double)" value="{0.0, 0.6}"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Side Plane - Central Face Box">
@@ -144,43 +134,40 @@
       <Parameter name="regions" type="Array(string)" value="{Face 103, Central Face Box}"/>
     </ParameterList>
   </ParameterList>
-
   <!-- Miscellaneous -->
   <ParameterList name="Domain Boundary">
     <ParameterList name="region: boundary">
       <Parameter name="entity" type="string" value="face"/>
     </ParameterList>
   </ParameterList>
-
   <!-- Cells sets from point regions -->
   <ParameterList name="Sample Point InCell">
     <ParameterList name="region: point">
-      <Parameter name="coordinate" type="Array(double)" value="{0.5,0.5}"/>
+      <Parameter name="coordinate" type="Array(double)" value="{0.5, 0.5}"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Sample Point OnFace">
     <ParameterList name="region: point">
-      <Parameter name="coordinate" type="Array(double)" value="{0.3333333333333,0.5}"/>
+      <Parameter name="coordinate" type="Array(double)" value="{0.3333333333333, 0.5}"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Sample Point OnVertex">
     <ParameterList name="region: point">
-      <Parameter name="coordinate" type="Array(double)" value="{0.3333333333333,0.3333333333333}"/>
+      <Parameter name="coordinate" type="Array(double)" value="{0.3333333333333, 0.3333333333333}"/>
     </ParameterList>
   </ParameterList>
-
   <!-- nodesets -->
   <ParameterList name="Interior XY Plane">
     <ParameterList name="region: plane">
-      <Parameter name="point" type="Array(double)" value="{0.0,0.3333333333333}"/>
-      <Parameter name="normal" type="Array(double)" value="{0.0,1.0}"/>
+      <Parameter name="point" type="Array(double)" value="{0.0, 0.3333333333333}"/>
+      <Parameter name="normal" type="Array(double)" value="{0.0, 1.0}"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Top Box Nodes">
     <ParameterList name="region: box">
-      <Parameter name="low coordinate" type="Array(double)" value="{0.2,0.2}"/>
-      <Parameter name="high coordinate" type="Array(double)" value="{0.8,0.8}"/>
+      <Parameter name="low coordinate" type="Array(double)" value="{0.2, 0.2}"/>
+      <Parameter name="high coordinate" type="Array(double)" value="{0.8, 0.8}"/>
     </ParameterList>
   </ParameterList>
-
 </ParameterList>
+

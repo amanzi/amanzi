@@ -14,14 +14,15 @@
     <ParameterList name="unstructured">
       <ParameterList name="generate mesh">
         <Parameter name="number of cells" type="Array(int)" value="{10, 10, 10}"/>
-        <Parameter name="domain low coordinate" type="Array(double)" value="{0.00000000000000000e+00, 0.00000000000000000e+00, 0.00000000000000000e+00}"/>
-        <Parameter name="domain high coordinate" type="Array(double)" value="{1.00000000000000000e+00, 1.00000000000000000e+00, 1.00000000000000000e+00}"/>
+        <Parameter name="domain low coordinate" type="Array(double)" value="{0e-17, 0e-17, 0e-17}"/>
+        <Parameter name="domain high coordinate" type="Array(double)" value="{1.00000000000000000, 1.00000000000000000, 1.00000000000000000}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="verbose object">
       <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
   </ParameterList>
+
   <ParameterList name="domain">
     <Parameter name="spatial dimension" type="int" value="3"/>
   </ParameterList>
@@ -34,11 +35,12 @@
     </ParameterList>
     <ParameterList name="TopSurface">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{0.00000000000000000e+00, 0.00000000000000000e+00, 1.00000000000000000e+00}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{1.00000000000000000e+00, 1.00000000000000000e+00, 1.00000000000000000e+00}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0e-17, 0e-17, 1.00000000000000000}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.00000000000000000, 1.00000000000000000, 1.00000000000000000}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
+
   <ParameterList name="state">
     <ParameterList name="evaluators">
       <ParameterList name="mass_density_liquid">
@@ -48,7 +50,7 @@
             <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="9.98200000000000045e+02"/>
+                <Parameter name="value" type="double" value="998.200000000000045"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -63,7 +65,7 @@
             <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="5.54093810713294515e+04"/>
+                <Parameter name="value" type="double" value="55409.3810713294515"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -78,7 +80,7 @@
             <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.00200000000000007e-03"/>
+                <Parameter name="value" type="double" value="0.00100200000000000007"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -93,7 +95,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="4.00000000000000022e-01"/>
+                <Parameter name="value" type="double" value="0.400000000000000022"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -103,21 +105,27 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="initial conditions">
+
       <ParameterList name="gravity">
-        <Parameter name="value" type="Array(double)" value="{0.00000000000000000e+00, 0.00000000000000000e+00, -9.80664999999999942e+00}"/>
+        <Parameter name="value" type="Array(double)" value="{0e-17, 0e-17, -9.80664999999999942}"/>
       </ParameterList>
+
       <ParameterList name="const_fluid_viscosity">
-        <Parameter name="value" type="double" value="1.00200000000000007e-03"/>
+        <Parameter name="value" type="double" value="0.00100200000000000007"/>
       </ParameterList>
+
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="998.2"/>
       </ParameterList>
+
       <ParameterList name="const_fluid_molar_mass">
         <Parameter name="value" type="double" value="0.018015"/>
       </ParameterList>
+
       <ParameterList name="atmospheric_pressure">
-        <Parameter name="value" type="double" value="1.01325000000000000e+05"/>
+        <Parameter name="value" type="double" value="101325.000000000000"/>
       </ParameterList>
+
     </ParameterList>
     <ParameterList name="mesh partitions">
       <ParameterList name="materials">
@@ -130,7 +138,7 @@
   </ParameterList>
   <ParameterList name="visualization data">
     <Parameter name="file name base" type="string" value="plot"/>
-    <Parameter name="times start period stop 0" type="Array(double)" value="{0.00000000000000000e+00, 2.00000000000000000e+00, 4.00000000000000000e+01}"/>
+    <Parameter name="times start period stop 0" type="Array(double)" value="{0e-17, 2.00000000000000000, 40.0000000000000000}"/>
   </ParameterList>
   <ParameterList name="cycle driver">
     <ParameterList name="time periods">
@@ -140,10 +148,10 @@
             <Parameter name="PK type" type="string" value="elastic"/>
           </ParameterList>
         </ParameterList>
-        <Parameter name="start period time" type="double" value="0.00000000000000000e+00"/>
-        <Parameter name="end period time" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="start period time" type="double" value="0e-17"/>
+        <Parameter name="end period time" type="double" value="0e-17"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial timestep" type="double" value="1.00000000000000000e+00"/>
+        <Parameter name="initial timestep" type="double" value="1.00000000000000000"/>
         <Parameter name="maximum timestep" type="double" value="9.99999999999999967e+98"/>
       </ParameterList>
     </ParameterList>
@@ -159,6 +167,7 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="PKs">
+
     <ParameterList name="steady:mechanics">
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="physical models and assumptions">
@@ -166,6 +175,7 @@
         <Parameter name="biot scheme: undrained split" type="bool" value="false"/>
         <Parameter name="biot scheme: fixed stress split" type="bool" value="false"/>
       </ParameterList>
+
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{displacement}"/>
         <Parameter name="linear solver" type="string" value="PCG for elasticity"/>
@@ -181,17 +191,17 @@
           <ParameterList name="timestep controller standard parameters">
             <Parameter name="max iterations" type="int" value="15"/>
             <Parameter name="min iterations" type="int" value="10"/>
-            <Parameter name="timestep increase factor" type="double" value="1.19999999999999996e+00"/>
-            <Parameter name="timestep reduction factor" type="double" value="8.00000000000000044e-01"/>
-            <Parameter name="max timestep" type="double" value="4.32340000000000000e+17"/>
-            <Parameter name="min timestep" type="double" value="9.99999999999999955e-07"/>
+            <Parameter name="timestep increase factor" type="double" value="1.19999999999999996"/>
+            <Parameter name="timestep reduction factor" type="double" value="0.800000000000000044"/>
+            <Parameter name="max timestep" type="double" value="432340000000000000.0"/>
+            <Parameter name="min timestep" type="double" value="9.99999999999999955e-7"/>
           </ParameterList>
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1.00000000000000008e-05"/>
-            <Parameter name="diverged tolerance" type="double" value="1.00000000000000000e+10"/>
-            <Parameter name="diverged l2 tolerance" type="double" value="1.00000000000000000e+10"/>
-            <Parameter name="max du growth factor" type="double" value="1.00000000000000000e+03"/>
+            <Parameter name="nonlinear tolerance" type="double" value="0.0000100000000000000008"/>
+            <Parameter name="diverged tolerance" type="double" value="10000000000.0000000"/>
+            <Parameter name="diverged l2 tolerance" type="double" value="10000000000.0000000"/>
+            <Parameter name="max du growth factor" type="double" value="1000.00000000000000"/>
             <Parameter name="max divergent iterations" type="int" value="3"/>
             <Parameter name="max nka vectors" type="int" value="10"/>
             <Parameter name="limit iterations" type="int" value="20"/>
@@ -199,14 +209,15 @@
           </ParameterList>
           <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
           <Parameter name="extrapolate initial guess" type="bool" value="true"/>
-          <Parameter name="restart tolerance relaxation factor" type="double" value="1.00000000000000000e+00"/>
-          <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.00000000000000000e+00"/>
+          <Parameter name="restart tolerance relaxation factor" type="double" value="1.00000000000000000"/>
+          <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.00000000000000000"/>
           <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
           <ParameterList name="verbose object">
             <Parameter name="verbosity level" type="string" value="high"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="operators">
         <ParameterList name="elasticity operator">
           <Parameter name="matrix type" type="string" value="stiffness"/>
@@ -217,11 +228,15 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
+
     </ParameterList>
+
   </ParameterList>
+
   <ParameterList name="solvers">
     <ParameterList name="AztecOO">
       <Parameter name="iterative method" type="string" value="gmres"/>
@@ -248,7 +263,7 @@
     <ParameterList name="PCG for elasticity">
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
-        <Parameter name="error tolerance" type="double" value="1.0e-08"/>
+        <Parameter name="error tolerance" type="double" value="1.0e-8"/>
         <Parameter name="maximum number of iterations" type="int" value="400"/>
         <Parameter name="convergence criteria" type="Array(string)" value="{relative residual, relative rhs, make one iteration}"/>
         <ParameterList name="verbose object">
@@ -273,12 +288,12 @@
         <Parameter name="prec type" type="string" value="MGV"/>
         <Parameter name="cycle applications" type="int" value="2"/>
         <Parameter name="aggregation: type" type="string" value="Uncoupled-MIS"/>
-        <Parameter name="aggregation: damping factor" type="double" value="1.33332999999999990e+00"/>
-        <Parameter name="aggregation: threshold" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="aggregation: damping factor" type="double" value="1.33332999999999990"/>
+        <Parameter name="aggregation: threshold" type="double" value="0e-17"/>
         <Parameter name="eigen-analysis: type" type="string" value="cg"/>
         <Parameter name="eigen-analysis: iterations" type="int" value="10"/>
         <Parameter name="smoother: sweeps" type="int" value="3"/>
-        <Parameter name="smoother: damping factor" type="double" value="1.00000000000000000e+00"/>
+        <Parameter name="smoother: damping factor" type="double" value="1.00000000000000000"/>
         <Parameter name="smoother: pre or post" type="string" value="both"/>
         <Parameter name="smoother: type" type="string" value="Jacobi"/>
         <Parameter name="coarse: type" type="string" value="Amesos-KLU"/>
@@ -288,10 +303,10 @@
     <ParameterList name="Hypre AMG">
       <Parameter name="preconditioning method" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
-        <Parameter name="tolerance" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="tolerance" type="double" value="0e-17"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>
         <Parameter name="cycle applications" type="int" value="5"/>
-        <Parameter name="strong threshold" type="double" value="5.00000000000000000e-01"/>
+        <Parameter name="strong threshold" type="double" value="0.500000000000000000"/>
         <Parameter name="cycle type" type="int" value="1"/>
         <Parameter name="coarsen type" type="int" value="0"/>
         <Parameter name="verbosity" type="int" value="0"/>
@@ -300,9 +315,9 @@
     <ParameterList name="Block ILU">
       <Parameter name="preconditioning method" type="string" value="block ilu"/>
       <ParameterList name="block ilu parameters">
-        <Parameter name="fact: relax value" type="double" value="1.00000000000000000e+00"/>
-        <Parameter name="fact: absolute threshold" type="double" value="0.00000000000000000e+00"/>
-        <Parameter name="fact: relative threshold" type="double" value="1.00000000000000000e+00"/>
+        <Parameter name="fact: relax value" type="double" value="1.00000000000000000"/>
+        <Parameter name="fact: absolute threshold" type="double" value="0e-17"/>
+        <Parameter name="fact: relative threshold" type="double" value="1.00000000000000000"/>
         <Parameter name="fact: level-of-fill" type="int" value="0"/>
         <Parameter name="overlap" type="int" value="0"/>
         <Parameter name="schwarz: combine mode" type="string" value="Add"/>

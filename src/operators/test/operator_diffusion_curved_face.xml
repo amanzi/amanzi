@@ -1,5 +1,4 @@
 <ParameterList name="Main">
-
   <!--  REGIONS  -->
   <ParameterList name="regions">
     <ParameterList name="Boundary">
@@ -9,8 +8,8 @@
     </ParameterList>
     <ParameterList name="Top side">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{1.0,1.0,1.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{0.0,0.0,1.0}"/>
+        <Parameter name="point" type="Array(double)" value="{1.0, 1.0, 1.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0, 0.0, 1.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -28,7 +27,6 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
@@ -44,17 +42,14 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <!--  OPERATORS  -->
   <ParameterList name="PK operator">
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-
     <ParameterList name="diffusion curved face">
       <Parameter name="discretization primary" type="string" value="mfd: curved face"/>
       <Parameter name="discretization secondary" type="string" value="mfd: default"/>
-      <Parameter name="schema" type="Array(string)" value="{face,cell}"/>
-      <Parameter name="preconditioner schema" type="Array(string)" value="{face,cell}"/>
+      <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
     </ParameterList>
   </ParameterList>
 </ParameterList>
-

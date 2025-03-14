@@ -1,30 +1,29 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-
   <!--  REGIONS  -->
   <ParameterList name="regions">
     <ParameterList name="Left side">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{-1.0,0.0}"/>
+        <Parameter name="point" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{-1.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Right side">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{1.0,1.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{1.0,0.0}"/>
+        <Parameter name="point" type="Array(double)" value="{1.0, 1.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{1.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bottom side">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{0.0,-1.0}"/>
+        <Parameter name="point" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0, -1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top side">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{1.0,1.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{0.0,1.0}"/>
+        <Parameter name="point" type="Array(double)" value="{1.0, 1.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0, 1.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -41,7 +40,6 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="GMRES">
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
@@ -52,7 +50,6 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="Belos GMRES">
       <Parameter name="iterative method" type="string" value="belos: gmres"/>
       <ParameterList name="belos: gmres parameters">
@@ -63,7 +60,6 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="Amesos1">
       <Parameter name="direct method" type="string" value="amesos: klu"/>
       <ParameterList name="amesos: klu parameters">
@@ -71,7 +67,6 @@
         <Parameter name="amesos version" type="int" value="1"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="Amesos2: basker">
       <Parameter name="direct method" type="string" value="amesos2: basker"/>
       <ParameterList name="amesos2: basker parameters">
@@ -79,7 +74,6 @@
         <Parameter name="amesos version" type="int" value="2"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="Amesos2: superludist">
       <Parameter name="direct method" type="string" value="amesos2: superludist"/>
       <ParameterList name="amesos2: superludist parameters">
@@ -88,7 +82,6 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
@@ -104,16 +97,13 @@
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="identity">
       <Parameter name="preconditioning method" type="string" value="identity"/>
     </ParameterList>
   </ParameterList>
-
   <!--  OPERATORS  -->
   <ParameterList name="PK operator">
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-
     <!-- NODAL (conformal) MFD schemes -->
     <ParameterList name="diffusion operator nodal">
       <Parameter name="discretization primary" type="string" value="mfd: default"/>
@@ -121,7 +111,6 @@
       <Parameter name="schema" type="Array(string)" value="{node}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{node}"/>
     </ParameterList>
-
     <ParameterList name="diffusion operator Lagrange">
       <Parameter name="matrix type" type="string" value="stiffness"/>
       <ParameterList name="schema">
@@ -130,7 +119,6 @@
         <Parameter name="method order" type="int" value="3"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="diffusion operator Lagrange serendipity">
       <Parameter name="matrix type" type="string" value="stiffness"/>
       <ParameterList name="schema">
@@ -139,7 +127,6 @@
         <Parameter name="method order" type="int" value="3"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="diffusion operator 3D Lagrange">
       <Parameter name="matrix type" type="string" value="stiffness"/>
       <ParameterList name="schema">
@@ -148,7 +135,6 @@
         <Parameter name="method order" type="int" value="3"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="diffusion operator 3D Lagrange serendipity">
       <Parameter name="matrix type" type="string" value="stiffness"/>
       <ParameterList name="schema">
@@ -157,7 +143,6 @@
         <Parameter name="method order" type="int" value="3"/>
       </ParameterList>
     </ParameterList>
-
     <!-- EDGE (nonconformal) MFD schemes -->
     <ParameterList name="diffusion operator edge">
       <Parameter name="matrix type" type="string" value="stiffness"/>
@@ -167,7 +152,6 @@
         <Parameter name="method order" type="int" value="1"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="diffusion operator Crouzeix-Raviart">
       <Parameter name="matrix type" type="string" value="stiffness"/>
       <ParameterList name="schema">
@@ -176,7 +160,6 @@
         <Parameter name="method order" type="int" value="3"/>
       </ParameterList>
     </ParameterList>
-
     <!-- MIXED MFD schemes -->
     <ParameterList name="diffusion operator mixed">
       <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
@@ -184,7 +167,6 @@
       <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
     </ParameterList>
-
     <ParameterList name="diffusion operator divk">
       <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
@@ -193,7 +175,6 @@
       <Parameter name="nonlinear coefficient" type="string" value="divk: cell-face"/>
       <!--Parameter name="file name" type="string" value="test/struct.exo"/-->
     </ParameterList>
-
     <ParameterList name="diffusion operator nonsymmetric">
       <Parameter name="discretization primary" type="string" value="mfd: default"/>
       <Parameter name="discretization secondary" type="string" value="mfd: default"/>
@@ -201,7 +182,6 @@
       <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
       <Parameter name="diffusion tensor" type="string" value="nonsymmetric"/>
     </ParameterList>
-
     <ParameterList name="diffusion operator gravity mfd">
       <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
@@ -209,7 +189,6 @@
       <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
       <Parameter name="gravity" type="bool" value="true"/>
     </ParameterList>
-
     <!-- FV schemes -->
     <ParameterList name="diffusion operator gravity fv">
       <Parameter name="discretization primary" type="string" value="fv: default"/>
@@ -218,44 +197,38 @@
       <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
       <Parameter name="gravity" type="bool" value="true"/>
     </ParameterList>
-
     <ParameterList name="diffusion operator nlfv">
       <Parameter name="discretization primary" type="string" value="nlfv: default"/>
       <Parameter name="discretization secondary" type="string" value="nlfv: default"/>
       <Parameter name="schema" type="Array(string)" value="{cell}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
     </ParameterList>
-
     <ParameterList name="upwind">
       <Parameter name="upwind method" type="string" value="upwind: amanzi"/>
       <ParameterList name="upwind parameters">
         <Parameter name="tolerance" type="double" value="1e-12"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="diffusion operator second-order">
       <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
-      <!-- We use the existing option, since we override local matrix calculation anyway -->   
+      <!-- We use the existing option, since we override local matrix calculation anyway -->
       <Parameter name="nonlinear coefficient" type="string" value="divk: cell-face-twin"/>
     </ParameterList>
-
     <ParameterList name="upwind second-order">
       <Parameter name="upwind method" type="string" value="upwind: second-order"/>
       <ParameterList name="upwind parameters">
         <Parameter name="tolerance" type="double" value="1e-12"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="diffusion operator cell">
       <Parameter name="discretization primary" type="string" value="mfd: two-point flux approximation"/>
       <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
       <Parameter name="schema" type="Array(string)" value="{cell}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
     </ParameterList>
-
     <!-- DG (nonconformal) schemes -->
     <ParameterList name="diffusion operator dg">
       <Parameter name="matrix type" type="string" value="stiffness"/>
@@ -269,4 +242,3 @@
     </ParameterList>
   </ParameterList>
 </ParameterList>
-

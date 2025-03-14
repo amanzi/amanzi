@@ -1,42 +1,42 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-
   <!--  REGIONS  -->
   <ParameterList name="regions">
     <ParameterList name="All">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{100.0,100.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{100.0, 100.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Left side">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{-1.0,0.0}"/>
+        <Parameter name="point" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{-1.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Right side">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{2.0,0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{1.0,0.0}"/>
+        <Parameter name="point" type="Array(double)" value="{2.0, 0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{1.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bottom side">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{0.0,-1.0}"/>
+        <Parameter name="point" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0, -1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top side">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{2.0,0.5}"/>
-        <Parameter name="normal" type="Array(double)" value="{0.0,1.0}"/>
+        <Parameter name="point" type="Array(double)" value="{2.0, 0.5}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0, 1.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
 
   <!-- FLOW -->
   <ParameterList name="PKs">
+
     <ParameterList name="mechanics elasticity">
       <Parameter name="domain name" type="string" value=""/>
       <ParameterList name="time integrator">
@@ -49,17 +49,17 @@
           <ParameterList name="timestep controller standard parameters">
             <Parameter name="max iterations" type="int" value="15"/>
             <Parameter name="min iterations" type="int" value="10"/>
-            <Parameter name="timestep increase factor" type="double" value="1.19999999999999996e+00"/>
+            <Parameter name="timestep increase factor" type="double" value="1.19999999999999996"/>
             <Parameter name="timestep reduction factor" type="double" value="0.8"/>
-            <Parameter name="max timestep" type="double" value="4.32340000000000000e+17"/>
-            <Parameter name="min timestep" type="double" value="9.99999999999999955e-07"/>
+            <Parameter name="max timestep" type="double" value="432340000000000000.0"/>
+            <Parameter name="min timestep" type="double" value="9.99999999999999955e-7"/>
           </ParameterList>
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1.0e-08"/>
+            <Parameter name="nonlinear tolerance" type="double" value="1.0e-8"/>
             <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
             <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
-            <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
+            <Parameter name="max du growth factor" type="double" value="1.0e+3"/>
             <Parameter name="max divergent iterations" type="int" value="3"/>
             <Parameter name="max nka vectors" type="int" value="10"/>
             <Parameter name="limit iterations" type="int" value="20"/>
@@ -75,6 +75,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="operators">
         <ParameterList name="elasticity operator">
           <Parameter name="matrix type" type="string" value="stiffness"/>
@@ -85,11 +86,13 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="physical models and assumptions">
         <Parameter name="use gravity" type="bool" value="false"/>
         <Parameter name="biot scheme: undrained split" type="bool" value="false"/>
         <Parameter name="biot scheme: fixed stress split" type="bool" value="false"/>
       </ParameterList>
+
       <ParameterList name="boundary conditions">
         <ParameterList name="traction">
           <ParameterList name="BC 0">
@@ -143,7 +146,7 @@
               </ParameterList>
               <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.0e-03"/>
+                  <Parameter name="value" type="double" value="0.0010"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -161,17 +164,20 @@
               </ParameterList>
               <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="-1.0e-03"/>
+                  <Parameter name="value" type="double" value="-0.0010"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
+
     </ParameterList>
+
   </ParameterList>
 
   <!--  STATE  -->
@@ -184,7 +190,7 @@
             <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <ParameterList name="function-constant"> 
+              <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="2500.0"/>
               </ParameterList>
             </ParameterList>
@@ -192,17 +198,20 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="initial conditions">
+
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="998.0"/>
       </ParameterList>
+
       <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="0.01"/>
       </ParameterList>
+
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="101325.0"/>
       </ParameterList>
+
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, -9.81}"/>
       </ParameterList>
@@ -243,6 +252,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="poisson_ratio">
         <ParameterList name="function">
           <ParameterList name="ALL">
@@ -256,9 +266,9 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
     </ParameterList>
   </ParameterList>
-
   <!-- SOLVERS -->
   <ParameterList name="solvers">
     <ParameterList name="PCG">
@@ -272,7 +282,6 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="GMRES with Hypre AMG">
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
@@ -281,7 +290,6 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
@@ -300,5 +308,3 @@
     </ParameterList>
   </ParameterList>
 </ParameterList>
-
-

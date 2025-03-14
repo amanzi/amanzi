@@ -1,38 +1,31 @@
 <ParameterList name="Main">
   <!--Phase II demo, Flow simulation, Flow period 04-->
-
   <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
   <Parameter name="Dump ParmParse Table" type="string" value="flow04/ppfile"/>
   <Parameter name="Petsc Options File" type="string" value="DOTpetsc"/>
-
   <ParameterList name="General Description">
     <Parameter name="Simulation name" type="string" value="PhaseII_Flow04"/>
     <Parameter name="Simulation units" type="string" value="[L]=m, [t]=s, [M]=g"/>
     <Parameter name="Simulation type" type="string" value="Richards equation unsaturated flow"/>
     <Parameter name="Simulation dimension" type="string" value="2D"/>
-    <Parameter name="Simulation transient mode"  type="string" value="steady-state"/>
+    <Parameter name="Simulation transient mode" type="string" value="steady-state"/>
     <Parameter name="Simulation materials" type="string" value="soil+concrete+more"/>
   </ParameterList>
-
   <ParameterList name="Domain">
-     <!--Cartesian coordinates implied-->
+    <!--Cartesian coordinates implied-->
     <Parameter name="Spatial Dimension" type="int" value="2"/>
   </ParameterList>
-
   <ParameterList name="Mesh">
     <ParameterList name="Structured">
-      <Parameter name="Domain Low Coordinate" type="Array(double)" value="{0,0}"/>
-      <Parameter name="Domain High Coordinate" type="Array(double)" value="{40,24}"/>
-      <Parameter name="Number of Cells" type="Array(int)" value="{40,24}"/>
+      <Parameter name="Domain Low Coordinate" type="Array(double)" value="{0.0, 0.0}"/>
+      <Parameter name="Domain High Coordinate" type="Array(double)" value="{40.0, 24.0}"/>
+      <Parameter name="Number of Cells" type="Array(int)" value="{40, 24}"/>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="Execution Control">
     <Parameter name="Flow Model" type="string" value="Richards"/>
     <Parameter name="Transport Model" type="string" value="Off"/>
     <Parameter name="Chemistry Model" type="string" value="Off"/>
-
-
     <ParameterList name="Time Integration Mode">
       <!-- <ParameterList name="Initialize To Steady"> -->
       <!--   <Parameter name="Start" type="double" value="0"/> -->
@@ -46,14 +39,12 @@
       <!--   <Parameter name="Initial Time Step Multiplier" type="double" value="1.0"/> -->
       <!-- </ParameterList> -->
       <ParameterList name="Steady">
-        <Parameter name="Start" type="double" value="0"/>
-        <Parameter name="End" type="double" value="1.e11"/>
-        <Parameter name="Initial Time Step" type="double" value="1.e5"/>
+        <Parameter name="Start" type="double" value="0.0"/>
+        <Parameter name="End" type="double" value="1e+11"/>
+        <Parameter name="Initial Time Step" type="double" value="1e+5"/>
       </ParameterList>
     </ParameterList>
-
     <Parameter name="Verbosity" type="string" value="Medium"/>
-
     <ParameterList name="Numerical Control Parameters">
       <ParameterList name="Structured Algorithm">
         <ParameterList name="Expert Settings">
@@ -66,187 +57,180 @@
           <Parameter name="steady_min_iterations" type="int" value="10"/>
           <Parameter name="steady_time_step_increase_factor" type="double" value="1.8"/>
           <Parameter name="steady_min_iterations_2" type="int" value="2"/>
-          <Parameter name="steady_time_step_increase_factor_2" type="double" value="3"/>
+          <Parameter name="steady_time_step_increase_factor_2" type="double" value="3.0"/>
           <Parameter name="steady_max_consecutive_failures_1" type="int" value="3"/>
           <Parameter name="steady_time_step_retry_factor_1" type="double" value="0.05"/>
           <Parameter name="steady_max_consecutive_failures_2" type="int" value="4"/>
           <Parameter name="steady_time_step_retry_factor_2" type="double" value="0.01"/>
           <Parameter name="steady_time_step_retry_factor_f" type="double" value="0.001"/>
           <Parameter name="steady_max_num_consecutive_success" type="int" value="0"/>
-          <Parameter name="steady_extra_time_step_increase_factor" type="double" value="10."/>
+          <Parameter name="steady_extra_time_step_increase_factor" type="double" value="10.0"/>
           <Parameter name="steady_max_num_consecutive_increases" type="int" value="15"/>
           <Parameter name="steady_consecutive_increase_reduction_factor" type="double" value="0.4"/>
-          <Parameter name="steady_max_psuedo_time" type="double" value="3.15576e11"/>
+          <Parameter name="steady_max_psuedo_time" type="double" value="3.15576e+11"/>
           <Parameter name="steady_abort_on_psuedo_timestep_failure" type="int" value="0"/>
           <Parameter name="steady_use_PETSc_snes" type="bool" value="true"/>
           <Parameter name="steady_limit_function_evals" type="int" value="100000000"/>
-
           <Parameter name="richard_solver_verbose" type="int" value="2"/>
           <Parameter name="richard_max_ls_iterations" type="int" value="10"/>
-          <Parameter name="richard_min_ls_factor" type="double" value="1.e-8"/>
-          <Parameter name="richard_ls_acceptance_factor" type="double" value="200"/>
+          <Parameter name="richard_min_ls_factor" type="double" value="1e-8"/>
+          <Parameter name="richard_ls_acceptance_factor" type="double" value="200.0"/>
           <Parameter name="richard_ls_reduction_factor" type="double" value="0.1"/>
           <Parameter name="richard_monitor_linear_solve" type="int" value="0"/>
           <Parameter name="richard_monitor_line_search" type="int" value="1"/>
-
           <Parameter name="richard_use_fd_jac" type="int" value="1"/>
-          <Parameter name="richard_perturbation_scale_for_J" type="double" value="1.e-10"/>
+          <Parameter name="richard_perturbation_scale_for_J" type="double" value="1e-10"/>
           <Parameter name="richard_use_dense_Jacobian" type="int" value="0"/>
           <Parameter name="richard_upwind_krel" type="int" value="1"/>
           <Parameter name="richard_pressure_maxorder" type="int" value="3"/>
           <Parameter name="richard_scale_solution_before_solve" type="bool" value="false"/>
           <Parameter name="richard_semi_analytic_J" type="bool" value="true"/>
           <Parameter name="steady_do_grid_sequence" type="int" value="1"/>
-          <Parameter name="steady_grid_sequence_new_level_dt_factor" type="Array(double)" value="{1.e-5, 1.e-5, 1.e-7}"/>
-          <Parameter name="richard_dt_thresh_pure_steady" type="double" value="1.e14"/>
-
-          <Parameter name="verbose" type="double" value="2"/>
+          <Parameter name="steady_grid_sequence_new_level_dt_factor" type="Array(double)" value="{0.00001, 0.00001, 1e-7}"/>
+          <Parameter name="richard_dt_thresh_pure_steady" type="double" value="1e+14"/>
+          <Parameter name="verbose" type="double" value="2.0"/>
         </ParameterList>
-
-	<ParameterList name="Adaptive Mesh Refinement Control">
-	  <Parameter name="Number Of AMR Levels" type="int" value="2"/>
-	  <Parameter name="Refinement Ratio" type="Array(int)" value="{4, 4, 4}"/>
-	  <Parameter name="Regrid Interval" type="Array(int)" value="{200000}"/>
-	  <Parameter name="Blocking Factor" type="Array(int)" value="{2, 2, 2, 2}"/>
-	  <Parameter name="Maximum Grid Size" type="Array(int)" value="{64, 64, 64, 64}"/>
-	  <Parameter name="Number Error Buffer Cells" type="Array(int)" value="{1, 1, 1}"/>        
-	  <Parameter name="Refinement Indicators" type="Array(string)" value="{Soil ref, wasteFF ref, Conc ref, Liner ref, Grout ref}"/>
-	  <ParameterList name="Soil ref">
-	    <Parameter name="Regions" type="Array(string)" value="{SoilLower}"/>
-	    <Parameter name="Inside Region" type="bool" value="TRUE"/>
-	    <Parameter name="Maximum Refinement Level" type="int" value="1"/>
-	  </ParameterList>
-	  <ParameterList name="wasteFF ref">
-	    <Parameter name="Regions" type="Array(string)" value="{TankWaste, TankFFfloor, TankFFwall}"/>
-	    <Parameter name="Inside Region" type="bool" value="TRUE"/>
-	    <Parameter name="Maximum Refinement Level" type="int" value="4"/>
-	  </ParameterList>
-	  <ParameterList name="Conc ref">
-	    <Parameter name="Regions" type="Array(string)" value="{TankConcFloor, TankConcWall, TankConcRoof1, TankConcRoof2}"/>
-	    <Parameter name="Inside Region" type="bool" value="TRUE"/>
-	    <Parameter name="Maximum Refinement Level" type="int" value="3"/>
-	  </ParameterList>
-	  <ParameterList name="Liner ref">
-	    <Parameter name="Regions" type="Array(string)" value="{TankLinerFloor, TankLinerWall, TankLinerRoof}"/>
-	    <Parameter name="Inside Region" type="bool" value="TRUE"/>
-	    <Parameter name="Maximum Refinement Level" type="int" value="4"/>
-	  </ParameterList>
-	  <ParameterList name="Grout ref">
-	    <Parameter name="Regions" type="Array(string)" value="{TankGrout}"/>
-	    <Parameter name="Inside Region" type="bool" value="TRUE"/>
-	    <Parameter name="Maximum Refinement Level" type="int" value="2"/>
-	  </ParameterList>
-	  <ParameterList name="Expert Settings">
-	    <Parameter name="v" type="int" value="3"/>
-	  </ParameterList>
-	</ParameterList>
+        <ParameterList name="Adaptive Mesh Refinement Control">
+          <Parameter name="Number Of AMR Levels" type="int" value="2"/>
+          <Parameter name="Refinement Ratio" type="Array(int)" value="{4, 4, 4}"/>
+          <Parameter name="Regrid Interval" type="Array(int)" value="{200000}"/>
+          <Parameter name="Blocking Factor" type="Array(int)" value="{2, 2, 2, 2}"/>
+          <Parameter name="Maximum Grid Size" type="Array(int)" value="{64, 64, 64, 64}"/>
+          <Parameter name="Number Error Buffer Cells" type="Array(int)" value="{1, 1, 1}"/>
+          <Parameter name="Refinement Indicators" type="Array(string)" value="{Soil ref, wasteFF ref, Conc ref, Liner ref, Grout ref}"/>
+          <ParameterList name="Soil ref">
+            <Parameter name="Regions" type="Array(string)" value="{SoilLower}"/>
+            <Parameter name="Inside Region" type="bool" value="true"/>
+            <Parameter name="Maximum Refinement Level" type="int" value="1"/>
+          </ParameterList>
+          <ParameterList name="wasteFF ref">
+            <Parameter name="Regions" type="Array(string)" value="{TankWaste, TankFFfloor, TankFFwall}"/>
+            <Parameter name="Inside Region" type="bool" value="true"/>
+            <Parameter name="Maximum Refinement Level" type="int" value="4"/>
+          </ParameterList>
+          <ParameterList name="Conc ref">
+            <Parameter name="Regions" type="Array(string)" value="{TankConcFloor, TankConcWall, TankConcRoof1, TankConcRoof2}"/>
+            <Parameter name="Inside Region" type="bool" value="true"/>
+            <Parameter name="Maximum Refinement Level" type="int" value="3"/>
+          </ParameterList>
+          <ParameterList name="Liner ref">
+            <Parameter name="Regions" type="Array(string)" value="{TankLinerFloor, TankLinerWall, TankLinerRoof}"/>
+            <Parameter name="Inside Region" type="bool" value="true"/>
+            <Parameter name="Maximum Refinement Level" type="int" value="4"/>
+          </ParameterList>
+          <ParameterList name="Grout ref">
+            <Parameter name="Regions" type="Array(string)" value="{TankGrout}"/>
+            <Parameter name="Inside Region" type="bool" value="true"/>
+            <Parameter name="Maximum Refinement Level" type="int" value="2"/>
+          </ParameterList>
+          <ParameterList name="Expert Settings">
+            <Parameter name="v" type="int" value="3"/>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="Regions">
     <ParameterList name="SoilLower">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0,0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{40,10}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{40.0, 10.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="SoilUpper">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0,18}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{40,24}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 18.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{40.0, 24.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="SoilRight">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{12,10}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{40,18}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{12.0, 10.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{40.0, 18.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="TankFFfloor">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0,10}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{0.5,10.31}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 10.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{0.5, 10.31}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="TankFFwall">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{11.67,10.33}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{11.69,18}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{11.67, 10.33}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{11.69, 18.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="TankWaste">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0,10.31}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{11.69,10.33}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 10.31}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{11.69, 10.33}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="TankConcFloor">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.5,10}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{12,10.3}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.5, 10.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{12.0, 10.3}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="TankConcWall">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{11.7,10.3}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{12,17.7}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{11.7, 10.3}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{12.0, 17.7}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="TankConcRoof1">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0,17.7}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{11.67,18}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 17.7}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{11.67, 18.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="TankConcRoof2">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{11.69,17.7}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{12,18}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{11.69, 17.7}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{12.0, 18.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="TankLinerFloor">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.5,10.3}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{11.7,10.31}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.5, 10.3}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{11.7, 10.31}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="TankLinerWall">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{11.69,10.31}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{11.7,17.7}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{11.69, 10.31}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{11.7, 17.7}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="TankLinerRoof">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0,17.69}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{11.67,17.7}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 17.69}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{11.67, 17.7}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="TankGrout">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0,10.33}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{11.67,17.69}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 10.33}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{11.67, 17.69}"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="Observation point at bottom of concrete">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{0,18}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{0.0, 18.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Observation point in middle of concrete">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{0,10}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{0.0, 10.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Observation point at top of concrete">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{0,14}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{0.0, 14.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="Material Properties">
     <ParameterList name="Soil">
       <ParameterList name="Porosity: Uniform">
@@ -257,14 +241,13 @@
         <Parameter name="y" type="double" value="2.87e-13"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha" type="double" value="3.02e-4"/>
+        <Parameter name="alpha" type="double" value="0.000302"/>
         <Parameter name="Sr" type="double" value="0.354"/>
         <Parameter name="m" type="double" value="0.291"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{SoilLower, SoilUpper, SoilRight}"/>
     </ParameterList>
-
     <ParameterList name="Gravel">
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.30"/>
@@ -274,14 +257,13 @@
         <Parameter name="y" type="double" value="1.54e-10"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha" type="double" value="1.46e-3"/>
+        <Parameter name="alpha" type="double" value="0.00146"/>
         <Parameter name="Sr" type="double" value="0.052"/>
         <Parameter name="m" type="double" value="0.314"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{TankWaste, TankFFfloor, TankFFwall}"/>
     </ParameterList>
-
     <ParameterList name="DegradedConcrete">
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.168"/>
@@ -298,7 +280,6 @@
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{TankConcFloor, TankConcWall, TankConcRoof1, TankConcRoof2}"/>
     </ParameterList>
-
     <ParameterList name="DegradedLiner">
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.168"/>
@@ -315,7 +296,6 @@
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{TankLinerFloor, TankLinerWall, TankLinerRoof}"/>
     </ParameterList>
-
     <ParameterList name="DegradedGrout">
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.266"/>
@@ -332,9 +312,7 @@
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{TankGrout}"/>
     </ParameterList>
-
   </ParameterList>
-
   <ParameterList name="Phase Definitions">
     <ParameterList name="Aqueous">
       <ParameterList name="Phase Properties">
@@ -352,21 +330,20 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="Initial Conditions">
     <ParameterList name="All">
       <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
       <ParameterList name="IC: Linear Pressure">
-        <Parameter name="Reference Value" type="double" value="101325"/>
-        <Parameter name="Reference Point" type="Array(double)" value="{0,0}"/>
-        <Parameter name="Gradient Value" type="Array(double)" value="{0,-9789.3474 }"/>
+        <Parameter name="Reference Value" type="double" value="101325.0"/>
+        <Parameter name="Reference Point" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="Gradient Value" type="Array(double)" value="{0.0, -9789.3474}"/>
       </ParameterList>
       <ParameterList name="Solute IC">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
             <ParameterList name="Tracer">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="0"/>
+                <Parameter name="Value" type="double" value="0.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -374,13 +351,11 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="Boundary Conditions">
-
     <ParameterList name="BC lower">
       <Parameter name="Assigned Regions" type="Array(string)" value="{YLOBC}"/>
       <ParameterList name="BC: Uniform Pressure">
-        <Parameter name="Values" type="Array(double)" value="{101325}"/>
+        <Parameter name="Values" type="Array(double)" value="{101325.0}"/>
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
@@ -393,11 +368,10 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="BC upper">
       <Parameter name="Assigned Regions" type="Array(string)" value="{YHIBC}"/>
       <ParameterList name="BC: Flux">
-        <Parameter name="Inward Volumetric Flux" type="Array(double)" value="{9.513e-09}"/>
+        <Parameter name="Inward Volumetric Flux" type="Array(double)" value="{9.513e-9}"/>
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
@@ -410,27 +384,27 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
-
   </ParameterList>
-
   <ParameterList name="Output">
     <Parameter name="File Name Digits" type="int" value="5"/>
-    <ParameterList name="Time Macros"/>
+    <ParameterList name="Time Macros">
+    </ParameterList>
     <ParameterList name="Cycle Macros">
       <ParameterList name="Every_1_steps">
-        <Parameter name="Start_Period_Stop" type="Array(int)" value="{0,1,-1}"/>
+        <Parameter name="Start_Period_Stop" type="Array(int)" value="{0, 1, -1}"/>
       </ParameterList>
       <ParameterList name="Every_10_steps">
-        <Parameter name="Start_Period_Stop" type="Array(int)" value="{0,10,-1}"/>
+        <Parameter name="Start_Period_Stop" type="Array(int)" value="{0, 10, -1}"/>
       </ParameterList>
       <ParameterList name="Every_100_steps">
-        <Parameter name="Start_Period_Stop" type="Array(int)" value="{0,100,-1}"/>
+        <Parameter name="Start_Period_Stop" type="Array(int)" value="{0, 100, -1}"/>
       </ParameterList>
       <ParameterList name="Every_1000_steps">
-        <Parameter name="Start_Period_Stop" type="Array(int)" value="{0,1000,-1}"/>
+        <Parameter name="Start_Period_Stop" type="Array(int)" value="{0, 1000, -1}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Observation Data"/>
+    <ParameterList name="Observation Data">
+    </ParameterList>
     <ParameterList name="Visualization Data">
       <Parameter name="File Name Base" type="string" value="flow04/plt"/>
       <Parameter name="Cycle Macros" type="Array(string)" value="{Every_1_steps}"/>
@@ -440,5 +414,4 @@
       <Parameter name="Cycle Macros" type="Array(string)" value="{Every_1_steps}"/>
     </ParameterList>
   </ParameterList>
-
 </ParameterList>

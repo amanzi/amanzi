@@ -1,10 +1,9 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-
   <ParameterList name="mesh">
     <Parameter name="framework" type="string" value="mstk::mesh"/>
-  </ParameterList>    
-   
+  </ParameterList>
+
   <ParameterList name="regions">
     <ParameterList name="Computational domain">
       <ParameterList name="region: labeled set">
@@ -33,15 +32,15 @@
   </ParameterList>
 
   <ParameterList name="PKs">
-    <ParameterList name="transport">
-      <Parameter name="cfl" type="double" value="0.5"/>   
-      <Parameter name="spatial discretization order" type="int" value="2"/>   
-      <Parameter name="temporal discretization order" type="int" value="2"/>   
-      <!-- developers parameters --> 
-      <Parameter name="enable internal tests" type="bool" value="true"/>   
-      <Parameter name="internal tests tolerance" type="double" value="1e-5"/>   
-      <!-- end of developers parameters -->
 
+    <ParameterList name="transport">
+      <Parameter name="cfl" type="double" value="0.5"/>
+      <Parameter name="spatial discretization order" type="int" value="2"/>
+      <Parameter name="temporal discretization order" type="int" value="2"/>
+      <!-- developers parameters -->
+      <Parameter name="enable internal tests" type="bool" value="true"/>
+      <Parameter name="internal tests tolerance" type="double" value="0.00001"/>
+      <!-- end of developers parameters -->
       <ParameterList name="reconstruction">
         <Parameter name="polynomial order" type="int" value="1"/>
         <Parameter name="limiter" type="string" value="tensorial"/>
@@ -68,8 +67,10 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-      </ParameterList>        
+      </ParameterList>
+
     </ParameterList>
+
   </ParameterList>
 
   <ParameterList name="state">
@@ -88,7 +89,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-
       <ParameterList name="saturation_liquid">
         <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
@@ -106,4 +106,3 @@
     </ParameterList>
   </ParameterList>
 </ParameterList>
-

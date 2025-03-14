@@ -1,41 +1,40 @@
 <ParameterList>
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-
   <!--  REGIONS  -->
   <ParameterList name="regions">
     <ParameterList name="Well">
       <ParameterList name="region: point">
-        <Parameter name="coordinate" type="Array(double)" value="{0.5,0.5}"/>
+        <Parameter name="coordinate" type="Array(double)" value="{0.5, 0.5}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Left side">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{-1.0,0.0}"/>
+        <Parameter name="point" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{-1.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Right side">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{1.0,1.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{1.0,0.0}"/>
+        <Parameter name="point" type="Array(double)" value="{1.0, 1.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{1.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bottom side">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{0.0,-1.0}"/>
+        <Parameter name="point" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0, -1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top side">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{1.0,1.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{0.0,1.0}"/>
+        <Parameter name="point" type="Array(double)" value="{1.0, 1.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0, 1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="All">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0, 1.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -43,9 +42,9 @@
   <ParameterList name="mesh">
     <ParameterList name="unstructured">
       <ParameterList name="generate mesh">
-          <Parameter name="number of cells" type="Array(int)" value="{5, 5}"/>
-          <Parameter name="domain low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
-          <Parameter name="domain high coordinate" type="Array(double)" value="{1.0, 1.0}"/>
+        <Parameter name="number of cells" type="Array(int)" value="{5, 5}"/>
+        <Parameter name="domain low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="domain high coordinate" type="Array(double)" value="{1.0, 1.0}"/>
       </ParameterList>
       <ParameterList name="expert">
         <Parameter name="framework" type="string" value="MSTK"/>
@@ -56,18 +55,17 @@
   <ParameterList name="domain">
     <Parameter name="spatial dimension" type="int" value="2"/>
   </ParameterList>
-
   <ParameterList name="cycle driver">
-    <Parameter name="start time" type="double" value="0"/>
-    <Parameter name="end time" type="double" value="2"/>
+    <Parameter name="start time" type="double" value="0.0"/>
+    <Parameter name="end time" type="double" value="2.0"/>
     <ParameterList name="time intervals">
       <ParameterList name="TI 0">
         <Parameter name="physical model" type="string" value="PK tree"/>
-        <Parameter name="initial timestep" type="double" value="1.00000000000000000e+00"/>
-        <Parameter name="maximal timestep" type="double" value="1.00000000000000000e+07"/>
-        <Parameter name="start interval time" type="double" value="0.00000000000000000e+00"/>
-        <Parameter name="end interval time" type="double" value="2.00000000000000000e+00"/>
-<!--
+        <Parameter name="initial timestep" type="double" value="1.00000000000000000"/>
+        <Parameter name="maximal timestep" type="double" value="10000000.0000000000"/>
+        <Parameter name="start interval time" type="double" value="0e-17"/>
+        <Parameter name="end interval time" type="double" value="2.00000000000000000"/>
+        <!--
   <Parameter name="time integration method" type="string" value="BDF1"/>
   <ParameterList name="BDF1">
     <Parameter name="timestep controller type" type="string" value="standard"/>
@@ -99,30 +97,34 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="PK tree">
     <ParameterList name="Pressure PK">
       <Parameter name="PK type" type="string" value="Pressure PK"/>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="state">
     <ParameterList name="initial conditions">
+
       <ParameterList name="gravity">
-        <Parameter name="value" type="Array(double)" value="{0.00000000000000000e+00, -9.80664999999999942e+00}"/>
+        <Parameter name="value" type="Array(double)" value="{0e-17, -9.80664999999999942}"/>
       </ParameterList>
+
       <ParameterList name="water_viscosity">
-        <Parameter name="value" type="double" value="1.00200000000000007e-03"/>
+        <Parameter name="value" type="double" value="0.00100200000000000007"/>
       </ParameterList>
+
       <ParameterList name="water_density">
-        <Parameter name="value" type="double" value="9.98200000000000045e+02"/>
+        <Parameter name="value" type="double" value="998.200000000000045"/>
       </ParameterList>
+
       <ParameterList name="oil_viscosity">
-        <Parameter name="value" type="double" value="1.00200000000000007e-03"/>
+        <Parameter name="value" type="double" value="0.00100200000000000007"/>
       </ParameterList>
+
       <ParameterList name="oil_density">
-        <Parameter name="value" type="double" value="9.98200000000000045e+02"/>
+        <Parameter name="value" type="double" value="998.200000000000045"/>
       </ParameterList>
+
       <ParameterList name="saturation_liquid">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -130,12 +132,13 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.00000000000000000e+00"/>
+                <Parameter name="value" type="double" value="0e-17"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="pressure">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -143,47 +146,52 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.00000000000000000e+00"/>
+                <Parameter name="value" type="double" value="0e-17"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="permeability">
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="regions" type="Array(string)" value="{All}"/>
             <Parameter name="component" type="string" value="cell"/>
-              <ParameterList name="function">
-                <Parameter name="number of dofs" type="int" value="2"/>
-                <Parameter name="function type" type="string" value="composite function"/>
-                <ParameterList name="dof 1 function">
-                  <ParameterList name="function-constant">
-                    <Parameter name="value" type="double" value="1.99759999999999989e-12"/>
-                  </ParameterList>
-                </ParameterList>
-                <ParameterList name="dof 2 function">
-                  <ParameterList name="function-constant">
-                    <Parameter name="value" type="double" value="1.99759999999999999e-13"/>
-                  </ParameterList>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="2"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.99759999999999989e-12"/>
                 </ParameterList>
               </ParameterList>
+              <ParameterList name="dof 2 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.99759999999999999e-13"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
-    </ParameterList> <!-- End initial conditions -->
 
+    </ParameterList>
+    <!-- End initial conditions -->
     <ParameterList name="mesh partitions">
       <ParameterList name="materials">
         <Parameter name="region list" type="Array(string)" value="{All}"/>
       </ParameterList>
     </ParameterList>
-  </ParameterList> <!-- End State -->
-
+  </ParameterList>
+  <!-- End State -->
   <ParameterList name="PKs">
+
     <ParameterList name="Pressure PK">
       <Parameter name="PK type" type="string" value="Pressure PK"/>
+
     </ParameterList>
+
   </ParameterList>
 
   <!--  FLOW  -->
@@ -191,11 +199,9 @@
     <ParameterList name="Pressure Problem">
       <Parameter name="atmospheric pressure" type="double" value="0.0"/>
       <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
-
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="medium"/>
       </ParameterList>
-
       <ParameterList name="operators">
         <ParameterList name="diffusion operator">
           <ParameterList name="matrix">
@@ -214,7 +220,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-
       <ParameterList name="boundary conditions">
         <ParameterList name="pressure">
           <ParameterList name="BC 1">
@@ -227,7 +232,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-
       <ParameterList name="source terms">
         <ParameterList name="SRC 0">
           <Parameter name="regions" type="Array(string)" value="{Well}"/>
@@ -239,18 +243,16 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-
       <ParameterList name="Water retention models">
         <ParameterList name="Water retention model for the whole domain">
           <Parameter name="water retention model" type="string" value="Simple"/>
           <Parameter name="region" type="string" value="All"/>
-          <Parameter name="residual saturation wet" type="double" value="0.00000000000000000e+00"/>
-          <Parameter name="residual saturation nonwet" type="double" value="0.00000000000000000e+00"/>
+          <Parameter name="residual saturation wet" type="double" value="0e-17"/>
+          <Parameter name="residual saturation nonwet" type="double" value="0e-17"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <!-- SOLVERS -->
   <ParameterList name="solvers">
     <ParameterList name="AztecOO CG">
@@ -261,7 +263,6 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
@@ -276,5 +277,4 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
 </ParameterList>

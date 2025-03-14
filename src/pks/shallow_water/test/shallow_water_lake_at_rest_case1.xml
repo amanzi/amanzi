@@ -1,25 +1,24 @@
 <ParameterList name="main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-
   <!-- REGIONS -->
   <ParameterList name="regions">
     <ParameterList name="Computational domain">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0, 1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Boundary">
-        <ParameterList name="region: boundary">
-        </ParameterList>
+      <ParameterList name="region: boundary">
+      </ParameterList>
     </ParameterList>
   </ParameterList>
 
   <!-- FLOW -->
   <ParameterList name="PKs">
+
     <ParameterList name="shallow water">
       <Parameter name="domain name" type="string" value="surface"/>
-
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
@@ -31,11 +30,11 @@
         <Parameter name="limiter location" type="string" value="face"/>
         <Parameter name="limiter cfl" type="double" value="0.1"/>
       </ParameterList>
+
       <Parameter name="use limiter" type="bool" value="true"/>
       <Parameter name="cfl" type="double" value="0.5"/>
       <Parameter name="number of reduced cfl cycles" type="int" value="10"/>
       <Parameter name="numerical flux" type="string" value="central upwind"/>
-
       <ParameterList name="boundary conditions">
         <ParameterList name="ponded depth">
           <ParameterList name="BC 0">
@@ -70,12 +69,15 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
     </ParameterList>
+
   </ParameterList>
 
   <!--  STATE  -->
   <ParameterList name="state">
     <ParameterList name="field evaluators">
+
       <ParameterList name="porosity">
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
@@ -90,9 +92,10 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-    </ParameterList>
 
+    </ParameterList>
     <ParameterList name="initial conditions">
+
       <ParameterList name="fluid_density">
         <Parameter name="value" type="double" value="1000.0"/>
       </ParameterList>
@@ -104,22 +107,23 @@
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, -9.81}"/>
       </ParameterList>
-      
+
       <ParameterList name="const_fluid_density">
-        <Parameter name="value" type="double" value="9.98200000000000045e+02"/>
+        <Parameter name="value" type="double" value="998.200000000000045"/>
       </ParameterList>
-      
+
       <ParameterList name="atmospheric_pressure">
-        <Parameter name="value" type="double" value="1.01325000000000000e+05"/>
+        <Parameter name="value" type="double" value="101325.000000000000"/>
       </ParameterList>
-      
+
       <ParameterList name="surface-bathymetry">
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="Computational domain"/>
             <Parameter name="components" type="Array(string)" value="{cell, node}"/>
             <ParameterList name="function">
-              <ParameterList name="function-constant"> <!-- time component -->
+              <ParameterList name="function-constant">
+                <!-- time component -->
                 <Parameter name="value" type="double" value="0.0"/>
               </ParameterList>
             </ParameterList>
@@ -133,7 +137,8 @@
             <Parameter name="region" type="string" value="Computational domain"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <ParameterList name="function-constant"> <!-- time component -->
+              <ParameterList name="function-constant">
+                <!-- time component -->
                 <Parameter name="value" type="double" value="1.0"/>
               </ParameterList>
             </ParameterList>
@@ -163,13 +168,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
     </ParameterList>
   </ParameterList>
 </ParameterList>
-
-
-
-
-
-
-

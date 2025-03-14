@@ -1,47 +1,46 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-
   <Parameter name="end time" type="double" value="5000.0"/>
   <Parameter name="initial timestep" type="double" value="1000.0"/>
   <Parameter name="max iterations" type="int" value="50"/>
   <Parameter name="mesh resolution" type="int" value="20"/>
-
   <!--  REGIONS  -->
   <ParameterList name="regions">
     <ParameterList name="All">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0, 1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Left side">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{-1.0,0.0}"/>
+        <Parameter name="point" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{-1.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Right side">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{1.0,0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{1.0, 0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0, 1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bottom side">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{0.0,-1.0}"/>
+        <Parameter name="point" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0, -1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top side">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{1.0,1.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{0.0,1.0}"/>
+        <Parameter name="point" type="Array(double)" value="{1.0, 1.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0, 1.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
 
   <!-- FLOW -->
   <ParameterList name="PKs">
+
     <ParameterList name="Navier Stokes">
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="extreme"/>
@@ -56,44 +55,44 @@
             <Parameter name="method order" type="int" value="1"/>
           </ParameterList>
         </ParameterList>
-
         <ParameterList name="divergence operator">
           <Parameter name="matrix type" type="string" value="divergence"/>
           <ParameterList name="schema domain">
             <Parameter name="base" type="string" value="cell"/>
             <Parameter name="method" type="string" value="BernardiRaugel"/>
-            <Parameter name="method order" type="int" value="-1"/> <!-- not used !-->
+            <Parameter name="method order" type="int" value="-1"/>
+            <!-- not used !-->
           </ParameterList>
           <ParameterList name="schema range">
             <Parameter name="base" type="string" value="cell"/>
             <Parameter name="method" type="string" value="dg modal"/>
-            <Parameter name="method order" type="int" value="0"/> 
-            <Parameter name="dg basis" type="string" value="regularized"/> 
+            <Parameter name="method order" type="int" value="0"/>
+            <Parameter name="dg basis" type="string" value="regularized"/>
           </ParameterList>
         </ParameterList>
-
         <ParameterList name="gradient operator">
           <Parameter name="matrix type" type="string" value="divergence transpose"/>
           <Parameter name="factory" type="string" value="schema range"/>
           <ParameterList name="schema range">
             <Parameter name="base" type="string" value="cell"/>
             <Parameter name="method" type="string" value="BernardiRaugel"/>
-            <Parameter name="method order" type="int" value="-1"/> <!-- not used !-->
+            <Parameter name="method order" type="int" value="-1"/>
+            <!-- not used !-->
           </ParameterList>
           <ParameterList name="schema domain">
             <Parameter name="base" type="string" value="cell"/>
             <Parameter name="method" type="string" value="dg modal"/>
-            <Parameter name="method order" type="int" value="0"/> 
-            <Parameter name="dg basis" type="string" value="regularized"/> 
+            <Parameter name="method order" type="int" value="0"/>
+            <Parameter name="dg basis" type="string" value="regularized"/>
           </ParameterList>
         </ParameterList>
-
         <ParameterList name="advection operator">
           <Parameter name="matrix type" type="string" value="advection"/>
           <ParameterList name="schema">
             <Parameter name="base" type="string" value="cell"/>
             <Parameter name="method" type="string" value="BernardiRaugel"/>
-            <Parameter name="method order" type="int" value="-1"/> <!-- not used !-->
+            <Parameter name="method order" type="int" value="-1"/>
+            <!-- not used !-->
           </ParameterList>
         </ParameterList>
       </ParameterList>
@@ -103,11 +102,9 @@
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
         <!--Parameter name="preconditioner enhancement" type="string" value="linear operator"/-->
         <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
-
         <Parameter name="time integration method" type="string" value="BDF1"/>
         <ParameterList name="BDF1">
           <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
-
           <Parameter name="timestep controller type" type="string" value="standard"/>
           <ParameterList name="timestep controller standard parameters">
             <Parameter name="min iterations" type="int" value="10"/>
@@ -117,10 +114,9 @@
             <Parameter name="max timestep" type="double" value="1e+8"/>
             <Parameter name="min timestep" type="double" value="0.0"/>
           </ParameterList>
-
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1e-4"/>
+            <Parameter name="nonlinear tolerance" type="double" value="0.0001"/>
             <Parameter name="diverged tolerance" type="double" value="1e+10"/>
             <Parameter name="limit iterations" type="int" value="20"/>
             <Parameter name="max du growth factor" type="double" value="1e+5"/>
@@ -173,21 +169,25 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
     </ParameterList>
+
   </ParameterList>
 
   <!--  STATE  -->
   <ParameterList name="state">
     <ParameterList name="evaluators">
     </ParameterList>
-
     <ParameterList name="initial conditions">
+
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="998.0"/>
       </ParameterList>
+
       <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="0.01"/>
       </ParameterList>
+
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="101325.0"/>
       </ParameterList>
@@ -241,9 +241,9 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
     </ParameterList>
   </ParameterList>
-
   <!-- SOLVERS -->
   <ParameterList name="solvers">
     <ParameterList name="PCG with Hypre AMG">
@@ -253,7 +253,6 @@
         <Parameter name="error tolerance" type="double" value="1e-12"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="linear operator">
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
@@ -266,7 +265,6 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
@@ -288,4 +286,3 @@
     </ParameterList>
   </ParameterList>
 </ParameterList>
-

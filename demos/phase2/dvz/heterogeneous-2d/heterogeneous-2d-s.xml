@@ -4,19 +4,16 @@
     <Parameter name="Model ID" type="string" value="TBD"/>
     <Parameter name="Author" type="string" value="Chandrika"/>
   </ParameterList>
-
   <ParameterList name="Domain">
     <Parameter name="Spatial Dimension" type="int" value="2"/>
   </ParameterList>
-  
   <ParameterList name="Mesh">
     <ParameterList name="Structured">
-      <Parameter name="Domain Low Coordinate" type="Array(double)" value="{0,0}"/>
-      <Parameter name="Domain High Coordinate" type="Array(double)" value="{216,107.52}"/>
-      <Parameter name="Number of Cells" type="Array(int)" value="{448,256}"/>
+      <Parameter name="Domain Low Coordinate" type="Array(double)" value="{0.0, 0.0}"/>
+      <Parameter name="Domain High Coordinate" type="Array(double)" value="{216.0, 107.52}"/>
+      <Parameter name="Number of Cells" type="Array(int)" value="{448, 256}"/>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="Execution Control">
     <Parameter name="Flow Model" type="string" value="Richards"/>
     <Parameter name="Transport Model" type="string" value="On"/>
@@ -24,28 +21,22 @@
     <ParameterList name="Time Integration Mode">
       <ParameterList name="Initialize To Steady">
         <Parameter name="Start" type="double" value="0.0"/>
-        <Parameter name="Switch" type="double" value="6.17266656e10"/>
-	<!--        <Parameter name="End" type="double" value="61736132880.000"/> -->
-        <Parameter name="End" type="double" value="9.4672798E10"/> 
-        <Parameter name="Steady Initial Time Step" type="double" value="10000"/>
-        <Parameter name="Transient Initial Time Step" type="double" value="100"/>
+        <Parameter name="Switch" type="double" value="6.17266656e+10"/>
+        <!--        <Parameter name="End" type="double" value="61736132880.000"/> -->
+        <Parameter name="End" type="double" value="9.4672798e+10"/>
+        <Parameter name="Steady Initial Time Step" type="double" value="10000.0"/>
+        <Parameter name="Transient Initial Time Step" type="double" value="100.0"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="Time Period Control">
-      <Parameter name="Start Times" type="Array(double)" value="{6.1729344E10, 6.173178481E10, 6.173705521E10}"/>
-      <Parameter name="Initial Time Step" type="Array(double)" value="{10, 10, 10}"/>
+      <Parameter name="Start Times" type="Array(double)" value="{6.1729344e+10, 6.173178481e+10, 6.173705521e+10}"/>
+      <Parameter name="Initial Time Step" type="Array(double)" value="{10.0, 10.0, 10.0}"/>
     </ParameterList>
-
     <Parameter name="Verbosity" type="string" value="High"/>
-
     <ParameterList name="Numerical Control Parameters">
-
       <ParameterList name="Structured Algorithm">
         <ParameterList name="Expert Settings">
-
           <Parameter name="max_n_subcycle_transport" type="int" value="20"/>
-
           <Parameter name="do_multilevel_full" type="int" value="1"/>
           <Parameter name="do_richard_init_to_steady" type="int" value="0"/>
           <Parameter name="richard_init_to_steady_verbose" type="int" value="2"/>
@@ -55,7 +46,7 @@
           <Parameter name="steady_min_iterations" type="int" value="5"/>
           <Parameter name="steady_time_step_increase_factor" type="double" value="1.25"/>
           <Parameter name="steady_min_iterations_2" type="int" value="0"/>
-          <Parameter name="steady_time_step_increase_factor_2" type="double" value="10"/>
+          <Parameter name="steady_time_step_increase_factor_2" type="double" value="10.0"/>
           <Parameter name="steady_max_consecutive_failures_1" type="int" value="3"/>
           <Parameter name="steady_time_step_retry_factor_1" type="double" value="0.05"/>
           <Parameter name="steady_max_consecutive_failures_2" type="int" value="4"/>
@@ -63,52 +54,45 @@
           <Parameter name="steady_time_step_retry_factor_f" type="double" value="0.001"/>
           <Parameter name="steady_max_time_steps" type="int" value="500"/>
           <Parameter name="steady_max_num_consecutive_success" type="int" value="0"/>
-          <Parameter name="steady_extra_time_step_increase_factor" type="double" value="10."/>
+          <Parameter name="steady_extra_time_step_increase_factor" type="double" value="10.0"/>
           <Parameter name="steady_max_num_consecutive_increases" type="int" value="15"/>
           <Parameter name="steady_consecutive_increase_reduction_factor" type="double" value="0.4"/>
-          <Parameter name="steady_max_psuedo_time" type="double" value="3.15576e11"/>
+          <Parameter name="steady_max_psuedo_time" type="double" value="3.15576e+11"/>
           <Parameter name="steady_abort_on_psuedo_timestep_failure" type="int" value="0"/>
           <Parameter name="steady_use_PETSc_snes" type="bool" value="true"/>
           <Parameter name="steady_limit_function_evals" type="int" value="100000000"/>
           <Parameter name="steady_do_grid_sequence" type="int" value="1"/>
-          <Parameter name="steady_grid_sequence_new_level_dt_factor" type="double" value="1.e-3"/>
-
+          <Parameter name="steady_grid_sequence_new_level_dt_factor" type="double" value="0.001"/>
           <Parameter name="richard_solver_verbose" type="int" value="3"/>
           <Parameter name="richard_max_ls_iterations" type="int" value="10"/>
-          <Parameter name="richard_min_ls_factor" type="double" value="1.e-8"/>
-          <Parameter name="richard_ls_acceptance_factor" type="double" value="5"/>
+          <Parameter name="richard_min_ls_factor" type="double" value="1e-8"/>
+          <Parameter name="richard_ls_acceptance_factor" type="double" value="5.0"/>
           <Parameter name="richard_ls_reduction_factor" type="double" value="0.1"/>
           <Parameter name="richard_monitor_linear_solve" type="int" value="0"/>
           <Parameter name="richard_monitor_line_search" type="int" value="0"/>
-
           <Parameter name="richard_use_fd_jac" type="int" value="1"/>
-          <Parameter name="richard_perturbation_scale_for_J" type="double" value="1.e-8"/>
+          <Parameter name="richard_perturbation_scale_for_J" type="double" value="1e-8"/>
           <Parameter name="richard_use_dense_Jacobian" type="int" value="0"/>
           <Parameter name="richard_upwind_krel" type="int" value="1"/>
           <Parameter name="richard_pressure_maxorder" type="int" value="3"/>
           <Parameter name="richard_scale_solution_before_solve" type="bool" value="true"/>
           <Parameter name="richard_semi_analytic_J" type="bool" value="false"/>
           <Parameter name="richard_variable_switch_saturation_threshold" type="double" value="0.9996"/>
-
           <Parameter name="verbose" type="int" value="2"/>
-
         </ParameterList>
-      
-	<ParameterList name="Adaptive Mesh Refinement Control">
-	  <Parameter name="Number Of AMR Levels" type="int" value="1"/>
-	  <Parameter name="Blocking Factor" type="Array(int)" value="{32, 32, 32, 32}"/>
-	  <Parameter name="Maximum Grid Size" type="Array(int)" value="{64, 64, 64, 64}"/>
-	</ParameterList>
-      
+        <ParameterList name="Adaptive Mesh Refinement Control">
+          <Parameter name="Number Of AMR Levels" type="int" value="1"/>
+          <Parameter name="Blocking Factor" type="Array(int)" value="{32, 32, 32, 32}"/>
+          <Parameter name="Maximum Grid Size" type="Array(int)" value="{64, 64, 64, 64}"/>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="Regions">
     <ParameterList name="Bottom Surface All">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{216.0,0.0}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{216.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Region 1">
@@ -137,32 +121,32 @@
     </ParameterList>
     <ParameterList name="Top Surface Crib_216-B-17">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{74.5,107.52}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{78.5,107.52}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{74.5, 107.52}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{78.5, 107.52}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top Surface Crib_216-B-18">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{143.5,107.52}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{147.5,107.52}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{143.5, 107.52}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{147.5, 107.52}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top Surface Recharge_Boundary_westOfCribs">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,107.52}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{74.5,107.52}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 107.52}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{74.5, 107.52}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top Surface Recharge_Boundary_btwnCribs">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{78.5,107.52}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{143.5,107.52}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{78.5, 107.52}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{143.5, 107.52}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top Surface Recharge_Boundary_eastOfCribs">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{147.5,107.52}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{216.0,107.52}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{147.5, 107.52}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{216.0, 107.52}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -172,11 +156,11 @@
         <Parameter name="Value" type="double" value="0.4082"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="x" type="double" value="1.9976E-12"/>
-        <Parameter name="y" type="double" value="1.9976E-13"/>
+        <Parameter name="x" type="double" value="1.9976e-12"/>
+        <Parameter name="y" type="double" value="1.9976e-13"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha" type="double" value="1.9467E-04"/>
+        <Parameter name="alpha" type="double" value="0.00019467"/>
         <Parameter name="Sr" type="double" value="0.0"/>
         <Parameter name="m" type="double" value="0.2294"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
@@ -188,11 +172,11 @@
         <Parameter name="Value" type="double" value="0.2206"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="x" type="double" value="6.9365E-11"/>
-        <Parameter name="y" type="double" value="6.9365E-12"/>
+        <Parameter name="x" type="double" value="6.9365e-11"/>
+        <Parameter name="y" type="double" value="6.9365e-12"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha" type="double" value="2.0260E-03"/>
+        <Parameter name="alpha" type="double" value="0.0020260"/>
         <Parameter name="Sr" type="double" value="0.0"/>
         <Parameter name="m" type="double" value="0.3333"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
@@ -204,18 +188,18 @@
         <Parameter name="Value" type="double" value="0.2340"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="x" type="double" value="2.0706E-09"/>
-        <Parameter name="y" type="double" value="2.0706E-10"/>
+        <Parameter name="x" type="double" value="2.0706e-9"/>
+        <Parameter name="y" type="double" value="2.0706e-10"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha" type="double" value="2.0674E-03"/>
+        <Parameter name="alpha" type="double" value="0.0020674"/>
         <Parameter name="Sr" type="double" value="0.0"/>
         <Parameter name="m" type="double" value="0.3006"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{Region 3}"/>
     </ParameterList>
-<!--    <ParameterList name="Gravel">
+    <!--    <ParameterList name="Gravel">
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.422"/>
       </ParameterList>
@@ -231,33 +215,32 @@
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{Region 4}"/>
     </ParameterList>
---> 
+-->
     <ParameterList name="Gravel">
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.234"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="x" type="double" value="2.0607E-09"/>
-        <Parameter name="y" type="double" value="2.06073E-09"/>
+        <Parameter name="x" type="double" value="2.0607e-9"/>
+        <Parameter name="y" type="double" value="2.06073e-9"/>
       </ParameterList>
-     <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha" type="double" value="2.0674E-03"/>
+      <ParameterList name="Capillary Pressure: van Genuchten">
+        <Parameter name="alpha" type="double" value="0.0020674"/>
         <Parameter name="Sr" type="double" value="0.0"/>
         <Parameter name="m" type="double" value="0.3006"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{Region 4}"/>
     </ParameterList>
-
- </ParameterList>
+  </ParameterList>
   <ParameterList name="Phase Definitions">
     <ParameterList name="Aqueous">
       <ParameterList name="Phase Properties">
         <ParameterList name="Viscosity: Uniform">
-          <Parameter name="Viscosity" type="double" value="1.002e-3 "/>
+          <Parameter name="Viscosity" type="double" value="0.001002"/>
         </ParameterList>
         <ParameterList name="Density: Uniform">
-          <Parameter name="Density" type="double" value="998.2 "/>
+          <Parameter name="Density" type="double" value="998.2"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="Phase Components">
@@ -270,13 +253,11 @@
   <ParameterList name="Initial Conditions">
     <ParameterList name="All">
       <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
-
       <ParameterList name="IC: Linear Pressure">
-        <Parameter name="Reference Value" type="double" value="101325 "/>
-        <Parameter name="Reference Point" type="Array(double)" value="{0,0}"/>
-        <Parameter name="Gradient Value" type="Array(double)" value="{0,-9793.5192 }"/>
+        <Parameter name="Reference Value" type="double" value="101325.0"/>
+        <Parameter name="Reference Point" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="Gradient Value" type="Array(double)" value="{0.0, -9793.5192}"/>
       </ParameterList>
-
       <!-- <ParameterList name="IC: File Pressure"> -->
       <!--   <Parameter name="File" type="string" value="ssCheckpt-72PE.h5"/> -->
       <!--   <Parameter name="Label" type="string" value="pressure"/> -->
@@ -286,7 +267,7 @@
           <ParameterList name="Water">
             <ParameterList name="Tc-99">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="0"/>
+                <Parameter name="Value" type="double" value="0.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -298,16 +279,16 @@
     <ParameterList name="BC For Bottom Surface All">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Bottom Surface All}"/>
       <ParameterList name="BC: Uniform Pressure">
-        <Parameter name="Times" type="Array(double)" value="{0.0, 9.4672798E10}"/>
+        <Parameter name="Times" type="Array(double)" value="{0.0, 9.4672798e+10}"/>
         <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Values" type="Array(double)" value="{101325., 101325.}"/>
+        <Parameter name="Values" type="Array(double)" value="{101325.0, 101325.0}"/>
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
             <ParameterList name="Tc-99">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 9.4672798E10}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 9.4672798e+10}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{0.0, 0.0}"/>
               </ParameterList>
@@ -319,22 +300,18 @@
     <ParameterList name="BC For Top Surface Crib_216-B-17">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Top Surface Crib_216-B-17}"/>
       <ParameterList name="BC: Flux">
-        <Parameter name="Times" type="Array(double)"
-          value="{0.0, 6.17266656E10, 6.1729344E10, 9.4672798E10}"/>
+        <Parameter name="Times" type="Array(double)" value="{0.0, 6.17266656e+10, 6.1729344e+10, 9.4672798e+10}"/>
         <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant, Constant}"/>
-        <Parameter name="Inward Volumetric Flux" type="Array(double)"
-          value="{1.1071E-10, 0.00254022E-3, 1.48666E-9, 1.48666E-9}"/>
+        <Parameter name="Inward Volumetric Flux" type="Array(double)" value="{1.1071e-10, 0.00000254022, 1.48666e-9, 1.48666e-9}"/>
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
             <ParameterList name="Tc-99">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)"
-                  value="{0.0, 6.17266656E10, 6.1729344E10, 9.4672798E10}"/>
-                <Parameter name="Time Functions" type="Array(string)"
-                  value="{Constant, Constant, Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{0.0, 1.881389E-06, 0.0, 0.0}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 6.17266656e+10, 6.1729344e+10, 9.4672798e+10}"/>
+                <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant, Constant}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.0, 0.000001881389, 0.0, 0.0}"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -344,24 +321,18 @@
     <ParameterList name="BC For Top Surface Crib_216-B-18">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Top Surface Crib_216-B-18}"/>
       <ParameterList name="BC: Flux">
-        <Parameter name="Times" type="Array(double)"
-          value="{0.0, 6.17266656E10, 6.173178481E10, 6.173705521E10, 9.4672798E10}"/>
-        <Parameter name="Time Functions" type="Array(string)"
-          value="{Constant, Constant, Constant, Constant}"/>
-        <Parameter name="Inward Volumetric Flux" type="Array(double)"
-          value="{1.1071E-10, 1.48666E-9, 0.00330423E-3, 1.48666E-9, 1.48666E-9}"/>
+        <Parameter name="Times" type="Array(double)" value="{0.0, 6.17266656e+10, 6.173178481e+10, 6.173705521e+10, 9.4672798e+10}"/>
+        <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant, Constant, Constant}"/>
+        <Parameter name="Inward Volumetric Flux" type="Array(double)" value="{1.1071e-10, 1.48666e-9, 0.00000330423, 1.48666e-9, 1.48666e-9}"/>
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
             <ParameterList name="Tc-99">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)"
-                  value="{0.0, 6.17266656E10, 6.173178481E10, 6.173705521E10, 9.4672798E10}"/>
-                <Parameter name="Time Functions" type="Array(string)"
-                  value="{Constant, Constant, Constant, Constant}"/>
-                <Parameter name="Values" type="Array(double)"
-                  value="{0.0, 0.0, 2.266885E-06, 0.0, 0.0}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 6.17266656e+10, 6.173178481e+10, 6.173705521e+10, 9.4672798e+10}"/>
+                <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant, Constant, Constant}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.0, 0.0, 0.000002266885, 0.0, 0.0}"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -369,21 +340,18 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="BC For Top Surface Recharge_Boundary_westOfCribs">
-      <Parameter name="Assigned Regions" type="Array(string)"
-        value="{Top Surface Recharge_Boundary_westOfCribs}"/>
+      <Parameter name="Assigned Regions" type="Array(string)" value="{Top Surface Recharge_Boundary_westOfCribs}"/>
       <ParameterList name="BC: Flux">
-        <Parameter name="Times" type="Array(double)" value="{0.0, 6.17266656E10, 9.4672798E10}"/>
+        <Parameter name="Times" type="Array(double)" value="{0.0, 6.17266656e+10, 9.4672798e+10}"/>
         <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
-        <Parameter name="Inward Volumetric Flux" type="Array(double)"
-          value="{1.1071E-10, 1.48666E-9, 1.48666E-9}"/>
+        <Parameter name="Inward Volumetric Flux" type="Array(double)" value="{1.1071e-10, 1.48666e-9, 1.48666e-9}"/>
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
             <ParameterList name="Tc-99">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)"
-                  value="{0.0, 6.17266656E10, 9.4672798E10}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 6.17266656e+10, 9.4672798e+10}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
               </ParameterList>
@@ -393,21 +361,18 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="BC For Top Surface Recharge_Boundary_btwnCribs">
-      <Parameter name="Assigned Regions" type="Array(string)"
-        value="{Top Surface Recharge_Boundary_btwnCribs}"/>
+      <Parameter name="Assigned Regions" type="Array(string)" value="{Top Surface Recharge_Boundary_btwnCribs}"/>
       <ParameterList name="BC: Flux">
-        <Parameter name="Times" type="Array(double)" value="{0.0, 6.17266656E10, 9.4672798E10}"/>
+        <Parameter name="Times" type="Array(double)" value="{0.0, 6.17266656e+10, 9.4672798e+10}"/>
         <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
-        <Parameter name="Inward Volumetric Flux" type="Array(double)"
-          value="{1.1071E-10, 1.48666E-9, 1.48666E-9}"/>
+        <Parameter name="Inward Volumetric Flux" type="Array(double)" value="{1.1071e-10, 1.48666e-9, 1.48666e-9}"/>
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
             <ParameterList name="Tc-99">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)"
-                  value="{0.0, 6.17266656E10, 9.4672798E10}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 6.17266656e+10, 9.4672798e+10}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
               </ParameterList>
@@ -417,21 +382,18 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="BC For Top Surface Recharge_Boundary_eastOfCribs">
-      <Parameter name="Assigned Regions" type="Array(string)"
-        value="{Top Surface Recharge_Boundary_eastOfCribs}"/>
+      <Parameter name="Assigned Regions" type="Array(string)" value="{Top Surface Recharge_Boundary_eastOfCribs}"/>
       <ParameterList name="BC: Flux">
-        <Parameter name="Times" type="Array(double)" value="{0.0, 6.17266656E10, 9.4672798E10}"/>
+        <Parameter name="Times" type="Array(double)" value="{0.0, 6.17266656e+10, 9.4672798e+10}"/>
         <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
-        <Parameter name="Inward Volumetric Flux" type="Array(double)"
-          value="{1.1071E-10, 1.48666E-9, 1.48666E-9}"/>
+        <Parameter name="Inward Volumetric Flux" type="Array(double)" value="{1.1071e-10, 1.48666e-9, 1.48666e-9}"/>
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
             <ParameterList name="Tc-99">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)"
-                  value="{0.0, 6.17266656E10, 9.4672798E10}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 6.17266656e+10, 9.4672798e+10}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
               </ParameterList>
@@ -442,19 +404,21 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="Output">
-    <ParameterList name="Time Macros"/>
+    <ParameterList name="Time Macros">
+    </ParameterList>
     <ParameterList name="Cycle Macros">
       <ParameterList name="Every_1.0_1000.0_-1">
-        <Parameter name="Start_Period_Stop" type="Array(int)" value="{0,1000,-1}"/>
+        <Parameter name="Start_Period_Stop" type="Array(int)" value="{0, 1000, -1}"/>
       </ParameterList>
       <ParameterList name="Every_100">
-        <Parameter name="Start_Period_Stop" type="Array(int)" value="{0,100,-1}"/>
+        <Parameter name="Start_Period_Stop" type="Array(int)" value="{0, 100, -1}"/>
       </ParameterList>
       <ParameterList name="Every_1">
-        <Parameter name="Start_Period_Stop" type="Array(int)" value="{0,1,-1}"/>
+        <Parameter name="Start_Period_Stop" type="Array(int)" value="{0, 1, -1}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Observation Data"/>
+    <ParameterList name="Observation Data">
+    </ParameterList>
     <ParameterList name="Visualization Data">
       <Parameter name="File Name Base" type="string" value="run_data/plt"/>
       <Parameter name="File Name Digits" type="int" value="5"/>

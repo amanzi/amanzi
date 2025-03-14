@@ -1,46 +1,44 @@
 <ParameterList>
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-
   <ParameterList name="visualization data">
     <Parameter name="file name base" type="string" value="plot_thermal"/>
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 100, -1}"/>
   </ParameterList>
-
   <ParameterList name="regions">
     <ParameterList name="All">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0,1.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0, 1.0, 1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Left side">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{0.0,1.0,1.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.0, 1.0, 1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top side">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0,1.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0,1.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0, 1.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0, 1.0, 1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bottom side">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0,0.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0, 1.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="fracture 1">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0,0.5}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0,0.5}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0, 0.5}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0, 1.0, 0.5}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="fracture 2">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.5,0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{1.0,0.5,1.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.5, 0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0, 0.5, 1.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -61,7 +59,6 @@
   <ParameterList name="domain">
     <Parameter name="spatial dimension" type="int" value="3"/>
   </ParameterList>
-
   <ParameterList name="cycle driver">
     <ParameterList name="time periods">
       <ParameterList name="TP 0">
@@ -87,7 +84,6 @@
       <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="state">
     <ParameterList name="verbose object">
       <Parameter name="verbosity level" type="string" value="high"/>
@@ -95,7 +91,7 @@
     <ParameterList name="evaluators">
       <ParameterList name="specific_storage">
         <Parameter name="evaluator type" type="string" value="specific storage"/>
-	<ParameterList name="specific storage parameters">
+        <ParameterList name="specific storage parameters">
           <ParameterList name="ALL">
             <Parameter name="regions" type="Array(string)" value="{All}"/>
             <Parameter name="model" type="string" value="constant"/>
@@ -111,7 +107,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="3.4641e-6"/>
+                <Parameter name="value" type="double" value="0.0000034641"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -131,7 +127,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-
       <ParameterList name="particle_density">
         <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
@@ -140,7 +135,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="2500."/>
+                <Parameter name="value" type="double" value="2500.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -174,7 +169,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-
       <ParameterList name="molar_density_liquid">
         <Parameter name="evaluator type" type="string" value="eos"/>
         <Parameter name="eos basis" type="string" value="both"/>
@@ -186,7 +180,6 @@
           <Parameter name="density" type="double" value="1000.0"/>
         </ParameterList>
       </ParameterList>
-
       <ParameterList name="viscosity_liquid">
         <Parameter name="evaluator type" type="string" value="viscosity"/>
         <Parameter name="viscosity key" type="string" value="viscosity_liquid"/>
@@ -196,7 +189,6 @@
           <Parameter name="density" type="double" value="1000.0"/>
         </ParameterList>
       </ParameterList>
-
       <ParameterList name="internal_energy_liquid">
         <Parameter name="evaluator type" type="string" value="iem"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
@@ -228,23 +220,28 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="initial conditions">
+
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="101325.0"/>
       </ParameterList>
+
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -9.8}"/>
       </ParameterList>
+
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="1000.0"/>
       </ParameterList>
+
       <ParameterList name="const_fluid_molar_mass">
         <Parameter name="value" type="double" value="0.018015"/>
       </ParameterList>
+
       <ParameterList name="const_fluid_viscosity">
-        <Parameter name="value" type="double" value="1.0e-3"/>
+        <Parameter name="value" type="double" value="0.0010"/>
       </ParameterList>
+
       <ParameterList name="temperature">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -258,6 +255,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="pressure">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -265,23 +263,22 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-linear">
-                <Parameter name="y0" type="double" value="1.01325e+05"/>
+                <Parameter name="y0" type="double" value="101325.0"/>
                 <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0, 0.0}"/>
-                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, 0.0, -9.7935192e+03}"/>
+                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, 0.0, -9793.5192}"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
-    </ParameterList>
 
+    </ParameterList>
     <ParameterList name="mesh partitions">
       <ParameterList name="materials">
         <Parameter name="region list" type="Array(string)" value="{All}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
       <Parameter name="preconditioning method" type="string" value="boomer amg"/>
@@ -289,7 +286,7 @@
         <Parameter name="tolerance" type="double" value="0.001"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>
         <Parameter name="cycle applications" type="int" value="5"/>
-        <Parameter name="strong threshold" type="double" value="5.0e-01"/>
+        <Parameter name="strong threshold" type="double" value="0.50"/>
         <Parameter name="cycle type" type="int" value="1"/>
         <Parameter name="coarsen type" type="int" value="0"/>
         <Parameter name="verbosity" type="int" value="0"/>
@@ -297,7 +294,6 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="solvers">
     <ParameterList name="AztecOO">
       <Parameter name="iterative method" type="string" value="gmres"/>
@@ -320,12 +316,11 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="PKs">
+
     <ParameterList name="flow and energy">
       <Parameter name="PKs order" type="Array(string)" value="{flow, energy}"/>
       <Parameter name="master PK index" type="int" value="0"/>
-
       <ParameterList name="physical models and assumptions">
         <Parameter name="vapor diffusion" type="bool" value="false"/>
       </ParameterList>
@@ -347,9 +342,9 @@
           </ParameterList>
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
+            <Parameter name="nonlinear tolerance" type="double" value="0.000010"/>
             <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
-            <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
+            <Parameter name="max du growth factor" type="double" value="1.0e+3"/>
             <Parameter name="max divergent iterations" type="int" value="3"/>
             <Parameter name="max nka vectors" type="int" value="15"/>
             <Parameter name="limit iterations" type="int" value="20"/>
@@ -366,106 +361,113 @@
           <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
       </ParameterList>
+
     </ParameterList>
 
     <ParameterList name="energy">
       <ParameterList name="verbose object">
-	<Parameter name="verbosity level" type="string" value="high"/>
+        <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
+
       <ParameterList name="energy evaluator">
-	<ParameterList name="verbose object">
-	  <Parameter name="verbosity level" type="string" value="high"/>
-	</ParameterList>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
+        </ParameterList>
       </ParameterList>
+
       <ParameterList name="enthalpy evaluator">
-	<Parameter name="include work term" type="bool" value="false"/>
-	<ParameterList name="verbose object">
-	  <Parameter name="verbosity level" type="string" value="high"/>
-	</ParameterList>
+        <Parameter name="include work term" type="bool" value="false"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
+        </ParameterList>
       </ParameterList>
+
       <ParameterList name="thermal conductivity evaluator">
-	<ParameterList name="All">
-	  <Parameter name="regions" type="Array(string)" value="{All}"/>
+        <ParameterList name="All">
+          <Parameter name="regions" type="Array(string)" value="{All}"/>
           <ParameterList name="solid phase">
             <Parameter name="eos type" type="string" value="constant"/>
             <Parameter name="reference conductivity" type="double" value="0.2"/>
             <Parameter name="reference temperature" type="double" value="298.15"/>
           </ParameterList>
           <ParameterList name="liquid phase">
-	    <Parameter name="eos type" type="string" value="liquid water"/>
+            <Parameter name="eos type" type="string" value="liquid water"/>
             <Parameter name="reference conductivity" type="double" value="0.1"/>
             <Parameter name="reference temperature" type="double" value="298.15"/>
-	  </ParameterList>
-	</ParameterList>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
 
       <ParameterList name="operators">
-	<ParameterList name="diffusion operator">
-	  <ParameterList name="matrix">
-	    <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
-	    <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-	    <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
-	    <Parameter name="gravity" type="bool" value="false"/>
-	  </ParameterList>
-	  <ParameterList name="preconditioner">
-	    <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
-	    <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-	    <Parameter name="gravity" type="bool" value="false"/>
-	    <Parameter name="Newton correction" type="string" value="none"/>
-	    <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
-	  </ParameterList>
-	</ParameterList>
-	<ParameterList name="advection operator">
-	  <Parameter name="discretization primary" type="string" value="relative permeability"/>
-	</ParameterList>
+        <ParameterList name="diffusion operator">
+          <ParameterList name="matrix">
+            <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
+            <Parameter name="gravity" type="bool" value="false"/>
+          </ParameterList>
+          <ParameterList name="preconditioner">
+            <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="gravity" type="bool" value="false"/>
+            <Parameter name="Newton correction" type="string" value="none"/>
+            <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="advection operator">
+          <Parameter name="discretization primary" type="string" value="relative permeability"/>
+        </ParameterList>
       </ParameterList>
 
       <ParameterList name="boundary conditions">
-	<ParameterList name="temperature">
-	  <ParameterList name="BC 0">
-	    <Parameter name="regions" type="Array(string)" value="{Bottom side}"/>
-	    <Parameter name="spatial distribution method" type="string" value="none"/>
-	    <ParameterList name="boundary temperature">
-	      <ParameterList name="function-constant">
-		<Parameter name="value" type="double" value="300.0"/>
-	      </ParameterList>
-	    </ParameterList>
-	  </ParameterList>
-	  <ParameterList name="BC 1">
-	    <Parameter name="regions" type="Array(string)" value="{Top side}"/>
-	    <Parameter name="spatial distribution method" type="string" value="none"/>
-	    <ParameterList name="boundary temperature">
-	      <ParameterList name="function-constant">
-		<Parameter name="value" type="double" value="310.0"/>
-	      </ParameterList>
-	    </ParameterList>
-	  </ParameterList>
-	</ParameterList>
+        <ParameterList name="temperature">
+          <ParameterList name="BC 0">
+            <Parameter name="regions" type="Array(string)" value="{Bottom side}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
+            <ParameterList name="boundary temperature">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="300.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="BC 1">
+            <Parameter name="regions" type="Array(string)" value="{Top side}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
+            <ParameterList name="boundary temperature">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="310.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
 
       <ParameterList name="time integrator">
-	<Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
-	<Parameter name="linear solver" type="string" value="none"/>
-	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-	<ParameterList name="dae constraint">
-	  <Parameter name="method" type="string" value="projection"/>
-	  <Parameter name="inflow krel correction" type="bool" value="true"/>
-	  <Parameter name="linear solver" type="string" value="AztecOO"/>
-	</ParameterList>
-	<Parameter name="time integration method" type="string" value="none"/>
+        <Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
+        <Parameter name="linear solver" type="string" value="none"/>
+        <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+        <ParameterList name="dae constraint">
+          <Parameter name="method" type="string" value="projection"/>
+          <Parameter name="inflow krel correction" type="bool" value="true"/>
+          <Parameter name="linear solver" type="string" value="AztecOO"/>
+        </ParameterList>
+        <Parameter name="time integration method" type="string" value="none"/>
       </ParameterList>
+
     </ParameterList>
 
     <ParameterList name="flow">
       <ParameterList name="verbose object">
-	<Parameter name="verbosity level" type="string" value="high"/>
+        <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
+
       <ParameterList name="physical models and assumptions">
         <Parameter name="flow and transport in fractures" type="bool" value="true"/>
       </ParameterList>
+
       <ParameterList name="fracture permeability models">
         <ParameterList name="FPM for Entire Domain">
           <Parameter name="region" type="string" value="All"/>
@@ -475,68 +477,70 @@
       </ParameterList>
 
       <ParameterList name="operators">
-	<ParameterList name="diffusion operator">
-	  <ParameterList name="matrix">
-	    <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
-	    <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-	    <Parameter name="gravity" type="bool" value="true"/>
-	    <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
-	  </ParameterList>
-	  <ParameterList name="preconditioner">
-	    <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
-	    <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-	    <Parameter name="gravity" type="bool" value="true"/>
-	    <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
-	  </ParameterList>
-	  <ParameterList name="vapor matrix">
-	    <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
-	    <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-	    <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
-	    <Parameter name="exclude primary terms" type="bool" value="false"/>
-	    <Parameter name="scaled constraint equation" type="bool" value="false"/>
-	    <Parameter name="gravity" type="bool" value="false"/>
-	    <Parameter name="Newton correction" type="string" value="none"/>
-	  </ParameterList>
-	</ParameterList>
+        <ParameterList name="diffusion operator">
+          <ParameterList name="matrix">
+            <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="gravity" type="bool" value="true"/>
+            <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
+          </ParameterList>
+          <ParameterList name="preconditioner">
+            <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="gravity" type="bool" value="true"/>
+            <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
+          </ParameterList>
+          <ParameterList name="vapor matrix">
+            <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
+            <Parameter name="exclude primary terms" type="bool" value="false"/>
+            <Parameter name="scaled constraint equation" type="bool" value="false"/>
+            <Parameter name="gravity" type="bool" value="false"/>
+            <Parameter name="Newton correction" type="string" value="none"/>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
+
       <ParameterList name="boundary conditions">
-	<ParameterList name="pressure">
-	  <ParameterList name="BC 0">
-	    <Parameter name="regions" type="Array(string)" value="{Top side}"/>
-	    <Parameter name="spatial distribution method" type="string" value="none"/>
-      	    <ParameterList name="boundary pressure">
-      	      <ParameterList name="function-constant">
-      		<Parameter name="value" type="double" value="101325.0"/>
-      	      </ParameterList>
-      	    </ParameterList>
-	  </ParameterList>
-	</ParameterList>
+        <ParameterList name="pressure">
+          <ParameterList name="BC 0">
+            <Parameter name="regions" type="Array(string)" value="{Top side}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
+            <ParameterList name="boundary pressure">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="101325.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
 
       <ParameterList name="time integrator">
-	<ParameterList name="initialization">
-	  <Parameter name="method" type="string" value="saturated solver"/>
-	  <Parameter name="linear solver" type="string" value="PCG with Hypre AMG"/>
-	</ParameterList>
-
-	<Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
+        <ParameterList name="initialization">
+          <Parameter name="method" type="string" value="saturated solver"/>
+          <Parameter name="linear solver" type="string" value="PCG with Hypre AMG"/>
+        </ParameterList>
+        <Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
         <Parameter name="linear solver" type="string" value="PCG with Hypre AMG"/>
-	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-	<ParameterList name="dae constraint">
-	  <Parameter name="method" type="string" value="projection"/>
-	  <Parameter name="inflow krel correction" type="bool" value="true"/>
-	  <Parameter name="linear solver" type="string" value="AztecOO"/>
-	</ParameterList>
-	<Parameter name="time integration method" type="string" value="none"/>
-	<ParameterList name="verbose object">
-	  <Parameter name="verbosity level" type="string" value="high"/>
-	</ParameterList>
+        <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+        <ParameterList name="dae constraint">
+          <Parameter name="method" type="string" value="projection"/>
+          <Parameter name="inflow krel correction" type="bool" value="true"/>
+          <Parameter name="linear solver" type="string" value="AztecOO"/>
+        </ParameterList>
+        <Parameter name="time integration method" type="string" value="none"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
+        </ParameterList>
       </ParameterList>
+
     </ParameterList>
+
   </ParameterList>
 </ParameterList>

@@ -1,36 +1,35 @@
 <ParameterList name="main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-
   <!--  REGIONS  -->
   <ParameterList name="regions">
     <ParameterList name="Left side">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{0.0,0.0,0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{-1.0,0.0,0.0}"/>
+        <Parameter name="point" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{-1.0, 0.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Right side">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{1.0,0.0,0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{1.0,0.0,0.0}"/>
+        <Parameter name="point" type="Array(double)" value="{1.0, 0.0, 0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{1.0, 0.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top surface">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{0.0,0.0,1.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{0.0,0.0,1.0}"/>
+        <Parameter name="point" type="Array(double)" value="{0.0, 0.0, 1.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0, 0.0, 1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="fracture 1">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{0.0,0.0,0.5}"/>
-        <Parameter name="normal" type="Array(double)" value="{0.0,0.0,1.0}"/>
+        <Parameter name="point" type="Array(double)" value="{0.0, 0.0, 0.5}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0, 0.0, 1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="fracture 2">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{0.0,0.5,0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{0.0,1.0,0.0}"/>
+        <Parameter name="point" type="Array(double)" value="{0.0, 0.5, 0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0, 1.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="fractures">
@@ -45,4 +44,3 @@
     <Parameter name="tolerance" type="double" value="1e-12"/>
   </ParameterList>
 </ParameterList>
-

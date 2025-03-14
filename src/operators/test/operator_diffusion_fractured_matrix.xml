@@ -1,12 +1,11 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-
   <!--  REGIONS  -->
   <ParameterList name="regions">
     <ParameterList name="Middle side">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{0.0,0.0,0.5}"/>
-        <Parameter name="normal" type="Array(double)" value="{0.0,0.0,1.0}"/>
+        <Parameter name="point" type="Array(double)" value="{0.0, 0.0, 0.5}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0, 0.0, 1.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -20,7 +19,6 @@
         <Parameter name="error tolerance" type="double" value="1e-14"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="GMRES">
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
@@ -32,7 +30,6 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
@@ -46,16 +43,13 @@
         <Parameter name="verbosity" type="int" value="0"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="identity">
       <Parameter name="preconditioning method" type="string" value="identity"/>
     </ParameterList>
   </ParameterList>
-
   <!--  OPERATORS  -->
   <ParameterList name="PK operator">
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-
     <ParameterList name="diffusion operator">
       <Parameter name="fracture" type="Array(string)" value="{Middle side}"/>
       <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
@@ -66,4 +60,3 @@
     </ParameterList>
   </ParameterList>
 </ParameterList>
-

@@ -1,6 +1,5 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-
   <!--  REGIONS  -->
   <ParameterList name="regions">
     <ParameterList name="Boundary">
@@ -18,7 +17,7 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-    
+
   <!-- MAPS -->
   <ParameterList name="maps">
     <Parameter name="method" type="string" value="Lagrange serendipity"/>
@@ -26,7 +25,6 @@
     <Parameter name="projector" type="string" value="H1"/>
     <Parameter name="map name" type="string" value="VEM"/>
   </ParameterList>
-
   <!-- LIMITER -->
   <ParameterList name="limiter">
     <Parameter name="limiter" type="string" value="none"/>
@@ -36,17 +34,14 @@
     <Parameter name="smoothness indicator" type="string" value="high order term"/>
     <Parameter name="limiter points" type="int" value="1"/>
   </ParameterList>
-
   <!--  OPERATORS: dual formulation -->
   <ParameterList name="PK operator">
     <Parameter name="boundary conditions" type="string" value="none"/>
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-
     <ParameterList name="flux operator">
       <Parameter name="matrix type" type="string" value="flux"/>
       <Parameter name="flux formula" type="string" value="downwind"/>
       <Parameter name="jump operator on test function" type="bool" value="true"/>
-
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="face"/>
         <Parameter name="method" type="string" value="dg modal"/>
@@ -54,11 +49,9 @@
         <Parameter name="dg basis" type="string" value="orthonormalized"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="advection operator">
       <Parameter name="matrix type" type="string" value="advection"/>
       <Parameter name="gradient operator on test function" type="bool" value="true"/>
-
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
         <Parameter name="method" type="string" value="dg modal"/>
@@ -66,10 +59,8 @@
         <Parameter name="dg basis" type="string" value="orthonormalized"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="reaction operator">
       <Parameter name="matrix type" type="string" value="mass"/>
-
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
         <Parameter name="method" type="string" value="dg modal"/>
@@ -77,10 +68,8 @@
         <Parameter name="method order" type="int" value="1"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="divergence operator">
       <Parameter name="matrix type" type="string" value="mass"/>
-
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
         <Parameter name="method" type="string" value="dg modal"/>
@@ -90,4 +79,3 @@
     </ParameterList>
   </ParameterList>
 </ParameterList>
-
