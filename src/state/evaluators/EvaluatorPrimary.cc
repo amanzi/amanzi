@@ -73,7 +73,7 @@ EvaluatorPrimary_::Update(State& S, const Key& request)
 {
   Teuchos::OSTab tab = vo_.getOSTab();
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-    *vo_.os() << "Primary Variable " << my_key_ << " requested by " << request << std::endl;
+    *vo_.os() << "Primary Variable " << Keys::getKey(my_key_, my_tag_) << " requested by " << request << std::endl;
   }
 
   if (requests_.find(request) == requests_.end()) {

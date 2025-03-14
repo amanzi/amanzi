@@ -39,7 +39,6 @@ def _listObjectFromElement(elem):
 
     # else try to guess the type from the List name
     cname = elem.get('name')
-    assert cname is not None
     try:
         return objects[cname].from_Element(elem)
 
@@ -54,7 +53,8 @@ def fromElement(elem):
         return _parameterFromElement(elem)
     elif elem.tag == 'ParameterList':
         return _listObjectFromElement(elem)
-    else:
-        raise RuntimeError('Invalid element with tag %s' % elem.tag)
+    elif 'function Comment' in str(elem.tag):
+        return objects['function Comment'].from_Element(elem)
+    raise RuntimeError('Invalid element with tag %s' % elem.tag)
 
 

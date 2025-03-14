@@ -127,18 +127,26 @@ validKey(const Key& key)
     auto split_deriv = split(key, deriv_delimiter);
     result = validKey(split_deriv.first) && validKey(split_deriv.second);
   } else {
-    int name_count = std::count(key.begin(), key.end(), name_delimiter);
-    if (name_count > 1) {
+    int tag_count = std::count(key.begin(), key.end(), tag_delimiter);
+    if (tag_count > 1) {
       result = false;
+    } else if (tag_count == 1) {
+      auto split_tag = split(key, tag_delimiter);
+      result = validKey(split_tag.first) && validKey(split_tag.second);
     } else {
-      auto domain_var = split(key, name_delimiter);
-      if (starts_with(domain_var.first, dset_delimiter) ||
-          ends_with(domain_var.first, dset_delimiter))
+      int name_count = std::count(key.begin(), key.end(), name_delimiter);
+      if (name_count > 1) {
         result = false;
-      if (std::count(domain_var.first.begin(), domain_var.first.end(), dset_delimiter) > 1)
-        result = false;
-      if (std::count(domain_var.second.begin(), domain_var.second.end(), dset_delimiter))
-        result = false;
+      } else {
+        auto domain_var = split(key, name_delimiter);
+        if (starts_with(domain_var.first, dset_delimiter) ||
+            ends_with(domain_var.first, dset_delimiter))
+          result = false;
+        if (std::count(domain_var.first.begin(), domain_var.first.end(), dset_delimiter) > 1)
+          result = false;
+        if (std::count(domain_var.second.begin(), domain_var.second.end(), dset_delimiter))
+          result = false;
+      }
     }
   }
   return result;
@@ -345,18 +353,16 @@ matchesDomainSet(const Key& domain_set, const Key& name)
 
 // tags
 Key
-getKey(const Key& var, const Tag& tag)
+getKey(const Key& var, const Tag& tag, bool force_delimiter)
 {
-  if (tag.get() == "")
-    return var;
-  else
-    return merge(var, tag.get(), tag_delimiter);
+  if (!force_delimiter && tag.get() == "") return var;
+  else return merge(var, tag.get(), tag_delimiter);
 }
 
 Key
-getKey(const KeyTag& var_tag)
+getKey(const KeyTag& var_tag, bool force_delimiter)
 {
-  return getKey(var_tag.first, var_tag.second);
+  return getKey(var_tag.first, var_tag.second, force_delimiter);
 }
 
 KeyTag
@@ -394,16 +400,21 @@ getDerivKey(const KeyTag& var, const KeyTag& wrt)
 // Helper functions for reading keys and domains from parameter lists
 // -----------------------------------------------------------------------------
 Key
-cleanPListName(const std::string& name)
+cleanPListName(const std::string& name, const std::string& default_name)
 {
   auto pos = name.rfind("->");
+  std::string out;
   if (pos == name.size()) {
-    return "";
+    out = default_name;
   } else if (pos == std::string::npos) {
-    return name;
+    out = name;
   } else {
-    return name.substr(pos + 2, std::string::npos);
+    out = name.substr(pos + 2, std::string::npos);
   }
+
+  // ANONYMOUS is what Teuchos names a PList with an empty name
+  if (out == "ANONYMOUS") out = default_name;
+  return out;
 }
 
 
@@ -506,11 +517,13 @@ readKey(Teuchos::ParameterList& list,
   if (list.isParameter(basename_key_suffix_arg)) {
     default_key = getKey(domain, list.get<std::string>(basename_key_suffix_arg));
     return list.get<std::string>(basename_key_arg, default_key);
-  } else if (!default_name.empty()) {
+  } else if (default_name == "ERROR_NO_DEFAULT_PROVIDED") {
+    return list.get<std::string>(basename_key_arg);
+  } else if (default_name.empty()) {
+    return list.get<std::string>(basename_key_arg, default_name);
+  } else {
     default_key = getKey(domain, default_name);
     return list.get<std::string>(basename_key_arg, default_key);
-  } else {
-    return list.get<std::string>(basename_key_arg);
   }
 }
 
@@ -576,4 +589,11 @@ readTag(Teuchos::ParameterList& list, const std::string& param, const Tag& defau
 }
 
 } // namespace Keys
+
+std::ostream& operator<<(std::ostream& os, const KeyTag& keytag)
+{
+  os << Keys::getKey(keytag);
+  return os;
+}
+
 } // namespace Amanzi

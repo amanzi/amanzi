@@ -89,6 +89,7 @@ using KeyTagSet = Utils::FIFO_Set<KeyTag>;
 typedef std::tuple<Key, Tag, Key> DerivativeTriple;
 typedef std::set<DerivativeTriple> DerivativeTripleSet;
 
+std::ostream& operator<<(std::ostream& os, const KeyTag& keytag);
 
 namespace Keys {
 
@@ -227,11 +228,12 @@ matchesDomainSet(const Key& domain_set, const Key& name);
 //
 // Working with tags
 // -----------------------------------------------------------------------------
-// Tag'd variables are of the form VARNAME:TAG
+// Tag'd variables are of the form VARNAME@TAG -- force_delimiter requires @
+// even for empty tags.
 Key
-getKey(const Key& var, const Tag& tag);
+getKey(const Key& var, const Tag& tag, bool force_delimiter=false);
 Key
-getKey(const KeyTag& var_tag);
+getKey(const KeyTag& var_tag, bool force_delimiter=false);
 
 KeyTag
 splitKeyTag(const Key& name);
@@ -254,12 +256,12 @@ getDerivKey(const KeyTag& var, const KeyTag& wrt);
 // Trilinos ParameterList includes the full tree of the name
 // (main->sublist->name), clean this and just return the final name.
 Key
-cleanPListName(const std::string& name);
+cleanPListName(const std::string& name, const std::string& default_name="");
 
 inline Key
-cleanPListName(const Teuchos::ParameterList& plist)
+cleanPListName(const Teuchos::ParameterList& plist, const std::string& default_name="")
 {
-  return cleanPListName(plist.name());
+  return cleanPListName(plist.name(), default_name);
 }
 
 // Read a domain name in a standard way, potentially with a dtype
@@ -298,13 +300,13 @@ Key
 readKey(Teuchos::ParameterList& list,
         const Key& domain,
         const Key& basename,
-        const Key& default_name = "");
+        const Key& default_name = "ERROR_NO_DEFAULT_PROVIDED");
 
 KeyTag
 readKeyTag(Teuchos::ParameterList& list,
            const Key& domain,
            const Key& basename,
-           const Key& default_name = "",
+           const Key& default_name = "ERROR_NO_DEFAULT_PROVIDED",
            const Tag& tag_default = Tag(""));
 
 // Convenience function for requesting a list of names of Keys from an input

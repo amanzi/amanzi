@@ -123,7 +123,7 @@ Beaker::EnforceConstraint(BeakerState* state,
     UpdateKineticChemistry();
     CalculateDTotal();
 
-    jacobian_.Zero();
+    jacobian_.PutScalar(0.);
 
     for (int i = 0; i < ncomp_; i++) {
       auto pair = Keys::split(names[i], '@');

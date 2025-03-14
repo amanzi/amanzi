@@ -62,8 +62,7 @@ class MatrixFE {
   Teuchos::RCP<const Epetra_CrsMatrix> OffProcMatrix() const { return offproc_matrix_; }
   Teuchos::RCP<Epetra_CrsMatrix> OffProcMatrix() { return offproc_matrix_; }
 
-  // zero to allow mation
-  int Zero();
+  int PutScalar(double val);
 
   // fill graph
   int SumIntoMyValues(int row, int count, const double* values, const int* indices);

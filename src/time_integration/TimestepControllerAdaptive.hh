@@ -31,6 +31,7 @@ working as intended or not... --ETC
 #include "Teuchos_ParameterList.hpp"
 
 #include "CompositeVector.hh"
+#include "TreeVector.hh"
 
 #include "TimestepController.hh"
 #include "TimeIntegrationDefs.hh"

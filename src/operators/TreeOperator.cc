@@ -416,7 +416,7 @@ void
 TreeOperator::AssembleMatrix()
 {
   AMANZI_ASSERT(leaves_.size() != 0);
-  Amat_->Zero();
+  Amat_->PutScalar(0.);
 
   // check that each row has at least one non-null operator block
   std::size_t n_row_leaves = leaves_.size();

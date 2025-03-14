@@ -350,65 +350,11 @@ Initialize<CompositeVector>(Teuchos::ParameterList& plist,
     std::vector<std::string> complist;
 
     // -- potential use of a mapping operator first --
-    bool map_normal = plist.get<bool>("dot with normal", false);
-    if (map_normal) {
-      // map_normal take a vector and dots it with face normals
-      AMANZI_ASSERT(t.NumComponents() == 1);                              // one comp
-      AMANZI_ASSERT(t.HasComponent("face"));                              // is named face
-      AMANZI_ASSERT(t.Location("face") == AmanziMesh::Entity_kind::FACE); // is on face
-      AMANZI_ASSERT(t.NumVectors("face") == 1);                           // and is scalar
-
-      // create a vector on faces of the appropriate dimension
-      int dim = t.Mesh()->getSpaceDimension();
-
-      CompositeVectorSpace cvs;
-      cvs.SetMesh(t.Mesh());
-      cvs.SetComponent("face", AmanziMesh::Entity_kind::FACE, dim);
-      Teuchos::RCP<CompositeVector> vel_vec = Teuchos::rcp(new CompositeVector(cvs));
-
-      // Evaluate the velocity function
-      auto func = Functions::CreateCompositeVectorFunction(func_plist, vel_vec->Map(), complist);
-      func->Compute(t_ini, vel_vec.ptr());
-
-      // CV's map may differ from the regular mesh map due to presense of fractures
-      const auto& fmap = *t.Map().Map("face", true);
-      int nfaces_owned =
-        t.Mesh()->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
-
-      Epetra_MultiVector& dat_f = *t.ViewComponent("face");
-      const Epetra_MultiVector& vel_f = *vel_vec->ViewComponent("face");
-
-      // Dot the velocity with the normal
-      // -- two branches: single flux per face, multiple fluxes
-      int dir;
-      AmanziGeometry::Point vel(dim);
-      for (int f = 0; f != nfaces_owned; ++f) {
-        for (int i = 0; i < dim; ++i) vel[i] = vel_f[i][f];
-
-        int ndofs = fmap.ElementSize(f);
-        int g = fmap.FirstPointInElement(f);
-        if (ndofs == 1) {
-          const AmanziGeometry::Point& normal = t.Mesh()->getFaceNormal(f);
-          dat_f[0][g] = vel * normal;
-        } else {
-          auto cells = t.Mesh()->getFaceCells(f);
-
-          for (int i = 0; i < ndofs; ++i) {
-            const AmanziGeometry::Point& normal = t.Mesh()->getFaceNormal(f, cells[i], &dir);
-            dat_f[0][g + i] = (vel * normal) * dir;
-          }
-        }
-      }
-      initialized = true;
-
-    } else {
-      auto t_ptr = Teuchos::rcpFromRef(t).ptr();
-
-      // no map, just evaluate the function
-      auto func = Functions::CreateCompositeVectorFunction(func_plist, t.Map(), complist);
-      func->Compute(t_ini, t_ptr);
-      initialized = true;
-    }
+    bool dot_with_normal = plist.get<bool>("dot with normal", false);
+    auto t_ptr = Teuchos::rcpFromRef(t).ptr();
+    auto func = Functions::CreateCompositeVectorFunction(func_plist, t.Map(), complist, dot_with_normal);
+    func->Compute(t_ini, t_ptr);
+    initialized = true;
   }
 
   if ((t.HasComponent("face") || t.HasComponent("boundary_face")) && t.HasComponent("cell") &&
