@@ -100,7 +100,7 @@ LimiterCellDG::LimiterScalarDG_(const WhetStone::DG_Modal& dg,
   AmanziGeometry::Point x1(dim), x2(dim), xm(dim);
   int order = WhetStone::PolynomialSpaceOrder(dim, nk);
 
-  if (!external_bounds_) { bounds_ = BoundsForCells(*field_, bc_model, bc_value, stencil_id_); }
+  if (!external_bounds_) { BoundsForCells(*field_, bc_model, bc_value, stencil_id_, bounds_); }
 
   int ilast = (dim == 2) ? 1 : 0;
 
@@ -173,7 +173,7 @@ LimiterCellDG::LimiterHierarchicalDG_(const WhetStone::DG_Modal& dg,
   // -- for mean values
   component_ = 0;
   std::vector<Teuchos::RCP<CompositeVector>> bounds(1 + dim);
-  bounds[0] = BoundsForCells(*field_, bc_model, bc_value, stencil_id_);
+  BoundsForCells(*field_, bc_model, bc_value, stencil_id_, bounds[0]);
 
   // -- for gradient
   {
@@ -188,7 +188,7 @@ LimiterCellDG::LimiterHierarchicalDG_(const WhetStone::DG_Modal& dg,
 
     for (int i = 0; i < dim; ++i) {
       component_ = i;
-      bounds[i + 1] = BoundsForCells(field_tmp, bc_model_none, bc_value, stencil_id_);
+      BoundsForCells(field_tmp, bc_model_none, bc_value, stencil_id_, bounds[i + 1]);
     }
   }
 

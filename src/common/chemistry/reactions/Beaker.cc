@@ -131,7 +131,7 @@ Beaker::Initialize(BeakerState& state, const BeakerParameters& parameters)
       ion_exchange_rxns_.size() > 0) {
     total_sorbed_.resize(ncomp_, 0.0);
     dtotal_sorbed_.Resize(ncomp_);
-    dtotal_sorbed_.Zero();
+    dtotal_sorbed_.PutScalar(0.);
 
     state.total_sorbed.resize(ncomp_, 0.0);
 
@@ -246,7 +246,7 @@ Beaker::Speciate(BeakerState* state)
     for (int i = 0; i < ncomp_; i++) { residual_.at(i) = total_.at(i) - state->total.at(i); }
     // add derivatives of total with respect to free to Jacobian
     // units of Jacobian: kg water/sec
-    jacobian_.Zero();
+    jacobian_.PutScalar(0.);
     CalculateDTotal();
     jacobian_.AddValues(&dtotal_);
 
@@ -1162,7 +1162,7 @@ Beaker::CalculateTotal(const BeakerState& state)
 void
 Beaker::CalculateDTotal()
 {
-  dtotal_.Zero();
+  dtotal_.PutScalar(0.);
 
   // derivative with respect to free-ion is 1.
   dtotal_.SetDiagonal(1.0);
@@ -1177,7 +1177,7 @@ Beaker::CalculateDTotal()
 
   // calculate sorbed derivatives
   if (total_sorbed_.size() > 0) {
-    dtotal_sorbed_.Zero();
+    dtotal_sorbed_.PutScalar(0.);
     for (auto it = surface_complexation_rxns_.begin(); it != surface_complexation_rxns_.end();
          ++it) {
       it->AddContributionToDTotal(primary_species(), &dtotal_sorbed_);
@@ -1338,7 +1338,7 @@ Beaker::CalculateJacobian()
   CalculateDTotal();
 
   // add in derivatives for equilibrium chemistry
-  jacobian_.Zero();
+  jacobian_.PutScalar(0.);
   AddAccumulationDerivative(&jacobian_, &dtotal_, &dtotal_sorbed_);
 
   // add in derivatives for kinetic chemistry

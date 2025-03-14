@@ -66,7 +66,7 @@ class MatrixBlock {
   void ScaleColumn(int irow, double scale);
   void Scale(double scale);
 
-  void Zero();
+  void PutScalar(double val);
   void SetDiagonal(double d);
 
   // non trivilar routines

@@ -136,7 +136,7 @@ void
 FlattenedTreeOperator::AssembleMatrix()
 {
   int n_blocks = blocks_.size();
-  Amat_->Zero();
+  Amat_->PutScalar(0.);
 
   // check that each row has at least one non-null operator block
   for (int row = 0; row != n_blocks; ++row) {

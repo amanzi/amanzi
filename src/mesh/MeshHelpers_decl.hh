@@ -74,7 +74,16 @@ getFaceOnBoundaryInternalCell(const Mesh_type& mesh, Entity_ID f);
 //
 template <class Mesh_type>
 KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
-getFaceNormalExterior(const Mesh_type& mesh, int f, int* dir);
+getFaceNormalExterior(const Mesh_type& mesh, Entity_ID f, int* dir);
+
+
+//
+// Get the directional int for a face that is on the boundary.
+//
+template <class Mesh_type>
+KOKKOS_INLINE_FUNCTION int
+getBoundaryDirection(const Mesh_type& mesh, Entity_ID f);
+
 
 //
 // Given a cell and a face bordering that cell, return the cell on the other

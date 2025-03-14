@@ -284,8 +284,8 @@ SimpleThermoDatabase::RebuildAqueousComplexes_(const Teuchos::ParameterList& pli
   int nsec = secondaries.size();
 
   MatrixBlock A(nsec, nsec), B(nsec, npri), Bnew(nsec, npri);
-  A.Zero();
-  B.Zero();
+  A.PutScalar(0.);
+  B.PutScalar(0.);
 
   // two ways to provide the equilibrium constant are reduced to one
   int nT(1);
