@@ -13,7 +13,7 @@
 List *region: cylinder* defines an infinite cylinder determined by
 a symmetry axis, point on this axis and radius.
 
-.. admonition:: region_cylinder-spec
+.. admonition:: region-cylinder-spec
 
   * `"axis`" ``[Array(double)]`` symmetry axis
   * `"point`" ``[Array(double)]`` point on a symmetry axis

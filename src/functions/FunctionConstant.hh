@@ -12,7 +12,7 @@
 
 Constant function is defined as :math:`f(x) = a`, for all :math:`x`.
 
-.. admonition:: function_constant-spec
+.. admonition:: function-constant-spec
 
   * `"value`" ``[double]`` The constant to be applied.
 
