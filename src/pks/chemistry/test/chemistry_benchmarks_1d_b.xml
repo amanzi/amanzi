@@ -24,6 +24,7 @@
       <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
   </ParameterList>
+
   <ParameterList name="domain">
     <Parameter name="spatial dimension" type="int" value="3"/>
   </ParameterList>
@@ -47,6 +48,7 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
+
   <ParameterList name="state">
     <ParameterList name="evaluators">
       <ParameterList name="specific_storage">
@@ -63,7 +65,6 @@
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
-
       <ParameterList name="mass_density_liquid">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -71,7 +72,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="9.98200000000000045e+02"/>
+                <Parameter name="value" type="double" value="998.200000000000045"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -85,7 +86,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="2.50000000000000000e-01"/>
+                <Parameter name="value" type="double" value="0.250000000000000000"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -99,7 +100,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.e+00"/>
+                <Parameter name="value" type="double" value="1.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -108,18 +109,23 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="initial conditions">
+
       <ParameterList name="gravity">
-        <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -9.80664999999999942e+00}"/>
+        <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -9.80664999999999942}"/>
       </ParameterList>
+
       <ParameterList name="const_fluid_viscosity">
-        <Parameter name="value" type="double" value="1.002e-03"/>
+        <Parameter name="value" type="double" value="0.001002"/>
       </ParameterList>
+
       <ParameterList name="const_fluid_density">
-        <Parameter name="value" type="double" value="9.982e+02"/>
+        <Parameter name="value" type="double" value="998.2"/>
       </ParameterList>
+
       <ParameterList name="const_fluid_molar_mass">
         <Parameter name="value" type="double" value="0.018015"/>
       </ParameterList>
+
       <ParameterList name="permeability">
         <Parameter name="write checkpoint" type="bool" value="false"/>
         <ParameterList name="function">
@@ -148,6 +154,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="pressure">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -155,17 +162,19 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="2.01325e+05"/>
+                <Parameter name="value" type="double" value="201325.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="geochemical conditions">
         <ParameterList name="initial">
           <Parameter name="regions" type="Array(string)" value="{All}"/>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="total_component_concentration">
         <Parameter name="names" type="Array(string)" value="{free, gas@CO2, mineral@Calcite}"/>
         <ParameterList name="function">
@@ -187,16 +196,18 @@
               </ParameterList>
               <ParameterList name="dof 3 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="5.0e-4"/>
+                  <Parameter name="value" type="double" value="0.00050"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="atmospheric_pressure">
-        <Parameter name="value" type="double" value="1.01325e+05"/>
+        <Parameter name="value" type="double" value="101325.0"/>
       </ParameterList>
+
       <ParameterList name="mineral_volume_fractions">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -207,13 +218,14 @@
               <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.0e-05"/>
+                  <Parameter name="value" type="double" value="0.000010"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="mineral_specific_surface_area">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -231,6 +243,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="mineral_rate_constant">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -248,6 +261,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="saturation_liquid">
         <ParameterList name="function">
           <ParameterList name="ALL">
@@ -261,6 +275,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
     </ParameterList>
     <ParameterList name="mesh partitions">
       <ParameterList name="materials">
@@ -270,7 +285,7 @@
   </ParameterList>
   <ParameterList name="visualization data">
     <Parameter name="file name base" type="string" value="calcite"/>
-    <Parameter name="times start period stop 0" type="Array(double)" value="{0.e+00, 3.15569260000000000e+07, -1.0}"/>
+    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 31556926.0000000000, -1.0}"/>
   </ParameterList>
   <ParameterList name="cycle driver">
     <ParameterList name="time periods">
@@ -280,9 +295,9 @@
             <Parameter name="PK type" type="string" value="darcy"/>
           </ParameterList>
         </ParameterList>
-        <Parameter name="start period time" type="double" value="0.e+00"/>
-        <Parameter name="end period time" type="double" value="0.e+00"/>
-        <Parameter name="initial timestep" type="double" value="1.57680000000000000e+05"/>
+        <Parameter name="start period time" type="double" value="0.0"/>
+        <Parameter name="end period time" type="double" value="0.0"/>
+        <Parameter name="initial timestep" type="double" value="157680.000000000000"/>
         <Parameter name="maximum timestep" type="double" value="9.99999999999999967e+98"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
       </ParameterList>
@@ -304,11 +319,11 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="start period time" type="double" value="0.e+00"/>
-        <Parameter name="end period time" type="double" value="1.57784630000000000e+08"/>
+        <Parameter name="start period time" type="double" value="0.0"/>
+        <Parameter name="end period time" type="double" value="157784630.000000000"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial timestep" type="double" value="1.57680000000000000e+05"/>
-        <Parameter name="maximum timestep" type="double" value="6.00000000000000000e+10"/>
+        <Parameter name="initial timestep" type="double" value="157680.000000000000"/>
+        <Parameter name="maximum timestep" type="double" value="60000000000.0000000"/>
       </ParameterList>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{H+, HCO3-, Ca++}"/>
@@ -324,11 +339,13 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="PKs">
+
     <ParameterList name="flow steady">
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="absolute permeability">
         <Parameter name="coordinate system" type="string" value="cartesian"/>
       </ParameterList>
+
       <ParameterList name="operators">
         <ParameterList name="diffusion operator">
           <ParameterList name="matrix">
@@ -358,6 +375,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
@@ -373,17 +391,17 @@
           <ParameterList name="timestep controller standard parameters">
             <Parameter name="max iterations" type="int" value="15"/>
             <Parameter name="min iterations" type="int" value="10"/>
-            <Parameter name="timestep increase factor" type="double" value="1.25e+00"/>
-            <Parameter name="timestep reduction factor" type="double" value="8.00000000000000044e-01"/>
-            <Parameter name="max timestep" type="double" value="4.32340000000000000e+17"/>
-            <Parameter name="min timestep" type="double" value="9.99999999999999955e-07"/>
+            <Parameter name="timestep increase factor" type="double" value="1.25"/>
+            <Parameter name="timestep reduction factor" type="double" value="0.800000000000000044"/>
+            <Parameter name="max timestep" type="double" value="432340000000000000.0"/>
+            <Parameter name="min timestep" type="double" value="9.99999999999999955e-7"/>
           </ParameterList>
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
             <Parameter name="nonlinear tolerance" type="double" value="9.99999999999999980e-13"/>
             <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
             <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
-            <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
+            <Parameter name="max du growth factor" type="double" value="1.0e+3"/>
             <Parameter name="max divergent iterations" type="int" value="3"/>
             <Parameter name="max nka vectors" type="int" value="10"/>
             <Parameter name="limit iterations" type="int" value="20"/>
@@ -399,13 +417,14 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="boundary conditions">
         <ParameterList name="mass flux">
           <ParameterList name="BC 0">
             <Parameter name="regions" type="Array(string)" value="{West}"/>
             <ParameterList name="outward mass flux">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="-7.91317859000000037e-06"/>
+                <Parameter name="value" type="double" value="-0.00000791317859000000037"/>
               </ParameterList>
             </ParameterList>
             <Parameter name="spatial distribution method" type="string" value="none"/>
@@ -418,7 +437,7 @@
             <Parameter name="regions" type="Array(string)" value="{East}"/>
             <ParameterList name="boundary pressure">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="2.01325e+05"/>
+                <Parameter name="value" type="double" value="201325.0"/>
               </ParameterList>
             </ParameterList>
             <Parameter name="spatial distribution method" type="string" value="none"/>
@@ -426,22 +445,29 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
+
     </ParameterList>
+
     <ParameterList name="flow and reactive transport">
       <Parameter name="PKs order" type="Array(string)" value="{flow, reactive transport}"/>
       <Parameter name="master PK index" type="int" value="0"/>
+
     </ParameterList>
+
     <ParameterList name="reactive transport">
       <Parameter name="PKs order" type="Array(string)" value="{chemistry, transport}"/>
+
     </ParameterList>
+
     <ParameterList name="transport">
       <Parameter name="domain name" type="string" value="domain"/>
       <Parameter name="spatial discretization order" type="int" value="2"/>
       <Parameter name="temporal discretization order" type="int" value="2"/>
-      <Parameter name="cfl" type="double" value="1.e+00"/>
+      <Parameter name="cfl" type="double" value="1.0"/>
       <Parameter name="flow mode" type="string" value="transient"/>
       <Parameter name="solver" type="string" value="Dispersion Solver"/>
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
@@ -453,11 +479,13 @@
         <Parameter name="limiter extension for transport" type="bool" value="true"/>
         <Parameter name="limiter stencil" type="string" value="face to cells"/>
       </ParameterList>
+
       <ParameterList name="molecular diffusion">
         <Parameter name="aqueous names" type="Array(string)" value="{H+, HCO3-, Ca++}"/>
         <Parameter name="aqueous values" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
         <Parameter name="molar masses" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
       </ParameterList>
+
       <ParameterList name="operators">
         <ParameterList name="diffusion operator">
           <ParameterList name="matrix">
@@ -476,6 +504,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="boundary conditions">
         <ParameterList name="constraints">
           <ParameterList name="West BC">
@@ -484,21 +513,25 @@
             <Parameter name="use area fractions" type="bool" value="false"/>
             <Parameter name="names" type="Array(string)" value="{pH, total, charge}"/>
             <ParameterList name="boundary constraints">
-              <Parameter name="constant values" type="Array(double)" value="{5.0, 1.0e-3, 1.0e-6}"/>
+              <Parameter name="constant values" type="Array(double)" value="{5.0, 0.0010, 0.0000010}"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <Parameter name="number of aqueous components" type="int" value="3"/>
       <Parameter name="number of gaseous components" type="int" value="0"/>
       <ParameterList name="physical models and assumptions">
         <Parameter name="effective transport porosity" type="bool" value="false"/>
         <Parameter name="permeability field is required" type="bool" value="false"/>
       </ParameterList>
+
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
+
     </ParameterList>
+
     <ParameterList name="chemistry">
       <Parameter isUsed="true" name="domain name" type="string" value="domain"/>
       <Parameter name="chemistry model" type="string" value="Amanzi"/>
@@ -507,27 +540,30 @@
       <!--Parameter name="activity model" type="string" value="unit"/-->
       <Parameter name="maximum Newton iterations" type="int" value="50"/>
       <Parameter name="tolerance" type="double" value="9.99999999999999980e-13"/>
-      <Parameter name="max timestep (s)" type="double" value="2.20e+05"/>
+      <Parameter name="max timestep (s)" type="double" value="2.20e+5"/>
       <Parameter name="min timestep (s)" type="double" value="1.0e+10"/>
-      <Parameter name="initial timestep (s)" type="double" value="2.2e+05"/>
+      <Parameter name="initial timestep (s)" type="double" value="2.2e+5"/>
       <Parameter name="timestep cut threshold" type="int" value="10"/>
-      <Parameter name="timestep cut factor" type="double" value="2.e+00"/>
+      <Parameter name="timestep cut factor" type="double" value="2.0"/>
       <Parameter name="timestep increase threshold" type="int" value="4"/>
-      <Parameter name="timestep increase factor" type="double" value="1.19999999999999996e+00"/>
+      <Parameter name="timestep increase factor" type="double" value="1.19999999999999996"/>
       <Parameter name="timestep control method" type="string" value="fixed"/>
       <Parameter name="auxiliary data" type="Array(string)" value="{pH}"/>
-      <Parameter name="initial conditions time" type="double" value="0.e+00"/>
+      <Parameter name="initial conditions time" type="double" value="0.0"/>
       <Parameter name="number of component concentrations" type="int" value="3"/>
       <Parameter name="log formulation" type="bool" value="true"/>
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
+
     </ParameterList>
+
     <ParameterList name="flow">
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="absolute permeability">
         <Parameter name="coordinate system" type="string" value="cartesian"/>
       </ParameterList>
+
       <ParameterList name="operators">
         <ParameterList name="diffusion operator">
           <ParameterList name="matrix">
@@ -557,6 +593,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
@@ -575,14 +612,14 @@
             <Parameter name="timestep increase factor" type="double" value="1.25"/>
             <Parameter name="timestep reduction factor" type="double" value="0.8"/>
             <Parameter name="max timestep" type="double" value="4.3234e+17"/>
-            <Parameter name="min timestep" type="double" value="9.99999999999999955e-07"/>
+            <Parameter name="min timestep" type="double" value="9.99999999999999955e-7"/>
           </ParameterList>
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
             <Parameter name="nonlinear tolerance" type="double" value="9.99999999999999980e-13"/>
             <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
             <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
-            <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
+            <Parameter name="max du growth factor" type="double" value="1.0e+3"/>
             <Parameter name="max divergent iterations" type="int" value="3"/>
             <Parameter name="max nka vectors" type="int" value="10"/>
             <Parameter name="limit iterations" type="int" value="20"/>
@@ -598,13 +635,14 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="boundary conditions">
         <ParameterList name="mass flux">
           <ParameterList name="BC 0">
             <Parameter name="regions" type="Array(string)" value="{West}"/>
             <ParameterList name="outward mass flux">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="-7.91317859000000037e-06"/>
+                <Parameter name="value" type="double" value="-0.00000791317859000000037"/>
               </ParameterList>
             </ParameterList>
             <Parameter name="spatial distribution method" type="string" value="none"/>
@@ -617,7 +655,7 @@
             <Parameter name="regions" type="Array(string)" value="{East}"/>
             <ParameterList name="boundary pressure">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="2.01325e+05"/>
+                <Parameter name="value" type="double" value="201325.0"/>
               </ParameterList>
             </ParameterList>
             <Parameter name="spatial distribution method" type="string" value="none"/>
@@ -625,11 +663,15 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
+
     </ParameterList>
+
   </ParameterList>
+
   <ParameterList name="solvers">
     <ParameterList name="AztecOO">
       <Parameter name="iterative method" type="string" value="gmres"/>
@@ -692,12 +734,12 @@
         <Parameter name="prec type" type="string" value="MGV"/>
         <Parameter name="cycle applications" type="int" value="2"/>
         <Parameter name="aggregation: type" type="string" value="Uncoupled-MIS"/>
-        <Parameter name="aggregation: damping factor" type="double" value="1.3333299999999999e+00"/>
-        <Parameter name="aggregation: threshold" type="double" value="0.e+00"/>
+        <Parameter name="aggregation: damping factor" type="double" value="1.3333299999999999"/>
+        <Parameter name="aggregation: threshold" type="double" value="0.0"/>
         <Parameter name="eigen-analysis: type" type="string" value="cg"/>
         <Parameter name="eigen-analysis: iterations" type="int" value="10"/>
         <Parameter name="smoother: sweeps" type="int" value="3"/>
-        <Parameter name="smoother: damping factor" type="double" value="1.e+00"/>
+        <Parameter name="smoother: damping factor" type="double" value="1.0"/>
         <Parameter name="smoother: pre or post" type="string" value="both"/>
         <Parameter name="smoother: type" type="string" value="Jacobi"/>
         <Parameter name="coarse: type" type="string" value="Amesos-KLU"/>
@@ -707,10 +749,10 @@
     <ParameterList name="Hypre AMG">
       <Parameter name="preconditioning method" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
-        <Parameter name="tolerance" type="double" value="0.e+00"/>
+        <Parameter name="tolerance" type="double" value="0.0"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>
         <Parameter name="cycle applications" type="int" value="5"/>
-        <Parameter name="strong threshold" type="double" value="5.00000000000000000e-01"/>
+        <Parameter name="strong threshold" type="double" value="0.500000000000000000"/>
         <Parameter name="cycle type" type="int" value="1"/>
         <Parameter name="coarsen type" type="int" value="0"/>
         <Parameter name="verbosity" type="int" value="0"/>
@@ -730,67 +772,66 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="thermodynamic database">
     <ParameterList name="primary species">
       <ParameterList name="H+">
-        <Parameter name="ion size parameter" type="double" value="9.00000000000000000e+00"/>
+        <Parameter name="ion size parameter" type="double" value="9.00000000000000000"/>
         <Parameter name="charge" type="int" value="1"/>
-        <Parameter name="gram molecular weight" type="double" value="1.00790000000000002e+00"/>
+        <Parameter name="gram molecular weight" type="double" value="1.00790000000000002"/>
       </ParameterList>
       <ParameterList name="HCO3-">
-        <Parameter name="ion size parameter" type="double" value="4.00000000000000000e+00"/>
+        <Parameter name="ion size parameter" type="double" value="4.00000000000000000"/>
         <Parameter name="charge" type="int" value="-1"/>
-        <Parameter name="gram molecular weight" type="double" value="6.10170999999999992e+01"/>
+        <Parameter name="gram molecular weight" type="double" value="61.0170999999999992"/>
       </ParameterList>
       <ParameterList name="Ca++">
-        <Parameter name="ion size parameter" type="double" value="6.00000000000000000e+00"/>
+        <Parameter name="ion size parameter" type="double" value="6.00000000000000000"/>
         <Parameter name="charge" type="int" value="2"/>
-        <Parameter name="gram molecular weight" type="double" value="4.00780000000000030e+01"/>
+        <Parameter name="gram molecular weight" type="double" value="40.0780000000000030"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="aqueous equilibrium complexes">
       <ParameterList name="OH-">
-        <Parameter name="ion size parameter" type="double" value="3.50000000000000000e+00"/>
+        <Parameter name="ion size parameter" type="double" value="3.50000000000000000"/>
         <Parameter name="charge" type="int" value="-1"/>
-        <Parameter name="gram molecular weight" type="double" value="1.70073000000000008e+01"/>
+        <Parameter name="gram molecular weight" type="double" value="17.0073000000000008"/>
         <Parameter name="reaction" type="string" value="1.0 H2O  -1.0 H+"/>
-        <Parameter name="equilibrium constant" type="double" value="1.39951000000000008e+01"/>
+        <Parameter name="equilibrium constant" type="double" value="13.9951000000000008"/>
       </ParameterList>
       <ParameterList name="CO3--">
-        <Parameter name="ion size parameter" type="double" value="4.50000000000000000e+00"/>
+        <Parameter name="ion size parameter" type="double" value="4.50000000000000000"/>
         <Parameter name="charge" type="int" value="-2"/>
-        <Parameter name="gram molecular weight" type="double" value="6.00091999999999999e+01"/>
+        <Parameter name="gram molecular weight" type="double" value="60.0091999999999999"/>
         <Parameter name="reaction" type="string" value="-1.0 H+  1.0 HCO3-"/>
-        <Parameter name="equilibrium constant" type="double" value="1.03287999999999993e+01"/>
+        <Parameter name="equilibrium constant" type="double" value="10.3287999999999993"/>
       </ParameterList>
       <ParameterList name="CO2(aq)">
-        <Parameter name="ion size parameter" type="double" value="3.00000000000000000e+00"/>
+        <Parameter name="ion size parameter" type="double" value="3.00000000000000000"/>
         <Parameter name="charge" type="int" value="0"/>
-        <Parameter name="gram molecular weight" type="double" value="4.40097999999999985e+01"/>
+        <Parameter name="gram molecular weight" type="double" value="44.0097999999999985"/>
         <Parameter name="reaction" type="string" value="-1.0 H2O  1.0 H+  1.0 HCO3-"/>
-        <Parameter name="equilibrium constant" type="double" value="-6.34469999999999956e+00"/>
+        <Parameter name="equilibrium constant" type="double" value="-6.34469999999999956"/>
       </ParameterList>
       <ParameterList name="CaOH+">
-        <Parameter name="ion size parameter" type="double" value="4.00000000000000000e+00"/>
+        <Parameter name="ion size parameter" type="double" value="4.00000000000000000"/>
         <Parameter name="charge" type="int" value="1"/>
-        <Parameter name="gram molecular weight" type="double" value="5.70852999999999966e+01"/>
+        <Parameter name="gram molecular weight" type="double" value="57.0852999999999966"/>
         <Parameter name="reaction" type="string" value="1.0 H2O  -1.0 H+  1.0 Ca++"/>
-        <Parameter name="equilibrium constant" type="double" value="1.28499999999999996e+01"/>
+        <Parameter name="equilibrium constant" type="double" value="12.8499999999999996"/>
       </ParameterList>
       <ParameterList name="CaHCO3+">
-        <Parameter name="ion size parameter" type="double" value="4.00000000000000000e+00"/>
+        <Parameter name="ion size parameter" type="double" value="4.00000000000000000"/>
         <Parameter name="charge" type="int" value="1"/>
-        <Parameter name="gram molecular weight" type="double" value="1.01095100000000002e+02"/>
+        <Parameter name="gram molecular weight" type="double" value="101.095100000000002"/>
         <Parameter name="reaction" type="string" value="1.0 HCO3-  1.0 Ca++"/>
-        <Parameter name="equilibrium constant" type="double" value="-1.04669999999999996e+00"/>
+        <Parameter name="equilibrium constant" type="double" value="-1.04669999999999996"/>
       </ParameterList>
       <ParameterList name="CaCO3(aq)">
-        <Parameter name="ion size parameter" type="double" value="3.00000000000000000e+00"/>
+        <Parameter name="ion size parameter" type="double" value="3.00000000000000000"/>
         <Parameter name="charge" type="int" value="0"/>
-        <Parameter name="gram molecular weight" type="double" value="1.00087199999999996e+02"/>
+        <Parameter name="gram molecular weight" type="double" value="100.087199999999996"/>
         <Parameter name="reaction" type="string" value="-1.0 H+  1.0 HCO3-  1.0 Ca++"/>
-        <Parameter name="equilibrium constant" type="double" value="7.00169999999999959e+00"/>
+        <Parameter name="equilibrium constant" type="double" value="7.00169999999999959"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="mineral kinetics">
@@ -798,15 +839,14 @@
         <Parameter name="rate model" type="string" value="TST"/>
         <Parameter name="rate constant" type="double" value="-9.0"/>
         <Parameter name="modifiers" type="string" value=""/>
-        <Parameter name="gram molecular weight" type="double" value="1.00087199999999996e+02"/>
+        <Parameter name="gram molecular weight" type="double" value="100.087199999999996"/>
         <Parameter name="reaction" type="string" value="-1.0 H+  1.0 HCO3-  1.0 Ca++"/>
-        <Parameter name="equilibrium constant" type="double" value="1.84870000000000001e+00"/>
-        <Parameter name="molar volume" type="double" value="3.69339999999999975e+01"/>
-        <Parameter name="specific surface area" type="double" value="1.00000000000000000e+00"/>
+        <Parameter name="equilibrium constant" type="double" value="1.84870000000000001"/>
+        <Parameter name="molar volume" type="double" value="36.9339999999999975"/>
+        <Parameter name="specific surface area" type="double" value="1.00000000000000000"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="analysis">
     <ParameterList name="domain">
       <Parameter name="used boundary condition regions" type="Array(string)" value="{West, East, West, East, West, East}"/>

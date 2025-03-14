@@ -8,7 +8,6 @@
     <Parameter name="amount" type="string" value="mol"/>
     <Parameter isUsed="true" name="temperature" type="string" value="K"/>
   </ParameterList>
-
   <ParameterList name="mesh">
     <ParameterList name="unstructured">
       <ParameterList name="expert">
@@ -32,6 +31,7 @@
       <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
   </ParameterList>
+
   <ParameterList name="domain">
     <Parameter name="spatial dimension" type="int" value="3"/>
   </ParameterList>
@@ -82,7 +82,7 @@
           <ParameterList name="EntireDomain">
             <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
             <Parameter name="model" type="string" value="constant"/>
-            <Parameter name="value" type="double" value="9.81e-07"/>
+            <Parameter name="value" type="double" value="9.81e-7"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
@@ -92,11 +92,10 @@
           <ParameterList name="fracture">
             <Parameter name="regions" type="Array(string)" value="{fracture}"/>
             <Parameter name="model" type="string" value="constant"/>
-            <Parameter name="value" type="double" value="5.0e-6"/>
+            <Parameter name="value" type="double" value="0.0000050"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
-
       <ParameterList name="mass_density_liquid">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -104,7 +103,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.00e+03"/>
+                <Parameter name="value" type="double" value="1.00e+3"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -158,7 +157,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.00e+03"/>
+                <Parameter name="value" type="double" value="1.00e+3"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -242,7 +241,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.00e+00"/>
+                <Parameter name="value" type="double" value="1.00"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -251,18 +250,23 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="initial conditions">
+
       <ParameterList name="gravity">
-        <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -9.80664999999999942e+00}"/>
+        <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -9.80664999999999942}"/>
       </ParameterList>
+
       <ParameterList name="const_fluid_viscosity">
-        <Parameter name="value" type="double" value="1.0e-03"/>
+        <Parameter name="value" type="double" value="0.0010"/>
       </ParameterList>
+
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="1000.0"/>
       </ParameterList>
+
       <ParameterList name="const_fluid_molar_mass">
         <Parameter name="value" type="double" value="0.018015"/>
       </ParameterList>
+
       <ParameterList name="permeability">
         <Parameter name="write checkpoint" type="bool" value="false"/>
         <ParameterList name="function">
@@ -291,6 +295,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="fracture-diffusion_to_matrix">
         <ParameterList name="function">
           <ParameterList name="fracture">
@@ -304,6 +309,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="pressure">
         <ParameterList name="function">
           <ParameterList name="EntireDomain">
@@ -311,14 +317,15 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-linear">
-                <Parameter name="y0" type="double" value="1.10e+07"/>
+                <Parameter name="y0" type="double" value="1.10e+7"/>
                 <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0, 0.0}"/>
-                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, 0.0, -9.80664999999999964e+03}"/>
+                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, 0.0, -9806.64999999999964}"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="saturation_liquid">
         <ParameterList name="function">
           <ParameterList name="EntireDomain">
@@ -335,12 +342,13 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.00e+00"/>
+                <Parameter name="value" type="double" value="1.00"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="fracture-pressure">
         <ParameterList name="function">
           <ParameterList name="EntireDomain">
@@ -348,17 +356,19 @@
             <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-linear">
-                <Parameter name="y0" type="double" value="1.10e+07"/>
+                <Parameter name="y0" type="double" value="1.10e+7"/>
                 <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0, 0.0}"/>
-                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, 0.0, -9.80664999999999964e+03}"/>
+                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, 0.0, -9806.64999999999964}"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="atmospheric_pressure">
-        <Parameter name="value" type="double" value="1.01325e+05"/>
+        <Parameter name="value" type="double" value="101325.0"/>
       </ParameterList>
+
       <ParameterList name="fracture-saturation_liquid">
         <ParameterList name="function">
           <ParameterList name="ALL">
@@ -372,8 +382,8 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-    </ParameterList>
 
+    </ParameterList>
     <ParameterList name="mesh partitions">
       <ParameterList name="materials">
         <Parameter name="region list" type="Array(string)" value="{EntireDomain}"/>
@@ -387,7 +397,6 @@
     <Parameter name="file name base" type="string" value="plot_matrix"/>
     <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 100.0, -1.0}"/>
   </ParameterList>
-
   <ParameterList name="cycle driver">
     <ParameterList name="time periods">
       <ParameterList name="TP 0">
@@ -403,9 +412,9 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="start period time" type="double" value="0.0"/>
-        <Parameter name="end period time" type="double" value="1.00e+03"/>
+        <Parameter name="end period time" type="double" value="1.00e+3"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial timestep" type="double" value="1.0e-03"/>
+        <Parameter name="initial timestep" type="double" value="0.0010"/>
         <Parameter name="maximum timestep" type="double" value="20.0"/>
       </ParameterList>
     </ParameterList>
@@ -420,8 +429,8 @@
       <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="PKs">
+
     <ParameterList name="transient:coupled flow">
       <Parameter name="PKs order" type="Array(string)" value="{transient:flow matrix, transient:flow fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
@@ -438,14 +447,14 @@
             <Parameter name="timestep increase factor" type="double" value="1.12"/>
             <Parameter name="timestep reduction factor" type="double" value="0.8"/>
             <Parameter name="max timestep" type="double" value="4.3234e+17"/>
-            <Parameter name="min timestep" type="double" value="9.99999999999999955e-07"/>
+            <Parameter name="min timestep" type="double" value="9.99999999999999955e-7"/>
           </ParameterList>
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1.0e-08"/>
+            <Parameter name="nonlinear tolerance" type="double" value="1.0e-8"/>
             <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
             <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
-            <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
+            <Parameter name="max du growth factor" type="double" value="1.0e+3"/>
             <Parameter name="max divergent iterations" type="int" value="3"/>
             <Parameter name="max nka vectors" type="int" value="10"/>
             <Parameter name="limit iterations" type="int" value="20"/>
@@ -462,15 +471,19 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
+
     </ParameterList>
+
     <ParameterList name="transient:flow matrix">
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="absolute permeability">
         <Parameter name="coordinate system" type="string" value="cartesian"/>
       </ParameterList>
+
       <ParameterList name="operators">
         <ParameterList name="diffusion operator">
           <ParameterList name="matrix">
@@ -484,6 +497,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
         <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
@@ -495,15 +509,16 @@
         </ParameterList>
         <Parameter name="time integration method" type="string" value="none"/>
       </ParameterList>
+
       <ParameterList name="boundary conditions">
         <ParameterList name="pressure">
           <ParameterList name="BC 0">
             <Parameter name="regions" type="Array(string)" value="{SurfaceInlet}"/>
             <ParameterList name="boundary pressure">
               <ParameterList name="function-linear">
-                <Parameter name="y0" type="double" value="1.190e+07"/>
+                <Parameter name="y0" type="double" value="1.190e+7"/>
                 <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0, 0.0}"/>
-                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, 0.0, -9.80664999999999964e+03}"/>
+                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, 0.0, -9806.64999999999964}"/>
               </ParameterList>
             </ParameterList>
             <Parameter name="spatial distribution method" type="string" value="none"/>
@@ -513,9 +528,9 @@
             <Parameter name="regions" type="Array(string)" value="{SurfaceOutlet}"/>
             <ParameterList name="boundary pressure">
               <ParameterList name="function-linear">
-                <Parameter name="y0" type="double" value="1.10e+07"/>
+                <Parameter name="y0" type="double" value="1.10e+7"/>
                 <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0, 0.0}"/>
-                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, 0.0, -9.80664999999999964e+03}"/>
+                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, 0.0, -9806.64999999999964}"/>
               </ParameterList>
             </ParameterList>
             <Parameter name="spatial distribution method" type="string" value="none"/>
@@ -523,10 +538,13 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
+
     </ParameterList>
+
     <ParameterList name="transient:flow fracture">
       <Parameter name="domain name" type="string" value="fracture"/>
       <ParameterList name="fracture permeability models">
@@ -536,12 +554,15 @@
           <Parameter name="aperture" type="double" value="0.0"/>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="physical models and assumptions">
         <Parameter name="flow and transport in fractures" type="bool" value="true"/>
       </ParameterList>
+
       <ParameterList name="absolute permeability">
         <Parameter name="coordinate system" type="string" value="cartesian"/>
       </ParameterList>
+
       <ParameterList name="operators">
         <ParameterList name="diffusion operator">
           <ParameterList name="matrix">
@@ -560,6 +581,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
         <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
@@ -571,15 +593,16 @@
         </ParameterList>
         <Parameter name="time integration method" type="string" value="none"/>
       </ParameterList>
+
       <ParameterList name="boundary conditions">
         <ParameterList name="pressure">
           <ParameterList name="BC 0">
             <Parameter name="regions" type="Array(string)" value="{SurfaceInlet}"/>
             <ParameterList name="boundary pressure">
               <ParameterList name="function-linear">
-                <Parameter name="y0" type="double" value="1.190e+07"/>
+                <Parameter name="y0" type="double" value="1.190e+7"/>
                 <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0, 0.0}"/>
-                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, 0.0, -9.80664999999999964e+03}"/>
+                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, 0.0, -9806.64999999999964}"/>
               </ParameterList>
             </ParameterList>
             <Parameter name="spatial distribution method" type="string" value="none"/>
@@ -589,9 +612,9 @@
             <Parameter name="regions" type="Array(string)" value="{SurfaceOutlet}"/>
             <ParameterList name="boundary pressure">
               <ParameterList name="function-linear">
-                <Parameter name="y0" type="double" value="1.10e+07"/>
+                <Parameter name="y0" type="double" value="1.10e+7"/>
                 <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0, 0.0}"/>
-                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, 0.0, -9.80664999999999964e+03}"/>
+                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, 0.0, -9806.64999999999964}"/>
               </ParameterList>
             </ParameterList>
             <Parameter name="spatial distribution method" type="string" value="none"/>
@@ -599,10 +622,13 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
+
     </ParameterList>
+
   </ParameterList>
 
   <ParameterList name="solvers">
@@ -637,6 +663,6 @@
   </ParameterList>
   <ParameterList name="visualization data fracture">
     <Parameter name="file name base" type="string" value="plot_fracture"/>
-    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 2.00e+02, -1.00e+00}"/>
+    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 200.0, -1.00}"/>
   </ParameterList>
 </ParameterList>

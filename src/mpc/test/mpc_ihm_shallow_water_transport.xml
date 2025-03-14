@@ -8,7 +8,6 @@
     <Parameter name="amount" type="string" value="mol"/>
     <Parameter isUsed="true" name="temperature" type="string" value="K"/>
   </ParameterList>
-
   <ParameterList name="mesh">
     <ParameterList name="unstructured">
       <ParameterList name="expert">
@@ -21,7 +20,6 @@
   <ParameterList name="domain">
     <Parameter name="spatial dimension" type="int" value="2"/>
   </ParameterList>
-
   <ParameterList name="regions">
     <ParameterList name="All">
       <ParameterList name="region: box">
@@ -31,11 +29,12 @@
     </ParameterList>
     <ParameterList name="LeftEdgeMiddle">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 2.0e+01}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{0.0, 3.0e+01}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 20.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.0, 30.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
+
   <ParameterList name="state">
     <ParameterList name="evaluators">
       <ParameterList name="mass_density_liquid">
@@ -45,7 +44,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="9.98200000000000045e+02"/>
+                <Parameter name="value" type="double" value="998.200000000000045"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -67,17 +66,20 @@
         <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="initial conditions">
+
       <ParameterList name="gravity">
-        <Parameter name="value" type="Array(double)" value="{0.0, -9.80664999999999942e+00}"/>
+        <Parameter name="value" type="Array(double)" value="{0.0, -9.80664999999999942}"/>
       </ParameterList>
+
       <ParameterList name="const_fluid_viscosity">
-        <Parameter name="value" type="double" value="1.00200000000000007e-03"/>
+        <Parameter name="value" type="double" value="0.00100200000000000007"/>
       </ParameterList>
+
       <ParameterList name="const_fluid_density">
-        <Parameter name="value" type="double" value="9.98200000000000045e+02"/>
+        <Parameter name="value" type="double" value="998.200000000000045"/>
       </ParameterList>
+
       <ParameterList name="total_component_concentration">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -95,6 +97,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="ponded_depth">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -108,9 +111,11 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="atmospheric_pressure">
-        <Parameter name="value" type="double" value="1.01325000000000000e+05"/>
+        <Parameter name="value" type="double" value="101325.000000000000"/>
       </ParameterList>
+
     </ParameterList>
     <ParameterList name="mesh partitions">
       <ParameterList name="materials">
@@ -118,12 +123,10 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="visualization data">
     <Parameter isUsed="true" name="file name base" type="string" value="plot"/>
-    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 2.0, 3.0e+02}"/>
+    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 2.0, 3.0e+2}"/>
   </ParameterList>
-
   <ParameterList name="cycle driver">
     <ParameterList name="time periods">
       <ParameterList name="TP 0">
@@ -139,9 +142,9 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="start period time" type="double" value="0.0"/>
-        <Parameter name="end period time" type="double" value="3.0e+02"/>
+        <Parameter name="end period time" type="double" value="3.0e+2"/>
         <Parameter name="maximum cycle number" type="int" value="30"/>
-        <Parameter name="initial timestep" type="double" value="1.00000000000000002e-02"/>
+        <Parameter name="initial timestep" type="double" value="0.0100000000000000002"/>
         <Parameter name="maximum timestep" type="double" value="9.99999999999999967e+98"/>
       </ParameterList>
     </ParameterList>
@@ -156,18 +159,21 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="PKs">
+
     <ParameterList name="transient:shallow water and transport">
       <Parameter name="PKs order" type="Array(string)" value="{transient:shallow water, transient:transport}"/>
       <Parameter name="domain name" type="string" value=""/>
       <ParameterList name="physical models and assumptions">
         <Parameter name="eos lookup table" type="string" value="false"/>
       </ParameterList>
+
     </ParameterList>
+
     <ParameterList name="transient:shallow water">
       <Parameter name="domain name" type="string" value="domain"/>
       <Parameter name="numerical flux" type="string" value="Rusanov"/>
       <Parameter name="number of reduced cfl cycles" type="int" value="10"/>
-      <Parameter name="cfl" type="double" value="5.00000000000000000e-01"/>
+      <Parameter name="cfl" type="double" value="0.500000000000000000"/>
       <ParameterList name="reconstruction">
         <Parameter name="polynomial order" type="int" value="0"/>
         <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
@@ -175,6 +181,7 @@
         <Parameter name="limiter location" type="string" value="face"/>
         <Parameter name="limiter cfl" type="double" value="0.5"/>
       </ParameterList>
+
       <ParameterList name="boundary conditions">
         <ParameterList name="ponded depth">
           <ParameterList name="BC 0">
@@ -209,9 +216,11 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
+
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{residual}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
@@ -227,17 +236,17 @@
           <ParameterList name="timestep controller standard parameters">
             <Parameter name="max iterations" type="int" value="15"/>
             <Parameter name="min iterations" type="int" value="10"/>
-            <Parameter name="timestep increase factor" type="double" value="1.25000000000000000e+00"/>
-            <Parameter name="timestep reduction factor" type="double" value="8.00000000000000044e-01"/>
-            <Parameter name="max timestep" type="double" value="4.32340000000000000e+17"/>
-            <Parameter name="min timestep" type="double" value="9.99999999999999955e-07"/>
+            <Parameter name="timestep increase factor" type="double" value="1.25000000000000000"/>
+            <Parameter name="timestep reduction factor" type="double" value="0.800000000000000044"/>
+            <Parameter name="max timestep" type="double" value="432340000000000000.0"/>
+            <Parameter name="min timestep" type="double" value="9.99999999999999955e-7"/>
           </ParameterList>
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1.00000000000000008e-05"/>
-            <Parameter name="diverged tolerance" type="double" value="1.00000000000000000e+10"/>
-            <Parameter name="diverged l2 tolerance" type="double" value="1.00000000000000000e+10"/>
-            <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
+            <Parameter name="nonlinear tolerance" type="double" value="0.0000100000000000000008"/>
+            <Parameter name="diverged tolerance" type="double" value="10000000000.0000000"/>
+            <Parameter name="diverged l2 tolerance" type="double" value="10000000000.0000000"/>
+            <Parameter name="max du growth factor" type="double" value="1.0e+3"/>
             <Parameter name="max divergent iterations" type="int" value="3"/>
             <Parameter name="max nka vectors" type="int" value="10"/>
             <Parameter name="limit iterations" type="int" value="20"/>
@@ -253,10 +262,13 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="physical models and assumptions">
         <Parameter name="eos lookup table" type="string" value="false"/>
       </ParameterList>
+
     </ParameterList>
+
     <ParameterList name="transient:transport">
       <Parameter name="domain name" type="string" value="domain"/>
       <Parameter name="spatial discretization order" type="int" value="1"/>
@@ -273,11 +285,13 @@
         <Parameter name="limiter extension for transport" type="bool" value="true"/>
         <Parameter name="limiter stencil" type="string" value="face to cells"/>
       </ParameterList>
+
       <ParameterList name="molecular diffusion">
         <Parameter name="aqueous names" type="Array(string)" value="{Tc-99}"/>
         <Parameter name="aqueous values" type="Array(double)" value="{0.0}"/>
         <Parameter name="molar masses" type="Array(double)" value="{0.0}"/>
       </ParameterList>
+
       <ParameterList name="operators">
         <ParameterList name="diffusion operator">
           <ParameterList name="matrix">
@@ -296,6 +310,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="boundary conditions">
         <ParameterList name="concentration">
           <ParameterList name="Tc-99">
@@ -312,6 +327,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <Parameter name="number of aqueous components" type="int" value="1"/>
       <Parameter name="number of gaseous components" type="int" value="0"/>
       <ParameterList name="physical models and assumptions">
@@ -321,11 +337,15 @@
         <Parameter name="volumetric flow rate key" type="string" value="riemann_flux"/>
         <Parameter name="saturation key" type="string" value="ponded_depth"/>
       </ParameterList>
+
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
+
     </ParameterList>
+
   </ParameterList>
+
   <ParameterList name="solvers">
     <ParameterList name="AztecOO">
       <Parameter name="iterative method" type="string" value="gmres"/>
@@ -374,7 +394,7 @@
         <Parameter name="tolerance" type="double" value="0.0"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>
         <Parameter name="cycle applications" type="int" value="5"/>
-        <Parameter name="strong threshold" type="double" value="5.00000000000000000e-01"/>
+        <Parameter name="strong threshold" type="double" value="0.500000000000000000"/>
         <Parameter name="cycle type" type="int" value="1"/>
         <Parameter name="coarsen type" type="int" value="0"/>
         <Parameter name="verbosity" type="int" value="0"/>
@@ -382,9 +402,8 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="visualization data surface">
     <Parameter name="file name base" type="string" value="plot_surface"/>
-    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 2.0, 3.0e+02}"/>
+    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 2.0, 3.0e+2}"/>
   </ParameterList>
 </ParameterList>
