@@ -1,47 +1,45 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-
   <Parameter name="end time" type="double" value="5000.0"/>
   <Parameter name="initial timestep" type="double" value="1000.0"/>
   <Parameter name="max iterations" type="int" value="50"/>
   <Parameter name="mesh resolution" type="int" value="20"/>
-
   <!--  REGIONS  -->
   <ParameterList name="regions">
     <ParameterList name="All">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{ 0.0,0.0,0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0,1.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0, 1.0, 1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Left side">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{  0.0,0.0,0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{-1.0,0.0,0.0}"/>
+        <Parameter name="point" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{-1.0, 0.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Right side">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{ 1.0,0.0,0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{1.0,0.0,0.0}"/>
+        <Parameter name="point" type="Array(double)" value="{1.0, 0.0, 0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{1.0, 0.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="fracture_x">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{ 0.5,0.0,0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{1.0,0.0,0.0}"/>
+        <Parameter name="point" type="Array(double)" value="{0.5, 0.0, 0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{1.0, 0.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="fracture_y">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{ 0.0,0.5,0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{0.0,1.0,0.0}"/>
+        <Parameter name="point" type="Array(double)" value="{0.0, 0.5, 0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0, 1.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="fracture_z">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{ 0.0,0.0,0.5}"/>
-        <Parameter name="normal" type="Array(double)" value="{0.0,0.0,1.0}"/>
+        <Parameter name="point" type="Array(double)" value="{0.0, 0.0, 0.5}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0, 0.0, 1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="fracture">
@@ -54,9 +52,10 @@
 
   <!-- FLOW -->
   <ParameterList name="PKs">
+
     <ParameterList name="mechanics matrix fracture">
       <ParameterList name="physical models and assumptions">
-	<Parameter name="use gravity" type="bool" value="false"/>
+        <Parameter name="use gravity" type="bool" value="false"/>
         <Parameter name="biot scheme: undrained split" type="bool" value="false"/>
         <Parameter name="biot scheme: fixed stress split" type="bool" value="false"/>
       </ParameterList>
@@ -68,7 +67,7 @@
             <Parameter name="base" type="string" value="cell"/>
             <Parameter name="method" type="string" value="BernardiRaugel"/>
             <Parameter name="method order" type="int" value="1"/>
-	    <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
+            <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
@@ -77,7 +76,7 @@
         <ParameterList name="All">
           <Parameter name="regions" type="Array(string)" value="{All}"/>
           <Parameter name="model" type="string" value="Hardin Drnevich"/>
-          <Parameter name="reference shear strain" type="double" value="8.0e-1"/>
+          <Parameter name="reference shear strain" type="double" value="0.80"/>
           <Parameter name="maximum shear stress" type="double" value="70.0"/>
         </ParameterList>
       </ParameterList>
@@ -86,12 +85,10 @@
         <Parameter name="linear solver" type="string" value="PCG"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
         <Parameter name="error control options" type="Array(string)" value="{displacement}"/>
-
         <Parameter name="time integration method" type="string" value="BDF1"/>
         <ParameterList name="BDF1">
           <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
           <Parameter name="extrapolate initial guess" type="bool" value="false"/>
-
           <Parameter name="timestep controller type" type="string" value="standard"/>
           <ParameterList name="timestep controller standard parameters">
             <Parameter name="min iterations" type="int" value="10"/>
@@ -101,7 +98,6 @@
             <Parameter name="max timestep" type="double" value="1e+8"/>
             <Parameter name="min timestep" type="double" value="0.0"/>
           </ParameterList>
-
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
             <Parameter name="nonlinear tolerance" type="double" value="1.0e-7"/>
@@ -149,7 +145,9 @@
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
+
     </ParameterList>
+
   </ParameterList>
 
   <!--  STATE  -->
@@ -162,8 +160,8 @@
             <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <ParameterList name="function-constant"> 
-                <Parameter name="value" type="double" value="2500."/>
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="2500.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -177,7 +175,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.0e-5"/>
+                <Parameter name="value" type="double" value="0.000010"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -205,24 +203,27 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.4286e-06"/>
+                <Parameter name="value" type="double" value="0.0000014286"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="initial conditions">
+
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="998.0"/>
       </ParameterList>
+
       <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="0.01"/>
       </ParameterList>
+
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="101325.0"/>
       </ParameterList>
+
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -9.81}"/>
       </ParameterList>
@@ -272,6 +273,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="poisson_ratio">
         <ParameterList name="function">
           <ParameterList name="ALL">
@@ -299,6 +301,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="fracture-ref_aperture">
         <ParameterList name="function">
           <ParameterList name="ALL">
@@ -312,6 +315,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="fracture-pressure">
         <ParameterList name="function">
           <ParameterList name="ALL">
@@ -325,12 +329,12 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
     </ParameterList>
     <ParameterList name="verbose object">
       <Parameter name="verbosity level" type="string" value="medium"/>
     </ParameterList>
   </ParameterList>
-
   <!-- SOLVERS -->
   <ParameterList name="solvers">
     <ParameterList name="PCG">
@@ -342,7 +346,6 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
@@ -360,4 +363,3 @@
     </ParameterList>
   </ParameterList>
 </ParameterList>
-

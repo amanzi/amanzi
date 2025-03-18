@@ -129,7 +129,6 @@
     <ParameterList name="SiO2">
       <Parameter name="group" type="string" value="Total"/>
     </ParameterList>
-
     <ParameterList name="UO2++">
       <Parameter name="group" type="string" value="Total"/>
     </ParameterList>
@@ -228,4 +227,3 @@
   </ParameterList>
   <Parameter name="stop_time" type="string" value="1000"/>
 </ParameterList>
-

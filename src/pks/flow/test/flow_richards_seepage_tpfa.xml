@@ -1,210 +1,208 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-
   <!--  REGIONS  -->
   <ParameterList name="regions">
     <ParameterList name="All">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{100.0,50.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{100.0, 50.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Left Bottom">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{0.0,40.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.0, 40.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Left Top">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0,40.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{0.0,50.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 40.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.0, 50.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Right Bottom">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{100.0,0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{100.0,20.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{100.0, 0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{100.0, 20.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Right Middle">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{100.0,20.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{100.0,40.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{100.0, 20.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{100.0, 40.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Right Top">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{100.0,40.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{100.0,50.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{100.0, 40.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{100.0, 50.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bottom">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{0.0,-1.0}"/>
+        <Parameter name="point" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0, -1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{0.0,50.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{0.0,1.0}"/>
+        <Parameter name="point" type="Array(double)" value="{0.0, 50.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0, 1.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
 
   <!--  FLOW  -->
   <ParameterList name="PKs">
+
     <ParameterList name="flow">
       <ParameterList name="relative permeability">
-	<Parameter name="upwind method" type="string" value="upwind: gravity"/>
-	<Parameter name="upwind frequency" type="string" value="every nonlinear iteration"/>
-	<ParameterList name="upwind parameters">
-	  <Parameter name="tolerance" type="double" value="1e-12"/>
-	</ParameterList>
+        <Parameter name="upwind method" type="string" value="upwind: gravity"/>
+        <Parameter name="upwind frequency" type="string" value="every nonlinear iteration"/>
+        <ParameterList name="upwind parameters">
+          <Parameter name="tolerance" type="double" value="1e-12"/>
+        </ParameterList>
       </ParameterList>
 
       <ParameterList name="verbose object">
-	<Parameter name="verbosity level" type="string" value="high"/>
+        <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
 
       <ParameterList name="operators">
-	<ParameterList name="diffusion operator">
-	  <ParameterList name="matrix">
-	    <Parameter name="discretization primary" type="string" value="fv: default"/>
-	    <Parameter name="discretization secondary" type="string" value="fv: default"/>
-	    <Parameter name="schema" type="Array(string)" value="{cell}"/>
-	    <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
-	    <Parameter name="gravity" type="bool" value="true"/>
-	  </ParameterList>
-	  <ParameterList name="preconditioner">
-	    <Parameter name="discretization primary" type="string" value="fv: default"/>
-	    <Parameter name="discretization secondary" type="string" value="fv: default"/>
-	    <Parameter name="schema" type="Array(string)" value="{cell}"/>
-	    <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
-	    <Parameter name="gravity" type="bool" value="true"/>
-	    <Parameter name="Newton correction" type="string" value="true Jacobian"/>
-	  </ParameterList>
-	</ParameterList>
+        <ParameterList name="diffusion operator">
+          <ParameterList name="matrix">
+            <Parameter name="discretization primary" type="string" value="fv: default"/>
+            <Parameter name="discretization secondary" type="string" value="fv: default"/>
+            <Parameter name="schema" type="Array(string)" value="{cell}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
+            <Parameter name="gravity" type="bool" value="true"/>
+          </ParameterList>
+          <ParameterList name="preconditioner">
+            <Parameter name="discretization primary" type="string" value="fv: default"/>
+            <Parameter name="discretization secondary" type="string" value="fv: default"/>
+            <Parameter name="schema" type="Array(string)" value="{cell}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
+            <Parameter name="gravity" type="bool" value="true"/>
+            <Parameter name="Newton correction" type="string" value="true Jacobian"/>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
 
       <ParameterList name="time integrator">
-	<Parameter name="linear solver" type="string" value="linear operator"/>
-	<Parameter name="error control options" type="Array(string)" value="{pressure}"/>
-	<Parameter name="preconditioner" type="string" value="Trilinos ML"/>
-	<!--Parameter name="preconditioner enhancement" type="string" value="linear operator"/-->
-
-	<ParameterList name="initialization">
-	  <Parameter name="method" type="string" value="saturated solver"/>
-	  <Parameter name="linear solver" type="string" value="AztecOO"/>
-	  <Parameter name="clipping saturation value" type="double" value="0.6"/>
-	</ParameterList>
-
-	<ParameterList name="dae constraint">
-	  <Parameter name="method" type="string" value="projection"/>
-	  <Parameter name="linear solver" type="string" value="AztecOO"/>
-	</ParameterList>
-	<Parameter name="time integration method" type="string" value="BDF1"/>
-	<ParameterList name="BDF1">
-	  <Parameter name="timestep controller type" type="string" value="standard"/>
-	  <ParameterList name="timestep controller standard parameters">
-	    <Parameter name="max iterations" type="int" value="35"/>
-	    <Parameter name="min iterations" type="int" value="7"/>
-	    <Parameter name="timestep increase factor" type="double" value="1.25"/>
-	    <Parameter name="timestep reduction factor" type="double" value="0.5"/>
-	    <Parameter name="max timestep" type="double" value="6.0e+09"/>
-	    <Parameter name="min timestep" type="double" value="9.99999999999999945e-21"/>
-	  </ParameterList>
-	  <Parameter name="solver type" type="string" value="Newton"/>
-	  <ParameterList name="Newton parameters">
-	    <Parameter name="nonlinear tolerance" type="double" value="9.99999999999999955e-05"/>
-	    <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
-	    <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
-	    <Parameter name="max divergent iterations" type="int" value="3"/>
-	    <Parameter name="max nka vectors" type="int" value="10"/>
-	    <Parameter name="limit iterations" type="int" value="20"/>
-	  </ParameterList>
-	  <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
-	  <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
-	  <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
-	  <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
-	  <Parameter name="extrapolate initial guess" type="bool" value="false"/>
-	</ParameterList>
+        <Parameter name="linear solver" type="string" value="linear operator"/>
+        <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
+        <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
+        <!--Parameter name="preconditioner enhancement" type="string" value="linear operator"/-->
+        <ParameterList name="initialization">
+          <Parameter name="method" type="string" value="saturated solver"/>
+          <Parameter name="linear solver" type="string" value="AztecOO"/>
+          <Parameter name="clipping saturation value" type="double" value="0.6"/>
+        </ParameterList>
+        <ParameterList name="dae constraint">
+          <Parameter name="method" type="string" value="projection"/>
+          <Parameter name="linear solver" type="string" value="AztecOO"/>
+        </ParameterList>
+        <Parameter name="time integration method" type="string" value="BDF1"/>
+        <ParameterList name="BDF1">
+          <Parameter name="timestep controller type" type="string" value="standard"/>
+          <ParameterList name="timestep controller standard parameters">
+            <Parameter name="max iterations" type="int" value="35"/>
+            <Parameter name="min iterations" type="int" value="7"/>
+            <Parameter name="timestep increase factor" type="double" value="1.25"/>
+            <Parameter name="timestep reduction factor" type="double" value="0.5"/>
+            <Parameter name="max timestep" type="double" value="6.0e+9"/>
+            <Parameter name="min timestep" type="double" value="9.99999999999999945e-21"/>
+          </ParameterList>
+          <Parameter name="solver type" type="string" value="Newton"/>
+          <ParameterList name="Newton parameters">
+            <Parameter name="nonlinear tolerance" type="double" value="0.0000999999999999999955"/>
+            <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+            <Parameter name="max du growth factor" type="double" value="1.0e+3"/>
+            <Parameter name="max divergent iterations" type="int" value="3"/>
+            <Parameter name="max nka vectors" type="int" value="10"/>
+            <Parameter name="limit iterations" type="int" value="20"/>
+          </ParameterList>
+          <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
+          <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
+          <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
+          <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
+          <Parameter name="extrapolate initial guess" type="bool" value="false"/>
+        </ParameterList>
       </ParameterList>
 
       <ParameterList name="water retention models">
-	<ParameterList name="WRM for All">
-	  <Parameter name="regions" type="Array(string)" value="{All}"/>
-	  <Parameter name="water retention model" type="string" value="van Genuchten"/>
-	  <Parameter name="van Genuchten alpha" type="double" value="0.000735"/>
-	  <Parameter name="van Genuchten m" type="double" value="0.31138"/>
-	  <Parameter name="residual saturation liquid" type="double" value="0.074"/>
-	</ParameterList>
+        <ParameterList name="WRM for All">
+          <Parameter name="regions" type="Array(string)" value="{All}"/>
+          <Parameter name="water retention model" type="string" value="van Genuchten"/>
+          <Parameter name="van Genuchten alpha" type="double" value="0.000735"/>
+          <Parameter name="van Genuchten m" type="double" value="0.31138"/>
+          <Parameter name="residual saturation liquid" type="double" value="0.074"/>
+        </ParameterList>
       </ParameterList>
 
       <ParameterList name="boundary conditions">
-	<ParameterList name="mass flux">
-	  <ParameterList name="BC 0">
-	    <Parameter name="regions" type="Array(string)" value="{Left Top, Right Top, Bottom}"/>
-	    <Parameter name="spatial distribution method" type="string" value="none"/>
-	    <ParameterList name="outward mass flux">
-	      <ParameterList name="function-constant">
-		<Parameter name="value" type="double" value="0.0"/>
-	      </ParameterList>
-	    </ParameterList>
-	  </ParameterList>
-	  <ParameterList name="BC 1">
-	    <Parameter name="regions" type="Array(string)" value="{Top}"/>
-	    <Parameter name="spatial distribution method" type="string" value="none"/>
-	    <ParameterList name="outward mass flux">
-	      <ParameterList name="function-constant">
-		<Parameter name="value" type="double" value="-2.1076e-07"/>
-	      </ParameterList>
-	    </ParameterList>
-	  </ParameterList>
-	</ParameterList>
-	<ParameterList name="static head">
-	  <ParameterList name="BC 2">
-	    <Parameter name="regions" type="Array(string)" value="{Left Bottom}"/>
-	    <Parameter name="spatial distribution method" type="string" value="none"/>
-	    <ParameterList name="static head">
-	      <ParameterList name="function-static-head">
-		<Parameter name="p0" type="double" value="101325.0"/>
-		<Parameter name="density" type="double" value="998.0"/>
-		<Parameter name="gravity" type="double" value="9.81"/>
-		<Parameter name="space dimension" type="int" value="2"/>
-		<ParameterList name="water table elevation">
-		  <ParameterList name="function-constant">
-		    <Parameter name="value" type="double" value="40.0"/>
-		  </ParameterList>
-		</ParameterList>
-	      </ParameterList>
-	    </ParameterList>
-	  </ParameterList>
-	  <ParameterList name="BC 3">
-	    <Parameter name="regions" type="Array(string)" value="{Right Bottom}"/>
-	    <Parameter name="spatial distribution method" type="string" value="none"/>
-	    <ParameterList name="static head">
-	      <ParameterList name="function-static-head">
-		<Parameter name="p0" type="double" value="101325.0"/>
-		<Parameter name="density" type="double" value="998.0"/>
-		<Parameter name="gravity" type="double" value="9.81"/>
-		<Parameter name="space dimension" type="int" value="2"/>
-		<ParameterList name="water table elevation">
-		  <ParameterList name="function-constant">
-		    <Parameter name="value" type="double" value="20.0"/>
-		  </ParameterList>
-		</ParameterList>
-	      </ParameterList>
-	    </ParameterList>
-	  </ParameterList>
-	</ParameterList>
-	<ParameterList name="seepage face">
-	  <ParameterList name="BC 4">
-	    <Parameter name="regions" type="Array(string)" value="{Right Middle}"/>
-	    <Parameter name="spatial distribution method" type="string" value="none"/>
-	    <Parameter name="rainfall" type="bool" value="false"/>
-	    <Parameter name="submodel" type="string" value="PFloTran"/>
+        <ParameterList name="mass flux">
+          <ParameterList name="BC 0">
+            <Parameter name="regions" type="Array(string)" value="{Left Top, Right Top, Bottom}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
+            <ParameterList name="outward mass flux">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="BC 1">
+            <Parameter name="regions" type="Array(string)" value="{Top}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
+            <ParameterList name="outward mass flux">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="-2.1076e-7"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="static head">
+          <ParameterList name="BC 2">
+            <Parameter name="regions" type="Array(string)" value="{Left Bottom}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
+            <ParameterList name="static head">
+              <ParameterList name="function-static-head">
+                <Parameter name="p0" type="double" value="101325.0"/>
+                <Parameter name="density" type="double" value="998.0"/>
+                <Parameter name="gravity" type="double" value="9.81"/>
+                <Parameter name="space dimension" type="int" value="2"/>
+                <ParameterList name="water table elevation">
+                  <ParameterList name="function-constant">
+                    <Parameter name="value" type="double" value="40.0"/>
+                  </ParameterList>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="BC 3">
+            <Parameter name="regions" type="Array(string)" value="{Right Bottom}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
+            <ParameterList name="static head">
+              <ParameterList name="function-static-head">
+                <Parameter name="p0" type="double" value="101325.0"/>
+                <Parameter name="density" type="double" value="998.0"/>
+                <Parameter name="gravity" type="double" value="9.81"/>
+                <Parameter name="space dimension" type="int" value="2"/>
+                <ParameterList name="water table elevation">
+                  <ParameterList name="function-constant">
+                    <Parameter name="value" type="double" value="20.0"/>
+                  </ParameterList>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="seepage face">
+          <ParameterList name="BC 4">
+            <Parameter name="regions" type="Array(string)" value="{Right Middle}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
+            <Parameter name="rainfall" type="bool" value="false"/>
+            <Parameter name="submodel" type="string" value="PFloTran"/>
             <ParameterList name="outward mass flux">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="0.0"/>
@@ -213,7 +211,9 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
     </ParameterList>
+
   </ParameterList>
 
   <!-- SOLVERS -->
@@ -244,12 +244,10 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="Trilinos ML">
       <Parameter name="preconditioning method" type="string" value="ml"/>
-
       <ParameterList name="ml parameters">
         <Parameter name="ML output" type="int" value="0"/>
         <Parameter name="aggregation: damping factor" type="double" value="1.33"/>
@@ -271,7 +269,6 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="state">
     <ParameterList name="evaluators">
       <ParameterList name="porosity">
@@ -331,20 +328,24 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="initial conditions">
+
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="998.0"/>
       </ParameterList>
+
       <ParameterList name="const_fluid_molar_mass">
         <Parameter name="value" type="double" value="0.018015"/>
       </ParameterList>
+
       <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="1.0"/>
       </ParameterList>
+
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="101325.0"/>
       </ParameterList>
+
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, -9.81}"/>
       </ParameterList>
@@ -376,7 +377,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
     </ParameterList>
   </ParameterList>
 </ParameterList>
-

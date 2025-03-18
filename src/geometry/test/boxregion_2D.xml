@@ -1,8 +1,9 @@
 <ParameterList name="regions">
   <ParameterList name="Top Section">
     <ParameterList name="region: box">
-      <Parameter name="low coordinate" type="Array(double)" value="{9, 8}"/>
-      <Parameter name="high coordinate" type="Array(double)" value="{11, 1.5}"/>
+      <Parameter name="low coordinate" type="Array(double)" value="{9.0, 8.0}"/>
+      <Parameter name="high coordinate" type="Array(double)" value="{11.0, 1.5}"/>
     </ParameterList>
   </ParameterList>
 </ParameterList>
+

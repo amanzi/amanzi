@@ -19,9 +19,9 @@ class ValidationLevel(dict):
             self.none = False
 
 
-
 def _parameterFromElement(elem):
     return objects[elem.get("type")].from_Element(elem)
+
 
 def _listObjectFromElement(elem):
     # see if this is a new-style elem, whose Lists have Types
@@ -37,13 +37,12 @@ def _listObjectFromElement(elem):
         else:
             return obj.from_Element(elem)
 
-    # else try to guess the type from the List name
     cname = elem.get('name')
-    try:
+    if cname in objects:
+        # a typed list
         return objects[cname].from_Element(elem)
-
-    # else just create a generic ParameterList
-    except KeyError:
+    else:
+        # a genericl parameter list
         return objects["ParameterList"].from_Element(elem)
 
 

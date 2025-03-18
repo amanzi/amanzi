@@ -1,6 +1,5 @@
 <ParameterList name="Main">
   <Parameter name="Amanzi Input Format Version" type="string" value="1.2.1"/>
-
   <ParameterList name="General Description">
     <Parameter name="Model ID" type="string" value="Transient Richards"/>
     <Parameter name="Model name" type="string" value="ASCEM-F-Area"/>
@@ -9,89 +8,86 @@
     <Parameter name="Creation date" type="string" value="06.15.12"/>
     <Parameter name="Last modified" type="string" value="06.15.12"/>
   </ParameterList>
-
   <!-- Execution control -->
   <ParameterList name="Execution Control">
-
     <Parameter name="Flow Model" type="string" value="Richards"/>
-    <Parameter name="Transport Model" type="string" value="On"/> 
+    <Parameter name="Transport Model" type="string" value="On"/>
     <Parameter name="Chemistry Model" type="string" value="Amanzi"/>
     <Parameter name="Verbosity" type="string" value="High"/>
-
     <ParameterList name="Time Integration Mode">
       <ParameterList name="Initialize To Steady">
         <Parameter name="Start" type="double" value="0.0"/>
-	<Parameter name="Switch" type="double" value="6.16635504e+10"/> <!-- Jan 1955 -->
-	<Parameter name="End" type="double" value="6.48508680e+10"/> <!-- Jan 2055 -->
-   	<Parameter name="Steady Initial Time Step" type="double" value="1.0e6"/>
-	<Parameter name="Transient Initial Time Step" type="double" value="100.0"/>
+        <Parameter name="Switch" type="double" value="6.16635504e+10"/>
+        <!-- Jan 1955 -->
+        <Parameter name="End" type="double" value="6.48508680e+10"/>
+        <!-- Jan 2055 -->
+        <Parameter name="Steady Initial Time Step" type="double" value="1.0e+6"/>
+        <Parameter name="Transient Initial Time Step" type="double" value="100.0"/>
         <Parameter name="Use Picard" type="bool" value="true"/>
       </ParameterList>
-    </ParameterList> <!-- Time Integration Mode -->
-
+    </ParameterList>
+    <!-- Time Integration Mode -->
     <!--ParameterList name="Restart from Checkpoint Data File">
       <Parameter name="Checkpoint Data File Name" type="string" value="chkpoint00134.h5"/>
     </ParameterList-->
-
     <ParameterList name="Numerical Control Parameters">
       <ParameterList name="Unstructured Algorithm">
         <ParameterList name="Transport Process Kernel">
-           <Parameter name="Transport Integration Algorithm" type="string" value="Explicit Second-Order"/>
-	   <Parameter name="transport subcycling" type="bool" value="true"/>
+          <Parameter name="Transport Integration Algorithm" type="string" value="Explicit Second-Order"/>
+          <Parameter name="transport subcycling" type="bool" value="true"/>
         </ParameterList>
         <ParameterList name="Chemistry Process Kernel">
-	   <Parameter name="max chemistry to transport timestep ratio" type="double" value="1.0"/>
+          <Parameter name="max chemistry to transport timestep ratio" type="double" value="1.0"/>
         </ParameterList>
         <ParameterList name="Steady-State Psuedo-Time Implicit Solver">
-           <Parameter name="pseudo time integrator initialize with darcy" type="bool" value="true"/> 
-           <Parameter name="pseudo time integrator clipping saturation value" type="double" value="0.9"/>
-           <Parameter name="pseudo time integrator time integration method" type="string" value="Picard"/> 
-           <Parameter name="pseudo time integrator preconditioner" type="string" value="Trilinos ML"/> 
-           <Parameter name="pseudo time integrator linear solver" type="string" value="AztecOO"/> 
-           <Parameter name="pseudo time integrator error control options" type="Array(string)" value="{pressure}"/>
-           <Parameter name="pseudo time integrator picard convergence tolerance" type="double" value="1e-10"/>
-           <Parameter name="pseudo time integrator picard maximum number of iterations" type="int" value="1200"/> 
+          <Parameter name="pseudo time integrator initialize with darcy" type="bool" value="true"/>
+          <Parameter name="pseudo time integrator clipping saturation value" type="double" value="0.9"/>
+          <Parameter name="pseudo time integrator time integration method" type="string" value="Picard"/>
+          <Parameter name="pseudo time integrator preconditioner" type="string" value="Trilinos ML"/>
+          <Parameter name="pseudo time integrator linear solver" type="string" value="AztecOO"/>
+          <Parameter name="pseudo time integrator error control options" type="Array(string)" value="{pressure}"/>
+          <Parameter name="pseudo time integrator picard convergence tolerance" type="double" value="1e-10"/>
+          <Parameter name="pseudo time integrator picard maximum number of iterations" type="int" value="1200"/>
         </ParameterList>
         <ParameterList name="Steady-State Implicit Time Integration">
-           <Parameter name="steady max timestep" type="double" value="6.0e+10"/>
-           <Parameter name="steady max iterations" type="int" value="50"/>
-           <Parameter name="steady min iterations" type="int" value="8"/>
-           <Parameter name="steady limit iterations" type="int" value="100"/>
-           <Parameter name="steady nonlinear tolerance" type="double" value="1.0e-5"/>
-           <Parameter name="steady timestep reduction factor" type="double" value="0.5"/>
-           <Parameter name="steady timestep increase factor" type="double" value="2.0"/>
+          <Parameter name="steady max timestep" type="double" value="6.0e+10"/>
+          <Parameter name="steady max iterations" type="int" value="50"/>
+          <Parameter name="steady min iterations" type="int" value="8"/>
+          <Parameter name="steady limit iterations" type="int" value="100"/>
+          <Parameter name="steady nonlinear tolerance" type="double" value="0.000010"/>
+          <Parameter name="steady timestep reduction factor" type="double" value="0.5"/>
+          <Parameter name="steady timestep increase factor" type="double" value="2.0"/>
         </ParameterList>
         <ParameterList name="Transient Implicit Time Integration">
-           <Parameter name="transient max iterations" type="int" value="15"/>
-           <Parameter name="transient min iterations" type="int" value="10"/>
-           <Parameter name="transient limit iterations" type="int" value="20"/>
-           <Parameter name="transient nonlinear tolerance" type="double" value="1.0e-5"/>
-           <Parameter name="transient max timestep" type="double" value="6.0e+10"/>
-           <Parameter name="transient max preconditioner lag iterations" type="int" value="20"/>
-           <Parameter name="transient timestep reduction factor" type="double" value="0.8"/>
-           <Parameter name="transient timestep increase factor" type="double" value="1.25"/>
-           <Parameter name="transient preconditioner" type="string" value="Hypre AMG"/>
+          <Parameter name="transient max iterations" type="int" value="15"/>
+          <Parameter name="transient min iterations" type="int" value="10"/>
+          <Parameter name="transient limit iterations" type="int" value="20"/>
+          <Parameter name="transient nonlinear tolerance" type="double" value="0.000010"/>
+          <Parameter name="transient max timestep" type="double" value="6.0e+10"/>
+          <Parameter name="transient max preconditioner lag iterations" type="int" value="20"/>
+          <Parameter name="transient timestep reduction factor" type="double" value="0.8"/>
+          <Parameter name="transient timestep increase factor" type="double" value="1.25"/>
+          <Parameter name="transient preconditioner" type="string" value="Hypre AMG"/>
         </ParameterList>
         <ParameterList name="Preconditioners">
-           <ParameterList name="Trilinos ML">
-               <Parameter name="ML cycle applications" type="int" value="6"/>
-           </ParameterList>
-           <ParameterList name="Hypre AMG">
-               <Parameter name="Hypre AMG cycle applications" type="int" value="6"/>
-           </ParameterList>
-           <ParameterList name="Block ILU">
-               <Parameter name="Block ILU level of fill" type="int" value="1"/>
-           </ParameterList>
+          <ParameterList name="Trilinos ML">
+            <Parameter name="ML cycle applications" type="int" value="6"/>
+          </ParameterList>
+          <ParameterList name="Hypre AMG">
+            <Parameter name="Hypre AMG cycle applications" type="int" value="6"/>
+          </ParameterList>
+          <ParameterList name="Block ILU">
+            <Parameter name="Block ILU level of fill" type="int" value="1"/>
+          </ParameterList>
         </ParameterList>
       </ParameterList>
-    </ParameterList> <!-- Numerical Control Parameters -->
-
-  </ParameterList> <!-- Execution Control -->
-
+    </ParameterList>
+    <!-- Numerical Control Parameters -->
+  </ParameterList>
+  <!-- Execution Control -->
   <ParameterList name="Domain">
     <Parameter name="Spatial Dimension" type="int" value="2"/>
   </ParameterList>
-         
   <!-- Mesh in exodus format -->
   <ParameterList name="Mesh">
     <ParameterList name="Unstructured">
@@ -105,129 +101,127 @@
         <Parameter name="Verify Mesh" type="bool" value="false"/>
       </ParameterList>
     </ParameterList>
-  </ParameterList> <!-- Mesh -->
-               
+  </ParameterList>
+  <!-- Mesh -->
   <!-- Regions: Each region is coincident  with those specified in the exodus II format. -->
   <ParameterList name="Regions">
-
     <ParameterList name="Upper aquifer">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label"  type="string" value="50000"/>
-        <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
+        <Parameter name="Label" type="string" value="50000"/>
+        <Parameter name="File" type="string" value="f_area_mesh_2D.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Cell"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Lower aquifer">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label"  type="string" value="30000"/>
-        <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
+        <Parameter name="Label" type="string" value="30000"/>
+        <Parameter name="File" type="string" value="f_area_mesh_2D.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Cell"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Tan clay">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label"  type="string" value="40000"/>
-        <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
+        <Parameter name="Label" type="string" value="40000"/>
+        <Parameter name="File" type="string" value="f_area_mesh_2D.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Cell"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Gordon confining">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label"  type="string" value="20000"/>
-        <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
+        <Parameter name="Label" type="string" value="20000"/>
+        <Parameter name="File" type="string" value="f_area_mesh_2D.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Cell"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Gordon aquifer">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label"  type="string" value="10000"/>
-        <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
+        <Parameter name="Label" type="string" value="10000"/>
+        <Parameter name="File" type="string" value="f_area_mesh_2D.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Cell"/>
       </ParameterList>
     </ParameterList>
-
-<!-- This face is corresponding to natural recharge (left side) (Bc1) -->
+    <!-- This face is corresponding to natural recharge (left side) (Bc1) -->
     <ParameterList name="Natural recharge (left)">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label"  type="string" value="1"/>
-        <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
+        <Parameter name="Label" type="string" value="1"/>
+        <Parameter name="File" type="string" value="f_area_mesh_2D.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
     </ParameterList>
-<!-- This face is corresponding to natural recharge (right side) (Bc3) -->
+    <!-- This face is corresponding to natural recharge (right side) (Bc3) -->
     <ParameterList name="Natural recharge (right)">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label"  type="string" value="3"/>
-        <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
+        <Parameter name="Label" type="string" value="3"/>
+        <Parameter name="File" type="string" value="f_area_mesh_2D.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
     </ParameterList>
-<!-- This face is corresponding to Seepage basin (Bc2) -->
+    <!-- This face is corresponding to Seepage basin (Bc2) -->
     <ParameterList name="Seepage basin">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label"  type="string" value="2"/>
-        <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
+        <Parameter name="Label" type="string" value="2"/>
+        <Parameter name="File" type="string" value="f_area_mesh_2D.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
     </ParameterList>
-<!-- This face is corresponding to seepage face (Bc4) -->
+    <!-- This face is corresponding to seepage face (Bc4) -->
     <ParameterList name="Seepage face">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label"  type="string" value="4"/>
-        <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
+        <Parameter name="Label" type="string" value="4"/>
+        <Parameter name="File" type="string" value="f_area_mesh_2D.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
     </ParameterList>
-<!-- This face is corresponding to UTRA (UUTRA + TCCZ + LUTRA) upstream side (Bc8) -->
+    <!-- This face is corresponding to UTRA (UUTRA + TCCZ + LUTRA) upstream side (Bc8) -->
     <ParameterList name="UTRA upstream">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label"  type="string" value="8"/>
-        <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
+        <Parameter name="Label" type="string" value="8"/>
+        <Parameter name="File" type="string" value="f_area_mesh_2D.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
     </ParameterList>
-<!-- This face is corresponding to UTRA (UUTRA + TCCZ + LUTRA) downstream side (Bc5) -->
+    <!-- This face is corresponding to UTRA (UUTRA + TCCZ + LUTRA) downstream side (Bc5) -->
     <ParameterList name="UTRA downstream">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label"  type="string" value="5"/>
-        <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
+        <Parameter name="Label" type="string" value="5"/>
+        <Parameter name="File" type="string" value="f_area_mesh_2D.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
     </ParameterList>
-<!-- This face is corresponding to Gordon aquifer (GA) upstream side (Bc7) -->
+    <!-- This face is corresponding to Gordon aquifer (GA) upstream side (Bc7) -->
     <ParameterList name="GA upstream">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label"  type="string" value="7"/>
-        <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
+        <Parameter name="Label" type="string" value="7"/>
+        <Parameter name="File" type="string" value="f_area_mesh_2D.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
     </ParameterList>
-<!-- This face is corresponding to Gordon aquifer (GA) downstream side (Bc6) -->
+    <!-- This face is corresponding to Gordon aquifer (GA) downstream side (Bc6) -->
     <ParameterList name="GA downstream">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label"  type="string" value="6"/>
-        <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
+        <Parameter name="Label" type="string" value="6"/>
+        <Parameter name="File" type="string" value="f_area_mesh_2D.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
     </ParameterList>
-<!-- This face is corresponding to vadose zone (Bc9, no flux) -->
+    <!-- This face is corresponding to vadose zone (Bc9, no flux) -->
     <ParameterList name="VZ">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label"  type="string" value="9"/>
-        <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
+        <Parameter name="Label" type="string" value="9"/>
+        <Parameter name="File" type="string" value="f_area_mesh_2D.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
@@ -237,35 +231,34 @@
     -->
     <ParameterList name="Well_1">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{1866, 58.1}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{1866.0, 58.1}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Well_2">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{1866, 43.8}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{1866.0, 43.8}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Well_3">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{2072, 58.1}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{2072.0, 58.1}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Basin_point">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{1721, 84.8}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{1721.0, 84.8}"/>
       </ParameterList>
     </ParameterList>
-    
-  </ParameterList> <!-- Regions -->
-
+  </ParameterList>
+  <!-- Regions -->
   <ParameterList name="Phase Definitions">
     <ParameterList name="Aqueous">
       <ParameterList name="Phase Properties">
         <ParameterList name="Viscosity: Uniform">
-          <Parameter name="Viscosity" type="double" value="1.0e-3"/>
+          <Parameter name="Viscosity" type="double" value="0.0010"/>
         </ParameterList>
         <ParameterList name="Density: Uniform">
-          <Parameter name="Density" type="double" value="997.16e0"/>
+          <Parameter name="Density" type="double" value="997.16"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="Phase Components">
@@ -273,15 +266,15 @@
           <Parameter name="Component Solutes" type="Array(string)" value="{H+, Al+++, Ca++, Cl-, Fe+++, CO2(aq), K+, Mg++, Na+, SiO2(aq), SO4--, Tritium, NO3-, UO2++}"/>
         </ParameterList>
       </ParameterList>
-    </ParameterList> <!-- Aqueous Phase -->
-    
+    </ParameterList>
+    <!-- Aqueous Phase -->
     <ParameterList name="Solid">
       <Parameter name="Minerals" type="Array(string)" value="{Quartz, Goethite, Kaolinite, Schoepite, Gibbsite, Jurbanite, Basaluminite, Opal}"/>
-      <Parameter name="Sorption Sites" type="Array(string)" value="{>davis_OH}"/>
-    </ParameterList> <!-- Solid Phase -->
-  </ParameterList> <!-- Phase Definitions -->
-
-
+      <Parameter name="Sorption Sites" type="Array(string)" value="{&gt;davis_OH}"/>
+    </ParameterList>
+    <!-- Solid Phase -->
+  </ParameterList>
+  <!-- Phase Definitions -->
   <ParameterList name="Material Properties">
     <!-- Upper aquifer (UUTRA) -->
     <ParameterList name="Mesh block 1">
@@ -290,146 +283,120 @@
         <Parameter name="Value" type="double" value="0.39"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="x" type="double" value="5.0e-12"/> 
+        <Parameter name="x" type="double" value="5.0e-12"/>
         <Parameter name="y" type="double" value="5.0e-12"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha" type="double" value="4.0e-4"/> 
+        <Parameter name="alpha" type="double" value="0.00040"/>
         <Parameter name="Sr" type="double" value="0.18"/>
         <Parameter name="m" type="double" value="0.27"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
-	<!--Parameter name="krel smoothing interval" type="double" value="100.0"/-->
+        <!--Parameter name="krel smoothing interval" type="double" value="100.0"/-->
       </ParameterList>
       <ParameterList name="Mineralogy">
-
-	<ParameterList name="Gibbsite">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Quartz">
-	  <Parameter name="Volume Fraction" type="double" value="0.88"/>
-	  <Parameter name="Specific Surface Area" type="double" value="3262.3"/>
-	</ParameterList>
-
-	<ParameterList name="Opal">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Jurbanite">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Basaluminite">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Kaolinite">
-	  <Parameter name="Volume Fraction" type="double" value="0.11"/>
-	  <Parameter name="Specific Surface Area" type="double" value="59093.9"/>
-	</ParameterList>
-
-	<ParameterList name="Schoepite">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Goethite">
-	  <Parameter name="Volume Fraction" type="double" value="0.016"/>
-	  <Parameter name="Specific Surface Area" type="double" value="11076.3"/>
-	</ParameterList>
-
-      </ParameterList> <!-- Mineralogy -->
-
-
+        <ParameterList name="Gibbsite">
+          <Parameter name="Volume Fraction" type="double" value="0.0"/>
+          <Parameter name="Specific Surface Area" type="double" value="0.1"/>
+        </ParameterList>
+        <ParameterList name="Quartz">
+          <Parameter name="Volume Fraction" type="double" value="0.88"/>
+          <Parameter name="Specific Surface Area" type="double" value="3262.3"/>
+        </ParameterList>
+        <ParameterList name="Opal">
+          <Parameter name="Volume Fraction" type="double" value="0.0"/>
+          <Parameter name="Specific Surface Area" type="double" value="0.1"/>
+        </ParameterList>
+        <ParameterList name="Jurbanite">
+          <Parameter name="Volume Fraction" type="double" value="0.0"/>
+          <Parameter name="Specific Surface Area" type="double" value="0.1"/>
+        </ParameterList>
+        <ParameterList name="Basaluminite">
+          <Parameter name="Volume Fraction" type="double" value="0.0"/>
+          <Parameter name="Specific Surface Area" type="double" value="0.1"/>
+        </ParameterList>
+        <ParameterList name="Kaolinite">
+          <Parameter name="Volume Fraction" type="double" value="0.11"/>
+          <Parameter name="Specific Surface Area" type="double" value="59093.9"/>
+        </ParameterList>
+        <ParameterList name="Schoepite">
+          <Parameter name="Volume Fraction" type="double" value="0.0"/>
+          <Parameter name="Specific Surface Area" type="double" value="0.1"/>
+        </ParameterList>
+        <ParameterList name="Goethite">
+          <Parameter name="Volume Fraction" type="double" value="0.016"/>
+          <Parameter name="Specific Surface Area" type="double" value="11076.3"/>
+        </ParameterList>
+      </ParameterList>
+      <!-- Mineralogy -->
       <Parameter name="Cation Exchange Capacity" type="double" value="2.75"/>
-
-
       <ParameterList name="Surface Complexation Sites">
-
-	<ParameterList name=">davis_OH">
-	  <Parameter name="Site Density" type="double" value="0.156199"/>
-	</ParameterList>
-
-      </ParameterList> <!-- Surface Complexation Sites -->
-    </ParameterList> <!-- Upper aquifer (UUTRA) -->
-
-    <!-- Lower aquifer (LUTRA) -->           
+        <ParameterList name="&gt;davis_OH">
+          <Parameter name="Site Density" type="double" value="0.156199"/>
+        </ParameterList>
+      </ParameterList>
+      <!-- Surface Complexation Sites -->
+    </ParameterList>
+    <!-- Upper aquifer (UUTRA) -->
+    <!-- Lower aquifer (LUTRA) -->
     <ParameterList name="Mesh block 2">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Lower aquifer}"/>
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.39"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="x" type="double" value="5.0e-12"/> 
+        <Parameter name="x" type="double" value="5.0e-12"/>
         <Parameter name="y" type="double" value="5.0e-12"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha" type="double" value="5.1e-5"/> 
+        <Parameter name="alpha" type="double" value="0.000051"/>
         <Parameter name="Sr" type="double" value="0.41"/>
         <Parameter name="m" type="double" value="0.5"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
       </ParameterList>
       <ParameterList name="Mineralogy">
-
-	<ParameterList name="Gibbsite">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Quartz">
-	  <Parameter name="Volume Fraction" type="double" value="0.88"/>
-	  <Parameter name="Specific Surface Area" type="double" value="3262.3"/>
-	</ParameterList>
-
-	<ParameterList name="Opal">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Jurbanite">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Basaluminite">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Kaolinite">
-	  <Parameter name="Volume Fraction" type="double" value="0.11"/>
-	  <Parameter name="Specific Surface Area" type="double" value="59093.9"/>
-	</ParameterList>
-
-	<ParameterList name="Schoepite">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Goethite">
-	  <Parameter name="Volume Fraction" type="double" value="0.016"/>
-	  <Parameter name="Specific Surface Area" type="double" value="11076.3"/>
-	</ParameterList>
-
-      </ParameterList> <!-- Mineralogy -->
-
-
+        <ParameterList name="Gibbsite">
+          <Parameter name="Volume Fraction" type="double" value="0.0"/>
+          <Parameter name="Specific Surface Area" type="double" value="0.1"/>
+        </ParameterList>
+        <ParameterList name="Quartz">
+          <Parameter name="Volume Fraction" type="double" value="0.88"/>
+          <Parameter name="Specific Surface Area" type="double" value="3262.3"/>
+        </ParameterList>
+        <ParameterList name="Opal">
+          <Parameter name="Volume Fraction" type="double" value="0.0"/>
+          <Parameter name="Specific Surface Area" type="double" value="0.1"/>
+        </ParameterList>
+        <ParameterList name="Jurbanite">
+          <Parameter name="Volume Fraction" type="double" value="0.0"/>
+          <Parameter name="Specific Surface Area" type="double" value="0.1"/>
+        </ParameterList>
+        <ParameterList name="Basaluminite">
+          <Parameter name="Volume Fraction" type="double" value="0.0"/>
+          <Parameter name="Specific Surface Area" type="double" value="0.1"/>
+        </ParameterList>
+        <ParameterList name="Kaolinite">
+          <Parameter name="Volume Fraction" type="double" value="0.11"/>
+          <Parameter name="Specific Surface Area" type="double" value="59093.9"/>
+        </ParameterList>
+        <ParameterList name="Schoepite">
+          <Parameter name="Volume Fraction" type="double" value="0.0"/>
+          <Parameter name="Specific Surface Area" type="double" value="0.1"/>
+        </ParameterList>
+        <ParameterList name="Goethite">
+          <Parameter name="Volume Fraction" type="double" value="0.016"/>
+          <Parameter name="Specific Surface Area" type="double" value="11076.3"/>
+        </ParameterList>
+      </ParameterList>
+      <!-- Mineralogy -->
       <Parameter name="Cation Exchange Capacity" type="double" value="2.75"/>
-
-
       <ParameterList name="Surface Complexation Sites">
-
-	<ParameterList name=">davis_OH">
-	  <Parameter name="Site Density" type="double" value="0.156199"/>
-	</ParameterList>
-
-      </ParameterList> <!-- Surface Complexation Sites -->
-    </ParameterList> <!-- Lower aquifer (LUTRA) -->           
-
+        <ParameterList name="&gt;davis_OH">
+          <Parameter name="Site Density" type="double" value="0.156199"/>
+        </ParameterList>
+      </ParameterList>
+      <!-- Surface Complexation Sites -->
+    </ParameterList>
+    <!-- Lower aquifer (LUTRA) -->
     <!-- Tan clay (TCCZ) -->
     <ParameterList name="Mesh block 3">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Tan clay}"/>
@@ -437,72 +404,59 @@
         <Parameter name="Value" type="double" value="0.39"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="x" type="double" value="1.98e-14"/> 
-        <Parameter name="y" type="double" value="1.98e-14"/> 
+        <Parameter name="x" type="double" value="1.98e-14"/>
+        <Parameter name="y" type="double" value="1.98e-14"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha" type="double" value="5.1e-5"/> 
+        <Parameter name="alpha" type="double" value="0.000051"/>
         <Parameter name="Sr" type="double" value="0.39"/>
         <Parameter name="m" type="double" value="0.5"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
       </ParameterList>
       <ParameterList name="Mineralogy">
-
-	<ParameterList name="Gibbsite">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Quartz">
-	  <Parameter name="Volume Fraction" type="double" value="0.88"/>
-	  <Parameter name="Specific Surface Area" type="double" value="3262.3"/>
-	</ParameterList>
-
-	<ParameterList name="Opal">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Jurbanite">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Basaluminite">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Kaolinite">
-	  <Parameter name="Volume Fraction" type="double" value="0.11"/>
-	  <Parameter name="Specific Surface Area" type="double" value="59093.9"/>
-	</ParameterList>
-
-	<ParameterList name="Schoepite">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Goethite">
-	  <Parameter name="Volume Fraction" type="double" value="0.016"/>
-	  <Parameter name="Specific Surface Area" type="double" value="11076.3"/>
-	</ParameterList>
-
-      </ParameterList> <!-- Mineralogy -->
-
-
+        <ParameterList name="Gibbsite">
+          <Parameter name="Volume Fraction" type="double" value="0.0"/>
+          <Parameter name="Specific Surface Area" type="double" value="0.1"/>
+        </ParameterList>
+        <ParameterList name="Quartz">
+          <Parameter name="Volume Fraction" type="double" value="0.88"/>
+          <Parameter name="Specific Surface Area" type="double" value="3262.3"/>
+        </ParameterList>
+        <ParameterList name="Opal">
+          <Parameter name="Volume Fraction" type="double" value="0.0"/>
+          <Parameter name="Specific Surface Area" type="double" value="0.1"/>
+        </ParameterList>
+        <ParameterList name="Jurbanite">
+          <Parameter name="Volume Fraction" type="double" value="0.0"/>
+          <Parameter name="Specific Surface Area" type="double" value="0.1"/>
+        </ParameterList>
+        <ParameterList name="Basaluminite">
+          <Parameter name="Volume Fraction" type="double" value="0.0"/>
+          <Parameter name="Specific Surface Area" type="double" value="0.1"/>
+        </ParameterList>
+        <ParameterList name="Kaolinite">
+          <Parameter name="Volume Fraction" type="double" value="0.11"/>
+          <Parameter name="Specific Surface Area" type="double" value="59093.9"/>
+        </ParameterList>
+        <ParameterList name="Schoepite">
+          <Parameter name="Volume Fraction" type="double" value="0.0"/>
+          <Parameter name="Specific Surface Area" type="double" value="0.1"/>
+        </ParameterList>
+        <ParameterList name="Goethite">
+          <Parameter name="Volume Fraction" type="double" value="0.016"/>
+          <Parameter name="Specific Surface Area" type="double" value="11076.3"/>
+        </ParameterList>
+      </ParameterList>
+      <!-- Mineralogy -->
       <Parameter name="Cation Exchange Capacity" type="double" value="2.75"/>
-
-
       <ParameterList name="Surface Complexation Sites">
-
-	<ParameterList name=">davis_OH">
-	  <Parameter name="Site Density" type="double" value="0.156199"/>
-	</ParameterList>
-
-      </ParameterList> <!-- Surface Complexation Sites -->
-    </ParameterList> <!-- Tan clay (TCCZ) -->
-
+        <ParameterList name="&gt;davis_OH">
+          <Parameter name="Site Density" type="double" value="0.156199"/>
+        </ParameterList>
+      </ParameterList>
+      <!-- Surface Complexation Sites -->
+    </ParameterList>
+    <!-- Tan clay (TCCZ) -->
     <!-- Gordon confining (GC) -->
     <ParameterList name="Mesh block 4">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Gordon confining}"/>
@@ -510,72 +464,59 @@
         <Parameter name="Value" type="double" value="0.39"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="x" type="double" value="1.0e-17"/> 
+        <Parameter name="x" type="double" value="1.0e-17"/>
         <Parameter name="y" type="double" value="1.0e-17"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha" type="double" value="5.1e-5"/>
+        <Parameter name="alpha" type="double" value="0.000051"/>
         <Parameter name="Sr" type="double" value="0.39"/>
         <Parameter name="m" type="double" value="0.5"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
       </ParameterList>
       <ParameterList name="Mineralogy">
-
-	<ParameterList name="Gibbsite">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Quartz">
-	  <Parameter name="Volume Fraction" type="double" value="0.88"/>
-	  <Parameter name="Specific Surface Area" type="double" value="3262.3"/>
-	</ParameterList>
-
-	<ParameterList name="Opal">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Jurbanite">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Basaluminite">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Kaolinite">
-	  <Parameter name="Volume Fraction" type="double" value="0.11"/>
-	  <Parameter name="Specific Surface Area" type="double" value="59093.9"/>
-	</ParameterList>
-
-	<ParameterList name="Schoepite">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Goethite">
-	  <Parameter name="Volume Fraction" type="double" value="0.016"/>
-	  <Parameter name="Specific Surface Area" type="double" value="11076.3"/>
-	</ParameterList>
-
-      </ParameterList> <!-- Mineralogy -->
-
-
+        <ParameterList name="Gibbsite">
+          <Parameter name="Volume Fraction" type="double" value="0.0"/>
+          <Parameter name="Specific Surface Area" type="double" value="0.1"/>
+        </ParameterList>
+        <ParameterList name="Quartz">
+          <Parameter name="Volume Fraction" type="double" value="0.88"/>
+          <Parameter name="Specific Surface Area" type="double" value="3262.3"/>
+        </ParameterList>
+        <ParameterList name="Opal">
+          <Parameter name="Volume Fraction" type="double" value="0.0"/>
+          <Parameter name="Specific Surface Area" type="double" value="0.1"/>
+        </ParameterList>
+        <ParameterList name="Jurbanite">
+          <Parameter name="Volume Fraction" type="double" value="0.0"/>
+          <Parameter name="Specific Surface Area" type="double" value="0.1"/>
+        </ParameterList>
+        <ParameterList name="Basaluminite">
+          <Parameter name="Volume Fraction" type="double" value="0.0"/>
+          <Parameter name="Specific Surface Area" type="double" value="0.1"/>
+        </ParameterList>
+        <ParameterList name="Kaolinite">
+          <Parameter name="Volume Fraction" type="double" value="0.11"/>
+          <Parameter name="Specific Surface Area" type="double" value="59093.9"/>
+        </ParameterList>
+        <ParameterList name="Schoepite">
+          <Parameter name="Volume Fraction" type="double" value="0.0"/>
+          <Parameter name="Specific Surface Area" type="double" value="0.1"/>
+        </ParameterList>
+        <ParameterList name="Goethite">
+          <Parameter name="Volume Fraction" type="double" value="0.016"/>
+          <Parameter name="Specific Surface Area" type="double" value="11076.3"/>
+        </ParameterList>
+      </ParameterList>
+      <!-- Mineralogy -->
       <Parameter name="Cation Exchange Capacity" type="double" value="2.75"/>
-
-
       <ParameterList name="Surface Complexation Sites">
-
-	<ParameterList name=">davis_OH">
-	  <Parameter name="Site Density" type="double" value="0.156199"/>
-	</ParameterList>
-
-      </ParameterList> <!-- Surface Complexation Sites -->
-    </ParameterList> <!-- Gordon confining (GC) -->
-
+        <ParameterList name="&gt;davis_OH">
+          <Parameter name="Site Density" type="double" value="0.156199"/>
+        </ParameterList>
+      </ParameterList>
+      <!-- Surface Complexation Sites -->
+    </ParameterList>
+    <!-- Gordon confining (GC) -->
     <!-- Gordon aquifer (GA) -->
     <ParameterList name="Mesh block 5">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Gordon aquifer}"/>
@@ -583,782 +524,690 @@
         <Parameter name="Value" type="double" value="0.39"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="x" type="double" value="1.0e-17"/> 
-      <Parameter name="y" type="double" value="1.0e-17"/>
+        <Parameter name="x" type="double" value="1.0e-17"/>
+        <Parameter name="y" type="double" value="1.0e-17"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha" type="double" value="5.1e-5"/>
+        <Parameter name="alpha" type="double" value="0.000051"/>
         <Parameter name="Sr" type="double" value="0.39"/>
         <Parameter name="m" type="double" value="0.5"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
       </ParameterList>
       <ParameterList name="Mineralogy">
-
-	<ParameterList name="Gibbsite">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Quartz">
-	  <Parameter name="Volume Fraction" type="double" value="0.88"/>
-	  <Parameter name="Specific Surface Area" type="double" value="3262.3"/>
-	</ParameterList>
-
-	<ParameterList name="Opal">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Jurbanite">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Basaluminite">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Kaolinite">
-	  <Parameter name="Volume Fraction" type="double" value="0.11"/>
-	  <Parameter name="Specific Surface Area" type="double" value="59093.9"/>
-	</ParameterList>
-
-	<ParameterList name="Schoepite">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Goethite">
-	  <Parameter name="Volume Fraction" type="double" value="0.016"/>
-	  <Parameter name="Specific Surface Area" type="double" value="11076.3"/>
-	</ParameterList>
-
-      </ParameterList> <!-- Mineralogy -->
-
-
+        <ParameterList name="Gibbsite">
+          <Parameter name="Volume Fraction" type="double" value="0.0"/>
+          <Parameter name="Specific Surface Area" type="double" value="0.1"/>
+        </ParameterList>
+        <ParameterList name="Quartz">
+          <Parameter name="Volume Fraction" type="double" value="0.88"/>
+          <Parameter name="Specific Surface Area" type="double" value="3262.3"/>
+        </ParameterList>
+        <ParameterList name="Opal">
+          <Parameter name="Volume Fraction" type="double" value="0.0"/>
+          <Parameter name="Specific Surface Area" type="double" value="0.1"/>
+        </ParameterList>
+        <ParameterList name="Jurbanite">
+          <Parameter name="Volume Fraction" type="double" value="0.0"/>
+          <Parameter name="Specific Surface Area" type="double" value="0.1"/>
+        </ParameterList>
+        <ParameterList name="Basaluminite">
+          <Parameter name="Volume Fraction" type="double" value="0.0"/>
+          <Parameter name="Specific Surface Area" type="double" value="0.1"/>
+        </ParameterList>
+        <ParameterList name="Kaolinite">
+          <Parameter name="Volume Fraction" type="double" value="0.11"/>
+          <Parameter name="Specific Surface Area" type="double" value="59093.9"/>
+        </ParameterList>
+        <ParameterList name="Schoepite">
+          <Parameter name="Volume Fraction" type="double" value="0.0"/>
+          <Parameter name="Specific Surface Area" type="double" value="0.1"/>
+        </ParameterList>
+        <ParameterList name="Goethite">
+          <Parameter name="Volume Fraction" type="double" value="0.016"/>
+          <Parameter name="Specific Surface Area" type="double" value="11076.3"/>
+        </ParameterList>
+      </ParameterList>
+      <!-- Mineralogy -->
       <Parameter name="Cation Exchange Capacity" type="double" value="2.75"/>
-
-
       <ParameterList name="Surface Complexation Sites">
-	
-	<ParameterList name=">davis_OH">
-	  <Parameter name="Site Density" type="double" value="0.156199"/>
-	</ParameterList>
-	
-      </ParameterList> <!-- Surface Complexation Sites -->
-    </ParameterList> <!-- Gordon aquifer (GA) -->
-    
-  </ParameterList> <!-- Material Properties -->
-  
-     
-  
+        <ParameterList name="&gt;davis_OH">
+          <Parameter name="Site Density" type="double" value="0.156199"/>
+        </ParameterList>
+      </ParameterList>
+      <!-- Surface Complexation Sites -->
+    </ParameterList>
+    <!-- Gordon aquifer (GA) -->
+  </ParameterList>
+  <!-- Material Properties -->
   <ParameterList name="Initial Conditions">
     <ParameterList name="IC For Domain">
       <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
       <ParameterList name="IC: Linear Pressure">
         <Parameter name="Phase" type="string" value="Aqueous"/>
         <Parameter name="Reference Value" type="double" value="101325.0"/>
-        <Parameter name="Reference Coordinate" type="Array(double)" value="{0., 60.0}"/>
+        <Parameter name="Reference Coordinate" type="Array(double)" value="{0.0, 60.0}"/>
         <!-- SABEA: Units for the gradient are Pa/m = rho*g = 998.32 kg/m^3 * 9.81 m/s^2 -->
-        <Parameter name="Gradient Value" type="Array(double)" value="{0., -9793.5192}"/>
+        <Parameter name="Gradient Value" type="Array(double)" value="{0.0, -9793.5192}"/>
       </ParameterList>
       <ParameterList name="Solute IC">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
-	    
             <ParameterList name="H+">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="2.9578630770689822E-06"/>
-                <Parameter name="Free Ion Guess" type="double" value="4.4349219948232250E-06"/>
+                <Parameter name="Value" type="double" value="0.0000029578630770689822"/>
+                <Parameter name="Free Ion Guess" type="double" value="0.0000044349219948232250"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Al+++">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="2.2134319178343449E-08"/>
-                <Parameter name="Free Ion Guess" type="double" value="5.7872778934634030E-09"/>
+                <Parameter name="Value" type="double" value="2.2134319178343449e-8"/>
+                <Parameter name="Free Ion Guess" type="double" value="5.7872778934634030e-9"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Ca++">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="1.0000000000000001E-05"/>
-                <Parameter name="Free Ion Guess" type="double" value="1.0028381797381277E-05"/>
+                <Parameter name="Value" type="double" value="0.000010000000000000001"/>
+                <Parameter name="Free Ion Guess" type="double" value="0.000010028381797381277"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Cl-">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="9.9892245160353443E-03"/>
-                <Parameter name="Free Ion Guess" type="double" value="1.0017671789459564E-02"/>
+                <Parameter name="Value" type="double" value="0.0099892245160353443"/>
+                <Parameter name="Free Ion Guess" type="double" value="0.010017671789459564"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Fe+++">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="2.5231281704019796E-16"/>
-                <Parameter name="Free Ion Guess" type="double" value="2.5303135246636987E-16"/>
+                <Parameter name="Value" type="double" value="2.5231281704019796e-16"/>
+                <Parameter name="Free Ion Guess" type="double" value="2.5303135246636987e-16"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="CO2(aq)">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="1.2146187645233065E-05"/>
-                <Parameter name="Free Ion Guess" type="double" value="1.0742367360218137E-05"/>
+                <Parameter name="Value" type="double" value="0.000012146187645233065"/>
+                <Parameter name="Free Ion Guess" type="double" value="0.000010742367360218137"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="K+">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="3.3200000000000001E-05"/>
-                <Parameter name="Free Ion Guess" type="double" value="3.3294546826549702E-05"/>
+                <Parameter name="Value" type="double" value="0.000033200000000000001"/>
+                <Parameter name="Free Ion Guess" type="double" value="0.000033294546826549702"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Mg++">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="5.3499999999999997E-03"/>
-                <Parameter name="Free Ion Guess" type="double" value="5.3651825870676614E-03"/>
+                <Parameter name="Value" type="double" value="0.0053499999999999997"/>
+                <Parameter name="Free Ion Guess" type="double" value="0.0053651825870676614"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Na+">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="2.7799999999999998E-04"/>
-                <Parameter name="Free Ion Guess" type="double" value="2.7879126028761809E-04"/>
+                <Parameter name="Value" type="double" value="0.00027799999999999998"/>
+                <Parameter name="Free Ion Guess" type="double" value="0.00027879126028761809"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="SiO2(aq)">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="1.7728213902597242E-04"/>
-                <Parameter name="Free Ion Guess" type="double" value="1.7778699932375911E-04"/>
+                <Parameter name="Value" type="double" value="0.00017728213902597242"/>
+                <Parameter name="Free Ion Guess" type="double" value="0.00017778699932375911"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="SO4--">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="2.2500000000000001E-05"/>
-                <Parameter name="Free Ion Guess" type="double" value="2.2564075409559286E-05"/>
+                <Parameter name="Value" type="double" value="0.000022500000000000001"/>
+                <Parameter name="Free Ion Guess" type="double" value="0.000022564075409559286"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Tritium">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="1.0000000000000001E-15"/>
-                <Parameter name="Free Ion Guess" type="double" value="1.0028477959804128E-15"/>
+                <Parameter name="Value" type="double" value="1.0000000000000001e-15"/>
+                <Parameter name="Free Ion Guess" type="double" value="1.0028477959804128e-15"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="NO3-">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="1.0000000000000000E-03"/>
-                <Parameter name="Free Ion Guess" type="double" value="1.0028477959449073E-03"/>
+                <Parameter name="Value" type="double" value="0.0010000000000000000"/>
+                <Parameter name="Free Ion Guess" type="double" value="0.0010028477959449073"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="UO2++">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="1.2499999999951748E-10"/>
-                <Parameter name="Free Ion Guess" type="double" value="3.0944807860172163E-11"/>
+                <Parameter name="Value" type="double" value="1.2499999999951748e-10"/>
+                <Parameter name="Free Ion Guess" type="double" value="3.0944807860172163e-11"/>
               </ParameterList>
             </ParameterList>
-	    
           </ParameterList>
         </ParameterList>
       </ParameterList>
-    </ParameterList> <!-- IC For Domain -->
-  </ParameterList> <!-- Initial Conditions -->
-  
-
+    </ParameterList>
+    <!-- IC For Domain -->
+  </ParameterList>
+  <!-- Initial Conditions -->
   <!-- Boundary conditions -->
   <ParameterList name="Boundary Conditions">
     <!-- Boundary corresponding to the Natural recharge (left side) -->
     <ParameterList name="BC for natural  recharge (left)">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Natural recharge (left)}"/>
       <ParameterList name="BC: Flux">
-        <Parameter name="Times" type="Array(double)" value="{0., 3.1536e9}"/>
+        <Parameter name="Times" type="Array(double)" value="{0.0, 3.1536e+9}"/>
         <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Inward Mass Flux" type="Array(double)" value="{4.743e-6, 4.743e-6}"/>  <!-- 0.15 [m3 m-2 yr-1] => [kg m-2 s-1] -->
+        <Parameter name="Inward Mass Flux" type="Array(double)" value="{0.000004743, 0.000004743}"/>
+        <!-- 0.15 [m3 m-2 yr-1] => [kg m-2 s-1] -->
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
-	    
             <ParameterList name="H+">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{2.9578630770689822E-06, 2.9578630770689822E-06}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.0000029578630770689822, 0.0000029578630770689822}"/>
               </ParameterList>
             </ParameterList>
-	    
             <ParameterList name="Al+++">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{2.2134319178343449E-08, 2.2134319178343449E-08}"/>
+                <Parameter name="Values" type="Array(double)" value="{2.2134319178343449e-8, 2.2134319178343449e-8}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Ca++">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.0000000000000001E-05, 1.0000000000000001E-05}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.000010000000000000001, 0.000010000000000000001}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Cl-">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{9.9892245160353443E-03, 9.9892245160353443E-03}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.0099892245160353443, 0.0099892245160353443}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Fe+++">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{2.5231281704019796E-16, 2.5231281704019796E-16}"/>
+                <Parameter name="Values" type="Array(double)" value="{2.5231281704019796e-16, 2.5231281704019796e-16}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="CO2(aq)">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.2146187645233065E-05, 1.2146187645233065E-05}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.000012146187645233065, 0.000012146187645233065}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="K+">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{3.3200000000000001E-05, 3.3200000000000001E-05}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.000033200000000000001, 0.000033200000000000001}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Mg++">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{5.3499999999999997E-03, 5.3499999999999997E-03}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.0053499999999999997, 0.0053499999999999997}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Na+">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{2.7799999999999998E-04, 2.7799999999999998E-04}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.00027799999999999998, 0.00027799999999999998}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="SiO2(aq)">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.7728213902597242E-04, 1.7728213902597242E-04}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.00017728213902597242, 0.00017728213902597242}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="SO4--">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{2.2500000000000001E-05, 2.2500000000000001E-05}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.000022500000000000001, 0.000022500000000000001}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Tritium">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.0000000000000001E-15, 1.0000000000000001E-15}"/>
+                <Parameter name="Values" type="Array(double)" value="{1.0000000000000001e-15, 1.0000000000000001e-15}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="NO3-">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.0000000000000000E-03, 1.0000000000000000E-03}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.0010000000000000000, 0.0010000000000000000}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="UO2++">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.2499999999951748E-10, 1.2499999999951748E-10}"/>
+                <Parameter name="Values" type="Array(double)" value="{1.2499999999951748e-10, 1.2499999999951748e-10}"/>
               </ParameterList>
             </ParameterList>
-
           </ParameterList>
         </ParameterList>
-      </ParameterList> <!-- Solute BC -->
-    </ParameterList> <!-- Boundary corresponding to the Natural recharge (left side) -->
-    
-<!-- Boundary corresponding to the Natural recharge (right side) -->
+      </ParameterList>
+      <!-- Solute BC -->
+    </ParameterList>
+    <!-- Boundary corresponding to the Natural recharge (left side) -->
+    <!-- Boundary corresponding to the Natural recharge (right side) -->
     <ParameterList name="BC for natural  recharge (right)">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Natural recharge (right)}"/>
       <ParameterList name="BC: Flux">
-        <Parameter name="Times" type="Array(double)" value="{0., 3.1536e9}"/>
+        <Parameter name="Times" type="Array(double)" value="{0.0, 3.1536e+9}"/>
         <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Inward Mass Flux" type="Array(double)" value="{4.743e-6, 4.743e-6}"/>  <!-- 0.15 [m3 m-2 yr-1] -->
+        <Parameter name="Inward Mass Flux" type="Array(double)" value="{0.000004743, 0.000004743}"/>
+        <!-- 0.15 [m3 m-2 yr-1] -->
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
-
             <ParameterList name="H+">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{2.9578630770689822E-06, 2.9578630770689822E-06}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.0000029578630770689822, 0.0000029578630770689822}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Al+++">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{2.2134319178343449E-08, 2.2134319178343449E-08}"/>
+                <Parameter name="Values" type="Array(double)" value="{2.2134319178343449e-8, 2.2134319178343449e-8}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Ca++">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.0000000000000001E-05, 1.0000000000000001E-05}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.000010000000000000001, 0.000010000000000000001}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Cl-">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{9.9892245160353443E-03, 9.9892245160353443E-03}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.0099892245160353443, 0.0099892245160353443}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Fe+++">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{2.5231281704019796E-16, 2.5231281704019796E-16}"/>
+                <Parameter name="Values" type="Array(double)" value="{2.5231281704019796e-16, 2.5231281704019796e-16}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="CO2(aq)">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.2146187645233065E-05, 1.2146187645233065E-05}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.000012146187645233065, 0.000012146187645233065}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="K+">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{3.3200000000000001E-05, 3.3200000000000001E-05}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.000033200000000000001, 0.000033200000000000001}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Mg++">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{5.3499999999999997E-03, 5.3499999999999997E-03}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.0053499999999999997, 0.0053499999999999997}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Na+">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{2.7799999999999998E-04, 2.7799999999999998E-04}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.00027799999999999998, 0.00027799999999999998}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="SiO2(aq)">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.7728213902597242E-04, 1.7728213902597242E-04}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.00017728213902597242, 0.00017728213902597242}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="SO4--">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{2.2500000000000001E-05, 2.2500000000000001E-05}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.000022500000000000001, 0.000022500000000000001}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Tritium">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.0000000000000001E-15, 1.0000000000000001E-15}"/>
+                <Parameter name="Values" type="Array(double)" value="{1.0000000000000001e-15, 1.0000000000000001e-15}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="NO3-">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.0000000000000000E-03, 1.0000000000000000E-03}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.0010000000000000000, 0.0010000000000000000}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="UO2++">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.2499999999951748E-10, 1.2499999999951748E-10}"/>
+                <Parameter name="Values" type="Array(double)" value="{1.2499999999951748e-10, 1.2499999999951748e-10}"/>
               </ParameterList>
             </ParameterList>
-
           </ParameterList>
         </ParameterList>
-      </ParameterList> <!-- Solute BC -->
-    </ParameterList> <!-- Boundary corresponding to the Natural recharge (right side) -->
-       
-<!-- Boundary corresponding to the seepage basin -->
+      </ParameterList>
+      <!-- Solute BC -->
+    </ParameterList>
+    <!-- Boundary corresponding to the Natural recharge (right side) -->
+    <!-- Boundary corresponding to the seepage basin -->
     <ParameterList name="BC for F-3 basin">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Seepage basin}"/>
       <ParameterList name="BC: Flux">
         <Parameter name="Times" type="Array(double)" value="{0.0, 6.16635504e+10, 6.27365088e+10}"/>
-        <Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
-	<!-- less than 4 [m3 m-2 yr-1], mean recalculated by Haruko (8/7/12) -->
-        <Parameter name="Inward Mass Flux" type="Array(double)" value="{4.743e-6, 1.11e-4, 4.743e-6}"/> 
+        <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
+        <!-- less than 4 [m3 m-2 yr-1], mean recalculated by Haruko (8/7/12) -->
+        <Parameter name="Inward Mass Flux" type="Array(double)" value="{0.000004743, 0.000111, 0.000004743}"/>
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
-
             <ParameterList name="H+">
               <ParameterList name="BC: Uniform Concentration">
-		<Parameter name="Times" type="Array(double)" value="{0.0, 6.16635504e+10, 6.27365088e+10}"/>
-		<Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{2.9578630770689822E-06, 9.7317820303283020E-03, 2.9578630770689822E-06}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 6.16635504e+10, 6.27365088e+10}"/>
+                <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.0000029578630770689822, 0.0097317820303283020, 0.0000029578630770689822}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Al+++">
               <ParameterList name="BC: Uniform Concentration">
-		<Parameter name="Times" type="Array(double)" value="{0.0, 6.16635504e+10, 6.27365088e+10}"/>
-		<Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{2.2134319178343449E-08, 1.0000000000000002E-08, 2.2134319178343449E-08}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 6.16635504e+10, 6.27365088e+10}"/>
+                <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
+                <Parameter name="Values" type="Array(double)" value="{2.2134319178343449e-8, 1.0000000000000002e-8, 2.2134319178343449e-8}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Ca++">
               <ParameterList name="BC: Uniform Concentration">
-		<Parameter name="Times" type="Array(double)" value="{0.0, 6.16635504e+10, 6.27365088e+10}"/>
-		<Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.0000000000000001E-05, 1.0000000000000001E-05, 1.0000000000000001E-05}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 6.16635504e+10, 6.27365088e+10}"/>
+                <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.000010000000000000001, 0.000010000000000000001, 0.000010000000000000001}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Cl-">
               <ParameterList name="BC: Uniform Concentration">
-		<Parameter name="Times" type="Array(double)" value="{0.0, 6.16635504e+10, 6.27365088e+10}"/>
-		<Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{9.9892245160353443E-03, 3.3899999999999997E-05, 9.9892245160353443E-03}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 6.16635504e+10, 6.27365088e+10}"/>
+                <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.0099892245160353443, 0.000033899999999999997, 0.0099892245160353443}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Fe+++">
               <ParameterList name="BC: Uniform Concentration">
-		<Parameter name="Times" type="Array(double)" value="{0.0, 6.16635504e+10, 6.27365088e+10}"/>
-		<Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{2.5231281704019796E-16, 2.4142508014351454E-06, 2.5231281704019796E-16}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 6.16635504e+10, 6.27365088e+10}"/>
+                <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
+                <Parameter name="Values" type="Array(double)" value="{2.5231281704019796e-16, 0.0000024142508014351454, 2.5231281704019796e-16}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="CO2(aq)">
               <ParameterList name="BC: Uniform Concentration">
-		<Parameter name="Times" type="Array(double)" value="{0.0, 6.16635504e+10, 6.27365088e+10}"/>
-		<Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.2146187645233065E-05, 1.0712465873417377E-05, 1.2146187645233065E-05}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 6.16635504e+10, 6.27365088e+10}"/>
+                <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.000012146187645233065, 0.000010712465873417377, 0.000012146187645233065}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="K+">
               <ParameterList name="BC: Uniform Concentration">
-		<Parameter name="Times" type="Array(double)" value="{0.0, 6.16635504e+10, 6.27365088e+10}"/>
-		<Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{3.3200000000000001E-05, 1.7200000000000000E-06, 3.3200000000000001E-05}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 6.16635504e+10, 6.27365088e+10}"/>
+                <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.000033200000000000001, 0.0000017200000000000000, 0.000033200000000000001}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Mg++">
               <ParameterList name="BC: Uniform Concentration">
-		<Parameter name="Times" type="Array(double)" value="{0.0, 6.16635504e+10, 6.27365088e+10}"/>
-		<Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{5.3499999999999997E-03, 2.4700000000000001E-06, 5.3499999999999997E-03}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 6.16635504e+10, 6.27365088e+10}"/>
+                <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.0053499999999999997, 0.0000024700000000000001, 0.0053499999999999997}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Na+">
               <ParameterList name="BC: Uniform Concentration">
-		<Parameter name="Times" type="Array(double)" value="{0.0, 6.16635504e+10, 6.27365088e+10}"/>
-		<Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{2.7799999999999998E-04, 3.0398521726429520E-04, 2.7799999999999998E-04}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 6.16635504e+10, 6.27365088e+10}"/>
+                <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.00027799999999999998, 0.00030398521726429520, 0.00027799999999999998}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="SiO2(aq)">
               <ParameterList name="BC: Uniform Concentration">
-		<Parameter name="Times" type="Array(double)" value="{0.0, 6.16635504e+10, 6.27365088e+10}"/>
-		<Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.7728213902597242E-04, 1.1800000000000000E-04, 1.7728213902597242E-04}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 6.16635504e+10, 6.27365088e+10}"/>
+                <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.00017728213902597242, 0.00011800000000000000, 0.00017728213902597242}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="SO4--">
               <ParameterList name="BC: Uniform Concentration">
-		<Parameter name="Times" type="Array(double)" value="{0.0, 6.16635504e+10, 6.27365088e+10}"/>
-		<Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{2.2500000000000001E-05, 4.8000000000000001E-05, 2.2500000000000001E-05}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 6.16635504e+10, 6.27365088e+10}"/>
+                <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.000022500000000000001, 0.000048000000000000001, 0.000022500000000000001}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Tritium">
               <ParameterList name="BC: Uniform Concentration">
-		<Parameter name="Times" type="Array(double)" value="{0.0, 6.16635504e+10, 6.27365088e+10}"/>
-		<Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.0000000000000001E-15, 2.1700000000000002E-09, 1.0000000000000001E-15}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 6.16635504e+10, 6.27365088e+10}"/>
+                <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
+                <Parameter name="Values" type="Array(double)" value="{1.0000000000000001e-15, 2.1700000000000002e-9, 1.0000000000000001e-15}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="NO3-">
               <ParameterList name="BC: Uniform Concentration">
-		<Parameter name="Times" type="Array(double)" value="{0.0, 6.16635504e+10, 6.27365088e+10}"/>
-		<Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.0000000000000000E-03, 1.0000000000000000E-02, 1.0000000000000000E-03}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 6.16635504e+10, 6.27365088e+10}"/>
+                <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.0010000000000000000, 0.010000000000000000, 0.0010000000000000000}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="UO2++">
               <ParameterList name="BC: Uniform Concentration">
-		<Parameter name="Times" type="Array(double)" value="{0.0, 6.16635504e+10, 6.27365088e+10}"/>
-		<Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.2499999999951748E-10, 3.0099999999999854E-05, 1.2499999999951748E-10}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 6.16635504e+10, 6.27365088e+10}"/>
+                <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
+                <Parameter name="Values" type="Array(double)" value="{1.2499999999951748e-10, 0.000030099999999999854, 1.2499999999951748e-10}"/>
               </ParameterList>
             </ParameterList>
-
           </ParameterList>
         </ParameterList>
-      </ParameterList> <!-- Solute BC -->
-    </ParameterList> <!-- Boundary corresponding to the seepage basin -->
-
-<!-- Boundary corresponding to the seepage face -->
+      </ParameterList>
+      <!-- Solute BC -->
+    </ParameterList>
+    <!-- Boundary corresponding to the seepage basin -->
+    <!-- Boundary corresponding to the seepage face -->
     <ParameterList name="BC for seepage face">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Seepage face}"/>
       <ParameterList name="BC: Seepage">
-        <Parameter name="Times" type="Array(double)" value="{0., 3.1536e9}"/>
+        <Parameter name="Times" type="Array(double)" value="{0.0, 3.1536e+9}"/>
         <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Inward Mass Flux" type="Array(double)" value="{4.743e-6, 4.743e-6}"/>  <!-- 0.15 [m3 m-2 yr-1] -->
+        <Parameter name="Inward Mass Flux" type="Array(double)" value="{0.000004743, 0.000004743}"/>
+        <!-- 0.15 [m3 m-2 yr-1] -->
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
-
             <ParameterList name="H+">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{2.9578630770689822E-06, 2.9578630770689822E-06}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.0000029578630770689822, 0.0000029578630770689822}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Al+++">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{2.2134319178343449E-08, 2.2134319178343449E-08}"/>
+                <Parameter name="Values" type="Array(double)" value="{2.2134319178343449e-8, 2.2134319178343449e-8}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Ca++">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.0000000000000001E-05, 1.0000000000000001E-05}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.000010000000000000001, 0.000010000000000000001}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Cl-">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{9.9892245160353443E-03, 9.9892245160353443E-03}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.0099892245160353443, 0.0099892245160353443}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Fe+++">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{2.5231281704019796E-16, 2.5231281704019796E-16}"/>
+                <Parameter name="Values" type="Array(double)" value="{2.5231281704019796e-16, 2.5231281704019796e-16}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="CO2(aq)">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.2146187645233065E-05, 1.2146187645233065E-05}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.000012146187645233065, 0.000012146187645233065}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="K+">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{3.3200000000000001E-05, 3.3200000000000001E-05}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.000033200000000000001, 0.000033200000000000001}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Mg++">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{5.3499999999999997E-03, 5.3499999999999997E-03}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.0053499999999999997, 0.0053499999999999997}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Na+">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{2.7799999999999998E-04, 2.7799999999999998E-04}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.00027799999999999998, 0.00027799999999999998}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="SiO2(aq)">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.7728213902597242E-04, 1.7728213902597242E-04}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.00017728213902597242, 0.00017728213902597242}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="SO4--">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{2.2500000000000001E-05, 2.2500000000000001E-05}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.000022500000000000001, 0.000022500000000000001}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="Tritium">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.0000000000000001E-15, 1.0000000000000001E-15}"/>
+                <Parameter name="Values" type="Array(double)" value="{1.0000000000000001e-15, 1.0000000000000001e-15}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="NO3-">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.0000000000000000E-03, 1.0000000000000000E-03}"/>
+                <Parameter name="Values" type="Array(double)" value="{0.0010000000000000000, 0.0010000000000000000}"/>
               </ParameterList>
             </ParameterList>
-
             <ParameterList name="UO2++">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e+9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.2499999999951748E-10, 1.2499999999951748E-10}"/>
+                <Parameter name="Values" type="Array(double)" value="{1.2499999999951748e-10, 1.2499999999951748e-10}"/>
               </ParameterList>
             </ParameterList>
-
           </ParameterList>
         </ParameterList>
-      </ParameterList> <!-- Solute BC -->
+      </ParameterList>
+      <!-- Solute BC -->
     </ParameterList>
-  </ParameterList> <!-- Boundary Conditions -->
-
+  </ParameterList>
+  <!-- Boundary Conditions -->
   <ParameterList name="Chemistry">
     <ParameterList name="Thermodynamic Database">
       <Parameter name="Format" type="string" value="simple"/>
       <Parameter name="File" type="string" value="ascem-2012-farea.bgd"/>
     </ParameterList>
-    <Parameter name="Verbosity" type="Array(string)" value="{verbose}" />
+    <Parameter name="Verbosity" type="Array(string)" value="{verbose}"/>
     <Parameter name="Activity Model" type="string" value="unit"/>
     <Parameter name="Tolerance" type="double" value="1.0e-10"/>
     <Parameter name="Maximum Newton Iterations" type="int" value="250"/>
     <Parameter name="Max Time Step (s)" type="double" value="864000.0"/>
     <Parameter name="Auxiliary Data" type="Array(string)" value="{pH}"/>
   </ParameterList>
-       
   <ParameterList name="Output">
-
     <!-- define some handy cycle macros -->
     <ParameterList name="Cycle Macros">
       <ParameterList name="Every-5000-steps">
         <Parameter name="Start_Period_Stop" type="Array(int)" value="{0, 5000, -1}"/>
       </ParameterList>
     </ParameterList>
-
     <!-- define some handy time macros -->
     <ParameterList name="Time Macros">
-
       <ParameterList name="Every two months">
-        <Parameter name="Start_Period_Stop" type="Array(double)" value="{6.16635504e+10, 5.184e+06, 6.6271e+10}"/>
+        <Parameter name="Start_Period_Stop" type="Array(double)" value="{6.16635504e+10, 5.184e+6, 6.6271e+10}"/>
       </ParameterList>
-
       <ParameterList name="Every year">
-	<!--
+        <!--
 	    Start:    t=1955.00  [y] = 6.16635504e+10 [s]
 	    Period:  dt=   1.00  [y] = 3.155760000e+7 [s]
 	    End:      t=2100.00  [y] = 6.627096000e+10 [s]
 	  -->
-        <Parameter name="Start_Period_Stop" type="Array(double)" value="{6.16635504e+10, 3.155760000e+7, 6.627096000e+10}"/>
+        <Parameter name="Start_Period_Stop" type="Array(double)" value="{6.16635504e+10, 31557600.00, 6.627096000e+10}"/>
       </ParameterList>
-
       <ParameterList name="Active Basin">
-	<!--
+        <!--
 	    Start:    t=1955.00  [y] = 6.16635504e+10 [s]
 	    Period:  dt=   1.00  [y] = 3.155760000e+7 [s]
 	    End:      t=1988.00  [y] = 6.27365088e+10 [s]
 	  -->
-	<Parameter name="Start_Period_Stop" type="Array(double)" value="{6.16635504e+10, 3.155760000e+7, 6.27365088e+10}"/>
+        <Parameter name="Start_Period_Stop" type="Array(double)" value="{6.16635504e+10, 31557600.00, 6.27365088e+10}"/>
       </ParameterList>
       <ParameterList name="Plume evolution: every year">
-	<!--
+        <!--
 	    Start:    t=1989.00  [y] = 6.276806640e+10 [s]
 	    Period:  dt=   1.00  [y] = 3.155760000e+7  [s]
 	    End:      t=2010.00  [y] = 6.343077600e+10 [s]
 	  -->
-	<Parameter name="Start_Period_Stop" type="Array(double)" value="{6.276806640e+10, 3.155760000e+7, 6.343077600e+10}"/>
+        <Parameter name="Start_Period_Stop" type="Array(double)" value="{6.276806640e+10, 31557600.00, 6.343077600e+10}"/>
       </ParameterList>
       <ParameterList name="Plume evolution: every five years">
-	<!--
+        <!--
 	    Start:    t=2015.00  [y] = 6.358856400e+10 [s]
 	    Period:  dt=   5.00  [y] = 1.577880000e+8  [s]
 	    End:      t=2100.00  [y] = 6.627096000e+10 [s]
 	  -->
-	<Parameter name="Start_Period_Stop" type="Array(double)" value="{6.358856400e+10, 1.577880000e+8, 6.627096000e+10}"/>
+        <Parameter name="Start_Period_Stop" type="Array(double)" value="{6.358856400e+10, 157788000.0, 6.627096000e+10}"/>
       </ParameterList>
-
     </ParameterList>
-
     <ParameterList name="Observation Data">
-
       <Parameter name="Observation Output Filename" type="string" value="observation.out"/>
       <ParameterList name="output01">
         <Parameter name="Region" type="string" value="Well_1"/>
@@ -1366,54 +1215,44 @@
         <Parameter name="Variable" type="string" value="H+ Aqueous concentration"/>
         <Parameter name="Time Macro" type="string" value="Every year"/>
       </ParameterList>
-
       <ParameterList name="output02">
         <Parameter name="Region" type="string" value="Well_2"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="H+ Aqueous concentration"/>
         <Parameter name="Time Macro" type="string" value="Every year"/>
       </ParameterList>
-
       <ParameterList name="output03">
         <Parameter name="Region" type="string" value="Well_3"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="H+ Aqueous concentration"/>
         <Parameter name="Time Macro" type="string" value="Every year"/>
       </ParameterList>
-
       <ParameterList name="output04">
         <Parameter name="Region" type="string" value="Well_1"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="UO2++ Aqueous concentration"/>
         <Parameter name="Time Macro" type="string" value="Every year"/>
       </ParameterList>
-
       <ParameterList name="output05">
         <Parameter name="Region" type="string" value="Well_2"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="UO2++ Aqueous concentration"/>
         <Parameter name="Time Macro" type="string" value="Every year"/>
       </ParameterList>
-	  
       <ParameterList name="output06">
         <Parameter name="Region" type="string" value="Well_3"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="UO2++ Aqueous concentration"/>
         <Parameter name="Time Macro" type="string" value="Every year"/>
       </ParameterList>
-
     </ParameterList>
-
     <ParameterList name="Visualization Data">
       <Parameter name="File Name Base" type="string" value="plot"/>
       <Parameter name="Time Macros" type="Array(string)" value="{Active Basin, Plume evolution: every year, Plume evolution: every five years}"/>
     </ParameterList>
-
     <ParameterList name="Checkpoint Data">
       <Parameter name="File Name Base" type="string" value="chkpoint"/>
       <Parameter name="Cycle Macro" type="string" value="Every-5000-steps"/>
     </ParameterList>
-
-  </ParameterList>     
-</ParameterList> 
-       
+  </ParameterList>
+</ParameterList>

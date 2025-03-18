@@ -1,254 +1,232 @@
 <ParameterList name="Main">
-
   <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
   <Parameter name="Dump ParmParse Table" type="string" value="run_data/ppfile"/>
   <Parameter name="Petsc Options File" type="string" value="DOTpetsc_hypre"/>
-
   <ParameterList name="General Description">
     <Parameter name="Simulation name" type="string" value="Phase 3 Tank Test"/>
     <Parameter name="Simulation units" type="string" value="[L]=m, [t]=s, [M]=g"/>
     <Parameter name="Simulation type" type="string" value="Saturated lateral flow and transport"/>
     <Parameter name="Simulation dimension" type="string" value="2D"/>
   </ParameterList>
-
   <ParameterList name="Domain">
     <Parameter name="Spatial Dimension" type="int" value="2"/>
   </ParameterList>
-
   <ParameterList name="Mesh">
     <ParameterList name="Structured">
-      <Parameter name="Domain Low Coordinate" type="Array(double)" value="{-24.8,-10}"/>
-      <Parameter name="Domain High Coordinate" type="Array(double)" value="{24.8,20.4}"/>
-      <Parameter name="Number of Cells" type="Array(int)" value="{62,38}"/>
+      <Parameter name="Domain Low Coordinate" type="Array(double)" value="{-24.8, -10.0}"/>
+      <Parameter name="Domain High Coordinate" type="Array(double)" value="{24.8, 20.4}"/>
+      <Parameter name="Number of Cells" type="Array(int)" value="{62, 38}"/>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="Execution Control">
     <Parameter name="Flow Model" type="string" value="Single Phase"/>
     <Parameter name="Transport Model" type="string" value="On"/>
     <Parameter name="Chemistry Model" type="string" value="Amanzi"/>
-
     <!-- <ParameterList name="Restart"> -->
     <!--   <Parameter name="File Name" type="string" value="chkfile"/> -->
     <!-- </ParameterList> -->
-
     <ParameterList name="Time Integration Mode">
       <ParameterList name="Initialize To Steady">
-        <Parameter name="Start" type="double" value="0"/>
-        <Parameter name="Switch" type="double" value="0"/>
-        <Parameter name="End" type="double" value="1.5778463e8"/>
-        <Parameter name="Transient Initial Time Step" type="double" value="1.e3"/>
-        <Parameter name="Steady Initial Time Step" type="double" value="1.e1"/>
-        <Parameter name="Steady Maximum Time Step Size" type="double" value="1.e9"/>
-        <Parameter name="Transient Maximum Time Step Size" type="double" value="1.e9"/>
+        <Parameter name="Start" type="double" value="0.0"/>
+        <Parameter name="Switch" type="double" value="0.0"/>
+        <Parameter name="End" type="double" value="1.5778463e+8"/>
+        <Parameter name="Transient Initial Time Step" type="double" value="1e+3"/>
+        <Parameter name="Steady Initial Time Step" type="double" value="1e+1"/>
+        <Parameter name="Steady Maximum Time Step Size" type="double" value="1e+9"/>
+        <Parameter name="Transient Maximum Time Step Size" type="double" value="1e+9"/>
         <Parameter name="Maximum Cycle Number" type="int" value="20"/>
         <Parameter name="Initial Time Step Multiplier" type="double" value="1.0"/>
       </ParameterList>
     </ParameterList>
-
     <!-- <Parameter name="Verbosity" type="string" value="Extreme"/> -->
-
     <ParameterList name="Numerical Control Parameters">
       <ParameterList name="Structured Algorithm">
         <ParameterList name="Expert Settings">
           <Parameter name="do_richard_init_to_steady" type="int" value="1"/>
           <Parameter name="richard_init_to_steady_verbose" type="int" value="2"/>
           <Parameter name="steady_do_grid_sequence" type="bool" value="false"/>
-          <Parameter name="steady_max_psuedo_time" type="double" value="1.e30"/>
+          <Parameter name="steady_max_psuedo_time" type="double" value="1e+30"/>
           <Parameter name="richard_semi_analytic_J" type="bool" value="false"/>
-          <Parameter name="richard_dt_thresh_pure_steady" type="double" value="1.e18"/>
+          <Parameter name="richard_dt_thresh_pure_steady" type="double" value="1e+18"/>
           <Parameter name="max_n_subcycle_transport" type="int" value="4"/>
         </ParameterList>
-	<ParameterList name="Iterative Linear Solver Control">
-	  <ParameterList name="Multigrid Algorithm">
-	    <ParameterList name="Expert Settings">
-	      <Parameter name="v" type="int" value="0"/>
-	    </ParameterList>
-	  </ParameterList>
-	  <ParameterList name="Conjugate Gradient Algorithm">
-	    <ParameterList name="Expert Settings">
-	      <Parameter name="v" type="int" value="0"/>
-	    </ParameterList>
-	  </ParameterList>
-	</ParameterList>
-
-	<ParameterList name="Adaptive Mesh Refinement Control">
-	  <Parameter name="Number Of AMR Levels" type="int" value="4"/>
-	  <Parameter name="Refinement Ratio" type="Array(int)" value="{4, 4, 4, 2, 2}"/>
-	  <Parameter name="Regrid Interval" type="Array(int)" value="{2}"/>
-	  <Parameter name="Blocking Factor" type="Array(int)" value="{2, 16, 16, 16, 16, 16}"/>
-	  <Parameter name="Maximum Grid Size" type="Array(int)" value="{32, 32, 32, 32, 32, 32}"/>
-	  <Parameter name="Number Error Buffer Cells" type="Array(int)" value="{1, 1, 1, 1, 1, 1}"/>
-	  <Parameter name="Refinement Indicators" type="Array(string)" value="{Tank ref, Wall ref, FF ref, Liners ref, InletOutlet ref, Sorbed ref, Tracer ref}"/>
-
-	  <ParameterList name="Tank ref">
-	    <Parameter name="Regions" type="Array(string)" value="{Tank}"/>
-	    <Parameter name="Inside Region" type="bool" value="TRUE"/>
-	    <Parameter name="Maximum Refinement Level" type="int" value="1"/>
-	  </ParameterList>
-
-	  <ParameterList name="Wall ref">
-	    <Parameter name="Regions" type="Array(string)" value="{Wall}"/>
-	    <Parameter name="Inside Region" type="bool" value="TRUE"/>
-	    <Parameter name="Maximum Refinement Level" type="int" value="2"/>
-	  </ParameterList>
-
-	  <ParameterList name="FF ref">
-	    <Parameter name="Regions" type="Array(string)" value="{FF, Sand, Waste}"/>
-	    <Parameter name="Inside Region" type="bool" value="TRUE"/>
-	    <Parameter name="Maximum Refinement Level" type="int" value="3"/>
-	  </ParameterList>
-
-	  <ParameterList name="Liners ref">
-	    <Parameter name="Regions" type="Array(string)" value="{Liners}"/>
-	    <Parameter name="Inside Region" type="bool" value="TRUE"/>
-	    <Parameter name="Maximum Refinement Level" type="int" value="3"/>
-	  </ParameterList>
-
-	  <ParameterList name="InletOutlet ref">
-	    <Parameter name="Regions" type="Array(string)" value="{InletOutlet}"/>
-	    <Parameter name="Inside Region" type="bool" value="TRUE"/>
-	    <Parameter name="Maximum Refinement Level" type="int" value="4"/>
-	  </ParameterList>
-
-	  <ParameterList name="Sorbed ref">
-	    <Parameter name="Regions" type="Array(string)" value="{All}"/>
-	    <Parameter name="Maximum Refinement Level" type="int" value="4"/>
-	    <Parameter name="Field Name" type="string" value="Cs137 Sorbed Concentration"/>
-	    <Parameter name="Value Greater" type="double" value="1.e-4"/>
-	  </ParameterList>
-
-	  <ParameterList name="Tracer ref">
-	    <Parameter name="Regions" type="Array(string)" value="{All}"/>
-	    <Parameter name="Maximum Refinement Level" type="int" value="4"/>
-	    <Parameter name="Field Name" type="string" value="Tracer Aqueous Concentration"/>
-	    <Parameter name="Value Greater" type="double" value="1.e-2"/>
-	  </ParameterList>
-
-	  <ParameterList name="Expert Settings">
-	    <Parameter name="v" type="int" value="3"/>
-	  </ParameterList>
-	</ParameterList>
+        <ParameterList name="Iterative Linear Solver Control">
+          <ParameterList name="Multigrid Algorithm">
+            <ParameterList name="Expert Settings">
+              <Parameter name="v" type="int" value="0"/>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="Conjugate Gradient Algorithm">
+            <ParameterList name="Expert Settings">
+              <Parameter name="v" type="int" value="0"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="Adaptive Mesh Refinement Control">
+          <Parameter name="Number Of AMR Levels" type="int" value="4"/>
+          <Parameter name="Refinement Ratio" type="Array(int)" value="{4, 4, 4, 2, 2}"/>
+          <Parameter name="Regrid Interval" type="Array(int)" value="{2}"/>
+          <Parameter name="Blocking Factor" type="Array(int)" value="{2, 16, 16, 16, 16, 16}"/>
+          <Parameter name="Maximum Grid Size" type="Array(int)" value="{32, 32, 32, 32, 32, 32}"/>
+          <Parameter name="Number Error Buffer Cells" type="Array(int)" value="{1, 1, 1, 1, 1, 1}"/>
+          <Parameter name="Refinement Indicators" type="Array(string)" value="{Tank ref, Wall ref, FF ref, Liners ref, InletOutlet ref, Sorbed ref, Tracer ref}"/>
+          <ParameterList name="Tank ref">
+            <Parameter name="Regions" type="Array(string)" value="{Tank}"/>
+            <Parameter name="Inside Region" type="bool" value="true"/>
+            <Parameter name="Maximum Refinement Level" type="int" value="1"/>
+          </ParameterList>
+          <ParameterList name="Wall ref">
+            <Parameter name="Regions" type="Array(string)" value="{Wall}"/>
+            <Parameter name="Inside Region" type="bool" value="true"/>
+            <Parameter name="Maximum Refinement Level" type="int" value="2"/>
+          </ParameterList>
+          <ParameterList name="FF ref">
+            <Parameter name="Regions" type="Array(string)" value="{FF, Sand, Waste}"/>
+            <Parameter name="Inside Region" type="bool" value="true"/>
+            <Parameter name="Maximum Refinement Level" type="int" value="3"/>
+          </ParameterList>
+          <ParameterList name="Liners ref">
+            <Parameter name="Regions" type="Array(string)" value="{Liners}"/>
+            <Parameter name="Inside Region" type="bool" value="true"/>
+            <Parameter name="Maximum Refinement Level" type="int" value="3"/>
+          </ParameterList>
+          <ParameterList name="InletOutlet ref">
+            <Parameter name="Regions" type="Array(string)" value="{InletOutlet}"/>
+            <Parameter name="Inside Region" type="bool" value="true"/>
+            <Parameter name="Maximum Refinement Level" type="int" value="4"/>
+          </ParameterList>
+          <ParameterList name="Sorbed ref">
+            <Parameter name="Regions" type="Array(string)" value="{All}"/>
+            <Parameter name="Maximum Refinement Level" type="int" value="4"/>
+            <Parameter name="Field Name" type="string" value="Cs137 Sorbed Concentration"/>
+            <Parameter name="Value Greater" type="double" value="0.0001"/>
+          </ParameterList>
+          <ParameterList name="Tracer ref">
+            <Parameter name="Regions" type="Array(string)" value="{All}"/>
+            <Parameter name="Maximum Refinement Level" type="int" value="4"/>
+            <Parameter name="Field Name" type="string" value="Tracer Aqueous Concentration"/>
+            <Parameter name="Value Greater" type="double" value="0.01"/>
+          </ParameterList>
+          <ParameterList name="Expert Settings">
+            <Parameter name="v" type="int" value="3"/>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
-
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="Regions">
-
     <ParameterList name="Wall Top">
       <ParameterList name="Region: Polygon">
-        <Parameter name="VerticesV1" type="Array(double)" value="{ -13.75,13.75,13.75,-13.75 }"/>
-        <Parameter name="VerticesV2" type="Array(double)" value="{ 9.0,9.0,9.9,9.9 }"/>
+        <Parameter name="VerticesV1" type="Array(double)" value="{-13.75, 13.75, 13.75, -13.75}"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{9.0, 9.0, 9.9, 9.9}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Wall Bottom">
       <ParameterList name="Region: Polygon">
-        <Parameter name="VerticesV1" type="Array(double)" value="{ -13.75,13.75,13.75,-13.75 }"/>
-        <Parameter name="VerticesV2" type="Array(double)" value="{ 0,0,0.9,0.9 }"/>
+        <Parameter name="VerticesV1" type="Array(double)" value="{-13.75, 13.75, 13.75, -13.75}"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{0.0, 0.0, 0.9, 0.9}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Wall Right">
       <ParameterList name="Region: Polygon">
-        <Parameter name="VerticesV1" type="Array(double)" value="{ 13.75,13.05,13.05,13.075,13.075,13.75 }"/>
-        <Parameter name="VerticesV2" type="Array(double)" value="{ 9.0,9.0,2.475,2.475,0.925,0.925 }"/>
+        <Parameter name="VerticesV1" type="Array(double)" value="{13.75, 13.05, 13.05, 13.075, 13.075, 13.75}"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{9.0, 9.0, 2.475, 2.475, 0.925, 0.925}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Wall Left">
       <ParameterList name="Region: Polygon">
-        <Parameter name="VerticesV1" type="Array(double)" value="{ -13.75,-13.075,-13.075,-13.05,-13.05,-13.75 }"/>
-        <Parameter name="VerticesV2" type="Array(double)" value="{ 0.925,0.925,2.475,2.475,9.0,9.0 }"/>
+        <Parameter name="VerticesV1" type="Array(double)" value="{-13.75, -13.075, -13.075, -13.05, -13.05, -13.75}"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{0.925, 0.925, 2.475, 2.475, 9.0, 9.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="FF Left">
       <ParameterList name="Region: Polygon">
-        <Parameter name="VerticesV1" type="Array(double)" value="{ -13.75,-13.05,-13.05,-13.025,-13.025,-13.0,-13.0,-13.075,-13.075,-13.75 }"/>
-        <Parameter name="VerticesV2" type="Array(double)" value="{ 0.9,0.9,2.45,2.45,0.975,0.975,2.475,2.475,0.925,0.925 }"/>
+        <Parameter name="VerticesV1" type="Array(double)" value="{-13.75, -13.05, -13.05, -13.025, -13.025, -13.0, -13.0, -13.075, -13.075, -13.75}"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{0.9, 0.9, 2.45, 2.45, 0.975, 0.975, 2.475, 2.475, 0.925, 0.925}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="FF Right">
       <ParameterList name="Region: Polygon">
-        <Parameter name="VerticesV1" type="Array(double)" value="{ 13.75,13.075,13.075,13.0,13.0,13.025,13.025,13.05,13.05,13.75 }"/>
-        <Parameter name="VerticesV2" type="Array(double)" value="{ 0.925,0.925,2.475,2.475,0.975,0.975,2.45,2.45,0.9,0.9 }"/>
+        <Parameter name="VerticesV1" type="Array(double)" value="{13.75, 13.075, 13.075, 13.0, 13.0, 13.025, 13.025, 13.05, 13.05, 13.75}"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{0.925, 0.925, 2.475, 2.475, 0.975, 0.975, 2.45, 2.45, 0.9, 0.9}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Primary Sand Pad">
       <ParameterList name="Region: Polygon">
-        <Parameter name="VerticesV1" type="Array(double)" value="{ -12.25,12.25,12.25,-12.25 }"/>
-        <Parameter name="VerticesV2" type="Array(double)" value="{ 0.95,0.95,0.975,0.975 }"/>
+        <Parameter name="VerticesV1" type="Array(double)" value="{-12.25, 12.25, 12.25, -12.25}"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{0.95, 0.95, 0.975, 0.975}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Secondary Sand Pad">
       <ParameterList name="Region: Polygon">
-        <Parameter name="VerticesV1" type="Array(double)" value="{ -13.05,13.05,13.05,-13.05 }"/>
-        <Parameter name="VerticesV2" type="Array(double)" value="{ 0.9,0.9,0.925,0.925 }"/>
+        <Parameter name="VerticesV1" type="Array(double)" value="{-13.05, 13.05, 13.05, -13.05}"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{0.9, 0.9, 0.925, 0.925}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Primary Liner Floor">
       <ParameterList name="Region: Polygon">
-        <Parameter name="VerticesV1" type="Array(double)" value="{ -12.25,12.25,12.25,-12.25 }"/>
-        <Parameter name="VerticesV2" type="Array(double)" value="{ 0.975,0.975,1.0,1.0 }"/>
+        <Parameter name="VerticesV1" type="Array(double)" value="{-12.25, 12.25, 12.25, -12.25}"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{0.975, 0.975, 1.0, 1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Primary Liner">
       <ParameterList name="Region: Polygon">
-        <Parameter name="VerticesV1" type="Array(double)" value="{ -12.275,-12.25,-12.25,12.25,12.25,12.275,12.275,-12.275 }"/>
-        <Parameter name="VerticesV2" type="Array(double)" value="{ 1.025,1.025,8.975,8.975,1.025,1.025,9.0,9.0 }"/>
+        <Parameter name="VerticesV1" type="Array(double)" value="{-12.275, -12.25, -12.25, 12.25, 12.25, 12.275, 12.275, -12.275}"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{1.025, 1.025, 8.975, 8.975, 1.025, 1.025, 9.0, 9.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Secondary Liner">
       <ParameterList name="Region: Polygon">
-        <Parameter name="VerticesV1" type="Array(double)" value="{ -13.05,13.05,13.05,13.025,13.025,-13.025,-13.025,-13.05 }"/>
-        <Parameter name="VerticesV2" type="Array(double)" value="{ 0.925,0.925,2.45,2.45,0.95,0.95,2.45,2.45 }"/>
+        <Parameter name="VerticesV1" type="Array(double)" value="{-13.05, 13.05, 13.05, 13.025, 13.025, -13.025, -13.025, -13.05}"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{0.925, 0.925, 2.45, 2.45, 0.95, 0.95, 2.45, 2.45}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Waste Floor">
       <ParameterList name="Region: Polygon">
-        <Parameter name="VerticesV1" type="Array(double)" value="{ -12.25,12.25,12.25,-12.25 }"/>
-        <Parameter name="VerticesV2" type="Array(double)" value="{ 1.0,1.0,1.025,1.025 }"/>
+        <Parameter name="VerticesV1" type="Array(double)" value="{-12.25, 12.25, 12.25, -12.25}"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{1.0, 1.0, 1.025, 1.025}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Waste Left">
       <ParameterList name="Region: Polygon">
-        <Parameter name="VerticesV1" type="Array(double)" value="{ -13.025,-12.25,-12.25,-13.025 }"/>
-        <Parameter name="VerticesV2" type="Array(double)" value="{ 0.95,0.95,0.975,0.975 }"/>
+        <Parameter name="VerticesV1" type="Array(double)" value="{-13.025, -12.25, -12.25, -13.025}"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{0.95, 0.95, 0.975, 0.975}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Waste Right">
       <ParameterList name="Region: Polygon">
-        <Parameter name="VerticesV1" type="Array(double)" value="{ 13.025,12.25,12.25,13.025 }"/>
-        <Parameter name="VerticesV2" type="Array(double)" value="{ 0.975,0.975,0.95,0.95 }"/>
+        <Parameter name="VerticesV1" type="Array(double)" value="{13.025, 12.25, 12.25, 13.025}"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{0.975, 0.975, 0.95, 0.95}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="FF Left 1">
       <ParameterList name="Region: Polygon">
-        <Parameter name="VerticesV1" type="Array(double)" value="{ -12.275,-12.25,-12.25,-12.275 }"/>
-        <Parameter name="VerticesV2" type="Array(double)" value="{ 0.975,0.975,1.025,1.025 }"/>
+        <Parameter name="VerticesV1" type="Array(double)" value="{-12.275, -12.25, -12.25, -12.275}"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{0.975, 0.975, 1.025, 1.025}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="FF Right 1">
       <ParameterList name="Region: Polygon">
-        <Parameter name="VerticesV1" type="Array(double)" value="{ 12.275,12.25,12.25,12.275 }"/>
-        <Parameter name="VerticesV2" type="Array(double)" value="{ 1.025,1.025,0.975,0.975 }"/>
+        <Parameter name="VerticesV1" type="Array(double)" value="{12.275, 12.25, 12.25, 12.275}"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{1.025, 1.025, 0.975, 0.975}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Tank Block">
       <ParameterList name="Region: Polygon">
-        <Parameter name="VerticesV1" type="Array(double)" value="{ -13.75,13.75,13.75,-13.75 }"/>
-        <Parameter name="VerticesV2" type="Array(double)" value="{ 0,0,9.9,9.9 }"/>
+        <Parameter name="VerticesV1" type="Array(double)" value="{-13.75, 13.75, 13.75, -13.75}"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{0.0, 0.0, 9.9, 9.9}"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="Inlet">
       <ParameterList name="Region: Polygon">
-        <Parameter name="VerticesV1" type="Array(double)" value="{ -13.775,-13.75,-13.75,-13.775 }"/>
-        <Parameter name="VerticesV2" type="Array(double)" value="{ 0.925,0.925,0.9,0.9 }"/>
+        <Parameter name="VerticesV1" type="Array(double)" value="{-13.775, -13.75, -13.75, -13.775}"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{0.925, 0.925, 0.9, 0.9}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Outlet">
       <ParameterList name="Region: Polygon">
-        <Parameter name="VerticesV1" type="Array(double)" value="{ 13.775,13.75,13.75,13.775 }"/>
-        <Parameter name="VerticesV2" type="Array(double)" value="{ 0.925,0.925,0.9,0.9 }"/>
+        <Parameter name="VerticesV1" type="Array(double)" value="{13.775, 13.75, 13.75, 13.775}"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{0.925, 0.925, 0.9, 0.9}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="InletOutlet">
@@ -257,71 +235,60 @@
         <Parameter name="Regions" type="Array(string)" value="{Inlet, Outlet}"/>
       </ParameterList>
     </ParameterList>
-
-
     <ParameterList name="Wall">
       <ParameterList name="Region: Logical">
         <Parameter name="Operation" type="string" value="Union"/>
         <Parameter name="Regions" type="Array(string)" value="{Wall Right, Wall Left, Wall Top, Wall Bottom}"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="FF">
       <ParameterList name="Region: Logical">
         <Parameter name="Operation" type="string" value="Union"/>
-        <Parameter name="Regions" type="Array(string)" value="{FF Right,FF Left,FF Right 1,FF Left 1}"/>
+        <Parameter name="Regions" type="Array(string)" value="{FF Right, FF Left, FF Right 1, FF Left 1}"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="Sand">
       <ParameterList name="Region: Logical">
         <Parameter name="Operation" type="string" value="Union"/>
-        <Parameter name="Regions" type="Array(string)" value="{Primary Sand Pad,Secondary Sand Pad}"/>
+        <Parameter name="Regions" type="Array(string)" value="{Primary Sand Pad, Secondary Sand Pad}"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="Liners">
       <ParameterList name="Region: Logical">
         <Parameter name="Operation" type="string" value="Union"/>
         <Parameter name="Regions" type="Array(string)" value="{Primary Liner, Primary Liner Floor, Secondary Liner}"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="Waste">
       <ParameterList name="Region: Logical">
         <Parameter name="Operation" type="string" value="Union"/>
         <Parameter name="Regions" type="Array(string)" value="{Waste Floor, Waste Left, Waste Right}"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="Grout">
       <ParameterList name="Region: Logical">
         <Parameter name="Operation" type="string" value="Subtraction"/>
         <Parameter name="Regions" type="Array(string)" value="{Tank Block, Wall, FF, Sand, Liners, Waste}"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="Tank">
       <ParameterList name="Region: Logical">
         <Parameter name="Operation" type="string" value="Union"/>
         <Parameter name="Regions" type="Array(string)" value="{Wall, FF, Sand, Liners, Waste, Grout}"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="Soil">
       <ParameterList name="Region: Logical">
         <Parameter name="Operation" type="string" value="Complement"/>
         <Parameter name="Region" type="string" value="Tank"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="Sources">
       <ParameterList name="Region: Logical">
         <Parameter name="Operation" type="string" value="Union"/>
-        <Parameter name="Regions" type="Array(string)" value="{Waste Floor, Waste Left, Waste Right, Primary Sand Pad,Secondary Sand Pad}"/>
+        <Parameter name="Regions" type="Array(string)" value="{Waste Floor, Waste Left, Waste Right, Primary Sand Pad, Secondary Sand Pad}"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="NonSources">
       <ParameterList name="Region: Logical">
         <Parameter name="Operation" type="string" value="Complement"/>
@@ -329,234 +296,224 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="Material Properties">
-
     <ParameterList name="Concrete">
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.2"/>
       </ParameterList>
       <ParameterList name="Hydraulic Conductivity: Uniform">
-        <Parameter name="Value" type="double" value="1.e-11"/>
+        <Parameter name="Value" type="double" value="1e-11"/>
       </ParameterList>
       <ParameterList name="Tortuosity: Uniform">
-        <Parameter name="Value" type="double" value="1."/>
+        <Parameter name="Value" type="double" value="1.0"/>
       </ParameterList>
       <ParameterList name="Sorption Isotherms">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
-	    <ParameterList name="Tracer">
-	      <Parameter name="Kd" type="double" value="1.e-6"/>
-	    </ParameterList>
-	    <ParameterList name="Sr90">
-	      <Parameter name="Kd" type="double" value="29946"/>
-	    </ParameterList>
-	    <ParameterList name="Cs137">
-	      <Parameter name="Kd" type="double" value="3993"/>
-	    </ParameterList>
-	  </ParameterList>
-	</ParameterList>
+            <ParameterList name="Tracer">
+              <Parameter name="Kd" type="double" value="0.000001"/>
+            </ParameterList>
+            <ParameterList name="Sr90">
+              <Parameter name="Kd" type="double" value="29946.0"/>
+            </ParameterList>
+            <ParameterList name="Cs137">
+              <Parameter name="Kd" type="double" value="3993.0"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{Wall}"/>
     </ParameterList>
-
     <ParameterList name="Grout">
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.2"/>
       </ParameterList>
       <ParameterList name="Hydraulic Conductivity: Uniform">
-        <Parameter name="Value" type="double" value="1.e-11"/>
+        <Parameter name="Value" type="double" value="1e-11"/>
       </ParameterList>
       <ParameterList name="Tortuosity: Uniform">
-        <Parameter name="Value" type="double" value="1."/>
+        <Parameter name="Value" type="double" value="1.0"/>
       </ParameterList>
       <ParameterList name="Sorption Isotherms">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
-	    <ParameterList name="Tracer">
-	      <Parameter name="Kd" type="double" value="1.e-6"/>
-	    </ParameterList>
-	    <ParameterList name="Sr90">
-	      <Parameter name="Kd" type="double" value="29946"/>
-	    </ParameterList>
-	    <ParameterList name="Cs137">
-	      <Parameter name="Kd" type="double" value="3993"/>
-	    </ParameterList>
-	  </ParameterList>
-	</ParameterList>
+            <ParameterList name="Tracer">
+              <Parameter name="Kd" type="double" value="0.000001"/>
+            </ParameterList>
+            <ParameterList name="Sr90">
+              <Parameter name="Kd" type="double" value="29946.0"/>
+            </ParameterList>
+            <ParameterList name="Cs137">
+              <Parameter name="Kd" type="double" value="3993.0"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{Grout}"/>
     </ParameterList>
-
     <ParameterList name="Soil">
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.35"/>
       </ParameterList>
       <ParameterList name="Hydraulic Conductivity: Uniform">
-        <Parameter name="Value" type="double" value="1.e-6"/>
+        <Parameter name="Value" type="double" value="0.000001"/>
       </ParameterList>
       <ParameterList name="Tortuosity: Uniform">
-        <Parameter name="Value" type="double" value="1."/>
+        <Parameter name="Value" type="double" value="1.0"/>
       </ParameterList>
       <ParameterList name="Sorption Isotherms">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
-	    <ParameterList name="Tracer">
-	      <Parameter name="Kd" type="double" value="1.e-6"/>
-	    </ParameterList>
-	    <ParameterList name="Sr90">
-	      <Parameter name="Kd" type="double" value="8597"/>
-	    </ParameterList>
-	    <ParameterList name="Cs137">
-	      <Parameter name="Kd" type="double" value="17194"/>
-	    </ParameterList>
-	  </ParameterList>
-	</ParameterList>
+            <ParameterList name="Tracer">
+              <Parameter name="Kd" type="double" value="0.000001"/>
+            </ParameterList>
+            <ParameterList name="Sr90">
+              <Parameter name="Kd" type="double" value="8597.0"/>
+            </ParameterList>
+            <ParameterList name="Cs137">
+              <Parameter name="Kd" type="double" value="17194.0"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{Soil}"/>
     </ParameterList>
-
     <ParameterList name="Fast-Flow Path">
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.3"/>
       </ParameterList>
       <ParameterList name="Hydraulic Conductivity: Uniform">
-        <Parameter name="Value" type="double" value=".15e-2"/>
+        <Parameter name="Value" type="double" value="0.0015"/>
       </ParameterList>
       <ParameterList name="Tortuosity: Uniform">
-        <Parameter name="Value" type="double" value="1."/>
+        <Parameter name="Value" type="double" value="1.0"/>
       </ParameterList>
       <ParameterList name="Sorption Isotherms">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
-	    <ParameterList name="Tracer">
-	      <Parameter name="Kd" type="double" value="1.e-6"/>
-	    </ParameterList>
-	    <ParameterList name="Sr90">
-	      <Parameter name="Kd" type="double" value="1.e-6"/>
-	    </ParameterList>
-	    <ParameterList name="Cs137">
-	      <Parameter name="Kd" type="double" value="1.e-6"/>
-	    </ParameterList>
-	  </ParameterList>
-	</ParameterList>
+            <ParameterList name="Tracer">
+              <Parameter name="Kd" type="double" value="0.000001"/>
+            </ParameterList>
+            <ParameterList name="Sr90">
+              <Parameter name="Kd" type="double" value="0.000001"/>
+            </ParameterList>
+            <ParameterList name="Cs137">
+              <Parameter name="Kd" type="double" value="0.000001"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{FF}"/>
     </ParameterList>
-
     <ParameterList name="Sand">
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.3"/>
       </ParameterList>
       <ParameterList name="Hydraulic Conductivity: Uniform">
-        <Parameter name="Value" type="double" value=".15e-2"/>
+        <Parameter name="Value" type="double" value="0.0015"/>
       </ParameterList>
       <ParameterList name="Tortuosity: Uniform">
-        <Parameter name="Value" type="double" value="1."/>
+        <Parameter name="Value" type="double" value="1.0"/>
       </ParameterList>
       <ParameterList name="Sorption Isotherms">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
-	    <ParameterList name="Tracer">
-	      <Parameter name="Kd" type="double" value="1.e-6"/>
-	    </ParameterList>
-	    <ParameterList name="Sr90">
-	      <Parameter name="Kd" type="double" value="1.e-6"/>
-	    </ParameterList>
-	    <ParameterList name="Cs137">
-	      <Parameter name="Kd" type="double" value="1.e-6"/>
-	    </ParameterList>
-	  </ParameterList>
-	</ParameterList>
+            <ParameterList name="Tracer">
+              <Parameter name="Kd" type="double" value="0.000001"/>
+            </ParameterList>
+            <ParameterList name="Sr90">
+              <Parameter name="Kd" type="double" value="0.000001"/>
+            </ParameterList>
+            <ParameterList name="Cs137">
+              <Parameter name="Kd" type="double" value="0.000001"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{Sand}"/>
     </ParameterList>
-
     <ParameterList name="WasteTank">
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.3"/>
       </ParameterList>
       <ParameterList name="Hydraulic Conductivity: Uniform">
-        <Parameter name="Value" type="double" value=".15e-2"/>
+        <Parameter name="Value" type="double" value="0.0015"/>
       </ParameterList>
       <ParameterList name="Tortuosity: Uniform">
-        <Parameter name="Value" type="double" value="1."/>
+        <Parameter name="Value" type="double" value="1.0"/>
       </ParameterList>
       <ParameterList name="Sorption Isotherms">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
-	    <ParameterList name="Tracer">
-	      <Parameter name="Kd" type="double" value="1.e-6"/>
-	    </ParameterList>
-	    <ParameterList name="Sr90">
-	      <Parameter name="Kd" type="double" value="1.e-6"/>
-	    </ParameterList>
-	    <ParameterList name="Cs137">
-	      <Parameter name="Kd" type="double" value="1.e-6"/>
-	    </ParameterList>
-	  </ParameterList>
-	</ParameterList>
+            <ParameterList name="Tracer">
+              <Parameter name="Kd" type="double" value="0.000001"/>
+            </ParameterList>
+            <ParameterList name="Sr90">
+              <Parameter name="Kd" type="double" value="0.000001"/>
+            </ParameterList>
+            <ParameterList name="Cs137">
+              <Parameter name="Kd" type="double" value="0.000001"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{Waste Floor}"/>
     </ParameterList>
-
     <ParameterList name="WasteAnnulus">
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.3"/>
       </ParameterList>
       <ParameterList name="Hydraulic Conductivity: Uniform">
-        <Parameter name="Value" type="double" value=".15e-2"/>
+        <Parameter name="Value" type="double" value="0.0015"/>
       </ParameterList>
       <ParameterList name="Tortuosity: Uniform">
-        <Parameter name="Value" type="double" value="1."/>
+        <Parameter name="Value" type="double" value="1.0"/>
       </ParameterList>
       <ParameterList name="Sorption Isotherms">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
-	    <ParameterList name="Tracer">
-	      <Parameter name="Kd" type="double" value="1.e-6"/>
-	    </ParameterList>
-	    <ParameterList name="Sr90">
-	      <Parameter name="Kd" type="double" value="1.e-6"/>
-	    </ParameterList>
-	    <ParameterList name="Cs137">
-	      <Parameter name="Kd" type="double" value="1.e-6"/>
-	    </ParameterList>
-	  </ParameterList>
-	</ParameterList>
+            <ParameterList name="Tracer">
+              <Parameter name="Kd" type="double" value="0.000001"/>
+            </ParameterList>
+            <ParameterList name="Sr90">
+              <Parameter name="Kd" type="double" value="0.000001"/>
+            </ParameterList>
+            <ParameterList name="Cs137">
+              <Parameter name="Kd" type="double" value="0.000001"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{Waste Left, Waste Right}"/>
     </ParameterList>
-
     <ParameterList name="Liner">
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.2"/>
       </ParameterList>
       <ParameterList name="Hydraulic Conductivity: Uniform">
-        <Parameter name="Value" type="double" value="1.e-14"/>
+        <Parameter name="Value" type="double" value="1e-14"/>
       </ParameterList>
       <ParameterList name="Tortuosity: Uniform">
-        <Parameter name="Value" type="double" value="1."/>
+        <Parameter name="Value" type="double" value="1.0"/>
       </ParameterList>
       <ParameterList name="Sorption Isotherms">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
-	    <ParameterList name="Tracer">
-	      <Parameter name="Kd" type="double" value="1.e-6"/>
-	    </ParameterList>
-	    <ParameterList name="Sr90">
-	      <Parameter name="Kd" type="double" value="0."/>
-	    </ParameterList>
-	    <ParameterList name="Cs137">
-	      <Parameter name="Kd" type="double" value="0."/>
-	    </ParameterList>
-	  </ParameterList>
-	</ParameterList>
+            <ParameterList name="Tracer">
+              <Parameter name="Kd" type="double" value="0.000001"/>
+            </ParameterList>
+            <ParameterList name="Sr90">
+              <Parameter name="Kd" type="double" value="0.0"/>
+            </ParameterList>
+            <ParameterList name="Cs137">
+              <Parameter name="Kd" type="double" value="0.0"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{Liners}"/>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="Phase Definitions">
     <ParameterList name="Aqueous">
       <ParameterList name="Phase Properties">
@@ -571,22 +528,21 @@
         <ParameterList name="Water">
           <Parameter name="Component Solutes" type="Array(string)" value="{Tracer, Sr90, Cs137}"/>
           <ParameterList name="Tracer">
-            <Parameter name="Molecular Diffusivity" type="double" value="5.e-12"/>
-            <Parameter name="First Order Decay Constant" type="double" value="0"/>
+            <Parameter name="Molecular Diffusivity" type="double" value="5e-12"/>
+            <Parameter name="First Order Decay Constant" type="double" value="0.0"/>
           </ParameterList>
           <ParameterList name="Sr90">
-            <Parameter name="Molecular Diffusivity" type="double" value="5.e-12"/>
-            <Parameter name="First Order Decay Constant" type="double" value="0"/>
+            <Parameter name="Molecular Diffusivity" type="double" value="5e-12"/>
+            <Parameter name="First Order Decay Constant" type="double" value="0.0"/>
           </ParameterList>
           <ParameterList name="Cs137">
-            <Parameter name="Molecular Diffusivity" type="double" value="5.e-12"/>
-            <Parameter name="First Order Decay Constant" type="double" value="0"/>
+            <Parameter name="Molecular Diffusivity" type="double" value="5e-12"/>
+            <Parameter name="First Order Decay Constant" type="double" value="0.0"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="Initial Conditions">
     <ParameterList name="Initial Condition NonSources">
       <Parameter name="Assigned Regions" type="Array(string)" value="{NonSources}"/>
@@ -598,24 +554,23 @@
           <ParameterList name="Water">
             <ParameterList name="Tracer">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="1.e-20"/>
+                <Parameter name="Value" type="double" value="1e-20"/>
               </ParameterList>
             </ParameterList>
             <ParameterList name="Sr90">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="1.e-20"/>
+                <Parameter name="Value" type="double" value="1e-20"/>
               </ParameterList>
             </ParameterList>
             <ParameterList name="Cs137">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="1.e-20"/>
+                <Parameter name="Value" type="double" value="1e-20"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="Initial Condition Waste Floor">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Waste Floor}"/>
       <ParameterList name="IC: Uniform Pressure">
@@ -626,24 +581,23 @@
           <ParameterList name="Water">
             <ParameterList name="Tracer">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="1"/>
+                <Parameter name="Value" type="double" value="1.0"/>
               </ParameterList>
             </ParameterList>
             <ParameterList name="Sr90">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="10"/>
+                <Parameter name="Value" type="double" value="10.0"/>
               </ParameterList>
             </ParameterList>
             <ParameterList name="Cs137">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="100"/>
+                <Parameter name="Value" type="double" value="100.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="Initial Condition Annulus Waste">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Waste Left, Waste Right}"/>
       <ParameterList name="IC: Uniform Pressure">
@@ -654,24 +608,23 @@
           <ParameterList name="Water">
             <ParameterList name="Tracer">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="2"/>
+                <Parameter name="Value" type="double" value="2.0"/>
               </ParameterList>
             </ParameterList>
             <ParameterList name="Sr90">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="20"/>
+                <Parameter name="Value" type="double" value="20.0"/>
               </ParameterList>
             </ParameterList>
             <ParameterList name="Cs137">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="200"/>
+                <Parameter name="Value" type="double" value="200.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="Initial Condition Primary Sand Pad">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Primary Sand Pad}"/>
       <ParameterList name="IC: Uniform Pressure">
@@ -682,24 +635,23 @@
           <ParameterList name="Water">
             <ParameterList name="Tracer">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="3"/>
+                <Parameter name="Value" type="double" value="3.0"/>
               </ParameterList>
             </ParameterList>
             <ParameterList name="Sr90">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="30"/>
+                <Parameter name="Value" type="double" value="30.0"/>
               </ParameterList>
             </ParameterList>
             <ParameterList name="Cs137">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="300"/>
+                <Parameter name="Value" type="double" value="300.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="Initial Condition Secondary Sand Pad">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Secondary Sand Pad}"/>
       <ParameterList name="IC: Uniform Pressure">
@@ -710,17 +662,17 @@
           <ParameterList name="Water">
             <ParameterList name="Tracer">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="4"/>
+                <Parameter name="Value" type="double" value="4.0"/>
               </ParameterList>
             </ParameterList>
             <ParameterList name="Sr90">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="40"/>
+                <Parameter name="Value" type="double" value="40.0"/>
               </ParameterList>
             </ParameterList>
             <ParameterList name="Cs137">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="400"/>
+                <Parameter name="Value" type="double" value="400.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -728,9 +680,7 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="Boundary Conditions">
-
     <ParameterList name="West BC">
       <Parameter name="Assigned Regions" type="Array(string)" value="{XLOBC}"/>
       <ParameterList name="BC: Uniform Hydraulic Head">
@@ -741,28 +691,27 @@
           <ParameterList name="Water">
             <ParameterList name="Tracer">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Values" type="Array(double)" value="{1.e-20}"/>
+                <Parameter name="Values" type="Array(double)" value="{1e-20}"/>
               </ParameterList>
             </ParameterList>
             <ParameterList name="Sr90">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Values" type="Array(double)" value="{1.e-20}"/>
+                <Parameter name="Values" type="Array(double)" value="{1e-20}"/>
               </ParameterList>
             </ParameterList>
             <ParameterList name="Cs137">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Values" type="Array(double)" value="{1.e-20}"/>
+                <Parameter name="Values" type="Array(double)" value="{1e-20}"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="East BC">
       <Parameter name="Assigned Regions" type="Array(string)" value="{XHIBC}"/>
       <ParameterList name="BC: Uniform Hydraulic Head">
-        <Parameter name="Values" type="Array(double)" value="{30}"/>
+        <Parameter name="Values" type="Array(double)" value="{30.0}"/>
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
@@ -783,40 +732,32 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
-
   </ParameterList>
-
   <ParameterList name="Output">
     <Parameter name="File Name Digits" type="int" value="5"/>
-
     <ParameterList name="Cycle Macros">
       <ParameterList name="Every_1_steps">
-        <Parameter name="Start_Period_Stop" type="Array(int)" value="{0,1,-1}"/>
+        <Parameter name="Start_Period_Stop" type="Array(int)" value="{0, 1, -1}"/>
       </ParameterList>
-
       <ParameterList name="Every_10_steps">
-        <Parameter name="Start_Period_Stop" type="Array(int)" value="{0,10,-1}"/>
+        <Parameter name="Start_Period_Stop" type="Array(int)" value="{0, 10, -1}"/>
       </ParameterList>
-
       <ParameterList name="Every_100_steps">
-        <Parameter name="Start_Period_Stop" type="Array(int)" value="{0,100,-1}"/>
+        <Parameter name="Start_Period_Stop" type="Array(int)" value="{0, 100, -1}"/>
       </ParameterList>
-
       <ParameterList name="Every_1000_steps">
-        <Parameter name="Start_Period_Stop" type="Array(int)" value="{0,1000,-1}"/>
+        <Parameter name="Start_Period_Stop" type="Array(int)" value="{0, 1000, -1}"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="Visualization Data">
       <Parameter name="File Name Base" type="string" value="run_data/plt"/>
       <Parameter name="Cycle Macros" type="Array(string)" value="{Every_10_steps}"/>
     </ParameterList>
-
     <ParameterList name="Checkpoint Data">
       <Parameter name="File Name Base" type="string" value="run_data/chk"/>
       <Parameter name="Cycle Macros" type="Array(string)" value="{Every_1_steps}"/>
     </ParameterList>
-<!--
+    <!--
     <ParameterList name="Observation Data">
       <Parameter name="Observation Output Filename" type="string" value="Tracer.out"/>
       <ParameterList name="Tracer concentration">
@@ -840,17 +781,15 @@
     </ParameterList>
 -->
   </ParameterList>
-
   <ParameterList name="Chemistry">
     <ParameterList name="Thermodynamic Database">
-      <Parameter name="Format" type="string" value="simple" />
-      <Parameter name="File" type="string" value="Tank.bgd" />
+      <Parameter name="Format" type="string" value="simple"/>
+      <Parameter name="File" type="string" value="Tank.bgd"/>
     </ParameterList>
-    <Parameter name="Verbosity" type="string" value="verbose" />
-    <Parameter name="Activity Model" type="string" value="unit" />
+    <Parameter name="Verbosity" type="string" value="verbose"/>
+    <Parameter name="Activity Model" type="string" value="unit"/>
     <Parameter name="Tolerance" type="double" value="1.0e-12"/>
     <Parameter name="Maximum Newton Iterations" type="int" value="250"/>
     <Parameter name="Max Time Step (s)" type="double" value="15778463.0"/>
   </ParameterList>
-
 </ParameterList>

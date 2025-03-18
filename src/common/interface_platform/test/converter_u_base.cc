@@ -131,7 +131,7 @@ TEST(CONVERTER_BASE)
       Teuchos::XMLObject XMLobj = XMLWriter.toXML(new_xml);
 
       std::stringstream ss;
-      ss << "test" << id.str() << "_native.xml";
+      ss << "converter_u_test" << id.str() << "_native.xml";
       std::ofstream xmlfile;
       xmlfile.open(ss.str().c_str());
       xmlfile << XMLobj;
@@ -139,18 +139,16 @@ TEST(CONVERTER_BASE)
       std::cout << "Successful translation. Validating the result...\n\n";
 
       // development
-      Teuchos::RCP<Teuchos::ParameterList> old_xml;
+      Teuchos::RCP<Teuchos::ParameterList> gold_xml;
       xmlFileName.str("");
       xmlFileName << "test/converter_u_validate" << id.str() << ".xml";
-      old_xml = Teuchos::getParametersFromXmlFile(xmlFileName.str());
-      new_xml.validateParameters(*old_xml);
-      old_xml->validateParameters(new_xml);
-      // new_xml.validateParametersAndSetDefaults(*old_xml);
-      // old_xml->validateParametersAndSetDefaults(new_xml);
+      gold_xml = Teuchos::getParametersFromXmlFile(xmlFileName.str());
+      new_xml.validateParameters(*gold_xml);
+      gold_xml->validateParameters(new_xml);
 
       // data validation
       std::string name;
-      bool flag = ComparePLists(new_xml, *old_xml, name);
+      bool flag = ComparePLists(new_xml, *gold_xml, name);
       if (!flag) {
         std::cout << "Test:" << i << ", error at \"" << name << "\".\n";
         CHECK(false);
