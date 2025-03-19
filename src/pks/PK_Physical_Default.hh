@@ -48,9 +48,6 @@ class PK_Physical_Default : public PK_Physical {
 
   void ChangedSolutionPK(const Tag& tag) override;
 
- protected:
-  // solution and evaluator
-  Key passwd_;
 };
 
 

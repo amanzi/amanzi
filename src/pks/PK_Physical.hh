@@ -40,6 +40,7 @@ class PK_Physical : virtual public PK {
   {
     domain_ = Keys::readDomain(*plist_, "domain", "domain");
     mesh_ = S_->GetMesh(domain_);
+    passwd_ = name();
   };
 
   // Virtual destructor
@@ -60,7 +61,8 @@ class PK_Physical : virtual public PK {
   Key domain_;
 
   // solution and evaluator
-  std::string key_;
+  Key key_;
+  std::string passwd_;
 
   // debugger for dumping vectors
   Teuchos::RCP<Debugger> db_;
