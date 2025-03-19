@@ -158,11 +158,10 @@ Chemistry_PK::checkForError_(int ierr, int max_itrs, int max_itrs_cell) const
   mesh_->getComm()->MaxAll(&ierr_l, &ierr, 1);
   if (ierr) return true;
 
-  Reductions::ValLoc itrs_l{ (double)max_itrs,
+  Reductions::MaxLoc itrs_l{ (double)max_itrs,
     mesh_->getMap(AmanziMesh::Entity_kind::CELL, false).GID(max_itrs_cell) };
-  Reductions::ValLoc itrs_g;
-  ierr = Reductions::reduceAllMaxLoc(*mesh_->getComm(), itrs_l, itrs_g);
-  if (ierr) return true;
+
+  Reductions::MaxLoc itrs_g = Reductions::reduceAllMaxLoc(*mesh_->getComm(), itrs_l);
 
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     Teuchos::OSTab tab = vo_->getOSTab();
