@@ -13,7 +13,7 @@
 List *region: level set* defines a general region using a level set
 function f(x) > 0.
 
-.. admonition:: region_level-set
+.. admonition:: region-level-set
 
   * `"dimension`"  ``[int]`` region spatial dimension
   * `"formula`" ``[string]`` level set formula
