@@ -46,6 +46,11 @@ This evaluator is used by providing the option:
    * `"mesh entity`" ``[string]`` **cell** Name of the entity on which the
      component is defined.
    * `"number of dofs`" ``[int]`` **1** Number of degrees of freedom to read.
+   * `"constant in time`" ``[bool]`` **false** Is the value constant throughout all time?
+   * `"checkpoint file`" ``[bool]`` **false** If this is true, then it is
+     expected that `"filename`" is a checkpoint-file-like object, where
+     /variable_name.ENTITY.DOF is itself a vector, and not a group.  Note this
+     forces `"constant in time`" to be true.
    * `"time function`" ``[function-spec]`` **optional** If provided, time is
      first manipulated by this function before interpolation.  This is useful
      for things like cyclic data, which can use a modulo time function to
@@ -124,9 +129,10 @@ class EvaluatorIndependentFromFile
   std::string meshname_;
   std::string compname_;
   std::string varname_;
-  std::string locname_;
+  AmanziMesh::Entity_kind locname_;
   int ndofs_;
 
+  bool checkpoint_file_;
   Teuchos::RCP<Function> time_func_;
 
  private:

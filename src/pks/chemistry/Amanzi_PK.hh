@@ -113,7 +113,7 @@ class Amanzi_PK : public Chemistry_PK {
 
   void ErrorAnalysis(int ierr, std::string& internal_msg);
 
-  virtual void updateSubstate() override {}
+  virtual void updateSubstate(const Tag& water_tag) override {}
 
  private:
   void AllocateAdditionalChemistryStorage_();

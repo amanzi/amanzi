@@ -1074,6 +1074,15 @@ HDF5_MPI::readAttrInt(int& value, const std::string attrname)
                               data_file_,
                               loc_h5path,
                               &IOgroup_);
+  if (ierr < 0) {
+    // try to read ints as int or long.
+    ierr = parallelIO_read_simple_attr(loc_attrname,
+            reinterpret_cast<void**>(&loc_value),
+            PIO_LONG,
+            data_file_,
+            loc_h5path,
+            &IOgroup_);
+  }
   checkThrow_(ierr, attrname, H5DataFilename_);
 
   value = *loc_value;
