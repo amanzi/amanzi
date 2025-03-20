@@ -36,6 +36,9 @@ jobs:
     - name: Output the TPLs version
       run:
         echo "TPLs version = ${{env.AMANZI_TPLS_VER}}"
+    - name: Get runner architecture
+      run:
+        echo "ARCH=$(uname -m)" >> $GITHUB_ENV
     - name: Login to Docker Hub
       uses: docker/login-action@v3
       with:
@@ -44,43 +47,22 @@ jobs:
     - name: Docker build
       id: docker
       working-directory: Docker
-      shell: bash
       run: |
-        if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
-          docker build --build-arg ARCH=linux/amd64 --build-arg amanzi_branch=${{env.AMANZI_BRANCH}} --build-arg amanzi_tpls_ver=${{env.AMANZI_TPLS_VER}} -t metsi/amanzi:${{env.AMANZI_BRANCH_TAG}}-amd64-latest -f Dockerfile-Amanzi-build .
-          docker push ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-amd64-latest
-        else
-          docker build --build-arg ARCH=linux/arm64 --build-arg amanzi_branch=${{env.AMANZI_BRANCH}} --build-arg amanzi_tpls_ver=${{env.AMANZI_TPLS_VER}} -t metsi/amanzi:${{env.AMANZI_BRANCH_TAG}}-arm64-latest -f Dockerfile-Amanzi-build .
-          docker push ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-arm64-latest
-        fi
-  fix-manifest:
-    runs-on: ubuntu-latest
-    needs: build
-    if: success()
-    steps:
-      - name: Check out the Amanzi repo
-        uses: actions/checkout@v4
-      - name: Set environment variables
-        run:
-          echo "AMANZI_BRANCH_TAG=$(echo $GITHUB_REF_NAME | sed -e 's/\//--/g')" >> $GITHUB_ENV
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{secrets.DOCKERHUB_USERNAME}}
-          password: ${{secrets.DOCKERHUB_PASSWORD}}
-      - name: Edit manifest
-        run: |
-          docker manifest create ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest \
-            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-arm64-latest \
-            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-amd64-latest
-          docker push ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest
+        docker build --build-arg amanzi_branch=${{env.AMANZI_BRANCH}} \
+        --build-arg amanzi_tpls_ver=${{env.AMANZI_TPLS_VER}} \
+        -t metsi/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{env.ARCH}}-latest \
+        -f Dockerfile-Amanzi-build .
+    - name: Docker push
+      working-directory: Docker
+      run:
+        docker push ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{env.ARCH}}-latest
   serial-tests:
     strategy:
       matrix:
         os: [ ubuntu-latest, ubuntu-24.04-arm ]
     runs-on: ${{ matrix.os }}
     name: serial tests
-    needs: fix-manifest
+    needs: build
     steps:
     - name: Check out the Amanzi repo
       uses: actions/checkout@v4
@@ -98,7 +80,7 @@ jobs:
         os: [ ubuntu-latest, ubuntu-24.04-arm ]
     runs-on: ${{ matrix.os }}
     name: parallel tests
-    needs: fix-manifest
+    needs: build
     steps:
     - name: Check out the Amanzi repo
       uses: actions/checkout@v4
@@ -110,4 +92,28 @@ jobs:
       working-directory: Docker
       run:
         docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest -L PARALLEL --output-on-failure"
-
+  fix-manifest:
+    runs-on: ubuntu-latest
+    needs: [parallel-tests, serial-tests]
+    if: success()
+    steps:
+      - name: Check out the Amanzi repo
+        uses: actions/checkout@v4
+      - name: Set environment variables
+        run:
+          echo "AMANZI_BRANCH_TAG=$(echo $GITHUB_REF_NAME | sed -e 's/\//--/g')" >> $GITHUB_ENV
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{secrets.DOCKERHUB_USERNAME}}
+          password: ${{secrets.DOCKERHUB_PASSWORD}}
+      - name: Pull images (remove with artifacts??)
+        run: |
+          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-arm64-latest
+          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-amd64-latest
+      - name: Edit manifest
+        run: |
+          docker manifest create ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest \
+            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-arm64-latest \
+            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-amd64-latest
+          docker push ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest
