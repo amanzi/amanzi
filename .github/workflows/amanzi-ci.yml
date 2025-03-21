@@ -45,20 +45,25 @@ jobs:
       shell: bash
       run: |
         if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
-          cat <<EOF >> $GITHUB_ENV
-ARCH:linux/amd64
-amanzi_branch:${{env.AMANZI_BRANCH}}
-amanzi_tpls_ver:${{env.AMANZI_TPLS_VER}}"
-EOF
+          BUILD_ARGS=$(cat <<-EOF
+          arch:linux/amd64
+          amanzi_branch:${{env.AMANZI_BRANCH}}
+          amanzi_tpls_ver:${{env.AMANZI_TPLS_VER}}
+          EOF
+          )
           echo "IMAGE_TAG=${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-amd64-latest" >> $GITHUB_ENV
         else
-          cat <<EOF >> $GITHUB_ENV
-ARCH:linux/arm64
-amanzi_branch:${{env.AMANZI_BRANCH}}
-amanzi_tpls_ver:${{env.AMANZI_TPLS_VER}}
-EOF
+          BUILD_ARGS=$(cat <<-EOF
+          arch:linux/arm64
+          amanzi_branch:${{env.AMANZI_BRANCH}}
+          amanzi_tpls_ver:${{env.AMANZI_TPLS_VER}}
+          EOF
+          )
           echo "IMAGE_TAG=${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-arm64-latest" >> $GITHUB_ENV
         fi
+        echo "BUILD_ARGS<<EOF" >> $GITHUB_ENV
+        echo "$BUILD_ARGS" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
     - name: temp debugging
       run: echo ${{env.BUILD_ARGS}}
     - name: Build and push
