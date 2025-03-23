@@ -177,8 +177,8 @@ Multiphase_PK::Setup()
       id1 = id2;
     }
   }
-  id3 = InitMPSystem_("constraint liquid eqn", id2);
-  id4 = InitMPSystem_("constraint gas eqn", id3);
+  id3 = InitMPSystem_("constraint gas eqn", id2);
+  id4 = InitMPSystem_("constraint liquid eqn", id3);
 
   // register non-standard fields
   if (!S_->HasRecord("gravity"))
@@ -224,9 +224,6 @@ Multiphase_PK::Setup()
     auto eval = Teuchos::rcp(new PressureGasEvaluator(elist, wrm_));
     S_->SetEvaluator(pressure_gas_key_, Tags::DEFAULT, eval);
 
-    S_->RequireDerivative<CV_t, CVS_t>(
-        pressure_gas_key_, Tags::DEFAULT, pressure_liquid_key_, Tags::DEFAULT, pressure_gas_key_)
-      .SetGhosted();
     S_->RequireDerivative<CV_t, CVS_t>(
         pressure_gas_key_, Tags::DEFAULT, pressure_liquid_key_, Tags::DEFAULT, pressure_gas_key_)
       .SetGhosted();
@@ -332,7 +329,7 @@ Multiphase_PK::Setup()
     S_->SetEvaluator(relperm_gas_key_, Tags::DEFAULT, eval);
 
     S_->RequireDerivative<CV_t, CVS_t>(
-        relperm_gas_key_, Tags::DEFAULT, saturation_liquid_key_, Tags::DEFAULT, relperm_gas_key_)
+      relperm_gas_key_, Tags::DEFAULT, saturation_liquid_key_, Tags::DEFAULT, relperm_gas_key_)
       .SetGhosted();
   }
 
@@ -529,6 +526,18 @@ Multiphase_PK::Setup()
         ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
       S_->RequireEvaluator(e, Tags::DEFAULT);
     }
+  }
+
+  // for debugging
+  {
+    Key pressure_vapor_key("pressure_vapor");
+    auto elist = MyRequire_(pressure_vapor_key, pressure_vapor_key);
+    elist.set<std::string>("temperature key", temperature_key_)
+      .set<std::string>("molar density liquid key", mol_density_liquid_key_)
+      .set<std::string>("saturation liquid key", saturation_liquid_key_)
+      .set<std::string>("eos type", "water vapor over water/ice");
+    auto eval = Teuchos::rcp(new VaporPressureEvaluator(elist, wrm_));
+    S_->SetEvaluator(pressure_vapor_key, Tags::DEFAULT, eval);
   }
 
   // derivatives with respect to primary
@@ -1001,30 +1010,35 @@ Multiphase_PK::ModifyCorrection(double h,
     const auto& uc = *u->SubVector(n)->Data()->ViewComponent("cell");
     auto& duc = *du->SubVector(n)->Data()->ViewComponent("cell");
 
+    // limit change to 10%
+    for (int c = 0; c < ncells_owned_; ++c) {
+      double range = 0.1 * std::fabs(uc[0][c]);
+      duc[0][c] = std::min(duc[0][c], range);
+      duc[0][c] = std::max(duc[0][c], -range);
+    }
+
+    // clip molar density to range [0; +\infty]
     if (name == mol_density_liquid_key_) {
-      // clip molar density to range [0; +\infty]
-      for (int i = 0; i < uc.NumVectors(); ++i) {
-        for (int c = 0; c < ncells_owned_; ++c) { duc[i][c] = std::min(duc[i][c], uc[i][c]); }
+      for (int c = 0; c < ncells_owned_; ++c) {
+        duc[0][c] = std::min(duc[0][c], uc[0][c]);
       }
 
+    // clip saturation (residual saturation is missing, FIXME)
     } else if (name == saturation_liquid_key_) {
-      // clip saturation (residual saturation is missing, FIXME)
       for (int c = 0; c < ncells_owned_; ++c) {
         duc[0][c] = std::min(duc[0][c], uc[0][c]);
         duc[0][c] = std::max(duc[0][c], uc[0][c] - 1.0);
       }
 
+    // clip mole fraction to range [0; 1]
     } else {
-      // clip mole fraction to range [0; 1]
       for (auto& comp : component_names_) {
         Key keyg = x_gas_key_ + "_" + comp;
         Key keyl = x_liquid_key_ + "_" + comp;
         if (name == keyg || name == keyl) {
-          for (int i = 0; i < uc.NumVectors(); ++i) {
-            for (int c = 0; c < ncells_owned_; ++c) {
-              duc[i][c] = std::min(duc[i][c], uc[i][c]);
-              duc[i][c] = std::max(duc[i][c], uc[i][c] - 1.0);
-            }
+          for (int c = 0; c < ncells_owned_; ++c) {
+            duc[0][c] = std::min(duc[0][c], uc[0][c]);
+            duc[0][c] = std::max(duc[0][c], uc[0][c] - 1.0);
           }
         }
       }

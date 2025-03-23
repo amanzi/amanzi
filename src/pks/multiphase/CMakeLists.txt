@@ -109,6 +109,11 @@ if (BUILD_TESTS)
   set(amanzi_libs multiphase state mesh_factory whetstone operators 
                   geometry mesh_functions functions eos pks)
 
+  # add_amanzi_test(multiphase_heat_pipe multiphase_heat_pipe
+  #                 KIND      int
+  #                 SOURCE    test/Main.cc test/multiphase_heat_pipe.cc
+  #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})  
+  
   add_amanzi_test(multiphase_richards multiphase_richards
                   KIND      int
                   SOURCE    test/Main.cc test/multiphase_richards.cc

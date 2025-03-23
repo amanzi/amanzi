@@ -62,7 +62,7 @@ TEST(MULTIPHASE_RICHARDS)
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 50, 3);
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 10.0, 1.0, 20, 2);
 
   // create screen io
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Multiphase_PK", *plist));
@@ -107,16 +107,15 @@ TEST(MULTIPHASE_RICHARDS)
     iloop++;
 
     // output solution
-    if (iloop % 1 == 0) {
+    if (iloop % 20 == 0) {
       io->InitializeCycle(t, iloop, "");
       const auto& u0 = *S->Get<CompositeVector>("pressure_liquid").ViewComponent("cell");
       const auto& u1 = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
 
+      WriteStateStatistics(*S, *vo);
       io->WriteVector(*u0(0), "pressure", AmanziMesh::Entity_kind::CELL);
       io->WriteVector(*u1(0), "saturation", AmanziMesh::Entity_kind::CELL);
       io->FinalizeCycle();
-
-      WriteStateStatistics(*S, *vo);
     }
   }
 
@@ -124,11 +123,28 @@ TEST(MULTIPHASE_RICHARDS)
 
   // verification
   double dmin, dmax;
-  const auto& sl = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
-  sl.MinValue(&dmin);
-  sl.MaxValue(&dmax);
-  CHECK(dmin >= 0.0 && dmax <= 1.0);
+  std::vector<std::string> sat({ "saturation_liquid", "saturation_gas" });
+  std::vector<std::string> ncp({ "ncp_liquid_fg", "ncp_gas_fg" });
+  std::vector<std::string> mfl({ "mole_fraction_liquid_Air", "mole_fraction_liquid_H2O" });
+  std::vector<std::string> mfg({ "mole_fraction_gas_Air", "mole_fraction_gas_H2O" });
 
-  S->Get<CompositeVector>("ncp_gas_fg").NormInf(&dmax);
-  CHECK(dmax <= 1.0e-11);
+  for (int i = 0; i < 2; ++i) {
+    const auto& sl = *S->Get<CompositeVector>(sat[i]).ViewComponent("cell");
+    sl.MinValue(&dmin);
+    sl.MaxValue(&dmax);
+    CHECK(dmin >= 0.0 && dmax <= 1.0);
+
+    S->Get<CompositeVector>(ncp[i]).NormInf(&dmax);
+    CHECK(dmax <= 1.0e-8);
+
+    const auto& xl = *S->Get<CompositeVector>(mfl[i]).ViewComponent("cell");
+    xl.MinValue(&dmin);
+    xl.MaxValue(&dmax);
+    CHECK(dmin >= 0.0 && dmax <= 1.0);
+
+    const auto& xg = *S->Get<CompositeVector>(mfg[i]).ViewComponent("cell");
+    xg.MinValue(&dmin);
+    xg.MaxValue(&dmax);
+    CHECK(dmin >= 0.0 && dmax <= 1.0);
+  }
 }

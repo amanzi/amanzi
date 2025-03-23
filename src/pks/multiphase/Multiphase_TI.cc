@@ -237,7 +237,6 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
   fone->PutScalar(1.0);
 
   // update fluxes
-  /*
   for (int phase = 0; phase < 2; ++phase) {
     S_->GetEvaluator(adv_names_[phase]).Update(*S_, passwd_);
 
@@ -254,7 +253,6 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
     pdeK->UpdateMatrices(flux.ptr(), var.ptr());
     pdeK->UpdateFlux(var.ptr(), flux.ptr());
   }
-  */
 
   // for each operator we linearize (a) functions on which it acts and
   // (b) non-linear coefficients
@@ -432,7 +430,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
   op_preconditioner_->SymbolicAssembleMatrix();
   op_preconditioner_->AssembleMatrix();
   // auto J = FiniteDifferenceJacobian(tp - dtp, tp, u, u, 1e-6);
-  // std::cout << J << std::endl; exit(0);
+  // std::cout << J << std::endl;
   // std::cout << *op_preconditioner_->A() << std::endl; exit(0);
 
   // finalize preconditioner
@@ -538,8 +536,9 @@ Multiphase_PK::FiniteDifferenceJacobian(double t_old,
   auto u0 = Teuchos::rcp(new TreeVector(*u_old));
   auto u1 = Teuchos::rcp_const_cast<TreeVector>(u_new);
 
+  int nu = soln_names_.size();
   double umax;
-  int nJ = 3 * ncells_owned_;
+  int nJ = nu * ncells_owned_;
   WhetStone::DenseMatrix J(nJ, nJ);
 
   J.PutScalar(0.0);

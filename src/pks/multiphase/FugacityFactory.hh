@@ -40,7 +40,7 @@ class FugacityFactory : public Utils::Factory<Fugacity> {
     } else if (eos == "saturated vapor") {
       return std::make_shared<Fugacity_SaturatedVapor>(plist);
     } else if (eos == "Henry law") {
-      return std::make_shared<Fugacity_SaturatedVapor>(plist);
+      return std::make_shared<Fugacity_HenryLaw>(plist);
     }
     return nullptr;
   }
