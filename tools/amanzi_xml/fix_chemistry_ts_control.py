@@ -60,8 +60,9 @@ def fixTSControl(pk_list):
             tsc_params.setParameter("min iterations", "int",
                                   pk_list.pop("timestep increase threshold").getValue())
         if pk_list.isElement("timestep cut factor"):
+            # NOTE: the old cut factor is > 1, while the reduction factor is < 1
             tsc_params.setParameter("timestep reduction factor", "double",
-                                  pk_list.pop("timestep cut factor").getValue())
+                                  1.0 / pk_list.pop("timestep cut factor").getValue())
         if pk_list.isElement("timestep increase factor"):
             tsc_params.setParameter("timestep increase factor", "double",
                                   pk_list.pop("timestep increase factor").getValue())

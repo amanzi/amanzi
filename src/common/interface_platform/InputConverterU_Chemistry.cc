@@ -464,7 +464,7 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
     tsc_list.set<double>("min timestep [s]", dt_min);
     tsc_list.set<double>("initial timestep [s]", dt_init);
     tsc_list.set<int>("max iterations", cut_threshold);
-    tsc_list.set<double>("timestep reduction factor", dt_cut);
+    tsc_list.set<double>("timestep reduction factor", 1./dt_cut);
     tsc_list.set<int>("min iterations", increase_threshold);
     tsc_list.set<double>("timestep increase factor", dt_increase);
 
