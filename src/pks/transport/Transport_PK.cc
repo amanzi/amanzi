@@ -388,7 +388,8 @@ Transport_PK::Setup()
   }
 
   // temporary fields
-  S_->Require<CV_t, CVS_t>(tcc_key_, Tags::COPY, passwd_, component_names_);
+  S_->Require<CV_t, CVS_t>(tcc_key_, Tags::COPY, passwd_, component_names_)
+    .SetGhosted(true);
 
 #ifdef ALQUIMIA_ENABLED
   SetupAlquimia();
