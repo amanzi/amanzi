@@ -489,6 +489,11 @@ Alquimia_PK::updateSubstate()
     substate_.mineral_specific_surface_area_new = &*S_->GetW<CompositeVector>(mineral_specific_surface_area_key_, tag_next_, passwd_).ViewComponent("cell", false);
   }
 
+  if (number_sorption_sites_ > 0) {
+    substate_.sorption_site_density_old = &*S_->Get<CompositeVector>(sorp_site_density_key_, tag_current_).ViewComponent("cell", false);
+    substate_.sorption_site_density_new = &*S_->GetW<CompositeVector>(sorp_site_density_key_, tag_next_, passwd_).ViewComponent("cell", false);
+  }
+
   if (!total_sorbed_key_.empty()) {
     substate_.total_sorbed_old = &*S_->Get<CompositeVector>(total_sorbed_key_, tag_current_).ViewComponent("cell", false);
     substate_.total_sorbed_new = &*S_->GetW<CompositeVector>(total_sorbed_key_, tag_next_, passwd_).ViewComponent("cell", false);
@@ -496,7 +501,7 @@ Alquimia_PK::updateSubstate()
 
   if (number_ion_exchange_sites_ > 0) {
     substate_.cation_exchange_capacity_old = &*S_->Get<CompositeVector>(cation_exchange_capacity_key_, tag_current_).ViewComponent("cell", false);
-    substate_.cation_exchange_capacity_old = &*S_->GetW<CompositeVector>(cation_exchange_capacity_key_, tag_next_, passwd_).ViewComponent("cell", false);
+    substate_.cation_exchange_capacity_new = &*S_->GetW<CompositeVector>(cation_exchange_capacity_key_, tag_next_, passwd_).ViewComponent("cell", false);
   }
 
   // aux data
@@ -643,6 +648,7 @@ Alquimia_PK::XMLParameters()
     Teuchos::ParameterList& geochem_conditions =
       initial_conditions->sublist("geochemical conditions");
     ParseChemicalConditionRegions_(geochem_conditions, chem_initial_conditions_);
+
     if (chem_initial_conditions_.empty()) {
       if (plist_->isSublist("initial conditions")) {
         msg << "Alquimia_PK::XMLParameters(): No geochemical conditions were found in "
