@@ -71,6 +71,9 @@ Chemistry_PK::parseParameterList()
   // other parameters
   saturation_tolerance_ = plist_->get<double>("saturation tolerance", 1e-14);
   operator_split_ = plist_->get<bool>("operator split", false);
+  if (operator_split_) {
+    operator_split_tag_ = Tag(plist_->get<std::string>("operator split tag"));
+  }
 }
 
 
@@ -103,6 +106,9 @@ Chemistry_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // AMANZI_ASSERT(std::abs(S_->get_time(tag_current_) - t_old) < 1.e-4);
   // AMANZI_ASSERT(std::abs(S_->get_time(tag_next_) - t_new) < 1.e-4);
   State_to_Solution(Tags::NEXT, *solution_);
+
+  // set up the substate for faster access
+  updateSubstate();
 
   // Get the number of owned (non-ghost) cells for the mesh.
   AmanziMesh::Entity_ID num_cells =

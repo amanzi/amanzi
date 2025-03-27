@@ -40,6 +40,7 @@ ReactiveTransport_PK::ReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
   // tell chemistry it is operator split, which means it will use TCC next
   // instead of current.  Also tell it to use Amanzi generic passwd
   getSubPKPlist_(0)->set("operator split", true);
+  getSubPKPlist_(0)->set("operator split tag", Tags::COPY.get());
   getSubPKPlist_(0)->set("primary variable password", "state");
 }
 

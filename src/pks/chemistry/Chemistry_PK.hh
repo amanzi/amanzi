@@ -138,6 +138,7 @@ class Chemistry_PK : public PK_Physical_Default {
 
   // discretization control
   bool operator_split_;
+  Tag operator_split_tag_;
 };
 
 } // namespace AmanziChemistry

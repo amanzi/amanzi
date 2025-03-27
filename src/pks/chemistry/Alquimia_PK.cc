@@ -473,8 +473,9 @@ Alquimia_PK::updateSubstate()
 
   // internal things
   if (operator_split_) {
-    // OPERATOR SPLITTING -- TCC old is NEXT here!
-    substate_.tcc_old = &*S_->Get<CompositeVector>(key_, tag_next_).ViewComponent("cell", false);
+    // operator splitting -- that tag used here depends upon the code.  In
+    // Amanzi, this is COPY, in ATS, this is NEXT
+    substate_.tcc_old = &*S_->Get<CompositeVector>(key_, operator_split_tag_).ViewComponent("cell", false);
   } else {
     // stand-alone chemistry -- TCC is CURRENT here!
     substate_.tcc_old = &*S_->Get<CompositeVector>(key_, tag_current_).ViewComponent("cell", false);
