@@ -48,7 +48,7 @@ FlexibleObservations::FlexibleObservations(Teuchos::RCP<Teuchos::ParameterList> 
 
   Teuchos::ParameterList tmp_list;
   tmp_list.set<std::string>("verbosity level", "high");
-  vo_ = new VerboseObject("Observations", tmp_list);
+  vo_ = Teuchos::rcp(new VerboseObject("Observations", tmp_list));
 
   // loop over the sublists and create an observation for each
   for (auto i = obs_list_->begin(); i != obs_list_->end(); i++) {
@@ -103,7 +103,7 @@ FlexibleObservations::FlexibleObservations(Teuchos::RCP<Teuchos::ParameterList> 
       // loop over all variables listed and create an observable for each
       std::string var = observable_plist.get<std::string>("variable");
       Key domain_name = observable_plist.get<std::string>("domain name", "domain");
-      observations.insert(std::pair<std::string, Teuchos::RCP<Observable>>(
+      observations.insert(std::pair<std::string, Teuchos::RCP<ObservableAmanzi>>(
         obs_list_->name(i),
         CreateObservable(
           *coordinator_list, observable_plist, *units_list, S->GetMesh(domain_name))));
@@ -125,7 +125,7 @@ FlexibleObservations::MakeObservations(State& S)
   std::string unit;
 
   // loop over all observables
-  for (std::map<std::string, Teuchos::RCP<Observable>>::iterator i = observations.begin();
+  for (std::map<std::string, Teuchos::RCP<ObservableAmanzi>>::iterator i = observations.begin();
        i != observations.end();
        i++) {
     if ((i->second)->DumpRequested(S.get_time()) || (i->second)->DumpRequested(S.get_cycle())) {
@@ -207,7 +207,7 @@ bool
 FlexibleObservations::DumpRequested(const double time)
 {
   bool result = false;
-  for (std::map<std::string, Teuchos::RCP<Observable>>::iterator i = observations.begin();
+  for (std::map<std::string, Teuchos::RCP<ObservableAmanzi>>::iterator i = observations.begin();
        i != observations.end();
        i++) {
     result = result || (i->second)->DumpRequested(time);
@@ -220,7 +220,7 @@ bool
 FlexibleObservations::DumpRequested(const int cycle)
 {
   bool result = false;
-  for (std::map<std::string, Teuchos::RCP<Observable>>::iterator i = observations.begin();
+  for (std::map<std::string, Teuchos::RCP<ObservableAmanzi>>::iterator i = observations.begin();
        i != observations.end();
        i++) {
     result = result || (i->second)->DumpRequested(cycle);
@@ -243,7 +243,7 @@ FlexibleObservations::DumpRequested(const int cycle, const double time)
 void
 FlexibleObservations::RegisterWithTimeStepManager(Utils::TimeStepManager& tsm)
 {
-  for (std::map<std::string, Teuchos::RCP<Observable>>::iterator i = observations.begin();
+  for (std::map<std::string, Teuchos::RCP<ObservableAmanzi>>::iterator i = observations.begin();
        i != observations.end();
        i++) {
     (i->second)->RegisterWithTimeStepManager(tsm);

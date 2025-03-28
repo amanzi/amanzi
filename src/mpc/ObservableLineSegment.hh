@@ -18,7 +18,7 @@
 
 namespace Amanzi {
 
-class ObservableLineSegment : public virtual Observable {
+class ObservableLineSegment : public virtual ObservableAmanzi {
  public:
   ObservableLineSegment(std::string variable,
                         std::string region,
@@ -41,13 +41,14 @@ class ObservableLineSegment : public virtual Observable {
 };
 
 
+inline
 ObservableLineSegment::ObservableLineSegment(std::string variable,
                                              std::string region,
                                              std::string functional,
                                              Teuchos::ParameterList& plist,
                                              Teuchos::ParameterList& units_plist,
                                              Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-  : Observable(variable, region, functional, plist, units_plist, mesh)
+  : ObservableAmanzi(variable, region, functional, plist, units_plist, mesh)
 {
   interpolation_ = plist.get<std::string>("interpolation", "linear");
   weighting_ = plist.get<std::string>("weighting", "none");
@@ -55,7 +56,7 @@ ObservableLineSegment::ObservableLineSegment(std::string variable,
 };
 
 
-int
+inline int
 ObservableLineSegment::ComputeRegionSize()
 {
   //int mesh_block_size;
@@ -87,7 +88,7 @@ ObservableLineSegment::ComputeRegionSize()
 }
 
 
-void
+inline void
 ObservableLineSegment::ComputeObservation(State& S,
                                           double* value,
                                           double* volume,
@@ -100,7 +101,7 @@ ObservableLineSegment::ComputeObservation(State& S,
 }
 
 
-void
+inline void
 ObservableLineSegment::ComputeInterpolationPoints(
   Teuchos::RCP<const AmanziGeometry::Region> reg_ptr)
 {

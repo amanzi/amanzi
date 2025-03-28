@@ -106,7 +106,7 @@ Observable::Observable(Teuchos::ParameterList& plist)
   // function modifies the values
   if (plist.isSublist("modifier")) {
     FunctionFactory fac;
-    modifier_ = fac.Create(plist.sublist("modifier"));
+    modifier_ = Teuchos::rcp(fac.Create(plist.sublist("modifier")));
 
     // convert the list to a string for printing in the file, so there is some
     // hope of tracibility

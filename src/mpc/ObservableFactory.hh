@@ -21,9 +21,9 @@
 
 namespace Amanzi {
 
-class Observable;
+class ObservableAmanzi;
 
-Teuchos::RCP<Observable>
+Teuchos::RCP<ObservableAmanzi>
 CreateObservable(Teuchos::ParameterList& coord_plist,
                  Teuchos::ParameterList& observable_plist,
                  Teuchos::ParameterList& units_plist,

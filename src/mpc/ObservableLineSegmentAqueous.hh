@@ -41,6 +41,7 @@ class ObservableLineSegmentAqueous : public ObservableAqueous, public Observable
 };
 
 
+inline
 ObservableLineSegmentAqueous::ObservableLineSegmentAqueous(
   std::string variable,
   std::string region,
@@ -48,19 +49,19 @@ ObservableLineSegmentAqueous::ObservableLineSegmentAqueous(
   Teuchos::ParameterList& plist,
   Teuchos::ParameterList& units_plist,
   Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-  : Observable(variable, region, functional, plist, units_plist, mesh),
+  : ObservableAmanzi(variable, region, functional, plist, units_plist, mesh),
     ObservableAqueous(variable, region, functional, plist, units_plist, mesh),
     ObservableLineSegment(variable, region, functional, plist, units_plist, mesh){};
 
 
-int
+inline int
 ObservableLineSegmentAqueous::ComputeRegionSize()
 {
   return ObservableLineSegment::ComputeRegionSize();
 }
 
 
-void
+inline void
 ObservableLineSegmentAqueous::ComputeObservation(State& S,
                                                  double* value,
                                                  double* volume,
@@ -102,7 +103,7 @@ ObservableLineSegmentAqueous::ComputeObservation(State& S,
 }
 
 
-void
+inline void
 ObservableLineSegmentAqueous::InterpolatedValues(State& S,
                                                  std::string& var,
                                                  std::string& interpolation,
