@@ -150,9 +150,10 @@ void
 Transport_PK::SetupAlquimia()
 {
   if (chem_pk_ == Teuchos::null) return;
-
   alquimia_pk_ = Teuchos::rcp_dynamic_cast<AmanziChemistry::Alquimia_PK>(chem_pk_);
-  chem_engine_ = chem_pk_->chem_engine();
+  if (alquimia_pk_ != Teuchos::null) {
+    chem_engine_ = alquimia_pk_->getChemEngine();
+  }
 
   if (chem_engine_ != Teuchos::null) {
     // Retrieve the component names (primary and secondary) from the chemistry
@@ -387,7 +388,8 @@ Transport_PK::Setup()
   }
 
   // temporary fields
-  S_->Require<CV_t, CVS_t>(tcc_key_, Tags::COPY, passwd_, component_names_);
+  S_->Require<CV_t, CVS_t>(tcc_key_, Tags::COPY, passwd_, component_names_)
+    .SetGhosted(true);
 
 #ifdef ALQUIMIA_ENABLED
   SetupAlquimia();

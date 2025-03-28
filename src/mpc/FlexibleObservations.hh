@@ -194,11 +194,6 @@ class FlexibleObservations {
                        Amanzi::ObservationData& observation_data,
                        Teuchos::RCP<const State> S);
 
-  ~FlexibleObservations()
-  {
-    if (vo_ != NULL) delete vo_;
-  }
-
   void RegisterComponentNames(std::vector<std::string>& comp_names,
                               std::vector<double>& comp_mol_masses,
                               int num_liquid)
@@ -223,14 +218,14 @@ class FlexibleObservations {
   double CalculateWaterTable_(State& S, AmanziMesh::Entity_ID_View& ids);
 
  protected:
-  VerboseObject* vo_;
+  Teuchos::RCP<VerboseObject> vo_;
 
  private:
   int rank_;
   Teuchos::RCP<Teuchos::ParameterList> obs_list_;
   Teuchos::RCP<Teuchos::ParameterList> coordinator_list_;
   Amanzi::ObservationData& observation_data_;
-  std::map<std::string, Teuchos::RCP<Observable>> observations;
+  std::map<std::string, Teuchos::RCP<ObservableAmanzi>> observations;
 
   std::vector<std::string> comp_names_;
   std::vector<double> comp_mol_masses_;

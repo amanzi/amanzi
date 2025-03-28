@@ -94,6 +94,12 @@
       <Parameter name="maximum Newton iterations" type="int" value="150"/>
       <Parameter name="auxiliary data" type="Array(string)" value="{pH}"/>
       <Parameter name="log formulation" type="bool" value="true"/>
+      <ParameterList name="timestep controller" type="ParameterList">
+        <Parameter name="timestep controller type" type="string" value="fixed"/>
+        <ParameterList name="timestep controller fixed parameters" type="ParameterList">
+          <Parameter name="timestep [s]" type="double" value="10000000000000000.0"/>
+        </ParameterList>
+      </ParameterList>
 
     </ParameterList>
 

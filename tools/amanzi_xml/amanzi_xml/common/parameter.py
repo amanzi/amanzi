@@ -71,9 +71,9 @@ def _validValueFromType(ptype, value):
             except ValueError:
                 raise ValueError("Parameter of type float given non-Decimal-convertible value.")
 
-        if '.' not in str(d) and 'e' not in str(d).lower():
-            return Decimal(str(d)+'.0')
-        return d
+        if '.' not in str(value) and 'e' not in str(value).lower():
+            value = Decimal(str(value)+'.0')
+        return value
 
     else:
         raise ValueError(f"Invalid ptype {ptype}")
@@ -106,15 +106,18 @@ def _convertTypeToString(ptype, value):
     _checkType(ptype, value)
     
     retval = None
+
     if ptype == 'bool':
         if value is True:
             retval = "true"
         elif value is False:
             retval = "false"
+
     elif ptype == 'double':
         retval = f'{value:g}'
         if '.' not in retval and 'e' not in retval.lower():
             retval = retval + '.0'
+
     else:
         retval = str(value).strip()
     return retval

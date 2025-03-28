@@ -74,6 +74,8 @@ class PK_MPC : virtual public PK {
   typename std::vector<Teuchos::RCP<PK_Base>>::iterator end() { return sub_pks_.end(); }
 
  protected:
+  Teuchos::RCP<Teuchos::ParameterList> getSubPKPlist_(int i);
+
   // list of the PKs coupled by this MPC
   typedef std::vector<Teuchos::RCP<PK_Base>> SubPKList;
   SubPKList sub_pks_;
@@ -221,6 +223,17 @@ PK_MPC<PK_Base>::CalculateDiagnostics(const Tag& tag)
     (*pk)->CalculateDiagnostics(tag);
   }
 }
+
+
+template <class PK_Base>
+Teuchos::RCP<Teuchos::ParameterList>
+PK_MPC<PK_Base>::getSubPKPlist_(int i)
+{
+  Teuchos::Array<std::string> names = my_list_->get<Teuchos::Array<std::string>>("PKs order");
+  return Teuchos::sublist(Teuchos::sublist(global_list_, "PKs"), names[i]);
+}
+
+
 
 } // namespace Amanzi
 
