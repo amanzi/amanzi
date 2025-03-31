@@ -12,7 +12,7 @@
 
 No parameters required.
 
-.. admonition:: region_all-spec
+.. admonition:: region-all-spec
 
   * `"empty`" ``[bool]`` **True** This is simply here to avoid issues with empty lists.
 
