@@ -588,7 +588,7 @@ MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M)
   }
 
   // create groups of quasi-parallel faces
-  int map[nrows];
+  std::vector<int> map(nrows);
   for (int i = 0; i < nrows; i++) map[i] = i;
 
   const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);

@@ -127,7 +127,8 @@ class Verification {
         int n = Acell.NumRows();
 
         int info, ldv(1), lwork = 4 * n;
-        double VL, VR, dmem2[n], dwork[lwork];
+        double VL, VR;
+        std::vector<double> dmem2(n), dwork(lwork);
         Amanzi::WhetStone::DenseVector dmem1(n);
 
         Amanzi::WhetStone::DGEEV_F77("N",
@@ -136,12 +137,12 @@ class Verification {
                                      Acell.Values(),
                                      &n,
                                      dmem1.Values(),
-                                     dmem2,
+                                     dmem2.data(),
                                      &VL,
                                      &ldv,
                                      &VR,
                                      &ldv,
-                                     dwork,
+                                     dwork.data(),
                                      &lwork,
                                      &info);
 

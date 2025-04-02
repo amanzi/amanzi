@@ -121,8 +121,8 @@ class IterativeMethodGMRES
   int GMRES_Deflated_(const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const;
 
   void
-  ComputeSolution_(Vector& x, int k, WhetStone::DenseMatrix& T, double* s, Vector& p, Vector& r)
-    const;
+  ComputeSolution_(Vector& x, int k, WhetStone::DenseMatrix& T, 
+                   std::vector<double>& s, Vector& p, Vector& r) const;
   void ComputeSolution_(Vector& x, double* d, Vector& p, Vector& r) const;
 
   void InitGivensRotation_(double& dx, double& dy, double& cs, double& sn) const;
@@ -232,7 +232,7 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::GMRES_(const 
 {
   Vector w(f), r(f), p(f); // construct empty vectors
 
-  double s[krylov_dim_ + 1], cs[krylov_dim_ + 1], sn[krylov_dim_ + 1];
+  std::vector<double> s(krylov_dim_ + 1), cs(krylov_dim_ + 1), sn(krylov_dim_ + 1);
   WhetStone::DenseMatrix T(krylov_dim_ + 1, krylov_dim_);
   num_itrs_inner_ = 0;
 
@@ -649,7 +649,7 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::ComputeSoluti
   Vector& x,
   int k,
   WhetStone::DenseMatrix& T,
-  double* s,
+  std::vector<double>& s,
   Vector& p,
   Vector& r) const
 {

@@ -119,9 +119,9 @@ MyRemapDG::CollectStatistics(double t, const TreeVector& u)
 
     Epetra_MultiVector& xc = *rhs.ViewComponent("cell");
     int nk = xc.NumVectors();
-    double xmax[nk], xmin[nk];
-    xc.MaxValue(xmax);
-    xc.MinValue(xmin);
+    std::vector<double> xmax(nk), xmin(nk);
+    xc.MaxValue(xmax.data());
+    xc.MinValue(xmin.data());
 
     if (mesh0_->getComm()->MyPID() == 0) {
       printf("t=%8.5f  L2=%9.5g  nfnc=%5d  sharp=%5.1f%%  umax/umin: %9.5g %9.5g\n",

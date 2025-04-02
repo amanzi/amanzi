@@ -269,9 +269,10 @@ MyRemapDGr::CollectStatistics(double t, const TreeVector& u)
 
     Epetra_MultiVector& xc = *rhs.ViewComponent("cell");
     int nk = xc.NumVectors();
-    double xmax[nk], xmin[nk], lmax(-1.0), lmin(-1.0), lavg(-1.0);
-    xc.MaxValue(xmax);
-    xc.MinValue(xmin);
+    double lmax(-1.0), lmin(-1.0), lavg(-1.0);
+    std::vector<double> xmax(nk), xmin(nk);
+    xc.MaxValue(xmax.data());
+    xc.MinValue(xmin.data());
 
     if (limiter() != Teuchos::null) {
       const auto& lim = *limiter()->limiter();
