@@ -47,8 +47,8 @@ ReactiveTransportMatrixFracture_PK::ReactiveTransportMatrixFracture_PK(
   // instead of current.  Also tell it to use Amanzi generic passwd
   for (const auto& chem_pk : *coupled_chemistry_pk_) {
     auto chem_pk_plist = Teuchos::sublist(Teuchos::sublist(global_list_, "PKs"), chem_pk->name());
-    chem_pk_plist->set("operator split", true);
-    chem_pk_plist->set("operator split tag", Tags::COPY.get());
+    chem_pk_plist->set("concentration tag current", Tags::COPY.get());
+    chem_pk_plist->set("concentration tag next", Tags::COPY.get());
     chem_pk_plist->set("primary variable password", "state");
   }
 }

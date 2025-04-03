@@ -39,8 +39,8 @@ ReactiveTransport_PK::ReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
 
   // tell chemistry it is operator split, which means it will use TCC next
   // instead of current.  Also tell it to use Amanzi generic passwd
-  getSubPKPlist_(0)->set("operator split", true);
-  getSubPKPlist_(0)->set("operator split tag", Tags::COPY.get());
+  getSubPKPlist_(0)->set("concentration tag current", Tags::COPY.get());
+  getSubPKPlist_(0)->set("concentration tag next", "operator_split");
   getSubPKPlist_(0)->set("primary variable password", "state");
 }
 
@@ -92,5 +92,13 @@ ReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   pk_fail = chemistry_pk_->AdvanceStep(t_old, t_new, reinit);
   return pk_fail;
 };
+
+
+void
+ReactiveTransport_PK::CommitStep(double t_old, double t_new, const Tag& tag)
+{
+  chemistry_pk_->CommitStep(t_old, t_new, tag);
+}
+
 
 } // namespace Amanzi

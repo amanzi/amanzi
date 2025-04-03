@@ -277,7 +277,7 @@ class Alquimia_PK : public Chemistry_PK {
   int number_aux_data_;
 
   std::map<std::string, Key> aux_out_names_;
-  std::vector<std::vector<std::string> > aux_out_subfield_names_;
+  std::map<std::string, std::vector<std::string> > aux_out_subfield_names_;
 
   Impl::AlquimiaSubstate substate_;
 

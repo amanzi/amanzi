@@ -182,6 +182,7 @@ Amanzi_PK::Setup()
     .SetMesh(mesh_)
     ->SetGhosted(true)
     ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_components_);
+  requireEvaluatorAtNext(tcc_key_, tcc_tag_next_, *S_, passwd_);
 
   // require minerals
   if (number_mineral_components_ > 0) {
@@ -221,7 +222,7 @@ Amanzi_PK::Setup()
   }
 
   if (using_sorption_) {
-    S_->Require<CV_t, CVS_t>(total_sorbed_key_, tag_next_, passwd_)
+    S_->Require<CV_t, CVS_t>(total_sorbed_key_, tag_next_, passwd_, aqueous_comp_names_)
       .SetMesh(mesh_)
       ->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_components_);
@@ -309,6 +310,9 @@ Amanzi_PK::Initialize()
   ncells_owned_ =
     mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
+  // note, this is done here to allow the default value to be the time in state
+  initial_conditions_time_ = plist_->get<double>("initial conditions time", S_->get_time());
+
   // initialization using base class
   Chemistry_PK::Initialize();
 
@@ -317,8 +321,6 @@ Amanzi_PK::Initialize()
     if (!S_->GetRecordW(tcc_key_, passwd_).initialized()) {
       InitializeCVField(S_, *vo_, tcc_key_, tag_next_, passwd_, 0.0);
     }
-    set_aqueous_components(
-      S_->GetPtrW<CompositeVector>(tcc_key_, tag_next_, passwd_)->ViewComponent("cell", false));
 
     InitializeCVField(S_, *vo_, primary_activity_coeff_key_, tag_next_, passwd_, 1.0);
     InitializeCVField(S_, *vo_, free_ion_species_key_, tag_next_, passwd_, 1.0e-9);
@@ -361,7 +363,7 @@ Amanzi_PK::Initialize()
   initial_conditions_time_ = plist_->get<double>("initial conditions time", S_->get_time());
 
 
-  auto tcc = S_->GetPtrW<CV_t>(tcc_key_, Tags::DEFAULT, passwd_)->ViewComponent("cell", true);
+  auto tcc = S_->GetPtrW<CV_t>(tcc_key_, tcc_tag_next_, passwd_)->ViewComponent("cell", true);
 
   XMLParameters();
 
@@ -382,7 +384,7 @@ Amanzi_PK::Initialize()
   InitializeBeakerFields_();
 
   if (ncells_owned_ > 0) {
-    CopyCellStateToBeakerState(0, tcc);
+    CopyCellStateToBeakerState(0);
     chem_->CopyStateToBeaker(beaker_state_);
     // chem_->VerifyState(beaker_state_);
   }
@@ -446,12 +448,12 @@ Amanzi_PK::Initialize()
   ierr = 0;
   if (fabs(initial_conditions_time_ - S_->get_time()) <= 1e-8 * fabs(S_->get_time())) {
     for (int c = 0; c < num_cells; ++c) {
-      CopyCellStateToBeakerState(c, tcc);
+      CopyCellStateToBeakerState(c);
 
       try {
         for (int i = 0; i < nprimary; ++i) values[i] = (*tcc)[i][c];
         chem_->EnforceConstraint(&beaker_state_, beaker_parameters_, constraints, values);
-        CopyBeakerStructuresToCellState(c, tcc);
+        CopyBeakerStructuresToCellState(c);
       } catch (Exceptions::Amanzi_exception& geochem_err) {
         ierr = 1;
         internal_msg = geochem_err.what();
@@ -671,10 +673,10 @@ Amanzi_PK::SetupAuxiliaryOutput()
 * (aqueous_components), not the value stored in state!
 ******************************************************************* */
 void
-Amanzi_PK::CopyCellStateToBeakerState(int c, Teuchos::RCP<Epetra_MultiVector> aqueous_components)
+Amanzi_PK::CopyCellStateToBeakerState(int c)
 {
   for (unsigned int i = 0; i < number_aqueous_components_; i++) {
-    beaker_state_.total.at(i) = (*aqueous_components)[i][c];
+    beaker_state_.total.at(i) = (*bf_.tcc_old)[i][c];
   }
 
   for (int i = 0; i < number_aqueous_components_; ++i) {
@@ -755,11 +757,10 @@ Amanzi_PK::CopyCellStateToBeakerState(int c, Teuchos::RCP<Epetra_MultiVector> aq
 * Copy data from the beaker back into the state arrays.
 ******************************************************************* */
 void
-Amanzi_PK::CopyBeakerStructuresToCellState(int c,
-                                           Teuchos::RCP<Epetra_MultiVector> aqueous_components)
+Amanzi_PK::CopyBeakerStructuresToCellState(int c)
 {
   for (unsigned int i = 0; i < number_aqueous_components_; ++i) {
-    (*aqueous_components)[i][c] = std::max(beaker_state_.total.at(i), TCC_MIN_VALUE);
+    (*bf_.tcc_new)[i][c] = std::max(beaker_state_.total.at(i), TCC_MIN_VALUE);
   }
 
   for (int i = 0; i < number_aqueous_components_; ++i) {
@@ -832,7 +833,7 @@ Amanzi_PK::CopyBeakerStructuresToCellState(int c,
 int
 Amanzi_PK::advanceSingleCell_(int cell, double dt)
 {
-  CopyCellStateToBeakerState(cell, aqueous_components_);
+  CopyCellStateToBeakerState(cell);
 
   int num_itrs = 0;
   if (beaker_state_.saturation > saturation_tolerance_) {
@@ -849,7 +850,7 @@ Amanzi_PK::advanceSingleCell_(int cell, double dt)
       num_itrs = -1;
     }
 
-    if (num_itrs >= 0) CopyBeakerStructuresToCellState(cell, aqueous_components_);
+    if (num_itrs >= 0) CopyBeakerStructuresToCellState(cell);
   }
   return num_itrs;
 }
@@ -871,6 +872,9 @@ Amanzi_PK::InitializeBeakerFields_()
     bf_.temperature = S_->Get<CV_t>(temperature_key_).ViewComponent("cell");
 
   bf_.prev_saturation = S_->Get<CV_t>(prev_saturation_key_).ViewComponent("cell");
+
+  bf_.tcc_old = S_->Get<CV_t>(tcc_key_, tcc_tag_current_).ViewComponent("cell");
+  bf_.tcc_new = S_->GetW<CV_t>(tcc_key_, tcc_tag_next_, passwd_).ViewComponent("cell");
 
   bf_.free_ion = S_->GetW<CV_t>(free_ion_species_key_, tag, passwd_).ViewComponent("cell");
   bf_.activity = S_->GetW<CV_t>(primary_activity_coeff_key_, tag, passwd_).ViewComponent("cell");

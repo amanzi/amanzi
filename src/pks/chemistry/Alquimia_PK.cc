@@ -158,8 +158,10 @@ Alquimia_PK::parseParameterList()
 
   // Set up auxiliary chemistry data using the ChemistryEngine.
   std::vector<std::string> aux_out_names;
-  chem_engine_->GetAuxiliaryOutputNames(aux_out_names, aux_out_subfield_names_);
+  std::vector<std::vector<std::string>> aux_out_subfield_names;
+  chem_engine_->GetAuxiliaryOutputNames(aux_out_names, aux_out_subfield_names);
 
+  int i = 0;
   for (const auto& name : aux_out_names) {
     if (name == "pH") {
       pH_key_ = Keys::readKey(*plist_, domain_, "pH", "pH");
@@ -192,6 +194,8 @@ Alquimia_PK::parseParameterList()
       // update this logic, keys, and CopyFromAlquimia(), adding new variables for storing diagnostics
       AMANZI_ASSERT(false);
     }
+    aux_out_subfield_names_[name] = aux_out_subfield_names[i];
+    ++i;
   }
 }
 
@@ -271,18 +275,27 @@ Alquimia_PK::Setup()
     }
   }
 
-  { // aqueous state data
-    auto keys = std::vector<Key>{key_, total_sorbed_key_};
-    for (const auto& key : keys) {
-      if (!key.empty()) {
-        requireEvaluatorAtNext(key, tag_next_, *S_, true, passwd_)
-          .SetMesh(mesh_)
-          ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_components_);
-        S_->GetRecordSetW(key).set_subfieldnames(aqueous_comp_names_);
-        requireEvaluatorAtCurrent(key, tag_current_, *S_, passwd_);
-      }
-    }
+  // aqueous state data
+  requireEvaluatorAtNext(key_, tag_next_, *S_, true, passwd_)
+    .SetMesh(mesh_)
+    ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_components_);
+  S_->GetRecordSetW(key_).set_subfieldnames(aqueous_comp_names_);
+  requireEvaluatorAtCurrent(key_, tag_current_, *S_, passwd_);
+
+  if (tcc_tag_next_ != tag_next_)
+    requireEvaluatorAtNext(key_, tcc_tag_next_, *S_, true, passwd_);
+  if (tcc_tag_current_ != tag_current_)
+    requireEvaluatorAtCurrent(key_, tcc_tag_current_, *S_, passwd_);
+
+  // sorbed state data
+  if (!total_sorbed_key_.empty()) {
+    requireEvaluatorAtNext(total_sorbed_key_, tag_next_, *S_, true, passwd_)
+      .SetMesh(mesh_)
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_components_);
+    S_->GetRecordSetW(total_sorbed_key_).set_subfieldnames(aqueous_comp_names_);
+    requireEvaluatorAtCurrent(total_sorbed_key_, tag_current_, *S_, passwd_);
   }
+
 
   { // mineral state data
     auto keys = std::vector<Key>{mineral_volume_fraction_key_, mineral_specific_surface_area_key_};
@@ -336,9 +349,9 @@ Alquimia_PK::Setup()
     requireEvaluatorAtNext(key, tag_next_, *S_, true, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, aux_out_subfield_names_[i].size());
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, aux_out_subfield_names_[name].size());
     S_->GetRecordW(key, tag_next_, passwd_).set_io_checkpoint(false);
-    S_->GetRecordSetW(key).set_subfieldnames(aux_out_subfield_names_[i]);
+    S_->GetRecordSetW(key).set_subfieldnames(aux_out_subfield_names_[name]);
     ++i;
   }
 }
@@ -352,17 +365,18 @@ Alquimia_PK::Initialize()
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  // initialization using the base class, will initialize tcc
   Chemistry_PK::Initialize();
 
   // Read XML parameters from our input file.
   XMLParameters();
 
+  // mark aux_out data as initialized
   for (const auto& [name, key] : aux_out_names_) {
     S_->GetRecordW(key, tag_next_, passwd_).set_initialized();
   }
 
-  if (std::abs(initial_conditions_time_ - S_->get_time()) < 1e-8 * (1.0 + fabs(S_->get_time()))) {
+  if (chem_initial_conditions_.size() > 0 &&
+      std::abs(initial_conditions_time_ - S_->get_time()) < 1e-8 * (1.0 + std::abs(S_->get_time()))) {
     updateSubstate();
     int ierr = 0;
 
@@ -393,6 +407,13 @@ Alquimia_PK::Initialize()
       Errors::Message msg("Error in Alquimia_PK::Initialize()");
       Exceptions::amanzi_throw(msg);
     }
+
+    S_->GetRecordW(key_, tcc_tag_next_, passwd_).set_initialized();
+  }
+
+  if (tag_next_ != tcc_tag_next_ && S_->GetRecord(key_, tcc_tag_next_).initialized()) {
+    assign(key_, tag_next_, tcc_tag_next_, *S_);
+    S_->GetRecordW(key_, tag_next_, passwd_).set_initialized();
   }
 }
 
@@ -472,15 +493,9 @@ Alquimia_PK::updateSubstate()
   }
 
   // internal things
-  if (operator_split_) {
-    // operator splitting -- that tag used here depends upon the code.  In
-    // Amanzi, this is COPY, in ATS, this is NEXT
-    substate_.tcc_old = &*S_->Get<CompositeVector>(key_, operator_split_tag_).ViewComponent("cell", false);
-  } else {
-    // stand-alone chemistry -- TCC is CURRENT here!
-    substate_.tcc_old = &*S_->Get<CompositeVector>(key_, tag_current_).ViewComponent("cell", false);
-  }
-  substate_.tcc_new = &*S_->GetW<CompositeVector>(key_, tag_next_, passwd_).ViewComponent("cell", false);
+  // Amanzi, this is COPY, in ATS, this is CURRENT / NEXT
+  substate_.tcc_old = &*S_->Get<CompositeVector>(key_, tcc_tag_current_).ViewComponent("cell", false);
+  substate_.tcc_new = &*S_->GetW<CompositeVector>(key_, tcc_tag_next_, passwd_).ViewComponent("cell", false);
 
   if (number_mineral_components_ > 0) {
     substate_.mineral_volume_fraction_old = &*S_->Get<CompositeVector>(mineral_volume_fraction_key_, tag_current_).ViewComponent("cell", false);

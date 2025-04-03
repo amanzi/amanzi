@@ -186,6 +186,11 @@ TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   bool failed = false;
   double dt_MPC = t_new - t_old;
 
+  {
+    const Epetra_MultiVector& tcc = *S_->Get<CompositeVector>("total_component_concentration", tag_next_).ViewComponent("cell", false);
+    std::cout << "UGH tcc = " << tcc[0][0] << std::endl;
+  }
+
   // We use original tcc and make a copy of it later if needed.
   tcc = S_->GetPtrW<CV_t>(tcc_key_, Tags::DEFAULT, passwd_);
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");

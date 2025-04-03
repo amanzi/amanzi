@@ -100,12 +100,8 @@ class Amanzi_PK : public Chemistry_PK {
   Teuchos::RCP<Epetra_MultiVector> extra_chemistry_output_data();
   void set_chemistry_output_names(std::vector<std::string>* names);
 
-  // -- get/set auxiliary tcc vector that now contains only aqueous components.
-  Teuchos::RCP<Epetra_MultiVector> aqueous_components() { return aqueous_components_; }
-  void set_aqueous_components(Teuchos::RCP<Epetra_MultiVector> tcc) { aqueous_components_ = tcc; }
-
   // functions used in Transport PK
-  void CopyCellStateToBeakerState(int c, Teuchos::RCP<Epetra_MultiVector> aqueous_components);
+  void CopyCellStateToBeakerState(int c);
 
   // access
   std::shared_ptr<Beaker> get_engine() { return chem_; }
@@ -127,7 +123,7 @@ class Amanzi_PK : public Chemistry_PK {
 
   void InitializeBeakerFields_();
 
-  void CopyBeakerStructuresToCellState(int c, Teuchos::RCP<Epetra_MultiVector> aqueous_components);
+  void CopyBeakerStructuresToCellState(int c);
   virtual int advanceSingleCell_(int cell, double dt) override;
   virtual void copyFields_(const Tag& tag_dest, const Tag& tag_source) override {}
 

@@ -408,7 +408,7 @@ InputConverter::GetUniqueElementByTagsString_(const DOMNode* node1,
 ****************************************************************** */
 DOMElement*
 InputConverter::GetUniqueChildByAttribute_(xercesc::DOMNode* node,
-                                           const char* attr_name,
+                                           const std::string& attr_name,
                                            const std::string& attr_value,
                                            bool& flag,
                                            bool exception)
@@ -427,8 +427,8 @@ InputConverter::GetUniqueChildByAttribute_(xercesc::DOMNode* node,
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
     DOMElement* element = static_cast<DOMElement*>(inode);
-    if (element->hasAttribute(mm.transcode(attr_name))) {
-      char* text = mm.transcode(element->getAttribute(mm.transcode(attr_name)));
+    if (element->hasAttribute(mm.transcode(attr_name.c_str()))) {
+      char* text = mm.transcode(element->getAttribute(mm.transcode(attr_name.c_str())));
       if (strcmp(text, attr_value.c_str()) == 0) {
         child = element;
         n++;
@@ -584,10 +584,10 @@ InputConverter::GetSameChildNodes_(DOMNode* node, std::string& name, bool& flag,
 * Verifies existance
 ****************************************************************** */
 bool
-InputConverter::HasAttribute_(DOMElement* elem, const char* attr_name)
+InputConverter::HasAttribute_(DOMElement* elem, const std::string& attr_name)
 {
   MemoryManager mm;
-  return elem->hasAttribute(mm.transcode(attr_name));
+  return elem->hasAttribute(mm.transcode(attr_name.c_str()));
 }
 
 
@@ -596,7 +596,7 @@ InputConverter::HasAttribute_(DOMElement* elem, const char* attr_name)
 ****************************************************************** */
 double
 InputConverter::GetAttributeValueD_(DOMElement* elem,
-                                    const char* attr_name,
+                                    const std::string& attr_name,
                                     const std::string& type,
                                     double valmin,
                                     double valmax,
@@ -610,8 +610,8 @@ InputConverter::GetAttributeValueD_(DOMElement* elem,
   Errors::Message msg;
   std::string text, parsed, found_type, unit_in;
 
-  if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
-    text = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
+  if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name.c_str()))) {
+    text = mm.transcode(elem->getAttribute(mm.transcode(attr_name.c_str())));
     if (text.size() == 0) {
       msg << "Attribute \"" << attr_name << "\" cannot be empty.\n";
       Exceptions::amanzi_throw(msg);
@@ -668,7 +668,7 @@ InputConverter::GetAttributeValueD_(DOMElement* elem,
 ****************************************************************** */
 int
 InputConverter::GetAttributeValueL_(DOMElement* elem,
-                                    const char* attr_name,
+                                    const std::string& attr_name,
                                     const std::string& type,
                                     int valmin,
                                     int valmax,
@@ -679,8 +679,8 @@ InputConverter::GetAttributeValueL_(DOMElement* elem,
   MemoryManager mm;
 
   std::string text, parsed, found_type;
-  if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
-    text = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
+  if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name.c_str()))) {
+    text = mm.transcode(elem->getAttribute(mm.transcode(attr_name.c_str())));
 
     // process constants
     found_type = GetConstantType_(text, parsed);
@@ -718,7 +718,7 @@ InputConverter::GetAttributeValueL_(DOMElement* elem,
 ****************************************************************** */
 std::string
 InputConverter::GetAttributeValueS_(DOMElement* elem,
-                                    const char* attr_name,
+                                    const std::string& attr_name,
                                     const std::string& type,
                                     bool exception,
                                     std::string default_val)
@@ -727,8 +727,8 @@ InputConverter::GetAttributeValueS_(DOMElement* elem,
   MemoryManager mm;
 
   std::string text, found_type;
-  if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
-    text = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
+  if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name.c_str()))) {
+    text = mm.transcode(elem->getAttribute(mm.transcode(attr_name.c_str())));
     trim(text);
 
     // check the list of global constants
@@ -760,7 +760,7 @@ InputConverter::GetAttributeValueS_(DOMElement* elem,
 ****************************************************************** */
 std::vector<double>
 InputConverter::GetAttributeVectorD_(DOMElement* elem,
-                                     const char* attr_name,
+                                     const std::string& attr_name,
                                      int length,
                                      std::string unit,
                                      bool exception,
@@ -769,9 +769,9 @@ InputConverter::GetAttributeVectorD_(DOMElement* elem,
   std::vector<double> val;
   MemoryManager mm;
 
-  if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
+  if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name.c_str()))) {
     std::vector<std::string> unit_in;
-    char* text_content = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
+    char* text_content = mm.transcode(elem->getAttribute(mm.transcode(attr_name.c_str())));
     val = MakeVector_(text_content, unit_in, mol_mass);
 
     for (int i = 0; i < unit_in.size(); ++i) {
@@ -805,13 +805,13 @@ InputConverter::GetAttributeVectorD_(DOMElement* elem,
 * Extract attribute of type vector<string>.
 ****************************************************************** */
 std::vector<std::string>
-InputConverter::GetAttributeVectorS_(DOMElement* elem, const char* attr_name, bool exception)
+InputConverter::GetAttributeVectorS_(DOMElement* elem, const std::string& attr_name, bool exception)
 {
   std::vector<std::string> val, tmp;
   MemoryManager mm;
 
-  if (elem->hasAttribute(mm.transcode(attr_name))) {
-    char* text_content = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
+  if (elem->hasAttribute(mm.transcode(attr_name.c_str()))) {
+    char* text_content = mm.transcode(elem->getAttribute(mm.transcode(attr_name.c_str())));
     tmp = CharToStrings_(text_content);
     for (int i = 0; i < tmp.size(); ++i) {
       std::string parsed_val;
@@ -900,7 +900,7 @@ InputConverter::GetChildVectorS_(DOMNode* node,
 * Extract atribute of type std::string.
 ****************************************************************** */
 std::string
-InputConverter::GetAttributeValueS_(DOMNode* node, const char* attr_name, const char* options)
+InputConverter::GetAttributeValueS_(DOMNode* node, const std::string& attr_name, const char* options)
 {
   DOMElement* element = static_cast<DOMElement*>(node);
 

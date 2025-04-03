@@ -38,7 +38,7 @@ if __name__ == "__main__":
     amanzi_totc = [amanzi_totc_templ%comp for comp in components]
 
     amanzi_sorb_templ = "total_sorbed.{0}"
-    amanzi_sorb = [amanzi_sorb_templ.format(x) for x in range(len(components))]
+    amanzi_sorb = [amanzi_sorb_templ.format(x) for x in components]
 
     amanzi_vf_templ = "mineral_volume_fractions.{0}"
     amanzi_vf = [amanzi_vf_templ.format(x) for x in minerals]
@@ -130,7 +130,8 @@ if __name__ == "__main__":
 
         native = True
 
-    except:
+    except Exception as err:
+        print(err)
         native = False
 
 
@@ -165,7 +166,8 @@ if __name__ == "__main__":
 
         alq = True
 
-    except:
+    except Exception as err:
+        print(err)
         alq = False
 
     # Amanzi + Alquimia + PFloTran chemistry with writer
@@ -199,7 +201,8 @@ if __name__ == "__main__":
 
         alq_writer = True
 
-    except:
+    except Exception as err:
+        print(err)
         alq_writer = False
         
     # initialize subplots

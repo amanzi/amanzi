@@ -56,8 +56,8 @@ if __name__ == "__main__":
     amanzi_totc_crunch = [amanzi_totc_templ.format(x) for x in compcrunch] #range(len(components))]
 
     amanzi_sorb_templ = "total_sorbed.{0}"
-    amanzi_sorb = [amanzi_sorb_templ.format(x) for x in range(len(components))]
-    amanzi_sorb_crunch = [amanzi_sorb_templ.format(x) for x in range(len(compcrunch))]
+    amanzi_sorb = [amanzi_sorb_templ.format(x) for x in components]
+    amanzi_sorb_crunch = [amanzi_sorb_templ.format(x) for x in compcrunch]
 
 
 # pflotran data --->
@@ -117,7 +117,8 @@ if __name__ == "__main__":
 
         native = len(x_native)  
 
-    except:
+    except Exception as err:
+        print(err)
         native = 0 
         pass
 
@@ -142,7 +143,8 @@ if __name__ == "__main__":
 
         alq = True
 
-    except:
+    except Exception as err:
+        print(err)
         alq = False
 
 # AmanziU + Alquimia + PFloTran WITH WRITER --->
@@ -165,7 +167,8 @@ if __name__ == "__main__":
 
         alq_writer = True
 
-    except:
+    except Exception as err:
+        print(err)
         alq_writer = False      
 
 # AmanziU + Alquimia + CrunchFlow chemistry --->
@@ -188,7 +191,8 @@ if __name__ == "__main__":
 
         alqc = True
 
-    except:
+    except Exception as err:
+        print(err)
         alqc = False
 
 
@@ -207,7 +211,8 @@ if __name__ == "__main__":
             compS = "{0}_Sorbed_Concentration".format(comp)
             x_amanziS, v_amanziS[j] = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS,1)
         struct = len(x_amanziS)
-    except:
+    except Exception as err:
+        print(err)
         struct = 0
 
 
@@ -223,7 +228,8 @@ if __name__ == "__main__":
         compS = "A_Sorbed_Concentration"
         x_amanziS_crunch, v_amanziS_crunch = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS,1)
         struct_c = len(x_amanziS_crunch)
-    except:
+    except Exception as err:
+        print(err)
         struct_c = 0
 
 

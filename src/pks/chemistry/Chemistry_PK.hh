@@ -111,8 +111,9 @@ class Chemistry_PK : public PK_Physical_Default {
 
  protected:
   // error messages in Chemistry are rank-local.  This method does the
-  // AllReduce to check errors across ranks.
-  bool checkForError_(int ierr, int max_itrs, int max_itrs_cell) const;
+  // AllReduce to check errors across ranks.  Note that all three arguments are
+  // accepted by reference, and updated with their equivalent GLOBAL values.
+  void checkForError_(int& ierr, int& max_itrs, int& max_itrs_cell) const;
 
   // customization points for the beaker-level chemistry and substates
   virtual int advanceSingleCell_(int cell, double dt) = 0;
@@ -137,8 +138,8 @@ class Chemistry_PK : public PK_Physical_Default {
   int num_iterations_, num_successful_steps_;
 
   // discretization control
-  bool operator_split_;
-  Tag operator_split_tag_;
+  Tag tcc_tag_current_;
+  Tag tcc_tag_next_;
 };
 
 } // namespace AmanziChemistry

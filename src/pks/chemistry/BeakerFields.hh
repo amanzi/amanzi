@@ -36,6 +36,9 @@ struct BeakerFields {
   Teuchos::RCP<Epetra_MultiVector> surface_complex;
 
   Teuchos::RCP<Epetra_MultiVector> ion_exchange_sites, ion_exchange_ref_cation_conc;
+
+  Teuchos::RCP<const Epetra_MultiVector> tcc_old;
+  Teuchos::RCP<Epetra_MultiVector> tcc_new;
 };
 
 } // namespace AmanziChemistry

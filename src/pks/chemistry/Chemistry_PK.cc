@@ -37,8 +37,7 @@ Chemistry_PK::Chemistry_PK(Teuchos::ParameterList& pk_tree,
     number_aqueous_components_(0),
     number_gaseous_components_(0),
     number_mineral_components_(0),
-    dt_next_(-1.),
-    operator_split_(false)
+    dt_next_(-1.)
 {
   // note, we pass in null to the factory here to make sure there is no error
   // control used, which doesn't make sense for this application.
@@ -70,20 +69,18 @@ Chemistry_PK::parseParameterList()
 
   // other parameters
   saturation_tolerance_ = plist_->get<double>("saturation tolerance", 1e-14);
-  operator_split_ = plist_->get<bool>("operator split", false);
-  if (operator_split_) {
-    operator_split_tag_ = Tag(plist_->get<std::string>("operator split tag"));
-  }
+  tcc_tag_current_ = Tag(plist_->get<std::string>("concentration tag current", tag_current_.get()));
+  tcc_tag_next_ = Tag(plist_->get<std::string>("concentration tag next", tag_next_.get()));
 }
 
 
 void
 Chemistry_PK::Initialize()
 {
-  PK_Physical_Default::Initialize();
-
   // note, this is done here to allow the default value to be the time in state
   initial_conditions_time_ = plist_->get<double>("initial conditions time", S_->get_time());
+
+  PK_Physical_Default::Initialize();
 }
 
 
@@ -132,11 +129,12 @@ Chemistry_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   // broadcast and check for global failed step
-  bool failed = checkForError_(convergence_failure, max_itrs, imax);
+  checkForError_(convergence_failure, max_itrs, imax);
 
   // Compute the next global timestep.
-  dt_next_ = timestep_controller_->getTimestep(dt, max_itrs, !failed);
-  return failed;
+  dt_next_ = timestep_controller_->getTimestep(dt, max_itrs, !convergence_failure);
+
+  return convergence_failure;
 }
 
 
@@ -150,6 +148,10 @@ Chemistry_PK::CommitStep(double t_old, double t_new, const Tag& tag_next)
   Tag tag_current = tag_next == tag_next_ ? tag_current_ : Tags::CURRENT;
   copyFields_(tag_current_, tag_next);
 
+  if (tcc_tag_next_ != tag_next) {
+    assign(key_, tag_next, tcc_tag_next_, *S_);
+  }
+
   PK_Physical_Default::CommitStep(t_old, t_new, tag_next);
 }
 
@@ -157,24 +159,25 @@ Chemistry_PK::CommitStep(double t_old, double t_new, const Tag& tag_next)
 /* *******************************************************************
 * I/O or error messages
 ******************************************************************* */
-bool
-Chemistry_PK::checkForError_(int ierr, int max_itrs, int max_itrs_cell) const
+void
+Chemistry_PK::checkForError_(int& ierr, int& max_itrs, int& max_itrs_cell) const
 {
   int ierr_l(ierr);
   mesh_->getComm()->MaxAll(&ierr_l, &ierr, 1);
-  if (ierr) return true;
+  if (ierr) return;
 
   Reductions::MaxLoc itrs_l{ (double)max_itrs,
     mesh_->getMap(AmanziMesh::Entity_kind::CELL, false).GID(max_itrs_cell) };
 
   Reductions::MaxLoc itrs_g = Reductions::reduceAllMaxLoc(*mesh_->getComm(), itrs_l);
+  max_itrs = itrs_g.value;
+  max_itrs_cell = itrs_g.gid;
 
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "max Newton iterations: " << (int) itrs_g.value << " in cell "
                << itrs_g.gid << std::endl;
   }
-  return false;
 }
 
 

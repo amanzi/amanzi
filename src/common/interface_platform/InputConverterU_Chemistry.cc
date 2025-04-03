@@ -186,7 +186,9 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
     if (aqueous_reactions.size() > 0) {
       out_list.set<Teuchos::Array<std::string>>("aqueous_reactions", aqueous_reactions);
 
-      Teuchos::ParameterList& rate = ic_list.sublist("first_order_decay_constant");
+      std::string decay_constant_name = engine == "amanzi" ? "first_order_decay_constant" :
+        "aqueous_kinetic_rate_constant";
+      Teuchos::ParameterList& rate = ic_list.sublist(decay_constant_name);
 
       for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end();
            it++) {
@@ -282,7 +284,9 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
     // ion exchange
     node = GetUniqueElementByTagsString_(inode, "ion_exchange, cations", flag);
     if (flag) {
-      Teuchos::ParameterList& sites = ic_list.sublist("ion_exchange_sites");
+      std::string field_name = engine == "amanzi" ? "ion_exchange_sites" :
+        "cation_exchange_capacity";
+      Teuchos::ParameterList& sites = ic_list.sublist(field_name);
       double cec = GetAttributeValueD_(node, "cec", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "mol/m^3");
 
       for (auto it = regions.begin(); it != regions.end(); ++it) {
@@ -369,7 +373,9 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
 
         sorption_sites.clear();
 
-        Teuchos::ParameterList& complexation = ic_list.sublist("sorption_sites");
+      std::string field_name = engine == "amanzi" ? "sorption_sites" :
+        "sorption_site_density";
+        Teuchos::ParameterList& complexation = ic_list.sublist(field_name);
         Teuchos::ParameterList& tmp_list =
           complexation.sublist("function")
             .sublist(site_str.str())
@@ -393,8 +399,8 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
   }
 
   // general parameters
-  int max_itrs(100), cut_threshold(8), increase_threshold(4);
-  double tol(1e-12), dt_max(1e+10), dt_min(1e+10), dt_init(1e+7), dt_cut(2.0), dt_increase(1.2);
+  int max_itrs(100), cut_threshold(20), increase_threshold(8);
+  double tol(1e-12), dt_max(1e+10), dt_min(1e-10), dt_init(1e+10), dt_cut(2.0), dt_increase(1.2);
 
   double ion_value;
   bool ion_guess(false), log_form(true);

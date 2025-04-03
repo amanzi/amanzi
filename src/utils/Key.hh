@@ -148,7 +148,7 @@ cleanName(const std::string& name, bool delimiters_ok = false);
 
 // is this valid?
 bool
-validKey(const Key& key);
+isValid(const Key& key);
 
 // Generate a DOMAIN-VARNAME key.
 // Note, if DOMAIN == "domain" or "" this returns VARNAME

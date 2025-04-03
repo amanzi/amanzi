@@ -105,10 +105,10 @@ if __name__ == "__main__":
                          'total_component_concentration.Ca++', \
                          'total_component_concentration.Mg++', \
                          'total_component_concentration.Cl-']
-    amanzi_sorbed     = ['total_sorbed.0', \
-                         'total_sorbed.1', \
-                         'total_sorbed.2', \
-                         'total_sorbed.3']
+    amanzi_sorbed     = ['total_sorbed.Na+', \
+                         'total_sorbed.Ca++', \
+                         'total_sorbed.Mg++', \
+                         'total_sorbed.Cl-']
 
     amanzi_compS      = ['Na+_water_Concentration', \
                          'Ca++_water_Concentration', \
@@ -369,8 +369,8 @@ if __name__ == "__main__":
         bx[i].yaxis.set_label_position("right")
 
     # Set axes to be shared + only have ticks on the bottom row
-    ax[0].get_shared_x_axes().join(*[ax[i] for i in range(nrows)])
-    bx[0].get_shared_x_axes().join(*[bx[i] for i in range(nrows)])
+    # ax[0].get_shared_x_axes().join(*[ax[i] for i in range(nrows)])
+    # bx[0].get_shared_x_axes().join(*[bx[i] for i in range(nrows)])
 
     for i in range(nrows-1):
         ax[i].set_xticklabels([])
