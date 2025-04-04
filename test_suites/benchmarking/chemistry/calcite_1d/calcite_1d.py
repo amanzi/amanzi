@@ -183,8 +183,9 @@ if __name__ == "__main__":
 
         native = True
 
-    except:
+    except Exception as err:
         native = False
+        print(err)
         pass    
 
 
@@ -200,7 +201,7 @@ if __name__ == "__main__":
             x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
             Ca_amanzi_alquimia = Ca_amanzi_alquimia +[c_amanzi_alquimia]
 
-        comp = 'free_ion_species.H+'
+        comp = 'primary_free_ion_concentration.H+'
         pH_amanzi_alquimia = []
         for i, time in enumerate(times):
             x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
@@ -214,7 +215,8 @@ if __name__ == "__main__":
 
         alq = True
 
-    except:
+    except Exception as err:
+        print(err)
         alq = False
 
     # Amanzi U + Alquimia + PFloTran chemistry with writer
@@ -229,7 +231,7 @@ if __name__ == "__main__":
             x_amanzi_alquimia_w, c_amanzi_alquimia_w = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
             Ca_amanzi_alquimia_w = Ca_amanzi_alquimia_w +[c_amanzi_alquimia_w]
 
-        comp = 'free_ion_species.H+'
+        comp = 'primary_free_ion_concentration.H+'
         pH_amanzi_alquimia_w = []
         for i, time in enumerate(times):
             x_amanzi_alquimia_w, c_amanzi_alquimia_w = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
@@ -243,7 +245,8 @@ if __name__ == "__main__":
 
         alq_writer = True
 
-    except:
+    except Exception as err:
+        print(err)
         alq_writer = False
         
     # Amanzi U + Alquimia + CruchFlow chemistry
@@ -258,7 +261,7 @@ if __name__ == "__main__":
             x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
             Ca_amanzi_alquimia_crunch = Ca_amanzi_alquimia_crunch +[c_amanzi_alquimia_crunch]
 
-        comp = 'free_ion_species.H+'
+        comp = 'primary_free_ion_concentration.H+'
         pH_amanzi_alquimia_crunch = []
         for i, time in enumerate(times):
            x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
@@ -272,7 +275,8 @@ if __name__ == "__main__":
 
         alq_crunch = True
 
-    except:
+    except Exception as err:
+        print(err)
         alq_crunch = False
 
     

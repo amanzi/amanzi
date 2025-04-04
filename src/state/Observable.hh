@@ -129,10 +129,13 @@ class Observable {
   static const double nan;
 
   Observable(Teuchos::ParameterList& plist);
-  Observable(const Comm_ptr_type& comm, Teuchos::ParameterList& plist) : Observable(plist)
+  Observable(const Comm_ptr_type& comm, Teuchos::ParameterList& plist)
+    : Observable(plist)
   {
     set_comm(comm);
   }
+
+  virtual ~Observable() = default;
 
   const std::string& get_name() const { return name_; }
   const std::string& get_variable() const { return variable_; }
@@ -175,7 +178,7 @@ class Observable {
 
   double (*reducer_)(double a, double b, double vol);
 
-  std::unique_ptr<Function> modifier_;
+  Teuchos::RCP<Function> modifier_;
   std::string modifier_str_;
 };
 

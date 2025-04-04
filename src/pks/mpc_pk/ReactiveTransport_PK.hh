@@ -51,35 +51,22 @@ class ReactiveTransport_PK : public PK_MPCAdditive<PK> {
                        const Teuchos::RCP<State>& S,
                        const Teuchos::RCP<TreeVector>& soln);
 
-  ~ReactiveTransport_PK(){};
-
   // PK methods
   // -- dt is the minimum of the sub pks
-  virtual double get_dt();
-  virtual void set_dt(double dt);
+  double get_dt() override;
+  void set_dt(double dt) override;
+  bool AdvanceStep(double t_old, double t_new, bool reinit) override;
+  void CommitStep(double t_old, double t_new, const Tag& tag) override;
 
-  // -- advance each sub pk dt.
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
-
-  virtual void Initialize();
-
-  virtual void CommitStep(double t_old, double t_new, const Tag& tag);
-
-  std::string name() { return "reactive transport"; }
+  std::string name() override { return "reactive transport"; }
 
  protected:
   bool chem_step_succeeded;
-  bool storage_created;
   double dTtran_, dTchem_;
 
  private:
-  // storage for the component concentration intermediate values
-  Teuchos::RCP<Epetra_MultiVector> total_component_concentration_stor;
-
   Teuchos::RCP<Transport::Transport_PK> transport_pk_;
   Teuchos::RCP<AmanziChemistry::Chemistry_PK> chemistry_pk_;
-  // int master_, slave_;
-
 
   // factory registration
   static RegisteredPKFactory<ReactiveTransport_PK> reg_;

@@ -55,7 +55,7 @@ class TransportBoundaryFunction_Chemistry : public TransportDomainFunction {
       AMANZI_ASSERT(cells.size() == 1);
       int c = cells[0];
 
-      amanzi_pk_->CopyCellStateToBeakerState(c, tcc->ViewComponent("cell", true));
+      amanzi_pk_->CopyCellStateToBeakerState(c);
 
       auto& values = it->second;
       chem_engine_->EnforceConstraint(&beaker_state, beaker_parameters, constraints_, values);

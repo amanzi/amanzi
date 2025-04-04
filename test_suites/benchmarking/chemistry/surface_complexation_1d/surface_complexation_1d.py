@@ -52,8 +52,8 @@ if __name__ == "__main__":
     amanzi_totc_crunch = [amanzi_totc_templ.format(x) for x in compcrunch] #range(len(components))]
 
     amanzi_sorb_templ = "total_sorbed.{0}"
-    amanzi_sorb = [amanzi_sorb_templ.format(x+1) for x in range(len(components))]
-    amanzi_sorb_crunch = [amanzi_sorb_templ.format(x+1) for x in range(len(compcrunch))]
+    amanzi_sorb = [amanzi_sorb_templ.format(x) for x in components]
+    amanzi_sorb_crunch = [amanzi_sorb_templ.format(x) for x in compcrunch]
 
 # amanzi output (structured - alquimia)
     amanzi_totc_templ = "{0}_water_Concentration"
@@ -237,7 +237,8 @@ if __name__ == "__main__":
 
         alq_crunch = True
 
-    except:
+    except Exception as err:
+        print(err)
         alq_crunch = False
 
 
@@ -462,8 +463,8 @@ if __name__ == "__main__":
         bx[i].yaxis.set_label_position("right")
 
     # Set axes to be shared + only have ticks on the bottom row
-    ax[0].get_shared_x_axes().join(*[ax[i] for i in range(main_rows)])
-    bx[0].get_shared_x_axes().join(*[bx[i] for i in range(main_rows)])
+    # ax[0].get_shared_x_axes().join(*[ax[i] for i in range(main_rows)])
+    # bx[0].get_shared_x_axes().join(*[bx[i] for i in range(main_rows)])
 
     for i in range(main_rows-1):
         ax[i].set_xticklabels([])

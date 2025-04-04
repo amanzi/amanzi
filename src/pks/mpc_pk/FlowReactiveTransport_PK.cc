@@ -105,6 +105,7 @@ FlowReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       S_->set_intermediate_time(t_old + dt_done + dt_next);
       sub_pks_[slave_]->CommitStep(t_old + dt_done, t_old + dt_done + dt_next, Tags::DEFAULT);
       dt_done += dt_next;
+
       // allow dt to grow only when success
       dt_next = sub_pks_[slave_]->get_dt();
     }
@@ -116,6 +117,11 @@ FlowReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
     // check for subcycling condition
     done = std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1 * min_dt_;
+  }
+
+  {
+    const Epetra_MultiVector& tcc = *S_->Get<CompositeVector>("total_component_concentration", tag_next_).ViewComponent("cell", false);
+    std::cout << "post FlowReactiveTransport Advance tcc = " << tcc[0][0] << std::endl;
   }
 
   // we reach this point when subcycling has been completed

@@ -1083,6 +1083,7 @@ CycleDriver::ResetDriver(int time_pr_id)
 
   // Initialize the process kernels and verify
   pk_->Initialize();
+  pk_->CommitStep(S_->get_time(), S_->get_time(), Tags::DEFAULT);
   S_->CheckAllFieldsInitialized();
 
   S_->GetMeshPartition("materials");
