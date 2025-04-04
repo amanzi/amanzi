@@ -37,7 +37,7 @@
       <molar_mass>0.018015</molar_mass>
       <dissolved_components>
         <primaries>
-          <primary coefficient_of_diffusion="1.0E-9" first_order_decay_constant="1.78577e-09">Tritium</primary>
+          <primary coefficient_of_diffusion="1.0E-9" first_order_decay_rate_constant="1.78577e-09">Tritium</primary>
         </primaries>
       </dissolved_components>
     </liquid_phase>

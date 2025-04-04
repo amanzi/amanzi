@@ -135,7 +135,7 @@ class Amanzi_PK : public Chemistry_PK {
   Key temperature_key_;
   Key min_vol_frac_key_;
   Key min_ssa_key_;
-  Key sorp_sites_key_;
+  Key surface_site_density_key_;
   Key surf_cfsc_key_;
   Key total_sorbed_key_;
   Key isotherm_kd_key_;
@@ -143,12 +143,12 @@ class Amanzi_PK : public Chemistry_PK {
   Key isotherm_langmuir_b_key_;
   Key free_ion_species_key_;
   Key primary_activity_coeff_key_;
-  Key ion_exchange_sites_key_;
+  Key cation_exchange_capacity_key_;
   Key ion_exchange_ref_cation_conc_key_;
   Key secondary_activity_coeff_key_;
   Key alquimia_aux_data_key_;
   Key mineral_rate_constant_key_;
-  Key first_order_decay_constant_key_;
+  Key first_order_decay_rate_constant_key_;
 
  private:
   std::shared_ptr<Beaker> chem_;

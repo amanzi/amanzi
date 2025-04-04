@@ -80,7 +80,7 @@ Amanzi_PK::parseParameterList()
   temperature_key_ = Keys::getKey(domain_, "temperature");
   min_vol_frac_key_ = Keys::getKey(domain_, "mineral_volume_fractions");
   min_ssa_key_ = Keys::getKey(domain_, "mineral_specific_surface_area");
-  sorp_sites_key_ = Keys::getKey(domain_, "sorption_sites");
+  surface_site_density_key_ = Keys::getKey(domain_, "surface_site_density");
   surf_cfsc_key_ = Keys::getKey(domain_, "surface_complex_free_site_conc");
   total_sorbed_key_ = Keys::getKey(domain_, "total_sorbed");
   isotherm_kd_key_ = Keys::getKey(domain_, "isotherm_kd");
@@ -89,12 +89,12 @@ Amanzi_PK::parseParameterList()
   free_ion_species_key_ = Keys::getKey(domain_, "free_ion_species");
   primary_activity_coeff_key_ = Keys::getKey(domain_, "primary_activity_coeff");
 
-  ion_exchange_sites_key_ = Keys::getKey(domain_, "ion_exchange_sites");
+  cation_exchange_capacity_key_ = Keys::getKey(domain_, "cation_exchange_capacity");
   ion_exchange_ref_cation_conc_key_ = Keys::getKey(domain_, "ion_exchange_ref_cation_conc");
   secondary_activity_coeff_key_ = Keys::getKey(domain_, "secondary_activity_coeff");
   alquimia_aux_data_key_ = Keys::getKey(domain_, "alquimia_aux_data");
   mineral_rate_constant_key_ = Keys::getKey(domain_, "mineral_rate_constant");
-  first_order_decay_constant_key_ = Keys::getKey(domain_, "first_order_decay_constant");
+  first_order_decay_rate_constant_key_ = Keys::getKey(domain_, "first_order_decay_rate_constant");
 
   // -- Amanzi specific keys
   prev_saturation_key_ = Keys::getKey(domain_, "prev_saturation_liquid");
@@ -211,7 +211,7 @@ Amanzi_PK::Setup()
     }
 
     // -- register two fields
-    S_->Require<CV_t, CVS_t>(sorp_sites_key_, tag_next_, passwd_, ss_names_cv)
+    S_->Require<CV_t, CVS_t>(surface_site_density_key_, tag_next_, passwd_, ss_names_cv)
       .SetMesh(mesh_)
       ->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_sorption_sites_);
@@ -259,7 +259,7 @@ Amanzi_PK::Setup()
   }
 
   if (number_ion_exchange_sites_ > 0) {
-    S_->Require<CV_t, CVS_t>(ion_exchange_sites_key_, tag_next_, passwd_)
+    S_->Require<CV_t, CVS_t>(cation_exchange_capacity_key_, tag_next_, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_ion_exchange_sites_);
@@ -346,12 +346,12 @@ Amanzi_PK::Initialize()
 
   // Ion exchange sites: default to 1
   if (number_ion_exchange_sites_ > 0) {
-    InitializeCVField(S_, *vo_, ion_exchange_sites_key_, tag_next_, passwd_, 1.0);
+    InitializeCVField(S_, *vo_, cation_exchange_capacity_key_, tag_next_, passwd_, 1.0);
     InitializeCVField(S_, *vo_, ion_exchange_ref_cation_conc_key_, tag_next_, passwd_, 1.0);
   }
 
   if (number_sorption_sites_ > 0) {
-    InitializeCVField(S_, *vo_, sorp_sites_key_, tag_next_, passwd_, 1.0);
+    InitializeCVField(S_, *vo_, surface_site_density_key_, tag_next_, passwd_, 1.0);
     InitializeCVField(S_, *vo_, surf_cfsc_key_, tag_next_, passwd_, 1.0);
   }
 
@@ -591,7 +591,7 @@ Amanzi_PK::InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> plist,
   number_ion_exchange_sites_ = 0;
   using_sorption_isotherms_ = false;
 
-  if (ic_list.isSublist(ion_exchange_sites_key_)) {
+  if (ic_list.isSublist(cation_exchange_capacity_key_)) {
     // there is currently only at most one site...
     using_sorption_ = true;
     number_ion_exchange_sites_ = 1;
@@ -613,7 +613,7 @@ Amanzi_PK::InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> plist,
     }
   }
 
-  if (ic_list.isSublist(sorp_sites_key_)) { using_sorption_ = true; }
+  if (ic_list.isSublist(surface_site_density_key_)) { using_sorption_ = true; }
 
   // in the old version, this was only in the Block sublist... may need work?
   if (plist->isParameter("Cation Exchange Capacity")) {
@@ -713,7 +713,7 @@ Amanzi_PK::CopyCellStateToBeakerState(int c)
   // TODO: only allow one ion exchange site at the moment!
   if (number_ion_exchange_sites_ > 0) {
     for (unsigned int i = 0; i < number_ion_exchange_sites_; i++) {
-      beaker_state_.ion_exchange_sites[i] = (*bf_.ion_exchange_sites)[i][c];
+      beaker_state_.ion_exchange_sites[i] = (*bf_.cation_exchange_capacity)[i][c];
       // TODO(bandre): need to save ion exchange ref cation conc here!
       beaker_state_.ion_exchange_ref_cation_conc.at(i) = (*bf_.ion_exchange_ref_cation_conc)[i][c];
     }
@@ -722,7 +722,7 @@ Amanzi_PK::CopyCellStateToBeakerState(int c)
   // surface complexation
   if (number_sorption_sites_ > 0) {
     for (int i = 0; i < number_sorption_sites_; ++i) {
-      beaker_state_.surface_site_density[i] = (*bf_.sorption_sites)[i][c];
+      beaker_state_.surface_site_density[i] = (*bf_.surface_site_density)[i][c];
       // TODO(bandre): need to save surface complexation free site conc here!
     }
   }
@@ -796,7 +796,7 @@ Amanzi_PK::CopyBeakerStructuresToCellState(int c)
   // surface complexation
   if (number_sorption_sites_ > 0) {
     for (int i = 0; i < number_sorption_sites_; i++) {
-      (*bf_.sorption_sites)[i][c] = beaker_state_.surface_site_density.at(i);
+      (*bf_.surface_site_density)[i][c] = beaker_state_.surface_site_density.at(i);
       // TODO: need to save surface complexation free site conc here!
     }
   }
@@ -810,7 +810,7 @@ Amanzi_PK::CopyBeakerStructuresToCellState(int c)
   // ion exchange
   if (number_ion_exchange_sites_ > 0) {
     for (int i = 0; i < number_ion_exchange_sites_; ++i) {
-      (*bf_.ion_exchange_sites)[i][c] = beaker_state_.ion_exchange_sites.at(i);
+      (*bf_.cation_exchange_capacity)[i][c] = beaker_state_.ion_exchange_sites.at(i);
       (*bf_.ion_exchange_ref_cation_conc)[i][c] = beaker_state_.ion_exchange_ref_cation_conc.at(i);
       // TODO(bandre): need to save ion exchange ref cation conc here!
     }
@@ -885,8 +885,8 @@ Amanzi_PK::InitializeBeakerFields_()
   }
 
   if (number_ion_exchange_sites_ > 0) {
-    bf_.ion_exchange_sites =
-      S_->GetW<CV_t>(ion_exchange_sites_key_, tag, passwd_).ViewComponent("cell");
+    bf_.cation_exchange_capacity =
+      S_->GetW<CV_t>(cation_exchange_capacity_key_, tag, passwd_).ViewComponent("cell");
     bf_.ion_exchange_ref_cation_conc =
       S_->GetW<CV_t>(ion_exchange_ref_cation_conc_key_, tag, passwd_).ViewComponent("cell");
   }
@@ -909,7 +909,7 @@ Amanzi_PK::InitializeBeakerFields_()
   }
 
   if (number_sorption_sites_ > 0) {
-    bf_.sorption_sites = S_->GetW<CV_t>(sorp_sites_key_, tag, passwd_).ViewComponent("cell");
+    bf_.surface_site_density = S_->GetW<CV_t>(surface_site_density_key_, tag, passwd_).ViewComponent("cell");
   }
 
   if (beaker_state_.surface_complex_free_site_conc.size() > 0) {

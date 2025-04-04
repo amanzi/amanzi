@@ -77,7 +77,7 @@
             <density>exp</density> <!-- REQUIRED -->
             <dissolved_components> 
                 <primaries>
-                    <primary coefficient_of_diffusion="exp" first_order_decay_constant="exp" forward_rate="exp" backward_rate="exp">primary_name_string</primary>
+                    <primary coefficient_of_diffusion="exp" first_order_decay_rate_constant="exp" forward_rate="exp" backward_rate="exp">primary_name_string</primary>
 		    <!-- primary name must match the name in the engine database file -->
 		    <!-- NOTE: if primary is a non-reactive species/solute, 
 			 include the forward and backward rates.  Dummy values of 0 are acceptable -->

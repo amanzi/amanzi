@@ -1073,7 +1073,7 @@ The ``liquid_phase`` element is required to produce a valid input file.  If prim
      <density> Exponential </density>
      <dissolved_components> 
        <primaries>
-         <primary coefficient_of_diffusion="Exponential" first_order_decay_constant="Exponential"> PrimaryName </primary>
+         <primary coefficient_of_diffusion="Exponential" first_order_decay_rate_constant="Exponential"> PrimaryName </primary>
        </primaries> 
        <secondaries>
          <secondary>SecondaryName</secondary>
@@ -1117,7 +1117,7 @@ An example ``phases`` element looks like the following.
       <density>998.2</density>
       <dissolved_components> 
         <primaries>
-          <primary coefficient_of_diffusion="1.0e-9" first_order_decay_constant="1.0e-9">Tc-99</primary>
+          <primary coefficient_of_diffusion="1.0e-9" first_order_decay_rate_constant="1.0e-9">Tc-99</primary>
         </primaries>
       </dissolved_components>
     </liquid_phase>

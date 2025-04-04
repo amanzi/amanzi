@@ -111,8 +111,8 @@ struct AlquimiaSubstate {
   Epetra_MultiVector const * mineral_specific_surface_area_old; // [m^2 (mineral) m^-3 (bulk)]
   Epetra_MultiVector * mineral_specific_surface_area_new;
 
-  Epetra_MultiVector const * sorption_site_density_old; // [mol m^-3 (bulk)]
-  Epetra_MultiVector * sorption_site_density_new;
+  Epetra_MultiVector const * surface_site_density_old; // [mol m^-3 (bulk)]
+  Epetra_MultiVector * surface_site_density_new;
 
   Epetra_MultiVector const * cation_exchange_capacity_old; // [mol m^-3 (bulk)]
   Epetra_MultiVector * cation_exchange_capacity_new; // [mol m^-3 (bulk)]
@@ -125,7 +125,7 @@ struct AlquimiaSubstate {
   Epetra_MultiVector const * isotherm_langmuir_b; // [-]
 
   Epetra_MultiVector const * mineral_rate_constant; // [mol m^-2 s^-1]
-  Epetra_MultiVector const * aqueous_kinetic_rate_constant; // [s^-1]
+  Epetra_MultiVector const * first_order_decay_rate_constant; // [s^-1]
 
   // aux data
   Epetra_MultiVector const * aux_data_old;
@@ -154,8 +154,8 @@ struct AlquimiaSubstate {
       mineral_volume_fraction_new(nullptr),
       mineral_specific_surface_area_old(nullptr),
       mineral_specific_surface_area_new(nullptr),
-      sorption_site_density_old(nullptr),
-      sorption_site_density_new(nullptr),
+      surface_site_density_old(nullptr),
+      surface_site_density_new(nullptr),
       cation_exchange_capacity_old(nullptr),
       cation_exchange_capacity_new(nullptr),
       saturation_liquid(nullptr),
@@ -163,7 +163,7 @@ struct AlquimiaSubstate {
       isotherm_freundlich_n(nullptr),
       isotherm_langmuir_b(nullptr),
       mineral_rate_constant(nullptr),
-      aqueous_kinetic_rate_constant(nullptr),
+      first_order_decay_rate_constant(nullptr),
       aux_data_old(nullptr),
       aux_data_new(nullptr),
       pH(nullptr),
@@ -241,7 +241,7 @@ class Alquimia_PK : public Chemistry_PK {
   Key total_sorbed_key_;
   Key mineral_volume_fraction_key_;
   Key mineral_specific_surface_area_key_;
-  Key sorp_site_density_key_;
+  Key surface_site_density_key_;
   Key cation_exchange_capacity_key_;
   Key aux_data_key_;
 
@@ -250,7 +250,7 @@ class Alquimia_PK : public Chemistry_PK {
   Key isotherm_freundlich_n_key_;
   Key isotherm_langmuir_b_key_;
   Key mineral_rate_constant_key_;
-  Key aqueous_kinetic_rate_constant_key_;
+  Key first_order_decay_rate_constant_key_;
 
   // -- aux output (diagnostics)
   Key pH_key_;

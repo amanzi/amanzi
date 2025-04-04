@@ -130,7 +130,7 @@ Alquimia_PK::parseParameterList()
   }
 
   if (number_sorption_sites_ > 0) {
-    sorp_site_density_key_ = Keys::readKey(*plist_, domain_, "sorption site density", "sorption_site_density");
+    surface_site_density_key_ = Keys::readKey(*plist_, domain_, "sorption site density", "surface_site_density");
   }
 
   if (num_sorption_components > 0) {
@@ -145,7 +145,7 @@ Alquimia_PK::parseParameterList()
   }
 
   if (number_aqueous_kinetics_ > 0) {
-    aqueous_kinetic_rate_constant_key_ = Keys::readKey(*plist_, domain_, "aqueous kinetic rate constant", "aqueous_kinetic_rate_constant");
+    first_order_decay_rate_constant_key_ = Keys::readKey(*plist_, domain_, "aqueous kinetic rate constant", "first_order_decay_rate_constant");
   }
 
   if (number_ion_exchange_sites_ > 0) {
@@ -260,17 +260,17 @@ Alquimia_PK::Setup()
       S_->GetRecordSetW(mineral_rate_constant_key_).set_subfieldnames(mineral_comp_names_);
     }
 
-    if (!aqueous_kinetic_rate_constant_key_.empty()) {
-      if (S_->HasEvaluatorList(aqueous_kinetic_rate_constant_key_) ||
-          S_->HasICList(aqueous_kinetic_rate_constant_key_)) {
-        requireEvaluatorAtCurrent(aqueous_kinetic_rate_constant_key_, tag_current_, *S_)
+    if (!first_order_decay_rate_constant_key_.empty()) {
+      if (S_->HasEvaluatorList(first_order_decay_rate_constant_key_) ||
+          S_->HasICList(first_order_decay_rate_constant_key_)) {
+        requireEvaluatorAtCurrent(first_order_decay_rate_constant_key_, tag_current_, *S_)
           .SetMesh(mesh_)
           ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_kinetics_);
-        S_->GetRecordSetW(aqueous_kinetic_rate_constant_key_).set_subfieldnames(aqueous_kinetics_names_);
+        S_->GetRecordSetW(first_order_decay_rate_constant_key_).set_subfieldnames(aqueous_kinetics_names_);
       } else {
         // User has not provided this list, instead it must be in the chemical
         // engine card.  We will not provide it.
-        aqueous_kinetic_rate_constant_key_ = "";
+        first_order_decay_rate_constant_key_ = "";
       }
     }
   }
@@ -311,12 +311,12 @@ Alquimia_PK::Setup()
   }
 
   // sorption site state data
-  if (!sorp_site_density_key_.empty()) {
-    requireEvaluatorAtNext(sorp_site_density_key_, tag_next_, *S_, true, passwd_)
+  if (!surface_site_density_key_.empty()) {
+    requireEvaluatorAtNext(surface_site_density_key_, tag_next_, *S_, true, passwd_)
       .SetMesh(mesh_)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, number_sorption_sites_);
-    S_->GetRecordSetW(sorp_site_density_key_).set_subfieldnames(sorption_site_names_);
-    requireEvaluatorAtCurrent(sorp_site_density_key_, tag_current_, *S_, passwd_);
+    S_->GetRecordSetW(surface_site_density_key_).set_subfieldnames(sorption_site_names_);
+    requireEvaluatorAtCurrent(surface_site_density_key_, tag_current_, *S_, passwd_);
   }
 
   // ion exchange site density
@@ -487,9 +487,9 @@ Alquimia_PK::updateSubstate()
     substate_.mineral_rate_constant = &*S_->Get<CompositeVector>(mineral_rate_constant_key_, tag_current_).ViewComponent("cell", false);
   }
 
-  if (!aqueous_kinetic_rate_constant_key_.empty()) {
-    S_->GetEvaluator(aqueous_kinetic_rate_constant_key_, tag_current_).Update(*S_, name_);
-    substate_.aqueous_kinetic_rate_constant = &*S_->Get<CompositeVector>(aqueous_kinetic_rate_constant_key_, tag_current_).ViewComponent("cell", false);
+  if (!first_order_decay_rate_constant_key_.empty()) {
+    S_->GetEvaluator(first_order_decay_rate_constant_key_, tag_current_).Update(*S_, name_);
+    substate_.first_order_decay_rate_constant = &*S_->Get<CompositeVector>(first_order_decay_rate_constant_key_, tag_current_).ViewComponent("cell", false);
   }
 
   // internal things
@@ -506,8 +506,8 @@ Alquimia_PK::updateSubstate()
   }
 
   if (number_sorption_sites_ > 0) {
-    substate_.sorption_site_density_old = &*S_->Get<CompositeVector>(sorp_site_density_key_, tag_current_).ViewComponent("cell", false);
-    substate_.sorption_site_density_new = &*S_->GetW<CompositeVector>(sorp_site_density_key_, tag_next_, passwd_).ViewComponent("cell", false);
+    substate_.surface_site_density_old = &*S_->Get<CompositeVector>(surface_site_density_key_, tag_current_).ViewComponent("cell", false);
+    substate_.surface_site_density_new = &*S_->GetW<CompositeVector>(surface_site_density_key_, tag_next_, passwd_).ViewComponent("cell", false);
   }
 
   if (!total_sorbed_key_.empty()) {
@@ -711,7 +711,7 @@ Alquimia_PK::copyToAlquimia(int cell, AlquimiaBeaker& beaker)
 
   // surface complexation
   for (unsigned int i = 0; i != number_sorption_sites_; ++i)
-    beaker.state.surface_site_density.data[i] = (*substate_.sorption_site_density_old)[i][cell];
+    beaker.state.surface_site_density.data[i] = (*substate_.surface_site_density_old)[i][cell];
 
   // ion exchange
   for (unsigned int i = 0; i != number_ion_exchange_sites_; ++i)
@@ -729,9 +729,9 @@ Alquimia_PK::copyToAlquimia(int cell, AlquimiaBeaker& beaker)
       beaker.properties.langmuir_b.data[i] = (*substate_.isotherm_langmuir_b)[i][cell];
 
   // aqueous kinetics
-  if (substate_.aqueous_kinetic_rate_constant != nullptr) {
+  if (substate_.first_order_decay_rate_constant != nullptr) {
     for (unsigned int i = 0; i != number_aqueous_kinetics_; ++i) {
-      beaker.properties.aqueous_kinetic_rate_cnst.data[i] = (*substate_.aqueous_kinetic_rate_constant)[i][cell];
+      beaker.properties.aqueous_kinetic_rate_cnst.data[i] = (*substate_.first_order_decay_rate_constant)[i][cell];
     }
   }
 
@@ -769,7 +769,7 @@ Alquimia_PK::copyFromAlquimia_(int cell)
 
   // surface complexation
   for (unsigned i = 0; i != number_sorption_sites_; ++i) {
-    (*substate_.sorption_site_density_new)[i][cell] = beaker_.state.surface_site_density.data[i];
+    (*substate_.surface_site_density_new)[i][cell] = beaker_.state.surface_site_density.data[i];
   }
 
   // ion exchange
@@ -873,7 +873,7 @@ Alquimia_PK::copyFields_(const Tag& tag_dest, const Tag& tag_source)
     total_sorbed_key_,
     mineral_volume_fraction_key_,
     mineral_specific_surface_area_key_,
-    sorp_site_density_key_,
+    surface_site_density_key_,
     cation_exchange_capacity_key_,
     aux_data_key_ };
 

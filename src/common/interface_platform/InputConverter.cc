@@ -1464,8 +1464,8 @@ InputConverter::CreateINFile_(std::string& filename, int rank)
       primaries << "    " << name << "\n";
       element = static_cast<DOMElement*>(inode);
 
-      if (element->hasAttribute(mm.transcode("first_order_decay_constant"))) {
-        double decay = GetAttributeValueD_(element, "first_order_decay_constant");
+      if (element->hasAttribute(mm.transcode("first_order_decay_rate_constant"))) {
+        double decay = GetAttributeValueD_(element, "first_order_decay_rate_constant");
         name = TrimString_(mm.transcode(inode->getTextContent()));
         decayrates << "    REACTION " << name << " <-> \n";
         decayrates << "    RATE_CONSTANT " << decay << "\n";

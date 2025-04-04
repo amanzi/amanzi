@@ -151,7 +151,7 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
 
       double krate(-99.9);
       krate = GetAttributeValueD_(
-        inode, "first_order_decay_constant", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "", false, -99.9);
+        inode, "first_order_decay_rate_constant", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "", false, -99.9);
 
       if (krate != -99.9) {
         kin_rate_cnst.push_back(krate);
@@ -186,8 +186,7 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
     if (aqueous_reactions.size() > 0) {
       out_list.set<Teuchos::Array<std::string>>("aqueous_reactions", aqueous_reactions);
 
-      std::string decay_constant_name = engine == "amanzi" ? "first_order_decay_constant" :
-        "aqueous_kinetic_rate_constant";
+      std::string decay_constant_name = "first_order_decay_rate_constant";
       Teuchos::ParameterList& rate = ic_list.sublist(decay_constant_name);
 
       for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end();
@@ -284,8 +283,7 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
     // ion exchange
     node = GetUniqueElementByTagsString_(inode, "ion_exchange, cations", flag);
     if (flag) {
-      std::string field_name = engine == "amanzi" ? "ion_exchange_sites" :
-        "cation_exchange_capacity";
+      std::string field_name = "cation_exchange_capacity";
       Teuchos::ParameterList& sites = ic_list.sublist(field_name);
       double cec = GetAttributeValueD_(node, "cec", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "mol/m^3");
 
@@ -373,8 +371,7 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
 
         sorption_sites.clear();
 
-      std::string field_name = engine == "amanzi" ? "sorption_sites" :
-        "sorption_site_density";
+      std::string field_name = "surface_site_density";
         Teuchos::ParameterList& complexation = ic_list.sublist(field_name);
         Teuchos::ParameterList& tmp_list =
           complexation.sublist("function")
