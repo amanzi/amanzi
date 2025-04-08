@@ -643,7 +643,7 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="ion_exchange_sites">
+      <ParameterList name="cation_exchange_capacity">
         <ParameterList name="function">
           <ParameterList name="Soil_1">
             <Parameter name="region" type="string" value="Soil_1"/>
