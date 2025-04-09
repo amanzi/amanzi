@@ -214,18 +214,17 @@
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="maximum Newton iterations" type="int" value="100"/>
       <Parameter name="tolerance" type="double" value="9.99999999999999980e-13"/>
-      <Parameter name="max timestep (s)" type="double" value="15778463.0000000000"/>
-      <Parameter name="min timestep (s)" type="double" value="10000000000.0000000"/>
-      <Parameter name="initial timestep (s)" type="double" value="15778463.0000000000"/>
-      <Parameter name="timestep cut threshold" type="int" value="8"/>
-      <Parameter name="timestep cut factor" type="double" value="2.00000000000000000"/>
-      <Parameter name="timestep increase threshold" type="int" value="4"/>
-      <Parameter name="timestep increase factor" type="double" value="1.19999999999999996"/>
-      <Parameter name="timestep control method" type="string" value="fixed"/>
       <Parameter name="initial conditions time" type="double" value="0e-17"/>
       <Parameter name="number of component concentrations" type="int" value="1"/>
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="extreme"/>
+      </ParameterList>
+
+      <ParameterList name="timestep controller" type="ParameterList">
+        <Parameter name="timestep controller type" type="string" value="fixed"/>
+        <ParameterList name="timestep controller fixed parameters" type="ParameterList">
+          <Parameter name="timestep [s]" type="double" value="15778463.0000000000"/>
+        </ParameterList>
       </ParameterList>
 
     </ParameterList>

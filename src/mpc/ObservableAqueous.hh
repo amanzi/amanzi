@@ -23,7 +23,7 @@
 
 namespace Amanzi {
 
-class ObservableAqueous : public virtual Observable {
+class ObservableAqueous : public virtual ObservableAmanzi {
  public:
   ObservableAqueous(std::string variable,
                     std::string region,

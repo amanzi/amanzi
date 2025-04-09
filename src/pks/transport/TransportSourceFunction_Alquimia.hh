@@ -58,10 +58,7 @@ class TransportSourceFunction_Alquimia : public TransportDomainFunction {
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;
 
   // Containers for interacting with the chemistry engine.
-  AlquimiaState alq_state_;
-  AlquimiaProperties alq_mat_props_;
-  AlquimiaAuxiliaryData alq_aux_data_;
-  AlquimiaAuxiliaryOutputData alq_aux_output_;
+  AmanziChemistry::AlquimiaBeaker beaker_;
 };
 
 } // namespace Transport
