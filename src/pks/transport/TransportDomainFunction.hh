@@ -65,6 +65,7 @@ class TransportDomainFunction {
 
   std::vector<std::string>& tcc_names() { return tcc_names_; }
   void set_tcc_names(const std::vector<std::string>& tcc_names) { tcc_names_ = tcc_names; }
+  std::vector<double>& tcc_mol_masses() { return tcc_mol_masses_; }
   std::vector<int>& tcc_index() { return tcc_index_; }
   virtual void set_state(const Teuchos::RCP<State>& S) { S_ = S; }
 
@@ -92,6 +93,7 @@ class TransportDomainFunction {
   Teuchos::RCP<const State> S_;
 
   std::vector<std::string> tcc_names_; // list of component names
+  std::vector<double> tcc_mol_masses_; // molar masses of components
   std::vector<int> tcc_index_;         // index of component in the global list
 };
 
