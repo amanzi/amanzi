@@ -383,7 +383,7 @@
         <ParameterList name="All">
           <Parameter name="regions" type="Array(string)" value="{All}"/>
           <Parameter name="model" type="string" value="Bear"/>
-          <ParameterList name="parameters for Bear">
+          <ParameterList name="Bear parameters">
             <Parameter name="alpha_l" type="double" value="0.0"/>
             <Parameter name="alpha_t" type="double" value="0.0"/>
           </ParameterList>
@@ -438,7 +438,7 @@
         <ParameterList name="All">
           <Parameter name="regions" type="Array(string)" value="{All}"/>
           <Parameter name="model" type="string" value="Bear"/>
-          <ParameterList name="parameters for Bear">
+          <ParameterList name="Bear parameters">
             <Parameter name="alpha_l" type="double" value="0.0"/>
             <Parameter name="alpha_t" type="double" value="0.0"/>
           </ParameterList>

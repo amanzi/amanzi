@@ -27,7 +27,10 @@ TransportBoundaryFunction_Alquimia::TransportBoundaryFunction_Alquimia(
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
   Teuchos::RCP<AmanziChemistry::Alquimia_PK> alquimia_pk,
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine)
-  : name_("alquimia bc"), mesh_(mesh), alquimia_pk_(alquimia_pk), chem_engine_(chem_engine)
+  : name_("alquimia bc"),
+    mesh_(mesh),
+    alquimia_pk_(alquimia_pk),
+    chem_engine_(chem_engine)
 {
   // Check arguments.
   if (chem_engine_ != Teuchos::null) {
@@ -81,10 +84,6 @@ TransportBoundaryFunction_Alquimia::Init_(const std::vector<std::string>& region
     for (int n = 0; n < nblock; ++n) {
       int f = block[n];
       value_[f].resize(chem_engine_->NumPrimarySpecies());
-
-      const auto& cells = mesh_->getFaceCells(f);
-      AMANZI_ASSERT(cells.size() == 1);
-      cell_for_face_[f] = cells[0];
     }
   }
 }
@@ -101,14 +100,14 @@ TransportBoundaryFunction_Alquimia::Compute(double t_old, double t_new)
   for (auto it = begin(); it != end(); ++it) {
     // Find the index of the cell we're in.
     int f = it->first;
-    int cell = cell_for_face_[f];
+    int cell = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh_, f);
 
     // Dump the contents of the chemistry state into our Alquimia containers.
     alquimia_pk_->copyToAlquimia(cell, beaker_);
 
     // Enforce the condition.
-    chem_engine_->EnforceCondition(cond_name, t_new,
-            beaker_.properties, beaker_.state, beaker_.aux_data, beaker_.aux_output);
+    chem_engine_->EnforceCondition(
+      cond_name, t_new, beaker_.properties, beaker_.state, beaker_.aux_data, beaker_.aux_output);
 
     // Move the concentrations into place.
     std::vector<double>& values = it->second;

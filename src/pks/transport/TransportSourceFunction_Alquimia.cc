@@ -98,8 +98,8 @@ TransportSourceFunction_Alquimia::Compute(double t_old, double t_new)
     alquimia_pk_->copyToAlquimia(cell, beaker_);
 
     // Enforce the condition.
-    chem_engine_->EnforceCondition(cond_name, t_new,
-      beaker_.properties, beaker_.state, beaker_.aux_data, beaker_.aux_output);
+    chem_engine_->EnforceCondition(
+      cond_name, t_new, beaker_.properties, beaker_.state, beaker_.aux_data, beaker_.aux_output);
 
     // Move the concentrations into place.
     std::vector<double>& values = it->second;
