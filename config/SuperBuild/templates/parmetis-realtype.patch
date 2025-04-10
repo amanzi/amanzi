@@ -1,0 +1,12 @@
+diff --color -ruNbB parmetis-4.0.3a-old/metis/include/metis.h parmetis-4.0.3a-source/metis/include/metis.h
+--- parmetis-4.0.3a-old/metis/include/metis.h	2013-03-30 10:24:50
++++ parmetis-4.0.3a-source/metis/include/metis.h	2025-02-12 13:10:01
+@@ -40,7 +40,7 @@
+    32 : single precission floating point (float)
+    64 : double precission floating point (double)
+ --------------------------------------------------------------------------*/
+-#define REALTYPEWIDTH 32
++#define REALTYPEWIDTH 64
+ 
+ 
+ 
