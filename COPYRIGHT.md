@@ -11,10 +11,10 @@ at the end of this document.
 Los Alamos National Laboratory
 ----------------------------------------------
  
-  Copyright (c) 2010-2020, Triad National Security, LLC.
+  Copyright (c) 2010-2025, Triad National Security, LLC.
   All rights reserved.
    
-  Copyright 2010-2020. Triad National Security, LLC. This software was 
+  Copyright 2010-2025. Triad National Security, LLC. This software was 
   produced under U.S. Government contract 89233218CNA000001 for Los Alamos 
   National Laboratory (LANL), which is operated by Triad National Security, 
   LLC for the U.S. Department of Energy/National Nuclear Security 
@@ -33,10 +33,10 @@ Los Alamos National Laboratory
   included at the end of this document. 
 
 ----------------------------------------------
-Lawrence Berkely National Laboratory
+Lawrence Berkeley National Laboratory
 ----------------------------------------------
 
-  Amanzi Copyright (c) 2010-2020, The Regents of the University of
+  Amanzi Copyright (c) 2010-2025, The Regents of the University of
   California, through Lawrence Berkeley National Laboratory  (subject to
   receipt of any required approvals from the U.S. Dept. of Energy).  All
   rights reserved.
@@ -45,7 +45,7 @@ Lawrence Berkely National Laboratory
 Pacific Northwest National Laboratory
 ----------------------------------------------
 
-  Copyright 2010-2020 Battelle Memorial Institute.
+  Copyright 2010-2025 Battelle Memorial Institute.
 
   U.S. GOVERNMENT RIGHTS NOTICE.  These data were produced by Battelle
   Memorial Institute (BMI) under Contract No. DE AC05-76RLO1830 with

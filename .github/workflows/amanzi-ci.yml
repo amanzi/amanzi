@@ -9,7 +9,10 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, ubuntu-24.04-arm ]
+    runs-on: ${{ matrix.os }}
     name: Build Docker container
     steps:
     - name: Check out the Amanzi repo
@@ -33,6 +36,13 @@ jobs:
     - name: Output the TPLs version
       run:
         echo "TPLs version = ${{env.AMANZI_TPLS_VER}}"
+    - name: Get runner architecture
+      run: |
+        if [[ ${{matrix.os}} == "ubuntu-24.04-arm" ]]; then
+          echo "ARCH=arm64" >> $GITHUB_ENV
+        else
+          echo "ARCH=amd64" >> $GITHUB_ENV
+        fi
     - name: Login to Docker Hub
       uses: docker/login-action@v3
       with:
@@ -41,14 +51,21 @@ jobs:
     - name: Docker build
       id: docker
       working-directory: Docker
-      run:
-        docker build --build-arg amanzi_branch=${{env.AMANZI_BRANCH}} --build-arg amanzi_tpls_ver=${{env.AMANZI_TPLS_VER}} -t metsi/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest -f Dockerfile-Amanzi-build .
+      run: |
+        docker build --build-arg ARCH=linux/${{env.ARCH}} \
+        --build-arg amanzi_branch=${{env.AMANZI_BRANCH}} \
+        --build-arg amanzi_tpls_ver=${{env.AMANZI_TPLS_VER}} \
+        -t metsi/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{env.ARCH}}-latest \
+        -f Dockerfile-Amanzi-build .
     - name: Docker push
       working-directory: Docker
       run:
-        docker push ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest
+        docker push ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{env.ARCH}}-latest
   serial-tests:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, ubuntu-24.04-arm ]
+    runs-on: ${{ matrix.os }}
     name: serial tests
     needs: build
     steps:
@@ -57,13 +74,23 @@ jobs:
     - name: Set environment variables
       run:
         echo "AMANZI_BRANCH_TAG=$(echo $GITHUB_REF_NAME | sed -e 's/\//--/g')" >> $GITHUB_ENV
+    - name: Get runner architecture
+      run: |
+        if [[ ${{matrix.os}} == "ubuntu-24.04-arm" ]]; then
+         echo "ARCH=arm64" >> $GITHUB_ENV
+        else
+         echo "ARCH=amd64" >> $GITHUB_ENV
+        fi
     - name: Run tests
       id: tests
       working-directory: Docker
       run:
-        docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest -L SERIAL --output-on-failure"
+        docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{env.ARCH}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest -L SERIAL --output-on-failure"
   parallel-tests:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, ubuntu-24.04-arm ]
+    runs-on: ${{ matrix.os }}
     name: parallel tests
     needs: build
     steps:
@@ -72,9 +99,40 @@ jobs:
     - name: Set environment variables
       run:
         echo "AMANZI_BRANCH_TAG=$(echo $GITHUB_REF_NAME | sed -e 's/\//--/g')" >> $GITHUB_ENV
+    - name: Get runner architecture
+      run: |
+        if [[ ${{matrix.os}} == "ubuntu-24.04-arm" ]]; then
+         echo "ARCH=arm64" >> $GITHUB_ENV
+        else
+          echo "ARCH=amd64" >> $GITHUB_ENV
+        fi
     - name: Run tests
       id: tests
       working-directory: Docker
       run:
-        docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest -L PARALLEL --output-on-failure"
-
+        docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{env.ARCH}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest -L PARALLEL --output-on-failure"
+  fix-manifest:
+    runs-on: ubuntu-latest
+    needs: [parallel-tests, serial-tests]
+    if: success()
+    steps:
+      - name: Check out the Amanzi repo
+        uses: actions/checkout@v4
+      - name: Set environment variables
+        run:
+          echo "AMANZI_BRANCH_TAG=$(echo $GITHUB_REF_NAME | sed -e 's/\//--/g')" >> $GITHUB_ENV
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{secrets.DOCKERHUB_USERNAME}}
+          password: ${{secrets.DOCKERHUB_PASSWORD}}
+      - name: Pull images (remove with artifacts??)
+        run: |
+          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-arm64-latest
+          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-amd64-latest
+      - name: Edit manifest
+        run: |
+          docker manifest create ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest \
+            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-arm64-latest \
+            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-amd64-latest
+          docker manifest push ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest
