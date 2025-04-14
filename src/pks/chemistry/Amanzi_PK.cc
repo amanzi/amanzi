@@ -973,11 +973,12 @@ Amanzi_PK::ErrorAnalysis(int ierr, std::string& internal_msg)
 
     // get at least one error message
     int n = tmp_out[1];
-    int msg_out[n + 1], msg_in[n + 1], m(mesh_->getComm()->MyPID());
+    int m = mesh_->getComm()->MyPID();
+    std::vector<int> msg_out(n + 1), msg_in(n + 1);
     internal_msg.resize(n);
 
     Errors::encode_string(internal_msg, n, m, msg_in);
-    mesh_->getComm()->MaxAll(msg_in, msg_out, n + 1);
+    mesh_->getComm()->MaxAll(msg_in.data(), msg_out.data(), n + 1);
     Errors::decode_string(msg_out, n, internal_msg);
 
     vo_->Write(Teuchos::VERB_HIGH, internal_msg);
