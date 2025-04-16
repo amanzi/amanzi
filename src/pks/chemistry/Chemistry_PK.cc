@@ -61,9 +61,9 @@ Chemistry_PK::get_dt()
 void
 Chemistry_PK::parseParameterList()
 {
-  // set the default primary variable.  Note this will be mangled with the
-  // domain in PK_Physical_Default
-  key_ = "total_component_concentration";
+  if (!plist_->isParameter("primary variable key suffix")) {
+    plist_->set<std::string>("primary variable key suffix", "total_component_concentration");
+  }
   PK_Physical_Default::parseParameterList();
 
   // other parameters
@@ -107,7 +107,7 @@ Chemistry_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // set up the substate for faster access
   S_->GetW<CompositeVector>(key_, tcc_tag_next_, passwd_) =
     S_->Get<CompositeVector>(key_, tcc_tag_current_);
-  updateSubstate();
+  updateSubstate(tag_current_);
 
   // Get the number of owned (non-ghost) cells for the mesh.
   AmanziMesh::Entity_ID num_cells =
