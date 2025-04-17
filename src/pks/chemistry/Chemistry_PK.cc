@@ -61,10 +61,9 @@ Chemistry_PK::get_dt()
 void
 Chemistry_PK::parseParameterList()
 {
-  // set the default primary variable.  Note this will be mangled with the
-  // domain.
-  key_ = "total_component_concentration";
-
+  if (!plist_->isParameter("primary variable key suffix")) {
+    plist_->set<std::string>("primary variable key suffix", "total_component_concentration");
+  }
   PK_Physical_Default::parseParameterList();
 
   // other parameters
@@ -98,6 +97,7 @@ Chemistry_PK::AdvanceStep(double t_old, double t_new, bool reinit)
                << "Advancing: t0 = " << t_old
                << " t1 = " << t_new << " h = " << dt << std::endl
                << "----------------------------------------------------------------" << std::endl;
+  db_->WriteVector("C (old)", S_->GetPtr<CompositeVector>(key_, tcc_tag_current_).ptr());
 
   // these assertions fail with Amanzi, does Amanzi not call State::set_time?  --ETC
   // AMANZI_ASSERT(std::abs(S_->get_time(tag_current_) - t_old) < 1.e-4);
@@ -105,7 +105,9 @@ Chemistry_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   State_to_Solution(Tags::NEXT, *solution_);
 
   // set up the substate for faster access
-  updateSubstate();
+  S_->GetW<CompositeVector>(key_, tcc_tag_next_, passwd_) =
+    S_->Get<CompositeVector>(key_, tcc_tag_current_);
+  updateSubstate(tag_current_);
 
   // Get the number of owned (non-ghost) cells for the mesh.
   AmanziMesh::Entity_ID num_cells =
@@ -133,6 +135,7 @@ Chemistry_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // Compute the next global timestep.
   dt_next_ = timestep_controller_->getTimestep(dt, max_itrs, !convergence_failure);
+  db_->WriteVector("C (new)", S_->GetPtr<CompositeVector>(key_, tag_next_).ptr());
 
   return convergence_failure;
 }

@@ -107,7 +107,7 @@ class Chemistry_PK : public PK_Physical_Default {
   virtual void set_dt(double dt) override {};
   virtual double get_dt() override;
 
-  virtual void updateSubstate() = 0;
+  virtual void updateSubstate(const Tag& water_tag) = 0;
 
  protected:
   // error messages in Chemistry are rank-local.  This method does the

@@ -210,7 +210,7 @@ class Alquimia_PK : public Chemistry_PK {
     return chem_engine_;
   }
   void copyToAlquimia(int cell, AlquimiaBeaker& beaker);
-  void updateSubstate() override;
+  void updateSubstate(const Tag& water_tag) override;
 
  protected:
   void XMLParameters();

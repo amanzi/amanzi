@@ -8,9 +8,18 @@
 */
 
 /*
-  Transport PK
 
-  Anisotropic mechanical dispersion model.
+Anisotropic mechanical dispersion model by Burnett & Frind.
+
+.. _MDM-Burnett-Frind-spec
+.. admonition:: MDM-Burnett-Frind-spec
+
+   * `"alpha_l`" ``[double]`` Longitudinal dispersivity/dispersion coefficient.
+   * `"alpha_tv`" ``[double]`` Vertical transverse dispersivity/dispersion coefficient.
+   * `"alpha_th`" ``[double]`` Horizontal transverse dispersivity/dispersion coefficient.
+
+
+
 */
 
 #ifndef AMANZI_MDM_BURNETT_FRIND_HH_

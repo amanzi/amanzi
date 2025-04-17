@@ -8,9 +8,18 @@
 */
 
 /*
-  Transport PK
 
-  Anisotropic mechanical dispersion model.
+Anisotropic mechanical dispersion model by Lichtner, Kelkar, and Robinson.
+
+
+.. _MDM-Burnett-Frind-spec
+.. admonition:: MDM-Burnett-Frind-spec
+
+   * `"alpha_lv`" ``[double]`` **0.** Vertical longitudinal dispersivity/dispersion coefficient.
+   * `"alpha_lh`" ``[double]`` **0.** Horizontal longitudinal dispersivity/dispersion coefficient.
+   * `"alpha_tv`" ``[double]`` **0.** Vertical transverse dispersivity/dispersion coefficient.
+   * `"alpha_th`" ``[double]`` **0.** Horizontal transverse dispersivity/dispersion coefficient.
+
 */
 
 #ifndef AMANZI_MDM_LICHTNER_KELKAR_ROBINSON_HH_
