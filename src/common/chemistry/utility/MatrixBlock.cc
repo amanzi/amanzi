@@ -133,13 +133,13 @@ int
 MatrixBlock::Inverse()
 {
   int ierr;
-  int iwork[size_];
-  DGETRF_F77(&size_, &size_, A_, &size_, iwork, &ierr);
+  std::vector<int> iwork(size_);
+  DGETRF_F77(&size_, &size_, A_, &size_, iwork.data(), &ierr);
   if (ierr) return ierr;
 
   int lwork = size_ * size_;
-  double dwork[lwork];
-  DGETRI_F77(&size_, A_, &size_, iwork, dwork, &lwork, &ierr);
+  std::vector<double> dwork(lwork);
+  DGETRI_F77(&size_, A_, &size_, iwork.data(), dwork.data(), &lwork, &ierr);
   return ierr;
 }
 

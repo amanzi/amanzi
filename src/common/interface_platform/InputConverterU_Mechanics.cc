@@ -48,7 +48,7 @@ InputConverterU::TranslateMechanics_(const std::string& domain)
   DOMElement* element;
 
   // process expert parameters
-  bool biot_undrained_split(false), biot_stress_split(false);
+  bool biot_undrained_split(false), biot_stress_split(false), use_fracture(false);
   std::string disc_method("elasticity");
 
   bool flag;
@@ -65,7 +65,12 @@ InputConverterU::TranslateMechanics_(const std::string& domain)
     // -- discretization method
     inode = GetUniqueElementByTagsString_(node, "discretization_method", flag);
     if (flag) disc_method = GetTextContentS_(inode, "elasticity, BernardiRaugel");
+
+    // -- insert fracture
+    inode = GetUniqueElementByTagsString_(node, "use_fracture", flag);
+    if (flag) use_fracture = GetTextContentL_(inode);
   }
+
   // create header
   out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
 
@@ -101,7 +106,7 @@ InputConverterU::TranslateMechanics_(const std::string& domain)
     .set<std::string>("method", disc_method)
     .set<int>("method order", 1);
 
-  if (fracture_network_)
+  if (fracture_network_ && use_fracture)
     out_list.sublist("operators")
       .sublist("elasticity operator")
       .sublist("schema")

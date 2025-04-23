@@ -173,7 +173,7 @@ std::string
 EvaluatorPrimary_::WriteToString() const
 {
   std::stringstream result;
-  result << my_key_ << std::endl << "  Type: primary" << std::endl;
+  result << my_key_ << std::endl << "  type: primary" << std::endl;
   return result.str();
 }
 
