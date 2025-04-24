@@ -242,12 +242,21 @@ InputConverterU::TranslateMechanicsBCs_(const std::string& domain)
     if (bcs.type == "displacement") {
       Teuchos::ParameterList& bcfn = bc.sublist("no slip");
       bcfn.set<int>("number of dofs", dim_).set<std::string>("function type", "composite function");
+
+      auto formulas = CharToStrings_(bcs.formulas[0].c_str());
       for (int k = 0; k < dim_; ++k) {
         std::stringstream dof_str;
         dof_str << "dof " << k + 1 << " function";
-        bcfn.sublist(dof_str.str())
-          .sublist("function-constant")
-          .set<double>("value", bcs.vectors[0][k]);
+        if (formulas.size() == dim_) {
+          bcfn.sublist(dof_str.str())
+            .sublist("function-exprtk")
+            .set<int>("number of arguments", dim_ + 1)
+            .set<std::string>("formula", formulas[k]);
+        } else {
+          bcfn.sublist(dof_str.str())
+            .sublist("function-constant")
+            .set<double>("value", bcs.vectors[0][k]);
+        }
       }
     } else if (bcs.type == "traction") {
       Teuchos::ParameterList& bcfn = bc.sublist("traction");
