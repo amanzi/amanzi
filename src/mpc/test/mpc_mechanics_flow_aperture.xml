@@ -601,7 +601,7 @@
               </ParameterList>
               <ParameterList name="dof 3 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="-1.101e+7"/>
+                  <Parameter name="value" type="double" value="-3.303e+7"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>

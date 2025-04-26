@@ -219,7 +219,7 @@ MechanicsElasticity_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "elasticity solver (PCG): ||r||_H=" << op->residual() << " itr=" << op->num_itrs()
-               << " code=" << op->returned_code() << std::endl;
+               << " code=" << op->returned_code() << " size=" << rhs->GlobalLength() << std::endl;
   }
 
   if (ierr != 0) {
