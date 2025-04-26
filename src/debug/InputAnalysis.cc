@@ -26,10 +26,11 @@ InputAnalysis::Init(Teuchos::ParameterList& plist)
 {
   plist_ = &plist;
 
+  Teuchos::ParameterList vo_list;
   if (plist.isSublist("analysis")) {
-    Teuchos::ParameterList vo_list = plist.sublist("analysis");
-    vo_ = new VerboseObject("InputAnalysis:" + domain_, vo_list);
+    vo_list = plist.sublist("analysis");
   }
+  vo_ = new VerboseObject("InputAnalysis:" + domain_, vo_list);
 }
 
 
