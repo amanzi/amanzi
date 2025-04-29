@@ -150,7 +150,7 @@
       <assigned_regions>xz1,xz2,yz1,yz2</assigned_regions>
       <liquid_phase name="water">
         <liquid_component name="water">
-          <uniform_pressure function="constant" start="1.07785e6" value="1.07785e6" />
+          <uniform_pressure function="constant" start="0.0" value="1.07785e6" />
         </liquid_component>
       </liquid_phase>
     </boundary_condition>

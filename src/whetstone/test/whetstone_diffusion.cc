@@ -32,9 +32,11 @@
 std::pair<double, double> EigenvaluesSVD(Amanzi::WhetStone::DenseMatrix& M) 
 {
   int n(M.NumRows()), lwork(100), info;
-  double U[n*n], V[n*n], S[100], work[lwork];
+  double S[100];
+  std::vector<double> U(n*n), V(n*n), work(lwork);
 
-  Amanzi::WhetStone::DGESVD_F77("A", "A", &n, &n, M.Values(), &n, S, U, &n, V, &n, work, &lwork, &info);
+  Amanzi::WhetStone::DGESVD_F77("A", "A", &n, &n, M.Values(), &n, 
+                                S, U.data(), &n, V.data(), &n, work.data(), &lwork, &info);
 
   double emin(1e+10), emax(0.0);
   for (int i = 0; i < n; ++i) {

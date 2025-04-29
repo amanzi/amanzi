@@ -188,9 +188,9 @@ main(int argc, char* argv[])
     cdims = (hsize_t*)malloc(rank * sizeof(hsize_t));
     mdims = (hsize_t*)malloc(rank * sizeof(hsize_t));
     H5Sget_simple_extent_dims(dataspace, cdims, mdims);
-    int nodemap[cdims[0]];
+    std::vector<int> nodemap(cdims[0]);
     num_nodes = cdims[0];
-    status = H5Dread(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, nodemap);
+    status = H5Dread(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, nodemap.data());
     status = H5Dclose(dataset_id);
 
     // read Mesh/ElementMap, store num_elems
@@ -201,9 +201,9 @@ main(int argc, char* argv[])
     cdims = (hsize_t*)malloc(rank * sizeof(hsize_t));
     mdims = (hsize_t*)malloc(rank * sizeof(hsize_t));
     H5Sget_simple_extent_dims(dataspace, cdims, mdims);
-    int elemmap[cdims[0]];
+    std::vector<int> elemmap(cdims[0]);
     num_elems = cdims[0];
-    status = H5Dread(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, elemmap);
+    status = H5Dread(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, elemmap.data());
     status = H5Dclose(dataset_id);
 
     // write out unpermuted mesh
@@ -231,10 +231,10 @@ main(int argc, char* argv[])
     mdims = (hsize_t*)malloc(rank * sizeof(hsize_t));
     H5Sget_simple_extent_dims(dataspace, cdims, mdims);
     std::cout << "  E>> read dims: " << cdims[0] << " x " << cdims[1] << std::endl;
-    int elems[cdims[0]];
+    std::vector<int> elems(cdims[0]);
     int elem_len = cdims[0];
     //elems = (double *) malloc(num_elems * 1 *sizeof(double *));
-    status = H5Dread(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, elems);
+    status = H5Dread(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, elems.data());
     status = H5Dclose(dataset_id);
 
     // unpermute nodes
@@ -293,9 +293,9 @@ main(int argc, char* argv[])
     // do element unpermute
     int map_offset = 0;
     int org_offset = 0;
-    int mapelems[elem_len];
+    std::vector<int> mapelems(elem_len);
     std::cout << "E>> create reverse elemmap" << std::endl;
-    int rev_elemmap[num_elems];
+    std::vector<int> rev_elemmap(num_elems);
     for (int i = 0; i < num_elems; i++) {
       rev_elemmap[elemmap[i]] = i;
       std::cout << "  E>> rev[" << elemmap[i] << "] = " << i << std::endl;
@@ -339,7 +339,7 @@ main(int argc, char* argv[])
     dataspace = H5Screate_simple(rank, dimsf, NULL);
     dataset_id = H5Dcreate(
       new_file, "/Mesh/MixedElements", dt, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    status = H5Dwrite(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, mapelems);
+    status = H5Dwrite(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, mapelems.data());
 
 
     // iterate over datasets, fill in list of names
@@ -351,7 +351,7 @@ main(int argc, char* argv[])
       std::stringstream ds_name;
       ds_name << "/" << datasetList[i];
       std::cout << "E>> checking " << ds_name.str() << std::endl;
-      status = unpermute(ds_name.str().c_str(), restart_file, new_file, nodemap, elemmap);
+      status = unpermute(ds_name.str().c_str(), restart_file, new_file, nodemap.data(), elemmap.data());
     }
     // get size dimensions
     // if node or element based, unpermute, write out

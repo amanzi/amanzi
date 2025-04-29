@@ -99,7 +99,6 @@
     <ParameterList name="chemistry">
       <Parameter name="PK type" type="string" value="chemistry pk"/>
       <Parameter name="component names" type="Array(string)" value="{Na+, Ca++, Mg++, Cl-}"/>
-      <Parameter name="initial timestep (s)" type="double" value="20.0"/>
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="maximum Newton iterations" type="int" value="50"/>
       <Parameter name="log formulation" type="bool" value="true"/>
@@ -113,7 +112,7 @@
           <Parameter name="function" type="string" value="list was moved to state"/>
         </ParameterList>
 
-        <ParameterList name="ion_exchange_sites">
+        <ParameterList name="cation_exchange_capacity">
           <Parameter name="function" type="string" value="list was moved to state"/>
         </ParameterList>
 
@@ -131,6 +130,13 @@
       <Parameter name="number of component concentrations" type="int" value="4"/>
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
+      </ParameterList>
+
+      <ParameterList name="timestep controller" type="ParameterList">
+        <Parameter name="timestep controller type" type="string" value="fixed"/>
+        <ParameterList name="timestep controller fixed parameters" type="ParameterList">
+          <Parameter name="timestep [s]" type="double" value="20.0"/>
+        </ParameterList>
       </ParameterList>
 
     </ParameterList>
@@ -477,7 +483,7 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="ion_exchange_sites">
+      <ParameterList name="cation_exchange_capacity">
         <ParameterList name="function">
           <ParameterList name="Soil_1">
             <Parameter name="region" type="string" value="Soil_1"/>

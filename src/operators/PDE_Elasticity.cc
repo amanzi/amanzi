@@ -203,6 +203,7 @@ PDE_Elasticity::ComputeHydrostaticStress(const CompositeVector& u, CompositeVect
     WhetStone::Tensor CTc = Cc * Tc;
 
     for (int k = 0; k < d; ++k) p_c[0][c] += CTc(k, k);
+    p_c[0][c] /= 3;
   }
 }
 

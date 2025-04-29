@@ -250,8 +250,8 @@ PDE_DiffusionNLFV::InitStencils_()
     }
 
     // decompose co-normals
-    int ierr, ids[dim_];
-    double ws[dim_];
+    int ierr, ids[3];
+    double ws[3];
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
       const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f, c, &dir);

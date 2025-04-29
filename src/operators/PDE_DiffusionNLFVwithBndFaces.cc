@@ -241,8 +241,8 @@ PDE_DiffusionNLFVwithBndFaces::InitStencils_()
     }
 
     // decompose co-normals
-    int ierr, ids[dim_];
-    double ws[dim_];
+    int ierr, ids[3];
+    double ws[3];
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
       const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
@@ -294,8 +294,8 @@ PDE_DiffusionNLFVwithBndFaces::InitStencils_()
       const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
       conormal = -(Kc * normal) * dirs[face_itself];
 
-      int ierr, ids[dim_];
-      double ws[dim_];
+      int ierr, ids[3];
+      double ws[3];
 
       ierr = nlfv.PositiveDecomposition(face_itself, tau, conormal, manifold_dim_, ws, ids);
       AMANZI_ASSERT(ierr == 0);

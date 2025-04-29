@@ -990,7 +990,7 @@ The subelement ``primaries`` is used for specifying reactive and non-reactive pr
 
     * ``coefficient_of_diffusion`` = "exponential", this is an optional attribute
 
-    * ``first_order_decay_constant`` = "exponential", this is an optional attribute
+    * ``first_order_decay_rate_constant`` = "exponential", this is an optional attribute
 
     * ``forward_rate`` = "exponential", this is a required attribute when being used with non-reactive primaries/solutes and automatically generating the chemistry engine input file
 

@@ -131,10 +131,11 @@ Tensor::Inverse()
     data_[2] /= -det;
 
   } else {
-    int info, ipiv[size_];
-    double work[size_];
-    DGETRF_F77(&size_, &size_, data_, &size_, ipiv, &info);
-    DGETRI_F77(&size_, data_, &size_, ipiv, work, &size_, &info);
+    int info;
+    std::vector<int> ipiv(size_);
+    std::vector<double> work(size_);
+    DGETRF_F77(&size_, &size_, data_, &size_, ipiv.data(), &info);
+    DGETRI_F77(&size_, data_, &size_, ipiv.data(), work.data(), &size_, &info);
   }
 }
 
@@ -153,10 +154,10 @@ Tensor::PseudoInverse()
   } else {
     int n = size_;
     int lwork(3 * n), info;
-    double S[n], work[lwork];
+    std::vector<double> S(n), work(lwork);
 
     Tensor T(*this);
-    DSYEV_F77("V", "U", &n, T.data(), &n, S, work, &lwork, &info);
+    DSYEV_F77("V", "U", &n, T.data(), &n, S.data(), work.data(), &lwork, &info);
 
     // pseudo-invert diagonal matrix S
     double norm_inf(fabs(S[0]));
@@ -324,10 +325,10 @@ Tensor::SpectralBounds(double* lower, double* upper) const
   } else if (rank_ <= 2) {
     int n = size_;
     int lwork(3 * n), info;
-    double S[n], work[lwork];
+    std::vector<double> S(n), work(lwork);
 
     Tensor T(*this);
-    DSYEV_F77("N", "U", &n, T.data(), &n, S, work, &lwork, &info);
+    DSYEV_F77("N", "U", &n, T.data(), &n, S.data(), work.data(), &lwork, &info);
     *lower = S[0];
     *upper = S[n - 1];
   }

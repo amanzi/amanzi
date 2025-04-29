@@ -1898,8 +1898,7 @@ bool
 MeshAudit_Maps<Mesh_type>::check_face_partition() const
 {
   // Mark all the faces contained by owned cells.
-  bool owned[nfaces_all_];
-  for (int j = 0; j < nfaces_all_; ++j) owned[j] = false;
+  std::vector<bool> owned(nfaces_all_, false);
   View_type<const Entity_ID, MemSpace_kind::HOST> cface;
   for (Entity_ID j = 0; j < mesh_->getMap(AmanziMesh::Entity_kind::CELL, false).NumMyElements();
        ++j) {
@@ -1929,8 +1928,7 @@ bool
 MeshAudit_Maps<Mesh_type>::check_node_partition() const
 {
   // Mark all the nodes contained by owned cells.
-  bool owned[nnodes_all_];
-  for (int j = 0; j < nnodes_all_; ++j) owned[j] = false;
+  std::vector<bool> owned(nnodes_all_, false);
   View_type<const Entity_ID, MemSpace_kind::HOST> cnode;
   for (Entity_ID j = 0; j < mesh_->getMap(AmanziMesh::Entity_kind::CELL, false).NumMyElements();
        ++j) {

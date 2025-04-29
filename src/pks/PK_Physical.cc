@@ -26,7 +26,7 @@ namespace Amanzi {
 void
 PK_Physical::State_to_Solution(const Tag& tag, TreeVector& solution)
 {
-  solution.SetData(S_->GetPtrW<CompositeVector>(key_, tag, name()));
+  solution.SetData(S_->GetPtrW<CompositeVector>(key_, tag, passwd_));
 }
 
 

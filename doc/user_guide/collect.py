@@ -458,9 +458,9 @@ if ( opts.verification or opts.full_guide and opts.run_tests):
                         el2 = el[el.find("verification"):]
                         print("   file: " + el2)
                         if ("Amanzi::SIMULATION_SUCCESSFUL" in open(el).read()):
-                            print("   result: SIMULATION_SUCCESSFUL")
+                            print("   result: \033[32m SIMULATION_SUCCESSFUL\033[0m")
                         else:
-                            print("   ERROR: " + el)
+                            print("  \033[31m ERROR:\033[0m " + el)
             os.chdir(cwd)
 
 if ( opts.benchmarking or opts.full_guide and opts.run_tests):
@@ -483,7 +483,7 @@ if ( opts.benchmarking or opts.full_guide and opts.run_tests):
                         el2 = el[el.find("benchmarking"):]
                         print("   file: " + el2)
                         if ("Amanzi::SIMULATION_SUCCESSFUL" in open(el).read()):
-                            print("   result: SIMULATION_SUCCESSFUL")
+                            print("   result: \033[32m SIMULATION_SUCCESSFUL\033[0m")
                         else:
-                            print("   ERROR:" + open(el).readline())
+                            print("  \033[31m ERROR:\033[0m " + open(el).readline())
             os.chdir(cwd)

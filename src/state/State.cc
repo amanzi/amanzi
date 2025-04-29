@@ -572,8 +572,8 @@ State::WriteDependencyGraph() const
         Teuchos::OSTab tab1 = vo_->getOSTab();
         Teuchos::OSTab tab2 = vo_->getOSTab();
         data_.at(e.first)->GetFactory<CompositeVector, CompositeVectorSpace>().Print(*vo_->os());
-        *vo_->os() << std::endl;
       }
+      *vo_->os() << std::endl;
     }
 
     *vo_->os() << "------------------------------" << std::endl

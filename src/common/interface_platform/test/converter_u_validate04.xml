@@ -279,7 +279,7 @@
         <Parameter name="value" type="double" value="101325.0"/>
       </ParameterList>
 
-      <ParameterList name="first_order_decay_constant">
+      <ParameterList name="first_order_decay_rate_constant">
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="region" type="string" value="All"/>
@@ -456,7 +456,7 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="ion_exchange_sites">
+      <ParameterList name="cation_exchange_capacity">
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="region" type="string" value="All"/>
@@ -470,7 +470,7 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="sorption_sites">
+      <ParameterList name="surface_site_density">
         <ParameterList name="function">
           <ParameterList name="MESH BLOCK 1">
             <Parameter name="regions" type="Array(string)" value="{All}"/>
@@ -780,14 +780,6 @@
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="maximum Newton iterations" type="int" value="100"/>
       <Parameter name="tolerance" type="double" value="1.0e-10"/>
-      <Parameter name="max timestep (s)" type="double" value="1.0e+10"/>
-      <Parameter name="min timestep (s)" type="double" value="1.0e+10"/>
-      <Parameter name="initial timestep (s)" type="double" value="1.0e+7"/>
-      <Parameter name="timestep cut threshold" type="int" value="8"/>
-      <Parameter name="timestep cut factor" type="double" value="2.0"/>
-      <Parameter name="timestep increase threshold" type="int" value="4"/>
-      <Parameter name="timestep increase factor" type="double" value="1.2"/>
-      <Parameter name="timestep control method" type="string" value="fixed"/>
       <Parameter name="sorption sites" type="Array(string)" value="{&gt;davis_OH}"/>
       <Parameter name="initial conditions time" type="double" value="0.0"/>
       <Parameter name="number of component concentrations" type="int" value="14"/>
@@ -799,6 +791,13 @@
 
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
+      </ParameterList>
+
+      <ParameterList name="timestep controller" type="ParameterList">
+        <Parameter name="timestep controller type" type="string" value="fixed"/>
+        <ParameterList name="timestep controller fixed parameters" type="ParameterList">
+          <Parameter name="timestep [s]" type="double" value="1.0e+7"/>
+        </ParameterList>
       </ParameterList>
 
     </ParameterList>

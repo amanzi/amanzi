@@ -117,7 +117,7 @@ cleanName(const std::string& name, bool delimiters_ok)
 // Note, if DOMAIN == "domain" or "" this returns VARNAME
 
 bool
-validKey(const Key& key)
+isValid(const Key& key)
 {
   bool result = true;
   int deriv_del_count = std::count(key.begin(), key.end(), deriv_delimiter);
@@ -125,14 +125,14 @@ validKey(const Key& key)
     result = false;
   } else if (deriv_del_count == 1) {
     auto split_deriv = split(key, deriv_delimiter);
-    result = validKey(split_deriv.first) && validKey(split_deriv.second);
+    result = isValid(split_deriv.first) && isValid(split_deriv.second);
   } else {
     int tag_count = std::count(key.begin(), key.end(), tag_delimiter);
     if (tag_count > 1) {
       result = false;
     } else if (tag_count == 1) {
       auto split_tag = split(key, tag_delimiter);
-      result = validKey(split_tag.first) && validKey(split_tag.second);
+      result = isValid(split_tag.first) && isValid(split_tag.second);
     } else {
       int name_count = std::count(key.begin(), key.end(), name_delimiter);
       if (name_count > 1) {
@@ -144,8 +144,8 @@ validKey(const Key& key)
           result = false;
         if (std::count(domain_var.first.begin(), domain_var.first.end(), dset_delimiter) > 1)
           result = false;
-        if (std::count(domain_var.second.begin(), domain_var.second.end(), dset_delimiter))
-          result = false;
+        // if (std::count(domain_var.second.begin(), domain_var.second.end(), dset_delimiter))
+        //   result = false;
       }
     }
   }
@@ -179,7 +179,7 @@ getKey(const Key& domain, const Key& variable)
 KeyPair
 splitKey(const Key& name)
 {
-  if (!validKey(name)) {
+  if (!isValid(name)) {
     Errors::Message msg("Keys::splitKey() called with invalid argument \"");
     msg << name << "\"";
     Exceptions::amanzi_throw(msg);

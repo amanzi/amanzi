@@ -77,6 +77,7 @@
 
       <unstr_chemistry_controls>
 	  <auxiliary_data>pH</auxiliary_data>
+          <initial_time_step>1.e7</initial_time_step>
       </unstr_chemistry_controls>
 
       <unstr_steady-state_controls>

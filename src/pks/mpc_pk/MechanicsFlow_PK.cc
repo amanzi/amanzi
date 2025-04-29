@@ -105,6 +105,8 @@ void
 MechanicsFlow_PK::Initialize()
 {
   InitializeCVField(S_, *vo_, undrained_split_coef_key_, Tags::DEFAULT, "", 0.0);
+  InitializeCVField(S_, *vo_, biot_key_, Tags::DEFAULT, "", 1.0);
+
   PK_MPCSequential::Initialize();
 }
 

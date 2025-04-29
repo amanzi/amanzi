@@ -294,7 +294,7 @@ polygon_get_area_centroid_normal(PVT& coords, double* area, Point* centroid, Poi
 // Check if point is in polygon by Jordan's crossing algorithm
 template <class PVT>
 bool
-point_in_polygon(const Point testpnt, const PVT& coords)
+point_in_polygon(const Point& testpnt, const PVT& coords)
 {
   int np = coords.size();
   int d = coords[0].dim();
@@ -324,7 +324,7 @@ point_in_polygon(const Point testpnt, const PVT& coords)
 
 template <class PVT>
 bool
-point_in_polygon_flat(const Point testpnt, const PVT& coords, int i0, int i1)
+point_in_polygon_flat(const Point& testpnt, const PVT& coords, int i0, int i1)
 {
   int i, ip1, c;
 

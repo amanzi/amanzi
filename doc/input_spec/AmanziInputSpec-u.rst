@@ -1477,7 +1477,7 @@ The subelement ``primaries`` is used for specifying reactive and non-reactive pr
 
     * ``coefficient_of_diffusion`` = "double", this is an optional attribute
 
-    * ``first_order_decay_constant`` = "double", this is an optional attribute
+    * ``first_order_decay_rate_constant`` = "double", this is an optional attribute
 
     * ``forward_rate`` = "double", this is a required attribute when being used with non-reactive primaries/solutes and automatically generating the chemistry engine input file
 

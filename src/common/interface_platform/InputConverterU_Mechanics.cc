@@ -48,7 +48,7 @@ InputConverterU::TranslateMechanics_(const std::string& domain)
   DOMElement* element;
 
   // process expert parameters
-  bool biot_undrained_split(false), biot_stress_split(false);
+  bool biot_undrained_split(false), biot_stress_split(false), use_fracture(false);
   std::string disc_method("elasticity");
 
   bool flag;
@@ -65,7 +65,12 @@ InputConverterU::TranslateMechanics_(const std::string& domain)
     // -- discretization method
     inode = GetUniqueElementByTagsString_(node, "discretization_method", flag);
     if (flag) disc_method = GetTextContentS_(inode, "elasticity, BernardiRaugel");
+
+    // -- insert fracture
+    inode = GetUniqueElementByTagsString_(node, "use_fracture", flag);
+    if (flag) use_fracture = GetTextContentL_(inode);
   }
+
   // create header
   out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
 
@@ -101,7 +106,7 @@ InputConverterU::TranslateMechanics_(const std::string& domain)
     .set<std::string>("method", disc_method)
     .set<int>("method order", 1);
 
-  if (fracture_network_)
+  if (fracture_network_ && use_fracture)
     out_list.sublist("operators")
       .sublist("elasticity operator")
       .sublist("schema")
@@ -237,12 +242,21 @@ InputConverterU::TranslateMechanicsBCs_(const std::string& domain)
     if (bcs.type == "displacement") {
       Teuchos::ParameterList& bcfn = bc.sublist("no slip");
       bcfn.set<int>("number of dofs", dim_).set<std::string>("function type", "composite function");
+
+      auto formulas = CharToStrings_(bcs.formulas[0].c_str());
       for (int k = 0; k < dim_; ++k) {
         std::stringstream dof_str;
         dof_str << "dof " << k + 1 << " function";
-        bcfn.sublist(dof_str.str())
-          .sublist("function-constant")
-          .set<double>("value", bcs.vectors[0][k]);
+        if (formulas.size() == dim_) {
+          bcfn.sublist(dof_str.str())
+            .sublist("function-exprtk")
+            .set<int>("number of arguments", dim_ + 1)
+            .set<std::string>("formula", formulas[k]);
+        } else {
+          bcfn.sublist(dof_str.str())
+            .sublist("function-constant")
+            .set<double>("value", bcs.vectors[0][k]);
+        }
       }
     } else if (bcs.type == "traction") {
       Teuchos::ParameterList& bcfn = bc.sublist("traction");

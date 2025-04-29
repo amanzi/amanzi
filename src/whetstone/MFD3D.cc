@@ -87,7 +87,8 @@ MFD3D::StabilityOptimized_(const Tensor& T, DenseMatrix& N, DenseMatrix& M)
   // find null space of N^T
   DenseMatrix U(nrows, nrows);
   int info, ldv = 1, size = 5 * ncols + 3 * nrows;
-  double V, S[nrows], work[size];
+  double V;
+  std::vector<double> S(nrows), work(size);
 
   DGESVD_F77("A",
              "N",
@@ -95,12 +96,12 @@ MFD3D::StabilityOptimized_(const Tensor& T, DenseMatrix& N, DenseMatrix& M)
              &ncols,
              N.Values(),
              &nrows, // N = u s v
-             S,
+             S.data(),
              U.Values(),
              &nrows,
              &V,
              &ldv,
-             work,
+             work.data(),
              &size,
              &info);
 
@@ -176,7 +177,7 @@ MFD3D::StabilityOptimized_(const Tensor& T, DenseMatrix& N, DenseMatrix& M)
 
     // check SPD property (we use allocated memory)
     DenseMatrix Ptmp(P);
-    DSYEV_F77("N", "U", &mcols, Ptmp.Values(), &mcols, S, work, &size, &info);
+    DSYEV_F77("N", "U", &mcols, Ptmp.Values(), &mcols, S.data(), work.data(), &size, &info);
     if (info != 0) return 1;
 
     if (S[0] > eigmin) {
@@ -410,15 +411,14 @@ MFD3D::StabilityMMatrix_(int c, DenseMatrix& N, DenseMatrix& M, int objective)
   }
 
   // find a feasible basic solution
-  int izrow[mx + 1], iypos[m12 + 1];
-  simplex_num_itrs_ = SimplexFindFeasibleSolution_(T, m1, m2, 0, izrow, iypos);
+  std::vector<int> izrow(mx + 1), iypos(m12 + 1);
+  simplex_num_itrs_ = SimplexFindFeasibleSolution_(T, m1, m2, 0, izrow.data(), iypos.data());
   simplex_functional_ = T(0, 0);
 
   if (simplex_num_itrs_ < 0) return 1;
   if (fabs(T(m12 + 1, 0)) > 1e-8) return 1;
 
-  double u[mx];
-  for (int i = 0; i < mx; i++) u[i] = 0.0;
+  std::vector<double> u(mx, 0.0);
   for (int i = 1; i < m12 + 1; i++) {
     int k = iypos[i] - 1;
     if (k < mx) u[k] = T(i, 0);
@@ -472,15 +472,16 @@ MFD3D::SimplexFindFeasibleSolution_(DenseMatrix& T, int m1, int m2, int m3, int*
 
   // work memory
   int ip, kp, itr_max = WHETSTONE_SIMPLEX_MAX_ITERATIONS * n;
-  int itr1(0), itr2(0), nl1(n), l1[n + 1];
+  int itr1(0), itr2(0), nl1(n);
+  std::vector<int> l1(n + 1);
 
   for (int k = 0; k < n + 1; k++) l1[k] = izrow[k] = k;
   for (int i = 0; i < m + 1; i++) iypos[i] = n + i;
 
   // Start of phase I.
   if (m2 + m3 > 0) {
-    int flag(0), l3[m2];
-    for (int i = 0; i < m2; i++) l3[i] = 1;
+    int flag(0);
+    std::vector<int> l3(m2, 1);
 
     for (int itr = 0; itr < itr_max; itr++) {
       // find maximum coeffient of the auxiliary functional
