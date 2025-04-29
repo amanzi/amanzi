@@ -12,7 +12,7 @@ Help()
     echo "  --mpi_distro        Which MPI implementation to use? (currently OpenMPI or MPICH) (Default: MPICH)"
     echo "  --mpi_version       Which version number of --mpi_distro to build (Default: 4.0.3)"
     echo "  --petsc_ver         Which version of PETSc to build as part of TPLs? (Default: 3.20)"
-    echo "  --trilinos_ver      Which version of trilinos to build as part of TPLs? (Default: 15-1-6af5f44)"
+    echo "  --trilinos_ver      Which version of trilinos to build as part of TPLs? (Default: 15-1-0)"
     echo "  --amanzi_branch     Which Amanzi branch should be used when building container? (Default: master)"
     echo "  --amanzi_src_dir    Where does the Amanzi repo reside on the current system?"
     echo "                      (Default: /ascem/amanzi/repos/amanzi-master)"
