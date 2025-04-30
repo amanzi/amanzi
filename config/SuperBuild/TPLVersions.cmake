@@ -190,6 +190,8 @@
 #                - update Silo to 4.11.1
 #                - remove Boost and Trilinos dependency on Boost
 #   0.98.10      - patch ascem/io to improve error handling
+#   0.98.11      - update zlib to 1.3.1 (compatible with MacOSX Apple clang 17)
+
 
 include(CMakeParseArguments)
 
@@ -293,13 +295,13 @@ set(MPICH_MD5_SUM        e175452f4d61646a52c73031683fc375)
 # TPL: zlib
 #
 set(ZLIB_VERSION_MAJOR 1)
-set(ZLIB_VERSION_MINOR 2)
-set(ZLIB_VERSION_PATCH 11)
+set(ZLIB_VERSION_MINOR 3)
+set(ZLIB_VERSION_PATCH 1)
 set(ZLIB_VERSION ${ZLIB_VERSION_MAJOR}.${ZLIB_VERSION_MINOR}.${ZLIB_VERSION_PATCH})
 set(ZLIB_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(ZLIB_ARCHIVE_FILE   zlib-${ZLIB_VERSION}.tar.gz)
 set(ZLIB_SAVEAS_FILE    ${ZLIB_ARCHIVE_FILE})
-set(ZLIB_MD5_SUM        1c9f62f0778697a09d36121ead88e08e) 
+set(ZLIB_MD5_SUM        9855b6d802d7fe5b7bd5b196a2271655) 
 
 #
 # TPL: METIS
