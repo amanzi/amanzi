@@ -191,6 +191,7 @@
 #                - remove Boost and Trilinos dependency on Boost
 #   0.98.10      - patch ascem/io to improve error handling
 #   0.98.11      - update zlib to 1.3.1 (compatible with MacOSX Apple clang 17)
+#                - patch Trilinos/kokkos-kernels (error shown up when building by Apple clang 17 or LLVM clang 19)
 
 
 include(CMakeParseArguments)
