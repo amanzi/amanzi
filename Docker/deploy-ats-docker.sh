@@ -121,11 +121,6 @@ echo " - global hash      $ATS_GIT_GLOBAL_HASH"
 echo " - version string   $ATS_VER"
 echo ""
 
-if "${use_proxy}" ; then
-    LANL_PROXY="--build-arg http_proxy=proxyout.lanl.gov:8080 --build-arg https_proxy=proxyout.lanl.gov:8080"
-else
-    LANL_PROXY=""
-fi
 if [ "${output_style}" = "plain" ]; then
     output="--progress=plain"
 else
@@ -164,7 +159,7 @@ else
         --build-arg amanzi_branch=${amanzi_branch} \
         --build-arg amanzi_tpls_ver=${amanzi_tpls_ver} \
         --build-arg mpi_flavor=${mpi_flavor} \
-        -f ${amanzi_src_dir}/Docker/Dockerfile-ATS \
+        -f ${amanzi_src_dir}/Docker/Dockerfile-ATS-build \
         -t metsi/ats:${ATS_VER} .
 fi
 
