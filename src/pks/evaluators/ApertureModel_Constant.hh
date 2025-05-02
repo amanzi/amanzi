@@ -23,8 +23,8 @@ Constant aperture
 
 */
 
-#ifndef AMANZI_FLOW_APERTURE_MODEL_CONSTANT_HH_
-#define AMANZI_FLOW_APERTURE_MODEL_CONSTANT_HH_
+#ifndef AMANZI_EVALUATORS_APERTURE_MODEL_CONSTANT_HH_
+#define AMANZI_EVALUATORS_APERTURE_MODEL_CONSTANT_HH_
 
 #include <cmath>
 
@@ -33,7 +33,7 @@ Constant aperture
 #include "ApertureModel.hh"
 
 namespace Amanzi {
-namespace Flow {
+namespace Evaluators {
 
 class ApertureModel_Constant : public ApertureModel {
  public:
@@ -54,7 +54,7 @@ class ApertureModel_Constant : public ApertureModel {
   double a0_;
 };
 
-} // namespace Flow
+} // namespace Evaluators
 } // namespace Amanzi
 
 #endif

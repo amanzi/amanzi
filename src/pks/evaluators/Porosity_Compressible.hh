@@ -8,19 +8,19 @@
 */
 
 /*
-  Flow PK
+  Evaluators
 
 */
 
-#ifndef AMANZI_FLOW_POROSITY_COMPRESSIBLE_HH_
-#define AMANZI_FLOW_POROSITY_COMPRESSIBLE_HH_
+#ifndef AMANZI_EVALUATORS_POROSITY_COMPRESSIBLE_HH_
+#define AMANZI_EVALUATORS_POROSITY_COMPRESSIBLE_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
 #include "Porosity.hh"
 
 namespace Amanzi {
-namespace Flow {
+namespace Evaluators {
 
 class Porosity_Compressible : public Porosity {
  public:
@@ -60,7 +60,7 @@ class Porosity_Compressible : public Porosity {
   double a_liquid_, a_rock_;
 };
 
-} // namespace Flow
+} // namespace Evaluators
 } // namespace Amanzi
 
 #endif

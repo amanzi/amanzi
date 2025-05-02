@@ -125,7 +125,7 @@ InputConverterU::TranslateFlow_(const std::string& mode,
     flow_list = &out_list;
 
     out_list.sublist("water retention models") = TranslateWRM_("flow");
-    out_list.sublist("porosity models") = TranslatePOM_(domain);
+
     if (out_list.sublist("porosity models").numParams() > 0) {
       flow_list->sublist("physical models and assumptions")
         .set<std::string>("porosity model", "compressible");
@@ -400,7 +400,9 @@ InputConverterU::TranslateWRM_(const std::string& pk_name)
 * Create list of porosity models.
 ****************************************************************** */
 Teuchos::ParameterList
-InputConverterU::TranslatePOM_(const std::string& domain)
+InputConverterU::TranslatePOM_(const std::string& domain,
+                               Teuchos::ParameterList& out_ic,
+                               Teuchos::ParameterList& out_ev)
 {
   Teuchos::ParameterList out_list;
 
@@ -409,13 +411,17 @@ InputConverterU::TranslatePOM_(const std::string& domain)
     *vo_->os() << "Translating porosity models" << std::endl;
 
   MemoryManager mm;
+  Errors::Message msg;
+
   DOMNodeList* children;
   DOMNode* node;
   DOMElement* element;
 
-  bool flag;
+  bool flag, poroelasticity(false), thermoelasticity(false);
   double compres, ref_pressure;
+
   std::string model;
+  Key porosity_key = Keys::getKey(domain, "porosity");
 
   use_porosity_model_ = false;
 
@@ -432,9 +438,17 @@ InputConverterU::TranslatePOM_(const std::string& domain)
     bool flag;
     node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
     std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
+    std::string reg_str = CreateNameFromVector_(regions);
 
     // get compressibility
     node = GetUniqueElementByTagsString_(inode, "mechanical_properties, porosity", flag);
+    if (flag) {
+      TranslateFieldEvaluator_(node, porosity_key, "-", reg_str, regions, out_ic, out_ev);
+    } else {
+      msg << "Porosity element must be specified under mechanical_properties";
+      Exceptions::amanzi_throw(msg);
+    }
+
     model = GetAttributeValueS_(node, "model", "constant, compressible, thermoporoelastic");
 
     std::string type = GetAttributeValueS_(node, "type", TYPE_NONE, false, "");
@@ -450,16 +464,15 @@ InputConverterU::TranslatePOM_(const std::string& domain)
     // optional thermoporoelasticity
     double dilation_rock(0.0), dilation_liquid(0.0), biot(1.0);
     if (model == "thermoporoelastic") {
-      DOMNode* knode;
-      knode =
-        GetUniqueElementByTagsString_(inode, "mechanical_properties, rock_thermal_dilation", flag);
-      if (flag)
-        dilation_rock = GetAttributeValueD_(knode, "value", TYPE_NUMERICAL, 0.0, 1.0, "K^-1");
+      poroelasticity_ = true;
+      thermoelasticity_ = true;
 
-      knode = GetUniqueElementByTagsString_(
-        inode, "mechanical_properties, liquid_thermal_dilation", flag);
-      if (flag)
-        dilation_liquid = GetAttributeValueD_(knode, "value", TYPE_NUMERICAL, 0.0, 1.0, "K^-1");
+      DOMNode* knode;
+      knode = GetUniqueElementByTagsString_(inode, "mechanical_properties, rock_thermal_dilation", flag);
+      if (flag) dilation_rock = GetAttributeValueD_(knode, "value", TYPE_NUMERICAL, 0.0, 1.0, "K^-1");
+
+      knode = GetUniqueElementByTagsString_(inode, "mechanical_properties, liquid_thermal_dilation", flag);
+      if (flag) dilation_liquid = GetAttributeValueD_(knode, "value", TYPE_NUMERICAL, 0.0, 1.0, "K^-1");
 
       // Biot-Willis coefficient
       knode = GetUniqueElementByTagsString_(inode, "mechanical_properties, biot_coefficient", flag);
@@ -471,8 +484,7 @@ InputConverterU::TranslatePOM_(const std::string& domain)
       compres = GetAttributeValueD_(node, "compressibility", TYPE_NUMERICAL, 0.0, 1.0, "Pa^-1");
     } else if (model == "thermoporoelastic") {
       double bulk(0.0);
-      if (flag)
-        bulk = GetAttributeValueD_(node, "solid_bulk_modulus", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa");
+      if (flag) bulk = GetAttributeValueD_(node, "solid_bulk_modulus", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa");
       compres = (biot - phi) / bulk;
     }
 
@@ -483,12 +495,11 @@ InputConverterU::TranslatePOM_(const std::string& domain)
     pom_list.set<Teuchos::Array<std::string>>("regions", regions);
 
     // we can have either uniform of compressible rock
+    pom_list.set<std::string>("porosity model", model);
     if (model == "constant") {
-      pom_list.set<std::string>("porosity model", "constant");
       pom_list.set<double>("value", phi);
     } else {
-      pom_list.set<std::string>("porosity model", "compressible")
-        .set<double>("undeformed soil porosity", phi)
+      pom_list.set<double>("undeformed soil porosity", phi)
         .set<double>("reference pressure", ref_pressure)
         .set<double>("pore compressibility", compres)
         .set<double>("biot coefficient", biot)
@@ -498,9 +509,21 @@ InputConverterU::TranslatePOM_(const std::string& domain)
     }
   }
 
-  if (!use_porosity_model_) {
-    Teuchos::ParameterList empty;
-    out_list = empty;
+  if (use_porosity_model_) {
+    Key pressure_key = Keys::getKey(domain, "porosity");
+    Key temperature_key = Keys::getKey(domain, "temperature");
+    Key vol_strain_key = Keys::getKey(domain, "volumetric_strain");
+
+    ParameterList& tmp = out_list.sublist(porosity_key);
+    tmp.set<std::string>("porosity key", porosity_key)
+       .set<std::string>("pressure key", pressure_key)
+       .set<std::string>("temperature key", temperature_key)
+       .set<std::string>("volumetric strain key", vol_strain_key)
+       .set<bool>("thermoelasticity", themorelasticity)
+       .set<bool>("thermoelasticity", poroelasticity)
+       .set<std::string>("tag", "");
+
+    out_ev.sublist(porosity_key).sublist("parameters") = out_list;
   }
   return out_list;
 }

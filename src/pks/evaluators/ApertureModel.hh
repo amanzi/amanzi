@@ -14,13 +14,13 @@ changes in fracture aperture due to change in internal fluid/gas pressure.
 
 */
 
-#ifndef AMANZI_FLOW_APERTURE_MODEL_HH_
-#define AMANZI_FLOW_APERTURE_MODEL_HH_
+#ifndef AMANZI_EVALUATORS_APERTURE_MODEL_HH_
+#define AMANZI_EVALUATORS_APERTURE_MODEL_HH_
 
 #include <string>
 
 namespace Amanzi {
-namespace Flow {
+namespace Evaluators {
 
 class ApertureModel {
  public:
@@ -30,7 +30,7 @@ class ApertureModel {
   virtual double dAperturedPressure(double pressure, double pov) = 0;
 };
 
-} // namespace Flow
+} // namespace Evaluators
 } // namespace Amanzi
 
 #endif

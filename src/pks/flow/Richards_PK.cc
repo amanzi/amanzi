@@ -21,6 +21,7 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 // Amanzi
+#include "ApertureModelEvaluator.hh"
 #include "BoundaryFlux.hh"
 #include "EvaluatorMultiplicativeReciprocal.hh"
 #include "EvaluatorPrimary.hh"
@@ -33,6 +34,7 @@
 #include "OperatorDefs.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "Point.hh"
+#include "PorosityEvaluator.hh"
 #include "StateArchive.hh"
 #include "StateHelpers.hh"
 #include "VolumetricFlowRateEvaluator.hh"
@@ -40,9 +42,7 @@
 #include "XMLParameterListWriter.hh"
 
 // Amanzi::Flow
-#include "ApertureModelEvaluator.hh"
 #include "PermeabilityEvaluator.hh"
-#include "PorosityEvaluator.hh"
 #include "Richards_PK.hh"
 #include "WaterStorage.hh"
 #include "WRMEvaluator.hh"
@@ -226,8 +226,8 @@ Richards_PK::Setup()
       .set<bool>("thermoelasticity", false)
       .set<std::string>("tag", "");
 
-    Teuchos::RCP<PorosityModelPartition> pom = CreatePorosityModelPartition(mesh_, msp_list);
-    auto eval = Teuchos::rcp(new PorosityEvaluator(elist, pom));
+    Teuchos::RCP<Evaluators::PorosityModelPartition> pom = Evaluators::CreatePorosityModelPartition(mesh_, msp_list);
+    auto eval = Teuchos::rcp(new Evaluators::PorosityEvaluator(elist, pom));
     S_->SetEvaluator(porosity_msp_key_, Tags::DEFAULT, eval);
   }
 
@@ -238,29 +238,6 @@ Richards_PK::Setup()
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-
-    if (pom_name == "compressible") {
-      Teuchos::RCP<Teuchos::ParameterList> pom_list =
-        Teuchos::sublist(fp_list_, "porosity models", true);
-      Teuchos::RCP<PorosityModelPartition> pom = CreatePorosityModelPartition(mesh_, pom_list);
-
-      Teuchos::ParameterList elist(porosity_key_);
-      elist.set<std::string>("porosity key", porosity_key_)
-        .set<std::string>("pressure key", pressure_key_)
-        .set<bool>("thermoelasticity", thermoelasticity_)
-        .set<std::string>("tag", "");
-
-      if (poroelasticity_) elist.set<std::string>("volumetric strain key", vol_strain_key_);
-      if (thermoelasticity_) elist.set<std::string>("temperature key", temperature_key_);
-      // elist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-
-      S_->RequireDerivative<CV_t, CVS_t>(
-          porosity_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, porosity_key_)
-        .SetGhosted();
-
-      auto eval = Teuchos::rcp(new PorosityEvaluator(elist, pom));
-      S_->SetEvaluator(porosity_key_, Tags::DEFAULT, eval);
-    } else {
       S_->RequireEvaluator(porosity_key_, Tags::DEFAULT);
     }
   }
@@ -411,7 +388,7 @@ Richards_PK::Setup()
   if (flow_on_manifold_) {
     if (fp_list_->isSublist("fracture aperture models")) {
       auto fam_list = Teuchos::sublist(fp_list_, "fracture aperture models", true);
-      auto fam = CreateApertureModelPartition(mesh_, fam_list);
+      auto fam = Evaluators::CreateApertureModelPartition(mesh_, fam_list);
 
       Teuchos::ParameterList elist(aperture_key_);
       elist.set<std::string>("aperture key", aperture_key_)
@@ -419,7 +396,7 @@ Richards_PK::Setup()
         .set<std::string>("tag", "");
       if (S_->HasRecord("hydrostatic_stress")) elist.set<bool>("use stress", true);
 
-      auto eval = Teuchos::rcp(new ApertureModelEvaluator(elist, fam));
+      auto eval = Teuchos::rcp(new Evaluators::ApertureModelEvaluator(elist, fam));
       S_->SetEvaluator(aperture_key_, Tags::DEFAULT, eval);
     } else {
       S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);

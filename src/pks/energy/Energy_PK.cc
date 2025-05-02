@@ -17,14 +17,18 @@
 
 #include "Teuchos_ParameterList.hpp"
 
+// Amanzi
+#include "ApertureModelEvaluator.hh"
 #include "EvaluatorMultiplicativeReciprocal.hh"
 #include "EvaluatorPrimary.hh"
 #include "Mesh.hh"
 #include "MeshAlgorithms.hh"
 #include "PK_DomainFunctionFactory.hh"
+#include "PorosityEvaluator.hh"
 #include "State.hh"
 #include "WhetStoneDefs.hh"
 
+// Amanzi::Energy
 #include "Energy_PK.hh"
 #include "EnthalpyEvaluator.hh"
 
@@ -102,6 +106,7 @@ Energy_PK::Setup()
   x_gas_key_ = Keys::getKey(domain_, "molar_fraction_gas");
 
   mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
+  porosity_key_ = Keys::getKey(domain_, "porosity");
   sat_liquid_key_ = Keys::getKey(domain_, "saturation_liquid");
   pressure_key_ = Keys::getKey(domain_, "pressure");
 
@@ -213,11 +218,28 @@ Energy_PK::Setup()
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
-    S_->Require<CV_t, CVS_t>(aperture_key_, Tags::DEFAULT, aperture_key_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-    S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
+    if (!S_->HasRecord(aperture_key_)) {
+      S_->Require<CV_t, CVS_t>(aperture_key_, Tags::DEFAULT, aperture_key_)
+        .SetMesh(mesh_)
+        ->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+
+      if (ep_list_->isSublist("fracture aperture models")) {
+        auto fam_list = Teuchos::sublist(ep_list_, "fracture aperture models", true);
+        auto fam = Evaluators::CreateApertureModelPartition(mesh_, fam_list);
+
+        Teuchos::ParameterList elist(aperture_key_);
+        elist.set<std::string>("aperture key", aperture_key_)
+          .set<std::string>("pressure key", pressure_key_)
+          .set<std::string>("tag", "");
+        if (S_->HasRecord("hydrostatic_stress")) elist.set<bool>("use stress", true);
+
+        auto eval = Teuchos::rcp(new Evaluators::ApertureModelEvaluator(elist, fam));
+        S_->SetEvaluator(aperture_key_, Tags::DEFAULT, eval);
+      } else {
+        S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
+      }
+    }
 
     Teuchos::ParameterList elist(conductivity_eff_key_);
     std::vector<std::string> listm(
@@ -245,18 +267,18 @@ Energy_PK::Setup()
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-    // S_->RequireEvaluator(pressure_key_, Tags::DEFAULT);
     AddDefaultPrimaryEvaluator(S_, pressure_key_);
   }
 
-  // -- fracture aperture
-  if (flow_on_manifold_) {
-    S_->Require<CV_t, CVS_t>(aperture_key_, Tags::DEFAULT, aperture_key_)
+  // -- porosity
+  if (!S_->HasRecord(porosity_key_)) {
+    S_->Require<CV_t, CVS_t>(porosity_key_, Tags::DEFAULT, porosity_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+     S_->RequireEvaluator(porosity_key_, Tags::DEFAULT);
   }
+
 
   // set units
   S_->GetRecordSetW(temperature_key_).set_units("K");

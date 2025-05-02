@@ -25,7 +25,7 @@
 TEST(vanGenuchten)
 {
   using namespace Amanzi;
-  using namespace Amanzi::Flow;
+  using namespace Amanzi::Evaluators;
 
   Teuchos::ParameterList plist;
   plist.set<double>("undeformed aperture", 1e-5)

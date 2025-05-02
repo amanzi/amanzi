@@ -8,12 +8,12 @@
 */
 
 /*
-  Flow PK
+  Evaluators
 
 */
 
-#ifndef AMANZI_FLOW_POROSITY_CONSTANT_HH_
-#define AMANZI_FLOW_POROSITY_CONSTANT_HH_
+#ifndef AMANZI_EVALUATORS_POROSITY_CONSTANT_HH_
+#define AMANZI_EVALUATORS_POROSITY_CONSTANT_HH_
 
 #include <utility>
 
@@ -22,7 +22,7 @@
 #include "Porosity.hh"
 
 namespace Amanzi {
-namespace Flow {
+namespace Evaluators {
 
 class Porosity_Constant : public Porosity {
  public:
@@ -45,7 +45,7 @@ class Porosity_Constant : public Porosity {
   double porosity_;
 };
 
-} // namespace Flow
+} // namespace Evaluators
 } // namespace Amanzi
 
 #endif

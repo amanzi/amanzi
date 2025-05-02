@@ -8,20 +8,20 @@
 */
 
 /*
-  Flow PK
+  Common evaluators
 
   A collection of aperture models along with a mesh partition.
 */
 
-#ifndef AMANZI_FLOW_APERTURE_MODEL_PARTITION_HH_
-#define AMANZI_FLOW_APERTURE_MODEL_PARTITION_HH_
+#ifndef AMANZI_EVALUATORS_APERTURE_MODEL_PARTITION_HH_
+#define AMANZI_EVALUATORS_APERTURE_MODEL_PARTITION_HH_
 
 #include "Mesh.hh"
 #include "MeshPartition.hh"
 #include "ApertureModel.hh"
 
 namespace Amanzi {
-namespace Flow {
+namespace Evaluators {
 
 typedef std::vector<Teuchos::RCP<ApertureModel>> ApertureModelList;
 typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, ApertureModelList> ApertureModelPartition;
@@ -31,7 +31,7 @@ Teuchos::RCP<ApertureModelPartition>
 CreateApertureModelPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                              Teuchos::RCP<Teuchos::ParameterList> plist);
 
-} // namespace Flow
+} // namespace Evaluators
 } // namespace Amanzi
 
 #endif

@@ -477,7 +477,7 @@ Mechanics_PK::AddTemperatureGradient(CompositeVector& rhs)
   const auto& E = *S_->Get<CV_t>(young_modulus_key_, Tags::DEFAULT).ViewComponent("cell");
   const auto& nu = *S_->Get<CV_t>(poisson_ratio_key_, Tags::DEFAULT).ViewComponent("cell");
 
-  auto eval = Teuchos::rcp_dynamic_cast<Flow::PorosityEvaluator>(
+  auto eval = Teuchos::rcp_dynamic_cast<Evaluators::PorosityEvaluator>(
     S_->GetEvaluatorPtr("porosity", Tags::DEFAULT));
 
   if (temp.HasComponent("face")) {

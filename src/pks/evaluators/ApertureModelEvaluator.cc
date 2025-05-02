@@ -9,20 +9,19 @@
 */
 
 /*
-  Flow PK
+  Evaluators
 */
 
 // Amanzi
 #include "PDE_HelperDiscretization.hh"
 
-// Amanzi::Flow
-#include "FlowDefs.hh"
+// Amanzi::Evaluators
 #include "ApertureModel.hh"
 #include "ApertureModelEvaluator.hh"
 #include "ApertureModelPartition.hh"
 
 namespace Amanzi {
-namespace Flow {
+namespace Evaluators {
 
 /* ******************************************************************
 * Two constructors.
@@ -130,5 +129,5 @@ ApertureModelEvaluator::UpdateOverburdenPressure_(const State& S)
   }
 }
 
-} // namespace Flow
+} // namespace Evaluators
 } // namespace Amanzi
