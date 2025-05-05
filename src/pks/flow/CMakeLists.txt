@@ -63,7 +63,7 @@ if (Ifpack_ENABLE_HYPRE)
   list(APPEND flow_tpl_libs ${Ifpack_LIBRARIES} ${HYPRE_LIBRARY})
 endif()
 add_amanzi_library(flow SOURCE ${flow_src_files}
-                   LINK_LIBS pks eos evaluators operators state functions 
+                   LINK_LIBS pks eos evaluators operators state functions
                              mesh_functions time_integration data_structures
                              ${flow_tpl_libs})
 

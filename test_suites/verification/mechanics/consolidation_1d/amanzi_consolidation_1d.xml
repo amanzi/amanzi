@@ -113,7 +113,7 @@
   <materials>
     <material name="All">
       <mechanical_properties>
-        <porosity model="compressible" value="0.1" compressibility="1e-10" reference_pressure="10.0e+6"/>
+        <porosity model="poroelastic" value="0.1" compressibility="1e-10" reference_pressure="10.0e+6"/>
         <particle_density value="2716.0"/>
         <poisson_ratio value="0.0"/>
         <!--specific_storage model="constant" value="2.943e-7"/-->

@@ -48,7 +48,6 @@ set(mechanics_src_files Mechanics_PK.cc
                         MechanicsFracturedMatrix_PK.cc
                         MechanicsBoundaryFunction.cc
                         HydrostaticStressEvaluator.cc
-                        VolumetricStrainEvaluator.cc
                         ShearStrainEvaluator.cc
                         SSMEvaluator.cc
    )
@@ -73,7 +72,6 @@ set(mechanics_inc_files
   MechanicsFracturedMatrix_PK.hh
   MechanicsBoundaryFunction.hh
   HydrostaticStressEvaluator.hh
-  VolumetricStrainEvaluator.hh
 )
 
 add_install_include_file(${mechanics_inc_files})

@@ -67,22 +67,28 @@
       <Parameter name="cycles start period stop" type="Array(int)" value="{3, 1, -1}"/>
     </ParameterList>
   </ParameterList>
+
   <ParameterList name="state">
     <ParameterList name="evaluators">
+      <ParameterList name="volumetric_strain">
+        <Parameter name="evaluator type" type="string" value="volumetric strain"/>
+      </ParameterList>
       <ParameterList name="porosity">
-        <ParameterList name="function">
-          <ParameterList name="EntireDomain">
-            <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.100000000000000006"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
+        <Parameter name="evaluator type" type="string" value="porosity"/>
+        <Parameter name="porosity key" type="string" value="porosity"/>
+        <Parameter name="pressure key" type="string" value="pressure"/>
+        <Parameter name="volumetric strain key" type="string" value="volumetric_strain"/>
+        <Parameter name="thermoelasticity" type="bool" value="false"/>
+        <Parameter name="poroelasticity" type="bool" value="true"/>
+        <ParameterList name="parameters">
+        <ParameterList name="POM 0">
+          <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
+          <Parameter name="porosity model" type="string" value="compressible"/>
+          <Parameter name="undeformed soil porosity" type="double" value="0.1"/>
+          <Parameter name="reference pressure" type="double" value="101325.000000000000"/>
+          <Parameter name="pore compressibility" type="double" value="3.0e-9"/>
         </ParameterList>
-        <Parameter name="evaluator type" type="string" value="independent variable"/>
-        <Parameter name="constant in time" type="bool" value="true"/>
+        </ParameterList>
       </ParameterList>
       <ParameterList name="particle_density">
         <ParameterList name="function">
@@ -98,32 +104,6 @@
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
         <Parameter name="constant in time" type="bool" value="true"/>
-      </ParameterList>
-      <ParameterList name="internal_energy_liquid">
-        <Parameter name="evaluator type" type="string" value="iem"/>
-        <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
-        <ParameterList name="IEM parameters">
-          <ParameterList name="EntireDomain">
-            <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
-            <ParameterList name="IEM parameters">
-              <Parameter name="iem type" type="string" value="linear"/>
-              <Parameter name="heat capacity" type="double" value="76.0000000000000000"/>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="internal_energy_rock">
-        <Parameter name="evaluator type" type="string" value="iem"/>
-        <Parameter name="internal energy key" type="string" value="internal_energy_rock"/>
-        <ParameterList name="IEM parameters">
-          <ParameterList name="EntireDomain">
-            <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
-            <ParameterList name="IEM parameters">
-              <Parameter name="iem type" type="string" value="linear"/>
-              <Parameter name="heat capacity" type="double" value="1180.00000000000000"/>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
       </ParameterList>
       <ParameterList name="molar_density_liquid">
         <Parameter name="evaluator type" type="string" value="eos"/>
@@ -542,16 +522,6 @@
         <ParameterList name="WRM_0">
           <Parameter name="water retention model" type="string" value="saturated"/>
           <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
-        </ParameterList>
-      </ParameterList>
-
-      <ParameterList name="porosity models">
-        <ParameterList name="POM 0">
-          <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
-          <Parameter name="porosity model" type="string" value="compressible"/>
-          <Parameter name="undeformed soil porosity" type="double" value="0.1"/>
-          <Parameter name="reference pressure" type="double" value="101325.000000000000"/>
-          <Parameter name="pore compressibility" type="double" value="3.0e-9"/>
         </ParameterList>
       </ParameterList>
 

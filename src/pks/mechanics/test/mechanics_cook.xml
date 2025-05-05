@@ -126,14 +126,16 @@
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
-
     </ParameterList>
-
   </ParameterList>
 
   <!--  STATE  -->
   <ParameterList name="state">
     <ParameterList name="evaluators">
+      <ParameterList name="volumetric_strain">
+        <Parameter name="evaluator type" type="string" value="volumetric strain"/>
+      </ParameterList>
+
       <ParameterList name="particle_density">
         <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
@@ -149,20 +151,18 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
+
     <ParameterList name="initial conditions">
 
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="998.0"/>
       </ParameterList>
-
       <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="0.01"/>
       </ParameterList>
-
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="101325.0"/>
       </ParameterList>
-
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, -9.81}"/>
       </ParameterList>

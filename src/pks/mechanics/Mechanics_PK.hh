@@ -155,7 +155,6 @@ class Mechanics_PK : public PK_PhysicalBDF {
   Teuchos::RCP<CompositeVector> solution_;
   Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>> eval_;
   Teuchos::RCP<HydrostaticStressEvaluator> eval_hydro_stress_;
-  Teuchos::RCP<VolumetricStrainEvaluator> eval_vol_strain_;
 
   // solvers
   Teuchos::RCP<Operators::Operator> op_matrix_;

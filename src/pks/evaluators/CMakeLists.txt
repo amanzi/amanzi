@@ -27,7 +27,9 @@ set(evaluators_src_files
     ApertureModelPartition.cc
     ApertureModelEvaluator.cc
     PorosityModelPartition.cc
-    PorosityEvaluator.cc)
+    PorosityEvaluator.cc
+    VolumetricStrainEvaluator.cc)
+
 set(evaluators_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${SEACAS_LIBRARIES})
 add_amanzi_library(evaluators SOURCE ${evaluators_src_files}
                    LINK_LIBS eos functions mesh_functions data_structures state operators
@@ -42,7 +44,8 @@ set(evaluators_inc_files
     ApertureModelPartition.hh
     ApertureModelEvaluator.hh
     Porosity.hh
-    PorosityModelPartition.hh)
+    PorosityModelPartition.hh
+    VolumetricStrainEvaluator.hh)
 
 add_install_include_file(${evaluators_inc_files})
 

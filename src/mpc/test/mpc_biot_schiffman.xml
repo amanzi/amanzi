@@ -60,7 +60,35 @@
   </ParameterList>
 
   <ParameterList name="state">
+    <ParameterList name="debug">
+      <Parameter name="evaluators" type="Array(string)" value="{porosity,volumetric_strain}"/>
+    </ParameterList>
+    
     <ParameterList name="evaluators">
+      <ParameterList name="volumetric_strain">
+        <Parameter name="evaluator type" type="string" value="volumetric strain"/>
+      </ParameterList>
+      <ParameterList name="porosity">
+        <Parameter name="evaluator type" type="string" value="porosity"/>
+        <Parameter name="porosity key" type="string" value="porosity"/>
+        <Parameter name="pressure key" type="string" value="pressure"/>
+        <Parameter name="volumetric strain key" type="string" value="volumetric_strain"/>
+        <Parameter name="thermoelasticity" type="bool" value="false"/>
+        <Parameter name="poroelasticity" type="bool" value="true"/>
+        <ParameterList name="parameters">
+          <ParameterList name="POM 0">
+            <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
+            <Parameter name="porosity model" type="string" value="compressible"/>
+            <Parameter name="undeformed soil porosity" type="double" value="0.1"/>
+            <Parameter name="reference pressure" type="double" value="1.0e+7"/>
+            <Parameter name="pore compressibility" type="double" value="1.0e-10"/>
+            <Parameter name="biot coefficient" type="double" value="0.9"/>
+            <Parameter name="rock thermal dilation" type="double" value="0.0"/>
+            <Parameter name="liquid thermal dilation" type="double" value="0.0"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
       <ParameterList name="mass_density_liquid">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -99,21 +127,6 @@
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="0.001"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-        <Parameter name="evaluator type" type="string" value="independent variable"/>
-        <Parameter name="constant in time" type="bool" value="true"/>
-      </ParameterList>
-      <ParameterList name="porosity">
-        <ParameterList name="function">
-          <ParameterList name="EntireDomain">
-            <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.1"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -398,19 +411,6 @@
         <ParameterList name="WRM_0">
           <Parameter name="water retention model" type="string" value="saturated"/>
           <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
-        </ParameterList>
-      </ParameterList>
-
-      <ParameterList name="porosity models">
-        <ParameterList name="POM 0">
-          <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
-          <Parameter name="porosity model" type="string" value="compressible"/>
-          <Parameter name="undeformed soil porosity" type="double" value="0.1"/>
-          <Parameter name="reference pressure" type="double" value="1.0e+7"/>
-          <Parameter name="pore compressibility" type="double" value="1.0e-10"/>
-          <Parameter name="biot coefficient" type="double" value="0.9"/>
-          <Parameter name="rock thermal dilation" type="double" value="0.0"/>
-          <Parameter name="liquid thermal dilation" type="double" value="0.0"/>
         </ParameterList>
       </ParameterList>
 

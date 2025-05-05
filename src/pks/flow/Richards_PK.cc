@@ -225,9 +225,9 @@ Richards_PK::Setup()
       .set<std::string>("pressure key", pressure_msp_key_)
       .set<bool>("thermoelasticity", false)
       .set<std::string>("tag", "");
+    elist.sublist("parameters") = *msp_list;
 
-    Teuchos::RCP<Evaluators::PorosityModelPartition> pom = Evaluators::CreatePorosityModelPartition(mesh_, msp_list);
-    auto eval = Teuchos::rcp(new Evaluators::PorosityEvaluator(elist, pom));
+    auto eval = Teuchos::rcp(new Evaluators::PorosityEvaluator(elist));
     S_->SetEvaluator(porosity_msp_key_, Tags::DEFAULT, eval);
   }
 
@@ -239,7 +239,6 @@ Richards_PK::Setup()
       ->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
       S_->RequireEvaluator(porosity_key_, Tags::DEFAULT);
-    }
   }
 
   // -- viscosity: if not requested by any PK, we request its constant value.

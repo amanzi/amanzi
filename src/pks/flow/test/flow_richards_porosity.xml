@@ -150,21 +150,6 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="porosity models">
-        <ParameterList name="POM for Material 1">
-          <Parameter name="regions" type="Array(string)" value="{Material 1}"/>
-          <Parameter name="porosity model" type="string" value="constant"/>
-          <Parameter name="value" type="double" value="0.2"/>
-        </ParameterList>
-        <ParameterList name="POM for Material 2">
-          <Parameter name="regions" type="Array(string)" value="{Material 2}"/>
-          <Parameter name="porosity model" type="string" value="compressible"/>
-          <Parameter name="undeformed soil porosity" type="double" value="0.2"/>
-          <Parameter name="reference pressure" type="double" value="-10.0"/>
-          <Parameter name="pore compressibility" type="double" value="0.01"/>
-        </ParameterList>
-      </ParameterList>
-
       <ParameterList name="boundary conditions">
         <ParameterList name="mass flux">
           <ParameterList name="BC 0">
@@ -209,6 +194,28 @@
       <Parameter name="verbosity level" type="string" value="extreme"/>
     </ParameterList>
     <ParameterList name="evaluators">
+      <ParameterList name="porosity">
+        <Parameter name="evaluator type" type="string" value="porosity"/>
+        <Parameter name="porosity key" type="string" value="porosity"/>
+        <Parameter name="pressure key" type="string" value="pressure"/>
+        <Parameter name="thermoelasticity" type="bool" value="false"/>
+        <Parameter name="poroelasticity" type="bool" value="false"/>
+        <ParameterList name="parameters">
+          <ParameterList name="POM for Material 1">
+            <Parameter name="regions" type="Array(string)" value="{Material 1}"/>
+            <Parameter name="porosity model" type="string" value="constant"/>
+            <Parameter name="value" type="double" value="0.2"/>
+          </ParameterList>
+          <ParameterList name="POM for Material 2">
+            <Parameter name="regions" type="Array(string)" value="{Material 2}"/>
+            <Parameter name="porosity model" type="string" value="compressible"/>
+            <Parameter name="undeformed soil porosity" type="double" value="0.2"/>
+            <Parameter name="reference pressure" type="double" value="-10.0"/>
+            <Parameter name="pore compressibility" type="double" value="0.01"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
       <ParameterList name="molar_density_liquid">
         <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">

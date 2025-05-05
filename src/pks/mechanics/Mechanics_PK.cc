@@ -86,13 +86,7 @@ Mechanics_PK::Setup()
       ->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1)
       ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1); // copy of states needs it
-  }
-  {
-    Teuchos::ParameterList elist(vol_strain_key_);
-    elist.set<std::string>("tag", "");
-    // elist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-    eval_vol_strain_ = Teuchos::rcp(new VolumetricStrainEvaluator(elist));
-    S_->SetEvaluator(vol_strain_key_, Tags::DEFAULT, eval_vol_strain_);
+    S_->RequireEvaluator(vol_strain_key_, Tags::DEFAULT);
   }
 
   // -- rock properties

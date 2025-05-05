@@ -86,6 +86,9 @@
 
   <ParameterList name="state">
     <ParameterList name="evaluators">
+      <ParameterList name="volumetric_strain">
+        <Parameter name="evaluator type" type="string" value="volumetric strain"/>
+      </ParameterList>
       <ParameterList name="porosity">
         <ParameterList name="function">
           <ParameterList name="EntireDomain">

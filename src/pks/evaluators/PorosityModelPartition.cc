@@ -42,10 +42,8 @@ CreatePorosityModelPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
       std::string model = sublist.get<std::string>("porosity model");
       if (model == "constant") {
         pom_list.push_back(Teuchos::rcp(new Porosity_Constant(sublist)));
-      } else if (model == "compressible") {
-        pom_list.push_back(Teuchos::rcp(new Porosity_Compressible(sublist)));
       } else {
-        AMANZI_ASSERT(0);
+        pom_list.push_back(Teuchos::rcp(new Porosity_Compressible(sublist)));
       }
     } else {
       AMANZI_ASSERT(0);

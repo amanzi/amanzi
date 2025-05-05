@@ -129,7 +129,7 @@
   <materials>
     <material name="Bottom">
       <mechanical_properties>
-        <porosity value="0.25"/>
+        <porosity model="constant" value="0.25"/>
         <volumetric_strain formula="0.0"/>
         <specific_storage value="0.0" model="constant"/>
       </mechanical_properties>
@@ -138,7 +138,7 @@
     </material>
     <material name="Top">
       <mechanical_properties>
-        <porosity value="0.2" />
+        <porosity model="constant" value="0.2"/>
         <specific_storage value="0.0" model="constant"/>
       </mechanical_properties>
       <permeability x="KM2" y="KM2" z="KM2" />
@@ -188,7 +188,7 @@
     <materials>
       <material name="Uniform">
         <mechanical_properties>
-          <porosity value="0.4"/>
+          <porosity model="constant" value="0.4"/>
           <compliance formula="0.0"/>
           <specific_storage value="0.0" model="constant"/>
         </mechanical_properties>
