@@ -8,11 +8,12 @@
     <Parameter name="amount" type="string" value="mol"/>
     <Parameter isUsed="true" name="temperature" type="string" value="K"/>
   </ParameterList>
+
   <ParameterList name="mesh">
+    <Parameter name="framework" type="string" value="MSTK"/>
+    <Parameter name="partitioner" type="string" value="metis"/>
     <ParameterList name="unstructured">
       <ParameterList name="expert">
-        <Parameter name="framework" type="string" value="MSTK"/>
-        <Parameter name="partitioner" type="string" value="metis"/>
         <Parameter name="request edges" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="generate mesh">

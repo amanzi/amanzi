@@ -26,14 +26,12 @@
   </ParameterList>
 
   <ParameterList name="mesh">
+    <Parameter name="framework" type="string" value="MSTK"/>
     <ParameterList name="unstructured">
       <ParameterList name="generate mesh">
         <Parameter name="number of cells" type="Array(int)" value="{200, 10}"/>
         <Parameter name="domain low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
         <Parameter name="domain high coordinate" type="Array(double)" value="{200.0, 20.0}"/>
-      </ParameterList>
-      <ParameterList name="expert">
-        <Parameter name="framework" type="string" value="MSTK"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

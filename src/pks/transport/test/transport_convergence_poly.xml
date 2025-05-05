@@ -1,16 +1,16 @@
 <ParameterList name="main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
+
   <ParameterList name="domain">
     <Parameter name="spatial dimension" type="int" value="2"/>
   </ParameterList>
+
   <ParameterList name="mesh">
+    <Parameter name="framework" type="string" value="MSTK"/>
     <ParameterList name="unstructured">
       <ParameterList name="Read">
         <Parameter name="file" type="string" value="medium15x16.exo"/>
         <Parameter name="format" type="string" value="Exodus II"/>
-      </ParameterList>
-      <ParameterList name="expert">
-        <Parameter name="framework" type="string" value="MSTK"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
