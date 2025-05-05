@@ -64,6 +64,9 @@
 
   <ParameterList name="state">
     <ParameterList name="evaluators">
+      <ParameterList name="volumetric_strain">
+        <Parameter name="evaluator type" type="string" value="volumetric strain"/>
+      </ParameterList>
       <ParameterList name="mass_density_liquid">
         <ParameterList name="function">
           <ParameterList name="All">

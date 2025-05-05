@@ -13,6 +13,7 @@
 #include "state_evaluators_registration.hh"
 #include "VerboseObject_objs.hh"
 
+#include "evaluators_reg.hh"
 #include "evaluators_flow_reg.hh"
 #include "models_flow_reg.hh"
 

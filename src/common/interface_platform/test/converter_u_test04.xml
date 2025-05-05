@@ -214,7 +214,7 @@
   <materials>
     <material name="Soil">
       <mechanical_properties>
-        <porosity value="0.25"/>
+        <porosity model="constant" value="0.25"/>
         <specific_storage model="constant" value="0.001"/>
         <dispersion_tensor alpha_l="0.0" alpha_t="0.0" type="bear"/>
       </mechanical_properties>

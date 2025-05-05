@@ -8,20 +8,20 @@
 */
 
 /*
-  Flow PK
+  Evaluators
 
   A collection of porosity models along with a mesh partition.
 */
 
-#ifndef AMANZI_FLOW_POROSITY_MODEL_PARTITION_HH_
-#define AMANZI_FLOW_POROSITY_MODEL_PARTITION_HH_
+#ifndef AMANZI_EVALUATORS_POROSITY_MODEL_PARTITION_HH_
+#define AMANZI_EVALUATORS_POROSITY_MODEL_PARTITION_HH_
 
 #include "Mesh.hh"
 #include "MeshPartition.hh"
 #include "Porosity.hh"
 
 namespace Amanzi {
-namespace Flow {
+namespace Evaluators {
 
 typedef std::vector<Teuchos::RCP<Porosity>> PorosityModelList;
 typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, PorosityModelList> PorosityModelPartition;
@@ -31,7 +31,7 @@ Teuchos::RCP<PorosityModelPartition>
 CreatePorosityModelPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                              Teuchos::RCP<Teuchos::ParameterList> plist);
 
-} // namespace Flow
+} // namespace Evaluators
 } // namespace Amanzi
 
 #endif

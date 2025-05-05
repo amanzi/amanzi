@@ -4,6 +4,7 @@
   <Parameter name="initial timestep" type="double" value="1000.0"/>
   <Parameter name="max iterations" type="int" value="50"/>
   <Parameter name="mesh resolution" type="int" value="20"/>
+
   <!--  REGIONS  -->
   <ParameterList name="regions">
     <ParameterList name="All">
@@ -50,9 +51,8 @@
     </ParameterList>
   </ParameterList>
 
-  <!-- FLOW -->
+  <!-- PKS -->
   <ParameterList name="PKs">
-
     <ParameterList name="mechanics matrix fracture">
       <ParameterList name="physical models and assumptions">
         <Parameter name="use gravity" type="bool" value="false"/>
@@ -145,14 +145,16 @@
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
-
     </ParameterList>
-
   </ParameterList>
 
   <!--  STATE  -->
   <ParameterList name="state">
     <ParameterList name="evaluators">
+      <ParameterList name="volumetric_strain">
+        <Parameter name="evaluator type" type="string" value="volumetric strain"/>
+      </ParameterList>
+
       <ParameterList name="particle_density">
         <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
@@ -210,20 +212,17 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="initial conditions">
 
+    <ParameterList name="initial conditions">
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="998.0"/>
       </ParameterList>
-
       <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="0.01"/>
       </ParameterList>
-
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="101325.0"/>
       </ParameterList>
-
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -9.81}"/>
       </ParameterList>
@@ -335,6 +334,7 @@
       <Parameter name="verbosity level" type="string" value="medium"/>
     </ParameterList>
   </ParameterList>
+
   <!-- SOLVERS -->
   <ParameterList name="solvers">
     <ParameterList name="PCG">
@@ -346,6 +346,7 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
+
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">

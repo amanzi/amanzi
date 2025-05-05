@@ -9,13 +9,13 @@
 */
 
 /*
-  Flow PK
+  Evaluators
 
   The fracture aperture evaluator.
 */
 
-#ifndef AMANZI_FLOW_APERTURE_EVALUATOR_HH_
-#define AMANZI_FLOW_APERTURE_EVALUATOR_HH_
+#ifndef AMANZI_EVALUATORS_APERTURE_EVALUATOR_HH_
+#define AMANZI_EVALUATORS_APERTURE_EVALUATOR_HH_
 
 #include "Factory.hh"
 #include "EvaluatorSecondaryMonotype.hh"
@@ -26,7 +26,7 @@
 #include "ApertureModelPartition.hh"
 
 namespace Amanzi {
-namespace Flow {
+namespace Evaluators {
 
 class ApertureModelEvaluator
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
@@ -64,7 +64,7 @@ class ApertureModelEvaluator
   static Utils::RegisteredFactory<Evaluator, ApertureModelEvaluator> reg_;
 };
 
-} // namespace Flow
+} // namespace Evaluators
 } // namespace Amanzi
 
 #endif

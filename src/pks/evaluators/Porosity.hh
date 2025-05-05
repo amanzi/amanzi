@@ -57,13 +57,13 @@ In this example, we define two different porosity models in two soils.
 
 */
 
-#ifndef AMANZI_FLOW_POROSITY_HH_
-#define AMANZI_FLOW_POROSITY_HH_
+#ifndef AMANZI_EVALUATORS_POROSITY_HH_
+#define AMANZI_EVALUATORS_POROSITY_HH_
 
 #include <string>
 
 namespace Amanzi {
-namespace Flow {
+namespace Evaluators {
 
 class Porosity {
  public:
@@ -75,7 +75,7 @@ class Porosity {
   virtual std::pair<double, double> getThermalCoefficients() = 0;
 };
 
-} // namespace Flow
+} // namespace Evaluators
 } // namespace Amanzi
 
 #endif

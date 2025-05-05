@@ -190,7 +190,7 @@ MechanicsSmallStrain_PK::Initialize()
 
   // we set up operators and can trigger re-initialization of stress
   eval_hydro_stress_->set_op(op_matrix_elas_);
-  eval_vol_strain_->set_op(op_matrix_elas_);
+  Teuchos::rcp_dynamic_cast<Evaluators::VolumetricStrainEvaluator>(S_->GetEvaluatorPtr(vol_strain_key_, Tags::DEFAULT))->set_op(op_matrix_elas_);
   eval_shear_strain_->set_op(op_matrix_elas_);
   eval_->SetChanged();
 

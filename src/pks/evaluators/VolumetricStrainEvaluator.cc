@@ -8,7 +8,7 @@
 */
 
 /*
-  Mechanics PK
+  Evaluators
 
   Evaluator for computing hydrostatic stress.
 */
@@ -18,7 +18,7 @@
 #include "VolumetricStrainEvaluator.hh"
 
 namespace Amanzi {
-namespace Mechanics {
+namespace Evaluators {
 
 /* ******************************************************************
 * Constructor
@@ -66,5 +66,5 @@ VolumetricStrainEvaluator::Evaluate_(const State& S, const std::vector<Composite
   }
 }
 
-} // namespace Mechanics
+} // namespace Evaluators
 } // namespace Amanzi

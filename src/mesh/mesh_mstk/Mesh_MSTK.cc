@@ -43,6 +43,7 @@ Mesh_MSTK::Mesh_MSTK(const std::string& filename,
   read_plist_();
 
   if (vo_.get() && vo_->os_OK(Teuchos::VERB_EXTREME)) {
+    Teuchos::OSTab tab = vo_->getOSTab();
     *(vo_->os()) << "Construct mesh from file" << std::endl;
   }
 
@@ -1992,6 +1993,7 @@ Mesh_MSTK::getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
           (region.entity_str() == "NODE" && entdim != MVERTEX)) {
         // FIXME meanwhile, we print a warning
         if (vo_.get() && vo_->os_OK(Teuchos::VERB_HIGH)) {
+          Teuchos::OSTab tab = vo_->getOSTab();
           *(vo_->os()) << "Mismatch of entity type in labeled set region and mesh set (3D)\n";
         }
         // Errors::Message mesg("Mismatch of entity type in labeled set region and mesh set (3D)");

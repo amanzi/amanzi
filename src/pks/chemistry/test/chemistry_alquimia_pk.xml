@@ -1,11 +1,8 @@
 <ParameterList>
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
   <ParameterList name="mesh">
+    <Parameter name="framework" type="string" value="MSTK"/>
     <ParameterList name="unstructured">
-      <ParameterList name="expert">
-        <Parameter name="framework" type="string" value="MSTK"/>
-        <Parameter name="partitioner" type="string" value="NOT_SPECIFIED"/>
-      </ParameterList>
       <ParameterList name="generate mesh">
         <Parameter name="number of cells" type="Array(int)" value="{100, 1, 1}"/>
         <Parameter name="domain low coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}"/>

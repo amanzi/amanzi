@@ -9,14 +9,14 @@
 */
 
 /*
-  Flow PK
+  Evaluators
 
   The porosity evaluator simply calls the porosity model with
   the correct arguments.
 */
 
-#ifndef AMANZI_FLOW_POROSITY_EVALUATOR_HH_
-#define AMANZI_FLOW_POROSITY_EVALUATOR_HH_
+#ifndef AMANZI_EVALUATORS_POROSITY_EVALUATOR_HH_
+#define AMANZI_EVALUATORS_POROSITY_EVALUATOR_HH_
 
 #include <utility>
 
@@ -24,17 +24,15 @@
 #include "EvaluatorSecondaryMonotype.hh"
 #include "Tag.hh"
 
-#include "Porosity.hh"
 #include "PorosityModelPartition.hh"
 
 namespace Amanzi {
-namespace Flow {
+namespace Evaluators {
 
 class PorosityEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   // constructor format for all derived classes
-  explicit PorosityEvaluator(Teuchos::ParameterList& plist,
-                             Teuchos::RCP<PorosityModelPartition> pom);
+  explicit PorosityEvaluator(Teuchos::ParameterList& plist);
   PorosityEvaluator(const PorosityEvaluator& other);
 
   // required inteface functions
@@ -53,20 +51,19 @@ class PorosityEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Com
   }
 
  protected:
-  void InitializeFromPlist_();
-
- protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  Teuchos::RCP<PorosityModelPartition> pom_;
-  Key pressure_key_, temperature_key_, strain_key_, biot_key_;
 
+  Teuchos::RCP<PorosityModelPartition> pom_;
+  bool initialized_;
+
+  Key pressure_key_, temperature_key_, strain_key_, biot_key_;
   bool poroelasticity_, thermoelasticity_;
 
  private:
   static Utils::RegisteredFactory<Evaluator, PorosityEvaluator> reg_;
 };
 
-} // namespace Flow
+} // namespace Evaluators
 } // namespace Amanzi
 
 #endif

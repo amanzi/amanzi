@@ -17,10 +17,12 @@ project(FLOW)
 # External (TPL) include directories
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${Teuchos_INCLUDE_DIRS})
+
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${EOS_SOURCE_DIR})
+include_directories(${EVALUATORS_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
@@ -44,8 +46,6 @@ set(flow_src_files Flow_PK.cc
                    Richards_PK.cc Richards_TI.cc Richards_WRM.cc
                    Richards_Picard.cc Richards_LinearOperator.cc Richards_CNLS.cc
                    ApertureDarcyEvaluator.cc
-                   ApertureModelPartition.cc ApertureModelEvaluator.cc
-                   PorosityModelPartition.cc PorosityEvaluator.cc
                    PermeabilityModelPartition.cc PermeabilityEvaluator.cc
                    RelPermEvaluator.cc
                    WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_linear.cc WRM_tabular.cc
@@ -63,7 +63,7 @@ if (Ifpack_ENABLE_HYPRE)
   list(APPEND flow_tpl_libs ${Ifpack_LIBRARIES} ${HYPRE_LIBRARY})
 endif()
 add_amanzi_library(flow SOURCE ${flow_src_files}
-                   LINK_LIBS pks eos operators state functions 
+                   LINK_LIBS pks eos evaluators operators state functions
                              mesh_functions time_integration data_structures
                              ${flow_tpl_libs})
 
@@ -77,12 +77,6 @@ set(flow_inc_files
   FlowSourceFunction.hh
   Flow_PK.hh
   FlowTypeDefs.hh
-  ApertureModel.hh
-  ApertureModel_BartonBandis.hh
-  ApertureModel_Constant.hh
-  ApertureModel_ExponentialLaw.hh
-  ApertureModelPartition.hh
-  ApertureModelEvaluator.hh
   FracturePermModel.hh
   FracturePermModel_Constant.hh
   FracturePermModel_CubicLaw.hh
@@ -95,8 +89,6 @@ set(flow_inc_files
   MultiscaleFlowPorosity_GDPM.hh
   MultiscaleFlowPorosityFactory.hh
   MultiscaleFlowPorosityPartition.hh
-  Porosity.hh
-  PorosityModelPartition.hh
   Richards_PK.hh
   VolumetricFlowRateEvaluator.hh
   WRM.hh
@@ -225,12 +217,6 @@ if (BUILD_TESTS)
                                         test/flow_wrm_tabular.cc
                                         test/flow_wrm_solvers.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
-    add_amanzi_test(flow_aperture flow_aperture
-                    KIND int
-                    SOURCE test/Main.cc test/flow_aperture.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
 
     # Test: flow-bc-factory
     add_amanzi_test(flow_bc_factory flow_bc_factory

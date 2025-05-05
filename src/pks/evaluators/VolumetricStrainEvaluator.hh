@@ -8,20 +8,21 @@
 */
 
 /*
-  Mechanics PK
+  Evaluators
 
   Evaluator for computing hydrostatic stress.
 */
 
-#ifndef AMANZI_MECHANICS_VOLUMETRIC_STRAIN_EVALUATOR_
-#define AMANZI_MECHANICS_VOLUMETRIC_STRAIN_EVALUATOR_
+#ifndef AMANZI_VOLUMETRIC_STRAIN_EVALUATOR_
+#define AMANZI_VOLUMETRIC_STRAIN_EVALUATOR_
 
+#include "Factory.hh"
 #include "PDE_Elasticity.hh"
 
 #include "EvaluatorSecondaryMonotype.hh"
 
 namespace Amanzi {
-namespace Mechanics {
+namespace Evaluators {
 
 class VolumetricStrainEvaluator
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
@@ -34,6 +35,8 @@ class VolumetricStrainEvaluator
 
   // required inteface functions
   virtual Teuchos::RCP<Evaluator> Clone() const override;
+
+  virtual void EnsureEvaluators(State& S) override{};
 
  protected:
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
@@ -49,9 +52,12 @@ class VolumetricStrainEvaluator
  protected:
   Key displacement_key_;
   Teuchos::RCP<Operators::PDE_Elasticity> op_;
+
+ private:
+  static Utils::RegisteredFactory<Evaluator, VolumetricStrainEvaluator> reg_;
 };
 
-} // namespace Mechanics
+} // namespace Evaluators
 } // namespace Amanzi
 
 #endif

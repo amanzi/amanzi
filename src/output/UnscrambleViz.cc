@@ -272,8 +272,8 @@ main(int argc, char* argv[])
     // unpermute mixed elements
     // loop through elements to get type list
     std::cout << "E>> collect element information" << std::endl;
-    int elem_types[num_elems]
-                  [3]; // 0)element type id 1)connectivity length 2)offset is element array
+    // 0)element type id 1)connectivity length 2)offset is element array
+    int elem_types[num_elems][3]; 
     int elem_cnt = 0;
     for (int i = 0; i < num_elems; i++) {
       elem_types[i][0] = elems[elem_cnt];

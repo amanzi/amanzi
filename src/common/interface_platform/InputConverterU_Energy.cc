@@ -139,6 +139,8 @@ InputConverterU::TranslateEnergy_(const std::string& domain, const std::string& 
     }
   }
 
+  out_list.sublist("fracture aperture models") = TranslateFAM_(domain);
+
   // insert time integrator
   std::string err_options("energy"),
     unstr_controls("unstructured_controls, unstr_transient_controls");

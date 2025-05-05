@@ -2,13 +2,11 @@
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
   <!-- MESH -->
   <ParameterList name="mesh">
+    <Parameter name="framework" type="string" value="MSTK"/>
     <ParameterList name="unstructured">
       <ParameterList name="Read">
         <Parameter name="file" type="string" value="hexes.exo"/>
         <Parameter name="format" type="string" value="Exodus II"/>
-      </ParameterList>
-      <ParameterList name="expert">
-        <Parameter name="framework" type="string" value="MSTK"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

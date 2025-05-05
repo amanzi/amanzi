@@ -95,6 +95,7 @@ endif()
 if (ENABLE_AmanziPhysicsModule)
   # this should go first
   add_subdirectory(eos)
+  add_subdirectory(evaluators)
 
   add_subdirectory(flow)
   add_subdirectory(energy)
