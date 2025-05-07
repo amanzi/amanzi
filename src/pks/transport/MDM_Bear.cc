@@ -29,8 +29,17 @@ namespace Transport {
 ****************************************************************** */
 MDM_Bear::MDM_Bear(Teuchos::ParameterList& plist)
 {
-  alphaL_ = plist.get<double>("alpha_l");
-  alphaT_ = plist.get<double>("alpha_t");
+  if (plist.isParameter("alpha_l")) {
+    alphaL_ = plist.get<double>("alpha_l");
+  } else {
+    alphaL_ = plist.get<double>("longitudinal dispersivity [m]");
+  }
+
+  if (plist.isParameter("alpha_t")) {
+    alphaT_ = plist.get<double>("alpha_t");
+  } else {
+    alphaT_ = plist.get<double>("transverse dispersivity [m]");
+  }
 }
 
 

@@ -23,6 +23,7 @@
 #include "EvaluatorSecondaryMonotypeFromFunction.hh"
 #include "EvaluatorPrimary.hh"
 #include "EvaluatorTemporalInterpolation.hh"
+#include "EvaluatorVelocityReconstruction.hh"
 
 namespace Amanzi {
 
@@ -52,5 +53,8 @@ Utils::RegisteredFactory<Evaluator, EvaluatorPrimaryCV>
 
 Utils::RegisteredFactory<Evaluator, EvaluatorTemporalInterpolation>
   EvaluatorTemporalInterpolation::fac_("temporal interpolation");
+
+Utils::RegisteredFactory<Evaluator, EvaluatorVelocityReconstruction>
+  EvaluatorVelocityReconstruction::fac_("velocity reconstruction");
 
 } // namespace Amanzi

@@ -120,7 +120,7 @@ PK_DomainFunctionField<FunctionBase>::Init(const Teuchos::ParameterList& plist,
           std::stringstream sublist_name;
           sublist_name << "field " << lcv << " info";
           Key field_key_ = flist.sublist(sublist_name.str()).get<std::string>("field key");
-          Tag tag = Keys::readTag(flist.sublist(sublist_name.str()), "tag");
+          Tag tag = Keys::readTag(flist.sublist(sublist_name.str()));
           field_keys_.push_back(field_key_);
           tags_.push_back(tag);
         }
@@ -128,7 +128,7 @@ PK_DomainFunctionField<FunctionBase>::Init(const Teuchos::ParameterList& plist,
     } else { // for only ONE field evaluator (without number of fields sublist)
       Key field_key_ = flist.get<std::string>("field key");
       field_keys_.push_back(field_key_);
-      Tag tag = Keys::readTag(flist, "tag");
+      Tag tag = Keys::readTag(flist);
       tags_.push_back(tag);
       // component_key_ = flist.get<std::string>("component", "cell");
     }

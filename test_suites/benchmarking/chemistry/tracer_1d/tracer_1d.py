@@ -142,6 +142,21 @@ if __name__ == "__main__":
         struct_crunch = len(x_amanziS_crunch)
     except:
         struct_crunch = 0
+
+    # ATS
+    try:
+        print("looking for ATS")
+        path_to_ATS = os.path.join(os.environ['ATS_SRC_DIR'], 'testing',
+                                   'ats-regression-tests', '07_reactive_transport',
+                                   'amanzi_benchmark-tracer.regression')
+        root_ats = "ats_vis"
+        comp_ats = "total_component_concentration.tracer"
+        x_ATS, c_ATS = GetXY_AmanziU_1D(path_to_ATS,root_ats,comp_ats,1)
+        ats = len(x_ATS)
+
+    except RuntimeError:
+        ats = 0
+
         
 # plotting --------------------------------------------------------
     fig = plt.figure(figsize=[8.00,5.25])
@@ -177,7 +192,11 @@ if __name__ == "__main__":
 
     # struct amanzi alquimia + pflotran
     if (struct_crunch>0):
-        sam = ax.plot(x_amanziS_crunch, c_amanziS_crunch,'g*',label='AmanziS+Alq(CF)',linewidth=2) 
+        sam = ax.plot(x_amanziS_crunch, c_amanziS_crunch,'g*',label='AmanziS+Alq(CF)',linewidth=2)
+
+    if (ats > 0):
+        print('plotting ATS')
+        ax.plot(x_ATS, c_ATS, 'c-x', label='ATS', linewidth=2)
         
 # figure look
     # axes

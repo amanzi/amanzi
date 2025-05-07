@@ -25,11 +25,7 @@ namespace Amanzi {
 void
 PK_Physical_Default::parseParameterList()
 {
-  if (key_.empty()) {
-    key_ = Keys::readKey(*plist_, domain_, "primary variable");
-  } else {
-    key_ = Keys::readKey(*plist_, domain_, "primary variable", key_);
-  }
+  key_ = Keys::readKey(*plist_, domain_, "primary variable");
   passwd_ = plist_->get<std::string>("primary variable password", name());
 
   // require primary variable evaluators

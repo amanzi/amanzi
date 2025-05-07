@@ -22,7 +22,7 @@ namespace Amanzi {
 // ---------------------------------------------------------------------------
 EvaluatorIndependent_::EvaluatorIndependent_(Teuchos::ParameterList& plist)
   : my_key_(Keys::cleanPListName(plist.name())),
-    my_tag_(Keys::readTag(plist, "tag")),
+    my_tag_(Keys::readTag(plist)),
     time_(0.0),
     temporally_variable_(!plist.get<bool>("constant in time", false)),
     computed_once_(false),

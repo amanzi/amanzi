@@ -7,10 +7,27 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-/*
-  Transport PK
+/*!
 
-  Anisotropic mechanical dispersion model.
+Anisotropic mechanical dispersion model by Bear.
+
+`"mechanical dispersion type`" = `"Bear`"
+
+.. _MDM-Bear-spec
+.. admonition:: MDM-Bear-spec
+
+   ONE OF
+   * `"alpha_l`" ``[double]`` Longitudinal dispersivity.
+   OR
+   * `"longitudinal dispersivity [m]`" ``[double]``
+   END
+
+   ONE OF
+   * `"alpha_t`" ``[double]`` Transverse dispersivity.
+   OR
+   * `"transverse dispersivity [m]`" ``[double]``
+   END
+
 */
 
 #ifndef AMANZI_MDM_BEAR_HH_
