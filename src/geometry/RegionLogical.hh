@@ -7,35 +7,33 @@
   Authors: Rao Garimella
 */
 
-//! RegionLogical: A region defined by a logical operation on one or two other regions
+//! A region defined by a logical operation on one or more other regions.
 /*!
 
-The list *region: logical* defines logical operations on regions allow for
-more advanced region definitions. At this time the logical region allows for
-logical operations on a list of regions.  *union* and *intersection* are
-self-evident. In the case of *subtraction*, subtraction is performed from the
-first region in the list.  The *complement* is a special case in that it is
-the only case that operates on single region, and returns the complement to it
-within the domain ENTIRE_DOMAIN.  Currently, multi-region booleans are not
-supported in the same expression.
+The logical region defines logical operations on regions to allow for more
+advanced region definitions. *union* and *intersection* are self-evident. In
+the case of *subtraction*, all elements in the first region are included, then
+all elements in every other region after the first are removed.  The
+*complement* returns all entries that are not in the given region.
+
+`"region type`" = `"logical`"
 
 .. _region-logical-spec:
 .. admonition:: region-logical-spec
 
-    * `"operation`" ``[string]`` defines operation on the list of regions.
-      One of: `"union`", `"intersect`", `"subtract`", `"complement`"
-    * `"regions`" ``[Array(string)]`` specifies the list of involved regions.
+   * `"operation`" ``[string]`` defines operation on the list of regions.
+     One of: `"union`", `"intersect`", `"subtract`", `"complement`"
+   * `"regions`" ``[Array(string)]`` specifies the list of involved regions.
 
 Example:
 
 .. code-block:: xml
 
-  <ParameterList name="LOWER_LAYERs">
-    <ParameterList name="region: logical">
-      <Parameter name="operation" type="string" value="union"/>
-      <Parameter name="regions" type="Array(string)" value="{Middle1, Middle2, Bottom}"/>
-    </ParameterList>
-  </ParameterList>
+   <ParameterList name="LOWER_LAYERs">
+     <Parameter name="region type" type="string" value="logical"/>
+     <Parameter name="operation" type="string" value="union"/>
+     <Parameter name="regions" type="Array(string)" value="{Middle1, Middle2, Bottom}"/>
+   </ParameterList>
 
 */
 

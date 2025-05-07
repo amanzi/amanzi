@@ -8,28 +8,31 @@
            Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-//! RegionCylinder: A cylinder
+//! A cylindrical region in 3 dimensions.
 /*!
-List *region: cylinder* defines an infinite cylinder determined by
-a symmetry axis, point on this axis and radius.
 
+A cylinder region defines an infinite cylinder determined by
+a symmetry axis, point on this axis, and radius.
+
+`"region type`" = `"cylinder`"
+
+.. _region-cylinder-spec:
 .. admonition:: region-cylinder-spec
 
-  * `"axis`" ``[Array(double)]`` symmetry axis
-  * `"point`" ``[Array(double)]`` point on a symmetry axis
-  * `"radius`" ``[double]`` cylinder radius
+   * `"axis`" ``[Array(double)]`` symmetry axis
+   * `"point`" ``[Array(double)]`` point on a symmetry axis
+   * `"radius`" ``[double]`` cylinder radius
 
 Example:
 
 .. code-block:: xml
 
    <ParameterList name="TOP_SECTION"> <!-- parent list -->
-     <ParameterList name="region: cylinder">
-       <Parameter name="normal" type="Array(double)" value="{1, 1, 0}"/>
-       <Parameter name="axis" type="Array(double)" value="{0, 0, 1}"/>
-       <ParameterList name="expert parameters">
-         <Parameter name="tolerance" type="double" value="1.0e-05"/>
-       </ParameterList>
+     <Parameter name="region type" type="string" value="cylinder"/>
+     <Parameter name="normal" type="Array(double)" value="{1, 1, 0}"/>
+     <Parameter name="axis" type="Array(double)" value="{0, 0, 1}"/>
+     <ParameterList name="expert parameters">
+       <Parameter name="tolerance" type="double" value="1.0e-05"/>
      </ParameterList>
    </ParameterList>
 
