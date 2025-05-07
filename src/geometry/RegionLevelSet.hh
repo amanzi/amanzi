@@ -8,27 +8,30 @@
            Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-//! RegionLevelSet: A region defined by a level set function.
+//! A region defined by a level set function.
 /*!
-List *region: level set* defines a general region using a level set
-function f(x) > 0.
 
-.. admonition:: region-level-set
+List level set region defines a general region using a level set function
+:math:`f(x) > 0.`.
 
-  * `"dimension`"  ``[int]`` region spatial dimension
-  * `"formula`" ``[string]`` level set formula
+`"region type`" = `"level set`"
+      
+.. _region-level-set-spec:      
+.. admonition:: region-level-set-spec
+
+   * `"dimension`"  ``[int]`` region spatial dimension
+   * `"formula`" ``[string]`` level set formula
 
 Example:
 
 .. code-block:: xml
 
    <ParameterList name="TOP_SECTION"> <!-- parent list -->
-     <ParameterList name="region: level set">
-       <Parameter name="dimension" type="int" value="2" />
-       <Parameter name="formula" type="string" value="1 - (x * x + 2 * y * y)" />
-       <ParameterList name="expert parameters">
-         <Parameter name="tolerance" type="double" value="1.0e-05"/>
-       </ParameterList>
+     <Parameter name="region type" type="string" value="level set"/>
+     <Parameter name="dimension" type="int" value="2" />
+     <Parameter name="formula" type="string" value="1 - (x * x + 2 * y * y)" />
+     <ParameterList name="expert parameters">
+       <Parameter name="tolerance" type="double" value="1.0e-05"/>
      </ParameterList>
    </ParameterList>
 

@@ -17,8 +17,7 @@ output desired. Regions may represents zero-, one-, two- or three-dimensional
 subsets of physical space.  For a three-dimensional problem, the simulation
 domain will be a three-dimensional region bounded by a set of two-dimensional
 regions.  If the simulation domain is N-dimensional, the boundary conditions
-must be specified over a set of regions are (N-1)-dimensional.
-
+must be specified over a set of regions that are (N-1)-dimensional.
 
 .. warning:: Surface files contain labeled triangulated face sets.  The user is
     responsible for ensuring that the intersections with other surfaces in the
@@ -90,9 +89,9 @@ Example:
 
 In this example, *TOP SECTION*, *MIDDLE SECTION* and *BOTTOM SECTION*
 are three box-shaped volumetric regions. *INFLOW SURFACE* is a
-surface region defined in an Exodus II-formatted labeled set
+labeled set region defined in an Exodus II-formatted labeled set
 file and *OUTFLOW PLANE* is a planar region. *BLOODY SAND* is a volumetric
-region defined by the value 25 in color function file.
+region defined by the value 25 in a color function file.
 
 */
 
@@ -111,6 +110,7 @@ class Point;
 
 class Region {
  public:
+  //  Region() : tol_(1.e-8) {}
   virtual ~Region(){};
 
   // Dimension of the subdomain
@@ -177,7 +177,9 @@ class Region {
       manifold_dimension_(dim),
       space_dimension_(geom_dim),
       geometric_(geometric),
-      lifecycle_(lifecycle){};
+      lifecycle_(lifecycle),
+      tol_(1.e-8)
+    {};
 
  protected:
   // Name of identifier

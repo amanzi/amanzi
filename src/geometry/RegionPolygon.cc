@@ -71,7 +71,7 @@ RegionPolygon::Init_()
       nrml /= norm(nrml);
 
       double dp = nrml * normal_;
-      if (std::abs(dp - 1.0) > TOL) {
+      if (std::abs(dp - 1.0) > tol_) {
         Errors::Message mesg("Polygon region is not exactly planar");
         Exceptions::amanzi_throw(mesg);
       }
@@ -124,7 +124,7 @@ RegionPolygon::inside(const Point& p) const
   }
   res -= d;
 
-  if (std::abs(res) > TOL) return false;
+  if (std::abs(res) > tol_) return false;
 
   bool result(false);
   if (points_[0].dim() == 2) {
@@ -154,7 +154,7 @@ RegionPolygon::inside(const Point& p) const
       double d_sqr = L22(dvec);
 
       // Is the distance 0? Point is inside segment
-      if (d_sqr < TOL * TOL) result = true;
+      if (d_sqr < tol_ * tol_) result = true;
     }
 
   } else {
@@ -235,7 +235,7 @@ RegionPolygon::inside(const Point& p) const
         double d_sqr = L22(dvec);
 
         // Is the distance 0? Point is inside segment
-        if (d_sqr < TOL * TOL) {
+        if (d_sqr < tol_ * tol_) {
           result = true;
           break;
         }

@@ -123,7 +123,7 @@ resolveMeshSetVolumeFractions(const AmanziGeometry::Region& region,
       Kokkos::resize(ents, ents_cpt);
       Kokkos::resize(vol_fracs, vol_fracs_cpt);
     } else {
-      // ind == FACE
+      // kind == FACE
       int nfaces = mesh.getNumEntities(Entity_kind::FACE, ptype);
       Kokkos::realloc(vol_fracs, nfaces);
       Kokkos::realloc(ents, nfaces);
@@ -185,12 +185,13 @@ resolveMeshSet_(const AmanziGeometry::Region& region,
     result = resolveMeshSetAll(region, kind, ptype, mesh);
   } else if (AmanziGeometry::RegionType::BOUNDARY == region.get_type()) {
     result = resolveMeshSetBoundary(region, kind, ptype, mesh);
-  } else if (AmanziGeometry::RegionType::LINE_SEGMENT == region.get_type()) {
+  } else if (AmanziGeometry::RegionType::LINE_SEGMENT == region.get_type()
+             || AmanziGeometry::RegionType::BOX_VOF == region.get_type()) {
     View_type<double, MemSpace_kind::HOST> vofs;
     result = resolveMeshSetVolumeFractions(region, kind, ptype, vofs, mesh);
   } else if (AmanziGeometry::RegionType::POINT == region.get_type() && kind == Entity_kind::CELL) {
     auto region_point = dynamic_cast<const AmanziGeometry::RegionPoint*>(&region);
-    result = resolveMeshSetPoint(*region_point, kind, ptype, mesh);
+    result = resolveMeshSetPointInCell(*region_point, kind, ptype, mesh);
   } else {
     // geometric
     result = resolveMeshSetGeometric(region, kind, ptype, mesh);
@@ -200,10 +201,10 @@ resolveMeshSet_(const AmanziGeometry::Region& region,
 
 
 View_type<const Entity_ID, MemSpace_kind::HOST>
-resolveMeshSetPoint(const AmanziGeometry::RegionPoint& region,
-                    const Entity_kind kind,
-                    const Parallel_kind ptype,
-                    const MeshCache<MemSpace_kind::HOST>& mesh)
+resolveMeshSetPointInCell(const AmanziGeometry::RegionPoint& region,
+                          const Entity_kind kind,
+                          const Parallel_kind ptype,
+                          const MeshCache<MemSpace_kind::HOST>& mesh)
 {
   std::vector<Entity_ID> result;
 

@@ -118,10 +118,10 @@ resolveMeshSetLogical(const AmanziGeometry::RegionLogical& region,
                       const MeshCache<MemSpace_kind::HOST>& mesh);
 
 View_type<const Entity_ID, MemSpace_kind::HOST>
-resolveMeshSetPoint(const AmanziGeometry::RegionPoint& region,
-                    const Entity_kind kind,
-                    const Parallel_kind ptype,
-                    const MeshCache<MemSpace_kind::HOST>& mesh);
+resolveMeshSetPointInCell(const AmanziGeometry::RegionPoint& region,
+                          const Entity_kind kind,
+                          const Parallel_kind ptype,
+                          const MeshCache<MemSpace_kind::HOST>& mesh);
 
 View_type<const Entity_ID, MemSpace_kind::HOST>
 filterParentEntities(const MeshCache<MemSpace_kind::HOST>& mesh,

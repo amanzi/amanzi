@@ -7,18 +7,25 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-//! RegionEnumerated: A region enumerated as a list of IDs.
+//! An enumerated set is simply a list of discrete mesh global IDs.
 /*!
 
-List *region: enumerated set* defines a set of mesh entities via the list
-of input global ids. Note that global ids are not defined correctly when
-parallel mesh is created on a fly.
+An enumerated set and a labeled set are functionally equivalent, but where a
+labeled set stores its labels in the mesh file (typically as an attribute on
+the mesh), an enumerated set stores its labeles separately, either directly in
+the input file (for short lists) or in a separate file (for long lists).
 
-.. _region-enumerated-spec:
-.. admonition:: region-enumerated-spec
+Note that global ids are not defined correctly when a parallel mesh is created on
+a fly.  Instead, prepartition the mesh and use the partitioned global IDs.
 
-    * `"entity`" ``[string]`` Type of the mesh object.  One of: `"cell`", `"face`", `"edge`", `"node`"
-    * `"entity gids`" ``[Array(int)]`` List of the global IDs of the entities.
+`"region type`" = `"enumerated set`"
+
+.. _region-enumerated-set-spec:
+.. admonition:: region-enumerated-set-spec
+
+   * `"entity`" ``[string]`` Type of the mesh object.  One of: `"cell`",
+     `"face`", `"edge`", `"node`"
+   * `"entity gids`" ``[Array(int)]`` List of the global IDs of the entities.
 
 
 Example:
@@ -26,11 +33,22 @@ Example:
 .. code-block:: xml
 
    <ParameterList name="WELL"> <!-- parent list -->
-     <ParameterList name="region: enumerated set">
-       <Parameter name="entity" type="string" value="face"/>
-       <Parameter name="entity gids" type="Array(int)" value="{1, 12, 23, 34}"/>
-     </ParameterList>
+     <Parameter name="region type" type="string" value="enumerated set"/>
+     <Parameter name="entity" type="string" value="face"/>
+     <Parameter name="entity gids" type="Array(int)" value="{1, 12, 23, 34}"/>
    </ParameterList>
+
+
+For an enumerated set from file, the file should be an XML file that contains a
+sublist whose name is the region name.  That sublist should be a
+`"region-enumerated-set-spec`".
+
+`"region type`" = `"enumerated set from file`"
+   
+.. _region-enumerated-set-from-file-spec:
+.. admonition:: region-enumerated-set-from-file-spec
+
+   * `"filename`" ``[string]`` Name of the XML file to read.
 
 */
 

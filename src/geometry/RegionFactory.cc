@@ -181,7 +181,13 @@ createRegion(const std::string& reg_name,
     region = Teuchos::rcp(new RegionEnumerated(reg_name, reg_id, entity_str, gids.toVector(), lifecycle));
 
   } else if (shape == "enumerated set from file") {
-    std::string filename = plist.get<std::string>("read from file");
+    std::string filename;
+    if (plist.isParameter("read from file")) {
+      // old parameter name -- deprecate
+      filename = plist.get<std::string>("read from file");
+    } else {
+      filename = plist.get<std::string>("filename");
+    }
     Teuchos::ParameterList enum_list_from_file = *Teuchos::getParametersFromXmlFile(filename);
     std::string enum_reg_name = plist.get<std::string>("region name");
     Teuchos::ParameterList enum_sub_list = enum_list_from_file.sublist(enum_reg_name);
@@ -252,11 +258,11 @@ createRegion(const std::string& reg_name,
   }
 
   // tolerance for geometric operations
-  double tolerance = TOL;
-  if (plist.isSublist("expert parameters")) {
-    tolerance = plist.sublist("expert parameters").get<double>("tolerance");
+  if (plist.isSublist("expert parameters") &&
+      plist.sublist("expert parameters").isParameter("tolerance")) {
+    double tolerance = plist.sublist("expert parameters").get<double>("tolerance");
+    region->set_tolerance(tolerance);
   }
-  region->set_tolerance(tolerance);
 
   return region;
 }

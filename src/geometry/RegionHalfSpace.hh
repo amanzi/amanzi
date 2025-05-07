@@ -8,28 +8,26 @@
            Ethan Coon (ecoon@lanl.gov)
 */
 
-//! RegionHalfSpace: A planar (infinite) region in space, defined by a point and a normal.
+//! An infinite halfspace, defined by a plane and an outward normal.
 /*!
-List *region: halfspace* defines a halfspace determined by a plane and
-outward normal to the plane.
 
-.. admonition:: region_half_space-spec
 
-  * `"normal`" ``[Array(double)]`` Normal to the plane.
-  * `"point`" ``[Array(double)]`` Point in space.
+`"region type`" = `"halfspace`"
+
+.. _region-halfspace-spec:
+.. admonition:: region-halfspace-spec
+
+   * `"normal`" ``[Array(double)]`` Normal to the plane.
+   * `"point`" ``[Array(double)]`` Point in space.
 
 Example:
 
 .. code-block:: xml
 
    <ParameterList name="TOP_SECTION"> <!-- parent list -->
-     <ParameterList name="region: halfspace">
-       <Parameter name="point" type="Array(double)" value="{2, 3, 5}"/>
-       <Parameter name="normal" type="Array(double)" value="{1, 1, 0}"/>
-       <ParameterList name="expert parameters">
-         <Parameter name="tolerance" type="double" value="1.0e-05"/>
-       </ParameterList>
-     </ParameterList>
+     <Parameter name="region type" type="string" value="box"/>
+     <Parameter name="point" type="Array(double)" value="{2, 3, 5}"/>
+     <Parameter name="normal" type="Array(double)" value="{1, 1, 0}"/>
    </ParameterList>
 
 */

@@ -69,8 +69,8 @@ RegionBox::inside(const Point& p) const
   // #endif
 
   for (int i = 0; i != p.dim(); ++i) {
-    if (p[i] < p0_[i] - TOL) return false;
-    if (p[i] > p1_[i] + TOL) return false;
+    if (p[i] < p0_[i] - tol_) return false;
+    if (p[i] > p1_[i] + tol_) return false;
   }
   return true;
 }

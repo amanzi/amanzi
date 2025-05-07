@@ -7,34 +7,30 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-//! RegionBoundary:  A region consisting of all entities on the domain boundary
+//! A region consisting of the entire boundary of any mesh.
 /*!
 
-List *region: boundary* defines a set of all boundary faces.
-Using this definition, faces located on the domain boundary are extracted.
+No parameters are required.
+
+`"region type`" = `"boundary`"
 
 .. _region-boundary-spec:
 .. admonition:: region-boundary-spec
 
-    * `"entity`" ``[string]`` Type of the mesh object.  Unclear whether this is
-      used or can be other things than `"face`"?
+   * `"empty`" ``[bool]`` **True** This is simply here to avoid issues with empty lists.
 
 Example:
 
 .. code-block:: xml
 
    <ParameterList name="DOMAIN_BOUNDARY"> <!-- parent list names the region -->
-     <ParameterList name="region: boundary">
-       <Parameter name="entity" type="string" value="face"/>
-     </ParameterList>
+     <Parameter name="region type" type="string" value="boundary"/>
    </ParameterList>
 
 */
 
 #ifndef AMANZI_REGION_BOUNDARY_HH_
 #define AMANZI_REGION_BOUNDARY_HH_
-
-#include <vector>
 
 #include "errors.hh"
 #include "GeometryDefs.hh"
@@ -52,9 +48,6 @@ class RegionBoundary : public Region {
   // Is the the specified point inside this region
   bool inside(const Point& p) const;
 
- protected:
-  const std::string entity_str_;    // what kind of entities make up this set
-  const std::vector<int> entities_; // list of those included
 };
 
 } // namespace AmanziGeometry
