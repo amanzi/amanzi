@@ -258,11 +258,11 @@ createRegion(const std::string& reg_name,
   }
 
   // tolerance for geometric operations
-  double tolerance = TOL;
-  if (plist.isSublist("expert parameters")) {
-    tolerance = plist.sublist("expert parameters").get<double>("tolerance");
+  if (plist.isSublist("expert parameters") &&
+      plist.sublist("expert parameters").isParameter("tolerance")) {
+    double tolerance = plist.sublist("expert parameters").get<double>("tolerance");
+    region->set_tolerance(tolerance);
   }
-  region->set_tolerance(tolerance);
 
   return region;
 }

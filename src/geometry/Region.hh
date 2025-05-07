@@ -110,7 +110,7 @@ class Point;
 
 class Region {
  public:
-  Region() : tol_(TOL) {}
+  //  Region() : tol_(1.e-8) {}
   virtual ~Region(){};
 
   // Dimension of the subdomain
@@ -177,7 +177,9 @@ class Region {
       manifold_dimension_(dim),
       space_dimension_(geom_dim),
       geometric_(geometric),
-      lifecycle_(lifecycle){};
+      lifecycle_(lifecycle),
+      tol_(1.e-8)
+    {};
 
  protected:
   // Name of identifier

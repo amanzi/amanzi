@@ -8,7 +8,7 @@
            Ethan Coon (ecoon@lanl.gov)
 */
 
-//! An (infinite) plana region in space, defined by a point and a normal.
+//! An (infinite) plane region in space, defined by a point and a normal.
 /*!
 
 Note that the dimension of the point and normal must match that of the mesh on
