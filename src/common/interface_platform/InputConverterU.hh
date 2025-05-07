@@ -237,12 +237,14 @@ class InputConverterU : public InputConverter {
                                        const std::string& field,
                                        const std::string& region,
                                        double val);
+  void TranslatePOM_(const std::string& domain,
+                     Teuchos::ParameterList& out_ic,
+                     Teuchos::ParameterList& out_ev);
 
   // -- flow
   Teuchos::ParameterList
   TranslateFlow_(const std::string& mode, const std::string& domain, const std::string& pk_model);
   Teuchos::ParameterList TranslateWRM_(const std::string& pk_name);
-  Teuchos::ParameterList TranslatePOM_(const std::string& domain);
   Teuchos::ParameterList TranslatePPM_(const std::string& domain);
   Teuchos::ParameterList TranslateFAM_(const std::string& domain);
   Teuchos::ParameterList TranslateFlowMSM_();

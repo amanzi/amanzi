@@ -109,7 +109,7 @@
   <materials>
     <material name="Homogeneous">
       <mechanical_properties>
-        <porosity value="0.25" />
+        <porosity model="constant" value="0.25" />
       </mechanical_properties>
       <permeability x="1.0e-5" y="1.0e-5" z="1.0e-5" />
       <assigned_regions>EntireDomain</assigned_regions>
@@ -156,7 +156,7 @@
     <materials>
       <material name="Uniform">
         <mechanical_properties>
-          <porosity value="0.004"/>
+          <porosity model="constant" value="0.004"/>
         </mechanical_properties>
 
         <permeability model="cubic law"/>

@@ -24,6 +24,7 @@
 #include "CycleDriver.hh"
 #include "MeshAudit.hh"
 #include "eos_reg.hh"
+#include "evaluators_reg.hh"
 #include "evaluators_flow_reg.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"

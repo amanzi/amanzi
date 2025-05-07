@@ -26,6 +26,7 @@ include_directories(${ATK_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${EOS_SOURCE_DIR})
+include_directories(${EVALUATORS_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
@@ -62,7 +63,7 @@ if (Ifpack_ENABLE_HYPRE)
   list(APPEND energy_tpl_libs ${Ifpack_LIBRARIES} ${HYPRE_LIBRARY})
 endif()
 add_amanzi_library(energy SOURCE ${energy_src_files}
-                   LINK_LIBS operators eos pks functions mesh_functions
+                   LINK_LIBS operators eos evaluators pks functions mesh_functions
                              time_integration data_structures
                              ${energy_tpl_libs})
 

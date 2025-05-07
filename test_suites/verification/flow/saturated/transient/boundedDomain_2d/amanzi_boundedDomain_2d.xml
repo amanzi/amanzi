@@ -126,7 +126,7 @@
         <comments>Material properties for zone 1</comments>
         <assigned_regions>Zone_1</assigned_regions>
         <mechanical_properties>
-          <porosity value="0.25" />
+          <porosity model="constant" value="0.25"/>
           <specific_storage model="constant" value="2.0e-4" />
         </mechanical_properties>
         <permeability x="1.187E-9" y="1.187E-9" z="1.187E-9" />
@@ -135,7 +135,7 @@
         <comments>Material properties for zone 2</comments>
         <assigned_regions>Zone_2</assigned_regions>
         <mechanical_properties>
-          <porosity value="0.25" />
+          <porosity model="constant" value="0.25"/>
           <specific_storage model="constant" value="2.0e-4" />
         </mechanical_properties>
         <permeability x="1.187E-9" y="1.187E-9" z="1.187E-9" />
@@ -144,7 +144,7 @@
         <comments>Material properties for zone 3</comments>
         <assigned_regions>Zone_3</assigned_regions>
         <mechanical_properties>
-          <porosity value="0.25" />
+          <porosity model="constant" value="0.25"/>
           <specific_storage model="constant" value="2.0e-4" />
         </mechanical_properties>
         <permeability x="1.187E-9" y="1.187E-9" z="1.187E-9" />

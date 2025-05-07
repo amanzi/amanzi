@@ -275,6 +275,33 @@ if __name__ == "__main__":
         struct_c = 0
 
 
+    # ATS + PFloTran
+    try:
+        print("looking for ATS")
+        path_to_ATS = os.path.join(os.environ['ATS_SRC_DIR'], 'testing',
+                                   'ats-regression-tests', '07_reactive_transport',
+                                   'amanzi_benchmark-ion_exchange.regression')
+
+        root_ATS = "ats_vis"
+
+        u_ATS = [[[] for x in range(len(amanzi_components))] for x in range(len(times))]
+        for i, time in enumerate(times):
+            for j, comp in enumerate(amanzi_components):
+                x_ATS, c_ATS = GetXY_AmanziU_1D(path_to_ATS,root_ATS,comp,1)
+                u_ATS[i][j] = c_ATS
+              
+        v_ATS = [[[] for x in range(len(amanzi_sorbed))] for x in range(len(times))]
+        for i, time in enumerate(times):
+            for j, comp in enumerate(amanzi_sorbed):
+                x_ATS, c_ATS = GetXY_AmanziU_1D(path_to_ATS,root_ATS,comp,1)
+                v_ATS[i][j] = c_ATS
+
+        ats = len(u_ATS)
+
+    except:
+        ats = 0
+
+        
     components = ['Na+','Ca++','Mg++','Cl-']
 
     # define subplots as a subgrid
@@ -315,6 +342,12 @@ if __name__ == "__main__":
             ax[j].plot(x_amanzi_native, u_amanzi_native[i][j],'x',label='AmanziU Native Chem',c=PFLOTRAN_LINE_COLOR)
             bx[j].plot(x_amanzi_native, v_amanzi_native[i][j],'rx',label='AmanziU Native Chem')
 
+    if ats:
+        i = 0
+        for j, comp in enumerate(components):
+            ax[j].plot(x_ATS, u_ATS[i][j],'c-x',label='ATS')
+            bx[j].plot(x_ATS, v_ATS[i][j],'c-x',label='ATS')
+            
     if crunch:
         i = 0  # hardwired for time 50 years
         for j, comp in enumerate(components):

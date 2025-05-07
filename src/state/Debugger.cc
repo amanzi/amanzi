@@ -28,10 +28,10 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
   : verb_level_(verb_level),
     plist_(plist),
     mesh_(mesh),
-    formatter_(plist.get<int>("column width", 15),
-               plist.get<int>("precision", 7),
-               plist.get<int>("header width", 20),
-               plist.get<int>("cell number width", 5)),
+    formatter_(plist.sublist("verbose object").get<int>("column width", 15),
+               plist.sublist("verbose object").get<int>("precision", 7),
+               plist.sublist("verbose object").get<int>("debug cell header width", 24),
+               plist.sublist("verbose object").get<int>("gid number width", 5)),
     name_(name)
 {
   vo_ = Teuchos::rcp(new VerboseObject(name, plist));
@@ -153,13 +153,18 @@ Debugger::WriteCellInfo(bool include_faces)
 void
 Debugger::WriteVector(const std::string& vname,
                       const Teuchos::Ptr<const CompositeVector>& vec,
-                      bool include_faces)
+                      bool include_faces,
+                      std::vector<std::string> const * subfield_names)
 {
   int n_vecs = 0;
   Teuchos::RCP<const Epetra_MultiVector> vec_c;
   if (vec->HasComponent("cell")) {
     vec_c = vec->ViewComponent("cell", false);
     n_vecs = vec_c->NumVectors();
+  }
+
+  if (subfield_names != nullptr) {
+    AMANZI_ASSERT(subfield_names->size() == n_vecs);
   }
 
   Teuchos::RCP<const Epetra_MultiVector> vec_f;
@@ -179,7 +184,11 @@ Debugger::WriteVector(const std::string& vname,
       Teuchos::OSTab tab = dcvo_[i]->getOSTab();
 
       if (dcvo_[i]->os_OK(verb_level_)) {
-        *dcvo_[i]->os() << formatter_.formatHeader(vname, c0_gid);
+        if (subfield_names != nullptr) {
+          *dcvo_[i]->os() << formatter_.formatHeader(vname+"."+(*subfield_names)[j], c0_gid);
+        } else {
+          *dcvo_[i]->os() << formatter_.formatHeader(vname, c0_gid);
+        }
 
         if (vec_c != Teuchos::null) *dcvo_[i]->os() << " " << formatter_.format((*vec_c)[j][c0]);
 
@@ -207,9 +216,15 @@ Debugger::WriteVector(const std::string& vname,
 
 // Write a vector individually.
 void
-Debugger::WriteCellVector(const std::string& name, const Epetra_MultiVector& vec)
+Debugger::WriteCellVector(const std::string& name,
+                          const Epetra_MultiVector& vec,
+                          std::vector<std::string> const * subfield_names)
 {
   int n_vecs = vec.NumVectors();
+  if (subfield_names != nullptr) {
+    AMANZI_ASSERT(subfield_names->size() == n_vecs);
+  }
+
   for (int i = 0; i != dc_.size(); ++i) {
     for (int j = 0; j != n_vecs; ++j) {
       AmanziMesh::Entity_ID c0 = dc_[i];
@@ -217,7 +232,13 @@ Debugger::WriteCellVector(const std::string& name, const Epetra_MultiVector& vec
       Teuchos::OSTab tab = dcvo_[i]->getOSTab();
 
       if (dcvo_[i]->os_OK(verb_level_)) {
-        *dcvo_[i]->os() << formatter_.formatHeader(name, c0_gid) << formatter_.format(vec[j][c0])
+        if (subfield_names != nullptr) {
+          *dcvo_[i]->os() << formatter_.formatHeader(name+'.'+(*subfield_names)[j], c0_gid);
+        } else {
+          *dcvo_[i]->os() << formatter_.formatHeader(name, c0_gid);
+        }
+
+        *dcvo_[i]->os() << formatter_.format(vec[j][c0])
                         << std::endl;
       }
     }

@@ -124,6 +124,11 @@ InputConverterU::TranslateMechanics_(const std::string& domain)
   // insert boundary conditions and source terms
   out_list.sublist("boundary conditions") = TranslateMechanicsBCs_(domain);
 
+  // evaluators
+  Teuchos::ParameterList& aux = glist_->sublist("state").sublist("evaluators");
+  aux.sublist("volumetric_strain")
+    .set<std::string>("evaluator type", "volumetric strain");
+
   out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
   return out_list;
 }

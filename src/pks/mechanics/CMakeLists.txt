@@ -24,6 +24,7 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
+include_directories(${EVALUATORS_SOURCE_DIR})
 include_directories(${FLOW_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
@@ -47,7 +48,6 @@ set(mechanics_src_files Mechanics_PK.cc
                         MechanicsFracturedMatrix_PK.cc
                         MechanicsBoundaryFunction.cc
                         HydrostaticStressEvaluator.cc
-                        VolumetricStrainEvaluator.cc
                         ShearStrainEvaluator.cc
                         SSMEvaluator.cc
    )
@@ -72,7 +72,6 @@ set(mechanics_inc_files
   MechanicsFracturedMatrix_PK.hh
   MechanicsBoundaryFunction.hh
   HydrostaticStressEvaluator.hh
-  VolumetricStrainEvaluator.hh
 )
 
 add_install_include_file(${mechanics_inc_files})

@@ -130,7 +130,7 @@ Alquimia_PK::parseParameterList()
   }
 
   if (number_sorption_sites_ > 0) {
-    surface_site_density_key_ = Keys::readKey(*plist_, domain_, "sorption site density", "surface_site_density");
+    surface_site_density_key_ = Keys::readKey(*plist_, domain_, "surface site density", "surface_site_density");
   }
 
   if (num_sorption_components > 0) {
@@ -145,7 +145,7 @@ Alquimia_PK::parseParameterList()
   }
 
   if (number_aqueous_kinetics_ > 0) {
-    first_order_decay_rate_constant_key_ = Keys::readKey(*plist_, domain_, "aqueous kinetic rate constant", "first_order_decay_rate_constant");
+    first_order_decay_rate_constant_key_ = Keys::readKey(*plist_, domain_, "first order decay rate constant", "first_order_decay_rate_constant");
   }
 
   if (number_ion_exchange_sites_ > 0) {
@@ -215,6 +215,7 @@ Alquimia_PK::Setup()
         requireEvaluatorAtCurrent(key, tag_current_, *S_)
           .SetMesh(mesh_)
           ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+        requireEvaluatorAtNext(key, Tags::DEFAULT, *S_);
       }
     }
   }
@@ -377,7 +378,7 @@ Alquimia_PK::Initialize()
 
   if (chem_initial_conditions_.size() > 0 &&
       std::abs(initial_conditions_time_ - S_->get_time()) < 1e-8 * (1.0 + std::abs(S_->get_time()))) {
-    updateSubstate();
+    updateSubstate(Tags::DEFAULT);
     int ierr = 0;
 
     for (const auto& [region, condition] : chem_initial_conditions_) {
@@ -449,21 +450,21 @@ Alquimia_PK::initializeSingleCell_(int cell, const std::string& condition)
  * struct for use in AdvanceSingleCell.
  ******************************************************************* */
 void
-Alquimia_PK::updateSubstate()
+Alquimia_PK::updateSubstate(const Tag& water_tag)
 {
   // external things
-  S_->GetEvaluator(poro_key_, tag_current_).Update(*S_, name_);
-  substate_.porosity = &*S_->Get<CompositeVector>(poro_key_, tag_current_).ViewComponent("cell", false);
+  S_->GetEvaluator(poro_key_, water_tag).Update(*S_, name_);
+  substate_.porosity = &*S_->Get<CompositeVector>(poro_key_, water_tag).ViewComponent("cell", false);
 
-  S_->GetEvaluator(sat_key_, tag_current_).Update(*S_, name_);
-  substate_.saturation_liquid = &*S_->Get<CompositeVector>(sat_key_, tag_current_).ViewComponent("cell", false);
+  S_->GetEvaluator(sat_key_, water_tag).Update(*S_, name_);
+  substate_.saturation_liquid = &*S_->Get<CompositeVector>(sat_key_, water_tag).ViewComponent("cell", false);
 
-  S_->GetEvaluator(dens_key_, tag_current_).Update(*S_, name_);
-  substate_.mass_density_liquid = &*S_->Get<CompositeVector>(dens_key_, tag_current_).ViewComponent("cell", false);
+  S_->GetEvaluator(dens_key_, water_tag).Update(*S_, name_);
+  substate_.mass_density_liquid = &*S_->Get<CompositeVector>(dens_key_, water_tag).ViewComponent("cell", false);
 
   if (!temp_key_.empty()) {
-    S_->GetEvaluator(temp_key_, tag_current_).Update(*S_, name_);
-    substate_.temperature = &*S_->Get<CompositeVector>(temp_key_, tag_current_).ViewComponent("cell", false);
+    S_->GetEvaluator(temp_key_, water_tag).Update(*S_, name_);
+    substate_.temperature = &*S_->Get<CompositeVector>(temp_key_, water_tag).ViewComponent("cell", false);
   }
 
   // parameters

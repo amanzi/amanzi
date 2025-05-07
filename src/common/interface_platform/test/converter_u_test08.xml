@@ -139,7 +139,7 @@
   <materials>
     <material name="Rock">
       <mechanical_properties>
-        <porosity value="0.15"/>
+        <porosity model="constant" value="0.15"/>
         <particle_density value="2600.0"/>
       </mechanical_properties>
       <permeability x="5e-20" y="5e-20" />

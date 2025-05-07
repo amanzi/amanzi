@@ -49,8 +49,6 @@ class TransportBoundaryFunction_Alquimia : public TransportDomainFunction {
 
  protected:
   std::string name_;
-
- private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
   // string function of geochemical conditions

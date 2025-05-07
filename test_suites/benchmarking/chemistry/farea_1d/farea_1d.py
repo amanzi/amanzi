@@ -204,6 +204,43 @@ if __name__ == "__main__":
     except Exception as err:
         print(err)
         alq_writer = False
+
+
+    # ATS + PFloTran
+    try:
+        print("looking for ATS")
+        path_to_ATS = os.path.join(os.environ['ATS_SRC_DIR'], 'testing',
+                                   'ats-regression-tests', '07_reactive_transport',
+                                   'amanzi_benchmark-farea.regression')
+
+        root_ATS = "ats_vis"
+
+        # tot concentration
+        u_ATS = [[] for x in range(len(totcama))]
+        for j, comp in enumerate(totcama):
+            x_ATS, c_ATS = GetXY_AmanziU_1D(path_to_ATS,root_ATS,comp,1)
+            u_ATS[j] = c_ATS  
+
+        # sorbed concentration
+        v_ATS = [[] for x in range(len(sorbama))]
+        for j, sorb in enumerate(sorbama):
+            x_ATS, c_ATS = GetXY_AmanziU_1D(path_to_ATS,root_ATS,sorb,1)
+            v_ATS[j] = c_ATS
+
+        # mineral volume fraction
+        w_ATS = [[] for x in range(len(vfama))]
+        for j, vf in enumerate(vfama):
+            x_ATS, c_ATS = GetXY_AmanziU_1D(path_to_ATS,root_ATS,vf,1)
+            w_ATS[j] = c_ATS
+
+        ats = True
+
+    except Exception as err:
+        print(err)
+        ats = False
+    
+        
+
         
     # initialize subplots
     fig, ax = plt.subplots(3,sharex=True,figsize=(8,15))
@@ -213,8 +250,7 @@ if __name__ == "__main__":
 
     colors= ['r','b','m','g'] # components
     colors2= ['c','k','g','y'] # components
-    styles = ['-','o','x','--'] # codes
-    codes = ['Amanzi+Alquimia(PFloTran)','Amanzi Native Chemistry','PFloTran'] + [None,]*9
+    styles = ['-','o','x','--','^'] # codes
 
     # lines on axes
     # ax[0],b[0] ---> Aqueous concentrations
@@ -227,6 +263,8 @@ if __name__ == "__main__":
             ax[0].plot(x_amanzi_alquimia_w, u_amanzi_alquimia_w[j],color=colors[j],linestyle=styles[3],linewidth=2)
         if native:
             ax[0].plot(x_amanzi_native, u_amanzi_native[j],color=colors[j],marker=styles[1],linestyle='None',linewidth=2,label=comp)
+        if ats:
+            ax[0].plot(x_ATS, u_ATS[j], color=colors[j], marker=styles[4], linestyle='None', linewidth=2)
 
         ax[0].plot(x_pflotran, u_pflotran[j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2)
         
@@ -239,6 +277,11 @@ if __name__ == "__main__":
         if native:
             label='Amanzi Native Chemistry' if j==0 else None
             ax[1].plot(x_amanzi_native, v_amanzi_native[j],color=colors[j],marker=styles[1],linestyle='None',linewidth=2,label=label)
+        if ats:
+            label = 'ATS' if j == 0 else None
+            ax[1].plot(x_ATS, v_ATS[j], color=colors[j], marker=styles[4], linestyle='None',linewidth=2,label=label)
+
+
         label='PFloTran' if j==0 else None
         ax[1].plot(x_pflotran, v_pflotran[j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2,label=label)
 
@@ -251,7 +294,9 @@ if __name__ == "__main__":
             ax[2].plot(x_amanzi_alquimia_w, w_amanzi_alquimia_w[j],color=colors2[j],linestyle=styles[3],linewidth=2)
         if native:
             ax[2].plot(x_amanzi_native, w_amanzi_native[j],color=colors2[j],marker=styles[1],linestyle='None',linewidth=2,label=vf) 
-            ax[2].plot(x_pflotran, w_pflotran[j],color=colors2[j],linestyle='None',marker=styles[2],linewidth=2)
+        if ats:
+            ax[2].plot(x_ATS, w_ATS[j], color=colors2[j], marker=styles[4], linestyle='None',linewidth=2)
+        ax[2].plot(x_pflotran, w_pflotran[j],color=colors2[j],linestyle='None',marker=styles[2],linewidth=2)
 
     # axes
     ax[2].set_xlabel("Distance (m)",fontsize=15)

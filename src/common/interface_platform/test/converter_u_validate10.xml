@@ -35,14 +35,17 @@
     </ParameterList>
     <ParameterList name="TopSurface">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{0e-17, 0e-17, 1.00000000000000000}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{1.00000000000000000, 1.00000000000000000, 1.00000000000000000}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0, 1.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0, 1.0, 1.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
 
   <ParameterList name="state">
     <ParameterList name="evaluators">
+      <ParameterList name="volumetric_strain">
+        <Parameter name="evaluator type" type="string" value="volumetric strain"/>
+      </ParameterList>
       <ParameterList name="mass_density_liquid">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -50,7 +53,7 @@
             <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="998.200000000000045"/>
+                <Parameter name="value" type="double" value="998.2"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

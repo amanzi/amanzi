@@ -100,8 +100,9 @@ PK_DomainFunctionParentMeshField<FunctionBase>::Init(const Teuchos::ParameterLis
   AMANZI_ASSERT(region_kind == AmanziMesh::Entity_kind::FACE);
 
   // get field name and tag
-  field_key_ = slist.get<std::string>("external field key");
-  field_tag_ = Keys::readTag(slist, "external field tag");
+  Key domain_name = Keys::readDomain(slist, "domain", "domain");
+  field_key_ = Keys::readKey(slist, domain_name, "external field");
+  field_tag_ = Keys::readTag(slist, "external field");
 
   // create a list of domain ids
   RegionList regions = plist.get<Teuchos::Array<std::string>>("regions").toVector();

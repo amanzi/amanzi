@@ -994,7 +994,10 @@ InputConverterU::TranslateCommonContinuumFields_(const std::string& domain,
   DOMNode* node;
   DOMNodeList* children;
 
-  // material independent fields
+  // domain independent fields
+  // -- porosity
+  TranslatePOM_(domain, out_ic, out_ev);
+
   // -- viscosity
   node = GetUniqueElementByTagsString_("phases, gas_phase, viscosity", flag);
   if (flag) {
@@ -1057,16 +1060,6 @@ InputConverterU::TranslateCommonContinuumFields_(const std::string& domain,
       node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
       std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
       std::string reg_str = CreateNameFromVector_(regions);
-
-      // porosity
-      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, porosity", flag);
-      if (flag) {
-        TranslateFieldEvaluator_(
-          node, Keys::getKey(domain, "porosity"), "-", reg_str, regions, out_ic, out_ev);
-      } else {
-        msg << "Porosity element must be specified under mechanical_properties";
-        Exceptions::amanzi_throw(msg);
-      }
 
       // specific_yield
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, specific_yield", flag);

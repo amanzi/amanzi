@@ -38,8 +38,8 @@ The Barton-Bandis aperture-stress relationship is defined by initial aperture
 
 */
 
-#ifndef AMANZI_FLOW_APERTURE_MODEL_BARTON_BANDIS_HH_
-#define AMANZI_FLOW_APERTURE_MODEL_BARTON_BANDIS_HH_
+#ifndef AMANZI_EVALUATORS_APERTURE_MODEL_BARTON_BANDIS_HH_
+#define AMANZI_EVALUATORS_APERTURE_MODEL_BARTON_BANDIS_HH_
 
 #include <cmath>
 
@@ -48,7 +48,7 @@ The Barton-Bandis aperture-stress relationship is defined by initial aperture
 #include "ApertureModel.hh"
 
 namespace Amanzi {
-namespace Flow {
+namespace Evaluators {
 
 class ApertureModel_BartonBandis : public ApertureModel {
  public:
@@ -78,7 +78,7 @@ class ApertureModel_BartonBandis : public ApertureModel {
   double a0_, pov_, A_, B_;
 };
 
-} // namespace Flow
+} // namespace Evaluators
 } // namespace Amanzi
 
 #endif

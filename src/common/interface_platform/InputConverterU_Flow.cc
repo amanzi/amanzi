@@ -125,7 +125,7 @@ InputConverterU::TranslateFlow_(const std::string& mode,
     flow_list = &out_list;
 
     out_list.sublist("water retention models") = TranslateWRM_("flow");
-    out_list.sublist("porosity models") = TranslatePOM_(domain);
+
     if (out_list.sublist("porosity models").numParams() > 0) {
       flow_list->sublist("physical models and assumptions")
         .set<std::string>("porosity model", "compressible");
@@ -392,116 +392,6 @@ InputConverterU::TranslateWRM_(const std::string& pk_name)
     }
   }
 
-  return out_list;
-}
-
-
-/* ******************************************************************
-* Create list of porosity models.
-****************************************************************** */
-Teuchos::ParameterList
-InputConverterU::TranslatePOM_(const std::string& domain)
-{
-  Teuchos::ParameterList out_list;
-
-  Teuchos::OSTab tab = vo_->getOSTab();
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
-    *vo_->os() << "Translating porosity models" << std::endl;
-
-  MemoryManager mm;
-  DOMNodeList* children;
-  DOMNode* node;
-  DOMElement* element;
-
-  bool flag;
-  double compres, ref_pressure;
-  std::string model;
-
-  use_porosity_model_ = false;
-
-  node = (domain == "fracture") ?
-           GetUniqueElementByTagsString_("fracture_network, materials", flag) :
-           GetUniqueElementByTagsString_("materials", flag);
-  element = static_cast<DOMElement*>(node);
-  children = element->getElementsByTagName(mm.transcode("material"));
-
-  for (int i = 0; i < children->getLength(); ++i) {
-    DOMNode* inode = children->item(i);
-
-    // get assigned regions
-    bool flag;
-    node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
-    std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
-
-    // get compressibility
-    node = GetUniqueElementByTagsString_(inode, "mechanical_properties, porosity", flag);
-    model = GetAttributeValueS_(node, "model", "constant, compressible, thermoporoelastic");
-
-    std::string type = GetAttributeValueS_(node, "type", TYPE_NONE, false, "");
-    if (type == "h5file") {
-      use_porosity_model_ = false;
-      break;
-    }
-
-    double phi = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1.0);
-    ref_pressure = GetAttributeValueD_(
-      node, "reference_pressure", TYPE_NUMERICAL, 0.0, DBL_MAX, "Pa", false, const_atm_pressure_);
-
-    // optional thermoporoelasticity
-    double dilation_rock(0.0), dilation_liquid(0.0), biot(1.0);
-    if (model == "thermoporoelastic") {
-      DOMNode* knode;
-      knode =
-        GetUniqueElementByTagsString_(inode, "mechanical_properties, rock_thermal_dilation", flag);
-      if (flag)
-        dilation_rock = GetAttributeValueD_(knode, "value", TYPE_NUMERICAL, 0.0, 1.0, "K^-1");
-
-      knode = GetUniqueElementByTagsString_(
-        inode, "mechanical_properties, liquid_thermal_dilation", flag);
-      if (flag)
-        dilation_liquid = GetAttributeValueD_(knode, "value", TYPE_NUMERICAL, 0.0, 1.0, "K^-1");
-
-      // Biot-Willis coefficient
-      knode = GetUniqueElementByTagsString_(inode, "mechanical_properties, biot_coefficient", flag);
-      if (flag) biot = GetAttributeValueD_(knode, "value", TYPE_NUMERICAL, 0.0, 1.0, "");
-    }
-
-    // optional poroelasticity
-    if (model == "compressible") {
-      compres = GetAttributeValueD_(node, "compressibility", TYPE_NUMERICAL, 0.0, 1.0, "Pa^-1");
-    } else if (model == "thermoporoelastic") {
-      double bulk(0.0);
-      if (flag)
-        bulk = GetAttributeValueD_(node, "solid_bulk_modulus", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa");
-      compres = (biot - phi) / bulk;
-    }
-
-    std::stringstream ss;
-    ss << "POM " << i;
-
-    Teuchos::ParameterList& pom_list = out_list.sublist(ss.str());
-    pom_list.set<Teuchos::Array<std::string>>("regions", regions);
-
-    // we can have either uniform of compressible rock
-    if (model == "constant") {
-      pom_list.set<std::string>("porosity model", "constant");
-      pom_list.set<double>("value", phi);
-    } else {
-      pom_list.set<std::string>("porosity model", "compressible")
-        .set<double>("undeformed soil porosity", phi)
-        .set<double>("reference pressure", ref_pressure)
-        .set<double>("pore compressibility", compres)
-        .set<double>("biot coefficient", biot)
-        .set<double>("rock thermal dilation", dilation_rock)
-        .set<double>("liquid thermal dilation", dilation_liquid);
-      use_porosity_model_ = true;
-    }
-  }
-
-  if (!use_porosity_model_) {
-    Teuchos::ParameterList empty;
-    out_list = empty;
-  }
   return out_list;
 }
 
