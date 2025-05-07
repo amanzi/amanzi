@@ -184,9 +184,9 @@ createRegion(const std::string& reg_name,
     std::string filename;
     if (plist.isParameter("read from file")) {
       // old parameter name -- deprecate
-      std::filename = plist.get<std::string>("read from file");
+      filename = plist.get<std::string>("read from file");
     } else {
-      std::filename = plist.get<std::string>("filename");
+      filename = plist.get<std::string>("filename");
     }
     Teuchos::ParameterList enum_list_from_file = *Teuchos::getParametersFromXmlFile(filename);
     std::string enum_reg_name = plist.get<std::string>("region name");
