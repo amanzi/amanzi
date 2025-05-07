@@ -16,6 +16,11 @@ the case of *subtraction*, all elements in the first region are included, then
 all elements in every other region after the first are removed.  The
 *complement* returns all entries that are not in the given region.
 
+In all cases, logical operations are done discretely on the resolved
+regions. For instance, the union of two box regions is the discrete union of
+each box, resolved on a mesh, not the the geometric union of the two boxes.
+
+
 `"region type`" = `"logical`"
 
 .. _region-logical-spec:
