@@ -314,6 +314,7 @@ if (ENABLE_Trilinos_Patch)
     trilinos-duplicate-parameters.patch
     trilinos-ifpack.patch
     trilinos-kokkos-kernels.patch
+    trilinos-metis-real_t.patch
     )
   configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/trilinos-patch-step.sh.in
                  ${Trilinos_prefix_dir}/trilinos-patch-step.sh
