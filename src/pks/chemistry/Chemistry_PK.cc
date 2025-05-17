@@ -95,7 +95,7 @@ Chemistry_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   double dt = t_new - t_old;
 
   Teuchos::OSTab tab = vo_->getOSTab();
-  if (vo_->os_OK(Teuchos::VERB_LOW))
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "----------------------------------------------------------------" << std::endl
                << "Advancing: t0 = " << t_old << " t1 = " << t_new << " h = " << dt << std::endl
                << "----------------------------------------------------------------" << std::endl;

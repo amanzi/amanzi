@@ -344,8 +344,8 @@
       </ParameterList>
       <ParameterList name="TP 1">
         <ParameterList name="PK tree">
-          <ParameterList name="transient:flow and energy">
-            <Parameter name="PK type" type="string" value="thermal flow"/>
+          <ParameterList name="transient:mpc">
+            <Parameter name="PK type" type="string" value="flow and energy"/>
             <ParameterList name="transient:flow">
               <Parameter name="PK type" type="string" value="richards"/>
             </ParameterList>
@@ -591,17 +591,15 @@
 
     </ParameterList>
 
-    <ParameterList name="transient:flow and energy">
+    <ParameterList name="transient:mpc">
       <Parameter name="PKs order" type="Array(string)" value="{transient:flow, transient:energy}"/>
       <Parameter name="master PK index" type="int" value="0"/>
       <Parameter name="domain name" type="string" value="domain"/>
-      <Parameter name="PK type" type="string" value="thermal flow"/>
-      <ParameterList name="physical models and assumptions">
-        <Parameter name="vapor diffusion" type="bool" value="false"/>
-      </ParameterList>
+      <Parameter name="PK type" type="string" value="flow and energy"/>
+      <Parameter name="MPC type" type="bool" value="true"/>
 
       <ParameterList name="time integrator">
-        <Parameter name="error control options" type="Array(string)" value="{pressure, temperature}"/>
+        <Parameter name="error control options" type="Array(string)" value="{residual}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
         <ParameterList name="dae constraint">
@@ -743,7 +741,7 @@
       </ParameterList>
 
       <ParameterList name="time integrator">
-        <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
+        <Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
         <ParameterList name="dae constraint">

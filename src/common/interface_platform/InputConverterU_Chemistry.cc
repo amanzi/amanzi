@@ -66,7 +66,7 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
   if (engine == "amanzi") {
     out_list.set<std::string>("chemistry model", "Amanzi");
 
-    node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
+    node = GetPKChemistryPointer_(flag);
 
     if (bgdfilename != "") {
       auto pair = Keys::split(bgdfilename, '.');
@@ -519,7 +519,7 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
   }
 
   // miscalleneous
-  out_list.set<double>("initial conditions time", ic_time_);
+  out_list.set<double>("initial conditions time", ic_time_chemistry_);
   out_list.set<int>("number of component concentrations", comp_names_all_.size());
 
   // assumption
@@ -527,30 +527,6 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
 
   out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
   return out_list;
-}
-
-
-/* ******************************************************************
-* Helper utility for two stuctures of process_kernel lists
-****************************************************************** */
-DOMNode*
-InputConverterU::GetPKChemistryPointer_(bool& flag)
-{
-  MemoryManager mm;
-  DOMNode* node = NULL;
-  DOMNodeList* children;
-
-  node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
-  if (!flag) {
-    node = GetUniqueElementByTagsString_("process_kernels", flag);
-    children = static_cast<DOMElement*>(node)->getElementsByTagName(mm.transcode("pk"));
-    for (int i = 0; i < children->getLength(); ++i) {
-      node = GetUniqueElementByTagsString_(children->item(i), "chemistry", flag);
-      if (flag) break;
-    }
-  }
-
-  return node;
 }
 
 } // namespace AmanziInput

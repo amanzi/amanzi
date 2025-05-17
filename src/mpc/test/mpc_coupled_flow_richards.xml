@@ -376,7 +376,7 @@
       <ParameterList name="TP 0">
         <ParameterList name="PK tree">
           <ParameterList name="transient:coupled flow">
-            <Parameter name="PK type" type="string" value="darcy matrix fracture"/>
+            <Parameter name="PK type" type="string" value="flow matrix fracture"/>
             <ParameterList name="transient:flow matrix">
               <Parameter name="PK type" type="string" value="richards"/>
             </ParameterList>

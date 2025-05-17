@@ -65,7 +65,7 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
                            Teuchos::RCP<const TreeVector> du) override;
 
-  std::string name() override { return "thermal flow matrix fracture"; }
+  std::string name() override { return "flow and energy matrix fracture"; }
 
  private:
   // use flag to avoid double counting of coupling terms for Darcy PK

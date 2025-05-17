@@ -114,6 +114,7 @@ class InputConverter {
   void ParseConstants_();
   void ParseGeochemistry_();
   void FilterNodes(const std::string& filter);
+  DOMNode* GetPKChemistryPointer_(bool& flag);
 
   // auto-generated input files
   // -- Pflotran input file

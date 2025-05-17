@@ -47,7 +47,7 @@ to handle multiphysics process kernels (PKs) and multiple time periods.
            available options are (`"darcy`", `"richards`", `"transport`", `"one-phase energy`",
            `"two-phase energy`", `"reactive transport`", `"flow reactive transport`",
            `"thermal richards`", `"chemistry`", `"transport implicit`", `"transport matrix fracture`",
-           `"transport matrix fracture implicit`", `"flow`", and `"darcy matrix fracture`").
+           `"transport matrix fracture implicit`", `"flow`", and `"flow matrix fracture`").
 
          * `"start period time`" ``[double]`` is the start time of the current time period.
 
