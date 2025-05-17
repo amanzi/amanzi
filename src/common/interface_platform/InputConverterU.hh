@@ -15,6 +15,8 @@
 #ifndef AMANZI_INPUT_CONVERTER_UNSTRUCTURED_HH_
 #define AMANZI_INPUT_CONVERTER_UNSTRUCTURED_HH_
 
+#include <map>
+
 // TPLs
 #include "xercesc/dom/DOM.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -67,6 +69,25 @@ struct BCs {
 };
 
 
+struct MPC {
+  MPC() : basename(""),
+          submodel(""), 
+          is_pk(false),
+          is_mpc(false),
+          matrix_fracture(false),
+          mpc_type(""),
+          parsed(false){};
+  std::string basename;
+  std::string submodel;
+  std::vector<std::string> pks;
+  bool is_pk;
+  bool is_mpc;
+  bool matrix_fracture;
+  std::string mpc_type;
+  bool parsed;
+};
+
+
 class InputConverterU : public InputConverter {
  public:
   explicit InputConverterU(const std::string& input_filename)
@@ -84,10 +105,9 @@ class InputConverterU : public InputConverter {
       use_transport_porosity_(false),
       use_transport_dispersion_(true),
       transport_permeability_(false),
-      transport_implicit_(false),
       restart_(false),
       ic_time_flow_(0.0),
-      ic_time_(0.0),
+      ic_time_chemistry_(0.0),
       output_prefix_(""),
       io_walkabout_(false),
       io_mesh_info_(false),
@@ -110,10 +130,9 @@ class InputConverterU : public InputConverter {
       use_transport_porosity_(false),
       use_transport_dispersion_(true),
       transport_permeability_(false),
-      transport_implicit_(false),
       restart_(false),
       ic_time_flow_(0.0),
-      ic_time_(0.0),
+      ic_time_chemistry_(0.0),
       output_prefix_(output_prefix),
       io_walkabout_(false),
       io_mesh_info_(false),
@@ -174,9 +193,15 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateState_();
   Teuchos::ParameterList TranslateMaterialsPartition_();
   Teuchos::ParameterList TranslateCycleDriver_();
-  Teuchos::ParameterList TranslateCycleDriverNew_();
   Teuchos::ParameterList TranslateTimePeriodControls_();
   Teuchos::ParameterList TranslatePKs_(Teuchos::ParameterList& glist);
+
+  Teuchos::ParameterList TranslateSinglePhysicsPK_(const std::string& prefix, 
+                                                   const std::string& domain,
+                                                   const std::string& pkname,
+                                                   const std::string& pk_model,
+                                                   Teuchos::ParameterList& glist);
+
   Teuchos::ParameterList TranslateDiffusionOperator_(const std::string& disc_methods,
                                                      const std::string& pc_method,
                                                      const std::string& nonlinear_solver,
@@ -304,7 +329,7 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateShallowWaterBCs_();
 
   // -- mpc pks
-  bool coupled_flow_, coupled_transport_, coupled_energy_, coupled_multiphase_;
+  bool coupled_flow_;
   std::vector<std::string> fracture_regions_, surface_regions_;
 
   void ProcessMacros_(const std::string& prefix,
@@ -312,8 +337,8 @@ class InputConverterU : public InputConverter {
                       Teuchos::ParameterList& mPL,
                       Teuchos::ParameterList& outPL);
 
-  void PopulatePKTree_(Teuchos::ParameterList& pk_tree, const std::string pk_name);
-  void RegisterPKsList_(Teuchos::ParameterList& pk_tree, Teuchos::ParameterList& pks_list);
+  std::pair<bool, std::vector<std::string>>
+  RegisterPKsList_(Teuchos::ParameterList& pk_tree, Teuchos::ParameterList& pks_list);
 
   void FinalizeMPC_PKs_(Teuchos::ParameterList& glist);
 
@@ -337,7 +362,6 @@ class InputConverterU : public InputConverter {
   Iterator SelectUniqueEntries(Iterator first, Iterator last);
 
   // -- miscalleneous
-  DOMNode* GetPKChemistryPointer_(bool& flag);
   bool FindNameInVector_(const std::string& name, const std::vector<std::string>& list);
   std::string CreateNameFromVector_(const std::vector<std::string>& list);
   bool WeightVolumeSubmodel_(const std::vector<std::string>& regions);
@@ -390,14 +414,11 @@ class InputConverterU : public InputConverter {
   std::vector<std::string> comp_names_all_;
   std::map<std::string, double> solute_molar_mass_;
 
-  // global mpc parameters
-  std::vector<std::string> pks_strong_, pks_weak_;
-
   // global state parameters
   // -- initialization filename, different from restart
   bool restart_;
   std::string init_filename_;
-  double ic_time_flow_, ic_time_;
+  double ic_time_flow_, ic_time_chemistry_;
 
   // global solvers parameters
   std::vector<std::pair<std::string, double>> gmres_solvers_;

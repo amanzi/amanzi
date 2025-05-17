@@ -26,8 +26,6 @@ ReactiveTransport_PK::ReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
                                            const Teuchos::RCP<TreeVector>& soln)
   : Amanzi::PK_MPCAdditive<PK>(pk_tree, global_list, S, soln)
 {
-  // why put chemistry before transport if you intend to solve transport before
-  // chemistry? --ETC
   transport_pk_ = Teuchos::rcp_dynamic_cast<Transport::Transport_PK>(sub_pks_[1]);
   AMANZI_ASSERT(transport_pk_ != Teuchos::null);
 

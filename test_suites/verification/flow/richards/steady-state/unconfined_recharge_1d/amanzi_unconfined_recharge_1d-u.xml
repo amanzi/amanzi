@@ -26,10 +26,10 @@
       </macros>
     </definitions>
     <process_kernels>
-      <comments>Variably saturated flow</comments>
-      <flow model="richards" state="on" />
-      <transport state="off" />
-      <chemistry engine="none" state="off" />
+      <pk mode="steady">
+        <comments>Variably saturated flow</comments>
+        <flow model="richards" state="on"/>
+      </pk>
     </process_kernels>
     <phases>
       <liquid_phase name="water">
