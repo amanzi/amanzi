@@ -718,10 +718,10 @@ InputConverterU::TranslateFlowBCs_(const std::string& domain)
 
   // correct list of boundary conditions for given domain
   bool flag;
-  if (domain == "matrix")
-    node = GetUniqueElementByTagsString_("boundary_conditions", flag);
-  else
+  if (domain == "fracture")
     node = GetUniqueElementByTagsString_("fracture_network, boundary_conditions", flag);
+  else
+    node = GetUniqueElementByTagsString_("boundary_conditions", flag);
   if (!flag) return out_list;
 
   node_list = node->getChildNodes();

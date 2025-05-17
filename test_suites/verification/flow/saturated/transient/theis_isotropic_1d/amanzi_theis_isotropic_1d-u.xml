@@ -37,10 +37,10 @@
       </macros>
     </definitions>
     <process_kernels>
-      <comments>Single-phase transient flow</comments>
-      <flow model="saturated" state="on" />
-      <transport state="off" />
-      <chemistry engine="none" state="off" />
+      <pk mode="transient">
+        <comments>Single-phase transient flow</comments>
+        <flow model="saturated" state="on" />
+      </pk>
     </process_kernels>
 
     <execution_controls>

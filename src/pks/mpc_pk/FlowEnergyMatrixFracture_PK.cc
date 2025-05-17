@@ -14,7 +14,8 @@
   Process kernel that couples flow and energy in matrix and fractures.
 */
 
-#include "FlowEnergy_PK.hh"
+#include "FlowMatrixFracture_PK.hh"
+#include "EnergyMatrixFracture_PK.hh"
 #include "InverseFactory.hh"
 #include "PDE_CouplingFlux.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
@@ -132,12 +133,12 @@ FlowEnergyMatrixFracture_PK::Setup()
   auto& mflow = glist_->sublist("PKs").sublist(pks1[0]).sublist("physical models and assumptions");
   mflow.set<std::string>("coupled matrix fracture flow", "matrix");
 
-  auto& fflow = glist_->sublist("PKs").sublist(pks2[0]).sublist("physical models and assumptions");
+  auto& fflow = glist_->sublist("PKs").sublist(pks1[1]).sublist("physical models and assumptions");
   fflow.set<std::string>("coupled matrix fracture flow", "fracture");
 
   // -- energy
   auto& menergy =
-    glist_->sublist("PKs").sublist(pks1[1]).sublist("physical models and assumptions");
+    glist_->sublist("PKs").sublist(pks2[0]).sublist("physical models and assumptions");
   menergy.set<std::string>("coupled matrix fracture energy", "matrix");
 
   auto& fenergy =
@@ -167,23 +168,15 @@ FlowEnergyMatrixFracture_PK::Initialize()
 {
   PK_MPCStrong<PK_BDF>::Initialize();
 
-  // diagonal blocks (0,0) and (2,2) in tree operator must be Darcy PKs
-  // one reason is that Darcy_PK combines matrix and preconditioner
-  for (int i = 0; i < 2; ++i) {
-    std::string tmp = (*Teuchos::rcp_dynamic_cast<FlowEnergy_PK>(sub_pks_[i])->begin())->name();
-    std::string pk_name = Keys::getVarName(tmp);
-    AMANZI_ASSERT(pk_name == "darcy" || pk_name == "richards");
-  }
-
   // diagonal blocks in the 4x4 tree operator are the FlowEnergy PKs.
   // These blocks go into the preconditioner (op_tree_pc). The coupling
   // terms are linear and go into both the preconditioner and matrix ops.
-  auto pk_matrix = Teuchos::rcp_dynamic_cast<FlowEnergy_PK>(sub_pks_[0]);
-  auto pk_fracture = Teuchos::rcp_dynamic_cast<FlowEnergy_PK>(sub_pks_[1]);
+  auto mpc_flow = Teuchos::rcp_dynamic_cast<FlowMatrixFracture_PK>(sub_pks_[0]);
+  auto mpc_energy = Teuchos::rcp_dynamic_cast<EnergyMatrixFracture_PK>(sub_pks_[1]);
 
   //
-  // NOTE: In this PK, the solution is 2-deep, with 2 sub-PKs (matrix,
-  // fracture) each with 2 sub-pks of their own (flow,energy).  Currently
+  // NOTE: In this PK, the solution is 2-deep, with 2 sub-PKs (flow, energy)
+  // each with 2 sub-pks of their own (matrix, fracture).  Currently
   // TreeOperator cannot handle this, so instead we must flatten the map.
   auto tvs = Teuchos::rcp(new TreeVectorSpace(solution_->Map()));
   op_tree_matrix_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
@@ -196,8 +189,8 @@ FlowEnergyMatrixFracture_PK::Initialize()
   }
 
   op_tree_pc_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
-  op_tree_pc_->set_block(0, 0, pk_matrix->op_tree_pc()->Clone());
-  op_tree_pc_->set_block(1, 1, pk_fracture->op_tree_pc()->Clone());
+  op_tree_pc_->set_block(0, 0, mpc_flow->op_tree_pc()->Clone());
+  op_tree_pc_->set_block(1, 1, mpc_energy->op_tree_pc()->Clone());
   for (int i = 0; i < 2; ++i) {
     const auto& row = solution_->SubVector(i)->get_map();
     for (int j = 0; j < 2; ++j) {
@@ -449,10 +442,10 @@ FlowEnergyMatrixFracture_PK::AddCouplingFluxes_(
 {
   Teuchos::ParameterList oplist;
 
-  auto op00 = op_tree->get_block(0, 0)->get_operator_block(i, i);
-  auto op01 = op_tree->get_block(0, 1)->get_operator_block(i, i);
-  auto op10 = op_tree->get_block(1, 0)->get_operator_block(i, i);
-  auto op11 = op_tree->get_block(1, 1)->get_operator_block(i, i);
+  auto op00 = op_tree->get_block(i, i)->get_operator_block(0, 0);
+  auto op01 = op_tree->get_block(i, i)->get_operator_block(0, 1);
+  auto op10 = op_tree->get_block(i, i)->get_operator_block(1, 0);
+  auto op11 = op_tree->get_block(i, i)->get_operator_block(1, 1);
 
   Teuchos::RCP<Operators::PDE_CouplingFlux> op_coupling00, op_coupling11;
   // add diagonal
@@ -467,10 +460,10 @@ FlowEnergyMatrixFracture_PK::AddCouplingFluxes_(
   op_coupling11->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   if (op00 == Teuchos::null)
-    op_tree->get_block(0, 0)->set_operator_block(i, i, op_coupling00->global_operator());
+    op_tree->get_block(i, i)->set_operator_block(0, 0, op_coupling00->global_operator());
 
   if (op11 == Teuchos::null)
-    op_tree->get_block(1, 1)->set_operator_block(i, i, op_coupling11->global_operator());
+    op_tree->get_block(i, i)->set_operator_block(1, 1, op_coupling11->global_operator());
 
   auto op_coupling01 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
     oplist, cvs_matrix, cvs_fracture, inds_matrix, inds_fracture, op01));
@@ -483,10 +476,10 @@ FlowEnergyMatrixFracture_PK::AddCouplingFluxes_(
   op_coupling10->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   if (op10 == Teuchos::null)
-    op_tree->get_block(1, 0)->set_operator_block(i, i, op_coupling10->global_operator());
+    op_tree->get_block(i, i)->set_operator_block(1, 0, op_coupling10->global_operator());
 
   if (op01 == Teuchos::null)
-    op_tree->get_block(0, 1)->set_operator_block(i, i, op_coupling01->global_operator());
+    op_tree->get_block(i, i)->set_operator_block(0, 1, op_coupling01->global_operator());
 
   // return operators
   std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux>> ops;

@@ -18,10 +18,10 @@
       </macros>
     </definitions>
     <process_kernels>
-      <comments>Single phase flow only</comments>
-      <flow model="saturated" state="on" />
-      <transport state="off" />
-      <chemistry engine="none" state="off" />
+      <pk mode="steady">
+        <comments>Single phase flow only</comments>
+        <flow model="saturated" state="on" />
+      </pk>
     </process_kernels>
     <phases>
       <liquid_phase name="water">

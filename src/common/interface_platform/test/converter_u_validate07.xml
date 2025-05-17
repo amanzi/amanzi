@@ -463,7 +463,7 @@
       <ParameterList name="TP 0">
         <ParameterList name="PK tree">
           <ParameterList name="steady:coupled flow">
-            <Parameter name="PK type" type="string" value="darcy matrix fracture"/>
+            <Parameter name="PK type" type="string" value="flow matrix fracture"/>
             <ParameterList name="steady:flow matrix">
               <Parameter name="PK type" type="string" value="darcy"/>
             </ParameterList>
@@ -481,7 +481,7 @@
       <ParameterList name="TP 1">
         <ParameterList name="PK tree">
           <ParameterList name="transient:coupled flow and energy">
-            <Parameter name="PK type" type="string" value="thermal flow matrix fracture"/>
+            <Parameter name="PK type" type="string" value="flow and energy matrix fracture"/>
             <ParameterList name="transient:flow and energy">
               <Parameter name="PK type" type="string" value="thermal flow"/>
               <ParameterList name="transient:flow">
@@ -528,7 +528,7 @@
     <ParameterList name="steady:coupled flow">
       <Parameter name="PKs order" type="Array(string)" value="{steady:flow matrix, steady:flow fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
-      <Parameter name="PK type" type="string" value="darcy matrix fracture"/>
+      <Parameter name="PK type" type="string" value="flow matrix fracture"/>
       <ParameterList name="physical models and assumptions">
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
       </ParameterList>
@@ -759,7 +759,7 @@
     <ParameterList name="transient:coupled flow and energy">
       <Parameter name="PKs order" type="Array(string)" value="{transient:flow and energy, transient:flow and energy fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
-      <Parameter name="PK type" type="string" value="thermal flow matrix fracture"/>
+      <Parameter name="PK type" type="string" value="flow and energy matrix fracture"/>
       <ParameterList name="physical models and assumptions">
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
       </ParameterList>

@@ -43,14 +43,14 @@ RegisteredPKFactory<PK_MPCWeak> PK_MPCWeak::reg_("mpc weak");
 
 RegisteredPKFactory<FlowEnergy_PK> FlowEnergy_PK::reg_("thermal flow");
 RegisteredPKFactory<FlowEnergyMatrixFracture_PK>
-  FlowEnergyMatrixFracture_PK::reg_("thermal flow matrix fracture");
+  FlowEnergyMatrixFracture_PK::reg_("flow and energy matrix fracture");
 RegisteredPKFactory<FlowReactiveTransport_PK>
-  FlowReactiveTransport_PK::reg_("flow reactive transport");
-RegisteredPKFactory<FlowMatrixFracture_PK> FlowMatrixFracture_PK::reg_("darcy matrix fracture");
+  FlowReactiveTransport_PK::reg_("flow and chemistry and transport");
+RegisteredPKFactory<FlowMatrixFracture_PK> FlowMatrixFracture_PK::reg_("flow matrix fracture");
 RegisteredPKFactory<MultiphaseMatrixFracture_PK>
   MultiphaseMatrixFracture_PK::reg_("multiphase matrix fracture");
 
-RegisteredPKFactory<ReactiveTransport_PK> ReactiveTransport_PK::reg_("reactive transport");
+RegisteredPKFactory<ReactiveTransport_PK> ReactiveTransport_PK::reg_("chemistry and transport");
 
 // integrated matrix-fracture models
 RegisteredPKFactory<TransportMatrixFracture_PK>

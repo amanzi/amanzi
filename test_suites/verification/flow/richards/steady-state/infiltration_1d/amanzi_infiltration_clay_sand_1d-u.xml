@@ -20,9 +20,9 @@
       </macros>
     </definitions>
     <process_kernels>
-      <flow model="richards" state="on" />
-      <transport state="off" />
-      <chemistry engine="none" state="off" />
+      <pk mode="steady">
+        <flow model="richards" state="on" />
+      </pk>
     </process_kernels>
     <execution_controls>
       <verbosity level="medium" />
