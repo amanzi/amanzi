@@ -69,17 +69,17 @@
       <ParameterList name="TP 0">
         <ParameterList name="PK tree">
           <ParameterList name="flow and reactive transport">
-            <Parameter name="PK type" type="string" value="flow reactive transport"/>
+            <Parameter name="PK type" type="string" value="flow and chemistry and transport"/>
             <ParameterList name="flow">
               <Parameter name="PK type" type="string" value="darcy"/>
             </ParameterList>
             <ParameterList name="reactive transport">
-              <Parameter name="PK type" type="string" value="reactive transport"/>
-              <ParameterList name="transport">
-                <Parameter name="PK type" type="string" value="transport"/>
-              </ParameterList>
+              <Parameter name="PK type" type="string" value="chemistry and transport"/>
               <ParameterList name="chemistry">
                 <Parameter name="PK type" type="string" value="chemistry amanzi"/>
+              </ParameterList>
+              <ParameterList name="transport">
+                <Parameter name="PK type" type="string" value="transport"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

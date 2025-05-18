@@ -110,7 +110,7 @@ InputConverterU::TranslateShallowWater_(const std::string& domain)
   out_list.sublist("boundary conditions") = TranslateShallowWaterBCs_();
 
   // pipe extension
-  if (strcmp(pk_model_["shallow_water"].begin()->c_str(), "pipe flow") == 0) {
+  if (strcmp(pk_model_["shallow water"].begin()->c_str(), "pipe flow") == 0) {
     out_list.set<std::string>("domain name", "domain");
     out_list.set<std::string>("diameter key", "diameter")
             .set<std::string>("direction key", "direction");

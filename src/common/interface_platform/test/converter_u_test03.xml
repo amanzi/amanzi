@@ -42,9 +42,14 @@
   </definitions>
 
   <process_kernels>
-    <flow model="saturated" state="on"/>
-    <transport state="on" />
-    <chemistry engine="none" process_model="none" state="off"/>
+    <pk mode="steady">
+      <flow model="saturated" state="on" />
+    </pk>
+    <pk mode="transient">
+      <flow model="saturated" state="on" />
+      <transport state="on" />
+      <weakly_coupled name="mpc">flow,transport</weakly_coupled>
+    </pk>
   </process_kernels>
 
   <phases>
@@ -62,8 +67,8 @@
   <execution_controls>
     <verbosity level="high" />
     <execution_control_defaults init_dt="1.0" method="picard" mode="steady" />
-    <execution_control mode="steady" start="0.0  y" />
-    <execution_control end="END" mode="transient" start="START" />
+    <execution_control mode="steady" start="0.0  y" end="START"/>
+    <execution_control mode="transient" start="START" end="END"/>
   </execution_controls>
 
   <numerical_controls>
