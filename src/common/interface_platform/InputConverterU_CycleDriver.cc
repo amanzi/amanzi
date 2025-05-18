@@ -244,14 +244,14 @@ InputConverterU::TranslateCycleDriver_()
 
       } else if (strcmp(tagname, "shallow_water") == 0) {
         model = GetAttributeValueS_(jnode, "model", "shallow water, pipe flow");
-        mpcs[tagname].submodel = model;
-        mpcs[tagname].is_pk = true;
+        mpcs["shallow water"].submodel = model;
+        mpcs["shallow water"].is_pk = true;
 
-        pk_model_["shallow_water"].push_back(model);
+        pk_model_["shallow water"].push_back(model);
         std::string region = GetAttributeValueS_(jnode, "domain");
         surface_regions_.push_back(region);
-        pk_region_["shallow_water"] = region;
-        pk_domain_["shallow_water"] = "domain";
+        pk_region_["shallow water"] = region;
+        pk_domain_["shallow water"] = "surface";
 
         GetAttributeValueS_(jnode, "state", "on");
 
@@ -676,9 +676,9 @@ InputConverterU::TranslatePKs_(Teuchos::ParameterList& glist)
         out_list.sublist(pk_names[1])
           .sublist("physical models and assumptions")
           .set<std::string>("volumetric flow rate key",
-                            Keys::getKey(pk_domain_["shallow_water"], "riemann_flux"))
+                            Keys::getKey(pk_domain_["shallow water"], "riemann_flux"))
           .set<std::string>("saturation key",
-                            Keys::getKey(pk_domain_["shallow_water"], "ponded_depth"));
+                            Keys::getKey(pk_domain_["shallow water"], "ponded_depth"));
       }
 
       if (pkname == "flow and energy") {
@@ -761,7 +761,7 @@ InputConverterU::TranslateSinglePhysicsPK_(const std::string& prefix,
   } else if (pkname == "chemistry") {
     return TranslateChemistry_(domain);
   } else if (pkname == "shallow water") {
-    return TranslateShallowWater_(pk_domain_["shallow_water"]);
+    return TranslateShallowWater_(pk_domain_["shallow water"]);
   } else if (pkname == "multiphase") {
     auto& tmp = glist.sublist("state");
     return TranslateMultiphase_(domain, tmp);
@@ -786,6 +786,7 @@ InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
     std::string prefix = Keys::split(name, delimiter).first;
     std::string basename = Keys::split(name, delimiter).second;
 
+    // adjust matrix-fracture MPCs
     if (basename == "flow matrix fracture" || basename == "energy matrix fracture") {
       std::string pk = basename.erase(basename.find(" "), 16);
       std::string pk_m = Keys::merge(prefix, pk + " matrix", delimiter);
@@ -820,27 +821,6 @@ InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
       CreateSubmesh_(mesh_list, true);
     }
 
-    if (basename == "flow and shallow water") {
-      mesh_list.set<bool>("request edges", true);
-
-      Teuchos::Array<std::string> aux(1, pk_region_["shallow_water"]);
-      mesh_list.sublist("unstructured").sublist("submesh")
-        .set<Teuchos::Array<std::string>>("regions", aux)
-        .set<std::string>("extraction method", "manifold mesh")
-        .set<std::string>("domain name", "surface");
-    }
-
-    if (basename == "transport matrix fracture implicit") {
-      std::string transport_m = Keys::merge(prefix, "transport matrix", delimiter);
-      pk_list.sublist(transport_m)
-        .sublist("operators")
-        .sublist("advection operator")
-        .sublist("matrix")
-        .set<Teuchos::Array<std::string>>("fracture", fracture_regions_);
-
-      pk_list.sublist(name).sublist("verbose object") = verb_list_.sublist("verbose object");
-    }
-
     if (basename == "transport matrix fracture") {
       std::string transport_m = Keys::merge(prefix, "transport matrix", delimiter);
       auto& tmp = pk_list.sublist(transport_m).sublist("operators");
@@ -856,11 +836,41 @@ InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
       CreateSubmesh_(mesh_list, true);
     }
 
-    if (basename == "coupled multiphase") {
+    if (basename == "transport matrix fracture implicit") {
+      std::string transport_m = Keys::merge(prefix, "transport matrix", delimiter);
+      pk_list.sublist(transport_m)
+        .sublist("operators")
+        .sublist("advection operator")
+        .sublist("matrix")
+        .set<Teuchos::Array<std::string>>("fracture", fracture_regions_);
+
+      pk_list.sublist(name).sublist("verbose object") = verb_list_.sublist("verbose object");
+    }
+
+    if (basename == "multiphase matrix fracture") {
       CreateSubmesh_(mesh_list, true);
     }
 
-    if (basename == "flow and energy matrix fracture") {
+    if (basename == "mechanics") {
+      if (fracture_network_) CreateSubmesh_(mesh_list, true);
+    }
+
+    // adjust other MPCs
+    std::string pktype;
+    if (pk_list.sublist(name).isParameter("PK type"))
+      pktype = pk_list.sublist(name).get<std::string>("PK type");
+
+    if (pktype == "flow and shallow water") {
+      mesh_list.set<bool>("request edges", true);
+
+      Teuchos::Array<std::string> aux(1, pk_region_["shallow water"]);
+      mesh_list.sublist("unstructured").sublist("submesh")
+        .set<Teuchos::Array<std::string>>("regions", aux)
+        .set<std::string>("extraction method", "manifold mesh")
+        .set<std::string>("domain name", "surface");
+    }
+
+    if (pktype == "flow and energy matrix fracture") {
       std::vector<std::string> name_pks = {
         "flow matrix fracture", "energy matrix fracture", "flow", "energy",
         "flow fracture", "energy fracture"
@@ -905,10 +915,6 @@ InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
       }
 
       CreateSubmesh_(mesh_list, true);
-    }
-
-    if (basename == "mechanics") {
-      if (fracture_network_) CreateSubmesh_(mesh_list, true);
     }
   }
 }

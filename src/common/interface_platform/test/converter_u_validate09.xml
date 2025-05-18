@@ -227,8 +227,8 @@
       </ParameterList>
       <ParameterList name="TP 1">
         <ParameterList name="PK tree">
-          <ParameterList name="transient:flow and shallow water">
-            <Parameter name="PK type" type="string" value="surface subsurface"/>
+          <ParameterList name="transient:mpc2">
+            <Parameter name="PK type" type="string" value="flow and shallow water"/>
             <ParameterList name="transient:flow">
               <Parameter name="PK type" type="string" value="richards"/>
             </ParameterList>
@@ -392,10 +392,12 @@
 
     </ParameterList>
 
-    <ParameterList name="transient:flow and shallow water">
+    <ParameterList name="transient:mpc2">
       <Parameter name="PKs order" type="Array(string)" value="{transient:flow, transient:shallow water}"/>
       <Parameter name="master PK index" type="int" value="0"/>
-      <Parameter name="PK type" type="string" value="surface subsurface"/>
+      <Parameter name="PK type" type="string" value="flow and shallow water"/>
+      <Parameter name="MPC type" type="bool" value="true"/>
+      <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{residual}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>

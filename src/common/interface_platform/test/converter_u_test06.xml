@@ -35,9 +35,14 @@
   </definitions>
 
   <process_kernels>
-    <flow model="constant" state="on"/>
-    <transport state="on" />
-    <chemistry engine="amanzi" state="on"/>
+    <pk mode="steady">
+      <flow model="saturated" state="on"/>
+    </pk>
+    <pk mode="transient">
+      <transport state="on" />
+      <chemistry engine="amanzi" state="on"/>
+      <weakly_coupled name="mpc">chemistry,transport</weakly_coupled>
+    </pk>
   </process_kernels>
 
   <phases>
