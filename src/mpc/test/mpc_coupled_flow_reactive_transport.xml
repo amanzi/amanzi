@@ -733,7 +733,7 @@
       <ParameterList name="TP 1">
         <ParameterList name="PK tree">
           <ParameterList name="coupled flow and reactive transport">
-            <Parameter name="PK type" type="string" value="flow reactive transport"/>
+            <Parameter name="PK type" type="string" value="flow and chemistry and transport"/>
             <ParameterList name="coupled flow">
               <Parameter name="PK type" type="string" value="flow matrix fracture"/>
               <ParameterList name="flow matrix">

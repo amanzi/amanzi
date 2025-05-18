@@ -213,24 +213,9 @@
         <Parameter name="evaluator type" type="string" value="independent variable"/>
         <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
-      <ParameterList name="temperature">
-        <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="*"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="298.149999999999977"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-        <Parameter name="evaluator type" type="string" value="independent variable"/>
-        <Parameter name="constant in time" type="bool" value="true"/>
-      </ParameterList>
     </ParameterList>
-    <ParameterList name="initial conditions">
 
+    <ParameterList name="initial conditions">
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, -9.80665}"/>
       </ParameterList>
@@ -366,8 +351,8 @@
       </ParameterList>
       <ParameterList name="TP 1">
         <ParameterList name="PK tree">
-          <ParameterList name="transient:flow and transport">
-            <Parameter name="PK type" type="string" value="flow reactive transport"/>
+          <ParameterList name="transient:mpc">
+            <Parameter name="PK type" type="string" value="flow and transport"/>
             <ParameterList name="transient:flow">
               <Parameter name="PK type" type="string" value="darcy"/>
             </ParameterList>
@@ -384,7 +369,6 @@
       </ParameterList>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{Tc-99}"/>
-    <Parameter name="number of liquid components" type="int" value="1"/>
     <Parameter name="component molar masses" type="Array(double)" value="{0.0989062549999999985}"/>
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{6.1729344e+10, 9.4672798e+10}"/>
@@ -566,11 +550,58 @@
 
     </ParameterList>
 
-    <ParameterList name="transient:flow and transport">
+    <ParameterList name="transient:mpc">
       <Parameter name="PKs order" type="Array(string)" value="{transient:flow, transient:transport}"/>
       <Parameter name="master PK index" type="int" value="0"/>
-      <Parameter name="PK type" type="string" value="flow reactive transport"/>
-
+      <Parameter name="PK type" type="string" value="flow and transport"/>
+      <Parameter name="MPC type" type="bool" value="true"/>
+      <Parameter name="domain name" type="string" value="domain"/>
+      <ParameterList name="time integrator">
+        <Parameter name="error control options" type="Array(string)" value="{residual}"/>
+        <Parameter name="linear solver" type="string" value="AztecOO"/>
+        <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+        <ParameterList name="dae constraint">
+          <Parameter name="method" type="string" value="projection"/>
+          <Parameter name="inflow krel correction" type="bool" value="true"/>
+          <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
+        </ParameterList>
+        <Parameter name="time integration method" type="string" value="BDF1"/>
+        <ParameterList name="BDF1">
+          <Parameter name="timestep controller type" type="string" value="adaptive"/>
+          <ParameterList name="timestep controller adaptive parameters">
+            <Parameter name="max iterations" type="int" value="15"/>
+            <Parameter name="min iterations" type="int" value="10"/>
+            <Parameter name="timestep increase factor" type="double" value="1.19999999999999996e+00"/>
+            <Parameter name="timestep reduction factor" type="double" value="8.00000000000000044e-01"/>
+            <Parameter name="max timestep" type="double" value="4.32340000000000000e+17"/>
+            <Parameter name="min timestep" type="double" value="9.99999999999999955e-07"/>
+            <Parameter name="relative tolerance" type="double" value="1.00000000000000005e-04"/>
+            <Parameter name="absolute tolerance" type="double" value="1.00000000000000000e+01"/>
+          </ParameterList>
+          <Parameter name="solver type" type="string" value="nka"/>
+          <ParameterList name="nka parameters">
+            <Parameter name="nonlinear tolerance" type="double" value="1.00000000000000008e-05"/>
+            <Parameter name="diverged tolerance" type="double" value="1.00000000000000000e+10"/>
+            <Parameter name="diverged l2 tolerance" type="double" value="1.00000000000000000e+10"/>
+            <Parameter name="max du growth factor" type="double" value="1.00000000000000000e+03"/>
+            <Parameter name="max divergent iterations" type="int" value="3"/>
+            <Parameter name="max nka vectors" type="int" value="10"/>
+            <Parameter name="limit iterations" type="int" value="20"/>
+            <Parameter name="modify correction" type="bool" value="false"/>
+          </ParameterList>
+          <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
+          <Parameter name="extrapolate initial guess" type="bool" value="true"/>
+          <Parameter name="restart tolerance relaxation factor" type="double" value="1.00000000000000000e+00"/>
+          <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.00000000000000000e+00"/>
+          <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
+          <ParameterList name="verbose object">
+            <Parameter name="verbosity level" type="string" value="high"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="transient:flow">
