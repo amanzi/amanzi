@@ -7,10 +7,31 @@
   Authors: Ethan Coon
 */
 
-/*
-  Process Kernels
+/*!
 
-  Default base with a few methods implemented in standard ways.
+A physical PK is single PDE or DAE defined on a single mesh, and represents a
+single process model.  Typically all leaves of the PK tree will be a physical PK.
+
+.. _pk-physical-default-spec:
+.. admonition:: pk-physical-default-spec
+
+   * `"domain name`" ``[string]`` Name from the :ref:`Mesh` list on which this PK is defined.
+
+   * `"primary variable key`" ``[string]`` The primary variable
+     e.g. `"pressure`", or `"temperature`".  Most PKs supply sane defaults.
+
+   * `"initial conditions`" ``[initial-conditions-spec]``  See :ref:`Initial Conditions`.
+
+   * `"max valid change`" ``[double]`` **-1** Sets a limiter on what is a
+     valid change in a single timestep.  Changes larger than this are declared
+     invalid and the timestep fails.  By default, any change is valid.
+     Units are the same as the primary variable.
+
+   INCLUDES:
+
+   - ``[pk-spec]`` This *is a* PK_.
+   - ``[debugger-spec]`` Uses a :ref:`Debugger`
+
 */
 
 #pragma once

@@ -6,24 +6,15 @@
 
   Authors: Ethan Coon
 */
-
-//! A field evaluator with no dependencies, a constant value.
-/*
-  State
-
-*/
-
 /*!
 
 This evaluator is typically used for providing data that is a simple constant
 value.
 
-This evaluator is used by providing the option:
-
 `"evaluator type`" = `"independent variable constant`"
 
-.. _independent-variable-constant-evaluator-spec:
-.. admonition:: independent-variable-constant-evaluator-spec
+.. _evaluator-independent-variable-constant-spec:
+.. admonition:: evaluator-independent-variable-constant-spec
 
    * `"value`" ``[double]`` The value.
 

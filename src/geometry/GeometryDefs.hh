@@ -111,8 +111,6 @@ enum class LifeCycleType { PERMANENT = 0, TEMPORARY };
 
 enum class BoolOpType { NOBOOLEAN = -1, COMPLEMENT, UNION, INTERSECT, SUBTRACT };
 
-const double TOL = 1.0e-08;
-
 // arbitrary number to avoid clashing
 // with IDs of LabeledSet regions
 const unsigned int REGION_ID_OFFSET = 59049;

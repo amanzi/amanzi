@@ -8,10 +8,11 @@
            Ethan Coon (ecoon@lanl.gov)
 */
 
-//! IOEvent: base time/timestep control determing when in time to do something.
+//! Base control parameters for determing when, in time, to do something.
 /*!
 
-The IOEvent is used for multiple objects that need to indicate simulation times or cycles on which to do something.
+The IOEvent is used by multiple objects that need to indicate simulation times
+or cycles on which to do something.
 
 .. _io-event-spec:
 .. admonition:: io-event-spec

@@ -8,7 +8,39 @@
            Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
+// DEVELOPER NOTE: this documentation covers both PDE_DiffusionFV AND
+// PDE_DiffusionFVwithGravity
+
+/*!
+
+Finite volume method for diffusion.
+
+`"discretization primary`" = `"fv: default`"
+
+.. _pde-diffusion-fv-spec:
+.. admonition:: pde-diffusion-fv-spec
+
+   * `"exclude primary terms`" ``[bool]`` **false** Set by PK.  This enables
+     the use of Jacobian terms without the primary terms in the preconditioner,
+     which is particularly useful for off-diagonal entries in the
+     preconditioner where the coefficient is a function of the primary
+     variable, but the diffused quantity is not.
+
+   * `"surface operator`" ``[bool]`` **false** Set by MPC.  Enables coupling of
+     surface FV diffusion to subsurface MFD diffusion.
+
+   * `"nonlinear coefficient`" ``[string]`` **upwind: face** specifies a method
+     for treating nonlinear diffusion coefficient, if any. Available options
+     are `"none`" and `"upwind: face`"
+
+   INCLUDES:
+
+   - ``[pde-diffusion-spec]``
+
+*/
+
 /*
+
   Operators
 
   DiffusionFV implements the Diffusion interface using

@@ -7,25 +7,29 @@
   Authors: Rao Garimella
 */
 
-//! RegionPoint: a point in space.
+//! A single point in space.
 /*!
 
-List *region: point* defines a point in space.
-This region consists of cells containing this point.
+A point region defines a point in space.  Note that this region will match all
+cells that contain this point in the closure of that cell.
+
+Note that the dimension of the coordinate must match that of the mesh on which
+the region is resolved.
+
+`"region type`" = `"point`"
 
 .. _region-point-spec:
 .. admonition:: region-point-spec
 
-    * `"coordinate`" ``[Array(double)]`` Location of point in space.
+   * `"coordinate`" ``[Array(double)]`` Location of point in space.
 
 Example:
 
 .. code-block:: xml
 
-   <ParameterList name="DOWN_WIND150"> <!-- parent list defining the name -->
-     <ParameterList name="region: point">
-       <Parameter name="coordinate" type="Array(double)" value="{-150.0, 0.0, 0.0}"/>
-     </ParameterList>
+   <ParameterList name="DOWN_WIND150">
+     <Parameter name="region type" type="string" value="point"/>
+     <Parameter name="coordinate" type="Array(double)" value="{-150.0, 0.0, 0.0}"/>
    </ParameterList>
 
 */

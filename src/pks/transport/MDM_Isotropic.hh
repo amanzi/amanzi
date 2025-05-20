@@ -9,7 +9,10 @@
 
 /*!
 
-Isotropic mechanical dispersion model.
+An isotropic mechanical dispersion model.  Note this is rarely used for real
+problems, but is useful for testing.  Note there is no velocity component to
+this model -- it is equivalent to isotropic diffusion.  Prefer to use Bear for
+a basic dispersion model.
 
 `"mechanical dispersion type`" = `"scalar`"
 
@@ -18,8 +21,8 @@ OR
 `"mechanical dispersion type`" = `"isotropic`"
 
 
-.. _MDM-scalar-spec
-.. admonition:: MDM-scalar-spec
+.. _mdm-scalar-spec
+.. admonition:: mdm-scalar-spec
 
   ONE OF:
 
