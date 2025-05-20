@@ -53,7 +53,7 @@ XERCES_CPP_NAMESPACE_USE
     <energy model="two-phase" state="on"/>
     <transport state="on"/>
     <stronly_coupled name="mpc">flow,energy</strongly_coupled>
-    <sub_cycling>mpc,transport</sub_cycling>
+    <subcycled>mpc,transport</subcycled>
   </pk>
   <pk mode="transient3">
     <flow model="richards" state="on"/>
@@ -61,7 +61,7 @@ XERCES_CPP_NAMESPACE_USE
     <transport state="on"/>
     <chemistry engine="none" process_model="none" state="on"/>
     <stronly_coupled name="mpc">flow,energy</strongly_coupled>
-    <sub_cycling>mpc,transport,chemistry</sub_cycling>
+    <subcycled>mpc,transport</subcycled>
   </pk>
   <pk mode="transient4">
     <flow model="richards" state="on"/>
@@ -70,7 +70,7 @@ XERCES_CPP_NAMESPACE_USE
     <chemistry engine="none" process_model="none" state="on"/>
     <stronly_coupled name="mpc1">flow,energy</strongly_coupled>
     <weakly_coupled name="mpc2">transport,chemistry</weakly_coupled>
-    <sub_cycling>mpc1,mpc2</sub_cycling>
+    <subcycled>mpc,transport</subcycled>
   </pk>
 </process_kernels>
 ****************************************************************** */
@@ -292,6 +292,15 @@ InputConverterU::TranslateCycleDriver_()
         mpcs[pkname].pks = CharToStrings_(mm.transcode(jnode->getTextContent()));
         mpcs[pkname].mpc_type = (model == "default") ? "weakly default" : "weakly";
         mpcs[pkname].matrix_fracture = coupled_flow_;
+
+      } else if (strcmp(tagname, "subcycled") == 0) {
+        pkname = GetAttributeValueS_(jnode, "name");
+        model = GetAttributeValueS_(jnode, "model", TYPE_NUMERICAL, false, "");
+
+        mpcs[pkname].is_mpc = true;
+        mpcs[pkname].pks = CharToStrings_(mm.transcode(jnode->getTextContent()));
+        mpcs[pkname].mpc_type = (model == "default") ? "subcycled default" : "subcycled";
+        mpcs[pkname].matrix_fracture = coupled_flow_;
       }       
     }
 
@@ -344,10 +353,13 @@ InputConverterU::TranslateCycleDriver_()
 
         if (params.is_mpc && !params.matrix_fracture) {
           mpcname = params.pks[0] + " and " + params.pks[1];
-          if (params.mpc_type == "weakly default")
+          if (params.mpc_type == "weakly default") {
             params.basename = "mpc weak";
-          else 
+          } else if (params.mpc_type == "subcycled default") {
+            params.basename = "mpc subcycled";
+          } else { 
             params.basename = mpcs[params.pks[0]].basename + " and " + mpcs[params.pks[1]].basename;
+          }
           Teuchos::ParameterList& aux = pk_tree_list.sublist(Keys::merge(mode, mpc.first, delimiter));
           aux.set<std::string>("PK type", params.basename);
 
@@ -380,7 +392,6 @@ InputConverterU::TranslateCycleDriver_()
         }
       }
     }
-std::cout << pk_tree_list << std::endl;
 
     Teuchos::ParameterList& tmp_list = out_list.sublist("time periods").sublist(ss.str());
     tmp_list.sublist("PK tree") = pk_tree_list;
