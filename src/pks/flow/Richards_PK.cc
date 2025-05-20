@@ -646,18 +646,12 @@ Richards_PK::Initialize()
   // Initialize boundary conditions and source terms.
   UpdateSourceBoundaryData(t_ini, t_ini, pressure);
 
-  // Initialize matrix and preconditioner operators.
-  // -- molar density requires to rescale gravity later.
-  //    make an evaluator for alpha_upwind? FIXME
-  if (!flow_on_manifold_) {
-    auto& alpha = S_->GetW<CompositeVector>(alpha_key_, Tags::DEFAULT, alpha_key_);
-    *alpha_upwind_->ViewComponent("cell") = *alpha.ViewComponent("cell");
-  }
-
-  op_matrix_->Init();
+  // initialization of the diffusion matrix requires a few steps, 
+  // we simply call the functional evaluation to make these steps.
   op_matrix_diff_->SetBCs(op_bc_, op_bc_);
-  op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
-  op_matrix_diff_->ApplyBCs(true, true, true);
+
+  auto f = Teuchos::rcp(new TreeVector(*soln_));
+  FunctionalResidual(t_ini, t_ini + dt_, soln_, soln_, f);
 
   op_preconditioner_->Init();
   op_preconditioner_diff_->SetBCs(op_bc_, op_bc_);

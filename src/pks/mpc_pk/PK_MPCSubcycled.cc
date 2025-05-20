@@ -8,10 +8,13 @@
 */
 
 /*
-  This is the mpc_pk component of the Amanzi code.
+  MPC PKs
 
   Class for subcycling a slave step within a master step.
   Assumes that intermediate_time() can be used (i.e. this is not nestable?)
+
+  NOTe: if master passes, slave will try to subcycle with adaptive time step
+  or simulation fails.
 
   See additional documentation in the base class src/pks/mpc_pk/PK_MPC.hh
 */
