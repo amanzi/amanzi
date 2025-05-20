@@ -24,14 +24,15 @@ DOMAIN-NAME`".
 .. _visualization-spec:
 .. admonition:: visualization-spec
 
-    * `"file name base`" ``[string]`` **visdump_DOMAIN_data**
-    * `"dynamic mesh`" ``[bool]`` **false** Write mesh data for every
-      visualization dump; this facilitates visualizing deforming meshes.
-    * `"time units`" ``[string]`` **s** A valid time unit to convert time
-      into for output files.  One of `"s`", `"d`", `"y`", or `"yr 365`"
+   * `"file name base`" ``[string]`` **visdump_DOMAIN_data**
+   * `"dynamic mesh`" ``[bool]`` **false** Write mesh data for every
+     visualization dump; this facilitates visualizing deforming meshes.
+   * `"time units`" ``[string]`` **s** A valid time unit to convert time
+     into for output files.  One of `"s`", `"d`", `"y`", or `"yr 365`"
 
-    INCLUDES:
-    - ``[io-event-spec]`` An IOEvent_ spec
+   INCLUDES:
+
+   - ``[io-event-spec]`` An :ref:`IOEvent` spec.
 
 
 Example:

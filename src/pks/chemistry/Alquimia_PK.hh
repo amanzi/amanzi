@@ -12,13 +12,13 @@
 The Alquimia PK leverages the Alquimia interface to implement chemical
 reactions by calling out to a chemical engine.
 
-This PK, by it self, solves the following set of ODEs:
+This PK, when not coupled, solves the following set of ODEs:
 
 .. math::
    \frac{\partial C_ij}{\partial t} = \sum_{k=1..nreactions} R_ik(C_{i=1..ncomponents,j})
 
-for k indexing reactions, i indexing components, and j indexing grid cell.  The
-concentrations C are in `[kg L^-1]`.
+for :math:`k` indexing reactions, :math:`i` indexing components, and :math:`j`
+indexing grid cells.  The total component concentrations :math:`C` are in `[kg L^-1]`.
 
 The details of how to parameterize and specify a reaction network are specific
 to each geochemical engine, of which currently only PFloTran and Crunch are
@@ -27,52 +27,53 @@ Examples are available in Amanzi's user guide tests and ATS's regression tests.
 
 `"PK type`" = `"chemistry alquimia`"
 
-.. _alquimia-pk-spec
-.. admonition:: alquimia-pk-spec
+.. _pk-chemistry-alquimia-spec
+.. admonition:: pk-chemistry-alquimia-spec
 
-  * `"timestep controller`" ``[timestep-controller-typed-spec]`` Timestep control parameters.
+   * `"timestep controller`" ``[timestep-controller-typed-spec]`` Timestep control parameters.
 
-  * `"engine`" ``[string]`` One of:
+   * `"engine`" ``[string]`` One of:
 
-    - `"CrunchFlow`"
-    - `"PfloTran`"
+     - `"CrunchFlow`"
+     - `"PfloTran`"
 
-  * `"engine input file`" ``[string]`` Path to the engine's input file.
+   * `"engine input file`" ``[string]`` Path to the engine's input file.
 
-  KEYS:
-  - `"total component concentration`"
-  - `"mass density liquid`"
-  - `"porosity`"
-  - `"saturation liquid`"
-  - `"temperature`"
-  - `"mineral volume fractions`"
-  - `"mineral specific surface area`"
-  - `"mineral rate constant`"
-  - `"surface site density`"
-  - `"total_sorbed`"
-  - `"isotherm kd`"
-  - `"isotherm freundlich n`"
-  - `"isotherm langmuir b`"
-  - `"first order decay ratae constant`"
-  - `"cation exchange capacity`"
-  - `"aux data`"
-  - `"pH`"
+   KEYS:
+
+   - `"total component concentration`"
+   - `"mass density liquid`"
+   - `"porosity`"
+   - `"saturation liquid`"
+   - `"temperature`"
+   - `"mineral volume fractions`"
+   - `"mineral specific surface area`"
+   - `"mineral rate constant`"
+   - `"surface site density`"
+   - `"total_sorbed`"
+   - `"isotherm kd`"
+   - `"isotherm freundlich n`"
+   - `"isotherm langmuir b`"
+   - `"first order decay ratae constant`"
+   - `"cation exchange capacity`"
+   - `"aux data`"
+   - `"pH`"
 
 
 See the Alquimia documentation for the needed input spec for a given engine.    
 
  .. code-block:: xml
 
-  <ParameterList>  <!-- parent list -->
-  <ParameterList name="alquimia PK">
-    <Parameter name="engine" type="string" value="PFloTran"/>
-    <Parameter name="engine input file" type="string" value="tritium.in"/>
-    <ParameterList name="timestep controller">
-    <Parameter name="timestep control type" type="string" value="fixed"/>
-    <ParameterList name="fixed parameters">
-      <Parameter name="timestep [s]" type="double" value="1.0e-02"/>
-    </ParameterList>
-  </ParameterList>
+   <ParameterList>  <!-- parent list -->
+   <ParameterList name="alquimia PK">
+     <Parameter name="engine" type="string" value="PFloTran"/>
+     <Parameter name="engine input file" type="string" value="tritium.in"/>
+     <ParameterList name="timestep controller">
+     <Parameter name="timestep control type" type="string" value="fixed"/>
+     <ParameterList name="fixed parameters">
+       <Parameter name="timestep [s]" type="double" value="1.0e-02"/>
+     </ParameterList>
+   </ParameterList>
 
 */
 

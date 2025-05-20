@@ -6,70 +6,68 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
-
-//! State, a container for data.
-/*
-  State
-
-*/
-
 /*!
 
-State  is a  simple data-manager,  allowing PKs  to require,  read, and  write
-various fields.
+State is a simple data manager, allowing PKs to require, read, and write
+various fields. It:
 
 - Acts as a factory for data through the various require methods.
 - Provides some data protection by providing both const and non-const
-  data pointers to PKs.
-- Provides some initialization capability -- this is where all
-  independent variables can be initialized (as independent variables
-  are owned by state, not by any PK).
-
+  access to data.
+- Provides some initialization capability.
+- Can be visualized or checkpointed.
 
 .. _state-spec:
 .. admonition:: state-spec
 
    * `"evaluators`" ``[evaluator-typedinline-spec-list]`` A list of evaluators.
 
-   * `"initial conditions`" ``[list]`` A list of constant-in-time data.  Note
-     that `"initial conditions`" is not a particularly descriptive name here --
-     PDE initial conditions are generally not here.  This list consists of
+   * `"initial conditions`" ``[list]`` A list of constant-in-time data and
+     other constants (e.g. gravity and atmospheric pressure).  Note that
+     `"initial conditions`" is not a particularly descriptive name here -- PK
+     initial conditions are generally not here.
 
    * `"model parameters`" ``[list]`` A list of shared model parameters that can
      be used across all evaluators.
 
+   * `"debug`" ``[state-debug-spec]`` **optional**
+
+
+State also houses the dependency graph of all evaluators.
+
+Evaluators are individual terms used to build up a PK or MPCs.  Each
+term represents a variable in the equation, and can consist of primary
+variables (those that are solved for by a PK solver), independent
+variables (those that have no dependent variables but are provided by
+the user as data), and secondary variables (those that are functions
+of other variables).  Note that all three may be variable in space
+and/or time.
+
+
 .. _evaluator-typedinline-spec:
 .. admonition:: evaluator-typedinline-spec
 
-   * `"evaluator type`" ``[string]`` Type of the evaluator Included for
-     convenience in defining data that is not in the dependency graph,
-     constants are things (like gravity, or atmospheric pressure) which are
-     stored in state but never change.  Typically they're limited to scalars
-     and dense, local vectors.
+   * `"evaluator type`" ``[string]`` Type of the evaluator
 
 
-Example:
+State's debug spec is intended for use by PK and Evaluator developers, or occasionally
+users debugging input files.
 
-.. code-block:: xml
+.. _state-debug-spec:
+.. admonition:: state-debug-spec
 
-    <ParameterList name="state">
-      <Parameter name="initialization filename" type="string" value="_CHECK00123.h5"/>
-      <ParameterList name="evaluators">
-        <ParameterList name="pressure">
-          <Parameter name="evaluator type" type="string" value="primary variable" />
-        </ParameterList>
-      </ParameterList>
+   * `"data`" ``[Array(string)]`` A list of data.  If a variable is in this
+     list, a message is printed every time that data is required.  Setting a
+     breakpoint in a debugger on a line of code in
+     `State::CheckIsDebugData_()` will allow debugging all locations that
+     require this data, enabling debugging of incorrect or inconsistent require
+     statements.
 
-      <ParameterList name="initial conditions">
-        <Parameter name="time" type="double" value="0.0">
-        <ParameterList name="atmospheric pressure">
-          <Parameter name="value" type="double" value="101325.0" />
-        </ParameterList>
-        <ParameterList name="gravity">
-          <Parameter name="value" type="Array(double)" value="{0.0,0.0,-9.80665}" />
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
+   * `"evaluators`" ``[Array(string)]`` A list of evaluators.  If a variable is
+     in this list, a message is printed every time an evaluator for this
+     variable is reuqired.  Setting a breakpoint in a debugger in
+     `State::CheckIsDebugEval_()` will allow debugging of all locations that
+     require a given evaluator.
 
 */
 
@@ -544,7 +542,7 @@ class State {
   // should be used and tested more thoroughly.
   //
   // Get a parameter list.
-  Teuchos::ParameterList GetModelParameters(std::string modelname);
+  const Teuchos::ParameterList& GetModelParameters(const std::string& modelname) const;
 
   // -----------------------------------------------------------------------------
   // State handles MeshPartitions

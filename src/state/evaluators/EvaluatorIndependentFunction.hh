@@ -6,13 +6,6 @@
 
   Authors: Ethan Coon
 */
-
-/*
-  State
-
-  A field evaluator with no dependencies specified by a function.
-*/
-
 /*!
 
 This evaluator is typically used for providing data that are functions of space
@@ -20,14 +13,12 @@ and time.  The evaluator consists of a list of (region, function) pairs, and the
 functions are evaluated across that region at each timestep.  If the problem is
 time-independent, the `"constant in time`" option results in a performance
 improvement (as the functions need only be evaluated once).  This leverages the
-exaustive functional format capability provided in Amanzi's Functions_ library.
-
-This evaluator is used by providing the option:
+exaustive functional format capability provided in Amanzi's :ref:`Functions` library.
 
 `"evaluator type`" == `"independent variable`"
 
-.. _independent-variable-function-evaluator-spec:
-.. admonition:: independent-variable-function-evaluator-spec
+.. _evaluator-independent-variable-spec:
+.. admonition:: evaluator-independent-variable-spec
 
    * `"constant in time`" ``[bool]`` **false** If true, only evaluate the
      functions once as they are time-independent.

@@ -22,8 +22,8 @@ class to include the water content term.
 
 `"evaluator type`" = `"dispersion tensor`"
 
-.. _mdm-evaluator-spec
-.. admonition: mdm-evaluator-spec
+.. _evaluator-mdm-spec:
+.. admonition: evaluator-mdm-spec
 
    * `"mechanical dispersion parameters`"
      ``[mechanical-dispersion-typed-spec-list]`` List of region-based
@@ -31,13 +31,13 @@ class to include the water content term.
 
    * `"is surface`" ``[bool]`` **optional** Default is set if "surface" is in
      the domain name of this variable's key, e.g. in the case
-     "surface-dispersion_coefficient".  
+     "surface-dispersion_coefficient".
 
    KEYS:
+
    - `"velocity`"
    - `"porosity`" Note this is only used if `"is surface`" = False.
    
-
 */
 
 #pragma once
