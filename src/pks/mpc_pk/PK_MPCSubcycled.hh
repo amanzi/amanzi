@@ -39,6 +39,8 @@ class PK_MPCSubcycled : public PK_MPC<PK> {
   // -- advance each sub pk dt.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
 
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag);
+
  protected:
   int master_;
   int slave_;
