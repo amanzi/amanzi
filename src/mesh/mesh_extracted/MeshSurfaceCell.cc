@@ -41,11 +41,9 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const MeshFramework>& parent
   parent_ = parent_mesh;
 
   // set dimensions
-  if (flatten) {
-    setSpaceDimension(2);
-  } else {
-    setSpaceDimension(3);
-  }
+  if (flatten) setSpaceDimension(2);
+  else setSpaceDimension(3);
+
   setManifoldDimension(2);
   parent_face_ = 0; // the parent face is always the 0th by construction of a
                     // MeshColumn
