@@ -273,7 +273,8 @@ main(int argc, char* argv[])
     // loop through elements to get type list
     std::cout << "E>> collect element information" << std::endl;
     // 0)element type id 1)connectivity length 2)offset is element array
-    int elem_types[num_elems][3]; 
+    // int elem_types[num_elems][3]; 
+    std::vector<std::vector<int>> elem_types(num_elems, std::vector<int>(3));
     int elem_cnt = 0;
     for (int i = 0; i < num_elems; i++) {
       elem_types[i][0] = elems[elem_cnt];

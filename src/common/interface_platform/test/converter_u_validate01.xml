@@ -808,7 +808,7 @@
       <ParameterList name="material properties">
         <ParameterList name="Facies_1">
           <Parameter name="model" type="string" value="Bear"/>
-          <ParameterList name="parameters for Bear">
+          <ParameterList name="Bear parameters">
             <Parameter name="alpha_l" type="double" value="1.000e-02"/>
             <Parameter name="alpha_t" type="double" value="1.000e-03"/>
           </ParameterList>
@@ -816,7 +816,7 @@
         </ParameterList>
         <ParameterList name="Facies_2">
           <Parameter name="model" type="string" value="Burnett-Frind"/>
-          <ParameterList name="parameters for Burnett-Frind">
+          <ParameterList name="Burnett-Frind parameters">
             <Parameter name="alpha_l" type="double" value="1.000e-02"/>
             <Parameter name="alpha_th" type="double" value="1.000e-03"/>
             <Parameter name="alpha_tv" type="double" value="2.00e-03"/>
@@ -825,7 +825,7 @@
         </ParameterList>
         <ParameterList name="Facies_3">
           <Parameter name="model" type="string" value="Lichtner-Kelkar-Robinson"/>
-          <ParameterList name="parameters for Lichtner-Kelkar-Robinson">
+          <ParameterList name="Lichtner-Kelkar-Robinson parameters">
             <Parameter name="alpha_lh" type="double" value="1.0e-02"/>
             <Parameter name="alpha_lv" type="double" value="2.0e-02"/>
             <Parameter name="alpha_th" type="double" value="1.0e-03"/>
