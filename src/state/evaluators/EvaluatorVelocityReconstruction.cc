@@ -54,7 +54,7 @@ EvaluatorVelocityReconstruction::Evaluate_(const State& S,
 
   Teuchos::LAPACK<int, double> lapack;
   Teuchos::SerialDenseMatrix<int, double> matrix(d, d);
-  double rhs[d];
+  std::vector<double> rhs(d);
 
   for (int c = 0; c != velocity.MyLength(); ++c) {
     auto faces = mesh_->getCellFaces(c);
@@ -78,7 +78,7 @@ EvaluatorVelocityReconstruction::Evaluate_(const State& S,
     }
 
     int info;
-    lapack.POSV('U', d, 1, matrix.values(), d, rhs, d, &info);
+    lapack.POSV('U', d, 1, matrix.values(), d, rhs.data(), d, &info);
 
     for (int i = 0; i != d; ++i) velocity[i][c] = rhs[i] / nliq_c[0][c];
   }
