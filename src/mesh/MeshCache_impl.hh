@@ -35,8 +35,8 @@ MeshCacheBase::setSpaceDimension(unsigned int dim)
   } else {
     names.resize(space_dim_);
     if (space_dim_ > 0) names[0] = "x";
-    if (space_dim_ > 1) names[0] = "y";
-    if (space_dim_ > 2) names[0] = "z";
+    if (space_dim_ > 1) names[1] = "y";
+    if (space_dim_ > 2) names[2] = "z";
   }
   setSpaceDimensionNames(names);
 }
