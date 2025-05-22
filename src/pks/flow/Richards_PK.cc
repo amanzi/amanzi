@@ -652,7 +652,7 @@ Richards_PK::Initialize()
   op_matrix_diff_->SetBCs(op_bc_, op_bc_);
 
   auto f = Teuchos::rcp(new TreeVector(*soln_));
-  FunctionalResidual(t_ini, t_ini + dt_, soln_, soln_, f);
+  FunctionalResidual(t_ini - dt_, t_ini, soln_, soln_, f);
 
   op_preconditioner_->Init();
   op_preconditioner_diff_->SetBCs(op_bc_, op_bc_);
