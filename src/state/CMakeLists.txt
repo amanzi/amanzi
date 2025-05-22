@@ -77,6 +77,7 @@ set(state_inc_files
   evaluators/EvaluatorTemporalInterpolation.hh
   evaluators/EvaluatorSecondaryMonotypeFromFunction.hh
   evaluators/EvaluatorAlias.hh
+  evaluators/EvaluatorVelocityReconstruction.hh
   IO.hh
   Observable.hh
   StateDefs.hh
@@ -108,6 +109,7 @@ add_amanzi_library(state
                           evaluators/EvaluatorTemporalInterpolation.cc
                           evaluators/EvaluatorSecondaryMonotypeFromFunction.cc
                           evaluators/EvaluatorAlias.cc
+                            evaluators/EvaluatorVelocityReconstruction.cc
                           IO.cc
                           Observable.cc
                           UnstructuredObservations.cc

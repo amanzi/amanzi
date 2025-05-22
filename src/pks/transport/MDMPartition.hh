@@ -29,7 +29,7 @@ typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, MDMList> MDMPartition;
 
 // Non-member factory returns false if all models generate zero dispersion tensor.
 Teuchos::RCP<MDMPartition>
-CreateMDMPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+CreateMDMPartition(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                    Teuchos::RCP<Teuchos::ParameterList> plist,
                    bool& flag);
 

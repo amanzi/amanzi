@@ -6,11 +6,23 @@
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+/*!
 
-/*
-  Transport PK
+Anisotropic mechanical dispersion model by Burnett & Frind that splits the
+transverse component of dispersion between the horizontal and vertical.
 
-  Anisotropic mechanical dispersion model.
+`"mechanical dispersion type`" = `"Burnett-Frind`"
+
+.. _mdm-burnett-frind-spec
+.. admonition:: mdm-burnett-frind-spec
+
+   * `"alpha_l`" ``[double]`` Longitudinal dispersivity/dispersion coefficient.
+
+   * `"alpha_tv`" ``[double]`` Vertical transverse dispersivity/dispersion
+     coefficient.
+
+   * `"alpha_th`" ``[double]`` Horizontal transverse dispersivity/dispersion
+     coefficient.
 */
 
 #ifndef AMANZI_MDM_BURNETT_FRIND_HH_

@@ -7,13 +7,6 @@
   Authors: Ethan Coon
 */
 
-//! An evaluator with no dependencies specified by a function.
-/*
-  State
-
-*/
-
-
 #ifndef AMANZI_STATE_INDEPENDENT_EVALUATOR_HH_
 #define AMANZI_STATE_INDEPENDENT_EVALUATOR_HH_
 

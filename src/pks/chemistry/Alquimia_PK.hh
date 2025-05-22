@@ -9,39 +9,71 @@
 
 /*!
 
-The Alquimia chemistry process kernel only requires the *Engine* and *Engine Input File*
-entries, but will also accept and respect the value given for *max timestep (s)*.
-Most details are provided in the trimmed PFloTran file *1d-tritium-trim.in*.
+The Alquimia PK leverages the Alquimia interface to implement chemical
+reactions by calling out to a chemical engine.
 
-.. admonition:: alquimia-spec
+This PK, when not coupled, solves the following set of ODEs:
 
-  * `"minerals`" ``[Array(string)]`` is the list of mineral names.
+.. math::
+   \frac{\partial C_ij}{\partial t} = \sum_{k=1..nreactions} R_ik(C_{i=1..ncomponents,j})
 
-  * `"sorption sites`" ``[Array(string)]`` is the list of sorption sites.
+for :math:`k` indexing reactions, :math:`i` indexing components, and :math:`j`
+indexing grid cells.  The total component concentrations :math:`C` are in `[kg L^-1]`.
 
-  * `"auxiliary data`" ``[Array(string)]`` defines additional chemistry related data that the user
-    can request be saved to vis files.
+The details of how to parameterize and specify a reaction network are specific
+to each geochemical engine, of which currently only PFloTran and Crunch are
+supported.  Corresponding input files for these engines must be provided.
+Examples are available in Amanzi's user guide tests and ATS's regression tests.
 
-  * `"min timestep (s)`" ``[double]`` is the minimum timestep that chemistry will allow 
-    the MPC to take.
+`"PK type`" = `"chemistry alquimia`"
 
-.. code-block:: xml
+.. _pk-chemistry-alquimia-spec
+.. admonition:: pk-chemistry-alquimia-spec
 
-  <ParameterList>  <!-- parent list -->
-  <ParameterList name="_CHEMISTRY">
-    <Parameter name="engine" type="string" value="PFloTran"/>
-    <Parameter name="engine input file" type="string" value="_TRITIUM.in"/>
-    <Parameter name="minerals" type="Array(string)" value="{quartz, kaolinite, goethite, opal}"/>
-    <Parameter name="min timestep (s)" type="double" value="1.5778463e-07"/>
-    <Parameter name="max timestep (s)" type="double" value="1.5778463e+07"/>
-    <Parameter name="initial timestep (s)" type="double" value="1.0e-02"/>
-    <Parameter name="timestep control method" type="string" value="simple"/>
-    <Parameter name="timestep cut threshold" type="int" value="8"/>
-    <Parameter name="timestep cut factor" type="double" value="2.0"/>
-    <Parameter name="timestep increase threshold" type="int" value="4"/>
-    <Parameter name="timestep increase factor" type="double" value="1.2"/>
-  </ParameterList>
-  </ParameterList>
+   * `"timestep controller`" ``[timestep-controller-typed-spec]`` Timestep control parameters.
+
+   * `"engine`" ``[string]`` One of:
+
+     - `"CrunchFlow`"
+     - `"PfloTran`"
+
+   * `"engine input file`" ``[string]`` Path to the engine's input file.
+
+   KEYS:
+
+   - `"total component concentration`"
+   - `"mass density liquid`"
+   - `"porosity`"
+   - `"saturation liquid`"
+   - `"temperature`"
+   - `"mineral volume fractions`"
+   - `"mineral specific surface area`"
+   - `"mineral rate constant`"
+   - `"surface site density`"
+   - `"total_sorbed`"
+   - `"isotherm kd`"
+   - `"isotherm freundlich n`"
+   - `"isotherm langmuir b`"
+   - `"first order decay ratae constant`"
+   - `"cation exchange capacity`"
+   - `"aux data`"
+   - `"pH`"
+
+
+See the Alquimia documentation for the needed input spec for a given engine.    
+
+ .. code-block:: xml
+
+   <ParameterList>  <!-- parent list -->
+   <ParameterList name="alquimia PK">
+     <Parameter name="engine" type="string" value="PFloTran"/>
+     <Parameter name="engine input file" type="string" value="tritium.in"/>
+     <ParameterList name="timestep controller">
+     <Parameter name="timestep control type" type="string" value="fixed"/>
+     <ParameterList name="fixed parameters">
+       <Parameter name="timestep [s]" type="double" value="1.0e-02"/>
+     </ParameterList>
+   </ParameterList>
 
 */
 
@@ -210,7 +242,7 @@ class Alquimia_PK : public Chemistry_PK {
     return chem_engine_;
   }
   void copyToAlquimia(int cell, AlquimiaBeaker& beaker);
-  void updateSubstate() override;
+  void updateSubstate(const Tag& water_tag) override;
 
  protected:
   void XMLParameters();

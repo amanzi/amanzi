@@ -110,7 +110,7 @@ RegionBoxVolumeFractions::inside(const Point& p) const
   Point phat(N_ * (p - p0_));
 
   bool result(true);
-  for (int i = 0; i != p.dim(); ++i) { result &= (phat[i] > -TOL && phat[i] < 1.0 + TOL); }
+  for (int i = 0; i != p.dim(); ++i) { result &= (phat[i] > -tol_ && phat[i] < 1.0 + tol_); }
   return result;
 }
 

@@ -598,11 +598,11 @@ State::WriteDependencyGraph() const
 // -----------------------------------------------------------------------------
 // State handles model parameters.
 // -----------------------------------------------------------------------------
-Teuchos::ParameterList
-State::GetModelParameters(std::string modelname)
+const Teuchos::ParameterList&
+State::GetModelParameters(const std::string& modelname) const
 {
   AMANZI_ASSERT(state_plist_.isSublist("model parameters"));
-  Teuchos::ParameterList model_plist = state_plist_.sublist("model parameters");
+  const Teuchos::ParameterList& model_plist = state_plist_.sublist("model parameters");
   AMANZI_ASSERT(model_plist.isSublist(modelname));
   return model_plist.sublist(modelname);
 }

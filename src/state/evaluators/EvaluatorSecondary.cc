@@ -86,7 +86,7 @@ EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
       }
     } else {
       auto my_tag = my_keys_.front().second;
-      auto dep_tag = Keys::readTag(plist_, my_tag);
+      auto dep_tag = Keys::readTag(plist_, "dependency", my_tag);
       for (const auto& dep : deps) { dependencies_.insert(KeyTag(dep, dep_tag)); }
     }
 
@@ -110,7 +110,7 @@ EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
       }
     } else {
       const auto& my_tag = my_keys_[0].second;
-      auto dep_tag = Keys::readTag(plist_, my_tag);
+      auto dep_tag = Keys::readTag(plist_, "dependency", my_tag);
       for (const auto& suffix : dep_suff) {
         dependencies_.insert(KeyTag(Keys::getKey(domain, suffix), dep_tag));
       }

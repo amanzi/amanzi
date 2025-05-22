@@ -212,7 +212,7 @@ InputConverterU::TranslateTransport_(const std::string& domain)
 
           std::string formula = GetAttributeValueS_(node, "alpha", TYPE_NONE, false, "m");
 
-          tmp_list.sublist("parameters for scalar")
+          tmp_list.sublist("scalar parameters")
             .sublist("alpha")
             .sublist("function-exprtk")
             .set<int>("number of arguments", dim_ + 1)
@@ -223,7 +223,7 @@ InputConverterU::TranslateTransport_(const std::string& domain)
           al = GetAttributeValueD_(node, "alpha_l", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
           at = GetAttributeValueD_(node, "alpha_t", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
 
-          tmp_list.sublist("parameters for Bear")
+          tmp_list.sublist("Bear parameters")
             .set<double>("alpha_l", al)
             .set<double>("alpha_t", at);
         } else if (strcmp(model.c_str(), "burnett_frind") == 0) {
@@ -233,7 +233,7 @@ InputConverterU::TranslateTransport_(const std::string& domain)
           ath = GetAttributeValueD_(node, "alpha_th", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
           atv = GetAttributeValueD_(node, "alpha_tv", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
 
-          tmp_list.sublist("parameters for Burnett-Frind")
+          tmp_list.sublist("Burnett-Frind parameters")
             .set<double>("alpha_l", al)
             .set<double>("alpha_th", ath)
             .set<double>("alpha_tv", atv);
@@ -247,7 +247,7 @@ InputConverterU::TranslateTransport_(const std::string& domain)
           ath = GetAttributeValueD_(node, "alpha_th", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
           atv = GetAttributeValueD_(node, "alpha_tv", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
 
-          tmp_list.sublist("parameters for Lichtner-Kelkar-Robinson")
+          tmp_list.sublist("Lichtner-Kelkar-Robinson parameters")
             .set<double>("alpha_lh", alh)
             .set<double>("alpha_lv", alv)
             .set<double>("alpha_th", ath)

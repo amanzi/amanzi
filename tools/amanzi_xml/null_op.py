@@ -2,14 +2,6 @@ import sys,os
 import xml.etree.ElementTree as etree
 from amanzi_xml.utils import io as aio
 
-def fromFile(file_or_filename):
-    etree_parser = etree.XMLParser(target=etree.TreeBuilder(insert_comments=True))
-    return etree.parse(file_or_filename, etree_parser)
-
-def toFile(xml, file_or_filename):
-    xml.write(file_or_filename, method='amanzi_xml')
-
-
 
 if __name__ == "__main__":
     import argparse
@@ -24,11 +16,11 @@ if __name__ == "__main__":
 
     # check for orig file
     print("Converting file: %s"%args.infile)
-    xml = fromFile(args.infile)
+    xml = aio.fromFile(args.infile)
 
     if args.inplace:
-        toFile(xml, args.infile)
+        aio.toFile(xml, args.infile)
     else:
-        toFile(xml, args.outfile)
+        aio.toFile(xml, args.outfile)
     sys.exit(0)
 

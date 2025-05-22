@@ -317,12 +317,9 @@ readKeys(Teuchos::ParameterList& list,
          const Key& basename,
          Teuchos::Array<Key> const* const default_names = nullptr);
 
-// Read a dependency tag or tag list from a parameter list, given some default
-// information.
+// Read a tag from a parameter list
 Tag
-readTag(Teuchos::ParameterList& list, const Tag& default_tag = Tag{});
-Tag
-readTag(Teuchos::ParameterList& list, const std::string& param, const Tag& default_tag = Tag{});
+readTag(Teuchos::ParameterList& list, const std::string& param="", const Tag& default_tag = Tag{});
 
 } // namespace Keys
 } // namespace Amanzi

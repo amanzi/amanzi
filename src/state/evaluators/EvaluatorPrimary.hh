@@ -6,12 +6,6 @@
 
   Authors: Ethan Coon
 */
-
-/*
-  State
-
-*/
-
 /*!
 
 An evaluator with no dependencies that serves as the primary variable to be
@@ -19,10 +13,14 @@ solved for by a PK.  Note that users almost never are required to write an
 input spec for these -- they are controlled by the PK and therefore the input
 spec for this evaluator is written by that PK.
 
-.. _evaluator-primary-spec:
-.. admonition:: evaluator-primary-spec
+`"evaluator type`" = `"primary variable`"
 
-   * `"tag`" ``[string]`` **""** Time tag at which this primary variable is used.
+.. _evaluator-primary-variable-spec:
+.. admonition:: evaluator-primary-variable-spec
+
+   * `"tag`" ``[string]`` **optional** Typically this is not set by the user,
+     but implied by either the requester or by a fully qualified variable name
+     (e.g. pressure@NEXT enforces that, on construction, `"tag`" = `"NEXT`".
 
 */
 

@@ -18,6 +18,7 @@
 #include "MDM_BurnettFrind.hh"
 #include "MDM_Isotropic.hh"
 #include "MDM_LichtnerKelkarRobinson.hh"
+#include "EvaluatorMDM.hh"
 
 #include "MultiscaleTransportPorosityFactory.hh"
 #include "MultiscaleTransportPorosity_GDPM.hh"
@@ -43,7 +44,8 @@ namespace Transport {
 
 Utils::RegisteredFactory<MDM, MDM_Bear> MDM_Bear::reg_("Bear");
 Utils::RegisteredFactory<MDM, MDM_BurnettFrind> MDM_BurnettFrind::reg_("Burnett-Frind");
-Utils::RegisteredFactory<MDM, MDM_Isotropic> MDM_Isotropic::reg_("scalar");
+Utils::RegisteredFactory<MDM, MDM_Isotropic> MDM_Isotropic::reg_("isotropic");
+Utils::RegisteredFactory<MDM, MDM_Isotropic> MDM_Isotropic::reg2_("scalar");
 Utils::RegisteredFactory<MDM, MDM_LichtnerKelkarRobinson>
   MDM_LichtnerKelkarRobinson::reg_("Lichtner-Kelkar-Robinson");
 
@@ -52,6 +54,9 @@ Utils::RegisteredFactory<MultiscaleTransportPorosity, MultiscaleTransportPorosit
 
 Utils::RegisteredFactory<MultiscaleTransportPorosity, MultiscaleTransportPorosity_GDPM>
   MultiscaleTransportPorosity_GDPM::reg_("generalized dual porosity");
+
+Utils::RegisteredFactory<Evaluator, EvaluatorMDM>
+  EvaluatorMDM::reg_("dispersion tensor");
 
 } // namespace Transport
 } // namespace Amanzi
