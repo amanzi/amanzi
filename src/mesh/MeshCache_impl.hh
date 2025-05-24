@@ -25,6 +25,39 @@ namespace AmanziMesh {
 
 class SingleFaceMesh;
 
+inline void
+MeshCacheBase::setSpaceDimension(unsigned int dim)
+{
+  space_dim_ = dim;
+  std::vector<std::string> names;
+  if (plist_->isParameter("space dimension names")) {
+    names = plist_->get<Teuchos::Array<std::string>>("space dimension names").toVector();
+  } else {
+    names.resize(space_dim_);
+    if (space_dim_ > 0) names[0] = "x";
+    if (space_dim_ > 1) names[1] = "y";
+    if (space_dim_ > 2) names[2] = "z";
+  }
+  setSpaceDimensionNames(names);
+}
+
+
+inline void
+MeshCacheBase::setSpaceDimensionNames(const std::vector<std::string>& names)
+{
+  space_dim_names_ = names;
+  if (space_dim_ != space_dim_names_.size()) {
+    Errors::Message msg;
+    msg << "Mesh was provided space dimension names: ";
+    for (const auto& n : space_dim_names_) {
+      msg << "\"" << n << "\", ";
+    }
+    msg << " which is of length " << space_dim_names_.size() << " but the mesh is of dimension " << space_dim_;
+    Exceptions::amanzi_throw(msg);
+  }
+}
+
+
 template <MemSpace_kind MEM>
 template <MemSpace_kind MEM_OTHER>
 MeshCache<MEM>::MeshCache(MeshCache<MEM_OTHER>& other)
@@ -60,7 +93,7 @@ MeshCache<MEM>::setMeshFramework(const Teuchos::RCP<MeshFramework>& framework_me
   has_node_faces_ = framework_mesh->hasNodeFaces();
   comm_ = framework_mesh_->getComm();
   gm_ = framework_mesh_->getGeometricModel();
-  space_dim_ = framework_mesh_->getSpaceDimension();
+  setSpaceDimension(framework_mesh_->getSpaceDimension());
   manifold_dim_ = framework_mesh_->getManifoldDimension();
   is_logical_ = framework_mesh_->isLogical();
   is_ordered_ = framework_mesh_->isOrdered();
