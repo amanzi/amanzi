@@ -164,7 +164,7 @@ Multiphase_PK::Setup()
 
   // model assumptions
   auto physical_models = Teuchos::sublist(mp_list_, "physical models and assumptions");
-  flow_on_manifold_ = physical_models->get<bool>("flow and transport in fractures", false);
+  assumptions_.Init(*physical_models, *mesh_);
 
   // extract information about nonlinear system
   component_names_ = mp_list_->sublist("molecular diffusion")
@@ -277,7 +277,7 @@ Multiphase_PK::Setup()
 
   // Darcy volume fluxes
   if (!S_->HasRecord(mol_flowrate_liquid_key_)) {
-    if (!flow_on_manifold_) {
+    if (!assumptions_.flow_on_manifold) {
       S_->Require<CV_t, CVS_t>(mol_flowrate_liquid_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)
         ->SetGhosted(true)
@@ -291,7 +291,7 @@ Multiphase_PK::Setup()
   }
 
   if (!S_->HasRecord(mol_flowrate_gas_key_)) {
-    if (!flow_on_manifold_) {
+    if (!assumptions_.flow_on_manifold) {
       S_->Require<CV_t, CVS_t>(mol_flowrate_gas_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)
         ->SetGhosted(true)

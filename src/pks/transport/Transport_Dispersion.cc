@@ -309,7 +309,7 @@ Transport_PK::DispersionSolver(const Epetra_MultiVector& tcc_prev,
     op1->ApplyBCs(true, true, true);
 
     // add accumulation term.
-    AMANZI_ASSERT(!transport_on_manifold_);
+    AMANZI_ASSERT(!assumptions_.flow_on_manifold);
     Epetra_MultiVector& fac1 = *factor.ViewComponent("cell");
     Epetra_MultiVector& fac0 = *factor0.ViewComponent("cell");
 

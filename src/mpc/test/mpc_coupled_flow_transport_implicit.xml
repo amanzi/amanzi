@@ -681,7 +681,6 @@
       <ParameterList name="physical models and assumptions">
         <Parameter name="effective transport porosity" type="bool" value="false"/>
         <Parameter name="permeability field is required" type="bool" value="false"/>
-        <Parameter name="eos lookup table" type="bool" value="false"/>
         <Parameter name="use dispersion solver" type="bool" value="true"/>
       </ParameterList>
 
@@ -780,7 +779,6 @@
       <ParameterList name="physical models and assumptions">
         <Parameter name="effective transport porosity" type="bool" value="false"/>
         <Parameter name="permeability field is required" type="bool" value="false"/>
-        <Parameter name="eos lookup table" type="bool" value="false"/>
         <Parameter name="use dispersion solver" type="bool" value="true"/>
         <Parameter name="flow and transport in fractures" type="bool" value="true"/>
       </ParameterList>

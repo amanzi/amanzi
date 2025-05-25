@@ -159,9 +159,9 @@ MechanicsFracturedMatrix_PK::FunctionalResidual(double t_old,
 
   // add external forces
   auto rhs = op_matrix_->rhs();
-  if (use_gravity_) AddGravityTerm(*rhs);
-  if (poroelasticity_) AddPressureGradient(*rhs);
-  if (thermoelasticity_) AddTemperatureGradient(*rhs);
+  if (assumptions_.use_gravity) AddGravityTerm(*rhs);
+  if (assumptions_.poroelasticity) AddPressureGradient(*rhs);
+  if (assumptions_.thermoelasticity) AddTemperatureGradient(*rhs);
 
   // assemble local matrices for fractures
   op_matrix_elas_->UpdateMatrices();

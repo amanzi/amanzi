@@ -47,7 +47,7 @@ TransportImplicit_PK::FunctionalResidual(double t_old,
   auto& unew_c = *u_new->Data()->ViewComponent("cell");
   auto& f_c = *f->Data()->ViewComponent("cell");
 
-  if (use_dispersion_) {
+  if (assumptions_.use_dispersion) {
     int phase;
     double md;
     CalculateDispersionTensor_(t_old + dtp / 2, *transport_phi, *wc_c);
@@ -87,7 +87,7 @@ TransportImplicit_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVec
   op_adv_->UpdateMatrices(S_->GetPtr<CompositeVector>(vol_flowrate_key_, Tags::DEFAULT).ptr());
   op_adv_->ApplyBCs(true, true, true);
 
-  if (use_dispersion_) {
+  if (assumptions_.use_dispersion) {
     op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
     op_diff_->ApplyBCs(true, true, true);
   }

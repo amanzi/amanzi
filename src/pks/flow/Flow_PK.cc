@@ -73,16 +73,11 @@ Flow_PK::Setup()
 {
   // Work flow can be affected by the list of models
   auto physical_models = Teuchos::sublist(fp_list_, "physical models and assumptions");
-
-  // type of the flow (in matrix or on manifold)
-  flow_on_manifold_ = physical_models->get<bool>("flow and transport in fractures", false);
-  flow_on_manifold_ &= (mesh_->getManifoldDimension() != mesh_->getSpaceDimension());
+  assumptions_.Init(*physical_models, *mesh_);
 
   // coupling with other PKs
-  coupled_to_matrix_ =
-    physical_models->get<std::string>("coupled matrix fracture flow", "") == "fracture";
-  coupled_to_fracture_ =
-    physical_models->get<std::string>("coupled matrix fracture flow", "") == "matrix";
+  coupled_to_matrix_ = physical_models->get<std::string>("coupled matrix fracture flow", "") == "fracture";
+  coupled_to_fracture_ = physical_models->get<std::string>("coupled matrix fracture flow", "") == "matrix";
 
   // keys and tags
   Tag tag = Tags::DEFAULT;
@@ -115,7 +110,7 @@ Flow_PK::Setup()
 
   // fields and evaluators
   // -- effective fracture permeability
-  if (flow_on_manifold_) {
+  if (assumptions_.flow_on_manifold) {
     if (!S_->HasRecord(permeability_key_)) {
       S_->Require<CV_t, CVS_t>(permeability_key_, Tags::DEFAULT, permeability_key_)
         .SetMesh(mesh_)
@@ -172,7 +167,7 @@ Flow_PK::Setup()
 
     std::vector<std::string> listm(
       { Keys::getVarName(porosity_key_), Keys::getVarName(saturation_liquid_key_) });
-    if (flow_on_manifold_) listm.push_back(Keys::getVarName(aperture_key_));
+    if (assumptions_.flow_on_manifold) listm.push_back(Keys::getVarName(aperture_key_));
 
     elist.set<Teuchos::Array<std::string>>("multiplicative dependency key suffixes", listm)
       .set<std::string>("tag", "");
@@ -227,7 +222,7 @@ Flow_PK::Setup()
   }
 
   // set units
-  if (flow_on_manifold_) S_->GetRecordSetW(aperture_key_).set_units("m");
+  if (assumptions_.flow_on_manifold) S_->GetRecordSetW(aperture_key_).set_units("m");
 }
 
 
@@ -240,7 +235,7 @@ Flow_PK::Setup_FlowRates_(bool mass_to_molar, double molar_rho)
   Tag tag = Tags::DEFAULT;
 
   CompositeVectorSpace cvs;
-  if (flow_on_manifold_) {
+  if (assumptions_.flow_on_manifold) {
     cvs = *Operators::CreateManifoldCVS(mesh_);
   } else {
     cvs.SetMesh(mesh_)->SetGhosted(true)->SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
