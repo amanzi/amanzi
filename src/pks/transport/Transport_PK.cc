@@ -184,26 +184,14 @@ Transport_PK::Setup()
 
   // cross-coupling of PKs
   auto physical_models = Teuchos::sublist(tp_list_, "physical models and assumptions");
-  bool abs_perm = physical_models->get<bool>("permeability field is required", false);
-  std::string multiscale_model =
-    physical_models->get<std::string>("multiscale model", "single continuum");
-  transport_on_manifold_ = physical_models->get<bool>("flow and transport in fractures", false);
-  use_transport_porosity_ = physical_models->get<bool>("effective transport porosity", false);
-  use_effective_diffusion_ = physical_models->get<bool>("effective transport diffusion", false);
-  use_dispersion_ = physical_models->get<bool>("use dispersion solver", true);
+  assumptions_.Init(*physical_models, *mesh_);
 
   // generate keys here to be available for setup of the base class
   permeability_key_ = Keys::getKey(domain_, "permeability");
   porosity_key_ = Keys::getKey(domain_, "porosity");
   transport_porosity_key_ = Keys::getKey(domain_, "transport_porosity");
-
-  std::string tmp =
-    physical_models->get<std::string>("volumetric flow rate key", "volumetric_flow_rate");
-  vol_flowrate_key_ = Keys::getKey(domain_, tmp);
-
-  tmp = physical_models->get<std::string>("saturation key", "saturation_liquid");
-  saturation_liquid_key_ = Keys::getKey(domain_, tmp);
-
+  vol_flowrate_key_ = Keys::getKey(domain_, assumptions_.vol_flowrate);
+  saturation_liquid_key_ = Keys::getKey(domain_, assumptions_.sat_liquid);
   tortuosity_key_ = Keys::getKey(domain_, "tortuosity");
 
   wc_key_ = Keys::getKey(domain_, "water_content");
@@ -218,14 +206,14 @@ Transport_PK::Setup()
   // require state fields when Flow PK is off
   S_->Require<double>("const_fluid_density", Tags::DEFAULT, "state");
 
-  if (!S_->HasRecord(permeability_key_) && abs_perm) {
+  if (!S_->HasRecord(permeability_key_) && assumptions_.abs_perm) {
     S_->Require<CV_t, CVS_t>(permeability_key_, Tags::DEFAULT, permeability_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, dim);
   }
   if (!S_->HasRecord(vol_flowrate_key_)) {
-    if (transport_on_manifold_) {
+    if (assumptions_.flow_on_manifold) {
       auto cvs = Operators::CreateManifoldCVS(mesh_);
       *S_->Require<CV_t, CVS_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_)
          .SetMesh(mesh_)
@@ -247,7 +235,7 @@ Transport_PK::Setup()
   }
 
   // require domain specific fields
-  if (transport_on_manifold_) {
+  if (assumptions_.flow_on_manifold) {
     S_->Require<CV_t, CVS_t>(aperture_key_, Tags::DEFAULT, aperture_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
@@ -284,7 +272,7 @@ Transport_PK::Setup()
     S_->RequireEvaluator(porosity_key_, Tags::DEFAULT);
   }
 
-  if (use_transport_porosity_) {
+  if (assumptions_.use_transport_porosity) {
     if (!S_->HasRecord(transport_porosity_key_)) {
       S_->Require<CV_t, CVS_t>(transport_porosity_key_, Tags::DEFAULT, transport_porosity_key_)
         .SetMesh(mesh_)
@@ -303,7 +291,7 @@ Transport_PK::Setup()
 
     std::vector<std::string> listm(
       { Keys::getVarName(porosity_key_), Keys::getVarName(saturation_liquid_key_) });
-    if (transport_on_manifold_) listm.push_back(Keys::getVarName(aperture_key_));
+    if (assumptions_.flow_on_manifold) listm.push_back(Keys::getVarName(aperture_key_));
 
     Teuchos::ParameterList elist(wc_key_);
     elist.set<std::string>("my key", wc_key_)
@@ -340,7 +328,7 @@ Transport_PK::Setup()
 
   // require multiscale fields
   multiscale_porosity_ = false;
-  if (multiscale_model == "dual continuum discontinuous matrix") {
+  if (assumptions_.msm_name == "dual continuum discontinuous matrix") {
     multiscale_porosity_ = true;
     msp_ = CreateMultiscaleTransportPorosityPartition(mesh_, tp_list_);
 
@@ -399,7 +387,9 @@ Transport_PK::Setup()
   S_->GetRecordSetW(tcc_key_).set_units("mol/m^3");
   S_->GetRecordSetW(porosity_key_).set_units("-");
   S_->GetRecordSetW(saturation_liquid_key_).set_units("-");
-  if (transport_on_manifold_) { S_->GetRecordSetW(aperture_key_).set_units("m"); }
+  if (assumptions_.flow_on_manifold) {
+    S_->GetRecordSetW(aperture_key_).set_units("m");
+  }
 }
 
 
@@ -451,7 +441,7 @@ Transport_PK::Initialize()
   S_->Get<CV_t>(vol_flowrate_key_).ScatterMasterToGhosted("face");
 
   phi = S_->Get<CV_t>(porosity_key_).ViewComponent("cell");
-  if (use_transport_porosity_) {
+  if (assumptions_.use_transport_porosity) {
     transport_phi = S_->Get<CV_t>(transport_porosity_key_).ViewComponent("cell");
   } else {
     transport_phi = phi;
@@ -654,7 +644,7 @@ Transport_PK::Initialize()
     *vo_->os() << "Number of components: " << component_names_.size() << std::endl
                << "cfl=" << cfl_ << " spatial/temporal discretization: " << spatial_disc_order
                << " " << temporal_disc_order << std::endl
-               << "using transport porosity: " << use_transport_porosity_ << std::endl;
+               << "using transport porosity: " << assumptions_.use_transport_porosity << std::endl;
     *vo_->os() << vo_->color("green") << "Initialization of PK is complete." << vo_->reset()
                << std::endl
                << std::endl;

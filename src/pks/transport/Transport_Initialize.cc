@@ -133,7 +133,7 @@ Transport_PK::InitializeAll_()
     if (tau == 0.0) flag_diffusion_ = false;
   }
 
-  use_dispersion_ &= flag_dispersion_ || flag_diffusion_;
+  assumptions_.use_dispersion &= flag_dispersion_ || flag_diffusion_; // FIXME
 
   // statistics of solutes
   if (tp_list_->isParameter("runtime diagnostics: solute names")) {

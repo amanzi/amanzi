@@ -80,7 +80,7 @@ EnergyTwoPhase_PK::Setup()
       .set<double>("liquid molar mass", molar_mass)
       .set<std::string>("tag", "");
     elist.setName(energy_key_);
-    if (flow_on_manifold_) elist.set<std::string>("aperture key", aperture_key_);
+    if (assumptions_.flow_on_manifold) elist.set<std::string>("aperture key", aperture_key_);
 
     auto ee = Teuchos::rcp(new TotalEnergyEvaluator(elist));
     S_->SetEvaluator(energy_key_, Tags::DEFAULT, ee);

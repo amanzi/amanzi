@@ -216,6 +216,7 @@ and temporal accuracy, and verbosity:
 #include "FCT.hh"
 #include "Key.hh"
 #include "LimiterCell.hh"
+#include "ModelAssumptions.hh"
 #include "PK.hh"
 #include "PK_Explicit.hh"
 #include "PK_Factory.hh"
@@ -434,8 +435,9 @@ class Transport_PK : public PK_Physical {
   std::string passwd_;
   Method_t method_;
 
-  bool transport_on_manifold_;
-  bool subcycling_, use_transport_porosity_, use_effective_diffusion_;
+  // physical models and assumptions
+  ModelAssumptions assumptions_;
+  bool subcycling_;
   int dim;
 
   Teuchos::RCP<AmanziChemistry::Chemistry_PK> chem_pk_;
@@ -462,7 +464,7 @@ class Transport_PK : public PK_Physical {
   Teuchos::RCP<MDMPartition> mdm_;
   std::vector<WhetStone::Tensor> D_;
 
-  bool flag_dispersion_, flag_diffusion_, use_dispersion_;
+  bool flag_dispersion_, flag_diffusion_;
   std::vector<int> axi_symmetry_; // axi-symmetry direction of permeability tensor
   std::string dispersion_preconditioner, dispersion_solver;
 

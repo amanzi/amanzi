@@ -132,6 +132,7 @@ The available boundary conditions include the prescibed pressure, total influx, 
 #include "EvaluatorPrimary.hh"
 #include "FlattenedTreeOperator.hh"
 #include "Key.hh"
+#include "ModelAssumptions.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_AdvectionUpwindFactory.hh"
 #include "PDE_DiffusionFactory.hh"
@@ -338,7 +339,9 @@ class Multiphase_PK : public PK_PhysicalBDF {
  private:
   int missed_bc_faces_;
   double smooth_mu_; // smoothing parameter
-  bool flow_on_manifold_;
+
+  // physical models and assumptions
+  ModelAssumptions assumptions_;
 
   // solvers and preconditioners
   bool cpr_enhanced_;

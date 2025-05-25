@@ -882,10 +882,7 @@ InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
     }
 
     if (pktype == "flow and energy matrix fracture") {
-      std::vector<std::string> name_pks = {
-        "flow matrix fracture", "energy matrix fracture", "flow", "energy",
-        "flow fracture", "energy fracture"
-      };
+      std::vector<std::string> name_pks = {"flow matrix fracture", "energy matrix fracture"};
 
       for (auto&& pk : name_pks) {
         std::string fullname = Keys::merge(prefix, pk, delimiter);

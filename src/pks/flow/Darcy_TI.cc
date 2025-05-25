@@ -41,7 +41,7 @@ Darcy_PK::FunctionalResidual(double t_old,
   CompositeVector sy_g(*specific_yield_copy_);
   sy_g.Scale(factor);
 
-  if (flow_on_manifold_) {
+  if (assumptions_.flow_on_manifold) {
     S_->GetEvaluator(aperture_key_).Update(*S_, "flow");
     const auto& aperture = S_->Get<CV_t>(aperture_key_, Tags::DEFAULT);
     sy_g.Multiply(1.0, sy_g, aperture, 0.0);
@@ -49,7 +49,7 @@ Darcy_PK::FunctionalResidual(double t_old,
 
   // optimization for stationary matrices
   op_->RestoreCheckPoint();
-  if (flow_on_manifold_) {
+  if (assumptions_.flow_on_manifold) {
     bool updated = S_->GetEvaluator(permeability_eff_key_).Update(*S_, "flow");
     if (updated) { // new matrices require new checkpoint
       op_->Init();
@@ -71,14 +71,14 @@ Darcy_PK::FunctionalResidual(double t_old,
   }
 
   // compliance and optional update of diffusion operator
-  if (flow_on_manifold_) {
+  if (assumptions_.flow_on_manifold) {
     S_->GetEvaluator(compliance_key_).Update(*S_, "flow");
     const auto& compliance = S_->Get<CompositeVector>(compliance_key_, Tags::DEFAULT);
 
     CompositeVector ss_g(compliance);
     ss_g.Scale(rho_);
     op_acc_->AddAccumulationDelta(*u_old->Data(), ss_g, ss_g, dt_, "cell");
-  } else if (use_bulk_modulus_) {
+  } else if (assumptions_.use_bulk_modulus) {
     S_->GetEvaluator(bulk_modulus_key_).Update(*S_, "flow");
     const auto& bulk = S_->Get<CV_t>(bulk_modulus_key_, Tags::DEFAULT);
     const auto& bulk_c = *bulk.ViewComponent("cell");

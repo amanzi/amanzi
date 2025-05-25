@@ -100,11 +100,7 @@ Darcy_PK::Setup()
   Flow_PK::Setup();
 
   // Our decision can be affected by the list of models
-  auto physical_models = Teuchos::sublist(fp_list_, "physical models and assumptions");
-  external_aperture_ = physical_models->get<bool>("external aperture", false);
-  std::string mu_model = physical_models->get<std::string>("viscosity model", "constant viscosity");
-  use_bulk_modulus_ = physical_models->get<bool>("use bulk modulus", false);
-  if (mu_model != "constant viscosity") {
+  if (assumptions_.mu_model != "constant viscosity") {
     Errors::Message msg;
     msg << "Darcy PK supports only constant viscosity model.";
     Exceptions::amanzi_throw(msg);
@@ -146,7 +142,7 @@ Darcy_PK::Setup()
 
     elist.set<std::string>("pressure key", pressure_key_)
       .set<std::string>("specific storage key", specific_storage_key_);
-    if (flow_on_manifold_) elist.set<std::string>("aperture key", aperture_key_);
+    if (assumptions_.flow_on_manifold) elist.set<std::string>("aperture key", aperture_key_);
 
     S_->RequireDerivative<CV_t, CVS_t>(
         water_storage_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, water_storage_key_)
@@ -209,14 +205,14 @@ Darcy_PK::Setup()
   Setup_FlowRates_(true, molar_rho);
 
   // -- fracture dynamics
-  if (flow_on_manifold_) {
+  if (assumptions_.flow_on_manifold) {
     S_->Require<CV_t, CVS_t>(compliance_key_, Tags::DEFAULT, compliance_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S_->RequireEvaluator(compliance_key_, Tags::DEFAULT);
 
-    if (external_aperture_) {
+    if (assumptions_.external_aperture) {
       RequireFieldForEvaluator(*S_, ref_aperture_key_);
       S_->GetRecordW(ref_aperture_key_, ref_aperture_key_).set_io_vis(false);
       S_->RequireEvaluator(ref_aperture_key_, Tags::DEFAULT);
@@ -232,7 +228,7 @@ Darcy_PK::Setup()
     } else {
       S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
     }
-  } else if (use_bulk_modulus_) {
+  } else if (assumptions_.use_bulk_modulus) {
     S_->Require<CV_t, CVS_t>(bulk_modulus_key_, Tags::DEFAULT)
       .SetMesh(mesh_)
       ->SetGhosted(true)
@@ -383,15 +379,15 @@ Darcy_PK::Initialize()
   double mu = S_->Get<double>("const_fluid_viscosity");
   Teuchos::ParameterList& oplist =
     fp_list_->sublist("operators").sublist("diffusion operator").sublist("matrix");
-  if (flow_on_manifold_) oplist.set<std::string>("nonlinear coefficient", "standard: cell");
-  if (coupled_to_matrix_ || flow_on_manifold_) {
+  if (assumptions_.flow_on_manifold) oplist.set<std::string>("nonlinear coefficient", "standard: cell");
+  if (coupled_to_matrix_ || assumptions_.flow_on_manifold) {
     if (!oplist.isParameter("use manifold flux")) oplist.set<bool>("use manifold flux", true);
   }
 
   Operators::PDE_DiffusionFactory opfactory(oplist, mesh_);
   opfactory.SetConstantGravitationalTerm(gravity_, rho_);
 
-  if (!flow_on_manifold_) {
+  if (!assumptions_.flow_on_manifold) {
     SetAbsolutePermeabilityTensor();
     Teuchos::RCP<std::vector<WhetStone::Tensor>> Kptr = Teuchos::rcpFromRef(K);
     opfactory.SetVariableTensorCoefficient(Kptr);
@@ -457,11 +453,12 @@ Darcy_PK::InitializeFields_()
   InitializeCVField(S_, *vo_, saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_key_, 1.0);
   InitializeCVField(S_, *vo_, prev_saturation_liquid_key_, Tags::DEFAULT, passwd_, 1.0);
 
-  if (flow_on_manifold_)
+  if (assumptions_.flow_on_manifold)
     InitializeCVField(S_, *vo_, compliance_key_, Tags::DEFAULT, compliance_key_, 0.0);
 
-  if (flow_on_manifold_ && external_aperture_)
+  if (assumptions_.flow_on_manifold && assumptions_.external_aperture) {
     InitializeCVFieldFromCVField(S_, *vo_, ref_pressure_key_, pressure_key_, passwd_);
+  }
 
   InitializeCVFieldFromCVField(S_, *vo_, prev_water_storage_key_, water_storage_key_, passwd_);
 }
@@ -549,7 +546,7 @@ Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   CompositeVector sy_g(*specific_yield_copy_);
   sy_g.Scale(factor);
 
-  if (flow_on_manifold_) {
+  if (assumptions_.flow_on_manifold) {
     S_->GetEvaluator(aperture_key_).Update(*S_, aperture_key_);
     const auto& aperture = S_->Get<CV_t>(aperture_key_, Tags::DEFAULT);
     sy_g.Multiply(1.0, sy_g, aperture, 0.0);
@@ -564,7 +561,7 @@ Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   // add diffusion matrices
-  if (flow_on_manifold_) {
+  if (assumptions_.flow_on_manifold) {
     S_->GetEvaluator(permeability_eff_key_).Update(*S_, "flow");
     op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   }
@@ -633,7 +630,7 @@ Darcy_PK::CommitStep(double t_old, double t_new, const Tag& tag)
   S_->GetW<CV_t>(prev_water_storage_key_, Tags::DEFAULT, passwd_) =
     S_->Get<CV_t>(water_storage_key_, Tags::DEFAULT);
 
-  if (coupled_to_matrix_ || flow_on_manifold_) VV_FractureConservationLaw();
+  if (coupled_to_matrix_ || assumptions_.flow_on_manifold) VV_FractureConservationLaw();
 
   // update time derivative
   *pdot_cells_prev = *pdot_cells;
