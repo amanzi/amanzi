@@ -245,6 +245,7 @@ Global parameters
 #include "CompositeVectorSpace.hh"
 #include "EvaluatorIndependentFunction.hh"
 #include "Key.hh"
+#include "ModelAssumptions.hh"
 #include "Operator.hh"
 #include "PK_DomainFunction.hh"
 #include "PK_PhysicalBDF.hh"
@@ -348,7 +349,7 @@ class Flow_PK : public PK_PhysicalBDF {
   int dim;
 
   std::string passwd_;
-  bool peaceman_model_, use_bulk_modulus_;
+  bool peaceman_model_;
 
   // Stationary physical quantatities
   std::vector<WhetStone::Tensor> K;
@@ -373,8 +374,8 @@ class Flow_PK : public PK_PhysicalBDF {
   Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>> pressure_eval_;
   Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>> pressure_msp_eval_;
 
-  // DFN model
-  bool flow_on_manifold_; // true for the DFN model
+  // physical models and assumptions
+  ModelAssumptions assumptions_;
   bool coupled_to_matrix_, coupled_to_fracture_;
 
   // names of state fields
