@@ -387,7 +387,7 @@ class Flow_PK : public PK_PhysicalBDF {
   Key permeability_key_, permeability_eff_key_;
   Key water_storage_key_, prev_water_storage_key_;
   Key viscosity_liquid_key_, mol_density_liquid_key_, mass_density_liquid_key_;
-  Key aperture_key_, bulk_modulus_key_, hydrostatic_stress_key_;
+  Key aperture_key_, bulk_modulus_key_;
 
   // io
   Utils::Units units_;

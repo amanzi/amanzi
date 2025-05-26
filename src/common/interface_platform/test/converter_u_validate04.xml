@@ -554,6 +554,9 @@
 
     <ParameterList name="steady:flow">
       <Parameter name="domain name" type="string" value="domain"/>
+      <ParameterList name="physical models and assumptions">
+        <Parameter name="use overburden stress" type="bool" value="false"/>
+      </ParameterList>
       <ParameterList name="absolute permeability">
         <Parameter name="coordinate system" type="string" value="cartesian"/>
       </ParameterList>
@@ -845,11 +848,14 @@
           <Parameter name="timestep [s]" type="double" value="1.0e+7"/>
         </ParameterList>
       </ParameterList>
-
     </ParameterList>
 
     <ParameterList name="transient:flow">
       <Parameter name="domain name" type="string" value="domain"/>
+      <ParameterList name="physical models and assumptions">
+        <Parameter name="use overburden stress" type="bool" value="false"/>
+      </ParameterList>
+
       <ParameterList name="absolute permeability">
         <Parameter name="coordinate system" type="string" value="cartesian"/>
       </ParameterList>
