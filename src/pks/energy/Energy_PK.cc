@@ -212,6 +212,13 @@ Energy_PK::Setup()
   }
 
   // -- effective fracture conductivity
+  if (assumptions_.use_overburden_stress && domain_ == "domain") {
+    S_->Require<CV_t, CVS_t>("hydrostatic_stress", Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+  }
+
   if (assumptions_.flow_on_manifold) {
     S_->Require<CV_t, CVS_t>(conductivity_eff_key_, Tags::DEFAULT, conductivity_eff_key_)
       .SetMesh(mesh_)
@@ -231,8 +238,8 @@ Energy_PK::Setup()
         Teuchos::ParameterList elist(aperture_key_);
         elist.set<std::string>("aperture key", aperture_key_)
           .set<std::string>("pressure key", pressure_key_)
+          .set<bool>("use overburden stress", assumptions_.use_overburden_stress)
           .set<std::string>("tag", "");
-        if (S_->HasRecord("hydrostatic_stress")) elist.set<bool>("use stress", true);
 
         auto eval = Teuchos::rcp(new Evaluators::ApertureModelEvaluator(elist, fam));
         S_->SetEvaluator(aperture_key_, Tags::DEFAULT, eval);

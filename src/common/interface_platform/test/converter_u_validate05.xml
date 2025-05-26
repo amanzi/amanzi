@@ -642,6 +642,10 @@
 
     <ParameterList name="steady:flow matrix">
       <Parameter name="domain name" type="string" value="domain"/>
+      <ParameterList name="physical models and assumptions">
+        <Parameter name="use overburden stress" type="bool" value="false"/>
+      </ParameterList>
+
       <ParameterList name="absolute permeability">
         <Parameter name="coordinate system" type="string" value="cartesian"/>
       </ParameterList>
@@ -726,6 +730,7 @@
       <ParameterList name="physical models and assumptions">
         <Parameter name="flow and transport in fractures" type="bool" value="true"/>
         <Parameter name="external aperture" type="bool" value="false"/>
+        <Parameter name="use overburden stress" type="bool" value="false"/>
       </ParameterList>
 
       <ParameterList name="absolute permeability">

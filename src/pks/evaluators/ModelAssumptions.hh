@@ -29,6 +29,7 @@ struct ModelAssumptions {
       thermoelasticity(false),
       external_aperture(false),
       use_bulk_modulus(false),
+      use_overburden_stress(false),
       use_transport_porosity(false),
       use_effective_diffusion(false),
       use_dispersion(true),
@@ -57,6 +58,7 @@ struct ModelAssumptions {
 
     external_aperture = plist.get<bool>("external aperture", false);
     use_bulk_modulus = plist.get<bool>("use bulk modulus", false);
+    use_overburden_stress = plist.get<bool>("use overburden stress", false);
 
     use_transport_porosity = plist.get<bool>("effective transport porosity", false);
     use_effective_diffusion = plist.get<bool>("effective transport diffusion", false);
@@ -86,6 +88,7 @@ struct ModelAssumptions {
 
   bool external_aperture;
   bool use_bulk_modulus;
+  bool use_overburden_stress;
 
   bool use_transport_porosity;
   bool use_effective_diffusion;

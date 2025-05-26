@@ -378,6 +378,9 @@
   <ParameterList name="PKs">
 
     <ParameterList name="steady:flow">
+      <ParameterList name="physical models and assumptions">
+        <Parameter name="use overburden stress" type="bool" value="false"/>
+      </ParameterList>
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="absolute permeability">
         <Parameter name="coordinate system" type="string" value="cartesian"/>
@@ -647,6 +650,9 @@
     </ParameterList>
 
     <ParameterList name="transient:flow">
+      <ParameterList name="physical models and assumptions">
+        <Parameter name="use overburden stress" type="bool" value="false"/>
+      </ParameterList>
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="relative permeability">
         <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>

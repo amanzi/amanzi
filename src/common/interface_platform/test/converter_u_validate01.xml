@@ -386,6 +386,9 @@
 
   <ParameterList name="PKs">
     <ParameterList name="steady:flow">
+      <ParameterList name="physical models and assumptions">
+        <Parameter name="use overburden stress" type="bool" value="false"/>
+      </ParameterList>
       <ParameterList name="clipping parameters">
         <Parameter name="maximum correction change" type="double" value="-1.0"/>
       </ParameterList>
@@ -565,6 +568,9 @@
     </ParameterList>
 
     <ParameterList name="transient:flow">
+      <ParameterList name="physical models and assumptions">
+        <Parameter name="use overburden stress" type="bool" value="false"/>
+      </ParameterList>
       <ParameterList name="clipping parameters">
         <Parameter name="maximum correction change" type="double" value="-1.0"/>
       </ParameterList>

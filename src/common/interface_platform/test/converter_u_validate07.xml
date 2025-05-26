@@ -600,8 +600,10 @@
       </ParameterList>
       <ParameterList name="physical models and assumptions">
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
+        <Parameter name="use overburden stress" type="bool" value="false"/>
       </ParameterList>
     </ParameterList>
+
     <ParameterList name="steady:flow fracture">
       <ParameterList name="clipping parameters">
         <Parameter name="maximum correction change" type="double" value="-1.0e+00"/>
@@ -618,6 +620,7 @@
         <Parameter name="flow and transport in fractures" type="bool" value="true"/>
         <Parameter name="external aperture" type="bool" value="false"/>
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
+        <Parameter name="use overburden stress" type="bool" value="false"/>
       </ParameterList>
       <ParameterList name="absolute permeability">
         <Parameter name="coordinate system" type="string" value="cartesian"/>
@@ -1087,8 +1090,10 @@
       </ParameterList>
       <ParameterList name="physical models and assumptions">
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
+        <Parameter name="use overburden stress" type="bool" value="false"/>
       </ParameterList>
     </ParameterList>
+
     <ParameterList name="transient:flow fracture">
       <ParameterList name="clipping parameters">
         <Parameter name="maximum correction change" type="double" value="-1.0e+00"/>
@@ -1104,6 +1109,7 @@
       <ParameterList name="physical models and assumptions">
         <Parameter name="flow and transport in fractures" type="bool" value="true"/>
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
+        <Parameter name="use overburden stress" type="bool" value="false"/>
       </ParameterList>
       <ParameterList name="relative permeability">
         <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
