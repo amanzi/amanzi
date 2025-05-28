@@ -315,11 +315,10 @@
 
   <ParameterList name="cycle driver">
     <ParameterList name="time periods">
-      
       <ParameterList name="TP 0">
         <ParameterList name="PK tree">
           <ParameterList name="flow and shallow water">
-            <Parameter name="PK type" type="string" value="surface subsurface"/>
+            <Parameter name="PK type" type="string" value="flow and shallow water"/>
             <ParameterList name="flow">
               <Parameter name="PK type" type="string" value="richards"/>
             </ParameterList>
@@ -348,7 +347,6 @@
   </ParameterList>
 
   <ParameterList name="PKs">
-  
     <ParameterList name="flow and shallow water">
       <Parameter name="PKs order" type="Array(string)" value="{flow, shallow water}"/>
       <Parameter name="master PK index" type="int" value="0"/>

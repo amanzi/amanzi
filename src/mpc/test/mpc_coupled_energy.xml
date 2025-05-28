@@ -545,7 +545,7 @@
       <ParameterList name="TP 0">
         <ParameterList name="PK tree">
           <ParameterList name="steady:coupled flow">
-            <Parameter name="PK type" type="string" value="darcy matrix fracture"/>
+            <Parameter name="PK type" type="string" value="flow matrix fracture"/>
             <ParameterList name="steady:flow matrix">
               <Parameter name="PK type" type="string" value="darcy"/>
             </ParameterList>
@@ -593,7 +593,7 @@
   <ParameterList name="PKs">
 
     <ParameterList name="steady:coupled flow">
-      <Parameter isUsed="true" name="PK type" type="string" value="darcy matrix fracture"/>
+      <Parameter isUsed="true" name="PK type" type="string" value="flow matrix fracture"/>
       <Parameter name="PKs order" type="Array(string)" value="{steady:flow matrix, steady:flow fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
       <ParameterList name="time integrator">

@@ -107,7 +107,7 @@ TransportImplicit_PK::Initialize()
 
   // operators
   // -- dispertion and/or diffusion
-  if (use_dispersion_) {
+  if (assumptions_.use_dispersion) {
     D_.resize(ncells_owned);
     Teuchos::RCP<std::vector<WhetStone::Tensor>> Dptr = Teuchos::rcpFromRef(D_);
     Teuchos::ParameterList& oplist_d =
@@ -123,7 +123,7 @@ TransportImplicit_PK::Initialize()
   // Solution vector does not match tcc in general, even for one species.
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh_)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)->SetGhosted(true);
-  if (use_dispersion_) cvs = op_diff_->global_operator()->DomainMap();
+  if (assumptions_.use_dispersion) cvs = op_diff_->global_operator()->DomainMap();
 
   solution_ = Teuchos::rcp(new CompositeVector(cvs));
   soln_->SetData(solution_);
@@ -258,7 +258,7 @@ TransportImplicit_PK::AdvanceStepLO_(double t_old, double t_new, int* tot_itrs)
     op_adv_->UpdateMatrices(S_->GetPtr<CV_t>(vol_flowrate_key_, Tags::DEFAULT).ptr());
     op_adv_->ApplyBCs(true, true, true);
 
-    if (use_dispersion_) {
+    if (assumptions_.use_dispersion) {
       int phase;
       double md;
       CalculateDispersionTensor_(t_old + dt_ / 2, *transport_phi, wc_c);
@@ -358,7 +358,7 @@ TransportImplicit_PK::UpdateLinearSystem(double t_old, double t_new, int compone
   op_adv_->UpdateMatrices(S_->GetPtr<CV_t>(vol_flowrate_key_, Tags::DEFAULT).ptr());
   op_adv_->ApplyBCs(true, true, true);
 
-  if (use_dispersion_) {
+  if (assumptions_.use_dispersion) {
     int phase;
     double md;
     CalculateDispersionTensor_(t_old + dt / 2, *transport_phi, wc_c);

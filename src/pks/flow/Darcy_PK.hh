@@ -142,7 +142,6 @@ class Darcy_PK : public Flow_PK {
   bool initialize_with_darcy_;
   int num_itrs_;
 
-  bool external_aperture_;
   Key compliance_key_, ref_aperture_key_, ref_pressure_key_;
 
   Teuchos::RCP<CompositeVector> solution;      // next pressure state

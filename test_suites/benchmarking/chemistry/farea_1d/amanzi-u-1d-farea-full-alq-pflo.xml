@@ -13,10 +13,16 @@
         </macros>
     </definitions>
     <process_kernels>
-        <flow model="saturated" state="on"/>
-        <transport state="on"/>
-	<!--chemistry database="farea-full.dat" engine="pflotran" state="on" input_filename="1d-farea-full-trim.in"/-->
+      <pk mode="steady">
+        <flow state="on" model="saturated"/>
+      </pk>
+      <pk mode="transient">
+        <flow state="on" model="saturated"/>
+        <transport state="on" />
 	<chemistry database="farea-full.dat" engine="pflotran" state="on"/>
+        <weakly_coupled name="reactive transport">chemistry,transport</weakly_coupled>
+        <weakly_coupled name="mpc">flow,reactive transport</weakly_coupled>
+      </pk>
     </process_kernels>
     <phases>
         <liquid_phase name="water">

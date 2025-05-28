@@ -73,6 +73,8 @@ class PK_MPC : virtual public PK {
   typename std::vector<Teuchos::RCP<PK_Base>>::iterator begin() { return sub_pks_.begin(); }
   typename std::vector<Teuchos::RCP<PK_Base>>::iterator end() { return sub_pks_.end(); }
 
+  Teuchos::RCP<PK_Base> getSubPK(int i) { return sub_pks_[i]; }
+
  protected:
   Teuchos::RCP<Teuchos::ParameterList> getSubPKPlist_(int i);
 

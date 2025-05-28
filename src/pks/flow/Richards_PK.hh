@@ -110,7 +110,7 @@ class Richards_PK : public Flow_PK {
   virtual void ChangedSolution() override
   {
     pressure_eval_->SetChanged();
-    if (multiscale_porosity_) { pressure_msp_eval_->SetChanged(); }
+    if (assumptions_.msm_porosity) pressure_msp_eval_->SetChanged();
   }
 
   // -- returns the number of linear iterations.
@@ -195,18 +195,15 @@ class Richards_PK : public Flow_PK {
   // coupling with energy
   Teuchos::RCP<Operators::Operator> op_vapor_;
   Teuchos::RCP<Operators::PDE_Diffusion> op_vapor_diff_;
-  bool vapor_diffusion_;
 
   // miscaleneous models
   Key ppfactor_key_, vol_strain_key_;
-  bool poroelasticity_, thermoelasticity_;
 
   // multiscale models
   Key pressure_msp_key_, porosity_msp_key_;
   Key water_storage_msp_key_, prev_water_storage_msp_key_;
   Key temperature_key_;
 
-  bool multiscale_porosity_;
   int ms_itrs_;
   Teuchos::RCP<MultiscaleFlowPorosityPartition> msp_;
 

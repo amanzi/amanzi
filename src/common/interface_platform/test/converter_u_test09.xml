@@ -28,7 +28,7 @@
     <pk mode="transient">
       <flow model="richards" state="on" />
       <shallow_water model="shallow water" state="on" domain="TopSurface"/>
-      <weakly_coupled name="mpc2">flow,shallow_water</weakly_coupled>
+      <weakly_coupled name="mpc2">flow,shallow water</weakly_coupled>
     </pk>
   </process_kernels>
 
