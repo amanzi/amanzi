@@ -67,21 +67,6 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
 
   std::string name() override { return "flow and energy matrix fracture"; }
 
- private:
-  // use flag to avoid double counting of coupling terms for Darcy PK
-  std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux>> AddCouplingFluxes_(
-    const Teuchos::RCP<CompositeVectorSpace>& cvs_matrix,
-    const Teuchos::RCP<CompositeVectorSpace>& cvs_fracture,
-    std::shared_ptr<const std::vector<std::vector<int>>> inds_matrix,
-    std::shared_ptr<const std::vector<std::vector<int>>> inds_fracture,
-    std::shared_ptr<const std::vector<double>> values,
-    int i,
-    Teuchos::RCP<Operators::TreeOperator>& op_tree);
-
-  void SwapEvaluatorField_(const Key& key,
-                           Teuchos::RCP<CompositeVector>& fdm_copy,
-                           Teuchos::RCP<CompositeVector>& fdf_copy);
-
  public:
   // virtual void CalculateDiagnostics() {};
   Teuchos::RCP<const Teuchos::ParameterList> linear_operator_list_;
@@ -91,11 +76,6 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
  private:
   const Teuchos::RCP<Teuchos::ParameterList>& glist_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain_, mesh_fracture_;
-
-  Key matrix_mol_flowrate_key_;
-  Key diffusion_to_matrix_key_, heat_diffusion_to_matrix_key_;
-
-  std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux>> adv_coupling_matrix_, adv_coupling_pc_;
 
   Teuchos::RCP<Matrix<TreeVector, TreeVectorSpace>> op_pc_solver_;
 
