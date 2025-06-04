@@ -816,11 +816,12 @@
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
-
     </ParameterList>
 
     <ParameterList name="transient:chemistry">
       <Parameter name="domain name" type="string" value="domain"/>
+      <Parameter name="primary variable password" type="string" value="state"/>
+
       <Parameter name="engine" type="string" value="PFloTran"/>
       <Parameter name="chemistry model" type="string" value="Alquimia"/>
       <Parameter name="engine input file" type="string" value="test/converter_u_test04.in"/>

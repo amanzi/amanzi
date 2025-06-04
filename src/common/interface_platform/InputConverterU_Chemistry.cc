@@ -453,10 +453,11 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
   out_list.set<std::string>("activity model", activity_model);
   if (pitzer_database.size() > 0)
     out_list.set<std::string>("Pitzer database file", pitzer_database);
-  out_list.set<int>("maximum Newton iterations", max_itrs);
-  out_list.set<double>("tolerance", tol);
-  out_list.set<bool>("log formulation", log_form);
-  out_list.set<std::string>("convergence criterion", conv_criterion);
+  out_list.set<int>("maximum Newton iterations", max_itrs)
+    .set<double>("tolerance", tol)
+    .set<bool>("log formulation", log_form)
+    .set<std::string>("convergence criterion", conv_criterion)
+    .set<std::string>("primary variable password", "state");
 
   // timestep controller
   if (dt_method == "simple") {

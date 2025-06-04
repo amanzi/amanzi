@@ -366,7 +366,7 @@ Beaker::ReactionStep(BeakerState* state, const BeakerParameters& parameters, dou
 
   if (num_iterations >= max_iterations_) {
     std::ostringstream oss;
-    oss << "\nWarning: The maximum number of Netwon iterations reached in Beaker.\n"
+    oss << "\nWarning: The maximum number of Newton iterations reached in Beaker.\n"
         << "\n   max relative change = " << max_rel_change
         << "\n   max relative index = " << max_rel_index << "\n   tolerance = " << tolerance_
         << "\n   max iterations = " << max_iterations_ << std::endl;
