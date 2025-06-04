@@ -88,6 +88,7 @@ runTest(int order, const std::string& linsolver)
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   TransportImplicit_PK TPK(pk_tree, plist, S, soln);
 
+  TPK.parseParameterList();
   TPK.Setup();
   S->Setup();
   S->InitializeFields();

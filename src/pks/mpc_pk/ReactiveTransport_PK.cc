@@ -26,10 +26,17 @@ ReactiveTransport_PK::ReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
                                            const Teuchos::RCP<TreeVector>& soln)
   : Amanzi::PK_MPCAdditive<PK>(pk_tree, global_list, S, soln)
 {
-  transport_pk_ = Teuchos::rcp_dynamic_cast<Transport::Transport_PK>(sub_pks_[1]);
-  AMANZI_ASSERT(transport_pk_ != Teuchos::null);
+  int i0(-1);
+  for (int i = 0; i < 2; ++i) {
+    transport_pk_ = Teuchos::rcp_dynamic_cast<Transport::Transport_PK>(sub_pks_[i]);
+    if (transport_pk_ != Teuchos::null) {
+      i0 = i;
+      break;
+    }
+  }
+  AMANZI_ASSERT(i0 >= 0);
 
-  chemistry_pk_ = Teuchos::rcp_dynamic_cast<AmanziChemistry::Chemistry_PK>(sub_pks_[0]);
+  chemistry_pk_ = Teuchos::rcp_dynamic_cast<AmanziChemistry::Chemistry_PK>(sub_pks_[1 - i0]);
   AMANZI_ASSERT(chemistry_pk_ != Teuchos::null);
 
   // communicate chemistry engine to transport.
@@ -91,11 +98,13 @@ ReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 };
 
 
+// -----------------------------------------------------------------------------
+// Only one needs to commit due to the shared primary unknown
+// -----------------------------------------------------------------------------
 void
 ReactiveTransport_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
   chemistry_pk_->CommitStep(t_old, t_new, tag);
 }
-
 
 } // namespace Amanzi

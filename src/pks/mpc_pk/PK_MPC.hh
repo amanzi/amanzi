@@ -139,7 +139,7 @@ PK_MPC<PK_Base>::PK_MPC(Teuchos::ParameterList& pk_tree,
   my_solution_ = Teuchos::rcp(new TreeVector());
   sub_pks_.clear();
   for (int i = 0; i < pk_name.size(); i++) {
-    // Collect arguments to the constructor
+    // create vector of primary unknowns
     Teuchos::RCP<TreeVector> pk_soln = Teuchos::rcp(new TreeVector());
     solution_->PushBack(pk_soln);
     my_solution_->PushBack(pk_soln);
@@ -148,6 +148,16 @@ PK_MPC<PK_Base>::PK_MPC(Teuchos::ParameterList& pk_tree,
     Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(pk_name[i], pk_tree, global_list, S, pk_soln);
     Teuchos::RCP<PK_Base> pk = Teuchos::rcp_dynamic_cast<PK_Base>(pk_notype);
     sub_pks_.push_back(pk);
+  }
+
+  // share names with siblings 
+  for (int n = 0; n < pk_name.size(); ++n) {
+    for (int i = 0; i < pk_name.size(); ++i) {
+      if (i != n) {
+        Teuchos::RCP<PK> pk = Teuchos::rcp_dynamic_cast<PK>(sub_pks_[i]);
+        plist->sublist(pk_name[n]).set<Teuchos::RCP<PK>>("sibling " + std::to_string(i), pk);
+      }
+    }
   }
 }
 

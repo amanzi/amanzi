@@ -360,7 +360,6 @@ Amanzi_PK::Initialize()
   // miscaleneous controls
   initial_conditions_time_ = plist_->get<double>("initial conditions time", S_->get_time());
 
-
   auto tcc = S_->GetPtrW<CV_t>(tcc_key_, tcc_tag_next_, passwd_)->ViewComponent("cell", true);
 
   XMLParameters();
@@ -832,6 +831,9 @@ Amanzi_PK::CopyBeakerStructuresToCellState(int c)
 }
 
 
+/* ******************************************************************
+* Perform chemistry in a single cell.
+******************************************************************* */
 int
 Amanzi_PK::advanceSingleCell_(int cell, double dt)
 {

@@ -106,6 +106,8 @@ runTest(int order, const std::string& linsolver)
     plist->sublist("cycle driver").sublist("pk_tree").sublist("transport");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   TransportImplicit_PK TPK(pk_tree, plist, S, soln);
+
+  TPK.parseParameterList();
   TPK.Setup();
   S->Setup();
   S->InitializeFields();
