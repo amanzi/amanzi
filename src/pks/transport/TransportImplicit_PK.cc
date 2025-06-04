@@ -68,26 +68,6 @@ TransportImplicit_PK::TransportImplicit_PK(Teuchos::ParameterList& pk_tree,
 
 
 /* ******************************************************************
-* Simple constructor for unit tests.
-****************************************************************** */
-TransportImplicit_PK::TransportImplicit_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                                           Teuchos::RCP<State> S,
-                                           const std::string& pk_list_name,
-                                           std::vector<std::string>& component_names)
-  : Transport_PK(glist, S, pk_list_name, component_names)
-{
-  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  tp_list_ = Teuchos::sublist(pk_list, pk_list_name, true);
-
-  // We also need miscaleneous sublists
-  preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
-  linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
-  if (tp_list_->isSublist("time integrator"))
-    ti_list_ = Teuchos::sublist(tp_list_, "time integrator", true);
-}
-
-
-/* ******************************************************************
 * Initialization
 ****************************************************************** */
 void

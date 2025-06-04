@@ -89,21 +89,28 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
   linear_solver_list_ = Teuchos::sublist(glist, "solvers");
   nonlinear_solver_list_ = Teuchos::sublist(glist, "nonlinear solvers");
 
+  // other variables and io
+  dt_prev_ = 1e+91;
+
+  Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist, "units");
+  units_.Init(*units_list);
+
+  vo_ = Teuchos::null;
+}
+
+
+/* ******************************************************************
+* Parser
+******************************************************************* */
+void
+Transport_PK::Transport_PK::parseParameterList()
+{
   subcycling_ = tp_list_->get<bool>("transport subcycling", true);
 
   // domain and primary evaluators
   domain_ = tp_list_->template get<std::string>("domain name", "domain");
   tcc_key_ = Keys::getKey(domain_, "total_component_concentration");
   AddDefaultPrimaryEvaluator(S_, tcc_key_);
-
-  // other variables
-  dt_prev_ = 1e+91;
-
-  // initialize io
-  Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist, "units");
-  units_.Init(*units_list);
-
-  vo_ = Teuchos::null;
 }
 
 
@@ -185,6 +192,17 @@ Transport_PK::Setup()
   // cross-coupling of PKs
   auto physical_models = Teuchos::sublist(tp_list_, "physical models and assumptions");
   assumptions_.Init(*physical_models, *mesh_);
+
+  if (chem_pk_ == Teuchos::null) {
+    for (int i = 0; i < 2; ++i) {
+      std::string sibling = "sibling " + std::to_string(i);
+      if (tp_list_->isParameter(sibling)) {
+        auto tmp = tp_list_->get<Teuchos::RCP<Amanzi::PK>>(sibling, Teuchos::null);
+        chem_pk_ = Teuchos::rcp_dynamic_cast<AmanziChemistry::Chemistry_PK>(tmp);
+        break;
+      }
+    }
+  }
 
   // generate keys here to be available for setup of the base class
   permeability_key_ = Keys::getKey(domain_, "permeability");
