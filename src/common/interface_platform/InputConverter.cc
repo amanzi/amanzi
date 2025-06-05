@@ -248,7 +248,7 @@ void
 InputConverter::ParseGeochemistry_()
 {
   bool flag;
-  DOMNode* node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
+  auto node = GetPKChemistryPointer_(flag);
   if (!flag) return;
 
   std::string engine = GetAttributeValueS_(node, "engine");
@@ -1381,9 +1381,8 @@ InputConverter::CreateINFile_(std::string& filename, int rank)
 
   // database filename and controls
   bool flag;
-  node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
-  element = static_cast<DOMElement*>(node);
-  std::string datfilename = GetAttributeValueS_(element, "database", TYPE_NONE, true, "");
+  node = GetPKChemistryPointer_(flag);
+  std::string datfilename = GetAttributeValueS_(node, "database", TYPE_NONE, true, "");
 
   struct stat buffer;
   int status = stat(datfilename.c_str(), &buffer);
@@ -1965,6 +1964,30 @@ InputConverter::CreateINFile_(std::string& filename, int rank)
   }
 
   return infilename;
+}
+
+
+/* ******************************************************************
+* Helper utility for two stuctures of process_kernel lists
+****************************************************************** */
+DOMNode*
+InputConverter::GetPKChemistryPointer_(bool& flag)
+{
+  MemoryManager mm;
+  DOMNode* node = NULL;
+  DOMNodeList* children;
+
+  node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
+  if (!flag) {
+    node = GetUniqueElementByTagsString_("process_kernels", flag);
+    children = static_cast<DOMElement*>(node)->getElementsByTagName(mm.transcode("pk"));
+    for (int i = 0; i < children->getLength(); ++i) {
+      node = GetUniqueElementByTagsString_(children->item(i), "chemistry", flag);
+      if (flag) break;
+    }
+  }
+
+  return node;
 }
 
 

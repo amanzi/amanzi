@@ -170,6 +170,13 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
   }
 
   // remaining BDF1 parameters
+  std::string prefix("numerical_controls, unstructured_controls, unstr_transient_controls, ");
+  node = GetUniqueElementByTagsString_(prefix + "extrapolation_damping_factor", flag);
+  if (flag) {
+    double factor = GetTextContentD_(node, "", false, 1.0);
+    bdf1.set<double>("extrapolation damping factor", factor);
+  }
+
   bdf1.set<int>("max preconditioner lag iterations", TI_MAX_PC_LAG);
   bdf1.set<bool>("extrapolate initial guess", true);
   bdf1.set<double>("restart tolerance relaxation factor", TI_TOL_RELAX_FACTOR);

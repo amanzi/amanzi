@@ -43,6 +43,7 @@ struct BDF1_State {
   bool extrapolate_guess; // extrapolate forward in time or use previous
                           // step as initial guess for nonlinear solver
   int extrapolation_order;
+  double extrapolation_damping;
 
   // Solution history
   Teuchos::RCP<SolutionHistory<Vector, VectorSpace>> uhist;
@@ -100,6 +101,7 @@ BDF1_State<Vector, VectorSpace>::BDF1_State(const std::string& name,
 
   // forward time extrapolation (fix me lipnikov@lanl.gov)
   extrapolate_guess = plist.get<bool>("extrapolate initial guess", true);
+  extrapolation_damping = plist.get<double>("extrapolation damping factor", 1.0);
   extrapolation_order = plist.get<int>("nonlinear iteration initial guess extrapolation order", 1);
   if (extrapolation_order == 0) extrapolate_guess = false;
 

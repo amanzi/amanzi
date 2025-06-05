@@ -442,8 +442,8 @@
     <ParameterList name="time periods">
       <ParameterList name="TP 0">
         <ParameterList name="PK tree">
-          <ParameterList name="steady:coupled flow">
-            <Parameter name="PK type" type="string" value="darcy matrix fracture"/>
+          <ParameterList name="steady:flow matrix fracture">
+            <Parameter name="PK type" type="string" value="flow matrix fracture"/>
             <ParameterList name="steady:flow matrix">
               <Parameter name="PK type" type="string" value="darcy"/>
             </ParameterList>
@@ -460,18 +460,18 @@
       </ParameterList>
       <ParameterList name="TP 1">
         <ParameterList name="PK tree">
-          <ParameterList name="transient:coupled reactive transport">
-            <Parameter name="PK type" type="string" value="reactive transport matrix fracture"/>
-            <ParameterList name="transient:coupled chemistry">
+          <ParameterList name="transient:mpc">
+            <Parameter name="PK type" type="string" value="chemistry and transport matrix fracture"/>
+            <ParameterList name="transient:chemistry matrix fracture">
               <Parameter name="PK type" type="string" value="chemistry matrix fracture"/>
               <ParameterList name="transient:chemistry matrix">
-                <Parameter name="PK type" type="string" value="chemistry amanzi"/>
+                <Parameter name="PK type" type="string" value="amanzi"/>
               </ParameterList>
               <ParameterList name="transient:chemistry fracture">
-                <Parameter name="PK type" type="string" value="chemistry amanzi"/>
+                <Parameter name="PK type" type="string" value="amanzi"/>
               </ParameterList>
             </ParameterList>
-            <ParameterList name="transient:coupled transport">
+            <ParameterList name="transient:transport matrix fracture">
               <Parameter name="PK type" type="string" value="transport matrix fracture"/>
               <ParameterList name="transient:transport matrix">
                 <Parameter name="PK type" type="string" value="transport"/>
@@ -482,15 +482,14 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="start period time" type="double" value="0.0"/>
-        <Parameter name="end period time" type="double" value="1.0e+9"/>
+        <Parameter name="start period time" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="end period time" type="double" value="1.00000000000000000e+09"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial timestep" type="double" value="1.0e+4"/>
-        <Parameter name="maximum timestep" type="double" value="1.0e+7"/>
+        <Parameter name="initial timestep" type="double" value="1.00000000000000000e+04"/>
+        <Parameter name="maximum timestep" type="double" value="1.00000000000000000e+07"/>
       </ParameterList>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{Tritium}"/>
-    <Parameter name="number of liquid components" type="int" value="1"/>
     <Parameter name="component molar masses" type="Array(double)" value="{1.0}"/>
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{}"/>
@@ -503,10 +502,11 @@
   </ParameterList>
   <ParameterList name="PKs">
 
-    <ParameterList name="steady:coupled flow">
+    <ParameterList name="steady:flow matrix fracture">
       <Parameter name="PKs order" type="Array(string)" value="{steady:flow matrix, steady:flow fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
-      <Parameter name="PK type" type="string" value="darcy matrix fracture"/>
+      <Parameter name="PK type" type="string" value="flow matrix fracture"/>
+      <Parameter name="MPC type" type="bool" value="true"/>
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
@@ -553,15 +553,17 @@
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
-
     </ParameterList>
 
     <ParameterList name="steady:flow matrix">
       <Parameter name="domain name" type="string" value="domain"/>
+      <ParameterList name="physical models and assumptions">
+        <Parameter name="use overburden stress" type="bool" value="false"/>
+      </ParameterList>
+
       <ParameterList name="absolute permeability">
         <Parameter name="coordinate system" type="string" value="cartesian"/>
       </ParameterList>
-
       <ParameterList name="clipping parameters">
         <Parameter name="maximum correction change" type="double" value="-1.0"/>
       </ParameterList>
@@ -637,7 +639,6 @@
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
-
     </ParameterList>
 
     <ParameterList name="steady:flow fracture">
@@ -657,6 +658,7 @@
       <ParameterList name="physical models and assumptions">
         <Parameter name="flow and transport in fractures" type="bool" value="true"/>
         <Parameter name="external aperture" type="bool" value="false"/>
+        <Parameter name="use overburden stress" type="bool" value="false"/>
       </ParameterList>
 
       <ParameterList name="absolute permeability">
@@ -709,22 +711,64 @@
 
     </ParameterList>
 
-    <ParameterList name="transient:coupled reactive transport">
-      <Parameter name="PKs order" type="Array(string)" value="{transient:coupled chemistry, transient:coupled transport}"/>
-      <Parameter name="master PK index" type="int" value="1"/>
-      <Parameter name="PK type" type="string" value="reactive transport matrix fracture"/>
-
+    <ParameterList name="transient:mpc">
+      <Parameter name="PKs order" type="Array(string)" value="{transient:chemistry matrix fracture, transient:transport matrix fracture}"/>
+      <Parameter name="master PK index" type="int" value="0"/>
+      <Parameter name="PK type" type="string" value="chemistry and transport matrix fracture"/>
+      <Parameter name="MPC type" type="bool" value="true"/>
+      <Parameter name="domain name" type="string" value="domain"/>
+      <ParameterList name="time integrator">
+        <Parameter name="error control options" type="Array(string)" value="{residual}"/>
+        <Parameter name="linear solver" type="string" value="AztecOO"/>
+        <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+        <Parameter name="time integration method" type="string" value="BDF1"/>
+        <ParameterList name="BDF1">
+          <Parameter name="timestep controller type" type="string" value="standard"/>
+          <ParameterList name="timestep controller standard parameters">
+            <Parameter name="max iterations" type="int" value="15"/>
+            <Parameter name="min iterations" type="int" value="10"/>
+            <Parameter name="timestep increase factor" type="double" value="1.00000000000000000e+00"/>
+            <Parameter name="timestep reduction factor" type="double" value="8.00000000000000044e-01"/>
+            <Parameter name="max timestep" type="double" value="4.32340000000000000e+17"/>
+            <Parameter name="min timestep" type="double" value="9.99999999999999955e-07"/>
+          </ParameterList>
+          <Parameter name="solver type" type="string" value="nka"/>
+          <ParameterList name="nka parameters">
+            <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
+            <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+            <Parameter name="diverged l2 tolerance" type="double" value="1.00000000000000000e+10"/>
+            <Parameter name="max du growth factor" type="double" value="1.00000000000000000e+03"/>
+            <Parameter name="max divergent iterations" type="int" value="3"/>
+            <Parameter name="max nka vectors" type="int" value="10"/>
+            <Parameter name="limit iterations" type="int" value="20"/>
+            <Parameter name="modify correction" type="bool" value="false"/>
+          </ParameterList>
+          <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
+          <Parameter name="extrapolate initial guess" type="bool" value="true"/>
+          <Parameter name="restart tolerance relaxation factor" type="double" value="1.00000000000000000e+00"/>
+          <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.00000000000000000e+00"/>
+          <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
+          <ParameterList name="verbose object">
+            <Parameter name="verbosity level" type="string" value="high"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
+      </ParameterList>
     </ParameterList>
 
-    <ParameterList name="transient:coupled chemistry">
+    <ParameterList name="transient:chemistry matrix fracture">
       <Parameter name="PKs order" type="Array(string)" value="{transient:chemistry matrix, transient:chemistry fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
       <Parameter name="PK type" type="string" value="chemistry matrix fracture"/>
-
+      <Parameter name="MPC type" type="bool" value="true"/>
     </ParameterList>
 
     <ParameterList name="transient:chemistry matrix">
       <Parameter name="domain name" type="string" value="domain"/>
+      <Parameter name="primary variable password" type="string" value="state"/>
+
       <Parameter name="chemistry model" type="string" value="Amanzi"/>
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="maximum Newton iterations" type="int" value="100"/>
@@ -747,11 +791,12 @@
           <Parameter name="timestep [s]" type="double" value="1.0e+10"/>
         </ParameterList>
       </ParameterList>
-
     </ParameterList>
 
     <ParameterList name="transient:chemistry fracture">
       <Parameter name="domain name" type="string" value="fracture"/>
+      <Parameter name="primary variable password" type="string" value="state"/>
+
       <Parameter name="chemistry model" type="string" value="Amanzi"/>
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="maximum Newton iterations" type="int" value="100"/>
@@ -777,13 +822,13 @@
 
     </ParameterList>
 
-    <ParameterList name="transient:coupled transport">
+    <ParameterList name="transient:transport matrix fracture">
       <Parameter name="PKs order" type="Array(string)" value="{transient:transport matrix, transient:transport fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
       <Parameter name="solver" type="string" value="Dispersion Solver"/>
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="PK type" type="string" value="transport matrix fracture"/>
-
+      <Parameter name="MPC type" type="bool" value="true"/>
     </ParameterList>
 
     <ParameterList name="transient:transport matrix">

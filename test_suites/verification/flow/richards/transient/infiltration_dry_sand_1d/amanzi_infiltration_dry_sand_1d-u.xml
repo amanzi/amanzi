@@ -16,9 +16,9 @@
         </macros>
     </definitions>
     <process_kernels>
+      <pk mode="transient">
         <flow model="richards" state="on"/>
-        <transport state="off"/>
-        <chemistry engine="none" state="off"/>
+      </pk>
     </process_kernels>
     <phases>
         <liquid_phase name="water">

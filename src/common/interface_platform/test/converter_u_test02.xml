@@ -39,6 +39,7 @@
     <pk mode="transient">
       <flow model="richards" state="on" />
       <energy model="two-phase energy" state="on" />
+      <strongly_coupled name="mpc">flow,energy</strongly_coupled>
     </pk>
   </process_kernels>
 

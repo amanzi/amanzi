@@ -302,9 +302,9 @@
       <ParameterList name="TP 1">
         <ParameterList name="PK tree">
           <ParameterList name="flow and reactive transport">
-            <Parameter name="PK type" type="string" value="flow reactive transport"/>
+            <Parameter name="PK type" type="string" value="flow and chemistry and transport"/>
             <ParameterList name="reactive transport">
-              <Parameter name="PK type" type="string" value="reactive transport"/>
+              <Parameter name="PK type" type="string" value="chemistry and transport"/>
               <ParameterList name="transport">
                 <Parameter name="PK type" type="string" value="transport"/>
               </ParameterList>

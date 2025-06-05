@@ -57,7 +57,6 @@ class ApertureModelEvaluator
   Teuchos::RCP<ApertureModelPartition> apm_;
   Key pressure_key_;
 
-  bool use_stress_ = false;
   std::vector<double> pov_; // overburden pressure
 
  private:
