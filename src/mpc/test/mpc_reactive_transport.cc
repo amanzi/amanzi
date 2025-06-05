@@ -103,7 +103,7 @@ TEST(MPC_DRIVER_REACTIVE_TRANSPORT_NATIVE)
   RunTestReactiveTransport("test/mpc_reactive_transport.xml", 6);
 }
 
-#ifdef ALQUIMIA_ENABLED
+#ifdef ENABLE_ALQUIMIA
 TEST(MPC_DRIVER_REACTIVE_TRANSPORT_ALQUIMIA)
 {
   RunTestReactiveTransport("test/mpc_alquimia_transport.xml", 12);
