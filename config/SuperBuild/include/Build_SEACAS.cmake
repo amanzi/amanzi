@@ -135,9 +135,10 @@ ExternalProject_Add(${SEACAS_BUILD_TARGET}
                     TMP_DIR   ${SEACAS_tmp_dir}                     # Temporary files directory
                     STAMP_DIR ${SEACAS_stamp_dir}                   # Timestamp and log directory
                     # -- Download and URL definitions
-                    DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}                # Download directory
-                    URL          ${SEACAS_URL}                      # URL may be a web site OR a local file
-                    URL_MD5      ${SEACAS_MD5_SUM}                  # md5sum of the archive file
+                    DOWNLOAD_DIR  ${TPL_DOWNLOAD_DIR}               # Download directory
+                    URL           ${SEACAS_URL}                     # URL may be a web site OR a local file
+                    URL_MD5       ${SEACAS_MD5_SUM}                 # md5sum of the archive file
+                    DOWNLOAD_NAME ${SEACAS_SAVEAS_FILE}   # file name to store (if not end of URL)
                     # -- Patch
                     PATCH_COMMAND ${SEACAS_PATCH_COMMAND}
                     # -- Configure

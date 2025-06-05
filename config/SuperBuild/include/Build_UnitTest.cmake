@@ -68,6 +68,12 @@ set(Unittest_CMAKE_ARGS
    ${Unittest_CMAKE_TPL_ARGS}
    ${Unittest_CMAKE_EXTRA_ARGS})
 
+# --- Override minimum version
+# --- Cache Args may need the type to be float? 
+if(CMAKE_MAJOR_VERSION VERSION_EQUAL "4")
+  list(APPEND Unittest_CMAKE_ARGS "-DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.5")
+endif()
+ 
 ExternalProject_add(${UnitTest_BUILD_TARGET}
                     DEPENDS   ${UnitTest_PACKAGE_DEPENDS}          # Package dependency target
                     TMP_DIR   ${UnitTest_tmp_dir}                  # Temporary files directory
