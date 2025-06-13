@@ -26,11 +26,16 @@ configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/superlu-patch-step.cmake.in
 set(SuperLU_PATCH_COMMAND ${CMAKE_COMMAND} -P ${SuperLU_cmake_patch})
 
 # --- Define the arguments passed to CMake.
-set(SuperLU_CMAKE_ARGS 
+set(SuperLU_CMAKE_ARGS
       "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}"
       "-DCMAKE_INSTALL_LIBDIR:FILEPATH=${TPL_INSTALL_PREFIX}/lib"
       "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
       "-Denable_internal_blaslib:BOOL=FALSE")
+
+# --- Override minimum version
+if(CMAKE_MAJOR_VERSION VERSION_EQUAL "4")
+  list(APPEND SuperLU_CMAKE_ARGS "-DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.5")
+endif()
 
 string(REPLACE ";" "\\\;" superlu_module_opt "${CMAKE_MODULE_PATH}")
 
