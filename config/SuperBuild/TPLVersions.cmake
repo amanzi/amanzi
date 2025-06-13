@@ -192,6 +192,9 @@
 #   0.98.10      - patch ascem/io to improve error handling
 #   0.98.11      - update zlib to 1.3.1 (compatible with MacOSX Apple Clang 17)
 #                - patch Kokkos solvers in Trilinos for Apple Clang 17.
+#                - update HDF5 to 1.14.6
+#                - update netcdf-c to 4.9.2
+#                - update netcdf-fortran to 4.6.2
 
 
 include(CMakeParseArguments)
@@ -361,39 +364,38 @@ set(Boost_MD5_SUM        db0112a3a37a3742326471d20f1a186a)
 # TPL: HDF5
 #
 set(HDF5_VERSION_MAJOR 1)
-set(HDF5_VERSION_MINOR 12)
-set(HDF5_VERSION_PATCH 1)
+set(HDF5_VERSION_MINOR 14)
+set(HDF5_VERSION_PATCH 6)
 set(HDF5_VERSION ${HDF5_VERSION_MAJOR}.${HDF5_VERSION_MINOR}.${HDF5_VERSION_PATCH})
-set(HDF5_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
-set(HDF5_ARCHIVE_FILE   hdf5-${HDF5_VERSION}.tar.bz2)
+set(HDF5_VERSION_UNDERSCORE ${HDF5_VERSION_MAJOR}_${HDF5_VERSION_MINOR}_${HDF5_VERSION_PATCH})
+set(HDF5_URL_STRING     "https://support.hdfgroup.org/releases/hdf5/v${HDF5_VERSION_MAJOR}_${HDF5_VERSION_MINOR}/v${HDF5_VERSION_UNDERSCORE}/downloads")
+set(HDF5_ARCHIVE_FILE   hdf5-${HDF5_VERSION}.tar.gz)
 set(HDF5_SAVEAS_FILE    ${HDF5_ARCHIVE_FILE})
-set(HDF5_MD5_SUM        442469fbf43626006346e679c22cf10a)
-
+set(HDF5_MD5_SUM        63426c8e24086634eaf9179a8c5fe9e5)
 
 #
 # TPL: NetCDF
 #
 set(NetCDF_VERSION_MAJOR 4)
-set(NetCDF_VERSION_MINOR 8)
-set(NetCDF_VERSION_PATCH 1)
+set(NetCDF_VERSION_MINOR 9)
+set(NetCDF_VERSION_PATCH 2)
 set(NetCDF_VERSION ${NetCDF_VERSION_MAJOR}.${NetCDF_VERSION_MINOR}.${NetCDF_VERSION_PATCH})
 set(NetCDF_URL_STRING     "https://github.com/Unidata/netcdf-c/archive/")
 set(NetCDF_ARCHIVE_FILE   v${NetCDF_VERSION}.tar.gz)
 set(NetCDF_SAVEAS_FILE    netcdf-${NetCDF_VERSION}.tar.gz)
-set(NetCDF_MD5_SUM        b069f4eb1718798c2907c38189615f95)
-
+set(NetCDF_MD5_SUM        84acd096ab4f3300c20db862eecdf7c7)
 
 #
 # TPL: NetCDF Fortran
 #
 set(NetCDF_Fortran_VERSION_MAJOR 4)
-set(NetCDF_Fortran_VERSION_MINOR 5)
-set(NetCDF_Fortran_VERSION_PATCH 4)
+set(NetCDF_Fortran_VERSION_MINOR 6)
+set(NetCDF_Fortran_VERSION_PATCH 2)
 set(NetCDF_Fortran_VERSION ${NetCDF_Fortran_VERSION_MAJOR}.${NetCDF_Fortran_VERSION_MINOR}.${NetCDF_Fortran_VERSION_PATCH})
 set(NetCDF_Fortran_URL_STRING     "https://github.com/Unidata/netcdf-fortran/archive/")
 set(NetCDF_Fortran_ARCHIVE_FILE   v${NetCDF_Fortran_VERSION}.tar.gz)
 set(NetCDF_Fortran_SAVEAS_FILE    netcdf-fortran-${NetCDF_Fortran_VERSION}.tar.gz)
-set(NetCDF_Fortran_MD5_SUM        77e1be413ab343f42a4a6e8b338b45d5)
+set(NetCDF_Fortran_MD5_SUM        0311a8ee74c4fdd509600d8be292199d)
 
 #
 # ASCEM-IO
