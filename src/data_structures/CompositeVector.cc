@@ -109,53 +109,19 @@ DOCUMENT VANDELAY HERE! FIX ME --etc
 
 namespace Amanzi {
 
-// Constructor
-CompositeVector::CompositeVector(const CompositeVectorSpace& space)
+// Private constructor
+CompositeVector::CompositeVector(const CompositeVectorSpace& space,
+        bool ghosted,
+        InitMode mode)
   : map_(Teuchos::rcp(new CompositeVectorSpace(space))),
-    ghosted_(space.ghosted_),
-    indexmap_(space.indexmap_),
-    names_(space.names_),
-    ghost_are_current_(space.NumComponents(), false)
-{
-  InitMap_(*map_);
-  CreateData_();
-}
-
-
-CompositeVector::CompositeVector(const CompositeVectorSpace& space, bool ghosted)
-  : map_(Teuchos::rcp(new CompositeVectorSpace(space, ghosted))),
     ghosted_(ghosted),
     indexmap_(space.indexmap_),
     names_(space.names_),
     ghost_are_current_(space.NumComponents(), false)
 {
   InitMap_(*map_);
-  CreateData_();
-}
-
-
-CompositeVector::CompositeVector(const CompositeVector& other, InitMode mode)
-  : map_(Teuchos::rcp(new CompositeVectorSpace(*other.map_))),
-    ghosted_(other.ghosted_),
-    indexmap_(other.indexmap_),
-    names_(other.names_),
-    ghost_are_current_(other.map_->NumComponents(), false)
-{
-  InitMap_(*map_);
-  CreateData_();
-  InitData_(other, mode);
-}
-
-CompositeVector::CompositeVector(const CompositeVector& other, bool ghosted, InitMode mode)
-  : map_(Teuchos::rcp(new CompositeVectorSpace(*other.map_, ghosted))),
-    ghosted_(ghosted),
-    indexmap_(other.indexmap_),
-    names_(other.names_),
-    ghost_are_current_(other.map_->NumComponents(), false)
-{
-  InitMap_(*map_);
-  CreateData_();
-  InitData_(other, mode);
+  if (mode > InitMode::NOALLOC) CreateData_();
+  if (mode == InitMode::ZERO) PutScalarMasterAndGhosted(0.);
 }
 
 
@@ -185,16 +151,6 @@ CompositeVector::InitMap_(const CompositeVectorSpace& space)
   }
 };
 
-
-// Initialize data
-void
-CompositeVector::InitData_(const CompositeVector& other, InitMode mode)
-{
-  // Trilinos inits to 0
-  //  if (mode == INIT_MODE_ZERO) {
-  //    PutScalar(0.);
-  if (mode == INIT_MODE_COPY) { *this = other; }
-}
 
 // Sets sizes of vectors, instantiates Epetra_Vectors, and preps for lazy
 // creation of everything else.
@@ -300,6 +256,86 @@ CompositeVector::ViewComponent(const std::string& name, bool ghosted)
     return mastervec_->ViewComponent(name);
   }
 };
+
+
+
+// View a vector slice of a single DoF
+Teuchos::RCP<const CompositeVector>
+CompositeVector::GetVector(size_t i) const
+{
+  std::vector<int> num_dofs_i(NumComponents(), 1);
+
+  std::vector<AmanziMesh::Entity_kind> locations;
+  int check_same_ndofs = -1;
+  for (const auto& name : names_) {
+    if (check_same_ndofs < 0) check_same_ndofs = NumVectors(name);
+
+    if (check_same_ndofs != NumVectors(name)) {
+      Errors::Message msg("Cannot slice a vector with differing numbers of DoFs across components.");
+      Exceptions::amanzi_throw(msg);
+    }
+    locations.emplace_back(Location(name));
+  }
+
+  // create the space
+  CompositeVectorSpace cvs;
+  cvs.SetMesh(map_->Mesh())
+    ->SetGhosted(ghosted_)
+    ->SetComponents(names_, locations, num_dofs_i);
+
+  // create the vector
+  auto cv = Teuchos::rcp(new CompositeVector(cvs, ghosted_, InitMode::NOALLOC));
+
+  // for each component, set the vector as the MultiVector's dof vector,
+  // through a NON-OWNING (these are owned by this's MultiVector) RCP to the
+  // Epetra_Vector.
+  for (const auto& name : names_) {
+    // Have to const-cast to construct the new vector, but will return the new
+    // vector as const.  This is safe, despite appearances.
+    Epetra_MultiVector const * comp_vec = (*ViewComponent(name, true))(i);
+    Teuchos::RCP<Epetra_MultiVector> comp_vec_ptr = Teuchos::rcpFromRef<Epetra_MultiVector>(*const_cast<Epetra_MultiVector*>(comp_vec));
+    cv->SetComponent(name, comp_vec_ptr);
+  }
+  return cv;
+}
+
+
+// View a vector slice of a single DoF
+Teuchos::RCP<CompositeVector>
+CompositeVector::GetVector(size_t i)
+{
+  std::vector<int> num_dofs_i(NumComponents(), 1);
+
+  std::vector<AmanziMesh::Entity_kind> locations;
+  int check_same_ndofs = -1;
+  for (const auto& name : names_) {
+    if (check_same_ndofs < 0) check_same_ndofs = NumVectors(name);
+
+    if (check_same_ndofs != NumVectors(name)) {
+      Errors::Message msg("Cannot slice a vector with differing numbers of DoFs across components.");
+      Exceptions::amanzi_throw(msg);
+    }
+    locations.emplace_back(Location(name));
+  }
+
+  // create the space
+  CompositeVectorSpace cvs;
+  cvs.SetMesh(map_->Mesh())
+    ->SetGhosted(ghosted_)
+    ->SetComponents(names_, locations, num_dofs_i);
+
+  // create the vector
+  auto cv = Teuchos::rcp(new CompositeVector(cvs, ghosted_, InitMode::NOALLOC));
+
+  // for each component, set the vector as the MultiVector's dof vector,
+  // through a NON-OWNING (these are owned by this's MultiVector) RCP to the
+  // Epetra_Vector.
+  for (const auto& name : names_) {
+    cv->SetComponent(name, Teuchos::rcpFromRef(*(*ViewComponent(name, true))(i)));
+  }
+  return cv;
+}
+
 
 
 // Set data by pointer if possible, otherwise by copy.

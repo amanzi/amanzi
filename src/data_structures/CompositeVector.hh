@@ -126,8 +126,6 @@ DOCUMENT VANDELAY HERE! FIX ME --etc
 #ifndef AMANZI_COMPOSITEVECTOR_HH_
 #define AMANZI_COMPOSITEVECTOR_HH_
 
-#define CV_ENABLE_SET_FROM_OPERATOR 0
-
 #include <vector>
 #include "Teuchos_RCP.hpp"
 #include "Epetra_MultiVector.h"
@@ -143,17 +141,35 @@ DOCUMENT VANDELAY HERE! FIX ME --etc
 namespace Amanzi {
 
 class CompositeVector {
+
+
  public:
   using VectorSpace_t = CompositeVectorSpace;
   // -- Constructors --
+  CompositeVector(const CompositeVectorSpace&, bool, InitMode);
 
   // Constructor from a CompositeVectorSpace (which is like a VectorSpace).
-  CompositeVector(const CompositeVectorSpace& space);
-  CompositeVector(const CompositeVectorSpace& space, bool ghosted);
+  CompositeVector(const CompositeVectorSpace& space)
+    : CompositeVector(space, space.Ghosted(), init_mode_default) {}
+
+  CompositeVector(const CompositeVectorSpace& space, bool ghosted)
+    : CompositeVector(space, ghosted, init_mode_default) {}
+
+  CompositeVector(const CompositeVectorSpace& space, InitMode mode)
+    : CompositeVector(space, space.Ghosted(), mode) {}
 
   // Copy constructor.
-  CompositeVector(const CompositeVector& other, InitMode mode = INIT_MODE_COPY);
-  CompositeVector(const CompositeVector& other, bool ghosted, InitMode mode = INIT_MODE_COPY);
+  CompositeVector(const CompositeVector& other)
+    : CompositeVector(other.Map(), other.Ghosted(), InitMode::NONE)
+  {
+    *this = other;
+  }
+
+  CompositeVector(const CompositeVector& other, bool ghosted)
+    : CompositeVector(other.Map(), ghosted, InitMode::NONE)
+  {
+    *this = other;
+  }
 
   // Assignment operator.
   CompositeVector& operator=(const CompositeVector& other);
@@ -220,37 +236,18 @@ class CompositeVector {
   }
   double operator()(const std::string& name, int j) const { return (*ghostvec_)(name, 0, j); }
 
+  // View a vector slice of a single DoF
+  Teuchos::RCP<const CompositeVector> GetVector(size_t i) const;
+
+  // View a vector slice of a single DoF
+  Teuchos::RCP<CompositeVector> GetVector(size_t i);
+
   // -- Set data. --
 
   // Access a view of a single component's data.
   //
   // Non-const access -- tags changed.
   Teuchos::RCP<Epetra_MultiVector> ViewComponent(const std::string& name, bool ghosted = false);
-
-#if CV_ENABLE_SET_FROM_OPERATOR
-  // Set entries in the vectors.
-  //
-  // Using these is VERY STRONGLY DISCOURAGED.  Instead, call ViewComponent()
-  // and set entries in the MultiVector.  THESE ARE VERY VERY SLOW (But they
-  // can be handy in debugging.)  Tags changed.
-  double& operator()(const std::string& name, int i, int j)
-  {
-    ChangedValue(name);
-    return (*ghostvec_)(name, i, j);
-  }
-
-  // Set entries in the 0th vector.
-  //
-  // Using these is VERY STRONGLY DISCOURAGED.  Instead, call ViewComponent()
-  // and set entries in the MultiVector.  THESE ARE VERY VERY SLOW (But they
-  // can be handy in debugging.)  Tags changed.
-  double& operator()(const std::string& name, int j)
-  {
-    ChangedValue(name);
-    return (*ghostvec_)(name, 0, j);
-  }
-#endif
-
 
   // Set block by pointer if possible, copy if not?????? FIX ME --etc
   void SetComponent(const std::string& name, const Teuchos::RCP<Epetra_MultiVector>& data);
@@ -404,7 +401,6 @@ class CompositeVector {
 
  private:
   void InitMap_(const CompositeVectorSpace& space);
-  void InitData_(const CompositeVector& other, InitMode mode);
   void CreateData_();
 
   int Index_(const std::string& name) const { return indexmap_.at(name); }
