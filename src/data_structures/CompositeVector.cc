@@ -119,33 +119,33 @@ CompositeVector::CompositeVector(const CompositeVectorSpace& space,
     names_(space.names_),
     ghost_are_current_(space.NumComponents(), false)
 {
-  InitMap_(*map_);
+  InitMap_();
   if (mode > InitMode::NOALLOC) CreateData_();
   if (mode == InitMode::ZERO) PutScalarMasterAndGhosted(0.);
 }
 
 
 void
-CompositeVector::InitMap_(const CompositeVectorSpace& space)
+CompositeVector::InitMap_()
 {
   // generate the master's maps
   std::vector<Teuchos::RCP<const Epetra_BlockMap>> mastermaps;
-  for (CompositeVectorSpace::name_iterator name = space.begin(); name != space.end(); ++name) {
-    mastermaps.emplace_back(space.Map(*name, false));
+  for (const auto& name : *map_) {
+    mastermaps.emplace_back(map_->Map(name, false));
   }
 
   // create the master BlockVector
-  mastervec_ = Teuchos::rcp(new BlockVector(Comm(), names_, mastermaps, space.num_dofs_));
+  mastervec_ = Teuchos::rcp(new BlockVector(Comm(), names_, mastermaps, map_->num_dofs_));
 
   // do the same for the ghosted Vector, if necessary
-  if (space.Ghosted()) {
+  if (ghosted_) {
     // generate the ghost's maps
     std::vector<Teuchos::RCP<const Epetra_BlockMap>> ghostmaps;
-    for (CompositeVectorSpace::name_iterator name = space.begin(); name != space.end(); ++name) {
-      ghostmaps.emplace_back(space.Map(*name, true));
+    for (const auto& name : *map_) {
+      ghostmaps.emplace_back(map_->Map(name, true));
     }
     // create the ghost BlockVector
-    ghostvec_ = Teuchos::rcp(new BlockVector(Comm(), names_, ghostmaps, space.num_dofs_));
+    ghostvec_ = Teuchos::rcp(new BlockVector(Comm(), names_, ghostmaps, map_->num_dofs_));
   } else {
     ghostvec_ = mastervec_;
   }

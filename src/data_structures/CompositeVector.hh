@@ -400,7 +400,7 @@ class CompositeVector {
   int Random();
 
  private:
-  void InitMap_(const CompositeVectorSpace& space);
+  void InitMap_();
   void CreateData_();
 
   int Index_(const std::string& name) const { return indexmap_.at(name); }
