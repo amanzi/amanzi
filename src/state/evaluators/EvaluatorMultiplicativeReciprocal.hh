@@ -76,10 +76,13 @@ class EvaluatorMultiplicativeReciprocal
 
   virtual void EnsureCompatibility_Units_(State& S) override;
 
+  virtual void EnsureCompatibility_ToDeps_(State& S) override;
+
  private:
   bool enforce_positivity_;
   double coef_;
   Teuchos::Array<std::string> list0_, list1_;
+  int n_dofs_;
 
   static Utils::RegisteredFactory<Evaluator, EvaluatorMultiplicativeReciprocal> fac_;
 };
