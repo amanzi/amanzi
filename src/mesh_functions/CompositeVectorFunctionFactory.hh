@@ -73,7 +73,8 @@ Teuchos::RCP<CompositeVectorFunction>
 CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
         const CompositeVectorSpace& factory,
         std::vector<std::string>& componentname_list,
-        bool dot_with_normal = false);
+        bool dot_with_normal = false,
+        const std::string& spatial_dist_method = "none");
 
 } // namespace Functions
 } // namespace Amanzi
