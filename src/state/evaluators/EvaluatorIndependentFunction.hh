@@ -62,6 +62,8 @@ class EvaluatorIndependentFunction
 
   EvaluatorIndependentFunction& operator=(const EvaluatorIndependentFunction& other);
 
+  virtual void EnsureCompatibility(State& S) override;
+
  protected:
   virtual void Update_(State& S) override;
 
