@@ -25,7 +25,8 @@ namespace Amanzi {
 // ---------------------------------------------------------------------------
 EvaluatorIndependentFunction::EvaluatorIndependentFunction(Teuchos::ParameterList& plist)
   : EvaluatorIndependent<CompositeVector, CompositeVectorSpace>(plist),
-    dot_with_normal_(plist.get<bool>("dot with normal", false))
+    dot_with_normal_(plist.get<bool>("dot with normal", false)),
+    spatial_dist_method_(plist.get<std::string>("spatial distribution method", "none"))
 {};
 
 
@@ -78,8 +79,8 @@ EvaluatorIndependentFunction::Update_(State& S)
     AMANZI_ASSERT(plist_.isSublist("function"));
 
     std::vector<std::string> complist;
-    func_ =
-      Functions::CreateCompositeVectorFunction(plist_.sublist("function"), cv.Map(), complist, dot_with_normal_);
+    func_ = Functions::CreateCompositeVectorFunction(plist_.sublist("function"), cv.Map(), complist,
+            dot_with_normal_, spatial_dist_method_);
   }
 
   // NOTE: EvaluatorIndependentFunctions own their own data.

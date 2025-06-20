@@ -27,7 +27,8 @@ Teuchos::RCP<CompositeVectorFunction>
 CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
         const CompositeVectorSpace& sample,
         std::vector<std::string>& componentname_list,
-        bool dot_with_normal)
+        bool dot_with_normal,
+        const std::string& spatial_dist_method)
 {
   Teuchos::RCP<MeshFunction> mesh_func = Teuchos::rcp(new MeshFunction(sample.Mesh()));
   componentname_list.clear();
@@ -144,7 +145,7 @@ CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
   }
 
   // create the function
-  return Teuchos::rcp(new CompositeVectorFunction(mesh_func, componentname_list, dot_with_normal));
+  return Teuchos::rcp(new CompositeVectorFunction(mesh_func, componentname_list, dot_with_normal, spatial_dist_method));
 };
 
 } // namespace Functions
