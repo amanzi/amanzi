@@ -14,6 +14,7 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-latest, ubuntu-24.04-arm ]
+        base_image: [ubuntu:jammy, gcc:14, gcc:latest]
     runs-on: ${{matrix.os}}
     steps:
     - name: Check out the Amanzi repo
@@ -36,19 +37,29 @@ jobs:
       with:
         username: ${{secrets.DOCKERHUB_USERNAME}}
         password: ${{secrets.DOCKERHUB_PASSWORD}}
+    - name: Clean base image tag name
+      id: sanitize
+      run: |
+        BASE_IMAGE="${{ matrix.base_image}}"
+        CLEANED_TAG="${BASE_IMAGE//:/-}"
+        echo "tag=$CLEANED_TAG" >> "$GITHUB_OUTPUT"
     - name: Build and push image
       uses: docker/build-push-action@v6
       with:
         context: .
         file: ./Docker/Dockerfile-TPLs
         push: true
-        tags: ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{env.ARCH}}-mpich
+        tags: ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{steps.sanitize.outputs.tag}}-${{env.ARCH}}-mpich
         build-args:
           amanzi_branch:master
           mpi_flavor:mpich
+          base_image:"${{matrix.base_image}}""
 
   fix-manifest:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        base_image: [ubuntu:jammy, gcc:14, gcc:latest]
     needs: build-tpl-image
     if: success()
     steps:
@@ -64,13 +75,19 @@ jobs:
         with:
           username: ${{secrets.DOCKERHUB_USERNAME}}
           password: ${{secrets.DOCKERHUB_PASSWORD}}
+      - name: Clean base image tag name
+        id: sanitize
+        run: |
+          BASE_IMAGE="${{ matrix.base_image}}"
+          CLEANED_TAG="${BASE_IMAGE//:/-}"
+          echo "tag=$CLEANED_TAG" >> "$GITHUB_OUTPUT"
       - name: Pull images (remove with artifacts??)
         run: |
-          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-arm64-mpich
-          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-amd64-mpich
+          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{steps.sanitize.outputs.tag}}-arm64-mpich
+          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{steps.sanitize.outputs.tag}}-amd64-mpich
       - name: Edit manifest
         run: |
-          docker manifest create ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-mpich \
-            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-arm64-mpich \
-            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-amd64-mpich
-          docker manifest push ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-mpich
+          docker manifest create ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{steps.sanitize.outputs.tag}}-mpich \
+            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{steps.sanitize.outputs.tag}}-arm64-mpich \
+            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{steps.sanitize.outputs.tag}}-amd64-mpich
+          docker manifest push ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{steps.sanitize.outputs.tag}}-mpich
