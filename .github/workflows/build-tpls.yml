@@ -12,6 +12,7 @@ on:
 jobs:
   build-tpl-image:
     strategy:
+      fail-fast: false
       matrix:
         os: [ ubuntu-latest, ubuntu-24.04-arm ]
         images:

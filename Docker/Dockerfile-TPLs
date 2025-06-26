@@ -18,14 +18,18 @@ ARG TARGETARCH
 # Set timezone:
 RUN ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime && echo $CONTAINER_TIMEZONE > /etc/timezone
 
-RUN apt-get -q update -y && apt-get install -y tzdata && apt-get -q install -y \
+RUN apt-get -q update -y && apt-get install -y tzdata && \
+  if [ "$base_image" = "ubuntu" ]; then \
+    apt-get -q install -y \
+      g++ \
+      gfortran; \
+  fi && \
+  apt-get -q install -y \
   apt-utils \
   curl \
   libcurl4-openssl-dev \
   emacs \
   gedit \
-  g++ \
-  gfortran \
   git \
   groff \
   libblas-dev \
