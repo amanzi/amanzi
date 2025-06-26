@@ -193,8 +193,9 @@
 #   0.98.11      - update zlib to 1.3.1 (compatible with MacOSX Apple Clang 17)
 #                - patch Kokkos solvers in Trilinos for Apple Clang 17.
 #                - update HDF5 to 1.14.6
-#                - update netcdf-c to 4.9.2
+#                - update netcdf-c to 4.9.3
 #                - update netcdf-fortran to 4.6.2
+#                - update SEACAS to date tag v2025-04-14
 
 
 include(CMakeParseArguments)
@@ -378,12 +379,12 @@ set(HDF5_MD5_SUM        63426c8e24086634eaf9179a8c5fe9e5)
 #
 set(NetCDF_VERSION_MAJOR 4)
 set(NetCDF_VERSION_MINOR 9)
-set(NetCDF_VERSION_PATCH 2)
+set(NetCDF_VERSION_PATCH 3)
 set(NetCDF_VERSION ${NetCDF_VERSION_MAJOR}.${NetCDF_VERSION_MINOR}.${NetCDF_VERSION_PATCH})
 set(NetCDF_URL_STRING     "https://github.com/Unidata/netcdf-c/archive/")
 set(NetCDF_ARCHIVE_FILE   v${NetCDF_VERSION}.tar.gz)
 set(NetCDF_SAVEAS_FILE    netcdf-${NetCDF_VERSION}.tar.gz)
-set(NetCDF_MD5_SUM        84acd096ab4f3300c20db862eecdf7c7)
+set(NetCDF_MD5_SUM        bc9eb96e1983bf90fb3a99cc358c5ac3)
 
 #
 # TPL: NetCDF Fortran
