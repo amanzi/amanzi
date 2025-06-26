@@ -2,8 +2,9 @@
 #FROM ubuntu:artful
 #FROM ubuntu:bionic
 #FROM ubuntu:focal
-ARG base_image=ubuntu:jammy
-FROM ${base_image}
+ARG base_image=ubuntu
+ARG ver_tag=jammy
+FROM ${base_image}:${ver_tag}
 
 
 LABEL Description="This image contains all of the third-party libraries needed by Amanzi (based on the specified branch, default branch is master)."
