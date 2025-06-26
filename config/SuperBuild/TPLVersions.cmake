@@ -195,6 +195,7 @@
 #                - update HDF5 to 1.14.6
 #                - update netcdf-c to 4.9.2
 #                - update netcdf-fortran to 4.6.2
+#                - update Alquimia to version 1.1.1
 
 
 include(CMakeParseArguments)
@@ -553,12 +554,12 @@ set(PFLOTRAN_MD5_SUM        d44b5670223ea9e6fbb894a8842161e0)
 #
 set(Alquimia_VERSION_MAJOR 1)
 set(Alquimia_VERSION_MINOR 1)
-set(Alquimia_VERSION_PATCH 0)
+set(Alquimia_VERSION_PATCH 1)
 set(Alquimia_VERSION ${Alquimia_VERSION_MAJOR}.${Alquimia_VERSION_MINOR}.${Alquimia_VERSION_PATCH})
 set(Alquimia_URL_STRING     https://github.com/LBL-EESA/alquimia-dev/archive/refs/tags)
 set(Alquimia_ARCHIVE_FILE   v${Alquimia_VERSION}.tar.gz)
 set(Alquimia_SAVEAS_FILE    alquimia-dev-${Alquimia_VERSION}.tar.gz)
-set(Alquimia_MD5_SUM        adfa32fe2bcd690a847ec59390f82a0a)
+set(Alquimia_MD5_SUM        4e288e576777d43a907cdfef71427449)
 
 #
 # TPL: Silo
