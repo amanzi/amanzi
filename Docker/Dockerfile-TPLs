@@ -1,11 +1,10 @@
-#FROM ubuntu:latest
-#FROM ubuntu:artful
-#FROM ubuntu:bionic
-#FROM ubuntu:focal
 ARG base_image=ubuntu
 ARG ver_tag=jammy
-FROM ${base_image}:${ver_tag}
+FROM ${base_image}:${ver_tag} AS base
 
+# need to redeclare:
+ARG base_image
+ARG ver_tag
 
 LABEL Description="This image contains all of the third-party libraries needed by Amanzi (based on the specified branch, default branch is master)."
 
@@ -20,7 +19,8 @@ RUN ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime && echo $CONT
 
 RUN apt-get -q update -y && apt-get install -y tzdata && \
   if [ "$base_image" = "ubuntu" ]; then \
-    apt-get -q install -y \
+    echo "Installing compilers..." \
+    && apt-get -q install -y \
       g++ \
       gfortran; \
   fi && \
@@ -84,6 +84,8 @@ RUN if [ "$build_mpi" = "True" ]; then \
 # Versions change and we cannot set environment variables from command output.
 ARG petsc_ver
 ARG trilinos_ver
+ARG https_proxy
+ARG http_proxy
 ARG amanzi_branch=master
 
 # Installation paths
@@ -102,14 +104,15 @@ RUN groupadd -r amanzi_user \
 USER amanzi_user
 
 # Set the current working directory as the users home directory
-# (creates teh directory if it doesn't exist)
+# (creates the directory if it doesn't exist)
 WORKDIR /home/amanzi_user
 
-# ENV https_proxy=proxyout.lanl.gov:8080 \
-#     http_proxy=proxyout.lanl.gov:8080
+ENV https_proxy=${https_proxy} \
+    http_proxy=${http_proxy}
 
 # Clone the amanzi git repo.
 RUN git clone https://github.com/amanzi/amanzi.git
+
 
 # Set the current working directory to the git repo
 # and switch branches if requested.
@@ -119,6 +122,11 @@ RUN if [ "$amanzi_branch" != "master" ]; then \
   fi; \
   echo "Amanzi branch = $amanzi_branch"; \
   git branch --list
+
+#===========================================================================
+# here and above can be run with --target base in the docker build command
+#===========================================================================
+FROM base AS tpls
 
 # Build and install the TPLs using bootstrap.sh, and remove
 # the source, objects, etc. after installation to save space.
