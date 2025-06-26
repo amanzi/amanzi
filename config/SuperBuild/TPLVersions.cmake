@@ -196,6 +196,7 @@
 #                - update netcdf-c to 4.9.3
 #                - update netcdf-fortran to 4.6.2
 #                - update SEACAS to date tag v2025-04-14
+#                - update SuperLU to 7.0.1
 
 
 include(CMakeParseArguments)
@@ -463,14 +464,14 @@ set(ParMetis_MD5_SUM        56ac6ebf6e7e8a522fa053c799dc7a92)
 #
 # TPL: SuperLU
 #
-set(SuperLU_VERSION_MAJOR  5)
-set(SuperLU_VERSION_MINOR  2)
-set(SuperLU_VERSION_PATCH  2)
+set(SuperLU_VERSION_MAJOR  7)
+set(SuperLU_VERSION_MINOR  0)
+set(SuperLU_VERSION_PATCH  1)
 set(SuperLU_VERSION  ${SuperLU_VERSION_MAJOR}.${SuperLU_VERSION_MINOR}.${SuperLU_VERSION_PATCH})
 set(SuperLU_URL_STRING     "https://github.com/xiaoyeli/superlu/archive/refs/tags")
 set(SuperLU_ARCHIVE_FILE   v${SuperLU_VERSION}.tar.gz)
 set(SuperLU_SAVEAS_FILE    superlu_${SuperLU_VERSION}.tar.gz)
-set(SuperLU_MD5_SUM        1e93259572bd2412674ed809a1446bd3)
+set(SuperLU_MD5_SUM        855cb57eb725535fd757564f220cd61e)
 
 #
 # TPL: SuperLU_Dist
