@@ -762,7 +762,7 @@ if (ENABLE_PETSC OR ENABLE_Structured)
 endif()
 
 # FMT
-include(${SuperBuild_BUILD_FILES_DIR}/Build.fmt.cmake)
+include(${SuperBuild_BUILD_FILES_DIR}/Build_fmt.cmake)
 
 # SEACAS
 include(${SuperBuild_BUILD_FILES_DIR}/Build_SEACAS.cmake)
