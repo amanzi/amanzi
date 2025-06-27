@@ -60,7 +60,7 @@ ExternalProject_Add(${SuperLUDist_BUILD_TARGET}
                     URL_MD5       ${SuperLUDist_MD5_SUM}       # md5sum of the archive file
                     DOWNLOAD_NAME ${SuperLUDist_SAVEAS_FILE}   # file name to store (if not end of URL)
                     # -- Patch
-                    # PATCH_COMMAND ${SuperLUDist_PATCH_COMMAND}  # Mods to source
+                    PATCH_COMMAND ${SuperLUDist_PATCH_COMMAND}  # Mods to source
                     # -- Configure
                     LIST_SEPARATOR |                             # Use the alternate list separator
                     SOURCE_DIR      ${SuperLUDist_source_dir}    # Source directory
