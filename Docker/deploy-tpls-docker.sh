@@ -92,7 +92,7 @@ case $i in
     amanzi_tpls_ver="${i#*=}"
     shift
     ;;
-    --stop_before_tpls=*)
+    --stop_before_tpls)
     stop_before_tpls=True
     shift
     ;;
@@ -157,9 +157,9 @@ else
 fi
 
 if "${stop_before_tpls}" ; then
-    tpl_arg=""
-else
     tpl_arg="--target base"
+else
+    tpl_arg="--target tpls"
 fi
 
 if $multiarch
@@ -182,6 +182,7 @@ then
         -f ${amanzi_src_dir}/Docker/Dockerfile-TPLs \
         -t metsi/amanzi-tpls:${amanzi_tpls_ver}-${mpi_distro}-${base_image}-${ver_tag} .
 else
+    echo "${tpl_arg}"
     docker build \
         ${cache} \
         ${push_arg} \
