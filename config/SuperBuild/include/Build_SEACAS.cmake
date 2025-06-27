@@ -10,7 +10,7 @@
 if (NOT ENABLE_XSDK)
     define_external_project_args(SEACAS
                                  TARGET seacas
-                                 DEPENDS HDF5 NetCDF)
+                                 DEPENDS HDF5 NetCDF FMT)
 else()
     define_external_project_args(SEACAS
                                  TARGET seacas
@@ -124,7 +124,7 @@ set(SEACAS_CMAKE_CACHE_ARGS
                     -DTPL_ENABLE_MPI:BOOL=ON
                     -DTPL_ENABLE_Pamgen:BOOL=FALSE
                     -DTPL_ENABLE_Pthread:BOOL=FALSE
-                    -DTPL_ENABLE_fmt:BOOL=FALSE
+                    -DTPL_ENABLE_fmt:BOOL=TRUE
                     -DSEACASExodus_ENABLE_THREADSAFE:BOOL=OFF
                     -DSEACASIoss_ENABLE_THREADSAFE:BOOL=OFF
                     -DPYTHON_EXECUTABLE:STRING=${PYTHON_EXECUTABLE}

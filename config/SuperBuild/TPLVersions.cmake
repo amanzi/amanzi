@@ -198,6 +198,7 @@
 #                - update SEACAS to date tag v2025-04-14
 #                - update SuperLU to 7.0.1
 #                - update SuperLU_dist to 9.1.0
+#                - add fmt (new dependency of SEACAS), 11.2.0
 
 
 include(CMakeParseArguments)
@@ -623,3 +624,14 @@ set(EXPRTK_ARCHIVE_FILE  ${EXPRTK_VERSION}.tar.gz)
 set(EXPRTK_SAVEAS_FILE   exprtk-${EXPRTK_ARCHIVE_FILE})
 set(EXPRTK_MD5_SUM       897d4d3faedf9ebaa96d66fd14c2f967)
 
+#
+# TPL: fmt
+#
+set(FMT_VERSION_MAJOR 11)
+set(FMT_VERSION_MINOR 2)
+set(FMT_VERSION_PATCH 0)
+set(FMT_VERSION  ${FMT_VERSION_MAJOR}.${FMT_VERSION_MINOR}.${FMT_VERSION_PATCH})
+set(FMT_URL_STRING    "https://github.com/fmtlib/fmt/archive")
+set(FMT_ARCHIVE_FILE  ${FMT_VERSION}.tar.gz)
+set(FMT_SAVEAS_FILE   fmt-${FMT_ARCHIVE_FILE})
+set(FMT_MD5_SUM       2f3701cada629ca455c3388d1089f5bd)
