@@ -1,5 +1,561 @@
---- ../superlu_dist-9.1.0/SRC/double/dutil_dist.c	2024-11-10 18:36:31
-+++ SRC/double/dutil_dist.c	2025-06-27 11:34:20
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/dreadtriple.c superlu_dist-9.1.0/EXAMPLE/dreadtriple.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/dreadtriple.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/dreadtriple.c	2025-06-27 15:46:46
+@@ -162,7 +162,7 @@
+ 
+ void dreadrhs(int m, double *b)
+ {
+-    FILE *fp, *fopen();
++    FILE *fp;
+     int i, j;
+ 
+     if ( !(fp = fopen("b.dat", "r")) ) {
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/pddrive.c superlu_dist-9.1.0/EXAMPLE/pddrive.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/pddrive.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/pddrive.c	2025-06-27 15:46:46
+@@ -63,7 +63,7 @@
+     int      nprow, npcol, lookahead, colperm, rowperm, ir, symbfact, batch;
+     int      iam, info, ldb, ldx, nrhs;
+     char     **cpp, c, *postfix;;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     int cpp_defs();
+     int ii, omp_mpi_level;
+     int ldumap, myrank, p; /* The following variables are used for batch solves */
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/pddrive1.c superlu_dist-9.1.0/EXAMPLE/pddrive1.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/pddrive1.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/pddrive1.c	2025-06-27 15:46:46
+@@ -62,7 +62,7 @@
+     int    iam, info, ldb, ldx, nrhs;
+     char     **cpp, c, *postfix;
+     int ii, omp_mpi_level;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     int cpp_defs();
+ 
+     nprow = 1;  /* Default process rows.      */
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/pddrive1_ABglobal.c superlu_dist-9.1.0/EXAMPLE/pddrive1_ABglobal.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/pddrive1_ABglobal.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/pddrive1_ABglobal.c	2025-06-27 15:46:46
+@@ -61,7 +61,7 @@
+     int      iam, info, ldb, ldx, nrhs;
+     char     trans[1];
+     char     **cpp, c;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     extern int cpp_defs();
+ 
+     nprow = 1;  /* Default process rows.      */
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/pddrive2.c superlu_dist-9.1.0/EXAMPLE/pddrive2.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/pddrive2.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/pddrive2.c	2025-06-27 15:46:46
+@@ -64,7 +64,7 @@
+     int      iam, info, ldb, ldx, nrhs;
+     char     **cpp, c, *postfix;
+     int ii, omp_mpi_level;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     int cpp_defs();
+ 
+     /* prototypes */
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/pddrive2_ABglobal.c superlu_dist-9.1.0/EXAMPLE/pddrive2_ABglobal.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/pddrive2_ABglobal.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/pddrive2_ABglobal.c	2025-06-27 15:46:46
+@@ -61,7 +61,7 @@
+     int      iam, info, ldb, ldx, nrhs;
+     char     trans[1];
+     char     **cpp, c;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     extern int cpp_defs();
+ 
+     nprow = 1;  /* Default process rows.      */
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/pddrive3.c superlu_dist-9.1.0/EXAMPLE/pddrive3.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/pddrive3.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/pddrive3.c	2025-06-27 15:46:46
+@@ -69,7 +69,7 @@
+     int      iam, info, ldb, ldx, nrhs;
+     char     **cpp, c, *postfix;
+     int ii, omp_mpi_level;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     int cpp_defs();
+ 
+     nprow = 1;  /* Default process rows.      */
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/pddrive3_ABglobal.c superlu_dist-9.1.0/EXAMPLE/pddrive3_ABglobal.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/pddrive3_ABglobal.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/pddrive3_ABglobal.c	2025-06-27 15:46:46
+@@ -67,7 +67,7 @@
+     int      iam, info, ldb, ldx, nrhs;
+     char     trans[1];
+     char     **cpp, c;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     extern int cpp_defs();
+ 
+     nprow = 1;  /* Default process rows.      */
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/pddrive4.c superlu_dist-9.1.0/EXAMPLE/pddrive4.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/pddrive4.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/pddrive4.c	2025-06-27 15:46:46
+@@ -66,7 +66,7 @@
+     int      nrhs = 1;   /* Number of right-hand side. */
+     int ii, omp_mpi_level;
+     char     **cpp, c, *postfix;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     int cpp_defs();
+ 
+ 
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/pddrive4_ABglobal.c superlu_dist-9.1.0/EXAMPLE/pddrive4_ABglobal.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/pddrive4_ABglobal.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/pddrive4_ABglobal.c	2025-06-27 15:46:46
+@@ -65,7 +65,7 @@
+     int      nrhs = 1;   /* Number of right-hand side. */
+     char     trans[1];
+     char     **cpp, c;
+-    FILE *fp, *fopen();
++    FILE *fp;
+ 
+     /* ------------------------------------------------------------
+        INITIALIZE MPI ENVIRONMENT. 
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/pddrive_ABglobal.c superlu_dist-9.1.0/EXAMPLE/pddrive_ABglobal.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/pddrive_ABglobal.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/pddrive_ABglobal.c	2025-06-27 15:46:46
+@@ -62,7 +62,7 @@
+     int      iam, info, ldb, ldx, nrhs;
+     char     trans[1];
+     char     **cpp, c;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     extern int cpp_defs();
+ 
+     nprow = 1;  /* Default process rows.      */
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/pddrive_spawn.c superlu_dist-9.1.0/EXAMPLE/pddrive_spawn.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/pddrive_spawn.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/pddrive_spawn.c	2025-06-27 15:46:46
+@@ -62,7 +62,7 @@
+     int      nprow, npcol,lookahead,colperm;
+     int      iam, info, ldb, ldx, nrhs;
+     char     **cpp, c, *postfix;;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     int cpp_defs();
+     int ii, omp_mpi_level;
+ 	MPI_Comm parent;
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/psdrive.c superlu_dist-9.1.0/EXAMPLE/psdrive.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/psdrive.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/psdrive.c	2025-06-27 15:46:46
+@@ -63,7 +63,7 @@
+     int      nprow, npcol, lookahead, colperm, rowperm, ir, symbfact, batch;
+     int      iam, info, ldb, ldx, nrhs;
+     char     **cpp, c, *postfix;;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     int cpp_defs();
+     int ii, omp_mpi_level;
+     int ldumap, myrank, p; /* The following variables are used for batch solves */
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/psdrive1.c superlu_dist-9.1.0/EXAMPLE/psdrive1.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/psdrive1.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/psdrive1.c	2025-06-27 15:46:46
+@@ -62,7 +62,7 @@
+     int    iam, info, ldb, ldx, nrhs;
+     char     **cpp, c, *postfix;
+     int ii, omp_mpi_level;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     int cpp_defs();
+ 
+     nprow = 1;  /* Default process rows.      */
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/psdrive1_ABglobal.c superlu_dist-9.1.0/EXAMPLE/psdrive1_ABglobal.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/psdrive1_ABglobal.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/psdrive1_ABglobal.c	2025-06-27 15:46:46
+@@ -61,7 +61,7 @@
+     int      iam, info, ldb, ldx, nrhs;
+     char     trans[1];
+     char     **cpp, c;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     extern int cpp_defs();
+ 
+     nprow = 1;  /* Default process rows.      */
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/psdrive2.c superlu_dist-9.1.0/EXAMPLE/psdrive2.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/psdrive2.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/psdrive2.c	2025-06-27 15:46:46
+@@ -64,7 +64,7 @@
+     int      iam, info, ldb, ldx, nrhs;
+     char     **cpp, c, *postfix;
+     int ii, omp_mpi_level;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     int cpp_defs();
+ 
+     /* prototypes */
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/psdrive2_ABglobal.c superlu_dist-9.1.0/EXAMPLE/psdrive2_ABglobal.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/psdrive2_ABglobal.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/psdrive2_ABglobal.c	2025-06-27 15:46:46
+@@ -61,7 +61,7 @@
+     int      iam, info, ldb, ldx, nrhs;
+     char     trans[1];
+     char     **cpp, c;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     extern int cpp_defs();
+ 
+     nprow = 1;  /* Default process rows.      */
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/psdrive3.c superlu_dist-9.1.0/EXAMPLE/psdrive3.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/psdrive3.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/psdrive3.c	2025-06-27 15:46:46
+@@ -69,7 +69,7 @@
+     int      iam, info, ldb, ldx, nrhs;
+     char     **cpp, c, *postfix;
+     int ii, omp_mpi_level;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     int cpp_defs();
+ 
+     nprow = 1;  /* Default process rows.      */
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/psdrive3_ABglobal.c superlu_dist-9.1.0/EXAMPLE/psdrive3_ABglobal.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/psdrive3_ABglobal.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/psdrive3_ABglobal.c	2025-06-27 15:46:46
+@@ -67,7 +67,7 @@
+     int      iam, info, ldb, ldx, nrhs;
+     char     trans[1];
+     char     **cpp, c;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     extern int cpp_defs();
+ 
+     nprow = 1;  /* Default process rows.      */
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/psdrive4.c superlu_dist-9.1.0/EXAMPLE/psdrive4.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/psdrive4.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/psdrive4.c	2025-06-27 15:46:46
+@@ -66,7 +66,7 @@
+     int      nrhs = 1;   /* Number of right-hand side. */
+     int ii, omp_mpi_level;
+     char     **cpp, c, *postfix;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     int cpp_defs();
+ 
+ 
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/psdrive4_ABglobal.c superlu_dist-9.1.0/EXAMPLE/psdrive4_ABglobal.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/psdrive4_ABglobal.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/psdrive4_ABglobal.c	2025-06-27 15:46:46
+@@ -65,7 +65,7 @@
+     int      nrhs = 1;   /* Number of right-hand side. */
+     char     trans[1];
+     char     **cpp, c;
+-    FILE *fp, *fopen();
++    FILE *fp;
+ 
+     /* ------------------------------------------------------------
+        INITIALIZE MPI ENVIRONMENT.
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/psdrive_ABglobal.c superlu_dist-9.1.0/EXAMPLE/psdrive_ABglobal.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/psdrive_ABglobal.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/psdrive_ABglobal.c	2025-06-27 15:46:46
+@@ -62,7 +62,7 @@
+     int      iam, info, ldb, ldx, nrhs;
+     char     trans[1];
+     char     **cpp, c;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     extern int cpp_defs();
+ 
+     nprow = 1;  /* Default process rows.      */
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/pzdrive.c superlu_dist-9.1.0/EXAMPLE/pzdrive.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/pzdrive.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/pzdrive.c	2025-06-27 15:46:46
+@@ -62,7 +62,7 @@
+     int      nprow, npcol, lookahead, colperm, rowperm, ir, symbfact, batch;
+     int      iam, info, ldb, ldx, nrhs;
+     char     **cpp, c, *postfix;;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     int cpp_defs();
+     int ii, omp_mpi_level;
+     int ldumap, myrank, p; /* The following variables are used for batch solves */
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/pzdrive1.c superlu_dist-9.1.0/EXAMPLE/pzdrive1.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/pzdrive1.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/pzdrive1.c	2025-06-27 15:46:46
+@@ -61,7 +61,7 @@
+     int    iam, info, ldb, ldx, nrhs;
+     char     **cpp, c, *postfix;
+     int ii, omp_mpi_level;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     int cpp_defs();
+ 
+     nprow = 1;  /* Default process rows.      */
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/pzdrive1_ABglobal.c superlu_dist-9.1.0/EXAMPLE/pzdrive1_ABglobal.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/pzdrive1_ABglobal.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/pzdrive1_ABglobal.c	2025-06-27 15:46:46
+@@ -60,7 +60,7 @@
+     int      iam, info, ldb, ldx, nrhs;
+     char     trans[1];
+     char     **cpp, c;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     extern int cpp_defs();
+ 
+     nprow = 1;  /* Default process rows.      */
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/pzdrive2.c superlu_dist-9.1.0/EXAMPLE/pzdrive2.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/pzdrive2.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/pzdrive2.c	2025-06-27 15:46:46
+@@ -63,7 +63,7 @@
+     int      iam, info, ldb, ldx, nrhs;
+     char     **cpp, c, *postfix;
+     int ii, omp_mpi_level;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     int cpp_defs();
+ 
+     /* prototypes */
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/pzdrive2_ABglobal.c superlu_dist-9.1.0/EXAMPLE/pzdrive2_ABglobal.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/pzdrive2_ABglobal.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/pzdrive2_ABglobal.c	2025-06-27 15:46:46
+@@ -60,7 +60,7 @@
+     int      iam, info, ldb, ldx, nrhs;
+     char     trans[1];
+     char     **cpp, c;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     extern int cpp_defs();
+ 
+     nprow = 1;  /* Default process rows.      */
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/pzdrive3.c superlu_dist-9.1.0/EXAMPLE/pzdrive3.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/pzdrive3.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/pzdrive3.c	2025-06-27 15:46:46
+@@ -68,7 +68,7 @@
+     int      iam, info, ldb, ldx, nrhs;
+     char     **cpp, c, *postfix;
+     int ii, omp_mpi_level;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     int cpp_defs();
+ 
+     nprow = 1;  /* Default process rows.      */
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/pzdrive3_ABglobal.c superlu_dist-9.1.0/EXAMPLE/pzdrive3_ABglobal.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/pzdrive3_ABglobal.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/pzdrive3_ABglobal.c	2025-06-27 15:46:46
+@@ -66,7 +66,7 @@
+     int      iam, info, ldb, ldx, nrhs;
+     char     trans[1];
+     char     **cpp, c;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     extern int cpp_defs();
+ 
+     nprow = 1;  /* Default process rows.      */
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/pzdrive4.c superlu_dist-9.1.0/EXAMPLE/pzdrive4.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/pzdrive4.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/pzdrive4.c	2025-06-27 15:46:46
+@@ -65,7 +65,7 @@
+     int      nrhs = 1;   /* Number of right-hand side. */
+     int ii, omp_mpi_level;
+     char     **cpp, c, *postfix;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     int cpp_defs();
+ 
+ 
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/pzdrive4_ABglobal.c superlu_dist-9.1.0/EXAMPLE/pzdrive4_ABglobal.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/pzdrive4_ABglobal.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/pzdrive4_ABglobal.c	2025-06-27 15:46:46
+@@ -64,7 +64,7 @@
+     int      nrhs = 1;   /* Number of right-hand side. */
+     char     trans[1];
+     char     **cpp, c;
+-    FILE *fp, *fopen();
++    FILE *fp;
+ 
+     /* ------------------------------------------------------------
+        INITIALIZE MPI ENVIRONMENT. 
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/pzdrive_ABglobal.c superlu_dist-9.1.0/EXAMPLE/pzdrive_ABglobal.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/pzdrive_ABglobal.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/pzdrive_ABglobal.c	2025-06-27 15:46:46
+@@ -61,7 +61,7 @@
+     int      iam, info, ldb, ldx, nrhs;
+     char     trans[1];
+     char     **cpp, c;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     extern int cpp_defs();
+ 
+     nprow = 1;  /* Default process rows.      */
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/pzdrive_spawn.c superlu_dist-9.1.0/EXAMPLE/pzdrive_spawn.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/pzdrive_spawn.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/pzdrive_spawn.c	2025-06-27 15:46:46
+@@ -62,7 +62,7 @@
+     int      nprow, npcol,lookahead,colperm;
+     int      iam, info, ldb, ldx, nrhs;
+     char     **cpp, c, *postfix;;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     int cpp_defs();
+     int ii, omp_mpi_level;
+ 	MPI_Comm parent;
+diff --color -ruN superlu_dist-9.1.0-orig/EXAMPLE/zreadtriple.c superlu_dist-9.1.0/EXAMPLE/zreadtriple.c
+--- superlu_dist-9.1.0-orig/EXAMPLE/zreadtriple.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/EXAMPLE/zreadtriple.c	2025-06-27 15:46:46
+@@ -161,7 +161,7 @@
+ 
+ void zreadrhs(int m, doublecomplex *b)
+ {
+-    FILE *fp, *fopen();
++    FILE *fp;
+     int i, j;
+ 
+     if ( !(fp = fopen("b.dat", "r")) ) {
+diff --color -ruN superlu_dist-9.1.0-orig/FORTRAN/c2f_dcreate_matrix_x_b.c superlu_dist-9.1.0/FORTRAN/c2f_dcreate_matrix_x_b.c
+--- superlu_dist-9.1.0-orig/FORTRAN/c2f_dcreate_matrix_x_b.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/FORTRAN/c2f_dcreate_matrix_x_b.c	2025-06-27 15:46:46
+@@ -99,7 +99,7 @@
+     char     trans[1];
+ 
+     char     **cpp, c, *postfix;;
+-    FILE     *fp, *fopen();
++    FILE     *fp;
+     
+     MPI_Comm_rank(slucomm, &iam);
+ 
+diff --color -ruN superlu_dist-9.1.0-orig/FORTRAN/c2f_zcreate_matrix_x_b.c superlu_dist-9.1.0/FORTRAN/c2f_zcreate_matrix_x_b.c
+--- superlu_dist-9.1.0-orig/FORTRAN/c2f_zcreate_matrix_x_b.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/FORTRAN/c2f_zcreate_matrix_x_b.c	2025-06-27 15:46:46
+@@ -98,7 +98,7 @@
+     char     trans[1];
+ 
+     char     **cpp, c, *postfix;;
+-    FILE     *fp, *fopen();
++    FILE     *fp;
+     
+     MPI_Comm_rank(slucomm, &iam);
+ 
+diff --color -ruN superlu_dist-9.1.0-orig/PYTHON/pdbridge.c superlu_dist-9.1.0/PYTHON/pdbridge.c
+--- superlu_dist-9.1.0-orig/PYTHON/pdbridge.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/PYTHON/pdbridge.c	2025-06-27 15:46:46
+@@ -33,7 +33,7 @@
+     int      nprow, npcol, lookahead, colperm, rowperm, ir, symbfact, batch, sympattern;
+     int      iam, info, ldb, ldx;
+     char     **cpp, c, *postfix;;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     int cpp_defs();
+     int ii, omp_mpi_level;
+     int ldumap, myrank, p; /* The following variables are used for batch solves */
+@@ -277,7 +277,7 @@
+     int      nprow, npcol, lookahead, colperm, rowperm, ir, symbfact, batch;
+     int      iam, info, ldb, ldx;
+     char     **cpp, c, *postfix;;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     int cpp_defs();
+     int ii, omp_mpi_level,m;
+     int ldumap, myrank, p; /* The following variables are used for batch solves */
+@@ -367,7 +367,7 @@
+     int      nprow, npcol, lookahead, colperm, rowperm, ir, symbfact, batch;
+     int      iam, info, ldb, ldx;
+     char     **cpp, c, *postfix;;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     int cpp_defs();
+     int ii, omp_mpi_level,m;
+     int ldumap, myrank, p; /* The following variables are used for batch solves */
+diff --color -ruN superlu_dist-9.1.0-orig/SRC/complex16/zreadMM.c superlu_dist-9.1.0/SRC/complex16/zreadMM.c
+--- superlu_dist-9.1.0-orig/SRC/complex16/zreadMM.c	2025-06-27 15:44:54
++++ superlu_dist-9.1.0/SRC/complex16/zreadMM.c	2025-06-27 15:46:47
+@@ -228,7 +228,7 @@
+ 
+ static void zreadrhs(int m, doublecomplex *b)
+ {
+-    FILE *fp, *fopen();
++    FILE *fp;
+     int i;
+ 
+     if ( !(fp = fopen("b.dat", "r")) ) {
+diff --color -ruN superlu_dist-9.1.0-orig/SRC/complex16/zreadtriple.c superlu_dist-9.1.0/SRC/complex16/zreadtriple.c
+--- superlu_dist-9.1.0-orig/SRC/complex16/zreadtriple.c	2025-06-27 15:44:54
++++ superlu_dist-9.1.0/SRC/complex16/zreadtriple.c	2025-06-27 15:46:47
+@@ -164,7 +164,7 @@
+ 
+ void zreadrhs(int m, doublecomplex *b)
+ {
+-    FILE *fp, *fopen();
++    FILE *fp;
+     int i;
+ 
+     if ( !(fp = fopen("b.dat", "r")) ) {
+diff --color -ruN superlu_dist-9.1.0-orig/SRC/complex16/zreadtriple_noheader.c superlu_dist-9.1.0/SRC/complex16/zreadtriple_noheader.c
+--- superlu_dist-9.1.0-orig/SRC/complex16/zreadtriple_noheader.c	2025-06-27 15:44:54
++++ superlu_dist-9.1.0/SRC/complex16/zreadtriple_noheader.c	2025-06-27 15:46:47
+@@ -182,7 +182,7 @@
+ #if 0
+ void zreadrhs(int m, doublecomplex *b)
+ {
+-    FILE *fp, *fopen();
++    FILE *fp;
+     int i, j;
+ 
+     if ( !(fp = fopen("b.dat", "r")) ) {
+diff --color -ruN superlu_dist-9.1.0-orig/SRC/complex16/zutil_dist.c superlu_dist-9.1.0/SRC/complex16/zutil_dist.c
+--- superlu_dist-9.1.0-orig/SRC/complex16/zutil_dist.c	2025-06-27 15:44:54
++++ superlu_dist-9.1.0/SRC/complex16/zutil_dist.c	2025-06-27 15:46:47
+@@ -819,7 +819,7 @@
+     int_t *index;
+     doublecomplex *nzval;
+ 	char filename[256];
+-	FILE *fp, *fopen();
++	FILE *fp;
+ 
+ 	// assert(grid->npcol*grid->nprow==1);
+ 
+@@ -1138,7 +1138,7 @@
+     int_t *index;
+     doublecomplex *nzval;
+ 	char filename[256];
+-	FILE *fp, *fopen();
++	FILE *fp;
+ 	gridinfo_t *grid = &(grid3d->grid2d);
+ 	int iam = grid->iam;
+ 	int iam3d = grid3d->iam;
+diff --color -ruN superlu_dist-9.1.0-orig/SRC/double/dreadMM.c superlu_dist-9.1.0/SRC/double/dreadMM.c
+--- superlu_dist-9.1.0-orig/SRC/double/dreadMM.c	2025-06-27 15:44:54
++++ superlu_dist-9.1.0/SRC/double/dreadMM.c	2025-06-27 15:46:47
+@@ -229,7 +229,7 @@
+ 
+ static void dreadrhs(int m, double *b)
+ {
+-    FILE *fp, *fopen();
++    FILE *fp;
+     int i;
+ 
+     if ( !(fp = fopen("b.dat", "r")) ) {
+diff --color -ruN superlu_dist-9.1.0-orig/SRC/double/dreadtriple.c superlu_dist-9.1.0/SRC/double/dreadtriple.c
+--- superlu_dist-9.1.0-orig/SRC/double/dreadtriple.c	2025-06-27 15:44:54
++++ superlu_dist-9.1.0/SRC/double/dreadtriple.c	2025-06-27 15:46:47
+@@ -165,7 +165,7 @@
+ 
+ void dreadrhs(int m, double *b)
+ {
+-    FILE *fp, *fopen();
++    FILE *fp;
+     int i;
+ 
+     if ( !(fp = fopen("b.dat", "r")) ) {
+diff --color -ruN superlu_dist-9.1.0-orig/SRC/double/dreadtriple_noheader.c superlu_dist-9.1.0/SRC/double/dreadtriple_noheader.c
+--- superlu_dist-9.1.0-orig/SRC/double/dreadtriple_noheader.c	2025-06-27 15:44:54
++++ superlu_dist-9.1.0/SRC/double/dreadtriple_noheader.c	2025-06-27 15:46:47
+@@ -183,7 +183,7 @@
+ #if 0
+ void dreadrhs(int m, double *b)
+ {
+-    FILE *fp, *fopen();
++    FILE *fp;
+     int i, j;
+ 
+     if ( !(fp = fopen("b.dat", "r")) ) {
+diff --color -ruN superlu_dist-9.1.0-orig/SRC/double/dutil_dist.c superlu_dist-9.1.0/SRC/double/dutil_dist.c
+--- superlu_dist-9.1.0-orig/SRC/double/dutil_dist.c	2025-06-27 15:44:54
++++ superlu_dist-9.1.0/SRC/double/dutil_dist.c	2025-06-27 15:46:47
 @@ -821,7 +821,7 @@
      int_t *index;
      double *nzval;
@@ -9,3 +565,189 @@
  
  	// assert(grid->npcol*grid->nprow==1);
  
+@@ -920,7 +920,7 @@
+     int_t *index,*lloc;
+     double *nzval;
+ 	char filename[256];
+-	FILE *fp, *fopen();
++	FILE *fp;
+ 
+ 	// assert(grid->npcol*grid->nprow==1);
+ 
+@@ -961,7 +961,7 @@
+     int_t *xsup = Glu_persist->xsup;
+     int_t *index;
+     double *nzval;
+-	FILE *fp, *fopen();
++	FILE *fp;
+ 
+ 	assert(grid->npcol*grid->nprow==1);
+ 
+@@ -1068,7 +1068,7 @@
+     int_t *xsup = Glu_persist->xsup;
+     int_t *index;
+     double *nzval0;
+-	FILE *fp, *fopen();
++	FILE *fp;
+ 
+     double *val;
+     int_t  *row, *col;
+@@ -1221,7 +1221,7 @@
+     int_t *xsup = Glu_persist->xsup;
+     int_t *index;
+     double *nzval0;
+-	FILE *fp, *fopen();
++	FILE *fp;
+ 
+     double *val;
+     int_t  *row, *col;
+@@ -1706,7 +1706,7 @@
+     int_t *index;
+     double *nzval;
+ 	char filename[256];
+-	FILE *fp, *fopen();
++	FILE *fp;
+ 	gridinfo_t *grid = &(grid3d->grid2d);
+ 	int iam = grid->iam;
+ 	int iam3d = grid3d->iam;
+diff --color -ruN superlu_dist-9.1.0-orig/SRC/double/pdgstrs.c superlu_dist-9.1.0/SRC/double/pdgstrs.c
+--- superlu_dist-9.1.0-orig/SRC/double/pdgstrs.c	2025-06-27 15:44:54
++++ superlu_dist-9.1.0/SRC/double/pdgstrs.c	2025-06-27 15:46:47
+@@ -1581,7 +1581,7 @@
+ 
+ #if 0  // this will readin a matrix with only lower triangular part, note that this code block is only for benchmarking cusparse performance
+ 
+-	FILE *fp, *fopen();
++	FILE *fp;
+ 	if ( !(fp = fopen("/gpfs/alpine/scratch/liuyangz/csc289/matrix/HTS/copter2.mtx", "r")) ) {
+ 	// if ( !(fp = fopen("/gpfs/alpine/scratch/liuyangz/csc289/matrix/HTS/epb3.mtx", "r")) ) {
+ 	// if ( !(fp = fopen("/gpfs/alpine/scratch/liuyangz/csc289/matrix/HTS/gridgena.mtx", "r")) ) {
+diff --color -ruN superlu_dist-9.1.0-orig/SRC/single/sreadMM.c superlu_dist-9.1.0/SRC/single/sreadMM.c
+--- superlu_dist-9.1.0-orig/SRC/single/sreadMM.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/SRC/single/sreadMM.c	2025-06-27 15:46:47
+@@ -229,7 +229,7 @@
+ 
+ static void sreadrhs(int m, float *b)
+ {
+-    FILE *fp, *fopen();
++    FILE *fp;
+     int i;
+ 
+     if ( !(fp = fopen("b.dat", "r")) ) {
+diff --color -ruN superlu_dist-9.1.0-orig/SRC/single/sreadtriple.c superlu_dist-9.1.0/SRC/single/sreadtriple.c
+--- superlu_dist-9.1.0-orig/SRC/single/sreadtriple.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/SRC/single/sreadtriple.c	2025-06-27 15:46:47
+@@ -165,7 +165,7 @@
+ 
+ void sreadrhs(int m, float *b)
+ {
+-    FILE *fp, *fopen();
++    FILE *fp;
+     int i;
+ 
+     if ( !(fp = fopen("b.dat", "r")) ) {
+diff --color -ruN superlu_dist-9.1.0-orig/SRC/single/sreadtriple_noheader.c superlu_dist-9.1.0/SRC/single/sreadtriple_noheader.c
+--- superlu_dist-9.1.0-orig/SRC/single/sreadtriple_noheader.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/SRC/single/sreadtriple_noheader.c	2025-06-27 15:46:47
+@@ -183,7 +183,7 @@
+ #if 0
+ void sreadrhs(int m, float *b)
+ {
+-    FILE *fp, *fopen();
++    FILE *fp;
+     int i, j;
+ 
+     if ( !(fp = fopen("b.dat", "r")) ) {
+diff --color -ruN superlu_dist-9.1.0-orig/SRC/single/sutil_dist.c superlu_dist-9.1.0/SRC/single/sutil_dist.c
+--- superlu_dist-9.1.0-orig/SRC/single/sutil_dist.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/SRC/single/sutil_dist.c	2025-06-27 15:46:47
+@@ -821,7 +821,7 @@
+     int_t *index;
+     float *nzval;
+ 	char filename[256];
+-	FILE *fp, *fopen();
++	FILE *fp;
+ 
+ 	// assert(grid->npcol*grid->nprow==1);
+ 
+@@ -1251,7 +1251,7 @@
+     int_t *index;
+     float *nzval;
+ 	char filename[256];
+-	FILE *fp, *fopen();
++	FILE *fp;
+ 	gridinfo_t *grid = &(grid3d->grid2d);
+ 	int iam = grid->iam;
+ 	int iam3d = grid3d->iam;
+diff --color -ruN superlu_dist-9.1.0-orig/SRC_OLD/pdgssvx3d_1pass_Yang.c superlu_dist-9.1.0/SRC_OLD/pdgssvx3d_1pass_Yang.c
+--- superlu_dist-9.1.0-orig/SRC_OLD/pdgssvx3d_1pass_Yang.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/SRC_OLD/pdgssvx3d_1pass_Yang.c	2025-06-27 15:46:46
+@@ -613,7 +613,7 @@
+     int_t *index;
+     double *nzval;
+ 	char filename[256];
+-	FILE *fp, *fopen();
++	FILE *fp;
+ 	gridinfo_t *grid = &(grid3d->grid2d);
+ 	int iam = grid->iam;
+ 	int iam3d = grid3d->iam;
+diff --color -ruN superlu_dist-9.1.0-orig/SRC_OLD/pdgssvx3d_2pass_Yang.c superlu_dist-9.1.0/SRC_OLD/pdgssvx3d_2pass_Yang.c
+--- superlu_dist-9.1.0-orig/SRC_OLD/pdgssvx3d_2pass_Yang.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/SRC_OLD/pdgssvx3d_2pass_Yang.c	2025-06-27 15:46:46
+@@ -615,7 +615,7 @@
+     int_t *index;
+     double *nzval;
+ 	char filename[256];
+-	FILE *fp, *fopen();
++	FILE *fp;
+ 	gridinfo_t *grid = &(grid3d->grid2d);
+ 	int iam = grid->iam;
+ 	int iam3d = grid3d->iam;
+diff --color -ruN superlu_dist-9.1.0-orig/SRC_OLD/pdgssvx3d_piyush.c superlu_dist-9.1.0/SRC_OLD/pdgssvx3d_piyush.c
+--- superlu_dist-9.1.0-orig/SRC_OLD/pdgssvx3d_piyush.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/SRC_OLD/pdgssvx3d_piyush.c	2025-06-27 15:46:46
+@@ -613,7 +613,7 @@
+     int_t *index;
+     double *nzval;
+ 	char filename[256];
+-	FILE *fp, *fopen();
++	FILE *fp;
+ 	gridinfo_t *grid = &(grid3d->grid2d);
+ 	int iam = grid->iam;
+ 	int iam3d = grid3d->iam;
+diff --color -ruN superlu_dist-9.1.0-orig/TEST/pdtest.c superlu_dist-9.1.0/TEST/pdtest.c
+--- superlu_dist-9.1.0-orig/TEST/pdtest.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/TEST/pdtest.c	2025-06-27 15:46:46
+@@ -126,7 +126,7 @@
+     int    nprow, npcol;
+     int    iam, info, ldb, ldx, nrhs, iinfo;
+     char     **cpp, c;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     char matrix_type[8], equed[1];
+     int  relax, maxsuper, fill_ratio, min_gemm_gpu_offload=0;
+     int    equil, ifact, nfact, iequil, iequed, prefact, notfactored, diaginv;
+diff --color -ruN superlu_dist-9.1.0-orig/TEST/pstest.c superlu_dist-9.1.0/TEST/pstest.c
+--- superlu_dist-9.1.0-orig/TEST/pstest.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/TEST/pstest.c	2025-06-27 15:46:46
+@@ -126,7 +126,7 @@
+     int    nprow, npcol;
+     int    iam, info, ldb, ldx, nrhs, iinfo;
+     char     **cpp, c;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     char matrix_type[8], equed[1];
+     int  relax, maxsuper, fill_ratio, min_gemm_gpu_offload=0;
+     int    equil, ifact, nfact, iequil, iequed, prefact, notfactored, diaginv;
+diff --color -ruN superlu_dist-9.1.0-orig/TEST/pztest.c superlu_dist-9.1.0/TEST/pztest.c
+--- superlu_dist-9.1.0-orig/TEST/pztest.c	2025-06-27 15:44:53
++++ superlu_dist-9.1.0/TEST/pztest.c	2025-06-27 15:46:46
+@@ -125,7 +125,7 @@
+     int    nprow, npcol;
+     int    iam, info, ldb, ldx, nrhs, iinfo;
+     char     **cpp, c;
+-    FILE *fp, *fopen();
++    FILE *fp;
+     char matrix_type[8], equed[1];
+     int  relax, maxsuper, fill_ratio, min_gemm_gpu_offload=0;
+     int    equil, ifact, nfact, iequil, iequed, prefact, notfactored, diaginv;
