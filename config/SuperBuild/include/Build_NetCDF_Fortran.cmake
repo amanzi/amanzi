@@ -30,7 +30,7 @@ configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/netcdf-fortran-patch-step.cmake.
                ${NetCDF_Fortran_cmake_patch}
                @ONLY)
 
-#set(NetCDF_Fortran_PATCH_COMMAND ${CMAKE_COMMAND} -P ${NetCDF_Fortran_cmake_patch})
+set(NetCDF_Fortran_PATCH_COMMAND ${CMAKE_COMMAND} -P ${NetCDF_Fortran_cmake_patch})
 
 # --- Define the configure command
 set(NetCDF_Fortran_CMAKE_CACHE_ARGS "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}")

@@ -19,7 +19,8 @@ for i in ${patch_files}; do
   exit 10
  fi
 
- (cd ${netcdf_fortran_src_dir}; patch -p1 < ${patch_file})
+# commented out because no current patches! rpf 250626
+# (cd ${netcdf_fortran_src_dir}; patch -p1 < ${patch_file})
 
 done
 
