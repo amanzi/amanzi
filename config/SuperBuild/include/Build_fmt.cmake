@@ -22,7 +22,7 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 set(FMT_CMAKE_CACHE_ARGS
                   -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
                   -DCMAKE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}
-                  -DBUILD_SHARED_LIBS:BOOL=TRUE
+                  -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
                   -DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=TRUE)
 
 # --- Add external project build and tie to the FMT build target
