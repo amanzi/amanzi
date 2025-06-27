@@ -197,6 +197,7 @@
 #                - update netcdf-fortran to 4.6.2
 #                - update SEACAS to date tag v2025-04-14
 #                - update SuperLU to 7.0.1
+#                - update SuperLU_dist to 9.1.0
 
 
 include(CMakeParseArguments)
@@ -476,14 +477,14 @@ set(SuperLU_MD5_SUM        855cb57eb725535fd757564f220cd61e)
 #
 # TPL: SuperLU_Dist
 #
-set(SuperLUDist_VERSION_MAJOR  6)
-set(SuperLUDist_VERSION_MINOR  4)
+set(SuperLUDist_VERSION_MAJOR  9)
+set(SuperLUDist_VERSION_MINOR  1)
 set(SuperLUDist_VERSION_PATCH  0)
 set(SuperLUDist_VERSION  ${SuperLUDist_VERSION_MAJOR}.${SuperLUDist_VERSION_MINOR}.${SuperLUDist_VERSION_PATCH})
 set(SuperLUDist_URL_STRING     "https://github.com/xiaoyeli/superlu_dist/archive/refs/tags")
 set(SuperLUDist_ARCHIVE_FILE   v${SuperLUDist_VERSION}.tar.gz)
 set(SuperLUDist_SAVEAS_FILE    superlu_dist_${SuperLUDist_VERSION}.tar.gz)
-set(SuperLUDist_MD5_SUM        4001999cda77d6176077f160f1a4659a)
+set(SuperLUDist_MD5_SUM        f8559a94ee64c8b70ebd79b65576d08d)
 
 #
 # TPL: Sowing (Built by PETSc!)
