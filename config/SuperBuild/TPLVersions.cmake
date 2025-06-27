@@ -199,6 +199,7 @@
 #                - update SuperLU to 7.0.1
 #                - update SuperLU_dist to 9.1.0
 #                - add fmt (new dependency of SEACAS), 11.2.0
+#                - update Alquimia to version 1.1.1
 
 
 include(CMakeParseArguments)
@@ -389,6 +390,7 @@ set(NetCDF_ARCHIVE_FILE   v${NetCDF_VERSION}.tar.gz)
 set(NetCDF_SAVEAS_FILE    netcdf-${NetCDF_VERSION}.tar.gz)
 set(NetCDF_MD5_SUM        bc9eb96e1983bf90fb3a99cc358c5ac3)
 
+
 #
 # TPL: NetCDF Fortran
 #
@@ -557,12 +559,12 @@ set(PFLOTRAN_MD5_SUM        d44b5670223ea9e6fbb894a8842161e0)
 #
 set(Alquimia_VERSION_MAJOR 1)
 set(Alquimia_VERSION_MINOR 1)
-set(Alquimia_VERSION_PATCH 0)
+set(Alquimia_VERSION_PATCH 1)
 set(Alquimia_VERSION ${Alquimia_VERSION_MAJOR}.${Alquimia_VERSION_MINOR}.${Alquimia_VERSION_PATCH})
 set(Alquimia_URL_STRING     https://github.com/LBL-EESA/alquimia-dev/archive/refs/tags)
 set(Alquimia_ARCHIVE_FILE   v${Alquimia_VERSION}.tar.gz)
 set(Alquimia_SAVEAS_FILE    alquimia-dev-${Alquimia_VERSION}.tar.gz)
-set(Alquimia_MD5_SUM        adfa32fe2bcd690a847ec59390f82a0a)
+set(Alquimia_MD5_SUM        4e288e576777d43a907cdfef71427449)
 
 #
 # TPL: Silo
