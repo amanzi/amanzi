@@ -16,6 +16,7 @@
  
  add_library(matgen ${sources})
  target_link_libraries(matgen superlu)
-if (APPLE)
-  set_target_properties(matgen PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
-endif()
++if (APPLE)
++  set_target_properties(matgen PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
++endif()
+
