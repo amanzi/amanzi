@@ -1,11 +1,11 @@
---- SRC/double/dutil_dist.c	2025-06-27 11:34:20
-+++ ../superlu_dist-9.1.0/SRC/double/dutil_dist.c	2024-11-10 18:36:31
+--- ../superlu_dist-9.1.0/SRC/double/dutil_dist.c	2024-11-10 18:36:31
++++ SRC/double/dutil_dist.c	2025-06-27 11:34:20
 @@ -821,7 +821,7 @@
      int_t *index;
      double *nzval;
  	char filename[256];
--	FILE *fp;
-+	FILE *fp, *fopen();
+-	FILE *fp, *fopen();
++	FILE *fp;
  
  	// assert(grid->npcol*grid->nprow==1);
  
