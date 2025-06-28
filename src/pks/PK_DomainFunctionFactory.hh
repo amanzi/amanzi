@@ -23,6 +23,7 @@
 #include "PK_DomainFunctionCoupling.hh"
 #include "PK_DomainFunctionField.hh"
 #include "PK_DomainFunctionFirstOrderExchange.hh"
+#include "PK_DomainFunctionFirstOrderExchangeDepth.hh"
 #include "PK_DomainFunctionParentMeshField.hh"
 #include "PK_DomainFunctionSimple.hh"
 #include "PK_DomainFunctionSimpleWell.hh"
@@ -140,6 +141,14 @@ PK_DomainFunctionFactory<FunctionBase>::Create(Teuchos::ParameterList& plist,
       Teuchos::rcp(new PK_DomainFunctionFirstOrderExchange<FunctionBase>(mesh_, plist, kind));
     func->Init(plist, keyword);
     return func;
+  } else if (model == "first order exchange depth") {
+    AMANZI_ASSERT(kind == AmanziMesh::Entity_kind::CELL);
+    plist.sublist("source function")
+      .set<std::string>("total component concentration copy", tag.get());
+    Teuchos::RCP<PK_DomainFunctionFirstOrderExchangeDepth<FunctionBase>> func =
+      Teuchos::rcp(new PK_DomainFunctionFirstOrderExchangeDepth<FunctionBase>(mesh_, plist, kind));
+    func->Init(plist, keyword);
+    return func;    
   } else if (model == "subgrid") {
     AMANZI_ASSERT(kind == AmanziMesh::Entity_kind::FACE);
     plist.sublist(keyword).set<std::string>("copy_field_out_tag", tag.get());
