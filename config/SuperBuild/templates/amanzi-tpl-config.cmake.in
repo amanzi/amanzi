@@ -80,6 +80,9 @@ set(UnitTest_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "UnitTest installation prefix")
 # ZLIB
 set(ZLIB_DIR @ZLIB_DIR@ CACHE PATH "ZLIB installation prefix")
 
+# fmt
+set(FMT_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "fmt installation prefix")
+
 # METIS  
 set(METIS_DIR @METIS_DIR@ CACHE PATH "METIS installation prefix")
 
