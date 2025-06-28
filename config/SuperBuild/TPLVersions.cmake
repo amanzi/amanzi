@@ -200,6 +200,7 @@
 #                - update SuperLU_dist to 9.1.0
 #                - add fmt (new dependency of SEACAS), 11.2.0
 #                - update Alquimia to version 1.1.1
+#                - update hypre to 2.33.0
 
 
 include(CMakeParseArguments)
@@ -443,15 +444,15 @@ set(MOAB_MD5_SUM        935d18f8edf7dc3df625d9426a2d59e1)
 # TPL: HYPRE
 #
 set(HYPRE_VERSION_MAJOR  2)
-set(HYPRE_VERSION_MINOR  29)
+set(HYPRE_VERSION_MINOR  33)
 set(HYPRE_VERSION_PATCH  0)
 set(HYPRE_VERSION  ${HYPRE_VERSION_MAJOR}.${HYPRE_VERSION_MINOR}.${HYPRE_VERSION_PATCH})
 set(HYPRE_URL_STRING     "https://github.com/hypre-space/hypre/archive/")
 set(HYPRE_ARCHIVE_FILE   v${HYPRE_VERSION}.tar.gz)
 set(HYPRE_SAVEAS_FILE    hypre-${HYPRE_VERSION}.tar.gz)
-set(HYPRE_MD5_SUM        0b3abc221b216db97175709aa0bf94d7)
+set(HYPRE_MD5_SUM        d4990384b7b1d8b0357fc34d91530d49)
 set(HYPRE_GIT_REPOSITORY "https://github.com/hypre-space/hypre")
-set(HYPRE_GIT_TAG        "8f6bdc6ab8c9d01961fa0b3024a1969c6cb7877f")
+set(HYPRE_GIT_TAG        "d3243638e7dee5208cb4ea643610fa9bdb74123b")
 
 #
 # TPL: ParMetis
