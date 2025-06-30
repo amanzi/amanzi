@@ -371,8 +371,8 @@ Richards_PK::Setup()
 
     Teuchos::ParameterList elist(alpha_key_);
     elist.set<std::string>("my key", alpha_key_)
-      .set<Teuchos::Array<std::string>>("multiplicative dependencies", listm)
-      .set<Teuchos::Array<std::string>>("reciprocal dependencies", listr)
+      .set<Teuchos::Array<std::string>>("multiplicative dependency key suffixes", listm)
+      .set<Teuchos::Array<std::string>>("reciprocal dependency key suffixes", listr)
       .set<std::string>("tag", "");
 
     S_->RequireDerivative<CV_t, CVS_t>(

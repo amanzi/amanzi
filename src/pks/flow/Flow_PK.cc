@@ -149,7 +149,7 @@ Flow_PK::Setup()
       std::vector<std::string> listm(
         { Keys::getVarName(aperture_key_), Keys::getVarName(permeability_key_) });
       elist.set<std::string>("my key", permeability_eff_key_)
-        .set<Teuchos::Array<std::string>>("multiplicative dependencies", listm)
+        .set<Teuchos::Array<std::string>>("multiplicative dependency key suffixes", listm)
         .set<std::string>("tag", "");
       auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
       S_->SetEvaluator(permeability_eff_key_, Tags::DEFAULT, eval);
@@ -173,7 +173,7 @@ Flow_PK::Setup()
       { Keys::getVarName(porosity_key_), Keys::getVarName(saturation_liquid_key_) });
     if (flow_on_manifold_) listm.push_back(Keys::getVarName(aperture_key_));
 
-    elist.set<Teuchos::Array<std::string>>("multiplicative dependencies", listm)
+    elist.set<Teuchos::Array<std::string>>("multiplicative dependency key suffixes", listm)
       .set<std::string>("tag", "");
     auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
     S_->SetEvaluator(wc_key_, Tags::DEFAULT, eval);
