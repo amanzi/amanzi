@@ -48,12 +48,12 @@ class TreeVector {
 
   // Basic constructors of a TreeVector
   TreeVector();
-  TreeVector(const Comm_ptr_type& comm);
-  explicit TreeVector(const TreeVectorSpace& space, InitMode mode = INIT_MODE_NONE);
-  explicit TreeVector(const Teuchos::RCP<TreeVectorSpace>& space, InitMode mode = INIT_MODE_NONE);
+  explicit TreeVector(const Comm_ptr_type& comm);
+  explicit TreeVector(const TreeVectorSpace& space, InitMode mode = init_mode_default);
+  explicit TreeVector(const Teuchos::RCP<TreeVectorSpace>& space, InitMode mode = init_mode_default);
 
   // copy constructors
-  TreeVector(const TreeVector& other, InitMode mode = INIT_MODE_COPY);
+  TreeVector(const TreeVector& other);
 
   // Assignment operator.
   TreeVector& operator=(const TreeVector& other);
