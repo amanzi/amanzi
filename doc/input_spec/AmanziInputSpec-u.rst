@@ -283,9 +283,9 @@ The ``execution_control_defaults`` element specifies default values to be utiliz
 +------------------+----------------+----------------------------------+
 | max_dt           | time           | time value(,unit)                |
 +------------------+----------------+----------------------------------+
-| reduction_factor | double         | factor for reducing timestep    |
+| reduction_factor | double         | factor for reducing timestep     |
 +------------------+----------------+----------------------------------+
-| increase_factor  | double         | factor for increasing timestep  |
+| increase_factor  | double         | factor for increasing timestep   |
 +------------------+----------------+----------------------------------+
 | mode             | string         | ``steady, transient``            |
 +------------------+----------------+----------------------------------+
@@ -312,9 +312,9 @@ Individual time periods of the simulation are defined using ``execution_control`
 +------------------+----------------+----------------------------------------------------------+
 | max_dt           | time           | time value(,unit)                                        |
 +------------------+----------------+----------------------------------------------------------+
-| reduction_factor | double         | factor for reducing timestep                            |
+| reduction_factor | double         | factor for reducing timestep                             |
 +------------------+----------------+----------------------------------------------------------+
-| increase_factor  | double         | factor for increasing timestep                          |
+| increase_factor  | double         | factor for increasing timestep                           |
 +------------------+----------------+----------------------------------------------------------+
 | mode             | string         | ``steady, transient``                                    |
 +------------------+----------------+----------------------------------------------------------+
