@@ -18,11 +18,26 @@ jobs:
         images:
           - base_image: ubuntu
             ver_tag: jammy
+            mpi_distro: mpich
           - base_image: gcc
             ver_tag: "14"
+            mpi_distro: mpich
           - base_image: gcc
             ver_tag: latest
+            mpi_distro: mpich
 
+          - base_image: ubuntu
+            ver_tag: jammy
+            mpi_distro: openmpi
+            mpi_ver: "4.1.8"
+          - base_image: gcc
+            ver_tag: "14"
+            mpi_distro: mpich
+            mpi_ver: "5.0.8"
+          - base_image: gcc
+            ver_tag: latest
+            mpi_distro: mpich
+            mpi_ver: "5.0.8"
     runs-on: ${{matrix.os}}
     steps:
     - name: Check out the Amanzi repo
@@ -57,6 +72,8 @@ jobs:
           mpi_flavor=mpich
           base_image=${{matrix.images.base_image}}
           ver_tag=${{matrix.images.ver_tag}}
+          mpi_distro=${{matrix.images.mpi_distro}}
+          mpi_ver=${{matrix.images.mpi_ver}}
 
   fix-manifest:
     runs-on: ubuntu-latest
