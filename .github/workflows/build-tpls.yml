@@ -22,9 +22,11 @@ jobs:
           - base_image: gcc
             ver_tag: "14"
             mpi_distro: mpich
+            target: base
           - base_image: gcc
             ver_tag: latest
             mpi_distro: mpich
+            target: base
           - base_image: ubuntu
             ver_tag: jammy
             mpi_distro: openmpi
@@ -33,10 +35,12 @@ jobs:
             ver_tag: "14"
             mpi_distro: openmpi
             mpi_ver: "5.0.8"
+            target: base
           - base_image: gcc
             ver_tag: latest
             mpi_distro: openmpi
             mpi_ver: "5.0.8"
+            target: base
     runs-on: ${{matrix.os}}
     steps:
     - name: Check out the Amanzi repo
