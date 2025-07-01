@@ -7,15 +7,6 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-/*
-  Multiphase PK
-
-  Secondary variable field evaluator computes product of fields
-  or inverse of fields:
-
-    eval = (f1 * f2 * ... * fn) / (g1 * g2 * ... * gm)
-*/
-
 #include <utility>
 
 #include "Evaluator.hh"
@@ -29,42 +20,37 @@ namespace Amanzi {
 EvaluatorMultiplicativeReciprocal::EvaluatorMultiplicativeReciprocal(Teuchos::ParameterList& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
-  if (my_keys_.size() == 0) {
-    Key key = plist.get<std::string>("my key");
-    Tag tag = make_tag(plist.get<std::string>("tag"));
-    my_keys_.push_back(make_pair(key, tag));
-  }
-  Key domain = Keys::getDomain(my_keys_[0].first);
-
   if (plist_.isParameter("evaluator dependencies")) {
     Errors::Message msg;
-    msg << "EvaluatorMultiplicativeReciprocal: \"" << my_keys_[0].first
+    msg << "EvaluatorMultiplicativeReciprocal: \"" << my_keys_.front().first
         << "\" must have separate (optional) lists for multiplicative and reciprocal dependencies.";
     Exceptions::amanzi_throw(msg);
   }
-
-  if (plist_.isParameter("multiplicative dependencies")) {
-    // since dependensies is a map, we need separate maps for numerator and denominator
-    const auto& names = plist_.get<Teuchos::Array<std::string>>("multiplicative dependencies");
-    for (const auto& name : names) {
-      Key full_name = Keys::getKey(domain, name);
-      dependencies_.insert(std::make_pair(full_name, Tags::DEFAULT));
-      list0_.push_back(full_name);
-    }
+  if (plist_.isParameter("multiplicative dependencies") ||
+      plist_.isParameter("reciprocal dependencies")) {
+    Errors::Message msg;
+    msg << "EvaluatorMultiplicativeReciprocal: \"" << my_keys_.front().first
+        << "\" no longer accepts option \"multiplicative dependencies\" or \"reciprocal dependencies\""
+        << "-- please use \"multiplicative dependency keys\" or \"multiplicative dependency key suffixes\""
+        << " (respectively reciprocal) instead.";
   }
 
-  if (plist_.isParameter("reciprocal dependencies")) {
-    const auto& names = plist_.get<Teuchos::Array<std::string>>("reciprocal dependencies");
-    for (const auto& name : names) {
-      Key full_name = Keys::getKey(domain, name);
-      dependencies_.insert(std::make_pair(full_name, Tags::DEFAULT));
-      list1_.push_back(full_name);
-    }
+  Key domain = Keys::getDomain(my_keys_.front().first);
+  Tag tag = my_keys_.front().second;
+
+  const Teuchos::Array<std::string> empty_array;
+  {
+    list0_ = Keys::readKeys(plist_, domain, "multiplicative dependency", &empty_array);
+    for (const auto& key : list0_) dependencies_.insert({key, tag});
+  }
+  {
+    list1_ = Keys::readKeys(plist_, domain, "reciprocal dependency", &empty_array);
+    for (const auto& key : list1_) dependencies_.insert({key, tag});
   }
 
   if (list0_.size() + list1_.size() == 0) {
     Errors::Message msg;
-    msg << "EvaluatorMultiplicativeReciprocal for: \"" << my_keys_[0].first
+    msg << "EvaluatorMultiplicativeReciprocal for: \"" << my_keys_.front().first
         << "\" has no dependencies.";
     Exceptions::amanzi_throw(msg);
   }
@@ -76,7 +62,8 @@ EvaluatorMultiplicativeReciprocal::EvaluatorMultiplicativeReciprocal(Teuchos::Pa
 
 EvaluatorMultiplicativeReciprocal::EvaluatorMultiplicativeReciprocal(
   const EvaluatorMultiplicativeReciprocal& other)
-  : EvaluatorSecondaryMonotype(other){};
+  : EvaluatorSecondaryMonotype(other)
+{};
 
 
 /* ******************************************************************

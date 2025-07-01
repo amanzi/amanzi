@@ -91,6 +91,38 @@ struct test_cv_bf {
 };
 
 
+struct test_cv_slicable {
+  Comm_ptr_type comm;
+  Teuchos::RCP<Mesh> mesh;
+
+  Teuchos::RCP<CompositeVectorSpace> x_space;
+  Teuchos::RCP<CompositeVector> x;
+
+  test_cv_slicable()
+  {
+    comm = getDefaultComm();
+    MeshFactory meshfactory(comm);
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
+
+    std::vector<Entity_kind> locations(2);
+    locations[0] = CELL;
+    locations[1] = FACE;
+
+    std::vector<std::string> names(2);
+    names[0] = "cell";
+    names[1] = "face";
+
+    std::vector<int> num_dofs(2);
+    num_dofs[0] = 2;
+    num_dofs[1] = 2;
+
+    x_space = Teuchos::rcp(new CompositeVectorSpace());
+    x_space->SetMesh(mesh)->SetGhosted()->SetComponents(names, locations, num_dofs);
+    x = Teuchos::rcp(new CompositeVector(*x_space));
+  }
+};
+
+
 SUITE(COMPOSITE_VECTOR)
 {
   // test basic setup and construction
@@ -371,5 +403,45 @@ SUITE(COMPOSITE_VECTOR)
     } else {
       CHECK(nbf_owned < nbf_all);
     }
+  }
+
+  TEST_FIXTURE(test_cv_slicable, CVSliceable)
+  {
+    // checks slicing
+    x->PutScalar(1.0);
+
+    CHECK_CLOSE(1.0, (*x)("cell", 0, 0), 1.e-10);
+    CHECK_CLOSE(1.0, (*x)("cell", 1, 0), 1.e-10);
+    CHECK_CLOSE(1.0, (*x)("face", 0, 0), 1.e-10);
+    CHECK_CLOSE(1.0, (*x)("face", 1, 0), 1.e-10);
+
+    // slice
+    {
+      auto x1 = x->GetVector(1);
+      x1->PutScalar(2.0);
+    }
+
+    CHECK_CLOSE(1.0, (*x)("cell", 0, 0), 1.e-10);
+    CHECK_CLOSE(2.0, (*x)("cell", 1, 0), 1.e-10);
+    CHECK_CLOSE(1.0, (*x)("face", 0, 0), 1.e-10);
+    CHECK_CLOSE(2.0, (*x)("face", 1, 0), 1.e-10);
+
+    // check slicing of const vector
+    Teuchos::RCP<const CompositeVector> x_const(x);
+    {
+      auto x1 = x_const->GetVector(1);
+      CHECK_CLOSE(2.0, (*x1)("cell", 0, 0), 1.e-10);
+      CHECK_CLOSE(2.0, (*x1)("face", 0, 0), 1.e-10);
+    }
+  }
+
+
+  TEST_FIXTURE(test_cv, CVSliceableThrows)
+  {
+    // checks that slicing a non-slicable vector throws
+    CHECK_THROW(x->GetVector(1), Errors::Message);
+
+    Teuchos::RCP<const CompositeVector> x_const(x);
+    CHECK_THROW(x_const->GetVector(1), Errors::Message);
   }
 }
