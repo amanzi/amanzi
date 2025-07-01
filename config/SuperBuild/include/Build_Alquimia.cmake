@@ -61,6 +61,12 @@ set(Alquimia_CMAKE_ARGS
       "-DMPI_PREFIX=${MPI_PREFIX}"
       "-DCMAKE_Fortran_FLAGS:STRING=-fPIC -w -Wno-unused-variable -ffree-line-length-0 -O3")
 
+# --- Override minimum version
+if(CMAKE_MAJOR_VERSION VERSION_EQUAL "4")
+  list(APPEND Alquimia_CMAKE_ARGS "-DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.5")
+endif()
+
+
 # --- Add external project build and tie to the Alquimia build target
 ExternalProject_Add(${Alquimia_BUILD_TARGET}
                     DEPENDS   ${Alquimia_PACKAGE_DEPENDS}         # Package dependency target

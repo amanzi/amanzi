@@ -11,6 +11,7 @@
 
 #include <functional>
 #include <cmath>
+#include <algorithm>
 
 #include "exceptions.hh"
 #include "errors.hh"
