@@ -307,7 +307,7 @@ Transport_PK::Setup()
 
     Teuchos::ParameterList elist(wc_key_);
     elist.set<std::string>("my key", wc_key_)
-      .set<Teuchos::Array<std::string>>("multiplicative dependencies", listm)
+      .set<Teuchos::Array<std::string>>("multiplicative dependency key suffixes", listm)
       .set<std::string>("tag", "");
     auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
     S_->SetEvaluator(wc_key_, Tags::DEFAULT, eval);
@@ -331,8 +331,8 @@ Transport_PK::Setup()
 
     Teuchos::ParameterList elist(aux_key);
     elist.set<std::string>("my key", aux_key)
-      .set<Teuchos::Array<std::string>>("multiplicative dependencies", { "total_component_concentration" })
-      .set<Teuchos::Array<std::string>>("reciprocal dependencies", { "mass_density_liquid" })
+      .set<Teuchos::Array<std::string>>("multiplicative dependency key suffixes", { "total_component_concentration" })
+      .set<Teuchos::Array<std::string>>("reciprocal dependency key suffixes", { "mass_density_liquid" })
       .set<std::string>("tag", "");
     auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
     S_->SetEvaluator(aux_key, Tags::DEFAULT, eval);

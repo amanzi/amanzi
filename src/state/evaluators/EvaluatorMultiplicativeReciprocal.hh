@@ -7,31 +7,49 @@
   Authors: Ethan Coon (coonet@ornl.gov)
            Konstantin Lipnikov (lipnikov@lanl.gov)
 */
-
-//! A generic evaluator for multiplying and dividing a collection of fields.
-/*
-  State
-
-  Secondary variable field evaluator computes product of fields
-  or inverse of fields:
-
-    eval = f1 * f2 * ... * fn) / (g1 * g2 * ... * gm)
-*/
-
-
 /*!
+
+A generic evaluator for multiplying and dividing a collection of fields.
+
+Secondary variable field evaluator computes element-wise multiplication and
+division of fields:
+
+.. math::
+   e = \alpha \frac{f_1 * f_2 * ... * f_n}{g_1 * g_2 * ... * g_m}
+
+Note that, for the moment, all tags for :math:`f_i` and :math:`g_i` must be the
+same as that of :math:`e`.  This could straightforwardly be relaxed upon
+request.
 
 .. _multiplicative-reciprocal-evaluator-spec:
 .. admonition:: multiplicative-reciprocal-evaluator-spec
+
    * `"coefficient`" ``[double]`` **1** A constant prefix to the product.
    * `"enforce positivity`" ``[bool]`` **false** If true, max the result with 0.
 
-   * `"multiplicative dependencies`" ``[Array(string)]`` **optional**, only base field names
-   * `"reciprocal dependencies`" ``[Array(string)]`` **optional**, only base field names
+   ONE OF
+
+   * `"multiplicative dependency keys`" ``[Array(string)]`` **optional**, the :math:`f_i`
+
+   OR
+
+   * `"multiplicative dependency key suffixes`" ``[Array(string)]`` **optional**, suffixes for the :math:`f_i`.
+
+   END
+
+   ONE OF
+
+   * `"reciprocal dependency keys`" ``[Array(string)]`` **optional**, the :math:`g_i`
+
+   OR
+
+   * `"reciprocal dependency key suffixes`" ``[Array(string)]`` **optional**, suffixes for the :math:`g_i`.
+
+   END
 
 */
-#ifndef AMANZI_MULTIPLICATIVE_RECIPROCAL_EVALUATOR_HH_
-#define AMANZI_MULTIPLICATIVE_RECIPROCAL_EVALUATOR_HH_
+
+#pragma once
 
 #include <string>
 
@@ -61,11 +79,11 @@ class EvaluatorMultiplicativeReciprocal
  private:
   bool enforce_positivity_;
   double coef_;
-  std::vector<std::string> list0_, list1_;
+  Teuchos::Array<std::string> list0_, list1_;
 
   static Utils::RegisteredFactory<Evaluator, EvaluatorMultiplicativeReciprocal> fac_;
 };
 
 } // namespace Amanzi
 
-#endif
+

@@ -245,7 +245,7 @@ Energy_PK::Setup()
     std::vector<std::string> listm(
       { Keys::getVarName(aperture_key_), Keys::getVarName(conductivity_key_) });
     elist.set<std::string>("my key", conductivity_eff_key_)
-      .set<Teuchos::Array<std::string>>("multiplicative dependencies", listm)
+      .set<Teuchos::Array<std::string>>("multiplicative dependency key suffixes", listm)
       .set<std::string>("tag", "");
     auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
     S_->SetEvaluator(conductivity_eff_key_, Tags::DEFAULT, eval);
