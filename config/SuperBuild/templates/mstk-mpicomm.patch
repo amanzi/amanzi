@@ -1,0 +1,35 @@
+diff --color -rau MSTK-3.3.6/src/base/MSTK.c mstk-3.3.6-source/src/base/MSTK.c
+--- MSTK-3.3.6/src/base/MSTK.c    2021-01-26 11:16:36
++++ mstk-3.3.6-source/src/base/MSTK.c    2024-05-29 22:48:10
+@@ -57,13 +57,13 @@
+   }
+ 
+ #ifdef MSTK_HAVE_MPI
+-  int MSTK_Comm_size(MSTK_Comm comm) {
++  int MSTK_Comm_size(MPI_Comm comm) {
+     int size;
+     MPI_Comm_size(comm,&size);
+     return size;
+   }
+ 
+-  int MSTK_Comm_rank(MSTK_Comm comm) {
++  int MSTK_Comm_rank(MPI_Comm comm) {
+     int rank;
+     MPI_Comm_rank(comm,&rank);
+     return rank;
+
+diff --color -rau MSTK-3.3.6/utils/mkstruc/src/mkstruc.c mstk-3.3.6-source/utils/mkstruc/src/mkstruc.c
+--- MSTK-3.3.6/utils/mkstruc/src/mkstruc.c    2021-01-26 11:16:36
++++ mstk-3.3.6-source/utils/mkstruc/src/mkstruc.c    2024-05-29 22:50:53
+@@ -556,8 +556,11 @@
+     MV_Set_Coords(mv,xyz);
+   }
+ 
++#ifdef MSTK_HAVE_MPI
++#else
+   MESH_WriteToFile(mesh,outfile,F1,NULL);
+-
++#endif
++
+   MESH_Delete(mesh);
+ }
