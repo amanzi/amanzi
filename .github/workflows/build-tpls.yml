@@ -19,6 +19,7 @@ jobs:
           - base_image: ubuntu
             ver_tag: jammy
             mpi_distro: mpich
+            target: tpls
           - base_image: gcc
             ver_tag: "14"
             mpi_distro: mpich
@@ -31,6 +32,7 @@ jobs:
             ver_tag: jammy
             mpi_distro: openmpi
             mpi_ver: "4.1.8"
+            target: tpls
           - base_image: gcc
             ver_tag: "14"
             mpi_distro: openmpi
@@ -77,6 +79,7 @@ jobs:
           ver_tag=${{matrix.images.ver_tag}}
           mpi_distro=${{matrix.images.mpi_distro}}
           mpi_ver=${{matrix.images.mpi_ver}}
+        target: ${{matrix.images.target}}
 
   fix-manifest:
     runs-on: ubuntu-latest
