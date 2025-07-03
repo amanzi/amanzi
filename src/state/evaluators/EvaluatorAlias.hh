@@ -68,7 +68,9 @@ class EvaluatorAlias : public Evaluator {
   // Virtual method for debugging, plotting the dependency graph, etc.
   virtual std::string WriteToString() const override;
 
-protected:
+  void SetChanged(State& S);
+
+ protected:
   Key my_key_, target_key_;
   Tag my_tag_, target_tag_;
 };
