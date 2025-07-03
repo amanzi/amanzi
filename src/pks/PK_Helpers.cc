@@ -9,6 +9,7 @@
 
 //! A set of helper functions for doing common things in PKs.
 #include "MeshAlgorithms.hh"
+#include "EvaluatorAlias.hh"
 #include "PK_Helpers.hh"
 
 namespace Amanzi {
@@ -85,16 +86,24 @@ changedEvaluatorPrimary(const Key& key, const Tag& tag, State& S, bool or_die)
 {
   bool changed = false;
   Teuchos::RCP<Evaluator> eval = S.GetEvaluatorPtr(key, tag);
-  Teuchos::RCP<EvaluatorPrimaryCV> eval_pv = Teuchos::rcp_dynamic_cast<EvaluatorPrimaryCV>(eval);
-  if (eval_pv == Teuchos::null) {
-    if (or_die) {
-      Errors::Message msg;
-      msg << "Expected primary variable evaluator for " << key << " @ " << tag.get();
-      Exceptions::amanzi_throw(msg);
-    }
-  } else {
+  if (eval->get_type() == EvaluatorType::PRIMARY) {
+    Teuchos::RCP<EvaluatorPrimary_> eval_pv = Teuchos::rcp_dynamic_cast<EvaluatorPrimary_>(eval);
+    AMANZI_ASSERT(eval_pv != Teuchos::null);
     eval_pv->SetChanged();
     changed = true;
+
+  } else if (eval->get_type() == EvaluatorType::ALIAS) {
+    Teuchos::RCP<EvaluatorAlias> eval_alias = Teuchos::rcp_dynamic_cast<EvaluatorAlias>(eval);
+    AMANZI_ASSERT(eval_alias != Teuchos::null);
+    eval_alias->SetChanged(S);
+    changed = true;
+
+  } else {
+    if (or_die) {
+      Errors::Message msg;
+      msg << "Expected primary or aliased variable evaluator for " << key << " @ " << tag.get();
+      Exceptions::amanzi_throw(msg);
+    }
   }
   return changed;
 }

@@ -483,7 +483,7 @@ readDomainHint(Teuchos::ParameterList& plist,
 Key
 guessDomainType(const Key& domain)
 {
-  for (const auto& guess : { "snow", "canopy", "surface" }) {
+  for (const auto& guess : { "snow", "canopy", "surface_3d", "surface" }) {
     if (in(domain, guess)) { return guess; }
   }
   return "domain";
