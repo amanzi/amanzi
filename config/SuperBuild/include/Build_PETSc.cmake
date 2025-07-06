@@ -82,9 +82,41 @@ endif()
 # BLAS options
 if (BLAS_LIBRARIES) 
   if (NOT APPLE)
-    build_whitespace_string(petsc_blas_libs ${BLAS_LIBRARIES})
-    string (REPLACE " " "," petsc_blas_libs "${petsc_blas_libs}")
-    set(petsc_blas_option "--with-blas-lib=[${petsc_blas_libs}]")
+    # RPF - linux systems where blas/lapack were compiled with
+    # OS compiler but a different compiler was used for building 
+    # amanzi-ats and its tpls cause an issue here, as the find_BLAS
+    # macro within CMake will grab the system one. This can be checked
+    # by comparing the compiler libraries linked to the compiler binary
+    # and libblas.
+    # find what is linked to compiler being used
+    execute_process(
+      COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libstdc++.so.6
+      OUTPUT_VARIABLE COMPILER_LIBSTDCPP
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    # find what is linked to blas
+    message(STATUS ${BLAS_LIBRARIES})
+    execute_process(
+      COMMAND LDD ${BLAS_LIBRARIES}
+      OUTPUT_VARIABLE BLAS_LDD_OUTPUT
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      ERROR_QUIET
+    )
+
+    # extract just STDCPP for OS isntalled BLAS
+    string(REGEX MATCH "/[^\n ]*/libstdc\+\+\.so\.6" BLAS_LIBSTDCPP "${BLAS_LDD_OUTPUT}")
+
+    # compare COMPILER and BLAS LIBSTDCPP. If not equal, instruct PETSC to build 
+    # its own BLAS/LAPACK
+    if (NOT COMPILER_LIBSTDCPP STREQUAL BLAS_LIBSTDCPP)
+      message(STATUS "RPF - mistmatch between BLAS and compiler detected")
+      message(STATUS "Building OpenBLAS with PETSc.")
+      set(petsc_blas_option "--download-openblas")
+    else()
+      build_whitespace_string(petsc_blas_libs ${BLAS_LIBRARIES})
+      string (REPLACE " " "," petsc_blas_libs "${petsc_blas_libs}")
+      set(petsc_blas_option "--with-blas-lib=[${petsc_blas_libs}]")
+    endif()
   endif()
 else()
   set(petsc_blas_option)
@@ -93,9 +125,14 @@ endif()
 # LAPACK options
 if ( LAPACK_LIBRARIES ) 
   if (NOT APPLE) # Macs are different.
-    build_whitespace_string(petsc_lapack_libs ${LAPACK_LIBRARIES})
-    string (REPLACE " " "," petsc_lapack_libs "${petsc_lapack_libs}")
-    set(petsc_lapack_option "--with-lapack-lib=[${petsc_lapack_libs}]")
+    # petsc will also build lapack if asked to do openblas:
+    if (NOT COMPILER_LIBSTDCPP STREQUAL BLAS_LIBSTDCPP)
+      set(petsc_lapack_option) # so, set to empty string
+    else()
+      build_whitespace_string(petsc_lapack_libs ${LAPACK_LIBRARIES})
+      string (REPLACE " " "," petsc_lapack_libs "${petsc_lapack_libs}")
+      set(petsc_lapack_option "--with-lapack-lib=[${petsc_lapack_libs}]")
+    endif()
   endif()
 else()
   set(petsc_lapack_option)
