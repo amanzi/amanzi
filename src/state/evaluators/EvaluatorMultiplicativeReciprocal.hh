@@ -21,8 +21,10 @@ Note that, for the moment, all tags for :math:`f_i` and :math:`g_i` must be the
 same as that of :math:`e`.  This could straightforwardly be relaxed upon
 request.
 
-.. _multiplicative-reciprocal-evaluator-spec:
-.. admonition:: multiplicative-reciprocal-evaluator-spec
+`"evaluator type`" = `"multiplicative reciprocal`"
+
+.. _evaluator-multiplicative-reciprocal-spec:
+.. admonition:: evaluator-multiplicative-reciprocal-spec
 
    * `"coefficient`" ``[double]`` **1** A constant prefix to the product.
    * `"enforce positivity`" ``[bool]`` **false** If true, max the result with 0.
