@@ -50,9 +50,10 @@ RUN apt-get -q update -y && apt-get install -y tzdata && \
   zlib1g-dev && \
   if [ "$base_image" = "gcc" ]; then \
     echo  "Installing h5py in debian image..." \
-    && apt-get -q install -y python3-h5py;
+    && apt-get -q install -y \
+	python3-h5py; \
   fi && \
-  && apt-get clean \
+  apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
 
@@ -159,8 +160,7 @@ ENV HDF5_DIR=/home/amanzi_user/install/tpls
 
 RUN if [ "$base_image" = "ubuntu" ]; then \
       pip3 install --no-cache-dir --upgrade pip \
-      && pip3 install --no-cache-dir --no-binary=h5py h5py; \
-    fi
+      && pip3 install --no-cache-dir --no-binary=h5py h5py; fi
 
 # Set the LD_LIBRARY_PATH for Amanzi builds in the next stage
 ENV LD_LIBRARY_PATH=${AMANZI_TPLS_DIR}/lib:${AMANZI_PETSC_LIBS}:${AMANZI_TRILINOS_LIBS}:${AMANZI_SEACAS_LIBS}
