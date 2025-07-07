@@ -201,6 +201,7 @@
 #                - add fmt (new dependency of SEACAS), 11.2.0
 #                - update Alquimia to version 1.1.1
 #                - update hypre to 2.33.0
+#                - update PETSc to 3.21.0
 
 
 include(CMakeParseArguments)
@@ -506,14 +507,14 @@ set(Sowing_MD5_SUM        da689d94e2565dada261a17f3c07448d)
 # TPL: PETSc
 #
 set(PETSc_VERSION_MAJOR  3)
-set(PETSc_VERSION_MINOR  20)
+set(PETSc_VERSION_MINOR  21)
 set(PETSc_VERSION_PATCH  0)
 set(PETSc_VERSION  ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR})
 set(PETSc_ARCHIVE_VERSION ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}.${PETSc_VERSION_PATCH})
 set(PETSc_URL_STRING     "https://gitlab.com/petsc/petsc/-/archive/v${PETSc_ARCHIVE_VERSION}")
 set(PETSc_ARCHIVE_FILE   petsc-v${PETSc_VERSION}.tar.gz)
 set(PETSc_SAVEAS_FILE    petsc-${PETSc_VERSION}.tar.gz)
-set(PETSc_MD5_SUM        1f17155e2077cb027f0838a27d02ef3c)
+set(PETSc_MD5_SUM        fb13054334d3a9c0559d250a9fade0cc)
 
 #
 # TPL: Trilinos

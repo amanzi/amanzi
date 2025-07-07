@@ -95,7 +95,6 @@ if (BLAS_LIBRARIES)
       OUTPUT_STRIP_TRAILING_WHITESPACE
     )
     # find what is linked to blas
-    message(STATUS ${BLAS_LIBRARIES})
     execute_process(
       COMMAND LDD ${BLAS_LIBRARIES}
       OUTPUT_VARIABLE BLAS_LDD_OUTPUT
@@ -104,13 +103,13 @@ if (BLAS_LIBRARIES)
     )
 
     # extract just STDCPP for OS isntalled BLAS
-    string(REGEX MATCH "/[^\n ]*/libstdc\+\+\.so\.6" BLAS_LIBSTDCPP "${BLAS_LDD_OUTPUT}")
+    string(REGEX MATCH "libstdc[+][+].so\.6" BLAS_LIBSTDCPP "${BLAS_LDD_OUTPUT}")
 
     # compare COMPILER and BLAS LIBSTDCPP. If not equal, instruct PETSC to build 
     # its own BLAS/LAPACK
     if (NOT COMPILER_LIBSTDCPP STREQUAL BLAS_LIBSTDCPP)
-      message(STATUS "RPF - mistmatch between BLAS and compiler detected")
-      message(STATUS "Building OpenBLAS with PETSc.")
+      message(STATUS ">>> Build_PETSc -- RPF - mistmatch between BLAS and compiler detected")
+      message(STATUS ">>> Build_PETSc -- Building OpenBLAS with PETSc.")
       set(petsc_blas_option "--download-openblas")
     else()
       build_whitespace_string(petsc_blas_libs ${BLAS_LIBRARIES})
