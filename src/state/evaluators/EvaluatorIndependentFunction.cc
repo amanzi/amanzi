@@ -88,16 +88,6 @@ EvaluatorIndependentFunction::EnsureCompatibility(State& S)
 void
 EvaluatorIndependentFunction::Update_(State& S)
 {
-  // if (!computed_once_) {
-    // // Create the function.
-    // auto& cv = S.Get<CompositeVector>(my_key_, my_tag_);
-    // AMANZI_ASSERT(plist_.isSublist("function"));
-
-    // std::vector<std::string> complist;
-    // func_ = Functions::CreateCompositeVectorFunction(plist_.sublist("function"), cv.Map(), complist,
-    //         dot_with_normal_, spatial_dist_method_);
-  // }
-
   // NOTE: EvaluatorIndependentFunctions own their own data.
   auto cv = S.GetPtrW<CompositeVector>(my_key_, my_tag_, my_key_);
   time_ = S.get_time(my_tag_);

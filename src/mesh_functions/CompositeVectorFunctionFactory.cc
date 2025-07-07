@@ -150,7 +150,11 @@ CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
 
         // this call will either Add the component if it doesn't exist, or
         // confirm the structure if it does.
-        sample.AddComponent(component, location, func->size());
+        if (dot_with_normal) {
+          sample.AddComponent(component, location, 1);
+        } else {
+          sample.AddComponent(component, location, func->size());
+        }
 
         // -- Create the domain,
         auto domain = Teuchos::rcp(new MeshFunction::Domain(regions, location));
