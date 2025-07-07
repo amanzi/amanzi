@@ -18,7 +18,8 @@ namespace Amanzi {
 * Two constructors.
 ****************************************************************** */
 EvaluatorMultiplicativeReciprocal::EvaluatorMultiplicativeReciprocal(Teuchos::ParameterList& plist)
-  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
+    n_dofs_(-1)
 {
   if (plist_.isParameter("evaluator dependencies")) {
     Errors::Message msg;
