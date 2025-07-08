@@ -196,11 +196,11 @@
 #                - update netcdf-c to 4.9.3
 #                - update netcdf-fortran to 4.6.2
 #                - update SEACAS to date tag v2025-04-14
-#                - update SuperLU to 7.0.1
-#                - update SuperLU_dist to 9.1.0
+#                - update SuperLU to 6.0.1
+#                - update SuperLU_dist to 8.2.0
 #                - add fmt (new dependency of SEACAS), 11.2.0
 #                - update Alquimia to version 1.1.1
-#                - update hypre to 2.33.0
+#                - update hypre to 2.31.0
 #                - update PETSc to 3.21.0
 
 
@@ -445,7 +445,7 @@ set(MOAB_MD5_SUM        935d18f8edf7dc3df625d9426a2d59e1)
 # TPL: HYPRE
 #
 set(HYPRE_VERSION_MAJOR  2)
-set(HYPRE_VERSION_MINOR  33)
+set(HYPRE_VERSION_MINOR  31)
 set(HYPRE_VERSION_PATCH  0)
 set(HYPRE_VERSION  ${HYPRE_VERSION_MAJOR}.${HYPRE_VERSION_MINOR}.${HYPRE_VERSION_PATCH})
 set(HYPRE_URL_STRING     "https://github.com/hypre-space/hypre/archive/")
@@ -470,26 +470,26 @@ set(ParMetis_MD5_SUM        56ac6ebf6e7e8a522fa053c799dc7a92)
 #
 # TPL: SuperLU
 #
-set(SuperLU_VERSION_MAJOR  7)
+set(SuperLU_VERSION_MAJOR  6)
 set(SuperLU_VERSION_MINOR  0)
 set(SuperLU_VERSION_PATCH  1)
 set(SuperLU_VERSION  ${SuperLU_VERSION_MAJOR}.${SuperLU_VERSION_MINOR}.${SuperLU_VERSION_PATCH})
 set(SuperLU_URL_STRING     "https://github.com/xiaoyeli/superlu/archive/refs/tags")
 set(SuperLU_ARCHIVE_FILE   v${SuperLU_VERSION}.tar.gz)
 set(SuperLU_SAVEAS_FILE    superlu_${SuperLU_VERSION}.tar.gz)
-set(SuperLU_MD5_SUM        855cb57eb725535fd757564f220cd61e)
+set(SuperLU_MD5_SUM        d15c61705f4ddf0777731d3f388e287f)
 
 #
 # TPL: SuperLU_Dist
 #
-set(SuperLUDist_VERSION_MAJOR  9)
-set(SuperLUDist_VERSION_MINOR  1)
+set(SuperLUDist_VERSION_MAJOR  8)
+set(SuperLUDist_VERSION_MINOR  2)
 set(SuperLUDist_VERSION_PATCH  0)
 set(SuperLUDist_VERSION  ${SuperLUDist_VERSION_MAJOR}.${SuperLUDist_VERSION_MINOR}.${SuperLUDist_VERSION_PATCH})
 set(SuperLUDist_URL_STRING     "https://github.com/xiaoyeli/superlu_dist/archive/refs/tags")
 set(SuperLUDist_ARCHIVE_FILE   v${SuperLUDist_VERSION}.tar.gz)
 set(SuperLUDist_SAVEAS_FILE    superlu_dist_${SuperLUDist_VERSION}.tar.gz)
-set(SuperLUDist_MD5_SUM        f8559a94ee64c8b70ebd79b65576d08d)
+set(SuperLUDist_MD5_SUM        fc81d1e200e18e31891b88bed3bf78be)
 
 #
 # TPL: Sowing (Built by PETSc!)
