@@ -100,7 +100,7 @@ enum Entity_kind : int {
 
 // entity kind from string
 inline Entity_kind
-createEntityKind(const std::string& instring)
+createEntityKind(const std::string& instring, bool or_die = true)
 {
   std::string estring = instring; // note not done in signature to throw a better error
   transform(estring.begin(), estring.end(), estring.begin(), ::tolower);
@@ -116,14 +116,17 @@ createEntityKind(const std::string& instring)
     return Entity_kind::EDGE;
   else if (estring == "node")
     return Entity_kind::NODE;
-  else {
+  else if (or_die) {
     Errors::Message msg;
     msg << "Unknown entity kind string: \"" << instring
         << "\", valid are \"cell\", \"face\", \"boundary_face\", \"edge\", and \"node\".";
     Exceptions::amanzi_throw(msg);
-    return Entity_kind::NODE;
+    return Entity_kind::UNKNOWN;
+  } else {
+    return Entity_kind::UNKNOWN;
   }
 }
+
 
 // string from entity kind
 inline std::string

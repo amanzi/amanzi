@@ -125,7 +125,7 @@ CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
         }
       } else {
         for (const auto& comp : components) {
-          locations.emplace_back(AmanziMesh::createEntityKind(comp));
+          locations.emplace_back(AmanziMesh::createEntityKind(comp, false));
         }
       }
 
@@ -147,6 +147,21 @@ CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
         // get the entity kind based upon the sample vector
         const std::string& component = components[i];
         AmanziMesh::Entity_kind location = locations[i];
+
+        // if location is UNKNOWN, then neither the location option was
+        // provided in the list, nor was the component name something
+        // interpretable as a location (e.g. component = "cell").  So the
+        // location must already be in the space.
+        if (location == AmanziMesh::Entity_kind::UNKNOWN) {
+          if (not sample.HasComponent(component)) {
+            Errors::Message msg;
+            msg << "CompositeVectorFunctionFactory \"" << plist.name() << "(" << name << ")"
+                << "\": missing \"location\" option for component \"" << component << "\"";
+            Exceptions::amanzi_throw(msg);
+          } else {
+            location = sample.Location(component);
+          }
+        }
 
         // this call will either Add the component if it doesn't exist, or
         // confirm the structure if it does.
@@ -257,35 +272,6 @@ CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
         for (auto it = sample.begin(); it != sample.end(); ++it) components.emplace_back(*it);
       }
 
-      // grab the name of the locations from the list
-      std::vector<AmanziMesh::Entity_kind> locations;
-      if (sublist.isParameter("location")) {
-        if (sublist.isType<std::string>("location")) {
-          locations.emplace_back(AmanziMesh::createEntityKind(sublist.get<std::string>("location")));
-        } else {
-          Errors::Message msg;
-          msg << "CompositeVectorFunctionFactory \"" << plist.name() << "(" << name << ")"
-              << "\": parameter \"location\" should be a string.";
-          Exceptions::amanzi_throw(msg);
-        }
-      } else if (sublist.isParameter("locations")) {
-        if (sublist.isType<Teuchos::Array<std::string>>("locations")) {
-          auto location_strings = sublist.get<Teuchos::Array<std::string>>("locations").toVector();
-          for (const auto& loc : location_strings) {
-            locations.emplace_back(AmanziMesh::createEntityKind(loc));
-          }
-        } else {
-          Errors::Message msg;
-          msg << "CompositeVectorFunctionFactory \"" << plist.name() << "(" << name << ")"
-              << "\": parameter \"locations\" should be an Array(string).";
-          Exceptions::amanzi_throw(msg);
-        }
-      } else {
-        for (const auto& comp : components) {
-          locations.emplace_back(AmanziMesh::createEntityKind(comp));
-        }
-      }
-
       // create the function
       Teuchos::RCP<MultiFunction> func;
       if (sublist.isSublist("function")) {
@@ -322,8 +308,6 @@ CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
           }
         }
 
-        // this call will either Add the component if it doesn't exist, or
-        // confirm the structure if it does.
         AmanziMesh::Entity_kind location = sample.Location(component);
 
         // -- Create the domain,
