@@ -79,66 +79,51 @@ else()
   set(petsc_debug_flag 1)
 endif()
 
+# fix libstdc++ linking issue
+execute_process(
+  COMMAND lsb_release -is
+  OUTPUT_VARIABLE DISTRO_NAME
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+if (DISTRO_NAME STREQUAL "Debian")
+  message(STATUS "Debian system detected via lsb_release - check for mismatched libstdc++")
+  execute_process(
+    COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libstdc++.so.6
+    OUTPUT_VARIABLE COMPILER_LIBSTDCPP
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  execute_process(
+    COMMAND strings ${COMPILER_LIBSTDCPP}
+    OUTPUT_VARIABLE COMPILER_LIBSTDCPP_STRINGS
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  string(REGEX MATCHALL "CXXABI_1\.3\..." COMPILER_ABI_STRINGS "${COMPILER_LIBSTDCPP_STRINGS}")
+  string(CONCAT COMPILER_ABIS ${COMPILER_ABI_STRINGS})
+  execute_process(
+    COMMAND uname -m
+    OUTPUT_VARIABLE ARCH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  execute_process(
+    COMMAND strings /lib/${ARCH}-linux-gnu/libstdc++.so.6
+    OUTPUT_VARIABLE SYSTEM_LIBSTDCPP_STRINGS
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  string(REGEX MATCHALL "CXXABI_1\.3\..." SYSTEM_ABI_STRINGS "${SYSTEM_LIBSTDCPP_STRINGS}")
+  string(CONCAT SYSTEM_ABIS ${SYSTEM_ABI_STRINGS})
+  if (NOT ${SYSTEM_ABIS} STREQUAL ${COMPILER_ABIS})
+    get_filename_component(COMPILER_LIBSTDCPP_DIR ${COMPILER_LIBSTDCPP} DIRECTORY)
+    link_directories(${COMPILER_LIBSTDCPP_DIR})
+    # message(FATAL_ERROR "Alquimia will not build unless compiler libstdc++ linked here with rpath for petsc..")
+  endif() 
+endif()
+
 # BLAS options
 if (BLAS_LIBRARIES)
   if (NOT APPLE)
-    # RPF - linux systems where blas/lapack were compiled with
-    # OS compiler but a different compiler was used for building
-    # amanzi-ats and its tpls cause an issue here, as the find_BLAS
-    # macro within CMake will grab the system one. This can be checked
-    # by comparing the compiler libraries linked to the compiler binary
-    # and libblas.
-    # one limitation of this - other TPLs earlier in the build process
-    # link the system blas/lapack. So longer-term this either needs to
-    # build OpenBLAS earlier in the build process.
-    # find what is linked to compiler being used
-    execute_process(
-      COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libstdc++.so.6
-      OUTPUT_VARIABLE COMPILER_LIBSTDCPP
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    # find what is linked to blas
-    execute_process(
-      COMMAND LDD ${BLAS_LIBRARIES}
-      OUTPUT_VARIABLE BLAS_LDD_OUTPUT
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-      ERROR_QUIET
-    )
-
-    # extract just STDCPP for OS isntalled BLAS
-    string(REGEX MATCH "libstdc[+][+].so\.6" BLAS_LIBSTDCPP "${BLAS_LDD_OUTPUT}")
-
-    # compare COMPILER and BLAS LIBSTDCPP. If not equal, instruct PETSC to build
-    # its own BLAS/LAPACK
-    if (NOT COMPILER_LIBSTDCPP STREQUAL BLAS_LIBSTDCPP)
-      message(WARNING ">>> Build_PETSc -- RPF - mistmatch between system BLAS and compiler detected")
-      # check to see if compiler has new CXXABI version, as mismatch here will cause
-      # build failures in alquimia.
-      execute_process(
-        COMMAND strings ${COMPILER_LIBSTDCPP} | grep 'CXXABI'
-        OUTPUT_VARIABLE COMPILER_ABI_STRINGS
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-      )
-      execute_process(
-        COMMAND strings ${BLAS_LIBSTDCPP} | grep 'CXXABI'
-        OUTPUT_VARIABLE SYSTEM_ABI_STRINGS
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-      )
-
-      if (NOT SYSTEM_ABI_STRINGS STREQUAL COMPILER_ABI_STRINGS)
-        message(WARNING ">>> Build_PETSc -- ABI versions differ between compiler and system BLAS/LAPACK")
-        message(WARNING ">>> Build_PETSc -- Building OpenBLAS with PETSc.")
-        set(petsc_blas_option "--download-openblas")
-      else()
-        build_whitespace_string(petsc_blas_libs ${BLAS_LIBRARIES})
-        string (REPLACE " " "," petsc_blas_libs "${petsc_blas_libs}")
-        set(petsc_blas_option "--with-blas-lib=[${petsc_blas_libs}]")
-        endif()
-    else()
-      build_whitespace_string(petsc_blas_libs ${BLAS_LIBRARIES})
-      string (REPLACE " " "," petsc_blas_libs "${petsc_blas_libs}")
-      set(petsc_blas_option "--with-blas-lib=[${petsc_blas_libs}]")
-    endif()
+    build_whitespace_string(petsc_blas_libs ${BLAS_LIBRARIES})
+    string (REPLACE " " "," petsc_blas_libs "${petsc_blas_libs}")
+    set(petsc_blas_option "--with-blas-lib=[${petsc_blas_libs}]")
   endif()
 else()
   set(petsc_blas_option)
@@ -147,14 +132,9 @@ endif()
 # LAPACK options
 if ( LAPACK_LIBRARIES )
   if (NOT APPLE) # Macs are different.
-    # petsc will also build lapack if asked to do openblas:
-    if (NOT SYSTEM_ABI_STRINGS STREQUAL COMPILER_ABI_STRINGS)
-      set(petsc_lapack_option) # so, set to empty string
-    else()
-      build_whitespace_string(petsc_lapack_libs ${LAPACK_LIBRARIES})
-      string (REPLACE " " "," petsc_lapack_libs "${petsc_lapack_libs}")
-      set(petsc_lapack_option "--with-lapack-lib=[${petsc_lapack_libs}]")
-    endif()
+    build_whitespace_string(petsc_lapack_libs ${LAPACK_LIBRARIES})
+    string (REPLACE " " "," petsc_lapack_libs "${petsc_lapack_libs}")
+    set(petsc_lapack_option "--with-lapack-lib=[${petsc_lapack_libs}]")
   endif()
 else()
   set(petsc_lapack_option)
