@@ -1,0 +1,144 @@
+diff --color -ruN superlu_dist-8.2.1-orig/EXAMPLE/pddrive3d.c superlu_dist-8.2.1/EXAMPLE/pddrive3d.c
+--- superlu_dist-8.2.1-orig/EXAMPLE/pddrive3d.c	2025-07-08 11:13:09
++++ superlu_dist-8.2.1/EXAMPLE/pddrive3d.c	2025-07-08 11:31:16
+@@ -118,7 +118,7 @@
+     int lookahead, colperm, rowperm, ir, batch;
+     int iam, info, ldb, ldx, nrhs;
+     char **cpp, c, *suffix;
+-    FILE *fp, *fopen ();
++    FILE *fp;
+     extern int cpp_defs ();
+     int ii, omp_mpi_level;
+     int*    usermap;     /* The following variables are used for batch solves */
+diff --color -ruN superlu_dist-8.2.1-orig/EXAMPLE/pddrive3d1.c superlu_dist-8.2.1/EXAMPLE/pddrive3d1.c
+--- superlu_dist-8.2.1-orig/EXAMPLE/pddrive3d1.c	2025-07-08 11:13:09
++++ superlu_dist-8.2.1/EXAMPLE/pddrive3d1.c	2025-07-08 11:31:16
+@@ -118,7 +118,7 @@
+     int lookahead, colperm, rowperm, ir;
+     int iam, info, ldb, ldx, nrhs;
+     char **cpp, c, *suffix;
+-    FILE *fp, *fopen ();
++    FILE *fp;
+     extern int cpp_defs ();
+     int ii, omp_mpi_level;
+ 
+diff --color -ruN superlu_dist-8.2.1-orig/EXAMPLE/pddrive3d2.c superlu_dist-8.2.1/EXAMPLE/pddrive3d2.c
+--- superlu_dist-8.2.1-orig/EXAMPLE/pddrive3d2.c	2025-07-08 11:13:09
++++ superlu_dist-8.2.1/EXAMPLE/pddrive3d2.c	2025-07-08 11:31:16
+@@ -117,7 +117,7 @@
+     int lookahead, colperm, rowperm, ir;
+     int iam, info, ldb, ldx, nrhs;
+     char **cpp, c, *suffix;
+-    FILE *fp, *fopen ();
++    FILE *fp;
+     extern int cpp_defs ();
+     int ii, omp_mpi_level;
+ 
+diff --color -ruN superlu_dist-8.2.1-orig/EXAMPLE/pddrive3d3.c superlu_dist-8.2.1/EXAMPLE/pddrive3d3.c
+--- superlu_dist-8.2.1-orig/EXAMPLE/pddrive3d3.c	2025-07-08 11:13:09
++++ superlu_dist-8.2.1/EXAMPLE/pddrive3d3.c	2025-07-08 11:31:16
+@@ -123,7 +123,7 @@
+     int lookahead, colperm, rowperm, ir;
+     int iam, info, ldb, ldx, nrhs, ii, omp_mpi_level;
+     char **cpp, c, *suffix;
+-    FILE *fp, *fopen ();
++    FILE *fp;
+     extern int cpp_defs ();
+     
+     nprow = 1;            /* Default process rows.      */
+diff --color -ruN superlu_dist-8.2.1-orig/EXAMPLE/psdrive3d.c superlu_dist-8.2.1/EXAMPLE/psdrive3d.c
+--- superlu_dist-8.2.1-orig/EXAMPLE/psdrive3d.c	2025-07-08 11:13:09
++++ superlu_dist-8.2.1/EXAMPLE/psdrive3d.c	2025-07-08 11:31:16
+@@ -118,7 +118,7 @@
+     int lookahead, colperm, rowperm, ir, batch;
+     int iam, info, ldb, ldx, nrhs;
+     char **cpp, c, *suffix;
+-    FILE *fp, *fopen ();
++    FILE *fp;
+     extern int cpp_defs ();
+     int ii, omp_mpi_level;
+     int*    usermap;     /* The following variables are used for batch solves */
+diff --color -ruN superlu_dist-8.2.1-orig/EXAMPLE/psdrive3d1.c superlu_dist-8.2.1/EXAMPLE/psdrive3d1.c
+--- superlu_dist-8.2.1-orig/EXAMPLE/psdrive3d1.c	2025-07-08 11:13:09
++++ superlu_dist-8.2.1/EXAMPLE/psdrive3d1.c	2025-07-08 11:31:16
+@@ -118,7 +118,7 @@
+     int lookahead, colperm, rowperm, ir;
+     int iam, info, ldb, ldx, nrhs;
+     char **cpp, c, *suffix;
+-    FILE *fp, *fopen ();
++    FILE *fp;
+     extern int cpp_defs ();
+     int ii, omp_mpi_level;
+ 
+diff --color -ruN superlu_dist-8.2.1-orig/EXAMPLE/psdrive3d2.c superlu_dist-8.2.1/EXAMPLE/psdrive3d2.c
+--- superlu_dist-8.2.1-orig/EXAMPLE/psdrive3d2.c	2025-07-08 11:13:09
++++ superlu_dist-8.2.1/EXAMPLE/psdrive3d2.c	2025-07-08 11:31:16
+@@ -117,7 +117,7 @@
+     int lookahead, colperm, rowperm, ir;
+     int iam, info, ldb, ldx, nrhs;
+     char **cpp, c, *suffix;
+-    FILE *fp, *fopen ();
++    FILE *fp;
+     extern int cpp_defs ();
+     int ii, omp_mpi_level;
+ 
+diff --color -ruN superlu_dist-8.2.1-orig/EXAMPLE/psdrive3d3.c superlu_dist-8.2.1/EXAMPLE/psdrive3d3.c
+--- superlu_dist-8.2.1-orig/EXAMPLE/psdrive3d3.c	2025-07-08 11:13:09
++++ superlu_dist-8.2.1/EXAMPLE/psdrive3d3.c	2025-07-08 11:31:16
+@@ -123,7 +123,7 @@
+     int lookahead, colperm, rowperm, ir;
+     int iam, info, ldb, ldx, nrhs, ii, omp_mpi_level;
+     char **cpp, c, *suffix;
+-    FILE *fp, *fopen ();
++    FILE *fp;
+     extern int cpp_defs ();
+     
+     nprow = 1;            /* Default process rows.      */
+diff --color -ruN superlu_dist-8.2.1-orig/EXAMPLE/pzdrive3d.c superlu_dist-8.2.1/EXAMPLE/pzdrive3d.c
+--- superlu_dist-8.2.1-orig/EXAMPLE/pzdrive3d.c	2025-07-08 11:13:09
++++ superlu_dist-8.2.1/EXAMPLE/pzdrive3d.c	2025-07-08 11:31:16
+@@ -118,7 +118,7 @@
+     int lookahead, colperm, rowperm, ir, batch;
+     int iam, info, ldb, ldx, nrhs;
+     char **cpp, c, *suffix;
+-    FILE *fp, *fopen ();
++    FILE *fp;
+     extern int cpp_defs ();
+     int ii, omp_mpi_level;
+     int*    usermap;     /* The following variables are used for batch solves */
+diff --color -ruN superlu_dist-8.2.1-orig/EXAMPLE/pzdrive3d1.c superlu_dist-8.2.1/EXAMPLE/pzdrive3d1.c
+--- superlu_dist-8.2.1-orig/EXAMPLE/pzdrive3d1.c	2025-07-08 11:13:09
++++ superlu_dist-8.2.1/EXAMPLE/pzdrive3d1.c	2025-07-08 11:31:16
+@@ -118,7 +118,7 @@
+     int lookahead, colperm, rowperm, ir;
+     int iam, info, ldb, ldx, nrhs;
+     char **cpp, c, *suffix;
+-    FILE *fp, *fopen ();
++    FILE *fp;
+     extern int cpp_defs ();
+     int ii, omp_mpi_level;
+ 
+diff --color -ruN superlu_dist-8.2.1-orig/EXAMPLE/pzdrive3d2.c superlu_dist-8.2.1/EXAMPLE/pzdrive3d2.c
+--- superlu_dist-8.2.1-orig/EXAMPLE/pzdrive3d2.c	2025-07-08 11:13:09
++++ superlu_dist-8.2.1/EXAMPLE/pzdrive3d2.c	2025-07-08 11:31:16
+@@ -117,7 +117,7 @@
+     int lookahead, colperm, rowperm, ir;
+     int iam, info, ldb, ldx, nrhs;
+     char **cpp, c, *suffix;
+-    FILE *fp, *fopen ();
++    FILE *fp;
+     extern int cpp_defs ();
+     int ii, omp_mpi_level;
+ 
+diff --color -ruN superlu_dist-8.2.1-orig/EXAMPLE/pzdrive3d3.c superlu_dist-8.2.1/EXAMPLE/pzdrive3d3.c
+--- superlu_dist-8.2.1-orig/EXAMPLE/pzdrive3d3.c	2025-07-08 11:13:09
++++ superlu_dist-8.2.1/EXAMPLE/pzdrive3d3.c	2025-07-08 11:31:16
+@@ -123,7 +123,7 @@
+     int lookahead, colperm, rowperm, ir;
+     int iam, info, ldb, ldx, nrhs, ii, omp_mpi_level;
+     char **cpp, c, *suffix;
+-    FILE *fp, *fopen ();
++    FILE *fp;
+     extern int cpp_defs ();
+     
+     nprow = 1;            /* Default process rows.      */
