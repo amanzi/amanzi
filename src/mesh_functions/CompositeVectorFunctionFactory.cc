@@ -311,13 +311,15 @@ CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
         }
 
         // check n_dofs matches
-        int n_dofs = sample.NumVectors(component);
-        if (n_dofs != func->size()) {
-          Errors::Message msg;
-          msg << "CompositeVectorFunctionFactory \"" << plist.name() << "(" << name << ")"
-              << "\": component \"" << component << "\" provided a function with " << func->size()
-              << " degrees of freedom, but the vector expects " << n_dofs << " dofs.";
-          Exceptions::amanzi_throw(msg);
+        if (!dot_with_normal) {
+          int n_dofs = sample.NumVectors(component);
+          if (n_dofs != func->size()) {
+            Errors::Message msg;
+            msg << "CompositeVectorFunctionFactory \"" << plist.name() << "(" << name << ")"
+                << "\": component \"" << component << "\" provided a function with " << func->size()
+                << " degrees of freedom, but the vector expects " << n_dofs << " dofs.";
+            Exceptions::amanzi_throw(msg);
+          }
         }
 
         // this call will either Add the component if it doesn't exist, or
