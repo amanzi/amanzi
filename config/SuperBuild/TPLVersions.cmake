@@ -197,7 +197,7 @@
 #                - update netcdf-fortran to 4.6.2
 #                - update SEACAS to date tag v2025-04-14
 #                - update SuperLU to 6.0.1
-#                - update SuperLU_dist to 8.2.0
+#                - update SuperLU_dist to 8.2.1
 #                - add fmt (new dependency of SEACAS), 11.2.0
 #                - update Alquimia to version 1.1.1
 #                - update hypre to 2.31.0
@@ -484,7 +484,7 @@ set(SuperLU_MD5_SUM        d15c61705f4ddf0777731d3f388e287f)
 #
 set(SuperLUDist_VERSION_MAJOR  8)
 set(SuperLUDist_VERSION_MINOR  2)
-set(SuperLUDist_VERSION_PATCH  0)
+set(SuperLUDist_VERSION_PATCH  1)
 set(SuperLUDist_VERSION  ${SuperLUDist_VERSION_MAJOR}.${SuperLUDist_VERSION_MINOR}.${SuperLUDist_VERSION_PATCH})
 set(SuperLUDist_URL_STRING     "https://github.com/xiaoyeli/superlu_dist/archive/refs/tags")
 set(SuperLUDist_ARCHIVE_FILE   v${SuperLUDist_VERSION}.tar.gz)
