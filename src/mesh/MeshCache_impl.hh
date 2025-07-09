@@ -310,6 +310,8 @@ MeshCache<MEM>::getCentroid(const Entity_kind kind, const Entity_ID ent) const
     return getEdgeCentroid<AP>(ent);
   case (Entity_kind::NODE):
     return getNodeCoordinate<AP>(ent);
+  case (Entity_kind::BOUNDARY_FACE):
+    return getFaceCentroid<AP>(getBoundaryFaceFace(*this, ent));
   default:
     assert(false);
   }
@@ -330,6 +332,8 @@ MeshCache<MEM>::getCentroid(const Entity_ID ent) const
     return getEdgeCentroid<AP>(ent);
   } else if constexpr (EK == Entity_kind::NODE) {
     return getNodeCoordinate<AP>(ent);
+  } else if constexpr (EK == Entity_kind::BOUNDARY_FACE) {
+    return getFaceCentroid<AP>(getBoundaryFaceFace(*this, ent));
   }
   AMANZI_ASSERT(false);
   return AmanziGeometry::Point();

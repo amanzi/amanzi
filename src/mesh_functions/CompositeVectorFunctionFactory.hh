@@ -69,11 +69,29 @@ Each entry in that list is a:
 namespace Amanzi {
 namespace Functions {
 
+//
+// NON-CONST factory: the structure of func provided in plist MAY CHANGE the
+// structure of factory.
+//
+Teuchos::RCP<CompositeVectorFunction>
+CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
+        CompositeVectorSpace& factory,
+        std::vector<std::string>& componentname_list,
+        bool dot_with_normal = false,
+        const std::string& spatial_dist_method = "none");
+
+
+//
+// CONST factory: the structure of func provided in plist MAY NOT CHANGE the
+// structure of factory.
+//
 Teuchos::RCP<CompositeVectorFunction>
 CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
         const CompositeVectorSpace& factory,
         std::vector<std::string>& componentname_list,
-        bool dot_with_normal = false);
+        bool dot_with_normal = false,
+        const std::string& spatial_dist_method = "none");
+
 
 } // namespace Functions
 } // namespace Amanzi

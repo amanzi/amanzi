@@ -90,6 +90,9 @@ EvaluatorIndependentTensorFunction::EnsureCompatibility(State& S)
       map_new.AddComponent(name, map_old.Location(name), num_funcs_);
     }
     f.set_map(map_new);
+
+    std::vector<std::string> component_names;
+    func_ = Functions::CreateCompositeVectorFunction(plist_.sublist("function"), map_new, component_names);
   }
 }
 
@@ -100,13 +103,13 @@ void
 EvaluatorIndependentTensorFunction::Update_(State& S)
 {
   const auto& fac = S.GetRecordSetW(my_key_).GetFactory<TensorVector, TensorVector_Factory>();
-  if (!computed_once_) {
-    // Create the function.
-    AMANZI_ASSERT(plist_.isSublist("function"));
+  // if (!computed_once_) {
+  //   // Create the function.
+  //   AMANZI_ASSERT(plist_.isSublist("function"));
 
-    std::vector<std::string> component_names;
-    func_ = Functions::CreateCompositeVectorFunction(plist_.sublist("function"), fac.map(), component_names);
-  }
+  //   std::vector<std::string> component_names;
+  //   func_ = Functions::CreateCompositeVectorFunction(plist_.sublist("function"), fac.map(), component_names);
+  // }
 
   auto& tv = S.GetW<TensorVector>(my_key_, my_tag_, my_key_);
   auto cv = Teuchos::rcp(new CompositeVector(fac.map()));
