@@ -64,14 +64,14 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& parent_mesh,
   if (mesh_fw != Teuchos::null) {
     mesh = Teuchos::rcp(new Mesh(mesh_fw, Teuchos::rcp(new MeshAlgorithms()), Teuchos::null));
     mesh->setParentMesh(parent_mesh);
-  }
 
-  if (flatten) {
-    std::vector<std::string> names = parent_mesh->getSpaceDimensionNames();
-    names.pop_back();
-    mesh->setSpaceDimensionNames(names);
-  } else {
-    mesh->setSpaceDimensionNames(parent_mesh->getSpaceDimensionNames());
+    if (flatten) {
+      std::vector<std::string> names = parent_mesh->getSpaceDimensionNames();
+      names.pop_back();
+      mesh->setSpaceDimensionNames(names);
+    } else {
+      mesh->setSpaceDimensionNames(parent_mesh->getSpaceDimensionNames());
+    }
   }
   return mesh;
 }
@@ -95,10 +95,6 @@ MeshFactory::createColumn(const Teuchos::RCP<Mesh>& parent,
                           int col_id,
                           const Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
-  //if (parent->getMeshFramework() == Teuchos::null) {
-  //  Errors::Message msg("Cannot create a column mesh from a parent whose framework has been deleted.");
-  //}
-
   // create a framework of the extracted 3D column
   parent->buildColumns();
   Teuchos::RCP<MeshFramework> column_extracted_3D = MeshFrameworkFactory::create(

@@ -21,8 +21,10 @@ Note that, for the moment, all tags for :math:`f_i` and :math:`g_i` must be the
 same as that of :math:`e`.  This could straightforwardly be relaxed upon
 request.
 
-.. _multiplicative-reciprocal-evaluator-spec:
-.. admonition:: multiplicative-reciprocal-evaluator-spec
+`"evaluator type`" = `"multiplicative reciprocal`"
+
+.. _evaluator-multiplicative-reciprocal-spec:
+.. admonition:: evaluator-multiplicative-reciprocal-spec
 
    * `"coefficient`" ``[double]`` **1** A constant prefix to the product.
    * `"enforce positivity`" ``[bool]`` **false** If true, max the result with 0.
@@ -76,10 +78,13 @@ class EvaluatorMultiplicativeReciprocal
 
   virtual void EnsureCompatibility_Units_(State& S) override;
 
+  virtual void EnsureCompatibility_ToDeps_(State& S) override;
+
  private:
   bool enforce_positivity_;
   double coef_;
   Teuchos::Array<std::string> list0_, list1_;
+  int n_dofs_;
 
   static Utils::RegisteredFactory<Evaluator, EvaluatorMultiplicativeReciprocal> fac_;
 };

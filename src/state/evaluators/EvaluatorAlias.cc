@@ -14,6 +14,7 @@ An evaluator that aliases to another key/tag pair, doing no work itself.
 Note this may be any type of evaluator -- primary, secondary, or independent.
 */
 
+#include "EvaluatorPrimary.hh"
 #include "EvaluatorAlias.hh"
 
 namespace Amanzi {
@@ -118,6 +119,19 @@ EvaluatorAlias::WriteToString() const
   std::string ret("Alias ");
   ret = ret + Keys::getKey(my_key_, my_tag_) + " --> " + Keys::getKey(target_key_, target_tag_);
   return ret;
+}
+
+
+void
+EvaluatorAlias::SetChanged(State& S)
+{
+  Teuchos::RCP<Evaluator> target_eval = S.GetEvaluatorPtr(target_key_, target_tag_);
+  auto target_eval_as_primary = Teuchos::rcp_dynamic_cast<EvaluatorPrimary_>(target_eval);
+  if (target_eval_as_primary == Teuchos::null) {
+    Errors::Message msg("SetChanged called on an aliased evaluator whose target is not a primary evaluator");
+    Exceptions::amanzi_throw(msg);
+  }
+  target_eval_as_primary->SetChanged();
 }
 
 
