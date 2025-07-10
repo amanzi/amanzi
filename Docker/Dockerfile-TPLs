@@ -62,8 +62,8 @@ RUN if [ "$build_mpi" = "True" ]; then \
   && wget https://www.mpich.org/static/downloads/${mpi_version}/mpich-${mpi_version}.tar.gz \
   && tar xvf mpich-${mpi_version}.tar.gz \
   && cd mpich-${mpi_version} \
-  && FFLAGS="-fallow-argument-mismatch" FCFLAGS="-fallow-argument-mismatch" ./configure --enable-shared --with-device=ch3:sock --enable-fast=all,Os --prefix=/usr \
-  && make \
+  && FFLAGS="-fallow-argument-mismatch" FCFLAGS="-fallow-argument-mismatch" ./configure --enable-shared --with-device=ch3:sock --enable-fast=all,Os --prefix=/usr/local \
+  && make -j4 \
   && make install \
   && cd ../ \
   && rm -r mpich-${mpi_version}/ \
@@ -73,8 +73,9 @@ RUN if [ "$build_mpi" = "True" ]; then \
   && wget https://download.open-mpi.org/release/open-mpi/v${mpi_version_major}/openmpi-${mpi_version}.tar.gz \
   && tar xvf openmpi-${mpi_version}.tar.gz \
   && cd openmpi-${mpi_version} \
-  && FFLAGS="-fallow-argument-mismatch" FCFLAGS="-fallow-argument-mismatch" ./configure --enable-shared --prefix=/usr \
-  && make \
+  && export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH \
+  && FFLAGS="-fallow-argument-mismatch" FCFLAGS="-fallow-argument-mismatch" ./configure --enable-shared --prefix=/usr/local \
+  && make -j4 \
   && make install \
   && cd ../ \
   && rm -r openmpi-${mpi_version}/ \
@@ -146,7 +147,7 @@ RUN if [ ${base_image} = "gcc" ]; then \
       --enable-shared --enable-structured --enable-silo \
       --enable-alquimia --enable-pflotran --enable-crunchtope \
       --enable-pf_clm \
-      --with-mpi=/usr \
+      --with-mpi=/usr/local \
       --with-python=/usr/bin/python ; \
   else \
     ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
@@ -158,7 +159,7 @@ RUN if [ ${base_image} = "gcc" ]; then \
       --enable-shared --enable-structured --enable-silo \
       --enable-alquimia --enable-pflotran --enable-crunchtope \
       --enable-pf_clm \
-      --with-mpi=/usr \
+      --with-mpi=/usr/local \
       --with-python=/usr/bin/python ; \
   fi \
   && git checkout master \
@@ -176,7 +177,7 @@ RUN if [ "$base_image" = "ubuntu" ]; then \
       && pip3 install --no-cache-dir --no-binary=h5py h5py; fi
 
 # Set the LD_LIBRARY_PATH for Amanzi builds in the next stage
-ENV LD_LIBRARY_PATH=${AMANZI_TPLS_DIR}/lib:${AMANZI_PETSC_LIBS}:${AMANZI_TRILINOS_LIBS}:${AMANZI_SEACAS_LIBS}
+ENV LD_LIBRARY_PATH=${AMANZI_TPLS_DIR}/lib:${AMANZI_PETSC_LIBS}:${AMANZI_TRILINOS_LIBS}:${AMANZI_SEACAS_LIBS}:/usr/local/lib64:/usr/local/lib:/usr/lib
 RUN echo $LD_LIBRARY_PATH
 
 # Set path to pick up any tools installed during bootstrap
