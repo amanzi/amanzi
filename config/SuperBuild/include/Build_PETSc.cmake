@@ -79,45 +79,6 @@ else()
   set(petsc_debug_flag 1)
 endif()
 
-# fix libstdc++ linking issue
-execute_process(
-  COMMAND lsb_release -is
-  OUTPUT_VARIABLE DISTRO_NAME
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-if (DISTRO_NAME STREQUAL "Debian")
-  message(STATUS "Debian system detected via lsb_release - check for mismatched libstdc++")
-  execute_process(
-    COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libstdc++.so.6
-    OUTPUT_VARIABLE COMPILER_LIBSTDCPP
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
-  execute_process(
-    COMMAND strings ${COMPILER_LIBSTDCPP}
-    OUTPUT_VARIABLE COMPILER_LIBSTDCPP_STRINGS
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
-  string(REGEX MATCHALL "CXXABI_1\.3\..." COMPILER_ABI_STRINGS "${COMPILER_LIBSTDCPP_STRINGS}")
-  string(CONCAT COMPILER_ABIS ${COMPILER_ABI_STRINGS})
-  execute_process(
-    COMMAND uname -m
-    OUTPUT_VARIABLE ARCH
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
-  execute_process(
-    COMMAND strings /lib/${ARCH}-linux-gnu/libstdc++.so.6
-    OUTPUT_VARIABLE SYSTEM_LIBSTDCPP_STRINGS
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
-  string(REGEX MATCHALL "CXXABI_1\.3\..." SYSTEM_ABI_STRINGS "${SYSTEM_LIBSTDCPP_STRINGS}")
-  string(CONCAT SYSTEM_ABIS ${SYSTEM_ABI_STRINGS})
-  if (NOT ${SYSTEM_ABIS} STREQUAL ${COMPILER_ABIS})
-    get_filename_component(COMPILER_LIBSTDCPP_DIR ${COMPILER_LIBSTDCPP} DIRECTORY)
-    link_directories(${COMPILER_LIBSTDCPP_DIR})
-    # message(FATAL_ERROR "Alquimia will not build unless compiler libstdc++ linked here with rpath for petsc..")
-  endif() 
-endif()
-
 # BLAS options
 if (BLAS_LIBRARIES)
   if (NOT APPLE)
