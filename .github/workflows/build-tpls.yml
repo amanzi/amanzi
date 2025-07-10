@@ -79,13 +79,13 @@ jobs:
         context: .
         file: ./Docker/Dockerfile-TPLs
         push: true
-        tags: ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{matrix.images.mpi_distro}}-${{matrix.images.base_image}}-${{matrix.images.ver_tag}}-${{env.ARCH}}-${{env.AMANZI_BRANCH_TAG}}
+        tags: ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{matrix.images.mpi_distro}}-${{matrix.images.base_image}}-${{matrix.images.ver_tag}}-${{env.ARCH}}
         build-args: |
           amanzi_branch=${{env.AMANZI_BRANCH}}
           base_image=${{matrix.images.base_image}}
           ver_tag=${{matrix.images.ver_tag}}
-          mpi_distro=${{matrix.images.mpi_distro}}
-          mpi_ver=${{matrix.images.mpi_ver}}
+          mpi_flavor=${{matrix.images.mpi_distro}}
+          mpi_version=${{matrix.images.mpi_ver}}
         target: ${{matrix.images.target}}
 
   fix-manifest:
@@ -121,14 +121,6 @@ jobs:
         working-directory: Docker
         run:
           echo "AMANZI_TPLS_VER=$(./get_tpls_version.sh)" >> $GITHUB_ENV
-      - name: Extract the branch name
-        id: branch
-        run:
-          echo "AMANZI_BRANCH=$GITHUB_REF_NAME" >> $GITHUB_ENV
-      - name: Filter the branch name to generate a tag for Docker
-        id: tag
-        run:
-          echo "AMANZI_BRANCH_TAG=$(echo ${{env.AMANZI_BRANCH}} | sed -e 's/\//--/g')" >> $GITHUB_ENV
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -136,11 +128,11 @@ jobs:
           password: ${{secrets.DOCKERHUB_PASSWORD}}
       - name: Pull images (remove with artifacts??)
         run: |
-          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{matrix.images.mpi_distro}}-${{matrix.images.base_image}}-${{matrix.images.ver_tag}}-arm64-${{env.AMANZI_BRANCH_TAG}}
-          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{matrix.images.mpi_distro}}-${{matrix.images.base_image}}-${{matrix.images.ver_tag}}-amd64-${{env.AMANZI_BRANCH_TAG}}
+          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{matrix.images.mpi_distro}}-${{matrix.images.base_image}}-${{matrix.images.ver_tag}}-arm64
+          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{matrix.images.mpi_distro}}-${{matrix.images.base_image}}-${{matrix.images.ver_tag}}-amd64
       - name: Edit manifest
         run: |
-          docker manifest create ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{matrix.images.mpi_distro}}-${{matrix.images.base_image}}-${{matrix.images.ver_tag}}-${{env.AMANZI_BRANCH_TAG}} \
-            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{matrix.images.mpi_distro}}-${{matrix.images.base_image}}-${{matrix.images.ver_tag}}-amd64-${{env.AMANZI_BRANCH_TAG}} \
-            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{matrix.images.mpi_distro}}-${{matrix.images.base_image}}-${{matrix.images.ver_tag}}-arm64-${{env.AMANZI_BRANCH_TAG}}
-          docker manifest push ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{matrix.images.mpi_distro}}-${{matrix.images.base_image}}-${{matrix.images.ver_tag}}-${{env.AMANZI_BRANCH_TAG}}
+          docker manifest create ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{matrix.images.mpi_distro}}-${{matrix.images.base_image}}-${{matrix.images.ver_tag}} \
+            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{matrix.images.mpi_distro}}-${{matrix.images.base_image}}-${{matrix.images.ver_tag}}-amd64 \
+            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{matrix.images.mpi_distro}}-${{matrix.images.base_image}}-${{matrix.images.ver_tag}}-arm64
+          docker manifest push ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{matrix.images.mpi_distro}}-${{matrix.images.base_image}}-${{matrix.images.ver_tag}}
