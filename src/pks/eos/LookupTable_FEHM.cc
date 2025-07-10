@@ -78,12 +78,18 @@ LookupTable_FEHM::LookupTable_FEHM(Teuchos::ParameterList& plist) : LookupTable(
   }
   ifs.getline(line, 100);
 
+  AMANZI_ASSERT(axisT_[0] > 273.0 || axisP_[nP - 1] > 1.0e+5); // scaling is missing
+
   // skip lines
   for (int i = 0; i < 10; ++i) ifs.getline(line, 100);
 
   // allocate memory for table
   F_.resize(nP);
   for (int i = 0; i < nP; ++i) F_[i].resize(nT);
+  dFdP_.resize(nP);
+  for (int i = 0; i < nP; ++i) dFdP_[i].resize(nT);
+  dFdT_.resize(nP);
+  for (int i = 0; i < nP; ++i) dFdT_[i].resize(nT);
 
   // We assume the following order: density, enthalpy, viscosity
   std::string label;
@@ -98,10 +104,19 @@ LookupTable_FEHM::LookupTable_FEHM(Teuchos::ParameterList& plist) : LookupTable(
   } else if (field_ == "internal_energy") {
     ReadBlock_(ifs, nP, nT, true);
     auto density = F_;
+    auto DdensityDT = dFdT_;
+    auto DdensityDP = dFdP_;
 
     ReadBlock_(ifs, nP, nT, true);
-    for (int i = 0; i < nP; ++i)
-      for (int j = 0; j < nT; ++j) F_[i][j] = F_[i][j] * 1000.0 - axisP_[i] / density[i][j];
+    for (int i = 0; i < nP; ++i) {
+      for (int j = 0; j < nT; ++j) {
+        F_[i][j] = F_[i][j] * 1000.0 - axisP_[i] / density[i][j];
+
+        double tmp = axisP_[i] / std::pow(density[i][j], 2);
+        dFdT_[i][j] = dFdT_[i][j] * 1000.0 + tmp * DdensityDT[i][j];
+        dFdP_[i][j] = dFdP_[i][j] * 1000.0 + tmp * DdensityDP[i][j] - 1.0 / density[i][j];
+      }
+    }
 
     ReadBlock_(ifs, nP, nT, false);
   }
@@ -139,17 +154,45 @@ LookupTable_FEHM::LookupTable_FEHM(Teuchos::ParameterList& plist) : LookupTable(
 * Function evaluation
 ****************************************************************** */
 double
-LookupTable_FEHM::Function(double T, double p, int* ierr)
+LookupTable_FEHM::Function(double T, double p, int* ierr) {
+  return Function_(T, p, ierr, F_);
+}
+
+
+/* ******************************************************************
+* Derivative evaluation
+****************************************************************** */
+double
+LookupTable_FEHM::DFunctionDT(double T, double p, int* ierr) {
+  return Function_(T, p, ierr, dFdT_);
+}
+
+
+/* ******************************************************************
+* Derivative evaluation
+****************************************************************** */
+double
+LookupTable_FEHM::DFunctionDp(double T, double p, int* ierr) {
+  return Function_(T, p, ierr, dFdP_);
+}
+
+
+/* ******************************************************************
+* Generic function evaluation
+****************************************************************** */
+double
+LookupTable_FEHM::Function_(double T, double p, int* ierr,
+                            const std::vector<std::vector<double>>& F)
 {
   int ip, jt, n, m(0);
   *ierr = FindBox_(T, p, &ip, &jt);
   if (*ierr > 0) return 0.0;
 
   double f00, f01, f10, f11, g00, g11;
-  f00 = g00 = F_[ip - 1][jt - 1];
-  f01 = F_[ip - 1][jt];
-  f10 = F_[ip][jt - 1];
-  f11 = g11 = F_[ip][jt];
+  f00 = g00 = F[ip - 1][jt - 1];
+  f01 = F[ip - 1][jt];
+  f10 = F[ip][jt - 1];
+  f11 = g11 = F[ip][jt];
 
   n = map_[ip - 1][jt - 1];
   if (n >= 0) {
@@ -205,7 +248,7 @@ LookupTable_FEHM::Function(double T, double p, int* ierr)
 
 
 /* ******************************************************************
-* Function evaluation
+* Location
 ****************************************************************** */
 int
 LookupTable_FEHM::Location(double T, double p, int* ierr)
@@ -257,12 +300,26 @@ LookupTable_FEHM::ReadBlock_(std::ifstream& ifs, int nP, int nT, bool flag)
 
   // -- derivative wrt temperature
   ifs.getline(line, 100);
-  for (int i = 0; i < nT * nP; ++i) ifs >> value;
+  if (flag) {
+    for (int i = 0; i < nP; ++i)
+      for (int j = 0; j < nT; ++j) ifs >> dFdT_[i][j];
+  } else {
+    for (int i = 0; i < nT * nP; ++i) ifs >> value;
+  }
   ifs.getline(line, 100);
 
   // -- derivative wrt pressure
   ifs.getline(line, 100);
-  for (int i = 0; i < nT * nP; ++i) ifs >> value;
+  if (flag) {
+    for (int i = 0; i < nP; ++i) {
+      for (int j = 0; j < nT; ++j) {
+        ifs >> dFdP_[i][j];
+        dFdP_[i][j] /= scaleP_;
+      }
+    }
+  } else {
+    for (int i = 0; i < nT * nP; ++i) ifs >> value;
+  }
   ifs.getline(line, 100);
 
   return label;

@@ -33,9 +33,13 @@ class LookupTable_FEHM : public LookupTable {
   ~LookupTable_FEHM(){};
 
   virtual double Function(double T, double p, int* ierr) override;
+  virtual double DFunctionDT(double T, double p, int* ierr) override;
+  virtual double DFunctionDp(double T, double p, int* ierr) override;
   virtual int Location(double T, double p, int* ierr) override;
 
  private:
+  double Function_(double T, double p, int* ierr, const std::vector<std::vector<double>>& F);
+
   std::string ReadBlock_(std::ifstream& ifs, int nP, int nT, bool flag);
   void ReadBlockSat_(std::ifstream& ifs, int nS, std::vector<std::vector<double>>& satF);
 
@@ -47,6 +51,8 @@ class LookupTable_FEHM : public LookupTable {
   std::vector<std::vector<int>> map_;
   std::vector<double> satT_, satP_;
   std::vector<std::vector<double>> satFl_, satFg_;
+
+  std::vector<std::vector<double>> dFdP_, dFdT_;
 };
 
 } // namespace AmanziEOS
