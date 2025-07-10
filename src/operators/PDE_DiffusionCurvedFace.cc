@@ -325,6 +325,8 @@ PDE_DiffusionCurvedFace::Init_(Teuchos::ParameterList& plist)
     weight_->ScatterMasterToGhosted("face");
   }
 
+  penalty_ = plist.get<double>("penalty", 0.0);
+
   if (global_op_ == Teuchos::null) { // create operator
     global_op_schema_ = OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE;
 
@@ -406,10 +408,22 @@ PDE_DiffusionCurvedFace::Init_(Teuchos::ParameterList& plist)
   }
 
   // error analysis
-  double err(0.0);
-  for (int f = 0; f < nfaces_owned; ++f) { err += norm((*bf_)[f] - mesh_->getFaceCentroid(f)); }
+  double err(0.0), err_b(0.0);
+  for (int f = 0; f < nfaces_owned; ++f) {
+    err += norm((*bf_)[f] - mesh_->getFaceCentroid(f));
+  }
+
+  auto faces_bnd = mesh_->getBoundaryFaces();
+  for (int n = 0; n < faces_bnd.size(); ++n) {
+    int f = faces_bnd[n];
+    const auto& normal = mesh_->getFaceNormal(f);
+    double area = mesh_->getFaceArea(f);
+    err_b += std::fabs(((*bf_)[f] - mesh_->getFaceCentroid(f)) * normal) / area;
+  }
+
   if (mesh_->getComm()->MyPID() == 0) {
-    std::cout << "new face centroids deviation on rank zero is " << err / nfaces_owned << "\n\n";
+    std::cout << "new face centroids deviation on rank zero is " << err / nfaces_owned 
+              << ", on boundary is " << err_b / faces_bnd.size() << "\n\n";
   }
 }
 
@@ -423,6 +437,9 @@ PDE_DiffusionCurvedFace::LSProblemSetupMatrix_(std::vector<WhetStone::DenseMatri
   int d = mesh_->getSpaceDimension();
 
   // matrix A A^T
+  WhetStone::Tensor W(d, 2);
+  AmanziGeometry::Point normal_w(d);
+
   matrices.resize(nfaces_owned);
 
   for (int f = 0; f < nfaces_owned; ++f) {
@@ -430,20 +447,30 @@ PDE_DiffusionCurvedFace::LSProblemSetupMatrix_(std::vector<WhetStone::DenseMatri
     auto cells = mesh_->getFaceCells(f);
     int ncells = cells.size();
 
+    // weight which penalizes the minimum-norm solution in the normal direction
+    if (ncells == 1) {
+      W = InverseTensorialWeigth_(normal);
+      normal_w = W * normal;
+    }
+
     int nrows = ncells * d;
     WhetStone::DenseMatrix Aface(nrows, nrows);
     Aface.PutScalar(0.0);
 
     for (int i1 = 0; i1 < d; ++i1) {
       for (int j1 = 0; j1 < d; ++j1) {
-        double val = normal[i1] * normal[j1];
-        Aface(i1, j1) = val;
         if (ncells == 2) {
+          double val = normal[i1] * normal[j1];
+          Aface(i1, j1) = val;
+
           int i2 = i1 + d;
           int j2 = j1 + d;
           Aface(i2, j2) = val;
           Aface(i1, j2) = -val;
           Aface(i2, j1) = -val;
+        } else {
+          double val = normal[i1] * normal_w[j1];
+          Aface(i1, j1) = val;
         }
       }
     }
@@ -509,6 +536,7 @@ PDE_DiffusionCurvedFace::LSProblemPrimarySolution_(const CompositeVector& sol, i
   }
 
   // optional weighted l2-norm
+  WhetStone::Tensor W(d, 2);
   Teuchos::RCP<const Epetra_MultiVector> weight_f;
   if (weight_.get()) weight_f = weight_->ViewComponent("face", true);
 
@@ -520,7 +548,15 @@ PDE_DiffusionCurvedFace::LSProblemPrimarySolution_(const CompositeVector& sol, i
 
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
-      const auto& normal = mesh_->getFaceNormal(f);
+      auto normal = mesh_->getFaceNormal(f);
+
+      auto cells = mesh_->getFaceCells(f);
+      int ncells = cells.size();
+      if (ncells == 1) {
+        W = InverseTensorialWeigth_(normal);
+        AmanziGeometry::Point tmp(normal);
+        normal = W * tmp;
+      }
 
       if (weight_.get()) {
         double s = (*weight_f)[0][f];
@@ -534,6 +570,29 @@ PDE_DiffusionCurvedFace::LSProblemPrimarySolution_(const CompositeVector& sol, i
   bf->ScatterMasterToGhosted();
 
   for (int f = 0; f < nfaces_wghost; ++f) { (*bf_)[f][i0] = bf_f[0][f]; }
+}
+
+
+/* ******************************************************************
+* Create tensorial weigth.
+****************************************************************** */
+WhetStone::Tensor
+PDE_DiffusionCurvedFace::InverseTensorialWeigth_(const AmanziGeometry::Point& normal)
+{
+  int d = normal.dim();
+  double area = L22(normal);
+
+  WhetStone::Tensor W(d, 2);
+
+  for (int i1 = 0; i1 < d; ++i1) {
+    for (int j1 = 0; j1 < d; ++j1) {
+      W(i1, j1) = normal[i1] * normal[j1] * penalty_ / area;
+    }
+    W(i1, i1) += 1.0;
+  }
+  W.Inverse();
+
+  return W;
 }
 
 } // namespace Operators
