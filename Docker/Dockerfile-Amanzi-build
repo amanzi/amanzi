@@ -1,5 +1,9 @@
 ARG amanzi_tpls_ver=latest
-FROM metsi/amanzi-tpls:${amanzi_tpls_ver}-mpich
+ARG base_image=ubuntu
+ARG ver_tag=jammy
+ARG mpi_distro=mpich
+ARG mpi_version=4.0.3
+FROM metsi/amanzi-tpls:${amanzi_tpls_ver}-${mpi_distro}-${base_image}-${ver_tag}
 LABEL Description="Amanzi: Build and install Amanzi in a Docker image."
 
 # Switch to amanzi_user
@@ -42,8 +46,6 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --with-mpi=/usr \
    --enable-shared \
    && cd /home/amanzi_user/amanzi_builddir/amanzi 
-
-#  && rm -r /home/amanzi_user/amanzi_builddir/
 
 # Set path to make it easier to run amanzi
 ENV PATH=/home/amanzi_user/install/bin:${PATH}

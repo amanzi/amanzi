@@ -12,6 +12,28 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-latest, ubuntu-24.04-arm ]
+        images:
+          - base_image: ubuntu
+            ver_tag: jammy
+            mpi_distro: mpich
+          - base_image: gcc
+            ver_tag: "14"
+            mpi_distro: mpich
+          - base_image: gcc
+            ver_tag: latest
+            mpi_distro: mpich
+          - base_image: ubuntu
+            ver_tag: jammy
+            mpi_distro: openmpi
+            mpi_ver: "4.1.8"
+          - base_image: gcc
+            ver_tag: "14"
+            mpi_distro: openmpi
+            mpi_ver: "5.0.8"
+          - base_image: gcc
+            ver_tag: latest
+            mpi_distro: openmpi
+            mpi_ver: "5.0.8"
     runs-on: ${{ matrix.os }}
     name: Build Docker container
     steps:
@@ -48,23 +70,47 @@ jobs:
       with:
         username: ${{secrets.DOCKERHUB_USERNAME}}
         password: ${{secrets.DOCKERHUB_PASSWORD}}
-    - name: Docker build
-      id: docker
-      working-directory: Docker
-      run: |
-        docker build --build-arg ARCH=linux/${{env.ARCH}} \
-        --build-arg amanzi_branch=${{env.AMANZI_BRANCH}} \
-        --build-arg amanzi_tpls_ver=${{env.AMANZI_TPLS_VER}} \
-        -t metsi/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{env.ARCH}}-latest \
-        -f Dockerfile-Amanzi-build .
-    - name: Docker push
-      working-directory: Docker
-      run:
-        docker push ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{env.ARCH}}-latest
+    - name: Build and push image
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: ./Docker/Dockerifle-Amanzi-build
+        push: true
+        tags: ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{matrix.images.mpi_distro}}-${{matrix.images.base_image}}-${{matrix.images.ver_tag}}-${{env.ARCH}}-latest
+        build-args: |
+          amanzi_branch=${{env.AMANZI_BRANCH}}
+          amanzi_tpls_ver=${{env.AMANZI_TPLS_VER}}
+          base_image=${{matrix.images.base_image}}
+          ver_tag=${{matrix.images.ver_tag}}
+          mpi_distro=${{matrix.images.mpi_distro}}
+          mpi_ver=${{matrix.images.mpi_ver}}
+          ARCH=linux/${{env.ARCH}}
   serial-tests:
     strategy:
       matrix:
         os: [ ubuntu-latest, ubuntu-24.04-arm ]
+        images:
+          - base_image: ubuntu
+            ver_tag: jammy
+            mpi_distro: mpich
+          - base_image: gcc
+            ver_tag: "14"
+            mpi_distro: mpich
+          - base_image: gcc
+            ver_tag: latest
+            mpi_distro: mpich
+          - base_image: ubuntu
+            ver_tag: jammy
+            mpi_distro: openmpi
+            mpi_ver: "4.1.8"
+          - base_image: gcc
+            ver_tag: "14"
+            mpi_distro: openmpi
+            mpi_ver: "5.0.8"
+          - base_image: gcc
+            ver_tag: latest
+            mpi_distro: openmpi
+            mpi_ver: "5.0.8"
     runs-on: ${{ matrix.os }}
     name: serial tests
     needs: build
@@ -85,11 +131,33 @@ jobs:
       id: tests
       working-directory: Docker
       run:
-        docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{env.ARCH}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest -L SERIAL --output-on-failure"
+        docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{matrix.images.mpi_distro}}-${{matrix.images.base_image}}-${{matrix.images.ver_tag}}-${{env.ARCH}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest -L SERIAL --output-on-failure"
   parallel-tests:
     strategy:
       matrix:
         os: [ ubuntu-latest, ubuntu-24.04-arm ]
+        images:
+          - base_image: ubuntu
+            ver_tag: jammy
+            mpi_distro: mpich
+          - base_image: gcc
+            ver_tag: "14"
+            mpi_distro: mpich
+          - base_image: gcc
+            ver_tag: latest
+            mpi_distro: mpich
+          - base_image: ubuntu
+            ver_tag: jammy
+            mpi_distro: openmpi
+            mpi_ver: "4.1.8"
+          - base_image: gcc
+            ver_tag: "14"
+            mpi_distro: openmpi
+            mpi_ver: "5.0.8"
+          - base_image: gcc
+            ver_tag: latest
+            mpi_distro: openmpi
+            mpi_ver: "5.0.8"
     runs-on: ${{ matrix.os }}
     name: parallel tests
     needs: build
@@ -110,11 +178,35 @@ jobs:
       id: tests
       working-directory: Docker
       run:
-        docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{env.ARCH}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest -L PARALLEL --output-on-failure"
+        docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{matrix.images.mpi_distro}}-${{matrix.images.base_image}}-${{matrix.images.ver_tag}}-${{env.ARCH}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest -L PARALLEL --output-on-failure"
   fix-manifest:
     runs-on: ubuntu-latest
     needs: [parallel-tests, serial-tests]
     if: success()
+    strategy:
+      matrix:
+        images:
+          - base_image: ubuntu
+            ver_tag: jammy
+            mpi_distro: mpich
+          - base_image: gcc
+            ver_tag: "14"
+            mpi_distro: mpich
+          - base_image: gcc
+            ver_tag: latest
+            mpi_distro: mpich
+          - base_image: ubuntu
+            ver_tag: jammy
+            mpi_distro: openmpi
+            mpi_ver: "4.1.8"
+          - base_image: gcc
+            ver_tag: "14"
+            mpi_distro: openmpi
+            mpi_ver: "5.0.8"
+          - base_image: gcc
+            ver_tag: latest
+            mpi_distro: openmpi
+            mpi_ver: "5.0.8"
     steps:
       - name: Check out the Amanzi repo
         uses: actions/checkout@v4
@@ -128,11 +220,11 @@ jobs:
           password: ${{secrets.DOCKERHUB_PASSWORD}}
       - name: Pull images (remove with artifacts??)
         run: |
-          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-arm64-latest
-          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-amd64-latest
+          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{matrix.images.mpi_distro}}-${{matrix.images.base_image}}-${{matrix.images.ver_tag}}-arm64-latest
+          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{matrix.images.mpi_distro}}-${{matrix.images.base_image}}-${{matrix.images.ver_tag}}-amd64-latest
       - name: Edit manifest
         run: |
-          docker manifest create ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest \
-            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-arm64-latest \
-            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-amd64-latest
-          docker manifest push ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest
+          docker manifest create ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{matrix.images.mpi_distro}}-${{matrix.images.base_image}}-${{matrix.images.ver_tag}}-latest \
+            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{matrix.images.mpi_distro}}-${{matrix.images.base_image}}-${{matrix.images.ver_tag}}-arm64-latest \
+            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{matrix.images.mpi_distro}}-${{matrix.images.base_image}}-${{matrix.images.ver_tag}}-amd64-latest
+          docker manifest push ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{matrix.images.mpi_distro}}-${{matrix.images.base_image}}-${{matrix.images.ver_tag}}-latest
