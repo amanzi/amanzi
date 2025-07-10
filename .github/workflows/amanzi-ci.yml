@@ -74,7 +74,7 @@ jobs:
       uses: docker/build-push-action@v6
       with:
         context: .
-        file: ./Docker/Dockerifle-Amanzi-build
+        file: ./Docker/Dockerfile-Amanzi-build
         push: true
         tags: ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{matrix.images.mpi_distro}}-${{matrix.images.base_image}}-${{matrix.images.ver_tag}}-${{env.ARCH}}-latest
         build-args: |
