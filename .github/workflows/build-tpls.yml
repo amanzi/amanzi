@@ -19,14 +19,17 @@ jobs:
           - base_image: ubuntu
             ver_tag: jammy
             mpi_distro: mpich
+            mpi_ver: "4.0.3"
             target: tpls
           - base_image: gcc
             ver_tag: "14"
             mpi_distro: mpich
+            mpi_ver: "4.2.3"
             target: tpls
           - base_image: gcc
             ver_tag: latest
             mpi_distro: mpich
+            mpi_ver: "4.3.1"
             target: tpls
           - base_image: ubuntu
             ver_tag: jammy
