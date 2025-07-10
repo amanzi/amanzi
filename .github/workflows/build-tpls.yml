@@ -39,7 +39,7 @@ jobs:
           - base_image: gcc
             ver_tag: "14"
             mpi_distro: openmpi
-            mpi_ver: "5.0.8"
+            mpi_ver: "5.0.5"
             target: tpls
           - base_image: gcc
             ver_tag: latest
@@ -89,6 +89,8 @@ jobs:
           ver_tag=${{matrix.images.ver_tag}}
           mpi_flavor=${{matrix.images.mpi_distro}}
           mpi_version=${{matrix.images.mpi_ver}}
+          trilinos_ver="15-1-0"
+          petsc_ver="3.21"
         target: ${{matrix.images.target}}
 
   fix-manifest:
