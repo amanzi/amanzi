@@ -54,6 +54,9 @@ RUN echo $PATH
 # Create mount point for work on the host
 RUN mkdir /home/amanzi_user/work
 
+# Make MPI oversubscribe (primarily affects openMPI on CI) if required
+ENV MPIEXEC_PREFLAGS=--oversubscribe
+
 # Unset proxy
 ENV https_proxy= \
     http_proxy=
