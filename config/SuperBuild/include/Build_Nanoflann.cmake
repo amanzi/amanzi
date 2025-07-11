@@ -31,6 +31,20 @@ set(Nanoflann_PATCH_COMMAND ${CMAKE_COMMAND} -P ${Nanoflann_cmake_patch})
 # --- Define the install directory
 set(nanoflann_install_dir ${TPL_INSTALL_PREFIX})
 
+# --- Set CMake cache arguments
+set(Nanoflann_CMAKE_CACHE_ARGS
+    -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
+    -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+    -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
+    -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
+    -DCMAKE_INSTALL_PREFIX:PATH=${nanoflann_install_dir})
+
+# --- Override minimum version
+if(CMAKE_MAJOR_VERSION VERSION_EQUAL "4")
+  list(APPEND Nanoflann_CMAKE_CACHE_ARGS "-DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.5")
+endif()
+
+
 # --- Add external project and tie to the Nanoflann build target
 ExternalProject_Add(${Nanoflann_BUILD_TARGET}
                     TMP_DIR   ${Nanoflann_tmp_dir}         # Temporary files directory
@@ -46,11 +60,7 @@ ExternalProject_Add(${Nanoflann_BUILD_TARGET}
                     PATCH_COMMAND ${Nanoflann_PATCH_COMMAND}
                     #
                     CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}   # Ensure uniform build
-                                 -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
-                                 -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
-                                 -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
-                                 -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
-                                 -DCMAKE_INSTALL_PREFIX:PATH=${nanoflann_install_dir}
+                                  ${Nanoflann_CMAKE_CACHE_ARGS}
                     # -- Build
                     BINARY_DIR    ${Nanoflann_build_dir}   # Build directory 
                     # -- Install

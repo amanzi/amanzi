@@ -38,6 +38,7 @@ set(CCSE_CMAKE_CACHE_ARGS
                        -DBL_PRECISION:STRING=DOUBLE
                        -DBL_SPACEDIM:INT=${CCSE_BL_SPACEDIM}
                        -DBL_USE_PARTICLES:INT=0
+                       -DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.5
                        -DCMAKE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}
                        -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
                        -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
@@ -53,7 +54,11 @@ set(CCSE_CMAKE_CACHE_ARGS
                        -DMPI_Fortran_COMPILER:FILEPATH=${MPI_Fortran_COMPILER}
                        -DVERBOSE:BOOL=ON)
 
-
+# --- Override minimum version
+if(CMAKE_MAJOR_VERSION VERSION_EQUAL "4")
+  list(APPEND CCSE_CMAKE_CACHE_ARGS "-DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.5")
+endif()
+                     
 # --- Set the name of the patch
 set(CCSE_patch_file ccse-1.3.4-dependency.patch ccse-1.3.4-tools-compilers.patch
                     ccse-1.3.4-tools-plot1d.patch
