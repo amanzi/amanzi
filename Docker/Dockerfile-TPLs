@@ -73,7 +73,7 @@ RUN if [ "$build_mpi" = "True" ]; then \
   && wget https://download.open-mpi.org/release/open-mpi/v${mpi_version_major}/openmpi-${mpi_version}.tar.gz \
   && tar xvf openmpi-${mpi_version}.tar.gz \
   && cd openmpi-${mpi_version} \
-  && export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH \
+  && export LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/lib:$LD_LIBRARY_PATH \
   && FFLAGS="-fallow-argument-mismatch" FCFLAGS="-fallow-argument-mismatch" ./configure --enable-shared --prefix=/usr/local \
   && make -j4 \
   && make install \
@@ -134,10 +134,10 @@ FROM base AS tpls
 
 # Build and install the TPLs using bootstrap.sh, and remove
 # the source, objects, etc. after installation to save space.
-RUN if [ ${base_image} = "gcc" ]; then \
+RUN if [ ${base_image} = "gcc" ] || [ ${mpi_flavor} = "openmpi" ]; then \
   # need to set LD_LIBRARY_PATH just for build stage to link libpetsc.so to
   # correct compiler libraries.
-  export LD_LIBRARY_PATH=/usr/local/lib64:$LD_LIBRARY_PATH \
+  export LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/lib:$LD_LIBRARY_PATH \
   && ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
       --parallel=4 --opt \
       --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/amanzi \
