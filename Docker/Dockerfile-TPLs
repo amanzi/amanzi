@@ -171,11 +171,6 @@ RUN if [ ${base_image} = "gcc" ] || [ ${mpi_flavor} = "openmpi" ]; then \
 
 ENV HDF5_DIR=/home/amanzi_user/install/tpls
 
-# Note this installs numpy as well
-RUN if [ "$base_image" = "ubuntu" ]; then \
-      pip3 install --no-cache-dir --upgrade pip \
-      && pip3 install --no-cache-dir --no-binary=h5py h5py; fi
-
 # Set the LD_LIBRARY_PATH for Amanzi builds in the next stage
 ENV LD_LIBRARY_PATH=${AMANZI_TPLS_DIR}/lib:${AMANZI_PETSC_LIBS}:${AMANZI_TRILINOS_LIBS}:${AMANZI_SEACAS_LIBS}:/usr/local/lib64:/usr/local/lib:/usr/lib
 RUN echo $LD_LIBRARY_PATH
@@ -183,6 +178,13 @@ RUN echo $LD_LIBRARY_PATH
 # Set path to pick up any tools installed during bootstrap
 ENV PATH=/home/amanzi_user/amanzi/install/tools/bin:${PATH}
 RUN echo $PATH
+
+# Note this installs numpy as well
+RUN if [ "$base_image" = "ubuntu" ]; then \
+      pip3 install --no-cache-dir --upgrade pip \
+      && pip3 install --no-cache-dir --no-binary=h5py h5py; fi
+
+
 
 
 
