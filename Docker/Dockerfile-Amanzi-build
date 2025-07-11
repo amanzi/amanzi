@@ -35,7 +35,10 @@ RUN git branch --list
 RUN git checkout $amanzi_branch
 RUN git reset --hard origin/$amanzi_branch
 RUN git rev-parse --short HEAD
-  
+
+# Make MPI oversubscribe (primarily affects openMPI on CI) if required
+ENV MPIEXEC_PREFLAGS=--oversubscribe
+
 RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/amanzi \
    --tpl-config-file=${AMANZI_TPLS_DIR}/share/cmake/amanzi-tpl-config.cmake \
@@ -53,9 +56,6 @@ RUN echo $PATH
 
 # Create mount point for work on the host
 RUN mkdir /home/amanzi_user/work
-
-# Make MPI oversubscribe (primarily affects openMPI on CI) if required
-ENV MPIEXEC_PREFLAGS=--oversubscribe
 
 # Unset proxy
 ENV https_proxy= \
