@@ -7,8 +7,6 @@
   Authors: Markus Berndt
            Ethan Coon (ecoon@lanl.gov)
 */
-
-//! Manages simulation output to disk.
 /*!
 
 A user may request periodic writes of field data for the purposes of

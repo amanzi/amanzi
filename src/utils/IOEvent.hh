@@ -7,8 +7,6 @@
   Authors: Markus Berndt
            Ethan Coon (ecoon@lanl.gov)
 */
-
-//! Base control parameters for determing when, in time, to do something.
 /*!
 
 The IOEvent is used by multiple objects that need to indicate simulation times
