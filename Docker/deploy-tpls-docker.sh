@@ -13,6 +13,7 @@ Help()
     echo "                      of using precompiled binaries in Ubuntu package repository (Default: True)"
     echo "  --mpi_distro        Which MPI implementation to use? (currently OpenMPI or MPICH) (Default: MPICH)"
     echo "  --mpi_version       Which version number of --mpi_distro to build (Default: 4.0.3)"
+    echo "  --cmake_version     Option to allow building a newer version of cmake than the minimum required. (Default unset)"
     echo "  --petsc_ver         Which version of PETSc to build as part of TPLs? (Default: 3.21)"
     echo "  --trilinos_ver      Which version of trilinos to build as part of TPLs? (Default: 15-1-0)"
     echo "  --amanzi_branch     Which Amanzi branch should be used when building container? (Default: master)"
@@ -72,6 +73,10 @@ case $i in
     mpi_version="${i#*=}"
     shift
     ;;
+    --cmake_version=*)
+    cmake_version="${i#*=}"
+    shift
+    ;;
     --petsc_ver=*)
     petsc_ver="${i#*=}"
     shift
@@ -128,6 +133,7 @@ ver_tag="${ver_tag:-jammy}"
 build_mpi="${build_mpi:-True}"
 mpi_distro="${mpi_distro:-mpich}"
 mpi_version="${mpi_version:-4.0.3}"
+cmake_version="${cmake_version:-}"
 petsc_ver="${petsc_ver:-3.21}"
 trilinos_ver="${trilnos_ver:-15-1-0}"
 amanzi_branch="${amanzi_branch:-master}"
@@ -177,6 +183,7 @@ then
         --build-arg mpi_version=${mpi_version} \
         --build-arg base_image=${base_image} \
         --build-arg ver_tag=${ver_tag} \
+        --build-arg cmake_version=${cmake_version} \
         ${use_proxy} \
         ${output} \
         -f ${amanzi_src_dir}/Docker/Dockerfile-TPLs \
@@ -195,6 +202,7 @@ else
         --build-arg mpi_version=${mpi_version} \
         --build-arg base_image=${base_image} \
         --build-arg ver_tag=${ver_tag} \
+        --build-arg cmake_version=${cmake_version} \
         ${use_proxy} \
         ${output} \
         -f ${amanzi_src_dir}/Docker/Dockerfile-TPLs \

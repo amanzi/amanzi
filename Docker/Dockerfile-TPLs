@@ -2,13 +2,12 @@ ARG base_image=ubuntu
 ARG ver_tag=jammy
 FROM ${base_image}:${ver_tag} AS base
 
-# need to redeclare:
-ARG base_image
-ARG ver_tag
-
 LABEL Description="This image contains all of the third-party libraries needed by Amanzi (based on the specified branch, default branch is master)."
 
-# MPI flavor (mpich|openmpi)
+# Build arguments
+ARG cmake_version
+ARG base_image
+ARG ver_tag
 ARG build_mpi=True
 ARG mpi_flavor=mpich
 ARG mpi_version=4.0.3
@@ -126,6 +125,26 @@ RUN if [ "$amanzi_branch" != "master" ]; then \
   fi; \
   echo "Amanzi branch = $amanzi_branch"; \
   git branch --list
+
+
+# Check to see if we've requested a newer cmake than what bootstrap requires
+USER root
+RUN export cmake_minimum_version=$(grep '^cmake_version=' bootstrap.sh | cut -d= -f2) \
+    && echo "${cmake_minimum_version}" "${cmake_version}" \
+    && if printf "%s\n%s\n" "${cmake_minimum_version}" "${cmake_version}" | sort -V -C ; then \
+    # install cmake:
+      export cmake_major_minor=$(echo "${cmake_version}" | cut -d. -f1,2) \
+      && echo $cmake_major_minor \
+      && cd /home/amanzi_user \
+      && wget https://cmake.org/files/v${cmake_major_minor}/cmake-${cmake_version}.tar.gz \
+      && tar -xvf cmake-${cmake_version}.tar.gz \
+      && cd cmake-${cmake_version} \
+      && ./bootstrap \ 
+      && make -j4 \
+      && make install; fi
+
+USER amanzi_user
+
 
 #===========================================================================
 # here and above can be run with --target base in the docker build command
