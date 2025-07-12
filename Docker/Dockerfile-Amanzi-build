@@ -38,6 +38,8 @@ RUN git rev-parse --short HEAD
 
 # Make MPI oversubscribe (primarily affects openMPI on CI) if required
 ENV MPIEXEC_PREFLAGS=--oversubscribe
+ENV OMPI_MCA_rmaps_base_oversubscribe=1
+ENV PRTE_MCA_rmaps_default_mapping_policy=":oversubscribe"
 
 RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/amanzi \
