@@ -1,11 +1,11 @@
 #  -*- mode: cmake -*-
 
 #
-# Build TPL:  PETSc 
-#    
+# Build TPL:  PETSc
+#
 # --- Define all the directories and common external project flags
-define_external_project_args(PETSc 
-                             TARGET petsc 
+define_external_project_args(PETSc
+                             TARGET petsc
                              DEPENDS METIS ParMetis HDF5 HYPRE SuperLU SuperLUDist
                              BUILD_IN_SOURCE)
 
@@ -13,7 +13,7 @@ define_external_project_args(PETSc
 amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
                          PREFIX PETSc
                          VERSION ${PETSc_VERSION_MAJOR} ${PETSc_VERSION_MINOR} ${PETSc_VERSION_PATCH})
-  
+
 # --- Download packages PETSc needs
 set(petsc_packages Sowing)
 get_filename_component(real_download_path ${TPL_DOWNLOAD_DIR} REALPATH)
@@ -52,7 +52,7 @@ foreach (_pack ${petsc_packages})
         message(FATAL_ERROR ">>> Build_PETSc -- DOWNLOAD: failed -- ${${_pack}_DOWNLOAD_STATUS}[1]")
       endif()
     endif()
-  endif()  
+  endif()
 endforeach()
 
 
@@ -65,7 +65,7 @@ build_whitespace_string(petsc_cflags
 
 build_whitespace_string(petsc_cxxflags
                        ${Amanzi_COMMON_CXXFLAGS})
-set(cpp_flag_list 
+set(cpp_flag_list
     ${Amanzi_COMMON_CFLAGS}
     ${Amanzi_COMMON_CXXFLAGS})
 list(REMOVE_DUPLICATES cpp_flag_list)
@@ -80,7 +80,7 @@ else()
 endif()
 
 # BLAS options
-if (BLAS_LIBRARIES) 
+if (BLAS_LIBRARIES)
   if (NOT APPLE)
     build_whitespace_string(petsc_blas_libs ${BLAS_LIBRARIES})
     string (REPLACE " " "," petsc_blas_libs "${petsc_blas_libs}")
@@ -91,7 +91,7 @@ else()
 endif()
 
 # LAPACK options
-if ( LAPACK_LIBRARIES ) 
+if ( LAPACK_LIBRARIES )
   if (NOT APPLE) # Macs are different.
     build_whitespace_string(petsc_lapack_libs ${LAPACK_LIBRARIES})
     string (REPLACE " " "," petsc_lapack_libs "${petsc_lapack_libs}")
@@ -131,18 +131,18 @@ endif()
 
 if ( ${AMANZI_ARCH_NERSC} OR ${AMANZI_ARCH_CHICOMA} )
   set(petsc_mpi_flags --with-mpi=1 --with-batch=1)
-  set(petsc_compilers --with-cc=${CMAKE_C_COMPILER} 
-                      --with-cxx=${CMAKE_CXX_COMPILER} 
+  set(petsc_compilers --with-cc=${CMAKE_C_COMPILER}
+                      --with-cxx=${CMAKE_CXX_COMPILER}
                       --with-fc=${CMAKE_Fortran_COMPILER})
   set(petsc_compiler_flags --CFLAGS=${petsc_cflags}
                            --CXXFLAGS=${petsc_cxxflags}
 			   --FFLAGS=${petsc_fcflags})
-#                           --with-clib-autodetect=0 
+#                           --with-clib-autodetect=0
 #                           --with-cxxlib-autodetect=0)
 else()
   set(petsc_mpi_flags --with-mpi=1 --with-mpi-dir=${MPI_PREFIX})
   set(petsc_compilers)
-  set(petsc_compiler_flags --CFLAGS=${petsc_cflags} 
+  set(petsc_compiler_flags --CFLAGS=${petsc_cflags}
                            --CXXFLAGS=${petsc_cxxflags}
 			   --FFLAGS=${petsc_fcflags})
 endif()
@@ -164,9 +164,9 @@ configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/petsc-patch-step.cmake.in
                ${PETSc_cmake_patch}
                @ONLY)
 # --- Set the patch command
-set(PETSc_PATCH_COMMAND ${CMAKE_COMMAND} -P ${PETSc_cmake_patch})     
+set(PETSc_PATCH_COMMAND ${CMAKE_COMMAND} -P ${PETSc_cmake_patch})
 
-# --- Add external project build 
+# --- Add external project build
 ExternalProject_Add(${PETSc_BUILD_TARGET}
                     DEPENDS   ${PETSc_PACKAGE_DEPENDS}     # Package dependency target
                     TMP_DIR   ${PETSc_tmp_dir}             # Temporary files directory
@@ -176,7 +176,7 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                     URL           ${PETSc_URL}              # URL may be a web site OR a local file
                     URL_MD5       ${PETSc_MD5_SUM}          # md5sum of the archive file
                     DOWNLOAD_NAME ${PETSc_SAVEAS_FILE}      # file name to store (if not end of URL)
-                    # -- Patch 
+                    # -- Patch
                     PATCH_COMMAND ${PETSc_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR    ${PETSc_source_dir}       # Source directory
@@ -196,7 +196,7 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                               ${petsc_blas_option}
                               ${petsc_package_flags}
                     # -- Build
-                    BINARY_DIR       ${PETSc_build_dir}           # Build directory 
+                    BINARY_DIR       ${PETSc_build_dir}           # Build directory
                     BUILD_COMMAND    $(MAKE) -j 1 PETSC_DIR=${PETSc_source_dir} # Run the CMake script to build
                     BUILD_IN_SOURCE  ${PETSc_BUILD_IN_SOURCE}     # Flag for in source builds
                     # -- Install

@@ -75,7 +75,7 @@ ExternalProject_Add(${NetCDF_BUILD_TARGET}
                     URL_MD5      ${NetCDF_MD5_SUM}        # md5sum of the archive file
                     DOWNLOAD_NAME ${NetCDF_SAVEAS_FILE}   # file name to store (if not end of URL)
                     # -- Patch 
-                    PATCH_COMMAND ${NetCDF_PATCH_COMMAND}
+                    # PATCH_COMMAND ${NetCDF_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR       ${NetCDF_source_dir}
                     CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}  # Ensure uniform build

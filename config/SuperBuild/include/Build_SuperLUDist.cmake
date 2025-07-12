@@ -16,18 +16,18 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   VERSION ${SuperLUDist_VERSION_MAJOR} ${SuperLUDist_VERSION_MINOR} ${SuperLUDist_VERSION_PATCH})
   
 # --- Patch the original code
-#set(SuperLUDist_patch_file superludist-missingpatch)
-#set(SuperLUDist_sh_patch ${SuperLUDist_prefix_dir}/superluidist-patch-step.sh)
-#configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/superludist-patch-step.sh.in
-#               ${SuperLUDist_sh_patch}
-#               @ONLY)
+set(SuperLUDist_patch_file superludist-stdio-conflict.patch)
+set(SuperLUDist_sh_patch ${SuperLUDist_prefix_dir}/superludist-patch-step.sh)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/superludist-patch-step.sh.in
+               ${SuperLUDist_sh_patch}
+               @ONLY)
 # configure the CMake patch step
-#set(SuperLUDist_cmake_patch ${SuperLUDist_prefix_dir}/superluidist-patch-step.cmake)
-#configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/superludist-patch-step.cmake.in
-#               ${SuperLUDist_cmake_patch}
-#               @ONLY)
+set(SuperLUDist_cmake_patch ${SuperLUDist_prefix_dir}/superludist-patch-step.cmake)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/superludist-patch-step.cmake.in
+               ${SuperLUDist_cmake_patch}
+               @ONLY)
 # set the patch command
-#set(SuperLUDist_PATCH_COMMAND ${CMAKE_COMMAND} -P ${SuperLUDist_cmake_patch})
+set(SuperLUDist_PATCH_COMMAND ${CMAKE_COMMAND} -P ${SuperLUDist_cmake_patch})
 
 if(BUILD_SHARED_LIBS)
   set(SLU_BUILD_STATIC_LIBS FALSE)
@@ -60,7 +60,7 @@ ExternalProject_Add(${SuperLUDist_BUILD_TARGET}
                     URL_MD5       ${SuperLUDist_MD5_SUM}       # md5sum of the archive file
                     DOWNLOAD_NAME ${SuperLUDist_SAVEAS_FILE}   # file name to store (if not end of URL)
                     # -- Patch
-                    # PATCH_COMMAND ${SuperLUDist_PATCH_COMMAND}  # Mods to source
+                    PATCH_COMMAND ${SuperLUDist_PATCH_COMMAND}  # Mods to source
                     # -- Configure
                     LIST_SEPARATOR |                             # Use the alternate list separator
                     SOURCE_DIR      ${SuperLUDist_source_dir}    # Source directory
