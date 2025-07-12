@@ -93,6 +93,7 @@ jobs:
           mpi_version=${{matrix.images.mpi_ver}}
           trilinos_ver="15-1-0"
           petsc_ver="3.21"
+          cmake_version=${{matrix.images.cmake_version}}
         target: ${{matrix.images.target}}
 
   fix-manifest:
