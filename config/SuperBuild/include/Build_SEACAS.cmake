@@ -75,14 +75,16 @@ else()
 endif()
 
 #
-# --- Define the SEACAS patch step - mainly for nem_slice to be able
-# --- to handle columns
+# --- Define the SEACAS patch step
+#     - this was mainly for nem_slice to be able to handle columns (doesn't seem relevant)
+#     - szip patch fixes duplicate conflicting declaration
 #
-set(ENABLE_SEACAS_Patch OFF)
+set(ENABLE_SEACAS_Patch ON)
 if (ENABLE_SEACAS_Patch)
   set(SEACAS_patch_file
-    seacas-nemslice.patch
-    seacas-exoduspy.patch
+    #seacas-nemslice.patch
+    #seacas-exoduspy.patch
+    seacas-szip.patch
     )
   configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/seacas-patch-step.sh.in
                  ${SEACAS_prefix_dir}/seacas-patch-step.sh
