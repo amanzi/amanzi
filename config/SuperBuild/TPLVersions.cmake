@@ -196,6 +196,7 @@
 #                - update netcdf-c to 4.9.2
 #                - update netcdf-fortran to 4.6.2
 #                - update Alquimia to version 1.1.1
+#                - update ExprTK to version 0.0.3
 
 
 include(CMakeParseArguments)
@@ -614,10 +615,10 @@ set(CLM_MD5_SUM       1412ff30fc5db0d3c1dc71ef30c86995)
 #
 set(EXPRTK_VERSION_MAJOR 0)
 set(EXPRTK_VERSION_MINOR 0)
-set(EXPRTK_VERSION_PATCH 2)
+set(EXPRTK_VERSION_PATCH 3)
 set(EXPRTK_VERSION  ${EXPRTK_VERSION_MAJOR}.${EXPRTK_VERSION_MINOR}.${EXPRTK_VERSION_PATCH})
 set(EXPRTK_URL_STRING    "https://github.com/ArashPartow/exprtk/archive")
 set(EXPRTK_ARCHIVE_FILE  ${EXPRTK_VERSION}.tar.gz)
 set(EXPRTK_SAVEAS_FILE   exprtk-${EXPRTK_ARCHIVE_FILE})
-set(EXPRTK_MD5_SUM       897d4d3faedf9ebaa96d66fd14c2f967)
+set(EXPRTK_MD5_SUM       b38c56a28c418052949ca272600148ad)
 
