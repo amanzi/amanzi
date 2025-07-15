@@ -144,6 +144,30 @@ class NoxVector : public NOX::Abstract::Vector {
   Teuchos::RCP<VectorClass> vec_;
 };
 
+
+template <class VectorClass>
+NoxVector<VectorClass>::NoxVector(const NoxVector& other, NOX::CopyType type)
+{
+  switch (type) {
+  case NOX::DeepCopy:
+    vec_ = Teuchos::rcp(new VectorClass(*other.vec_));
+    break;
+  case NOX::ShapeCopy:
+    vec_ = Teuchos::rcp(new VectorClass(other.vec_->Map(), InitMode::NONE));
+    break;
+  default:
+    vec_ = Teuchos::rcp(new VectorClass(other.vec_->Map(), InitMode::NONE));
+    break;
+  }
+}
+
+template <>
+inline NoxVector<Epetra_Vector>::NoxVector(const NoxVector& other, NOX::CopyType type)
+{
+  vec_ = Teuchos::rcp(new Epetra_Vector(*other.vec_));
+}
+
+
 } // namespace Amanzi
 
 #endif

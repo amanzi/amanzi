@@ -8,28 +8,30 @@
            Ethan Coon (ecoon@lanl.gov)
 */
 
-//! RegionPlane: A planar (infinite) region in space, defined by a point and a normal.
+//! An (infinite) plane region in space, defined by a point and a normal.
 /*!
 
-List *region: plane* defines a plane using a point lying on the plane and normal to the plane.
+Note that the dimension of the point and normal must match that of the mesh on
+which the region is resolved.
+
+`"region type`" = `"plane`"
 
 .. _region-plane-spec:
 .. admonition:: region-plane-spec
 
-    * `"normal`" ``[Array(double)]`` Normal to the plane.
-    * `"point`" ``[Array(double)]`` Point in space.
+   * `"normal`" ``[Array(double)]`` Normal to the plane.
+   * `"point`" ``[Array(double)]`` Point in space.
 
 Example:
 
 .. code-block:: xml
 
    <ParameterList name="TOP_SECTION"> <!-- parent list -->
-     <ParameterList name="region: plane">
-       <Parameter name="point" type="Array(double)" value="{2, 3, 5}"/>
-       <Parameter name="normal" type="Array(double)" value="{1, 1, 0}"/>
-       <ParameterList name="expert parameters">
-         <Parameter name="tolerance" type="double" value="1.0e-05"/>
-       </ParameterList>
+     <Parameter name="region type" type="string" value="plane"/>
+     <Parameter name="point" type="Array(double)" value="{2, 3, 5}"/>
+     <Parameter name="normal" type="Array(double)" value="{1, 1, 0}"/>
+     <ParameterList name="expert parameters">
+       <Parameter name="tolerance" type="double" value="1.0e-05"/>
      </ParameterList>
    </ParameterList>
 

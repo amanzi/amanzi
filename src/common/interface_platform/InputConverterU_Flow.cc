@@ -1048,7 +1048,7 @@ InputConverterU::TranslateSources_(const std::string& domain,
           .sublist("evaluators")
           .sublist("Q")
           .set<std::string>("evaluator type", "multiplicative reciprocal")
-          .set<Teuchos::Array<std::string>>("multiplicative dependencies",
+          .set<Teuchos::Array<std::string>>("multiplicative dependency key suffixes",
                                             { "molar_density_liquid", bcs.variable })
           .set<double>("coefficient", 1.0);
       } else {

@@ -353,7 +353,13 @@ struct MeshCacheBase {
 
   // space dimension describes the dimension of coordinates in space
   std::size_t getSpaceDimension() const { return space_dim_; }
-  void setSpaceDimension(unsigned int dim) { space_dim_ = dim; }
+  void setSpaceDimension(unsigned int dim);
+
+  // name the space dimensions
+  const std::vector<std::string>& getSpaceDimensionNames() const {
+    return space_dim_names_;
+  }
+  void setSpaceDimensionNames(const std::vector<std::string>& names);
 
   // manifold dimension describes the dimensionality of the corresponding R^n
   // manifold onto which this mesh can be projected.
@@ -366,6 +372,7 @@ struct MeshCacheBase {
   Teuchos::RCP<Teuchos::ParameterList> plist_;
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_;
   int space_dim_;
+  std::vector<std::string> space_dim_names_;
   int manifold_dim_;
   bool is_ordered_;
   bool is_logical_;

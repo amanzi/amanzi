@@ -82,7 +82,7 @@ PK_DomainFunctionFirstOrderExchange<FunctionBase>::Init(const Teuchos::Parameter
   Teuchos::ParameterList blist = plist.sublist("source function");
 
   Key domain_name = Keys::readDomain(blist, "domain", "domain");
-  exchanged_key_ = Keys::readKey(blist, domain_name, "exchanged quantity", "molar_ratio");
+  exchanged_key_ = Keys::readKey(blist, domain_name, "exchanged quantity", "mole_fraction");
   exchanged_tag_ = Keys::readTag(blist, "exchanged quantity");
 
   lwc_key_ = Keys::readKey(blist, domain_name, "liquid water content", "water_content");
@@ -123,7 +123,7 @@ PK_DomainFunctionFirstOrderExchange<FunctionBase>::Compute(double t0, double t1)
   std::vector<double> args(1 + dim);
   args[0] = t1;
 
-  // get the molar mixing ratio, water contents
+  // get the mole fraction, water contents
   S_->GetEvaluator(exchanged_key_, exchanged_tag_).Update(*S_, exchanged_key_+"_first_order_exchange");
   S_->GetEvaluator(lwc_key_, lwc_tag_).Update(*S_, lwc_key_+"_first_order_exchange");
   const auto& ex = *S_->Get<CompositeVector>(exchanged_key_, exchanged_tag_).ViewComponent("cell");

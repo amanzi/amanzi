@@ -7,15 +7,6 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-/*
-  Multiphase PK
-
-  Secondary variable field evaluator computes product of fields
-  or inverse of fields:
-
-    eval = (f1 * f2 * ... * fn) / (g1 * g2 * ... * gm)
-*/
-
 #include <utility>
 
 #include "Evaluator.hh"
@@ -27,44 +18,40 @@ namespace Amanzi {
 * Two constructors.
 ****************************************************************** */
 EvaluatorMultiplicativeReciprocal::EvaluatorMultiplicativeReciprocal(Teuchos::ParameterList& plist)
-  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
+    n_dofs_(-1)
 {
-  if (my_keys_.size() == 0) {
-    Key key = plist.get<std::string>("my key");
-    Tag tag = make_tag(plist.get<std::string>("tag"));
-    my_keys_.push_back(make_pair(key, tag));
-  }
-  Key domain = Keys::getDomain(my_keys_[0].first);
-
   if (plist_.isParameter("evaluator dependencies")) {
     Errors::Message msg;
-    msg << "EvaluatorMultiplicativeReciprocal: \"" << my_keys_[0].first
+    msg << "EvaluatorMultiplicativeReciprocal: \"" << my_keys_.front().first
         << "\" must have separate (optional) lists for multiplicative and reciprocal dependencies.";
     Exceptions::amanzi_throw(msg);
   }
-
-  if (plist_.isParameter("multiplicative dependencies")) {
-    // since dependensies is a map, we need separate maps for numerator and denominator
-    const auto& names = plist_.get<Teuchos::Array<std::string>>("multiplicative dependencies");
-    for (const auto& name : names) {
-      Key full_name = Keys::getKey(domain, name);
-      dependencies_.insert(std::make_pair(full_name, Tags::DEFAULT));
-      list0_.push_back(full_name);
-    }
+  if (plist_.isParameter("multiplicative dependencies") ||
+      plist_.isParameter("reciprocal dependencies")) {
+    Errors::Message msg;
+    msg << "EvaluatorMultiplicativeReciprocal: \"" << my_keys_.front().first
+        << "\" no longer accepts option \"multiplicative dependencies\" or \"reciprocal dependencies\""
+        << "-- please use \"multiplicative dependency keys\" or \"multiplicative dependency key suffixes\""
+        << " (respectively reciprocal) instead.";
   }
 
-  if (plist_.isParameter("reciprocal dependencies")) {
-    const auto& names = plist_.get<Teuchos::Array<std::string>>("reciprocal dependencies");
-    for (const auto& name : names) {
-      Key full_name = Keys::getKey(domain, name);
-      dependencies_.insert(std::make_pair(full_name, Tags::DEFAULT));
-      list1_.push_back(full_name);
-    }
+  Key domain = Keys::getDomain(my_keys_.front().first);
+  Tag tag = my_keys_.front().second;
+
+  const Teuchos::Array<std::string> empty_array;
+  {
+    list0_ = Keys::readKeys(plist_, domain, "multiplicative dependency", &empty_array);
+    for (const auto& key : list0_) dependencies_.insert({key, tag});
+  }
+  {
+    list1_ = Keys::readKeys(plist_, domain, "reciprocal dependency", &empty_array);
+    for (const auto& key : list1_) dependencies_.insert({key, tag});
   }
 
   if (list0_.size() + list1_.size() == 0) {
     Errors::Message msg;
-    msg << "EvaluatorMultiplicativeReciprocal for: \"" << my_keys_[0].first
+    msg << "EvaluatorMultiplicativeReciprocal for: \"" << my_keys_.front().first
         << "\" has no dependencies.";
     Exceptions::amanzi_throw(msg);
   }
@@ -76,7 +63,8 @@ EvaluatorMultiplicativeReciprocal::EvaluatorMultiplicativeReciprocal(Teuchos::Pa
 
 EvaluatorMultiplicativeReciprocal::EvaluatorMultiplicativeReciprocal(
   const EvaluatorMultiplicativeReciprocal& other)
-  : EvaluatorSecondaryMonotype(other){};
+  : EvaluatorSecondaryMonotype(other)
+{};
 
 
 /* ******************************************************************
@@ -96,24 +84,40 @@ void
 EvaluatorMultiplicativeReciprocal::Evaluate_(const State& S,
                                              const std::vector<CompositeVector*>& results)
 {
-  for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
-    auto& result_c = *results[0]->ViewComponent(*comp);
-    int ndofs = result_c.MyLength();
+  for (const auto& comp : *results[0]) {
+    int n_dofs = results[0]->NumVectors(comp);
 
+    auto& result_c = *results[0]->ViewComponent(comp);
     result_c.PutScalar(coef_);
 
-    for (auto it = list0_.begin(); it != list0_.end(); ++it) {
-      const auto& factor_c = *S.Get<CompositeVector>(*it, Tags::DEFAULT).ViewComponent(*comp);
-      for (int c = 0; c != ndofs; ++c) result_c[0][c] *= factor_c[0][c];
+    for (const auto& it : list0_) {
+      const auto& factor_c = *S.Get<CompositeVector>(it, Tags::DEFAULT).ViewComponent(comp);
+      if (factor_c.NumVectors() == n_dofs) {
+        for (int i = 0; i != n_dofs; ++i) {
+          for (int c = 0; c != result_c.MyLength(); ++c) result_c[i][c] *= factor_c[i][c];
+        }
+      } else {
+        for (int i = 0; i != n_dofs; ++i) {
+          for (int c = 0; c != result_c.MyLength(); ++c) result_c[i][c] *= factor_c[0][c];
+        }
+      }
     }
 
-    for (auto it = list1_.begin(); it != list1_.end(); ++it) {
-      const auto& factor_c = *S.Get<CompositeVector>(*it, Tags::DEFAULT).ViewComponent(*comp);
-      for (int c = 0; c != ndofs; ++c) result_c[0][c] /= factor_c[0][c];
+    for (const auto& it : list1_) {
+      const auto& factor_c = *S.Get<CompositeVector>(it, Tags::DEFAULT).ViewComponent(comp);
+      if (factor_c.NumVectors() == n_dofs) {
+        for (int i = 0; i != n_dofs; ++i) {
+          for (int c = 0; c != result_c.MyLength(); ++c) result_c[i][c] /= factor_c[i][c];
+        }
+      } else {
+        for (int i = 0; i != n_dofs; ++i) {
+          for (int c = 0; c != result_c.MyLength(); ++c) result_c[i][c] /= factor_c[0][c];
+        }
+      }
     }
 
     if (enforce_positivity_) {
-      for (int c = 0; c != ndofs; ++c) { result_c[0][c] = std::max(result_c[0][c], 0.0); }
+      for (int c = 0; c != result_c.MyLength(); ++c) { result_c[0][c] = std::max(result_c[0][c], 0.0); }
     }
   }
 }
@@ -129,23 +133,49 @@ EvaluatorMultiplicativeReciprocal::EvaluatePartialDerivative_(
   const Tag& wrt_tag,
   const std::vector<CompositeVector*>& results)
 {
-  for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
-    auto& result_c = *results[0]->ViewComponent(*comp);
-    int ncells = result_c.MyLength();
+  for (const auto& comp : *results[0]) {
+    auto& result_c = *results[0]->ViewComponent(comp);
+    result_c.PutScalar(coef_);
 
-    result_c.PutScalar(1.0);
-    for (auto it = list0_.begin(); it != list0_.end(); ++it) {
-      const auto& factor_c = *S.Get<CompositeVector>(*it, Tags::DEFAULT).ViewComponent(*comp);
-      if (*it != wrt_key)
-        for (int c = 0; c != ncells; ++c) result_c[0][c] *= factor_c[0][c];
+    for (const auto& it : list0_) {
+      const auto& factor_c = *S.Get<CompositeVector>(it, Tags::DEFAULT).ViewComponent(comp);
+      if (it != wrt_key) {
+        if (factor_c.NumVectors() == n_dofs_) {
+          for (int i = 0; i != n_dofs_; ++i) {
+            for (int c = 0; c != result_c.MyLength(); ++c) result_c[i][c] *= factor_c[i][c];
+          }
+        } else {
+          for (int i = 0; i != n_dofs_; ++i) {
+            for (int c = 0; c != result_c.MyLength(); ++c) result_c[i][c] *= factor_c[0][c];
+          }
+        }
+      }
     }
 
-    for (auto it = list1_.begin(); it != list1_.end(); ++it) {
-      const auto& factor_c = *S.Get<CompositeVector>(*it, Tags::DEFAULT).ViewComponent(*comp);
-      if (*it == wrt_key)
-        for (int c = 0; c != ncells; ++c) result_c[0][c] /= -factor_c[0][c] * factor_c[0][c];
-      else
-        for (int c = 0; c != ncells; ++c) result_c[0][c] /= factor_c[0][c];
+    for (const auto& it : list1_) {
+      const auto& factor_c = *S.Get<CompositeVector>(it, Tags::DEFAULT).ViewComponent(comp);
+      if (it == wrt_key) {
+        if (factor_c.NumVectors() == n_dofs_) {
+          for (int i = 0; i != n_dofs_; ++i) {
+            for (int c = 0; c != result_c.MyLength(); ++c) result_c[i][c] /= -factor_c[i][c] * factor_c[i][c];
+          }
+        } else {
+          for (int i = 0; i != n_dofs_; ++i) {
+            for (int c = 0; c != result_c.MyLength(); ++c) result_c[i][c] /= -factor_c[0][c] * factor_c[0][c];
+          }
+        }
+
+      } else {
+        if (factor_c.NumVectors() == n_dofs_) {
+          for (int i = 0; i != n_dofs_; ++i) {
+            for (int c = 0; c != result_c.MyLength(); ++c) result_c[i][c] /= factor_c[i][c];
+          }
+        } else {
+          for (int i = 0; i != n_dofs_; ++i) {
+            for (int c = 0; c != result_c.MyLength(); ++c) result_c[i][c] /= factor_c[0][c];
+          }
+        }
+      }
     }
   }
 }
@@ -159,22 +189,69 @@ EvaluatorMultiplicativeReciprocal::EnsureCompatibility_Units_(State& S)
 {
   std::string data("-");
   Utils::Units system;
-  auto& r = S.GetRecordSetW(my_keys_[0].first);
 
+  bool valid_units = true;
   for (auto it = list0_.begin(); it != list0_.end(); ++it) {
     auto tmp = S.GetRecordSet(*it).units();
-    data = system.MultiplyUnits(data, tmp);
+    if (tmp != "") {
+      data = system.MultiplyUnits(data, tmp);
+    } else {
+      valid_units = false;
+      break;
+    }
   }
   for (auto it = list1_.begin(); it != list1_.end(); ++it) {
     auto tmp = S.GetRecordSet(*it).units();
-    data = system.DivideUnits(data, tmp);
+    if (tmp != "") {
+      data = system.DivideUnits(data, tmp);
+    } else {
+      valid_units = false;
+      break;
+    }
   }
 
-  auto tmp = r.units();
-  if (tmp != "")
-    AMANZI_ASSERT(system.CompareUnits(tmp, data));
-  else
-    r.set_units(data);
+  if (valid_units) {
+    auto& r = S.GetRecordSetW(my_keys_[0].first);
+    auto tmp = r.units();
+    if (tmp != "") AMANZI_ASSERT(system.CompareUnits(tmp, data));
+    else r.set_units(data);
+  }
 }
+
+void
+EvaluatorMultiplicativeReciprocal::EnsureCompatibility_ToDeps_(State& S)
+{
+  auto akeytag = my_keys_.front();
+  const auto& my_fac =
+    S.Require<CompositeVector, CompositeVectorSpace>(akeytag.first, akeytag.second);
+
+  if (my_fac.Mesh() != Teuchos::null) {
+    for (const auto& key_tag : dependencies_) {
+      auto& dep_fac = S.Require<CompositeVector,CompositeVectorSpace>(key_tag.first, key_tag.second);
+      dep_fac.SetMesh(my_fac.Mesh());
+
+      for (const auto& comp : my_fac) {
+        AmanziMesh::Entity_kind loc = my_fac.Location(comp);
+        int n_dofs = my_fac.NumVectors(comp);
+
+        if (n_dofs_ > 0) {
+          AMANZI_ASSERT(n_dofs_ == n_dofs);
+        } else {
+          n_dofs_ = n_dofs;
+        }
+
+        if (dep_fac.HasComponent(comp)) {
+          int dep_n_dofs = dep_fac.NumVectors(comp);
+          if (dep_n_dofs == 1 || dep_n_dofs == n_dofs_) {
+            dep_fac.AddComponent(comp, loc, dep_n_dofs);
+          } else {
+            AMANZI_ASSERT(false);
+          }
+        }
+      }
+    }
+  }
+}
+
 
 } // namespace Amanzi

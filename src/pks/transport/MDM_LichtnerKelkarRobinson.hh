@@ -6,20 +6,24 @@
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+/*!
 
-/*
-
-Anisotropic mechanical dispersion model by Lichtner, Kelkar, and Robinson.
+Anisotropic mechanical dispersion model by Lichtner, Kelkar, and Robinson, that
+splits vertical from horizontal and longitudinal from transverse.
 
 `"mechanical dispersion type`" = `"Lichtner-Kelkar-Robinson`"
 
-.. _MDM-Lichtner-Kelkar-Robinson-spec
-.. admonition:: MDM-Lichtner-Kelkar-Robinson-spec
+.. _mdm-lichtner-kelkar-robinson-spec
+.. admonition:: mdm-lichtner-kelkar-robinson-spec
 
-   * `"alpha_lv`" ``[double]`` **0.** Vertical longitudinal dispersivity/dispersion coefficient.
-   * `"alpha_lh`" ``[double]`` **0.** Horizontal longitudinal dispersivity/dispersion coefficient.
-   * `"alpha_tv`" ``[double]`` **0.** Vertical transverse dispersivity/dispersion coefficient.
-   * `"alpha_th`" ``[double]`` **0.** Horizontal transverse dispersivity/dispersion coefficient.
+   * `"alpha_lv`" ``[double]`` **0.** Vertical longitudinal
+     dispersivity/dispersion coefficient.
+   * `"alpha_lh`" ``[double]`` **0.** Horizontal longitudinal
+     dispersivity/dispersion coefficient.
+   * `"alpha_tv`" ``[double]`` **0.** Vertical transverse
+     dispersivity/dispersion coefficient.
+   * `"alpha_th`" ``[double]`` **0.** Horizontal transverse
+     dispersivity/dispersion coefficient.
 
 */
 

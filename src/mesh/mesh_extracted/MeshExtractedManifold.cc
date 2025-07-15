@@ -64,9 +64,9 @@ MeshExtractedManifold::MeshExtractedManifold(
   vo_ = Teuchos::rcp(new VerboseObject(comm_, "MeshExtractedManifold", *plist_));
 
   int d = parent_mesh_->getSpaceDimension();
-  setSpaceDimension(d);
   setManifoldDimension(d - 1);
   if (flattened_) setSpaceDimension(d - 1);
+  else setSpaceDimension(d);
 
   InitParentMaps(setname);
   InitEpetraMaps();

@@ -6,26 +6,34 @@
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
-
 /*!
 
-Anisotropic mechanical dispersion model by Bear.
+An anisotropic mechanical dispersion model by Bear that splits longitudinal
+from transverse.
 
 `"mechanical dispersion type`" = `"Bear`"
 
-.. _MDM-Bear-spec
-.. admonition:: MDM-Bear-spec
+.. _mdm-bear-spec
+.. admonition:: mdm-bear-spec
 
    ONE OF
+
    * `"alpha_l`" ``[double]`` Longitudinal dispersivity.
+
    OR
+
    * `"longitudinal dispersivity [m]`" ``[double]``
+
    END
 
    ONE OF
+
    * `"alpha_t`" ``[double]`` Transverse dispersivity.
+
    OR
+
    * `"transverse dispersivity [m]`" ``[double]``
+
    END
 
 */

@@ -438,6 +438,15 @@ State::RequireEvaluator(const Key& key, const Tag& tag, bool alias_ok)
       *vo_->os() << "  ... evaluator created as cell volume" << std::endl;
     }
     return RequireEvaluator(key, tag);
+  } else if (Keys::getVarName(key) == "slope_magnitude" ||
+             Keys::getVarName(key) == "elevation") {
+    Teuchos::ParameterList& cv_list = GetEvaluatorList(key);
+    cv_list.set("evaluator type", "meshed elevation");
+    // recursive call will result in the above, HasEvaluatorList() branch being taken.
+    if (debug && vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+      *vo_->os() << "  ... evaluator created as cell volume" << std::endl;
+    }
+    return RequireEvaluator(key, tag);
   }
 
   // Amanzi prefers to put constant-in-time values and functions in the
@@ -598,11 +607,11 @@ State::WriteDependencyGraph() const
 // -----------------------------------------------------------------------------
 // State handles model parameters.
 // -----------------------------------------------------------------------------
-Teuchos::ParameterList
-State::GetModelParameters(std::string modelname)
+const Teuchos::ParameterList&
+State::GetModelParameters(const std::string& modelname) const
 {
   AMANZI_ASSERT(state_plist_.isSublist("model parameters"));
-  Teuchos::ParameterList model_plist = state_plist_.sublist("model parameters");
+  const Teuchos::ParameterList& model_plist = state_plist_.sublist("model parameters");
   AMANZI_ASSERT(model_plist.isSublist(modelname));
   return model_plist.sublist(modelname);
 }

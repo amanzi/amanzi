@@ -6,13 +6,6 @@
 
   Authors: Ethan Coon
 */
-
-//! An evaluator with no dependencies specified by discrete data in a file.
-/*
-  State
-
-*/
-
 /*!
 
 This evaluator is typically used for providing data that are functions of space
@@ -30,12 +23,11 @@ Within the file, data is expected to meet the following (HDF5) layout::
       /1 : ...
       /NTIMES-1 : 1D array at time /time[NTIMES-1]
 
-This evaluator is used by providing the option:
 
-`"evaluator type`" == `"independent variable`"
+`"evaluator type`" == `"independent variable from file`"
 
-.. _independent-variable-from-file-evaluator-spec:
-.. admonition:: independent-variable-from-file-evaluator-spec
+.. _evaluator-independent-variable-from-file-spec:
+.. admonition:: evaluator-independent-variable-from-file-spec
 
    * `"filename`" ``[string]`` Path to the file.
    * `"variable name`" ``[string]`` Name of the dataset to read from the file.
@@ -58,21 +50,19 @@ This evaluator is used by providing the option:
 
 .. code-block:: xml
 
-  <ParameterList name="field_evaluators">  <!-- parent list -->
-  <ParameterList name="porosity">
-    <Parameter name="field evaluator type" type="string" value="independent variable from file"/>
-    <Parameter name="filename" type="string" value="_DATA_FILE.h5"/>
-    <Parameter name="domain name" type="string" value="domain"/>
-    <Parameter name="variable name" type="string" value="porosity"/>
-    <Parameter name="component name" type="string" value="cell"/>
-    <Parameter name="mesh entity" type="string" value="cell"/>
-    <Parameter name="number of dofs" type="int" value="1"/>
+   <ParameterList name="porosity">
+     <Parameter name="evaluator type" type="string" value="independent variable from file"/>
+     <Parameter name="filename" type="string" value="_DATA_FILE.h5"/>
+     <Parameter name="domain name" type="string" value="domain"/>
+     <Parameter name="variable name" type="string" value="porosity"/>
+     <Parameter name="component name" type="string" value="cell"/>
+     <Parameter name="mesh entity" type="string" value="cell"/>
+     <Parameter name="number of dofs" type="int" value="1"/>
 
-    <ParameterList name="time function">
-      <Parameter name="times" type="Array(double)" value="{1.0, 2.0, 3.0}"/>
-    </ParameterList>
-  </ParameterList>
-  </ParameterList>
+     <ParameterList name="time function">
+       <Parameter name="times" type="Array(double)" value="{1.0, 2.0, 3.0}"/>
+     </ParameterList>
+   </ParameterList>
 
 The field *porosity* is defined as a cell-based variable and
 interpolated between three time intervals.

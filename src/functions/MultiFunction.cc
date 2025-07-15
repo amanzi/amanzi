@@ -75,7 +75,11 @@ MultiFunction::MultiFunction(Teuchos::ParameterList& plist)
       for (int lcv = 1; lcv != (ndofs + 1); ++lcv) {
         std::stringstream sublist_name;
         sublist_name << "dof " << lcv << " function";
-        functions_.push_back(Teuchos::rcp(factory.Create(plist.sublist(sublist_name.str()))));
+        if (plist.isSublist(sublist_name.str())) {
+          functions_.emplace_back(Teuchos::rcp(factory.Create(plist.sublist(sublist_name.str()))));
+        } else {
+          functions_.emplace_back(Teuchos::null);
+        }
       }
     } else {
       // ERROR -- invalid number of dofs
@@ -117,7 +121,11 @@ MultiFunction::size() const
 double*
 MultiFunction::operator()(const std::vector<double>& xt) const
 {
-  for (int i = 0; i != size(); ++i) { values_[i] = (*functions_[i])(xt); }
+  for (int i = 0; i != size(); ++i) {
+    if (functions_[i] != Teuchos::null) {
+      values_[i] = (*functions_[i])(xt);
+    }
+  }
   return values_;
 };
 
