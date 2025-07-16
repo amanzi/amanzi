@@ -124,6 +124,7 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
   --enable-shared --enable-structured --enable-silo \
   --enable-alquimia --enable-pflotran --enable-crunchtope \
   --enable-pf_clm \
+  --enable-mesh_moab \
   --with-mpi=/usr \
   --with-python=/usr/bin/python \
   && git checkout master \
