@@ -115,6 +115,8 @@ RUN if [ "$amanzi_branch" != "master" ]; then \
 
 # Build and install the TPLs using bootstrap.sh, and remove
 # the source, objects, etc. after installation to save space.
+# Consider adding ...
+#  --enable-mesh_moab \
 RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
   --parallel=4 --opt \
   --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/amanzi \
@@ -124,7 +126,6 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
   --enable-shared --enable-structured --enable-silo \
   --enable-alquimia --enable-pflotran --enable-crunchtope \
   --enable-pf_clm \
-  --enable-mesh_moab \
   --with-mpi=/usr \
   --with-python=/usr/bin/python \
   && git checkout master \
