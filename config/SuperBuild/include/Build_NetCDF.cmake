@@ -35,6 +35,8 @@ set(NetCDF_PATCH_COMMAND ${CMAKE_COMMAND} -P ${NetCDF_cmake_patch})
 # --- Define the configure command
 set(NetCDF_CMAKE_CACHE_ARGS "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}")
 list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}")
+list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DCMAKE_INSTALL_LIBDIR:FILEPATH=lib")
+list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DCMAKE_INSTALL_BINDIR:FILEPATH=bin")
 list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DENABLE_DAP:BOOL=FALSE")
 list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DENABLE_PARALLEL4:BOOL=TRUE")
 list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DHDF5_PARALLEL:BOOL=TRUE")
@@ -43,6 +45,10 @@ list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DHDF5_HL_LIBRARY:FILEPATH=${HDF5_HL_LIBRAR
 list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DHDF5_INCLUDE_DIR:PATH=${HDF5_INCLUDE_DIRS}")
 list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DHDF5_VERSION:STRING=${HDF5_VERSION}")
 
+# --- Override minimum version
+if(CMAKE_MAJOR_VERSION VERSION_EQUAL "4")
+  list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.5")
+endif()
 
 # Default is to build with NetCDF4 which depends on HDF5
 option(ENABLE_NetCDF4 "Enable netCDF4 build" TRUE)
@@ -69,7 +75,7 @@ ExternalProject_Add(${NetCDF_BUILD_TARGET}
                     URL_MD5      ${NetCDF_MD5_SUM}        # md5sum of the archive file
                     DOWNLOAD_NAME ${NetCDF_SAVEAS_FILE}   # file name to store (if not end of URL)
                     # -- Patch 
-                    PATCH_COMMAND ${NetCDF_PATCH_COMMAND}
+                    # PATCH_COMMAND ${NetCDF_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR       ${NetCDF_source_dir}
                     CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}  # Ensure uniform build

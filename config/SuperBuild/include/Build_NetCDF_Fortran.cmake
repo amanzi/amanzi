@@ -19,7 +19,7 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   VERSION ${NetCDF_Fortran_VERSION_MAJOR} ${NetCDF_Fortran_VERSION_MINOR} ${NetCDF_Fortran_VERSION_PATCH})
   
 # --- Patch original code
-set(NetCDF_Fortran_patch_file netcdf-fortran-4.5.4-cmake.patch)
+set(NetCDF_Fortran_patch_file )
 set(NetCDF_Fortran_sh_patch ${NetCDF_Fortran_prefix_dir}/netcdf-fortran-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/netcdf-fortran-patch-step.sh.in
                ${NetCDF_Fortran_sh_patch}
@@ -35,10 +35,17 @@ set(NetCDF_Fortran_PATCH_COMMAND ${CMAKE_COMMAND} -P ${NetCDF_Fortran_cmake_patc
 # --- Define the configure command
 set(NetCDF_Fortran_CMAKE_CACHE_ARGS "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}")
 list(APPEND NetCDF_Fortran_CMAKE_CACHE_ARGS "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}")
+list(APPEND NetCDF_Fortran_CMAKE_CACHE_ARGS "-DCMAKE_INSTALL_LIBDIR:FILEPATH=lib")
+list(APPEND NetCDF_Fortran_CMAKE_CACHE_ARGS "-DCMAKE_INSTALL_BINDIR:FILEPATH=bin")
 list(APPEND NetCDF_Fortran_CMAKE_CACHE_ARGS "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}")
 list(APPEND NetCDF_Fortran_CMAKE_CACHE_ARGS "-DENABLE_TESTS:BOOL=FALSE")
 list(APPEND NetCDF_Fortran_CMAKE_CACHE_ARGS "-DBUILD_EXAMPLES:BOOL=FALSE")
 list(APPEND NetCDF_Fortran_CMAKE_CACHE_ARGS "-DNETCDF_C_LIBRARY:PATH=${NetCDF_C_LIBRARY}")
+
+# --- Override minimum version
+if(CMAKE_MAJOR_VERSION VERSION_EQUAL "4")
+  list(APPEND NetCDF_Fortran_CMAKE_CACHE_ARGS "-DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.5")
+endif()
 
 # shared/static libraries
 if (BUILD_STATIC_LIBS)
