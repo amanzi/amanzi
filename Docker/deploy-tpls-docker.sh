@@ -78,6 +78,14 @@ case $i in
     cmake_version="${i#*=}"
     shift
     ;;
+    --petsc_ver=*)
+    petsc_ver="${i#*=}"
+    shift
+    ;;
+    --trilinos_ver=*)
+    trilinos_ver="${i#*=}"
+    shift
+    ;;
     --amanzi_branch=*)
     amanzi_branch="${i#*=}"
     shift
@@ -131,8 +139,8 @@ build_mpi="${build_mpi:-True}"
 mpi_distro="${mpi_distro:-mpich}"
 mpi_version="${mpi_version:-4.0.3}"
 cmake_version="${cmake_version:-}"
-#petsc_ver="${petsc_ver:-3.21}"
-#trilinos_ver="${trilnos_ver:-15-1-0}"
+petsc_ver="${petsc_ver:-3.21}"
+trilinos_ver="${trilnos_ver:-15-1-0}"
 amanzi_branch="${amanzi_branch:-master}"
 amanzi_src_dir="${amanzi_src_dir:-/ascem/amanzi/repos/amanzi-master}"
 amanzi_tpls_ver="${amanzi_tpls_ver:-`get_tpl_version`}"
@@ -182,7 +190,6 @@ then
         --build-arg base_image=${base_image} \
         --build-arg ver_tag=${ver_tag} \
         --build-arg cmake_version=${cmake_version} \
-        --build-arg build_type=${build_type} \
         ${use_proxy} \
         ${output} \
         -f ${amanzi_src_dir}/Docker/Dockerfile-TPLs \
@@ -202,7 +209,6 @@ else
         --build-arg base_image=${base_image} \
         --build-arg ver_tag=${ver_tag} \
         --build-arg cmake_version=${cmake_version} \
-        --build-arg build_type=${build_type} \
         ${use_proxy} \
         ${output} \
         -f ${amanzi_src_dir}/Docker/Dockerfile-TPLs \
