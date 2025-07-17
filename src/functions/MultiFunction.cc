@@ -102,6 +102,7 @@ MultiFunction::MultiFunction(Teuchos::ParameterList& plist)
   };
 
   values_ = new double[functions_.size()];
+  for (int i = 0; i < functions_.size(); ++i) values_[i] = 0.0;
 }
 
 
