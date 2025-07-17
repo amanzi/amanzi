@@ -190,6 +190,14 @@
 #                - update Silo to 4.11.1
 #                - remove Boost and Trilinos dependency on Boost
 #   0.98.10      - patch ascem/io to improve error handling
+#   0.98.11      - update zlib to 1.3.1 (compatible with MacOSX Apple Clang 17)
+#                - patch Kokkos solvers in Trilinos for Apple Clang 17.
+#                - update HDF5 to 1.14.6
+#                - update netcdf-c to 4.9.2
+#                - update netcdf-fortran to 4.6.2
+#                - update Alquimia to version 1.1.1
+#                - update ExprTK to version 0.0.3
+
 
 include(CMakeParseArguments)
 
@@ -293,13 +301,13 @@ set(MPICH_MD5_SUM        e175452f4d61646a52c73031683fc375)
 # TPL: zlib
 #
 set(ZLIB_VERSION_MAJOR 1)
-set(ZLIB_VERSION_MINOR 2)
-set(ZLIB_VERSION_PATCH 11)
+set(ZLIB_VERSION_MINOR 3)
+set(ZLIB_VERSION_PATCH 1)
 set(ZLIB_VERSION ${ZLIB_VERSION_MAJOR}.${ZLIB_VERSION_MINOR}.${ZLIB_VERSION_PATCH})
 set(ZLIB_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(ZLIB_ARCHIVE_FILE   zlib-${ZLIB_VERSION}.tar.gz)
 set(ZLIB_SAVEAS_FILE    ${ZLIB_ARCHIVE_FILE})
-set(ZLIB_MD5_SUM        1c9f62f0778697a09d36121ead88e08e) 
+set(ZLIB_MD5_SUM        9855b6d802d7fe5b7bd5b196a2271655)
 
 #
 # TPL: METIS
@@ -358,39 +366,38 @@ set(Boost_MD5_SUM        db0112a3a37a3742326471d20f1a186a)
 # TPL: HDF5
 #
 set(HDF5_VERSION_MAJOR 1)
-set(HDF5_VERSION_MINOR 12)
-set(HDF5_VERSION_PATCH 1)
+set(HDF5_VERSION_MINOR 14)
+set(HDF5_VERSION_PATCH 6)
 set(HDF5_VERSION ${HDF5_VERSION_MAJOR}.${HDF5_VERSION_MINOR}.${HDF5_VERSION_PATCH})
-set(HDF5_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
-set(HDF5_ARCHIVE_FILE   hdf5-${HDF5_VERSION}.tar.bz2)
+set(HDF5_VERSION_UNDERSCORE ${HDF5_VERSION_MAJOR}_${HDF5_VERSION_MINOR}_${HDF5_VERSION_PATCH})
+set(HDF5_URL_STRING     "https://support.hdfgroup.org/releases/hdf5/v${HDF5_VERSION_MAJOR}_${HDF5_VERSION_MINOR}/v${HDF5_VERSION_UNDERSCORE}/downloads")
+set(HDF5_ARCHIVE_FILE   hdf5-${HDF5_VERSION}.tar.gz)
 set(HDF5_SAVEAS_FILE    ${HDF5_ARCHIVE_FILE})
-set(HDF5_MD5_SUM        442469fbf43626006346e679c22cf10a)
-
+set(HDF5_MD5_SUM        63426c8e24086634eaf9179a8c5fe9e5)
 
 #
 # TPL: NetCDF
 #
 set(NetCDF_VERSION_MAJOR 4)
-set(NetCDF_VERSION_MINOR 8)
-set(NetCDF_VERSION_PATCH 1)
+set(NetCDF_VERSION_MINOR 9)
+set(NetCDF_VERSION_PATCH 2)
 set(NetCDF_VERSION ${NetCDF_VERSION_MAJOR}.${NetCDF_VERSION_MINOR}.${NetCDF_VERSION_PATCH})
 set(NetCDF_URL_STRING     "https://github.com/Unidata/netcdf-c/archive/")
 set(NetCDF_ARCHIVE_FILE   v${NetCDF_VERSION}.tar.gz)
 set(NetCDF_SAVEAS_FILE    netcdf-${NetCDF_VERSION}.tar.gz)
-set(NetCDF_MD5_SUM        b069f4eb1718798c2907c38189615f95)
-
+set(NetCDF_MD5_SUM        84acd096ab4f3300c20db862eecdf7c7)
 
 #
 # TPL: NetCDF Fortran
 #
 set(NetCDF_Fortran_VERSION_MAJOR 4)
-set(NetCDF_Fortran_VERSION_MINOR 5)
-set(NetCDF_Fortran_VERSION_PATCH 4)
+set(NetCDF_Fortran_VERSION_MINOR 6)
+set(NetCDF_Fortran_VERSION_PATCH 2)
 set(NetCDF_Fortran_VERSION ${NetCDF_Fortran_VERSION_MAJOR}.${NetCDF_Fortran_VERSION_MINOR}.${NetCDF_Fortran_VERSION_PATCH})
 set(NetCDF_Fortran_URL_STRING     "https://github.com/Unidata/netcdf-fortran/archive/")
 set(NetCDF_Fortran_ARCHIVE_FILE   v${NetCDF_Fortran_VERSION}.tar.gz)
 set(NetCDF_Fortran_SAVEAS_FILE    netcdf-fortran-${NetCDF_Fortran_VERSION}.tar.gz)
-set(NetCDF_Fortran_MD5_SUM        77e1be413ab343f42a4a6e8b338b45d5)
+set(NetCDF_Fortran_MD5_SUM        0311a8ee74c4fdd509600d8be292199d)
 
 #
 # ASCEM-IO
@@ -423,7 +430,7 @@ set(MOAB_VERSION_MAJOR  5)
 set(MOAB_VERSION_MINOR  3)
 set(MOAB_VERSION_PATCH  1)
 set(MOAB_VERSION ${MOAB_VERSION_MAJOR}.${MOAB_VERSION_MINOR}.${MOAB_VERSION_PATCH})
-set(MOAB_URL_STRING     ftp://ftp.mcs.anl.gov/pub/fathom)
+set(MOAB_URL_STRING     https://ftp.mcs.anl.gov/pub/fathom)
 set(MOAB_ARCHIVE_FILE   moab-${MOAB_VERSION}.tar.gz)
 set(MOAB_SAVEAS_FILE    ${MOAB_ARCHIVE_FILE})
 set(MOAB_MD5_SUM        935d18f8edf7dc3df625d9426a2d59e1)
@@ -548,12 +555,12 @@ set(PFLOTRAN_MD5_SUM        d44b5670223ea9e6fbb894a8842161e0)
 #
 set(Alquimia_VERSION_MAJOR 1)
 set(Alquimia_VERSION_MINOR 1)
-set(Alquimia_VERSION_PATCH 0)
+set(Alquimia_VERSION_PATCH 1)
 set(Alquimia_VERSION ${Alquimia_VERSION_MAJOR}.${Alquimia_VERSION_MINOR}.${Alquimia_VERSION_PATCH})
 set(Alquimia_URL_STRING     https://github.com/LBL-EESA/alquimia-dev/archive/refs/tags)
 set(Alquimia_ARCHIVE_FILE   v${Alquimia_VERSION}.tar.gz)
 set(Alquimia_SAVEAS_FILE    alquimia-dev-${Alquimia_VERSION}.tar.gz)
-set(Alquimia_MD5_SUM        adfa32fe2bcd690a847ec59390f82a0a)
+set(Alquimia_MD5_SUM        4e288e576777d43a907cdfef71427449)
 
 #
 # TPL: Silo
@@ -608,10 +615,10 @@ set(CLM_MD5_SUM       1412ff30fc5db0d3c1dc71ef30c86995)
 #
 set(EXPRTK_VERSION_MAJOR 0)
 set(EXPRTK_VERSION_MINOR 0)
-set(EXPRTK_VERSION_PATCH 2)
+set(EXPRTK_VERSION_PATCH 3)
 set(EXPRTK_VERSION  ${EXPRTK_VERSION_MAJOR}.${EXPRTK_VERSION_MINOR}.${EXPRTK_VERSION_PATCH})
 set(EXPRTK_URL_STRING    "https://github.com/ArashPartow/exprtk/archive")
 set(EXPRTK_ARCHIVE_FILE  ${EXPRTK_VERSION}.tar.gz)
 set(EXPRTK_SAVEAS_FILE   exprtk-${EXPRTK_ARCHIVE_FILE})
-set(EXPRTK_MD5_SUM       897d4d3faedf9ebaa96d66fd14c2f967)
+set(EXPRTK_MD5_SUM       b38c56a28c418052949ca272600148ad)
 

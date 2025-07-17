@@ -44,6 +44,11 @@ set(METIS_CMAKE_CACHE_ARGS
       -DSHARED:BOOL=${BUILD_SHARED_LIBS}
       -DGKLIB_PATH:PATH=${METIS_GKLIB_DIR})
 
+# --- Override minimum version
+if(CMAKE_MAJOR_VERSION VERSION_EQUAL "4")
+  list(APPEND METIS_CMAKE_CACHE_ARGS "-DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.5")
+endif()
+    
 # --- Add external project build and tie to the METIS build target
 ExternalProject_Add(${METIS_BUILD_TARGET}
                     DEPENDS   ${METIS_PACKAGE_DEPENDS}            # Package dependency target
