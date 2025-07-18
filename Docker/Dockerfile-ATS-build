@@ -16,8 +16,11 @@
 
 ARG amanzi_tpls_ver=latest
 ARG mpi_flavor=mpich
+ARG base_image=ubuntu
+ARG ver_tag=jammy
+ARG mpi_version=4.0.3
 
-FROM metsi/amanzi-tpls:${amanzi_tpls_ver}-${mpi_flavor}
+FROM metsi/amanzi-tpls:${amanzi_tpls_ver}-${mpi_flavor}-${base_image}-${ver_tag}
 LABEL Description="ATS CI: Build ATS in a Docker image."
 SHELL ["/bin/bash", "-c"]
 
@@ -37,7 +40,7 @@ RUN echo "${AMANZI_PREFIX}"; echo "${AMANZI_TPLS_DIR}"; echo "Amanzi branch = \"
 
 # Change the Working Directory and update amanzi
 WORKDIR /home/amanzi_user/amanzi
- 
+
 # update the docker's Amanzi repo to current master, not master when
 # TPLs layer was built
 RUN git remote prune origin; git fetch; git reset --hard origin/master
@@ -57,15 +60,15 @@ RUN if [[ -n "$ats_branch" ]] ; then echo "checking out ATS branch: \"$ats_branc
 RUN git rev-parse --short HEAD
 
 # Checkout ats-regression-tests at the right branch
-RUN git submodule update --init 
+RUN git submodule update --init
 WORKDIR /home/amanzi_user/amanzi/src/physics/ats/testing/ats-regression-tests
 RUN if [[ -n "$ats_tests_branch" ]] ; then echo "checking out ATS tests branch: \"$ats_tests_branch\""; git fetch; git checkout $ats_tests_branch; git reset --hard origin/$ats_tests_branch; fi
 RUN git rev-parse --short HEAD
 WORKDIR /home/amanzi_user/amanzi
 
 ENV AMANZI_SRC_DIR=/home/amanzi_user/amanzi \
-    ATS_SRC_DIR=/home/amanzi_user/amanzi/src/physics/ats 
-  
+    ATS_SRC_DIR=/home/amanzi_user/amanzi/src/physics/ats
+
 RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/ats \
    --tpl-config-file=${AMANZI_TPLS_DIR}/share/cmake/amanzi-tpl-config.cmake \

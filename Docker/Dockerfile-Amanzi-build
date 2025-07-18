@@ -1,5 +1,9 @@
 ARG amanzi_tpls_ver=latest
-FROM metsi/amanzi-tpls:${amanzi_tpls_ver}-mpich
+ARG base_image=ubuntu
+ARG ver_tag=jammy
+ARG mpi_distro=mpich
+ARG mpi_version=4.0.3
+FROM metsi/amanzi-tpls:${amanzi_tpls_ver}-${mpi_distro}-${base_image}-${ver_tag}
 LABEL Description="Amanzi: Build and install Amanzi in a Docker image."
 
 # Switch to amanzi_user
@@ -31,7 +35,12 @@ RUN git branch --list
 RUN git checkout $amanzi_branch
 RUN git reset --hard origin/$amanzi_branch
 RUN git rev-parse --short HEAD
-  
+
+# Make MPI oversubscribe (primarily affects openMPI on CI) if required
+ENV MPIEXEC_PREFLAGS=--oversubscribe
+ENV OMPI_MCA_rmaps_base_oversubscribe=1
+ENV PRTE_MCA_rmaps_default_mapping_policy=":oversubscribe"
+
 RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/amanzi \
    --tpl-config-file=${AMANZI_TPLS_DIR}/share/cmake/amanzi-tpl-config.cmake \
@@ -42,8 +51,6 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --with-mpi=/usr \
    --enable-shared \
    && cd /home/amanzi_user/amanzi_builddir/amanzi 
-
-#  && rm -r /home/amanzi_user/amanzi_builddir/
 
 # Set path to make it easier to run amanzi
 ENV PATH=/home/amanzi_user/install/bin:${PATH}
