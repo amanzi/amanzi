@@ -9,12 +9,12 @@ class Exprtk(Package):
 
     """ C++ Mathematical Expression Toolkit Library """
 
-    homepage = "https://github.com/ArashPartow/exprtk"
+    homepage = "https://www.partow.net/programming/exprtk/index.html"
     git      = "https://github.com/ArashPartow/exprtk"
 
-    maintainers = ['julienloiseau','jd-moulton','gcapodag']
-    version('master', commit='806c519c91fd08ba4fa19380dbf3f6e42de9e2d1', default=True)
+    maintainers = ['julienloiseau','jd-moulton','arashpartow']
+    version('release', commit='a4b17d543f072d2e3ba564e4bc5c3a0d2b05c338', default=True)
 
-    def install(self, prec, prefix): 
+    def install(self, prec, prefix):
         mkdirp(prefix.include)
         install("exprtk.hpp", prefix.include)

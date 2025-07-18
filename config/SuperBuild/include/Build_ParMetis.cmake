@@ -45,6 +45,12 @@ set(ParMetis_CMAKE_CACHE_ARGS
                   -DGKLIB_PATH:PATH=${ParMetis_GKLIB_DIR}
                   -DMETIS_PATH:PATH=${ParMetis_METIS_DIR})
 
+# --- Override minimum version
+# --- Cache Args may need the type to be float? 
+if(CMAKE_MAJOR_VERSION VERSION_EQUAL "4")
+  list(APPEND ParMetis_CMAKE_CACHE_ARGS "-DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.5")
+endif()
+                
 # --- Add external project build and tie to the ParMetis build target
 ExternalProject_Add(${ParMetis_BUILD_TARGET}
                     DEPENDS   ${ParMetis_PACKAGE_DEPENDS}             # Package dependency target

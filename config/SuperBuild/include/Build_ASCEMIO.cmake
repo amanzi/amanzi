@@ -30,11 +30,16 @@ configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ascemio-patch-step.cmake.in
 set(ASCEMIO_PATCH_COMMAND ${CMAKE_COMMAND} -P ${ASCEMIO_cmake_patch})
 
 # --- Define the arguments passed to CMake.
-set(ASCEMIO_CMAKE_ARGS 
+set(ASCEMIO_CMAKE_ARGS
       "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}"
       "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
       "-DHDF5_DIR=${HDF5_DIR}")
 
+# --- Override minimum version
+if(CMAKE_MAJOR_VERSION VERSION_EQUAL "4")
+  list(APPEND ASCEMIO_CMAKE_ARGS "-DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.5")
+endif()
+    
 if (BUILD_SHARED_LIBS)
   set(HDF5_USE_STATIC_LIBRARIES OFF)
 else()

@@ -36,7 +36,7 @@ else()
 endif()  
 
 # --- Define the arguments passed to CMake.
-set(SuperLUDist_CMAKE_ARGS 
+set(SuperLUDist_CMAKE_ARGS
       "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}"
       "-DCMAKE_INSTALL_LIBDIR:FILEPATH=${TPL_INSTALL_PREFIX}/lib"
       "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}"
@@ -44,6 +44,11 @@ set(SuperLUDist_CMAKE_ARGS
       "-DBUILD_STATIC_LIBS:BOOL=${SLU_BUILD_STATIC_LIBS}"
       "-DTPL_ENABLE_BLASLIB:BOOL=FALSE")
 
+# --- Override minimum version
+if(CMAKE_MAJOR_VERSION VERSION_EQUAL "4")
+  list(APPEND SuperLUDist_CMAKE_ARGS "-DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.5")
+endif()
+    
 # --- Add external project build and tie to the SuperLU build target
 ExternalProject_Add(${SuperLUDist_BUILD_TARGET}
                     DEPENDS   ${SuperLUDist_PACKAGE_DEPENDS}   # Package dependency target

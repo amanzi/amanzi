@@ -7,11 +7,14 @@
   Authors: Ethan Coon
 */
 
-/*
+/*!
 
 An evaluator that aliases to another key/tag pair, doing no work itself.
 
-Note this may be any type of evaluator -- primary, secondary, or independent.
+Note this may alias to any type of evaluator -- primary, secondary, or
+independent.  These are typically not specified by the user in the input spec,
+but instead manually constructed by a PK or MPC.
+
 */
 
 #pragma once

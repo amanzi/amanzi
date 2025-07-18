@@ -8,8 +8,14 @@
            Ethan Coon (ecoon@lanl.gov)
 */
 
-//! Collection of Observations on an unstructured mesh to be written to a common file.
 /*!
+Observations are a localized-in-space but frequent-in-time view of simulation
+output, designed to get at useful diagnostic quantities such as hydrographs,
+total water content, quantities at a point, etc.  These allow frequent
+collection in time without saving huge numbers of visualization files to do
+postprocessing.  In fact, these should be though of as orthogonal data queries
+to visualization -- visualization is pointwise in time but complete in space,
+while observations are pointwise/finite in space but complete in time.
 
 .. _observation-spec:
 .. admonition:: observation-spec

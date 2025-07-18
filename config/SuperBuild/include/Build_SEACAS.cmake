@@ -75,14 +75,16 @@ else()
 endif()
 
 #
-# --- Define the SEACAS patch step - mainly for nem_slice to be able
-# --- to handle columns
+# --- Define the SEACAS patch step
+#     - this was mainly for nem_slice to be able to handle columns (doesn't seem relevant)
+#     - szip patch fixes duplicate conflicting declaration
 #
-set(ENABLE_SEACAS_Patch OFF)
+set(ENABLE_SEACAS_Patch ON)
 if (ENABLE_SEACAS_Patch)
   set(SEACAS_patch_file
-    seacas-nemslice.patch
-    seacas-exoduspy.patch
+    #seacas-nemslice.patch
+    #seacas-exoduspy.patch
+    seacas-szip.patch
     )
   configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/seacas-patch-step.sh.in
                  ${SEACAS_prefix_dir}/seacas-patch-step.sh
@@ -135,9 +137,10 @@ ExternalProject_Add(${SEACAS_BUILD_TARGET}
                     TMP_DIR   ${SEACAS_tmp_dir}                     # Temporary files directory
                     STAMP_DIR ${SEACAS_stamp_dir}                   # Timestamp and log directory
                     # -- Download and URL definitions
-                    DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}                # Download directory
-                    URL          ${SEACAS_URL}                      # URL may be a web site OR a local file
-                    URL_MD5      ${SEACAS_MD5_SUM}                  # md5sum of the archive file
+                    DOWNLOAD_DIR  ${TPL_DOWNLOAD_DIR}               # Download directory
+                    URL           ${SEACAS_URL}                     # URL may be a web site OR a local file
+                    URL_MD5       ${SEACAS_MD5_SUM}                 # md5sum of the archive file
+                    DOWNLOAD_NAME ${SEACAS_SAVEAS_FILE}   # file name to store (if not end of URL)
                     # -- Patch
                     PATCH_COMMAND ${SEACAS_PATCH_COMMAND}
                     # -- Configure
