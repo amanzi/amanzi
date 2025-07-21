@@ -43,7 +43,7 @@ std::pair<double, double> EigenvaluesSVD(Amanzi::WhetStone::DenseMatrix& M)
     emin = std::min(emin, S[i]);
     emax = std::max(emax, S[i]);
   }
-  return std::pair<double, double>(emin, emax);
+  return std::make_pair(emin, emax);
 }
 
 

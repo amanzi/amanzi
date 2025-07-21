@@ -184,5 +184,5 @@ TEST(MERGE_MESHES)
   testMeshAudit<MeshAudit, AmanziMesh::Mesh>(mesh1);
 
   auto mstk1 = Teuchos::rcp_dynamic_cast<AmanziMesh::Mesh_MSTK>(mesh1->getMeshFramework())->getMSTK();
-  MESH_ExportToExodusII(mstk1, "merged.exo", 0, {}, nullptr, nullptr);
+  MESH_ExportToExodusII(mstk1, "merged.exo", 0, {}, nullptr, 0);
 }
