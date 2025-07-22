@@ -80,7 +80,7 @@ clean:
 	echo "Removing the section subdirectories: verification, tutorial, benchmarking, install, mycase" ;\
 	rm -rf verification tutorial benchmarking install mycase  ;\
 	echo "Removing the generated ./index.rst"   ;\
-	rm -f ./index.rst
+	rm -f ./index.rst*
 
 run_tests:
 	@echo "Setting up guide indexes, and running any tests for this build ..."
