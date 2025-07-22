@@ -193,7 +193,8 @@
 #   0.98.11      - update zlib to 1.3.1 (compatible with MacOSX Apple Clang 17)
 #                - patch Kokkos solvers in Trilinos for Apple Clang 17.
 #                - update Alquimia to version 1.1.1
-#   0.98.12      - update hypre to 2.31.0
+#   0.98.12      - update Alquimia to version 1.2.0
+#   0.98.13      - update hypre to 2.31.0
 #                - update PETSc to 3.21.0
 #                - update HDF5 to 1.14.6
 #                - update netcdf-c to 4.9.3
@@ -202,7 +203,6 @@
 #                - update SuperLU to 6.0.1
 #                - update SuperLU_dist to 8.2.1
 #                - add fmt (new dependency of SEACAS), 11.2.0
-
 
 include(CMakeParseArguments)
 
@@ -255,7 +255,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 98)
-set(AMANZI_TPLS_VERSION_PATCH 12)
+set(AMANZI_TPLS_VERSION_PATCH 13)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
