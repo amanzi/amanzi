@@ -195,8 +195,9 @@
 #                - update HDF5 to 1.14.6
 #                - update netcdf-c to 4.9.2
 #                - update netcdf-fortran to 4.6.2
-#                - update Alquimia to version 1.2.0 (supersedes earlier update to version 1.1.1)
+#                - update Alquimia to version 1.1.0
 #                - update ExprTK to version 0.0.3
+#   0.98.12      - update Alquimia to version 1.2.0
 
 
 include(CMakeParseArguments)
@@ -250,7 +251,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 98)
-set(AMANZI_TPLS_VERSION_PATCH 11)
+set(AMANZI_TPLS_VERSION_PATCH 12)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
