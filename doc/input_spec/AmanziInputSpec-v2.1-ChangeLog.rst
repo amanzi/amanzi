@@ -1,5 +1,5 @@
 =============================================================
-Change Log for Amanzi XML Input Specification |version|
+Change Log for Amanzi XML Input Specification (Version 2.x.x)
 =============================================================
 
 .. contents:: **Table of Contents**
@@ -241,7 +241,7 @@ Numerical Controls
 
 * Added the parameter `"clipping_pressure`" to the renamed `"unstr_initialization`" list.
 
-* Removed the parameter `"initialize_with_darcy`" from the section `"unstr_initialization`".  This section's parameters are used to initialize the steady time step and `"initialize_with_darcy`" is already specified under the steady-state section.
+* Removed the parameter `"initialize_with_darcy`" from the section `"unstr_initialization`".  This section's parameters are used to initialize the steady timestep and `"initialize_with_darcy`" is already specified under the steady-state section.
 
 * Added the option `"darcy_solver`" the parameter `"method`" in the `"unstr_initialization`" list.
 

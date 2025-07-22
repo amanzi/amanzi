@@ -20,29 +20,20 @@ assert sys.version_info.major >= 3, "Python 3.x is required to build documentati
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #sys.path.insert(0, os.path.abspath('.'))
 
-# -- Project information -----------------------------------------------------
-
-project = u'Amanzi'
-copyright = u'2024, Contributing National Laboratories (LANL, LBNL, ORNL, PNNL)'
-author = 'Erica Hinrichs'
-
-# The short X.Y version
-version = 'dev'
-# The full version, including alpha/beta/rc tags
-release = 'dev'
-
 # -- General configuration -----------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #needs_sphinx = '1.0'
 
 
-# Add any Sphinx extension module names here, as strings. They can be
-# extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
-# ones.
-
+#
+#  Add path for custom extensions
+#
 sys.path.append(os.path.abspath('.'))
 
+# 
+#  Extensions 
+#
 # 
 #  Extensions 
 #
@@ -90,6 +81,10 @@ source_suffix = '.rst'
 # The master toctree document.
 master_doc = 'index'
 
+# General information about the project.
+project = u'Amanzi'
+copyright = u'2021, Contributing National Laboratories (LANL, LBNL, ORNL, PNNL)'
+
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
@@ -98,14 +93,13 @@ decode = lambda x : x.decode(sys.stdout.encoding) if isinstance(x,bytes) else x
 
 amanzi_branch=decode(subprocess.check_output('git symbolic-ref --short HEAD',shell=True).rstrip())
 amanzi_global_id=decode(subprocess.check_output('git rev-parse --short HEAD',shell=True).rstrip())
-
 # Tags are different on release branch
-if ( re.search(r'amanzi-(\d+)\.(\d+)',amanzi_branch) ):
+if ( re.search('amanzi-(\d+)\.(\d+)',amanzi_branch) ):
     amanzi_latest_tag=decode(subprocess.check_output('git tag -l \'amanzi-*\' | grep -v dev', shell=True)).split()[-1].rstrip()
-    amanzi_latest_tag_ver=amanzi_latest_tag.replace('amanzi-',' ')
+    amanzi_latest_tag_ver=amanzi_latest_tag.replace('amanzi-','Version ')
 else:
     amanzi_latest_tag=decode(subprocess.check_output('git tag -l \'amanzi-*\'', shell=True)).split()[-1].rstrip()
-    amanzi_latest_tag_ver=amanzi_latest_tag.replace('amanzi-',' ')
+    amanzi_latest_tag_ver=amanzi_latest_tag.replace('amanzi-','Version ')+'_'+amanzi_global_id
 
 # The short X.Y version.
 version = amanzi_latest_tag_ver
@@ -154,38 +148,14 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'pydata_sphinx_theme'
-html_title = "Amanzi"
-html_context = {
-    "default_mode": "auto"
-}
-
-html_sidebars = {
-    "**" : [
-            "version",
-            "version-switcher",
-            "sidebar-nav-bs.html",
-            "page-toc.html",
-            ]
-}
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-
 html_theme_options = {
-    "logo": {
-    "image_light": "_static/Amanzi-color.png",
-    "image_dark": "_static/Amanzi-Dark.png",
-    },
-    "navbar_start": ["navbar-logo"],
+    'logo_only': True,
     'prev_next_buttons_location': 'both',
-    "secondary_sidebar_items": [],
-    "switcher": {
-        "json_url": "https://raw.githubusercontent.com/amanzi/amanzi/gh-pages/versions.json",
-        "version_match": '1.5.0',
-    },
-#    "navbar_start" : ["navbar-logo", ],
 }
 
 # Add any paths that contain custom themes here, relative to this directory.
@@ -196,11 +166,11 @@ html_theme_options = {
 #html_title = None
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
-# html_short_title = None
+#html_short_title = None
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-#html_logo: = '_static/Amanzi-color.png'
+html_logo = '_static/Amanzi-color.png'
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
@@ -214,7 +184,6 @@ html_static_path = ['_static']
 
 html_css_files = [
   'fix_eq_position.css',
-  'default.css',
 ]
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,

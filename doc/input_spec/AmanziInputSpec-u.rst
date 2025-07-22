@@ -1,6 +1,6 @@
-======================================================
-Unstructured Input Specification for Amanzi |version|
-======================================================
+===================================================
+Unstructured Input Specification for Amanzi 1.6-dev
+===================================================
 
 .. contents:: **Table of Contents**
 
@@ -242,7 +242,7 @@ An example ``definition`` section would look as the following:
 Execution Controls
 ==================
 
-The ``execution_controls`` section defines the general execution of the Amanzi simulation.  Amanzi can execute in four modes: steady state, transient, transient with static flow, or initialize to a steady state and then continue to transient.  The transient with static flow mode does not compute the flow solution at each time step.  During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity. At present this mode only supports the "Single Phase" flow model.
+The ``execution_controls`` section defines the general execution of the Amanzi simulation.  Amanzi can execute in four modes: steady state, transient, transient with static flow, or initialize to a steady state and then continue to transient.  The transient with static flow mode does not compute the flow solution at each timestep.  During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity. At present this mode only supports the "Single Phase" flow model.
 
 .. code-block:: xml
   
@@ -283,9 +283,9 @@ The ``execution_control_defaults`` element specifies default values to be utiliz
 +------------------+----------------+----------------------------------+
 | max_dt           | time           | time value(,unit)                |
 +------------------+----------------+----------------------------------+
-| reduction_factor | double         | factor for reducing time step    |
+| reduction_factor | double         | factor for reducing timestep    |
 +------------------+----------------+----------------------------------+
-| increase_factor  | double         | factor for increasing time step  |
+| increase_factor  | double         | factor for increasing timestep  |
 +------------------+----------------+----------------------------------+
 | mode             | string         | ``steady, transient``            |
 +------------------+----------------+----------------------------------+
@@ -312,9 +312,9 @@ Individual time periods of the simulation are defined using ``execution_control`
 +------------------+----------------+----------------------------------------------------------+
 | max_dt           | time           | time value(,unit)                                        |
 +------------------+----------------+----------------------------------------------------------+
-| reduction_factor | double         | factor for reducing time step                            |
+| reduction_factor | double         | factor for reducing timestep                            |
 +------------------+----------------+----------------------------------------------------------+
-| increase_factor  | double         | factor for increasing time step                          |
+| increase_factor  | double         | factor for increasing timestep                          |
 +------------------+----------------+----------------------------------------------------------+
 | mode             | string         | ``steady, transient``                                    |
 +------------------+----------------+----------------------------------------------------------+
@@ -1260,7 +1260,7 @@ It is supported currently by the Amanzi geochemical engine.
 .. code-block:: xml
 
     <sorption_isotherms>
-  <primary name="string" />
+	<primary name="string" />
             Required Elements: none
             Optional Elements: kd_model
         </primary>
@@ -1271,9 +1271,9 @@ The ``kd_model`` element takes the following form:
 .. code-block:: xml
  
     <sorption_isotherms>
-  <primary name="string" />
+	<primary name="string" />
             <kd_model model="linear|langmuir|freundlich" kd="Value" b="Value (langmuir only)" n="Value (freundlich only)" />
-  </primary>
+	</primary>
     </sorption_isotherms>
   
 Minerals
@@ -1356,7 +1356,7 @@ For each process kernel the element ``state`` indicates whether the solution is 
     <process_kernels>
         <flow model="saturated" state="on"/>
         <transport state="on"/>
-  <chemistry database="farea-full.dat" engine="pflotran" state="on"/>
+	<chemistry database="farea-full.dat" engine="pflotran" state="on"/>
     </process_kernels>
 
 Flow
@@ -1374,7 +1374,7 @@ Currently three scenarios are available for calculated the flow field.
 
 *  ``saturated`` is a single phase, fully saturated flow.
 
-*  ``constant`` is equivalent to a flow model of single phase (saturated) with the time integration mode of transient with static flow in the version 1.2.1 input specification.  This flow model indicates that the flow field is static so no flow solver is called during time stepping. During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure and flux) field are used to solve for the Darcy velocity.
+*  ``constant`` is equivalent to a flow model of single phase (saturated) with the time integration mode of transient with static flow in the version 1.2.1 input specification.  This flow model indicates that the flow field is static so no flow solver is called during timestepping. During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure and flux) field are used to solve for the Darcy velocity.
 
 
 Transport
@@ -1477,7 +1477,7 @@ The subelement ``primaries`` is used for specifying reactive and non-reactive pr
 
     * ``coefficient_of_diffusion`` = "double", this is an optional attribute
 
-    * ``first_order_decay_constant`` = "double", this is an optional attribute
+    * ``first_order_decay_rate_constant`` = "double", this is an optional attribute
 
     * ``forward_rate`` = "double", this is a required attribute when being used with non-reactive primaries/solutes and automatically generating the chemistry engine input file
 
@@ -2188,16 +2188,16 @@ Example:
     <observations>
       <filename>observation.out</filename>
       <liquid_phase name="water">
-  <aqueous_pressure>
-    <assigned_regions>Obs_r1</assigned_regions>
-    <functional>point</functional>
-    <time_macros>EveryDay</time_macros>
-  </aqueous_pressure>
-  <aqueous_pressure>
-    <assigned_regions>Obs_r2</assigned_regions>
-    <functional>point</functional>
-    <time_macros>EveryYear</time_macros>
-  </aqueous_pressure>
+	<aqueous_pressure>
+	  <assigned_regions>Obs_r1</assigned_regions>
+	  <functional>point</functional>
+	  <time_macros>EveryDay</time_macros>
+	</aqueous_pressure>
+	<aqueous_pressure>
+	  <assigned_regions>Obs_r2</assigned_regions>
+	  <functional>point</functional>
+	  <time_macros>EveryYear</time_macros>
+	</aqueous_pressure>
         <sorbed_conc solute="Ca">
           <assigned_regions>Obs_r2</assigned_regions>
           <functional>point</functional>

@@ -77,7 +77,7 @@
             <density>exp</density> <!-- REQUIRED -->
             <dissolved_components> 
                 <primaries>
-                    <primary coefficient_of_diffusion="exp" first_order_decay_constant="exp" forward_rate="exp" backward_rate="exp">primary_name_string</primary>
+                    <primary coefficient_of_diffusion="exp" first_order_decay_rate_constant="exp" forward_rate="exp" backward_rate="exp">primary_name_string</primary>
 		    <!-- primary name must match the name in the engine database file -->
 		    <!-- NOTE: if primary is a non-reactive species/solute, 
 			 include the forward and backward rates.  Dummy values of 0 are acceptable -->
@@ -169,7 +169,7 @@
 		<max_time_step> exp </max_time_step> <!-- default: 1e+10 -->
 		<initial_time_step> exp </initial_time_step> <!-- default: 1e+7 -->
 		<time_step_control_method> fixed | simple </time_step_control_method> <!-- default: fixed -->
-		<!-- use time step options only if method = simple -->
+		<!-- use timestep options only if method = simple -->
 		<time_step_cut_threshold> int </time_step_cut_threshold> <!-- default: 8 -->
 		<time_step_cut_factor> exp </time_step_cut_factor> <!-- default: 2.0 -->
 		<time_step_increase_threshold> int </time_step_increase_threshold> <!-- default: 4 -->
