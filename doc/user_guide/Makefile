@@ -85,7 +85,7 @@ clean:
 run_tests:
 	@echo "Setting up guide indexes, and running any tests for this build ..."
 	export PYTHONPATH=$(NEW_PYTHONPATH);\
-	python collect.py $(AMANZI_SECTION_OPTIONS) --run-tests
+	python collect.py $(AMANZI_SECTION_OPTIONS) --run-tests --full-guide
 	@echo "TESTs finished."
 	@echo
 
