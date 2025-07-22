@@ -38,6 +38,4 @@ contaminant migration under partially saturated, nonisothermal conditions in fra
 Indices and tables
 %%%%%%%%%%%%%%%%%%
 
-* :ref:`genindex`
-* :ref:`modindex`
 * :ref:`search`

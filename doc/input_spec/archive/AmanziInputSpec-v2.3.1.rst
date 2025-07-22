@@ -234,7 +234,7 @@ An example ``definition`` section would look as the following:
 Execution Controls
 ==================
 
-The ``execution_controls`` section defines the general execution of the Amanzi simulation.  Amanzi can execute in four modes: steady state, transient, transient with static flow, or initialize to a steady state and then continue to transient.  The transient with static flow mode does not compute the flow solution at each timestep.  During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity. At present this mode only supports the "Single Phase" flow model.
+The ``execution_controls`` section defines the general execution of the Amanzi simulation.  Amanzi can execute in four modes: steady state, transient, transient with static flow, or initialize to a steady state and then continue to transient.  The transient with static flow mode does not compute the flow solution at each time step.  During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity. At present this mode only supports the "Single Phase" flow model.
 
 .. code-block:: xml
   
@@ -275,9 +275,9 @@ The ``execution_control_defaults`` element specifies default values to be utiliz
 +------------------+----------------+----------------------------------+
 | max_dt           | time           | time value(,unit)                |
 +------------------+----------------+----------------------------------+
-| reduction_factor | exponential    | factor for reducing timestep    |
+| reduction_factor | exponential    | factor for reducing time step    |
 +------------------+----------------+----------------------------------+
-| increase_factor  | exponential    | factor for increasing timestep  |
+| increase_factor  | exponential    | factor for increasing time step  |
 +------------------+----------------+----------------------------------+
 | mode             | string         | ``steady, transient``            |
 +------------------+----------------+----------------------------------+
@@ -304,9 +304,9 @@ Individual time periods of the simulation are defined using ``execution_control`
 +------------------+----------------+----------------------------------------------------------+
 | max_dt           | time           | time value(,unit)                                        |
 +------------------+----------------+----------------------------------------------------------+
-| reduction_factor | exponential    | factor for reducing timestep                            |
+| reduction_factor | exponential    | factor for reducing time step                            |
 +------------------+----------------+----------------------------------------------------------+
-| increase_factor  | exponential    | factor for increasing timestep                          |
+| increase_factor  | exponential    | factor for increasing time step                          |
 +------------------+----------------+----------------------------------------------------------+
 | mode             | string         | ``steady, transient``                                    |
 +------------------+----------------+----------------------------------------------------------+
@@ -719,7 +719,7 @@ The ``structured_controls`` sections specifies numerical control options for the
       Optional Elements: comments, str_time_step_controls, str_flow_controls, str_transport_controls, str_amr_controls
   </structured_controls>
 
-The subsections ``str_flow_controls`` and  ``str_transient_controls`` specify options specific to those process kernals.  The ``str_time_step_controls`` specify options for controlling the timestep based on performance of the nonlinear solvers.  The subsection ``str_amr_controls`` specify options for AMR, including those for gridding and distribution granularity of data in parallel.
+The subsections ``str_flow_controls`` and  ``str_transient_controls`` specify options specific to those process kernals.  The ``str_time_step_controls`` specify options for controlling the time step based on performance of the nonlinear solvers.  The subsection ``str_amr_controls`` specify options for AMR, including those for gridding and distribution granularity of data in parallel.
 
 Str_time_step_controls
 ______________________
@@ -1369,7 +1369,7 @@ Flow
 
       *  ``model`` = " richards | saturated | constant" 
 
-Currently three scenarios are available for calculated the flow field.  ``richards`` is a single phase, variably saturated flow assuming constant gas pressure.  ``saturated`` is a single phase, fully saturated flow.  ``constant`` is equivalent to a flow model of single phase (saturated) with the time integration mode of transient with static flow in the version 1.2.1 input specification.  This flow model indicates that the flow field is static so no flow solver is called during timestepping. During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity.
+Currently three scenarios are available for calculated the flow field.  ``richards`` is a single phase, variably saturated flow assuming constant gas pressure.  ``saturated`` is a single phase, fully saturated flow.  ``constant`` is equivalent to a flow model of single phase (saturated) with the time integration mode of transient with static flow in the version 1.2.1 input specification.  This flow model indicates that the flow field is static so no flow solver is called during time stepping. During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity.
 
 Note:  Unstructured options ``discretization_method``,  ``rel_perm_method``, and ``preconditioning_strategy`` have been moved to the ``unstr_flow_controls`` section under ``numerical_controls``/
 

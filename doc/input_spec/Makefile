@@ -34,8 +34,8 @@ PDF = $(SRC:%.rst=%.pdf)
 
 %.pdf : %.tex
 	pdflatex $<
-	pdflatex $<
-	pdflatex $<
+	#pdflatex $<
+	#pdflatex $<
 
 %.rst:
 	@./AmanziNativeSpec.py $< $@

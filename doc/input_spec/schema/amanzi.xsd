@@ -1591,7 +1591,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:simpleContent>
 	<xs:extension base="xs:string">
 		<xs:attribute name="coefficient_of_diffusion" type="typedef_exponential"/>
-		<xs:attribute name="first_order_decay_rate_constant" type="typedef_exponential"/>	
+		<xs:attribute name="first_order_decay_constant" type="typedef_exponential"/>	
 		<xs:attribute name="forward_rate" type="typedef_exponential" />
 		<xs:attribute name="backward_rate" type="typedef_exponential" />
 		<xs:attribute name="molar_mass" type="typedef_exponential" />

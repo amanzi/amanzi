@@ -161,7 +161,7 @@ to handle multiphysics process kernels (PKs) and multiple time periods.
       * `"maximum cycle number`" [int] is the maximum allowed number of cycles in 
         the current time period. Special value -1 means unlimited number of cycles.
 
-      * `"initial timestep`" is the initial timestep for the current time period.
+      * `"initial time step`" is the initial time step for the current time period.
 
 .. code-block:: xml
 
@@ -190,7 +190,7 @@ to handle multiphysics process kernels (PKs) and multiple time periods.
           <Parameter name="start period time" type="double" value="0.0"/>
           <Parameter name="end period time" type="double" value="1.5778463e+09"/>
           <Parameter name="maximum cycle number" type="int" value="-1"/>
-          <Parameter name="initial timestep" type="double" value="1.57680e+05"/>
+          <Parameter name="initial time step" type="double" value="1.57680e+05"/>
         </ParameterList>
 
         <ParameterList name="TP 1">
@@ -217,10 +217,10 @@ for each time period *TP #*.
 
 * `"start times`" [Array(double)] is the list of particular times that we want to hit exactly.
 
-* `"initial timestep`" [Array(double)] is the first timestep after we hit a special
+* `"initial time step`" [Array(double)] is the first time step after we hit a special
   time specified above.
 
-* `"maximum timestep`" [Array(double)] allows the user to limit the timestep between
+* `"maximum time step`" [Array(double)] allows the user to limit the time step between
   two particular times.
 
 .. code-block:: xml
@@ -228,12 +228,12 @@ for each time period *TP #*.
    <ParameterList name="Cycle Driver">  <!-- parent list -->
      <ParameterList name="time period control">
        <Parameter name="start times" type="Array(double)" value="{3.16e+10, 6.32e+10}"/>
-       <Parameter name="initial timestep" type="Array(double)" value="{100.0, 100.0}"/>
-       <Parameter name="maximum timestep" type="Array(double)" value="{3.16e+8, 4.0e+17}"/>
+       <Parameter name="initial time step" type="Array(double)" value="{100.0, 100.0}"/>
+       <Parameter name="maximum time step" type="Array(double)" value="{3.16e+8, 4.0e+17}"/>
      </ParameterList>
    </ParameterList>
 
-Between approximately 1000 [y] and 2000 [y], we limit the maximum timestep to 10 [y]. 
+Between approximately 1000 [y] and 2000 [y], we limit the maximum time step to 10 [y]. 
 
 
 Restart from checkpoint data file
@@ -964,8 +964,8 @@ relative permeability, density and viscosity.
     `"other: harmonic average`", and `"other: arithmetic average`".
 
   * `"upwind update`" [string] defines frequency of recalculating Darcy flux inside
-    nonlinear solver. The available options are `"every timestep`" and `"every nonlinear iteration`".
-    The first option freezes the Darcy flux for the whole timestep. The second option
+    nonlinear solver. The available options are `"every time step`" and `"every nonlinear iteration`".
+    The first option freezes the Darcy flux for the whole time step. The second option
     updates it on each iteration of a nonlinear solver. The second option is recommended
     for the New ton solver. It may impact significantly upwinding of the relative permeability 
     and convergence rate of this solver.
@@ -1313,12 +1313,12 @@ Initialization and constraints
 Time step controller and nonlinear solver
 `````````````````````````````````````````
 
-The timestep is controlled by parameter *timestep controller type*
+The time step is controlled by parameter *time step controller type*
 and the related list of options.
 Nonlinear solver is controlled by parameter *solver type*  and related list of options.
 Amanzi supports a few nonlinear solvers described in details in a separate section.
 
-* `"timestep controller type`" [list]
+* `"time step controller type`" [list]
   Available options are `"fixed`", `"standard`", `"smarter`", and `"adaptive`".
   The later is under development and is based on a posteriori error estimates.
 
@@ -1331,28 +1331,28 @@ Amanzi supports a few nonlinear solvers described in details in a separate secti
   * `"restart tolerance relaxation factor`" [double] changes the nonlinear
     tolerance. The time integrator is usually restarted when a boundary condition 
     changes drastically. It may be beneficial to loosen the nonlinear 
-    tolerance on the first several timesteps after the time integrator restart. 
+    tolerance on the first several time steps after the time integrator restart. 
     The default value is 1, while a reasonable value may be as large as 1000. 
 
   * `"restart tolerance relaxation factor damping`" controls how fast the loosened 
     nonlinear tolerance will revert back to the one specified in `"nonlinear tolerance"`.
     If the nonlinear tolerance is `"tol`", the relaxation factor is `"factor`", and 
-    the damping is `"d`", and the timestep count is `"n`" then the actual nonlinear 
+    the damping is `"d`", and the time step count is `"n`" then the actual nonlinear 
     tolerance is `"tol * max(1.0, factor * d ** n)`".
     The default value is 1, while reasonable values are between 0 and 1.
 
-  * `"timestep increase factor`" [double] defines geometric grow rate for the
-    initial timestep. This factor is applied when nonlinear solver converged
+  * `"time step increase factor`" [double] defines geometric grow rate for the
+    initial time step. This factor is applied when nonlinear solver converged
     in less than `"min iterations`" iterations. Default is 1.0.
 
-  * `"timestep reduction factor`" [double] defines abrupt timestep reduction
+  * `"time step reduction factor`" [double] defines abrupt time step reduction
     when nonlinear solver failed or did not converge in  `"max iterations`" iterations.
 
-  * `"max timestep`" [double] is the maximum allowed timestep.
+  * `"max time step`" [double] is the maximum allowed time step.
 
-  * `"min timestep`" [double] is the minimum allowed timestep.
+  * `"min time step`" [double] is the minimum allowed time step.
 
-  * `"solver type`" [string] defines nonlinear solver used on each timestep for
+  * `"solver type`" [string] defines nonlinear solver used on each time step for
     a nonlinear algebraic system :math:`F(x) = 0`. 
     The available options `"aa`", `"nka`" and `"Newton`".
 
@@ -1377,10 +1377,10 @@ Amanzi supports a few nonlinear solvers described in details in a separate secti
          <ParameterList name="timestep controller standard parameters">
            <Parameter name="min iterations" type="int" value="10"/>
            <Parameter name="max iterations" type="int" value="15"/>
-           <Parameter name="timestep increase factor" type="double" value="1.2"/>
-           <Parameter name="timestep reduction factor" type="double" value="0.5"/>
-           <Parameter name="max timestep" type="double" value="1e+9"/>
-           <Parameter name="min timestep" type="double" value="0.0"/>
+           <Parameter name="time step increase factor" type="double" value="1.2"/>
+           <Parameter name="time step reduction factor" type="double" value="0.5"/>
+           <Parameter name="max time step" type="double" value="1e+9"/>
+           <Parameter name="min time step" type="double" value="0.0"/>
          </ParameterList>
 
          <Parameter name="solver type" type="string" value="nka"/>
@@ -1418,11 +1418,11 @@ Amanzi supports a few nonlinear solvers described in details in a separate secti
      </ParameterList>
    </ParameterList>
 
-In this example, the timestep is increased by factor 1.2 when the nonlinear
+In this example, the time step is increased by factor 1.2 when the nonlinear
 solver converges in 10 or less iterations. 
-The timestep is not changed when the number of nonlinear iterations is
+The time step is not changed when the number of nonlinear iterations is
 between 11 and 15.
-The timestep will be cut twice if the number of nonlinear iterations exceeds 15.
+The time step will be cut twice if the number of nonlinear iterations exceeds 15.
 
 
 Developer parameters
@@ -1481,11 +1481,11 @@ Here after keyword *global* refers to the whole simulation including
 all time periods, keyword *local* refers to the current time period.
 The incomplete list is
 
- * [global] cycle number, time before the step, and timestep dt (in years)
+ * [global] cycle number, time before the step, and time step dt (in years)
  * [local] step number, time T, and dT inside the time integrator (in seconds)
  * [local] frequency of preconditioner updates
  * [local] number of performed nonlinear steps and value of the nonlinear residual
- * [local] total number of successful timesteps (TS), failed timesteps (FS),
+ * [local] total number of successful time steps (TS), failed time steps (FS),
    preconditioner updates (PC/1) and preconditioner applies (PC/2),
    linear solves insides preconditioner (LS)
  * [local] amount of liquid (water) in the reservoir and amount of water entering
@@ -1854,7 +1854,7 @@ The remaining parameters that can be used by a developer include
   divergence-free condition. The default value is 1e-6.
 
 * `"runtime diagnostics: solute names`" [Array(string)] defines solutes that will be 
-  tracked closely each timestep if verbosity `"high`". Default value is the first 
+  tracked closely each time step if verbosity `"high`". Default value is the first 
   solute in the global list of `"aqueous names`" and the first gas in the global list 
   of `"gaseous names`".
 
@@ -1871,10 +1871,10 @@ Here after keyword *global* refers to the whole simulation including
 all time periods, keyword *local* refers to the current time period.
 The incomplete list is
 
- * [global] cycle number, time before step, and timestep dt (in years)
- * [local] cell id and position with the smallest timestep
+ * [global] cycle number, time before step, and time step dt (in years)
+ * [local] cell id and position with the smallest time step
  * [local] convergence of a linear solver for dispersion, PCG here
- * [local] number of subcycles, stable timestep, and global timestep (in seconds)
+ * [local] number of subcycles, stable time step, and global time step (in seconds)
  * [local] species's name, concentration extrema, total amount of it in the 
    reservoir, and amount escaped through the outflow boundary
  * [global] current simulation time (in years)
@@ -1914,30 +1914,30 @@ Alquimia
 ````````
 
 The Alquimia chemistry process kernel only requires the *Engine* and *Engine Input File*
-entries, but will also accept and respect the value given for *max timestep (s)*. 
+entries, but will also accept and respect the value given for *max time step (s)*. 
 Most details are provided in the trimmed PFloTran file *1d-tritium-trim.in*.
 
-* `"max timestep (s)`" [double] is the maximum timestep that chemistry will allow the MPC to take.
+* `"max time step (s)`" [double] is the maximum time step that chemistry will allow the MPC to take.
 
-* `"min timestep (s)`" [double] is the minimum timestep that chemistry will allow the MPC to take.
+* `"min time step (s)`" [double] is the minimum time step that chemistry will allow the MPC to take.
 
-* `"initial timestep (s)`" [double] is the initial timestep that chemistry will ask the MPC to take.
+* `"initial time step (s)`" [double] is the initial time step that chemistry will ask the MPC to take.
 
-* `"timestep control method`" [string] specifies timestep control method for chemistry subcycling. 
-  Choose either "fixed" (default) or "simple".  For option "fixed", timestep is fixed.
-  For option "simple", the timestep is adjusted in response to stiffness of system of equations 
-  based on a simple scheme. This option require the following parameters: `"timestep cut threshold`",
-  `"timestep cut factor`", `"timestep increase threshold`", and `"timestep increase factor`".
+* `"time step control method`" [string] specifies time step control method for chemistry subcycling. 
+  Choose either "fixed" (default) or "simple".  For option "fixed", time step is fixed.
+  For option "simple", the time step is adjusted in response to stiffness of system of equations 
+  based on a simple scheme. This option require the following parameters: `"time step cut threshold`",
+  `"time step cut factor`", `"time step increase threshold`", and `"time step increase factor`".
 
-* `"timestep cut threshold`" [int] is the number of Newton iterations that if exceeded
-  will trigger a timestep cut. Default is 8.
+* `"time step cut threshold`" [int] is the number of Newton iterations that if exceeded
+  will trigger a time step cut. Default is 8.
 
-* `"timestep cut factor`" [double] is the factor by which the timestep is cut. Default is 2.0
+* `"time step cut factor`" [double] is the factor by which the time step is cut. Default is 2.0
 
-* `"timestep increase threshold`" [int] is the number of consecutive successful timesteps that
-  will trigger a timestep increase. Default is 4.
+* `"time step increase threshold`" [int] is the number of consecutive successful time steps that
+  will trigger a time step increase. Default is 4.
 
-* `"timestep increase factor`" [double] is the factor by which the timestep is increased. Default is 1.2
+* `"time step increase factor`" [double] is the factor by which the time step is increased. Default is 1.2
 
 .. code-block:: xml
 
@@ -1946,14 +1946,14 @@ Most details are provided in the trimmed PFloTran file *1d-tritium-trim.in*.
       <Parameter name="Engine" type="string" value="PFloTran"/>
       <Parameter name="Engine Input File" type="string" value="1d-tritium-trim.in"/>
       <Parameter name="Verbosity" type="Array(string)" value="{verbose}"/>
-      <Parameter name="min timestep (s)" type="double" value="1.5778463e-07"/>
-      <Parameter name="max timestep (s)" type="double" value="1.5778463e+07"/>
-      <Parameter name="initial timestep (s)" type="double" value="1.0e-02"/>
-      <Parameter name="timestep control method" type="string" value="simple"/>
-      <Parameter name="timestep cut threshold" type="int" value="8"/>
-      <Parameter name="timestep cut factor" type="double" value="2.0"/>
-      <Parameter name="timestep increase threshold" type="int" value="4"/>
-      <Parameter name="timestep increase factor" type="double" value="1.2"/>
+      <Parameter name="min time step (s)" type="double" value="1.5778463e-07"/>
+      <Parameter name="max time step (s)" type="double" value="1.5778463e+07"/>
+      <Parameter name="initial time step (s)" type="double" value="1.0e-02"/>
+      <Parameter name="time step control method" type="string" value="simple"/>
+      <Parameter name="time step cut threshold" type="int" value="8"/>
+      <Parameter name="time step cut factor" type="double" value="2.0"/>
+      <Parameter name="time step increase threshold" type="int" value="4"/>
+      <Parameter name="time step increase factor" type="double" value="1.2"/>
     </ParameterList>
   </ParameterList>
 
@@ -1986,8 +1986,8 @@ The Amanzi chemistry process kernel uses the following parameters.
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="tolerance" type="double" value="1.5e-12"/>
       <Parameter name="maximum Newton iterations" type="int" value="25"/>
-      <Parameter name="max timestep (s)" type="double" value="1.5e+07"/>
-      <Parameter name="min timestep (s)" type="double" value="1.0e-6"/>
+      <Parameter name="max time step (s)" type="double" value="1.5e+07"/>
+      <Parameter name="min time step (s)" type="double" value="1.0e-6"/>
       <Parameter name="number of component concentrations" type="int" value="1"/>
       <Parameter name="auxiliary data" type="Array(string)" value="{pH}"/>
     </ParameterList>
@@ -3056,7 +3056,7 @@ Internal parameters for GMRES include
 * `"convergence criteria`" [Array(string)] specifies multiple convergence criteria. The list
   may include `"relative residual`", `"relative rhs`" (default), `"absolute residual`", and
   `"make one iteration`". The latter enforces the solver to perform at least one iteration
-  which may be critical for extremely small timesteps.
+  which may be critical for extremely small time steps.
 
 * `"size of Krylov space`" [int] defines the maximum size of the Krylov space. The default value is 10.
 
@@ -3092,7 +3092,7 @@ Internal parameters for PCG include
 * `"convergence criteria`" [Array(string)] specifies multiple convergence criteria. The list
   may include `"relative residual`", `"relative rhs`" (default), `"absolute residual`", and
   `"make one iteration`". The latter enforces the solver to perform at least one iteration
-  which may be critical for extremely small timesteps.
+  which may be critical for extremely small time steps.
 
 * `"overflow tolerance`" [double] defines the maximum allowed jump in residual. The default
   value is 3.0e+50.
@@ -3126,7 +3126,7 @@ Internal parameters for NKA include
 * `"convergence criteria`" [Array(string)] specifies multiple convergence criteria. The list
   may include `"relative residual`", `"relative rhs`" (default), `"absolute residual`", and
   `"make one iteration`". The latter enforces the solver to perform at least one iteration
-  which may be critical for extremely small timesteps.
+  which may be critical for extremely small time steps.
 
 * `"overflow tolerance`" [double] defines the maximum allowed jump in residual. The default
   value is 3.0e+50.
@@ -4136,7 +4136,7 @@ Visualization file
 A user may request periodic writes of field data for the purposes of visualization.  
 The user will specify explicitly what is to be included in the file at each snapshot.
 Visualization files can only be written at intervals corresponding to the numerical 
-timestep values or intervals corresponding to the cycle number; writes are controlled by timestep cycle number.
+time step values or intervals corresponding to the cycle number; writes are controlled by time step cycle number.
 
 * `"Visualization Data`" [list] can accept a file name base [string] and cycle data [list] 
   that is used to generate the file base name or directory base name that is used in writing visualization data.

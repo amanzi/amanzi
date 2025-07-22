@@ -1,6 +1,6 @@
-=============================================
-Structured Input Specification for Amanzi 1.5
-=============================================
+====================================================
+Structured Input Specification for Amanzi |version|
+====================================================
 
 .. contents:: **Table of Contents**
 
@@ -191,7 +191,7 @@ An example ``definition`` section would look as the following:
 Execution Controls
 ==================
 
-The ``execution_controls`` section defines the general execution of the Amanzi simulation.  Amanzi can execute in four modes: steady state, transient, transient with static flow, or initialize to a steady state and then continue to transient.  The transient with static flow mode does not compute the flow solution at each timestep.  During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity. At present this mode only supports the "Single Phase" flow model.
+The ``execution_controls`` section defines the general execution of the Amanzi simulation.  Amanzi can execute in four modes: steady state, transient, transient with static flow, or initialize to a steady state and then continue to transient.  The transient with static flow mode does not compute the flow solution at each time step.  During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity. At present this mode only supports the "Single Phase" flow model.
 
 .. code-block:: xml
   
@@ -232,9 +232,9 @@ The ``execution_control_defaults`` element specifies default values to be utiliz
 +------------------+----------------+----------------------------------+
 | max_dt           | time           | time value(,unit)                |
 +------------------+----------------+----------------------------------+
-| reduction_factor | exponential    | factor for reducing timestep    |
+| reduction_factor | exponential    | factor for reducing time step    |
 +------------------+----------------+----------------------------------+
-| increase_factor  | exponential    | factor for increasing timestep  |
+| increase_factor  | exponential    | factor for increasing time step  |
 +------------------+----------------+----------------------------------+
 | mode             | string         | ``steady, transient``            |
 +------------------+----------------+----------------------------------+
@@ -261,9 +261,9 @@ Individual time periods of the simulation are defined using ``execution_control`
 +------------------+----------------+----------------------------------------------------------+
 | max_dt           | time           | time value(,unit)                                        |
 +------------------+----------------+----------------------------------------------------------+
-| reduction_factor | exponential    | factor for reducing timestep                            |
+| reduction_factor | exponential    | factor for reducing time step                            |
 +------------------+----------------+----------------------------------------------------------+
-| increase_factor  | exponential    | factor for increasing timestep                          |
+| increase_factor  | exponential    | factor for increasing time step                          |
 +------------------+----------------+----------------------------------------------------------+
 | mode             | string         | ``steady, transient``                                    |
 +------------------+----------------+----------------------------------------------------------+
@@ -323,7 +323,7 @@ However, no options within the sections are required.  The list of available opt
       Optional Elements: comments, str_time_step_controls, str_flow_controls, str_transport_controls, str_amr_controls
   </structured_controls>
 
-The subsections ``str_flow_controls`` and  ``str_transient_controls`` specify options specific to those process kernals.  The ``str_time_step_controls`` specify options for controlling the timestep based on performance of the nonlinear solvers.  The subsection ``str_amr_controls`` specify options for AMR, including those for gridding and distribution granularity of data in parallel.
+The subsections ``str_flow_controls`` and  ``str_transient_controls`` specify options specific to those process kernals.  The ``str_time_step_controls`` specify options for controlling the time step based on performance of the nonlinear solvers.  The subsection ``str_amr_controls`` specify options for AMR, including those for gridding and distribution granularity of data in parallel.
 
 Str_time_step_controls
 ______________________
@@ -838,7 +838,7 @@ The ``sorption_isotherms`` is an optional element for providing Kd models and mo
 .. code-block:: xml
 
     <sorption_isotherms>
-	<solute name="string" />
+  <solute name="string" />
             Required Elements: none
             Optional Elements: kd_model
     </sorption_isotherms>
@@ -849,9 +849,9 @@ The ``kd_model`` element takes the following form:
 .. code-block:: xml
  
     <sorption_isotherms>
-	<primary name="string" />
+  <primary name="string" />
             <kd_model model="linear|langmuir|freundlich" kd="Value" b="Value (langmuir only)" n="Value (freundlich only)" />
-	</primary>
+  </primary>
     </sorption_isotherms>
   
 Minerals
@@ -919,7 +919,7 @@ The ``flow`` has the following attributes,
 
       *  ``model`` = " richards | saturated | constant" 
 
-Currently three scenarios are available for calculated the flow field.  ``richards`` is a single phase, variably saturated flow assuming constant gas pressure.  ``saturated`` is a single phase, fully saturated flow.  ``constant`` is equivalent to a flow model of single phase (saturated) with the time integration mode of transient with static flow in the version 1.2.1 input specification.  This flow model indicates that the flow field is static so no flow solver is called during timestepping. During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity.
+Currently three scenarios are available for calculated the flow field.  ``richards`` is a single phase, variably saturated flow assuming constant gas pressure.  ``saturated`` is a single phase, fully saturated flow.  ``constant`` is equivalent to a flow model of single phase (saturated) with the time integration mode of transient with static flow in the version 1.2.1 input specification.  This flow model indicates that the flow field is static so no flow solver is called during time stepping. During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity.
 
 
 Transport
@@ -990,7 +990,7 @@ The subelement ``primaries`` is used for specifying reactive and non-reactive pr
 
     * ``coefficient_of_diffusion`` = "exponential", this is an optional attribute
 
-    * ``first_order_decay_rate_constant`` = "exponential", this is an optional attribute
+    * ``first_order_decay_constant`` = "exponential", this is an optional attribute
 
     * ``forward_rate`` = "exponential", this is a required attribute when being used with non-reactive primaries/solutes and automatically generating the chemistry engine input file
 
@@ -1333,21 +1333,21 @@ Example:
       <filename>observation.out</filename>
 
       <liquid_phase name="water">
-	<aqueous_pressure>
-	  <assigned_regions>Obs_r1</assigned_regions>
-	  <functional>point</functional>
-	  <time_macros>Observation Times</time_macros>
-	</aqueous_pressure>
-	<aqueous_pressure>
-	  <assigned_regions>Obs_r2</assigned_regions>
-	  <functional>point</functional>
-	  <time_macros>Observation Times</time_macros>
-	</aqueous_pressure>
-	<aqueous_pressure>
-	  <assigned_regions>Obs_r2</assigned_regions>
-	  <functional>point</functional>
-	  <time_macros>Observation Times</time_macros>
-	</aqueous_pressure>
+  <aqueous_pressure>
+    <assigned_regions>Obs_r1</assigned_regions>
+    <functional>point</functional>
+    <time_macros>Observation Times</time_macros>
+  </aqueous_pressure>
+  <aqueous_pressure>
+    <assigned_regions>Obs_r2</assigned_regions>
+    <functional>point</functional>
+    <time_macros>Observation Times</time_macros>
+  </aqueous_pressure>
+  <aqueous_pressure>
+    <assigned_regions>Obs_r2</assigned_regions>
+    <functional>point</functional>
+    <time_macros>Observation Times</time_macros>
+  </aqueous_pressure>
       </liquid_phase>
 
     </observations>
