@@ -210,7 +210,7 @@ if __name__ == "__main__":
     plt.legend(loc='upper right',fontsize=13)
     plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",x=0.57,fontsize=20)
     print(f'saving figure: {root}_1d.png')
-    plt.savefig(os.path.join(local_path,root+"_1d.png"
+    # plt.savefig(os.path.join(local_path,root+"_1d.png"
 
     plt.savefig(root+"_1d.png",format="png")
     # plt.show()
