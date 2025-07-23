@@ -7,11 +7,18 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-/*
-  State
+// Utilities for I/O of State data.
 
-  Utilities for I/O of State data.
+/*!
+
+.. _exodus-file-initialization-spec:
+.. admonition:: exodus-file-initialization-spec
+
+   * `"file`" ``[string]`` The filename to read.
+   * `"attributes`" ``[Array(string)]`` List of variables to read from the file.
+
 */
+
 
 #ifndef STATE_IO_HH_
 #define STATE_IO_HH_
