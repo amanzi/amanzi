@@ -160,7 +160,6 @@ if __name__ == "__main__":
         
     # plotting --------------------------------------------------------
     os.chdir(CWD)
-
     fig = plt.figure(figsize=[8.00,5.25])
     ax = fig.add_subplot()
     
@@ -212,7 +211,8 @@ if __name__ == "__main__":
     print(f'saving figure: {root}_1d.png')
     # plt.savefig(os.path.join(local_path,root+"_1d.png"
 
-    plt.savefig(root+"_1d.png",format="png")
+    print(f'saving figure: {root}_1d.png')
+    plt.savefig(os.path.join(local_path,root+"_1d.png"),format="png")
     # plt.show()
     # plt.close()
 
