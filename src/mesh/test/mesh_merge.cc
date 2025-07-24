@@ -117,8 +117,8 @@ merge2D(Teuchos::RCP<Mesh>& mesh1,
   }
 
   mesh1_fw->rebuildAll();
-  cacheAll(*mesh1);
   mesh1 = Teuchos::rcp(new Mesh(mesh1_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
+  cacheAll(*mesh1);
 }
 
 
@@ -183,6 +183,4 @@ TEST(MERGE_MESHES)
 
   testMeshAudit<MeshAudit, AmanziMesh::Mesh>(mesh1);
 
-  auto mstk1 = Teuchos::rcp_dynamic_cast<AmanziMesh::Mesh_MSTK>(mesh1->getMeshFramework())->getMSTK();
-  MESH_ExportToExodusII(mstk1, "merged.exo", 0, {}, nullptr, 0);
 }
