@@ -26,7 +26,7 @@ echo ""
 
 
 ${AMANZI_SRC_DIR}/bootstrap.sh \
-   ${dbg_option} \
+   --debug \
    --with-mpi=${OPENMPI_DIR} \
    --enable-shared \
    --enable-ecosim \
@@ -50,6 +50,9 @@ ${AMANZI_SRC_DIR}/bootstrap.sh \
    --with-cmake=`which cmake` \
    --with-ctest=`which ctest` \
    --with-cxx-flags="-std=c++14" \
+   --with-c-compiler=`which mpicc` \
+   --with-cxx-compiler=`which mpic++` \
+   --with-fort-compiler=`which mpif90` \
    --branch_ats=${ATS_VERSION} \
    --parallel=6
 
