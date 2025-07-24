@@ -105,7 +105,7 @@ class MeshFramework {
   // Some meshes have a corresponding mesh that is better for visualization.
   const MeshFramework& getVisMesh() const
   {
-    if (vis_mesh_.get()) return *vis_mesh_;
+    if (vis_mesh_.get() ) return *vis_mesh_;
     return *this;
   }
   void setVisMesh(const Teuchos::RCP<const MeshFramework>& vis_mesh) { vis_mesh_ = vis_mesh; }
@@ -156,8 +156,8 @@ class MeshFramework {
 
   // DEVELOPER NOTE: serial meshes need not provide this method -- the default
   // returns a list of LIDs.
-  virtual View_type<const Entity_GID, MemSpace_kind::HOST>
-  getEntityGIDs(const Entity_kind kind, bool ghosted) const;
+  virtual View_type<const Entity_GID, MemSpace_kind::HOST> getEntityGIDs(const Entity_kind kind,
+                                                                         bool ghosted) const;
 
   // corresponding entity in the parent mesh
   virtual Entity_ID getEntityParent(const Entity_kind kind, const Entity_ID entid) const;
@@ -218,15 +218,15 @@ class MeshFramework {
   // and -1 if face normal points into cell
   // In 2D, direction is 1 if face/edge is defined in the same
   // direction as the cell polygon, and -1 otherwise
-  virtual void
-  getCellFacesAndDirs(const Entity_ID c,
-                      View_type<const Entity_ID, MemSpace_kind::HOST>& faces,
-                      View_type<const Direction_type, MemSpace_kind::HOST>* const dirs) const = 0;
+  virtual void getCellFacesAndDirs(
+    const Entity_ID c,
+    View_type<const Entity_ID, MemSpace_kind::HOST>& faces,
+    View_type<const Direction_type, MemSpace_kind::HOST>* const dirs) const = 0;
 
-  virtual void
-  getCellEdges(const Entity_ID c, View_type<const Entity_ID, MemSpace_kind::HOST>& edges) const;
-  virtual void
-  getCellNodes(const Entity_ID c, View_type<const Entity_ID, MemSpace_kind::HOST>& nodes) const;
+  virtual void getCellEdges(const Entity_ID c,
+                            View_type<const Entity_ID, MemSpace_kind::HOST>& edges) const;
+  virtual void getCellNodes(const Entity_ID c,
+                            View_type<const Entity_ID, MemSpace_kind::HOST>& nodes) const;
 
   void getFaceEdges(const Entity_ID f, View_type<const Entity_ID, MemSpace_kind::HOST>& edges) const
   {
@@ -256,11 +256,11 @@ class MeshFramework {
   //
   // In 3D, the nodes of the face are returned in ccw order consistent
   // with the face normal.
-  virtual void
-  getFaceNodes(const Entity_ID f, View_type<const Entity_ID, MemSpace_kind::HOST>& nodes) const = 0;
+  virtual void getFaceNodes(const Entity_ID f,
+                            View_type<const Entity_ID, MemSpace_kind::HOST>& nodes) const = 0;
 
-  virtual void
-  getEdgeNodes(const Entity_ID e, View_type<const Entity_ID, MemSpace_kind::HOST>& nodes) const;
+  virtual void getEdgeNodes(const Entity_ID e,
+                            View_type<const Entity_ID, MemSpace_kind::HOST>& nodes) const;
 
   //-------------------
   // Upward adjacencies
@@ -268,8 +268,8 @@ class MeshFramework {
   // The cells are returned in no particular order. Also, the order of cells
   // is not guaranteed to be the same for corresponding faces on different
   // processors
-  virtual void
-  getFaceCells(const Entity_ID f, View_type<const Entity_ID, MemSpace_kind::HOST>& cells) const = 0;
+  virtual void getFaceCells(const Entity_ID f,
+                            View_type<const Entity_ID, MemSpace_kind::HOST>& cells) const = 0;
 
   // Cells of a given Parallel_kind connected to an edge
   //

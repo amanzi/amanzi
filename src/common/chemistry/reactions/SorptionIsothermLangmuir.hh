@@ -27,7 +27,7 @@ class SorptionIsothermLangmuir : public SorptionIsotherm {
  public:
   SorptionIsothermLangmuir();
   SorptionIsothermLangmuir(double K, double b);
-  ~SorptionIsothermLangmuir(){};
+  ~SorptionIsothermLangmuir() {};
 
   void Init(double K, double b);
 

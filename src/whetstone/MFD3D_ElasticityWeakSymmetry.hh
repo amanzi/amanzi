@@ -38,7 +38,7 @@ class MFD3D_ElasticityWeakSymmetry : public MFD3D {
  public:
   MFD3D_ElasticityWeakSymmetry(const Teuchos::ParameterList& plist,
                                const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : MFD3D(mesh){};
+    : MFD3D(mesh) {};
 
   // required methods
   // -- schema for displacement and rotations in the stiffness matrix

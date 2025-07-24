@@ -151,8 +151,9 @@ class State {
   void RegisterDomainMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh, bool deformable = false);
 
   // -- Register a mesh under a generic key.
-  void
-  RegisterMesh(const Key& key, const Teuchos::RCP<AmanziMesh::Mesh>& mesh, bool deformable = false);
+  void RegisterMesh(const Key& key,
+                    const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
+                    bool deformable = false);
 
   // Alias a mesh to an existing mesh
   void AliasMesh(const Key& target, const Key& alias);
@@ -211,7 +212,7 @@ class State {
   // This allows e.g. observations to use aliases for variables that would not
   // otherwise exist, because they are only used in subcycled PKs, rather than
   // forcing the creation and update of a true NEXT variable.
-  template <typename T, typename F>
+  template<typename T, typename F>
   F& Require(const Key& fieldname, const Tag& tag, const Key& owner = "", bool alias_ok = false)
   {
     AMANZI_ASSERT(fieldname != "");
@@ -225,7 +226,7 @@ class State {
 
   // This Require call is for factories that do not have a default constructor.
   // (e.g. Epetra_Map).
-  template <typename T, typename F>
+  template<typename T, typename F>
   F& Require(const F& f,
              const Key& fieldname,
              const Tag& tag,
@@ -243,7 +244,7 @@ class State {
 
   // This Require call is for default-constructible data that does not need a
   // factory (e.g. plain-old-data like int, double, etc).
-  template <typename T>
+  template<typename T>
   void Require(const Key& fieldname, const Tag& tag, const Key& owner = "", bool alias_ok = true)
   {
     AMANZI_ASSERT(fieldname != "");
@@ -258,7 +259,7 @@ class State {
 
   // This Require call will not compile for factories F that do not have a
   // default constructor (e.g. Epetra_Map).
-  template <typename T, typename F>
+  template<typename T, typename F>
   F& Require(const Key& fieldname,
              const Tag& tag,
              const Key& owner,
@@ -278,7 +279,7 @@ class State {
 
   // This Require call is for factories that do not have a default constructor.
   // (e.g. Epetra_Map).
-  template <typename T, typename F>
+  template<typename T, typename F>
   F& Require(const F& f,
              const Key& fieldname,
              const Tag& tag,
@@ -327,7 +328,7 @@ class State {
   Record& GetRecordW(const Key& fieldname, const Tag& tag, const Key& owner);
 
   // Require derivatives
-  template <typename T, typename F>
+  template<typename T, typename F>
   F& RequireDerivative(const Key& key,
                        const Tag& tag,
                        const Key& wrt_key,
@@ -344,7 +345,7 @@ class State {
     return deriv_set.SetType<T, F>();
   }
 
-  template <typename T>
+  template<typename T>
   void RequireDerivative(const Key& key,
                          const Tag& tag,
                          const Key& wrt_key,
@@ -371,15 +372,17 @@ class State {
 
   // ignoring record access for now, this could be added to, e.g. vis
   // derivatives.
-  template <typename T>
-  const T&
-  GetDerivative(const Key& key, const Tag& tag, const Key& wrt_key, const Tag& wrt_tag) const
+  template<typename T>
+  const T& GetDerivative(const Key& key,
+                         const Tag& tag,
+                         const Key& wrt_key,
+                         const Tag& wrt_tag) const
   {
     Tag der_tag = make_tag(Keys::getKey(wrt_key, wrt_tag));
     return GetDerivativeSet(key, tag).Get<T>(der_tag);
   }
 
-  template <typename T>
+  template<typename T>
   T& GetDerivativeW(const Key& key,
                     const Tag& tag,
                     const Key& wrt_key,
@@ -390,15 +393,17 @@ class State {
     return GetDerivativeSetW(key, tag).GetW<T>(der_tag, owner);
   }
 
-  template <typename T>
-  Teuchos::RCP<const T>
-  GetDerivativePtr(const Key& key, const Tag& tag, const Key& wrt_key, const Tag& wrt_tag) const
+  template<typename T>
+  Teuchos::RCP<const T> GetDerivativePtr(const Key& key,
+                                         const Tag& tag,
+                                         const Key& wrt_key,
+                                         const Tag& wrt_tag) const
   {
     Tag der_tag = make_tag(Keys::getKey(wrt_key, wrt_tag));
     return GetDerivativeSet(key, tag).GetPtr<T>(der_tag);
   }
 
-  template <typename T>
+  template<typename T>
   Teuchos::RCP<T> GetDerivativePtrW(const Key& key,
                                     const Tag& tag,
                                     const Key& wrt_key,
@@ -411,21 +416,21 @@ class State {
 
   // Access to data
 #ifndef DISABLE_DEFAULT_TAG
-  template <typename T>
+  template<typename T>
   bool HasData(const Key& fieldname, const Tag& tag = Tags::DEFAULT) const
   {
     return HasRecord(fieldname, tag) && GetRecord(fieldname, tag).ValidType<T>();
   }
 
   // -- const
-  template <typename T>
+  template<typename T>
   const T& Get(const Key& fieldname, const Tag& tag = Tags::DEFAULT) const
   {
     return GetRecordSet(fieldname).Get<T>(tag);
   }
 
   // -- non-const
-  template <typename T>
+  template<typename T>
   T& GetW(const Key& fieldname, const Key& owner)
   {
     return GetW<T>(fieldname, Tags::DEFAULT, owner);
@@ -433,14 +438,14 @@ class State {
 
 #else
 
-  template <typename T>
+  template<typename T>
   bool HasData(const Key& fieldname, const Tag& tag) const
   {
     return HasRecord(fieldname, tag) && GetRecord(fieldname, tag).ValidType<T>();
   }
 
   // -- const
-  template <typename T>
+  template<typename T>
   const T& Get(const Key& fieldname, const Tag& tag) const
   {
     return GetRecordSet(fieldname).Get<T>(tag);
@@ -448,19 +453,19 @@ class State {
 
 #endif
 
-  template <typename T>
+  template<typename T>
   T& GetW(const Key& fieldname, const Tag& tag, const Key& owner)
   {
     return GetRecordSetW(fieldname).GetW<T>(tag, owner);
   }
 
-  template <typename T>
+  template<typename T>
   Teuchos::RCP<const T> GetPtr(const Key& fieldname, const Tag& tag) const
   {
     return GetRecordSet(fieldname).GetPtr<T>(tag);
   }
 
-  template <typename T>
+  template<typename T>
   Teuchos::RCP<T> GetPtrW(const Key& fieldname, const Tag& tag, const Key& owner)
   {
     return GetRecordSetW(fieldname).GetPtrW<T>(tag, owner);
@@ -469,7 +474,7 @@ class State {
   //
   // Sets by deep copy, not pointer
   //
-  template <typename T>
+  template<typename T>
   void Assign(const Key& fieldname, const Tag& tag, const Key& owner, const T& data)
   {
     return GetRecordSetW(fieldname).Assign(tag, owner, data);
@@ -477,7 +482,7 @@ class State {
 
 
   // Sets by pointer
-  template <typename T>
+  template<typename T>
   void SetPtr(const Key& fieldname, const Tag& tag, const Key& owner, const Teuchos::RCP<T>& data)
   {
     return GetRecordSetW(fieldname).SetPtr<T>(tag, owner, data);
@@ -506,7 +511,10 @@ class State {
 
   // -- allows PKs to add to this list to initial conditions
   Teuchos::ParameterList& ICList() { return state_plist_.sublist("initial conditions"); }
-  const Teuchos::ParameterList& ICList() const { return state_plist_.sublist("initial conditions"); }
+  const Teuchos::ParameterList& ICList() const
+  {
+    return state_plist_.sublist("initial conditions");
+  }
   Teuchos::ParameterList& GetICList(const Key& key);
   bool HasICList(const Key& key) const;
 
@@ -562,9 +570,7 @@ class State {
   void set_time(const Tag& tag, double value);
   void set_time(double value) { Assign("time", Tags::DEFAULT, "time", value); }
 
-  void advance_time(const Tag& tag, double dt) {
-    set_time(tag, get_time(tag) + dt);
-  }
+  void advance_time(const Tag& tag, double dt) { set_time(tag, get_time(tag) + dt); }
   void advance_time(double dt) { advance_time(Tags::DEFAULT, dt); }
 
   // can these go away in favor of time at different tags?

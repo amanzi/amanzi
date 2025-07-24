@@ -116,7 +116,7 @@ InitializeCVFieldFromCVField(const Teuchos::RCP<State>& S,
 {
   if (S->HasRecord(field0, tag)) {
     if (!S->GetRecord(field0, tag).initialized()) {
-      if (S->HasEvaluator(field1, tag)) S->GetEvaluator(field1, tag).Update(*S, passwd);
+      if (S->HasEvaluator(field1, tag) ) S->GetEvaluator(field1, tag).Update(*S, passwd);
 
       const auto& f1 = S->Get<CompositeVector>(field1);
       auto& f0 = S->GetW<CompositeVector>(field0, tag, passwd);

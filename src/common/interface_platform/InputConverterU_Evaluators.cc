@@ -88,7 +88,8 @@ InputConverterU::TranslatePOM_(const std::string& domain,
       Exceptions::amanzi_throw(msg);
     }
 
-    model = GetAttributeValueS_(node, "model", "constant, compressible, poroelastic, thermoporoelastic");
+    model =
+      GetAttributeValueS_(node, "model", "constant, compressible, poroelastic, thermoporoelastic");
 
     std::string type = GetAttributeValueS_(node, "type", TYPE_NONE, false, "");
     if (type == "h5file") {
@@ -122,13 +123,18 @@ InputConverterU::TranslatePOM_(const std::string& domain,
       thermoelasticity = true;
       use_porosity_model_ = true;
 
-      knode = GetUniqueElementByTagsString_(inode, "mechanical_properties, rock_thermal_dilation", flag);
-      if (flag) dilation_rock = GetAttributeValueD_(knode, "value", TYPE_NUMERICAL, 0.0, 1.0, "K^-1");
+      knode =
+        GetUniqueElementByTagsString_(inode, "mechanical_properties, rock_thermal_dilation", flag);
+      if (flag)
+        dilation_rock = GetAttributeValueD_(knode, "value", TYPE_NUMERICAL, 0.0, 1.0, "K^-1");
 
-      knode = GetUniqueElementByTagsString_(inode, "mechanical_properties, liquid_thermal_dilation", flag);
-      if (flag) dilation_liquid = GetAttributeValueD_(knode, "value", TYPE_NUMERICAL, 0.0, 1.0, "K^-1");
+      knode = GetUniqueElementByTagsString_(
+        inode, "mechanical_properties, liquid_thermal_dilation", flag);
+      if (flag)
+        dilation_liquid = GetAttributeValueD_(knode, "value", TYPE_NUMERICAL, 0.0, 1.0, "K^-1");
 
-      if (flag) bulk = GetAttributeValueD_(node, "solid_bulk_modulus", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa");
+      if (flag)
+        bulk = GetAttributeValueD_(node, "solid_bulk_modulus", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa");
       compres = (biot - phi) / bulk;
     }
 

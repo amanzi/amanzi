@@ -45,7 +45,7 @@ using namespace Amanzi;
 
 struct DiffusionFixture {
   DiffusionFixture(Teuchos::RCP<Teuchos::ParameterList> plist_)
-    : comm(Amanzi::getDefaultComm()), plist(plist_){};
+    : comm(Amanzi::getDefaultComm()), plist(plist_) {};
 
   void Discretize(const std::string& name, AmanziMesh::Entity_kind kind);
   void DiscretizeWithGravity(const std::string& name, double gravity, AmanziMesh::Entity_kind kind);
@@ -57,8 +57,8 @@ struct DiffusionFixture {
   void Setup(const std::string& prec_solver_, bool symmetric_);
 
   // -- coefficients
-  void
-  SetScalarCoefficient(Operators::PDE_DiffusionFactory& opfactory, AmanziMesh::Entity_kind kind);
+  void SetScalarCoefficient(Operators::PDE_DiffusionFactory& opfactory,
+                            AmanziMesh::Entity_kind kind);
 
   // -- boundary conditions
   void SetBCsDirichlet();
@@ -425,7 +425,9 @@ DiffusionFixture::MatVec(int nloops)
   auto sol(*solution);
 
   auto start = std::chrono::high_resolution_clock::now();
-  for (int i = 0; i < nloops; ++i) { global_op->Apply(sol, *solution); }
+  for (int i = 0; i < nloops; ++i) {
+    global_op->Apply(sol, *solution);
+  }
   auto stop = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 

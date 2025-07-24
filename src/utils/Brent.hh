@@ -23,9 +23,9 @@ namespace Utils {
 *
 * Note that a and b must bracket the root, i.e. f(a) * f(b) < 0
 *
-* Two temination criteria are used. First, the bracket size is less 
+* Two temination criteria are used. First, the bracket size is less
 * than tol. Second, function values at bracket ends are ess then ftol.
-* When ftol is missing or negative, it is approximated inside as 
+* When ftol is missing or negative, it is approximated inside as
 *
 *   ftol = (1 + |f(a)| + |f(b)|) * tol.
 *
@@ -34,7 +34,7 @@ namespace Utils {
 *   *itr == *itr + 1 indicates that the method did not converge.
 *   otherwise, *itr is the number of iterations to convergence.
 ****************************************************************** */
-template <class F>
+template<class F>
 double
 findRootBrent(const F& f, double a, double b, double tol, int* itr, double ftol = -1.0)
 {
@@ -111,7 +111,7 @@ findRootBrent(const F& f, double a, double b, double tol, int* itr, double ftol 
 *
 * Return <a,b> where f(a) * f(b) is negative, given a starting point
 ****************************************************************** */
-template <class F>
+template<class F>
 std::pair<double, double>
 bracketRoot(const F& f, double start, double delta, int* itrs)
 {
@@ -127,12 +127,9 @@ bracketRoot(const F& f, double start, double delta, int* itrs)
   int max_itrs(*itrs);
   *itrs = 0;
   while (*itrs < max_itrs) {
-    if (fa == 0.)
-      return std::make_pair(a, a);
-    else if (fb == 0.)
-      return std::make_pair(b, b);
-    else if (fa * fb < 0.)
-      return std::make_pair(a, b);
+    if (fa == 0.) return std::make_pair(a, a);
+    else if (fb == 0.) return std::make_pair(b, b);
+    else if (fa * fb < 0.) return std::make_pair(a, b);
     else if (std::fabs(fa) > std::fabs(fb)) {
       // root to the right of b
       std::swap(a, b);
@@ -156,7 +153,7 @@ bracketRoot(const F& f, double start, double delta, int* itrs)
 * A local minimum of a function f(x) in an interval [a, b].
 * Follows closely to https://www.youtube.com/watch?v=BQm7uTYC0sg
 ****************************************************************** */
-template <class F>
+template<class F>
 double
 findMinimumBrent(const F& f, double a, double b, double tol, int* itr)
 {
@@ -223,10 +220,8 @@ findMinimumBrent(const F& f, double a, double b, double tol, int* itr)
 
     // update variables
     if (fu <= fx) {
-      if (u < x)
-        b = x;
-      else
-        a = x;
+      if (u < x) b = x;
+      else a = x;
 
       v = w;
       w = x;
@@ -235,10 +230,8 @@ findMinimumBrent(const F& f, double a, double b, double tol, int* itr)
       fw = fx;
       fx = fu;
     } else {
-      if (u < x)
-        a = u;
-      else
-        b = u;
+      if (u < x) a = u;
+      else b = u;
 
       if (fu <= fw || w == x) {
         v = w;

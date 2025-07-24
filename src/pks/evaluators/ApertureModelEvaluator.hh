@@ -47,7 +47,7 @@ class ApertureModelEvaluator
                                           const std::vector<CompositeVector*>& results) override;
 
  protected:
-  virtual void EnsureCompatibility_ToDeps_(State& S) override{};
+  virtual void EnsureCompatibility_ToDeps_(State& S) override {};
 
  private:
   void UpdateOverburdenPressure_(const State& S);

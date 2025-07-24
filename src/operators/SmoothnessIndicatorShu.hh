@@ -33,8 +33,8 @@ namespace Operators {
 class SmoothnessIndicatorShu : public SmoothnessIndicator {
  public:
   SmoothnessIndicatorShu(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
-    : SmoothnessIndicator(mesh){};
-  ~SmoothnessIndicatorShu(){};
+    : SmoothnessIndicator(mesh) {};
+  ~SmoothnessIndicatorShu() {};
 
   virtual void Init(Teuchos::ParameterList& plist);
 

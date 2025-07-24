@@ -275,7 +275,9 @@ SUITE(COMPOSITE_VECTOR)
 
     { // scope for x_c
       Epetra_MultiVector& x_c = *x->ViewComponent("cell", false);
-      for (int c = 0; c != ncells; ++c) { x_c[0][c] = rank + 1.0; }
+      for (int c = 0; c != ncells; ++c) {
+        x_c[0][c] = rank + 1.0;
+      }
       x->ScatterMasterToGhosted("cell");
     }
 
@@ -295,7 +297,9 @@ SUITE(COMPOSITE_VECTOR)
       int nfaces =
         mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
       Epetra_MultiVector& x_f = *x->ViewComponent("face", false);
-      for (int f = 0; f != nfaces; ++f) { x_f[0][f] = rank + 1.0; }
+      for (int f = 0; f != nfaces; ++f) {
+        x_f[0][f] = rank + 1.0;
+      }
       x->ScatterMasterToGhosted("face");
     }
   }
@@ -306,13 +310,17 @@ SUITE(COMPOSITE_VECTOR)
     int ncells =
       mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
     Epetra_MultiVector& x_c = *x->ViewComponent("cell", true);
-    for (int c = 0; c != ncells; ++c) { x_c[0][c] = rank + 1; }
+    for (int c = 0; c != ncells; ++c) {
+      x_c[0][c] = rank + 1;
+    }
     x->GatherGhostedToMaster("cell");
 
     int nfaces =
       mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
     Epetra_MultiVector& x_f = *x->ViewComponent("face", true);
-    for (int f = 0; f != nfaces; ++f) { x_f[0][f] = rank + 1; }
+    for (int f = 0; f != nfaces; ++f) {
+      x_f[0][f] = rank + 1;
+    }
     x->GatherGhostedToMaster("face");
   }
 
@@ -324,7 +332,9 @@ SUITE(COMPOSITE_VECTOR)
     int ncells =
       mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     Epetra_MultiVector& x_c = *x->ViewComponent("cell", false);
-    for (int c = 0; c != ncells; ++c) { x_c[0][c] = rank + 1.0; }
+    for (int c = 0; c != ncells; ++c) {
+      x_c[0][c] = rank + 1.0;
+    }
     x->ScatterMasterToGhosted("cell");
 
     x->PutScalar(100.);
@@ -353,7 +363,9 @@ SUITE(COMPOSITE_VECTOR)
       mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
     Epetra_MultiVector& x_c = *x->ViewComponent("cell", false);
-    for (int c = 0; c != ncells; ++c) { x_c[0][c] = rank + 1.0; }
+    for (int c = 0; c != ncells; ++c) {
+      x_c[0][c] = rank + 1.0;
+    }
     x->ScatterMasterToGhosted("cell");
     if (size == 2) {
       if (rank == 0) {
@@ -369,7 +381,9 @@ SUITE(COMPOSITE_VECTOR)
 
     // by changing the values using the same vector ref, we can cheat the
     // system
-    for (int c = 0; c != ncells; ++c) { x_c[0][c] = rank + 100; }
+    for (int c = 0; c != ncells; ++c) {
+      x_c[0][c] = rank + 100;
+    }
     x->ScatterMasterToGhosted("cell"); // this call should NOT communicate
     if (size == 2) {
       if (rank == 0) {

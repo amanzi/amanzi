@@ -23,16 +23,15 @@ namespace AmanziEOS {
 
 class EOS_Density {
  public:
-  EOS_Density(Teuchos::ParameterList& eos_plist) : ierr_(0)
+  EOS_Density(Teuchos::ParameterList& eos_plist)
+    : ierr_(0)
   {
     M_ = eos_plist.get<double>("molar mass");
 
-    if (eos_plist.isParameter("molar density"))
-      rho_ = eos_plist.get<double>("molar density") * M_;
-    else
-      rho_ = eos_plist.get<double>("density");
+    if (eos_plist.isParameter("molar density") ) rho_ = eos_plist.get<double>("molar density") * M_;
+    else rho_ = eos_plist.get<double>("density");
   }
-  virtual ~EOS_Density(){};
+  virtual ~EOS_Density() {};
 
   // Virtual methods that form the EOS
   virtual double Density(double T, double p) = 0;

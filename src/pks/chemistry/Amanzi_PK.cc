@@ -129,10 +129,8 @@ Amanzi_PK::parseParameterList()
 
   //  some tests provide nullptr
   name_ = "Amanzi_PK:" + domain_;
-  if (solution_.get())
-    vo_ = Teuchos::rcp(new VerboseObject(solution_->Comm(), name_, *vo_plist));
-  else
-    vo_ = Teuchos::rcp(new VerboseObject(getDefaultComm(), name_, *vo_plist));
+  if (solution_.get() ) vo_ = Teuchos::rcp(new VerboseObject(solution_->Comm(), name_, *vo_plist));
+  else vo_ = Teuchos::rcp(new VerboseObject(getDefaultComm(), name_, *vo_plist));
 }
 
 
@@ -396,8 +394,8 @@ Amanzi_PK::Initialize()
       std::string species_name = chem_->primary_species().at(i).name();
       if (aqueous_comp_names_[i] != species_name) {
         Errors::Message msg;
-        msg << "Amanzi PK: mismatch of name: \"" << aqueous_comp_names_[i] << "\" and \"" << species_name
-            << "\". Compare XML and BGD lists.";
+        msg << "Amanzi PK: mismatch of name: \"" << aqueous_comp_names_[i] << "\" and \""
+            << species_name << "\". Compare XML and BGD lists.";
         Exceptions::amanzi_throw(msg);
       }
     }
@@ -424,17 +422,17 @@ Amanzi_PK::Initialize()
 
   // print statistics
   // try {
-    vo_->Write(Teuchos::VERB_HIGH, "Initializing chemistry in cell 0...\n");
-    chem_->Display();
-    vo_->Write(Teuchos::VERB_HIGH, "Initial speciation calculations in cell 0...\n");
+  vo_->Write(Teuchos::VERB_HIGH, "Initializing chemistry in cell 0...\n");
+  chem_->Display();
+  vo_->Write(Teuchos::VERB_HIGH, "Initial speciation calculations in cell 0...\n");
 
-    if (ncells_owned_ > 0) {
-      for (int i = 0; i < nprimary; ++i) values[i] = (*tcc)[i][0];
-      chem_->EnforceConstraint(&beaker_state_, beaker_parameters_, constraints, values);
+  if (ncells_owned_ > 0) {
+    for (int i = 0; i < nprimary; ++i) values[i] = (*tcc)[i][0];
+    chem_->EnforceConstraint(&beaker_state_, beaker_parameters_, constraints, values);
 
-      vo_->Write(Teuchos::VERB_HIGH, "\nTest solution of initial conditions in cell 0:\n");
-      chem_->DisplayResults();
-    }
+    vo_->Write(Teuchos::VERB_HIGH, "\nTest solution of initial conditions in cell 0:\n");
+    chem_->DisplayResults();
+  }
   // } catch (Exceptions::Amanzi_exception& geochem_err) {
   //   ierr = 1;
   //   internal_msg = geochem_err.what();
@@ -577,7 +575,7 @@ Amanzi_PK::InitializeMinerals(Teuchos::RCP<Teuchos::ParameterList> plist)
 ******************************************************************* */
 void
 Amanzi_PK::InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> plist,
-                                      Teuchos::ParameterList& ic_list)
+                                   Teuchos::ParameterList& ic_list)
 {
   sorption_site_names_.clear();
   if (plist->isParameter("sorption sites")) {
@@ -613,7 +611,9 @@ Amanzi_PK::InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> plist,
     }
   }
 
-  if (ic_list.isSublist(surface_site_density_key_)) { using_sorption_ = true; }
+  if (ic_list.isSublist(surface_site_density_key_)) {
+    using_sorption_ = true;
+  }
 
   // in the old version, this was only in the Block sublist... may need work?
   if (plist->isParameter("Cation Exchange Capacity")) {
@@ -749,7 +749,9 @@ Amanzi_PK::CopyCellStateToBeakerState(int c)
   beaker_state_.saturation = (1.0 - a) * (*bf_.prev_saturation)[0][c] + a * (*bf_.saturation)[0][c];
   beaker_state_.volume = mesh_->getCellVolume(c);
 
-  if (S_->HasRecord(temperature_key_)) { beaker_state_.temperature = (*bf_.temperature)[0][c]; }
+  if (S_->HasRecord(temperature_key_)) {
+    beaker_state_.temperature = (*bf_.temperature)[0][c];
+  }
 }
 
 
@@ -909,7 +911,8 @@ Amanzi_PK::InitializeBeakerFields_()
   }
 
   if (number_sorption_sites_ > 0) {
-    bf_.surface_site_density = S_->GetW<CV_t>(surface_site_density_key_, tag, passwd_).ViewComponent("cell");
+    bf_.surface_site_density =
+      S_->GetW<CV_t>(surface_site_density_key_, tag, passwd_).ViewComponent("cell");
   }
 
   if (beaker_state_.surface_complex_free_site_conc.size() > 0) {

@@ -25,8 +25,8 @@ namespace Transport {
 
 class DiffusionPhase {
  public:
-  DiffusionPhase(){};
-  ~DiffusionPhase(){};
+  DiffusionPhase() {};
+  ~DiffusionPhase() {};
 
   int FindDiffusionValue(const std::string& tcc_name, double* md)
   {

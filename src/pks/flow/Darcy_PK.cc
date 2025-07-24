@@ -385,7 +385,7 @@ Darcy_PK::Initialize()
     fp_list_->sublist("operators").sublist("diffusion operator").sublist("matrix");
   if (flow_on_manifold_) oplist.set<std::string>("nonlinear coefficient", "standard: cell");
   if (coupled_to_matrix_ || flow_on_manifold_) {
-    if (!oplist.isParameter("use manifold flux")) oplist.set<bool>("use manifold flux", true);
+    if (!oplist.isParameter("use manifold flux") ) oplist.set<bool>("use manifold flux", true);
   }
 
   Operators::PDE_DiffusionFactory opfactory(oplist, mesh_);

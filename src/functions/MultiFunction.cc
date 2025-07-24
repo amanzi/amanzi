@@ -53,7 +53,8 @@ MultiFunction::MultiFunction(const std::vector<Teuchos::RCP<const Function>>& fu
   values_ = new double[functions_.size()];
 };
 
-MultiFunction::MultiFunction(const Teuchos::RCP<const Function>& function) : functions_(1, function)
+MultiFunction::MultiFunction(const Teuchos::RCP<const Function>& function)
+  : functions_(1, function)
 {
   values_ = new double[1];
 };
@@ -102,7 +103,7 @@ MultiFunction::MultiFunction(Teuchos::ParameterList& plist)
   };
 
   values_ = new double[functions_.size()];
-  for (int i = 0; i < functions_.size(); ++i) values_[i] = 0.0;
+  for (int i = 0; i < functions_.size() ; ++i) values_[i] = 0.0;
 }
 
 

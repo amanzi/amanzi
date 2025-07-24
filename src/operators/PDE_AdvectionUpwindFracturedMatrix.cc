@@ -78,7 +78,9 @@ PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(const Teuchos::Ptr<const Comp
     auto [block, vofs] = mesh_->getSetEntitiesAndVolumeFractions(
       fractures_[i], AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
-    for (int n = 0; n < block.size(); ++n) { matrix[block[n]] *= 0.0; }
+    for (int n = 0; n < block.size(); ++n) {
+      matrix[block[n]] *= 0.0;
+    }
   }
 }
 
@@ -130,7 +132,9 @@ PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(const Teuchos::Ptr<const Comp
     auto [block, vofs] = mesh_->getSetEntitiesAndVolumeFractions(
       fractures_[i], AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
-    for (int n = 0; n < block.size(); ++n) { matrix[block[n]] *= 0.0; }
+    for (int n = 0; n < block.size(); ++n) {
+      matrix[block[n]] *= 0.0;
+    }
   }
 }
 

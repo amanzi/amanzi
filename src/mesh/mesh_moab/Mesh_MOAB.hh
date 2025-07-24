@@ -187,8 +187,8 @@ class Mesh_MOAB : public MeshFramework {
   //
   // Boundary Conditions or Sets
   //----------------------------
-  virtual bool
-  isValidSetType(const AmanziGeometry::RegionType rtype, const Entity_kind kind) const override
+  virtual bool isValidSetType(const AmanziGeometry::RegionType rtype,
+                              const Entity_kind kind) const override
   {
     if (rtype == AmanziGeometry::RegionType::BOX || rtype == AmanziGeometry::RegionType::PLANE ||
         rtype == AmanziGeometry::RegionType::POINT ||

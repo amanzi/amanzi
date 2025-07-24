@@ -69,7 +69,8 @@ namespace Amanzi {
 namespace Utils {
 
 class TimeStepManager;
-template<typename T> struct Event;
+template<typename T>
+struct Event;
 
 class IOEvent : public Teuchos::VerboseObject<IOEvent> {
  public:
@@ -103,4 +104,3 @@ class IOEvent : public Teuchos::VerboseObject<IOEvent> {
 
 } // namespace Utils
 } // namespace Amanzi
-

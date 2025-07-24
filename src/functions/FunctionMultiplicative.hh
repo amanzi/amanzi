@@ -50,8 +50,9 @@ namespace Amanzi {
 class FunctionMultiplicative : public Function {
  public:
   FunctionMultiplicative(std::unique_ptr<Function> f1, std::unique_ptr<Function> f2)
-    : f1_(std::move(f1)), f2_(std::move(f2)){};
-  FunctionMultiplicative(const Function& f1, const Function& f2) : f1_(f1.Clone()), f2_(f2.Clone())
+    : f1_(std::move(f1)), f2_(std::move(f2)) {};
+  FunctionMultiplicative(const Function& f1, const Function& f2)
+    : f1_(f1.Clone()), f2_(f2.Clone())
   {}
   FunctionMultiplicative(const FunctionMultiplicative& source)
     : f1_(source.f1_->Clone()), f2_(source.f2_->Clone())

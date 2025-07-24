@@ -25,12 +25,13 @@
 namespace Amanzi {
 namespace Operators {
 
-template <typename T>
+template<typename T>
 class CoefficientModel {
  public:
-  CoefficientModel(){};
-  CoefficientModel(const std::shared_ptr<std::vector<T>>& coef) : coef_(coef){};
-  ~CoefficientModel(){};
+  CoefficientModel() {};
+  CoefficientModel(const std::shared_ptr<std::vector<T>>& coef)
+    : coef_(coef) {};
+  ~CoefficientModel() {};
 
   std::string name() { return typeid(T).name(); }
   T get_coef(int c) { return (*coef_)[c]; }
@@ -43,7 +44,7 @@ class CoefficientModel {
 /* ******************************************************************
 * Specialization
 ****************************************************************** */
-template <>
+template<>
 inline WhetStone::Tensor
 CoefficientModel<WhetStone::Tensor>::get_coef(int c)
 {

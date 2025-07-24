@@ -29,7 +29,8 @@ namespace WhetStone {
 /* ******************************************************************
 * Constructors
 ****************************************************************** */
-MFD3D::MFD3D(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : BilinearForm(mesh)
+MFD3D::MFD3D(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+  : BilinearForm(mesh)
 {
   stability_method_ = WHETSTONE_STABILITY_GENERIC;
   scaling_factor_ = 1.0;
@@ -416,7 +417,7 @@ MFD3D::StabilityMMatrix_(int c, DenseMatrix& N, DenseMatrix& M, int objective)
   simplex_functional_ = T(0, 0);
 
   if (simplex_num_itrs_ < 0) return 1;
-  if (fabs(T(m12 + 1, 0)) > 1e-8) return 1;
+  if (fabs(T(m12 + 1, 0) ) > 1e-8) return 1;
 
   std::vector<double> u(mx, 0.0);
   for (int i = 1; i < m12 + 1; i++) {

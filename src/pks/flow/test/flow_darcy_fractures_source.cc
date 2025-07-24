@@ -107,5 +107,7 @@ TEST(DARCY_TWO_FRACTURES)
   std::string passwd("");
   auto& p =
     *S->GetW<CompositeVector>("fracture-pressure", Tags::DEFAULT, passwd).ViewComponent("cell");
-  for (int c = 0; c < p.MyLength(); c++) { CHECK_CLOSE(p_new, p[0][c], 0.01 * std::fabs(p_new)); }
+  for (int c = 0; c < p.MyLength(); c++) {
+    CHECK_CLOSE(p_new, p[0][c], 0.01 * std::fabs(p_new));
+  }
 }

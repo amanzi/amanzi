@@ -95,7 +95,7 @@ InputConverterU::ParseCondList_(std::vector<DOMNode*>& same_list,
       if (name != filter_name) continue;
     }
 
-    // special bc 
+    // special bc
     if (bctype == "field_pressure") {
       bcs.coupling = true;
       continue;

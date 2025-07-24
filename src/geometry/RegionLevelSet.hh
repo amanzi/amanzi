@@ -15,8 +15,8 @@ List level set region defines a general region using a level set function
 :math:`f(x) > 0.`.
 
 `"region type`" = `"level set`"
-      
-.. _region-level-set-spec:      
+
+.. _region-level-set-spec:
 .. admonition:: region-level-set-spec
 
    * `"dimension`"  ``[int]`` region spatial dimension
@@ -57,7 +57,7 @@ class RegionLevelSet : public Region {
                  const std::string& formula,
                  const LifeCycleType lifecycle = LifeCycleType::PERMANENT);
 
-  // Is the specified point inside this region 
+  // Is the specified point inside this region
   bool inside(const Point& p) const;
 
  protected:

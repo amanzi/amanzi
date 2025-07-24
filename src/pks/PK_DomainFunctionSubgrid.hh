@@ -30,10 +30,11 @@
 
 namespace Amanzi {
 
-template <class FunctionBase>
+template<class FunctionBase>
 class PK_DomainFunctionSubgrid : public FunctionBase {
  public:
-  PK_DomainFunctionSubgrid(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : mesh_(mesh){};
+  PK_DomainFunctionSubgrid(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : mesh_(mesh) {};
   virtual ~PK_DomainFunctionSubgrid() = default;
 
   // member functions
@@ -48,8 +49,8 @@ class PK_DomainFunctionSubgrid : public FunctionBase {
   virtual void set_state(const Teuchos::RCP<State>& S) final { S_ = S; }
 
  protected:
-  using FunctionBase::value_;
   using FunctionBase::keyword_;
+  using FunctionBase::value_;
 
   Teuchos::RCP<const State> S_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -66,7 +67,7 @@ class PK_DomainFunctionSubgrid : public FunctionBase {
 /* ******************************************************************
 * Initialization adds a single function to the list of unique specs.
 ****************************************************************** */
-template <class FunctionBase>
+template<class FunctionBase>
 void
 PK_DomainFunctionSubgrid<FunctionBase>::Init(const Teuchos::ParameterList& plist,
                                              const std::string& keyword,
@@ -110,7 +111,7 @@ PK_DomainFunctionSubgrid<FunctionBase>::Init(const Teuchos::ParameterList& plist
 /* ******************************************************************
 * Compute and distribute the result by Subgrid.
 ****************************************************************** */
-template <class FunctionBase>
+template<class FunctionBase>
 void
 PK_DomainFunctionSubgrid<FunctionBase>::Compute(double t0, double t1)
 {

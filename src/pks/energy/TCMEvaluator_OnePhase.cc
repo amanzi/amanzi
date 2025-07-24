@@ -71,7 +71,7 @@ TCMEvaluator_OnePhase::TCMEvaluator_OnePhase(const TCMEvaluator_OnePhase& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
     tc_liq_(other.tc_liq_),
     tc_solid_(other.tc_solid_),
-    temperature_key_(other.temperature_key_){};
+    temperature_key_(other.temperature_key_) {};
 
 
 /* ******************************************************************

@@ -10,14 +10,14 @@
 /*!
 
 The Barton-Bandis aperture-stress relationship is defined by initial aperture
-:math:`a_0`, overbuden pressure/normal stress :math:`p_{ov}`, fluid pressure 
+:math:`a_0`, overbuden pressure/normal stress :math:`p_{ov}`, fluid pressure
 :math:`p_f`, and two fitting parameters A and B:
 
 
 .. math::
   a = a_0 - \frac{A (p_{ov} - p_f)}{1 + B (p_{ov} - p_f)}
 
-* `"undeformed aperture`" [double] aperture at zero effective normal stress 
+* `"undeformed aperture`" [double] aperture at zero effective normal stress
 
 * `"overburden pressure`" [double] overburden pressure/total normal stress
 
@@ -59,7 +59,7 @@ class ApertureModel_BartonBandis : public ApertureModel {
     A_ = plist.get<double>("BartonBandis A");
     B_ = plist.get<double>("BartonBandis B");
   }
-  ~ApertureModel_BartonBandis(){};
+  ~ApertureModel_BartonBandis() {};
 
   // required methods from the base class
   virtual double OverburdenPressure() override { return pov_; }

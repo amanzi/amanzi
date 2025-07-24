@@ -28,7 +28,8 @@ namespace AmanziEOS {
 
 class VaporLiquidFactory {
  public:
-  VaporLiquidFactory(const Teuchos::ParameterList& plist) : plist_(plist){};
+  VaporLiquidFactory(const Teuchos::ParameterList& plist)
+    : plist_(plist) {};
 
   std::shared_ptr<VaporLiquid> Create(const std::string& name)
   {

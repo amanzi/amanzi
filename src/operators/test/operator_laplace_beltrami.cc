@@ -49,7 +49,7 @@ LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
 
   if (MyPID == 0) {
     std::cout << "\nTest: Laplace Beltrami solver: ";
-    for (int i = 0; i < surfaces.size(); ++i) std::cout << "\"" << surfaces[i] << "\", ";
+    for (int i = 0; i < surfaces.size() ; ++i) std::cout << "\"" << surfaces[i] << "\", ";
     std::cout << diff_op << std::endl;
   }
 
@@ -151,7 +151,9 @@ LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
 
   // check bounds of cell-based solution
   const Epetra_MultiVector& p = *solution.ViewComponent("cell");
-  for (int c = 0; c < p.MyLength(); ++c) { CHECK(p[0][c] > 0.0 && p[0][c] < 3.0); }
+  for (int c = 0; c < p.MyLength(); ++c) {
+    CHECK(p[0][c] > 0.0 && p[0][c] < 3.0);
+  }
 
   if (MyPID == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << global_op->residual() << " itr=" << num_itrs

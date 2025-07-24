@@ -71,5 +71,7 @@ TEST(MPC_DRIVER_IHM_SHALLOW_WATER_TRANSPORT)
   int ncells =
     mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
-  for (int c = 0; c < ncells; ++c) { CHECK(tcc[0][c] >= 0.0 && tcc[0][c] <= 1.0); }
+  for (int c = 0; c < ncells; ++c) {
+    CHECK(tcc[0][c] >= 0.0 && tcc[0][c] <= 1.0);
+  }
 }

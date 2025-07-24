@@ -113,7 +113,7 @@ InputConverterU::TranslateShallowWater_(const std::string& domain)
   if (strcmp(pk_model_["shallow_water"].begin()->c_str(), "pipe flow") == 0) {
     out_list.set<std::string>("domain name", "domain");
     out_list.set<std::string>("diameter key", "diameter")
-            .set<std::string>("direction key", "direction");
+      .set<std::string>("direction key", "direction");
   }
 
   out_list.sublist("verbose object") = verb_list_.sublist("verbose object");

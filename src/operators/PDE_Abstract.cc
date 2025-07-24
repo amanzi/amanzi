@@ -66,10 +66,8 @@ PDE_Abstract::Init_(Teuchos::ParameterList& plist)
   // discretization method:
   auto mfd_domain = WhetStone::BilinearFormFactory::Create(domain, mesh_);
   Teuchos::RCP<WhetStone::BilinearForm> mfd_range;
-  if (!symmetric)
-    mfd_range = WhetStone::BilinearFormFactory::Create(range, mesh_);
-  else
-    mfd_range = mfd_domain;
+  if (!symmetric) mfd_range = WhetStone::BilinearFormFactory::Create(range, mesh_);
+  else mfd_range = mfd_domain;
 
   // At the moment, a bilinear form is based on one
   // element, so we need to specify its non-default location

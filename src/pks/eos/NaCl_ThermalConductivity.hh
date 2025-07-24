@@ -29,7 +29,7 @@ namespace AmanziEOS {
 class NaCl_ThermalConductivity : public EOS_ThermalConductivity {
  public:
   explicit NaCl_ThermalConductivity(Teuchos::ParameterList& plist);
-  virtual ~NaCl_ThermalConductivity(){};
+  virtual ~NaCl_ThermalConductivity() {};
 
   virtual double ThermalConductivity(double T, double phi);
   virtual double DThermalConductivityDT(double T, double phi);

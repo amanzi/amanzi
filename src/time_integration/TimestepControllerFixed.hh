@@ -43,4 +43,3 @@ class TimestepControllerFixed : public TimestepController {
 };
 
 } // namespace Amanzi
-

@@ -25,14 +25,14 @@
 namespace Amanzi {
 namespace Flow {
 
-template <typename Model>
+template<typename Model>
 using ModelList = std::vector<Teuchos::RCP<Model>>;
 
-template <typename Model>
+template<typename Model>
 using ModelPartition = std::pair<Teuchos::RCP<Functions::MeshPartition>, ModelList<Model>>;
 
 // Non-member factory
-template <typename Model>
+template<typename Model>
 Teuchos::RCP<ModelPartition<Model>>
 CreateModelPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh, Teuchos::ParameterList& plist)
 {

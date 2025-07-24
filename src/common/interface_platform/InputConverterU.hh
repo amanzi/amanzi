@@ -35,7 +35,8 @@ typedef std::map<std::string, std::vector<std::string>> Tree;
 
 struct Phase {
  public:
-  Phase() : active(false){};
+  Phase()
+    : active(false) {};
 
   bool active;
   std::string primary;
@@ -47,8 +48,10 @@ typedef std::map<std::string, Phase> PhaseTree;
 
 struct BCs {
  public:
-  BCs() : mol_mass(-1.0), coupling(false){};
-  BCs(double value) : mol_mass(value){};
+  BCs()
+    : mol_mass(-1.0), coupling(false) {};
+  BCs(double value)
+    : mol_mass(value) {};
 
   std::string type;
   std::vector<double> times, values, fluxes;
@@ -88,7 +91,7 @@ class InputConverterU : public InputConverter {
       output_prefix_(""),
       io_walkabout_(false),
       io_mesh_info_(false),
-      vo_(NULL){};
+      vo_(NULL) {};
 
   explicit InputConverterU(const std::string& input_filename,
                            xercesc::DOMDocument* input_doc,
@@ -114,7 +117,7 @@ class InputConverterU : public InputConverter {
       output_prefix_(output_prefix),
       io_walkabout_(false),
       io_mesh_info_(false),
-      vo_(NULL){};
+      vo_(NULL) {};
 
   ~InputConverterU()
   {
@@ -164,8 +167,9 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateHypreAMG_();
   Teuchos::ParameterList TranslateBILU_();
   Teuchos::ParameterList TranslateILU_();
-  Teuchos::ParameterList
-  TranslateLinearSolvers_(std::string tags, std::string method_default, std::string method_enforce);
+  Teuchos::ParameterList TranslateLinearSolvers_(std::string tags,
+                                                 std::string method_default,
+                                                 std::string method_enforce);
   Teuchos::ParameterList TranslateSolvers_();
   Teuchos::ParameterList TranslateState_();
   Teuchos::ParameterList TranslateMaterialsPartition_();
@@ -242,8 +246,9 @@ class InputConverterU : public InputConverter {
                      Teuchos::ParameterList& out_ev);
 
   // -- flow
-  Teuchos::ParameterList
-  TranslateFlow_(const std::string& mode, const std::string& domain, const std::string& pk_model);
+  Teuchos::ParameterList TranslateFlow_(const std::string& mode,
+                                        const std::string& domain,
+                                        const std::string& pk_model);
   Teuchos::ParameterList TranslateWRM_(const std::string& pk_name);
   Teuchos::ParameterList TranslatePPM_(const std::string& domain);
   Teuchos::ParameterList TranslateFAM_(const std::string& domain);
@@ -290,8 +295,8 @@ class InputConverterU : public InputConverter {
 
   // -- multiphase
   bool multiphase_, isothermal_;
-  Teuchos::ParameterList
-  TranslateMultiphase_(const std::string& domain, Teuchos::ParameterList& state_list);
+  Teuchos::ParameterList TranslateMultiphase_(const std::string& domain,
+                                              Teuchos::ParameterList& state_list);
   Teuchos::ParameterList TranslateMultiphaseBCs_();
 
   // -- shallow water
@@ -328,7 +333,7 @@ class InputConverterU : public InputConverter {
   bool TranslateGenericMath_(const BCs& bcs, Teuchos::ParameterList& bcfn);
 
   // -- sort functions
-  template <class Iterator>
+  template<class Iterator>
   Iterator SelectUniqueEntries(Iterator first, Iterator last);
 
   // -- miscalleneous
@@ -436,7 +441,7 @@ InputConverterU::HasSubmodel_(const std::string& model, const std::string& submo
 /* ******************************************************************
 * Selects unique entries and places them in [first, last)
 ****************************************************************** */
-template <class Iterator>
+template<class Iterator>
 Iterator
 InputConverterU::SelectUniqueEntries(Iterator first, Iterator last)
 {

@@ -46,7 +46,7 @@ ApertureModelEvaluator::ApertureModelEvaluator(Teuchos::ParameterList& plist,
 ApertureModelEvaluator::ApertureModelEvaluator(const ApertureModelEvaluator& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
     apm_(other.apm_),
-    pressure_key_(other.pressure_key_){};
+    pressure_key_(other.pressure_key_) {};
 
 
 /* ******************************************************************

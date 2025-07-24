@@ -77,7 +77,9 @@ TEST(FIELD_INITIALIZATION)
   int ncells =
     mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   const auto& phi = *S.Get<CompositeVector>("porosity").ViewComponent("cell");
-  for (int c = 0; c < ncells; ++c) { CHECK_EQUAL(0.25, phi[0][c]); }
+  for (int c = 0; c < ncells; ++c) {
+    CHECK_EQUAL(0.25, phi[0][c]);
+  }
 
   // from exo currently not supported in new state
   // // -- scalar field from a file

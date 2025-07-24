@@ -25,8 +25,9 @@ class Species;
 
 class ActivityModelDebyeHuckel : public ActivityModel {
  public:
-  ActivityModelDebyeHuckel() : ActivityModel(), max_log_gamma_(7.0){};
-  ~ActivityModelDebyeHuckel(){};
+  ActivityModelDebyeHuckel()
+    : ActivityModel(), max_log_gamma_(7.0) {};
+  ~ActivityModelDebyeHuckel() {};
 
   virtual double Evaluate(const Species& species) final;
 

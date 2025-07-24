@@ -47,13 +47,13 @@
 class AnalyticBase : public Amanzi::WhetStone::WhetStoneFunction {
  public:
   AnalyticBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
-    : mesh_(mesh), d_(mesh->getSpaceDimension()){};
-  ~AnalyticBase(){};
+    : mesh_(mesh), d_(mesh->getSpaceDimension()) {};
+  ~AnalyticBase() {};
 
   // analytic solution for diffusion problem with gravity
   // -- tensorial diffusion coefficient
-  virtual Amanzi::WhetStone::Tensor
-  TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p,
+                                                      double t) = 0;
 
   // -- scalar diffusion coefficient
   virtual double ScalarDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) { return 1.0; }
@@ -62,19 +62,19 @@ class AnalyticBase : public Amanzi::WhetStone::WhetStoneFunction {
   virtual double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) const = 0;
 
   // -- gradient of continuous velocity grad(h), where h = p - g z
-  virtual Amanzi::AmanziGeometry::Point
-  gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p,
+                                                       double t) = 0;
 
   // -- analytic advection function
-  virtual Amanzi::AmanziGeometry::Point
-  advection_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::AmanziGeometry::Point advection_exact(const Amanzi::AmanziGeometry::Point& p,
+                                                        double t) = 0;
 
   // -- source term
   virtual double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
 
   // derived quantity: Darcy velocity -K k grad(h)
-  virtual Amanzi::AmanziGeometry::Point
-  velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  virtual Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p,
+                                                       double t)
   {
     auto K = TensorDiffusivity(p, t);
     double kr = ScalarDiffusivity(p, t);
@@ -92,10 +92,16 @@ class AnalyticBase : public Amanzi::WhetStone::WhetStoneFunction {
   int get_dimension() const { return d_; }
 
   // error calculation
-  void
-  ComputeCellError(Epetra_MultiVector& p, double t, double& pnorm, double& l2_err, double& inf_err);
-  void
-  ComputeFaceError(Epetra_MultiVector& u, double t, double& unorm, double& l2_err, double& inf_err);
+  void ComputeCellError(Epetra_MultiVector& p,
+                        double t,
+                        double& pnorm,
+                        double& l2_err,
+                        double& inf_err);
+  void ComputeFaceError(Epetra_MultiVector& u,
+                        double t,
+                        double& unorm,
+                        double& l2_err,
+                        double& inf_err);
   void ComputeNodeError(Epetra_MultiVector& p,
                         double t,
                         double& pnorm,
@@ -436,10 +442,8 @@ AnalyticBase::GlobalOp(std::string op, double* val, int n)
   double* val_tmp = new double[n];
   for (int i = 0; i < n; ++i) val_tmp[i] = val[i];
 
-  if (op == "sum")
-    mesh_->getComm()->SumAll(val_tmp, val, n);
-  else if (op == "max")
-    mesh_->getComm()->MaxAll(val_tmp, val, n);
+  if (op == "sum") mesh_->getComm()->SumAll(val_tmp, val, n);
+  else if (op == "max") mesh_->getComm()->MaxAll(val_tmp, val, n);
 
   delete[] val_tmp;
 }

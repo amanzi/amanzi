@@ -28,7 +28,7 @@ namespace Multiphase {
 class WRMmp_Corey : public WRMmp {
  public:
   WRMmp_Corey(Teuchos::ParameterList& plist);
-  ~WRMmp_Corey(){};
+  ~WRMmp_Corey() {};
 
   // required methods from the base class
   virtual double k_relative(double sl, int phase);

@@ -25,8 +25,7 @@ namespace Amanzi {
 // Given a vector, apply the Dirichlet data to that vector's boundary_face
 // component.
 // -----------------------------------------------------------------------------
-void
-applyDirichletBCs(const Operators::BCs& bcs, CompositeVector& u);
+void applyDirichletBCs(const Operators::BCs& bcs, CompositeVector& u);
 
 
 // -----------------------------------------------------------------------------
@@ -38,18 +37,16 @@ applyDirichletBCs(const Operators::BCs& bcs, CompositeVector& u);
 //  -- boundary_face value (currently not used -- fix me --etc)
 //  -- internal cell
 // -----------------------------------------------------------------------------
-double
-getFaceOnBoundaryValue(AmanziMesh::Entity_ID f,
-                       const CompositeVector& u,
-                       const Operators::BCs& bcs);
+double getFaceOnBoundaryValue(AmanziMesh::Entity_ID f,
+                              const CompositeVector& u,
+                              const Operators::BCs& bcs);
 
 
 // -----------------------------------------------------------------------------
 // Create an alias -- a pointer is copied such that Tag alias's evaluator and
 // data both point to Tag target's.
 // -----------------------------------------------------------------------------
-bool
-aliasVector(State& S, const Key& key, const Tag& target, const Tag& alias);
+bool aliasVector(State& S, const Key& key, const Tag& target, const Tag& alias);
 
 // -----------------------------------------------------------------------------
 // Mark primary variable evaluator as changed.
@@ -57,8 +54,7 @@ aliasVector(State& S, const Key& key, const Tag& target, const Tag& alias);
 // If or_die is true, throw an error if GetEvaluator(key,tag) is not castable
 // to EvaluatorPrimary
 // -----------------------------------------------------------------------------
-bool
-changedEvaluatorPrimary(const Key& key, const Tag& tag, State& S, bool or_die = true);
+bool changedEvaluatorPrimary(const Key& key, const Tag& tag, State& S, bool or_die = true);
 
 
 // -----------------------------------------------------------------------------
@@ -66,15 +62,20 @@ changedEvaluatorPrimary(const Key& key, const Tag& tag, State& S, bool or_die = 
 //
 // If or_die is true, throw an error if the xml has a sublist for this key.
 // -----------------------------------------------------------------------------
-CompositeVectorSpace&
-requireEvaluatorPrimary(const Key& key, const Tag& tag, State& S, const Key& owner, bool or_die = true);
+CompositeVectorSpace& requireEvaluatorPrimary(const Key& key,
+                                              const Tag& tag,
+                                              State& S,
+                                              const Key& owner,
+                                              bool or_die = true);
 
 
 // -----------------------------------------------------------------------------
 // Require assignment evaluator, which allows tracking old data.
 // -----------------------------------------------------------------------------
-CompositeVectorSpace&
-requireEvaluatorAssign(const Key& key, const Tag& tag, State& S, const Key& owner);
+CompositeVectorSpace& requireEvaluatorAssign(const Key& key,
+                                             const Tag& tag,
+                                             State& S,
+                                             const Key& owner);
 
 
 // -----------------------------------------------------------------------------
@@ -85,11 +86,10 @@ requireEvaluatorAssign(const Key& key, const Tag& tag, State& S, const Key& owne
 // ensure that we have a way to recover from failed timesteps.  This is a
 // separate copy of data, and an "assigment" evaluator.
 // -----------------------------------------------------------------------------
-CompositeVectorSpace&
-requireEvaluatorAtCurrent(const Key& key,
-                          const Tag& tag,
-                          State& S,
-                          const Key& owner = "");
+CompositeVectorSpace& requireEvaluatorAtCurrent(const Key& key,
+                                                const Tag& tag,
+                                                State& S,
+                                                const Key& owner = "");
 
 // -----------------------------------------------------------------------------
 // Require a vector and a primary variable evaluator at next tag(s).
@@ -103,19 +103,16 @@ requireEvaluatorAtCurrent(const Key& key,
 // If owner is not empty, key@tag is claimed by owner, and a EvaluatorPrimary
 // is created.  This also implies managed_here.
 // -----------------------------------------------------------------------------
-CompositeVectorSpace&
-requireEvaluatorAtNext(const Key& key,
-                       const Tag& tag,
-                       State& S,
-                       bool managed_here,
-                       const Key& owner = "");
+CompositeVectorSpace& requireEvaluatorAtNext(const Key& key,
+                                             const Tag& tag,
+                                             State& S,
+                                             bool managed_here,
+                                             const Key& owner = "");
 
 
 inline CompositeVectorSpace&
-requireEvaluatorAtNext(const Key& key,
-              const Tag& tag,
-              State& S,
-              const Key& owner = "") {
+requireEvaluatorAtNext(const Key& key, const Tag& tag, State& S, const Key& owner = "")
+{
   return requireEvaluatorAtNext(key, tag, S, false, owner);
 }
 
@@ -123,13 +120,10 @@ requireEvaluatorAtNext(const Key& key,
 // -----------------------------------------------------------------------------
 // Assign if it is an assignment evaluator.
 // -----------------------------------------------------------------------------
-void
-assign(const Key& key, const Tag& tag_dest, const Tag& tag_source, State& S);
+void assign(const Key& key, const Tag& tag_dest, const Tag& tag_source, State& S);
 
 
-void
-copyMeshCoordinatesToVector(const AmanziMesh::Mesh& mesh, CompositeVector& vec);
-void
-copyVectorToMeshCoordinates(const CompositeVector& vec, AmanziMesh::Mesh& mesh);
+void copyMeshCoordinatesToVector(const AmanziMesh::Mesh& mesh, CompositeVector& vec);
+void copyVectorToMeshCoordinates(const CompositeVector& vec, AmanziMesh::Mesh& mesh);
 
 } // namespace Amanzi

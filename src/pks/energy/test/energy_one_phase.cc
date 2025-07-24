@@ -132,5 +132,7 @@ TEST(ENERGY_ONE_PHASE)
   WriteStateStatistics(*S, *vo);
 
   auto temp = *S->Get<CompositeVector>("temperature").ViewComponent("cell");
-  for (int c = 0; c < 10; ++c) { CHECK_CLOSE(1.5, temp[0][c], 2e-8); }
+  for (int c = 0; c < 10; ++c) {
+    CHECK_CLOSE(1.5, temp[0][c], 2e-8);
+  }
 }

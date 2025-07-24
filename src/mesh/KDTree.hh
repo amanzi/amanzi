@@ -29,8 +29,8 @@ namespace AmanziMesh {
 // Note that it does not own any data.
 class PointCloud {
  public:
-  PointCloud(){};
-  ~PointCloud(){};
+  PointCloud() {};
+  ~PointCloud() {};
 
   // Interface for nanoflann
   // -- must return the number of points in the cloud
@@ -43,7 +43,7 @@ class PointCloud {
   //    false to default to a standard bounding box computation loop.
   //    true if the box was already computed and returned in bb.
   //    Look at bb.size() to find out the expected dimensionality (e.g. 2 or 3 for point clouds)
-  template <class BoundingBox>
+  template<class BoundingBox>
   bool kdtree_get_bbox(BoundingBox& bb) const
   {
     return false;
@@ -63,8 +63,8 @@ typedef nanoflann::
 
 class KDTree {
  public:
-  KDTree(){};
-  ~KDTree(){};
+  KDTree() {};
+  ~KDTree() {};
 
   // main member function
   void Init(const Point_List* points)
@@ -77,13 +77,14 @@ class KDTree {
   }
 
   // find the first n points closest to the given point p
-  std::vector<unsigned int>
-  SearchNearest(const AmanziGeometry::Point& p, Double_List& dist_sqr, int n = 1)
+  std::vector<unsigned int> SearchNearest(const AmanziGeometry::Point& p,
+                                          Double_List& dist_sqr,
+                                          int n = 1)
   {
     AMANZI_ASSERT(tree_ != NULL);
 
     double query[3];
-    for (int i = 0; i < p.dim(); ++i) query[i] = p[i];
+    for (int i = 0; i < p.dim() ; ++i) query[i] = p[i];
 
     std::vector<unsigned int> idx(n);
     dist_sqr.resize(n);
@@ -98,13 +99,14 @@ class KDTree {
   }
 
   // find all points in the sphere of centered to the given point p
-  std::vector<size_t>
-  SearchInSphere(const AmanziGeometry::Point& p, Double_List& dist_sqr, double radius_sqr)
+  std::vector<size_t> SearchInSphere(const AmanziGeometry::Point& p,
+                                     Double_List& dist_sqr,
+                                     double radius_sqr)
   {
     AMANZI_ASSERT(tree_ != NULL);
 
     double query[3];
-    for (int i = 0; i < p.dim(); ++i) query[i] = p[i];
+    for (int i = 0; i < p.dim() ; ++i) query[i] = p[i];
 
     std::vector<std::pair<unsigned int, double>> matches;
     nanoflann::SearchParams params;

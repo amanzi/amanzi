@@ -47,7 +47,9 @@ CellToFace_ScaleInverse(Teuchos::RCP<const CompositeVector> f1, Teuchos::RCP<Com
   // cell-part of the map
   int ncells_wghost =
     mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
-  for (int c = 0; c < ncells_wghost; ++c) { f2c[0][c] /= f1c[0][c]; }
+  for (int c = 0; c < ncells_wghost; ++c) {
+    f2c[0][c] /= f1c[0][c];
+  }
 
   // face-part of the map
   int nfaces_wghost =

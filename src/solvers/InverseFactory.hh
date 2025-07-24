@@ -112,7 +112,7 @@ getMethodSublist(Teuchos::ParameterList& inv_list, const std::string& method_nam
     method_list.set("verbose object", inv_list.sublist("verbose object"));
 
   // update the list with the method name
-  if (!method_list.isParameter("method")) method_list.set<std::string>("method", method_name);
+  if (!method_list.isParameter("method") ) method_list.set<std::string>("method", method_name);
   return method_list;
 }
 
@@ -192,10 +192,10 @@ mergePreconditionerSolverLists(const std::string& pc_name,
 //
 // Iterative methods work with preconditioners
 //
-template <class Operator,
-          class Preconditioner = Operator,
-          class Vector = typename Operator::Vector_t,
-          class VectorSpace = typename Operator::VectorSpace_t>
+template<class Operator,
+         class Preconditioner = Operator,
+         class Vector = typename Operator::Vector_t,
+         class VectorSpace = typename Operator::VectorSpace_t>
 Teuchos::RCP<Inverse<Operator, Preconditioner, Vector, VectorSpace>>
 createIterativeMethod(const std::string& method_name, Teuchos::ParameterList& inv_list)
 {
@@ -221,10 +221,10 @@ createIterativeMethod(const std::string& method_name, Teuchos::ParameterList& in
 //
 // This also potentially gets used by client code...
 //
-template <class Operator,
-          class Preconditioner,
-          class Vector = typename Operator::Vector_t,
-          class VectorSpace = typename Operator::VectorSpace_t>
+template<class Operator,
+         class Preconditioner,
+         class Vector = typename Operator::Vector_t,
+         class VectorSpace = typename Operator::VectorSpace_t>
 Teuchos::RCP<Matrix<Vector, VectorSpace>>
 createIterativeMethod(Teuchos::ParameterList& inv_list,
                       const Teuchos::RCP<Operator>& m,
@@ -242,9 +242,9 @@ createIterativeMethod(Teuchos::ParameterList& inv_list,
   return inv;
 }
 
-template <class Operator,
-          class Vector = typename Operator::Vector_t,
-          class VectorSpace = typename Operator::VectorSpace_t>
+template<class Operator,
+         class Vector = typename Operator::Vector_t,
+         class VectorSpace = typename Operator::VectorSpace_t>
 Teuchos::RCP<Matrix<Vector, VectorSpace>>
 createIterativeMethod(Teuchos::ParameterList& inv_list, const Teuchos::RCP<Operator>& m)
 {
@@ -263,9 +263,9 @@ createIterativeMethod(Teuchos::ParameterList& inv_list, const Teuchos::RCP<Opera
 //
 // Assembled methods work on matrices.
 //
-template <class Matrix = Epetra_CrsMatrix,
-          class Vector = Epetra_Vector,
-          class VectorSpace = Epetra_Map>
+template<class Matrix = Epetra_CrsMatrix,
+         class Vector = Epetra_Vector,
+         class VectorSpace = Epetra_Map>
 Teuchos::RCP<Inverse<Matrix, Matrix, Vector, VectorSpace>>
 createAssembledMethod(const std::string& method_name, Teuchos::ParameterList& inv_list)
 {
@@ -341,10 +341,10 @@ createAssembledMethod(const std::string& method_name, Teuchos::ParameterList& in
 // changes.
 //
 // NOTE: the return type of this is the more general one!
-template <class Operator,
-          class Assembler = Operator,
-          class Vector = typename Operator::Vector_t,
-          class VectorSpace = typename Operator::VectorSpace_t>
+template<class Operator,
+         class Assembler = Operator,
+         class Vector = typename Operator::Vector_t,
+         class VectorSpace = typename Operator::VectorSpace_t>
 typename std::enable_if<Impl::is_assembling<Assembler>::value,
                         Teuchos::RCP<Matrix<Vector, VectorSpace>>>::type
 createInverse(Teuchos::ParameterList& inv_list,
@@ -409,9 +409,9 @@ createInverse(Teuchos::ParameterList& inv_list,
 }
 
 
-template <class Operator,
-          class Vector = typename Operator::Vector_t,
-          class VectorSpace = typename Operator::VectorSpace_t>
+template<class Operator,
+         class Vector = typename Operator::Vector_t,
+         class VectorSpace = typename Operator::VectorSpace_t>
 Teuchos::RCP<Matrix<Vector, VectorSpace>>
 createInverse(Teuchos::ParameterList& inv_list, const Teuchos::RCP<Operator>& m)
 {
@@ -423,10 +423,10 @@ createInverse(Teuchos::ParameterList& inv_list, const Teuchos::RCP<Operator>& m)
 // Factory style preferred in Amanzi -- a global, const plist of options,
 // indexed by a local name.
 //
-template <class Operator,
-          class Preconditioner,
-          class Vector = typename Operator::Vector_t,
-          class VectorSpace = typename Operator::VectorSpace_t>
+template<class Operator,
+         class Preconditioner,
+         class Vector = typename Operator::Vector_t,
+         class VectorSpace = typename Operator::VectorSpace_t>
 Teuchos::RCP<Matrix<Vector, VectorSpace>>
 createInverse(const std::string& name,
               const Teuchos::ParameterList& solvers_list,
@@ -444,9 +444,9 @@ createInverse(const std::string& name,
   return Teuchos::null;
 }
 
-template <class Operator,
-          class Vector = typename Operator::Vector_t,
-          class VectorSpace = typename Operator::VectorSpace_t>
+template<class Operator,
+         class Vector = typename Operator::Vector_t,
+         class VectorSpace = typename Operator::VectorSpace_t>
 Teuchos::RCP<Matrix<Vector, VectorSpace>>
 createInverse(const std::string& name,
               const Teuchos::ParameterList& solvers_list,

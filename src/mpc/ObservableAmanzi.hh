@@ -32,11 +32,11 @@ namespace Amanzi {
 class ObservableAmanzi : public Utils::IOEvent {
  public:
   ObservableAmanzi(std::string variable,
-             std::string region,
-             std::string functional,
-             Teuchos::ParameterList& plist,
-             Teuchos::ParameterList& units_plist,
-             Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+                   std::string region,
+                   std::string functional,
+                   Teuchos::ParameterList& plist,
+                   Teuchos::ParameterList& units_plist,
+                   Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : Utils::IOEvent(plist),
       variable_(variable),
       functional_(functional),
@@ -61,8 +61,11 @@ class ObservableAmanzi : public Utils::IOEvent {
 
   virtual ~ObservableAmanzi() = default;
 
-  virtual void
-  ComputeObservation(State& S, double* value, double* volume, std::string& unit, double dt) = 0;
+  virtual void ComputeObservation(State& S,
+                                  double* value,
+                                  double* volume,
+                                  std::string& unit,
+                                  double dt) = 0;
   virtual int ComputeRegionSize() { return region_size_; }
 
  public:
@@ -82,5 +85,3 @@ class ObservableAmanzi : public Utils::IOEvent {
 };
 
 } // namespace Amanzi
-
-

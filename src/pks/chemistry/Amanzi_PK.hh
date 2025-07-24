@@ -93,7 +93,10 @@ class Amanzi_PK : public Chemistry_PK {
   virtual void Setup() override final;
   virtual void Initialize() override final;
 
-  virtual void CalculateDiagnostics(const Tag& tag) override final { extra_chemistry_output_data(); }
+  virtual void CalculateDiagnostics(const Tag& tag) override final
+  {
+    extra_chemistry_output_data();
+  }
 
   // The following two routines provide the interface for
   // output of auxillary cellwise data from chemistry
@@ -109,7 +112,8 @@ class Amanzi_PK : public Chemistry_PK {
   BeakerState beaker_state() { return beaker_state_; }
 
   void InitializeMinerals(Teuchos::RCP<Teuchos::ParameterList> plist);
-  void InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> plist, Teuchos::ParameterList& ic_list);
+  void InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> plist,
+                               Teuchos::ParameterList& ic_list);
 
   void ErrorAnalysis(int ierr, std::string& internal_msg);
 

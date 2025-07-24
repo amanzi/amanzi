@@ -65,7 +65,9 @@ NumericalFlux_Rusanov::Compute(const std::vector<double>& UL,
   lambda_max_ = Smax; // FIXME, we probably need only max speed
   lambda_min_ = -Smax;
 
-  for (int i = 0; i < 3; i++) { F[i] = 0.5 * (FL[i] + FR[i]) - 0.5 * Smax * (UR[i] - UL[i]); }
+  for (int i = 0; i < 3; i++) {
+    F[i] = 0.5 * (FL[i] + FR[i]) - 0.5 * Smax * (UR[i] - UL[i]);
+  }
 
   return F;
 }

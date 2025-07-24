@@ -223,9 +223,7 @@ InputConverterU::TranslateTransport_(const std::string& domain)
           al = GetAttributeValueD_(node, "alpha_l", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
           at = GetAttributeValueD_(node, "alpha_t", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
 
-          tmp_list.sublist("Bear parameters")
-            .set<double>("alpha_l", al)
-            .set<double>("alpha_t", at);
+          tmp_list.sublist("Bear parameters").set<double>("alpha_l", al).set<double>("alpha_t", at);
         } else if (strcmp(model.c_str(), "burnett_frind") == 0) {
           tmp_list.set<std::string>("model", "Burnett-Frind");
 
@@ -291,8 +289,7 @@ InputConverterU::TranslateTransport_(const std::string& domain)
   node = GetUniqueElementByTagsString_(
     "unstructured_controls, unstr_transport_controls, dispersion_discretization_method", flag);
   std::string disc_methods;
-  if (flag)
-    disc_methods = mm.transcode(node->getTextContent());
+  if (flag) disc_methods = mm.transcode(node->getTextContent());
   else
     disc_methods = (mesh_rectangular_) ? "mfd-monotone_for_hex" : "mfd-optimized_for_monotonicity";
   disc_methods.append(", mfd-two_point_flux_approximation");
@@ -383,7 +380,7 @@ InputConverterU::TranslateMolecularDiffusion_()
       if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
       tagname = mm.transcode(inode->getNodeName());
-      if (strcmp(tagname, species.c_str()) != 0) continue;
+      if (strcmp(tagname, species.c_str() ) != 0) continue;
 
       text = mm.transcode(inode->getTextContent());
       double val = GetAttributeValueD_(
@@ -413,7 +410,7 @@ InputConverterU::TranslateMolecularDiffusion_()
       if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
       tagname = mm.transcode(inode->getNodeName());
-      if (strcmp(tagname, species.c_str()) != 0) continue;
+      if (strcmp(tagname, species.c_str() ) != 0) continue;
 
       text = mm.transcode(inode->getTextContent());
       double val = GetAttributeValueD_(
@@ -564,8 +561,7 @@ InputConverterU::TranslateTransportBCs_(const std::string& domain)
   bool flag;
   if (domain == "fracture")
     node = GetUniqueElementByTagsString_("fracture_network, boundary_conditions", flag);
-  else
-    node = GetUniqueElementByTagsString_("boundary_conditions", flag);
+  else node = GetUniqueElementByTagsString_("boundary_conditions", flag);
   if (!flag) return out_list;
 
   children = node->getChildNodes();
@@ -603,7 +599,9 @@ InputConverterU::TranslateTransportBCs_(const std::string& domain)
 
     // geochemical BCs
     node = GetUniqueElementByTagsString_(inode, "liquid_phase, geochemistry_component", flag);
-    if (flag) { TranslateTransportGeochemistry_(node, bcname, regions, out_list); }
+    if (flag) {
+      TranslateTransportGeochemistry_(node, bcname, regions, out_list);
+    }
   }
 
   // backward compatibility: translate constraints for native chemistry
@@ -711,7 +709,7 @@ InputConverterU::TranslateTransportGeochemistry_(DOMNode* node,
   // create vectors of values and forms
   std::vector<double> times;
   std::vector<std::string> forms, values;
-  for (std::map<double, std::string>::iterator it = tp_values.begin(); it != tp_values.end();
+  for (std::map<double, std::string>::iterator it = tp_values.begin() ; it != tp_values.end();
        ++it) {
     times.push_back(it->first);
     values.push_back(it->second);
@@ -859,7 +857,9 @@ InputConverterU::TranslateTransportSources_()
 
     // geochemical sources
     node = GetUniqueElementByTagsString_(inode, "liquid_phase, geochemistry_component", flag);
-    if (flag) { TranslateTransportGeochemistry_(node, srcname, regions, out_list); }
+    if (flag) {
+      TranslateTransportGeochemistry_(node, srcname, regions, out_list);
+    }
   }
 
   return out_list;

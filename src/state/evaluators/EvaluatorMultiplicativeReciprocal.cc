@@ -18,8 +18,7 @@ namespace Amanzi {
 * Two constructors.
 ****************************************************************** */
 EvaluatorMultiplicativeReciprocal::EvaluatorMultiplicativeReciprocal(Teuchos::ParameterList& plist)
-  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
-    n_dofs_(-1)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist), n_dofs_(-1)
 {
   if (plist_.isParameter("evaluator dependencies")) {
     Errors::Message msg;
@@ -31,8 +30,10 @@ EvaluatorMultiplicativeReciprocal::EvaluatorMultiplicativeReciprocal(Teuchos::Pa
       plist_.isParameter("reciprocal dependencies")) {
     Errors::Message msg;
     msg << "EvaluatorMultiplicativeReciprocal: \"" << my_keys_.front().first
-        << "\" no longer accepts option \"multiplicative dependencies\" or \"reciprocal dependencies\""
-        << "-- please use \"multiplicative dependency keys\" or \"multiplicative dependency key suffixes\""
+        << "\" no longer accepts option \"multiplicative dependencies\" or \"reciprocal "
+           "dependencies\""
+        << "-- please use \"multiplicative dependency keys\" or \"multiplicative dependency key "
+           "suffixes\""
         << " (respectively reciprocal) instead.";
   }
 
@@ -42,11 +43,11 @@ EvaluatorMultiplicativeReciprocal::EvaluatorMultiplicativeReciprocal(Teuchos::Pa
   const Teuchos::Array<std::string> empty_array;
   {
     list0_ = Keys::readKeys(plist_, domain, "multiplicative dependency", &empty_array);
-    for (const auto& key : list0_) dependencies_.insert({key, tag});
+    for (const auto& key : list0_) dependencies_.insert({ key, tag });
   }
   {
     list1_ = Keys::readKeys(plist_, domain, "reciprocal dependency", &empty_array);
-    for (const auto& key : list1_) dependencies_.insert({key, tag});
+    for (const auto& key : list1_) dependencies_.insert({ key, tag });
   }
 
   if (list0_.size() + list1_.size() == 0) {
@@ -63,8 +64,7 @@ EvaluatorMultiplicativeReciprocal::EvaluatorMultiplicativeReciprocal(Teuchos::Pa
 
 EvaluatorMultiplicativeReciprocal::EvaluatorMultiplicativeReciprocal(
   const EvaluatorMultiplicativeReciprocal& other)
-  : EvaluatorSecondaryMonotype(other)
-{};
+  : EvaluatorSecondaryMonotype(other) {};
 
 
 /* ******************************************************************
@@ -94,11 +94,11 @@ EvaluatorMultiplicativeReciprocal::Evaluate_(const State& S,
       const auto& factor_c = *S.Get<CompositeVector>(it, Tags::DEFAULT).ViewComponent(comp);
       if (factor_c.NumVectors() == n_dofs) {
         for (int i = 0; i != n_dofs; ++i) {
-          for (int c = 0; c != result_c.MyLength(); ++c) result_c[i][c] *= factor_c[i][c];
+          for (int c = 0; c != result_c.MyLength() ; ++c) result_c[i][c] *= factor_c[i][c];
         }
       } else {
         for (int i = 0; i != n_dofs; ++i) {
-          for (int c = 0; c != result_c.MyLength(); ++c) result_c[i][c] *= factor_c[0][c];
+          for (int c = 0; c != result_c.MyLength() ; ++c) result_c[i][c] *= factor_c[0][c];
         }
       }
     }
@@ -107,17 +107,19 @@ EvaluatorMultiplicativeReciprocal::Evaluate_(const State& S,
       const auto& factor_c = *S.Get<CompositeVector>(it, Tags::DEFAULT).ViewComponent(comp);
       if (factor_c.NumVectors() == n_dofs) {
         for (int i = 0; i != n_dofs; ++i) {
-          for (int c = 0; c != result_c.MyLength(); ++c) result_c[i][c] /= factor_c[i][c];
+          for (int c = 0; c != result_c.MyLength() ; ++c) result_c[i][c] /= factor_c[i][c];
         }
       } else {
         for (int i = 0; i != n_dofs; ++i) {
-          for (int c = 0; c != result_c.MyLength(); ++c) result_c[i][c] /= factor_c[0][c];
+          for (int c = 0; c != result_c.MyLength() ; ++c) result_c[i][c] /= factor_c[0][c];
         }
       }
     }
 
     if (enforce_positivity_) {
-      for (int c = 0; c != result_c.MyLength(); ++c) { result_c[0][c] = std::max(result_c[0][c], 0.0); }
+      for (int c = 0; c != result_c.MyLength(); ++c) {
+        result_c[0][c] = std::max(result_c[0][c], 0.0);
+      }
     }
   }
 }
@@ -142,11 +144,11 @@ EvaluatorMultiplicativeReciprocal::EvaluatePartialDerivative_(
       if (it != wrt_key) {
         if (factor_c.NumVectors() == n_dofs_) {
           for (int i = 0; i != n_dofs_; ++i) {
-            for (int c = 0; c != result_c.MyLength(); ++c) result_c[i][c] *= factor_c[i][c];
+            for (int c = 0; c != result_c.MyLength() ; ++c) result_c[i][c] *= factor_c[i][c];
           }
         } else {
           for (int i = 0; i != n_dofs_; ++i) {
-            for (int c = 0; c != result_c.MyLength(); ++c) result_c[i][c] *= factor_c[0][c];
+            for (int c = 0; c != result_c.MyLength() ; ++c) result_c[i][c] *= factor_c[0][c];
           }
         }
       }
@@ -157,22 +159,24 @@ EvaluatorMultiplicativeReciprocal::EvaluatePartialDerivative_(
       if (it == wrt_key) {
         if (factor_c.NumVectors() == n_dofs_) {
           for (int i = 0; i != n_dofs_; ++i) {
-            for (int c = 0; c != result_c.MyLength(); ++c) result_c[i][c] /= -factor_c[i][c] * factor_c[i][c];
+            for (int c = 0; c != result_c.MyLength(); ++c)
+              result_c[i][c] /= -factor_c[i][c] * factor_c[i][c];
           }
         } else {
           for (int i = 0; i != n_dofs_; ++i) {
-            for (int c = 0; c != result_c.MyLength(); ++c) result_c[i][c] /= -factor_c[0][c] * factor_c[0][c];
+            for (int c = 0; c != result_c.MyLength(); ++c)
+              result_c[i][c] /= -factor_c[0][c] * factor_c[0][c];
           }
         }
 
       } else {
         if (factor_c.NumVectors() == n_dofs_) {
           for (int i = 0; i != n_dofs_; ++i) {
-            for (int c = 0; c != result_c.MyLength(); ++c) result_c[i][c] /= factor_c[i][c];
+            for (int c = 0; c != result_c.MyLength() ; ++c) result_c[i][c] /= factor_c[i][c];
           }
         } else {
           for (int i = 0; i != n_dofs_; ++i) {
-            for (int c = 0; c != result_c.MyLength(); ++c) result_c[i][c] /= factor_c[0][c];
+            for (int c = 0; c != result_c.MyLength() ; ++c) result_c[i][c] /= factor_c[0][c];
           }
         }
       }
@@ -227,7 +231,8 @@ EvaluatorMultiplicativeReciprocal::EnsureCompatibility_ToDeps_(State& S)
 
   if (my_fac.Mesh() != Teuchos::null) {
     for (const auto& key_tag : dependencies_) {
-      auto& dep_fac = S.Require<CompositeVector,CompositeVectorSpace>(key_tag.first, key_tag.second);
+      auto& dep_fac =
+        S.Require<CompositeVector, CompositeVectorSpace>(key_tag.first, key_tag.second);
       dep_fac.SetMesh(my_fac.Mesh());
 
       for (const auto& comp : my_fac) {

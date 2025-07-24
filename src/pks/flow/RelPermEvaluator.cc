@@ -34,7 +34,7 @@ RelPermEvaluator::RelPermEvaluator(const RelPermEvaluator& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
     wrm_(other.wrm_),
     pressure_key_(other.pressure_key_),
-    patm_(other.patm_){};
+    patm_(other.patm_) {};
 
 
 /* ******************************************************************

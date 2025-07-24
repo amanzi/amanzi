@@ -27,9 +27,9 @@ typedef std::vector<Teuchos::RCP<ApertureModel>> ApertureModelList;
 typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, ApertureModelList> ApertureModelPartition;
 
 // Non-member factory
-Teuchos::RCP<ApertureModelPartition>
-CreateApertureModelPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                             Teuchos::RCP<Teuchos::ParameterList> plist);
+Teuchos::RCP<ApertureModelPartition> CreateApertureModelPartition(
+  Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+  Teuchos::RCP<Teuchos::ParameterList> plist);
 
 } // namespace Evaluators
 } // namespace Amanzi

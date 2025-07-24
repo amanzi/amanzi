@@ -27,7 +27,7 @@
 namespace Kokkos {
 namespace Impl {
 
-template <typename View_type>
+template<typename View_type>
 struct View_iter {
   using iterator_category = std::forward_iterator_tag;
   using value_type = typename View_type::value_type;
@@ -35,8 +35,12 @@ struct View_iter {
   using pointer = value_type*;
   using reference = value_type&;
 
-  KOKKOS_INLINE_FUNCTION View_iter(const View_type& v) : View_iter(v, 0) {}
-  KOKKOS_INLINE_FUNCTION View_iter(const View_type& v, int i) : v_(v), i_(i) {}
+  KOKKOS_INLINE_FUNCTION View_iter(const View_type& v)
+    : View_iter(v, 0)
+  {}
+  KOKKOS_INLINE_FUNCTION View_iter(const View_type& v, int i)
+    : v_(v), i_(i)
+  {}
 
   KOKKOS_INLINE_FUNCTION reference operator*() const { return v_(i_); }
   KOKKOS_INLINE_FUNCTION pointer operator->() { return &v_(i_); }
@@ -127,14 +131,14 @@ struct View_iter {
 
 } // namespace Impl
 
-template <typename View_type>
+template<typename View_type>
 Impl::View_iter<View_type> KOKKOS_INLINE_FUNCTION
 begin(const View_type& view)
 {
   return Impl::View_iter<View_type>(view);
 }
 
-template <typename View_type>
+template<typename View_type>
 Impl::View_iter<View_type> KOKKOS_INLINE_FUNCTION
 end(const View_type& view)
 {

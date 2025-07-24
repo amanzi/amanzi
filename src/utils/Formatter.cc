@@ -29,7 +29,7 @@ void
 Formatter::setWidth(int width)
 {
   width_ = width;
-  if (width < (precision_ + 7)) setPrecision(width - 7);
+  if (width < (precision_ + 7) ) setPrecision(width - 7);
 }
 
 std::string

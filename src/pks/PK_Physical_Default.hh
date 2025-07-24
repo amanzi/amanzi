@@ -42,9 +42,9 @@ Note that initial conditions use shared specs for CompositeVectors:
 
    - ``[constants-composite-vector-spec]`` The shared functionality for
      specifying time-independent values.  See :ref:`Initial Conditions`.
-   
 
-     
+
+
 */
 
 #pragma once
@@ -68,9 +68,7 @@ class PK_Physical_Default : public PK_Physical {
                       const Teuchos::RCP<Teuchos::ParameterList>& glist,
                       const Teuchos::RCP<State>& S,
                       const Teuchos::RCP<TreeVector>& soln)
-    : PK_Physical(pk_tree, glist, S, soln),
-      PK(pk_tree, glist, S, soln)
-  {};
+    : PK_Physical(pk_tree, glist, S, soln), PK(pk_tree, glist, S, soln) {};
 
   // Default implementations of PK methods.
   virtual void parseParameterList() override;
@@ -81,10 +79,7 @@ class PK_Physical_Default : public PK_Physical {
   virtual void FailStep(double t_old, double t_new, const Tag& tag_next) override;
 
   void ChangedSolutionPK(const Tag& tag) override;
-
 };
 
 
 } // namespace Amanzi
-
-

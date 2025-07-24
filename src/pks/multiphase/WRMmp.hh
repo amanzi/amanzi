@@ -24,8 +24,8 @@ namespace Multiphase {
 
 class WRMmp {
  public:
-  WRMmp(){};
-  virtual ~WRMmp(){};
+  WRMmp() {};
+  virtual ~WRMmp() {};
 
   virtual double k_relative(double Sw, int phase) = 0;
   virtual double capillaryPressure(double s) = 0;

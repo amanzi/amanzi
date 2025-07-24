@@ -52,7 +52,8 @@ State::State()
   vo_ = Teuchos::rcp(new VerboseObject("State", "none"));
 };
 
-State::State(Teuchos::ParameterList& state_plist) : state_plist_(state_plist)
+State::State(Teuchos::ParameterList& state_plist)
+  : state_plist_(state_plist)
 {
   vo_ = Teuchos::rcp(new VerboseObject("State", state_plist_));
 
@@ -122,7 +123,7 @@ State::GetMesh(const Key& key) const
 Teuchos::RCP<AmanziMesh::Mesh>
 State::GetDeformableMesh(Key key)
 {
-  if (key.empty()) key = "domain";
+  if (key.empty() ) key = "domain";
 
   mesh_iterator lb = meshes_.lower_bound(key);
   if (lb != meshes_.end() && !(meshes_.key_comp()(key, lb->first))) {
@@ -160,7 +161,7 @@ State::IsDeformableMesh(const Key& key) const
 Teuchos::RCP<AmanziMesh::Mesh>
 State::GetMesh_(const Key& key) const
 {
-  if (key.empty()) return GetMesh_("domain");
+  if (key.empty() ) return GetMesh_("domain");
 
   mesh_iterator lb = meshes_.lower_bound(key);
   if (lb != meshes_.end() && !(meshes_.key_comp()(key, lb->first))) {
@@ -334,7 +335,8 @@ State::RequireEvaluator(const Key& key, const Tag& tag, bool alias_ok)
   for (auto& e : evaluators_) {
     if (Keys::hasKey(e.second, tag) && e.second.at(tag)->ProvidesKey(key, tag)) {
       if (debug && vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-        *vo_->os() << "  ... evaluator is provided by evaluator for \"" << Keys::getKey(e.first, tag) << "\"" << std::endl;
+        *vo_->os() << "  ... evaluator is provided by evaluator for \""
+                   << Keys::getKey(e.first, tag) << "\"" << std::endl;
       }
       auto& evaluator = e.second.at(tag);
       SetEvaluator_(key, tag, evaluator);
@@ -396,8 +398,7 @@ State::RequireEvaluator(const Key& key, const Tag& tag, bool alias_ok)
   if (found) {
     fe_plist.setName(key);
     // -- Check for special case -- alias
-    if (fe_plist.isParameter("evaluator type") &&
-        fe_plist.isType<std::string>("evaluator type") &&
+    if (fe_plist.isParameter("evaluator type") && fe_plist.isType<std::string>("evaluator type") &&
         fe_plist.get<std::string>("evaluator type") == "alias") {
       KeyTag target = Keys::splitKeyTag(fe_plist.get<std::string>("target"));
       if (target.first != key) {
@@ -438,8 +439,7 @@ State::RequireEvaluator(const Key& key, const Tag& tag, bool alias_ok)
       *vo_->os() << "  ... evaluator created as cell volume" << std::endl;
     }
     return RequireEvaluator(key, tag);
-  } else if (Keys::getVarName(key) == "slope_magnitude" ||
-             Keys::getVarName(key) == "elevation") {
+  } else if (Keys::getVarName(key) == "slope_magnitude" || Keys::getVarName(key) == "elevation") {
     Teuchos::ParameterList& cv_list = GetEvaluatorList(key);
     cv_list.set("evaluator type", "meshed elevation");
     // recursive call will result in the above, HasEvaluatorList() branch being taken.
@@ -553,7 +553,8 @@ State::require_time(const Tag& tag, const Key& owner)
 }
 
 void
-State::set_time(const Tag& tag, double value) {
+State::set_time(const Tag& tag, double value)
+{
   Assign("time", tag, "time", value);
   auto time_eval = GetEvaluatorPtr("time", tag);
   auto time_eval_pv = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<double>>(time_eval);
@@ -699,7 +700,9 @@ State::Setup()
   }
 
   // Create the data for all derivatives
-  for (auto& deriv : derivs_) { deriv.second->CreateData(); }
+  for (auto& deriv : derivs_) {
+    deriv.second->CreateData();
+  }
 
   // -- Write DAG to disk for visualization
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
@@ -844,7 +847,9 @@ State::InitializeFields(const Tag& tag)
         if (HasEvaluator(it->first, tag)) {
           Evaluator& fm = GetEvaluator(it->first, tag);
           auto tmp = dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>*>(&fm);
-          if (tmp != nullptr) { tmp->SetChanged(); }
+          if (tmp != nullptr) {
+            tmp->SetChanged();
+          }
         }
       }
 
@@ -1037,7 +1042,9 @@ State::GetEvaluatorList(const Key& key)
     bool is_ds = Keys::splitDomainSet(key, split);
     if (is_ds) {
       Key lifted_key = Keys::getKey(std::get<0>(split), "*", std::get<2>(split));
-      if (FEList().isParameter(lifted_key)) { return FEList().sublist(lifted_key); }
+      if (FEList().isParameter(lifted_key)) {
+        return FEList().sublist(lifted_key);
+      }
     }
   }
 
@@ -1049,13 +1056,13 @@ State::GetEvaluatorList(const Key& key)
 bool
 State::HasEvaluatorList(const Key& key) const
 {
-  if (FEList().isSublist(key)) return true;
+  if (FEList() .isSublist(key)) return true;
   // check for domain set
   KeyTriple split;
   bool is_ds = Keys::splitDomainSet(key, split);
   if (is_ds) {
     Key lifted_key = Keys::getKey(std::get<0>(split), "*", std::get<2>(split));
-    if (FEList().isSublist(lifted_key)) return true;
+    if (FEList() .isSublist(lifted_key)) return true;
   }
   return false;
 }
@@ -1072,7 +1079,9 @@ State::GetICList(const Key& key)
     bool is_ds = Keys::splitDomainSet(key, split);
     if (is_ds) {
       Key lifted_key = Keys::getKey(std::get<0>(split), "*", std::get<2>(split));
-      if (ICList().isParameter(lifted_key)) { return ICList().sublist(lifted_key); }
+      if (ICList().isParameter(lifted_key)) {
+        return ICList().sublist(lifted_key);
+      }
     }
   }
 
@@ -1084,13 +1093,13 @@ State::GetICList(const Key& key)
 bool
 State::HasICList(const Key& key) const
 {
-  if (ICList().isSublist(key)) return true;
+  if (ICList() .isSublist(key)) return true;
   // check for domain set
   KeyTriple split;
   bool is_ds = Keys::splitDomainSet(key, split);
   if (is_ds) {
     Key lifted_key = Keys::getKey(std::get<0>(split), "*", std::get<2>(split));
-    if (ICList().isSublist(lifted_key)) return true;
+    if (ICList() .isSublist(lifted_key)) return true;
   }
   return false;
 }
@@ -1102,7 +1111,7 @@ State::CheckIsDebugEval_(const Key& key, const Tag& tag)
   // check for debugging.  This provides a line for setting breakpoints for
   // debugging PK and Evaluator dependencies.
 #ifdef ENABLE_DBC
-  if (!state_plist_.isSublist("debug")) return false;
+  if (!state_plist_.isSublist("debug") ) return false;
 
   Teuchos::Array<Key> debug_evals = state_plist_.sublist("debug").get<Teuchos::Array<std::string>>(
     "evaluators", Teuchos::Array<Key>());
@@ -1113,7 +1122,9 @@ State::CheckIsDebugEval_(const Key& key, const Tag& tag)
                  << std::endl;
     }
     if (tag == Tags::DEFAULT) {
-      if (vo_->os_OK(Teuchos::VERB_MEDIUM)) { *vo_->os() << " -- default tag" << std::endl; }
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+        *vo_->os() << " -- default tag" << std::endl;
+      }
     }
     return true;
   }
@@ -1127,7 +1138,7 @@ State::CheckIsDebugData_(const Key& key, const Tag& tag)
   // check for debugging.  This provides a line for setting breakpoints for
   // debugging PK and Evaluator dependencies.
 #ifdef ENABLE_DBC
-  if (!state_plist_.isSublist("debug")) return false;
+  if (!state_plist_.isSublist("debug") ) return false;
 
   Teuchos::Array<Key> debug_evals =
     state_plist_.sublist("debug").get<Teuchos::Array<std::string>>("data", Teuchos::Array<Key>());
@@ -1138,7 +1149,9 @@ State::CheckIsDebugData_(const Key& key, const Tag& tag)
                  << std::endl;
     }
     if (tag == Tags::DEFAULT) {
-      if (vo_->os_OK(Teuchos::VERB_MEDIUM)) { *vo_->os() << " -- default tag" << std::endl; }
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+        *vo_->os() << " -- default tag" << std::endl;
+      }
     }
     return true;
   }

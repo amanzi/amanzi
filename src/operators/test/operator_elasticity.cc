@@ -40,7 +40,7 @@
 /* *****************************************************************
 * Elasticity model: exactness test.
 ***************************************************************** */
-template <class Analytic>
+template<class Analytic>
 double
 RunTest(int icase,
         const std::string& solver,
@@ -296,7 +296,9 @@ RunTest(int icase,
   CompositeVector& rhs = *global_op->rhs();
   global_op->ApplyInverse(rhs, solution);
 
-  if (icase == 1 || icase == 2) { ver.CheckResidual(solution, 1.0e-13); }
+  if (icase == 1 || icase == 2) {
+    ver.CheckResidual(solution, 1.0e-13);
+  }
 
   if (MyPID == 0) {
     std::cout << ana.Tensor(mesh->getCellCentroid(0), 0.0) << std::endl;

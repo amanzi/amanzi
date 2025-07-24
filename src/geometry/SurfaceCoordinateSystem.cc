@@ -39,8 +39,7 @@ SurfaceCoordinateSystem::Init()
     // here we need orthogonal projector to implement hierarchical construction
     if (fabs(normal_unit_[0]) > 0.1)
       tau[0] = AmanziGeometry::Point(normal_unit_[1], -normal_unit_[0], 0.0);
-    else
-      tau[0] = AmanziGeometry::Point(0.0, -normal_unit_[2], normal_unit_[1]);
+    else tau[0] = AmanziGeometry::Point(0.0, -normal_unit_[2], normal_unit_[1]);
 
     tau[0] /= norm(tau[0]);
     tau[1] = normal_unit_ ^ tau[0];

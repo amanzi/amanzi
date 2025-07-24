@@ -27,7 +27,7 @@ struct BeakerParameters {
     : tolerance(1.0e-12),
       max_iterations(250),
       update_activity_newton(false),
-      activity_model_name("unit"){};
+      activity_model_name("unit") {};
 
   // solver parameters
   double tolerance;

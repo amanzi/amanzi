@@ -79,7 +79,7 @@ RunBatchNative(const std::string& filexml,
                bool ic_no_sorbed = false)
 {
 #ifdef ABORT_ON_FLOATING_POINT_EXCEPTIONS
-#  ifdef __APPLE__
+#ifdef __APPLE__
   // Make floating point exceptions abort the program. runtime error
   // message isn't helpful, but running in gdb will stop at the
   // correct line. This may code may not be apple specific....
@@ -88,7 +88,7 @@ RunBatchNative(const std::string& filexml,
   _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_DIV_ZERO);
   _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_OVERFLOW);
   _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_UNDERFLOW);
-#  endif
+#endif
 #endif
 
   // default i/o level
@@ -479,7 +479,7 @@ TEST(NATIVE_VALOCCHI_INITIAL)
   std::vector<double> icm = { 1.0e-5 };
   std::vector<double> icts = {
     1.607889E+02, 1.415668E+02, 1.530388E+02, 0.000000E+00
-  };                                     // total sorbed
+  }; // total sorbed
   std::vector<double> icie = { 750.0 };  // ion exchange
   std::vector<double> icfi, icsd, icssa; // free ion, side density, specific surface area
   RunBatchNative("test/native/ion-exchange-valocchi.xml",

@@ -33,19 +33,17 @@ class Polynomial;
 class PolynomialOnMesh;
 
 // Gramm matrix for polynomials
-void
-GrammMatrix(const Polynomial& poly,
-            const PolynomialOnMesh& integrals,
-            const Basis_Regularized& basis,
-            DenseMatrix& G);
+void GrammMatrix(const Polynomial& poly,
+                 const PolynomialOnMesh& integrals,
+                 const Basis_Regularized& basis,
+                 DenseMatrix& G);
 
 // Gramm matrix for gradient of polynomials with tensorial weight
-inline void
-GrammMatrixGradients(const Tensor& K,
-                     const Polynomial& poly,
-                     const PolynomialOnMesh& integrals,
-                     const Basis_Regularized& basis,
-                     DenseMatrix& G);
+inline void GrammMatrixGradients(const Tensor& K,
+                                 const Polynomial& poly,
+                                 const PolynomialOnMesh& integrals,
+                                 const Basis_Regularized& basis,
+                                 DenseMatrix& G);
 
 
 /* ******************************************************************
@@ -72,7 +70,9 @@ GrammMatrix(const Polynomial& poly,
       int l = jt.PolynomialPosition();
       double scalel = basis.monomial_scales()[jt.MonomialSetOrder()];
 
-      for (int i = 0; i < d; ++i) { multi_index[i] = index[i] + jndex[i]; }
+      for (int i = 0; i < d; ++i) {
+        multi_index[i] = index[i] + jndex[i];
+      }
 
       int pos = PolynomialPosition(d, multi_index);
       G(k, l) = G(l, k) = integrals.poly()(pos) * scalek * scalel;
@@ -96,10 +96,8 @@ GrammMatrixGradients(const Tensor& K,
   G.Reshape(nd, nd);
 
   Tensor Ktmp(d, 2);
-  if (K.rank() == 2)
-    Ktmp = K;
-  else
-    Ktmp.MakeDiagonal(K(0, 0));
+  if (K.rank() == 2) Ktmp = K;
+  else Ktmp.MakeDiagonal(K(0, 0));
 
   int multi_index[3];
   for (auto it = poly.begin(); it < poly.end(); ++it) {
@@ -112,7 +110,9 @@ GrammMatrixGradients(const Tensor& K,
       int l = jt.PolynomialPosition();
       double scalel = basis.monomial_scales()[jt.MonomialSetOrder()];
 
-      for (int i = 0; i < d; ++i) { multi_index[i] = index[i] + jndex[i]; }
+      for (int i = 0; i < d; ++i) {
+        multi_index[i] = index[i] + jndex[i];
+      }
 
       double sum(0.0), tmp;
       for (int i = 0; i < d; ++i) {

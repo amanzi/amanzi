@@ -46,7 +46,7 @@ class ApertureDarcyEvaluator
                                           const std::vector<CompositeVector*>& results) override;
 
  protected:
-  virtual void EnsureCompatibility_ToDeps_(State& S) override{};
+  virtual void EnsureCompatibility_ToDeps_(State& S) override {};
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

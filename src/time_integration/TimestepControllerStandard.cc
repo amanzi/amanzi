@@ -20,8 +20,8 @@
 namespace Amanzi {
 
 TimestepControllerStandard::TimestepControllerStandard(const std::string& name,
-                             Teuchos::ParameterList& plist,
-                             const Teuchos::RCP<State>& S)
+                                                       Teuchos::ParameterList& plist,
+                                                       const Teuchos::RCP<State>& S)
   : TimestepControllerRecoverable(name, plist, S)
 {
   max_its_ = plist.get<int>("max iterations");

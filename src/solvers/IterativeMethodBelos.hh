@@ -34,16 +34,18 @@ Includes GMRES and other Belos methods.
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template <class Matrix,
-          class Preconditioner = Matrix,
-          class Vector = typename Matrix::Vector_t,
-          class VectorSpace = typename Vector::Space_t>
+template<class Matrix,
+         class Preconditioner = Matrix,
+         class Vector = typename Matrix::Vector_t,
+         class VectorSpace = typename Vector::Space_t>
 class IterativeMethodBelos
   : public InverseIterativeMethod<Matrix, Preconditioner, Vector, VectorSpace> {
   using InvIt = InverseIterativeMethod<Matrix, Preconditioner, Vector, VectorSpace>;
 
  public:
-  IterativeMethodBelos() : InvIt() {}
+  IterativeMethodBelos()
+    : InvIt()
+  {}
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override final;
   virtual int ApplyInverse(const Vector& v, Vector& hv) const override final;
@@ -52,17 +54,17 @@ class IterativeMethodBelos
   virtual std::string MethodName_() const override { return "Belos: GMRES"; }
 
  private:
-  using InvIt::m_;
-  using InvIt::h_;
-  using InvIt::vo_;
-  using InvIt::num_itrs_;
-  using InvIt::max_itrs_;
-  using InvIt::tol_;
   using InvIt::criteria_;
+  using InvIt::h_;
+  using InvIt::inited_;
+  using InvIt::krylov_dim_;
+  using InvIt::m_;
+  using InvIt::max_itrs_;
+  using InvIt::num_itrs_;
   using InvIt::residual_;
   using InvIt::returned_code_;
-  using InvIt::krylov_dim_;
-  using InvIt::inited_;
+  using InvIt::tol_;
+  using InvIt::vo_;
 
   Teuchos::RCP<Teuchos::ParameterList> belos_list_;
 };
@@ -74,7 +76,7 @@ class IterativeMethodBelos
  * "maximum number of iterations" [int] default = 100
  * "convergence criteria" Array(string) default = "{relative rhs}"
  ****************************************************************** */
-template <class Matrix, class Preconditioner, class Vector, class VectorSpace>
+template<class Matrix, class Preconditioner, class Vector, class VectorSpace>
 void
 IterativeMethodBelos<Matrix, Preconditioner, Vector, VectorSpace>::set_inverse_parameters(
   Teuchos::ParameterList& plist)
@@ -114,7 +116,7 @@ IterativeMethodBelos<Matrix, Preconditioner, Vector, VectorSpace>::set_inverse_p
   }
 }
 
-template <class Matrix, class Preconditioner, class Vector, class VectorSpace>
+template<class Matrix, class Preconditioner, class Vector, class VectorSpace>
 int
 IterativeMethodBelos<Matrix, Preconditioner, Vector, VectorSpace>::ApplyInverse(const Vector& v,
                                                                                 Vector& hv) const

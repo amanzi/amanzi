@@ -25,7 +25,7 @@
 namespace Amanzi {
 namespace AmanziEOS {
 
-template <typename EOS>
+template<typename EOS>
 class EOSFactory : public Utils::Factory<EOS> {
  public:
   using Utils::Factory<EOS>::CreateInstance;

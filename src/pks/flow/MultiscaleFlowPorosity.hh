@@ -41,7 +41,7 @@ namespace Flow {
 
 class MultiscaleFlowPorosity {
  public:
-  virtual ~MultiscaleFlowPorosity(){};
+  virtual ~MultiscaleFlowPorosity() {};
 
   // Field here is the water storage.
   // There is no need to use evaluators for this task.

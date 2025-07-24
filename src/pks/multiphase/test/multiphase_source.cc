@@ -132,7 +132,9 @@ run_test(const std::string& domain, const std::string& filename)
       WriteStateStatistics(*S, *vo);
     }
 
-    while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 2.0; }
+    while (MPK->AdvanceStep(t, t + dt, false)) {
+      dt /= 2.0;
+    }
 
     MPK->CommitStep(t, t + dt, Tags::DEFAULT);
 

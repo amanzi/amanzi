@@ -30,10 +30,8 @@ namespace Operators {
 void
 Mini_Diffusion1D::UpdateMatrices(const PDEType method)
 {
-  if (method == PDEType::PDE_DIFFUSION_MFD)
-    UpdateMatricesMFD_();
-  else if (method == PDEType::PDE_DIFFUSION_FD)
-    UpdateMatricesFD_();
+  if (method == PDEType::PDE_DIFFUSION_MFD) UpdateMatricesMFD_();
+  else if (method == PDEType::PDE_DIFFUSION_FD) UpdateMatricesFD_();
 }
 
 
@@ -162,7 +160,9 @@ Mini_Diffusion1D::UpdateJacobian(const WhetStone::DenseVector& p,
   up_(ncells - 1) = -ar - br * dkdp(ncells - 1);
 
   // derivatives of f(k(p))
-  if (type_l == Operators::OPERATOR_BC_DIRICHLET) { diag_(0) -= tmp0 * dkdp(0) * bcl; }
+  if (type_l == Operators::OPERATOR_BC_DIRICHLET) {
+    diag_(0) -= tmp0 * dkdp(0) * bcl;
+  }
 
   if (type_r == Operators::OPERATOR_BC_DIRICHLET) {
     diag_(ncells - 1) -= tmp1 * dkdp(ncells - 1) * bcr;

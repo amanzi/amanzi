@@ -54,28 +54,29 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
                                   Teuchos::RCP<TreeVector> f) override;
 
   // -- preconditioner
-  virtual void
-  UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt) override;
+  virtual void UpdatePreconditioner(double t,
+                                    Teuchos::RCP<const TreeVector> up,
+                                    double dt) override;
 
-  virtual int
-  ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) override;
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
+                                  Teuchos::RCP<TreeVector> Pu) override;
 
   // -- error norm for coupled system
-  virtual double
-  ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) override;
+  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
+                           Teuchos::RCP<const TreeVector> du) override;
 
   std::string name() override { return "thermal flow matrix fracture"; }
 
  private:
   // use flag to avoid double counting of coupling terms for Darcy PK
-  std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux>>
-  AddCouplingFluxes_(const Teuchos::RCP<CompositeVectorSpace>& cvs_matrix,
-                     const Teuchos::RCP<CompositeVectorSpace>& cvs_fracture,
-                     std::shared_ptr<const std::vector<std::vector<int>>> inds_matrix,
-                     std::shared_ptr<const std::vector<std::vector<int>>> inds_fracture,
-                     std::shared_ptr<const std::vector<double>> values,
-                     int i,
-                     Teuchos::RCP<Operators::TreeOperator>& op_tree);
+  std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux>> AddCouplingFluxes_(
+    const Teuchos::RCP<CompositeVectorSpace>& cvs_matrix,
+    const Teuchos::RCP<CompositeVectorSpace>& cvs_fracture,
+    std::shared_ptr<const std::vector<std::vector<int>>> inds_matrix,
+    std::shared_ptr<const std::vector<std::vector<int>>> inds_fracture,
+    std::shared_ptr<const std::vector<double>> values,
+    int i,
+    Teuchos::RCP<Operators::TreeOperator>& op_tree);
 
   void SwapEvaluatorField_(const Key& key,
                            Teuchos::RCP<CompositeVector>& fdm_copy,

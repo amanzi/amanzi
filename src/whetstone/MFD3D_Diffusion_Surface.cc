@@ -58,7 +58,9 @@ MFD3D_Diffusion::L2consistencyInverseSurface(int c,
   Tensor P(d_, 2);
   for (int i = 0; i < d_; i++) {
     P(i, i) = 1.0;
-    for (int j = 0; j < d_; j++) { P(i, j) -= v1[i] * v1[j]; }
+    for (int j = 0; j < d_; j++) {
+      P(i, j) -= v1[i] * v1[j];
+    }
   }
 
   // cell-based coordinate system

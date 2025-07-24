@@ -30,7 +30,7 @@ class WRM_linear : public WRM {
   explicit WRM_linear(Teuchos::ParameterList& plist);
 
   explicit WRM_linear(double pc0);
-  ~WRM_linear(){};
+  ~WRM_linear() {};
 
   // required methods from the base class
   double k_relative(double pc) const;

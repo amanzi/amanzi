@@ -54,7 +54,8 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelFactory)
     Teuchos::RCP<Amanzi::VerboseObject> vo_;
   };
 
-  ActivityModelFactoryTest::ActivityModelFactoryTest() : amf_(), activity_model_(NULL)
+  ActivityModelFactoryTest::ActivityModelFactoryTest()
+    : amf_(), activity_model_(NULL)
   {
     Teuchos::ParameterList plist;
     vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Chemistry", plist));

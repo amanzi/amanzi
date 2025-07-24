@@ -41,7 +41,7 @@ class ApertureModel_Constant : public ApertureModel {
   {
     a0_ = plist.get<double>("value");
   }
-  ~ApertureModel_Constant(){};
+  ~ApertureModel_Constant() {};
 
   // required methods from the base class
   virtual double OverburdenPressure() override { return 0.0; }

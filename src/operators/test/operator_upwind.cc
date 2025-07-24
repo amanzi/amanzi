@@ -41,8 +41,9 @@ namespace Amanzi {
 
 class Model {
  public:
-  Model(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh){};
-  ~Model(){};
+  Model(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    : mesh_(mesh) {};
+  ~Model() {};
 
   // main members
   double Value(int c, double pc) const { return analytic(pc); }
@@ -64,7 +65,7 @@ using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
 using namespace Amanzi::Operators;
 
-template <class UpwindClass>
+template<class UpwindClass>
 void
 RunTestUpwind(const std::string& method)
 {
@@ -126,7 +127,9 @@ RunTestUpwind(const std::string& method)
 
     // add boundary face component
     for (int f = 0; f != bc_model.size(); ++f) {
-      if (bc_model[f] == OPERATOR_BC_DIRICHLET) { ffaces[0][f] = bc_value[f]; }
+      if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+        ffaces[0][f] = bc_value[f];
+      }
     }
 
     // create and initialize face-based flux field

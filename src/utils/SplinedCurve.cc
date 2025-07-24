@@ -88,29 +88,29 @@ SplinedCurve::Value(double x)
     } else {
       // off the left end
       switch (left_) {
-      case SplineExtrapolation_t::CONSTANT:
-        return y_[0];
-      case SplineExtrapolation_t::LINEAR:
-        return y_[0] - (x - x_[0]) * dy_[0];
-      case SplineExtrapolation_t::SPLINE:
-        ++i;
-        break;
-      case SplineExtrapolation_t::THROW:
-        Exceptions::amanzi_throw(Amanzi_exception_SplineOutOfRange());
+        case SplineExtrapolation_t::CONSTANT:
+          return y_[0];
+        case SplineExtrapolation_t::LINEAR:
+          return y_[0] - (x - x_[0]) * dy_[0];
+        case SplineExtrapolation_t::SPLINE:
+          ++i;
+          break;
+        case SplineExtrapolation_t::THROW:
+          Exceptions::amanzi_throw(Amanzi_exception_SplineOutOfRange());
       }
     }
   } else if (i == dx_.size()) {
     // off the right end
     switch (right_) {
-    case SplineExtrapolation_t::CONSTANT:
-      return y_[i];
-    case SplineExtrapolation_t::LINEAR:
-      return y_[i] + (x - x_[i]) * dy_[i];
-    case SplineExtrapolation_t::SPLINE:
-      --i;
-      break;
-    case SplineExtrapolation_t::THROW:
-      Exceptions::amanzi_throw(Amanzi_exception_SplineOutOfRange());
+      case SplineExtrapolation_t::CONSTANT:
+        return y_[i];
+      case SplineExtrapolation_t::LINEAR:
+        return y_[i] + (x - x_[i]) * dy_[i];
+      case SplineExtrapolation_t::SPLINE:
+        --i;
+        break;
+      case SplineExtrapolation_t::THROW:
+        Exceptions::amanzi_throw(Amanzi_exception_SplineOutOfRange());
     }
   }
 
@@ -131,29 +131,29 @@ SplinedCurve::Derivative(double x)
     } else {
       // off the left end
       switch (left_) {
-      case SplineExtrapolation_t::CONSTANT:
-        return 0.;
-      case SplineExtrapolation_t::LINEAR:
-        return dy_[0];
-      case SplineExtrapolation_t::SPLINE:
-        ++i;
-        break;
-      case SplineExtrapolation_t::THROW:
-        Exceptions::amanzi_throw(Amanzi_exception_SplineOutOfRange());
+        case SplineExtrapolation_t::CONSTANT:
+          return 0.;
+        case SplineExtrapolation_t::LINEAR:
+          return dy_[0];
+        case SplineExtrapolation_t::SPLINE:
+          ++i;
+          break;
+        case SplineExtrapolation_t::THROW:
+          Exceptions::amanzi_throw(Amanzi_exception_SplineOutOfRange());
       }
     }
   } else if (i == dx_.size()) {
     // off the right end
     switch (right_) {
-    case SplineExtrapolation_t::CONSTANT:
-      return 0.;
-    case SplineExtrapolation_t::LINEAR:
-      return dy_[i];
-    case SplineExtrapolation_t::SPLINE:
-      --i;
-      break;
-    case SplineExtrapolation_t::THROW:
-      Exceptions::amanzi_throw(Amanzi_exception_SplineOutOfRange());
+      case SplineExtrapolation_t::CONSTANT:
+        return 0.;
+      case SplineExtrapolation_t::LINEAR:
+        return dy_[i];
+      case SplineExtrapolation_t::SPLINE:
+        --i;
+        break;
+      case SplineExtrapolation_t::THROW:
+        Exceptions::amanzi_throw(Amanzi_exception_SplineOutOfRange());
     }
   }
 
@@ -195,7 +195,9 @@ SplinedCurve::Setup_()
 
     // calculate the finite difference slopes
     std::vector<double> dy_fd(dx_.size(), 0.);
-    for (int i = 0; i != dx_.size(); ++i) { dy_fd[i] = (y_[i + 1] - y_[i]) / dx_[i]; }
+    for (int i = 0; i != dx_.size(); ++i) {
+      dy_fd[i] = (y_[i + 1] - y_[i]) / dx_[i];
+    }
 
     // enforce sufficient monotonicity constraint on slopes
     if (mean_slope > 0.) {

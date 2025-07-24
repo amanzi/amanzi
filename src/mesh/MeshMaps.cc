@@ -27,7 +27,7 @@ createContiguousMaps(const Map_ptr_type& ghosted, const Map_ptr_type& owned)
 
   // communicated owned to ghosted using the mesh's maps
   Epetra_IntVector owned_ids(*owned);
-  for (int i = 0; i != owned_ids.MyLength(); ++i) owned_ids[i] = owned_contiguous->GID(i);
+  for (int i = 0; i != owned_ids.MyLength() ; ++i) owned_ids[i] = owned_contiguous->GID(i);
   Epetra_Import importer(*ghosted, *owned);
   Epetra_IntVector all_ids(*ghosted);
   all_ids.Import(owned_ids, importer, Insert);
@@ -42,8 +42,8 @@ void
 MeshMaps::initialize(const MeshFramework& mesh, bool renumber)
 {
   std::vector<Entity_kind> to_construct{ Entity_kind::CELL, Entity_kind::FACE };
-  if (mesh.hasEdges()) to_construct.emplace_back(Entity_kind::EDGE);
-  if (mesh.hasNodes()) to_construct.emplace_back(Entity_kind::NODE);
+  if (mesh.hasEdges() ) to_construct.emplace_back(Entity_kind::EDGE);
+  if (mesh.hasNodes() ) to_construct.emplace_back(Entity_kind::NODE);
 
   for (const auto& kind : to_construct) {
     std::pair<Teuchos::RCP<Epetra_Map>, Teuchos::RCP<Epetra_Map>> maps;
@@ -191,19 +191,15 @@ MeshMaps::getImporter(Entity_kind kind) const
 std::size_t
 MeshMaps::getNBoundaryFaces(Parallel_kind ptype) const
 {
-  if (Parallel_kind::OWNED == ptype)
-    return owned_.at(Entity_kind::BOUNDARY_FACE)->NumMyElements();
-  else
-    return all_.at(Entity_kind::BOUNDARY_FACE)->NumMyElements();
+  if (Parallel_kind::OWNED == ptype) return owned_.at(Entity_kind::BOUNDARY_FACE)->NumMyElements();
+  else return all_.at(Entity_kind::BOUNDARY_FACE)->NumMyElements();
 }
 
 std::size_t
 MeshMaps::getNBoundaryNodes(Parallel_kind ptype) const
 {
-  if (Parallel_kind::OWNED == ptype)
-    return owned_.at(Entity_kind::BOUNDARY_NODE)->NumMyElements();
-  else
-    return all_.at(Entity_kind::BOUNDARY_NODE)->NumMyElements();
+  if (Parallel_kind::OWNED == ptype) return owned_.at(Entity_kind::BOUNDARY_NODE)->NumMyElements();
+  else return all_.at(Entity_kind::BOUNDARY_NODE)->NumMyElements();
 }
 
 

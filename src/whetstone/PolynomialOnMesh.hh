@@ -30,7 +30,8 @@ namespace WhetStone {
 
 class PolynomialOnMesh {
  public:
-  PolynomialOnMesh() : kind_((Entity_kind)WhetStone::CELL), id_(-1){};
+  PolynomialOnMesh()
+    : kind_((Entity_kind)WhetStone::CELL), id_(-1) {};
 
   Polynomial& poly() { return poly_; }
   const Polynomial& poly() const { return poly_; }

@@ -297,8 +297,7 @@ LimiterCell::LimiterTensorial_(const AmanziMesh::cEntity_ID_View& ids,
   if (!external_bounds_) {
     if (stencil_id_ == OPERATOR_LIMITER_STENCIL_F2C)
       BoundsForFaces(*field_, bc_model, bc_value, stencil_id_, bounds_);
-    else
-      BoundsForCells(*field_, bc_model, bc_value, stencil_id_, bounds_);
+    else BoundsForCells(*field_, bc_model, bc_value, stencil_id_, bounds_);
   }
 
   for (int n = 0; n < ids.size(); ++n) {
@@ -397,10 +396,8 @@ LimiterCell::LimiterExtensionTransportTensorial_()
 
         a = u1f - u1;
         if (fabs(a) > OPERATOR_LIMITER_TOLERANCE * (fabs(u1f) + fabs(u1))) {
-          if (a > 0)
-            b = u1 - bounds_c[0][c];
-          else
-            b = u1 - bounds_c[1][c];
+          if (a > 0) b = u1 - bounds_c[0][c];
+          else b = u1 - bounds_c[1][c];
 
           flux = fabs((*flux_)[0][f]);
           outflux += flux;
@@ -446,8 +443,7 @@ LimiterCell::LimiterScalar_(const AmanziMesh::cEntity_ID_View& ids,
   if (!external_bounds_) {
     if (stencil_id_ == OPERATOR_LIMITER_STENCIL_F2C)
       BoundsForFaces(*field_, bc_model, bc_value, stencil_id_, bounds_);
-    else
-      BoundsForCells(*field_, bc_model, bc_value, stencil_id_, bounds_);
+    else BoundsForCells(*field_, bc_model, bc_value, stencil_id_, bounds_);
   }
 
   double tol_base = sqrt(OPERATOR_LIMITER_TOLERANCE);
@@ -542,10 +538,8 @@ LimiterCell::LimiterExtensionTransportScalar_(Teuchos::RCP<Epetra_Vector> limite
         a = u1f - u1;
         tol = OPERATOR_LIMITER_TOLERANCE * (fabs(u1f) + fabs(u1));
         if (fabs(a) > tol) {
-          if (a > 0)
-            b = u1 - bounds_c[0][c];
-          else
-            b = u1 - bounds_c[1][c];
+          if (a > 0) b = u1 - bounds_c[0][c];
+          else b = u1 - bounds_c[1][c];
 
           flux = fabs((*flux_)[0][f]);
           outflux += flux;
@@ -739,10 +733,8 @@ LimiterCell::LimiterExtensionTransportKuzmin_(const std::vector<double>& field_l
 
           a = up - u1;
           if (fabs(a) > OPERATOR_LIMITER_TOLERANCE * (fabs(up) + fabs(u1))) {
-            if (a > 0)
-              b = u1 - field_local_min[c];
-            else
-              b = u1 - field_local_max[c];
+            if (a > 0) b = u1 - field_local_min[c];
+            else b = u1 - field_local_max[c];
 
             flux = fabs((*flux_)[0][f]) * weights[j];
             outflux += flux;

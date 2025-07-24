@@ -31,7 +31,7 @@ namespace AmanziSolvers {
 /* ******************************************************************
 * Initialization of the Solver
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 Teuchos::RCP<Solver<Vector, VectorSpace>>
 SolverFactory<Vector, VectorSpace>::Create(const std::string& name,
                                            const Teuchos::ParameterList& solver_list)
@@ -52,7 +52,7 @@ SolverFactory<Vector, VectorSpace>::Create(const std::string& name,
 /* ******************************************************************
 * Initialization of the solver
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 Teuchos::RCP<Solver<Vector, VectorSpace>>
 SolverFactory<Vector, VectorSpace>::Create(Teuchos::ParameterList& slist)
 {

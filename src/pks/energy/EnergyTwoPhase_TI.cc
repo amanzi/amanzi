@@ -127,7 +127,9 @@ EnergyTwoPhase_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
   auto& dEdT = S_->GetDerivativeW<CompositeVector>(
     energy_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, energy_key_);
 
-  if (dt > 0.0) { op_acc_->AddAccumulationDelta(*up->Data().ptr(), dEdT, dEdT, dt, "cell"); }
+  if (dt > 0.0) {
+    op_acc_->AddAccumulationDelta(*up->Data().ptr(), dEdT, dEdT, dt, "cell");
+  }
 
   // add advection term dHdT
   if (prec_include_enthalpy_) {
@@ -164,7 +166,9 @@ EnergyTwoPhase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<cons
   double ref_temp(273.0);
   for (int c = 0; c < ncells_owned; c++) {
     double tmp = fabs(duc[0][c]) / (fabs(uc[0][c] - ref_temp) + ref_temp);
-    if (tmp > error_t) { error_t = tmp; }
+    if (tmp > error_t) {
+      error_t = tmp;
+    }
   }
 
   // Cell error is based upon error in energy conservation relative to

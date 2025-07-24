@@ -51,10 +51,12 @@ class Analytic00b : public AnalyticBase {
     grad_ = Gradient(poly_);
 
     Amanzi::WhetStone::VectorPolynomial tmp(3, 3);
-    for (int i = 0; i < 3; ++i) { tmp[i] = v_[i] * poly_; }
+    for (int i = 0; i < 3; ++i) {
+      tmp[i] = v_[i] * poly_;
+    }
     rhs_ = Amanzi::WhetStone::Divergence(tmp) - poly_.Laplacian();
   }
-  ~Analytic00b(){};
+  ~Analytic00b() {};
 
   Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t)
   {

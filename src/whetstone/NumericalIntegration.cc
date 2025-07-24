@@ -28,7 +28,7 @@ namespace WhetStone {
 * Constructor.
 ****************************************************************** */
 NumericalIntegration::NumericalIntegration(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-  : mesh_(mesh), d_(mesh->getSpaceDimension()){};
+  : mesh_(mesh), d_(mesh->getSpaceDimension()) {};
 
 
 /* ******************************************************************
@@ -54,7 +54,9 @@ IntegrateFunctionsTriangle(const AmanziMesh::Point_List& xy,
     auto ym = xy[0] + y1 * q2d_points[n][1] + y2 * q2d_points[n][2];
 
     double a(q2d_weights[n]);
-    for (int i = 0; i < funcs.size(); ++i) { a *= funcs[i]->Value(ym); }
+    for (int i = 0; i < funcs.size(); ++i) {
+      a *= funcs[i]->Value(ym);
+    }
     integral += a;
   }
 
@@ -91,7 +93,9 @@ IntegrateFunctionsTetrahedron(const AmanziMesh::Point_List& xy,
     ym = xy[0] + y1 * q3d_points[n][1] + y2 * q3d_points[n][2] + y3 * q3d_points[n][3];
 
     double a(q3d_weights[n]);
-    for (int i = 0; i < funcs.size(); ++i) { a *= funcs[i]->Value(ym); }
+    for (int i = 0; i < funcs.size(); ++i) {
+      a *= funcs[i]->Value(ym);
+    }
     integral += a;
   }
 
@@ -119,10 +123,14 @@ IntegrateFunctionsEdge(const AmanziGeometry::Point& x1,
   double integral(0.0);
   for (int n = 0; n <= m; ++n) {
     double q1d(q1d_points[m][n]);
-    for (int i = 0; i < d; ++i) { xm[i] = x1[i] * q1d + x2[i] * (1.0 - q1d); }
+    for (int i = 0; i < d; ++i) {
+      xm[i] = x1[i] * q1d + x2[i] * (1.0 - q1d);
+    }
 
     double a(q1d_weights[m][n]);
-    for (int i = 0; i < funcs.size(); ++i) { a *= funcs[i]->Value(xm); }
+    for (int i = 0; i < funcs.size(); ++i) {
+      a *= funcs[i]->Value(xm);
+    }
     integral += a;
   }
 
@@ -230,7 +238,9 @@ NumericalIntegration::IntegratePolynomialCell(int c, const Polynomial& poly)
   tmp.ChangeOrigin(mesh_->getCellCentroid(c));
 
   double value(0.0);
-  for (int n = 0; n < tmp.size(); ++n) { value += integrals_.poly()(n) * tmp(n); }
+  for (int n = 0; n < tmp.size(); ++n) {
+    value += integrals_.poly()(n) * tmp(n);
+  }
 
   return value;
 }
@@ -264,7 +274,9 @@ NumericalIntegration::IntegratePolynomialsCell(int c,
 
   // dot product of coefficients of two polynomials.
   double value(0.0);
-  for (int n = 0; n < product.size(); ++n) { value += integrals_.poly()(n) * product(n); }
+  for (int n = 0; n < product.size(); ++n) {
+    value += integrals_.poly()(n) * product(n);
+  }
 
   return value;
 }
@@ -299,7 +311,9 @@ NumericalIntegration::IntegratePolynomialsCell(int c,
 
   // dot product of coefficients of two polynomials.
   double value(0.0);
-  for (int n = 0; n < product.size(); ++n) { value += integrals.poly()(n) * product(n); }
+  for (int n = 0; n < product.size(); ++n) {
+    value += integrals.poly()(n) * product(n);
+  }
 
   return value;
 }
@@ -392,7 +406,9 @@ IntegratePolynomialsEdge(const AmanziGeometry::Point& x1,
 {
   // minimal quadrature rule
   int k(0);
-  for (int i = 0; i < polys.size(); ++i) { k += polys[i]->order(); }
+  for (int i = 0; i < polys.size(); ++i) {
+    k += polys[i]->order();
+  }
   int m = k / 2;
   AMANZI_ASSERT(m < 8);
 
@@ -403,7 +419,9 @@ IntegratePolynomialsEdge(const AmanziGeometry::Point& x1,
     xm = x1 * q1d_points[m][n] + x2 * (1.0 - q1d_points[m][n]);
 
     double a(q1d_weights[m][n]);
-    for (int i = 0; i < polys.size(); ++i) { a *= polys[i]->Value(xm); }
+    for (int i = 0; i < polys.size(); ++i) {
+      a *= polys[i]->Value(xm);
+    }
     integral += a;
   }
 
@@ -471,7 +489,9 @@ NumericalIntegration::IntegrateMonomialsCell(int c, int k, Polynomial& integrals
 
   int nk = PolynomialSpaceDimension(d_, k - 1);
   int mk = MonomialSpaceDimension(d_, k);
-  for (int i = 0; i < mk; ++i) { integrals(nk + i) = 0.0; }
+  for (int i = 0; i < mk; ++i) {
+    integrals(nk + i) = 0.0;
+  }
 
   const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();

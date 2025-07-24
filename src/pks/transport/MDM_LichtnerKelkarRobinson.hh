@@ -47,7 +47,7 @@ namespace Transport {
 class MDM_LichtnerKelkarRobinson : public MDM {
  public:
   explicit MDM_LichtnerKelkarRobinson(Teuchos::ParameterList& plist);
-  ~MDM_LichtnerKelkarRobinson(){};
+  ~MDM_LichtnerKelkarRobinson() {};
 
   // Required methods from the base class
   // -- dispersion tensor of rank 2

@@ -41,8 +41,8 @@ Chemistry_PK::Chemistry_PK(Teuchos::ParameterList& pk_tree,
 {
   // note, we pass in null to the factory here to make sure there is no error
   // control used, which doesn't make sense for this application.
-  timestep_controller_ = createTimestepController<TreeVector>(name_,
-          plist_->sublist("timestep controller"), S_, Teuchos::null, Teuchos::null);
+  timestep_controller_ = createTimestepController<TreeVector>(
+    name_, plist_->sublist("timestep controller"), S_, Teuchos::null, Teuchos::null);
 };
 
 
@@ -52,7 +52,6 @@ Chemistry_PK::get_dt()
   if (dt_next_ < 0.) dt_next_ = timestep_controller_->getInitialTimestep();
   return dt_next_;
 }
-
 
 
 /* ******************************************************************
@@ -98,8 +97,7 @@ Chemistry_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_LOW))
     *vo_->os() << "----------------------------------------------------------------" << std::endl
-               << "Advancing: t0 = " << t_old
-               << " t1 = " << t_new << " h = " << dt << std::endl
+               << "Advancing: t0 = " << t_old << " t1 = " << t_new << " h = " << dt << std::endl
                << "----------------------------------------------------------------" << std::endl;
   db_->WriteVector("C_old",
                    S_->GetPtr<CompositeVector>(key_, tcc_tag_current_).ptr(),
@@ -179,8 +177,9 @@ Chemistry_PK::checkForError_(int& ierr, int& max_itrs, int& max_itrs_cell) const
   mesh_->getComm()->MaxAll(&ierr_l, &ierr, 1);
   if (ierr) return;
 
-  Reductions::MaxLoc itrs_l{ (double)max_itrs,
-    mesh_->getMap(AmanziMesh::Entity_kind::CELL, false).GID(max_itrs_cell) };
+  Reductions::MaxLoc itrs_l{
+    (double)max_itrs, mesh_->getMap(AmanziMesh::Entity_kind::CELL, false).GID(max_itrs_cell)
+  };
 
   Reductions::MaxLoc itrs_g = Reductions::reduceAllMaxLoc(*mesh_->getComm(), itrs_l);
   max_itrs = itrs_g.value;
@@ -188,8 +187,8 @@ Chemistry_PK::checkForError_(int& ierr, int& max_itrs, int& max_itrs_cell) const
 
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "max Newton iterations: " << (int) itrs_g.value << " in cell "
-               << itrs_g.gid << std::endl;
+    *vo_->os() << "max Newton iterations: " << (int)itrs_g.value << " in cell " << itrs_g.gid
+               << std::endl;
   }
 }
 

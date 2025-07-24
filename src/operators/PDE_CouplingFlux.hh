@@ -45,7 +45,7 @@ class PDE_CouplingFlux : public PDE_HelperDiscretization {
     global_op_ = global_op;
     Init_(plist, cvs_row, cvs_col, row_inds, col_inds);
   }
-  ~PDE_CouplingFlux(){};
+  ~PDE_CouplingFlux() {};
 
   // main members
   // -- required by the interface
@@ -62,10 +62,11 @@ class PDE_CouplingFlux : public PDE_HelperDiscretization {
 
   // optional calculation of flux from potential p
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
-                          const Teuchos::Ptr<CompositeVector>& u) override{};
+                          const Teuchos::Ptr<CompositeVector>& u) override {};
 
   // not implemented
-  virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override {
+  virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override
+  {
     Errors::Message msg("Coupling operator does not support boundary conditions.");
     Exceptions::amanzi_throw(msg);
   }

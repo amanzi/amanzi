@@ -20,7 +20,9 @@
 
 namespace Amanzi {
 
-class ObservableLineSegmentAqueous : public ObservableAqueous, public ObservableLineSegment {
+class ObservableLineSegmentAqueous
+  : public ObservableAqueous
+  , public ObservableLineSegment {
  public:
   ObservableLineSegmentAqueous(std::string variable,
                                std::string region,
@@ -29,8 +31,11 @@ class ObservableLineSegmentAqueous : public ObservableAqueous, public Observable
                                Teuchos::ParameterList& units_plist,
                                Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
-  virtual void
-  ComputeObservation(State& S, double* value, double* volume, std::string& unit, double dt);
+  virtual void ComputeObservation(State& S,
+                                  double* value,
+                                  double* volume,
+                                  std::string& unit,
+                                  double dt);
   virtual int ComputeRegionSize();
   void InterpolatedValues(State& S,
                           std::string& var,
@@ -41,8 +46,7 @@ class ObservableLineSegmentAqueous : public ObservableAqueous, public Observable
 };
 
 
-inline
-ObservableLineSegmentAqueous::ObservableLineSegmentAqueous(
+inline ObservableLineSegmentAqueous::ObservableLineSegmentAqueous(
   std::string variable,
   std::string region,
   std::string functional,
@@ -51,7 +55,7 @@ ObservableLineSegmentAqueous::ObservableLineSegmentAqueous(
   Teuchos::RCP<const AmanziMesh::Mesh> mesh)
   : ObservableAmanzi(variable, region, functional, plist, units_plist, mesh),
     ObservableAqueous(variable, region, functional, plist, units_plist, mesh),
-    ObservableLineSegment(variable, region, functional, plist, units_plist, mesh){};
+    ObservableLineSegment(variable, region, functional, plist, units_plist, mesh) {};
 
 
 inline int

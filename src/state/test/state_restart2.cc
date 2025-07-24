@@ -79,7 +79,9 @@ SUITE(RESTART2)
     // Set values
     int cell_index_list[] = { 0, 1, 2, 3 };
     double cell_values[] = { 10.0, 20.0, 30.0, 40.0 };
-    for (int i = 0; i != 4; ++i) { cell_values[i] += rank * 40; }
+    for (int i = 0; i != 4; ++i) {
+      cell_values[i] += rank * 40;
+    }
     auto& mf =
       *S->GetW<CompositeVector>("my_field", Tags::DEFAULT, "my_field").ViewComponent("cell");
     mf(0)->ReplaceMyValues(4, cell_values, cell_index_list);

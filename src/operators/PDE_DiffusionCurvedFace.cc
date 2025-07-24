@@ -81,7 +81,7 @@ PDE_DiffusionCurvedFace::UpdateMatrices(const Teuchos::Ptr<const CompositeVector
   if (const_K_.rank() > 0) Kc = const_K_;
 
   for (int c = 0; c < ncells_owned; c++) {
-    if (K_.get()) Kc = (*K_)[c];
+    if (K_.get() ) Kc = (*K_)[c];
     mfd.StiffnessMatrix(c, Kc, Acell);
     local_op_->matrices[c] = Acell;
   }
@@ -242,7 +242,9 @@ PDE_DiffusionCurvedFace::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u
     int nfaces = faces.size();
 
     WhetStone::DenseVector v(nfaces + 1), av(nfaces + 1);
-    for (int n = 0; n < nfaces; n++) { v(n) = u_face[0][faces[n]]; }
+    for (int n = 0; n < nfaces; n++) {
+      v(n) = u_face[0][faces[n]];
+    }
     v(nfaces) = u_cell[0][c];
 
     if (local_op_->matrices_shadow[c].NumRows() == 0) {
@@ -260,7 +262,9 @@ PDE_DiffusionCurvedFace::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u
     }
   }
 
-  for (int f = 0; f != nfaces_owned; ++f) { flux_data[0][f] /= hits[f]; }
+  for (int f = 0; f != nfaces_owned; ++f) {
+    flux_data[0][f] /= hits[f];
+  }
 }
 
 
@@ -284,7 +288,7 @@ PDE_DiffusionCurvedFace::CreateMassMatrices_()
 
   for (int c = 0; c < ncells_owned; c++) {
     int ok;
-    if (K_.get()) Kc = (*K_)[c];
+    if (K_.get() ) Kc = (*K_)[c];
 
     ok = mfd.MassMatrixInverse(c, Kc, Wff);
     Wff_cells_[c] = Wff;
@@ -305,7 +309,9 @@ PDE_DiffusionCurvedFace::CreateMassMatrices_()
 void
 PDE_DiffusionCurvedFace::ScaleMassMatrices(double s)
 {
-  for (int c = 0; c < ncells_owned; c++) { Wff_cells_[c] *= s; }
+  for (int c = 0; c < ncells_owned; c++) {
+    Wff_cells_[c] *= s;
+  }
 }
 
 
@@ -407,7 +413,9 @@ PDE_DiffusionCurvedFace::Init_(Teuchos::ParameterList& plist)
 
   // error analysis
   double err(0.0);
-  for (int f = 0; f < nfaces_owned; ++f) { err += norm((*bf_)[f] - mesh_->getFaceCentroid(f)); }
+  for (int f = 0; f < nfaces_owned; ++f) {
+    err += norm((*bf_)[f] - mesh_->getFaceCentroid(f));
+  }
   if (mesh_->getComm()->MyPID() == 0) {
     std::cout << "new face centroids deviation on rank zero is " << err / nfaces_owned << "\n\n";
   }
@@ -454,7 +462,7 @@ PDE_DiffusionCurvedFace::LSProblemSetupMatrix_(std::vector<WhetStone::DenseMatri
   // optional weighted l2-norm
   if (weight_.get()) {
     const auto& weight_f = *weight_->ViewComponent("face");
-    for (int f = 0; f < nfaces_owned; ++f) matrices[f] /= weight_f[0][f]; 
+    for (int f = 0; f < nfaces_owned; ++f) matrices[f] /= weight_f[0][f];
   }
 }
 
@@ -510,7 +518,7 @@ PDE_DiffusionCurvedFace::LSProblemPrimarySolution_(const CompositeVector& sol, i
 
   // optional weighted l2-norm
   Teuchos::RCP<const Epetra_MultiVector> weight_f;
-  if (weight_.get()) weight_f = weight_->ViewComponent("face", true);
+  if (weight_.get() ) weight_f = weight_->ViewComponent("face", true);
 
   // save to a vector which could be shared with WhetStone
   // add correction to generalized face centroid
@@ -533,7 +541,9 @@ PDE_DiffusionCurvedFace::LSProblemPrimarySolution_(const CompositeVector& sol, i
 
   bf->ScatterMasterToGhosted();
 
-  for (int f = 0; f < nfaces_wghost; ++f) { (*bf_)[f][i0] = bf_f[0][f]; }
+  for (int f = 0; f < nfaces_wghost; ++f) {
+    (*bf_)[f][i0] = bf_f[0][f];
+  }
 }
 
 } // namespace Operators

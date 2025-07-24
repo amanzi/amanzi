@@ -16,16 +16,16 @@ The conceptual PDE model for the quasi-static elastic deformation is
   =
   \rho \boldsymbol{g}
 
-where 
+where
 :math:`\boldsymbol{d}` is the displacement [m],
 :math:`\rho` is the rock density [kg/m^3],
 :math:`\boldsymbol{\varepsilon}` is the strain tensor,
 and
 :math:`\boldsymbol{g}` is the gravity vector [:math:`m/s^2`].
 
-For a linear elasticity problem, the stress tensor :math:`C` is a linear operator 
+For a linear elasticity problem, the stress tensor :math:`C` is a linear operator
 acting on the strain tensor.
-For a small-strain problem, this stress tensor becomes a nonlinear operator. 
+For a small-strain problem, this stress tensor becomes a nonlinear operator.
 Currently, the only available option is the Hardin-Drnevich model.
 
 */
@@ -70,10 +70,8 @@ class Mechanics_PK : public PK_PhysicalBDF {
                const Teuchos::RCP<Teuchos::ParameterList>& glist,
                const Teuchos::RCP<State>& S,
                const Teuchos::RCP<TreeVector>& soln)
-    : PK(pk_tree, glist, S, soln),
-      PK_PhysicalBDF(pk_tree, glist, S, soln),
-      passwd_(""){};
-  ~Mechanics_PK(){};
+    : PK(pk_tree, glist, S, soln), PK_PhysicalBDF(pk_tree, glist, S, soln), passwd_("") {};
+  ~Mechanics_PK() {};
 
   // methods required for PK interface
   virtual void parseParameterList() override {};
@@ -83,7 +81,7 @@ class Mechanics_PK : public PK_PhysicalBDF {
   virtual double get_dt() final { return dt_; }
   virtual void set_dt(double dt) final { dt_ = dt; }
 
-  virtual void CalculateDiagnostics(const Tag& tag) final{};
+  virtual void CalculateDiagnostics(const Tag& tag) final {};
 
   // -- check the admissibility of a solution
   //    override with the actual admissibility check
@@ -95,8 +93,9 @@ class Mechanics_PK : public PK_PhysicalBDF {
   //    using extrapolation and the timestep that is used to compute
   //    this predictor this function returns true if the predictor was
   //    modified, false if not
-  bool
-  ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u) override
+  bool ModifyPredictor(double dt,
+                       Teuchos::RCP<const TreeVector> u0,
+                       Teuchos::RCP<TreeVector> u) override
   {
     return false;
   }
@@ -105,11 +104,11 @@ class Mechanics_PK : public PK_PhysicalBDF {
   //    has computed it, will return true if it did change the correction,
   //    so that the nonlinear iteration can store the modified correction
   //    and pass it to NKA so that the NKA space can be updated
-  AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-  ModifyCorrection(double dt,
-                   Teuchos::RCP<const TreeVector> res,
-                   Teuchos::RCP<const TreeVector> u,
-                   Teuchos::RCP<TreeVector> du) override
+  AmanziSolvers::FnBaseDefs::ModifyCorrectionResult ModifyCorrection(
+    double dt,
+    Teuchos::RCP<const TreeVector> res,
+    Teuchos::RCP<const TreeVector> u,
+    Teuchos::RCP<TreeVector> du) override
   {
     return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
   }

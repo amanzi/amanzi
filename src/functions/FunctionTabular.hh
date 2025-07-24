@@ -135,7 +135,7 @@ class FunctionTabular : public Function {
                   const std::vector<Form_kind>& form,
                   std::vector<std::unique_ptr<Function>> func);
   FunctionTabular(const FunctionTabular& other);
-  ~FunctionTabular(){};
+  ~FunctionTabular() {};
 
   std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionTabular>(*this); }
   double operator()(const std::vector<double>& x) const;

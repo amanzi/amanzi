@@ -143,27 +143,27 @@ class TreeOperator : public Matrix<TreeVector, TreeVectorSpace> {
   // Inverse diagnostics... these may change
   virtual double residual() const override
   {
-    if (preconditioner_.get()) return preconditioner_->residual();
+    if (preconditioner_.get() ) return preconditioner_->residual();
     return 0.;
   }
   virtual int num_itrs() const override
   {
-    if (preconditioner_.get()) return preconditioner_->num_itrs();
+    if (preconditioner_.get() ) return preconditioner_->num_itrs();
     return 0;
   }
   virtual int returned_code() const override
   {
-    if (preconditioner_.get()) return preconditioner_->returned_code();
+    if (preconditioner_.get() ) return preconditioner_->returned_code();
     return 0;
   }
   virtual std::string returned_code_string() const override
   {
-    if (preconditioner_.get()) return preconditioner_->returned_code_string();
+    if (preconditioner_.get() ) return preconditioner_->returned_code_string();
     return "success";
   }
   virtual std::string name() const override
   {
-    if (preconditioner_.get()) return std::string("TreeOperator: ") + preconditioner_->name();
+    if (preconditioner_.get() ) return std::string("TreeOperator: ") + preconditioner_->name();
     return "TreeOperator: block diagonal";
   }
 
@@ -216,7 +216,9 @@ class TreeOperator_BlockDiagonalPreconditioner {
   using Vector_t = TreeOperator::Vector_t;
   using VectorSpace_t = TreeOperator::VectorSpace_t;
 
-  TreeOperator_BlockDiagonalPreconditioner(TreeOperator& op) : op_(op) {}
+  TreeOperator_BlockDiagonalPreconditioner(TreeOperator& op)
+    : op_(op)
+  {}
 
   int Apply(const TreeVector& X, TreeVector& Y) const
   {
@@ -230,11 +232,15 @@ class TreeOperator_BlockDiagonalPreconditioner {
   }
   void InitializeInverse()
   {
-    for (int n = 0; n != op_.get_col_size(); ++n) { op_.get_block(n, n)->InitializeInverse(); }
+    for (int n = 0; n != op_.get_col_size(); ++n) {
+      op_.get_block(n, n)->InitializeInverse();
+    }
   }
   void ComputeInverse()
   {
-    for (int n = 0; n != op_.get_col_size(); ++n) { op_.get_block(n, n)->ComputeInverse(); }
+    for (int n = 0; n != op_.get_col_size(); ++n) {
+      op_.get_block(n, n)->ComputeInverse();
+    }
   }
 
  private:
@@ -245,11 +251,11 @@ class TreeOperator_BlockDiagonalPreconditioner {
 // Nonmember function that flattens the TreeOperator into a 2D array of only
 // its leaf Operators.  Returns the shape (n_leaves_row, n_leaves_col)
 //
-std::pair<int, int>
-collectTreeOperatorLeaves(TreeOperator& tm,
-                          std::vector<std::vector<Teuchos::RCP<Operator>>>& leaves,
-                          std::size_t i,
-                          std::size_t j);
+std::pair<int, int> collectTreeOperatorLeaves(
+  TreeOperator& tm,
+  std::vector<std::vector<Teuchos::RCP<Operator>>>& leaves,
+  std::size_t i,
+  std::size_t j);
 
 } // namespace Impl
 

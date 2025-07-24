@@ -63,11 +63,12 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   chem_engine_->InitState(beaker_.properties, beaker_.state, beaker_.aux_data, beaker_.aux_output);
 
   // Amanzi stores many things in the state->initial conditions list, not locally.  Move them locally.
-  if (global_list->sublist("state").sublist("initial conditions").isSublist("geochemical conditions")) {
+  if (global_list->sublist("state")
+        .sublist("initial conditions")
+        .isSublist("geochemical conditions")) {
     plist_->sublist("initial conditions").sublist("geochemical conditions") =
       global_list->sublist("state").sublist("initial conditions").sublist("geochemical conditions");
   }
-
 }
 
 
@@ -124,13 +125,17 @@ Alquimia_PK::parseParameterList()
   temp_key_ = Keys::readKey(*plist_, domain_, "temperature", "");
 
   if (number_mineral_components_ > 0) {
-    mineral_volume_fraction_key_ = Keys::readKey(*plist_, domain_, "mineral volume fractions", "mineral_volume_fractions");
-    mineral_specific_surface_area_key_ = Keys::readKey(*plist_, domain_, "mineral specific surface area", "mineral_specific_surface_area");
-    mineral_rate_constant_key_ = Keys::readKey(*plist_, domain_, "mineral rate constant", "mineral_rate_constant");
+    mineral_volume_fraction_key_ =
+      Keys::readKey(*plist_, domain_, "mineral volume fractions", "mineral_volume_fractions");
+    mineral_specific_surface_area_key_ = Keys::readKey(
+      *plist_, domain_, "mineral specific surface area", "mineral_specific_surface_area");
+    mineral_rate_constant_key_ =
+      Keys::readKey(*plist_, domain_, "mineral rate constant", "mineral_rate_constant");
   }
 
   if (number_sorption_sites_ > 0) {
-    surface_site_density_key_ = Keys::readKey(*plist_, domain_, "surface site density", "surface_site_density");
+    surface_site_density_key_ =
+      Keys::readKey(*plist_, domain_, "surface site density", "surface_site_density");
   }
 
   if (num_sorption_components > 0) {
@@ -140,16 +145,20 @@ Alquimia_PK::parseParameterList()
   if (num_isotherm_components > 0) {
     // all of these are parameters
     isotherm_kd_key_ = Keys::readKey(*plist_, domain_, "isotherm kd", "isotherm_kd");
-    isotherm_freundlich_n_key_ = Keys::readKey(*plist_, domain_, "isotherm freundlich n", "isotherm_freundlich_n");
-    isotherm_langmuir_b_key_ = Keys::readKey(*plist_, domain_, "isotherm langmuir b", "isotherm_langmuir_b");
+    isotherm_freundlich_n_key_ =
+      Keys::readKey(*plist_, domain_, "isotherm freundlich n", "isotherm_freundlich_n");
+    isotherm_langmuir_b_key_ =
+      Keys::readKey(*plist_, domain_, "isotherm langmuir b", "isotherm_langmuir_b");
   }
 
   if (number_aqueous_kinetics_ > 0) {
-    first_order_decay_rate_constant_key_ = Keys::readKey(*plist_, domain_, "first order decay rate constant", "first_order_decay_rate_constant");
+    first_order_decay_rate_constant_key_ = Keys::readKey(
+      *plist_, domain_, "first order decay rate constant", "first_order_decay_rate_constant");
   }
 
   if (number_ion_exchange_sites_ > 0) {
-    cation_exchange_capacity_key_ = Keys::readKey(*plist_, domain_, "cation exchange capacity", "cation_exchange_capacity");
+    cation_exchange_capacity_key_ =
+      Keys::readKey(*plist_, domain_, "cation exchange capacity", "cation_exchange_capacity");
   }
 
   if (number_aux_data_ > 0) {
@@ -167,29 +176,36 @@ Alquimia_PK::parseParameterList()
       pH_key_ = Keys::readKey(*plist_, domain_, "pH", "pH");
       aux_out_names_[name] = pH_key_;
     } else if (name == "mineral_saturation_index") {
-      mineral_sat_index_key_ = Keys::readKey(*plist_, domain_, "mineral saturation index", "mineral_saturation_index");
+      mineral_sat_index_key_ =
+        Keys::readKey(*plist_, domain_, "mineral saturation index", "mineral_saturation_index");
       aux_out_names_[name] = mineral_sat_index_key_;
     } else if (name == "mineral_reaction_rate") {
-      mineral_reaction_rate_key_ = Keys::readKey(*plist_, domain_, "mineral reaction rate", "mineral_reaction_rate");
+      mineral_reaction_rate_key_ =
+        Keys::readKey(*plist_, domain_, "mineral reaction rate", "mineral_reaction_rate");
       aux_out_names_[name] = mineral_reaction_rate_key_;
     } else if (name == "aqueous_kinetic_rate") {
-      aqueous_kinetic_rate_key_ = Keys::readKey(*plist_, domain_, "aqueous kinetic rate", "aqueous_kinetic_rate");
+      aqueous_kinetic_rate_key_ =
+        Keys::readKey(*plist_, domain_, "aqueous kinetic rate", "aqueous_kinetic_rate");
       aux_out_names_[name] = aqueous_kinetic_rate_key_;
     } else if (name == "primary_free_ion_concentration") {
-      primary_ion_conc_key_ = Keys::readKey(*plist_, domain_, "primary free ion concentration", "primary_free_ion_concentration");
+      primary_ion_conc_key_ = Keys::readKey(
+        *plist_, domain_, "primary free ion concentration", "primary_free_ion_concentration");
       aux_out_names_[name] = primary_ion_conc_key_;
     } else if (name == "primary_activity_coeff") {
-      primary_activity_coef_key_ = Keys::readKey(*plist_, domain_, "primary activity coefficient", "primary_activity_coefficient");
+      primary_activity_coef_key_ = Keys::readKey(
+        *plist_, domain_, "primary activity coefficient", "primary_activity_coefficient");
       aux_out_names_[name] = primary_activity_coef_key_;
     } else if (name == "secondary_free_ion_concentration") {
-      secondary_ion_conc_key_ = Keys::readKey(*plist_, domain_, "secondary free ion concentration", "secondary_free_ion_concentration");
+      secondary_ion_conc_key_ = Keys::readKey(
+        *plist_, domain_, "secondary free ion concentration", "secondary_free_ion_concentration");
       aux_out_names_[name] = secondary_ion_conc_key_;
     } else if (name == "secondary_activity_coeff") {
-      secondary_activity_coef_key_ = Keys::readKey(*plist_, domain_, "secondary activity coefficient", "secondary_activity_coefficient");
+      secondary_activity_coef_key_ = Keys::readKey(
+        *plist_, domain_, "secondary activity coefficient", "secondary_activity_coefficient");
       aux_out_names_[name] = secondary_activity_coef_key_;
-    // } else if (name == "gas_partial_pressure") {
-    //   gas_partial_pressure_key_ = Keys::readKey(*plist_, domain_, "gas partial pressure", "gas_partial_pressure");
-    //   aux_out_names_[name] = gas_partial_pressure_key_;
+      // } else if (name == "gas_partial_pressure") {
+      //   gas_partial_pressure_key_ = Keys::readKey(*plist_, domain_, "gas partial pressure", "gas_partial_pressure");
+      //   aux_out_names_[name] = gas_partial_pressure_key_;
     } else {
       // update this logic, keys, and CopyFromAlquimia(), adding new variables for storing diagnostics
       AMANZI_ASSERT(false);
@@ -208,7 +224,7 @@ Alquimia_PK::Setup()
 {
   Chemistry_PK::Setup();
 
-  {  // external fields, only at the current time
+  { // external fields, only at the current time
     auto keys = std::vector<Key>{ dens_key_, poro_key_, sat_key_, temp_key_ };
     for (const auto& key : keys) {
       if (!key.empty()) {
@@ -257,7 +273,7 @@ Alquimia_PK::Setup()
     if (!mineral_rate_constant_key_.empty()) {
       requireEvaluatorAtCurrent(mineral_rate_constant_key_, tag_current_, *S_)
         .SetMesh(mesh_)
-          ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, number_mineral_components_);
+        ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, number_mineral_components_);
       S_->GetRecordSetW(mineral_rate_constant_key_).set_subfieldnames(mineral_comp_names_);
     }
 
@@ -267,7 +283,8 @@ Alquimia_PK::Setup()
         requireEvaluatorAtCurrent(first_order_decay_rate_constant_key_, tag_current_, *S_)
           .SetMesh(mesh_)
           ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, number_aqueous_kinetics_);
-        S_->GetRecordSetW(first_order_decay_rate_constant_key_).set_subfieldnames(aqueous_kinetics_names_);
+        S_->GetRecordSetW(first_order_decay_rate_constant_key_)
+          .set_subfieldnames(aqueous_kinetics_names_);
       } else {
         // User has not provided this list, instead it must be in the chemical
         // engine card.  We will not provide it.
@@ -283,8 +300,7 @@ Alquimia_PK::Setup()
   S_->GetRecordSetW(key_).set_subfieldnames(aqueous_comp_names_);
   requireEvaluatorAtCurrent(key_, tag_current_, *S_, passwd_);
 
-  if (tcc_tag_next_ != tag_next_)
-    requireEvaluatorAtNext(key_, tcc_tag_next_, *S_, true, passwd_);
+  if (tcc_tag_next_ != tag_next_) requireEvaluatorAtNext(key_, tcc_tag_next_, *S_, true, passwd_);
   if (tcc_tag_current_ != tag_current_)
     requireEvaluatorAtCurrent(key_, tcc_tag_current_, *S_, passwd_);
 
@@ -299,7 +315,8 @@ Alquimia_PK::Setup()
 
 
   { // mineral state data
-    auto keys = std::vector<Key>{mineral_volume_fraction_key_, mineral_specific_surface_area_key_};
+    auto keys =
+      std::vector<Key>{ mineral_volume_fraction_key_, mineral_specific_surface_area_key_ };
     for (const auto& key : keys) {
       if (!key.empty()) {
         requireEvaluatorAtNext(key, tag_next_, *S_, true, passwd_)
@@ -330,7 +347,7 @@ Alquimia_PK::Setup()
   }
 
   // aux_data
-  if (!aux_data_key_.empty()){
+  if (!aux_data_key_.empty()) {
     requireEvaluatorAtNext(aux_data_key_, tag_next_, *S_, true, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(false)
@@ -376,8 +393,8 @@ Alquimia_PK::Initialize()
     S_->GetRecordW(key, tag_next_, passwd_).set_initialized();
   }
 
-  if (chem_initial_conditions_.size() > 0 &&
-      std::abs(initial_conditions_time_ - S_->get_time()) < 1e-8 * (1.0 + std::abs(S_->get_time()))) {
+  if (chem_initial_conditions_.size() > 0 && std::abs(initial_conditions_time_ - S_->get_time()) <
+                                               1e-8 * (1.0 + std::abs(S_->get_time()))) {
     updateSubstate(Tags::DEFAULT);
     int ierr = 0;
 
@@ -427,8 +444,12 @@ int
 Alquimia_PK::initializeSingleCell_(int cell, const std::string& condition)
 {
   copyToAlquimia(cell, beaker_);
-  chem_engine_->EnforceCondition(condition, S_->get_time(tag_current_),
-          beaker_.properties, beaker_.state, beaker_.aux_data, beaker_.aux_output);
+  chem_engine_->EnforceCondition(condition,
+                                 S_->get_time(tag_current_),
+                                 beaker_.properties,
+                                 beaker_.state,
+                                 beaker_.aux_data,
+                                 beaker_.aux_output);
   copyFromAlquimia_(cell);
 
   // ETC: hacking to get consistent solution -- if there is no water
@@ -454,99 +475,148 @@ Alquimia_PK::updateSubstate(const Tag& water_tag)
 {
   // external things
   S_->GetEvaluator(poro_key_, water_tag).Update(*S_, name_);
-  substate_.porosity = &*S_->Get<CompositeVector>(poro_key_, water_tag).ViewComponent("cell", false);
+  substate_.porosity =
+    &*S_->Get<CompositeVector>(poro_key_, water_tag).ViewComponent("cell", false);
 
   S_->GetEvaluator(sat_key_, water_tag).Update(*S_, name_);
-  substate_.saturation_liquid = &*S_->Get<CompositeVector>(sat_key_, water_tag).ViewComponent("cell", false);
+  substate_.saturation_liquid =
+    &*S_->Get<CompositeVector>(sat_key_, water_tag).ViewComponent("cell", false);
 
   S_->GetEvaluator(dens_key_, water_tag).Update(*S_, name_);
-  substate_.mass_density_liquid = &*S_->Get<CompositeVector>(dens_key_, water_tag).ViewComponent("cell", false);
+  substate_.mass_density_liquid =
+    &*S_->Get<CompositeVector>(dens_key_, water_tag).ViewComponent("cell", false);
 
   if (!temp_key_.empty()) {
     S_->GetEvaluator(temp_key_, water_tag).Update(*S_, name_);
-    substate_.temperature = &*S_->Get<CompositeVector>(temp_key_, water_tag).ViewComponent("cell", false);
+    substate_.temperature =
+      &*S_->Get<CompositeVector>(temp_key_, water_tag).ViewComponent("cell", false);
   }
 
   // parameters
   if (!isotherm_kd_key_.empty()) {
     S_->GetEvaluator(isotherm_kd_key_, tag_current_).Update(*S_, name_);
-    substate_.isotherm_kd = &*S_->Get<CompositeVector>(isotherm_kd_key_, tag_current_).ViewComponent("cell", false);
+    substate_.isotherm_kd =
+      &*S_->Get<CompositeVector>(isotherm_kd_key_, tag_current_).ViewComponent("cell", false);
   }
 
   if (!isotherm_freundlich_n_key_.empty()) {
     S_->GetEvaluator(isotherm_freundlich_n_key_, tag_current_).Update(*S_, name_);
-    substate_.isotherm_freundlich_n = &*S_->Get<CompositeVector>(isotherm_freundlich_n_key_, tag_current_).ViewComponent("cell", false);
+    substate_.isotherm_freundlich_n =
+      &*S_->Get<CompositeVector>(isotherm_freundlich_n_key_, tag_current_)
+          .ViewComponent("cell", false);
   }
 
   if (!isotherm_langmuir_b_key_.empty()) {
     S_->GetEvaluator(isotherm_langmuir_b_key_, tag_current_).Update(*S_, name_);
-    substate_.isotherm_langmuir_b = &*S_->Get<CompositeVector>(isotherm_langmuir_b_key_, tag_current_).ViewComponent("cell", false);
+    substate_.isotherm_langmuir_b =
+      &*S_->Get<CompositeVector>(isotherm_langmuir_b_key_, tag_current_)
+          .ViewComponent("cell", false);
   }
 
   if (!mineral_rate_constant_key_.empty()) {
     S_->GetEvaluator(mineral_rate_constant_key_, tag_current_).Update(*S_, name_);
-    substate_.mineral_rate_constant = &*S_->Get<CompositeVector>(mineral_rate_constant_key_, tag_current_).ViewComponent("cell", false);
+    substate_.mineral_rate_constant =
+      &*S_->Get<CompositeVector>(mineral_rate_constant_key_, tag_current_)
+          .ViewComponent("cell", false);
   }
 
   if (!first_order_decay_rate_constant_key_.empty()) {
     S_->GetEvaluator(first_order_decay_rate_constant_key_, tag_current_).Update(*S_, name_);
-    substate_.first_order_decay_rate_constant = &*S_->Get<CompositeVector>(first_order_decay_rate_constant_key_, tag_current_).ViewComponent("cell", false);
+    substate_.first_order_decay_rate_constant =
+      &*S_->Get<CompositeVector>(first_order_decay_rate_constant_key_, tag_current_)
+          .ViewComponent("cell", false);
   }
 
   // internal things
   // Amanzi, this is COPY, in ATS, this is CURRENT / NEXT
-  substate_.tcc_old = &*S_->Get<CompositeVector>(key_, tcc_tag_current_).ViewComponent("cell", false);
-  substate_.tcc_new = &*S_->GetW<CompositeVector>(key_, tcc_tag_next_, passwd_).ViewComponent("cell", false);
+  substate_.tcc_old =
+    &*S_->Get<CompositeVector>(key_, tcc_tag_current_).ViewComponent("cell", false);
+  substate_.tcc_new =
+    &*S_->GetW<CompositeVector>(key_, tcc_tag_next_, passwd_).ViewComponent("cell", false);
 
   if (number_mineral_components_ > 0) {
-    substate_.mineral_volume_fraction_old = &*S_->Get<CompositeVector>(mineral_volume_fraction_key_, tag_current_).ViewComponent("cell", false);
-    substate_.mineral_volume_fraction_new = &*S_->GetW<CompositeVector>(mineral_volume_fraction_key_, tag_next_, passwd_).ViewComponent("cell", false);
+    substate_.mineral_volume_fraction_old =
+      &*S_->Get<CompositeVector>(mineral_volume_fraction_key_, tag_current_)
+          .ViewComponent("cell", false);
+    substate_.mineral_volume_fraction_new =
+      &*S_->GetW<CompositeVector>(mineral_volume_fraction_key_, tag_next_, passwd_)
+          .ViewComponent("cell", false);
 
-    substate_.mineral_specific_surface_area_old = &*S_->Get<CompositeVector>(mineral_specific_surface_area_key_, tag_current_).ViewComponent("cell", false);
-    substate_.mineral_specific_surface_area_new = &*S_->GetW<CompositeVector>(mineral_specific_surface_area_key_, tag_next_, passwd_).ViewComponent("cell", false);
+    substate_.mineral_specific_surface_area_old =
+      &*S_->Get<CompositeVector>(mineral_specific_surface_area_key_, tag_current_)
+          .ViewComponent("cell", false);
+    substate_.mineral_specific_surface_area_new =
+      &*S_->GetW<CompositeVector>(mineral_specific_surface_area_key_, tag_next_, passwd_)
+          .ViewComponent("cell", false);
   }
 
   if (number_sorption_sites_ > 0) {
-    substate_.surface_site_density_old = &*S_->Get<CompositeVector>(surface_site_density_key_, tag_current_).ViewComponent("cell", false);
-    substate_.surface_site_density_new = &*S_->GetW<CompositeVector>(surface_site_density_key_, tag_next_, passwd_).ViewComponent("cell", false);
+    substate_.surface_site_density_old =
+      &*S_->Get<CompositeVector>(surface_site_density_key_, tag_current_)
+          .ViewComponent("cell", false);
+    substate_.surface_site_density_new =
+      &*S_->GetW<CompositeVector>(surface_site_density_key_, tag_next_, passwd_)
+          .ViewComponent("cell", false);
   }
 
   if (!total_sorbed_key_.empty()) {
-    substate_.total_sorbed_old = &*S_->Get<CompositeVector>(total_sorbed_key_, tag_current_).ViewComponent("cell", false);
-    substate_.total_sorbed_new = &*S_->GetW<CompositeVector>(total_sorbed_key_, tag_next_, passwd_).ViewComponent("cell", false);
+    substate_.total_sorbed_old =
+      &*S_->Get<CompositeVector>(total_sorbed_key_, tag_current_).ViewComponent("cell", false);
+    substate_.total_sorbed_new = &*S_->GetW<CompositeVector>(total_sorbed_key_, tag_next_, passwd_)
+                                     .ViewComponent("cell", false);
   }
 
   if (number_ion_exchange_sites_ > 0) {
-    substate_.cation_exchange_capacity_old = &*S_->Get<CompositeVector>(cation_exchange_capacity_key_, tag_current_).ViewComponent("cell", false);
-    substate_.cation_exchange_capacity_new = &*S_->GetW<CompositeVector>(cation_exchange_capacity_key_, tag_next_, passwd_).ViewComponent("cell", false);
+    substate_.cation_exchange_capacity_old =
+      &*S_->Get<CompositeVector>(cation_exchange_capacity_key_, tag_current_)
+          .ViewComponent("cell", false);
+    substate_.cation_exchange_capacity_new =
+      &*S_->GetW<CompositeVector>(cation_exchange_capacity_key_, tag_next_, passwd_)
+          .ViewComponent("cell", false);
   }
 
   // aux data
   if (!aux_data_key_.empty()) {
-    substate_.aux_data_old = &*S_->Get<CompositeVector>(aux_data_key_, tag_current_).ViewComponent("cell", false);
-    substate_.aux_data_new = &*S_->GetW<CompositeVector>(aux_data_key_, tag_next_, passwd_).ViewComponent("cell", false);
+    substate_.aux_data_old =
+      &*S_->Get<CompositeVector>(aux_data_key_, tag_current_).ViewComponent("cell", false);
+    substate_.aux_data_new =
+      &*S_->GetW<CompositeVector>(aux_data_key_, tag_next_, passwd_).ViewComponent("cell", false);
   }
 
   // aux output
   if (!pH_key_.empty())
-    substate_.pH = &*S_->GetW<CompositeVector>(pH_key_, tag_next_, passwd_).ViewComponent("cell", false);
+    substate_.pH =
+      &*S_->GetW<CompositeVector>(pH_key_, tag_next_, passwd_).ViewComponent("cell", false);
   if (!mineral_sat_index_key_.empty())
-    substate_.mineral_saturation_index = &*S_->GetW<CompositeVector>(mineral_sat_index_key_, tag_next_, passwd_).ViewComponent("cell", false);
+    substate_.mineral_saturation_index =
+      &*S_->GetW<CompositeVector>(mineral_sat_index_key_, tag_next_, passwd_)
+          .ViewComponent("cell", false);
   if (!mineral_reaction_rate_key_.empty())
-    substate_.mineral_reaction_rate = &*S_->GetW<CompositeVector>(mineral_reaction_rate_key_, tag_next_, passwd_).ViewComponent("cell", false);
+    substate_.mineral_reaction_rate =
+      &*S_->GetW<CompositeVector>(mineral_reaction_rate_key_, tag_next_, passwd_)
+          .ViewComponent("cell", false);
   if (!aqueous_kinetic_rate_key_.empty())
-    substate_.aqueous_kinetic_rate = &*S_->GetW<CompositeVector>(aqueous_kinetic_rate_key_, tag_next_, passwd_).ViewComponent("cell", false);
+    substate_.aqueous_kinetic_rate =
+      &*S_->GetW<CompositeVector>(aqueous_kinetic_rate_key_, tag_next_, passwd_)
+          .ViewComponent("cell", false);
   if (!primary_ion_conc_key_.empty())
-    substate_.primary_free_ion_concentration = &*S_->GetW<CompositeVector>(primary_ion_conc_key_, tag_next_, passwd_).ViewComponent("cell", false);
+    substate_.primary_free_ion_concentration =
+      &*S_->GetW<CompositeVector>(primary_ion_conc_key_, tag_next_, passwd_)
+          .ViewComponent("cell", false);
   if (!primary_activity_coef_key_.empty())
-    substate_.primary_activity_coefficient = &*S_->GetW<CompositeVector>(primary_activity_coef_key_, tag_next_, passwd_).ViewComponent("cell", false);
+    substate_.primary_activity_coefficient =
+      &*S_->GetW<CompositeVector>(primary_activity_coef_key_, tag_next_, passwd_)
+          .ViewComponent("cell", false);
   if (!secondary_ion_conc_key_.empty())
-    substate_.secondary_free_ion_concentration = &*S_->GetW<CompositeVector>(secondary_ion_conc_key_, tag_next_, passwd_).ViewComponent("cell", false);
+    substate_.secondary_free_ion_concentration =
+      &*S_->GetW<CompositeVector>(secondary_ion_conc_key_, tag_next_, passwd_)
+          .ViewComponent("cell", false);
   if (!secondary_activity_coef_key_.empty())
-    substate_.secondary_activity_coefficient = &*S_->GetW<CompositeVector>(secondary_activity_coef_key_, tag_next_, passwd_).ViewComponent("cell", false);
+    substate_.secondary_activity_coefficient =
+      &*S_->GetW<CompositeVector>(secondary_activity_coef_key_, tag_next_, passwd_)
+          .ViewComponent("cell", false);
   // if (!gas_partial_pressure_key_.empty())
   //   substate_.gas_partial_pressure = &*S_->GetW<CompositeVector>(gas_partial_pressure_key_, tag_next_, passwd_).ViewComponent("cell", false);
-
 }
 
 
@@ -555,7 +625,7 @@ Alquimia_PK::updateSubstate(const Tag& water_tag)
 ******************************************************************* */
 void
 Alquimia_PK::ParseChemicalConditionRegions_(const Teuchos::ParameterList& param_list,
-                                           std::map<std::string, std::string>& conditions)
+                                            std::map<std::string, std::string>& conditions)
 {
   Errors::Message msg;
 
@@ -634,7 +704,7 @@ Alquimia_PK::XMLParameters()
         static int num_valid_types = 7;
         std::string type;
         for (int i = 0; i < num_valid_types; ++i) {
-          if (aqueous_constraint.isParameter(valid_types[i])) type = std::string(valid_types[i]);
+          if (aqueous_constraint.isParameter(valid_types[i]) ) type = std::string(valid_types[i]);
           // check whether a mineral or gas name have been provided to equilibrate with
           if (type == "mineral" || type == "gas") {
             if (equilibrate_name == "") {
@@ -705,9 +775,11 @@ Alquimia_PK::copyToAlquimia(int cell, AlquimiaBeaker& beaker)
 
   // minerals
   for (unsigned int i = 0; i != number_mineral_components_; ++i) {
-    beaker.state.mineral_volume_fraction.data[i] = (*substate_.mineral_volume_fraction_old)[i][cell];
+    beaker.state.mineral_volume_fraction.data[i] =
+      (*substate_.mineral_volume_fraction_old)[i][cell];
     beaker.properties.mineral_rate_cnst.data[i] = (*substate_.mineral_rate_constant)[i][cell];
-    beaker.state.mineral_specific_surface_area.data[i] = (*substate_.mineral_specific_surface_area_old)[i][cell];
+    beaker.state.mineral_specific_surface_area.data[i] =
+      (*substate_.mineral_specific_surface_area_old)[i][cell];
   }
 
   // surface complexation
@@ -716,7 +788,8 @@ Alquimia_PK::copyToAlquimia(int cell, AlquimiaBeaker& beaker)
 
   // ion exchange
   for (unsigned int i = 0; i != number_ion_exchange_sites_; ++i)
-    beaker.state.cation_exchange_capacity.data[i] = (*substate_.cation_exchange_capacity_old)[i][cell];
+    beaker.state.cation_exchange_capacity.data[i] =
+      (*substate_.cation_exchange_capacity_old)[i][cell];
 
   // sorption isotherms
   if (substate_.isotherm_kd)
@@ -732,7 +805,8 @@ Alquimia_PK::copyToAlquimia(int cell, AlquimiaBeaker& beaker)
   // aqueous kinetics
   if (substate_.first_order_decay_rate_constant != nullptr) {
     for (unsigned int i = 0; i != number_aqueous_kinetics_; ++i) {
-      beaker.properties.aqueous_kinetic_rate_cnst.data[i] = (*substate_.first_order_decay_rate_constant)[i][cell];
+      beaker.properties.aqueous_kinetic_rate_cnst.data[i] =
+        (*substate_.first_order_decay_rate_constant)[i][cell];
     }
   }
 
@@ -743,7 +817,7 @@ Alquimia_PK::copyToAlquimia(int cell, AlquimiaBeaker& beaker)
     beaker.aux_data.aux_ints.data[i] = (int)(*substate_.aux_data_old)[i][cell];
   }
   for (unsigned int i = 0; i != num_aux_doubles; ++i) {
-    beaker.aux_data.aux_doubles.data[i] = (*substate_.aux_data_old)[i+num_aux_ints][cell];
+    beaker.aux_data.aux_doubles.data[i] = (*substate_.aux_data_old)[i + num_aux_ints][cell];
   }
 }
 
@@ -764,8 +838,10 @@ Alquimia_PK::copyFromAlquimia_(int cell)
 
   // Mineral properties.
   for (unsigned i = 0; i != number_mineral_components_; ++i) {
-    (*substate_.mineral_volume_fraction_new)[i][cell] = beaker_.state.mineral_volume_fraction.data[i];
-    (*substate_.mineral_specific_surface_area_new)[i][cell] = beaker_.state.mineral_specific_surface_area.data[i];
+    (*substate_.mineral_volume_fraction_new)[i][cell] =
+      beaker_.state.mineral_volume_fraction.data[i];
+    (*substate_.mineral_specific_surface_area_new)[i][cell] =
+      beaker_.state.mineral_specific_surface_area.data[i];
   }
 
   // surface complexation
@@ -775,7 +851,8 @@ Alquimia_PK::copyFromAlquimia_(int cell)
 
   // ion exchange
   for (unsigned i = 0; i != number_ion_exchange_sites_; ++i) {
-    (*substate_.cation_exchange_capacity_new)[i][cell] = beaker_.state.cation_exchange_capacity.data[i];
+    (*substate_.cation_exchange_capacity_new)[i][cell] =
+      beaker_.state.cation_exchange_capacity.data[i];
   }
 
   int num_aux_ints = chem_engine_->Sizes().num_aux_integers;
@@ -784,19 +861,20 @@ Alquimia_PK::copyFromAlquimia_(int cell)
     (*substate_.aux_data_new)[i][cell] = (double)beaker_.aux_data.aux_ints.data[i];
   }
   for (unsigned i = 0; i != num_aux_doubles; ++i) {
-    (*substate_.aux_data_new)[i+num_aux_ints][cell] = beaker_.aux_data.aux_doubles.data[i];
+    (*substate_.aux_data_new)[i + num_aux_ints][cell] = beaker_.aux_data.aux_doubles.data[i];
   }
 
-  if (substate_.pH)
-    (*substate_.pH)[0][cell] = beaker_.aux_output.pH;
+  if (substate_.pH) (*substate_.pH)[0][cell] = beaker_.aux_output.pH;
 
   if (substate_.mineral_saturation_index)
     for (unsigned i = 0; i != substate_.mineral_saturation_index->NumVectors(); ++i)
-      (*substate_.mineral_saturation_index)[i][cell] = beaker_.aux_output.mineral_saturation_index.data[i];
+      (*substate_.mineral_saturation_index)[i][cell] =
+        beaker_.aux_output.mineral_saturation_index.data[i];
 
   if (substate_.mineral_reaction_rate)
     for (unsigned i = 0; i != substate_.mineral_reaction_rate->NumVectors(); ++i)
-      (*substate_.mineral_reaction_rate)[i][cell] = beaker_.aux_output.mineral_reaction_rate.data[i];
+      (*substate_.mineral_reaction_rate)[i][cell] =
+        beaker_.aux_output.mineral_reaction_rate.data[i];
 
   if (substate_.aqueous_kinetic_rate)
     for (unsigned i = 0; i != substate_.aqueous_kinetic_rate->NumVectors(); ++i)
@@ -804,19 +882,23 @@ Alquimia_PK::copyFromAlquimia_(int cell)
 
   if (substate_.primary_free_ion_concentration)
     for (unsigned i = 0; i != substate_.primary_free_ion_concentration->NumVectors(); ++i)
-      (*substate_.primary_free_ion_concentration)[i][cell] = beaker_.aux_output.primary_free_ion_concentration.data[i];
+      (*substate_.primary_free_ion_concentration)[i][cell] =
+        beaker_.aux_output.primary_free_ion_concentration.data[i];
 
   if (substate_.primary_activity_coefficient)
     for (unsigned i = 0; i != substate_.primary_activity_coefficient->NumVectors(); ++i)
-      (*substate_.primary_activity_coefficient)[i][cell] = beaker_.aux_output.primary_activity_coeff.data[i];
+      (*substate_.primary_activity_coefficient)[i][cell] =
+        beaker_.aux_output.primary_activity_coeff.data[i];
 
   if (substate_.secondary_free_ion_concentration)
     for (unsigned i = 0; i != substate_.secondary_free_ion_concentration->NumVectors(); ++i)
-      (*substate_.secondary_free_ion_concentration)[i][cell] = beaker_.aux_output.secondary_free_ion_concentration.data[i];
+      (*substate_.secondary_free_ion_concentration)[i][cell] =
+        beaker_.aux_output.secondary_free_ion_concentration.data[i];
 
   if (substate_.secondary_activity_coefficient)
     for (unsigned i = 0; i != substate_.secondary_activity_coefficient->NumVectors(); ++i)
-      (*substate_.secondary_activity_coefficient)[i][cell] = beaker_.aux_output.secondary_activity_coeff.data[i];
+      (*substate_.secondary_activity_coefficient)[i][cell] =
+        beaker_.aux_output.secondary_activity_coeff.data[i];
 
   // need num gas, which isn't yet used... --ETC
   // if (substate_.gas_partial_pressure)
@@ -869,20 +951,15 @@ Alquimia_PK::advanceSingleCell_(int cell, double dt)
 void
 Alquimia_PK::copyFields_(const Tag& tag_dest, const Tag& tag_source)
 {
-
   auto keys = std::vector<Key>{
-    total_sorbed_key_,
-    mineral_volume_fraction_key_,
-    mineral_specific_surface_area_key_,
-    surface_site_density_key_,
-    cation_exchange_capacity_key_,
-    aux_data_key_ };
+    total_sorbed_key_,         mineral_volume_fraction_key_,  mineral_specific_surface_area_key_,
+    surface_site_density_key_, cation_exchange_capacity_key_, aux_data_key_
+  };
 
   for (const auto& key : keys) {
-    if (!key.empty()) assign(key, tag_dest, tag_source, *S_);
+    if (!key.empty() ) assign(key, tag_dest, tag_source, *S_);
   }
 }
-
 
 
 } // namespace AmanziChemistry

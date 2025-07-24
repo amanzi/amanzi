@@ -23,14 +23,17 @@
 #include "TreeOperator.hh"
 #include "TreeVector.hh"
 
-template <class Vector, class Operator>
+template<class Vector, class Operator>
 class Verification {
  public:
-  Verification(Teuchos::RCP<const Operator> op) : op_(op){};
-  ~Verification(){};
+  Verification(Teuchos::RCP<const Operator> op)
+    : op_(op) {};
+  ~Verification() {};
 
-  void
-  CheckMatrixSPD(bool symmetry = true, bool pos_def = true, int nloops = 2, bool assembled = false)
+  void CheckMatrixSPD(bool symmetry = true,
+                      bool pos_def = true,
+                      int nloops = 2,
+                      bool assembled = false)
   {
     Vector a(op_->DomainMap()), ha(a), b(a), hb(a);
 

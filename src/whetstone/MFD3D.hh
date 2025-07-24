@@ -69,8 +69,10 @@ class MFD3D : public BilinearForm {
     Exceptions::amanzi_throw(msg);
   }
 
-  virtual void
-  L2Face(int f, const std::vector<Polynomial>& ve, const Polynomial* moments, Polynomial& vf)
+  virtual void L2Face(int f,
+                      const std::vector<Polynomial>& ve,
+                      const Polynomial* moments,
+                      Polynomial& vf)
   {
     Errors::Message msg("L2 face projector is not supported.");
     Exceptions::amanzi_throw(msg);
@@ -93,8 +95,10 @@ class MFD3D : public BilinearForm {
     Exceptions::amanzi_throw(msg);
   }
 
-  virtual void
-  H1Face(int f, const std::vector<Polynomial>& ve, const Polynomial* moments, Polynomial& vf)
+  virtual void H1Face(int f,
+                      const std::vector<Polynomial>& ve,
+                      const Polynomial* moments,
+                      Polynomial& vf)
   {
     Errors::Message msg("H1 face projector is not supported.");
     Exceptions::amanzi_throw(msg);
@@ -143,8 +147,7 @@ class MFD3D : public BilinearForm {
 
 
 // non-member functions
-void
-AddGradient(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, DenseMatrix& N);
+void AddGradient(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, DenseMatrix& N);
 
 } // namespace WhetStone
 } // namespace Amanzi

@@ -27,7 +27,7 @@ namespace Flow {
 class WRM_BrooksCorey : public WRM {
  public:
   explicit WRM_BrooksCorey(Teuchos::ParameterList& plist);
-  ~WRM_BrooksCorey(){};
+  ~WRM_BrooksCorey() {};
 
   // required methods from the base class
   double k_relative(double pc) const;
@@ -38,8 +38,12 @@ class WRM_BrooksCorey : public WRM {
   double dKdPc(double pc) const;
 
  private:
-  void
-  Init_(double lambda, double l, double alpha, double sr, std::string& krel_function, double pc0);
+  void Init_(double lambda,
+             double l,
+             double alpha,
+             double sr,
+             std::string& krel_function,
+             double pc0);
 
  private:
   double lambda_, l_, alpha_; // Brooks and Corey parameters: lambda, alpha

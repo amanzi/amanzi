@@ -26,9 +26,9 @@ namespace Operators {
 
 class Mini_Operator1D {
  public:
-  Mini_Operator1D(){};
+  Mini_Operator1D() {};
   Mini_Operator1D(const Mini_Operator1D& other);
-  ~Mini_Operator1D(){};
+  ~Mini_Operator1D() {};
 
   // initialize 1D mesh and geometry
   void Init(std::shared_ptr<const WhetStone::DenseVector> mesh);

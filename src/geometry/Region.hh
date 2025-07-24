@@ -111,7 +111,7 @@ class Point;
 class Region {
  public:
   //  Region() : tol_(1.e-8) {}
-  virtual ~Region(){};
+  virtual ~Region() {};
 
   // Dimension of the subdomain
   unsigned int get_manifold_dimension() const { return manifold_dimension_; }
@@ -156,8 +156,8 @@ class Region {
   }
 
   // Polyhedron with counter clockwise ordered faces (wrt normals)
-  virtual double
-  intersect(const Point_List& polytope, const std::vector<Entity_ID_List>& faces) const
+  virtual double intersect(const Point_List& polytope,
+                           const std::vector<Entity_ID_List>& faces) const
   {
     return -1.0;
   }
@@ -178,8 +178,7 @@ class Region {
       space_dimension_(geom_dim),
       geometric_(geometric),
       lifecycle_(lifecycle),
-      tol_(1.e-8)
-    {};
+      tol_(1.e-8) {};
 
  protected:
   // Name of identifier

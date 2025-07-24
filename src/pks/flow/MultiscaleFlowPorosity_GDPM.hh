@@ -66,11 +66,12 @@ pressure_msp = pressure in the matrix continuum.
 namespace Amanzi {
 namespace Flow {
 
-class MultiscaleFlowPorosity_GDPM : public MultiscaleFlowPorosity,
-                                    public AmanziSolvers::SolverFnBase<WhetStone::DenseVector> {
+class MultiscaleFlowPorosity_GDPM
+  : public MultiscaleFlowPorosity
+  , public AmanziSolvers::SolverFnBase<WhetStone::DenseVector> {
  public:
   MultiscaleFlowPorosity_GDPM(Teuchos::ParameterList& plist);
-  ~MultiscaleFlowPorosity_GDPM(){};
+  ~MultiscaleFlowPorosity_GDPM() {};
 
   // interface for porosity models
   // -- calculate field water storage assuming pressure equilibrium
@@ -111,13 +112,13 @@ class MultiscaleFlowPorosity_GDPM : public MultiscaleFlowPorosity,
   virtual void UpdatePreconditioner(const Teuchos::RCP<const WhetStone::DenseVector>& u) override;
 
   // -- other required functions
-  virtual void ChangedSolution() override{};
+  virtual void ChangedSolution() override {};
 
   // --  modifies the correction
-  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-  ModifyCorrection(const Teuchos::RCP<const WhetStone::DenseVector>& r,
-                   const Teuchos::RCP<const WhetStone::DenseVector>& u,
-                   const Teuchos::RCP<WhetStone::DenseVector>& du) override;
+  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult ModifyCorrection(
+    const Teuchos::RCP<const WhetStone::DenseVector>& r,
+    const Teuchos::RCP<const WhetStone::DenseVector>& u,
+    const Teuchos::RCP<WhetStone::DenseVector>& du) override;
 
   // modifiers
   void set_op(std::shared_ptr<Operators::Mini_Diffusion1D> op) { op_diff_ = op; }

@@ -90,28 +90,28 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
       K_(Teuchos::null),
       k_(Teuchos::null),
       dkdp_(Teuchos::null),
-      const_k_(1.0){};
+      const_k_(1.0) {};
 
   PDE_Diffusion(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : PDE_HelperDiscretization(mesh),
       K_(Teuchos::null),
       k_(Teuchos::null),
       dkdp_(Teuchos::null),
-      const_k_(1.0){};
+      const_k_(1.0) {};
 
   PDE_Diffusion(const Teuchos::RCP<AmanziMesh::Mesh>& mesh)
     : PDE_HelperDiscretization(mesh),
       K_(Teuchos::null),
       k_(Teuchos::null),
       dkdp_(Teuchos::null),
-      const_k_(1.0){};
+      const_k_(1.0) {};
 
   virtual ~PDE_Diffusion() = default;
 
   // main virtual members
   // -- setup
-  virtual void
-  SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor>>& K) = 0;
+  virtual void SetTensorCoefficient(
+    const Teuchos::RCP<const std::vector<WhetStone::Tensor>>& K) = 0;
   virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
                                     const Teuchos::RCP<const CompositeVector>& dkdp) = 0;
   void SetConstantScalarCoefficient(double k) { const_k_ = k; }
@@ -122,10 +122,10 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
                                               const Teuchos::Ptr<const CompositeVector>& u,
                                               double scalar_factor = 1.0) = 0;
 
-  virtual void
-  UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
-                                 const Teuchos::Ptr<const CompositeVector>& u,
-                                 const Teuchos::Ptr<const CompositeVector>& factor) = 0;
+  virtual void UpdateMatricesNewtonCorrection(
+    const Teuchos::Ptr<const CompositeVector>& flux,
+    const Teuchos::Ptr<const CompositeVector>& u,
+    const Teuchos::Ptr<const CompositeVector>& factor) = 0;
 
   // -- matrix modifications
   virtual void ModifyMatrices(const CompositeVector& u) = 0;
@@ -193,8 +193,8 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
 inline void
 PDE_Diffusion::ScaleMatricesColumns(const CompositeVector& s)
 {
-  if (!(local_op_schema_ & OPERATOR_SCHEMA_BASE_FACE)) AMANZI_ASSERT(false);
-  if (!s.HasComponent("cell")) AMANZI_ASSERT(false);
+  if (!(local_op_schema_ & OPERATOR_SCHEMA_BASE_FACE) ) AMANZI_ASSERT(false);
+  if (!s.HasComponent("cell") ) AMANZI_ASSERT(false);
 
   const auto& s_c = *s.ViewComponent("cell");
 
@@ -206,7 +206,9 @@ PDE_Diffusion::ScaleMatricesColumns(const CompositeVector& s)
 
     for (int n = 0; n < ncells; ++n) {
       double factor = s_c[0][cells[n]];
-      for (int m = 0; m < ncells; ++m) { Aface(m, n) *= factor; }
+      for (int m = 0; m < ncells; ++m) {
+        Aface(m, n) *= factor;
+      }
     }
   }
 }
@@ -221,7 +223,9 @@ PDE_Diffusion::little_k_space() const
   CompositeVectorSpace out;
   out.SetMesh(mesh_);
   out.SetGhosted();
-  if (little_k_ == OPERATOR_LITTLE_K_NONE) { return out; }
+  if (little_k_ == OPERATOR_LITTLE_K_NONE) {
+    return out;
+  }
   if (little_k_ != OPERATOR_LITTLE_K_UPWIND) {
     out.AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   }
@@ -257,10 +261,8 @@ PDE_Diffusion::set_jacobian_op(const Teuchos::RCP<Op>& op)
     if (local_op().get()) {
       auto index = std::find(global_operator()->begin(), global_operator()->end(), jac_op_) -
                    global_operator()->begin();
-      if (index != global_operator()->size())
-        global_operator()->OpPushBack(op);
-      else
-        global_operator()->OpReplace(op, index);
+      if (index != global_operator() ->size()) global_operator()->OpPushBack(op);
+      else global_operator()->OpReplace(op, index);
     } else {
       global_operator()->OpPushBack(op);
     }

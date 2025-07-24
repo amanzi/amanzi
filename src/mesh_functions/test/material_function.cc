@@ -43,8 +43,9 @@ main(int argc, char* argv[])
 // a test class to access data
 class DomainFunction : public MaterialMeshFunction {
  public:
-  DomainFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : MaterialMeshFunction(mesh){};
-  ~DomainFunction(){};
+  DomainFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : MaterialMeshFunction(mesh) {};
+  ~DomainFunction() {};
 
   // access specs
   const std::map<AmanziMesh::Entity_ID, double> get_ids(const AmanziMesh::Entity_kind& kind)

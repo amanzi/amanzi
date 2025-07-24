@@ -16,8 +16,8 @@
 namespace Amanzi {
 namespace Transport {
 
-EvaluatorMDM::EvaluatorMDM(Teuchos::ParameterList& plist) :
-  EvaluatorSecondary(plist)
+EvaluatorMDM::EvaluatorMDM(Teuchos::ParameterList& plist)
+  : EvaluatorSecondary(plist)
 {
   std::string domain = Keys::getDomain(my_keys_.front().first);
   Tag tag = my_keys_.front().second;
@@ -26,7 +26,7 @@ EvaluatorMDM::EvaluatorMDM(Teuchos::ParameterList& plist) :
 
   if (!is_surface_) {
     poro_key_ = Keys::readKey(plist_, domain, "porosity", "porosity");
-    dependencies_.insert(KeyTag{poro_key_, tag});
+    dependencies_.insert(KeyTag{ poro_key_, tag });
   }
 
   if (is_surface_) {
@@ -34,7 +34,7 @@ EvaluatorMDM::EvaluatorMDM(Teuchos::ParameterList& plist) :
   } else {
     velocity_key_ = Keys::readKey(plist_, domain, "velocity", "darcy_velocity");
   }
-  dependencies_.insert(KeyTag{velocity_key_, tag});
+  dependencies_.insert(KeyTag{ velocity_key_, tag });
 }
 
 void
@@ -44,8 +44,8 @@ EvaluatorMDM::Update_(State& S)
   Tag tag = key_tag.second;
 
   TensorVector& D = S.GetW<TensorVector>(my_keys_.front().first, tag, my_keys_.front().first);
-  const Epetra_MultiVector& velocity = *S.Get<CompositeVector>(velocity_key_, tag)
-    .ViewComponent("cell", false);
+  const Epetra_MultiVector& velocity =
+    *S.Get<CompositeVector>(velocity_key_, tag).ViewComponent("cell", false);
 
   const AmanziMesh::Mesh& m = *S.GetMesh(Keys::getDomain(key_tag.first));
 
@@ -65,8 +65,8 @@ EvaluatorMDM::Update_(State& S)
     }
 
   } else {
-    const Epetra_MultiVector& poro = *S.Get<CompositeVector>(poro_key_, tag)
-      .ViewComponent("cell", false);
+    const Epetra_MultiVector& poro =
+      *S.Get<CompositeVector>(poro_key_, tag).ViewComponent("cell", false);
 
     for (int c = 0; c != D.size(); ++c) {
       for (int i = 0; i != space_dim; ++i) v[i] = velocity[i][c];
@@ -81,28 +81,29 @@ void
 EvaluatorMDM::EnsureCompatibility(State& S)
 {
   KeyTag my_keytag = my_keys_.front();
-  auto& fac = S.Require<TensorVector, TensorVector_Factory>(my_keytag.first, my_keytag.second, my_keytag.first);
+  auto& fac = S.Require<TensorVector, TensorVector_Factory>(
+    my_keytag.first, my_keytag.second, my_keytag.first);
   EnsureCompatibility_Flags_(S);
 
   if (fac.map().Mesh() != Teuchos::null && mdms_ == Teuchos::null) {
     auto mesh = fac.map().Mesh();
     auto plist = Teuchos::rcpFromRef(plist_);
     bool flag(false);
-    mdms_ = CreateMDMPartition(fac.map().Mesh(), Teuchos::sublist(plist, "mechanical dispersion parameters"), flag);
+    mdms_ = CreateMDMPartition(
+      fac.map().Mesh(), Teuchos::sublist(plist, "mechanical dispersion parameters"), flag);
 
     if (!is_surface_) {
-      S.Require<CompositeVector,CompositeVectorSpace>(poro_key_, my_keytag.second)
+      S.Require<CompositeVector, CompositeVectorSpace>(poro_key_, my_keytag.second)
         .SetMesh(mesh)
         ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     }
 
-    S.Require<CompositeVector,CompositeVectorSpace>(velocity_key_, my_keytag.second)
+    S.Require<CompositeVector, CompositeVectorSpace>(velocity_key_, my_keytag.second)
       .SetMesh(mesh)
       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, mesh->getSpaceDimension());
 
     CompositeVectorSpace space;
-    space.SetMesh(mesh)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+    space.SetMesh(mesh)->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     fac.set_map(space);
   }
 

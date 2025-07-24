@@ -164,7 +164,9 @@ ReactiveTransportMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool
 
     while (!done) {
       // do not overstep
-      if (t_old + dt_done + dt_next > t_new) { dt_next = t_new - t_old - dt_done; }
+      if (t_old + dt_done + dt_next > t_new) {
+        dt_next = t_new - t_old - dt_done;
+      }
       S_->set_intermediate_time(t_old + dt_done + dt_next);
 
       fail = coupled_chemistry_pk_->AdvanceStep(t_old + dt_done, t_old + dt_done + dt_next, reinit);

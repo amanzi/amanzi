@@ -29,9 +29,11 @@ namespace WhetStone {
 
 class PolynomialBase : public WhetStoneFunction {
  public:
-  PolynomialBase() : d_(0), order_(-1), size_(0){};
-  PolynomialBase(int d, int order) : d_(d), order_(order), origin_(d){};
-  virtual ~PolynomialBase(){};
+  PolynomialBase()
+    : d_(0), order_(-1), size_(0) {};
+  PolynomialBase(int d, int order)
+    : d_(d), order_(order), origin_(d) {};
+  virtual ~PolynomialBase() {};
 
   // convert to regular vector
   virtual DenseVector ExpandCoefficients() const = 0;
