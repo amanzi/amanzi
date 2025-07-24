@@ -293,6 +293,24 @@ if (ENABLE_TESTS)
                     
         add_amanzi_test(operators_coupled_diffusion_2pe operators_coupled_diffusion NPROCS 2 KIND unit)
 
+        add_amanzi_test(operators_diffusion_multi_mesh operators_diffusion_multi_mesh
+                        KIND unit
+                        SOURCE test/Operator_MultiMesh.cc test/PDE_DiffusionMultiMesh.cc 
+                               test/Main.cc test/operator_diffusion_multi_mesh.cc
+                        LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+        add_amanzi_test(operators_diffusion_multi_mesh_cuts operators_diffusion_multi_mesh_cuts
+                        KIND unit
+                        SOURCE test/Operator_MultiMesh.cc test/PDE_DiffusionMultiMesh.cc 
+                               test/Main.cc test/operator_diffusion_multi_mesh_cuts.cc
+                        LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+        add_amanzi_test(operators_diffusion_multi_mesh_shells operators_diffusion_multi_mesh_shells
+                        KIND unit
+                        SOURCE test/Operator_MultiMesh.cc test/PDE_DiffusionMultiMesh.cc 
+                               test/Main.cc test/operator_diffusion_multi_mesh_shells.cc
+                        LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
         # convergence rates
         add_amanzi_test(operators_diffusion_convergence operators_diffusion_convergence
                         KIND unit
