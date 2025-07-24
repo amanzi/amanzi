@@ -408,9 +408,10 @@ PDE_DiffusionCurvedFace::Init_(Teuchos::ParameterList& plist)
   }
 
   // error analysis
-  double err(0.0), err_b(0.0);
+  double err(0.0), err_b(0.0), err_max(0.0);
   for (int f = 0; f < nfaces_owned; ++f) {
     err += norm((*bf_)[f] - mesh_->getFaceCentroid(f));
+    err_max = std::max(err_max, std::fabs(norm((*bf_)[f] - mesh_->getFaceCentroid(f))));
   }
 
   auto faces_bnd = mesh_->getBoundaryFaces();
@@ -422,7 +423,8 @@ PDE_DiffusionCurvedFace::Init_(Teuchos::ParameterList& plist)
   }
 
   if (mesh_->getComm()->MyPID() == 0) {
-    std::cout << "new face centroids deviation on rank zero is " << err / nfaces_owned 
+    std::cout << "new face centroids deviation on rank zero (max/avg): " 
+              << err_max << " " << err / nfaces_owned 
               << ", on boundary is " << err_b / faces_bnd.size() << "\n\n";
   }
 }
