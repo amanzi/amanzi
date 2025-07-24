@@ -36,7 +36,9 @@ namespace Operators {
 
 class BCs;
 
-class PDE_DiffusionNLFVwithGravity : public PDE_DiffusionNLFV, public PDE_DiffusionWithGravity {
+class PDE_DiffusionNLFVwithGravity
+  : public PDE_DiffusionNLFV
+  , public PDE_DiffusionWithGravity {
  public:
   PDE_DiffusionNLFVwithGravity(Teuchos::ParameterList& plist,
                                const Teuchos::RCP<Operator>& global_op,
@@ -125,8 +127,8 @@ class PDE_DiffusionNLFVwithGravity : public PDE_DiffusionNLFV, public PDE_Diffus
                           const Teuchos::Ptr<CompositeVector>& flux) override;
 
   // -- modify an operator
-  virtual void ModifyMatrices(const CompositeVector& u) override{};
-  virtual void ScaleMassMatrices(double s) override{};
+  virtual void ModifyMatrices(const CompositeVector& u) override {};
+  virtual void ScaleMassMatrices(double s) override {};
 
   // Developments
   // -- interface to solvers for treating nonlinear BCs.

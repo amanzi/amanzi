@@ -35,7 +35,7 @@ class EnergyTwoPhase_PK : public Energy_PK {
                     const Teuchos::RCP<Teuchos::ParameterList>& glist,
                     const Teuchos::RCP<State>& S,
                     const Teuchos::RCP<TreeVector>& soln);
-  virtual ~EnergyTwoPhase_PK(){};
+  virtual ~EnergyTwoPhase_PK() {};
 
   // methods required for PK intrefcae
   virtual void Setup() final;
@@ -43,7 +43,7 @@ class EnergyTwoPhase_PK : public Energy_PK {
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) final;
-  virtual void CalculateDiagnostics(const Tag& tag) final{};
+  virtual void CalculateDiagnostics(const Tag& tag) final {};
 
   double get_dt() final { return dt_; }
   void set_dt(double dt) final { dt_ = dt; }

@@ -42,16 +42,16 @@ using namespace Amanzi::AmanziGeometry;
 
 /*
   Let nu = 0. The mechanics equation is E d2u/dx2 = b dp/dx.
-  For volumetric strain e = du/dx, we have  E de/dx = b dp/dx. 
-  Hence 
+  For volumetric strain e = du/dx, we have  E de/dx = b dp/dx.
+  Hence
 
     e = (b p - P(t)) / E.
 
-  Inserting this in the flow equation and normalizing terms, we get 
+  Inserting this in the flow equation and normalizing terms, we get
 
     dp/dt - Cv d2 p / dx2 = b / (E S / (g rho) + b * b) dP(t)/dt
 
-  where Cv is the consolidation coefficient, 
+  where Cv is the consolidation coefficient,
 
     Cv = (k g) / mu / (S / (g rho) + b * b / E).
 */
@@ -101,8 +101,7 @@ RunTest(const std::string xmlInFileName)
       if (t > t0)
         pex[c] += (1.0 / k / k / k) * (1.0 - std::exp(-a * t0)) * std::sin(k * factor * x) *
                   std::exp(-a * (t - t0));
-      else
-        pex[c] += (1.0 / k / k / k) * (1.0 - std::exp(-a * t)) * std::sin(k * factor * x);
+      else pex[c] += (1.0 / k / k / k) * (1.0 - std::exp(-a * t)) * std::sin(k * factor * x);
     }
   }
   for (int c = 0; c < nx; ++c) {

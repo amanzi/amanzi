@@ -792,7 +792,9 @@ TEST(LIMITER_LINEAR_FUNCTION_FRACTURES)
     plist.set<int>("polynomial_order", 1);
     plist.set<bool>("limiter extension for transport", false);
 
-    if (i == 1) { plist.set<std::string>("limiter", "tensorial"); }
+    if (i == 1) {
+      plist.set<std::string>("limiter", "tensorial");
+    }
 
     if (i < 2) {
       bc_model.assign(nfaces_wghost, 0);

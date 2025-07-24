@@ -21,7 +21,8 @@ capabilities.
 #include "Teuchos_YamlParser_decl.hpp"
 
 
-int main(int argc, char* argv[])
+int
+main(int argc, char* argv[])
 {
   // input and output
   std::string output_xml, input_yaml;
@@ -58,7 +59,8 @@ int main(int argc, char* argv[])
 
   // convert
   // -- read
-  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::YAMLParameterList::parseYamlFile(input_yaml);
+  Teuchos::RCP<Teuchos::ParameterList> plist =
+    Teuchos::YAMLParameterList::parseYamlFile(input_yaml);
 
   // -- write
   if (output_xml.empty()) {

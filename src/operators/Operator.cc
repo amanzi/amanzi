@@ -199,7 +199,7 @@ Operator::SymbolicAssembleMatrix()
 {
   // Create the supermap given a space (set of possible schemas) and a
   // specific schema (assumed/checked to be consistent with the space).
-  if (!smap_.get()) smap_ = createSuperMap(*cvs_col_);
+  if (!smap_.get() ) smap_ = createSuperMap(*cvs_col_);
 
   // create the graph
   int row_size = MaxRowSize(*mesh_, schema_col());
@@ -230,11 +230,12 @@ Operator::SymbolicAssembleMatrix(const SuperMap& map,
                                  int my_block_col) const
 {
   Teuchos::OSTab tab = vo_->getOSTab();
-  if (vo_->os_OK(Teuchos::VERB_EXTREME)) *vo_->os() << "Symbolic Assembling..." << std::endl;
+  if (vo_->os_OK(Teuchos::VERB_EXTREME) ) *vo_->os() << "Symbolic Assembling..." << std::endl;
 
   // first of double dispatch via Visitor pattern
   for (auto& it : *this) {
-    if (vo_->os_OK(Teuchos::VERB_EXTREME)) *vo_->os() << "  op: " << it->schema_string << std::endl;
+    if (vo_->os_OK(Teuchos::VERB_EXTREME)
+      ) *vo_->os() << "  op: " << it->schema_string << std::endl;
     it->SymbolicAssembleMatrixOp(this, map, graph, my_block_row, my_block_col);
   }
 }
@@ -328,7 +329,8 @@ Operator::AssembleMatrix(const SuperMap& map,
 
   // first of double dispatch via Visitor pattern
   for (auto& it : *this) {
-    if (vo_->os_OK(Teuchos::VERB_EXTREME)) *vo_->os() << "  op: " << it->schema_string << std::endl;
+    if (vo_->os_OK(Teuchos::VERB_EXTREME)
+      ) *vo_->os() << "  op: " << it->schema_string << std::endl;
     it->AssembleMatrixOp(this, map, matrix, my_block_row, my_block_col);
   }
 }
@@ -622,7 +624,9 @@ Operator::InitializeInverse()
 void
 Operator::ComputeInverse()
 {
-  if (!initialize_complete_) { InitializeInverse(); }
+  if (!initialize_complete_) {
+    InitializeInverse();
+  }
   // assembly must be possible now
   AMANZI_ASSERT(preconditioner_.get());
   preconditioner_->ComputeInverse(); // NOTE: calls this->AssembleMatrix()
@@ -706,7 +710,9 @@ Operator::RestoreCheckPoint()
   *rhs_ = *rhs_checkpoint_;
 
   // restore local matrices without boundary conditions
-  for (auto& it : *this) { it->RestoreCheckPoint(); }
+  for (auto& it : *this) {
+    it->RestoreCheckPoint();
+  }
 
   assembly_complete_ = false;
   compute_complete_ = false;
@@ -736,7 +742,9 @@ Operator::const_op_iterator
 Operator::FindMatrixOp(int schema_dofs, int matching_rule, bool action) const
 {
   for (const_op_iterator it = begin(); it != end(); ++it) {
-    if ((*it)->Matches(schema_dofs, matching_rule)) { return it; }
+    if ((*it)->Matches(schema_dofs, matching_rule)) {
+      return it;
+    }
   }
 
   if (action) {
@@ -756,7 +764,9 @@ Operator::op_iterator
 Operator::FindMatrixOp(int schema_dofs, int matching_rule, bool action)
 {
   for (op_iterator it = begin(); it != end(); ++it) {
-    if ((*it)->Matches(schema_dofs, matching_rule)) { return it; }
+    if ((*it)->Matches(schema_dofs, matching_rule)) {
+      return it;
+    }
   }
 
   if (action) {

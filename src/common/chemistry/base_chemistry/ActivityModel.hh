@@ -31,7 +31,7 @@ namespace AmanziChemistry {
 class ActivityModel {
  public:
   ActivityModel();
-  virtual ~ActivityModel(){};
+  virtual ~ActivityModel() {};
 
   struct ActivityModelParameters {
     // if the activity model requires a database put the name here

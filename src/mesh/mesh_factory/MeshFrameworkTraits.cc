@@ -47,7 +47,9 @@ filter_preference(const Preference& pref)
 {
   Preference result;
   for (auto p : pref) {
-    if (framework_enabled(p)) { result.push_back(p); }
+    if (framework_enabled(p)) {
+      result.push_back(p);
+    }
   }
   return result;
 }

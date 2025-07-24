@@ -33,7 +33,7 @@ PDE_AdvectionUpwindFactory::Create(const Teuchos::RCP<Operator>& global_op)
   bool fractured_matrix = oplist_.isParameter("fracture");
 
   bool manifolds = false;
-  if (oplist_.isParameter("manifolds")) manifolds = oplist_.get<bool>("manifolds");
+  if (oplist_.isParameter("manifolds") ) manifolds = oplist_.get<bool>("manifolds");
 
   Teuchos::RCP<PDE_AdvectionUpwind> op;
 

@@ -56,7 +56,8 @@ struct TensorVector {
 
   TensorVector& operator=(const TensorVector& other) = default;
 
-  void PutScalar(double val) {
+  void PutScalar(double val)
+  {
     for (auto& t : data) {
       t.PutScalar(val);
     }
@@ -86,7 +87,8 @@ struct TensorVector {
 // -----------------------------------------------------------------------------
 class TensorVector_Factory {
  public:
-  TensorVector_Factory() : d_(0), rank_(0), ghosted_(false){};
+  TensorVector_Factory()
+    : d_(0), rank_(0), ghosted_(false) {};
 
   int dimension() const { return d_; }
 

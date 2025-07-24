@@ -17,27 +17,29 @@
 namespace Amanzi {
 
 EvaluatorVelocityReconstruction::EvaluatorVelocityReconstruction(Teuchos::ParameterList& plist)
-  : EvaluatorSecondaryMonotype<CompositeVector,CompositeVectorSpace>(plist)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   std::string domain = Keys::getDomain(my_keys_.front().first);
   Tag tag = my_keys_.front().second;
 
   flux_key_ = Keys::readKey(plist, domain, "water flux", "water_flux");
-  dependencies_.insert({flux_key_, tag});
+  dependencies_.insert({ flux_key_, tag });
 
   molar_dens_key_ = Keys::readKey(plist, domain, "molar density liquid", "molar_density_liquid");
-  dependencies_.insert({molar_dens_key_, tag});
+  dependencies_.insert({ molar_dens_key_, tag });
 }
 
 
 Teuchos::RCP<Evaluator>
-EvaluatorVelocityReconstruction::Clone() const {
+EvaluatorVelocityReconstruction::Clone() const
+{
   return Teuchos::rcp(new EvaluatorVelocityReconstruction(*this));
 }
 
 
 void
-EvaluatorVelocityReconstruction::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
+EvaluatorVelocityReconstruction::Evaluate_(const State& S,
+                                           const std::vector<CompositeVector*>& results)
 {
   Tag tag = my_keys_.front().second;
   const Epetra_MultiVector& flux =
@@ -45,8 +47,7 @@ EvaluatorVelocityReconstruction::Evaluate_(const State& S, const std::vector<Com
   const Epetra_MultiVector& nliq_c =
     *S.Get<CompositeVector>(molar_dens_key_, tag).ViewComponent("cell", false);
 
-  Epetra_MultiVector& velocity =
-    *results[0]->ViewComponent("cell", false);
+  Epetra_MultiVector& velocity = *results[0]->ViewComponent("cell", false);
 
   int d(mesh_->getSpaceDimension());
   AmanziGeometry::Point local_velocity(d);
@@ -70,7 +71,9 @@ EvaluatorVelocityReconstruction::Evaluate_(const State& S, const std::vector<Com
       for (int i = 0; i != d; ++i) {
         rhs[i] += normal[i] * flux[0][f];
         matrix(i, i) += normal[i] * normal[i];
-        for (int j = i + 1; j < d; ++j) { matrix(j, i) = matrix(i, j) += normal[i] * normal[j]; }
+        for (int j = i + 1; j < d; ++j) {
+          matrix(j, i) = matrix(i, j) += normal[i] * normal[j];
+        }
       }
     }
 
@@ -82,21 +85,21 @@ EvaluatorVelocityReconstruction::Evaluate_(const State& S, const std::vector<Com
 }
 
 
-
 void
 EvaluatorVelocityReconstruction::EnsureCompatibility_ToDeps_(State& S)
 {
   Tag tag = my_keys_.front().second;
-  CompositeVectorSpace& cvs = S.Require<CompositeVector,CompositeVectorSpace>(my_keys_.front().first, my_keys_.front().second);
+  CompositeVectorSpace& cvs = S.Require<CompositeVector, CompositeVectorSpace>(
+    my_keys_.front().first, my_keys_.front().second);
   if (mesh_ == Teuchos::null && cvs.Mesh() != Teuchos::null) {
     mesh_ = cvs.Mesh();
 
-    S.Require<CompositeVector,CompositeVectorSpace>(flux_key_, tag)
+    S.Require<CompositeVector, CompositeVectorSpace>(flux_key_, tag)
       .SetMesh(mesh_)
       ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1)
       ->SetGhosted("true");
 
-    S.Require<CompositeVector,CompositeVectorSpace>(molar_dens_key_, tag)
+    S.Require<CompositeVector, CompositeVectorSpace>(molar_dens_key_, tag)
       .SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
       ->SetGhosted("true");

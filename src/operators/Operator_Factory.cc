@@ -33,7 +33,7 @@ namespace Operators {
 Teuchos::RCP<Operator>
 Operator_Factory::Create()
 {
-  if (!plist_.get()) plist_ = Teuchos::rcp(new Teuchos::ParameterList("operator"));
+  if (!plist_.get() ) plist_ = Teuchos::rcp(new Teuchos::ParameterList("operator"));
 
   // deduce the type
   // -- first choice: type is provided in the plist
@@ -84,7 +84,7 @@ Operator_Factory::CreateFromSchema()
   AMANZI_ASSERT(schema_row_.get_base() == schema_col_.get_base());
   AMANZI_ASSERT(schema_row_.get_base() == AmanziMesh::Entity_kind::CELL);
 
-  if (!plist_.get()) plist_ = Teuchos::rcp(new Teuchos::ParameterList("operator"));
+  if (!plist_.get() ) plist_ = Teuchos::rcp(new Teuchos::ParameterList("operator"));
 
   // auto base = schema_row_.get_base();
   int size = schema_row_.size();
@@ -125,8 +125,8 @@ Operator_Factory::CreateFromSchema()
   // abstract operator is the best choice for multiple dofs, more
   // then two items in schema
   num1 = 0;
-  for (int i = 0; i < schema_row_.size(); ++i) num1 = std::max(num1, std::get<2>(schema_row_[i]));
-  for (int i = 0; i < schema_col_.size(); ++i) num1 = std::max(num1, std::get<2>(schema_col_[i]));
+  for (int i = 0; i < schema_row_.size() ; ++i) num1 = std::max(num1, std::get<2>(schema_row_[i]));
+  for (int i = 0; i < schema_col_.size() ; ++i) num1 = std::max(num1, std::get<2>(schema_col_[i]));
 
   if (num1 > 1) {
     auto cvs2 = Teuchos::rcp(new CompositeVectorSpace(cvsFromSchema(schema_col_, mesh_, true)));

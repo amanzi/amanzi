@@ -71,7 +71,6 @@ ReactiveTransport_PK::set_dt(double dt)
 }
 
 
-
 // -----------------------------------------------------------------------------
 // Advance each sub-PK individually, returning a failure as soon as possible.
 // -----------------------------------------------------------------------------

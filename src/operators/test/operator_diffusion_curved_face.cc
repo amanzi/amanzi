@@ -41,7 +41,7 @@
 * Exactness test for diffusion solver on meshes with curved faces.
 ***************************************************************** */
 void
-RunTestDiffusionCurved(int d, 
+RunTestDiffusionCurved(int d,
                        const std::string& filename,
                        int icase,
                        bool use_weight = false,
@@ -55,8 +55,9 @@ RunTestDiffusionCurved(int d,
 
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: elliptic solver, mesh with curved faces, new algorithm: " 
-                            << filename << std::endl;
+  if (MyPID == 0)
+    std::cout << "\nTest: elliptic solver, mesh with curved faces, new algorithm: " << filename
+              << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion_curved_face.xml";
@@ -71,10 +72,10 @@ RunTestDiffusionCurved(int d,
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<Mesh> mesh;
   if (filename == "" && d == 2) {
-    mesh = meshfactory.create(0.0,0.0, 1.0,1.0, nx,nx);
+    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, nx);
     DeformMesh(mesh, 7, 1.0);
   } else if (filename == "" && d == 3) {
-    mesh = meshfactory.create(0.0,0.0,0.0, 1.0,1.0,1.0, nx,nx,nx);
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx);
     DeformMesh(mesh, 7, 1.0);
   } else {
     mesh = meshfactory.create(filename);
@@ -86,10 +87,8 @@ RunTestDiffusionCurved(int d,
   int ncells_owned = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   Teuchos::RCP<AnalyticBase> ana;
-  if (filename == "")
-    ana = Teuchos::rcp(new Analytic00(mesh, 1));
-  else
-    ana = Teuchos::rcp(new Analytic00(mesh, 1));
+  if (filename == "") ana = Teuchos::rcp(new Analytic00(mesh, 1));
+  else ana = Teuchos::rcp(new Analytic00(mesh, 1));
 
   for (int c = 0; c < ncells_owned; c++) {
     const Point& xc = mesh->getCellCentroid(c);

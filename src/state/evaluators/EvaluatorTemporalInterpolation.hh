@@ -42,7 +42,6 @@ water content at an intermediate time (here called transport_current).
 namespace Amanzi {
 
 class EvaluatorTemporalInterpolation : public EvaluatorSecondary {
-
  public:
   explicit EvaluatorTemporalInterpolation(Teuchos::ParameterList& plist);
   EvaluatorTemporalInterpolation(const EvaluatorTemporalInterpolation& other) = default;
@@ -56,21 +55,20 @@ class EvaluatorTemporalInterpolation : public EvaluatorSecondary {
 
   // could implement this, but harder because chain rule is not in
   // EvaluatorSecondary.  Do we need it?
-  virtual void UpdateDerivative_(State& S,
-          const Key& wrt_key,
-          const Tag& wrt_tag) override {}
+  virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Tag& wrt_tag) override {}
 
-  virtual bool
-  IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const override {
+  virtual bool IsDifferentiableWRT(const State& S,
+                                   const Key& wrt_key,
+                                   const Tag& wrt_tag) const override
+  {
     return false;
   }
 
-protected:
+ protected:
   KeyTag current_, next_;
 
-private:
+ private:
   static Utils::RegisteredFactory<Evaluator, EvaluatorTemporalInterpolation> fac_;
-
 };
 
 } // namespace Amanzi

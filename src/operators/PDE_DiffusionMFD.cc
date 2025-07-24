@@ -56,7 +56,7 @@ PDE_DiffusionMFD::SetTensorCoefficient(const Teuchos::RCP<const std::vector<Whet
 
   if (local_op_schema_ ==
       OPERATOR_SCHEMA_BASE_CELL + OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL) {
-    if (K_ != Teuchos::null && K_.get()) AMANZI_ASSERT(K_->size() == ncells_owned);
+    if (K_ != Teuchos::null && K_.get() ) AMANZI_ASSERT(K_->size() == ncells_owned);
   }
 
   // changing the tensor coefficient invalidates the mass matrices
@@ -76,13 +76,17 @@ PDE_DiffusionMFD::SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>
 
   // compatibility checks
   if (k_ != Teuchos::null) {
-    if (little_k_ != OPERATOR_LITTLE_K_UPWIND) { AMANZI_ASSERT(k->HasComponent("cell")); }
+    if (little_k_ != OPERATOR_LITTLE_K_UPWIND) {
+      AMANZI_ASSERT(k->HasComponent("cell"));
+    }
 
     if (little_k_ != OPERATOR_LITTLE_K_STANDARD && little_k_ != OPERATOR_LITTLE_K_NONE) {
       AMANZI_ASSERT(k->HasComponent("face"));
     }
 
-    if (little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN) { AMANZI_ASSERT(k->HasComponent("twin")); }
+    if (little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN) {
+      AMANZI_ASSERT(k->HasComponent("twin"));
+    }
   }
 }
 
@@ -207,9 +211,9 @@ PDE_DiffusionMFD::UpdateMatricesMixed_little_k_()
   Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
   Teuchos::RCP<const Epetra_MultiVector> k_twin = Teuchos::null;
   if (k_ != Teuchos::null) {
-    if (k_->HasComponent("cell")) k_cell = k_->ViewComponent("cell");
-    if (k_->HasComponent("face")) k_face = k_->ViewComponent("face", true);
-    if (k_->HasComponent("twin")) k_twin = k_->ViewComponent("twin", true);
+    if (k_->HasComponent("cell") ) k_cell = k_->ViewComponent("cell");
+    if (k_->HasComponent("face") ) k_face = k_->ViewComponent("face", true);
+    if (k_->HasComponent("twin") ) k_twin = k_->ViewComponent("twin", true);
   }
 
   // update matrix blocks
@@ -224,7 +228,7 @@ PDE_DiffusionMFD::UpdateMatricesMixed_little_k_()
     double kc(1.0);
     std::vector<double> kf(nfaces, 1.0);
 
-    if (k_cell != Teuchos::null && k_cell.get()) kc = (*k_cell)[0][c];
+    if (k_cell != Teuchos::null && k_cell.get() ) kc = (*k_cell)[0][c];
 
     // -- chefs recommendation: SPD discretization with upwind
     if (little_k_ == OPERATOR_LITTLE_K_DIVK && k_face != Teuchos::null) {
@@ -343,7 +347,7 @@ PDE_DiffusionMFD::UpdateMatricesNodal_()
   if (const_K_.rank() > 0) K = const_K_;
 
   for (int c = 0; c < ncells_owned; c++) {
-    if (K_.get()) K = (*K_)[c];
+    if (K_.get() ) K = (*K_)[c];
 
     auto nodes = mesh_->getCellNodes(c);
     int nnodes = nodes.size();
@@ -403,7 +407,7 @@ PDE_DiffusionMFD::UpdateMatricesTPFA_()
   Ttmp.PutScalar(0.0);
 
   for (int c = 0; c < ncells_owned; c++) {
-    if (K_.get()) Kc = (*K_)[c];
+    if (K_.get() ) Kc = (*K_)[c];
     if (Kc.isZero()) continue; // We skip zero matrices
 
     const auto& faces = mesh_->getCellFaces(c);
@@ -526,8 +530,8 @@ PDE_DiffusionMFD::ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_trial,
   Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
   Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
   if (k_ != Teuchos::null) {
-    if (k_->HasComponent("cell")) k_cell = k_->ViewComponent("cell");
-    if (k_->HasComponent("face")) k_face = k_->ViewComponent("face", true);
+    if (k_->HasComponent("cell") ) k_cell = k_->ViewComponent("cell");
+    if (k_->HasComponent("face") ) k_face = k_->ViewComponent("face", true);
   }
 
   for (int c = 0; c != ncells_owned; ++c) {
@@ -539,7 +543,7 @@ PDE_DiffusionMFD::ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_trial,
     std::vector<double> kf(nfaces, 1.0);
     if (scaled_constraint_) {
       // un-rolling little-k data
-      if (k_cell != Teuchos::null && k_cell.get()) kc = (*k_cell)[0][c];
+      if (k_cell != Teuchos::null && k_cell.get() ) kc = (*k_cell)[0][c];
 
       if (little_k_ == OPERATOR_LITTLE_K_UPWIND) {
         for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
@@ -974,7 +978,7 @@ PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
   u->ScatterMasterToGhosted("face");
 
   if (k_ != Teuchos::null) {
-    if (k_->HasComponent("face")) k_->ScatterMasterToGhosted("face");
+    if (k_->HasComponent("face") ) k_->ScatterMasterToGhosted("face");
   }
 
   const Epetra_MultiVector& u_cell = *u->ViewComponent("cell");
@@ -988,7 +992,9 @@ PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
     int nfaces = faces.size();
 
     WhetStone::DenseVector v(nfaces + 1), av(nfaces + 1);
-    for (int n = 0; n < nfaces; n++) { v(n) = u_face[0][faces[n]]; }
+    for (int n = 0; n < nfaces; n++) {
+      v(n) = u_face[0][faces[n]];
+    }
     v(nfaces) = u_cell[0][c];
 
     if (local_op_->matrices_shadow[c].NumRows() == 0) {
@@ -1006,7 +1012,9 @@ PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
     }
   }
 
-  for (int f = 0; f != nfaces_owned; ++f) { flux_data[0][f] /= hits[f]; }
+  for (int f = 0; f != nfaces_owned; ++f) {
+    flux_data[0][f] /= hits[f];
+  }
 }
 
 
@@ -1036,7 +1044,9 @@ PDE_DiffusionMFD::UpdateFluxManifold_(const Teuchos::Ptr<const CompositeVector>&
     int nfaces = faces.size();
 
     WhetStone::DenseVector v(nfaces + 1), av(nfaces + 1);
-    for (int n = 0; n < nfaces; n++) { v(n) = u_face[0][faces[n]]; }
+    for (int n = 0; n < nfaces; n++) {
+      v(n) = u_face[0][faces[n]];
+    }
     v(nfaces) = u_cell[0][c];
 
     if (local_op_->matrices_shadow[c].NumRows() == 0) {
@@ -1080,7 +1090,7 @@ PDE_DiffusionMFD::CreateMassMatrices_()
 
   for (int c = 0; c < ncells_owned; c++) {
     int ok;
-    if (K_.get()) Kc = (*K_)[c];
+    if (K_.get() ) Kc = (*K_)[c];
 
     // For problems with degenerate coefficients we should skip WhetStone.
     if (Kc.Trace() == 0.0) {
@@ -1154,7 +1164,9 @@ PDE_DiffusionMFD::CreateMassMatrices_()
 void
 PDE_DiffusionMFD::ScaleMassMatrices(double s)
 {
-  for (int c = 0; c < ncells_owned; c++) { Wff_cells_[c] *= s; }
+  for (int c = 0; c < ncells_owned; c++) {
+    Wff_cells_[c] *= s;
+  }
 }
 
 
@@ -1416,7 +1428,9 @@ PDE_DiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
 
     WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
 
-    for (int n = 0; n != nfaces; ++n) { y_f[0][faces[n]] -= Acell(n, nfaces) * x_c[0][c]; }
+    for (int n = 0; n != nfaces; ++n) {
+      y_f[0][faces[n]] -= Acell(n, nfaces) * x_c[0][c];
+    }
   }
 
   y.GatherGhostedToMaster("face", Add);

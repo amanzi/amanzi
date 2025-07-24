@@ -28,7 +28,7 @@
 namespace Amanzi {
 namespace Functions {
 
-template <class Generic>
+template<class Generic>
 class GenericMeshFunction {
  public:
   typedef std::vector<std::string> RegionList;
@@ -42,8 +42,9 @@ class GenericMeshFunction {
   typedef std::vector<Teuchos::RCP<MeshSpec>> MeshSpecList;
 
  public:
-  GenericMeshFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : mesh_(mesh){};
-  ~GenericMeshFunction(){};
+  GenericMeshFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : mesh_(mesh) {};
+  ~GenericMeshFunction() {};
 
   // method that check uniqueness
   void AddSpec(const Teuchos::RCP<Spec>& spec);

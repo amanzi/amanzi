@@ -48,7 +48,9 @@ TEST(MESH_COLUMNS)
   if (AmanziMesh::framework_enabled(AmanziMesh::Framework::MSTK)) {
     frameworks.push_back(AmanziMesh::Framework::MSTK);
   }
-  if (nprocs == 1) { frameworks.push_back(AmanziMesh::Framework::SIMPLE); }
+  if (nprocs == 1) {
+    frameworks.push_back(AmanziMesh::Framework::SIMPLE);
+  }
 
   auto mesh_pars = Teuchos::rcp(new Teuchos::ParameterList());
   mesh_pars->set<std::string>("partitioner", "zoltan_rcb");

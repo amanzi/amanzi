@@ -43,12 +43,15 @@ class Operator_FaceCell : public Operator_Cell {
 
   // visit methods for Apply
   using Operator_Cell::ApplyMatrixFreeOp;
-  virtual int
-  ApplyMatrixFreeOp(const Op_Cell_FaceCell& op, const CompositeVector& X, CompositeVector& Y) const;
-  virtual int
-  ApplyMatrixFreeOp(const Op_Cell_Face& op, const CompositeVector& X, CompositeVector& Y) const;
-  virtual int
-  ApplyMatrixFreeOp(const Op_Face_Face& op, const CompositeVector& X, CompositeVector& Y) const;
+  virtual int ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
+                                const CompositeVector& X,
+                                CompositeVector& Y) const;
+  virtual int ApplyMatrixFreeOp(const Op_Cell_Face& op,
+                                const CompositeVector& X,
+                                CompositeVector& Y) const;
+  virtual int ApplyMatrixFreeOp(const Op_Face_Face& op,
+                                const CompositeVector& X,
+                                CompositeVector& Y) const;
   virtual int ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
                                 const CompositeVector& X,
                                 CompositeVector& Y) const;

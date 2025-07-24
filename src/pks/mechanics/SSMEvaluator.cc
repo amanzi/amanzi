@@ -39,7 +39,7 @@ SSMEvaluator::SSMEvaluator(Teuchos::ParameterList& plist, const Teuchos::RCP<SSM
 SSMEvaluator::SSMEvaluator(const SSMEvaluator& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
     ssm_(other.ssm_),
-    shear_strain_key_(other.shear_strain_key_){};
+    shear_strain_key_(other.shear_strain_key_) {};
 
 
 /* ******************************************************************

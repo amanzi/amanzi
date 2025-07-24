@@ -90,7 +90,7 @@ double
 MechanicsElasticity_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
                                   Teuchos::RCP<const TreeVector> du)
 {
-  if (!u->Data()->HasComponent("node")) return 0.0;
+  if (!u->Data() ->HasComponent("node")) return 0.0;
 
   const auto& uv = *u->Data()->ViewComponent("node");
   const auto& duv = *du->Data()->ViewComponent("node");

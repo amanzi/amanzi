@@ -114,11 +114,11 @@ class Mesh_MSTK : public MeshFramework {
   //
   // Number of entities of any kind (cell, face, node) and in a
   // particular category (OWNED, GHOST, ALL)
-  virtual std::size_t
-  getNumEntities(const Entity_kind kind, const Parallel_kind ptype) const override;
+  virtual std::size_t getNumEntities(const Entity_kind kind,
+                                     const Parallel_kind ptype) const override;
   // Get parallel type of entity
-  virtual Parallel_kind
-  getEntityPtype(const Entity_kind kind, const Entity_ID entid) const override;
+  virtual Parallel_kind getEntityPtype(const Entity_kind kind,
+                                       const Entity_ID entid) const override;
   // Global ID of any entity
   virtual Entity_GID getEntityGID(const Entity_kind kind, const Entity_ID lid) const override;
 
@@ -135,8 +135,8 @@ class Mesh_MSTK : public MeshFramework {
   virtual AmanziGeometry::Point getNodeCoordinate(const Entity_ID nodeid) const override;
 
   // Modify the coordinates of a node
-  virtual void
-  setNodeCoordinate(const Entity_ID nodeid, const AmanziGeometry::Point& coord) override;
+  virtual void setNodeCoordinate(const Entity_ID nodeid,
+                                 const AmanziGeometry::Point& coord) override;
 
   //
   // Downward Adjacencies
@@ -165,9 +165,9 @@ class Mesh_MSTK : public MeshFramework {
     View_type<const Direction_type, MemSpace_kind::HOST>* const face_dirs) const override;
 
   // Get edges of a cell
-  virtual void
-  getCellEdges(const Entity_ID cellid,
-               View_type<const Entity_ID, MemSpace_kind::HOST>& edgeids) const override;
+  virtual void getCellEdges(
+    const Entity_ID cellid,
+    View_type<const Entity_ID, MemSpace_kind::HOST>& edgeids) const override;
 
   // Get nodes of cell
   // On a distributed mesh, all nodes (OWNED or GHOST) of the cell
@@ -178,9 +178,9 @@ class Mesh_MSTK : public MeshFramework {
   // arbitrary order
   // In 2D, the nodes of the polygon will be returned in ccw order
   // consistent with the face normal
-  virtual void
-  getCellNodes(const Entity_ID cellid,
-               View_type<const Entity_ID, MemSpace_kind::HOST>& nodeids) const override;
+  virtual void getCellNodes(
+    const Entity_ID cellid,
+    View_type<const Entity_ID, MemSpace_kind::HOST>& nodeids) const override;
 
 
   // Edges and edge directions of a face
@@ -195,9 +195,9 @@ class Mesh_MSTK : public MeshFramework {
   // In 3D, the nodes of the face are returned in ccw order consistent
   // with the face normal
   // In 2D, nfnodes is 2
-  virtual void
-  getFaceNodes(const Entity_ID faceid,
-               View_type<const Entity_ID, MemSpace_kind::HOST>& nodeids) const override;
+  virtual void getFaceNodes(
+    const Entity_ID faceid,
+    View_type<const Entity_ID, MemSpace_kind::HOST>& nodeids) const override;
 
   // Get nodes of edge On a distributed mesh all nodes (OWNED or
   // GHOST) of the face are returned
@@ -208,51 +208,51 @@ class Mesh_MSTK : public MeshFramework {
   // Upward adjacencies
   //-------------------
   // Cells connected to a face
-  virtual void
-  getFaceCells(const Entity_ID faceid,
-               View_type<const Entity_ID, MemSpace_kind::HOST>& cellids) const override;
+  virtual void getFaceCells(
+    const Entity_ID faceid,
+    View_type<const Entity_ID, MemSpace_kind::HOST>& cellids) const override;
 
   // Cells of type 'ptype' connected to an edge
-  virtual void
-  getEdgeCells(const Entity_ID edgeid,
-               View_type<const Entity_ID, MemSpace_kind::HOST>& cellids) const override;
+  virtual void getEdgeCells(
+    const Entity_ID edgeid,
+    View_type<const Entity_ID, MemSpace_kind::HOST>& cellids) const override;
 
   // Faces of type 'ptype' connected to an edge
-  virtual void
-  getEdgeFaces(const Entity_ID edgeid,
-               View_type<const Entity_ID, MemSpace_kind::HOST>& faceids) const override;
+  virtual void getEdgeFaces(
+    const Entity_ID edgeid,
+    View_type<const Entity_ID, MemSpace_kind::HOST>& faceids) const override;
 
   // Cells of type 'ptype' connected to a node
-  virtual void
-  getNodeCells(const Entity_ID nodeid,
-               View_type<const Entity_ID, MemSpace_kind::HOST>& cellids) const override;
+  virtual void getNodeCells(
+    const Entity_ID nodeid,
+    View_type<const Entity_ID, MemSpace_kind::HOST>& cellids) const override;
 
   // Faces of type 'ptype' connected to a node
-  virtual void
-  getNodeFaces(const Entity_ID nodeid,
-               View_type<const Entity_ID, MemSpace_kind::HOST>& faceids) const override;
+  virtual void getNodeFaces(
+    const Entity_ID nodeid,
+    View_type<const Entity_ID, MemSpace_kind::HOST>& faceids) const override;
 
   // Edges of type 'ptype' connected to a node
-  virtual void
-  getNodeEdges(const Entity_ID nodeid,
-               View_type<const Entity_ID, MemSpace_kind::HOST>& edgeids) const override;
+  virtual void getNodeEdges(
+    const Entity_ID nodeid,
+    View_type<const Entity_ID, MemSpace_kind::HOST>& edgeids) const override;
 
   //
   // Get list of entities of type kind from a framework set.
   //
-  virtual bool
-  isValidSetType(const AmanziGeometry::RegionType rtype, const Entity_kind kind) const override
+  virtual bool isValidSetType(const AmanziGeometry::RegionType rtype,
+                              const Entity_kind kind) const override
   {
     return true;
   }
 
 
   // MSTK supports labeled sets
-  virtual void
-  getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
-                 const Entity_kind kind,
-                 const Parallel_kind ptype,
-                 View_type<const Entity_ID, MemSpace_kind::HOST>& entids) const override;
+  virtual void getSetEntities(
+    const AmanziGeometry::RegionLabeledSet& region,
+    const Entity_kind kind,
+    const Parallel_kind ptype,
+    View_type<const Entity_ID, MemSpace_kind::HOST>& entids) const override;
 
   // Run MSTK's internal checks - meant for debugging only
   // Returns true if everything is ok, false otherwise
@@ -420,23 +420,21 @@ Mesh_MSTK::getEntityPtype(const Entity_kind kind, const Entity_ID entid) const
   MEntity_ptr ment;
 
   switch (kind) {
-  case Entity_kind::CELL:
-    ment = (MEntity_ptr)cell_id_to_handle_[entid];
-    break;
-  case Entity_kind::FACE:
-    ment = (MEntity_ptr)face_id_to_handle_[entid];
-    break;
-  case Entity_kind::NODE:
-    ment = (MEntity_ptr)vtx_id_to_handle_[entid];
-    break;
-  default:
-    ment = NULL;
+    case Entity_kind::CELL:
+      ment = (MEntity_ptr)cell_id_to_handle_[entid];
+      break;
+    case Entity_kind::FACE:
+      ment = (MEntity_ptr)face_id_to_handle_[entid];
+      break;
+    case Entity_kind::NODE:
+      ment = (MEntity_ptr)vtx_id_to_handle_[entid];
+      break;
+    default:
+      ment = NULL;
   }
 
-  if (MEnt_PType(ment) == PGHOST)
-    return Parallel_kind::GHOST;
-  else
-    return Parallel_kind::OWNED;
+  if (MEnt_PType(ment) == PGHOST) return Parallel_kind::GHOST;
+  else return Parallel_kind::OWNED;
 }
 
 } // namespace AmanziMesh

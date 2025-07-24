@@ -269,7 +269,7 @@ class Flow_PK : public PK_PhysicalBDF {
           const Teuchos::RCP<Teuchos::ParameterList>& glist,
           const Teuchos::RCP<State>& S,
           const Teuchos::RCP<TreeVector>& soln);
-  virtual ~Flow_PK(){};
+  virtual ~Flow_PK() {};
 
   // members required by PK interface
   virtual void parseParameterList() override {};

@@ -62,11 +62,11 @@ class ResidualDebugger : public Utils::IOEvent {
     additional_vars_ = plist_.get<Teuchos::Array<std::string>>("additional variables", {});
   }
 
-  template <class VectorSpace>
+  template<class VectorSpace>
   void StartIteration(int attempt, const VectorSpace& space)
   {}
 
-  template <class Vector>
+  template<class Vector>
   void WriteVector(int iter,
                    const Vector& res,
                    const Teuchos::Ptr<const Vector>& u = Teuchos::null,
@@ -85,15 +85,13 @@ class ResidualDebugger : public Utils::IOEvent {
 };
 
 
-template <>
-void
-ResidualDebugger::StartIteration<TreeVectorSpace>(int attempt, const TreeVectorSpace& space);
-template <>
-void
-ResidualDebugger::WriteVector<TreeVector>(int iter,
-                                          const TreeVector& res,
-                                          const Teuchos::Ptr<const TreeVector>& u,
-                                          const Teuchos::Ptr<const TreeVector>& du);
+template<>
+void ResidualDebugger::StartIteration<TreeVectorSpace>(int attempt, const TreeVectorSpace& space);
+template<>
+void ResidualDebugger::WriteVector<TreeVector>(int iter,
+                                               const TreeVector& res,
+                                               const Teuchos::Ptr<const TreeVector>& u,
+                                               const Teuchos::Ptr<const TreeVector>& du);
 
 
 } // namespace AmanziSolvers

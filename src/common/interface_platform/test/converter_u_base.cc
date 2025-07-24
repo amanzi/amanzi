@@ -38,7 +38,7 @@ ComparePLists(const Teuchos::ParameterList& plist1,
   for (auto it = plist1.begin(); it != plist1.end(); ++it) {
     name = plist1.name(it);
     if (plist1.isSublist(name)) {
-      if (!plist2.isSublist(name)) return false;
+      if (!plist2.isSublist(name) ) return false;
 
       std::string name_tmp;
       bool flag = ComparePLists(plist1.sublist(name), plist2.sublist(name), name_tmp);
@@ -49,33 +49,33 @@ ComparePLists(const Teuchos::ParameterList& plist1,
       }
 
     } else if (plist1.isParameter(name)) {
-      if (!plist2.isParameter(name)) return false;
+      if (!plist2.isParameter(name) ) return false;
       const Teuchos::ParameterEntry& e1 = plist1.getEntry(name);
       const Teuchos::ParameterEntry& e2 = plist2.getEntry(name);
 
       if (e1.isType<double>()) {
-        if (!e2.isType<double>()) return false;
+        if (!e2.isType<double>() ) return false;
         double v1 = plist1.get<double>(name);
         double v2 = plist2.get<double>(name);
         if (fabs(v1 - v2) > fabs(v1) * 1e-12) return false;
       }
 
       if (e1.isType<std::string>()) {
-        if (!e2.isType<std::string>()) return false;
+        if (!e2.isType<std::string>() ) return false;
         std::string v1 = plist1.get<std::string>(name);
         std::string v2 = plist2.get<std::string>(name);
         if (v1 != v2) return false;
       }
 
       if (e1.isType<int>()) {
-        if (!e2.isType<int>()) return false;
+        if (!e2.isType<int>() ) return false;
         int v1 = plist1.get<int>(name);
         int v2 = plist2.get<int>(name);
         if (v1 != v2) return false;
       }
 
       if (e1.isType<Teuchos::Array<std::string>>()) {
-        if (!e2.isType<Teuchos::Array<std::string>>()) return false;
+        if (!e2.isType<Teuchos::Array<std::string>>() ) return false;
         std::vector<std::string> v1 = plist1.get<Teuchos::Array<std::string>>(name).toVector();
         std::vector<std::string> v2 = plist2.get<Teuchos::Array<std::string>>(name).toVector();
         if (v1.size() != v2.size()) return false;
@@ -84,7 +84,7 @@ ComparePLists(const Teuchos::ParameterList& plist1,
       }
 
       if (e1.isType<Teuchos::Array<int>>()) {
-        if (!e2.isType<Teuchos::Array<int>>()) return false;
+        if (!e2.isType<Teuchos::Array<int>>() ) return false;
         std::vector<int> v1 = plist1.get<Teuchos::Array<int>>(name).toVector();
         std::vector<int> v2 = plist2.get<Teuchos::Array<int>>(name).toVector();
         if (v1.size() != v2.size()) return false;
@@ -93,7 +93,7 @@ ComparePLists(const Teuchos::ParameterList& plist1,
       }
 
       if (e1.isType<Teuchos::Array<double>>()) {
-        if (!e2.isType<Teuchos::Array<double>>()) return false;
+        if (!e2.isType<Teuchos::Array<double>>() ) return false;
         std::vector<double> v1 = plist1.get<Teuchos::Array<double>>(name).toVector();
         std::vector<double> v2 = plist2.get<Teuchos::Array<double>>(name).toVector();
         if (v1.size() != v2.size()) return false;
@@ -149,7 +149,8 @@ TEST(CONVERTER_BASE)
       std::cout << std::endl
                 << "Successful translation. Validating the result..." << std::endl
                 << "    gold file: " << xmlFileName.str() << std::endl
-                << "    native file: " << ss.str() << std::endl << std::endl;
+                << "    native file: " << ss.str() << std::endl
+                << std::endl;
 
       old_xml = Teuchos::getParametersFromXmlFile(xmlFileName.str());
       new_xml.validateParameters(*old_xml);

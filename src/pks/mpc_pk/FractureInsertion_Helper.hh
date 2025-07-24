@@ -23,8 +23,7 @@ namespace Amanzi {
 
 // Populate advective coupling fluxes
 // flag = true for matrix, false for preconditioner
-void
-UpdateEnthalpyCouplingFluxes(
+void UpdateEnthalpyCouplingFluxes(
   const Teuchos::RCP<State>& S,
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_matrix,
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_fracture,

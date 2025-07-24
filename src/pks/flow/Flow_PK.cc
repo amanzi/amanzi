@@ -58,7 +58,8 @@ Flow_PK::Flow_PK(Teuchos::ParameterList& pk_tree,
 };
 
 
-Flow_PK::Flow_PK() : passwd_("")
+Flow_PK::Flow_PK()
+  : passwd_("")
 {
   vo_ = Teuchos::null;
 }
@@ -580,7 +581,9 @@ Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
         std::string name = it->first;
         if (tmp_list.isSublist(name)) {
           Teuchos::ParameterList& spec = tmp_list.sublist(name);
-          if (IsWellIndexRequire(spec)) { ComputeWellIndex(spec); }
+          if (IsWellIndexRequire(spec)) {
+            ComputeWellIndex(spec);
+          }
         }
       }
     }
@@ -676,10 +679,8 @@ Flow_PK::ComputeWellIndex(Teuchos::ParameterList& spec)
       }
       dx = xmax - xmin;
       dy = ymax - ymin;
-      if (d > 2)
-        h = zmax - zmin;
-      else
-        h = 1.0;
+      if (d > 2) h = zmax - zmin;
+      else h = 1.0;
 
       kx = perm[0][c];
       ky = perm[1][c];
@@ -708,7 +709,9 @@ Flow_PK::IsWellIndexRequire(Teuchos::ParameterList& spec)
     if (model == "simple well") {
       Teuchos::ParameterList well_list = spec.sublist("well");
       if (well_list.isParameter("submodel")) {
-        if (well_list.get<std::string>("submodel") == "bhp") { return true; }
+        if (well_list.get<std::string>("submodel") == "bhp") {
+          return true;
+        }
       }
     }
   }

@@ -71,10 +71,8 @@ RunTest(const std::string xmlInFileName)
   int status(0);
   double tmp(0.0);
   for (auto& quad : obs_data[label]) {
-    if (quad.value > tmp)
-      CHECK(status == 0);
-    else
-      status++;
+    if (quad.value > tmp) CHECK(status == 0);
+    else status++;
 
     tmp = quad.value;
   }

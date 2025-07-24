@@ -33,8 +33,8 @@ namespace Amanzi {
 
 class Model {
  public:
-  Model(){};
-  ~Model(){};
+  Model() {};
+  ~Model() {};
 
   // main members
   double Value(double pc) const { return analytic(pc); }

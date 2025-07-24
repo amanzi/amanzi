@@ -107,10 +107,8 @@ createRegion(const std::string& reg_name,
     std::vector<Point> points;
     Point pnt(dim);
     for (int i = 0; i < num_points; ++i) {
-      if (dim == 2)
-        pnt.set(pvec[i * dim], pvec[i * dim + 1]);
-      else if (dim == 3)
-        pnt.set(pvec[i * dim], pvec[i * dim + 1], pvec[i * dim + 2]);
+      if (dim == 2) pnt.set(pvec[i * dim], pvec[i * dim + 1]);
+      else if (dim == 3) pnt.set(pvec[i * dim], pvec[i * dim + 1], pvec[i * dim + 2]);
       points.push_back(pnt);
     }
 
@@ -134,8 +132,7 @@ createRegion(const std::string& reg_name,
     std::string name = plist.get<std::string>("label");
     std::string entity_str = plist.get<std::string>("entity");
 
-    if (entity_str == "Cell" || entity_str == "cell" || entity_str == "CELL")
-      entity_str = "CELL";
+    if (entity_str == "Cell" || entity_str == "cell" || entity_str == "CELL") entity_str = "CELL";
     else if (entity_str == "Face" || entity_str == "face" || entity_str == "FACE")
       entity_str = "FACE";
     else if (entity_str == "Node" || entity_str == "node" || entity_str == "NODE")
@@ -178,7 +175,8 @@ createRegion(const std::string& reg_name,
       gids = plist.get<Teuchos::Array<int>>("entity gids");
     }
 
-    region = Teuchos::rcp(new RegionEnumerated(reg_name, reg_id, entity_str, gids.toVector(), lifecycle));
+    region =
+      Teuchos::rcp(new RegionEnumerated(reg_name, reg_id, entity_str, gids.toVector(), lifecycle));
 
   } else if (shape == "enumerated set from file") {
     std::string filename;

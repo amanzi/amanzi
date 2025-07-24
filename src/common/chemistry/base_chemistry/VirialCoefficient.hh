@@ -26,7 +26,7 @@ namespace AmanziChemistry {
 class VirialCoefficient {
  public:
   VirialCoefficient();
-  ~VirialCoefficient(){};
+  ~VirialCoefficient() {};
 
   void UpdateVirial(const double& temp, const double& pressure);
 

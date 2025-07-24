@@ -232,7 +232,7 @@ Energy_PK::Setup()
         elist.set<std::string>("aperture key", aperture_key_)
           .set<std::string>("pressure key", pressure_key_)
           .set<std::string>("tag", "");
-        if (S_->HasRecord("hydrostatic_stress")) elist.set<bool>("use stress", true);
+        if (S_->HasRecord("hydrostatic_stress") ) elist.set<bool>("use stress", true);
 
         auto eval = Teuchos::rcp(new Evaluators::ApertureModelEvaluator(elist, fam));
         S_->SetEvaluator(aperture_key_, Tags::DEFAULT, eval);
@@ -276,14 +276,16 @@ Energy_PK::Setup()
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-     S_->RequireEvaluator(porosity_key_, Tags::DEFAULT);
+    S_->RequireEvaluator(porosity_key_, Tags::DEFAULT);
   }
 
 
   // set units
   S_->GetRecordSetW(temperature_key_).set_units("K");
   S_->GetRecordSetW(mol_flowrate_key_).set_units("mol/s");
-  if (flow_on_manifold_) { S_->GetRecordSetW(aperture_key_).set_units("m"); }
+  if (flow_on_manifold_) {
+    S_->GetRecordSetW(aperture_key_).set_units("m");
+  }
 }
 
 
@@ -388,11 +390,17 @@ Energy_PK::UpdateConductivityData(const Teuchos::Ptr<State>& S)
 void
 Energy_PK::UpdateSourceBoundaryData(double t_old, double t_new, const CompositeVector& u)
 {
-  for (int i = 0; i < bc_temperature_.size(); ++i) { bc_temperature_[i]->Compute(t_old, t_new); }
+  for (int i = 0; i < bc_temperature_.size(); ++i) {
+    bc_temperature_[i]->Compute(t_old, t_new);
+  }
 
-  for (int i = 0; i < bc_flux_.size(); ++i) { bc_flux_[i]->Compute(t_old, t_new); }
+  for (int i = 0; i < bc_flux_.size(); ++i) {
+    bc_flux_[i]->Compute(t_old, t_new);
+  }
 
-  for (int i = 0; i < srcs_.size(); ++i) { srcs_[i]->Compute(t_old, t_new); }
+  for (int i = 0; i < srcs_.size(); ++i) {
+    srcs_[i]->Compute(t_old, t_new);
+  }
 
   ComputeBCs(u);
 }
@@ -532,10 +540,8 @@ Energy_PK::ModifyCorrection(double dt,
 Teuchos::RCP<Operators::Operator>
 Energy_PK::my_operator(const Operators::OperatorType& type)
 {
-  if (type == Operators::OPERATOR_MATRIX)
-    return op_matrix_;
-  else if (type == Operators::OPERATOR_PRECONDITIONER_RAW)
-    return op_preconditioner_;
+  if (type == Operators::OPERATOR_MATRIX) return op_matrix_;
+  else if (type == Operators::OPERATOR_PRECONDITIONER_RAW) return op_preconditioner_;
   return Teuchos::null;
 }
 

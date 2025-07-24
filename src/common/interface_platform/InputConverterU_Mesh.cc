@@ -84,7 +84,9 @@ InputConverterU::TranslateMesh_()
 
   // Define the parameter partitioner_
   node = GetUniqueElementByTagsString_(inode, "partitioner", flag);
-  if (flag) { partitioner = mm.transcode(node->getTextContent()); }
+  if (flag) {
+    partitioner = mm.transcode(node->getTextContent());
+  }
 
   // Now we can properly parse the generate/read list.
   children = inode->getChildNodes();
@@ -165,13 +167,15 @@ InputConverterU::TranslateMesh_()
                  << std::setfill('0') << rank_;
               std::filesystem::path p(ss.str());
 
-              if (std::filesystem::exists(p)) filename = par_filename;
+              if (std::filesystem::exists(p) ) filename = par_filename;
             }
             mesh_list.set<std::string>("file", filename);
           }
         }
         node = GetUniqueElementByTagsString_(inode, "verify", flag3);
-        if (flag3) { verify = mm.transcode(node->getTextContent()); }
+        if (flag3) {
+          verify = mm.transcode(node->getTextContent());
+        }
         read = flag1 && flag2;
       }
     }
@@ -449,8 +453,12 @@ InputConverterU::TranslateRegions_()
           }
         }
 
-        if (!haveOp) { ThrowErrorMissing_("regions", "element", "operation", "logical"); }
-        if (!haveRL) { ThrowErrorMissing_("regions", "element", "region_list", "logical"); }
+        if (!haveOp) {
+          ThrowErrorMissing_("regions", "element", "operation", "logical");
+        }
+        if (!haveRL) {
+          ThrowErrorMissing_("regions", "element", "region_list", "logical");
+        }
       }
 
       else if (strcmp(node_name, "boundary") == 0) {
@@ -466,7 +474,8 @@ InputConverterU::TranslateRegions_()
         std::vector<double> low = GetAttributeVectorD_(reg_elem, "corner_coordinates", dim_, "m");
         std::vector<double> high =
           GetAttributeVectorD_(reg_elem, "opposite_corner_coordinates", dim_, "m");
-        std::vector<double> normals = GetAttributeVectorD_(reg_elem, "normals", dim_ * dim_, "", false);
+        std::vector<double> normals =
+          GetAttributeVectorD_(reg_elem, "normals", dim_ * dim_, "", false);
 
         out_list.sublist(reg_name)
           .sublist("region: box volume fractions")
@@ -533,7 +542,8 @@ void
 InputConverterU::CreateSubmesh_(Teuchos::ParameterList& mesh_list, bool all_faces)
 {
   Teuchos::Array<std::string> aux(1, "FRACTURE_NETWORK_INTERNAL");
-  mesh_list.sublist("unstructured").sublist("submesh")
+  mesh_list.sublist("unstructured")
+    .sublist("submesh")
     .set<Teuchos::Array<std::string>>("regions", aux)
     .set<std::string>("extraction method", "manifold mesh")
     .set<std::string>("domain name", "fracture")

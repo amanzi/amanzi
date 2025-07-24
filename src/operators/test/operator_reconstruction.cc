@@ -249,7 +249,9 @@ TEST(RECONSTRUCTION_QUADRATIC_2D)
   indicator.Compute(lifting);
   auto measure = indicator.get_measure();
 
-  for (int c = 0; c < measure.size(); ++c) { CHECK_CLOSE(measure[c], 1.0, 1e-12); }
+  for (int c = 0; c < measure.size(); ++c) {
+    CHECK_CLOSE(measure[c], 1.0, 1e-12);
+  }
 
   // Analyze reconstruction map
   const AmanziGeometry::Point xc = mesh->getCellCentroid(0);

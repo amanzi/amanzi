@@ -37,8 +37,8 @@
 class AnalyticDGBase {
  public:
   AnalyticDGBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order, bool advection)
-    : mesh_(mesh), order_(order), d_(mesh_->getSpaceDimension()), advection_(advection){};
-  ~AnalyticDGBase(){};
+    : mesh_(mesh), order_(order), d_(mesh_->getSpaceDimension()), advection_(advection) {};
+  ~AnalyticDGBase() {};
 
   // analytic data in conventional Taylor basis
   // -- diffusion tensor
@@ -79,14 +79,16 @@ class AnalyticDGBase {
   }
 
   // -- velocity
-  virtual Amanzi::AmanziGeometry::Point
-  VelocityExact(const Amanzi::AmanziGeometry::Point& p, double t)
+  virtual Amanzi::AmanziGeometry::Point VelocityExact(const Amanzi::AmanziGeometry::Point& p,
+                                                      double t)
   {
     Amanzi::WhetStone::VectorPolynomial v;
     VelocityTaylor(p, t, v);
 
     Amanzi::AmanziGeometry::Point tmp(d_);
-    for (int i = 0; i < d_; ++i) { tmp[i] = v[i](0, 0); }
+    for (int i = 0; i < d_; ++i) {
+      tmp[i] = v[i](0, 0);
+    }
     return tmp;
   }
 
@@ -155,7 +157,7 @@ AnalyticDGBase::InitialGuess(const Amanzi::WhetStone::DG_Modal& dg,
   for (int c = 0; c < ncells; ++c) {
     const Amanzi::AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
     if (inside != NULL)
-      if (!inside(xc)) continue;
+      if (!inside(xc) ) continue;
 
     Amanzi::WhetStone::Polynomial coefs;
     const Amanzi::WhetStone::Basis& basis = dg.cell_basis(c);
@@ -164,7 +166,7 @@ AnalyticDGBase::InitialGuess(const Amanzi::WhetStone::DG_Modal& dg,
     Amanzi::WhetStone::DenseVector data = coefs.coefs();
     basis.ChangeBasisNaturalToMy(data);
 
-    for (int n = 0; n < data.NumRows(); ++n) p[n][c] = data(n);
+    for (int n = 0; n < data.NumRows() ; ++n) p[n][c] = data(n);
   }
 }
 
@@ -420,10 +422,8 @@ AnalyticDGBase::GlobalOp(std::string op, double* val, int n)
   double* val_tmp = new double[n];
   for (int i = 0; i < n; ++i) val_tmp[i] = val[i];
 
-  if (op == "sum")
-    mesh_->getComm()->SumAll(val_tmp, val, n);
-  else if (op == "max")
-    mesh_->getComm()->MaxAll(val_tmp, val, n);
+  if (op == "sum") mesh_->getComm()->SumAll(val_tmp, val, n);
+  else if (op == "max") mesh_->getComm()->MaxAll(val_tmp, val, n);
 
   delete[] val_tmp;
 }

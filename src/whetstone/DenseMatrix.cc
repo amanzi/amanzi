@@ -128,7 +128,9 @@ DenseMatrix::Reshape(int mrow, int ncol)
   n_ = ncol;
 
   if (mem_ < m_ * n_) {
-    if (data_ != NULL) { delete[] data_; }
+    if (data_ != NULL) {
+      delete[] data_;
+    }
     mem_ = m_ * n_;
     data_ = new double[mem_];
   }
@@ -497,14 +499,26 @@ DenseMatrix::NullSpace()
   lwork = m_ + 5 * n_;
   std::vector<double> U(m_ * m_), V(ldv), S(n_), work(lwork);
 
-  DGESVD_F77("A", "N", &m_, &n_, data_, &m_, S.data(), U.data(),
-             &m_, V.data(), &ldv, work.data(), &lwork, &info);
+  DGESVD_F77("A",
+             "N",
+             &m_,
+             &n_,
+             data_,
+             &m_,
+             S.data(),
+             U.data(),
+             &m_,
+             V.data(),
+             &ldv,
+             work.data(),
+             &lwork,
+             &info);
 
   if (info != 0) AMANZI_ASSERT(false);
 
   double* data = D.Values();
   int offset = m_ * n_;
-  for (int i = 0; i < m_ * (m_ - n_); i++) data[i] = U[offset + i];
+  for (int i = 0; i < m_ * (m_ - n_) ; i++) data[i] = U[offset + i];
 
   return D;
 }
@@ -526,8 +540,20 @@ DenseMatrix::InverseMoorePenrose()
   lwork = std::max(m_ + 3 * n_, 5 * n_);
   std::vector<double> U(m_ * m_), V(n_ * n_), S(mn), work(lwork);
 
-  DGESVD_F77("A", "A", &m_, &n_, data_, &m_, S.data(), U.data(),
-             &m_, V.data(), &n_, work.data(), &lwork, &info);
+  DGESVD_F77("A",
+             "A",
+             &m_,
+             &n_,
+             data_,
+             &m_,
+             S.data(),
+             U.data(),
+             &m_,
+             V.data(),
+             &n_,
+             work.data(),
+             &lwork,
+             &info);
 
   if (info != 0) return 1;
 

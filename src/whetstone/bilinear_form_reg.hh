@@ -34,31 +34,31 @@ namespace Amanzi {
 namespace WhetStone {
 
 RegisteredFactory<MFD3D_BernardiRaugel> MFD3D_BernardiRaugel::reg_("BernardiRaugel");
-RegisteredFactory<MFD3D_BernardiRaugelGradDiv>
-  MFD3D_BernardiRaugelGradDiv::reg_("BernardiRaugel graddiv");
+RegisteredFactory<MFD3D_BernardiRaugelGradDiv> MFD3D_BernardiRaugelGradDiv::reg_(
+  "BernardiRaugel graddiv");
 
 RegisteredFactory<MFD3D_CrouzeixRaviart> MFD3D_CrouzeixRaviart::reg_("CrouzeixRaviart");
-RegisteredFactory<MFD3D_CrouzeixRaviartAnyOrder>
-  MFD3D_CrouzeixRaviartAnyOrder::reg_("CrouzeixRaviart high order");
-RegisteredFactory<MFD3D_CrouzeixRaviartSerendipity>
-  MFD3D_CrouzeixRaviartSerendipity::reg_("CrouzeixRaviart serendipity");
+RegisteredFactory<MFD3D_CrouzeixRaviartAnyOrder> MFD3D_CrouzeixRaviartAnyOrder::reg_(
+  "CrouzeixRaviart high order");
+RegisteredFactory<MFD3D_CrouzeixRaviartSerendipity> MFD3D_CrouzeixRaviartSerendipity::reg_(
+  "CrouzeixRaviart serendipity");
 
 RegisteredFactory<MFD3D_Diffusion> MFD3D_Diffusion::reg_("diffusion");
-RegisteredFactory<MFD3D_GeneralizedDiffusion>
-  MFD3D_GeneralizedDiffusion::reg_("diffusion generalized");
-RegisteredFactory<MFD3D_Diffusion_CurvedFace>
-  MFD3D_Diffusion_CurvedFace::reg_("diffusion curved face");
+RegisteredFactory<MFD3D_GeneralizedDiffusion> MFD3D_GeneralizedDiffusion::reg_(
+  "diffusion generalized");
+RegisteredFactory<MFD3D_Diffusion_CurvedFace> MFD3D_Diffusion_CurvedFace::reg_(
+  "diffusion curved face");
 
 RegisteredFactory<MFD3D_Elasticity> MFD3D_Elasticity::reg_("elasticity");
 RegisteredFactory<MFD3D_ElasticityGradDiv> MFD3D_ElasticityGradDiv::reg_("elasticity graddiv");
-RegisteredFactory<MFD3D_ElasticityWeakSymmetry>
-  MFD3D_ElasticityWeakSymmetry::reg_("elasticity weak symmetry");
+RegisteredFactory<MFD3D_ElasticityWeakSymmetry> MFD3D_ElasticityWeakSymmetry::reg_(
+  "elasticity weak symmetry");
 
 RegisteredFactory<MFD3D_Electromagnetics> MFD3D_Electromagnetics::reg_("electromagnetics");
 RegisteredFactory<MFD3D_Lagrange> MFD3D_Lagrange::reg_("Lagrange");
 RegisteredFactory<MFD3D_LagrangeAnyOrder> MFD3D_LagrangeAnyOrder::reg_("Lagrange high order");
-RegisteredFactory<MFD3D_LagrangeSerendipity>
-  MFD3D_LagrangeSerendipity::reg_("Lagrange serendipity");
+RegisteredFactory<MFD3D_LagrangeSerendipity> MFD3D_LagrangeSerendipity::reg_(
+  "Lagrange serendipity");
 
 RegisteredFactory<DG_Modal> DG_Modal::reg_("dg modal");
 

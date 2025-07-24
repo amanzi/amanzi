@@ -23,10 +23,11 @@
 
 namespace Amanzi {
 
-template <class VectorClass>
+template<class VectorClass>
 class NoxVector : public NOX::Abstract::Vector {
  public:
-  NoxVector(const Teuchos::RCP<VectorClass>& vec) : vec_(vec){};
+  NoxVector(const Teuchos::RCP<VectorClass>& vec)
+    : vec_(vec) {};
 
   NoxVector(const NoxVector& other, NOX::CopyType type = NOX::DeepCopy);
 
@@ -108,18 +109,18 @@ class NoxVector : public NOX::Abstract::Vector {
   {
     double result = 0.;
     switch (type) {
-    case NOX::Abstract::Vector::TwoNorm:
-      vec_->Norm2(&result);
-      break;
-    case NOX::Abstract::Vector::OneNorm:
-      vec_->Norm1(&result);
-      break;
-    case NOX::Abstract::Vector::MaxNorm:
-      vec_->NormInf(&result);
-      break;
-    default:
-      assert(0);
-      break;
+      case NOX::Abstract::Vector::TwoNorm:
+        vec_->Norm2(&result);
+        break;
+      case NOX::Abstract::Vector::OneNorm:
+        vec_->Norm1(&result);
+        break;
+      case NOX::Abstract::Vector::MaxNorm:
+        vec_->NormInf(&result);
+        break;
+      default:
+        assert(0);
+        break;
     }
     return result;
   }
@@ -145,23 +146,23 @@ class NoxVector : public NOX::Abstract::Vector {
 };
 
 
-template <class VectorClass>
+template<class VectorClass>
 NoxVector<VectorClass>::NoxVector(const NoxVector& other, NOX::CopyType type)
 {
   switch (type) {
-  case NOX::DeepCopy:
-    vec_ = Teuchos::rcp(new VectorClass(*other.vec_));
-    break;
-  case NOX::ShapeCopy:
-    vec_ = Teuchos::rcp(new VectorClass(other.vec_->Map(), InitMode::NONE));
-    break;
-  default:
-    vec_ = Teuchos::rcp(new VectorClass(other.vec_->Map(), InitMode::NONE));
-    break;
+    case NOX::DeepCopy:
+      vec_ = Teuchos::rcp(new VectorClass(*other.vec_));
+      break;
+    case NOX::ShapeCopy:
+      vec_ = Teuchos::rcp(new VectorClass(other.vec_->Map(), InitMode::NONE));
+      break;
+    default:
+      vec_ = Teuchos::rcp(new VectorClass(other.vec_->Map(), InitMode::NONE));
+      break;
   }
 }
 
-template <>
+template<>
 inline NoxVector<Epetra_Vector>::NoxVector(const NoxVector& other, NOX::CopyType type)
 {
   vec_ = Teuchos::rcp(new Epetra_Vector(*other.vec_));

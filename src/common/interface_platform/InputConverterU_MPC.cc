@@ -284,85 +284,85 @@ InputConverterU::TranslateCycleDriverNew_()
     ss << "TP " << tp_id;
 
     switch (transient_model) {
-    case 1:
-      PopulatePKTree_(pk_tree_list, Keys::merge(mode, "chemistry", delimiter));
-      break;
-    case 2:
-      tmp += "transport";
-      PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
-      break;
-    case 3:
-      tmp += "reactive transport";
-      PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
-      break;
-    case 4:
-      tmp += "flow";
-      PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
-      break;
-    case 5:
-      PopulatePKTree_(pk_tree_list, Keys::merge(mode, "flow and chemistry", delimiter));
-      break;
-    case 6:
-      tmp += "flow and transport";
-      PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
-      break;
-    case 7:
-      tmp += "flow and reactive transport";
-      PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
-      break;
-    case 8:
-      tmp += "energy";
-      PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
-      break;
-    case 12:
-      pk_master_["thermal flow"] = true;
-      tmp += "flow and energy";
-      PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
-      break;
-    case 14:
-      pk_master_["thermal flow"] = true;
-      tmp += "thermal flow and transport";
-      PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
-      break;
-    case 15:
-      pk_master_["thermal flow"] = true;
-      tmp += "thermal flow and reactive transport";
-      PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
-      break;
-    case 16:
-      PopulatePKTree_(pk_tree_list, Keys::merge(mode, "shallow water", delimiter));
-      break;
-    case 18:
-      PopulatePKTree_(pk_tree_list, Keys::merge(mode, "shallow water and transport", delimiter));
-      pk_domain_["shallow_water"] = "domain";
-      pk_domain_["transport"] = "domain";
-      break;
-    case 20:
-      PopulatePKTree_(pk_tree_list, Keys::merge(mode, "flow and shallow water", delimiter));
-      // for integrated hydrology, SW is defined on manifold
-      pk_domain_["shallow_water"] = "surface";
-      break;
-    case 32:
-      pk_master_["multiphase"] = true;
-      tmp += "multiphase";
-      PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
-      break;
-    case 64:
-      pk_master_["mechanics"] = true;
-      tmp = "mechanics";
-      PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
-      break;
-    case 68:
-      tmp = pks_weak_[0] + " and " + tmp + pks_weak_[1];
-      PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
-      break;
-    case 76:
-      tmp = tmp + "thermal flow and mechanics";
-      PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
-      break;
-    default:
-      msg << "The model with id=" << transient_model << " is not supported by the MPC.\n";
-      Exceptions::amanzi_throw(msg);
+      case 1:
+        PopulatePKTree_(pk_tree_list, Keys::merge(mode, "chemistry", delimiter));
+        break;
+      case 2:
+        tmp += "transport";
+        PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
+        break;
+      case 3:
+        tmp += "reactive transport";
+        PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
+        break;
+      case 4:
+        tmp += "flow";
+        PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
+        break;
+      case 5:
+        PopulatePKTree_(pk_tree_list, Keys::merge(mode, "flow and chemistry", delimiter));
+        break;
+      case 6:
+        tmp += "flow and transport";
+        PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
+        break;
+      case 7:
+        tmp += "flow and reactive transport";
+        PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
+        break;
+      case 8:
+        tmp += "energy";
+        PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
+        break;
+      case 12:
+        pk_master_["thermal flow"] = true;
+        tmp += "flow and energy";
+        PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
+        break;
+      case 14:
+        pk_master_["thermal flow"] = true;
+        tmp += "thermal flow and transport";
+        PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
+        break;
+      case 15:
+        pk_master_["thermal flow"] = true;
+        tmp += "thermal flow and reactive transport";
+        PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
+        break;
+      case 16:
+        PopulatePKTree_(pk_tree_list, Keys::merge(mode, "shallow water", delimiter));
+        break;
+      case 18:
+        PopulatePKTree_(pk_tree_list, Keys::merge(mode, "shallow water and transport", delimiter));
+        pk_domain_["shallow_water"] = "domain";
+        pk_domain_["transport"] = "domain";
+        break;
+      case 20:
+        PopulatePKTree_(pk_tree_list, Keys::merge(mode, "flow and shallow water", delimiter));
+        // for integrated hydrology, SW is defined on manifold
+        pk_domain_["shallow_water"] = "surface";
+        break;
+      case 32:
+        pk_master_["multiphase"] = true;
+        tmp += "multiphase";
+        PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
+        break;
+      case 64:
+        pk_master_["mechanics"] = true;
+        tmp = "mechanics";
+        PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
+        break;
+      case 68:
+        tmp = pks_weak_[0] + " and " + tmp + pks_weak_[1];
+        PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
+        break;
+      case 76:
+        tmp = tmp + "thermal flow and mechanics";
+        PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
+        break;
+      default:
+        msg << "The model with id=" << transient_model << " is not supported by the MPC.\n";
+        Exceptions::amanzi_throw(msg);
     }
 
     Teuchos::ParameterList& tmp_list = out_list.sublist("time periods").sublist(ss.str());
@@ -390,7 +390,9 @@ InputConverterU::TranslateCycleDriverNew_()
   out_list.set<Teuchos::Array<double>>("component molar masses", tmp);
 
   out_list.sublist("time period control") = TranslateTimePeriodControls_();
-  if (filename.size() > 0) { out_list.sublist("restart").set<std::string>("file name", filename); }
+  if (filename.size() > 0) {
+    out_list.sublist("restart").set<std::string>("file name", filename);
+  }
   out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
 
   return out_list;
@@ -641,11 +643,11 @@ InputConverterU::TranslateTimePeriodControls_()
 
         // find position before t
         std::map<double, double>::iterator it = init_dt.upper_bound(t);
-        if (it == init_dt.end()) it--;
+        if (it == init_dt.end() ) it--;
         dt_init_map[t] = it->second;
 
         it = max_dt.upper_bound(t);
-        if (it == max_dt.end()) it--;
+        if (it == max_dt.end() ) it--;
         dt_max_map[t] = it->second;
       }
     }
@@ -677,11 +679,11 @@ InputConverterU::TranslateTimePeriodControls_()
 
         // find position before t
         std::map<double, double>::iterator it = init_dt.upper_bound(t);
-        if (it == init_dt.end()) it--;
+        if (it == init_dt.end() ) it--;
         dt_init_map[t] = it->second;
 
         it = max_dt.upper_bound(t);
-        if (it == max_dt.end()) it--;
+        if (it == max_dt.end() ) it--;
         dt_max_map[t] = it->second;
       }
     }
@@ -746,7 +748,7 @@ InputConverterU::TranslatePKs_(Teuchos::ParameterList& glist)
   // create list of PKs
   std::vector<std::string> pks;
   for (auto it = out_list.begin(); it != out_list.end(); ++it) {
-    if ((it->second).isList()) pks.push_back(it->first);
+    if ((it->second) .isList()) pks.push_back(it->first);
   }
 
   // parse list of supported PKs in reverse order to allow MPC
@@ -1145,7 +1147,8 @@ InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
       mesh_list.set<bool>("request edges", true);
 
       Teuchos::Array<std::string> aux(1, pk_region_["shallow_water"]);
-      mesh_list.sublist("unstructured").sublist("submesh")
+      mesh_list.sublist("unstructured")
+        .sublist("submesh")
         .set<Teuchos::Array<std::string>>("regions", aux)
         .set<std::string>("extraction method", "manifold mesh")
         .set<std::string>("domain name", "surface");

@@ -57,7 +57,7 @@ class MFD3D_Diffusion_Edge : public MFD3D {
  public:
   MFD3D_Diffusion_Edge(const Teuchos::ParameterList& plist,
                        const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : MFD3D(mesh){};
+    : MFD3D(mesh) {};
 
   // main methods
   // -- symmetric schema

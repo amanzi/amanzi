@@ -70,7 +70,7 @@ namespace AmanziSolvers {
 
 #define NKA_EOL -1
 
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 class NKA_Base {
  public:
   NKA_Base(int mvec, double vtol, const VectorSpace& map);
@@ -83,8 +83,9 @@ class NKA_Base {
 
   void Relax();
   void Restart();
-  void
-  Correction(const Vector& f, Vector& v, const Teuchos::Ptr<const Vector>& oldv = Teuchos::null);
+  void Correction(const Vector& f,
+                  Vector& v,
+                  const Teuchos::Ptr<const Vector>& oldv = Teuchos::null);
 
  private:
   bool subspace_; // boolean: a nonempty subspace
@@ -110,7 +111,7 @@ class NKA_Base {
 /* ******************************************************************
  * Allocate memory
  ***************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 NKA_Base<Vector, VectorSpace>::NKA_Base(int mvec, double vtol, const VectorSpace& map)
   : subspace_(false), pending_(false), mvec_(std::max(mvec, 1)), vtol_(vtol)
 {
@@ -134,7 +135,7 @@ NKA_Base<Vector, VectorSpace>::NKA_Base(int mvec, double vtol, const VectorSpace
 /* ******************************************************************
  * TBW
  ***************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 void
 NKA_Base<Vector, VectorSpace>::Relax()
 {
@@ -161,7 +162,7 @@ NKA_Base<Vector, VectorSpace>::Relax()
 /* ******************************************************************
  * TBW
  ***************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 void
 NKA_Base<Vector, VectorSpace>::Restart()
 {
@@ -173,7 +174,9 @@ NKA_Base<Vector, VectorSpace>::Restart()
 
   // Initialize the free storage linked list.
   free_v_ = 0;
-  for (int k = 0; k < mvec_; k++) { next_v_[k] = k + 1; }
+  for (int k = 0; k < mvec_; k++) {
+    next_v_[k] = k + 1;
+  }
   next_v_[mvec_] = NKA_EOL;
 }
 
@@ -181,7 +184,7 @@ NKA_Base<Vector, VectorSpace>::Restart()
 /* ******************************************************************
  * TBW
  ***************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 void
 NKA_Base<Vector, VectorSpace>::Correction(const Vector& f,
                                           Vector& dir,
@@ -291,7 +294,9 @@ NKA_Base<Vector, VectorSpace>::Correction(const Vector& f,
       double hkk = 1.0;
       for (int j = first_v_; j != k; j = next_v_[j]) {
         double hkj = h_[j][k];
-        for (int i = first_v_; i != j; i = next_v_[i]) { hkj -= h_[k][i] * h_[j][i]; }
+        for (int i = first_v_; i != j; i = next_v_[i]) {
+          hkj -= h_[k][i] * h_[j][i];
+        }
         hkj /= h_[j][j];
         h_[k][j] = hkj;
         hkk -= hkj * hkj;
@@ -352,13 +357,17 @@ NKA_Base<Vector, VectorSpace>::Correction(const Vector& f,
       int ierr = dir.Dot(*w_[j], &cj);
       AMANZI_ASSERT(!ierr);
 
-      for (int i = first_v_; i != j; i = next_v_[i]) { cj -= h_[j][i] * c[i]; }
+      for (int i = first_v_; i != j; i = next_v_[i]) {
+        cj -= h_[j][i] * c[i];
+      }
       c[j] = cj / h_[j][j];
     }
     // backward substitution
     for (int j = last_v_; j != NKA_EOL; j = prev_v_[j]) {
       double cj = c[j];
-      for (int i = last_v_; i != j; i = prev_v_[i]) { cj -= h_[i][j] * c[i]; }
+      for (int i = last_v_; i != j; i = prev_v_[i]) {
+        cj -= h_[i][j] * c[i];
+      }
       c[j] = cj / h_[j][j];
     }
 

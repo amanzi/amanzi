@@ -21,12 +21,10 @@ namespace Amanzi {
 namespace Functions {
 
 CompositeVectorFunction::CompositeVectorFunction(const Teuchos::RCP<const MeshFunction>& func,
-        const std::vector<std::string>& names,
-        bool dot_with_normal,
-        const std::string& spatial_dist_method)
-  : func_(func),
-    dot_with_normal_(dot_with_normal),
-    spatial_dist_method_(spatial_dist_method)
+                                                 const std::vector<std::string>& names,
+                                                 bool dot_with_normal,
+                                                 const std::string& spatial_dist_method)
+  : func_(func), dot_with_normal_(dot_with_normal), spatial_dist_method_(spatial_dist_method)
 {
   AMANZI_ASSERT(names.size() == func->size());
 
@@ -57,15 +55,17 @@ CompositeVectorFunction::Compute(double time,
 
 void
 CompositeVectorFunction::Compute_(double time,
-                                 const Teuchos::Ptr<CompositeVector>& cv,
-                                 const VerboseObject* vo)
+                                  const Teuchos::Ptr<CompositeVector>& cv,
+                                  const VerboseObject* vo)
 {
   cv->PutScalar(0.);
 
 #ifdef ENSURE_INITIALIZED_CVFUNCS
   // ensure all components are touched
   std::map<std::string, bool> done;
-  for (auto compname : *cv) { done[compname] = false; }
+  for (auto compname : *cv) {
+    done[compname] = false;
+  }
 #endif
 
   // loop over the name/spec pair
@@ -101,9 +101,9 @@ CompositeVectorFunction::Compute_(double time,
 
 void
 CompositeVectorFunction::ComputeSpec_(const MeshFunction::Spec& spec,
-        double time,
-        Epetra_MultiVector& vec,
-        const VerboseObject* vo)
+                                      double time,
+                                      Epetra_MultiVector& vec,
+                                      const VerboseObject* vo)
 {
   const AmanziMesh::Mesh& mesh = *func_->mesh();
 
@@ -127,8 +127,8 @@ CompositeVectorFunction::ComputeSpec_(const MeshFunction::Spec& spec,
       const Epetra_BlockMap& map = vec.Map();
 
       if (vo && vo->os_OK(Teuchos::VERB_EXTREME)) {
-        *vo->os() << "  region: " << region << " contains " << id_list.size()
-                  << " local entities" << std::endl;
+        *vo->os() << "  region: " << region << " contains " << id_list.size() << " local entities"
+                  << std::endl;
       }
 
       // loop over indices
@@ -160,8 +160,8 @@ CompositeVectorFunction::ComputeSpec_(const MeshFunction::Spec& spec,
 
 void
 CompositeVectorFunction::ComputeDotWithNormal_(double time,
-        const Teuchos::Ptr<CompositeVector>& cv,
-        const VerboseObject* vo)
+                                               const Teuchos::Ptr<CompositeVector>& cv,
+                                               const VerboseObject* vo)
 {
   AMANZI_ASSERT(cv->Map().NumComponents() == 1);                              // one comp
   AMANZI_ASSERT(cv->Map().HasComponent("face"));                              // is named face
@@ -215,15 +215,17 @@ CompositeVectorFunction::ComputeDotWithNormal_(double time,
 
 void
 CompositeVectorFunction::ComputeSpatiallyDistributed_(double time,
-                                 const Teuchos::Ptr<CompositeVector>& cv,
-                                 const VerboseObject* vo)
+                                                      const Teuchos::Ptr<CompositeVector>& cv,
+                                                      const VerboseObject* vo)
 {
   cv->PutScalar(0.);
 
 #ifdef ENSURE_INITIALIZED_CVFUNCS
   // ensure all components are touched
   std::map<std::string, bool> done;
-  for (auto compname : *cv) { done[compname] = false; }
+  for (auto compname : *cv) {
+    done[compname] = false;
+  }
 #endif
 
   // loop over the name/spec pair
@@ -258,7 +260,7 @@ CompositeVectorFunction::ComputeSpatiallyDistributed_(double time,
     mesh.getComm()->SumAll(&l_total_volume, &total_volume, 1);
 
     // spatial distribution method = volume:  uniform distribution across the volume
-    vec.Update(1./total_volume, tmp_vec, 1.);
+    vec.Update(1. / total_volume, tmp_vec, 1.);
 
 #ifdef ENSURE_INITIALIZED_CVFUNCS
     done[compname] = true;
@@ -275,7 +277,6 @@ CompositeVectorFunction::ComputeSpatiallyDistributed_(double time,
   }
 #endif
 }
-
 
 
 } // namespace Functions

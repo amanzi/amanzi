@@ -27,7 +27,7 @@ class MultiphaseEvaluator
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   MultiphaseEvaluator(Teuchos::ParameterList& plist)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist), n_(0){};
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist), n_(0) {};
 
   // inteface functions to FieldEvaluator
   MultiphaseEvaluator(const MultiphaseEvaluator& other)
@@ -51,8 +51,10 @@ class MultiphaseEvaluator
 
   // added interface (WIP)
   // -- modifier
-  virtual void
-  set_subvector(int ifield, int n, const std::string& name, Teuchos::ParameterList& plist)
+  virtual void set_subvector(int ifield,
+                             int n,
+                             const std::string& name,
+                             Teuchos::ParameterList& plist)
   {
     n_ = n;
     AmanziEOS::VaporLiquidFactory factory(plist);

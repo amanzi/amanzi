@@ -63,10 +63,10 @@ necessitates calling all stages after it.
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template <class Operator,
-          class Preconditioner = Operator,
-          class Vector = typename Operator::Vector_t,
-          class VectorSpace = typename Vector::VectorSpace_t>
+template<class Operator,
+         class Preconditioner = Operator,
+         class Vector = typename Operator::Vector_t,
+         class VectorSpace = typename Vector::VectorSpace_t>
 class Inverse : public Matrix<Vector, VectorSpace> {
  public:
   Inverse() = default;
@@ -79,9 +79,9 @@ class Inverse : public Matrix<Vector, VectorSpace> {
     h_ = h;
   }
 
-  template <typename T = Preconditioner>
-  typename std::enable_if<std::is_same<Operator, T>::value>::type
-  set_matrix(const Teuchos::RCP<Operator>& m)
+  template<typename T = Preconditioner>
+  typename std::enable_if<std::is_same<Operator, T>::value>::type set_matrix(
+    const Teuchos::RCP<Operator>& m)
   {
     set_matrices(m, m);
   }

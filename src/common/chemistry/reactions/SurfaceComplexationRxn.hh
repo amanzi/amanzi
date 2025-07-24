@@ -45,7 +45,7 @@ class SurfaceComplexationRxn {
   SurfaceComplexationRxn(SurfaceSite* surface_sites,
                          const std::vector<SurfaceComplex>& surface_complexes);
   explicit SurfaceComplexationRxn(SurfaceSite surface_sites);
-  ~SurfaceComplexationRxn(){};
+  ~SurfaceComplexationRxn() {};
 
   // add complexes to the reaction
   void AddSurfaceComplex(SurfaceComplex surface_complex);

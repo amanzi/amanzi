@@ -42,7 +42,7 @@ class MFD3D_Electromagnetics : public DeRham_Edge {
  public:
   MFD3D_Electromagnetics(const Teuchos::ParameterList& plist,
                          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : DeRham_Edge(mesh){};
+    : DeRham_Edge(mesh) {};
 
   // required methods
   // -- schema

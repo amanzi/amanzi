@@ -157,12 +157,16 @@ MFD3D_CrouzeixRaviart::ProjectorCell_(const Teuchos::RCP<const AmanziMesh::Mesh>
 
     double tmp = vf[n].Value(xf) * dirs[n] / vol;
 
-    for (int j = 0; j < d_; ++j) { uc(1, j) += tmp * normal[j]; }
+    for (int j = 0; j < d_; ++j) {
+      uc(1, j) += tmp * normal[j];
+    }
   }
 
   // calculate projector's low-order term
   AmanziGeometry::Point grad(d_);
-  for (int j = 0; j < d_; ++j) { grad[j] = uc(1, j); }
+  for (int j = 0; j < d_; ++j) {
+    grad[j] = uc(1, j);
+  }
 
   double a1(0.0), a2(0.0), tmp;
   for (int n = 0; n < nfaces; ++n) {

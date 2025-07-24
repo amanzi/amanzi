@@ -238,7 +238,7 @@ Richards_PK::Setup()
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-      S_->RequireEvaluator(porosity_key_, Tags::DEFAULT);
+    S_->RequireEvaluator(porosity_key_, Tags::DEFAULT);
   }
 
   // -- viscosity: if not requested by any PK, we request its constant value.
@@ -393,7 +393,7 @@ Richards_PK::Setup()
       elist.set<std::string>("aperture key", aperture_key_)
         .set<std::string>("pressure key", pressure_key_)
         .set<std::string>("tag", "");
-      if (S_->HasRecord("hydrostatic_stress")) elist.set<bool>("use stress", true);
+      if (S_->HasRecord("hydrostatic_stress") ) elist.set<bool>("use stress", true);
 
       auto eval = Teuchos::rcp(new Evaluators::ApertureModelEvaluator(elist, fam));
       S_->SetEvaluator(aperture_key_, Tags::DEFAULT, eval);
@@ -502,10 +502,8 @@ Richards_PK::Initialize()
   upwind_ = upwind_factory.Create(mesh_, *upw_list);
 
   std::string upw_upd = upw_list->get<std::string>("upwind frequency", "every timestep");
-  if (upw_upd == "every nonlinear iteration")
-    upwind_frequency_ = FLOW_UPWIND_UPDATE_ITERATION;
-  else
-    upwind_frequency_ = FLOW_UPWIND_UPDATE_TIMESTEP;
+  if (upw_upd == "every nonlinear iteration") upwind_frequency_ = FLOW_UPWIND_UPDATE_ITERATION;
+  else upwind_frequency_ = FLOW_UPWIND_UPDATE_TIMESTEP;
 
   // face component of upwind field matches that of the flow field
   auto cvs = S_->Get<CV_t>(vol_flowrate_key_).Map();
@@ -638,7 +636,8 @@ Richards_PK::Initialize()
     if (!bdf1_list.isSublist("verbose object"))
       bdf1_list.sublist("verbose object") = fp_list_->sublist("verbose object");
 
-    bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1", bdf1_list, *this, soln_->get_map(), S_));
+    bdf1_dae_ = Teuchos::rcp(
+      new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1", bdf1_list, *this, soln_->get_map(), S_));
   } else {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "WARNING: BDF1 time integration list is missing..." << std::endl;
@@ -739,7 +738,7 @@ Richards_PK::Initialize()
       const auto& p1 = *S_->Get<CV_t>(pressure_key_).ViewComponent("cell");
       auto& p0 = *S_->GetW<CV_t>(pressure_msp_key_, passwd_).ViewComponent("cell");
 
-      for (int i = 0; i < p0.NumVectors(); ++i) (*p0(i)) = (*p1(0));
+      for (int i = 0; i < p0.NumVectors() ; ++i) (*p0(i)) = (*p1(0));
       pressure_msp_eval_->SetChanged();
     }
   }
@@ -815,7 +814,6 @@ Richards_PK::Initialize()
 }
 
 
-
 /* ****************************************************************
 * This completes initialization of common fields that were not
 * initialized by the state.
@@ -844,7 +842,7 @@ Richards_PK::InitializeFields_()
     // if (!S_->GetField(pressure_msp_key_, passwd_)->initialized()) {
     const auto& p1 = *S_->Get<CV_t>(pressure_key_).ViewComponent("cell");
     auto& p0 = *S_->GetW<CV_t>(pressure_msp_key_, passwd_).ViewComponent("cell");
-    for (int i = 0; i < p0.NumVectors(); ++i) (*p0(i)) = (*p1(0));
+    for (int i = 0; i < p0.NumVectors() ; ++i) (*p0(i)) = (*p1(0));
 
     S_->GetRecordW(pressure_msp_key_, passwd_).set_initialized();
     pressure_msp_eval_->SetChanged();
@@ -933,7 +931,9 @@ Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // save a copy of primary and conservative fields
   std::vector<std::string> fields({ pressure_key_, saturation_liquid_key_, water_storage_key_ });
-  if (flow_on_manifold_) { fields.push_back(aperture_key_); }
+  if (flow_on_manifold_) {
+    fields.push_back(aperture_key_);
+  }
   if (multiscale_porosity_) {
     fields.push_back(pressure_msp_key_);
     fields.push_back(water_storage_msp_key_);
@@ -945,7 +945,9 @@ Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // enter subspace
   if (reinit && solution->HasComponent("face")) {
     EnforceConstraints(t_new, solution);
-    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) { VV_PrintHeadExtrema(*solution); }
+    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+      VV_PrintHeadExtrema(*solution);
+    }
   }
 
   // initialization
@@ -982,7 +984,9 @@ Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     VV_ReportWaterBalance(S_.ptr());
     VV_ReportMultiscale();
   }
-  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) { VV_ReportSeepageOutflow(S_.ptr(), dt_); }
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    VV_ReportSeepageOutflow(S_.ptr(), dt_);
+  }
 
   if (dt_ <= dt_recommended && dt_ <= dt_next_ && dt_next_ < dt_recommended) {
     // If we took a smaller step than we recommended, likely due to constraints
@@ -1124,10 +1128,8 @@ Richards_PK::VV_ReportMultiscale()
 Teuchos::RCP<Operators::Operator>
 Richards_PK::my_operator(const Operators::OperatorType& type)
 {
-  if (type == Operators::OPERATOR_MATRIX)
-    return op_matrix_;
-  else if (type == Operators::OPERATOR_PRECONDITIONER_RAW)
-    return op_preconditioner_;
+  if (type == Operators::OPERATOR_MATRIX) return op_matrix_;
+  else if (type == Operators::OPERATOR_PRECONDITIONER_RAW) return op_preconditioner_;
   return Teuchos::null;
 }
 

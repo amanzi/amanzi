@@ -64,8 +64,8 @@ class PDE_DiffusionNLFV : public virtual PDE_Diffusion {
   // main virtual members
   // -- setup
   using PDE_Diffusion::Setup;
-  virtual void
-  SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor>>& K) override
+  virtual void SetTensorCoefficient(
+    const Teuchos::RCP<const std::vector<WhetStone::Tensor>>& K) override
   {
     K_ = K;
   }
@@ -79,10 +79,10 @@ class PDE_DiffusionNLFV : public virtual PDE_Diffusion {
                                               const Teuchos::Ptr<const CompositeVector>& u,
                                               double scalar_factor) override;
 
-  virtual void
-  UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
-                                 const Teuchos::Ptr<const CompositeVector>& u,
-                                 const Teuchos::Ptr<const CompositeVector>& factor) override;
+  virtual void UpdateMatricesNewtonCorrection(
+    const Teuchos::Ptr<const CompositeVector>& flux,
+    const Teuchos::Ptr<const CompositeVector>& u,
+    const Teuchos::Ptr<const CompositeVector>& factor) override;
 
   // -- after solving the problem: postrocessing
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,

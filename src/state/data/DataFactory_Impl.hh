@@ -32,7 +32,7 @@
 namespace Amanzi {
 namespace Impl {
 
-template <typename T>
+template<typename T>
 class HasCreate {
  private:
   HasCreate() = delete;
@@ -44,9 +44,9 @@ class HasCreate {
     char x[2];
   };
 
-  template <typename C>
+  template<typename C>
   static one test(decltype(void(std::declval<C&>().Create()))*);
-  template <typename C>
+  template<typename C>
   static two test(...);
 
  public:
@@ -57,29 +57,31 @@ class HasCreate {
 // thing factory base class
 class DataFactory_Intf {
  public:
-  virtual ~DataFactory_Intf(){};
+  virtual ~DataFactory_Intf() {};
 
   virtual std::unique_ptr<DataFactory_Intf> Clone() const = 0;
 
-  template <typename T, typename F>
+  template<typename T, typename F>
   bool ValidType() const;
 
   virtual void Create(Data& t) const = 0;
   virtual Data Create() const = 0;
 
-  template <typename T, typename F>
+  template<typename T, typename F>
   const F& Get() const;
 
-  template <typename T, typename F>
+  template<typename T, typename F>
   F& GetW();
 };
 
 
 // thing factory implementation
-template <typename T, typename F>
+template<typename T, typename F>
 class DataFactory_Impl : public DataFactory_Intf {
  public:
-  explicit DataFactory_Impl(const F& f) : f_(std::move(std::unique_ptr<F>(new F(f)))) {}
+  explicit DataFactory_Impl(const F& f)
+    : f_(std::move(std::unique_ptr<F>(new F(f))))
+  {}
 
   DataFactory_Impl(const DataFactory_Impl& other)
     : f_(std::move(std::unique_ptr<F>(new F(*other.f_))))
@@ -110,13 +112,13 @@ class DataFactory_Impl : public DataFactory_Intf {
   // Constructor:  T(F);
   // Create method: Teuchos::RCP<T> = F.Create();
   //
-  template <class Q = F>
+  template<class Q = F>
   typename std::enable_if<HasCreate<Q>::value, Data>::type Create_() const
   {
     return data<T>(f_->Create());
   }
 
-  template <class Q = F>
+  template<class Q = F>
   typename std::enable_if<!HasCreate<Q>::value, Data>::type Create_() const
   {
     return data<T>(Teuchos::rcp(new T(*f_)));
@@ -125,14 +127,14 @@ class DataFactory_Impl : public DataFactory_Intf {
 
 
 // partial specialization for NullFactory
-template <typename T>
+template<typename T>
 class DataFactory_Impl<T, NullFactory> : public DataFactory_Intf {
  public:
   explicit DataFactory_Impl(const NullFactory& f)
-    : f_(std::unique_ptr<NullFactory>(new NullFactory(f))){};
+    : f_(std::unique_ptr<NullFactory>(new NullFactory(f))) {};
 
   DataFactory_Impl(const DataFactory_Impl& other)
-    : f_(std::unique_ptr<NullFactory>(new NullFactory(*other.f_))){};
+    : f_(std::unique_ptr<NullFactory>(new NullFactory(*other.f_))) {};
 
   std::unique_ptr<DataFactory_Intf> Clone() const override
   {
@@ -155,7 +157,7 @@ class DataFactory_Impl<T, NullFactory> : public DataFactory_Intf {
 
 
 // thing factory base class implementation
-template <typename T, typename F>
+template<typename T, typename F>
 bool
 DataFactory_Intf::ValidType() const
 {
@@ -167,7 +169,7 @@ DataFactory_Intf::ValidType() const
   }
 }
 
-template <typename T, typename F>
+template<typename T, typename F>
 const F&
 DataFactory_Intf::Get() const
 {
@@ -180,7 +182,7 @@ DataFactory_Intf::Get() const
   return p->Get();
 }
 
-template <typename T, typename F>
+template<typename T, typename F>
 F&
 DataFactory_Intf::GetW()
 {

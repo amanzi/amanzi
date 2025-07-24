@@ -34,14 +34,16 @@ namespace Operators {
 
 class UpwindDivK : public Upwind {
  public:
-  UpwindDivK(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : Upwind(mesh){};
-  ~UpwindDivK(){};
+  UpwindDivK(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    : Upwind(mesh) {};
+  ~UpwindDivK() {};
 
   // main methods
   void Init(Teuchos::ParameterList& plist);
 
-  void
-  Compute(const CompositeVector& flux, const std::vector<int>& bc_model, CompositeVector& field);
+  void Compute(const CompositeVector& flux,
+               const std::vector<int>& bc_model,
+               CompositeVector& field);
 
  private:
   int method_, order_;
@@ -78,7 +80,8 @@ UpwindDivK::Compute(const CompositeVector& flux,
   const Epetra_MultiVector& flx_face = *flux.ViewComponent("face", true);
 
   const Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
-  const Epetra_MultiVector& fld_boundary = *std::as_const(field).ViewComponent("boundary_face", true);
+  const Epetra_MultiVector& fld_boundary =
+    *std::as_const(field).ViewComponent("boundary_face", true);
   const Epetra_Map& ext_face_map = mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true);
   const Epetra_Map& face_map = mesh_->getMap(AmanziMesh::Entity_kind::FACE, true);
   Epetra_MultiVector& upw_face = *field.ViewComponent(face_comp_, true);

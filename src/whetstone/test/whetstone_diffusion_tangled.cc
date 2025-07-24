@@ -30,8 +30,8 @@ namespace AmanziMesh {
 struct MeshAlgorithmsTangled : public MeshAlgorithms {
   virtual ~MeshAlgorithmsTangled() = default;
 
-  virtual std::pair<double, AmanziGeometry::Point>
-  computeCellGeometry(const MeshHost& mesh, const Entity_ID c) const
+  virtual std::pair<double, AmanziGeometry::Point> computeCellGeometry(const MeshHost& mesh,
+                                                                       const Entity_ID c) const
   {
     double area = 0.0;
     AmanziGeometry::Point centroid(2);
@@ -125,4 +125,3 @@ TEST(INVERTED_CELL_2D)
   CHECK_CLOSE(T(0, 0) * volume, vxx, 1e-10);
   CHECK_CLOSE(T(1, 0) * volume, vxy, 1e-10);
 }
-

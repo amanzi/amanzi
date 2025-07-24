@@ -49,7 +49,7 @@ class Permeability_PowerLaw : public Permeability {
     phi_ref_ = plist.get<double>("undeformed soil porosity");
     exp_ = plist.get<double>("power law exponent");
   }
-  ~Permeability_PowerLaw(){};
+  ~Permeability_PowerLaw() {};
 
   // required methods from the base class
   double Factor(double phi) { return std::pow(phi / phi_ref_, exp_); }

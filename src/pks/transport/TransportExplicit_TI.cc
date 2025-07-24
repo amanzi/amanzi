@@ -30,10 +30,8 @@ TransportExplicit_PK::FunctionalTimeDerivative(double t,
                                                const CompositeVector& component,
                                                CompositeVector& f)
 {
-  if (method_ == Method_t::MUSCL)
-    FunctionalTimeDerivative_MUSCL_(t, component, f, true);
-  else
-    FunctionalTimeDerivative_FCT_(t, component, f);
+  if (method_ == Method_t::MUSCL) FunctionalTimeDerivative_MUSCL_(t, component, f, true);
+  else FunctionalTimeDerivative_FCT_(t, component, f);
 }
 
 } // namespace Transport

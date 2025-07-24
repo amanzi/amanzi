@@ -49,7 +49,7 @@ using namespace Amanzi::Operators;
 * Tests DivK diffusion solver with full tensor and source term.
 * The model for kf is volime-weighted arithmetic average.
 ***************************************************************** */
-template <class PDE, class UpwindClass>
+template<class PDE, class UpwindClass>
 void
 RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
 {

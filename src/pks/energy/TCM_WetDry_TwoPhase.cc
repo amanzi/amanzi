@@ -25,7 +25,8 @@ namespace Energy {
 /* ******************************************************************
 * Simple constructor
 ****************************************************************** */
-TCM_WetDry_TwoPhase::TCM_WetDry_TwoPhase(Teuchos::ParameterList& plist) : plist_(plist)
+TCM_WetDry_TwoPhase::TCM_WetDry_TwoPhase(Teuchos::ParameterList& plist)
+  : plist_(plist)
 {
   InitializeFromPlist_();
 }

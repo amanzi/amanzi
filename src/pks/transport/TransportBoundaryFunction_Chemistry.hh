@@ -32,7 +32,7 @@ namespace Transport {
 
 class TransportBoundaryFunction_Chemistry : public TransportDomainFunction {
  public:
-  TransportBoundaryFunction_Chemistry(){};
+  TransportBoundaryFunction_Chemistry() {};
   TransportBoundaryFunction_Chemistry(const Teuchos::ParameterList& plist)
     : TransportDomainFunction(plist)
   {
@@ -60,7 +60,9 @@ class TransportBoundaryFunction_Chemistry : public TransportDomainFunction {
       auto& values = it->second;
       chem_engine_->EnforceConstraint(&beaker_state, beaker_parameters, constraints_, values);
 
-      for (int i = 0; i < values.size(); i++) { values[i] = beaker_state.total.at(i); }
+      for (int i = 0; i < values.size(); i++) {
+        values[i] = beaker_state.total.at(i);
+      }
     }
   }
 

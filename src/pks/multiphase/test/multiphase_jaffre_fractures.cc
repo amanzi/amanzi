@@ -113,7 +113,9 @@ run_test(const std::string& domain, const std::string& filename)
   int iloop(0);
   double t(0.0), tend(1.57e+12), dt(1.5768e+7), dt_max(3e+10);
   while (t < tend && iloop < 400) {
-    while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 10; }
+    while (MPK->AdvanceStep(t, t + dt, false)) {
+      dt /= 10;
+    }
 
     MPK->CommitStep(t, t + dt, Tags::DEFAULT);
     S->advance_cycle();

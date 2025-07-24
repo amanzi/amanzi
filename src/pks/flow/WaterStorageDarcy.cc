@@ -47,7 +47,7 @@ WaterStorageDarcy::WaterStorageDarcy(Teuchos::ParameterList& plist)
 ****************************************************************** */
 WaterStorageDarcy::WaterStorageDarcy(const WaterStorageDarcy& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
-    aperture_(other.aperture_){};
+    aperture_(other.aperture_) {};
 
 
 Teuchos::RCP<Evaluator>
@@ -98,14 +98,18 @@ WaterStorageDarcy::EvaluatePartialDerivative_(const State& S,
   if (wrt_key == pressure_key_) {
     for (int c = 0; c != ncells; ++c) result_v[0][c] = ss[0][c] / g;
   } else if (wrt_key == aperture_key_ && aperture_) {
-    for (int c = 0; c != ncells; ++c) { result_v[0][c] = ss[0][c] * p[0][c] / g; }
+    for (int c = 0; c != ncells; ++c) {
+      result_v[0][c] = ss[0][c] * p[0][c] / g;
+    }
   } else {
     AMANZI_ASSERT(0);
   }
 
   if (aperture_ && wrt_key != aperture_key_) {
     const auto& aperture = *S.Get<CompositeVector>(aperture_key_).ViewComponent("cell");
-    for (int c = 0; c != ncells; ++c) { result_v[0][c] *= aperture[0][c]; }
+    for (int c = 0; c != ncells; ++c) {
+      result_v[0][c] *= aperture[0][c];
+    }
   }
 }
 

@@ -114,7 +114,7 @@ Note this also accepts an object that provides the `BDF1 Solver Interface`_.
 
 namespace Amanzi {
 
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 class BDF1_TI {
  public:
   // Create the BDF Dae solver object, the nonlinear problem must be
@@ -126,8 +126,9 @@ class BDF1_TI {
           const Teuchos::RCP<State>& S = Teuchos::null);
 
   // initializes the state
-  void
-  SetInitialState(const double h, const Teuchos::RCP<const Vector>& u, const Teuchos::RCP<const Vector>& udot = Teuchos::null);
+  void SetInitialState(const double h,
+                       const Teuchos::RCP<const Vector>& u,
+                       const Teuchos::RCP<const Vector>& udot = Teuchos::null);
 
   // After a successful step, this method commits the new
   // solution to the solution history
@@ -135,9 +136,9 @@ class BDF1_TI {
 
   // Computes a step and returns true whan it fails.
   bool AdvanceStep(double dt,
-                const Teuchos::RCP<const Vector>& u_prev,
-                const Teuchos::RCP<Vector>& u,
-                double& dt_next);
+                   const Teuchos::RCP<const Vector>& u_prev,
+                   const Teuchos::RCP<Vector>& u,
+                   double& dt_next);
 
   bool AdvanceStep(double dt, double& dt_next, const Teuchos::RCP<Vector>& x)
   {
@@ -182,12 +183,12 @@ class BDF1_TI {
 /* ******************************************************************
 * Constructor
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 BDF1_TI<Vector, VectorSpace>::BDF1_TI(const std::string& name,
-        Teuchos::ParameterList& plist,
-        BDFFnBase<Vector>& fn,
-        const Teuchos::RCP<const VectorSpace>& space,
-        const Teuchos::RCP<State>& S)
+                                      Teuchos::ParameterList& plist,
+                                      BDFFnBase<Vector>& fn,
+                                      const Teuchos::RCP<const VectorSpace>& space,
+                                      const Teuchos::RCP<State>& S)
 {
   fn_ = Teuchos::rcpFromRef(fn);
 
@@ -224,7 +225,7 @@ BDF1_TI<Vector, VectorSpace>::BDF1_TI(const std::string& name,
 /* ******************************************************************
 * Initialize miscaleneous parameters.
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 void
 BDF1_TI<Vector, VectorSpace>::SetInitialState(const double t,
                                               const Teuchos::RCP<const Vector>& x,
@@ -240,10 +241,9 @@ BDF1_TI<Vector, VectorSpace>::SetInitialState(const double t,
 /* ******************************************************************
 * Record a successful solution to the history.
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 void
-BDF1_TI<Vector, VectorSpace>::CommitSolution(const double h,
-                                             const Teuchos::RCP<const Vector>& u)
+BDF1_TI<Vector, VectorSpace>::CommitSolution(const double h, const Teuchos::RCP<const Vector>& u)
 {
   double t = h + state_->uhist->MostRecentTime();
 
@@ -263,7 +263,7 @@ BDF1_TI<Vector, VectorSpace>::CommitSolution(const double h,
 /* ******************************************************************
 * Returns most recent time.
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 double
 BDF1_TI<Vector, VectorSpace>::time()
 {
@@ -274,12 +274,12 @@ BDF1_TI<Vector, VectorSpace>::time()
 /* ******************************************************************
 * Implementation of implicit Euler timestep.
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 bool
 BDF1_TI<Vector, VectorSpace>::AdvanceStep(double dt,
-        const Teuchos::RCP<const Vector>& u_prev,
-        const Teuchos::RCP<Vector>& u,
-        double& dt_next)
+                                          const Teuchos::RCP<const Vector>& u_prev,
+                                          const Teuchos::RCP<Vector>& u,
+                                          double& dt_next)
 {
   // initialize the output stream
   Teuchos::OSTab tab = vo_->getOSTab();
@@ -341,7 +341,9 @@ BDF1_TI<Vector, VectorSpace>::AdvanceStep(double dt,
     ierr = 1;
     itr = -1; // This should not be summed up into the global counter.
     code = AmanziSolvers::SOLVER_INTERNAL_EXCEPTION;
-    if (vo_->os_OK(Teuchos::VERB_HIGH)) { *vo_->os() << e.what() << std::endl; }
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      *vo_->os() << e.what() << std::endl;
+    }
   }
 
   if (ierr == 0) {
@@ -412,7 +414,7 @@ BDF1_TI<Vector, VectorSpace>::AdvanceStep(double dt,
 /* ******************************************************************
 * Report statistics.
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 void
 BDF1_TI<Vector, VectorSpace>::ReportStatistics_()
 {

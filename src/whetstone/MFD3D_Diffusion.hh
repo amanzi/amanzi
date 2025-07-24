@@ -41,10 +41,11 @@ namespace WhetStone {
 class MFD3D_Diffusion : public DeRham_Face {
  public:
   // constructor for backward compatibility
-  MFD3D_Diffusion(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : DeRham_Face(mesh){};
+  MFD3D_Diffusion(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : DeRham_Face(mesh) {};
   MFD3D_Diffusion(const Teuchos::ParameterList& plist,
                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : DeRham_Face(mesh){};
+    : DeRham_Face(mesh) {};
 
   // main methods
   // -- schema
@@ -70,8 +71,11 @@ class MFD3D_Diffusion : public DeRham_Face {
 
   // other mimetic methods
   // -- bad consistency conditions (flux is scaled by area)
-  int
-  L2consistencyScaledArea(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
+  int L2consistencyScaledArea(int c,
+                              const Tensor& K,
+                              DenseMatrix& N,
+                              DenseMatrix& Mc,
+                              bool symmetry);
   int L2consistencyInverseScaledArea(int c,
                                      const Tensor& K,
                                      DenseMatrix& R,
@@ -137,8 +141,8 @@ class MFD3D_Diffusion : public DeRham_Face {
   AmanziGeometry::Point mesh_getFaceNormal(int f, int c);
 
  protected:
-  using MFD3D::mesh_;
   using MFD3D::d_;
+  using MFD3D::mesh_;
 
  private:
   static RegisteredFactory<MFD3D_Diffusion> reg_;

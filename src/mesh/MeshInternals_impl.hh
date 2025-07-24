@@ -23,21 +23,21 @@ namespace Amanzi {
 namespace AmanziMesh {
 namespace Impl {
 
-template <class Mesh_type>
+template<class Mesh_type>
 KOKKOS_INLINE_FUNCTION Cell_kind
 getCellType(const Mesh_type& mesh, const Entity_ID c)
 {
   auto faces = mesh.getCellFaces(c);
   if (mesh.getManifoldDimension() == 2) {
     switch (faces.size()) {
-    case 3:
-      return Cell_kind::TRI;
-      break;
-    case 4:
-      return Cell_kind::QUAD;
-      break;
-    default:
-      return Cell_kind::POLYGON;
+      case 3:
+        return Cell_kind::TRI;
+        break;
+      case 4:
+        return Cell_kind::QUAD;
+        break;
+      default:
+        return Cell_kind::POLYGON;
     }
   } else if (mesh.getManifoldDimension() == 3) {
     int nquads = 0;
@@ -48,28 +48,21 @@ getCellType(const Mesh_type& mesh, const Entity_ID c)
     }
 
     switch (faces.size()) {
-    case 4:
-      if (nquads == 0)
-        return Cell_kind::TET;
-      else
+      case 4:
+        if (nquads == 0) return Cell_kind::TET;
+        else return Cell_kind::POLYHED;
+        break;
+      case 5:
+        if (nquads == 1) return Cell_kind::PYRAMID;
+        else if (nquads == 3) return Cell_kind::PRISM;
+        else return Cell_kind::POLYHED;
+        break;
+      case 6:
+        if (nquads == 6) return Cell_kind::HEX;
+        else return Cell_kind::POLYHED;
+        break;
+      default:
         return Cell_kind::POLYHED;
-      break;
-    case 5:
-      if (nquads == 1)
-        return Cell_kind::PYRAMID;
-      else if (nquads == 3)
-        return Cell_kind::PRISM;
-      else
-        return Cell_kind::POLYHED;
-      break;
-    case 6:
-      if (nquads == 6)
-        return Cell_kind::HEX;
-      else
-        return Cell_kind::POLYHED;
-      break;
-    default:
-      return Cell_kind::POLYHED;
     }
   } else {
     Errors::Message msg;
@@ -80,7 +73,7 @@ getCellType(const Mesh_type& mesh, const Entity_ID c)
 }
 
 
-template <class Mesh_type>
+template<class Mesh_type>
 int
 getFaceDirectionInCell(const Mesh_type& mesh, const Entity_ID f, const Entity_ID c)
 {
@@ -98,7 +91,7 @@ getFaceDirectionInCell(const Mesh_type& mesh, const Entity_ID f, const Entity_ID
 }
 
 
-template <class Mesh_type>
+template<class Mesh_type>
 std::vector<int>
 mapFaceToCellEdges(const Mesh_type& mesh, const Entity_ID f, const Entity_ID c)
 {
@@ -111,7 +104,7 @@ mapFaceToCellEdges(const Mesh_type& mesh, const Entity_ID f, const Entity_ID c)
 }
 
 
-template <class Mesh_type>
+template<class Mesh_type>
 typename Mesh_type::Entity_ID_View
 computeCellEdges(const Mesh_type& mesh, const Entity_ID c)
 {
@@ -123,14 +116,16 @@ computeCellEdges(const Mesh_type& mesh, const Entity_ID c)
   for (const auto& f : faces) {
     mesh.getFaceEdges(f, fedges);
     for (const auto& e : fedges) {
-      if (std::find(begin(vedges), end(vedges), e) == end(vedges)) { vedges.emplace_back(e); }
+      if (std::find(begin(vedges), end(vedges), e) == end(vedges)) {
+        vedges.emplace_back(e);
+      }
     }
   }
   vectorToView(edges, vedges);
   return edges;
 }
 
-template <class Mesh_type>
+template<class Mesh_type>
 typename Mesh_type::Entity_ID_View
 computeCellNodes(const Mesh_type& mesh, const Entity_ID c)
 {
@@ -144,7 +139,9 @@ computeCellNodes(const Mesh_type& mesh, const Entity_ID c)
     for (const auto& f : faces) {
       mesh.getFaceNodes(f, fnodes);
       for (const auto& n : fnodes) {
-        if (std::find(vnodes.begin(), vnodes.end(), n) == vnodes.end()) { vnodes.emplace_back(n); }
+        if (std::find(vnodes.begin(), vnodes.end(), n) == vnodes.end()) {
+          vnodes.emplace_back(n);
+        }
       }
     }
   } else {
@@ -175,7 +172,7 @@ computeCellNodes(const Mesh_type& mesh, const Entity_ID c)
 }
 
 
-template <class Mesh_type>
+template<class Mesh_type>
 typename Mesh_type::Entity_ID_View
 computeNodeCells(const Mesh_type& mesh, const Entity_ID n)
 {
@@ -185,7 +182,9 @@ computeNodeCells(const Mesh_type& mesh, const Entity_ID n)
   for (const auto& f : faces) {
     mesh.getFaceCells(f, fcells);
     for (const auto& c : fcells) {
-      if (std::find(vcells.begin(), vcells.end(), c) == vcells.end()) { vcells.emplace_back(c); }
+      if (std::find(vcells.begin(), vcells.end(), c) == vcells.end()) {
+        vcells.emplace_back(c);
+      }
     }
   }
   typename Mesh_type::Entity_ID_View cells;
@@ -194,7 +193,7 @@ computeNodeCells(const Mesh_type& mesh, const Entity_ID n)
 }
 
 
-template <class Mesh_type>
+template<class Mesh_type>
 typename Mesh_type::Entity_ID_View
 computeEdgeCells(const Mesh_type& mesh, const Entity_ID e)
 {
@@ -205,7 +204,9 @@ computeEdgeCells(const Mesh_type& mesh, const Entity_ID e)
   for (const auto& v : nodes) {
     auto vcells = computeNodeCells(mesh, v);
     for (const auto& c : vcells) {
-      if (std::find(ecells.begin(), ecells.end(), c) == ecells.end()) { ecells.emplace_back(c); }
+      if (std::find(ecells.begin(), ecells.end(), c) == ecells.end()) {
+        ecells.emplace_back(c);
+      }
     }
   }
   typename Mesh_type::Entity_ID_View cells;
@@ -217,7 +218,7 @@ computeEdgeCells(const Mesh_type& mesh, const Entity_ID e)
 //
 // Geometry algorithms
 //
-template <class Mesh_type>
+template<class Mesh_type>
 std::pair<double, AmanziGeometry::Point>
 computeCellGeometry(const Mesh_type& mesh, const Entity_ID c)
 {
@@ -258,7 +259,7 @@ computeCellGeometry(const Mesh_type& mesh, const Entity_ID c)
 }
 
 
-template <class Mesh_type>
+template<class Mesh_type>
 std::tuple<double, AmanziGeometry::Point, typename Mesh_type::Point_View>
 computeFaceGeometry(const Mesh_type& mesh, const Entity_ID f)
 {
@@ -340,7 +341,7 @@ computeFaceGeometry(const Mesh_type& mesh, const Entity_ID f)
 }
 
 
-template <class Mesh_type>
+template<class Mesh_type>
 std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
 computeEdgeGeometry(const Mesh_type& mesh, const Entity_ID e)
 {
@@ -352,7 +353,7 @@ computeEdgeGeometry(const Mesh_type& mesh, const Entity_ID e)
   return std::make_pair(x1 - x0, (x1 + x0) / 2);
 }
 
-template <class Mesh_type>
+template<class Mesh_type>
 typename Mesh_type::Point_View
 computeBisectors(const Mesh_type& mesh,
                  const Entity_ID c,
@@ -365,7 +366,7 @@ computeBisectors(const Mesh_type& mesh,
 }
 
 
-template <class Mesh_type>
+template<class Mesh_type>
 void
 debugCell(const Mesh_type& mesh, const Entity_ID c)
 {
@@ -389,7 +390,7 @@ debugCell(const Mesh_type& mesh, const Entity_ID c)
 }
 
 
-template <class Mesh_type>
+template<class Mesh_type>
 typename Mesh_type::Point_View
 computeEdgeCoordinates(const Mesh_type& mesh, const Entity_ID e)
 {
@@ -399,11 +400,13 @@ computeEdgeCoordinates(const Mesh_type& mesh, const Entity_ID e)
   typename Mesh_type::Point_View coords("coords", nodes.size());
   auto coords_cpt = 0;
 
-  for (const auto& n : nodes) { coords[coords_cpt++] = mesh.getNodeCoordinate(n); }
+  for (const auto& n : nodes) {
+    coords[coords_cpt++] = mesh.getNodeCoordinate(n);
+  }
   return coords;
 }
 
-template <class Mesh_type>
+template<class Mesh_type>
 typename Mesh_type::Point_View
 computeFaceCoordinates(const Mesh_type& mesh, const Entity_ID f)
 {
@@ -413,11 +416,13 @@ computeFaceCoordinates(const Mesh_type& mesh, const Entity_ID f)
   typename Mesh_type::Point_View coords("coords", nodes.size());
   auto coords_cpt = 0;
 
-  for (const auto& n : nodes) { coords[coords_cpt++] = mesh.getNodeCoordinate(n); }
+  for (const auto& n : nodes) {
+    coords[coords_cpt++] = mesh.getNodeCoordinate(n);
+  }
   return coords;
 }
 
-template <class Mesh_type>
+template<class Mesh_type>
 typename Mesh_type::Point_View
 computeCellCoordinates(const Mesh_type& mesh, const Entity_ID c)
 {
@@ -427,11 +432,13 @@ computeCellCoordinates(const Mesh_type& mesh, const Entity_ID c)
   typename Mesh_type::Point_View coords("coords", nodes.size());
   auto coords_cpt = 0;
 
-  for (const auto& n : nodes) { coords[coords_cpt++] = mesh.getNodeCoordinate(n); }
+  for (const auto& n : nodes) {
+    coords[coords_cpt++] = mesh.getNodeCoordinate(n);
+  }
   return coords;
 }
 
-template <class Mesh_type>
+template<class Mesh_type>
 std::size_t
 getMaxCellNumNodes(const Mesh_type& mesh)
 {
@@ -445,7 +452,7 @@ getMaxCellNumNodes(const Mesh_type& mesh)
   return max_nnodes_g;
 }
 
-template <class Mesh_type>
+template<class Mesh_type>
 std::size_t
 getMaxCellNumFaces(const Mesh_type& mesh)
 {
@@ -459,7 +466,7 @@ getMaxCellNumFaces(const Mesh_type& mesh)
   return max_nfaces_g;
 }
 
-template <class Mesh_type>
+template<class Mesh_type>
 std::size_t
 getMaxCellNumEdges(const Mesh_type& mesh)
 {
@@ -473,7 +480,7 @@ getMaxCellNumEdges(const Mesh_type& mesh)
   return max_nedges_g;
 }
 
-template <class Mesh_type>
+template<class Mesh_type>
 KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
 getFaceCentroid(const Mesh_type& mesh, const Entity_ID f)
 {

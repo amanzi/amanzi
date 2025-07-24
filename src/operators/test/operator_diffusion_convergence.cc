@@ -303,10 +303,8 @@ RunInverseProblem(const std::string& discretization, int nx, int ny, bool write_
   if (write_matrix) {
     std::stringstream fname;
     fname << "matrix_" << nx;
-    if (discretization == "fv: default")
-      fname << "_fv";
-    else
-      fname << "_mfd";
+    if (discretization == "fv: default") fname << "_fv";
+    else fname << "_mfd";
     fname << ".dat";
     EpetraExt::RowMatrixToMatlabFile(fname.str().c_str(), *op->global_operator()->A());
   }

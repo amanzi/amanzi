@@ -36,18 +36,19 @@ namespace Transport {
 
 class TransportDomainFunction {
  public:
-  TransportDomainFunction() : domain_volume_(-1.0), location_("boundary"), name_("undefined"){};
+  TransportDomainFunction()
+    : domain_volume_(-1.0), location_("boundary"), name_("undefined") {};
 
   TransportDomainFunction(const Teuchos::ParameterList& plist)
     : domain_volume_(-1.0), location_("boundary"), name_(Keys::cleanPListName(plist))
   {}
 
-  virtual ~TransportDomainFunction(){};
+  virtual ~TransportDomainFunction() {};
 
   // source term on time interval (t0, t1]
   virtual void Compute(double t0, double t1) { AMANZI_ASSERT(false); }
   virtual void ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                               Teuchos::RCP<CompositeVector> tcc){};
+                               Teuchos::RCP<CompositeVector> tcc) {};
 
   // model name and type
   virtual std::string getName() const { return name_; }
@@ -73,7 +74,10 @@ class TransportDomainFunction {
   Iterator begin() { return value_.begin(); }
   Iterator end() { return value_.end(); }
   std::map<int, std::vector<double>>::size_type size() { return value_.size(); }
-  typename std::map<int, std::vector<double>>::const_iterator begin() const { return value_.begin(); }
+  typename std::map<int, std::vector<double>>::const_iterator begin() const
+  {
+    return value_.begin();
+  }
   typename std::map<int, std::vector<double>>::const_iterator end() const { return value_.end(); }
 
 
@@ -101,7 +105,7 @@ void inline copyToCompositeVector(const TransportDomainFunction& df, CompositeVe
   Epetra_MultiVector& mv = *cv.ViewComponent("cell", true);
   for (const auto& val : df) {
     AMANZI_ASSERT(val.second.size() == mv.NumVectors());
-    for (int j=0; j!=mv.NumVectors(); ++j) {
+    for (int j = 0; j != mv.NumVectors(); ++j) {
       mv[j][val.first] = val.second[j];
     }
   }

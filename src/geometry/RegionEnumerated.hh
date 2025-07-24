@@ -44,7 +44,7 @@ sublist whose name is the region name.  That sublist should be a
 `"region-enumerated-set-spec`".
 
 `"region type`" = `"enumerated set from file`"
-   
+
 .. _region-enumerated-set-from-file-spec:
 .. admonition:: region-enumerated-set-from-file-spec
 

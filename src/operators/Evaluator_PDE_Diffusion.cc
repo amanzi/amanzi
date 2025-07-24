@@ -164,7 +164,9 @@ Evaluator_PDE_Diffusion::UpdateDerivative(State& S,
   // Do the update
   auto request = std::make_tuple(wrt_key, wrt_tag, requestor);
   if (update) {
-    if (vo_.os_OK(Teuchos::VERB_EXTREME)) { *vo_.os() << "  ... updating." << std::endl; }
+    if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
+      *vo_.os() << "  ... updating." << std::endl;
+    }
 
     // If so, update ourselves, empty our list of filled requests, and return.
     UpdateDerivative_(S, wrt_key, wrt_tag);
@@ -180,7 +182,9 @@ Evaluator_PDE_Diffusion::UpdateDerivative(State& S,
       deriv_requests_.insert(request);
       return true;
     } else {
-      if (vo_.os_OK(Teuchos::VERB_EXTREME)) { *vo_.os() << "  ... has not changed." << std::endl; }
+      if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
+        *vo_.os() << "  ... has not changed." << std::endl;
+      }
       return false;
     }
   }
@@ -222,7 +226,7 @@ Evaluator_PDE_Diffusion::Update_(State& S)
   global_op->Init();
 
   Teuchos::Ptr<const CompositeVector> u;
-  if (!u_key_.empty()) u = S.GetPtr<CompositeVector>(u_key_, my_tag_).ptr();
+  if (!u_key_.empty() ) u = S.GetPtr<CompositeVector>(u_key_, my_tag_).ptr();
   pde->UpdateMatrices(Teuchos::null, u);
   pde->ApplyBCs(true, true, true);
 }

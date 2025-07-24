@@ -225,5 +225,7 @@ TEST_FIXTURE(bits_and_pieces, static_head)
   for (it0 = bc0->begin(), i = 0; it0 != bc0->end(); ++it0, ++i) {
     CHECK_EQUAL(head[i], it0->second[0]);
   }
-  for (it1 = bc1->begin(); it1 != bc1->end(); ++it1) { CHECK_EQUAL(-3.0, it1->second[0]); }
+  for (it1 = bc1->begin(); it1 != bc1->end(); ++it1) {
+    CHECK_EQUAL(-3.0, it1->second[0]);
+  }
 }

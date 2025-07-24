@@ -26,34 +26,25 @@
 namespace Amanzi {
 
 // collection of routines for mesh deformation
-void
-DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
-           int deform,
-           double t,
-           const Teuchos::RCP<const AmanziMesh::Mesh>& mesh0 = Teuchos::null);
+void DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
+                int deform,
+                double t,
+                const Teuchos::RCP<const AmanziMesh::Mesh>& mesh0 = Teuchos::null);
 
-void
-DeformMeshCurved(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
-                 int deform,
-                 double t,
-                 const Teuchos::RCP<const AmanziMesh::Mesh>& mesh0,
-                 int order);
+void DeformMeshCurved(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
+                      int deform,
+                      double t,
+                      const Teuchos::RCP<const AmanziMesh::Mesh>& mesh0,
+                      int order);
 
-AmanziGeometry::Point
-MovePoint(double t, const AmanziGeometry::Point& xv, int deform);
+AmanziGeometry::Point MovePoint(double t, const AmanziGeometry::Point& xv, int deform);
 
-AmanziGeometry::Point
-TaylorGreenVortex(double t, const AmanziGeometry::Point& xv);
-AmanziGeometry::Point
-Rotation2D(double t, const AmanziGeometry::Point& xv);
-AmanziGeometry::Point
-CompressionExpansion(double t, const AmanziGeometry::Point& xv);
-AmanziGeometry::Point
-BubbleFace3D(double t, const AmanziGeometry::Point& xv);
-AmanziGeometry::Point
-Unused(double t, const AmanziGeometry::Point& xv);
-AmanziGeometry::Point
-SineProduct(double t, const AmanziGeometry::Point& xv);
+AmanziGeometry::Point TaylorGreenVortex(double t, const AmanziGeometry::Point& xv);
+AmanziGeometry::Point Rotation2D(double t, const AmanziGeometry::Point& xv);
+AmanziGeometry::Point CompressionExpansion(double t, const AmanziGeometry::Point& xv);
+AmanziGeometry::Point BubbleFace3D(double t, const AmanziGeometry::Point& xv);
+AmanziGeometry::Point Unused(double t, const AmanziGeometry::Point& xv);
+AmanziGeometry::Point SineProduct(double t, const AmanziGeometry::Point& xv);
 
 
 /* *****************************************************************
@@ -65,7 +56,7 @@ DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
            double t,
            const Teuchos::RCP<const AmanziMesh::Mesh>& mesh0)
 {
-  if (mesh1->getComm()->MyPID() == 0) std::cout << "Deforming mesh...\n";
+  if (mesh1->getComm() ->MyPID() == 0) std::cout << "Deforming mesh...\n";
 
   // create distributed random vector
   int d = mesh1->getSpaceDimension();
@@ -97,10 +88,8 @@ DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
   AmanziMesh::Point_View new_positions("newpos", nnodes);
 
   for (int v = 0; v < nnodes; ++v) {
-    if (mesh0.get())
-      xv = mesh0->getNodeCoordinate(v);
-    else
-      xv = mesh1->getNodeCoordinate(v);
+    if (mesh0.get() ) xv = mesh0->getNodeCoordinate(v);
+    else xv = mesh1->getNodeCoordinate(v);
 
     nodeids[v] = v;
 
@@ -182,29 +171,29 @@ MovePoint(double t, const AmanziGeometry::Point& xv, int deform)
   AmanziGeometry::Point yv(xv);
 
   switch (deform) {
-  case 1:
-    yv = TaylorGreenVortex(t, xv);
-    break;
-  case 2:
-    yv = Unused(t, xv);
-    break;
-  case 3:
-    yv = SineProduct(t, xv);
-    break;
-  case 4:
-    AMANZI_ASSERT(false);
-    break;
-  case 5:
-    yv = CompressionExpansion(t, xv);
-    break;
-  case 6:
-    yv = Rotation2D(t, xv);
-    break;
-  case 8:
-    yv = BubbleFace3D(t, xv);
-    break;
-  default:
-    break;
+    case 1:
+      yv = TaylorGreenVortex(t, xv);
+      break;
+    case 2:
+      yv = Unused(t, xv);
+      break;
+    case 3:
+      yv = SineProduct(t, xv);
+      break;
+    case 4:
+      AMANZI_ASSERT(false);
+      break;
+    case 5:
+      yv = CompressionExpansion(t, xv);
+      break;
+    case 6:
+      yv = Rotation2D(t, xv);
+      break;
+    case 8:
+      yv = BubbleFace3D(t, xv);
+      break;
+    default:
+      break;
   }
 
   return yv;

@@ -29,7 +29,7 @@ namespace AmanziEOS {
 class H2O_ThermalConductivity : public EOS_ThermalConductivity {
  public:
   explicit H2O_ThermalConductivity(Teuchos::ParameterList& plist);
-  virtual ~H2O_ThermalConductivity(){};
+  virtual ~H2O_ThermalConductivity() {};
 
   virtual double ThermalConductivity(double T, double phi);
   virtual double DThermalConductivityDT(double T, double phi);

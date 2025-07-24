@@ -40,7 +40,7 @@ CreateMDMPartition(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
       Teuchos::ParameterList sublist = plist->sublist(name);
 
       if (sublist.isParameter("region")) {
-        regions.push_back(std::vector<std::string>{sublist.get<std::string>("region")});
+        regions.push_back(std::vector<std::string>{ sublist.get<std::string>("region") });
       } else {
         regions.push_back(sublist.get<Teuchos::Array<std::string>>("regions").toVector());
       }

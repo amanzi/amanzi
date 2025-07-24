@@ -91,7 +91,7 @@ enum method_t {
   user_defined
 };
 
-template <class Vector>
+template<class Vector>
 class RK {
  public:
   // constructor for pre-coded RK methods (see list of methods in the method_t type above)
@@ -129,8 +129,9 @@ class RK {
 };
 
 
-template <class Vector>
-RK<Vector>::RK(fnBase<Vector>& fn, const method_t method, const Vector& initvector) : fn_(fn)
+template<class Vector>
+RK<Vector>::RK(fnBase<Vector>& fn, const method_t method, const Vector& initvector)
+  : fn_(fn)
 {
   InitMethod_(method);
   CreateStorage_(initvector);
@@ -138,7 +139,7 @@ RK<Vector>::RK(fnBase<Vector>& fn, const method_t method, const Vector& initvect
 }
 
 
-template <class Vector>
+template<class Vector>
 RK<Vector>::RK(fnBase<Vector>& fn, Teuchos::ParameterList& plist, const Vector& initvector)
   : fn_(fn), plist_(plist)
 {
@@ -171,7 +172,7 @@ RK<Vector>::RK(fnBase<Vector>& fn, Teuchos::ParameterList& plist, const Vector& 
 }
 
 
-template <class Vector>
+template<class Vector>
 RK<Vector>::RK(fnBase<Vector>& fn,
                const int order,
                const Epetra_SerialDenseMatrix& a,
@@ -190,36 +191,36 @@ RK<Vector>::RK(fnBase<Vector>& fn,
 }
 
 
-template <class Vector>
+template<class Vector>
 void
 RK<Vector>::InitMethod_(const method_t method)
 {
   method_ = method;
 
   switch (method_) {
-  case forward_euler:
-    order_ = 1;
-    break;
-  case heun_euler:
-    order_ = 2;
-    break;
-  case midpoint:
-    order_ = 2;
-    break;
-  case ralston:
-    order_ = 2;
-    break;
-  case tvd_3rd_order:
-    order_ = 3;
-    break;
-  case kutta_3rd_order:
-    order_ = 3;
-    break;
-  case runge_kutta_4th_order:
-    order_ = 4;
-    break;
-  default:
-    order_ = -1;
+    case forward_euler:
+      order_ = 1;
+      break;
+    case heun_euler:
+      order_ = 2;
+      break;
+    case midpoint:
+      order_ = 2;
+      break;
+    case ralston:
+      order_ = 2;
+      break;
+    case tvd_3rd_order:
+      order_ = 3;
+      break;
+    case kutta_3rd_order:
+      order_ = 3;
+      break;
+    case runge_kutta_4th_order:
+      order_ = 4;
+      break;
+    default:
+      order_ = -1;
   }
 
   a_.Shape(order_, order_);
@@ -228,107 +229,109 @@ RK<Vector>::InitMethod_(const method_t method)
 
   // initialize the RK tableau
   switch (method) {
-  case forward_euler:
-    b_[0] = 1.0;
-    c_[0] = 0.0;
-    break;
+    case forward_euler:
+      b_[0] = 1.0;
+      c_[0] = 0.0;
+      break;
 
-  case heun_euler:
-    a_(1, 0) = 1.0;
+    case heun_euler:
+      a_(1, 0) = 1.0;
 
-    b_[0] = 0.5;
-    b_[1] = 0.5;
+      b_[0] = 0.5;
+      b_[1] = 0.5;
 
-    c_[0] = 0.0;
-    c_[1] = 1.0;
-    break;
+      c_[0] = 0.0;
+      c_[1] = 1.0;
+      break;
 
-  case midpoint:
-    a_(1, 0) = 0.5;
+    case midpoint:
+      a_(1, 0) = 0.5;
 
-    b_[0] = 0.0;
-    b_[1] = 1.0;
+      b_[0] = 0.0;
+      b_[1] = 1.0;
 
-    c_[0] = 0.0;
-    c_[1] = 0.5;
-    break;
+      c_[0] = 0.0;
+      c_[1] = 0.5;
+      break;
 
-  case ralston:
-    a_(1, 0) = 2.0 / 3.0;
+    case ralston:
+      a_(1, 0) = 2.0 / 3.0;
 
-    b_[0] = 0.25;
-    b_[1] = 0.75;
+      b_[0] = 0.25;
+      b_[1] = 0.75;
 
-    c_[0] = 0.0;
-    c_[1] = 2.0 / 3.0;
-    break;
+      c_[0] = 0.0;
+      c_[1] = 2.0 / 3.0;
+      break;
 
-  case tvd_3rd_order:
-    a_(1, 0) = 1.0;
-    a_(2, 0) = 0.25;
+    case tvd_3rd_order:
+      a_(1, 0) = 1.0;
+      a_(2, 0) = 0.25;
 
-    a_(2, 1) = 0.25;
+      a_(2, 1) = 0.25;
 
-    b_[0] = 1.0 / 6.0;
-    b_[1] = 1.0 / 6.0;
-    b_[2] = 2.0 / 3.0;
+      b_[0] = 1.0 / 6.0;
+      b_[1] = 1.0 / 6.0;
+      b_[2] = 2.0 / 3.0;
 
-    c_[0] = 0.0;
-    c_[1] = 1.0;
-    c_[2] = 0.5;
-    break;
+      c_[0] = 0.0;
+      c_[1] = 1.0;
+      c_[2] = 0.5;
+      break;
 
-  case kutta_3rd_order:
-    a_(1, 0) = 0.5;
-    a_(2, 0) = -1.0;
+    case kutta_3rd_order:
+      a_(1, 0) = 0.5;
+      a_(2, 0) = -1.0;
 
-    a_(2, 1) = 2.0;
+      a_(2, 1) = 2.0;
 
-    b_[0] = 1.0 / 6.0;
-    b_[1] = 2.0 / 3.0;
-    b_[2] = 1.0 / 6.0;
+      b_[0] = 1.0 / 6.0;
+      b_[1] = 2.0 / 3.0;
+      b_[2] = 1.0 / 6.0;
 
-    c_[0] = 0.0;
-    c_[1] = 0.5;
-    c_[2] = 1.0;
-    break;
+      c_[0] = 0.0;
+      c_[1] = 0.5;
+      c_[2] = 1.0;
+      break;
 
-  case runge_kutta_4th_order:
-    a_(1, 0) = 0.5;
-    a_(2, 0) = 0.0;
-    a_(3, 0) = 0.0;
+    case runge_kutta_4th_order:
+      a_(1, 0) = 0.5;
+      a_(2, 0) = 0.0;
+      a_(3, 0) = 0.0;
 
-    a_(2, 1) = 0.5;
-    a_(3, 1) = 0.0;
+      a_(2, 1) = 0.5;
+      a_(3, 1) = 0.0;
 
-    a_(3, 2) = 1.0;
+      a_(3, 2) = 1.0;
 
-    b_[0] = 1.0 / 6.0;
-    b_[1] = 1.0 / 3.0;
-    b_[2] = 1.0 / 3.0;
-    b_[3] = 1.0 / 6.0;
+      b_[0] = 1.0 / 6.0;
+      b_[1] = 1.0 / 3.0;
+      b_[2] = 1.0 / 3.0;
+      b_[3] = 1.0 / 6.0;
 
-    c_[0] = 0.0;
-    c_[1] = 0.5;
-    c_[2] = 0.5;
-    c_[3] = 1.0;
-    break;
-  default:
-    break;
+      c_[0] = 0.0;
+      c_[1] = 0.5;
+      c_[2] = 0.5;
+      c_[3] = 1.0;
+      break;
+    default:
+      break;
   }
 }
 
 
-template <class Vector>
+template<class Vector>
 void
 RK<Vector>::CreateStorage_(const Vector& initvector)
 {
   k_.resize(order_);
-  for (int i = 0; i != order_; ++i) { k_[i] = Teuchos::rcp(new Vector(initvector)); }
+  for (int i = 0; i != order_; ++i) {
+    k_[i] = Teuchos::rcp(new Vector(initvector));
+  }
 }
 
 
-template <class Vector>
+template<class Vector>
 void
 RK<Vector>::TimeStep(double t, double h, const Vector& y, Vector& y_new)
 {
@@ -345,7 +348,9 @@ RK<Vector>::TimeStep(double t, double h, const Vector& y, Vector& y_new)
       y_new = y_tmp;
 
       for (int j = 0; j != i; ++j) {
-        if (a_(i, j) != 0.0) { y_new.Update(a_(i, j), *k_[j], 1.0); }
+        if (a_(i, j) != 0.0) {
+          y_new.Update(a_(i, j), *k_[j], 1.0);
+        }
       }
       fn_.ModifySolution(sum_time, y_new);
       fn_.FunctionalTimeDerivative(sum_time, y_new, *k_[i]);
@@ -356,7 +361,9 @@ RK<Vector>::TimeStep(double t, double h, const Vector& y, Vector& y_new)
 
   y_new = y_tmp;
   for (int i = 0; i != order_; ++i) {
-    if (b_[i] != 0.0) { y_new.Update(b_[i], *k_[i], 1.0); }
+    if (b_[i] != 0.0) {
+      y_new.Update(b_[i], *k_[i], 1.0);
+    }
   }
 }
 

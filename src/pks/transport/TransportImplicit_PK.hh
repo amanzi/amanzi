@@ -54,7 +54,9 @@
 namespace Amanzi {
 namespace Transport {
 
-class TransportImplicit_PK : public Transport_PK, public PK_BDF {
+class TransportImplicit_PK
+  : public Transport_PK
+  , public PK_BDF {
  public:
   TransportImplicit_PK(Teuchos::ParameterList& pk_tree,
                        const Teuchos::RCP<Teuchos::ParameterList>& glist,
@@ -66,7 +68,7 @@ class TransportImplicit_PK : public Transport_PK, public PK_BDF {
                        const std::string& pk_list_name,
                        std::vector<std::string>& component_names);
 
-  ~TransportImplicit_PK(){};
+  ~TransportImplicit_PK() {};
 
   virtual void Initialize() override;
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
@@ -80,12 +82,12 @@ class TransportImplicit_PK : public Transport_PK, public PK_BDF {
                                   Teuchos::RCP<const TreeVector> u_old,
                                   Teuchos::RCP<TreeVector> u_new,
                                   Teuchos::RCP<TreeVector> f) override;
-  virtual double
-  ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) override;
+  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
+                           Teuchos::RCP<const TreeVector> du) override;
 
   // -- management of the preconditioner
-  virtual int
-  ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu) override;
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
+                                  Teuchos::RCP<TreeVector> pu) override;
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u, double dt) override;
 
   // -- check the admissibility of a solution
@@ -98,8 +100,9 @@ class TransportImplicit_PK : public Transport_PK, public PK_BDF {
   //    using extrapolation and the timestep that is used to compute
   //    this predictor this function returns true if the predictor was
   //    modified, false if not
-  virtual bool
-  ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u) override
+  virtual bool ModifyPredictor(double dt,
+                               Teuchos::RCP<const TreeVector> u0,
+                               Teuchos::RCP<TreeVector> u) override
   {
     return false;
   }
@@ -108,11 +111,11 @@ class TransportImplicit_PK : public Transport_PK, public PK_BDF {
   //    has computed it, will return true if it did change the correction,
   //    so that the nonlinear iteration can store the modified correction
   //    and pass it to NKA so that the NKA space can be updated
-  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-  ModifyCorrection(double dt,
-                   Teuchos::RCP<const TreeVector> res,
-                   Teuchos::RCP<const TreeVector> u,
-                   Teuchos::RCP<TreeVector> du) override
+  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult ModifyCorrection(
+    double dt,
+    Teuchos::RCP<const TreeVector> res,
+    Teuchos::RCP<const TreeVector> u,
+    Teuchos::RCP<TreeVector> du) override
   {
     return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
   }
@@ -121,7 +124,7 @@ class TransportImplicit_PK : public Transport_PK, public PK_BDF {
 
   // -- calling this indicates that the time integration
   //    scheme is changing the value of the solution in state.
-  virtual void ChangedSolution() override{};
+  virtual void ChangedSolution() override {};
 
   void UpdateLinearSystem(double t_old, double t_new, int component);
   void UpdateBoundaryData(double t_old, double t_new, int component);

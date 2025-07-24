@@ -50,11 +50,9 @@ class Function;
 
 namespace Functions {
 
-void
-ReadColumnMeshFunction(Teuchos::ParameterList& plist, CompositeVector& v);
+void ReadColumnMeshFunction(Teuchos::ParameterList& plist, CompositeVector& v);
 
-void
-ReadColumnMeshFunction_ByDepth(const Function& func, CompositeVector& v);
+void ReadColumnMeshFunction_ByDepth(const Function& func, CompositeVector& v);
 
 } // namespace Functions
 } // namespace Amanzi

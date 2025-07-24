@@ -40,11 +40,11 @@ TEST(MASS_MATRIX_2D)
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: Mass matrix for edge elements in 2D" << std::endl;
-#  ifdef HAVE_MPI
+#ifdef HAVE_MPI
   auto comm = Amanzi::getDefaultComm();
-#  else
+#else
   auto comm = Amanzi::getCommSelf();
-#  endif
+#endif
   Teuchos::RCP<Teuchos::ParameterList> factory_plist = Teuchos::rcp(new Teuchos::ParameterList());
   factory_plist->set<bool>("request edges", true);
   factory_plist->set<bool>("request faces", true);
@@ -144,10 +144,8 @@ MassMatrix3D(std::string mesh_file, int max_row)
   meshfactory.set_preference(Preference({ Framework::MSTK }));
 
   RCP<Mesh> mesh;
-  if (mesh_file == "")
-    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1);
-  else
-    mesh = meshfactory.create(mesh_file);
+  if (mesh_file == "") mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1);
+  else mesh = meshfactory.create(mesh_file);
 
   Teuchos::ParameterList plist;
   MFD3D_Electromagnetics mfd(plist, mesh);
@@ -250,11 +248,11 @@ TEST(STIFFNESS_MATRIX_2D)
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: Stiffness matrix for edge elements in 2D" << std::endl;
-#  ifdef HAVE_MPI
+#ifdef HAVE_MPI
   auto comm = Amanzi::getDefaultComm();
-#  else
+#else
   auto comm = Amanzi::getCommSelf();
-#  endif
+#endif
 
   Teuchos::RCP<Teuchos::ParameterList> factory_plist = Teuchos::rcp(new Teuchos::ParameterList());
   factory_plist->set<bool>("request edges", true);
@@ -337,11 +335,11 @@ StiffnessMatrix3D(std::string mesh_file, int max_row)
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: Stiffness matrix for edge elements in 3D: " << mesh_file << std::endl;
-#  ifdef HAVE_MPI
+#ifdef HAVE_MPI
   auto comm = Amanzi::getDefaultComm();
-#  else
+#else
   auto comm = Amanzi::getCommSelf();
-#  endif
+#endif
 
   Teuchos::RCP<Teuchos::ParameterList> factory_plist = Teuchos::rcp(new Teuchos::ParameterList());
   factory_plist->set<bool>("request edges", true);

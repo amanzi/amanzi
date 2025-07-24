@@ -39,8 +39,9 @@ namespace WhetStone {
 
 class Basis {
  public:
-  Basis() : id_(-1){};
-  virtual ~Basis(){};
+  Basis()
+    : id_(-1) {};
+  virtual ~Basis() {};
 
   // initialization
   virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,

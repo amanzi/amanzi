@@ -21,8 +21,9 @@ namespace AmanziEOS {
 
 class EOS_Viscosity {
  public:
-  EOS_Viscosity(Teuchos::ParameterList& eos_plist) : eos_plist_(eos_plist), ierr_(0){};
-  virtual ~EOS_Viscosity(){};
+  EOS_Viscosity(Teuchos::ParameterList& eos_plist)
+    : eos_plist_(eos_plist), ierr_(0) {};
+  virtual ~EOS_Viscosity() {};
 
   virtual double Viscosity(double T, double p) = 0;
   virtual double DViscosityDT(double T, double p) = 0;

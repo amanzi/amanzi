@@ -548,7 +548,9 @@ PipeFlow_PK::get_dt()
   }
 
   // reduce dt_min when dt is too large for completely dry conditions (h = 0, qx = 0, qy = 0)
-  if (dt >= d_min * 1.e8) { dt = d_min * dt_dry; }
+  if (dt >= d_min * 1.e8) {
+    dt = d_min * dt_dry;
+  }
 
   double dt_min;
   mesh_->getComm()->MinAll(&dt, &dt_min, 1);
@@ -700,11 +702,9 @@ PipeFlow_PK::ComputeFieldsOnEdge(int c,
 double
 PipeFlow_PK::ComputeWettedAngle(double WaterDepth, double PipeD)
 {
-  if (WaterDepth >= PipeD)
-    return 2.0 * M_PI; //if pipe is filled wetted angle is two pi
+  if (WaterDepth >= PipeD) return 2.0 * M_PI; //if pipe is filled wetted angle is two pi
 
-  else
-    return 2.0 * acos(1.0 - 2.0 * WaterDepth / PipeD);
+  else return 2.0 * acos(1.0 - 2.0 * WaterDepth / PipeD);
 }
 
 //--------------------------------------------------------------------
@@ -716,8 +716,7 @@ PipeFlow_PK::ComputeWettedArea(double WettedAngle, double PipeD)
   if (WettedAngle >= (2.0 * M_PI))
     return M_PI * 0.25 * PipeD * PipeD; //if pipe is filled, wetted area is the full cross section
 
-  else
-    return PipeD * PipeD * 0.125 * (WettedAngle - sin(WettedAngle));
+  else return PipeD * PipeD * 0.125 * (WettedAngle - sin(WettedAngle));
 }
 
 //--------------------------------------------------------------------
@@ -726,11 +725,9 @@ PipeFlow_PK::ComputeWettedArea(double WettedAngle, double PipeD)
 double
 PipeFlow_PK::ComputeWaterDepth(double WettedAngle, double PipeD)
 {
-  if (WettedAngle >= (2.0 * M_PI))
-    return PipeD;
+  if (WettedAngle >= (2.0 * M_PI) ) return PipeD;
 
-  else
-    return PipeD * 0.5 * (1.0 - cos(WettedAngle * 0.5));
+  else return PipeD * 0.5 * (1.0 - cos(WettedAngle * 0.5));
 }
 
 //--------------------------------------------------------------------

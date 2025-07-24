@@ -90,5 +90,3 @@ class EvaluatorMultiplicativeReciprocal
 };
 
 } // namespace Amanzi
-
-

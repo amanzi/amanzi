@@ -217,7 +217,7 @@ FlowEnergyMatrixFracture_PK::Initialize()
   // -- transmissibimility coefficients for matrix-fracture fluxes
   auto eval = S_->GetEvaluatorPtr(heat_diffusion_to_matrix_key_, Tags::DEFAULT);
   auto eval_tmp = Teuchos::rcp_dynamic_cast<HeatDiffusionMatrixFracture>(eval);
-  if (eval_tmp.get()) eval_tmp->Update(*S_, "coupled flow energy");
+  if (eval_tmp.get() ) eval_tmp->Update(*S_, "coupled flow energy");
 
   const auto& kn = *S_->Get<CV_t>(diffusion_to_matrix_key_).ViewComponent("cell");
   const auto& tn = *S_->Get<CV_t>(heat_diffusion_to_matrix_key_).ViewComponent("cell");
@@ -399,7 +399,7 @@ FlowEnergyMatrixFracture_PK::UpdatePreconditioner(double t,
 
     for (int k = 0; k < 2; ++k) {
       const auto& inds = smap->Indices(n, comps[k], 0);
-      for (int i = 0; i != inds.size(); ++i) (*block_indices)[inds[i]] = id;
+      for (int i = 0; i != inds.size() ; ++i) (*block_indices)[inds[i]] = id;
     }
   }
   auto block_ids = std::make_pair(2, block_indices);
@@ -506,7 +506,7 @@ FlowEnergyMatrixFracture_PK::SwapEvaluatorField_(const Key& key,
                                                  Teuchos::RCP<CompositeVector>& fdm_copy,
                                                  Teuchos::RCP<CompositeVector>& fdf_copy)
 {
-  if (!S_->HasRecord(key)) return;
+  if (!S_->HasRecord(key) ) return;
 
   // matrix
   Key ev_key, fd_key;
@@ -525,7 +525,7 @@ FlowEnergyMatrixFracture_PK::SwapEvaluatorField_(const Key& key,
   // fracture
   ev_key = "fracture-" + key;
   fd_key = "fracture-prev_" + key;
-  if (!S_->HasRecord(ev_key)) return;
+  if (!S_->HasRecord(ev_key) ) return;
 
   S_->GetEvaluator(ev_key).Update(*S_, passwd);
   {

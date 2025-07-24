@@ -28,8 +28,8 @@
 #include "AmanziComm.hh"
 
 #ifdef ENABLE_Unstructured
-#  include "state_evaluators_registration.hh"
-#  include "AmanziUnstructuredGridSimulationDriver.hh"
+#include "state_evaluators_registration.hh"
+#include "AmanziUnstructuredGridSimulationDriver.hh"
 #endif
 
 #include "tpl_versions.h"
@@ -225,7 +225,9 @@ main(int argc, char* argv[])
     }
 
     if (print_paths) {
-      if (rank == 0) { std::cout << "xml input file:  " << xmlInFileName << std::endl; }
+      if (rank == 0) {
+        std::cout << "xml input file:  " << xmlInFileName << std::endl;
+      }
     }
 
     if (xmlInFileName.size() == 0) {
@@ -260,10 +262,14 @@ main(int argc, char* argv[])
                                    "likely due to an error in the mesh creation."));
     }
 
-    if (rank == 0) { std::cout << "Amanzi::SIMULATION_SUCCESSFUL\n\n"; }
+    if (rank == 0) {
+      std::cout << "Amanzi::SIMULATION_SUCCESSFUL\n\n";
+    }
   } catch (std::string& s) {
     if (rank == 0) {
-      if (s == "Amanzi not run") { std::cout << "Amanzi::SIMULATION_DID_NOT_RUN\n"; }
+      if (s == "Amanzi not run") {
+        std::cout << "Amanzi::SIMULATION_DID_NOT_RUN\n";
+      }
     }
     Kokkos::finalize();
     return 1;

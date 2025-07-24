@@ -25,7 +25,7 @@ namespace AmanziChemistry {
 class Newton {
  public:
   explicit Newton(const int n);
-  virtual ~Newton(){};
+  virtual ~Newton() {};
 
   void size(int i) { size_ = i; }
   int size() const { return size_; }

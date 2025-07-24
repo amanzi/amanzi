@@ -51,7 +51,9 @@ SaturationEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector
   auto& result_c = *results[0]->ViewComponent("cell");
 
   int ncells = result_c.MyLength();
-  for (int c = 0; c != ncells; ++c) { result_c[0][c] = 1.0 - sl[0][c]; }
+  for (int c = 0; c != ncells; ++c) {
+    result_c[0][c] = 1.0 - sl[0][c];
+  }
 }
 
 

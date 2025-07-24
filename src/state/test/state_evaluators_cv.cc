@@ -53,7 +53,9 @@ class AEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeV
     auto& result_c = *results[0]->ViewComponent(comp_);
     const auto& fb_c = *S.Get<CompositeVector>("fb").ViewComponent(comp_);
 
-    for (int c = 0; c != result_c.MyLength(); ++c) { result_c[0][c] = 2 * fb_c[0][c]; }
+    for (int c = 0; c != result_c.MyLength(); ++c) {
+      result_c[0][c] = 2 * fb_c[0][c];
+    }
   }
 
   virtual void EvaluatePartialDerivative_(const State& S,
@@ -64,7 +66,9 @@ class AEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeV
     auto& result_c = *results[0]->ViewComponent(comp_);
 
     if (wrt_key == "fb") {
-      for (int c = 0; c != result_c.MyLength(); ++c) { result_c[0][c] = 2.0; }
+      for (int c = 0; c != result_c.MyLength(); ++c) {
+        result_c[0][c] = 2.0;
+      }
     }
   }
 

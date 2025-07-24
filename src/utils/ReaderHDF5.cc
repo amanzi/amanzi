@@ -20,7 +20,8 @@
 
 namespace Amanzi {
 
-ReaderHDF5::ReaderHDF5(const std::string& filename) : filename_(filename), file_(-1)
+ReaderHDF5::ReaderHDF5(const std::string& filename)
+  : filename_(filename), file_(-1)
 {
   htri_t ierr = H5Fis_hdf5(filename.c_str());
   if (ierr > 0) {
@@ -101,7 +102,9 @@ ReaderHDF5::read(const std::string& lvarname, Teuchos::Array<int>& vec, int inde
 }
 
 void
-ReaderHDF5::read(const std::string& lvarname, Teuchos::SerialDenseMatrix<int, double>& mat, int index) const
+ReaderHDF5::read(const std::string& lvarname,
+                 Teuchos::SerialDenseMatrix<int, double>& mat,
+                 int index) const
 {
   std::string varname = lvarname;
   if (index >= 0) varname = varname + "/" + std::to_string(index);

@@ -31,25 +31,26 @@ class CompositeVectorFunction final {
                           const std::string& spatial_dist_method = "none");
   ~CompositeVectorFunction() = default;
 
-  void
-  Compute(double time, const Teuchos::Ptr<CompositeVector>& vec, const VerboseObject* vo = nullptr);
+  void Compute(double time,
+               const Teuchos::Ptr<CompositeVector>& vec,
+               const VerboseObject* vo = nullptr);
 
  protected:
-  void
-  Compute_(double time, const Teuchos::Ptr<CompositeVector>& vec, const VerboseObject* vo);
+  void Compute_(double time, const Teuchos::Ptr<CompositeVector>& vec, const VerboseObject* vo);
 
-  void
-  ComputeDotWithNormal_(double time, const Teuchos::Ptr<CompositeVector>& vec, const VerboseObject* vo);
+  void ComputeDotWithNormal_(double time,
+                             const Teuchos::Ptr<CompositeVector>& vec,
+                             const VerboseObject* vo);
 
-  void
-  ComputeSpatiallyDistributed_(double time, const Teuchos::Ptr<CompositeVector>& vec, const VerboseObject* vo);
+  void ComputeSpatiallyDistributed_(double time,
+                                    const Teuchos::Ptr<CompositeVector>& vec,
+                                    const VerboseObject* vo);
 
   // compute a single spec
-  void
-  ComputeSpec_(const MeshFunction::Spec& spec,
-               double time,
-               Epetra_MultiVector& vec,
-               const VerboseObject* vo);
+  void ComputeSpec_(const MeshFunction::Spec& spec,
+                    double time,
+                    Epetra_MultiVector& vec,
+                    const VerboseObject* vo);
 
  protected:
   typedef std::pair<std::string, Teuchos::RCP<MeshFunction::Spec>> CompositeVectorSpec;

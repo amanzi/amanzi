@@ -27,10 +27,10 @@ class Op_Cell_Cell : public Op {
   Op_Cell_Cell(const std::string& name, const Teuchos::RCP<const AmanziMesh::Mesh> mesh, int nvec)
     : Op(OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL, name, mesh)
   {
-    diag = Teuchos::rcp(new Epetra_MultiVector(
-      mesh->getMap(AmanziMesh::Entity_kind::CELL, false), nvec));
-    diag_shadow = Teuchos::rcp(new Epetra_MultiVector(
-      mesh->getMap(AmanziMesh::Entity_kind::CELL, false), nvec));
+    diag = Teuchos::rcp(
+      new Epetra_MultiVector(mesh->getMap(AmanziMesh::Entity_kind::CELL, false), nvec));
+    diag_shadow = Teuchos::rcp(
+      new Epetra_MultiVector(mesh->getMap(AmanziMesh::Entity_kind::CELL, false), nvec));
   }
 
   virtual Teuchos::RCP<Op> DeepClone() const override
@@ -72,7 +72,9 @@ class Op_Cell_Cell : public Op {
       const Epetra_MultiVector& s_c = *scaling.ViewComponent("cell", false);
       AMANZI_ASSERT(s_c.MyLength() == diag->MyLength());
       for (int k = 0; k != s_c.NumVectors(); ++k) {
-        for (int i = 0; i != s_c.MyLength(); ++i) { (*diag)[k][i] *= s_c[0][i]; }
+        for (int i = 0; i != s_c.MyLength(); ++i) {
+          (*diag)[k][i] *= s_c[0][i];
+        }
       }
     }
   }

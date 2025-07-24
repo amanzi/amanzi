@@ -35,14 +35,14 @@ computational domain.
 
 namespace Amanzi {
 
-template <class FunctionBase>
+template<class FunctionBase>
 class PK_DomainFunctionWeightField : public PK_DomainFunctionWeight<FunctionBase> {
  public:
   PK_DomainFunctionWeightField(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                const Teuchos::RCP<State>& S,
                                AmanziMesh::Entity_kind kind)
-    : PK_DomainFunctionWeight<FunctionBase>(mesh, kind), S_(S), mesh_(mesh), kind_(kind){};
-  ~PK_DomainFunctionWeightField(){};
+    : PK_DomainFunctionWeight<FunctionBase>(mesh, kind), S_(S), mesh_(mesh), kind_(kind) {};
+  ~PK_DomainFunctionWeightField() {};
 
   // member functions
   void Init(const Teuchos::ParameterList& plist, const std::string& keyword);
@@ -55,9 +55,9 @@ class PK_DomainFunctionWeightField : public PK_DomainFunctionWeight<FunctionBase
   }
 
  protected:
-  using FunctionBase::value_;
   using FunctionBase::domain_volume_;
   using FunctionBase::keyword_;
+  using FunctionBase::value_;
 
  private:
   Teuchos::RCP<State> S_;
@@ -72,7 +72,7 @@ class PK_DomainFunctionWeightField : public PK_DomainFunctionWeight<FunctionBase
 /* ******************************************************************
 * Initialization adds a single function to the list of unique specs.
 ****************************************************************** */
-template <class FunctionBase>
+template<class FunctionBase>
 void
 PK_DomainFunctionWeightField<FunctionBase>::Init(const Teuchos::ParameterList& plist,
                                                  const std::string& keyword)
@@ -105,7 +105,7 @@ PK_DomainFunctionWeightField<FunctionBase>::Init(const Teuchos::ParameterList& p
 /* ******************************************************************
 * Compute and distribute the result by volume.
 ****************************************************************** */
-template <class FunctionBase>
+template<class FunctionBase>
 void
 PK_DomainFunctionWeightField<FunctionBase>::Compute(double t0, double t1)
 {

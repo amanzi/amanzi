@@ -155,10 +155,8 @@ InputConverterU::TranslateCycleDriver_()
   std::map<double, double>::iterator it1, it2;
   it1 = tp_t1.begin();
   if (flag_steady && t1_steady < t0_steady) {
-    if (it1 != tp_t1.end())
-      t1_steady = it1->first;
-    else
-      flag = false;
+    if (it1 != tp_t1.end() ) t1_steady = it1->first;
+    else flag = false;
   }
 
   if (it1 != tp_t1.end()) {
@@ -264,45 +262,35 @@ InputConverterU::TranslateCycleDriver_()
   std::map<double, std::string>::iterator it = tp_mode.begin();
   while (it != tp_mode.end()) {
     switch (transient_model) {
-    case 1:
-      PopulatePKTree_(pk_tree_list, "transient:chemistry");
-      break;
-    case 2:
-      if (!coupled_transport_)
-        PopulatePKTree_(pk_tree_list, "transient:transport");
-      else
-        PopulatePKTree_(pk_tree_list, "transient:coupled transport");
-      break;
-    case 3:
-      if (!coupled_transport_)
-        PopulatePKTree_(pk_tree_list, "transient:reactive transport");
-      else
-        PopulatePKTree_(pk_tree_list, "transient:coupled reactive transport");
-      break;
-    case 4:
-      if (!coupled_flow_)
-        PopulatePKTree_(pk_tree_list, "transient:flow");
-      else
-        PopulatePKTree_(pk_tree_list, "transient:coupled flow");
-      break;
-    case 5:
-      PopulatePKTree_(pk_tree_list, "transient:flow and chemistry");
-      break;
-    case 6:
-      if (!coupled_flow_)
-        PopulatePKTree_(pk_tree_list, "transient:flow and transport");
-      else
-        PopulatePKTree_(pk_tree_list, "transient:coupled flow and transport");
-      break;
-    case 7:
-      if (!coupled_flow_)
-        PopulatePKTree_(pk_tree_list, "transient:flow and reactive transport");
-      else
-        PopulatePKTree_(pk_tree_list, "transient:coupled flow and reactive transport");
-      break;
-    default:
-      msg << "The model with id=" << transient_model << " is not supported by the MPC.\n";
-      Exceptions::amanzi_throw(msg);
+      case 1:
+        PopulatePKTree_(pk_tree_list, "transient:chemistry");
+        break;
+      case 2:
+        if (!coupled_transport_) PopulatePKTree_(pk_tree_list, "transient:transport");
+        else PopulatePKTree_(pk_tree_list, "transient:coupled transport");
+        break;
+      case 3:
+        if (!coupled_transport_) PopulatePKTree_(pk_tree_list, "transient:reactive transport");
+        else PopulatePKTree_(pk_tree_list, "transient:coupled reactive transport");
+        break;
+      case 4:
+        if (!coupled_flow_) PopulatePKTree_(pk_tree_list, "transient:flow");
+        else PopulatePKTree_(pk_tree_list, "transient:coupled flow");
+        break;
+      case 5:
+        PopulatePKTree_(pk_tree_list, "transient:flow and chemistry");
+        break;
+      case 6:
+        if (!coupled_flow_) PopulatePKTree_(pk_tree_list, "transient:flow and transport");
+        else PopulatePKTree_(pk_tree_list, "transient:coupled flow and transport");
+        break;
+      case 7:
+        if (!coupled_flow_) PopulatePKTree_(pk_tree_list, "transient:flow and reactive transport");
+        else PopulatePKTree_(pk_tree_list, "transient:coupled flow and reactive transport");
+        break;
+      default:
+        msg << "The model with id=" << transient_model << " is not supported by the MPC.\n";
+        Exceptions::amanzi_throw(msg);
     }
 
     std::ostringstream ss;

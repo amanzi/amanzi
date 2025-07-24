@@ -44,7 +44,8 @@ namespace WhetStone {
 
 class MFD3D_LagrangeAnyOrder : public MFD3D {
  public:
-  MFD3D_LagrangeAnyOrder(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : MFD3D(mesh){};
+  MFD3D_LagrangeAnyOrder(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : MFD3D(mesh) {};
   MFD3D_LagrangeAnyOrder(const Teuchos::ParameterList& plist,
                          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
@@ -114,8 +115,10 @@ class MFD3D_LagrangeAnyOrder : public MFD3D {
                       const Polynomial* moments,
                       Polynomial& uc);
 
-  void
-  ProjectorCellFromDOFs_(int c, const DenseVector& dofs, const ProjectorType type, Polynomial& uc);
+  void ProjectorCellFromDOFs_(int c,
+                              const DenseVector& dofs,
+                              const ProjectorType type,
+                              Polynomial& uc);
 
   std::vector<Polynomial> ConvertMomentsToPolynomials_(int order);
 

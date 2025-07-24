@@ -58,7 +58,7 @@ namespace Transport {
 class MDM_Bear : public MDM {
  public:
   explicit MDM_Bear(Teuchos::ParameterList& plist);
-  ~MDM_Bear(){};
+  ~MDM_Bear() {};
 
   // Required methods from the base class
   // -- dispersion tensor of rank 2.
