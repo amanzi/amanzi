@@ -473,7 +473,7 @@
               <Parameter name="PK type" type="string" value="elastic"/>
             </ParameterList>
             <ParameterList name="transient:coupled flow">
-              <Parameter name="PK type" type="string" value="darcy matrix fracture"/>
+              <Parameter name="PK type" type="string" value="flow matrix fracture"/>
               <ParameterList name="transient:flow matrix">
                 <Parameter name="PK type" type="string" value="richards"/>
               </ParameterList>
@@ -666,7 +666,7 @@
     </ParameterList>
 
     <ParameterList name="transient:coupled flow">
-      <Parameter isUsed="true" name="PK type" type="string" value="darcy matrix fracture"/>
+      <Parameter isUsed="true" name="PK type" type="string" value="flow matrix fracture"/>
       <Parameter name="PKs order" type="Array(string)" value="{transient:flow matrix, transient:flow fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
       <ParameterList name="time integrator">

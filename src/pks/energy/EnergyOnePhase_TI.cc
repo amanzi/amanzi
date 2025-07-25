@@ -171,9 +171,7 @@ EnergyOnePhase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<cons
     int ncomp = uc.MyLength();
     for (int i = 0; i < ncomp; ++i) {
       double tmp = fabs(duc[0][i]) / (fabs(uc[0][i] - ref_temp) + ref_temp);
-      if (tmp > error_t) {
-        error_t = tmp;
-      }
+      if (tmp > error_t) error_t = tmp;
     }
   }
 

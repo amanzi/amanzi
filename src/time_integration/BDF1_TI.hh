@@ -287,6 +287,7 @@ BDF1_TI<Vector, VectorSpace>::AdvanceStep(double dt,
   // print info about the timestep
   double tlast = state_->uhist->MostRecentTime();
   double tnew = tlast + dt;
+  double tnew_damped = tlast + state_->extrapolation_damping * dt;
 
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     *vo_->os() << "step " << state_->seq << " T = " << tlast << " [sec]  dT = " << dt << std::endl;
@@ -297,7 +298,7 @@ BDF1_TI<Vector, VectorSpace>::AdvanceStep(double dt,
   // Predicted solution (initial value for the nonlinear solver)
   if (state_->extrapolate_guess) {
     if (state_->uhist->history_size() > 1) {
-      state_->uhist->InterpolateSolution(tnew, *u);
+      state_->uhist->InterpolateSolution(tnew_damped, *u);
       fn_->ChangedSolution();
 
       if (fn_->IsAdmissible(u)) {

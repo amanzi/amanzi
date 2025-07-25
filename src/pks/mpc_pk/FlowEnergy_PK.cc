@@ -15,6 +15,7 @@
 
 #include "Flow_PK.hh"
 #include "Energy_PK.hh"
+#include "ModelAssumptions.hh"
 #include "OperatorDefs.hh"
 #include "StateArchive.hh"
 
@@ -56,12 +57,8 @@ FlowEnergy_PK::Setup()
 
   // Our decision can be affected by the list of models
   auto physical_models = Teuchos::sublist(my_list_, "physical models and assumptions");
-  bool vapor_diff = physical_models->get<bool>("vapor diffusion");
-  bool thermoelasticity = physical_models->get<bool>("thermoelasticity", false);
-
-  if (physical_models->isParameter("eos lookup table")) {
-    eos_table_ = physical_models->get<std::string>("eos lookup table");
-  }
+  ModelAssumptions assumptions;
+  assumptions.Init(*physical_models, *mesh_);
 
   // keys
   temperature_key_ = Keys::getKey(domain_, "temperature");
@@ -113,20 +110,18 @@ FlowEnergy_PK::Setup()
   // -- flow
   auto pks =
     glist_->sublist("PKs").sublist(name_).get<Teuchos::Array<std::string>>("PKs order").toVector();
-  std::string model = (vapor_diff) ? "two-phase" : "one-phase";
+  std::string model = (assumptions.vapor_diffusion) ? "two-phase" : "one-phase";
   Teuchos::ParameterList& flow =
     glist_->sublist("PKs").sublist(pks[0]).sublist("physical models and assumptions");
-  flow.set<bool>("vapor diffusion", vapor_diff)
-    .set<bool>("thermoelasticity", thermoelasticity)
-    .set<bool>("biot scheme: undrained split",
-               physical_models->get<bool>("biot scheme: undrained split", false))
-    .set<bool>("biot scheme: fixed stress split",
-               physical_models->get<bool>("biot scheme: fixed stress split", false));
+  flow.set<bool>("vapor diffusion", assumptions.vapor_diffusion)
+    .set<bool>("thermoelasticity", assumptions.thermoelasticity)
+    .set<bool>("biot scheme: undrained split", assumptions.undrained_split)
+    .set<bool>("biot scheme: fixed stress split", assumptions.fixed_stress_split);
 
   // -- energy
   Teuchos::ParameterList& energy =
     glist_->sublist("PKs").sublist(pks[1]).sublist("physical models and assumptions");
-  energy.set<bool>("vapor diffusion", vapor_diff);
+  energy.set<bool>("vapor diffusion", assumptions.vapor_diffusion);
 
   // process other PKs
   PK_MPCStrong<PK_BDF>::Setup();

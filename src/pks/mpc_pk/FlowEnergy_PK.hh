@@ -137,9 +137,6 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
   Key mol_density_liquid_key_, mass_density_liquid_key_;
   Key sat_liquid_key_, ws_key_;
 
-  // eos
-  std::string eos_table_;
-
   // factory registration
   static RegisteredPKFactory<FlowEnergy_PK> reg_;
 };

@@ -43,14 +43,14 @@ RegisteredPKFactory<PK_MPCWeak> PK_MPCWeak::reg_("mpc weak");
 
 RegisteredPKFactory<FlowEnergy_PK> FlowEnergy_PK::reg_("thermal flow");
 RegisteredPKFactory<FlowEnergyMatrixFracture_PK> FlowEnergyMatrixFracture_PK::reg_(
-  "thermal flow matrix fracture");
+  "flow and energy matrix fracture");
 RegisteredPKFactory<FlowReactiveTransport_PK> FlowReactiveTransport_PK::reg_(
-  "flow reactive transport");
-RegisteredPKFactory<FlowMatrixFracture_PK> FlowMatrixFracture_PK::reg_("darcy matrix fracture");
+  "flow and chemistry and transport");
+RegisteredPKFactory<FlowMatrixFracture_PK> FlowMatrixFracture_PK::reg_("flow matrix fracture");
 RegisteredPKFactory<MultiphaseMatrixFracture_PK> MultiphaseMatrixFracture_PK::reg_(
   "multiphase matrix fracture");
 
-RegisteredPKFactory<ReactiveTransport_PK> ReactiveTransport_PK::reg_("reactive transport");
+RegisteredPKFactory<ReactiveTransport_PK> ReactiveTransport_PK::reg_("chemistry and transport");
 
 // integrated matrix-fracture models
 RegisteredPKFactory<TransportMatrixFracture_PK> TransportMatrixFracture_PK::reg_(
@@ -63,7 +63,7 @@ RegisteredPKFactory<EnergyMatrixFracture_PK> EnergyMatrixFracture_PK::reg_(
 RegisteredPKFactory<TransportMatrixFractureImplicit_PK> TransportMatrixFractureImplicit_PK::reg_(
   "transport matrix fracture implicit");
 RegisteredPKFactory<ReactiveTransportMatrixFracture_PK> ReactiveTransportMatrixFracture_PK::reg_(
-  "reactive transport matrix fracture");
+  "chemistry and transport matrix fracture");
 
 RegisteredPKFactory<MechanicsFlowMatrixFracture_PK> MechanicsFlowMatrixFracture_PK::reg_(
   "mechanics and coupled flow");
@@ -71,8 +71,8 @@ RegisteredPKFactory<MechanicsFlow_PK> MechanicsFlow_PK::reg_("mechanics and flow
 RegisteredPKFactory<FlowMechanics_PK> FlowMechanics_PK::reg_("flow and mechanics");
 
 // integrated surface-subsurface models
-RegisteredPKFactory<SurfaceSubsurface_PK> SurfaceSubsurface_PK::reg_("surface subsurface");
+RegisteredPKFactory<SurfaceSubsurface_PK> SurfaceSubsurface_PK::reg_("flow and shallow water");
 RegisteredPKFactory<ShallowWaterTransport_PK> ShallowWaterTransport_PK::reg_(
-  "shallow water transport");
+  "shallow water and transport");
 
 } // namespace Amanzi

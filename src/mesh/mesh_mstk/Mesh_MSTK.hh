@@ -24,8 +24,6 @@
 #include "errors.hh"
 
 namespace Amanzi {
-class MeshCache;
-
 namespace AmanziMesh {
 
 // Mesh class based on the MSTK framework.
@@ -246,7 +244,6 @@ class Mesh_MSTK : public MeshFramework {
     return true;
   }
 
-
   // MSTK supports labeled sets
   virtual void getSetEntities(
     const AmanziGeometry::RegionLabeledSet& region,
@@ -257,6 +254,9 @@ class Mesh_MSTK : public MeshFramework {
   // Run MSTK's internal checks - meant for debugging only
   // Returns true if everything is ok, false otherwise
   bool run_internal_mstk_checks() const;
+  Mesh_ptr getMSTK() { return mesh_; }
+
+  void rebuildAll();
 
   // Private methods
   // ---------------

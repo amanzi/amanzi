@@ -63,11 +63,6 @@ class TransportImplicit_PK
                        const Teuchos::RCP<State>& S,
                        const Teuchos::RCP<TreeVector>& soln);
 
-  TransportImplicit_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                       Teuchos::RCP<State> S,
-                       const std::string& pk_list_name,
-                       std::vector<std::string>& component_names);
-
   ~TransportImplicit_PK() {};
 
   virtual void Initialize() override;

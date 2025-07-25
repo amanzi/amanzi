@@ -49,6 +49,10 @@ Mechanics_PK::Setup()
   particle_density_key_ = Keys::getKey(domain_, "particle_density");
   undrained_split_coef_key_ = Keys::getKey(domain_, "undrained_split_coef");
 
+  // control parameters
+  auto physical_models = Teuchos::sublist(ec_list_, "physical models and assumptions");
+  assumptions_.Init(*physical_models, *mesh_);
+
   // constant fields
   S_->Require<AmanziGeometry::Point>("gravity", Tags::DEFAULT, "state");
 

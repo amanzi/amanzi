@@ -45,7 +45,7 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
                      const Teuchos::RCP<Teuchos::ParameterList>& glist,
                      const Teuchos::RCP<State>& S,
                      const Teuchos::RCP<TreeVector>& soln)
-  : PK_PhysicalBDF(pk_tree, glist, S, soln), glist_(glist), passwd_(""), flow_on_manifold_(false)
+  : PK_PhysicalBDF(pk_tree, glist, S, soln), glist_(glist), passwd_("")
 {
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   ep_list_ = Teuchos::sublist(pk_list, name_, true);
@@ -75,7 +75,7 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
 
   // workflow can be affected by the list of models
   auto physical_models = Teuchos::sublist(ep_list_, "physical models and assumptions");
-  flow_on_manifold_ = physical_models->get<bool>("flow and transport in fractures", false);
+  assumptions_.Init(*physical_models, *mesh_);
 }
 
 
@@ -93,7 +93,8 @@ Energy_PK::Setup()
 
   aperture_key_ = Keys::getKey(domain_, "aperture");
   conductivity_eff_key_ = Keys::getKey(domain_, "thermal_conductivity_effective");
-  conductivity_gen_key_ = (!flow_on_manifold_) ? conductivity_key_ : conductivity_eff_key_;
+  conductivity_gen_key_ =
+    (!assumptions_.flow_on_manifold) ? conductivity_key_ : conductivity_eff_key_;
 
   ie_liquid_key_ = Keys::getKey(domain_, "internal_energy_liquid");
   ie_gas_key_ = Keys::getKey(domain_, "internal_energy_gas");
@@ -199,7 +200,7 @@ Energy_PK::Setup()
   // -- molar flow rates as a regular field
   if (!S_->HasRecord(mol_flowrate_key_)) {
     CompositeVectorSpace cvs;
-    if (flow_on_manifold_) {
+    if (assumptions_.flow_on_manifold) {
       cvs = *Operators::CreateManifoldCVS(mesh_);
     } else {
       cvs.SetMesh(mesh_)->SetGhosted(true)->SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
@@ -212,7 +213,14 @@ Energy_PK::Setup()
   }
 
   // -- effective fracture conductivity
-  if (flow_on_manifold_) {
+  if (assumptions_.use_overburden_stress && domain_ == "domain") {
+    S_->Require<CV_t, CVS_t>("hydrostatic_stress", Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+  }
+
+  if (assumptions_.flow_on_manifold) {
     S_->Require<CV_t, CVS_t>(conductivity_eff_key_, Tags::DEFAULT, conductivity_eff_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
@@ -231,8 +239,8 @@ Energy_PK::Setup()
         Teuchos::ParameterList elist(aperture_key_);
         elist.set<std::string>("aperture key", aperture_key_)
           .set<std::string>("pressure key", pressure_key_)
+          .set<bool>("use overburden stress", assumptions_.use_overburden_stress)
           .set<std::string>("tag", "");
-        if (S_->HasRecord("hydrostatic_stress") ) elist.set<bool>("use stress", true);
 
         auto eval = Teuchos::rcp(new Evaluators::ApertureModelEvaluator(elist, fam));
         S_->SetEvaluator(aperture_key_, Tags::DEFAULT, eval);
@@ -283,7 +291,7 @@ Energy_PK::Setup()
   // set units
   S_->GetRecordSetW(temperature_key_).set_units("K");
   S_->GetRecordSetW(mol_flowrate_key_).set_units("mol/s");
-  if (flow_on_manifold_) {
+  if (assumptions_.flow_on_manifold) {
     S_->GetRecordSetW(aperture_key_).set_units("m");
   }
 }

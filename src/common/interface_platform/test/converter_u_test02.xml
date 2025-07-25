@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="1.6-dev">
+<amanzi_input type="unstructured" version="1.7-dev">
   <model_description name="DVZ 3layer 2D">
     <comments>Example input file</comments>
     <author>Konstantin Lipnikov (TEST 2)</author>
@@ -39,6 +39,7 @@
     <pk mode="transient">
       <flow model="richards" state="on" />
       <energy model="two-phase energy" state="on" />
+      <strongly_coupled name="mpc">flow,energy</strongly_coupled>
     </pk>
   </process_kernels>
 

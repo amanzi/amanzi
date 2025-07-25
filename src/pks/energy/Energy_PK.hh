@@ -81,6 +81,7 @@ This list is often generated on a fly by a high-level MPC PK.
 #include "CompositeVector.hh"
 #include "EvaluatorPrimary.hh"
 #include "Key.hh"
+#include "ModelAssumptions.hh"
 #include "Operator.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_AdvectionUpwind.hh"
@@ -219,8 +220,8 @@ class Energy_PK : public PK_PhysicalBDF {
   Teuchos::RCP<CompositeVector> upw_conductivity_;
   Teuchos::RCP<Operators::Upwind> upwind_; // int implies fake model
 
-  // fracture network
-  bool flow_on_manifold_;
+  // physical models and assumptions
+  ModelAssumptions assumptions_;
 };
 
 } // namespace Energy
