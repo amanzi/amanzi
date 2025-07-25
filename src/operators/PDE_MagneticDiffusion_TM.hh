@@ -28,11 +28,11 @@ namespace Operators {
 class PDE_MagneticDiffusion_TM : public PDE_MagneticDiffusion {
  public:
   PDE_MagneticDiffusion_TM(const Teuchos::RCP<Operator>& global_op)
-    : PDE_MagneticDiffusion(global_op){};
+    : PDE_MagneticDiffusion(global_op) {};
 
   PDE_MagneticDiffusion_TM(Teuchos::ParameterList& plist,
                            const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : PDE_MagneticDiffusion(plist, mesh){};
+    : PDE_MagneticDiffusion(plist, mesh) {};
 
   // main virtual members
   // -- before solving the problem

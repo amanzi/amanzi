@@ -24,7 +24,7 @@ The diffusivity is defined independently for each solute.
      - `"Bear`",
      - `"Burnett-Frind`"
      - `"Lichtner-Kelkar-Robinson`"
-     
+
    * `"region`" ``[Array(string)]`` Defines geometric regions for material SOIL.
 
    * `"_MDM_type_ parameters`" ``[_MDM_type_-spec]``] See below for the
@@ -71,7 +71,7 @@ namespace Transport {
 
 class MDM {
  public:
-  virtual ~MDM(){};
+  virtual ~MDM() {};
 
   // returns dispersion tensor.
   virtual WhetStone::Tensor mech_dispersion(double t,
@@ -82,8 +82,10 @@ class MDM {
                                             double phi) const = 0;
 
   // -- compatibility version (t, x) are not used
-  WhetStone::Tensor
-  mech_dispersion(const AmanziGeometry::Point& u, int axi_symmetry, double wc, double phi)
+  WhetStone::Tensor mech_dispersion(const AmanziGeometry::Point& u,
+                                    int axi_symmetry,
+                                    double wc,
+                                    double phi)
   {
     return mech_dispersion(0.0, u, u, axi_symmetry, wc, phi);
   }

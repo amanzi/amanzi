@@ -61,7 +61,9 @@ HydrostaticPressureEvaluator::Evaluate_(const State& S,
   auto& result_c = *results[0]->ViewComponent("cell");
 
   int ncells = result_c.MyLength();
-  for (int c = 0; c != ncells; ++c) { result_c[0][c] = rho * g * h_c[0][c] + patm; }
+  for (int c = 0; c != ncells; ++c) {
+    result_c[0][c] = rho * g * h_c[0][c] + patm;
+  }
 }
 
 
@@ -82,7 +84,9 @@ HydrostaticPressureEvaluator::EvaluatePartialDerivative_(
 
   int ncells = result_c.MyLength();
   if (wrt_key == primary_variable_key_) {
-    for (int c = 0; c != ncells; ++c) { result_c[0][c] = rho * g; }
+    for (int c = 0; c != ncells; ++c) {
+      result_c[0][c] = rho * g;
+    }
   } else {
     AMANZI_ASSERT(false);
   }

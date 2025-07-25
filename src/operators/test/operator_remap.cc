@@ -49,8 +49,8 @@ class MyRemapDG : public Operators::RemapDG<CompositeVector> {
     : Operators::RemapDG<CompositeVector>(mesh0, mesh1, plist),
       tprint_(0.0),
       dt_output_(0.1),
-      l2norm_(-1.0){};
-  ~MyRemapDG(){};
+      l2norm_(-1.0) {};
+  ~MyRemapDG() {};
 
   // time control
   // -- stability condition
@@ -127,7 +127,7 @@ MyRemapDG::CollectStatistics(double t, const CompositeVector& u)
   if (tglob >= tprint_) {
     op_reac_->UpdateMatrices(t);
     auto& matrices = op_reac_->local_op()->matrices;
-    for (int n = 0; n < matrices.size(); ++n) matrices[n].Inverse();
+    for (int n = 0; n < matrices.size() ; ++n) matrices[n].Inverse();
 
     auto& rhs = *op_reac_->global_operator()->rhs();
     op_reac_->global_operator()->Apply(u, rhs);

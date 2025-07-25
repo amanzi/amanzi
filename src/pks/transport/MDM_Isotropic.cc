@@ -61,11 +61,13 @@ MDM_Isotropic::MDM_Isotropic(Teuchos::ParameterList& plist)
   }
 
   if (count > 1) {
-    Errors::Message msg("Only one of \"alpha\" and \"dispersion coefficient\", and \"dispersivity\" may be supplied.");
+    Errors::Message msg("Only one of \"alpha\" and \"dispersion coefficient\", and "
+                        "\"dispersivity\" may be supplied.");
     Exceptions::amanzi_throw(msg);
   }
   if (count == 0) {
-    Errors::Message msg("Either \"alpha\", \"dispersion coefficient\", or \"dispersivity\" must be supplied.");
+    Errors::Message msg(
+      "Either \"alpha\", \"dispersion coefficient\", or \"dispersivity\" must be supplied.");
     Exceptions::amanzi_throw(msg);
   }
 }

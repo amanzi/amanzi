@@ -108,8 +108,7 @@ PK_Physical_Default::Initialize()
     ChangedSolutionPK(tag_next_);
   }
 
-  if (solution_ != Teuchos::null)
-    solution_->SetData(record.GetPtrW<CompositeVector>(passwd_));
+  if (solution_ != Teuchos::null) solution_->SetData(record.GetPtrW<CompositeVector>(passwd_));
 };
 
 

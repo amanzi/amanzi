@@ -20,7 +20,8 @@ namespace Amanzi {
 namespace Evaluators {
 
 Utils::RegisteredFactory<Evaluator, PorosityEvaluator> PorosityEvaluator::reg_("porosity");
-Utils::RegisteredFactory<Evaluator, VolumetricStrainEvaluator> VolumetricStrainEvaluator::reg_("volumetric strain");
+Utils::RegisteredFactory<Evaluator, VolumetricStrainEvaluator> VolumetricStrainEvaluator::reg_(
+  "volumetric strain");
 
 } // namespace Evaluators
 } // namespace Amanzi

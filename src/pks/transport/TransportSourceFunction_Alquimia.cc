@@ -31,7 +31,8 @@ TransportSourceFunction_Alquimia::TransportSourceFunction_Alquimia(
 {
   // Check arguments.
   if (chem_engine_ != Teuchos::null) {
-    chem_engine_->InitState(beaker_.properties, beaker_.state, beaker_.aux_data, beaker_.aux_output);
+    chem_engine_->InitState(
+      beaker_.properties, beaker_.state, beaker_.aux_data, beaker_.aux_output);
     chem_engine_->GetPrimarySpeciesNames(tcc_names_);
   } else {
     Errors::Message msg;

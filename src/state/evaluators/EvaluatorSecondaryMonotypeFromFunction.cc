@@ -109,7 +109,9 @@ EvaluatorSecondaryMonotypeFromFunction::Evaluate_(const State& S,
 
   for (auto comp : *results[0]) {
     std::vector<Teuchos::Ptr<const Epetra_MultiVector>> dep_vecs;
-    for (const auto& dep : deps) { dep_vecs.emplace_back(dep->ViewComponent(comp, false).ptr()); }
+    for (const auto& dep : deps) {
+      dep_vecs.emplace_back(dep->ViewComponent(comp, false).ptr());
+    }
 
     std::vector<Teuchos::Ptr<Epetra_MultiVector>> result_vecs;
     for (auto& result : results) {
@@ -120,7 +122,7 @@ EvaluatorSecondaryMonotypeFromFunction::Evaluate_(const State& S,
       std::vector<double> p(ndeps);
       for (int j = 0; j != ndeps; ++j) p[j] = (*dep_vecs[j])[0][i];
 
-      for (int k = 0; k != funcs_.size(); ++k) (*result_vecs[k])[0][i] = (*funcs_[k])(p);
+      for (int k = 0; k != funcs_.size() ; ++k) (*result_vecs[k])[0][i] = (*funcs_[k])(p);
     }
   }
 }

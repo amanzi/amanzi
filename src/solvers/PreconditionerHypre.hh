@@ -180,13 +180,13 @@ class PreconditionerHypre : public AmanziSolvers::Preconditioner {
   void InitBoomer_();
   void InitILU_();
   void InitAMS_();
-  void Init_(){};
+  void Init_() {};
   void InitMGR_();
 
   int SetCoordinates_(Teuchos::RCP<Epetra_MultiVector>);
   int SetDiscreteGradient_(Teuchos::RCP<const Epetra_CrsMatrix>);
-  Teuchos::RCP<const Epetra_Map>
-  MakeContiguousColumnMap_(Teuchos::RCP<const Epetra_RowMatrix>&) const;
+  Teuchos::RCP<const Epetra_Map> MakeContiguousColumnMap_(
+    Teuchos::RCP<const Epetra_RowMatrix>&) const;
 
   Teuchos::ParameterList plist_;
   Teuchos::RCP<VerboseObject> vo_;

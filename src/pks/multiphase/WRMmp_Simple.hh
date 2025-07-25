@@ -29,7 +29,7 @@ namespace Multiphase {
 class WRMmp_Simple : public WRMmp {
  public:
   WRMmp_Simple(Teuchos::ParameterList& plist);
-  ~WRMmp_Simple(){};
+  ~WRMmp_Simple() {};
 
   // required methods from the base class
   virtual double k_relative(double Sw, int phase);

@@ -270,7 +270,7 @@ if __name__ == "__main__":
 
         ats = True
 
-    except:
+    except Exception:
         ats = False
         
 

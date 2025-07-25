@@ -27,7 +27,8 @@ namespace Utils {
 // -----------------------------------------------------------------------------
 // Standard constructor.
 // -----------------------------------------------------------------------------
-IOEvent::IOEvent(Teuchos::ParameterList& plist) : plist_(plist), units_(), disabled_(false)
+IOEvent::IOEvent(Teuchos::ParameterList& plist)
+  : plist_(plist), units_(), disabled_(false)
 {
   ReadParameters_();
 };
@@ -36,7 +37,8 @@ IOEvent::IOEvent(Teuchos::ParameterList& plist) : plist_(plist), units_(), disab
 // -----------------------------------------------------------------------------
 // Constructor for a disabled Event.
 // -----------------------------------------------------------------------------
-IOEvent::IOEvent() : units_(), disabled_(true){};
+IOEvent::IOEvent()
+  : units_(), disabled_(true) {};
 
 
 // -----------------------------------------------------------------------------
@@ -82,7 +84,7 @@ IOEvent::DumpRequested(int cycle) const
 {
   if (!is_disabled()) {
     for (const auto& ce : cycle_events_) {
-      if (ce->contains(cycle)) return true;
+      if (ce->contains(cycle) ) return true;
     }
   }
   return false;
@@ -96,7 +98,7 @@ IOEvent::DumpRequested(double time) const
 {
   if (!is_disabled()) {
     for (const auto& te : time_events_) {
-      if (te->contains(time)) return true;
+      if (te->contains(time) ) return true;
     }
   }
   return false;
@@ -113,7 +115,8 @@ IOEvent::ReadParameters_()
   if (plist_.isParameter("cycles start period stop")) {
     auto c_sps = plist_.get<Teuchos::Array<int>>("cycles start period stop");
     if (c_sps.size() != 3) {
-      Errors::Message msg("Array of incorrect length provided to IOEvent \"cycles start period stop\"");
+      Errors::Message msg(
+        "Array of incorrect length provided to IOEvent \"cycles start period stop\"");
       Exceptions::amanzi_throw(msg);
     }
     cycle_events_.push_back(Teuchos::rcp(new EventSPS<int>(c_sps[0], c_sps[1], c_sps[2])));
@@ -128,8 +131,7 @@ IOEvent::ReadParameters_()
       auto c_sps = plist_.get<Teuchos::Array<int>>(pname.str());
       if (c_sps.size() != 3) {
         Errors::Message msg;
-        msg << "Array of incorrect length provided to IOEvent \""
-            << pname.str() << "\"";
+        msg << "Array of incorrect length provided to IOEvent \"" << pname.str() << "\"";
         Exceptions::amanzi_throw(msg);
       }
       cycle_events_.push_back(Teuchos::rcp(new EventSPS<int>(c_sps[0], c_sps[1], c_sps[2])));
@@ -148,7 +150,8 @@ IOEvent::ReadParameters_()
   if (plist_.isParameter("times start period stop")) {
     auto t_sps = plist_.get<Teuchos::Array<double>>("times start period stop");
     if (t_sps.size() != 3) {
-      Errors::Message msg("Array of incorrect length provided to IOEvent \"times start period stop\"");
+      Errors::Message msg(
+        "Array of incorrect length provided to IOEvent \"times start period stop\"");
       Exceptions::amanzi_throw(msg);
     }
 

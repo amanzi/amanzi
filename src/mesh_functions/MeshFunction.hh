@@ -40,7 +40,8 @@ class MeshFunction {
   typedef std::vector<Teuchos::RCP<Spec>> SpecList;
 
   // constructor
-  MeshFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : mesh_(mesh){};
+  MeshFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : mesh_(mesh) {};
   virtual ~MeshFunction() = default;
 
   // add a spec -- others may inherit this and overload to do some checking?

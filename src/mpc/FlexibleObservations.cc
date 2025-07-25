@@ -144,7 +144,9 @@ FlexibleObservations::MakeObservations(State& S)
       i->second->ComputeObservation(S, &value, &volume, unit, 0.0);
 
       if (var == "drawdown" || var == "permeability-weighted drawdown") {
-        if (od.size() > 0) { value = od.begin()->value * volume - value; }
+        if (od.size() > 0) {
+          value = od.begin()->value * volume - value;
+        }
       }
 
       // syncronize the result across processors

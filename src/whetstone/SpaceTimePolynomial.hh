@@ -35,10 +35,11 @@ class Polynomial;
 
 class SpaceTimePolynomial {
  public:
-  SpaceTimePolynomial() : d_(0), order_(-1), size_(-1){};
+  SpaceTimePolynomial()
+    : d_(0), order_(-1), size_(-1) {};
   SpaceTimePolynomial(int d, int order);
   SpaceTimePolynomial(const SpaceTimePolynomial& poly);
-  ~SpaceTimePolynomial(){};
+  ~SpaceTimePolynomial() {};
 
   // reshape polynomial and erase (optionally) memory
   void Reshape(int d, int order, bool reset = false);
@@ -65,22 +66,22 @@ class SpaceTimePolynomial {
   SpaceTimePolynomial& operator*=(const SpaceTimePolynomial& poly);
   SpaceTimePolynomial& operator*=(double val);
 
-  friend SpaceTimePolynomial
-  operator+(const SpaceTimePolynomial& poly1, const SpaceTimePolynomial& poly2)
+  friend SpaceTimePolynomial operator+(const SpaceTimePolynomial& poly1,
+                                       const SpaceTimePolynomial& poly2)
   {
     SpaceTimePolynomial tmp(poly1);
     return tmp += poly2;
   }
 
-  friend SpaceTimePolynomial
-  operator-(const SpaceTimePolynomial& poly1, const SpaceTimePolynomial& poly2)
+  friend SpaceTimePolynomial operator-(const SpaceTimePolynomial& poly1,
+                                       const SpaceTimePolynomial& poly2)
   {
     SpaceTimePolynomial tmp(poly1);
     return tmp -= poly2;
   }
 
-  friend SpaceTimePolynomial
-  operator*(const SpaceTimePolynomial& poly1, const SpaceTimePolynomial& poly2)
+  friend SpaceTimePolynomial operator*(const SpaceTimePolynomial& poly1,
+                                       const SpaceTimePolynomial& poly2)
   {
     SpaceTimePolynomial tmp(poly1);
     return tmp *= poly2;

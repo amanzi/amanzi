@@ -36,7 +36,7 @@
 
 namespace Amanzi {
 
-template <>
+template<>
 RegisteredPKFactory<PK_MPCStrong<PK_BDF>> PK_MPCStrong<PK_BDF>::reg_("mpc strong");
 RegisteredPKFactory<PK_MPCSubcycled> PK_MPCSubcycled::reg_("mpc subcycled");
 RegisteredPKFactory<PK_MPCWeak> PK_MPCWeak::reg_("mpc weak");
@@ -53,20 +53,20 @@ RegisteredPKFactory<MultiphaseMatrixFracture_PK>
 RegisteredPKFactory<ReactiveTransport_PK> ReactiveTransport_PK::reg_("chemistry and transport");
 
 // integrated matrix-fracture models
-RegisteredPKFactory<TransportMatrixFracture_PK>
-  TransportMatrixFracture_PK::reg_("transport matrix fracture");
-RegisteredPKFactory<ChemistryMatrixFracture_PK>
-  ChemistryMatrixFracture_PK::reg_("chemistry matrix fracture");
-RegisteredPKFactory<EnergyMatrixFracture_PK>
-  EnergyMatrixFracture_PK::reg_("energy matrix fracture");
+RegisteredPKFactory<TransportMatrixFracture_PK> TransportMatrixFracture_PK::reg_(
+  "transport matrix fracture");
+RegisteredPKFactory<ChemistryMatrixFracture_PK> ChemistryMatrixFracture_PK::reg_(
+  "chemistry matrix fracture");
+RegisteredPKFactory<EnergyMatrixFracture_PK> EnergyMatrixFracture_PK::reg_(
+  "energy matrix fracture");
 
 RegisteredPKFactory<TransportMatrixFractureImplicit_PK>
   TransportMatrixFractureImplicit_PK::reg_("transport matrix fracture implicit");
 RegisteredPKFactory<ReactiveTransportMatrixFracture_PK>
   ReactiveTransportMatrixFracture_PK::reg_("chemistry and transport matrix fracture");
 
-RegisteredPKFactory<MechanicsFlowMatrixFracture_PK>
-  MechanicsFlowMatrixFracture_PK::reg_("mechanics and coupled flow");
+RegisteredPKFactory<MechanicsFlowMatrixFracture_PK> MechanicsFlowMatrixFracture_PK::reg_(
+  "mechanics and coupled flow");
 RegisteredPKFactory<MechanicsFlow_PK> MechanicsFlow_PK::reg_("mechanics and flow");
 RegisteredPKFactory<FlowMechanics_PK> FlowMechanics_PK::reg_("flow and mechanics");
 

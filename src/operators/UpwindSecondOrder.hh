@@ -35,8 +35,9 @@ namespace Operators {
 
 class UpwindSecondOrder : public Upwind {
  public:
-  UpwindSecondOrder(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : Upwind(mesh){};
-  ~UpwindSecondOrder(){};
+  UpwindSecondOrder(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    : Upwind(mesh) {};
+  ~UpwindSecondOrder() {};
 
   // main methods
   // -- initialization of control parameters
@@ -44,8 +45,9 @@ class UpwindSecondOrder : public Upwind {
 
   // -- upwind of a given cell-centered field on mesh faces
   // -- not all input parameters are use by some algorithms
-  void
-  Compute(const CompositeVector& flux, const std::vector<int>& bc_model, CompositeVector& field);
+  void Compute(const CompositeVector& flux,
+               const std::vector<int>& bc_model,
+               CompositeVector& field);
 
   // -- returns combined map for the original and upwinded fields.
   // -- Currently, composite vector cannot be extended on a fly.

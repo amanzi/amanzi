@@ -176,7 +176,8 @@ TEST(PIPE_FLOW_1D)
                                           Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
   const auto& vc = *S->Get<CompositeVector>("pipe-velocity").ViewComponent("cell");
-  double err_L1_vx(0.0), err_L1_vy(0.0), err_Linf_v_tmp(0.0), err_L1_v_tmp, err_L1_v, err_Linf_v(0.0);
+  double err_L1_vx(0.0), err_L1_vy(0.0), err_Linf_v_tmp(0.0), err_L1_v_tmp, err_L1_v,
+    err_Linf_v(0.0);
 
   for (int c = 0; c < ncells_owned; ++c) {
     err_L1_vx += std::abs(vc[0][c]) * mesh->getCellVolume(c);

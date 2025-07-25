@@ -54,7 +54,7 @@ XERCES_CPP_NAMESPACE_USE
 */
 class MemoryManager {
  public:
-  MemoryManager(){};
+  MemoryManager() {};
   ~MemoryManager() { Destroy_(); }
 
   XMLCh* transcode(const char* str)
@@ -74,8 +74,8 @@ class MemoryManager {
  private:
   void Destroy_()
   {
-    for (auto it = pchar.begin(); it != pchar.end(); ++it) xercesc::XMLString::release(&*it);
-    for (auto it = xchar.begin(); it != xchar.end(); ++it) xercesc::XMLString::release(&*it);
+    for (auto it = pchar.begin() ; it != pchar.end(); ++it) xercesc::XMLString::release(&*it);
+    for (auto it = xchar.begin() ; it != xchar.end(); ++it) xercesc::XMLString::release(&*it);
   }
 
  private:
@@ -89,13 +89,11 @@ class MemoryManager {
 
 // Creates an XML parser with our desired settings. This parser must be deleted
 // after the document has been used.
-XercesDOMParser*
-CreateXMLParser();
+XercesDOMParser* CreateXMLParser();
 
 // Using the given XML parser, parses the document contained in the file with
 // the given name.
-DOMDocument*
-OpenXMLInput(XercesDOMParser* parser, const std::string& xml_input);
+DOMDocument* OpenXMLInput(XercesDOMParser* parser, const std::string& xml_input);
 //------------------------------------------------------------------------
 
 
@@ -133,13 +131,15 @@ class InputConverter {
   //    leaves of the tree.
   xercesc::DOMNode* GetUniqueElementByTagsString_(const std::string& tags, bool& flag);
 
-  xercesc::DOMNode*
-  GetUniqueElementByTagsString_(const std::string& tags, bool& flag, bool exception);
+  xercesc::DOMNode* GetUniqueElementByTagsString_(const std::string& tags,
+                                                  bool& flag,
+                                                  bool exception);
 
   // -- modification of the previous routine where the first tag
   //    is replaced by a pointer to document's element
-  xercesc::DOMNode*
-  GetUniqueElementByTagsString_(const xercesc::DOMNode* node, const std::string& tags, bool& flag);
+  xercesc::DOMNode* GetUniqueElementByTagsString_(const xercesc::DOMNode* node,
+                                                  const std::string& tags,
+                                                  bool& flag);
 
   xercesc::DOMNode* GetUniqueElementByTagsString_(const xercesc::DOMNode* node,
                                                   const std::string& tags,
@@ -209,8 +209,9 @@ class InputConverter {
     std::string unit = "",
     bool exception = true,
     double mol_mass = -1.0);
-  std::vector<std::string>
-  GetAttributeVectorS_(xercesc::DOMElement* elem, const std::string& attr_name, bool exception = true);
+  std::vector<std::string> GetAttributeVectorS_(xercesc::DOMElement* elem,
+                                                const std::string& attr_name,
+                                                bool exception = true);
 
   // -- node is used more often then element
   int GetAttributeValueL_(xercesc::DOMNode* node,
@@ -257,16 +258,18 @@ class InputConverter {
     xercesc::DOMElement* element = static_cast<xercesc::DOMElement*>(node);
     return GetAttributeVectorD_(element, attr_name, length, unit, exception, mol_mass);
   }
-  std::vector<std::string>
-  GetAttributeVectorS_(xercesc::DOMNode* node, const std::string& attr_name, bool exception = true)
+  std::vector<std::string> GetAttributeVectorS_(xercesc::DOMNode* node,
+                                                const std::string& attr_name,
+                                                bool exception = true)
   {
     xercesc::DOMElement* element = static_cast<xercesc::DOMElement*>(node);
     return GetAttributeVectorS_(element, attr_name, exception);
   }
 
   // -- extract existing attribute value and verify it
-  std::string
-  GetAttributeValueS_(xercesc::DOMNode* node, const std::string& attr_name, const char* options);
+  std::string GetAttributeValueS_(xercesc::DOMNode* node,
+                                  const std::string& attr_name,
+                                  const char* options);
 
 
   // --------------
@@ -290,8 +293,10 @@ class InputConverter {
                                               bool exception = false);
 
   //    the name of identical nodes will be extracted too
-  std::vector<xercesc::DOMNode*>
-  GetSameChildNodes_(xercesc::DOMNode* node, std::string& name, bool& flag, bool exception = false);
+  std::vector<xercesc::DOMNode*> GetSameChildNodes_(xercesc::DOMNode* node,
+                                                    std::string& name,
+                                                    bool& flag,
+                                                    bool exception = false);
 
   // -- extract text content and verify it against list of options
   double GetTextContentD_( // supports units

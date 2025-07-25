@@ -24,7 +24,9 @@ TEST(MESH_GEOMETRY_PLANAR)
   // a 2D, generated, structured quad on the unit square, NX=NY=2
   std::vector<Framework> frameworks;
   // works in MSTK
-  if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
@@ -42,12 +44,14 @@ TEST(MESH_GEOMETRY_1CUBE_GENERATED)
 {
   // a 3D, generated, structured hex on the unit cube, NX=NY=NZ=1
   // only makes sense in serial
-  if (getDefaultComm()->getSize() != 1) return;
+  if (getDefaultComm() ->getSize() != 1) return;
 
   std::vector<Framework> frameworks;
   // works in MSTK & SIMPLE (in serial)
-  if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
-  if (getDefaultComm()->getSize() == 1) frameworks.push_back(Framework::SIMPLE);
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
+  if (getDefaultComm() ->getSize() == 1) frameworks.push_back(Framework::SIMPLE);
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
@@ -64,12 +68,16 @@ TEST(MESH_GEOMETRY_1CUBE_EXO)
 {
   // a 3D exodus file, structured hex on the unit cube, NX=NY=NZ=1
   // only makes sense in serial
-  if (getDefaultComm()->getSize() != 1) return;
+  if (getDefaultComm() ->getSize() != 1) return;
 
   // works in MSTK or MOAB
   std::vector<Framework> frameworks;
-  if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
-  if (framework_enabled(Framework::MOAB)) { frameworks.push_back(Framework::MOAB); }
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
+  if (framework_enabled(Framework::MOAB)) {
+    frameworks.push_back(Framework::MOAB);
+  }
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
@@ -88,8 +96,10 @@ TEST(MESH_GEOMETRY_3CUBE)
   // a 3D, generated, structured hex on the unit cube, NX=NY=NZ=3
   // works in MSTK & SIMPLE (in serial)
   std::vector<Framework> frameworks;
-  if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
-  if (getDefaultComm()->getSize() == 1) frameworks.push_back(Framework::SIMPLE);
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
+  if (getDefaultComm() ->getSize() == 1) frameworks.push_back(Framework::SIMPLE);
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
@@ -107,7 +117,9 @@ TEST(MESH_GEOMETRY_3CUBE_EXO)
   // a 3D exodus file, structured hex on the unit cube, NX=NY=NZ=3
   // works in MSTK or MOAB
   std::vector<Framework> frameworks;
-  if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
   if (framework_enabled(Framework::MOAB) && getDefaultComm()->getSize() == 1) {
     // moab only reads exo in serial, otherwise must read par
     frameworks.push_back(Framework::MOAB);
@@ -158,8 +170,10 @@ TEST(MESH_GEOMETRY_2x3CUBE)
   // a 3D, generated, structured hex on the unit cube, NX=NY=NZ=3
   // works in MSTK & SIMPLE (in serial)
   std::vector<Framework> frameworks;
-  if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
-  if (getDefaultComm()->getSize() == 1) frameworks.push_back(Framework::SIMPLE);
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
+  if (getDefaultComm() ->getSize() == 1) frameworks.push_back(Framework::SIMPLE);
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
@@ -178,7 +192,9 @@ TEST(MESH_GEOMETRY_FRACTURE_EXO)
   // Note this only checks the exo mesh, which does not have the fractures in it!
   // Actual fracture capability is checked later, but would depend on this test passing.
   std::vector<Framework> frameworks;
-  if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
 
   // Not sure what is up with this mesh, but MOAB errors trying to read it.
   // if (framework_enabled(Framework::MOAB)) {
@@ -199,7 +215,9 @@ TEST(MESH_GEOMETRY_PINCHOUTS)
 {
   // only MSTK can handle this mesh -- it has degeneracies
   std::vector<Framework> frameworks;
-  if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl

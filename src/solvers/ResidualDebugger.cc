@@ -31,14 +31,14 @@ namespace AmanziSolvers {
 //
 // TreeVector does work
 // -----------------------------------------------------------------------------
-template <>
+template<>
 void
 ResidualDebugger::StartIteration<TreeVectorSpace>(int attempt, const TreeVectorSpace& space)
 {
   int cycle = -1;
   double time = 0;
   if (S_.get()) {
-    if (S_->HasRecord("cycle", tag_)) cycle = S_->Get<int>("cycle", tag_);
+    if (S_->HasRecord("cycle", tag_) ) cycle = S_->Get<int>("cycle", tag_);
     time = S_->Get<double>("time", tag_);
   }
   on_ = DumpRequested(cycle, time);
@@ -64,7 +64,7 @@ ResidualDebugger::StartIteration<TreeVectorSpace>(int attempt, const TreeVectorS
 //
 // Write a vector individually.
 // -----------------------------------------------------------------------------
-template <>
+template<>
 void
 ResidualDebugger::WriteVector<TreeVector>(int iter,
                                           const TreeVector& res,

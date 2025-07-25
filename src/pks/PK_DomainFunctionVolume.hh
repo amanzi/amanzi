@@ -29,19 +29,21 @@
 
 namespace Amanzi {
 
-template <class FunctionBase>
-class PK_DomainFunctionVolume : public FunctionBase, public Functions::UniqueMeshFunction {
+template<class FunctionBase>
+class PK_DomainFunctionVolume
+  : public FunctionBase
+  , public Functions::UniqueMeshFunction {
  public:
   PK_DomainFunctionVolume(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                           AmanziMesh::Entity_kind kind)
-    : UniqueMeshFunction(mesh, AmanziMesh::Parallel_kind::OWNED), kind_(kind){};
+    : UniqueMeshFunction(mesh, AmanziMesh::Parallel_kind::OWNED), kind_(kind) {};
 
   PK_DomainFunctionVolume(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                           const Teuchos::ParameterList& plist,
                           AmanziMesh::Entity_kind kind)
-    : UniqueMeshFunction(mesh, AmanziMesh::Parallel_kind::OWNED), kind_(kind){};
+    : UniqueMeshFunction(mesh, AmanziMesh::Parallel_kind::OWNED), kind_(kind) {};
 
-  ~PK_DomainFunctionVolume(){};
+  ~PK_DomainFunctionVolume() {};
 
   // member functions
   void Init(const Teuchos::ParameterList& plist, const std::string& keyword);
@@ -51,9 +53,9 @@ class PK_DomainFunctionVolume : public FunctionBase, public Functions::UniqueMes
   virtual DomainFunction_kind getType() const override { return DomainFunction_kind::VOLUME; }
 
  protected:
-  using FunctionBase::value_;
   using FunctionBase::domain_volume_;
   using FunctionBase::keyword_;
+  using FunctionBase::value_;
 
  private:
   std::string submodel_;
@@ -65,7 +67,7 @@ class PK_DomainFunctionVolume : public FunctionBase, public Functions::UniqueMes
 /* ******************************************************************
 * Initialization adds a single function to the list of unique specs.
 ****************************************************************** */
-template <class FunctionBase>
+template<class FunctionBase>
 void
 PK_DomainFunctionVolume<FunctionBase>::Init(const Teuchos::ParameterList& plist,
                                             const std::string& keyword)
@@ -73,7 +75,7 @@ PK_DomainFunctionVolume<FunctionBase>::Init(const Teuchos::ParameterList& plist,
   keyword_ = keyword;
 
   submodel_ = "rate";
-  if (plist.isParameter("submodel")) submodel_ = plist.get<std::string>("submodel");
+  if (plist.isParameter("submodel") ) submodel_ = plist.get<std::string>("submodel");
 
   std::vector<std::string> regions = plist.get<Teuchos::Array<std::string>>("regions").toVector();
 
@@ -95,7 +97,7 @@ PK_DomainFunctionVolume<FunctionBase>::Init(const Teuchos::ParameterList& plist,
 /* ******************************************************************
 * Compute and distribute the result by volume.
 ****************************************************************** */
-template <class FunctionBase>
+template<class FunctionBase>
 void
 PK_DomainFunctionVolume<FunctionBase>::Compute(double t0, double t1)
 {
@@ -105,7 +107,7 @@ PK_DomainFunctionVolume<FunctionBase>::Compute(double t0, double t1)
 
   int nowned = mesh_->getNumEntities(kind_, AmanziMesh::Parallel_kind::OWNED);
 
-  for (auto uspec = unique_specs_.at(kind_)->begin(); uspec != unique_specs_.at(kind_)->end();
+  for (auto uspec = unique_specs_.at(kind_) ->begin(); uspec != unique_specs_.at(kind_)->end();
        ++uspec) {
     Teuchos::RCP<MeshIDs> ids = (*uspec)->second;
 

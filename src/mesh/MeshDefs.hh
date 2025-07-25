@@ -32,12 +32,12 @@ using Set_ID = int;
 using Direction_type = int;
 
 namespace Impl {
-template <MemSpace_kind MEM>
+template<MemSpace_kind MEM>
 struct MemorySpace {
   using space = Amanzi::DefaultMemorySpace;
 };
 
-template <>
+template<>
 struct MemorySpace<MemSpace_kind::HOST> {
   using space = Amanzi::DefaultHostMemorySpace;
 };
@@ -47,7 +47,7 @@ struct MemorySpace<MemSpace_kind::HOST> {
 //
 // Views are on host or device
 //
-template <typename T, MemSpace_kind MEM = MemSpace_kind::HOST>
+template<typename T, MemSpace_kind MEM = MemSpace_kind::HOST>
 using View_type = Kokkos::MeshView<T*, typename Impl::MemorySpace<MEM>::space>;
 
 //
@@ -58,11 +58,11 @@ using Entity_GID_List = std::vector<Entity_ID>;
 using Entity_Direction_List = std::vector<int>;
 using Point_List = std::vector<AmanziGeometry::Point>;
 using Double_List = std::vector<double>;
-template <typename T>
+template<typename T>
 using RaggedArray_List = std::vector<std::vector<T>>;
 
 
-template <typename T>
+template<typename T>
 using DualView_type = Kokkos::MeshDualView<T*, Kokkos::DefaultHostExecutionSpace>;
 using Entity_ID_DualView = DualView_type<Entity_ID>;
 using Entity_GID_DualView = DualView_type<Entity_GID>;
@@ -74,10 +74,8 @@ using Double_DualView = DualView_type<double>;
 inline std::string
 to_string(const MemSpace_kind mem)
 {
-  if (mem == MemSpace_kind::HOST)
-    return "host";
-  else
-    return "device";
+  if (mem == MemSpace_kind::HOST) return "host";
+  else return "device";
 }
 
 
@@ -104,18 +102,12 @@ createEntityKind(const std::string& instring, bool or_die = true)
 {
   std::string estring = instring; // note not done in signature to throw a better error
   transform(estring.begin(), estring.end(), estring.begin(), ::tolower);
-  if (estring == "cell")
-    return Entity_kind::CELL;
-  else if (estring == "face")
-    return Entity_kind::FACE;
-  else if (estring == "boundary_face")
-    return Entity_kind::BOUNDARY_FACE;
-  else if (estring == "boundary_node")
-    return Entity_kind::BOUNDARY_NODE;
-  else if (estring == "edge")
-    return Entity_kind::EDGE;
-  else if (estring == "node")
-    return Entity_kind::NODE;
+  if (estring == "cell") return Entity_kind::CELL;
+  else if (estring == "face") return Entity_kind::FACE;
+  else if (estring == "boundary_face") return Entity_kind::BOUNDARY_FACE;
+  else if (estring == "boundary_node") return Entity_kind::BOUNDARY_NODE;
+  else if (estring == "edge") return Entity_kind::EDGE;
+  else if (estring == "node") return Entity_kind::NODE;
   else if (or_die) {
     Errors::Message msg;
     msg << "Unknown entity kind string: \"" << instring
@@ -133,20 +125,20 @@ inline std::string
 to_string(const Entity_kind kind)
 {
   switch (kind) {
-  case (Entity_kind::CELL):
-    return "cell";
-  case (Entity_kind::FACE):
-    return "face";
-  case (Entity_kind::BOUNDARY_FACE):
-    return "boundary_face";
-  case (Entity_kind::BOUNDARY_NODE):
-    return "boundary_node";
-  case (Entity_kind::EDGE):
-    return "edge";
-  case (Entity_kind::NODE):
-    return "node";
-  default:
-    return "unknown";
+    case (Entity_kind::CELL):
+      return "cell";
+    case (Entity_kind::FACE):
+      return "face";
+    case (Entity_kind::BOUNDARY_FACE):
+      return "boundary_face";
+    case (Entity_kind::BOUNDARY_NODE):
+      return "boundary_node";
+    case (Entity_kind::EDGE):
+      return "edge";
+    case (Entity_kind::NODE):
+      return "node";
+    default:
+      return "unknown";
   }
 }
 
@@ -162,16 +154,16 @@ inline std::string
 to_string(const Parallel_kind ptype)
 {
   switch (ptype) {
-  case (Parallel_kind::UNKNOWN):
-    return "UNKNOWN";
-  case (Parallel_kind::OWNED):
-    return "OWNED";
-  case (Parallel_kind::GHOST):
-    return "GHOST";
-  case (Parallel_kind::ALL):
-    return "ALL";
-  default:
-    return "unknown";
+    case (Parallel_kind::UNKNOWN):
+      return "UNKNOWN";
+    case (Parallel_kind::OWNED):
+      return "OWNED";
+    case (Parallel_kind::GHOST):
+      return "GHOST";
+    case (Parallel_kind::ALL):
+      return "ALL";
+    default:
+      return "unknown";
   }
 }
 
@@ -193,24 +185,24 @@ inline std::string
 to_string(const Cell_kind ctype)
 {
   switch (ctype) {
-  case (Cell_kind::TRI):
-    return "cell type: triangle";
-  case (Cell_kind::QUAD):
-    return "cell type: quadrilateral";
-  case (Cell_kind::POLYGON):
-    return "cell type: polygon";
-  case (Cell_kind::TET):
-    return "cell type: tetrahedron";
-  case (Cell_kind::PRISM):
-    return "cell type: prism";
-  case (Cell_kind::PYRAMID):
-    return "cell type: pyramid";
-  case (Cell_kind::HEX):
-    return "cell type: hexahedron";
-  case (Cell_kind::POLYHED):
-    return "cell type: polyhedron";
-  default:
-    return "cell type: unknown";
+    case (Cell_kind::TRI):
+      return "cell type: triangle";
+    case (Cell_kind::QUAD):
+      return "cell type: quadrilateral";
+    case (Cell_kind::POLYGON):
+      return "cell type: polygon";
+    case (Cell_kind::TET):
+      return "cell type: tetrahedron";
+    case (Cell_kind::PRISM):
+      return "cell type: prism";
+    case (Cell_kind::PYRAMID):
+      return "cell type: pyramid";
+    case (Cell_kind::HEX):
+      return "cell type: hexahedron";
+    case (Cell_kind::POLYHED):
+      return "cell type: polyhedron";
+    default:
+      return "cell type: unknown";
   }
 }
 
@@ -227,14 +219,14 @@ inline std::string
 to_string(const Partitioner_kind partitioner_type)
 {
   switch (partitioner_type) {
-  case (Partitioner_kind::METIS):
-    return "Partitioner_kind::METIS";
-  case (Partitioner_kind::ZOLTAN_GRAPH):
-    return "Partitioner_kind::ZOLTAN_GRAPH";
-  case (Partitioner_kind::ZOLTAN_RCB):
-    return "Partitioner_kind::ZOLTAN_RCB";
-  default:
-    return "unknown";
+    case (Partitioner_kind::METIS):
+      return "Partitioner_kind::METIS";
+    case (Partitioner_kind::ZOLTAN_GRAPH):
+      return "Partitioner_kind::ZOLTAN_GRAPH";
+    case (Partitioner_kind::ZOLTAN_RCB):
+      return "Partitioner_kind::ZOLTAN_RCB";
+    default:
+      return "unknown";
   }
 }
 

@@ -42,9 +42,13 @@ Multiphase_PK::FunctionalResidual(double t_old,
 {
   double dtp = t_new - t_old;
   // update to handle time dependent BCs
-  for (int i = 0; i < bcs_.size(); ++i) { bcs_[i]->Compute(t_new, t_new); }
+  for (int i = 0; i < bcs_.size(); ++i) {
+    bcs_[i]->Compute(t_new, t_new);
+  }
   // update source terms
-  for (int i = 0; i < srcs_.size(); ++i) { srcs_[i]->Compute(t_new, t_new); }
+  for (int i = 0; i < srcs_.size(); ++i) {
+    srcs_[i]->Compute(t_new, t_new);
+  }
   // extract pointers to subvectors
   std::vector<Teuchos::RCP<CompositeVector>> up, fp;
   for (int i = 0; i < soln_names_.size(); ++i) {
@@ -131,7 +135,9 @@ Multiphase_PK::FunctionalResidual(double t_old,
       } else {
         const auto& tmp = *var->ViewComponent("cell");
         int m = std::min(eqns_flattened_[n][1], tmp.NumVectors() - 1);
-        for (int c = 0; c < ncells_owned_; ++c) { comp_c[0][c] = tmp[m][c]; }
+        for (int c = 0; c < ncells_owned_; ++c) {
+          comp_c[0][c] = tmp[m][c];
+        }
         pde->global_operator()->ComputeNegativeResidual(comp, fadd);
       }
 
@@ -185,7 +191,9 @@ Multiphase_PK::FunctionalResidual(double t_old,
 
     auto& fci = *fp[eqns_flattened_[n][0]]->ViewComponent("cell");
     if (ncp_ == "min") {
-      for (int c = 0; c < ncells_owned_; ++c) { fci[0][c] = std::min(ncp_fc[0][c], ncp_gc[0][c]); }
+      for (int c = 0; c < ncells_owned_; ++c) {
+        fci[0][c] = std::min(ncp_fc[0][c], ncp_gc[0][c]);
+      }
     } else if (ncp_ == "Fischer-Burmeister") {
       for (int c = 0; c < ncells_owned_; ++c) {
         double a = ncp_fc[0][c];
@@ -207,7 +215,9 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
 
   // extract pointers to subvectors
   std::vector<Teuchos::RCP<const CompositeVector>> up;
-  for (int i = 0; i < soln_names_.size(); ++i) { up.push_back(u->SubVector(i)->Data()); }
+  for (int i = 0; i < soln_names_.size(); ++i) {
+    up.push_back(u->SubVector(i)->Data());
+  }
 
   // miscalleneous fields
   // -- molar densities
@@ -308,10 +318,8 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
           auto flux = S_->GetPtr<CompositeVector>(flux_names_[phase], Tags::DEFAULT);
           upwind_->Compute(*flux, bcnone, *kr);
 
-          if (type == 0)
-            pde->Setup(Kptr, kr, Teuchos::null);
-          else
-            pde->Setup(Teuchos::null, kr, Teuchos::null);
+          if (type == 0) pde->Setup(Kptr, kr, Teuchos::null);
+          else pde->Setup(Teuchos::null, kr, Teuchos::null);
           pde->SetBCs(op_bcs_[keyc], op_bcs_[keyc]);
           pde->UpdateMatrices(flux.ptr(), var.ptr());
 
@@ -417,9 +425,9 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
       if (ncp_ == "min") {
         for (int c = 0; c < ncells_owned_; c++) {
           if (ncp_fc[0][c] > ncp_gc[0][c]) {
-            if (der_gc.get()) (*fone_c)[0][c] = (*der_gc)[0][c];
+            if (der_gc.get() ) (*fone_c)[0][c] = (*der_gc)[0][c];
           } else {
-            if (der_fc.get()) (*fone_c)[0][c] = (*der_fc)[0][c];
+            if (der_fc.get() ) (*fone_c)[0][c] = (*der_fc)[0][c];
           }
         }
       } else if (ncp_ == "Fischer-Burmeister") {
@@ -517,7 +525,9 @@ Multiphase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const Tr
     else if (soln_names_[i] == saturation_liquid_key_) {
       auto& dsc = *du->SubVector(i)->Data()->ViewComponent("cell");
 
-      for (int c = 0; c < ncells_owned_; c++) { error_tmp = std::max(error_tmp, fabs(dsc[0][c])); }
+      for (int c = 0; c < ncells_owned_; c++) {
+        error_tmp = std::max(error_tmp, fabs(dsc[0][c]));
+      }
     }
     error += error_tmp;
   }

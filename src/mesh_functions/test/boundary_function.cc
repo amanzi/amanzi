@@ -138,13 +138,16 @@ TEST_FIXTURE(reference_mesh, values1)
   bf.Compute(0.0);
 
   auto face_list = mesh->getSetEntities(RIGHT, FACE, Parallel_kind::ALL);
-  for (auto f = face_list.begin(); f != face_list.end(); ++f) CHECK_EQUAL(1.0, bf.find(*f)->second);
+  for (auto f = face_list.begin()
+    ; f != face_list.end(); ++f) CHECK_EQUAL(1.0, bf.find(*f)->second);
 
   face_list = mesh->getSetEntities(FRONT, FACE, Parallel_kind::ALL);
-  for (auto f = face_list.begin(); f != face_list.end(); ++f) CHECK_EQUAL(2.0, bf.find(*f)->second);
+  for (auto f = face_list.begin()
+    ; f != face_list.end(); ++f) CHECK_EQUAL(2.0, bf.find(*f)->second);
 
   face_list = mesh->getSetEntities(BACK, FACE, Parallel_kind::ALL);
-  for (auto f = face_list.begin(); f != face_list.end(); ++f) CHECK_EQUAL(3.0, bf.find(*f)->second);
+  for (auto f = face_list.begin()
+    ; f != face_list.end(); ++f) CHECK_EQUAL(3.0, bf.find(*f)->second);
 }
 
 

@@ -36,7 +36,7 @@ class VolumetricStrainEvaluator
   // required inteface functions
   virtual Teuchos::RCP<Evaluator> Clone() const override;
 
-  virtual void EnsureEvaluators(State& S) override{};
+  virtual void EnsureEvaluators(State& S) override {};
 
  protected:
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
@@ -44,10 +44,10 @@ class VolumetricStrainEvaluator
   virtual void EvaluatePartialDerivative_(const State& S,
                                           const Key& wrt_key,
                                           const Tag& wrt_tag,
-                                          const std::vector<CompositeVector*>& results) override{};
+                                          const std::vector<CompositeVector*>& results) override {};
 
   // since cell-based stress requires nodes, the default behavior is not applicable
-  virtual void EnsureCompatibility_ToDeps_(State& S) override{};
+  virtual void EnsureCompatibility_ToDeps_(State& S) override {};
 
  protected:
   Key displacement_key_;

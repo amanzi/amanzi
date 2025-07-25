@@ -30,7 +30,8 @@ namespace Amanzi {
 
 class PK_Physical : virtual public PK {
  public:
-  PK_Physical() : PK(){};
+  PK_Physical()
+    : PK() {};
 
   PK_Physical(Teuchos::ParameterList& pk_tree,
               const Teuchos::RCP<Teuchos::ParameterList>& glist,
@@ -70,33 +71,29 @@ class PK_Physical : virtual public PK {
 
 
 // non-meber Helper method to initialize a CV field
-void
-InitializeCVField(const Teuchos::RCP<State>& S,
-                  const VerboseObject& vo,
-                  const Key& key,
-                  const Tag& tag,
-                  const Key& passwd,
-                  double default_val);
+void InitializeCVField(const Teuchos::RCP<State>& S,
+                       const VerboseObject& vo,
+                       const Key& key,
+                       const Tag& tag,
+                       const Key& passwd,
+                       double default_val);
 
-void
-InitializeCVFieldFromCVField(const Teuchos::RCP<State>& S,
-                             const VerboseObject& vo,
-                             const Key& field0,
-                             const Key& field1,
-                             const Key& passwd,
-                             const Tag& tag = Tags::DEFAULT);
+void InitializeCVFieldFromCVField(const Teuchos::RCP<State>& S,
+                                  const VerboseObject& vo,
+                                  const Key& field0,
+                                  const Key& field1,
+                                  const Key& passwd,
+                                  const Tag& tag = Tags::DEFAULT);
 
 // add default evaluators
-void
-AddDefaultPrimaryEvaluator(const Teuchos::RCP<State>& S,
-                           const Key& key,
-                           const Tag& tag = Tags::DEFAULT);
+void AddDefaultPrimaryEvaluator(const Teuchos::RCP<State>& S,
+                                const Key& key,
+                                const Tag& tag = Tags::DEFAULT);
 
-void
-AddDefaultIndependentEvaluator(const Teuchos::RCP<State>& S,
-                               const Key& key,
-                               const Tag& tag = Tags::DEFAULT,
-                               double val = 0.0);
+void AddDefaultIndependentEvaluator(const Teuchos::RCP<State>& S,
+                                    const Key& key,
+                                    const Tag& tag = Tags::DEFAULT,
+                                    double val = 0.0);
 
 } // namespace Amanzi
 

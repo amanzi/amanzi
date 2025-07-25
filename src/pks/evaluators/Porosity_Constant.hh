@@ -30,14 +30,15 @@ class Porosity_Constant : public Porosity {
   {
     porosity_ = plist.get<double>("value");
   }
-  ~Porosity_Constant(){};
+  ~Porosity_Constant() {};
 
   // required methods from the base class
   virtual double PorosityValue(double p) override { return porosity_; }
   virtual double dPorositydPressure(double p) override { return 0.0; }
 
   virtual double PorosityValueReference() override { return porosity_; }
-  virtual std::pair<double, double> getThermalCoefficients() override {
+  virtual std::pair<double, double> getThermalCoefficients() override
+  {
     return std::make_pair(0.0, 0.0);
   }
 

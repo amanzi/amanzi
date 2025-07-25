@@ -90,8 +90,7 @@ class MatrixBlock {
 };
 
 // non-member functions
-void
-Multiply(const MatrixBlock& A, const MatrixBlock& B, MatrixBlock& AB);
+void Multiply(const MatrixBlock& A, const MatrixBlock& B, MatrixBlock& AB);
 
 } // namespace AmanziChemistry
 } // namespace Amanzi

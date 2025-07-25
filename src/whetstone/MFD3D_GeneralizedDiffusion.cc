@@ -70,7 +70,9 @@ MFD3D_GeneralizedDiffusion::L2consistency(int c, const Tensor& K, DenseMatrix& N
       R(d_ * i + 1, k) = area * xm[1][k];
       R(d_ * i + 2, k) = area * xm[2][k];
 
-      for (int l = 0; l < d_; ++l) { N(d_ * i + l, k) = vv[l][k]; }
+      for (int l = 0; l < d_; ++l) {
+        N(d_ * i + l, k) = vv[l][k];
+      }
     }
   }
 
@@ -169,7 +171,9 @@ MFD3D_GeneralizedDiffusion::L2consistencyInverse(int c,
       R(d_ * i + 1, k) = area * xm[1][k];
       R(d_ * i + 2, k) = area * xm[2][k];
 
-      for (int l = 0; l < d_; ++l) { N(d_ * i + l, k) = vv[l][k]; }
+      for (int l = 0; l < d_; ++l) {
+        N(d_ * i + l, k) = vv[l][k];
+      }
     }
   }
 
@@ -238,10 +242,14 @@ MFD3D_GeneralizedDiffusion::StiffnessMatrix(int c, const Tensor& K, DenseMatrix&
 
   double cntr(0.0);
   for (int i = 0; i < nx; ++i) {
-    for (int j = 0; j < nx; ++j) { A(i, j) = M(i, j) * area(i) * area(j); }
+    for (int j = 0; j < nx; ++j) {
+      A(i, j) = M(i, j) * area(i) * area(j);
+    }
 
     double add(0.0);
-    for (int j = 0; j < nx; ++j) { add -= M(i, j) * area_div(j); }
+    for (int j = 0; j < nx; ++j) {
+      add -= M(i, j) * area_div(j);
+    }
     A(nx, i) = A(i, nx) = add * area(i);
 
     cntr -= add * area_div(i);

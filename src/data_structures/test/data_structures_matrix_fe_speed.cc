@@ -375,7 +375,7 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix2)
     const auto& faces = mesh->getCellFaces(c);
 
     std::vector<int> faces_tmp;
-    for (int n = 0; n != faces.size(); ++n) faces_tmp.push_back(faces[n]);
+    for (int n = 0; n != faces.size() ; ++n) faces_tmp.push_back(faces[n]);
 
     for (int n = 0; n != faces.size(); ++n) {
       ierr |= graph->InsertMyIndices(faces[n], faces.size(), &faces_tmp[0]);
@@ -394,7 +394,9 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix2)
     for (int c = 0; c != ncells; ++c) {
       const auto& faces = mesh->getCellFaces(c);
       Epetra_IntSerialDenseVector face_gids(faces.size());
-      for (int n = 0; n != faces.size(); ++n) { face_gids[n] = face_map_ghosted->GID(faces[n]); }
+      for (int n = 0; n != faces.size(); ++n) {
+        face_gids[n] = face_map_ghosted->GID(faces[n]);
+      }
 
       Epetra_SerialDenseMatrix vals(faces.size(), faces.size());
       ierr |= control.SumIntoGlobalValues(face_gids, vals);
@@ -452,7 +454,7 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix_offproc2)
     const auto& faces = mesh->getCellFaces(c);
 
     std::vector<int> face_gids(faces.size());
-    for (int n = 0; n != faces.size(); ++n) face_gids[n] = face_map_ghosted->GID(faces[n]);
+    for (int n = 0; n != faces.size() ; ++n) face_gids[n] = face_map_ghosted->GID(faces[n]);
 
     ierr |=
       graph->InsertGlobalIndices(face_gids.size(), &face_gids[0], face_gids.size(), &face_gids[0]);
@@ -470,7 +472,9 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix_offproc2)
     for (int c = 0; c != ncells; ++c) {
       const auto& faces = mesh->getCellFaces(c);
       Epetra_IntSerialDenseVector face_gids(faces.size());
-      for (int n = 0; n != faces.size(); ++n) { face_gids[n] = face_map_ghosted->GID(faces[n]); }
+      for (int n = 0; n != faces.size(); ++n) {
+        face_gids[n] = face_map_ghosted->GID(faces[n]);
+      }
 
       Epetra_SerialDenseMatrix vals(faces.size(), faces.size());
       ierr |= control.SumIntoGlobalValues(face_gids, vals);
@@ -528,7 +532,7 @@ TEST(FE_MATRIX_FACE_FACE_MatrixFE2)
     const auto& faces = mesh->getCellFaces(c);
 
     std::vector<int> faces_tmp;
-    for (int n = 0; n != faces.size(); ++n) faces_tmp.push_back(faces[n]);
+    for (int n = 0; n != faces.size() ; ++n) faces_tmp.push_back(faces[n]);
 
     for (int n = 0; n != faces.size(); ++n) {
       ierr |= graph->InsertMyIndices(faces[n], faces.size(), &faces_tmp[0]);

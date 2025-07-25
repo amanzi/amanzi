@@ -337,8 +337,10 @@ Transport_PK::Setup()
 
     Teuchos::ParameterList elist(aux_key);
     elist.set<std::string>("my key", aux_key)
-      .set<Teuchos::Array<std::string>>("multiplicative dependency key suffixes", { "total_component_concentration" })
-      .set<Teuchos::Array<std::string>>("reciprocal dependency key suffixes", { "mass_density_liquid" })
+      .set<Teuchos::Array<std::string>>("multiplicative dependency key suffixes",
+                                        { "total_component_concentration" })
+      .set<Teuchos::Array<std::string>>("reciprocal dependency key suffixes",
+                                        { "mass_density_liquid" })
       .set<std::string>("tag", "");
     auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
     S_->SetEvaluator(aux_key, Tags::DEFAULT, eval);
@@ -394,8 +396,7 @@ Transport_PK::Setup()
   }
 
   // temporary fields
-  S_->Require<CV_t, CVS_t>(tcc_key_, Tags::COPY, passwd_, component_names_)
-    .SetGhosted(true);
+  S_->Require<CV_t, CVS_t>(tcc_key_, Tags::COPY, passwd_, component_names_).SetGhosted(true);
 
 #ifdef ALQUIMIA_ENABLED
   SetupAlquimia();
@@ -723,7 +724,9 @@ Transport_PK::StableTimeStep(int n)
   for (int f = 0; f < nfaces_wghost; f++) {
     for (int k = 0; k < upwind_cells_[f].size(); k++) {
       int c = upwind_cells_[f][k];
-      if (c >= 0) { total_outflux[c] += fabs(upwind_flux_[f][k]); }
+      if (c >= 0) {
+        total_outflux[c] += fabs(upwind_flux_[f][k]);
+      }
     }
   }
 
@@ -763,12 +766,9 @@ Transport_PK::StableTimeStep(int n)
     outflux = total_outflux[c];
     if (outflux > TRANSPORT_SMALL_CELL_OUTFLUX) {
       vol = mesh_->getCellVolume(c);
-      if (n == 0)
-        dt_cell = vol * wc_prev[0][c] / outflux;
-      else if (n == 1)
-        dt_cell = vol * wc[0][c] / outflux;
-      else
-        dt_cell = vol * std::min(wc_prev[0][c], wc[0][c]) / outflux;
+      if (n == 0) dt_cell = vol * wc_prev[0][c] / outflux;
+      else if (n == 1) dt_cell = vol * wc[0][c] / outflux;
+      else dt_cell = vol * std::min(wc_prev[0][c], wc[0][c]) / outflux;
     }
     if (dt_cell > 0.0 && dt_cell < dt_) {
       dt_ = dt_cell;
@@ -910,7 +910,8 @@ Transport_PK::CommitStep(double t_old, double t_new, const Tag& tag)
   dt_prev_ = std::min(dt_, t_new - t_old);
   S_->GetW<CV_t>(tcc_key_, Tags::DEFAULT, passwd_) = *tcc_tmp;
   Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
-    S_->GetEvaluatorPtr(tcc_key_, Tags::DEFAULT))->SetChanged();
+    S_->GetEvaluatorPtr(tcc_key_, Tags::DEFAULT))
+    ->SetChanged();
 }
 
 
@@ -1005,8 +1006,7 @@ Transport_PK::ComputeBCs_(std::vector<int>& bc_model, std::vector<double>& bc_va
           }
         }
       }
-    }
-    else if (bcs_[m]->get_location() == "interface") {
+    } else if (bcs_[m]->get_location() == "interface") {
       for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
         int f = it->first;
         bc_model[f] = Operators::OPERATOR_BC_NEUMANN;

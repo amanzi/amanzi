@@ -43,8 +43,8 @@ Chemistry_PK::Chemistry_PK(Teuchos::ParameterList& pk_tree,
 {
   // note, we pass in null to the factory here to make sure there is no error
   // control used, which doesn't make sense for this application.
-  timestep_controller_ = createTimestepController<TreeVector>(name_,
-          plist_->sublist("timestep controller"), S_, Teuchos::null, Teuchos::null);
+  timestep_controller_ = createTimestepController<TreeVector>(
+    name_, plist_->sublist("timestep controller"), S_, Teuchos::null, Teuchos::null);
 };
 
 
@@ -183,8 +183,9 @@ Chemistry_PK::checkForError_(int& ierr, int& max_itrs, int& max_itrs_cell) const
   mesh_->getComm()->MaxAll(&ierr_l, &ierr, 1);
   if (ierr) return;
 
-  Reductions::MaxLoc itrs_l{ (double)max_itrs,
-    mesh_->getMap(AmanziMesh::Entity_kind::CELL, false).GID(max_itrs_cell) };
+  Reductions::MaxLoc itrs_l{
+    (double)max_itrs, mesh_->getMap(AmanziMesh::Entity_kind::CELL, false).GID(max_itrs_cell)
+  };
 
   Reductions::MaxLoc itrs_g = Reductions::reduceAllMaxLoc(*mesh_->getComm(), itrs_l);
   max_itrs = itrs_g.value;

@@ -767,7 +767,9 @@ InputConverterU::TranslateFlowBCs_(const std::string& domain)
 
     // -- identify a BC that do not require forms (the global BC)
     bool global_bc(false);
-    if (bctype_in == "linear_pressure" || bctype_in == "linear_hydrostatic") { global_bc = true; }
+    if (bctype_in == "linear_pressure" || bctype_in == "linear_hydrostatic") {
+      global_bc = true;
+    }
 
     // -- identify a hard-coded BC that uses spatially dependent functions
     //    temporarily, we assume that it is also the global BC.
@@ -826,23 +828,23 @@ InputConverterU::TranslateFlowBCs_(const std::string& domain)
     if (bctype_in == "inward_mass_flux") {
       bctype = "mass flux";
       bcname = "outward mass flux";
-      for (int k = 0; k < bcs.values.size(); k++) bcs.values[k] *= -1;
+      for (int k = 0; k < bcs.values.size() ; k++) bcs.values[k] *= -1;
     } else if (bctype_in == "inward_mass_flux_distributed") {
       bctype = "mass flux";
       bcname = "outward mass flux";
-      for (int k = 0; k < bcs.values.size(); k++) bcs.values[k] *= -1;
-      for (int k = 0; k < bcs.forms.size(); k++) bcs.forms[k] = "volume";
+      for (int k = 0; k < bcs.values.size() ; k++) bcs.values[k] *= -1;
+      for (int k = 0; k < bcs.forms.size() ; k++) bcs.forms[k] = "volume";
     } else if (bctype_in == "outward_mass_flux") {
       bctype = "mass flux";
       bcname = "outward mass flux";
     } else if (bctype_in == "outward_volumetric_flux") {
       bctype = "mass flux";
       bcname = "outward mass flux";
-      for (int k = 0; k < bcs.values.size(); k++) bcs.values[k] *= rho_;
+      for (int k = 0; k < bcs.values.size() ; k++) bcs.values[k] *= rho_;
     } else if (bctype_in == "inward_volumetric_flux") {
       bctype = "mass flux";
       bcname = "outward mass flux";
-      for (int k = 0; k < bcs.values.size(); k++) bcs.values[k] *= -rho_;
+      for (int k = 0; k < bcs.values.size() ; k++) bcs.values[k] *= -rho_;
     } else if (bctype_in == "uniform_pressure" || bctype_in == "linear_pressure") {
       bctype = "pressure";
       bcname = "boundary pressure";
@@ -853,7 +855,7 @@ InputConverterU::TranslateFlowBCs_(const std::string& domain)
       bctype = "seepage face";
       bcname = "outward mass flux";
       bcs.values = bcs.fluxes;
-      for (int k = 0; k < bcs.values.size(); k++) bcs.values[k] *= -1;
+      for (int k = 0; k < bcs.values.size() ; k++) bcs.values[k] *= -1;
     } else if (bctype_in == "field_pressure") {
       bctype = "coupling";
       bcname = "boundary pressure";
@@ -974,10 +976,8 @@ InputConverterU::TranslateSources_(const std::string& domain,
   DOMNode *node, *phase;
   DOMElement* element;
 
-  if (domain == "fracture")
-    node = GetUniqueElementByTagsString_("fracture_network, sources", flag);
-  else
-    node = GetUniqueElementByTagsString_("sources", flag);
+  if (domain == "fracture") node = GetUniqueElementByTagsString_("fracture_network, sources", flag);
+  else node = GetUniqueElementByTagsString_("sources", flag);
 
   if (!flag) return out_list;
   children = node->getChildNodes();
@@ -1011,10 +1011,8 @@ InputConverterU::TranslateSources_(const std::string& domain,
 
     if (srctype == "volume_weighted") {
       weight = "volume";
-      if (pkname == "flow")
-        unit = "kg/s";
-      else if (pkname == "energy")
-        unit = "J/s";
+      if (pkname == "flow") unit = "kg/s";
+      else if (pkname == "energy") unit = "J/s";
     } else if (srctype == "perm_weighted") {
       weight = "permeability";
       unit = "kg/s";

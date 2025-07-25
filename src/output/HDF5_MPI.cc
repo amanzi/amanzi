@@ -176,7 +176,9 @@ HDF5_MPI::writeMesh(const double time, const int iteration)
 
   // -- write out node map
   ids = new int[nmap.NumMyElements()];
-  for (int i = 0; i < nnodes_local; i++) { ids[i] = nmap.GID(i); }
+  for (int i = 0; i < nnodes_local; i++) {
+    ids[i] = nmap.GID(i);
+  }
   globaldims[1] = 1;
   localdims[1] = 1;
 
@@ -201,13 +203,17 @@ HDF5_MPI::writeMesh(const double time, const int iteration)
   viz_comm_->GatherAll(&nnodes, &nnodesAll[0], 1);
   int start(0);
   std::vector<int> startAll(viz_comm_->NumProc(), 0);
-  for (int i = 0; i < viz_comm_->MyPID(); i++) { start += nnodesAll[i]; }
+  for (int i = 0; i < viz_comm_->MyPID(); i++) {
+    start += nnodesAll[i];
+  }
   viz_comm_->GatherAll(&start, &startAll[0], 1);
 
   std::vector<int> gid(nnodes_global);
   std::vector<int> pid(nnodes_global);
   std::vector<int> lid(nnodes_global);
-  for (int i = 0; i < nnodes_global; i++) { gid[i] = ngmap.GID(i); }
+  for (int i = 0; i < nnodes_global; i++) {
+    gid[i] = ngmap.GID(i);
+  }
   nmap.RemoteIDList(nnodes_global, &gid[0], &pid[0], &lid[0]);
 
   // -- determine size of connectivity vector
@@ -507,7 +513,9 @@ HDF5_MPI::writeDualMesh(const double time, const int iteration)
 
   // -- write out node map
   ids = new int[nmap.NumMyElements()];
-  for (int i = 0; i < nnodes_local; i++) { ids[i] = nmap.GID(i); }
+  for (int i = 0; i < nnodes_local; i++) {
+    ids[i] = nmap.GID(i);
+  }
   globaldims[1] = 1;
   localdims[1] = 1;
 
@@ -532,13 +540,17 @@ HDF5_MPI::writeDualMesh(const double time, const int iteration)
   viz_comm_->GatherAll(&nnodes, &nnodesAll[0], 1);
   int start(0);
   std::vector<int> startAll(viz_comm_->NumProc(), 0);
-  for (int i = 0; i < viz_comm_->MyPID(); i++) { start += nnodesAll[i]; }
+  for (int i = 0; i < viz_comm_->MyPID(); i++) {
+    start += nnodesAll[i];
+  }
   viz_comm_->GatherAll(&start, &startAll[0], 1);
 
   std::vector<int> gid(nnodes_global);
   std::vector<int> pid(nnodes_global);
   std::vector<int> lid(nnodes_global);
-  for (int i = 0; i < nnodes_global; i++) { gid[i] = ngmap.GID(i); }
+  for (int i = 0; i < nnodes_global; i++) {
+    gid[i] = ngmap.GID(i);
+  }
   nmap.RemoteIDList(nnodes_global, &gid[0], &pid[0], &lid[0]);
 
   // -- pass 1: count total connections, total entities
@@ -787,7 +799,9 @@ HDF5_MPI::endTimestep()
     // channel if they differ
     auto fields = extractFields_(xmlStep_);
     auto fields_prev = extractFields_(xmlStep_prev_);
-    if (fields != fields_prev && !xmlStep_prev_.isEmpty()) { createXdmfVisit_(); }
+    if (fields != fields_prev && !xmlStep_prev_.isEmpty()) {
+      createXdmfVisit_();
+    }
 
     xmlStep_prev_ = xmlStep_;
 
@@ -824,7 +838,9 @@ HDF5_MPI::extractFields_(const Teuchos::XMLObject& xml)
     for (int i = 0; i < node.numChildren(); i++) {
       auto tmp = node.getChild(i);
       if (tmp.getTag() == "Attribute" && tmp.hasAttribute("Name") && tmp.hasAttribute("Type")) {
-        if (tmp.getAttribute("Type") == "Scalar") { fields.insert(tmp.getAttribute("Name")); }
+        if (tmp.getAttribute("Type") == "Scalar") {
+          fields.insert(tmp.getAttribute("Name"));
+        }
       }
     }
   }
@@ -978,11 +994,11 @@ HDF5_MPI::readAttrString(std::string& value, const std::string attrname)
   char* loc_value;
 
   int ierr = parallelIO_read_simple_attr(loc_attrname,
-                              reinterpret_cast<void**>(&loc_value),
-                              PIO_STRING,
-                              data_file_,
-                              loc_h5path,
-                              &IOgroup_);
+                                         reinterpret_cast<void**>(&loc_value),
+                                         PIO_STRING,
+                                         data_file_,
+                                         loc_h5path,
+                                         &IOgroup_);
   checkThrow_(ierr, attrname, H5DataFilename_);
   value = std::string(loc_value);
 
@@ -1006,11 +1022,11 @@ HDF5_MPI::readAttrReal(double& value, const std::string attrname)
   double* loc_value;
 
   int ierr = parallelIO_read_simple_attr(loc_attrname,
-                              reinterpret_cast<void**>(&loc_value),
-                              PIO_DOUBLE,
-                              data_file_,
-                              loc_h5path,
-                              &IOgroup_);
+                                         reinterpret_cast<void**>(&loc_value),
+                                         PIO_DOUBLE,
+                                         data_file_,
+                                         loc_h5path,
+                                         &IOgroup_);
   checkThrow_(ierr, attrname, H5DataFilename_);
 
   value = *loc_value;
@@ -1037,13 +1053,13 @@ HDF5_MPI::readAttrReal(double** value, int* ndim, const std::string attrname)
   int ndims;
 
   int ierr = parallelIO_read_attr(loc_attrname,
-                       reinterpret_cast<void**>(&loc_value),
-                       PIO_DOUBLE,
-                       &ndims,
-                       &pdims,
-                       data_file_,
-                       loc_h5path,
-                       &IOgroup_);
+                                  reinterpret_cast<void**>(&loc_value),
+                                  PIO_DOUBLE,
+                                  &ndims,
+                                  &pdims,
+                                  data_file_,
+                                  loc_h5path,
+                                  &IOgroup_);
   checkThrow_(ierr, attrname, H5DataFilename_);
 
   *value = loc_value;
@@ -1069,19 +1085,19 @@ HDF5_MPI::readAttrInt(int& value, const std::string attrname)
   int* loc_value;
 
   int ierr = parallelIO_read_simple_attr(loc_attrname,
-                              reinterpret_cast<void**>(&loc_value),
-                              PIO_INTEGER,
-                              data_file_,
-                              loc_h5path,
-                              &IOgroup_);
+                                         reinterpret_cast<void**>(&loc_value),
+                                         PIO_INTEGER,
+                                         data_file_,
+                                         loc_h5path,
+                                         &IOgroup_);
   if (ierr < 0) {
     // try to read ints as int or long.
     ierr = parallelIO_read_simple_attr(loc_attrname,
-            reinterpret_cast<void**>(&loc_value),
-            PIO_LONG,
-            data_file_,
-            loc_h5path,
-            &IOgroup_);
+                                       reinterpret_cast<void**>(&loc_value),
+                                       PIO_LONG,
+                                       data_file_,
+                                       loc_h5path,
+                                       &IOgroup_);
   }
   checkThrow_(ierr, attrname, H5DataFilename_);
 
@@ -1108,13 +1124,13 @@ HDF5_MPI::readAttrInt(int** value, int* ndim, const std::string attrname)
   int ndims;
 
   int ierr = parallelIO_read_attr(loc_attrname,
-                       reinterpret_cast<void**>(&loc_value),
-                       PIO_INTEGER,
-                       &ndims,
-                       &pdims,
-                       data_file_,
-                       loc_h5path,
-                       &IOgroup_);
+                                  reinterpret_cast<void**>(&loc_value),
+                                  PIO_INTEGER,
+                                  &ndims,
+                                  &pdims,
+                                  data_file_,
+                                  loc_h5path,
+                                  &IOgroup_);
   checkThrow_(ierr, attrname, H5DataFilename_);
 
   *value = loc_value;
@@ -1235,7 +1251,9 @@ HDF5_MPI::writeFieldData_(const Epetra_Vector& x,
   //MB:   Exceptions::amanzi_throw(message);
   //MB: }
 
-  if (TrackXdmf()) { h5path << "/" << Iteration() << get_tag(); }
+  if (TrackXdmf()) {
+    h5path << "/" << Iteration() << get_tag();
+  }
 
   char* tmp;
   tmp = new char[h5path.str().size() + 1];
@@ -1309,7 +1327,9 @@ HDF5_MPI::checkFieldData_(const std::string& varname)
     // exists = H5Lexists(currfile->fid, h5path, H5P_DEFAULT);
     exists = parallelIO_name_exists(currfile->fid, h5path);
 
-    if (!exists) { std::cout << "Field " << h5path << " is not found in hdf5 file.\n"; }
+    if (!exists) {
+      std::cout << "Field " << h5path << " is not found in hdf5 file.\n";
+    }
 
     MPI_Bcast(&exists, 1, MPI_C_BOOL, 0, viz_comm_->Comm());
   }
@@ -1323,7 +1343,7 @@ HDF5_MPI::checkFieldData_(const std::string& varname)
 int
 HDF5_MPI::readFieldData_(Epetra_Vector& x, const std::string& varname, datatype_t type)
 {
-  if (!checkFieldData_(varname)) return -1;
+  if (!checkFieldData_(varname) ) return -1;
 
   char* h5path = new char[varname.size() + 1];
   strcpy(h5path, varname.c_str());
@@ -1341,18 +1361,18 @@ HDF5_MPI::readFieldData_(Epetra_Vector& x, const std::string& varname, datatype_
     localdims[1] = globaldims[1];
     if (localdims[1] != 1) return -3;
   }
-  if (globaldims[0] != x.GlobalLength()) return -3;
+  if (globaldims[0] != x.GlobalLength() ) return -3;
 
   double* data = new double[localdims[0]];
   int ierr = parallelIO_read_dataset(data,
-          type,
-          ndims,
-          globaldims,
-          localdims,
-          data_file_,
-          h5path,
-          &IOgroup_,
-          NONUNIFORM_CONTIGUOUS_READ);
+                                     type,
+                                     ndims,
+                                     globaldims,
+                                     localdims,
+                                     data_file_,
+                                     h5path,
+                                     &IOgroup_,
+                                     NONUNIFORM_CONTIGUOUS_READ);
   if (ierr) return -4;
 
   // Trilinos' ReplaceMyValues() works with elements only and cannot
@@ -1372,7 +1392,7 @@ HDF5_MPI::readDatasetReal(double** data, int nloc, const std::string& varname)
   char* h5path = new char[varname.size() + 1];
   strcpy(h5path, varname.c_str());
 
-  if (!checkFieldData_(varname)) return false;
+  if (!checkFieldData_(varname) ) return false;
 
   int ndims;
   parallelIO_get_dataset_ndims(&ndims, data_file_, h5path, &IOgroup_);
@@ -1415,24 +1435,24 @@ HDF5_MPI::getCellTypeID_(AmanziMesh::Cell_kind type)
   // cell type id's defined in Xdmf/include/XdmfTopology.h
 
   switch (type) {
-  case AmanziMesh::Cell_kind::POLYGON:
-    return 3;
-  case AmanziMesh::Cell_kind::TRI:
-    return 4;
-  case AmanziMesh::Cell_kind::QUAD:
-    return 5;
-  case AmanziMesh::Cell_kind::TET:
-    return 6;
-  case AmanziMesh::Cell_kind::PYRAMID:
-    return 7;
-  case AmanziMesh::Cell_kind::PRISM:
-    return 8; //wedge
-  case AmanziMesh::Cell_kind::HEX:
-    return 9;
-  case AmanziMesh::Cell_kind::POLYHED:
-    return 16; // see http://www.xdmf.org/index.php/XDMF_Model_and_Format
-  default:
-    return 3; // unknown, for now same as polygon
+    case AmanziMesh::Cell_kind::POLYGON:
+      return 3;
+    case AmanziMesh::Cell_kind::TRI:
+      return 4;
+    case AmanziMesh::Cell_kind::QUAD:
+      return 5;
+    case AmanziMesh::Cell_kind::TET:
+      return 6;
+    case AmanziMesh::Cell_kind::PYRAMID:
+      return 7;
+    case AmanziMesh::Cell_kind::PRISM:
+      return 8; //wedge
+    case AmanziMesh::Cell_kind::HEX:
+      return 9;
+    case AmanziMesh::Cell_kind::POLYHED:
+      return 16; // see http://www.xdmf.org/index.php/XDMF_Model_and_Format
+    default:
+      return 3; // unknown, for now same as polygon
   }
 }
 
@@ -1639,14 +1659,18 @@ HDF5_MPI::findGridNode_(Teuchos::XMLObject xmlobject)
 
   // Step down to child tag==Domain
   for (int i = 0; i < xmlobject.numChildren(); i++) {
-    if (xmlobject.getChild(i).getTag() == "Domain") { node = xmlobject.getChild(i); }
+    if (xmlobject.getChild(i).getTag() == "Domain") {
+      node = xmlobject.getChild(i);
+    }
   }
 
   // Step down to child tag==Grid and Attribute(GridType==Collection)
   for (int i = 0; i < node.numChildren(); i++) {
     tmp = node.getChild(i);
     if (tmp.getTag() == "Grid" && tmp.hasAttribute("GridType")) {
-      if (tmp.getAttribute("GridType") == "Collection") { return tmp; }
+      if (tmp.getAttribute("GridType") == "Collection") {
+        return tmp;
+      }
     }
   }
 
@@ -1672,7 +1696,9 @@ HDF5_MPI::findMeshNode_(Teuchos::XMLObject xmlobject)
   for (int i = 0; i < node.numChildren(); i++) {
     tmp = node.getChild(i);
     if (tmp.getTag() == "Grid" && tmp.hasAttribute("Name")) {
-      if (tmp.getAttribute("Name") == "Mesh") { return tmp; }
+      if (tmp.getAttribute("Name") == "Mesh") {
+        return tmp;
+      }
     }
   }
 
@@ -1737,7 +1763,8 @@ HDF5_MPI::checkThrow_(int ierr, const std::string& varname, const std::string& f
     Exceptions::amanzi_throw(msg);
   } else if (ierr != 0) {
     Errors::Message msg;
-    msg << "Unable to read variable \"" << varname << "\" in file \"" << filename << "\" (unknown reason)";
+    msg << "Unable to read variable \"" << varname << "\" in file \"" << filename
+        << "\" (unknown reason)";
     Exceptions::amanzi_throw(msg);
   }
 }

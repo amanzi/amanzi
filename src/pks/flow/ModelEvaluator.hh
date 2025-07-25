@@ -24,7 +24,7 @@
 namespace Amanzi {
 namespace Flow {
 
-template <typename Model>
+template<typename Model>
 class ModelEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   explicit ModelEvaluator(Teuchos::ParameterList& plist)
@@ -44,7 +44,7 @@ class ModelEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Compos
   virtual void EvaluatePartialDerivative_(const State& S,
                                           const Key& wrt_key,
                                           const Tag& wrt_tag,
-                                          const std::vector<CompositeVector*>& results) override{};
+                                          const std::vector<CompositeVector*>& results) override {};
 
  private:
   void Init_();
@@ -60,7 +60,7 @@ class ModelEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Compos
 /* ******************************************************************
 * Required member function
 ****************************************************************** */
-template <typename Model>
+template<typename Model>
 void
 ModelEvaluator<Model>::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
@@ -89,7 +89,7 @@ ModelEvaluator<Model>::Evaluate_(const State& S, const std::vector<CompositeVect
 /* ******************************************************************
 * Initialization.
 ****************************************************************** */
-template <typename Model>
+template<typename Model>
 void
 ModelEvaluator<Model>::Init_()
 {
@@ -99,7 +99,9 @@ ModelEvaluator<Model>::Init_()
     deps_ = plist_.get<Teuchos::Array<std::string>>("dependencies").toVector();
   }
 
-  for (auto key : deps_) { dependencies_.insert(std::make_pair(key, Tags::DEFAULT)); }
+  for (auto key : deps_) {
+    dependencies_.insert(std::make_pair(key, Tags::DEFAULT));
+  }
 }
 
 } // namespace Flow

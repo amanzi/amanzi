@@ -92,17 +92,17 @@ HeatDiffusionMatrixFracture::EnsureCompatibility(State& S)
 
   // For dependencies, all we really care is whether there is an evaluator
   // or not.
-  for (const auto& dep : dependencies_) { S.RequireEvaluator(dep.first, dep.second); }
+  for (const auto& dep : dependencies_) {
+    S.RequireEvaluator(dep.first, dep.second);
+  }
 
   // It would be nice to verify mesh parenting
   for (const auto& dep : dependencies_) {
     auto& dep_fac = S.Require<CompositeVector, CompositeVectorSpace>(dep.first, dep.second);
 
     Key dep_domain = Keys::getDomain(dep.first);
-    if (domain == dep_domain)
-      dep_fac.SetMesh(S.GetMesh(domain));
-    else
-      dep_fac.SetMesh(S.GetMesh(domain)->getParentMesh());
+    if (domain == dep_domain) dep_fac.SetMesh(S.GetMesh(domain));
+    else dep_fac.SetMesh(S.GetMesh(domain)->getParentMesh());
   }
 }
 

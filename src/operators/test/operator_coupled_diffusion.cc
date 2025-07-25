@@ -876,10 +876,8 @@ RunInverseProblem(const std::string& discretization, bool upwind, int nx, int ny
   if (write_file) {
     std::stringstream fname;
     fname << "matrix_" << nx;
-    if (discretization == "fv: default")
-      fname << "_fv";
-    else
-      fname << "_mfd";
+    if (discretization == "fv: default") fname << "_fv";
+    else fname << "_mfd";
     fname << ".dat";
     EpetraExt::RowMatrixToMatlabFile(fname.str().c_str(), *problem->op->A());
   }
@@ -910,10 +908,8 @@ RunInverseProblem(const std::string& discretization, bool upwind, int nx, int ny
   if (write_file) {
     std::stringstream fname;
     fname << "error_" << nx;
-    if (discretization == "fv: default")
-      fname << "_fv";
-    else
-      fname << "_mfd";
+    if (discretization == "fv: default") fname << "_fv";
+    else fname << "_mfd";
     fname << ".dat";
     problem->ReportError(fname.str(), *X.SubVector(0)->Data(), *X.SubVector(1)->Data());
   }
@@ -1015,10 +1011,8 @@ RunNonlinearProblem(const std::string& discretization,
 
       std::stringstream fname;
       fname << "files/operator_" << nits << "_" << nx;
-      if (discretization == "fv: default")
-        fname << "_fv";
-      else
-        fname << "_mfd";
+      if (discretization == "fv: default") fname << "_fv";
+      else fname << "_mfd";
       fname << ".dat";
       EpetraExt::RowMatrixToMatlabFile(fname.str().c_str(), *problem->op->A());
     }
@@ -1039,10 +1033,8 @@ RunNonlinearProblem(const std::string& discretization,
     if (write_file) {
       std::stringstream suffix;
       suffix << nits << "_" << nx;
-      if (discretization == "fv: default")
-        suffix << "_fv";
-      else
-        suffix << "_mfd";
+      if (discretization == "fv: default") suffix << "_fv";
+      else suffix << "_mfd";
       suffix << ".dat";
 
       std::string fname = "files/residual" + suffix.str();
@@ -1096,10 +1088,8 @@ RunNonlinearProblem(const std::string& discretization,
     if (write_file) {
       std::stringstream fname;
       fname << "files/preconditioner_" << nits << "_" << nx;
-      if (discretization == "fv: default")
-        fname << "_fv";
-      else
-        fname << "_mfd";
+      if (discretization == "fv: default") fname << "_fv";
+      else fname << "_mfd";
       fname << ".dat";
       EpetraExt::RowMatrixToMatlabFile(fname.str().c_str(), *problem->pc->A());
     }
@@ -1135,10 +1125,8 @@ RunNonlinearProblem(const std::string& discretization,
   if (write_file) {
     std::stringstream fname;
     fname << "error_" << nx;
-    if (discretization == "fv: default")
-      fname << "_fv";
-    else
-      fname << "_mfd";
+    if (discretization == "fv: default") fname << "_fv";
+    else fname << "_mfd";
     fname << ".dat";
     problem->ReportError(fname.str(), *X.SubVector(0)->Data(), *X.SubVector(1)->Data());
   }
@@ -1255,10 +1243,8 @@ RunInverseProblem_Diag(const std::string& discretization,
   if (write_file) {
     std::stringstream fname;
     fname << "error_" << nx;
-    if (discretization == "fv: default")
-      fname << "_fv";
-    else
-      fname << "_mfd";
+    if (discretization == "fv: default") fname << "_fv";
+    else fname << "_mfd";
     fname << ".dat";
     problem->ReportError(fname.str(), *X.SubVector(0)->Data(), *X.SubVector(1)->Data());
   }

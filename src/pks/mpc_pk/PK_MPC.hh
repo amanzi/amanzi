@@ -41,15 +41,15 @@
 
 namespace Amanzi {
 
-template <class PK_Base>
+template<class PK_Base>
 class PK_MPC : virtual public PK {
  public:
-  PK_MPC(){};
+  PK_MPC() {};
   PK_MPC(Teuchos::ParameterList& pk_tree,
          const Teuchos::RCP<Teuchos::ParameterList>& global_list,
          const Teuchos::RCP<State>& S,
          const Teuchos::RCP<TreeVector>& soln);
-  ~PK_MPC(){};
+  ~PK_MPC() {};
 
   // PK methods
   // -- sets up sub-PKs
@@ -66,8 +66,8 @@ class PK_MPC : virtual public PK {
   virtual void CommitStep(double t_old, double t_new, const Tag& tag);
   virtual void CalculateDiagnostics(const Tag& tag);
 
-  virtual void State_to_Solution(const Tag& tag, TreeVector& soln){};
-  virtual void Solution_to_State(const TreeVector& soln, const Tag& tag){};
+  virtual void State_to_Solution(const Tag& tag, TreeVector& soln) {};
+  virtual void Solution_to_State(const TreeVector& soln, const Tag& tag) {};
 
   // iterator over pks
   typename std::vector<Teuchos::RCP<PK_Base>>::iterator begin() { return sub_pks_.begin(); }
@@ -95,7 +95,7 @@ class PK_MPC : virtual public PK {
 // -----------------------------------------------------------------------------
 // Setup of PK hierarchy from PList
 // -----------------------------------------------------------------------------
-template <class PK_Base>
+template<class PK_Base>
 PK_MPC<PK_Base>::PK_MPC(Teuchos::ParameterList& pk_tree,
                         const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                         const Teuchos::RCP<State>& S,
@@ -116,7 +116,9 @@ PK_MPC<PK_Base>::PK_MPC(Teuchos::ParameterList& pk_tree,
   my_list_ = Teuchos::sublist(Teuchos::sublist(global_list_, "PKs"), name_);
 
   Teuchos::RCP<Teuchos::ParameterList> plist;
-  if (global_list_->isSublist("PKs")) { plist = Teuchos::sublist(global_list, "PKs"); }
+  if (global_list_->isSublist("PKs")) {
+    plist = Teuchos::sublist(global_list, "PKs");
+  }
 
   std::vector<std::string> pk_name =
     my_list_->get<Teuchos::Array<std::string>>("PKs order").toVector();
@@ -163,7 +165,7 @@ PK_MPC<PK_Base>::PK_MPC(Teuchos::ParameterList& pk_tree,
 // -----------------------------------------------------------------------------
 // Setup of PK hierarchy from PList
 // -----------------------------------------------------------------------------
-template <class PK_Base>
+template<class PK_Base>
 void
 PK_MPC<PK_Base>::parseParameterList()
 {
@@ -176,7 +178,7 @@ PK_MPC<PK_Base>::parseParameterList()
 // -----------------------------------------------------------------------------
 // Setup of PK hierarchy from PList
 // -----------------------------------------------------------------------------
-template <class PK_Base>
+template<class PK_Base>
 void
 PK_MPC<PK_Base>::Setup()
 {
@@ -189,7 +191,7 @@ PK_MPC<PK_Base>::Setup()
 // -----------------------------------------------------------------------------
 // Loop over sub-PKs, calling their initialization methods
 // -----------------------------------------------------------------------------
-template <class PK_Base>
+template<class PK_Base>
 void
 PK_MPC<PK_Base>::Initialize()
 {
@@ -202,7 +204,7 @@ PK_MPC<PK_Base>::Initialize()
 // -----------------------------------------------------------------------------
 // Propagate tags to sub-PKs
 // -----------------------------------------------------------------------------
-template <class PK_Base>
+template<class PK_Base>
 void
 PK_MPC<PK_Base>::set_tags(const Tag& current, const Tag& next)
 {
@@ -214,7 +216,7 @@ PK_MPC<PK_Base>::set_tags(const Tag& current, const Tag& next)
 // -----------------------------------------------------------------------------
 // loop over sub-PKs, calling their commit state method
 // -----------------------------------------------------------------------------
-template <class PK_Base>
+template<class PK_Base>
 void
 PK_MPC<PK_Base>::CommitStep(double t_old, double t_new, const Tag& tag)
 {
@@ -227,7 +229,7 @@ PK_MPC<PK_Base>::CommitStep(double t_old, double t_new, const Tag& tag)
 // -----------------------------------------------------------------------------
 // loop over sub-PKs, calling their CalculateDiagnostics method
 // -----------------------------------------------------------------------------
-template <class PK_Base>
+template<class PK_Base>
 void
 PK_MPC<PK_Base>::CalculateDiagnostics(const Tag& tag)
 {
@@ -237,14 +239,13 @@ PK_MPC<PK_Base>::CalculateDiagnostics(const Tag& tag)
 }
 
 
-template <class PK_Base>
+template<class PK_Base>
 Teuchos::RCP<Teuchos::ParameterList>
 PK_MPC<PK_Base>::getSubPKPlist_(int i)
 {
   Teuchos::Array<std::string> names = my_list_->get<Teuchos::Array<std::string>>("PKs order");
   return Teuchos::sublist(Teuchos::sublist(global_list_, "PKs"), names[i]);
 }
-
 
 
 } // namespace Amanzi

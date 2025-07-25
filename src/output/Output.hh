@@ -50,8 +50,8 @@ class Output {
 
   // read data from file
   virtual void ReadVector(Epetra_Vector& vec, const std::string& name) const = 0;
-  virtual void
-  ReadMultiVector(Epetra_MultiVector& vec, const std::vector<std::string>& names) const = 0;
+  virtual void ReadMultiVector(Epetra_MultiVector& vec,
+                               const std::vector<std::string>& names) const = 0;
 
   virtual void ReadAttribute(double& val, const std::string& name) const = 0;
   virtual void ReadAttribute(int& val, const std::string& name) const = 0;

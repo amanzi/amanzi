@@ -30,15 +30,18 @@
 
 namespace Amanzi {
 
-class PK_BDF : virtual public PK, public BDFFnBase<TreeVector> {
+class PK_BDF
+  : virtual public PK
+  , public BDFFnBase<TreeVector> {
  public:
-  PK_BDF() : PK(), BDFFnBase<TreeVector>(){};
+  PK_BDF()
+    : PK(), BDFFnBase<TreeVector>() {};
 
   PK_BDF(Teuchos::ParameterList& pk_tree,
          const Teuchos::RCP<Teuchos::ParameterList>& glist,
          const Teuchos::RCP<State>& S,
          const Teuchos::RCP<TreeVector>& soln)
-    : PK(pk_tree, glist, S, soln), BDFFnBase<TreeVector>(){};
+    : PK(pk_tree, glist, S, soln), BDFFnBase<TreeVector>() {};
 
   // access to operators and PDEs in sub-PKs
   virtual Teuchos::RCP<Operators::Operator> my_operator(const Operators::OperatorType& type)

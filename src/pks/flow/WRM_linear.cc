@@ -34,7 +34,9 @@ WRM_linear::WRM_linear(Teuchos::ParameterList& plist)
 }
 
 
-WRM_linear::WRM_linear(double pc0) : pc0_(pc0) {}
+WRM_linear::WRM_linear(double pc0)
+  : pc0_(pc0)
+{}
 
 
 /* ******************************************************************
@@ -53,12 +55,9 @@ WRM_linear::k_relative(double pc) const
 double
 WRM_linear::saturation(double pc) const
 {
-  if (pc < 0.0)
-    return 1.0;
-  else if (pc > pc0_)
-    return sr_;
-  else
-    return sr_ + (1.0 - sr_) * (pc0_ - pc) / pc0_;
+  if (pc < 0.0) return 1.0;
+  else if (pc > pc0_) return sr_;
+  else return sr_ + (1.0 - sr_) * (pc0_ - pc) / pc0_;
 }
 
 
@@ -78,10 +77,8 @@ WRM_linear::capillaryPressure(double s) const
 double
 WRM_linear::dSdPc(double pc) const
 {
-  if (pc < 0.0)
-    return 0.0;
-  else if (pc > pc0_)
-    return 0.0;
+  if (pc < 0.0) return 0.0;
+  else if (pc > pc0_) return 0.0;
   return -(1.0 - sr_) / pc0_;
 }
 

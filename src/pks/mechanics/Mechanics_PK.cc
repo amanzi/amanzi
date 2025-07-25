@@ -289,7 +289,9 @@ Mechanics_PK::ComputeOperatorBCs()
   // two nodal BCs are the first on the list
   for (int i = 0; i < op_bcs_.size(); ++i) {
     std::vector<int>& bc_model = op_bcs_[i]->bc_model();
-    for (int n = 0; n < bc_model.size(); n++) { bc_model[n] = Operators::OPERATOR_BC_NONE; }
+    for (int n = 0; n < bc_model.size(); n++) {
+      bc_model[n] = Operators::OPERATOR_BC_NONE;
+    }
   }
 
   for (int i = 0; i < bcs_.size(); ++i) {
@@ -301,7 +303,9 @@ Mechanics_PK::ComputeOperatorBCs()
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int n = it->first;
         bc_model[n] = Operators::OPERATOR_BC_DIRICHLET;
-        for (int k = 0; k < d; ++k) { bc_value[n][k] = it->second[k]; }
+        for (int k = 0; k < d; ++k) {
+          bc_value[n][k] = it->second[k];
+        }
         dirichlet_bc_++;
       }
     }
@@ -316,7 +320,9 @@ Mechanics_PK::ComputeOperatorBCs()
 
         double dot(0.0);
         const auto& normal = mesh_->getFaceNormal(n);
-        for (int k = 0; k < d; ++k) { dot += it->second[k] * normal[k]; }
+        for (int k = 0; k < d; ++k) {
+          dot += it->second[k] * normal[k];
+        }
 
         bc_model[n] = Operators::OPERATOR_BC_DIRICHLET;
         bc_value[n] = dot / mesh_->getFaceArea(n);
@@ -366,7 +372,9 @@ Mechanics_PK::ComputeOperatorBCs()
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int n = it->first;
         bc_model[n] = Operators::OPERATOR_BC_NORMAL_STRESS;
-        for (int k = 0; k < d; ++k) { bc_value[n][k] = it->second[k]; }
+        for (int k = 0; k < d; ++k) {
+          bc_value[n][k] = it->second[k];
+        }
       }
     }
   }

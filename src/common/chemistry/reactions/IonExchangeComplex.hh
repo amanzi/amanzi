@@ -61,12 +61,12 @@ namespace AmanziChemistry {
 
 class IonExchangeComplex {
  public:
-  IonExchangeComplex(){};
+  IonExchangeComplex() {};
   IonExchangeComplex(const std::string& complex_name,
                      int complex_id,
                      const Teuchos::ParameterList& plist,
                      const std::vector<Species>& primary_species);
-  virtual ~IonExchangeComplex(){};
+  virtual ~IonExchangeComplex() {};
 
   void Display(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayReaction(const Teuchos::Ptr<VerboseObject> vo) const;

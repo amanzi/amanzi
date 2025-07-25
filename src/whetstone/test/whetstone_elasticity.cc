@@ -318,7 +318,9 @@ TEST(ELASTICITY_WEAK_SYMMETRY_2D)
 
     double axx(0.0);
     for (int i = 0; i < mrows; i++) {
-      for (int j = 0; j < mrows; j++) { axx += A(i, j) * vx[i] * vx[j]; }
+      for (int j = 0; j < mrows; j++) {
+        axx += A(i, j) * vx[i] * vx[j];
+      }
     }
     CHECK_CLOSE(0.0, axx, 1e-10);
   }

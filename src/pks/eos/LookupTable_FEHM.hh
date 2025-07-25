@@ -12,7 +12,7 @@
 
   Tabulated equations of state.
 
-  The underlying assumption is that all intersections of saturation 
+  The underlying assumption is that all intersections of saturation
   line with non-uniform mesh are of type 6, i.e. through mesh vertices.
 */
 
@@ -30,7 +30,7 @@ namespace AmanziEOS {
 class LookupTable_FEHM : public LookupTable {
  public:
   LookupTable_FEHM(Teuchos::ParameterList& plist);
-  ~LookupTable_FEHM(){};
+  ~LookupTable_FEHM() {};
 
   virtual double Function(double T, double p, int* ierr) override;
   virtual double DFunctionDT(double T, double p, int* ierr) override;

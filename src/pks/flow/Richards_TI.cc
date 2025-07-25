@@ -561,10 +561,8 @@ Richards_PK::ModifyCorrection(double dt,
     double pc = atm_pressure_ - uc[0][c];
     double sat = wrm_->second[(*wrm_->first)[c]]->saturation(pc);
     double sat_pert;
-    if (sat >= 0.5)
-      sat_pert = sat - max_sat_pert;
-    else
-      sat_pert = sat + max_sat_pert;
+    if (sat >= 0.5) sat_pert = sat - max_sat_pert;
+    else sat_pert = sat + max_sat_pert;
 
     double press_pert =
       atm_pressure_ - wrm_->second[(*wrm_->first)[c]]->capillaryPressure(sat_pert);
@@ -574,10 +572,8 @@ Richards_PK::ModifyCorrection(double dt,
       // std::cout << "clip saturation: c=" << c << " p=" << uc[0][c]
       //           << " dp: " << duc[0][c] << " -> " << du_pert_max << std::endl;
 
-      if (duc[0][c] >= 0.0)
-        duc[0][c] = du_pert_max;
-      else
-        duc[0][c] = -du_pert_max;
+      if (duc[0][c] >= 0.0) duc[0][c] = du_pert_max;
+      else duc[0][c] = -du_pert_max;
 
       nsat_clipped++;
     }

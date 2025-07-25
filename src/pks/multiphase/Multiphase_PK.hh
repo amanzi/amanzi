@@ -59,31 +59,31 @@ The second one includes pressure liquid, molar gas density, and saturation liqui
 The third one is based on the model in Jaffre's paper.
 This model describes the two-phase two-component system with water and hydrogen.
 
-The structure of a system of multiphase equations is described by sublist `"system`" which 
-contains as many blocks as there are equations. The names of blocks are currently reserved 
+The structure of a system of multiphase equations is described by sublist `"system`" which
+contains as many blocks as there are equations. The names of blocks are currently reserved
 and cannot be changed. Each block except for the "constraint eqn" has the following parameters:
 
 .. admonition:: multiphase_pk-spec
 
-  * `"primary unknown`" ``[string]`` defines a name of the primary variable which goes into 
+  * `"primary unknown`" ``[string]`` defines a name of the primary variable which goes into
     a solution vector.
 
-  * `"accumulation`" ``[string]`` defines an evaluator for the accumulattion (or storage) term 
+  * `"accumulation`" ``[string]`` defines an evaluator for the accumulattion (or storage) term
     in this equation.
 
-  * `"terms`" [list] specifies details of underluing PDE operators. The list constains as 
-    many sublists as there are operators. Some of the operators can be considered either as 
-    diffusion operators with respect to particular fields or as advection operators associate 
-    with a Darcy velocities. We input parameters follow the diffusion viewpoint for 
+  * `"terms`" [list] specifies details of underluing PDE operators. The list constains as
+    many sublists as there are operators. Some of the operators can be considered either as
+    diffusion operators with respect to particular fields or as advection operators associate
+    with a Darcy velocities. We input parameters follow the diffusion viewpoint for
     all operators.
 
-    * `"coefficient`" ``[string]`` defined the diffusion coefficient. 
+    * `"coefficient`" ``[string]`` defined the diffusion coefficient.
 
-    * `"argument`" ``[string]`` defines a field for which the operator has the diffusion structure. 
+    * `"argument`" ``[string]`` defines a field for which the operator has the diffusion structure.
 
     * `"scaling factor`" ``[double]`` defines a scalar multiplier for the operator.
 
-    * `"phase`" ``[int]`` specifies a phase accosiated with the operator. It is used to upwind 
+    * `"phase`" ``[int]`` specifies a phase accosiated with the operator. It is used to upwind
       the diffusion coefficient w.r.t. to the corresponding Darcy velocity.
 
 .. code-block:: xml
@@ -160,7 +160,7 @@ class Multiphase_PK : public PK_PhysicalBDF {
                 const Teuchos::RCP<State>& S,
                 const Teuchos::RCP<TreeVector>& soln);
 
-  ~Multiphase_PK(){};
+  ~Multiphase_PK() {};
 
   // method required for abstract PK interface
   virtual void parseParameterList() override {};
@@ -172,7 +172,7 @@ class Multiphase_PK : public PK_PhysicalBDF {
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit) override;
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
-  virtual void CalculateDiagnostics(const Tag& tag) override{};
+  virtual void CalculateDiagnostics(const Tag& tag) override {};
 
   virtual std::string name() override { return "multiphase"; }
 
@@ -187,10 +187,11 @@ class Multiphase_PK : public PK_PhysicalBDF {
   double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) override;
 
   // -- preconditioner management
-  virtual int
-  ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu) override;
-  virtual void
-  UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt) override;
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
+                                  Teuchos::RCP<TreeVector> pu) override;
+  virtual void UpdatePreconditioner(double t,
+                                    Teuchos::RCP<const TreeVector> up,
+                                    double dt) override;
 
   // -- check the admissibility of a solution
   //    override with the actual admissibility check
@@ -202,8 +203,9 @@ class Multiphase_PK : public PK_PhysicalBDF {
   //    using extrapolation and the timestep that is used to compute
   //    this predictor this function returns true if the predictor was
   //    modified, false if not
-  virtual bool
-  ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u) override
+  virtual bool ModifyPredictor(double dt,
+                               Teuchos::RCP<const TreeVector> u0,
+                               Teuchos::RCP<TreeVector> u) override
   {
     return false;
   }
@@ -212,11 +214,11 @@ class Multiphase_PK : public PK_PhysicalBDF {
   // has computed it, will return true if it did change the correction,
   // so that the nonlinear iteration can store the modified correction
   // and pass it to NKA so that the NKA space can be updated
-  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-  ModifyCorrection(double h,
-                   Teuchos::RCP<const TreeVector> res,
-                   Teuchos::RCP<const TreeVector> u,
-                   Teuchos::RCP<TreeVector> du) override;
+  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult ModifyCorrection(
+    double h,
+    Teuchos::RCP<const TreeVector> res,
+    Teuchos::RCP<const TreeVector> u,
+    Teuchos::RCP<TreeVector> du) override;
 
   // calling this indicates that the time integration scheme is changing
   // the value of the solution in state.

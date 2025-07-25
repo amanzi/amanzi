@@ -25,13 +25,11 @@ enum struct FileFormat {
 };
 
 // Get the name of a particular file format
-std::string
-fileFormatName(const FileFormat f);
+std::string fileFormatName(const FileFormat f);
 
 // Determine a file format from a file name, and perform sanity checks on that
 // filename.
-FileFormat
-fileFormatFromFilename(const Comm_type& comm_, std::string name);
+FileFormat fileFormatFromFilename(const Comm_type& comm_, std::string name);
 
 } // namespace AmanziMesh
 } // namespace Amanzi

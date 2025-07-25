@@ -63,7 +63,7 @@ namespace Amanzi {
 /* *****************************************************************
 * Base class: analytic velocities
 ***************************************************************** */
-template <class Analytic>
+template<class Analytic>
 class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
  public:
   AdvectionFn(Teuchos::ParameterList& plist,
@@ -125,7 +125,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
 /* *****************************************************************
 * Advection: velocities are computed using L2 or H1 projection
 ***************************************************************** */
-template <class Analytic>
+template<class Analytic>
 class AdvectionFn_Projection : public AdvectionFn<Analytic> {
  public:
   AdvectionFn_Projection(Teuchos::ParameterList& plist,
@@ -135,16 +135,16 @@ class AdvectionFn_Projection : public AdvectionFn<Analytic> {
                          Teuchos::RCP<WhetStone::DG_Modal> dg,
                          bool conservative_form,
                          std::string weak_form)
-    : AdvectionFn<Analytic>(plist, nx, dt0, mesh, dg, conservative_form, weak_form){};
+    : AdvectionFn<Analytic>(plist, nx, dt0, mesh, dg, conservative_form, weak_form) {};
 
   // calculate cell-center and face-centered velocities using L2 or H1 projection
-  virtual void
-  ComputeVelocities(double t,
-                    double dt,
-                    const CompositeVector& u,
-                    const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial>>& velc,
-                    const Teuchos::RCP<std::vector<WhetStone::Polynomial>>& velf,
-                    const Teuchos::RCP<std::vector<WhetStone::Polynomial>>& divc) override;
+  virtual void ComputeVelocities(
+    double t,
+    double dt,
+    const CompositeVector& u,
+    const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial>>& velc,
+    const Teuchos::RCP<std::vector<WhetStone::Polynomial>>& velf,
+    const Teuchos::RCP<std::vector<WhetStone::Polynomial>>& divc) override;
 
   // name
   virtual std::string name() override { return "high order"; }
@@ -167,7 +167,7 @@ class AdvectionFn_Projection : public AdvectionFn<Analytic> {
 /* *****************************************************************
 * Advection: velocities are computed using L2 or H1 projection
 ***************************************************************** */
-template <class Analytic>
+template<class Analytic>
 class AdvectionFn_LevelSet : public AdvectionFn<Analytic> {
  public:
   AdvectionFn_LevelSet(Teuchos::ParameterList& plist,
@@ -177,16 +177,16 @@ class AdvectionFn_LevelSet : public AdvectionFn<Analytic> {
                        Teuchos::RCP<WhetStone::DG_Modal> dg,
                        bool conservative_form,
                        std::string weak_form)
-    : AdvectionFn<Analytic>(plist, nx, dt0, mesh, dg, conservative_form, weak_form){};
+    : AdvectionFn<Analytic>(plist, nx, dt0, mesh, dg, conservative_form, weak_form) {};
 
   // calculate cell-center and face-centered velocities using L2 or H1 projection
-  virtual void
-  ComputeVelocities(double t,
-                    double dt,
-                    const CompositeVector& u,
-                    const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial>>& velc,
-                    const Teuchos::RCP<std::vector<WhetStone::Polynomial>>& velf,
-                    const Teuchos::RCP<std::vector<WhetStone::Polynomial>>& divc) override;
+  virtual void ComputeVelocities(
+    double t,
+    double dt,
+    const CompositeVector& u,
+    const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial>>& velc,
+    const Teuchos::RCP<std::vector<WhetStone::Polynomial>>& velf,
+    const Teuchos::RCP<std::vector<WhetStone::Polynomial>>& divc) override;
 
   // name
   virtual std::string name() override { return "level set"; }
@@ -211,7 +211,7 @@ class AdvectionFn_LevelSet : public AdvectionFn<Analytic> {
 /* *****************************************************************
 * Constructor
 ***************************************************************** */
-template <class Analytic>
+template<class Analytic>
 AdvectionFn<Analytic>::AdvectionFn(Teuchos::ParameterList& plist,
                                    int nx,
                                    double dt,
@@ -280,7 +280,7 @@ AdvectionFn<Analytic>::AdvectionFn(Teuchos::ParameterList& plist,
 /* *****************************************************************
 * Functional F in dy/dt - F(y) = 0.
 ***************************************************************** */
-template <class Analytic>
+template<class Analytic>
 void
 AdvectionFn<Analytic>::FunctionalTimeDerivative(double t,
                                                 const CompositeVector& u,
@@ -307,7 +307,9 @@ AdvectionFn<Analytic>::FunctionalTimeDerivative(double t,
   auto K = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(ncells_wghost));
   WhetStone::Polynomial Kc(d, 0);
   Kc(0, 0) = 1.0;
-  for (int c = 0; c < ncells_wghost; c++) { (*K)[c] = Kc; }
+  for (int c = 0; c < ncells_wghost; c++) {
+    (*K)[c] = Kc;
+  }
 
   // -- source term
   int nk = WhetStone::PolynomialSpaceDimension(d, order_);
@@ -338,7 +340,9 @@ AdvectionFn<Analytic>::FunctionalTimeDerivative(double t,
 
     // -- convert moment to my basis
     dg_->cell_basis(c).LinearFormNaturalToMy(data);
-    for (int n = 0; n < pc.size(); ++n) { rhs_c[n][c] = data(n); }
+    for (int n = 0; n < pc.size(); ++n) {
+      rhs_c[n][c] = data(n);
+    }
   }
 
   // -- boundary data
@@ -366,7 +370,9 @@ AdvectionFn<Analytic>::FunctionalTimeDerivative(double t,
         ana_.SolutionTaylor(xf, t, coefs);
         data = coefs.coefs();
 
-        for (int i = 0; i < nk; ++i) { bc_value[f][i] = data(i); }
+        for (int i = 0; i < nk; ++i) {
+          bc_value[f][i] = data(i);
+        }
       } else if (weak_sign_ < 0.0) {
         bc_model[f] = Operators::OPERATOR_BC_REMOVE;
       }
@@ -411,7 +417,7 @@ AdvectionFn<Analytic>::FunctionalTimeDerivative(double t,
 /* *****************************************************************
 * Definition of velocities: analytic velocities
 ***************************************************************** */
-template <class Analytic>
+template<class Analytic>
 void
 AdvectionFn<Analytic>::ComputeVelocities(
   double t,
@@ -443,7 +449,9 @@ AdvectionFn<Analytic>::ComputeVelocities(
   dt_stable_min = std::min(dt_stable_min, dt_stable);
 
   if (divergence_term_) {
-    for (int c = 0; c < ncells_wghost_; ++c) { (*divc)[c] = Divergence((*velc)[c]); }
+    for (int c = 0; c < ncells_wghost_; ++c) {
+      (*divc)[c] = Divergence((*velc)[c]);
+    }
   }
 }
 
@@ -451,7 +459,7 @@ AdvectionFn<Analytic>::ComputeVelocities(
 /* *****************************************************************
 * Change original definitions of velocities: projection algorithm
 ***************************************************************** */
-template <class Analytic>
+template<class Analytic>
 void
 AdvectionFn_Projection<Analytic>::ComputeVelocities(
   double t,
@@ -519,7 +527,7 @@ AdvectionFn_Projection<Analytic>::ComputeVelocities(
 /* *****************************************************************
 * Change original definitions of velocities: level set algorithm
 ***************************************************************** */
-template <class Analytic>
+template<class Analytic>
 void
 AdvectionFn_LevelSet<Analytic>::ComputeVelocities(
   double t,
@@ -597,7 +605,9 @@ AdvectionFn_LevelSet<Analytic>::ComputeVelocities(
     vvf = GradientOnUnitSphere(poly, order_ - 1);
 
     for (int i = 0; i < 2; ++i) {
-      for (int m = 0; m < mk; ++m) { vecf_f[i * mk + m][f] = vvf[i](m); }
+      for (int m = 0; m < mk; ++m) {
+        vecf_f[i * mk + m][f] = vvf[i](m);
+      }
     }
   }
 
@@ -609,7 +619,9 @@ AdvectionFn_LevelSet<Analytic>::ComputeVelocities(
     const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
 
     for (int i = 0; i < 2; ++i) {
-      for (int m = 0; m < mk; ++m) { vvf[i](m) = vecf_f[i * mk + m][f]; }
+      for (int m = 0; m < mk; ++m) {
+        vvf[i](m) = vecf_f[i * mk + m][f];
+      }
     }
 
     (*velf)[f] = vvf * normal;
@@ -628,7 +640,7 @@ AdvectionFn_LevelSet<Analytic>::ComputeVelocities(
 /* *****************************************************************
 * Limit gradient
 ***************************************************************** */
-template <class Analytic>
+template<class Analytic>
 void
 AdvectionFn<Analytic>::ApplyLimiter(std::string& name, CompositeVector& u)
 {
@@ -770,7 +782,7 @@ InterpolateCellToNode(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   return un;
 }
 
-template <class Analytic, class Advection>
+template<class Analytic, class Advection>
 void
 Transient(std::string filename,
           int nx,
@@ -824,12 +836,9 @@ Transient(std::string filename,
   // meshfactory.set_partitioner(AmanziMesh::Partitioner_kind::ZOLTAN_RCB);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<Mesh> mesh;
-  if (nx == 0 || ny == 0)
-    mesh = meshfactory.create(filename);
-  else if (nz == 0)
-    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, ny);
-  else
-    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz);
+  if (nx == 0 || ny == 0) mesh = meshfactory.create(filename);
+  else if (nz == 0) mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, ny);
+  else mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz);
 
   // DeformMesh(mesh, deform, 0.0);
 
@@ -899,7 +908,9 @@ Transient(std::string filename,
     dt = std::min(dt0, tend - t);
 
     // overwrite solution at the origin
-    if (fn.name() == "level set") { ana.InitialGuess(*dg, sol_c, t, inside1); }
+    if (fn.name() == "level set") {
+      ana.InitialGuess(*dg, sol_c, t, inside1);
+    }
   }
 
   // compute solution error
@@ -917,14 +928,10 @@ Transient(std::string filename,
     printf("            (total) L2(p)=%9.6g  Inf(p)=%9.6g\n", pl2_err, pinf_err);
     printf("         (integral) L2(p)=%9.6g\n", pl2_int);
     printf("       FACE:        Inf(p)=%9.6g  Inf(grad p)=%9.6g\n", pface_inf, grad_pface_inf);
-    if (exact_solution_expected)
-      CHECK(pl2_mean < 1e-10);
-    else if (fn.name() == "level set")
-      CHECK(pl2_mean < 0.3 / nx);
-    else if (limiter == "none")
-      CHECK(pl2_mean < 0.12 / nx);
-    else
-      CHECK(pl2_mean < 0.3 / nx);
+    if (exact_solution_expected) CHECK(pl2_mean < 1e-10);
+    else if (fn.name() == "level set") CHECK(pl2_mean < 0.3 / nx);
+    else if (limiter == "none") CHECK(pl2_mean < 0.12 / nx);
+    else CHECK(pl2_mean < 0.3 / nx);
   }
 }
 

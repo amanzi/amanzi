@@ -86,10 +86,8 @@ KeyPair
 split(const Key& name, const char& delimiter)
 {
   std::size_t pos = name.find(delimiter);
-  if (pos == std::string::npos)
-    return std::make_pair(Key(""), name);
-  else
-    return std::make_pair(name.substr(0, pos), name.substr(pos + 1, std::string::npos));
+  if (pos == std::string::npos) return std::make_pair(Key(""), name);
+  else return std::make_pair(name.substr(0, pos), name.substr(pos + 1, std::string::npos));
 }
 
 // creates a clean name to be used as a variable name, domain name, tag name,
@@ -207,10 +205,8 @@ getDomain(const Key& name)
   if (name.find(deriv_delimiter) == std::string::npos) {
     // not a derivative
     auto split = splitKey(name);
-    if (split.first.empty())
-      return "domain";
-    else
-      return split.first;
+    if (split.first.empty() ) return "domain";
+    else return split.first;
 
   } else {
     // is a derivative
@@ -229,10 +225,8 @@ Key
 getDomainPrefix(const Key& name)
 {
   auto domain = getDomain(name);
-  if (domain == "domain")
-    return "";
-  else
-    return merge(domain, "", name_delimiter);
+  if (domain == "domain") return "";
+  else return merge(domain, "", name_delimiter);
 }
 
 
@@ -240,10 +234,8 @@ getDomainPrefix(const Key& name)
 Key
 getVarName(const Key& name)
 {
-  if (name.find(deriv_delimiter) == std::string::npos)
-    return splitKey(name).second;
-  else
-    return splitKey(split(name, deriv_delimiter).first).second;
+  if (name.find(deriv_delimiter) == std::string::npos) return splitKey(name).second;
+  else return splitKey(split(name, deriv_delimiter).first).second;
 }
 
 // abbreviate
@@ -301,7 +293,7 @@ isDomainSet(const Key& name)
 bool
 splitDomainSet(const Key& name, KeyTriple& result)
 {
-  if (!in(name, dset_delimiter)) return false;
+  if (!in(name, dset_delimiter) ) return false;
   Key domain;
   if (in(name, name_delimiter)) {
     auto domain_var = splitKey(name);
@@ -369,10 +361,8 @@ KeyTag
 splitKeyTag(const Key& name)
 {
   std::size_t pos = name.find(tag_delimiter);
-  if (pos == std::string::npos)
-    return std::make_pair(name, Tag(""));
-  else
-    return std::make_pair(name.substr(0, pos), Tag(name.substr(pos + 1, name.size())));
+  if (pos == std::string::npos) return std::make_pair(name, Tag(""));
+  else return std::make_pair(name.substr(0, pos), Tag(name.substr(pos + 1, name.size())));
 }
 
 // Derivatives are of the form dKey|dKey.
@@ -447,10 +437,8 @@ readDomainHint(Teuchos::ParameterList& plist,
                Key domain_type)
 {
   std::string param;
-  if (domain_type.empty())
-    param = "domain name";
-  else
-    param = (domain_type + " domain name");
+  if (domain_type.empty() ) param = "domain name";
+  else param = (domain_type + " domain name");
 
   domain_type = standardize(domain_type);
   hint_domain_type = standardize(hint_domain_type);
@@ -484,7 +472,9 @@ Key
 guessDomainType(const Key& domain)
 {
   for (const auto& guess : { "snow", "canopy", "surface_3d", "surface" }) {
-    if (in(domain, guess)) { return guess; }
+    if (in(domain, guess)) {
+      return guess;
+    }
   }
   return "domain";
 }
@@ -577,14 +567,15 @@ readKeys(Teuchos::ParameterList& list,
 Tag
 readTag(Teuchos::ParameterList& list, const std::string& param, const Tag& default_tag)
 {
-  std::string tag_str = list.get<std::string>(param.empty() ? "tag" : param + " tag",
-          default_tag.get());
+  std::string tag_str =
+    list.get<std::string>(param.empty() ? "tag" : param + " tag", default_tag.get());
   return Tag{ tag_str };
 }
 
 } // namespace Keys
 
-std::ostream& operator<<(std::ostream& os, const KeyTag& keytag)
+std::ostream&
+operator<<(std::ostream& os, const KeyTag& keytag)
 {
   os << Keys::getKey(keytag);
   return os;

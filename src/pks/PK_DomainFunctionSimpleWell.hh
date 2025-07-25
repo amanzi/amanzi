@@ -27,17 +27,19 @@
 
 namespace Amanzi {
 
-template <class FunctionBase>
-class PK_DomainFunctionSimpleWell : public FunctionBase, public Functions::UniqueMeshFunction {
+template<class FunctionBase>
+class PK_DomainFunctionSimpleWell
+  : public FunctionBase
+  , public Functions::UniqueMeshFunction {
  public:
   PK_DomainFunctionSimpleWell(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : UniqueMeshFunction(mesh, AmanziMesh::Parallel_kind::OWNED){};
+    : UniqueMeshFunction(mesh, AmanziMesh::Parallel_kind::OWNED) {};
 
   PK_DomainFunctionSimpleWell(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                               const Teuchos::ParameterList& plist)
-    : UniqueMeshFunction(mesh, AmanziMesh::Parallel_kind::OWNED){};
+    : UniqueMeshFunction(mesh, AmanziMesh::Parallel_kind::OWNED) {};
 
-  ~PK_DomainFunctionSimpleWell(){};
+  ~PK_DomainFunctionSimpleWell() {};
 
   // member functions
   void Init(const Teuchos::ParameterList& plist,
@@ -49,9 +51,9 @@ class PK_DomainFunctionSimpleWell : public FunctionBase, public Functions::Uniqu
   virtual DomainFunction_kind getType() const override { return DomainFunction_kind::SIMPLE_WELL; }
 
  protected:
-  using FunctionBase::value_;
   using FunctionBase::domain_volume_;
   using FunctionBase::keyword_;
+  using FunctionBase::value_;
 
   Teuchos::RCP<const State> S_;
 
@@ -69,7 +71,7 @@ class PK_DomainFunctionSimpleWell : public FunctionBase, public Functions::Uniqu
 /* ******************************************************************
 * Initialization adds a single function to the list of unique specs.
 ****************************************************************** */
-template <class FunctionBase>
+template<class FunctionBase>
 void
 PK_DomainFunctionSimpleWell<FunctionBase>::Init(const Teuchos::ParameterList& plist,
                                                 const std::string& keyword,
@@ -80,7 +82,7 @@ PK_DomainFunctionSimpleWell<FunctionBase>::Init(const Teuchos::ParameterList& pl
   kind_ = AmanziMesh::Entity_kind::CELL;
   Teuchos::ParameterList well_list = plist.sublist(keyword);
   submodel_ = "rate";
-  if (well_list.isParameter("submodel")) submodel_ = well_list.get<std::string>("submodel");
+  if (well_list.isParameter("submodel") ) submodel_ = well_list.get<std::string>("submodel");
 
   // well_index_key_ = plist.get<std::string>("well_index_key", "well_index");
   well_index_key_ = "well_index";
@@ -113,7 +115,7 @@ PK_DomainFunctionSimpleWell<FunctionBase>::Init(const Teuchos::ParameterList& pl
 /* ******************************************************************
 * Compute and distribute the result by volume.
 ****************************************************************** */
-template <class FunctionBase>
+template<class FunctionBase>
 void
 PK_DomainFunctionSimpleWell<FunctionBase>::Compute(double t0, double t1)
 {
@@ -124,7 +126,7 @@ PK_DomainFunctionSimpleWell<FunctionBase>::Compute(double t0, double t1)
   int nowned = mesh_->getNumEntities(kind_, AmanziMesh::Parallel_kind::OWNED);
 
   if (submodel_ == "rate") {
-    for (auto uspec = unique_specs_.at(kind_)->begin(); uspec != unique_specs_.at(kind_)->end();
+    for (auto uspec = unique_specs_.at(kind_) ->begin(); uspec != unique_specs_.at(kind_)->end();
          ++uspec) {
       Teuchos::RCP<MeshIDs> ids = (*uspec)->second;
 
@@ -157,7 +159,7 @@ PK_DomainFunctionSimpleWell<FunctionBase>::Compute(double t0, double t1)
     const Epetra_MultiVector& wi =
       *S_->Get<CompositeVector>("well_index", Tags::DEFAULT).ViewComponent("cell");
 
-    for (auto uspec = unique_specs_.at(kind_)->begin(); uspec != unique_specs_.at(kind_)->end();
+    for (auto uspec = unique_specs_.at(kind_) ->begin(); uspec != unique_specs_.at(kind_)->end();
          ++uspec) {
       Teuchos::RCP<MeshIDs> ids = (*uspec)->second;
 

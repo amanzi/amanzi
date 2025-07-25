@@ -563,7 +563,7 @@ InputConverterU::TranslateMultiphaseBCs_()
       } else if (bctype_in == "inward_volumetric_flux") {
         bctype = "mass flux total";
         bcname = "outward mass flux";
-        for (int k = 0; k < values.size(); k++) values[k] *= -1;
+        for (int k = 0; k < values.size() ; k++) values[k] *= -1;
       } else if (bctype_in == "saturation") {
         bctype = "saturation";
         bcname = "boundary saturation";

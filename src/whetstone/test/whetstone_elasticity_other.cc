@@ -130,10 +130,8 @@ runStiffness3D(const std::string& filename)
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<Mesh> mesh;
-  if (filename == "")
-    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3);
-  else
-    mesh = meshfactory.create(filename);
+  if (filename == "") mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3);
+  else mesh = meshfactory.create(filename);
 
   Teuchos::ParameterList plist;
   MFD3D_BernardiRaugel mfd(plist, mesh);
@@ -245,7 +243,9 @@ TEST(ADVECTION_NAVIER_STOKES_2D)
 
   // setup velocity
   AmanziMesh::Point_List u(nnodes);
-  for (int i = 0; i < nnodes; ++i) { u[i] = AmanziGeometry::Point(1.0, 2.0); }
+  for (int i = 0; i < nnodes; ++i) {
+    u[i] = AmanziGeometry::Point(1.0, 2.0);
+  }
 
   // calculate advection matrix
   DenseMatrix A;

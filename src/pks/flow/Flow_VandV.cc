@@ -110,11 +110,15 @@ Flow_PK::VV_ValidateBCs() const
     }
 
     if (bcs_[i]->get_bc_name() == "flux") {
-      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) { flux_faces.insert(it->first); }
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        flux_faces.insert(it->first);
+      }
     }
 
     if (bcs_[i]->get_bc_name() == "head") {
-      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) { head_faces.insert(it->first); }
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        head_faces.insert(it->first);
+      }
     }
 
     if (bcs_[i]->get_bc_name() == "coupling") {

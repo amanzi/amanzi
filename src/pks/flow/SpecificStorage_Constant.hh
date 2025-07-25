@@ -26,7 +26,8 @@ namespace Flow {
 
 class SpecificStorage_Constant : public SpecificStorage {
  public:
-  SpecificStorage_Constant(Teuchos::ParameterList& plist) : SpecificStorage(plist)
+  SpecificStorage_Constant(Teuchos::ParameterList& plist)
+    : SpecificStorage(plist)
   {
     value_ = plist.get<double>("value");
   }

@@ -17,8 +17,8 @@
 
 #ifdef ENABLE_Structured
 
-#  include "ParmParse.H"
-#  include "InputConverter.hh"
+#include "ParmParse.H"
+#include "InputConverter.hh"
 
 namespace Amanzi {
 namespace AmanziInput {

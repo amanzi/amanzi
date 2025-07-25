@@ -110,7 +110,7 @@ FunctionColorFactory::create_grid_color_function(int dim,
   if (comm.MyPID() == 0) {
     for (int k = 0; k < dim; ++k) {
       infile >> count[k];
-      if ((error = !infile.good())) break;
+      if ((error = !infile.good() )) break;
     }
   }
   comm.Broadcast(&error, 1, 0);
@@ -135,7 +135,7 @@ FunctionColorFactory::create_grid_color_function(int dim,
   if (comm.MyPID() == 0) {
     for (int k = 0; k < dim; ++k) {
       infile >> x0[k];
-      if ((error = !infile.good())) break;
+      if ((error = !infile.good() )) break;
     }
   }
   comm.Broadcast(&error, 1, 0);
@@ -151,7 +151,7 @@ FunctionColorFactory::create_grid_color_function(int dim,
   if (comm.MyPID() == 0) {
     for (int k = 0; k < dim; ++k) {
       infile >> dx[k];
-      if ((error = !infile.good())) break;
+      if ((error = !infile.good() )) break;
       dx[k] = (dx[k] - x0[k]) / count[k];
     }
   }
@@ -235,9 +235,9 @@ FunctionColorFactory::create_grid_color_function(int dim,
     for (int i = 0; i < n; ++i) {
       infile >> array[i];
       if (i == n - 1) { // okay to see an EOF on the last value
-        if ((error = infile.fail())) break;
+        if ((error = infile.fail() )) break;
       } else {
-        if ((error = !infile.good())) break;
+        if ((error = !infile.good() )) break;
       }
     }
   }

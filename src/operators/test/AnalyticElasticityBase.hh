@@ -22,7 +22,8 @@
 
 class AnalyticElasticityBase {
  public:
-  AnalyticElasticityBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : mesh_(mesh)
+  AnalyticElasticityBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
+    : mesh_(mesh)
   {
     nnodes_owned = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE,
                                          Amanzi::AmanziMesh::Parallel_kind::OWNED);
@@ -34,23 +35,23 @@ class AnalyticElasticityBase {
     ncells_wghost = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE,
                                           Amanzi::AmanziMesh::Parallel_kind::ALL);
   };
-  ~AnalyticElasticityBase(){};
+  ~AnalyticElasticityBase() {};
 
   // analytic solution for elasticity-type problem
   // -- stiffness/elasticity tensor T
   virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
 
   // -- analytic solution
-  virtual Amanzi::AmanziGeometry::Point
-  velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p,
+                                                       double t) = 0;
   virtual double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
-  virtual Amanzi::WhetStone::Tensor
-  stress_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::WhetStone::Tensor stress_exact(const Amanzi::AmanziGeometry::Point& p,
+                                                 double t) = 0;
   virtual double volumetric_strain_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
 
   // -- source term
-  virtual Amanzi::AmanziGeometry::Point
-  source_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p,
+                                                     double t) = 0;
 
   void VectorNodeSolution(Amanzi::CompositeVector& u, double t);
   void VectorCellSolution(Amanzi::CompositeVector& u, double t);
@@ -183,7 +184,9 @@ AnalyticElasticityBase::VectorNodeError(Amanzi::CompositeVector& u,
     auto nodes = mesh_->getCellNodes(c);
     int nnodes = nodes.size();
 
-    for (int i = 0; i < nnodes; i++) { vol_node[0][nodes[i]] += mesh_->getCellVolume(c) / nnodes; }
+    for (int i = 0; i < nnodes; i++) {
+      vol_node[0][nodes[i]] += mesh_->getCellVolume(c) / nnodes;
+    }
   }
   vol.GatherGhostedToMaster("node");
 
@@ -305,10 +308,8 @@ AnalyticElasticityBase::GlobalOp(std::string op, double* val, int n)
   double* val_tmp = new double[n];
   for (int i = 0; i < n; ++i) val_tmp[i] = val[i];
 
-  if (op == "sum")
-    mesh_->getComm()->SumAll(val_tmp, val, n);
-  else if (op == "max")
-    mesh_->getComm()->MaxAll(val_tmp, val, n);
+  if (op == "sum") mesh_->getComm()->SumAll(val_tmp, val, n);
+  else if (op == "max") mesh_->getComm()->MaxAll(val_tmp, val, n);
 
   delete[] val_tmp;
 }

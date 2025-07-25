@@ -41,14 +41,10 @@ RegionLogical::RegionLogical(const std::string& name,
   // entities in the mesh will determine the dimension.
   // 0 should trigger potential errors in the future.
 
-  if (operation_str == "complement")
-    operation_ = BoolOpType::COMPLEMENT;
-  else if (operation_str == "union")
-    operation_ = BoolOpType::UNION;
-  else if (operation_str == "intersect")
-    operation_ = BoolOpType::INTERSECT;
-  else if (operation_str == "subtract")
-    operation_ = BoolOpType::SUBTRACT;
+  if (operation_str == "complement") operation_ = BoolOpType::COMPLEMENT;
+  else if (operation_str == "union") operation_ = BoolOpType::UNION;
+  else if (operation_str == "intersect") operation_ = BoolOpType::INTERSECT;
+  else if (operation_str == "subtract") operation_ = BoolOpType::SUBTRACT;
   else {
     Errors::Message mesg("Unknown logical operation type requested on regions");
     amanzi_throw(mesg);

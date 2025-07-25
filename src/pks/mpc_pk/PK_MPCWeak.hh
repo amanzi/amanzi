@@ -33,12 +33,12 @@ class PK_MPCWeak : public PK_MPC<PK> {
              const Teuchos::RCP<Teuchos::ParameterList>& global_list,
              const Teuchos::RCP<State>& S,
              const Teuchos::RCP<TreeVector>& soln)
-    : PK_MPC<PK>(pk_tree, global_list, S, soln){};
+    : PK_MPC<PK>(pk_tree, global_list, S, soln) {};
 
   // PK methods
   // -- dt is the minimum of the sub pks
   virtual double get_dt();
-  virtual void set_dt(double dt){};
+  virtual void set_dt(double dt) {};
 
   // -- advance each sub pk dt.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);

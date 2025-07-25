@@ -104,7 +104,7 @@ class Energy_PK : public PK_PhysicalBDF {
             const Teuchos::RCP<Teuchos::ParameterList>& glist,
             const Teuchos::RCP<State>& S,
             const Teuchos::RCP<TreeVector>& soln);
-  virtual ~Energy_PK(){};
+  virtual ~Energy_PK() {};
 
   // methods required by PK interface
   virtual void parseParameterList() override {};
@@ -114,8 +114,8 @@ class Energy_PK : public PK_PhysicalBDF {
 
   // methods required for time integration
   // -- management of the preconditioner
-  virtual int
-  ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> hu) override
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
+                                  Teuchos::RCP<TreeVector> hu) override
   {
     return op_preconditioner_->ApplyInverse(*u->Data(), *hu->Data());
   }
@@ -130,8 +130,9 @@ class Energy_PK : public PK_PhysicalBDF {
   //    using extrapolation and the timestep that is used to compute
   //    this predictor this function returns true if the predictor was
   //    modified, false if not
-  bool
-  ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u) override
+  bool ModifyPredictor(double dt,
+                       Teuchos::RCP<const TreeVector> u0,
+                       Teuchos::RCP<TreeVector> u) override
   {
     return false;
   }
@@ -140,11 +141,11 @@ class Energy_PK : public PK_PhysicalBDF {
   //    has computed it, will return true if it did change the correction,
   //    so that the nonlinear iteration can store the modified correction
   //    and pass it to NKA so that the NKA space can be updated
-  AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-  ModifyCorrection(double dt,
-                   Teuchos::RCP<const TreeVector> res,
-                   Teuchos::RCP<const TreeVector> u,
-                   Teuchos::RCP<TreeVector> du) override;
+  AmanziSolvers::FnBaseDefs::ModifyCorrectionResult ModifyCorrection(
+    double dt,
+    Teuchos::RCP<const TreeVector> res,
+    Teuchos::RCP<const TreeVector> u,
+    Teuchos::RCP<TreeVector> du) override;
 
   // -- calling this indicates that the time integration
   //    scheme is changing the value of the solution in state.
@@ -157,11 +158,11 @@ class Energy_PK : public PK_PhysicalBDF {
   void AddSourceTerms(CompositeVector& rhs);
 
   // access
-  virtual Teuchos::RCP<Operators::Operator>
-  my_operator(const Operators::OperatorType& type) override;
+  virtual Teuchos::RCP<Operators::Operator> my_operator(
+    const Operators::OperatorType& type) override;
 
-  virtual Teuchos::RCP<Operators::PDE_HelperDiscretization>
-  my_pde(const Operators::PDEType& type) override
+  virtual Teuchos::RCP<Operators::PDE_HelperDiscretization> my_pde(
+    const Operators::PDEType& type) override
   {
     return op_matrix_diff_;
   }

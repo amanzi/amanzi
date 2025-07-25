@@ -43,7 +43,7 @@ FunctionMonomial::operator()(const std::vector<double>& x) const
     m << "FunctionMonomial expects higher-dimensional argument.";
     Exceptions::amanzi_throw(m);
   }
-  for (int j = 0; j < x0_.size(); ++j) y *= pow(x[j] - x0_[j], p_[j]);
+  for (int j = 0; j < x0_.size() ; ++j) y *= pow(x[j] - x0_[j], p_[j]);
   return y;
 }
 

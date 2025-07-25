@@ -277,7 +277,7 @@ FlowEnergyMatrixFracture_PK::UpdatePreconditioner(double t,
 
     for (int k = 0; k < 2; ++k) {
       const auto& inds = smap->Indices(n, comps[k], 0);
-      for (int i = 0; i != inds.size(); ++i) (*block_indices)[inds[i]] = id;
+      for (int i = 0; i != inds.size() ; ++i) (*block_indices)[inds[i]] = id;
     }
   }
   auto block_ids = std::make_pair(2, block_indices);

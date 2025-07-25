@@ -26,7 +26,8 @@ namespace AmanziEOS {
 /* ******************************************************************
 * Populate internal structures
 ****************************************************************** */
-LookupTable_FEHM::LookupTable_FEHM(Teuchos::ParameterList& plist) : LookupTable(plist)
+LookupTable_FEHM::LookupTable_FEHM(Teuchos::ParameterList& plist)
+  : LookupTable(plist)
 {
   std::string filename = plist.get<std::string>("table name");
   field_ = plist.get<std::string>("field name");
@@ -36,29 +37,29 @@ LookupTable_FEHM::LookupTable_FEHM(Teuchos::ParameterList& plist) : LookupTable(
 
   Errors::Message msg;
   msg << "\nFailed to open/read data from file: " << filename;
-  if (ifs.fail()) Exceptions::amanzi_throw(msg);
+  if (ifs.fail() ) Exceptions::amanzi_throw(msg);
 
   char line[200];
   ifs.getline(line, 100);
-  if (ifs.fail()) Exceptions::amanzi_throw(msg);
+  if (ifs.fail() ) Exceptions::amanzi_throw(msg);
 
   int nT, nP, nB, nK;
   ifs >> nT >> nP >> nB;
   ifs.getline(line, 100);
-  if (ifs.fail()) Exceptions::amanzi_throw(msg);
+  if (ifs.fail() ) Exceptions::amanzi_throw(msg);
 
   // primary variables are T and p
   ifs >> scaleT_ >> shiftT_;
   ifs.getline(line, 100);
-  if (ifs.fail()) Exceptions::amanzi_throw(msg);
+  if (ifs.fail() ) Exceptions::amanzi_throw(msg);
 
   ifs >> scaleP_ >> shiftP_;
   ifs.getline(line, 100);
-  if (ifs.fail()) Exceptions::amanzi_throw(msg);
+  if (ifs.fail() ) Exceptions::amanzi_throw(msg);
 
   ifs >> nK;
   ifs.getline(line, 100);
-  if (ifs.fail()) Exceptions::amanzi_throw(msg);
+  if (ifs.fail() ) Exceptions::amanzi_throw(msg);
 
   // T and p axis
   double value;
@@ -269,10 +270,8 @@ LookupTable_FEHM::Location(double T, double p, int* ierr)
   b = (T - axisT_[jt - 1]) / dT;
   tol = b - a;
 
-  if (tol > EOS_TABLE_TOL)
-    return EOS_TABLE_GAS;
-  else if (tol < -EOS_TABLE_TOL)
-    return EOS_TABLE_LIQUID;
+  if (tol > EOS_TABLE_TOL) return EOS_TABLE_GAS;
+  else if (tol < -EOS_TABLE_TOL) return EOS_TABLE_LIQUID;
 
   return EOS_TABLE_SATURATION_CURVE;
 }

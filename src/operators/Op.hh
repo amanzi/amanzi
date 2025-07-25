@@ -51,7 +51,7 @@ class Op {
       schema_old_(schema),
       schema_row_(schema),
       schema_col_(schema),
-      mesh_(mesh){};
+      mesh_(mesh) {};
 
   Op(const Schema& schema_row,
      const Schema& schema_col,
@@ -62,7 +62,7 @@ class Op {
   }
 
   Op(int schema, const std::string& schema_string_)
-    : schema_string(schema_string_), schema_old_(schema), mesh_(Teuchos::null){};
+    : schema_string(schema_string_), schema_old_(schema), mesh_(Teuchos::null) {};
 
   virtual ~Op() = default;
 
@@ -148,7 +148,9 @@ inline int
 Op::CopyShadowToMaster()
 {
   for (int i = 0; i != matrices.size(); ++i) {
-    if (matrices_shadow[i].NumRows() != 0) { matrices[i] = matrices_shadow[i]; }
+    if (matrices_shadow[i].NumRows() != 0) {
+      matrices[i] = matrices_shadow[i];
+    }
   }
   *diag = *diag_shadow;
   return 0;
@@ -159,7 +161,9 @@ inline void
 Op::RestoreCheckPoint()
 {
   for (int i = 0; i != matrices.size(); ++i) {
-    if (matrices_shadow[i].NumRows() != 0) { matrices[i] = matrices_shadow[i]; }
+    if (matrices_shadow[i].NumRows() != 0) {
+      matrices[i] = matrices_shadow[i];
+    }
   }
   *diag = *diag_shadow;
 }
@@ -172,8 +176,10 @@ inline void
 Op::Rescale(double scaling)
 {
   if (scaling != 1.0) {
-    for (int i = 0; i != matrices.size(); ++i) { matrices[i] *= scaling; }
-    if (diag.get()) diag->Scale(scaling);
+    for (int i = 0; i != matrices.size(); ++i) {
+      matrices[i] *= scaling;
+    }
+    if (diag.get() ) diag->Scale(scaling);
   }
 }
 

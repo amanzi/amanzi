@@ -283,7 +283,7 @@ Energy_PK::Setup()
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-     S_->RequireEvaluator(porosity_key_, Tags::DEFAULT);
+    S_->RequireEvaluator(porosity_key_, Tags::DEFAULT);
   }
 
 
@@ -397,11 +397,17 @@ Energy_PK::UpdateConductivityData(const Teuchos::Ptr<State>& S)
 void
 Energy_PK::UpdateSourceBoundaryData(double t_old, double t_new, const CompositeVector& u)
 {
-  for (int i = 0; i < bc_temperature_.size(); ++i) { bc_temperature_[i]->Compute(t_old, t_new); }
+  for (int i = 0; i < bc_temperature_.size(); ++i) {
+    bc_temperature_[i]->Compute(t_old, t_new);
+  }
 
-  for (int i = 0; i < bc_flux_.size(); ++i) { bc_flux_[i]->Compute(t_old, t_new); }
+  for (int i = 0; i < bc_flux_.size(); ++i) {
+    bc_flux_[i]->Compute(t_old, t_new);
+  }
 
-  for (int i = 0; i < srcs_.size(); ++i) { srcs_[i]->Compute(t_old, t_new); }
+  for (int i = 0; i < srcs_.size(); ++i) {
+    srcs_[i]->Compute(t_old, t_new);
+  }
 
   ComputeBCs(u);
 }
@@ -541,10 +547,8 @@ Energy_PK::ModifyCorrection(double dt,
 Teuchos::RCP<Operators::Operator>
 Energy_PK::my_operator(const Operators::OperatorType& type)
 {
-  if (type == Operators::OPERATOR_MATRIX)
-    return op_matrix_;
-  else if (type == Operators::OPERATOR_PRECONDITIONER_RAW)
-    return op_preconditioner_;
+  if (type == Operators::OPERATOR_MATRIX) return op_matrix_;
+  else if (type == Operators::OPERATOR_PRECONDITIONER_RAW) return op_preconditioner_;
   return Teuchos::null;
 }
 

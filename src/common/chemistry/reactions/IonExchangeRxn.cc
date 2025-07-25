@@ -84,7 +84,9 @@ IonExchangeRxn::Update(const std::vector<Species>& primary_species)
   bool one_more;
   double tol = 1.e-12;
 
-  if (!uniform_z_set_) { CheckUniformZ(primary_species); }
+  if (!uniform_z_set_) {
+    CheckUniformZ(primary_species);
+  }
 
   for (auto ionx = ionx_complexes_.begin(); ionx != ionx_complexes_.end(); ionx++) {
     ionx->set_X(0.0);
@@ -111,7 +113,9 @@ IonExchangeRxn::Update(const std::vector<Species>& primary_species)
         ionx_complexes_[i].set_X(value);
         total += value;
       }
-      if (false) { std::cout << "-- ionx total: " << total << std::endl; }
+      if (false) {
+        std::cout << "-- ionx total: " << total << std::endl;
+      }
       if (one_more) break;
 
       double res = 1.0 - total;
@@ -215,14 +219,18 @@ IonExchangeRxn::CheckUniformZ(const std::vector<Species>& primary_species)
 void
 IonExchangeRxn::DisplaySite(const Teuchos::Ptr<VerboseObject> vo) const
 {
-  for (auto site = ionx_site_.begin(); site != ionx_site_.end(); site++) { site->Display(vo); }
+  for (auto site = ionx_site_.begin(); site != ionx_site_.end(); site++) {
+    site->Display(vo);
+  }
 }
 
 
 void
 IonExchangeRxn::Display(const Teuchos::Ptr<VerboseObject> vo) const
 {
-  for (auto it = ionx_complexes_.begin(); it != ionx_complexes_.end(); ++it) { it->Display(vo); }
+  for (auto it = ionx_complexes_.begin(); it != ionx_complexes_.end(); ++it) {
+    it->Display(vo);
+  }
 }
 
 

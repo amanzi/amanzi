@@ -189,7 +189,7 @@ PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
     Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
     if (k_ != Teuchos::null) {
       k_->ScatterMasterToGhosted("face");
-      if (k_->HasComponent("face")) k_face = k_->ViewComponent("face", true);
+      if (k_->HasComponent("face") ) k_face = k_->ViewComponent("face", true);
     }
 
     // updating matrix blocks
@@ -256,7 +256,9 @@ PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
 
   Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
-  if (k_ != Teuchos::null) { k_face = k_->ViewComponent("face", true); }
+  if (k_ != Teuchos::null) {
+    k_face = k_->ViewComponent("face", true);
+  }
 
   if (!exclude_primary_terms_) {
     Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell", true);
@@ -325,7 +327,7 @@ PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solution,
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
         double value = bc_value[f];
         flux[0][f] = dirs[n] * trans_face[0][f] * (p[0][c] - value);
-        if (Krel_face.get()) flux[0][f] *= (*Krel_face)[0][f];
+        if (Krel_face.get() ) flux[0][f] *= (*Krel_face)[0][f];
 
       } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
         double value = bc_value[f];
@@ -346,7 +348,7 @@ PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solution,
           } else {
             flux[0][f] = dirs[n] * trans_face[0][f] * (p[0][c2] - p[0][c1]);
           }
-          if (Krel_face.get()) flux[0][f] *= (*Krel_face)[0][f];
+          if (Krel_face.get() ) flux[0][f] *= (*Krel_face)[0][f];
           flag[f] = 1;
         }
       }
@@ -368,8 +370,8 @@ PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
 
   u.ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
-  double dkdp[2] = {0., 0.};
-  double pres[2] = {0., 0.};
+  double dkdp[2] = { 0., 0. };
+  double pres[2] = { 0., 0. };
 
   dkdp_->ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& dKdP_cell = *dkdp_->ViewComponent("cell", true);
@@ -489,7 +491,7 @@ PDE_DiffusionFV::ComputeTransmissibility_()
   Kc(0, 0) = 1.0;
 
   for (int c = 0; c < ncells_owned; ++c) {
-    if (K_.get()) Kc = (*K_)[c];
+    if (K_.get() ) Kc = (*K_)[c];
     auto [faces, bisectors] = mesh_->getCellFacesAndBisectors(c);
     int nfaces = faces.size();
 
@@ -513,7 +515,9 @@ PDE_DiffusionFV::ComputeTransmissibility_()
   // some calculatons.
   transmissibility_->PutScalar(0.0);
 
-  for (int f = 0; f < nfaces_owned; f++) { trans_face[0][f] = 1.0 / beta_face[0][f]; }
+  for (int f = 0; f < nfaces_owned; f++) {
+    trans_face[0][f] = 1.0 / beta_face[0][f];
+  }
   transmissibility_->ScatterMasterToGhosted("face", true);
   transmissibility_initialized_ = true;
 }

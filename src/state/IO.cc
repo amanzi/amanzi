@@ -66,7 +66,9 @@ WriteVis(Visualization& vis, State& S)
           // -- write default tag if it exists, else write another tag with the
           // -- same time
           if (r->second->HasRecord(tag)) {
-            if (S.HasEvaluator(r->first, tag)) { S.GetEvaluator(r->first, tag).Update(S, "vis"); }
+            if (S.HasEvaluator(r->first, tag)) {
+              S.GetEvaluator(r->first, tag).Update(S, "vis");
+            }
             r->second->WriteVis(vis, &tag);
           } else {
             // try to find a record at the same time
@@ -125,7 +127,7 @@ ReadCheckpoint(const Comm_ptr_type& comm, State& S, const std::string& filename)
           // if there is an evaluator, and it is a primary eval, and we should mark it at changed
           auto eval = S.GetEvaluatorPtr(data->first, entry.first);
           auto eval_primary = Teuchos::rcp_dynamic_cast<EvaluatorPrimary_>(eval);
-          if (eval_primary.get()) eval_primary->SetChanged();
+          if (eval_primary.get() ) eval_primary->SetChanged();
         }
       }
     }
@@ -203,7 +205,9 @@ ReadCheckpointObservations(const Comm_ptr_type& comm,
   double* tmp_data(NULL);
 
   checkpoint.readDataString(&tmp_labels, &nlabels, "obs_names");
-  if (nlabels > 0) { checkpoint.readAttrInt(&nobs, &nlabels, "obs_numbers"); }
+  if (nlabels > 0) {
+    checkpoint.readAttrInt(&nobs, &nlabels, "obs_numbers");
+  }
   for (int i = 0; i < nlabels; ++i) ndata_glb += 2 * nobs[i];
   ndata = (comm->MyPID() == 0) ? ndata_glb : 0;
   checkpoint.readDatasetReal(&tmp_data, ndata, "obs_values");
@@ -275,8 +279,7 @@ DeformCheckpointMesh(State& S, Key domain)
     // deform the mesh
     if (Keys::starts_with(domain, "column"))
       AmanziMesh::deform(*write_access_mesh, nodeids, new_pos);
-    else
-      AmanziMesh::deform(*write_access_mesh, nodeids, new_pos);
+    else AmanziMesh::deform(*write_access_mesh, nodeids, new_pos);
   } else {
     Errors::Message msg;
     msg << "DeformCheckpointMesh: unable to deform mesh because field \"" << vc_key
@@ -410,7 +413,9 @@ ReadVariableFromExodusII(Teuchos::ParameterList& plist, CompositeVector& var)
       ncells = offset;
     }
 
-    for (int i = 0; i < num_vars; i++) { free(var_names[i]); }
+    for (int i = 0; i < num_vars; i++) {
+      free(var_names[i]);
+    }
 
     ierr = ex_close(exoid);
     printf("Closing file: %s ncells=%d error=%d\n", file_name.c_str(), ncells, ierr);
@@ -426,7 +431,9 @@ WriteStateStatistics(const State& S, const VerboseObject& vo, const Teuchos::EVe
 {
   // sort data in alphabetic order
   std::set<std::string> sorted;
-  for (auto it = S.data_begin(); it != S.data_end(); ++it) { sorted.insert(it->first); }
+  for (auto it = S.data_begin(); it != S.data_end(); ++it) {
+    sorted.insert(it->first);
+  }
 
   if (vo.os_OK(vl)) {
     Teuchos::OSTab tab = vo.getOSTab();
@@ -472,7 +479,7 @@ WriteStateStatistics(const State& S, const VerboseObject& vo, const Teuchos::EVe
           auto namedot = Keys::getKey(display_name, r.first);
           namedot.resize(40, '.');
           *vo.os() << namedot;
-          for (int i = 0; i < p.dim(); ++i) *vo.os() << " " << p[i];
+          for (int i = 0; i < p.dim() ; ++i) *vo.os() << " " << p[i];
           *vo.os() << std::endl;
         }
       }

@@ -40,11 +40,11 @@ dataset_info(hid_t loc_id, const char* name, void* empty)
 
   H5Gget_objinfo(loc_id, name, FALSE, &buf);
   switch (buf.type) {
-  case H5G_DATASET:
-    datasetList.push_back(name);
-    break;
-  default:
-    break;
+    case H5G_DATASET:
+      datasetList.push_back(name);
+      break;
+    default:
+      break;
   }
   return 0;
 }
@@ -123,10 +123,14 @@ unpermute(const char* name, hid_t file_id, hid_t new_fileid, int* nodemap, int* 
 
     if (cdims[0] == num_nodes) {
       std::cout << "    E>> unpermute node data" << std::endl;
-      for (int i = 0; i < num; ++i) { new_data[nodemap[i]] = data[i]; }
+      for (int i = 0; i < num; ++i) {
+        new_data[nodemap[i]] = data[i];
+      }
     } else if (cdims[0] == num_elems) {
       std::cout << "    E>> unpermute elem data" << std::endl;
-      for (int i = 0; i < num; ++i) { new_data[elemmap[i]] = data[i]; }
+      for (int i = 0; i < num; ++i) {
+        new_data[elemmap[i]] = data[i];
+      }
     }
     // write data
     dataspace = H5Screate_simple(2, cdims, NULL);
@@ -258,30 +262,30 @@ main(int argc, char* argv[])
       elem_types[i][0] = elems[elem_cnt];
       int conn_len;
       switch (elem_types[i][0]) {
-      case 4:
-        conn_len = 3; //TRI
-        break;
-      case 5:
-        conn_len = 4; //QUAD
-        break;
-      case 6:
-        conn_len = 4; //TET
-        break;
-      case 7:
-        conn_len = 5; //PYRAMID
-        break;
-      case 8:
-        conn_len = 6; //PRISM or WEDGE
-        break;
-      case 9:
-        conn_len = 8; // HEX
-        break;
-      //case 3:
-      //  conn_len = ????; //POLYGON or POLYHED
-      //  break;
-      default:
-        conn_len = -1;
-        break;
+        case 4:
+          conn_len = 3; //TRI
+          break;
+        case 5:
+          conn_len = 4; //QUAD
+          break;
+        case 6:
+          conn_len = 4; //TET
+          break;
+        case 7:
+          conn_len = 5; //PYRAMID
+          break;
+        case 8:
+          conn_len = 6; //PRISM or WEDGE
+          break;
+        case 9:
+          conn_len = 8; // HEX
+          break;
+        //case 3:
+        //  conn_len = ????; //POLYGON or POLYHED
+        //  break;
+        default:
+          conn_len = -1;
+          break;
       }
       elem_types[i][1] = conn_len;
       elem_types[i][2] = elem_cnt;
@@ -316,7 +320,9 @@ main(int argc, char* argv[])
       map_offset += elem_types[id][1] + 1;
     }
     std::cout << "E>> new ordered element connectivities:";
-    for (int i = 0; i < elem_len; i++) { std::cout << " " << mapelems[i]; }
+    for (int i = 0; i < elem_len; i++) {
+      std::cout << " " << mapelems[i];
+    }
     std::cout << std::endl;
 
     // create Mesh group
@@ -345,13 +351,16 @@ main(int argc, char* argv[])
     // iterate over datasets, fill in list of names
     std::cout << "E>> iterate to get field names" << std::endl;
     H5Giterate(restart_file, "/", NULL, dataset_info, NULL);
-    for (int i = 0; i < datasetList.size(); ++i) { std::cout << " " << datasetList[i]; }
+    for (int i = 0; i < datasetList.size(); ++i) {
+      std::cout << " " << datasetList[i];
+    }
     std::cout << std::endl;
     for (int i = 0; i < datasetList.size(); ++i) {
       std::stringstream ds_name;
       ds_name << "/" << datasetList[i];
       std::cout << "E>> checking " << ds_name.str() << std::endl;
-      status = unpermute(ds_name.str().c_str(), restart_file, new_file, nodemap.data(), elemmap.data());
+      status =
+        unpermute(ds_name.str().c_str(), restart_file, new_file, nodemap.data(), elemmap.data());
     }
     // get size dimensions
     // if node or element based, unpermute, write out

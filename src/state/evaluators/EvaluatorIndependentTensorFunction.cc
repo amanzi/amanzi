@@ -73,8 +73,10 @@ EvaluatorIndependentTensorFunction::EnsureCompatibility(State& S)
       num_funcs_ = dimension_ * dimension_;
     } else {
       Errors::Message msg;
-      msg << "EvaluatorIndependentTensorFunction: invalid paramter, \"tensor type\" = \"" << tensor_type_
-          << "\", must be one of: \"scalar\", \"horizontal and vertical\", \"diagonal\", \"full symmetric\""
+      msg << "EvaluatorIndependentTensorFunction: invalid paramter, \"tensor type\" = \""
+          << tensor_type_
+          << "\", must be one of: \"scalar\", \"horizontal and vertical\", \"diagonal\", \"full "
+             "symmetric\""
           << ", or \"full\"";
       Exceptions::amanzi_throw(msg);
     }
@@ -92,7 +94,8 @@ EvaluatorIndependentTensorFunction::EnsureCompatibility(State& S)
     f.set_map(map_new);
 
     std::vector<std::string> component_names;
-    func_ = Functions::CreateCompositeVectorFunction(plist_.sublist("function"), map_new, component_names);
+    func_ = Functions::CreateCompositeVectorFunction(
+      plist_.sublist("function"), map_new, component_names);
   }
 }
 
@@ -142,22 +145,21 @@ CopyVectorToTensorVector(const Epetra_MultiVector& v, int j, TensorVector& tv)
   unsigned int space_dim = tv.dim;
 
   if (ndofs == 1) { // isotropic
-    for (unsigned int i = 0; i != ni; ++i)
-      tv[i+j](0, 0) = v[0][i];
+    for (unsigned int i = 0; i != ni; ++i) tv[i + j](0, 0) = v[0][i];
 
   } else if (ndofs == 2 && space_dim == 3) {
     // horizontal and vertical perms
     for (int i = 0; i != ni; ++i) {
-      tv[i+j](0, 0) = v[0][i];
-      tv[i+j](1, 1) = v[0][i];
-      tv[i+j](2, 2) = v[1][i];
+      tv[i + j](0, 0) = v[0][i];
+      tv[i + j](1, 1) = v[0][i];
+      tv[i + j](2, 2) = v[1][i];
     }
 
   } else if (ndofs >= space_dim) {
     // diagonal tensor
     for (unsigned int dim = 0; dim != space_dim; ++dim) {
       for (unsigned int i = 0; i != ni; ++i) {
-        tv[i+j](dim, dim) = v[dim][i];
+        tv[i + j](dim, dim) = v[dim][i];
       }
     }
 
@@ -165,14 +167,14 @@ CopyVectorToTensorVector(const Epetra_MultiVector& v, int j, TensorVector& tv)
       // full tensor
       if (ndofs == 3) { // 2D
         for (unsigned int i = 0; i != ni; ++i) {
-          tv[i+j](0, 1) = tv[i+j](1, 0) = v[2][i];
+          tv[i + j](0, 1) = tv[i + j](1, 0) = v[2][i];
         }
 
       } else if (ndofs == 6) { // 3D
         for (unsigned int i = 0; i != ni; ++i) {
-          tv[i+j](0, 1) = tv[i+j](1, 0) = v[3][i]; // xy & yx
-          tv[i+j](0, 2) = tv[i+j](2, 0) = v[4][i]; // xz & zx
-          tv[i+j](1, 2) = tv[i+j](2, 1) = v[5][i]; // yz & zy
+          tv[i + j](0, 1) = tv[i + j](1, 0) = v[3][i]; // xy & yx
+          tv[i + j](0, 2) = tv[i + j](2, 0) = v[4][i]; // xz & zx
+          tv[i + j](1, 2) = tv[i + j](2, 1) = v[5][i]; // yz & zy
         }
       } else {
         AMANZI_ASSERT(0);

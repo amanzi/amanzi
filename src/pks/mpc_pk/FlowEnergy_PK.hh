@@ -112,11 +112,12 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
                                   Teuchos::RCP<TreeVector> f) override;
 
   // -- preconditioner
-  virtual void
-  UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt) override;
+  virtual void UpdatePreconditioner(double t,
+                                    Teuchos::RCP<const TreeVector> up,
+                                    double dt) override;
 
-  virtual int
-  ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) override;
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
+                                  Teuchos::RCP<TreeVector> Pu) override;
 
   // -- error norm for coupled system
   std::string name() override { return "thermal flow"; }

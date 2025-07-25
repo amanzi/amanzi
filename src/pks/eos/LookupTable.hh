@@ -30,8 +30,8 @@ const double EOS_TABLE_TOL = 2e-10;
 // Equation of State model
 class LookupTable {
  public:
-  LookupTable(Teuchos::ParameterList& plist){};
-  virtual ~LookupTable(){};
+  LookupTable(Teuchos::ParameterList& plist) {};
+  virtual ~LookupTable() {};
 
   // virtual methods
   virtual double Function(double T, double p, int* ierr);

@@ -40,7 +40,9 @@ class DenseMatrix {
   DenseMatrix(const DenseMatrix& B, int m1, int m2, int n1, int n2);
   ~DenseMatrix()
   {
-    if (data_ != NULL && access_ == WHETSTONE_DATA_ACCESS_COPY) { delete[] data_; }
+    if (data_ != NULL && access_ == WHETSTONE_DATA_ACCESS_COPY) {
+      delete[] data_;
+    }
   }
 
   // primary members
@@ -55,7 +57,9 @@ class DenseMatrix {
   {
     if (this != &B) {
       if (mem_ < B.m_ * B.n_) {
-        if (data_ != NULL) { delete[] data_; }
+        if (data_ != NULL) {
+          delete[] data_;
+        }
         mem_ = B.m_ * B.n_;
         data_ = new double[mem_];
       }
@@ -215,7 +219,7 @@ operator==(const DenseMatrix& A, const DenseMatrix& B)
   if (A.NumRows() != B.NumRows()) return false;
   if (A.NumCols() != B.NumCols()) return false;
   for (int i = 0; i != A.NumRows() * A.NumCols(); ++i)
-    if (A.Values()[i] != B.Values()[i]) return false;
+    if (A.Values() [i] != B.Values()[i]) return false;
   return true;
 }
 

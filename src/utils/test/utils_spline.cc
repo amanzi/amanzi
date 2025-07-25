@@ -47,7 +47,9 @@ SUITE(SPLINE)
     CHECK_CLOSE(0.5 * m, s.Derivative(1.3), 1.e-10);
 
     // monotonic?
-    for (int i = 0; i != 1000; ++i) { CHECK(s.Derivative(0.1 + (1.3 - 0.1) * i / 1000) < 0.); }
+    for (int i = 0; i != 1000; ++i) {
+      CHECK(s.Derivative(0.1 + (1.3 - 0.1) * i / 1000) < 0.);
+    }
 
     // random points from python implementation
     CHECK_CLOSE(0.9037037037037037, s.Value(0.5), 1.e-10);
@@ -100,7 +102,9 @@ SUITE(SPLINED_CURVE)
     CHECK_CLOSE(0.5 * m, s.Derivative(1.3), 1.e-10);
 
     // monotonic?
-    for (int i = 0; i != 1000; ++i) { CHECK(s.Derivative(0.1 + (1.3 - 0.1) * i / 1000) < 0.); }
+    for (int i = 0; i != 1000; ++i) {
+      CHECK(s.Derivative(0.1 + (1.3 - 0.1) * i / 1000) < 0.);
+    }
 
     // random points from python implementation
     CHECK_CLOSE(0.9037037037037037, s.Value(0.5), 1.e-10);

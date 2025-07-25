@@ -31,13 +31,13 @@ namespace Amanzi {
 namespace Utils {
 
 // explicity instantitate the static data of factory
-template <>
+template<>
 Factory<Flow::SpecificStorage>::map_type* Factory<Flow::SpecificStorage>::map_;
 
-template <>
+template<>
 Factory<Flow::WRM>::map_type* Factory<Flow::WRM>::map_;
 
-template <>
+template<>
 Factory<Flow::MultiscaleFlowPorosity>::map_type* Factory<Flow::MultiscaleFlowPorosity>::map_;
 
 } // namespace Utils
@@ -47,10 +47,10 @@ Factory<Flow::MultiscaleFlowPorosity>::map_type* Factory<Flow::MultiscaleFlowPor
 namespace Amanzi {
 namespace Flow {
 
-Utils::RegisteredFactory<SpecificStorage, SpecificStorage_Constant>
-  SpecificStorage_Constant::reg_("constant");
-Utils::RegisteredFactory<SpecificStorage, SpecificStorage_Standard>
-  SpecificStorage_Standard::reg_("standard");
+Utils::RegisteredFactory<SpecificStorage, SpecificStorage_Constant> SpecificStorage_Constant::reg_(
+  "constant");
+Utils::RegisteredFactory<SpecificStorage, SpecificStorage_Standard> SpecificStorage_Standard::reg_(
+  "standard");
 
 Utils::RegisteredFactory<WRM, WRM_BrooksCorey> WRM_BrooksCorey::reg_("Brooks Corey");
 Utils::RegisteredFactory<WRM, WRM_vanGenuchten> WRM_vanGenuchten::reg_("van Genuchten");

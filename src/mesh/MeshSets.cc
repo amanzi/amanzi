@@ -37,7 +37,9 @@ resolveMeshSet(const AmanziGeometry::Region& region,
 
   // If there is no parent, this is not an extracted mesh
   auto parent_mesh = mesh.getParentMesh();
-  if (parent_mesh == Teuchos::null) { return Impl::resolveMeshSet_(region, kind, ptype, mesh); }
+  if (parent_mesh == Teuchos::null) {
+    return Impl::resolveMeshSet_(region, kind, ptype, mesh);
+  }
 
   // there is a parent..
   auto region_type = region.get_type();
@@ -116,8 +118,7 @@ resolveMeshSetVolumeFractions(const AmanziGeometry::Region& region,
           ents[ents_cpt++] = c;
           if (region.get_type() == AmanziGeometry::RegionType::LINE_SEGMENT)
             vol_fracs[vol_fracs_cpt++] = volume;
-          else
-            vol_fracs[vol_fracs_cpt++] = volume / mesh.getCellVolume(c);
+          else vol_fracs[vol_fracs_cpt++] = volume / mesh.getCellVolume(c);
         }
       }
       Kokkos::resize(ents, ents_cpt);
@@ -185,8 +186,8 @@ resolveMeshSet_(const AmanziGeometry::Region& region,
     result = resolveMeshSetAll(region, kind, ptype, mesh);
   } else if (AmanziGeometry::RegionType::BOUNDARY == region.get_type()) {
     result = resolveMeshSetBoundary(region, kind, ptype, mesh);
-  } else if (AmanziGeometry::RegionType::LINE_SEGMENT == region.get_type()
-             || AmanziGeometry::RegionType::BOX_VOF == region.get_type()) {
+  } else if (AmanziGeometry::RegionType::LINE_SEGMENT == region.get_type() ||
+             AmanziGeometry::RegionType::BOX_VOF == region.get_type()) {
     View_type<double, MemSpace_kind::HOST> vofs;
     result = resolveMeshSetVolumeFractions(region, kind, ptype, vofs, mesh);
   } else if (AmanziGeometry::RegionType::POINT == region.get_type() && kind == Entity_kind::CELL) {
@@ -232,14 +233,14 @@ resolveMeshSetPointInCell(const AmanziGeometry::RegionPoint& region,
     Entity_ID icell = cells[ic];
 
     // Check if point is contained in cell
-    if (mesh.isPointInCell(rgnpnt, icell)) result.push_back(icell);
+    if (mesh.isPointInCell(rgnpnt, icell) ) result.push_back(icell);
   }
 
   // finally check all cells, typical for anisotropic meshes
   if (result.empty()) {
     int lncells = mesh.getNumEntities(CELL, ptype);
     for (int c = 0; c < lncells; ++c)
-      if (mesh.isPointInCell(rgnpnt, c)) result.push_back(c);
+      if (mesh.isPointInCell(rgnpnt, c) ) result.push_back(c);
   }
 
   View_type<Entity_ID, MemSpace_kind::HOST> rv;
@@ -545,7 +546,9 @@ resolveMeshSetEnumerated(const AmanziGeometry::RegionEnumerated& region,
     }
 
     // now copy ghosted into end of owned
-    for (std::size_t i = 0; i != cpt_g; ++i) { result[cpt++] = result_g[i]; }
+    for (std::size_t i = 0; i != cpt_g; ++i) {
+      result[cpt++] = result_g[i];
+    }
 
     Kokkos::resize(result, cpt);
     return result;
@@ -578,7 +581,9 @@ resolveMeshSetGeometric(const AmanziGeometry::Region& region,
   MeshCache<MemSpace_kind::HOST>::Entity_ID_View entities("entities", end - begin);
   int lcv = 0;
   for (Entity_ID i = begin; i != end; ++i) {
-    if (region.inside(mesh.getCentroid(kind, i))) { entities[lcv++] = i; }
+    if (region.inside(mesh.getCentroid(kind, i))) {
+      entities[lcv++] = i;
+    }
   }
   Kokkos::resize(entities, lcv);
   return entities;
@@ -632,87 +637,87 @@ resolveMeshSetLogical(const AmanziGeometry::RegionLogical& region,
 {
   View_type<const Entity_ID, MemSpace_kind::HOST> result;
   switch (region.get_operation()) {
-  case (AmanziGeometry::BoolOpType::COMPLEMENT): {
-    // Get the set of ALL entities of the right kind and type.
-    //
-    // wow this is a fun hack.  Since an ALL region does not need any aspect
-    // of region, we simply pass this region despite the fact that it is NOT
-    // an ALL region!
-    result = resolveMeshSetAll(region, kind, ptype, mesh);
+    case (AmanziGeometry::BoolOpType::COMPLEMENT): {
+      // Get the set of ALL entities of the right kind and type.
+      //
+      // wow this is a fun hack.  Since an ALL region does not need any aspect
+      // of region, we simply pass this region despite the fact that it is NOT
+      // an ALL region!
+      result = resolveMeshSetAll(region, kind, ptype, mesh);
 
-    // then iterate and subtract
-    for (const auto& rname : region.get_component_regions()) {
-      auto comp_ents = mesh.getSetEntities(rname, kind, ptype);
+      // then iterate and subtract
+      for (const auto& rname : region.get_component_regions()) {
+        auto comp_ents = mesh.getSetEntities(rname, kind, ptype);
 
-      Entity_ID_List lresult;
-      lresult.reserve(result.size());
-      std::set_difference(result.begin(),
-                          result.end(),
-                          comp_ents.begin(),
-                          comp_ents.end(),
-                          std::back_inserter(lresult));
-      vectorToConstView(result, lresult);
-    }
-
-  } break;
-  case (AmanziGeometry::BoolOpType::UNION): {
-    for (const auto& rname : region.get_component_regions()) {
-      auto comp_ents = mesh.getSetEntities(rname, kind, ptype);
-
-      Entity_ID_List lresult;
-      lresult.reserve(result.size() + comp_ents.size());
-
-      std::set_union(result.begin(),
-                     result.end(),
-                     comp_ents.begin(),
-                     comp_ents.end(),
-                     std::back_inserter(lresult));
-      vectorToConstView(result, lresult);
-    }
-
-  } break;
-  case (AmanziGeometry::BoolOpType::INTERSECT): {
-    const auto& rnames = region.get_component_regions();
-    AMANZI_ASSERT(rnames.size() > 1);
-    result = mesh.getSetEntities(rnames[0], kind, ptype);
-    for (int i = 1; i != rnames.size(); ++i) {
-      auto comp_ents = mesh.getSetEntities(rnames[i], kind, ptype);
-
-      Entity_ID_List lresult;
-      lresult.reserve(std::max(result.size(), comp_ents.size()));
-
-      std::set_intersection(result.begin(),
+        Entity_ID_List lresult;
+        lresult.reserve(result.size());
+        std::set_difference(result.begin(),
                             result.end(),
                             comp_ents.begin(),
                             comp_ents.end(),
                             std::back_inserter(lresult));
-      vectorToConstView(result, lresult);
+        vectorToConstView(result, lresult);
+      }
+
+    } break;
+    case (AmanziGeometry::BoolOpType::UNION): {
+      for (const auto& rname : region.get_component_regions()) {
+        auto comp_ents = mesh.getSetEntities(rname, kind, ptype);
+
+        Entity_ID_List lresult;
+        lresult.reserve(result.size() + comp_ents.size());
+
+        std::set_union(result.begin(),
+                       result.end(),
+                       comp_ents.begin(),
+                       comp_ents.end(),
+                       std::back_inserter(lresult));
+        vectorToConstView(result, lresult);
+      }
+
+    } break;
+    case (AmanziGeometry::BoolOpType::INTERSECT): {
+      const auto& rnames = region.get_component_regions();
+      AMANZI_ASSERT(rnames.size() > 1);
+      result = mesh.getSetEntities(rnames[0], kind, ptype);
+      for (int i = 1; i != rnames.size(); ++i) {
+        auto comp_ents = mesh.getSetEntities(rnames[i], kind, ptype);
+
+        Entity_ID_List lresult;
+        lresult.reserve(std::max(result.size(), comp_ents.size()));
+
+        std::set_intersection(result.begin(),
+                              result.end(),
+                              comp_ents.begin(),
+                              comp_ents.end(),
+                              std::back_inserter(lresult));
+        vectorToConstView(result, lresult);
+      }
+
+    } break;
+    case (AmanziGeometry::BoolOpType::SUBTRACT): {
+      const auto& rnames = region.get_component_regions();
+      AMANZI_ASSERT(rnames.size() > 1);
+      result = mesh.getSetEntities(rnames[0], kind, ptype);
+      for (int i = 1; i != rnames.size(); ++i) {
+        auto comp_ents = mesh.getSetEntities(rnames[i], kind, ptype);
+
+        Entity_ID_List lresult;
+        lresult.reserve(result.size());
+
+        std::set_difference(result.begin(),
+                            result.end(),
+                            comp_ents.begin(),
+                            comp_ents.end(),
+                            std::back_inserter(lresult));
+        vectorToConstView(result, lresult);
+      }
+    } break;
+    default: {
+      // note this should have errored already!
+      Errors::Message msg("RegionLogical: operation type not set");
+      Exceptions::amanzi_throw(msg);
     }
-
-  } break;
-  case (AmanziGeometry::BoolOpType::SUBTRACT): {
-    const auto& rnames = region.get_component_regions();
-    AMANZI_ASSERT(rnames.size() > 1);
-    result = mesh.getSetEntities(rnames[0], kind, ptype);
-    for (int i = 1; i != rnames.size(); ++i) {
-      auto comp_ents = mesh.getSetEntities(rnames[i], kind, ptype);
-
-      Entity_ID_List lresult;
-      lresult.reserve(result.size());
-
-      std::set_difference(result.begin(),
-                          result.end(),
-                          comp_ents.begin(),
-                          comp_ents.end(),
-                          std::back_inserter(lresult));
-      vectorToConstView(result, lresult);
-    }
-  } break;
-  default: {
-    // note this should have errored already!
-    Errors::Message msg("RegionLogical: operation type not set");
-    Exceptions::amanzi_throw(msg);
-  }
   }
   return result;
 }
@@ -737,10 +742,8 @@ filterParentEntities(const MeshCache<MemSpace_kind::HOST>& mesh,
   for (int i = 0; i != n_entities; ++i) {
     Entity_ID parent_id = mesh.getEntityParent(kind, i);
     for (int j = 0; j != parent_entities.size(); ++j) {
-      if (parent_entities[j] == parent_id)
-        vresult.emplace_back(i);
-      else if (parent_entities[j] > parent_id)
-        break;
+      if (parent_entities[j] == parent_id) vresult.emplace_back(i);
+      else if (parent_entities[j] > parent_id) break;
     }
   }
 
@@ -773,10 +776,8 @@ filterParentEntities_SurfaceCellToCell(
     Entity_ID parent_id = getFaceOnBoundaryInternalCell(*mesh.getParentMesh(), face_parent_id);
 
     for (int j = 0; j != parent_entities.size(); ++j) {
-      if (parent_entities[j] == parent_id)
-        vresult.emplace_back(i);
-      else if (parent_entities[j] > parent_id)
-        break;
+      if (parent_entities[j] == parent_id) vresult.emplace_back(i);
+      else if (parent_entities[j] > parent_id) break;
     }
   }
 

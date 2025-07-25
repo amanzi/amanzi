@@ -48,7 +48,9 @@
 namespace Amanzi {
 namespace Transport {
 
-class TransportExplicit_PK : public Transport_PK, public PK_Explicit<CompositeVector> {
+class TransportExplicit_PK
+  : public Transport_PK
+  , public PK_Explicit<CompositeVector> {
  public:
   TransportExplicit_PK(Teuchos::ParameterList& pk_tree,
                        const Teuchos::RCP<Teuchos::ParameterList>& glist,
@@ -60,12 +62,13 @@ class TransportExplicit_PK : public Transport_PK, public PK_Explicit<CompositeVe
                        const std::string& pk_list_name,
                        std::vector<std::string>& component_names);
 
-  ~TransportExplicit_PK(){};
+  ~TransportExplicit_PK() {};
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
 
-  virtual void
-  FunctionalTimeDerivative(double t, const CompositeVector& component, CompositeVector& f) override;
+  virtual void FunctionalTimeDerivative(double t,
+                                        const CompositeVector& component,
+                                        CompositeVector& f) override;
 
   // advection members
   // -- advection in matrix

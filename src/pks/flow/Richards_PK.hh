@@ -48,7 +48,7 @@ class Richards_PK : public Flow_PK {
               const Teuchos::RCP<State>& S,
               const Teuchos::RCP<TreeVector>& soln);
 
-  ~Richards_PK(){};
+  ~Richards_PK() {};
 
   // methods required for PK interface
   virtual void Setup() final;
@@ -73,12 +73,12 @@ class Richards_PK : public Flow_PK {
                                   Teuchos::RCP<const TreeVector> u_old,
                                   Teuchos::RCP<TreeVector> u_new,
                                   Teuchos::RCP<TreeVector> f) override;
-  virtual double
-  ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) override;
+  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
+                           Teuchos::RCP<const TreeVector> du) override;
 
   // -- management of the preconditioner
-  virtual int
-  ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu) override;
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
+                                  Teuchos::RCP<TreeVector> pu) override;
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u, double dt) override;
 
   // -- check the admissibility of a solution
@@ -99,11 +99,11 @@ class Richards_PK : public Flow_PK {
   //    has computed it, will return true if it did change the correction,
   //    so that the nonlinear iteration can store the modified correction
   //    and pass it to NKA so that the NKA space can be updated
-  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-  ModifyCorrection(double dt,
-                   Teuchos::RCP<const TreeVector> res,
-                   Teuchos::RCP<const TreeVector> u,
-                   Teuchos::RCP<TreeVector> du) override;
+  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult ModifyCorrection(
+    double dt,
+    Teuchos::RCP<const TreeVector> res,
+    Teuchos::RCP<const TreeVector> u,
+    Teuchos::RCP<TreeVector> du) override;
 
   // -- calling this indicates that the time integration
   //    scheme is changing the value of the solution in state.
@@ -137,11 +137,11 @@ class Richards_PK : public Flow_PK {
   double ErrorNormSTOMP(const CompositeVector& u, const CompositeVector& du);
 
   // -- access methods
-  virtual Teuchos::RCP<Operators::Operator>
-  my_operator(const Operators::OperatorType& type) override;
+  virtual Teuchos::RCP<Operators::Operator> my_operator(
+    const Operators::OperatorType& type) override;
 
-  virtual Teuchos::RCP<Operators::PDE_HelperDiscretization>
-  my_pde(const Operators::PDEType& type) override
+  virtual Teuchos::RCP<Operators::PDE_HelperDiscretization> my_pde(
+    const Operators::PDEType& type) override
   {
     return op_matrix_diff_;
   }

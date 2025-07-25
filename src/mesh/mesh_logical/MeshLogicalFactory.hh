@@ -280,8 +280,8 @@ class MeshLogicalFactory {
 
  protected:
   // Reads a tip type from plist
-  MeshLogicalFactory::LogicalTip_t
-  GetTipType_(Teuchos::ParameterList& plist, const std::string& pname);
+  MeshLogicalFactory::LogicalTip_t GetTipType_(Teuchos::ParameterList& plist,
+                                               const std::string& pname);
 
   // Reads a point from plist
   AmanziGeometry::Point GetPoint_(Teuchos::ParameterList& plist, const std::string& pname);

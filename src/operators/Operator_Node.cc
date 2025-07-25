@@ -73,12 +73,16 @@ Operator_Node::ApplyMatrixFreeOp(const Op_Cell_Node& op,
       int nnodes = nodes.size();
 
       WhetStone::DenseVector v(nnodes), av(nnodes);
-      for (int n = 0; n != nnodes; ++n) { v(n) = Xn[0][nodes[n]]; }
+      for (int n = 0; n != nnodes; ++n) {
+        v(n) = Xn[0][nodes[n]];
+      }
 
       const WhetStone::DenseMatrix& Acell = op.matrices[c];
       Acell.Multiply(v, av, false);
 
-      for (int n = 0; n != nnodes; ++n) { Yn[0][nodes[n]] += av(n); }
+      for (int n = 0; n != nnodes; ++n) {
+        Yn[0][nodes[n]] += av(n);
+      }
     }
   }
   return 0;
@@ -97,7 +101,9 @@ Operator_Node::ApplyMatrixFreeOp(const Op_Node_Node& op,
   Epetra_MultiVector& Yn = *Y.ViewComponent("node");
 
   for (int i = 0; i < Xn.NumVectors(); ++i) {
-    for (int v = 0; v != nnodes_owned; ++v) { Yn[i][v] += Xn[i][v] * (*op.diag)[i][v]; }
+    for (int v = 0; v != nnodes_owned; ++v) {
+      Yn[i][v] += Xn[i][v] * (*op.diag)[i][v];
+    }
   }
   return 0;
 }

@@ -39,7 +39,7 @@ class ReactiveTransportMatrixFracture_PK : public PK_MPCSubcycled {
                                      const Teuchos::RCP<State>& S,
                                      const Teuchos::RCP<TreeVector>& soln);
 
-  ~ReactiveTransportMatrixFracture_PK(){};
+  ~ReactiveTransportMatrixFracture_PK() {};
 
   // PK methods
   // -- dt is the minimum of the sub pks

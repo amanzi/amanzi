@@ -128,7 +128,9 @@ EnergyOnePhase_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
   const auto& dEdT =
     S_->GetDerivative<CompositeVector>(energy_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT);
 
-  if (dt > 0.0) { op_acc_->AddAccumulationDelta(*up->Data().ptr(), dEdT, dEdT, dt, "cell"); }
+  if (dt > 0.0) {
+    op_acc_->AddAccumulationDelta(*up->Data().ptr(), dEdT, dEdT, dt, "cell");
+  }
 
   // add advection term dHdT
   if (prec_include_enthalpy_) {

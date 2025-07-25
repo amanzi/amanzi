@@ -39,10 +39,11 @@ class Op_Cell_Schema : public Op {
       null_matrix);
     matrices_shadow = matrices;
   }
-  ~Op_Cell_Schema(){};
+  ~Op_Cell_Schema() {};
 
-  virtual void
-  ApplyMatrixFreeOp(const Operator* assembler, const CompositeVector& X, CompositeVector& Y) const
+  virtual void ApplyMatrixFreeOp(const Operator* assembler,
+                                 const CompositeVector& X,
+                                 CompositeVector& Y) const
   {
     assembler->ApplyMatrixFreeOp(*this, X, Y);
   }

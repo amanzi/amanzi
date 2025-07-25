@@ -150,8 +150,14 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
       DOMNode* inode = children->item(i);
 
       double krate(-99.9);
-      krate = GetAttributeValueD_(
-        inode, "first_order_decay_rate_constant", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "", false, -99.9);
+      krate = GetAttributeValueD_(inode,
+                                  "first_order_decay_rate_constant",
+                                  TYPE_NUMERICAL,
+                                  DVAL_MIN,
+                                  DVAL_MAX,
+                                  "",
+                                  false,
+                                  -99.9);
 
       if (krate != -99.9) {
         kin_rate_cnst.push_back(krate);
@@ -189,7 +195,7 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
       std::string decay_constant_name = "first_order_decay_rate_constant";
       Teuchos::ParameterList& rate = ic_list.sublist(decay_constant_name);
 
-      for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end();
+      for (std::vector<std::string>::const_iterator it = regions.begin() ; it != regions.end();
            it++) {
         Teuchos::ParameterList& aux3_list = rate.sublist("function")
                                               .sublist(*it)
@@ -231,7 +237,7 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
       Teuchos::ParameterList& surfarea = ic_list.sublist("mineral_specific_surface_area");
       Teuchos::ParameterList& rate = ic_list.sublist("mineral_rate_constant");
 
-      for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end();
+      for (std::vector<std::string>::const_iterator it = regions.begin() ; it != regions.end();
            it++) {
         Teuchos::ParameterList& aux1_list = volfrac.sublist("function")
                                               .sublist(*it)
@@ -306,7 +312,7 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
       Teuchos::ParameterList& langmuir_b = ic_list.sublist("isotherm_langmuir_b");
       Teuchos::ParameterList& freundlich_n = ic_list.sublist("isotherm_freundlich_n");
 
-      for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end();
+      for (std::vector<std::string>::const_iterator it = regions.begin() ; it != regions.end();
            ++it) {
         Teuchos::ParameterList& aux1_list = kd.sublist("function")
                                               .sublist(*it)
@@ -371,7 +377,7 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
 
         sorption_sites.clear();
 
-      std::string field_name = "surface_site_density";
+        std::string field_name = "surface_site_density";
         Teuchos::ParameterList& complexation = ic_list.sublist(field_name);
         Teuchos::ParameterList& tmp_list =
           complexation.sublist("function")
@@ -461,14 +467,15 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
 
   // timestep controller
   if (dt_method == "simple") {
-    out_list.sublist("timestep controller").set<std::string>("timestep controller type", "standard");
+    out_list.sublist("timestep controller")
+      .set<std::string>("timestep controller type", "standard");
     Teuchos::ParameterList& tsc_list =
       out_list.sublist("timestep controller").sublist("timestep controller standard parameters");
     tsc_list.set<double>("max timestep [s]", dt_max);
     tsc_list.set<double>("min timestep [s]", dt_min);
     tsc_list.set<double>("initial timestep [s]", dt_init);
     tsc_list.set<int>("max iterations", cut_threshold);
-    tsc_list.set<double>("timestep reduction factor", 1./dt_cut);
+    tsc_list.set<double>("timestep reduction factor", 1. / dt_cut);
     tsc_list.set<int>("min iterations", increase_threshold);
     tsc_list.set<double>("timestep increase factor", dt_increase);
 
@@ -480,7 +487,8 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
 
   } else {
     Errors::Message msg;
-    msg << "Unknown chemistry time_step_control_method \"" << dt_method << "\" -- valid are \"fixed\" and \"simple\".";
+    msg << "Unknown chemistry time_step_control_method \"" << dt_method
+        << "\" -- valid are \"fixed\" and \"simple\".";
     Exceptions::amanzi_throw(msg);
   }
 

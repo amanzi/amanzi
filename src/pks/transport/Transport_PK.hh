@@ -229,8 +229,8 @@ and temporal accuracy, and verbosity:
 
 #include "Chemistry_PK.hh"
 #ifdef ALQUIMIA_ENABLED
-#  include "Alquimia_PK.hh"
-#  include "ChemistryEngine.hh"
+#include "Alquimia_PK.hh"
+#include "ChemistryEngine.hh"
 #endif
 
 // Amanzi::Transport
@@ -244,8 +244,7 @@ and temporal accuracy, and verbosity:
 namespace Amanzi {
 namespace Transport {
 
-typedef double
-AnalyticFunction(const AmanziGeometry::Point&, const double);
+typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
 class Transport_PK : public PK_Physical {
  public:
@@ -259,7 +258,7 @@ class Transport_PK : public PK_Physical {
                const std::string& pk_list_name,
                std::vector<std::string>& component_names);
 
-  virtual ~Transport_PK(){};
+  virtual ~Transport_PK() {};
 
   // members required by PK interface
   virtual void parseParameterList() override;
@@ -267,10 +266,10 @@ class Transport_PK : public PK_Physical {
   virtual void Initialize() override;
 
   virtual double get_dt() override;
-  virtual void set_dt(double dt) override{};
+  virtual void set_dt(double dt) override {};
 
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
-  virtual void CalculateDiagnostics(const Tag& tag) override{};
+  virtual void CalculateDiagnostics(const Tag& tag) override {};
 
   virtual std::string name() override { return "transport"; }
 
@@ -329,8 +328,9 @@ class Transport_PK : public PK_Physical {
                                        const CompositeVector& component,
                                        CompositeVector& f,
                                        bool scale);
-  void
-  FunctionalTimeDerivative_FCT_(double t, const CompositeVector& component, CompositeVector& f);
+  void FunctionalTimeDerivative_FCT_(double t,
+                                     const CompositeVector& component,
+                                     CompositeVector& f);
 
   // sources and sinks for components from n0 to n1 including
   void ComputeSources_(double tp,

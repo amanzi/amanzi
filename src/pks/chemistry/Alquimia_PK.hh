@@ -60,7 +60,7 @@ Examples are available in Amanzi's user guide tests and ATS's regression tests.
    - `"pH`"
 
 
-See the Alquimia documentation for the needed input spec for a given engine.    
+See the Alquimia documentation for the needed input spec for a given engine.
 
  .. code-block:: xml
 
@@ -128,50 +128,50 @@ namespace Impl {
 //
 struct AlquimiaSubstate {
   // alquimia state
-  Epetra_MultiVector const * mass_density_liquid;  // [kg m^-3]
-  Epetra_MultiVector const * porosity; // [-]
-  Epetra_MultiVector const * temperature; // [K]
+  Epetra_MultiVector const* mass_density_liquid; // [kg m^-3]
+  Epetra_MultiVector const* porosity;            // [-]
+  Epetra_MultiVector const* temperature;         // [K]
 
-  Epetra_MultiVector const * tcc_old; // [mol L^-1]
-  Epetra_MultiVector * tcc_new;
+  Epetra_MultiVector const* tcc_old; // [mol L^-1]
+  Epetra_MultiVector* tcc_new;
 
-  Epetra_MultiVector const * total_sorbed_old; // [mol m^-3 (bulk)]
-  Epetra_MultiVector * total_sorbed_new;
+  Epetra_MultiVector const* total_sorbed_old; // [mol m^-3 (bulk)]
+  Epetra_MultiVector* total_sorbed_new;
 
-  Epetra_MultiVector const * mineral_volume_fraction_old; // [-]
-  Epetra_MultiVector * mineral_volume_fraction_new;
-  Epetra_MultiVector const * mineral_specific_surface_area_old; // [m^2 (mineral) m^-3 (bulk)]
-  Epetra_MultiVector * mineral_specific_surface_area_new;
+  Epetra_MultiVector const* mineral_volume_fraction_old; // [-]
+  Epetra_MultiVector* mineral_volume_fraction_new;
+  Epetra_MultiVector const* mineral_specific_surface_area_old; // [m^2 (mineral) m^-3 (bulk)]
+  Epetra_MultiVector* mineral_specific_surface_area_new;
 
-  Epetra_MultiVector const * surface_site_density_old; // [mol m^-3 (bulk)]
-  Epetra_MultiVector * surface_site_density_new;
+  Epetra_MultiVector const* surface_site_density_old; // [mol m^-3 (bulk)]
+  Epetra_MultiVector* surface_site_density_new;
 
-  Epetra_MultiVector const * cation_exchange_capacity_old; // [mol m^-3 (bulk)]
-  Epetra_MultiVector * cation_exchange_capacity_new; // [mol m^-3 (bulk)]
+  Epetra_MultiVector const* cation_exchange_capacity_old; // [mol m^-3 (bulk)]
+  Epetra_MultiVector* cation_exchange_capacity_new;       // [mol m^-3 (bulk)]
 
   // alquimia properties -- input only, so only at old time
-  Epetra_MultiVector const * saturation_liquid; // [-]
+  Epetra_MultiVector const* saturation_liquid; // [-]
 
-  Epetra_MultiVector const * isotherm_kd; // [kg H2O m^-3 (bulk)]
-  Epetra_MultiVector const * isotherm_freundlich_n; // [-]
-  Epetra_MultiVector const * isotherm_langmuir_b; // [-]
+  Epetra_MultiVector const* isotherm_kd;           // [kg H2O m^-3 (bulk)]
+  Epetra_MultiVector const* isotherm_freundlich_n; // [-]
+  Epetra_MultiVector const* isotherm_langmuir_b;   // [-]
 
-  Epetra_MultiVector const * mineral_rate_constant; // [mol m^-2 s^-1]
-  Epetra_MultiVector const * first_order_decay_rate_constant; // [s^-1]
+  Epetra_MultiVector const* mineral_rate_constant;           // [mol m^-2 s^-1]
+  Epetra_MultiVector const* first_order_decay_rate_constant; // [s^-1]
 
   // aux data
-  Epetra_MultiVector const * aux_data_old;
-  Epetra_MultiVector * aux_data_new;
+  Epetra_MultiVector const* aux_data_old;
+  Epetra_MultiVector* aux_data_new;
 
   // aux output -- note, no need for "old" variants of these, output only
-  Epetra_MultiVector * pH; // [-]
-  Epetra_MultiVector * mineral_saturation_index; // [mol s^-1 m^-3]
-  Epetra_MultiVector * mineral_reaction_rate; // [mol s^-1 m^-3 (bulk)]
-  Epetra_MultiVector * aqueous_kinetic_rate; // [??]
-  Epetra_MultiVector * primary_free_ion_concentration; // [mol L^-1]
-  Epetra_MultiVector * primary_activity_coefficient; // [-]
-  Epetra_MultiVector * secondary_free_ion_concentration; // [mol L^-1]
-  Epetra_MultiVector * secondary_activity_coefficient; // [-]
+  Epetra_MultiVector* pH;                               // [-]
+  Epetra_MultiVector* mineral_saturation_index;         // [mol s^-1 m^-3]
+  Epetra_MultiVector* mineral_reaction_rate;            // [mol s^-1 m^-3 (bulk)]
+  Epetra_MultiVector* aqueous_kinetic_rate;             // [??]
+  Epetra_MultiVector* primary_free_ion_concentration;   // [mol L^-1]
+  Epetra_MultiVector* primary_activity_coefficient;     // [-]
+  Epetra_MultiVector* secondary_free_ion_concentration; // [mol L^-1]
+  Epetra_MultiVector* secondary_activity_coefficient;   // [-]
   // Epetra_MultiVector * gas_partial_pressure; // [-]
 
   AlquimiaSubstate()
@@ -205,7 +205,8 @@ struct AlquimiaSubstate {
       primary_free_ion_concentration(nullptr),
       primary_activity_coefficient(nullptr),
       secondary_free_ion_concentration(nullptr),
-      secondary_activity_coefficient(nullptr) {}
+      secondary_activity_coefficient(nullptr)
+  {}
 };
 
 } // namespace Impl
@@ -220,7 +221,6 @@ struct AlquimiaBeaker {
   AlquimiaAuxiliaryData aux_data;
   AlquimiaAuxiliaryOutputData aux_output;
 };
-
 
 
 #ifdef ALQUIMIA_ENABLED
@@ -238,9 +238,7 @@ class Alquimia_PK : public Chemistry_PK {
   virtual void Setup() override final;
   virtual void Initialize() override final;
 
-  Teuchos::RCP<AmanziChemistry::ChemistryEngine> getChemEngine() {
-    return chem_engine_;
-  }
+  Teuchos::RCP<AmanziChemistry::ChemistryEngine> getChemEngine() { return chem_engine_; }
   void copyToAlquimia(int cell, AlquimiaBeaker& beaker);
   void updateSubstate(const Tag& water_tag) override;
 
@@ -258,7 +256,7 @@ class Alquimia_PK : public Chemistry_PK {
   int initializeSingleCell_(int cell, const std::string& condition);
 
   void ParseChemicalConditionRegions_(const Teuchos::ParameterList& param_list,
-          std::map<std::string, std::string>& conditions);
+                                      std::map<std::string, std::string>& conditions);
 
 
  private:
@@ -309,7 +307,7 @@ class Alquimia_PK : public Chemistry_PK {
   int number_aux_data_;
 
   std::map<std::string, Key> aux_out_names_;
-  std::map<std::string, std::vector<std::string> > aux_out_subfield_names_;
+  std::map<std::string, std::vector<std::string>> aux_out_subfield_names_;
 
   Impl::AlquimiaSubstate substate_;
 

@@ -20,7 +20,7 @@ single process model.  Typically all leaves of the PK tree will be a physical PK
    * `"primary variable key`" ``[string]`` The primary variable
      e.g. `"pressure`", or `"temperature`".  Most PKs supply sane defaults.
 
-   * `"initial conditions`" ``[initial-conditions-spec]``  See :ref:`Initial Conditions`.
+   * `"initial conditions`" ``[initial-conditions-spec]``  See below.
 
    * `"max valid change`" ``[double]`` **-1** Sets a limiter on what is a
      valid change in a single timestep.  Changes larger than this are declared
@@ -31,6 +31,19 @@ single process model.  Typically all leaves of the PK tree will be a physical PK
 
    - ``[pk-spec]`` This *is a* PK_.
    - ``[debugger-spec]`` Uses a :ref:`Debugger`
+
+
+Note that initial conditions use shared specs for CompositeVectors:
+
+.. _initial-conditions-spec:
+.. admonition:: initial-conditions-spec
+
+   INCLUDES:
+
+   - ``[constants-composite-vector-spec]`` The shared functionality for
+     specifying time-independent values.  See :ref:`Initial Conditions`.
+
+
 
 */
 
@@ -55,9 +68,7 @@ class PK_Physical_Default : public PK_Physical {
                       const Teuchos::RCP<Teuchos::ParameterList>& glist,
                       const Teuchos::RCP<State>& S,
                       const Teuchos::RCP<TreeVector>& soln)
-    : PK_Physical(pk_tree, glist, S, soln),
-      PK(pk_tree, glist, S, soln)
-  {};
+    : PK_Physical(pk_tree, glist, S, soln), PK(pk_tree, glist, S, soln) {};
 
   // Default implementations of PK methods.
   virtual void parseParameterList() override;
@@ -68,10 +79,7 @@ class PK_Physical_Default : public PK_Physical {
   virtual void FailStep(double t_old, double t_new, const Tag& tag_next) override;
 
   void ChangedSolutionPK(const Tag& tag) override;
-
 };
 
 
 } // namespace Amanzi
-
-

@@ -141,8 +141,8 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
   // main virtual members for populating an operator
   virtual void Init(Teuchos::ParameterList& plist);
 
-  virtual void
-  SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor>>& K) override;
+  virtual void SetTensorCoefficient(
+    const Teuchos::RCP<const std::vector<WhetStone::Tensor>>& K) override;
   virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
                                     const Teuchos::RCP<const CompositeVector>& dkdp) override;
 
@@ -159,10 +159,10 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
                                               const Teuchos::Ptr<const CompositeVector>& u,
                                               double scalar_factor = 1) override;
 
-  virtual void
-  UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
-                                 const Teuchos::Ptr<const CompositeVector>& u,
-                                 const Teuchos::Ptr<const CompositeVector>& factor) override;
+  virtual void UpdateMatricesNewtonCorrection(
+    const Teuchos::Ptr<const CompositeVector>& flux,
+    const Teuchos::Ptr<const CompositeVector>& u,
+    const Teuchos::Ptr<const CompositeVector>& factor) override;
 
   // modify matrix due to boundary conditions
   //    primary=true indicates that the operator updates both matrix and right-hand

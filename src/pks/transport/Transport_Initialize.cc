@@ -57,7 +57,7 @@ Transport_PK::InitializeAll_()
 
     int nblocks = 0;
     for (auto i = dlist.begin(); i != dlist.end(); i++) {
-      if (dlist.isSublist(dlist.name(i))) nblocks++;
+      if (dlist.isSublist(dlist.name(i) )) nblocks++;
     }
 
     mat_properties_.resize(nblocks);
@@ -121,7 +121,7 @@ Transport_PK::InitializeAll_()
   flag_diffusion_ = false;
   for (int i = 0; i < 2; i++) {
     if (diffusion_phase_[i] != Teuchos::null) {
-      if (diffusion_phase_[i]->values().size() != 0) flag_diffusion_ = true;
+      if (diffusion_phase_[i]->values() .size() != 0) flag_diffusion_ = true;
     }
   }
   if (flag_diffusion_) {

@@ -39,7 +39,7 @@ namespace Impl {
 
 #ifdef HAVE_MPI
 
-template <int MAXLEN>
+template<int MAXLEN>
 void
 MyMaxString(char* in, char* out, int* count, MPI_Datatype* dptr)
 {
@@ -53,7 +53,7 @@ MyMaxString(char* in, char* out, int* count, MPI_Datatype* dptr)
   }
 }
 
-template <int MAXLEN>
+template<int MAXLEN>
 void
 MyMaxStringWrapper(void* in, void* out, int* count, MPI_Datatype* dptr)
 {
@@ -69,12 +69,13 @@ MyMaxStringWrapper(void* in, void* out, int* count, MPI_Datatype* dptr)
 // A little helper class that, along with the Impl namespace, allows the
 // determination of the alphabetically last string across a communicator.
 //
-template <int maxlen>
+template<int maxlen>
 class StringReducer {
   static const int MAXLEN = maxlen;
 
  public:
-  StringReducer(const Comm_ptr_type& comm) : comm_ptr_(comm)
+  StringReducer(const Comm_ptr_type& comm)
+    : comm_ptr_(comm)
   {
 #ifdef HAVE_MPI
     // get the raw comm
@@ -176,7 +177,9 @@ class StringReducer {
     std::set<std::string> set(in.begin(), in.end());
     AMANZI_ASSERT(set.size() == in.size());
     if (in.size() > 1) {
-      for (int i = 0; i != (in.size() - 1); ++i) { AMANZI_ASSERT(in[i + 1] > in[i]); }
+      for (int i = 0; i != (in.size() - 1); ++i) {
+        AMANZI_ASSERT(in[i + 1] > in[i]);
+      }
     }
   }
 

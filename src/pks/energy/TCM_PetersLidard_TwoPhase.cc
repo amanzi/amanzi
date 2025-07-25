@@ -19,7 +19,8 @@
 namespace Amanzi {
 namespace Energy {
 
-TCM_PetersLidard_TwoPhase::TCM_PetersLidard_TwoPhase(Teuchos::ParameterList& plist) : plist_(plist)
+TCM_PetersLidard_TwoPhase::TCM_PetersLidard_TwoPhase(Teuchos::ParameterList& plist)
+  : plist_(plist)
 {
   InitializeFromPlist_();
 }

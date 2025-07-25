@@ -24,8 +24,8 @@ class AnalyticElasticity01 : public AnalyticElasticityBase {
                        double mu = 1.0,
                        double lambda = 0.0,
                        bool flag = false)
-    : AnalyticElasticityBase(mesh), mu_(mu), lambda_(lambda), flag_(flag){};
-  ~AnalyticElasticity01(){};
+    : AnalyticElasticityBase(mesh), mu_(mu), lambda_(lambda), flag_(flag) {};
+  ~AnalyticElasticity01() {};
 
   Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t)
   {

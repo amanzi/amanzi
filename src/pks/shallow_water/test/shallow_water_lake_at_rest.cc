@@ -263,7 +263,9 @@ RunTest(int icase)
 
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0) { std::cout << "Test: 2D Shallow water: Lake at rest" << std::endl; }
+  if (MyPID == 0) {
+    std::cout << "Test: 2D Shallow water: Lake at rest" << std::endl;
+  }
 
   // Read parameter list
   std::string xmlFilename;
@@ -362,7 +364,9 @@ RunTest(int icase)
     iter += 1;
   } // time loop
 
-  if (MyPID == 0) { std::cout << "Time-stepping finished. " << std::endl; }
+  if (MyPID == 0) {
+    std::cout << "Time-stepping finished. " << std::endl;
+  }
 
   double t_out = t_new;
 

@@ -28,10 +28,10 @@
 #include "MeshAudit.hh"
 #include "MeshExtractedManifold.hh"
 #ifdef HAVE_MESH_MOAB
-#  include "Mesh_MOAB.hh"
+#include "Mesh_MOAB.hh"
 #endif
 #ifdef HAVE_MESH_MSTK
-#  include "Mesh_MSTK.hh"
+#include "Mesh_MSTK.hh"
 #endif
 #include "Mesh_simple.hh"
 

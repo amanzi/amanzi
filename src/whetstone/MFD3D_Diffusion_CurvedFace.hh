@@ -45,8 +45,8 @@ class MFD3D_Diffusion_CurvedFace : public DeRham_Face {
   // constructor for backward compatibility
   MFD3D_Diffusion_CurvedFace(const Teuchos::ParameterList& plist,
                              const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : DeRham_Face(mesh){};
-  ~MFD3D_Diffusion_CurvedFace(){};
+    : DeRham_Face(mesh) {};
+  ~MFD3D_Diffusion_CurvedFace() {};
 
   // main methods
   // -- schema
@@ -85,8 +85,8 @@ class MFD3D_Diffusion_CurvedFace : public DeRham_Face {
   void RescaleMassMatrixInverse_(int c, DenseMatrix& W);
 
  protected:
-  using MFD3D::mesh_;
   using MFD3D::d_;
+  using MFD3D::mesh_;
 
   std::shared_ptr<const std::vector<AmanziGeometry::Point>> bf_;
 

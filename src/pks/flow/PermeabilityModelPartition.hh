@@ -28,9 +28,9 @@ typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, PermeabilityModelList>
   PermeabilityModelPartition;
 
 // Non-member factory
-Teuchos::RCP<PermeabilityModelPartition>
-CreatePermeabilityModelPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                                 Teuchos::RCP<Teuchos::ParameterList> plist);
+Teuchos::RCP<PermeabilityModelPartition> CreatePermeabilityModelPartition(
+  Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+  Teuchos::RCP<Teuchos::ParameterList> plist);
 
 } // namespace Flow
 } // namespace Amanzi

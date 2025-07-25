@@ -92,7 +92,7 @@ class Species {
  public:
   Species();
   Species(int id, const std::string& name, const Teuchos::ParameterList& plist);
-  virtual ~Species(){};
+  virtual ~Species() {};
 
   // update(): calculate the new activity coefficient, set the molarity,
   // activity and associated log values. Need to look at different

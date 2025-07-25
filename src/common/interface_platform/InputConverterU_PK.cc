@@ -438,8 +438,7 @@ InputConverterU::TranslateDiffusionOperator_(const std::string& disc_methods,
   Amanzi::replace_all(nonlinear_coef_out, "-", ": ");
   std::replace(nonlinear_coef_out.begin(), nonlinear_coef_out.end(), '_', ' ');
 
-  if (nonlinear_coef == "upwind-darcy_velocity")
-    nonlinear_coef_out = "upwind: face";
+  if (nonlinear_coef == "upwind-darcy_velocity") nonlinear_coef_out = "upwind: face";
   else if (nonlinear_coef == "upwind-amanzi" || nonlinear_coef == "upwind-amanzi_new")
     nonlinear_coef_out = "divk: cell-face";
 

@@ -62,8 +62,7 @@ TimeStepManager::TimeStepManager(Teuchos::ParameterList& plist)
 
 
 TimeStepManager::TimeStepManager(Teuchos::RCP<VerboseObject> vo_cd)
-  : manual_override_(false),
-    vo_(vo_cd)
+  : manual_override_(false), vo_(vo_cd)
 {}
 
 
@@ -83,7 +82,7 @@ TimeStepManager::RegisterTimeEvent(const std::vector<double>& times, bool phys)
 void
 TimeStepManager::RegisterTimeEvent(double time, bool phys)
 {
-  RegisterTimeEvent(std::vector<double>{time});
+  RegisterTimeEvent(std::vector<double>{ time });
 }
 
 void
@@ -119,7 +118,7 @@ TimeStepManager::TimeStep(double T, double dT, bool after_failure)
     }
   }
 
-  if (next_T_all_events == std::numeric_limits<double>::max()) return dT;
+  if (next_T_all_events == std::numeric_limits<double>::max() ) return dT;
 
   double time_remaining(next_T_all_events - T);
 
@@ -160,7 +159,7 @@ TimeStepManager::print(std::ostream& os, double start, double end) const
   // create a sorted array of the times between start and end and print it
   std::vector<double> print_times;
   for (auto i : time_events_) {
-    if (i->contains(start)) print_times.push_back(start);
+    if (i->contains(start) ) print_times.push_back(start);
 
     double time = i->getNext(start);
     while (time >= 0 && time < end) {
@@ -170,8 +169,9 @@ TimeStepManager::print(std::ostream& os, double start, double end) const
   }
 
   std::sort(print_times.begin(), print_times.end());
-  print_times.erase(std::unique(print_times.begin(), print_times.end(),
-          [=](double a, double b) { return isNearEqual<double>(a,b); }),
+  print_times.erase(std::unique(print_times.begin(),
+                                print_times.end(),
+                                [=](double a, double b) { return isNearEqual<double>(a, b); }),
                     print_times.end());
   for (auto t : print_times) os << t << " ";
 }

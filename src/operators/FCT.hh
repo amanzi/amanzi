@@ -38,8 +38,8 @@ class FCT {
       field_(field),
       component_(0),
       weight0_(Teuchos::null),
-      weight1_(Teuchos::null){};
-  ~FCT(){};
+      weight1_(Teuchos::null) {};
+  ~FCT() {};
 
   // re-initialization for another pair field + component
   void Init(Teuchos::RCP<const Epetra_MultiVector> field,
