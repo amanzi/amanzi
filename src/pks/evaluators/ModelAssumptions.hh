@@ -37,9 +37,10 @@ struct ModelAssumptions {
       vol_flowrate(""),
       sat_liquid(""),
       lookup_table(""),
-      use_gravity(true){};
-  
-  void Init(Teuchos::ParameterList plist, const AmanziMesh::Mesh& mesh) {
+      use_gravity(true) {};
+
+  void Init(Teuchos::ParameterList plist, const AmanziMesh::Mesh& mesh)
+  {
     flow_on_manifold = plist.get<bool>("flow and transport in fractures", false);
     flow_on_manifold &= (mesh.getManifoldDimension() != mesh.getSpaceDimension());
 
@@ -106,4 +107,3 @@ struct ModelAssumptions {
 } // namespace Amanzi
 
 #endif
-

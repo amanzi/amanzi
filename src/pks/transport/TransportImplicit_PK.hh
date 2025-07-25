@@ -63,7 +63,7 @@ class TransportImplicit_PK
                        const Teuchos::RCP<State>& S,
                        const Teuchos::RCP<TreeVector>& soln);
 
-  ~TransportImplicit_PK(){};
+  ~TransportImplicit_PK() {};
 
   virtual void Initialize() override;
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;

@@ -76,8 +76,10 @@ Flow_PK::Setup()
   assumptions_.Init(*physical_models, *mesh_);
 
   // coupling with other PKs
-  coupled_to_matrix_ = physical_models->get<std::string>("coupled matrix fracture flow", "") == "fracture";
-  coupled_to_fracture_ = physical_models->get<std::string>("coupled matrix fracture flow", "") == "matrix";
+  coupled_to_matrix_ =
+    physical_models->get<std::string>("coupled matrix fracture flow", "") == "fracture";
+  coupled_to_fracture_ =
+    physical_models->get<std::string>("coupled matrix fracture flow", "") == "matrix";
 
   // keys and tags
   Tag tag = Tags::DEFAULT;

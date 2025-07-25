@@ -155,7 +155,8 @@ LookupTable_FEHM::LookupTable_FEHM(Teuchos::ParameterList& plist)
 * Function evaluation
 ****************************************************************** */
 double
-LookupTable_FEHM::Function(double T, double p, int* ierr) {
+LookupTable_FEHM::Function(double T, double p, int* ierr)
+{
   return Function_(T, p, ierr, F_);
 }
 
@@ -164,7 +165,8 @@ LookupTable_FEHM::Function(double T, double p, int* ierr) {
 * Derivative evaluation
 ****************************************************************** */
 double
-LookupTable_FEHM::DFunctionDT(double T, double p, int* ierr) {
+LookupTable_FEHM::DFunctionDT(double T, double p, int* ierr)
+{
   return Function_(T, p, ierr, dFdT_);
 }
 
@@ -173,7 +175,8 @@ LookupTable_FEHM::DFunctionDT(double T, double p, int* ierr) {
 * Derivative evaluation
 ****************************************************************** */
 double
-LookupTable_FEHM::DFunctionDp(double T, double p, int* ierr) {
+LookupTable_FEHM::DFunctionDp(double T, double p, int* ierr)
+{
   return Function_(T, p, ierr, dFdP_);
 }
 
@@ -182,7 +185,9 @@ LookupTable_FEHM::DFunctionDp(double T, double p, int* ierr) {
 * Generic function evaluation
 ****************************************************************** */
 double
-LookupTable_FEHM::Function_(double T, double p, int* ierr,
+LookupTable_FEHM::Function_(double T,
+                            double p,
+                            int* ierr,
                             const std::vector<std::vector<double>>& F)
 {
   int ip, jt, n, m(0);

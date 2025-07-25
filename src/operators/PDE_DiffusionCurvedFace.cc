@@ -429,9 +429,8 @@ PDE_DiffusionCurvedFace::Init_(Teuchos::ParameterList& plist)
   }
 
   if (mesh_->getComm()->MyPID() == 0) {
-    std::cout << "new face centroids deviation on rank zero (max/avg): " 
-              << err_max << " " << err / nfaces_owned 
-              << ", on boundary is " << err_b / faces_bnd.size() << "\n\n";
+    std::cout << "new face centroids deviation on rank zero (max/avg): " << err_max << " "
+              << err / nfaces_owned << ", on boundary is " << err_b / faces_bnd.size() << "\n\n";
   }
 }
 

@@ -122,7 +122,8 @@ Chemistry_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   updateSubstate(tag_current_);
 
   // Get the number of owned (non-ghost) cells for the mesh.
-  auto ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  auto ncells_owned =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   // Now loop through all the cells and advance the chemistry.
   int max_itrs(0), imax(-1);
@@ -193,8 +194,8 @@ Chemistry_PK::checkForError_(int& ierr, int& max_itrs, int& max_itrs_cell) const
 
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "max Newton iterations: " << (int) max_itrs << " in cell "
-               << max_itrs_cell << std::endl;
+    *vo_->os() << "max Newton iterations: " << (int)max_itrs << " in cell " << max_itrs_cell
+               << std::endl;
   }
 }
 

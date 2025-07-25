@@ -9,7 +9,7 @@
 
 /*!
 
-Mimetic Finite Difference class of methods for diffusion on a set of 
+Mimetic Finite Difference class of methods for diffusion on a set of
 possibly non-matching meshes
 
 Example:
@@ -73,14 +73,16 @@ class PDE_DiffusionMultiMesh {
 
   // connect mesh domain with tensor coefficients
   void SetVariableTensorCoefficient(const std::string& name,
-                                    const Teuchos::RCP<std::vector<WhetStone::Tensor>>& K) {
+                                    const Teuchos::RCP<std::vector<WhetStone::Tensor>>& K)
+  {
     K_[name] = K;
   }
 
   // connect mesh domain with boundary conditions
   void SetBCs(const std::string& name,
               const Teuchos::RCP<const BCs>& bc_trial,
-              const Teuchos::RCP<const BCs>& bc_test) {
+              const Teuchos::RCP<const BCs>& bc_test)
+  {
     int i = std::distance(names_.begin(), std::find(names_.begin(), names_.end(), name));
     pdes_[i]->SetBCs(bc_trial, bc_test);
   }
@@ -102,25 +104,27 @@ class PDE_DiffusionMultiMesh {
   void ApplyBCs(bool primary, bool eliminate, bool essential_eqn);
 
   // calculate fluxes after solving the problem
-  void UpdateFlux(const Teuchos::Ptr<const TreeVector>& u,
-                  const Teuchos::Ptr<TreeVector>& flux) { exit(0); }
+  void UpdateFlux(const Teuchos::Ptr<const TreeVector>& u, const Teuchos::Ptr<TreeVector>& flux)
+  {
+    exit(0);
+  }
 
   // access
   Teuchos::RCP<Operators::TreeOperator> get_matrix() { return matrix_; }
 
  protected:
   // utilities to define surface-surface intersection
-  void
-  meshToMeshMapParticles_(const AmanziMesh::Mesh& mesh1, const std::string& rgn1,
-                          const AmanziMesh::Mesh& mesh2, const std::string& rgn2,
-                          InterfaceData& data12);
+  void meshToMeshMapParticles_(const AmanziMesh::Mesh& mesh1,
+                               const std::string& rgn1,
+                               const AmanziMesh::Mesh& mesh2,
+                               const std::string& rgn2,
+                               InterfaceData& data12);
 
-  int
-  findFace_(const AmanziGeometry::Point& xf1, 
-            const AmanziGeometry::Point& ray, 
-            const AmanziMesh::Mesh& mesh2, 
-            const std::string& rgn2, 
-            int* stage);
+  int findFace_(const AmanziGeometry::Point& xf1,
+                const AmanziGeometry::Point& ray,
+                const AmanziMesh::Mesh& mesh2,
+                const std::string& rgn2,
+                int* stage);
 
   void ModifyMatrices_(int ib, const InterfaceData& data);
 

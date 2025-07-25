@@ -93,7 +93,8 @@ Energy_PK::Setup()
 
   aperture_key_ = Keys::getKey(domain_, "aperture");
   conductivity_eff_key_ = Keys::getKey(domain_, "thermal_conductivity_effective");
-  conductivity_gen_key_ = (!assumptions_.flow_on_manifold) ? conductivity_key_ : conductivity_eff_key_;
+  conductivity_gen_key_ =
+    (!assumptions_.flow_on_manifold) ? conductivity_key_ : conductivity_eff_key_;
 
   ie_liquid_key_ = Keys::getKey(domain_, "internal_energy_liquid");
   ie_gas_key_ = Keys::getKey(domain_, "internal_energy_gas");

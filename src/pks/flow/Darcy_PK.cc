@@ -379,9 +379,10 @@ Darcy_PK::Initialize()
   double mu = S_->Get<double>("const_fluid_viscosity");
   Teuchos::ParameterList& oplist =
     fp_list_->sublist("operators").sublist("diffusion operator").sublist("matrix");
-  if (assumptions_.flow_on_manifold) oplist.set<std::string>("nonlinear coefficient", "standard: cell");
+  if (assumptions_.flow_on_manifold)
+    oplist.set<std::string>("nonlinear coefficient", "standard: cell");
   if (coupled_to_matrix_ || assumptions_.flow_on_manifold) {
-    if (!oplist.isParameter("use manifold flux")) oplist.set<bool>("use manifold flux", true);
+    if (!oplist.isParameter("use manifold flux") ) oplist.set<bool>("use manifold flux", true);
   }
 
   Operators::PDE_DiffusionFactory opfactory(oplist, mesh_);

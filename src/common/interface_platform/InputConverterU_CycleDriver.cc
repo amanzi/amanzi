@@ -301,7 +301,7 @@ InputConverterU::TranslateCycleDriver_()
         mpcs[pkname].pks = CharToStrings_(mm.transcode(jnode->getTextContent()));
         mpcs[pkname].mpc_type = (model == "default") ? "subcycled default" : "subcycled";
         mpcs[pkname].matrix_fracture = coupled_flow_;
-      }       
+      }
     }
 
     // create new time period (TP) in the cycle driver (CD)
@@ -357,16 +357,18 @@ InputConverterU::TranslateCycleDriver_()
             params.basename = "mpc weak";
           } else if (params.mpc_type == "subcycled default") {
             params.basename = "mpc subcycled";
-          } else { 
+          } else {
             params.basename = mpcs[params.pks[0]].basename + " and " + mpcs[params.pks[1]].basename;
           }
-          Teuchos::ParameterList& aux = pk_tree_list.sublist(Keys::merge(mode, mpc.first, delimiter));
+          Teuchos::ParameterList& aux =
+            pk_tree_list.sublist(Keys::merge(mode, mpc.first, delimiter));
           aux.set<std::string>("PK type", params.basename);
 
           for (int i = 0; i < 2; ++i) {
-            std::string type = (mpcs[params.pks[i]].is_mpc) ? params.basename : 
-                                                              *pk_model_[params.pks[i]].rbegin();
-            aux.sublist(Keys::merge(mode, params.pks[i], delimiter)).set<std::string>("PK type", type);
+            std::string type =
+              (mpcs[params.pks[i]].is_mpc) ? params.basename : *pk_model_[params.pks[i]].rbegin();
+            aux.sublist(Keys::merge(mode, params.pks[i], delimiter))
+              .set<std::string>("PK type", type);
 
             pkname = Keys::merge(mode, params.pks[i], delimiter);
             aux.sublist(pkname) = pk_tree_list.sublist(pkname);
@@ -378,12 +380,14 @@ InputConverterU::TranslateCycleDriver_()
         else if (params.is_mpc && params.matrix_fracture) {
           mpcname = params.pks[0] + " and " + params.pks[1] + " matrix fracture";
           params.basename = mpcs[params.pks[0]].basename + " and " + mpcs[params.pks[1]].basename;
-          Teuchos::ParameterList& aux = pk_tree_list.sublist(Keys::merge(mode, mpc.first, delimiter));
+          Teuchos::ParameterList& aux =
+            pk_tree_list.sublist(Keys::merge(mode, mpc.first, delimiter));
           aux.set<std::string>("PK type", mpcname);
 
           for (int i = 0; i < 2; ++i) {
             pkname = Keys::merge(mode, params.pks[i], delimiter);
-            if (mpcs[params.pks[i]].matrix_fracture && mpcs[params.pks[i]].is_pk) pkname += " matrix fracture";
+            if (mpcs[params.pks[i]].matrix_fracture && mpcs[params.pks[i]].is_pk)
+              pkname += " matrix fracture";
 
             aux.sublist(pkname) = pk_tree_list.sublist(pkname);
             pk_tree_list.remove(pkname);
@@ -418,7 +422,9 @@ InputConverterU::TranslateCycleDriver_()
   out_list.set<Teuchos::Array<double>>("component molar masses", tmp);
 
   out_list.sublist("time period control") = TranslateTimePeriodControls_();
-  if (filename.size() > 0) { out_list.sublist("restart").set<std::string>("file name", filename); }
+  if (filename.size() > 0) {
+    out_list.sublist("restart").set<std::string>("file name", filename);
+  }
   out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
 
   return out_list;
@@ -541,11 +547,11 @@ InputConverterU::TranslateTimePeriodControls_()
 
         // find position before t
         std::map<double, double>::iterator it = init_dt.upper_bound(t);
-        if (it == init_dt.end()) it--;
+        if (it == init_dt.end() ) it--;
         dt_init_map[t] = it->second;
 
         it = max_dt.upper_bound(t);
-        if (it == max_dt.end()) it--;
+        if (it == max_dt.end() ) it--;
         dt_max_map[t] = it->second;
       }
     }
@@ -631,7 +637,8 @@ InputConverterU::TranslatePKs_(Teuchos::ParameterList& glist)
       Teuchos::Array<std::string> pk_names;
 
       std::string pkname(basename);
-      std::string domain = (pk_domain_.find(pkname) == pk_domain_.end()) ? "domain" : (pk_domain_[pkname]);
+      std::string domain =
+        (pk_domain_.find(pkname) == pk_domain_.end()) ? "domain" : (pk_domain_[pkname]);
       auto pos = pkname.find(" matrix");
       if (pos != std::string::npos) {
         domain = "matrix";
@@ -678,7 +685,7 @@ InputConverterU::TranslatePKs_(Teuchos::ParameterList& glist)
             .set<std::string>("preconditioner", LINEAR_SOLVER_PC);
         }
       }
-      
+
       if (pkname == "flow and energy") {
         err_options = "pressure, temperature";
       }
@@ -757,7 +764,7 @@ InputConverterU::TranslatePKs_(Teuchos::ParameterList& glist)
 * Dispatch for single-physics PKs
 ****************************************************************** */
 Teuchos::ParameterList
-InputConverterU::TranslateSinglePhysicsPK_(const std::string& prefix, 
+InputConverterU::TranslateSinglePhysicsPK_(const std::string& prefix,
                                            const std::string& domain,
                                            const std::string& pkname,
                                            const std::string& pk_model,
@@ -875,14 +882,15 @@ InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
       mesh_list.set<bool>("request edges", true);
 
       Teuchos::Array<std::string> aux(1, pk_region_["shallow water"]);
-      mesh_list.sublist("unstructured").sublist("submesh")
+      mesh_list.sublist("unstructured")
+        .sublist("submesh")
         .set<Teuchos::Array<std::string>>("regions", aux)
         .set<std::string>("extraction method", "manifold mesh")
         .set<std::string>("domain name", "surface");
     }
 
     if (pktype == "flow and energy matrix fracture") {
-      std::vector<std::string> name_pks = {"flow matrix fracture", "energy matrix fracture"};
+      std::vector<std::string> name_pks = { "flow matrix fracture", "energy matrix fracture" };
 
       for (auto&& pk : name_pks) {
         std::string fullname = Keys::merge(prefix, pk, delimiter);
@@ -943,10 +951,11 @@ InputConverterU::RegisterPKsList_(Teuchos::ParameterList& pk_tree, Teuchos::Para
       std::string type = pk_tree.sublist(it->first).get<std::string>("PK type");
       const auto& [mpc, subpks] = RegisterPKsList_(pk_tree.sublist(it->first), pks_list);
 
-      pks_list.sublist(it->first).set<std::string>("PK type", type)
-        .set<bool>("MPC type", mpc);
-      if (mpc) pks_list.sublist(it->first).set<Teuchos::Array<std::string>>("PKs order", subpks)
-                                          .set<int>("master PK index", 0);
+      pks_list.sublist(it->first).set<std::string>("PK type", type).set<bool>("MPC type", mpc);
+      if (mpc)
+        pks_list.sublist(it->first)
+          .set<Teuchos::Array<std::string>>("PKs order", subpks)
+          .set<int>("master PK index", 0);
     }
   }
 
