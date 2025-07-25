@@ -177,7 +177,7 @@ InputConverter::ParseVersion_()
 
       Errors::Message msg;
       msg << "The input version " << version << " is not supported. "
-          << "Supported versions is " << ss1.str() << ".\n";
+          << "Supported version is " << ss1.str() << ".\n";
       Exceptions::amanzi_throw(msg);
     }
   } else {

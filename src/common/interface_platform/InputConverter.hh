@@ -32,7 +32,7 @@ namespace AmanziInput {
 
 // Amanzi version
 #define AMANZI_SPEC_VERSION_MAJOR 1
-#define AMANZI_SPEC_VERSION_MINOR 6
+#define AMANZI_SPEC_VERSION_MINOR 7
 #define AMANZI_SPEC_VERSION_MICRO "dev"
 
 // constants
