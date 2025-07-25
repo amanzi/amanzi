@@ -114,7 +114,8 @@ TestDiffusionMultiMesh(int d, double tol)
   }
 
   // populate boundary data
-  auto bc1 = Teuchos::rcp(new BCs(mesh1, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
+  auto bc1 =
+    Teuchos::rcp(new BCs(mesh1, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc1_model = bc1->bc_model();
   std::vector<double>& bc1_value = bc1->bc_value();
 
@@ -127,7 +128,8 @@ TestDiffusionMultiMesh(int d, double tol)
     }
   }
 
-  auto bc2 = Teuchos::rcp(new BCs(mesh2, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
+  auto bc2 =
+    Teuchos::rcp(new BCs(mesh2, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc2_model = bc2->bc_model();
   std::vector<double>& bc2_value = bc2->bc_value();
 
@@ -140,14 +142,14 @@ TestDiffusionMultiMesh(int d, double tol)
     }
   }
 
-  auto bc3 = Teuchos::rcp(new BCs(mesh3, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
+  auto bc3 =
+    Teuchos::rcp(new BCs(mesh3, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc3_model = bc3->bc_model();
   std::vector<double>& bc3_value = bc3->bc_value();
 
   for (int f = 0; f < nfaces3_wghost; ++f) {
     const Point& xf = mesh3->getFaceCentroid(f);
-    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
-        fabs(xf[1] - 1.0) < 1e-6 ||
+    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
         (d == 3 && (fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6))) {
       bc3_model[f] = OPERATOR_BC_DIRICHLET;
       bc3_value[f] = ana3.pressure_exact(xf, 0.0);
@@ -204,7 +206,7 @@ TestDiffusionMultiMesh(int d, double tol)
   ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
 
   auto inv_list = AmanziSolvers::mergePreconditionerSolverLists(
-      "Hypre AMG", plist.sublist("preconditioners"), "PCG", plist.sublist("solvers"));
+    "Hypre AMG", plist.sublist("preconditioners"), "PCG", plist.sublist("solvers"));
   op->set_inverse_parameters(inv_list);
   op->InitializeInverse();
   op->ComputeInverse();
@@ -229,7 +231,7 @@ TestDiffusionMultiMesh(int d, double tol)
   p1.MinValue(&p1min);
   p2.MinValue(&p2min);
   p3.MinValue(&p3min);
-    
+
   p1.MaxValue(&p1max);
   p2.MaxValue(&p2max);
   p3.MaxValue(&p3max);
@@ -238,9 +240,24 @@ TestDiffusionMultiMesh(int d, double tol)
     l2_err1 /= pnorm1;
     l2_err2 /= pnorm2;
     l2_err3 /= pnorm3;
-    printf("L2 =%9.6f  Inf =%9.6f  min/max = %9.6f %9.6f  #cells=%d\n", l2_err1, inf_err1, p1min, p1max, ncells1_owned);
-    printf("L2 =%9.6f  Inf =%9.6f  min/max = %9.6f %9.6f  #cells=%d\n", l2_err2, inf_err2, p2min, p2max, ncells2_owned);
-    printf("L2 =%9.6f  Inf =%9.6f  min/max = %9.6f %9.6f  #cells=%d\n", l2_err3, inf_err3, p3min, p3max, ncells3_owned);
+    printf("L2 =%9.6f  Inf =%9.6f  min/max = %9.6f %9.6f  #cells=%d\n",
+           l2_err1,
+           inf_err1,
+           p1min,
+           p1max,
+           ncells1_owned);
+    printf("L2 =%9.6f  Inf =%9.6f  min/max = %9.6f %9.6f  #cells=%d\n",
+           l2_err2,
+           inf_err2,
+           p2min,
+           p2max,
+           ncells2_owned);
+    printf("L2 =%9.6f  Inf =%9.6f  min/max = %9.6f %9.6f  #cells=%d\n",
+           l2_err3,
+           inf_err3,
+           p3min,
+           p3max,
+           ncells3_owned);
   }
 
   // i/o

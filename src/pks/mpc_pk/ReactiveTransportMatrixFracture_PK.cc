@@ -45,7 +45,7 @@ ReactiveTransportMatrixFracture_PK::ReactiveTransportMatrixFracture_PK(
       break;
     }
   }
-    
+
   subcycling_ = my_list_->get<bool>("subcycle chemistry", true);
   AMANZI_ASSERT(master_ == 1);
 

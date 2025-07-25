@@ -30,9 +30,7 @@ namespace Operators {
 * Constructor
 ****************************************************************** */
 PDE_DiffusionMultiMesh::PDE_DiffusionMultiMesh(Teuchos::ParameterList& plist)
-  : plist_(plist),
-    d_(0),
-    stability_(1.0)
+  : plist_(plist), d_(0), stability_(1.0)
 {
   vo_ = Teuchos::rcp(new VerboseObject("PDE", plist));
 }
@@ -41,7 +39,8 @@ PDE_DiffusionMultiMesh::PDE_DiffusionMultiMesh(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Initialization of the PDE operator
 ****************************************************************** */
-void PDE_DiffusionMultiMesh::Init(const Teuchos::RCP<State>& S)
+void
+PDE_DiffusionMultiMesh::Init(const Teuchos::RCP<State>& S)
 {
   // meshes
   names_ = plist_.get<Teuchos::Array<std::string>>("meshes").toVector();
@@ -76,9 +75,7 @@ void PDE_DiffusionMultiMesh::Init(const Teuchos::RCP<State>& S)
 
     InterfaceData data;
     for (int k = 0; k < 2; ++k) {
-      meshToMeshMapParticles_(*submeshes[k], rgns[k],
-                              *submeshes[1 - k], rgns[1 - k],
-                              data);
+      meshToMeshMapParticles_(*submeshes[k], rgns[k], *submeshes[1 - k], rgns[1 - k], data);
 
       interface_data.push_back(data);
       interface_meshes_.push_back({ names[k], names[1 - k] });
@@ -88,7 +85,7 @@ void PDE_DiffusionMultiMesh::Init(const Teuchos::RCP<State>& S)
 
   // create tree vector space
   auto tvs = Teuchos::rcp(new TreeVectorSpace());
-  for (auto& name : names_) { 
+  for (auto& name : names_) {
     Operators::PDE_DiffusionFactory opfactory(plist_, meshes_[name]);
     opfactory.SetVariableTensorCoefficient(K_[name]);
 
@@ -107,7 +104,8 @@ void PDE_DiffusionMultiMesh::Init(const Teuchos::RCP<State>& S)
   interface_data_.resize(nmeshes);
 
   for (int i0 = 0; i0 < nmeshes; ++i0) {
-    int nfaces_wghost = meshes_[names_[i0]]->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+    int nfaces_wghost = meshes_[names_[i0]]->getNumEntities(AmanziMesh::Entity_kind::FACE,
+                                                            AmanziMesh::Parallel_kind::ALL);
     interface_block_[i0].resize(nfaces_wghost, -1);
 
     for (int k = 0; k < ninterfaces; ++k) {
@@ -151,7 +149,8 @@ PDE_DiffusionMultiMesh::UpdateMatrices(const Teuchos::RCP<const TreeVector>& flu
 /* *****************************************************************
 * Apply boundary conditions
 * **************************************************************** */
-void PDE_DiffusionMultiMesh::ModifyMatrices_(int ib, const InterfaceData& data)
+void
+PDE_DiffusionMultiMesh::ModifyMatrices_(int ib, const InterfaceData& data)
 {
   auto op = *matrix_->get_operator_block(ib, ib)->begin();
 
@@ -163,7 +162,7 @@ void PDE_DiffusionMultiMesh::ModifyMatrices_(int ib, const InterfaceData& data)
     int ncol(nfaces + 1);
     for (int n = 0; n < nfaces; ++n) {
       auto it = data.find(faces[n]);
-      if (it != data.end()) ncol += it->second.size();
+      if (it != data.end() ) ncol += it->second.size();
     }
 
     // populate a flux coupling matrix
@@ -179,7 +178,8 @@ void PDE_DiffusionMultiMesh::ModifyMatrices_(int ib, const InterfaceData& data)
       if (it == data.end()) {
         C(n, n) = 1.0;
       } else {
-        double scale = stability_ * std::pow(meshes_[names_[ib]]->getFaceArea(f), (d_ - 2.0) / (d_ - 1.0));
+        double scale =
+          stability_ * std::pow(meshes_[names_[ib]]->getFaceArea(f), (d_ - 2.0) / (d_ - 1.0));
         C(n, n) = 0.5;
         L(n, n) = -scale;
         for (auto coef : it->second) {
@@ -202,7 +202,8 @@ void PDE_DiffusionMultiMesh::ModifyMatrices_(int ib, const InterfaceData& data)
 /* *****************************************************************
 * Apply boundary conditions
 * **************************************************************** */
-void PDE_DiffusionMultiMesh::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
+void
+PDE_DiffusionMultiMesh::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
   for (int ib = 0; ib < matrix_->get_row_size(); ++ib) {
     auto op = *matrix_->get_operator_block(ib, ib)->begin();
@@ -262,7 +263,8 @@ void PDE_DiffusionMultiMesh::ApplyBCs(bool primary, bool eliminate, bool essenti
                 for (auto coef : it->second) {
                   int jb = interface_block[f2];
                   AMANZI_ASSERT(jb >= 0);
-                  auto& tmp_face = *matrix_->get_operator_block(jb, jb)->rhs()->ViewComponent("face", true);
+                  auto& tmp_face =
+                    *matrix_->get_operator_block(jb, jb)->rhs()->ViewComponent("face", true);
 
                   tmp_face[0][coef.first] -= Acell(ncol, n) * value;
                   Acell(ncol, n) = 0.0;
@@ -290,12 +292,14 @@ void PDE_DiffusionMultiMesh::ApplyBCs(bool primary, bool eliminate, bool essenti
 * Approximate projection of mesh1 onto mesh2 using particles
 * **************************************************************** */
 void
-PDE_DiffusionMultiMesh::meshToMeshMapParticles_(
-    const AmanziMesh::Mesh& mesh1, const std::string& rgn1,
-    const AmanziMesh::Mesh& mesh2, const std::string& rgn2,
-    InterfaceData& data12)
+PDE_DiffusionMultiMesh::meshToMeshMapParticles_(const AmanziMesh::Mesh& mesh1,
+                                                const std::string& rgn1,
+                                                const AmanziMesh::Mesh& mesh2,
+                                                const std::string& rgn2,
+                                                InterfaceData& data12)
 {
-  auto block1 = mesh1.getSetEntities(rgn1, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  auto block1 =
+    mesh1.getSetEntities(rgn1, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   int nblock1 = block1.size();
 
   InterfaceData areas12;
@@ -327,10 +331,8 @@ PDE_DiffusionMultiMesh::meshToMeshMapParticles_(
 
         for (int l = 0; l < REFINE; ++l) {
           r = double(l + 0.5) / REFINE;
-          auto xa1 = coords1[0] * (1.0 - s) * (1.0 - r) 
-                   + coords1[1] * s * (1.0 - r)
-                   + coords1[2] * s * r
-                   + coords1[3] * (1.0 - s) * r;
+          auto xa1 = coords1[0] * (1.0 - s) * (1.0 - r) + coords1[1] * s * (1.0 - r) +
+                     coords1[2] * s * r + coords1[3] * (1.0 - s) * r;
 
           int f2 = findFace_(xa1, ray, mesh2, rgn2, &stage);
           if (stage == 1) count++;
@@ -374,9 +376,8 @@ PDE_DiffusionMultiMesh::meshToMeshMapParticles_(
     int count2 = nblock1 * std::pow(REFINE, d_ - 1);
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "interface names: \"" << rgn1 << "\" or \"" << rgn2 
-               << "\", areas: " << sum1 << " " << sum2 << "\n  "
-               << count << " particles in the 2nd stage out of " << count2 
+    *vo_->os() << "interface names: \"" << rgn1 << "\" or \"" << rgn2 << "\", areas: " << sum1
+               << " " << sum2 << "\n  " << count << " particles in the 2nd stage out of " << count2
                << " (" << 100.0 * count / count2 << "%)" << std::endl;
   }
 }
@@ -386,13 +387,14 @@ PDE_DiffusionMultiMesh::meshToMeshMapParticles_(
 * Given a point in mesh1, it returns face in mesh2
 * **************************************************************** */
 int
-PDE_DiffusionMultiMesh::findFace_(const AmanziGeometry::Point& xf1, 
-                                  const AmanziGeometry::Point& ray, 
-                                  const AmanziMesh::Mesh& mesh2, 
-                                  const std::string& rgn2, 
+PDE_DiffusionMultiMesh::findFace_(const AmanziGeometry::Point& xf1,
+                                  const AmanziGeometry::Point& ray,
+                                  const AmanziMesh::Mesh& mesh2,
+                                  const std::string& rgn2,
                                   int* stage)
 {
-  auto block = mesh2.getSetEntities(rgn2, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  auto block =
+    mesh2.getSetEntities(rgn2, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   int nblock = block.size();
 
   // check of ray hits interior of a face
@@ -401,7 +403,7 @@ PDE_DiffusionMultiMesh::findFace_(const AmanziGeometry::Point& xf1,
     int f2 = block[n];
     const auto& xf2 = mesh2.getFaceCentroid(f2);
     const auto& normal = mesh2.getFaceNormal(f2);
-     
+
     double angle = ray * normal;
     if (std::fabs(angle) < 1e-12) AMANZI_ASSERT(false);
     double s = ((xf1 - xf2) * normal) / angle;
@@ -409,7 +411,7 @@ PDE_DiffusionMultiMesh::findFace_(const AmanziGeometry::Point& xf1,
 
     const auto coords2 = mesh2.getFaceCoordinates(f2);
     if (d_ == 2 && (coords2[0] - xf1_proj) * (coords2[1] - xf1_proj) <= 0.0) return f2;
-    if (d_ == 3 && point_in_polygon(xf1_proj, coords2)) return f2;
+    if (d_ == 3 && point_in_polygon(xf1_proj, coords2) ) return f2;
   }
 
   // check for closest face
@@ -421,7 +423,7 @@ PDE_DiffusionMultiMesh::findFace_(const AmanziGeometry::Point& xf1,
     int f2 = block[n];
     const auto& xf2 = mesh2.getFaceCentroid(f2);
     const auto& normal = mesh2.getFaceNormal(f2);
-    
+
     double angle = ray * normal;
     double s = ((xf1 - xf2) * normal) / angle;
     auto xf1_proj = xf1 - s * ray;
@@ -429,7 +431,7 @@ PDE_DiffusionMultiMesh::findFace_(const AmanziGeometry::Point& xf1,
     const auto& coords2 = mesh2.getFaceCoordinates(f2);
 
     s = norm(coords2[0] - xf1_proj);
-    for (int i = 1; i < coords2.size(); ++i) s = std::min(s, norm(coords2[i] - xf1_proj));
+    for (int i = 1; i < coords2.size() ; ++i) s = std::min(s, norm(coords2[i] - xf1_proj));
     if (s < dist_min) {
       dist_min = s;
       f2min = f2;

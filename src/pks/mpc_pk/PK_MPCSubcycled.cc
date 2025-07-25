@@ -110,7 +110,8 @@ PK_MPCSubcycled::AdvanceStep(double t_old, double t_new, bool reinit)
     }
 
     // check for done condition
-    done = (std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1 * min_dt_) || (dt_next < min_dt_);
+    done =
+      (std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1 * min_dt_) || (dt_next < min_dt_);
   }
 
   return false;

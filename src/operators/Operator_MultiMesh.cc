@@ -34,12 +34,11 @@ namespace Operators {
 /* ******************************************************************
 * Constructor
 ****************************************************************** */
-Operator_MultiMesh::Operator_MultiMesh(
-  Teuchos::ParameterList& plist, 
-  Teuchos::RCP<Operator> global_op,
-  Teuchos::RCP<Op> local_op,
-  std::vector<int>& interface_block,
-  InterfaceData& interface_data)
+Operator_MultiMesh::Operator_MultiMesh(Teuchos::ParameterList& plist,
+                                       Teuchos::RCP<Operator> global_op,
+                                       Teuchos::RCP<Op> local_op,
+                                       std::vector<int>& interface_block,
+                                       InterfaceData& interface_data)
   : Operator(global_op->get_domain_map(), plist, local_op->schema_old()),
     interface_block_(interface_block),
     interface_data_(interface_data)
@@ -51,7 +50,7 @@ Operator_MultiMesh::Operator_MultiMesh(
 
 
 /* ******************************************************************
-* Visit methods for symbolic assemble: element=cell; dofs={face,cell} 
+* Visit methods for symbolic assemble: element=cell; dofs={face,cell}
 ****************************************************************** */
 void
 Operator_MultiMesh::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
@@ -105,10 +104,10 @@ Operator_MultiMesh::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
 ****************************************************************** */
 void
 Operator_MultiMesh::AssembleMatrixOp(const Op_Cell_FaceCell& op,
-                                    const SuperMap& map,
-                                    MatrixFE& mat,
-                                    int my_block_row,
-                                    int my_block_col) const
+                                     const SuperMap& map,
+                                     MatrixFE& mat,
+                                     int my_block_row,
+                                     int my_block_col) const
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 

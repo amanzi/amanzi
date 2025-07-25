@@ -150,7 +150,7 @@ PK_MPC<PK_Base>::PK_MPC(Teuchos::ParameterList& pk_tree,
     sub_pks_.push_back(pk);
   }
 
-  // share names with siblings 
+  // share names with siblings
   for (int n = 0; n < pk_name.size(); ++n) {
     for (int i = 0; i < pk_name.size(); ++i) {
       if (i != n) {

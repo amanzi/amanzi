@@ -70,13 +70,14 @@ struct BCs {
 
 
 struct MPC {
-  MPC() : basename(""),
-          submodel(""), 
-          is_pk(false),
-          is_mpc(false),
-          matrix_fracture(false),
-          mpc_type(""),
-          parsed(false){};
+  MPC()
+    : basename(""),
+      submodel(""),
+      is_pk(false),
+      is_mpc(false),
+      matrix_fracture(false),
+      mpc_type(""),
+      parsed(false) {};
   std::string basename;
   std::string submodel;
   std::vector<std::string> pks;
@@ -196,7 +197,7 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateTimePeriodControls_();
   Teuchos::ParameterList TranslatePKs_(Teuchos::ParameterList& glist);
 
-  Teuchos::ParameterList TranslateSinglePhysicsPK_(const std::string& prefix, 
+  Teuchos::ParameterList TranslateSinglePhysicsPK_(const std::string& prefix,
                                                    const std::string& domain,
                                                    const std::string& pkname,
                                                    const std::string& pk_model,
@@ -337,8 +338,8 @@ class InputConverterU : public InputConverter {
                       Teuchos::ParameterList& mPL,
                       Teuchos::ParameterList& outPL);
 
-  std::pair<bool, std::vector<std::string>>
-  RegisterPKsList_(Teuchos::ParameterList& pk_tree, Teuchos::ParameterList& pks_list);
+  std::pair<bool, std::vector<std::string>> RegisterPKsList_(Teuchos::ParameterList& pk_tree,
+                                                             Teuchos::ParameterList& pks_list);
 
   void FinalizeMPC_PKs_(Teuchos::ParameterList& glist);
 

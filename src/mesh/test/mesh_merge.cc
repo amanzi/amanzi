@@ -27,7 +27,7 @@
 using namespace Amanzi;
 
 void
-merge2D(Teuchos::RCP<Mesh>& mesh1, 
+merge2D(Teuchos::RCP<Mesh>& mesh1,
         const Teuchos::RCP<Mesh>& mesh2,
         const std::vector<int>& ids_v1,
         const std::vector<int>& ids_v2,
@@ -42,7 +42,7 @@ merge2D(Teuchos::RCP<Mesh>& mesh1,
 
   int nnodes1 = MESH_Num_Vertices(mstk1);
 
-  // add nodes of mstk2 to mstk1 
+  // add nodes of mstk2 to mstk1
   int idv(0);
   double xyz[3];
   MVertex_ptr v1, v2(nullptr);
@@ -56,10 +56,10 @@ merge2D(Teuchos::RCP<Mesh>& mesh1,
     MEnt_Set_AttVal(v2, atr_v, 0, 0, (void*)v1);
   }
 
-  // add edges of mstk2 to mstk1 
+  // add edges of mstk2 to mstk1
   int ival, ide(0);
   double dval;
-  void *vval;
+  void* vval;
   MEdge_ptr e1, e2(nullptr);
   MAttrib_ptr atr_e = MAttrib_New(mstk2, "edge", POINTER, MEDGE);
 
@@ -74,7 +74,7 @@ merge2D(Teuchos::RCP<Mesh>& mesh1,
     MEnt_Set_AttVal(e2, atr_e, 0, 0, (void*)e1);
   }
 
-  // add face of mstk2 to mstk1 
+  // add face of mstk2 to mstk1
   int idf(0);
   MFace_ptr f2 = nullptr;
   MAttrib_ptr atr_f = MAttrib_New(mstk2, "face", POINTER, MFACE);
@@ -117,7 +117,8 @@ merge2D(Teuchos::RCP<Mesh>& mesh1,
   }
 
   mesh1_fw->rebuildAll();
-  mesh1 = Teuchos::rcp(new Mesh(mesh1_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
+  mesh1 =
+    Teuchos::rcp(new Mesh(mesh1_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
   cacheAll(*mesh1);
 }
 
@@ -126,14 +127,20 @@ TEST(MERGE_MESHES)
 {
   auto comm = getDefaultComm();
 
-  auto mesh1 = createStructuredUnitQuad({ AmanziMesh::Framework::MSTK }, 10, 10, comm, Teuchos::null, Teuchos::null);
-  auto mesh2 = createStructuredUnitQuad({ AmanziMesh::Framework::MSTK }, 5, 10, comm, Teuchos::null, Teuchos::null);
+  auto mesh1 = createStructuredUnitQuad(
+    { AmanziMesh::Framework::MSTK }, 10, 10, comm, Teuchos::null, Teuchos::null);
+  auto mesh2 = createStructuredUnitQuad(
+    { AmanziMesh::Framework::MSTK }, 5, 10, comm, Teuchos::null, Teuchos::null);
 
-  int nnodes1_owned = mesh1->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
-  int nnodes2_owned = mesh2->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
+  int nnodes1_owned =
+    mesh1->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
+  int nnodes2_owned =
+    mesh2->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
 
-  int nfaces1_owned = mesh1->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
-  int nfaces2_owned = mesh2->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces1_owned =
+    mesh1->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces2_owned =
+    mesh2->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
   // deform mesh2
   for (int n = 0; n < nnodes2_owned; ++n) {
@@ -176,11 +183,12 @@ TEST(MERGE_MESHES)
 
   merge2D(mesh1, mesh2, ids_v1, ids_v2, ids_e1, ids_e2);
 
-  int nnodes1_new = mesh1->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
-  int nfaces1_new = mesh1->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int nnodes1_new =
+    mesh1->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces1_new =
+    mesh1->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   AMANZI_ASSERT(nnodes1_owned + nnodes2_owned == nnodes1_new + 11);
   AMANZI_ASSERT(nfaces1_owned + nfaces2_owned == nfaces1_new + 10);
 
   testMeshAudit<MeshAudit, AmanziMesh::Mesh>(mesh1);
-
 }

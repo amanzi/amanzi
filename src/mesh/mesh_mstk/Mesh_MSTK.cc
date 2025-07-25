@@ -3398,7 +3398,7 @@ Mesh_MSTK::rebuildAll()
 {
   cells_initialized_ = false;
   faces_initialized_ = false;
-  edges_initialized_ = false ;
+  edges_initialized_ = false;
 
   post_create_steps_();
 }

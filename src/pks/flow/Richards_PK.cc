@@ -637,7 +637,7 @@ Richards_PK::Initialize()
   // Initialize boundary conditions and source terms.
   UpdateSourceBoundaryData(t_ini, t_ini, pressure);
 
-  // initialization of the diffusion matrix requires a few steps, 
+  // initialization of the diffusion matrix requires a few steps,
   // we simply call the functional evaluation to make these steps.
   op_matrix_diff_->SetBCs(op_bc_, op_bc_);
 

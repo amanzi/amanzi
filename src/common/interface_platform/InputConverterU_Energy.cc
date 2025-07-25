@@ -199,8 +199,7 @@ InputConverterU::TranslateEnergyBCs_(const std::string& domain)
   bool flag;
   if (domain == "fracture")
     node = GetUniqueElementByTagsString_("fracture_network, boundary_conditions", flag);
-  else
-    node = GetUniqueElementByTagsString_("boundary_conditions", flag);
+  else node = GetUniqueElementByTagsString_("boundary_conditions", flag);
   if (!flag) return out_list;
 
   int ibc(0);
