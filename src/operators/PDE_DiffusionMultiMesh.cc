@@ -162,7 +162,7 @@ PDE_DiffusionMultiMesh::ModifyMatrices_(int ib, const InterfaceData& data)
     int ncol(nfaces + 1);
     for (int n = 0; n < nfaces; ++n) {
       auto it = data.find(faces[n]);
-      if (it != data.end() ) ncol += it->second.size();
+      if (it != data.end()) ncol += it->second.size();
     }
 
     // populate a flux coupling matrix
@@ -411,7 +411,7 @@ PDE_DiffusionMultiMesh::findFace_(const AmanziGeometry::Point& xf1,
 
     const auto coords2 = mesh2.getFaceCoordinates(f2);
     if (d_ == 2 && (coords2[0] - xf1_proj) * (coords2[1] - xf1_proj) <= 0.0) return f2;
-    if (d_ == 3 && point_in_polygon(xf1_proj, coords2) ) return f2;
+    if (d_ == 3 && point_in_polygon(xf1_proj, coords2)) return f2;
   }
 
   // check for closest face
@@ -431,7 +431,7 @@ PDE_DiffusionMultiMesh::findFace_(const AmanziGeometry::Point& xf1,
     const auto& coords2 = mesh2.getFaceCoordinates(f2);
 
     s = norm(coords2[0] - xf1_proj);
-    for (int i = 1; i < coords2.size() ; ++i) s = std::min(s, norm(coords2[i] - xf1_proj));
+    for (int i = 1; i < coords2.size(); ++i) s = std::min(s, norm(coords2[i] - xf1_proj));
     if (s < dist_min) {
       dist_min = s;
       f2min = f2;

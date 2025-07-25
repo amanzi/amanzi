@@ -59,7 +59,7 @@ merge2D(Teuchos::RCP<Mesh>& mesh1,
   // add edges of mstk2 to mstk1
   int ival, ide(0);
   double dval;
-  void* vval;
+  void *vval;
   MEdge_ptr e1, e2(nullptr);
   MAttrib_ptr atr_e = MAttrib_New(mstk2, "edge", POINTER, MEDGE);
 
