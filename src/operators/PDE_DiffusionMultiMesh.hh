@@ -108,7 +108,8 @@ class PDE_DiffusionMultiMesh {
   // access
   Teuchos::RCP<Operators::TreeOperator> get_matrix() { return matrix_; }
 
- private:
+ protected:
+  // utilities to define surface-surface intersection
   void
   meshToMeshMapParticles_(const AmanziMesh::Mesh& mesh1, const std::string& rgn1,
                           const AmanziMesh::Mesh& mesh2, const std::string& rgn2,
@@ -123,7 +124,7 @@ class PDE_DiffusionMultiMesh {
 
   void ModifyMatrices_(int ib, const InterfaceData& data);
 
- private:
+ protected:
   Teuchos::ParameterList plist_;
   std::map<std::string, Teuchos::RCP<const AmanziMesh::Mesh>> meshes_;
   int d_;
