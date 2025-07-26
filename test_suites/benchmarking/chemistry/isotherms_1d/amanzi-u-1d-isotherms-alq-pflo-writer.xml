@@ -1,4 +1,4 @@
-<amanzi_input version="1.6-dev" type="unstructured">
+<amanzi_input version="1.7-dev" type="unstructured">
   <misc>
     <echo_translated_input format="unstructured_native" file_name="oldspec.xml"/>
   </misc>

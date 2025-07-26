@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="1.6-dev">
+<amanzi_input type="unstructured" version="1.7-dev">
   <model_description name="SR Test Problem">
     <comments>Confined aquifer transient drawdown (Butler and Liu, 1991)</comments>
     <model_id>Butler</model_id>

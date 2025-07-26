@@ -1,4 +1,4 @@
-<amanzi_input version="1.6-dev" type="unstructured">
+<amanzi_input version="1.7-dev" type="unstructured">
 
   <model_description name="BC Cribs">
     <comments>Three homogeneous layers in 2D with two cribs discharging Tc-99</comments>
