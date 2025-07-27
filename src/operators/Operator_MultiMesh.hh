@@ -29,10 +29,9 @@
 namespace Amanzi {
 namespace Operators {
 
-class Operator_MultiMesh : public Operator {
- public:
-  typedef std::map<int, std::map<int, double>> InterfaceData;
+typedef std::map<int, std::map<int, double>> InterfaceData;
 
+class Operator_MultiMesh : public Operator {
  public:
   Operator_MultiMesh(Teuchos::ParameterList& plist,
                      Teuchos::RCP<Operator> global_op,
@@ -56,12 +55,10 @@ class Operator_MultiMesh : public Operator {
                                 int my_block_row,
                                 int my_block_col) const;
 
- public:
-  int cell_max_faces;
-
  private:
-  std::vector<int> interface_block_;
-  mutable std::map<int, std::map<int, double>> interface_data_;
+  int max_size_;
+  const std::vector<int>& interface_block_;
+  InterfaceData& interface_data_;
 };
 
 } // namespace Operators

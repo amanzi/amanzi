@@ -302,18 +302,18 @@ PDE_DiffusionMultiMesh::meshToMeshMapParticles_(const AmanziMesh::Mesh& mesh1,
     mesh1.getSetEntities(rgn1, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   int nblock1 = block1.size();
 
-  InterfaceData areas12;
+  data12.clear();
 
   int dir, stage, count(0);
-  double s, r;
+  double s, r, t;
 
   // count particle hits from mesh1 to mesh2
   for (int n = 0; n < nblock1; ++n) {
     int f1 = block1[n];
-    auto coords1 = mesh1.getFaceCoordinates(f1);
+    const auto& coords1 = mesh1.getFaceCoordinates(f1);
 
     int c1 = getFaceOnBoundaryInternalCell(mesh1, f1);
-    AmanziGeometry::Point ray = mesh1.getFaceNormal(f1, c1, &dir);
+    const AmanziGeometry::Point& ray = mesh1.getFaceNormal(f1, c1, &dir);
 
     if (d_ == 2) {
       for (int k = 0; k < REFINE; ++k) {
@@ -323,28 +323,61 @@ PDE_DiffusionMultiMesh::meshToMeshMapParticles_(const AmanziMesh::Mesh& mesh1,
         int f2 = findFace_(xa1, ray, mesh2, rgn2, &stage);
         if (stage == 1) count++;
 
-        areas12[f1][f2] += mesh1.getFaceArea(f1) / REFINE;
+        data12[f1][f2] += mesh1.getFaceArea(f1) / REFINE;
       }
     } else if (d_ == 3) {
-      for (int k = 0; k < REFINE; ++k) {
-        s = double(k + 0.5) / REFINE;
+      int nnodes = coords1.size();
+      AmanziGeometry::Point xa1(d_);
 
-        for (int l = 0; l < REFINE; ++l) {
-          r = double(l + 0.5) / REFINE;
-          auto xa1 = coords1[0] * (1.0 - s) * (1.0 - r) + coords1[1] * s * (1.0 - r) +
-                     coords1[2] * s * r + coords1[3] * (1.0 - s) * r;
+      if (nnodes == 4) { // quadrilateral
+        for (int k = 0; k < REFINE; ++k) {
+          s = double(k + 0.5) / REFINE;
 
-          int f2 = findFace_(xa1, ray, mesh2, rgn2, &stage);
-          if (stage == 1) count++;
+          for (int l = 0; l < REFINE; ++l) {
+            r = double(l + 0.5) / REFINE;
+            xa1 = coords1[0] * (1.0 - s) * (1.0 - r) + coords1[1] * s * (1.0 - r) +
+                  coords1[2] * s * r + coords1[3] * (1.0 - s) * r;
 
-          areas12[f1][f2] += mesh1.getFaceArea(f1) / REFINE / REFINE;
+            int f2 = findFace_(xa1, ray, mesh2, rgn2, &stage);
+            if (stage == 1) count++;
+            data12[f1][f2] += mesh1.getFaceArea(f1) / REFINE / REFINE;
+          }
         }
+      } else if (nnodes == 3) { // triangle
+        int m(0), ntri((REFINE + 1) * REFINE / 2);
+        for (int k = 0; k < REFINE; ++k) {
+          s = double(k + 0.333) / REFINE;
+
+          for (int l = 0; l < REFINE; ++l) {
+            r = double(l + 0.333) / REFINE;
+            t = 1.0 - s - r;
+            if (t > 0.0) {
+              xa1 = coords1[0] * s + coords1[1] * r + coords1[2] * t;
+
+              int f2 = findFace_(xa1, ray, mesh2, rgn2, &stage);
+              if (stage == 1) count++;
+              data12[f1][f2] += mesh1.getFaceArea(f1) / ntri;
+              m++;
+            }
+          }
+        }
+        AMANZI_ASSERT(m == ntri);
+      } else { 
+        AMANZI_ASSERT(false);
       }
     }
   }
 
+  // -- statistics
+  double sum1(0.0), sum2(0.0);
+  for (int f1 : block1) sum1 += mesh1.getFaceArea(f1);
+
+  for (int n = 0; n < nblock1; ++n) {
+    int f1 = block1[n];
+    for (auto& data : data12[f1]) sum2 += data.second;
+  }
+
   // compute interpolation coefficients for a scalar quantity
-  data12 = areas12;
   for (int n = 0; n < nblock1; ++n) {
     int f1 = block1[n];
     double area = mesh1.getFaceArea(f1);
@@ -361,15 +394,6 @@ PDE_DiffusionMultiMesh::meshToMeshMapParticles_(const AmanziMesh::Mesh& mesh1,
       AMANZI_ASSERT(data.second <= 1.0 + tol);
     }
     AMANZI_ASSERT(sum <= 1.0 + tol);
-  }
-
-  // -- statistics
-  double sum1(0.0), sum2(0.0);
-  for (int f1 : block1) sum1 += mesh1.getFaceArea(f1);
-
-  for (int n = 0; n < nblock1; ++n) {
-    int f1 = block1[n];
-    for (auto& data : areas12[f1]) sum2 += data.second;
   }
 
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
@@ -393,7 +417,7 @@ PDE_DiffusionMultiMesh::findFace_(const AmanziGeometry::Point& xf1,
                                   const std::string& rgn2,
                                   int* stage)
 {
-  auto block =
+  const auto& block =
     mesh2.getSetEntities(rgn2, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   int nblock = block.size();
 
@@ -409,7 +433,7 @@ PDE_DiffusionMultiMesh::findFace_(const AmanziGeometry::Point& xf1,
     double s = ((xf1 - xf2) * normal) / angle;
     auto xf1_proj = xf1 - s * ray;
 
-    const auto coords2 = mesh2.getFaceCoordinates(f2);
+    const auto& coords2 = mesh2.getFaceCoordinates(f2);
     if (d_ == 2 && (coords2[0] - xf1_proj) * (coords2[1] - xf1_proj) <= 0.0) return f2;
     if (d_ == 3 && point_in_polygon(xf1_proj, coords2) ) return f2;
   }

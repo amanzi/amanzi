@@ -64,7 +64,6 @@ namespace Operators {
 class PDE_DiffusionMultiMesh {
  public:
   const int REFINE = 9;
-  typedef std::map<int, std::map<int, double>> InterfaceData;
 
  public:
   PDE_DiffusionMultiMesh(Teuchos::ParameterList& plist);

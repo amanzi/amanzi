@@ -43,7 +43,20 @@ Operator_MultiMesh::Operator_MultiMesh(Teuchos::ParameterList& plist,
     interface_block_(interface_block),
     interface_data_(interface_data)
 {
-  cell_max_faces = 20; // FIXME
+  max_size_ = 0;
+  for (int c = 0; c < ncells_owned; ++c) {
+    const auto& faces = mesh_->getCellFaces(c);
+    int ndofs = faces.size() + 1;
+
+    for (int f : faces) {
+      int other_block = interface_block_[f];
+      if (other_block >= 0) {
+        ndofs += interface_data_[f].size();
+      }
+    }
+    max_size_ = std::max(max_size_, ndofs);
+  }
+
   local_op->schema_string = "Diffusion: FACE_CELL MultiMesh";
   OpPushBack(local_op);
 }
@@ -59,8 +72,8 @@ Operator_MultiMesh::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
                                              int my_block_row,
                                              int my_block_col) const
 {
-  std::vector<int> lid_r(2 * cell_max_faces + 1);
-  std::vector<int> lid_c(2 * cell_max_faces + 1);
+  std::vector<int> lid_r(max_size_);
+  std::vector<int> lid_c(max_size_);
 
   const std::vector<int>& face_row_inds = map.GhostIndices(my_block_row, "face", 0);
   const std::vector<int>& face_col_inds = map.GhostIndices(my_block_col, "face", 0);
@@ -111,8 +124,8 @@ Operator_MultiMesh::AssembleMatrixOp(const Op_Cell_FaceCell& op,
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
-  std::vector<int> lid_r(2 * cell_max_faces + 1);
-  std::vector<int> lid_c(2 * cell_max_faces + 1);
+  std::vector<int> lid_r(max_size_);
+  std::vector<int> lid_c(max_size_);
 
   const std::vector<int>& face_row_inds = map.GhostIndices(my_block_row, "face", 0);
   const std::vector<int>& face_col_inds = map.GhostIndices(my_block_col, "face", 0);
