@@ -119,10 +119,12 @@ class PDE_DiffusionMultiMesh {
                                const std::string& rgn2,
                                InterfaceData& data12);
 
+  // Note: if no initial guess, set f2_guess to -1
   int findFace_(const AmanziGeometry::Point& xf1,
                 const AmanziGeometry::Point& ray,
                 const AmanziMesh::Mesh& mesh2,
                 const std::string& rgn2,
+                int f2_guess,
                 int* stage);
 
   void ModifyMatrices_(int ib, const InterfaceData& data);

@@ -95,7 +95,10 @@ MFD3D_Diffusion_CurvedFace::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
 int
 MFD3D_Diffusion_CurvedFace::MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W)
 {
-  int ok = MassMatrix(c, K, W);
+  Tensor Kinv(K);
+  Kinv.Inverse();
+
+  int ok = MassMatrix(c, Kinv, W);
   W.Inverse();
   return ok;
 }

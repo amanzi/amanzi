@@ -304,7 +304,7 @@ PDE_DiffusionMultiMesh::meshToMeshMapParticles_(const AmanziMesh::Mesh& mesh1,
 
   data12.clear();
 
-  int dir, stage, count(0);
+  int f2(-1), dir, stage, count(0);
   double s, r, t;
 
   // count particle hits from mesh1 to mesh2
@@ -320,7 +320,7 @@ PDE_DiffusionMultiMesh::meshToMeshMapParticles_(const AmanziMesh::Mesh& mesh1,
         s = double(k + 0.5) / REFINE;
         auto xa1 = coords1[0] * (1.0 - s) + coords1[1] * s;
 
-        int f2 = findFace_(xa1, ray, mesh2, rgn2, &stage);
+        f2 = findFace_(xa1, ray, mesh2, rgn2, f2, &stage);
         if (stage == 1) count++;
 
         data12[f1][f2] += mesh1.getFaceArea(f1) / REFINE;
@@ -338,7 +338,7 @@ PDE_DiffusionMultiMesh::meshToMeshMapParticles_(const AmanziMesh::Mesh& mesh1,
             xa1 = coords1[0] * (1.0 - s) * (1.0 - r) + coords1[1] * s * (1.0 - r) +
                   coords1[2] * s * r + coords1[3] * (1.0 - s) * r;
 
-            int f2 = findFace_(xa1, ray, mesh2, rgn2, &stage);
+            f2 = findFace_(xa1, ray, mesh2, rgn2, f2, &stage);
             if (stage == 1) count++;
             data12[f1][f2] += mesh1.getFaceArea(f1) / REFINE / REFINE;
           }
@@ -354,7 +354,7 @@ PDE_DiffusionMultiMesh::meshToMeshMapParticles_(const AmanziMesh::Mesh& mesh1,
             if (t > 0.0) {
               xa1 = coords1[0] * s + coords1[1] * r + coords1[2] * t;
 
-              int f2 = findFace_(xa1, ray, mesh2, rgn2, &stage);
+              f2 = findFace_(xa1, ray, mesh2, rgn2, f2, &stage);
               if (stage == 1) count++;
               data12[f1][f2] += mesh1.getFaceArea(f1) / ntri;
               m++;
@@ -415,6 +415,7 @@ PDE_DiffusionMultiMesh::findFace_(const AmanziGeometry::Point& xf1,
                                   const AmanziGeometry::Point& ray,
                                   const AmanziMesh::Mesh& mesh2,
                                   const std::string& rgn2,
+                                  int f2_guess,
                                   int* stage)
 {
   const auto& block =
@@ -423,8 +424,10 @@ PDE_DiffusionMultiMesh::findFace_(const AmanziGeometry::Point& xf1,
 
   // check of ray hits interior of a face
   *stage = 0;
-  for (int n = 0; n < nblock; ++n) {
-    int f2 = block[n];
+  int n0 = (f2_guess >= 0) ? -1 : 0; // check if initial guess is known
+
+  for (int n = n0; n < nblock; ++n) {
+    int f2 = (n == -1) ? f2_guess : block[n];
     const auto& xf2 = mesh2.getFaceCentroid(f2);
     const auto& normal = mesh2.getFaceNormal(f2);
 
@@ -455,7 +458,10 @@ PDE_DiffusionMultiMesh::findFace_(const AmanziGeometry::Point& xf1,
     const auto& coords2 = mesh2.getFaceCoordinates(f2);
 
     s = norm(coords2[0] - xf1_proj);
-    for (int i = 1; i < coords2.size() ; ++i) s = std::min(s, norm(coords2[i] - xf1_proj));
+    for (int i = 1; i < coords2.size(); ++i) {
+      s = std::min(s, norm(coords2[i] - xf1_proj));
+    }
+
     if (s < dist_min) {
       dist_min = s;
       f2min = f2;
