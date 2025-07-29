@@ -89,7 +89,7 @@
       <ParameterList name="TP 0">
         <ParameterList name="PK tree">
           <ParameterList name="coupled reactive transport">
-            <Parameter name="PK type" type="string" value="reactive transport matrix fracture"/>
+            <Parameter name="PK type" type="string" value="chemistry and transport matrix fracture"/>
             <ParameterList name="coupled chemistry">
               <Parameter name="PK type" type="string" value="chemistry matrix fracture"/>
               <ParameterList name="chemistry matrix">
@@ -455,12 +455,11 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-  <ParameterList name="PKs">
 
+  <ParameterList name="PKs">
     <ParameterList name="coupled reactive transport">
       <Parameter name="PKs order" type="Array(string)" value="{coupled chemistry, coupled transport}"/>
       <Parameter name="master PK index" type="int" value="1"/>
-
     </ParameterList>
 
     <ParameterList name="coupled chemistry">
@@ -469,7 +468,6 @@
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
-
     </ParameterList>
 
     <ParameterList name="coupled transport">
@@ -499,7 +497,6 @@
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
-
     </ParameterList>
 
     <ParameterList name="transport matrix">
@@ -551,7 +548,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-
     </ParameterList>
 
     <ParameterList name="transport fracture">
@@ -586,10 +582,8 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-
       <ParameterList name="boundary conditions">
       </ParameterList>
-
     </ParameterList>
 
     <ParameterList name="chemistry matrix">
@@ -606,7 +600,6 @@
       </ParameterList>
 
       <ParameterList name="initial conditions">
-
       </ParameterList>
 
       <ParameterList name="timestep controller" type="ParameterList">
@@ -615,7 +608,6 @@
           <Parameter name="timestep [s]" type="double" value="2.0e+5"/>
         </ParameterList>
       </ParameterList>
-
     </ParameterList>
 
     <ParameterList name="chemistry fracture">
@@ -632,7 +624,6 @@
       </ParameterList>
 
       <ParameterList name="initial conditions">
-
       </ParameterList>
 
       <ParameterList name="timestep controller" type="ParameterList">
@@ -641,17 +632,15 @@
           <Parameter name="timestep [s]" type="double" value="2.0e+5"/>
         </ParameterList>
       </ParameterList>
-
     </ParameterList>
-
   </ParameterList>
 
   <ParameterList name="thermodynamic database">
     <ParameterList name="primary species">
       <ParameterList name="Tritium">
-        <Parameter name="ion size parameter" type="double" value="9.00000000000000000"/>
+        <Parameter name="ion size parameter" type="double" value="9.0"/>
         <Parameter name="charge" type="int" value="0"/>
-        <Parameter name="gram molecular weight" type="double" value="1.01000000000000001"/>
+        <Parameter name="gram molecular weight" type="double" value="1.01"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="general kinetics">
@@ -659,7 +648,7 @@
         <Parameter name="reactants" type="string" value="1.0 Tritium"/>
         <Parameter name="products" type="string" value=""/>
         <Parameter name="forward rate" type="double" value="1.78576999999999992e-9"/>
-        <Parameter name="backward rate" type="double" value="0e-17"/>
+        <Parameter name="backward rate" type="double" value="0.0"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

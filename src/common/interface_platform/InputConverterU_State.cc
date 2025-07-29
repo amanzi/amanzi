@@ -725,7 +725,7 @@ InputConverterU::TranslateState_()
       // -- temperature
       node = GetUniqueElementByTagsString_(inode, "temperature", flag);
       if (flag) {
-        TranslateFieldIC_(node, "temperature", "K", reg_str, regions, out_ic, "velue", { "*" });
+        TranslateFieldIC_(node, "temperature", "K", reg_str, regions, out_ic, "value", { "*" });
       }
 
       // -- geochemical condition

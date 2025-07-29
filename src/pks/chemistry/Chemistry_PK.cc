@@ -25,6 +25,8 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
+using CV_t = CompositeVector;
+
 /* ******************************************************************
 * Standard PK constructor
 ****************************************************************** */
@@ -73,9 +75,16 @@ Chemistry_PK::parseParameterList()
   saturation_tolerance_ = plist_->get<double>("saturation tolerance", 1e-14);
   tcc_tag_current_ = Tag(plist_->get<std::string>("concentration tag current", tag_current_.get()));
   tcc_tag_next_ = Tag(plist_->get<std::string>("concentration tag next", tag_next_.get()));
+
+  // a hack: check position of transport PK
+  if (plist_->isParameter("sibling 1")) tcc_tag_current_ = Tags::NEXT;
+  if (plist_->isParameter("sibling 0")) tcc_tag_current_ = Tags::COPY;
 }
 
 
+/* ******************************************************************
+* Simple initializer
+******************************************************************* */
 void
 Chemistry_PK::Initialize()
 {
@@ -95,10 +104,9 @@ Chemistry_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   double dt = t_new - t_old;
 
   Teuchos::OSTab tab = vo_->getOSTab();
-  if (vo_->os_OK(Teuchos::VERB_LOW))
-    *vo_->os() << "----------------------------------------------------------------" << std::endl
-               << "Advancing: t0 = " << t_old << " t1 = " << t_new << " h = " << dt << std::endl
-               << "----------------------------------------------------------------" << std::endl;
+  if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+    *vo_->os() << "Advancing: t0 = " << t_old << " t1 = " << t_new << " dt = " << dt << std::endl;
+  }
   db_->WriteVector("C_old",
                    S_->GetPtr<CompositeVector>(key_, tcc_tag_current_).ptr(),
                    false,
@@ -110,18 +118,17 @@ Chemistry_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   State_to_Solution(Tags::NEXT, *solution_);
 
   // set up the substate for faster access
-  S_->GetW<CompositeVector>(key_, tcc_tag_next_, passwd_) =
-    S_->Get<CompositeVector>(key_, tcc_tag_current_);
+  S_->GetW<CV_t>(key_, tcc_tag_next_, passwd_) = S_->Get<CV_t>(key_, tcc_tag_current_);
   updateSubstate(tag_current_);
 
   // Get the number of owned (non-ghost) cells for the mesh.
-  AmanziMesh::Entity_ID num_cells =
+  auto ncells_owned =
     mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   // Now loop through all the cells and advance the chemistry.
   int max_itrs(0), imax(-1);
   int convergence_failure = 0;
-  for (AmanziMesh::Entity_ID cell = 0; cell != num_cells; ++cell) {
+  for (AmanziMesh::Entity_ID cell = 0; cell != ncells_owned; ++cell) {
     int num_itrs = advanceSingleCell_(cell, dt);
     if (num_itrs >= 0) {
       if (max_itrs < num_itrs) {
@@ -187,11 +194,10 @@ Chemistry_PK::checkForError_(int& ierr, int& max_itrs, int& max_itrs_cell) const
 
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "max Newton iterations: " << (int)itrs_g.value << " in cell " << itrs_g.gid
+    *vo_->os() << "max Newton iterations: " << (int)max_itrs << " in cell " << max_itrs_cell
                << std::endl;
   }
 }
-
 
 } // namespace AmanziChemistry
 } // namespace Amanzi

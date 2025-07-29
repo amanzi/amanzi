@@ -62,6 +62,12 @@ Additional options available only for the MFD family of discretizations include:
   non-symmetric (but positive definite) tensors. Available options are *symmetric*
   (default) and *nonsymmetric*.
 
+* `"penalty`" ``[double]`` penalizes displacement normal to the boundary.
+  Zero penalty means no equal weights.
+
+* `"check topology compatibility`" checks impirical condition between numbers 
+  of faces and cells which is typically sufficient for solvubility of internal 
+  algebraic problems.
 */
 
 /*
@@ -160,6 +166,9 @@ class PDE_DiffusionCurvedFace : public virtual PDE_Diffusion {
   void LSProblemSetupRHS_(CompositeVector& rhs, int i0);
   void LSProblemPrimarySolution_(const CompositeVector& sol, int i0);
 
+ private:
+  WhetStone::Tensor InverseTensorialWeigth_(const AmanziGeometry::Point& normal);
+
  protected:
   Teuchos::ParameterList plist_;
   std::vector<WhetStone::DenseMatrix> Wff_cells_;
@@ -170,6 +179,10 @@ class PDE_DiffusionCurvedFace : public virtual PDE_Diffusion {
   std::shared_ptr<const CompositeVector> weight_;
 
   int schema_prec_dofs_;
+
+ private:
+  bool check_topology_compatibility_;
+  double penalty_;
 };
 
 } // namespace Operators

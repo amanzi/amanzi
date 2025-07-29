@@ -38,8 +38,9 @@ ApertureModelEvaluator::ApertureModelEvaluator(Teuchos::ParameterList& plist,
   pressure_key_ = plist_.get<std::string>("pressure key");
   dependencies_.insert(std::make_pair(pressure_key_, Tags::DEFAULT));
 
-  use_stress_ = plist.get<bool>("use stress", false);
-  if (use_stress_) dependencies_.insert(std::make_pair("hydrostatic_stress", Tags::DEFAULT));
+  if (plist.get<bool>("use overburden stress", false)) {
+    // dependencies_.insert(std::make_pair("hydrostatic_stress", Tags::DEFAULT)); FIXME
+  }
 }
 
 

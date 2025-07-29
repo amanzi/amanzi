@@ -32,7 +32,7 @@ namespace AmanziInput {
 
 // Amanzi version
 #define AMANZI_SPEC_VERSION_MAJOR 1
-#define AMANZI_SPEC_VERSION_MINOR 6
+#define AMANZI_SPEC_VERSION_MINOR 7
 #define AMANZI_SPEC_VERSION_MICRO "dev"
 
 // constants
@@ -114,6 +114,7 @@ class InputConverter {
   void ParseConstants_();
   void ParseGeochemistry_();
   void FilterNodes(const std::string& filter);
+  DOMNode* GetPKChemistryPointer_(bool& flag);
 
   // auto-generated input files
   // -- Pflotran input file

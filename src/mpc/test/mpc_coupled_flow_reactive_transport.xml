@@ -715,7 +715,7 @@
       <ParameterList name="TP 0">
         <ParameterList name="PK tree">
           <ParameterList name="coupled flow steady">
-            <Parameter name="PK type" type="string" value="darcy matrix fracture"/>
+            <Parameter name="PK type" type="string" value="flow matrix fracture"/>
             <ParameterList name="flow matrix steady">
               <Parameter name="PK type" type="string" value="darcy"/>
             </ParameterList>
@@ -733,9 +733,9 @@
       <ParameterList name="TP 1">
         <ParameterList name="PK tree">
           <ParameterList name="coupled flow and reactive transport">
-            <Parameter name="PK type" type="string" value="flow reactive transport"/>
+            <Parameter name="PK type" type="string" value="flow and chemistry and transport"/>
             <ParameterList name="coupled flow">
-              <Parameter name="PK type" type="string" value="darcy matrix fracture"/>
+              <Parameter name="PK type" type="string" value="flow matrix fracture"/>
               <ParameterList name="flow matrix">
                 <Parameter name="PK type" type="string" value="darcy"/>
               </ParameterList>
@@ -744,7 +744,7 @@
               </ParameterList>
             </ParameterList>
             <ParameterList name="coupled reactive transport">
-              <Parameter name="PK type" type="string" value="reactive transport matrix fracture"/>
+              <Parameter name="PK type" type="string" value="chemistry and transport matrix fracture"/>
               <ParameterList name="coupled chemistry">
                 <Parameter name="PK type" type="string" value="chemistry matrix fracture"/>
                 <ParameterList name="chemistry matrix">
@@ -785,8 +785,8 @@
       <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
   </ParameterList>
-  <ParameterList name="PKs">
 
+  <ParameterList name="PKs">
     <ParameterList name="coupled flow steady">
       <Parameter name="PKs order" type="Array(string)" value="{flow matrix steady, flow fracture steady}"/>
       <Parameter name="master PK index" type="int" value="0"/>
@@ -846,7 +846,6 @@
       <ParameterList name="physical models and assumptions">
         <Parameter name="eos lookup table" type="string" value="false"/>
       </ParameterList>
-
     </ParameterList>
 
     <ParameterList name="flow matrix steady">
@@ -955,7 +954,6 @@
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
-
     </ParameterList>
 
     <ParameterList name="flow fracture steady">
@@ -1022,7 +1020,6 @@
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
-
     </ParameterList>
 
     <ParameterList name="coupled flow and reactive transport">
@@ -1031,7 +1028,6 @@
       <ParameterList name="physical models and assumptions">
         <Parameter name="eos lookup table" type="string" value="false"/>
       </ParameterList>
-
     </ParameterList>
 
     <ParameterList name="coupled flow">
@@ -1092,7 +1088,6 @@
       <ParameterList name="physical models and assumptions">
         <Parameter name="eos lookup table" type="string" value="false"/>
       </ParameterList>
-
     </ParameterList>
 
     <ParameterList name="flow matrix">
@@ -1201,7 +1196,6 @@
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
-
     </ParameterList>
 
     <ParameterList name="flow fracture">
@@ -1269,7 +1263,6 @@
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
-
     </ParameterList>
 
     <ParameterList name="coupled reactive transport">
@@ -1278,7 +1271,6 @@
       <ParameterList name="physical models and assumptions">
         <Parameter name="eos lookup table" type="string" value="false"/>
       </ParameterList>
-
     </ParameterList>
 
     <ParameterList name="coupled chemistry">
@@ -1287,7 +1279,6 @@
       <ParameterList name="physical models and assumptions">
         <Parameter name="eos lookup table" type="string" value="false"/>
       </ParameterList>
-
     </ParameterList>
 
     <ParameterList name="chemistry matrix">
@@ -1313,7 +1304,6 @@
           <Parameter name="timestep [s]" type="double" value="10000000.0000000000"/>
         </ParameterList>
       </ParameterList>
-
     </ParameterList>
 
     <ParameterList name="chemistry fracture">
@@ -1339,7 +1329,6 @@
           <Parameter name="timestep [s]" type="double" value="10000000.0000000000"/>
         </ParameterList>
       </ParameterList>
-
     </ParameterList>
 
     <ParameterList name="coupled transport">
@@ -1390,7 +1379,6 @@
       <ParameterList name="physical models and assumptions">
         <Parameter name="eos lookup table" type="string" value="false"/>
       </ParameterList>
-
     </ParameterList>
 
     <ParameterList name="transport matrix">
@@ -1495,7 +1483,6 @@
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
-
     </ParameterList>
 
     <ParameterList name="transport fracture">
@@ -1558,9 +1545,7 @@
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
-
     </ParameterList>
-
   </ParameterList>
 
   <ParameterList name="solvers">
@@ -1657,31 +1642,31 @@
       <ParameterList name="A">
         <Parameter name="ion size parameter" type="double" value="0e-17"/>
         <Parameter name="charge" type="int" value="0"/>
-        <Parameter name="gram molecular weight" type="double" value="1.00000000000000000"/>
+        <Parameter name="gram molecular weight" type="double" value="1.0"/>
       </ParameterList>
       <ParameterList name="B">
         <Parameter name="ion size parameter" type="double" value="0e-17"/>
         <Parameter name="charge" type="int" value="0"/>
-        <Parameter name="gram molecular weight" type="double" value="1.00000000000000000"/>
+        <Parameter name="gram molecular weight" type="double" value="1.0"/>
       </ParameterList>
       <ParameterList name="C">
         <Parameter name="ion size parameter" type="double" value="0e-17"/>
         <Parameter name="charge" type="int" value="0"/>
-        <Parameter name="gram molecular weight" type="double" value="1.00000000000000000"/>
+        <Parameter name="gram molecular weight" type="double" value="1.0"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="isotherms">
       <ParameterList name="A">
         <Parameter name="model" type="string" value="linear"/>
-        <Parameter name="parameters" type="Array(double)" value="{120000000.000000000}"/>
+        <Parameter name="parameters" type="Array(double)" value="{120000000.0}"/>
       </ParameterList>
       <ParameterList name="B">
         <Parameter name="model" type="string" value="langmuir"/>
-        <Parameter name="parameters" type="Array(double)" value="{3400000000.00000000, 1.23000000000000005e-11}"/>
+        <Parameter name="parameters" type="Array(double)" value="{3400000000.0, 1.23e-11}"/>
       </ParameterList>
       <ParameterList name="C">
         <Parameter name="model" type="string" value="freundlich"/>
-        <Parameter name="parameters" type="Array(double)" value="{45000000000.0000000, 4.55999999999999996e-12}"/>
+        <Parameter name="parameters" type="Array(double)" value="{45000000000.0, 4.55999999999999996e-12}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

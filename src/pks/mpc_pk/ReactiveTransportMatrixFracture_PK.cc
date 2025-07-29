@@ -36,7 +36,15 @@ ReactiveTransportMatrixFracture_PK::ReactiveTransportMatrixFracture_PK(
   const Teuchos::RCP<TreeVector>& soln)
   : PK_MPCSubcycled(pk_tree, global_list, S, soln)
 {
-  coupled_chemistry_pk_ = Teuchos::rcp_dynamic_cast<ChemistryMatrixFracture_PK>(sub_pks_[0]);
+  coupled_chemistry_id_ = -1;
+  for (int i = 0; i < 2; ++i) {
+    coupled_chemistry_pk_ = Teuchos::rcp_dynamic_cast<ChemistryMatrixFracture_PK>(sub_pks_[i]);
+    if (coupled_chemistry_pk_ != Teuchos::null) {
+      coupled_chemistry_id_ = i;
+      coupled_transport_id_ = 1 - i;
+      break;
+    }
+  }
 
   subcycling_ = my_list_->get<bool>("subcycle chemistry", true);
   AMANZI_ASSERT(master_ == 1);
@@ -107,7 +115,7 @@ ReactiveTransportMatrixFracture_PK::Setup()
   // communicate chemistry engine to transport.
   auto ic = coupled_chemistry_pk_->begin();
 
-  auto mpc_implicit = Teuchos::rcp_dynamic_cast<PK_MPC<PK_BDF>>(sub_pks_[1]);
+  auto mpc_implicit = Teuchos::rcp_dynamic_cast<PK_MPC<PK_BDF>>(sub_pks_[coupled_transport_id_]);
   if (mpc_implicit.get() != NULL) {
     for (auto it = mpc_implicit->begin(); it != mpc_implicit->end(); ++it, ++ic) {
       auto it1 = Teuchos::rcp_dynamic_cast<Transport::Transport_PK>(*it);
@@ -115,7 +123,7 @@ ReactiveTransportMatrixFracture_PK::Setup()
       it1->SetupChemistry(ic1);
     }
   } else {
-    auto mpc_explicit = Teuchos::rcp_dynamic_cast<PK_MPC<PK>>(sub_pks_[1]);
+    auto mpc_explicit = Teuchos::rcp_dynamic_cast<PK_MPC<PK>>(sub_pks_[coupled_transport_id_]);
     for (auto it = mpc_explicit->begin(); it != mpc_explicit->end(); ++it, ++ic) {
       auto it1 = Teuchos::rcp_dynamic_cast<Transport::Transport_PK>(*it);
       auto ic1 = Teuchos::rcp_dynamic_cast<AmanziChemistry::Chemistry_PK>(*ic);
@@ -133,8 +141,8 @@ ReactiveTransportMatrixFracture_PK::Setup()
 double
 ReactiveTransportMatrixFracture_PK::get_dt()
 {
-  double dTchem = sub_pks_[0]->get_dt();
-  double dTtran = sub_pks_[1]->get_dt();
+  double dTchem = sub_pks_[coupled_chemistry_id_]->get_dt();
+  double dTtran = sub_pks_[coupled_transport_id_]->get_dt();
 
   if (subcycling_) return dTtran;
 
@@ -151,11 +159,11 @@ ReactiveTransportMatrixFracture_PK::get_dt()
 bool
 ReactiveTransportMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
-  bool fail = sub_pks_[1]->AdvanceStep(t_old, t_new, reinit);
+  bool fail = sub_pks_[coupled_transport_id_]->AdvanceStep(t_old, t_new, reinit);
   if (fail) return fail;
 
   // advance the slave, subcycling if needed
-  double dTchem = sub_pks_[0]->get_dt();
+  double dTchem = coupled_chemistry_pk_->get_dt();
   double dt_next(dTchem), dt_done(0.0);
 
   try {
@@ -175,7 +183,7 @@ ReactiveTransportMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool
         dt_next /= 2;
       } else {
         dt_done += dt_next;
-        dt_next = sub_pks_[0]->get_dt();
+        dt_next = coupled_chemistry_pk_->get_dt();
       }
 
       // no state recovery is made, so the only option is to fail

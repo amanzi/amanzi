@@ -302,8 +302,8 @@ TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // Dispersion/diffusion solver
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", false);
 
-  if (use_dispersion_) {
-    if (use_effective_diffusion_) {
+  if (assumptions_.use_dispersion) {
+    if (assumptions_.use_effective_diffusion) {
       CalculateDispersionTensor_(time, *transport_phi, *wc);
       DiffusionSolverEffective(tcc_next, t_old, t_new);
     } else {

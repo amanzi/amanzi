@@ -55,11 +55,13 @@ class MFD3D_Diffusion_CurvedFace : public DeRham_Face {
     return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::FACE, DOF_Type::SCALAR, d_));
   }
 
-  // -- mass matrix
+  // -- mass matrix represents integral of v^t T v
   int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
   virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override;
 
   // -- inverse mass matrix is modified to reflect scaling of fluxes by area
+  //    it represents inverse of integral of v^t inv(K) v.
+  //    it is scaled as K as expected in mixed-hybrid methods
   virtual int MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W) override;
 
   // -- stiffness matrix

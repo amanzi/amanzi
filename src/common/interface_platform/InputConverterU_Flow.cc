@@ -59,26 +59,28 @@ InputConverterU::TranslateFlow_(const std::string& mode,
   std::string update_upwind("every timestep");
 
   // process expert parameters
-  bool flag;
-  node = GetUniqueElementByTagsString_(
-    "unstructured_controls, unstr_flow_controls, rel_perm_method", flag);
+  bool flag, use_overburden_stress(false);
+  std::string prefix("unstructured_controls, unstr_flow_controls, ");
+
+  node = GetUniqueElementByTagsString_(prefix + "rel_perm_method", flag);
   if (flag) rel_perm = mm.transcode(node->getTextContent());
 
   rel_perm_out = rel_perm;
   Amanzi::replace_all(rel_perm_out, "-", ": ");
   std::replace(rel_perm_out.begin(), rel_perm_out.end(), '_', ' ');
 
-  node = GetUniqueElementByTagsString_(
-    "unstructured_controls, unstr_flow_controls, update_upwind_frequency", flag);
+  node = GetUniqueElementByTagsString_(prefix + "update_upwind_frequency", flag);
   if (flag) update_upwind = mm.transcode(node->getTextContent());
   replace(update_upwind.begin(), update_upwind.end(), '_', ' ');
 
-  node = GetUniqueElementByTagsString_(
-    "unstructured_controls, unstr_flow_controls, optional_fields", flag);
+  node = GetUniqueElementByTagsString_(prefix + "optional_fields", flag);
   if (flag) {
     auto fields = CharToStrings_(mm.transcode(node->getTextContent()));
     out_list.set<Teuchos::Array<std::string>>("optional fields", fields);
   }
+
+  node = GetUniqueElementByTagsString_(prefix + "use_overburden_stress", flag);
+  if (flag) use_overburden_stress = GetTextContentL_(node);
 
   node = GetUniqueElementByTagsString_(
     "unstructured_controls, unstr_nonlinear_solver, max_correction_change", flag);
@@ -94,6 +96,9 @@ InputConverterU::TranslateFlow_(const std::string& mode,
     out_list.sublist("physical models and assumptions")
       .set<bool>("flow and transport in fractures", true);
   }
+
+  out_list.sublist("physical models and assumptions")
+    .set<bool>("use overburden stress", use_overburden_stress);
 
   if (pk_model == "darcy") {
     flow_list = &out_list;
@@ -718,8 +723,9 @@ InputConverterU::TranslateFlowBCs_(const std::string& domain)
 
   // correct list of boundary conditions for given domain
   bool flag;
-  if (domain == "matrix") node = GetUniqueElementByTagsString_("boundary_conditions", flag);
-  else node = GetUniqueElementByTagsString_("fracture_network, boundary_conditions", flag);
+  if (domain == "fracture")
+    node = GetUniqueElementByTagsString_("fracture_network, boundary_conditions", flag);
+  else node = GetUniqueElementByTagsString_("boundary_conditions", flag);
   if (!flag) return out_list;
 
   node_list = node->getChildNodes();

@@ -188,7 +188,7 @@
       <ParameterList name="TP 0">
         <ParameterList name="PK tree">
           <ParameterList name="transient:shallow water and transport">
-            <Parameter name="PK type" type="string" value="shallow water transport"/>
+            <Parameter name="PK type" type="string" value="shallow water and transport"/>
             <ParameterList name="transient:shallow water">
               <Parameter name="PK type" type="string" value="shallow water"/>
             </ParameterList>

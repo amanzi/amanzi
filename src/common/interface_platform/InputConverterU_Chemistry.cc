@@ -66,7 +66,7 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
   if (engine == "amanzi") {
     out_list.set<std::string>("chemistry model", "Amanzi");
 
-    node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
+    node = GetPKChemistryPointer_(flag);
 
     if (bgdfilename != "") {
       auto pair = Keys::split(bgdfilename, '.');
@@ -459,10 +459,11 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
   out_list.set<std::string>("activity model", activity_model);
   if (pitzer_database.size() > 0)
     out_list.set<std::string>("Pitzer database file", pitzer_database);
-  out_list.set<int>("maximum Newton iterations", max_itrs);
-  out_list.set<double>("tolerance", tol);
-  out_list.set<bool>("log formulation", log_form);
-  out_list.set<std::string>("convergence criterion", conv_criterion);
+  out_list.set<int>("maximum Newton iterations", max_itrs)
+    .set<double>("tolerance", tol)
+    .set<bool>("log formulation", log_form)
+    .set<std::string>("convergence criterion", conv_criterion)
+    .set<std::string>("primary variable password", "state");
 
   // timestep controller
   if (dt_method == "simple") {
@@ -519,7 +520,7 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
   }
 
   // miscalleneous
-  out_list.set<double>("initial conditions time", ic_time_);
+  out_list.set<double>("initial conditions time", ic_time_chemistry_);
   out_list.set<int>("number of component concentrations", comp_names_all_.size());
 
   // assumption
@@ -527,30 +528,6 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
 
   out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
   return out_list;
-}
-
-
-/* ******************************************************************
-* Helper utility for two stuctures of process_kernel lists
-****************************************************************** */
-DOMNode*
-InputConverterU::GetPKChemistryPointer_(bool& flag)
-{
-  MemoryManager mm;
-  DOMNode* node = NULL;
-  DOMNodeList* children;
-
-  node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
-  if (!flag) {
-    node = GetUniqueElementByTagsString_("process_kernels", flag);
-    children = static_cast<DOMElement*>(node)->getElementsByTagName(mm.transcode("pk"));
-    for (int i = 0; i < children->getLength(); ++i) {
-      node = GetUniqueElementByTagsString_(children->item(i), "chemistry", flag);
-      if (flag) break;
-    }
-  }
-
-  return node;
 }
 
 } // namespace AmanziInput

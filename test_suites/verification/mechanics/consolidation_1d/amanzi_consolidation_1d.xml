@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="1.6-dev">
+<amanzi_input type="unstructured" version="1.7-dev">
   <model_description name="Terzaghi problem">
     <author>Konstantin Lipnikov</author>
     <units>
@@ -41,7 +41,7 @@
     <pk mode="transient">
       <mechanics model="elastic" state="on"/>
       <flow model="richards" state="on"/>
-      <weakly_coupled name="mpc1">flow,mechanics</weakly_coupled>
+      <weakly_coupled name="mpc">flow,mechanics</weakly_coupled>
     </pk>
   </process_kernels>
 

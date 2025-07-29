@@ -53,16 +53,6 @@ FlowReactiveTransport_PK::set_dt(double dt)
 
 
 // -----------------------------------------------------------------------------
-// Make necessary operatios by the end of the timesteps.
-// -----------------------------------------------------------------------------
-void
-FlowReactiveTransport_PK::CommitStep(double t_old, double t_new, const Tag& tag)
-{
-  sub_pks_[slave_]->CommitStep(t_old, t_new, tag);
-}
-
-
-// -----------------------------------------------------------------------------
 // Advance each sub-PK individually, returning a failure as soon as possible.
 // -----------------------------------------------------------------------------
 bool
@@ -75,11 +65,9 @@ FlowReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   if (fail) return fail;
 
   master_dt_ = t_new - t_old;
-
   sub_pks_[master_]->CommitStep(t_old, t_new, Tags::DEFAULT);
 
   slave_dt_ = sub_pks_[slave_]->get_dt();
-
   if (slave_dt_ > master_dt_) slave_dt_ = master_dt_;
 
   // advance the slave, subcycling if needed
@@ -101,10 +89,10 @@ FlowReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       // if fail, cut the step and try again
       dt_next /= 2;
     } else {
-      // if success, commit the state and increment to next intermediate
-      // -- etc: unclear if state should be commited or not?
       // set the intermediate time
       S_->set_intermediate_time(t_old + dt_done + dt_next);
+
+      // -- etc: unclear if state should be commited or not?
       sub_pks_[slave_]->CommitStep(t_old + dt_done, t_old + dt_done + dt_next, Tags::DEFAULT);
       dt_done += dt_next;
 
@@ -112,7 +100,6 @@ FlowReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       dt_next = sub_pks_[slave_]->get_dt();
     }
 
-    // dt_next = sub_pks_[slave_]->get_dt();
     // no state recovery (e.g. pressure) is made, so the only option is to fail.
     if (dt_next < min_dt_)
       Exceptions::amanzi_throw("Failure in ReactiveTransport_PK: small timestep.");
@@ -121,15 +108,18 @@ FlowReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     done = std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1 * min_dt_;
   }
 
-  {
-    const Epetra_MultiVector& tcc =
-      *S_->Get<CompositeVector>("total_component_concentration", tag_next_)
-         .ViewComponent("cell", false);
-    std::cout << "post FlowReactiveTransport Advance tcc = " << tcc[0][0] << std::endl;
-  }
-
   // we reach this point when subcycling has been completed
   return false;
+}
+
+
+// -----------------------------------------------------------------------------
+// Make necessary operatios by the end of the timesteps.
+// -----------------------------------------------------------------------------
+void
+FlowReactiveTransport_PK::CommitStep(double t_old, double t_new, const Tag& tag)
+{
+  sub_pks_[slave_]->CommitStep(t_old, t_new, tag);
 }
 
 } // namespace Amanzi

@@ -3390,5 +3390,18 @@ Mesh_MSTK::run_internal_mstk_checks() const
 }
 
 
+//--------------------------------------
+// rebuild Alanzi mesh
+//--------------------------------------
+void
+Mesh_MSTK::rebuildAll()
+{
+  cells_initialized_ = false;
+  faces_initialized_ = false;
+  edges_initialized_ = false;
+
+  post_create_steps_();
+}
+
 } // namespace AmanziMesh
 } // namespace Amanzi

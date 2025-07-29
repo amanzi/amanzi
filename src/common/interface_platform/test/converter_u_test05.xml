@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="1.6-dev">
+<amanzi_input type="unstructured" version="1.7-dev">
   <model_description name="flow and transport in fractures">
     <author>Konstantin Lipnikov (TEST 5)</author>
     <units>
@@ -35,9 +35,12 @@
   </definitions>
 
   <process_kernels>
-    <flow model="constant" state="on" />
-    <transport state="on" />
-    <chemistry engine="none" state="off" />
+    <pk mode="steady">
+      <flow model="saturated" state="on"/>
+    </pk>
+    <pk mode="transient">
+      <transport state="on" />
+    </pk>
   </process_kernels>
 
   <phases>
