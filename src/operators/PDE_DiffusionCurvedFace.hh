@@ -62,9 +62,12 @@ Additional options available only for the MFD family of discretizations include:
   non-symmetric (but positive definite) tensors. Available options are *symmetric*
   (default) and *nonsymmetric*.
 
-* `"penalty`" ``[double]`` penalty for normal displacement of the boundary.
+* `"penalty`" ``[double]`` penalizes displacement normal to the boundary.
   Zero penalty means no equal weights.
 
+* `"check topology compatibility`" checks impirical condition between numbers 
+  of faces and cells which is typically sufficient for solvubility of internal 
+  algebraic problems.
 */
 
 /*
@@ -178,6 +181,7 @@ class PDE_DiffusionCurvedFace : public virtual PDE_Diffusion {
   int schema_prec_dofs_;
 
  private:
+  bool check_topology_compatibility_;
   double penalty_;
 };
 

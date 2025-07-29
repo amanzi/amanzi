@@ -81,7 +81,7 @@ namespace Operators {
 
 class PDE_Abstract : public PDE_HelperDiscretization {
  public:
-  PDE_Abstract(Teuchos::ParameterList& plist, Teuchos::RCP<Operator> global_op)
+  PDE_Abstract(Teuchos::ParameterList& plist, const Teuchos::RCP<Operator>& global_op)
     : PDE_HelperDiscretization(global_op),
       coef_type_(CoefType::CONSTANT),
       static_matrices_initialized_(false)
@@ -89,7 +89,7 @@ class PDE_Abstract : public PDE_HelperDiscretization {
     Init_(plist);
   }
 
-  PDE_Abstract(Teuchos::ParameterList& plist, Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+  PDE_Abstract(Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : PDE_HelperDiscretization(mesh),
       coef_type_(CoefType::CONSTANT),
       static_matrices_initialized_(false)

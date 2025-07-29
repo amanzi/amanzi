@@ -324,7 +324,10 @@ PDE_DiffusionCurvedFace::Init_(Teuchos::ParameterList& plist)
   int d = mesh_->getSpaceDimension();
   int nfaces_all = mesh_->getMap(AmanziMesh::Entity_kind::FACE, false).NumGlobalElements();
   int ncells_all = mesh_->getMap(AmanziMesh::Entity_kind::CELL, false).NumGlobalElements();
-  AMANZI_ASSERT(nfaces_all > d * ncells_all);
+  if (check_topology_compatibility_ && nfaces_all <= d * ncells_all) {
+    Errors::Message msg("The number of faces is smaller three times the number of cells.");
+    Exceptions::amanzi_throw(msg);
+  }
 
   if (weight_.get()) {
     AMANZI_ASSERT(weight_->HasComponent("face"));
@@ -332,6 +335,7 @@ PDE_DiffusionCurvedFace::Init_(Teuchos::ParameterList& plist)
   }
 
   penalty_ = plist.get<double>("penalty", 0.0);
+  check_topology_compatibility_ = plist.get<bool>("check topology compatibility", true);
 
   if (global_op_ == Teuchos::null) { // create operator
     global_op_schema_ = OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE;
