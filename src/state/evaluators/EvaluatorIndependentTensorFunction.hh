@@ -21,8 +21,8 @@ This evaluator is used by providing the option:
 
 `"evaluator type`" == `"independent variable tensor`"
 
-.. _independent-variable-tensor-function-evaluator-spec:
-.. admonition:: independent-variable-tensor-function-evaluator-spec
+.. _evaluator-independent-variable-tensor-spec:
+.. admonition:: evaluator-independent-variable-tensor-spec
 
    * `"tensor type`" ``[string]`` One of:
      - `"scalar`" A single scalar, isotropic (1 DoF)
