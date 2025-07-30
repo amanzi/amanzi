@@ -303,8 +303,8 @@ BlockVector::Dot(const BlockVector& other, double* result) const
 {
   *result = 0.0;
   for (int i = 0; i != num_components_; ++i) {
-    double intermediate_result[data_[i]->NumVectors()];
-    int ierr = data_[i]->Dot(*(other.data_[i]), intermediate_result);
+    std::vector<double> intermediate_result(data_[i]->NumVectors());
+    int ierr = data_[i]->Dot(*(other.data_[i]), intermediate_result.data());
     if (ierr) return ierr;
     for (int lcv_vector = 0; lcv_vector != data_[i]->NumVectors(); ++lcv_vector) {
       *result += intermediate_result[lcv_vector];

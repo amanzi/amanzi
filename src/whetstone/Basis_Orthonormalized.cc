@@ -54,7 +54,7 @@ Basis_Orthonormalized::Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
   for (auto it = monomial_scales_.begin(); it < monomial_scales_.end(); ++it) {
     int k = it.MonomialSetPosition();
     const int* multi_index = it.multi_index();
-    int index[d];
+    int index[3];
 
     int m(0);
     for (int i = 0; i < d; ++i) {

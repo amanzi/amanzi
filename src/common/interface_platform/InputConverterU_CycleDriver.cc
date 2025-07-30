@@ -786,6 +786,7 @@ InputConverterU::TranslateSinglePhysicsPK_(const std::string& prefix,
   } else if (pkname == "mechanics") {
     return TranslateMechanics_(domain);
   }
+  return Teuchos::ParameterList();
 }
 
 

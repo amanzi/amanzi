@@ -233,5 +233,5 @@ TEST(OPERATOR_DIFFUSION_CURVED_3D)
 {
   RunTestDiffusionCurved(3, "test/random3D_05.exo", 1);
   RunTestDiffusionCurved(3, "test/hexes.exo", 1);
-  // RunTestDiffusionCurved(3, "test/sphere.exo", 0, true);
+  RunTestDiffusionCurved(3, "test/shell.exo", 0, true);
 }
