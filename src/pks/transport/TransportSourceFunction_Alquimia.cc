@@ -27,7 +27,10 @@ TransportSourceFunction_Alquimia::TransportSourceFunction_Alquimia(
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
   Teuchos::RCP<AmanziChemistry::Alquimia_PK> alquimia_pk,
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine)
-  : mesh_(mesh), alquimia_pk_(alquimia_pk), chem_engine_(chem_engine)
+  : mesh_(mesh),
+    alquimia_pk_(alquimia_pk),
+    chem_engine_(chem_engine),
+    TransportDomainFunction(plist)
 {
   // Check arguments.
   if (chem_engine_ != Teuchos::null) {
@@ -47,6 +50,8 @@ TransportSourceFunction_Alquimia::TransportSourceFunction_Alquimia(
   std::vector<double> times = plist.get<Teuchos::Array<double>>("times").toVector();
   std::vector<std::string> conditions =
     plist.get<Teuchos::Array<std::string>>("geochemical conditions").toVector();
+
+  set_location("interior");
 
   // Function of geochemical conditions and the associates regions.
   f_ = Teuchos::rcp(new FunctionTabularString(times, conditions));
