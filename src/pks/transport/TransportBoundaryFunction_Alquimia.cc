@@ -27,7 +27,10 @@ TransportBoundaryFunction_Alquimia::TransportBoundaryFunction_Alquimia(
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
   Teuchos::RCP<AmanziChemistry::Alquimia_PK> alquimia_pk,
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine)
-  : name_("alquimia bc"), mesh_(mesh), alquimia_pk_(alquimia_pk), chem_engine_(chem_engine)
+  : mesh_(mesh),
+    alquimia_pk_(alquimia_pk),
+    chem_engine_(chem_engine),
+    TransportDomainFunction(plist)
 {
   // Check arguments.
   if (chem_engine_ != Teuchos::null) {

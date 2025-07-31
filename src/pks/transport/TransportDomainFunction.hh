@@ -54,7 +54,7 @@ class TransportDomainFunction {
   virtual std::string getName() const { return name_; }
   virtual DomainFunction_kind getType() const = 0;
 
-  // location where model is applied (boundary or interface)
+  // location where model is applied (boundary or interface or interior)
   void set_location(const std::string& location) { location_ = location; }
   std::string get_location() const { return location_; }
 
