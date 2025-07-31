@@ -205,22 +205,26 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framewor
 
     } else if (r_name == "Enumerated") {
       if (!mesh->isValidSetType(r->get_type() , AmanziMesh::Entity_kind::CELL)) continue;
+      // gids of cells 1,2,3 depend on mesh partition
+      if (mesh->getComm()->NumProc() > 1) continue;
+      if (mesh->getParentMesh().get() != nullptr) continue;
 
       // if (framework == Framework::MSTK) { // logical only works in MSTK
-      // // cells 1,2,3 -- only supported by MSTK
-      // NOT WORKING!
-      // int n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
-      // CHECK_CLOSE_SUMALL(3, n_ents, *mesh->getComm());
+      int n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+      CHECK_CLOSE_SUMALL(3, n_ents, *mesh->getComm());
 
-      // auto ents = mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
-      // std::vector<int> ents_found(3, 0);
-      // for (const auto& e : ents) {
-      //   int gid = mesh->getMap(AmanziMesh::Entity_kind::CELL, false).GID(e);
-      //   if (gid == 1) ents_found[0] = 1;
-      //   if (gid == 2) ents_found[1] = 1;
-      //   if (gid == 3) ents_found[2] = 1;
-      // }
-      // CHECK_MPI_ALL(ents_found, *mesh->getComm());
+      auto ents = mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+      std::vector<int> ents_found(3, 0);
+      for (const auto& e : ents) {
+         int gid = mesh->getMap(AmanziMesh::Entity_kind::CELL, false).GID(e);
+         if (gid == 1) ents_found[0] = 1;
+         if (gid == 2) ents_found[1] = 1;
+         if (gid == 3) ents_found[2] = 1;
+      }
+      CHECK_MPI_ALL(ents_found, *mesh->getComm());
+
+      n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
+      CHECK_CLOSE_SUMALL(18, n_ents, *mesh->getComm());
       // }
 
     } else if (r_name == "Face 106" || r_name == "Top Face Plane") {
@@ -594,23 +598,26 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framework
 
     } else if (r_name == "Enumerated") {
       if (!mesh->isValidSetType(r->get_type() , AmanziMesh::Entity_kind::CELL)) continue;
+      // gids of cells 1,2,3 depend on mesh partition
+      if (mesh->getComm()->NumProc() > 1) continue;
+      if (mesh->getParentMesh().get() != nullptr) continue;
 
       // if (framework == Framework::MSTK) { // logical only works in MSTK
-      // // cells 1,2,3 -- only supported by MSTK
-      // NOT WORKING!
-      // int n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
-      // CHECK_CLOSE_SUMALL(3, n_ents, *mesh->getComm());
+      int n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+      CHECK_CLOSE_SUMALL(3, n_ents, *mesh->getComm());
 
-      // AmanziMesh::Entity_ID_View ents;
-      // ents = mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
-      // std::vector<int> ents_found(3, 0);
-      // for (const auto& e : ents) {
-      //   int gid = mesh->getMap(AmanziMesh::Entity_kind::CELL, false).GID(e);
-      //   if (gid == 1) ents_found[0] = 1;
-      //   if (gid == 2) ents_found[1] = 1;
-      //   if (gid == 3) ents_found[2] = 1;
-      // }
-      // CHECK_MPI_ALL(ents_found, *mesh->getComm());
+      auto ents = mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+      std::vector<int> ents_found(3, 0);
+      for (const auto& e : ents) {
+        int gid = mesh->getMap(AmanziMesh::Entity_kind::CELL, false).GID(e);
+        if (gid == 1) ents_found[0] = 1;
+        if (gid == 2) ents_found[1] = 1;
+        if (gid == 3) ents_found[2] = 1;
+      }
+      CHECK_MPI_ALL(ents_found, *mesh->getComm());
+
+      n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
+      CHECK_CLOSE_SUMALL(9, n_ents, *mesh->getComm());
       // }
 
     } else if (r_name == "Face 103" || r_name == "Side Plane") {

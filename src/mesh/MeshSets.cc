@@ -338,7 +338,7 @@ resolveIDMeshSetFromParent(const AmanziGeometry::Region& region,
   if (kind == Entity_kind::NODE) {
     if (parent_kind != Entity_kind::NODE) {
       Errors::Message msg;
-      msg << "Mesh: cannot resolve entities of type " << to_string(kind)
+      msg << "Mesh: cannot resolve entities of type NODE"
           << " from a parent mesh region \"" << region.get_name()
           << "\" which supplies entities of type " << to_string(parent_kind);
       Exceptions::amanzi_throw(msg);
@@ -524,16 +524,19 @@ resolveMeshSetEnumerated(const AmanziGeometry::RegionEnumerated& region,
                          const Parallel_kind ptype,
                          const MeshCache<MemSpace_kind::HOST>& mesh)
 {
-  if (kind == createEntityKind(region.entity_str())) {
-    Entity_ID_List region_entities = region.entities();
-    bool ghosted = (ptype != Parallel_kind::OWNED);
-    auto& mesh_map = mesh.getMap(kind, ghosted);
+  auto kind_rgn = createEntityKind(region.entity_str());
 
-    // note that we have to sort these by owned, then ghosted
+  const Entity_ID_List region_entities = region.entities();
+  bool ghosted = (ptype != Parallel_kind::OWNED);
+  auto& mesh_map = mesh.getMap(kind, ghosted);
+
+  // note that we have to sort these by owned, then ghosted
+  if (kind == kind_rgn) {
     std::size_t cpt = 0, cpt_g = 0;
     Entity_ID_View result("SetEnumerated", mesh_map.NumMyElements());
     Entity_ID_View result_g("ghosted SetEnumerated", mesh_map.NumMyElements());
     Entity_ID nowned = mesh.getNumEntities(kind, Parallel_kind::OWNED);
+
     for (Entity_GID gid : region_entities) {
       Entity_ID lid = mesh_map.LID(gid);
       if (lid >= 0) {
@@ -552,6 +555,45 @@ resolveMeshSetEnumerated(const AmanziGeometry::RegionEnumerated& region,
 
     Kokkos::resize(result, cpt);
     return result;
+
+  } else if (kind == Entity_kind::NODE) {
+    std::size_t cpt = 0, cpt_g = 0;
+    auto& mesh_map_rgn = mesh.getMap(kind_rgn, ghosted);
+
+    Entity_ID_View result("SubsetEnumerated", mesh_map.NumMyElements());
+    Entity_ID_View result_g("ghosted SubsetEnumerated", mesh_map.NumMyElements());
+    Entity_ID nowned = mesh.getNumEntities(kind, Parallel_kind::OWNED);
+
+    Kokkos::deep_copy(result, 0);
+    for (Entity_GID gid : region_entities) {
+      Entity_ID lid = mesh_map_rgn.LID(gid);
+      if (lid >= 0 && kind_rgn == Entity_kind::FACE) {
+        auto nodes = mesh.getFaceNodes(lid);
+        for (auto v : nodes) result[v] = 1;
+      } else if (lid >= 0 && kind_rgn == Entity_kind::CELL) {
+        auto nodes = mesh.getCellNodes(lid);
+        for (auto v : nodes) result[v] = 1;
+      }
+    }
+
+    for (int n = 0; n < mesh_map.NumMyElements(); ++n) {
+      if (result[n] == 1) {
+        if (n < nowned) {
+          result[cpt++] = n;
+        } else {
+          result_g[cpt_g++] = n;
+        }
+      }
+    }
+
+    // now copy ghosted into end of owned
+    for (std::size_t i = 0; i != cpt_g; ++i) {
+      result[cpt++] = result_g[i];
+    }
+
+    Kokkos::resize(result, cpt);
+    return result;
+
   } else {
     return Entity_ID_View();
   }
