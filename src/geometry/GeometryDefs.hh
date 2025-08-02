@@ -109,7 +109,9 @@ operator<<(std::ostream& os, const RegionType& rtype)
 enum class LifeCycleType { PERMANENT = 0, TEMPORARY };
 
 
-enum class BoolOpType { NOBOOLEAN = -1, COMPLEMENT, UNION, INTERSECT, SUBTRACT };
+// Note boundary of a set is a topological concept, not purely geometric.
+// It may be implemented using closure and complement operations.
+enum class BoolOpType { NOBOOLEAN = -1, COMPLEMENT, UNION, INTERSECT, SUBTRACT, BOUNDARY };
 
 // arbitrary number to avoid clashing
 // with IDs of LabeledSet regions

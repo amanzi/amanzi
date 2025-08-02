@@ -92,6 +92,7 @@ enum Entity_kind : int {
   FACE = 3,
   CELL = 4,
   BOUNDARY_NODE = 11,
+  BOUNDARY_EDGE = 12,
   BOUNDARY_FACE = 13
 };
 
@@ -105,6 +106,7 @@ createEntityKind(const std::string& instring, bool or_die = true)
   if (estring == "cell") return Entity_kind::CELL;
   else if (estring == "face") return Entity_kind::FACE;
   else if (estring == "boundary_face") return Entity_kind::BOUNDARY_FACE;
+  else if (estring == "boundary_edge") return Entity_kind::BOUNDARY_EDGE;
   else if (estring == "boundary_node") return Entity_kind::BOUNDARY_NODE;
   else if (estring == "edge") return Entity_kind::EDGE;
   else if (estring == "node") return Entity_kind::NODE;
@@ -131,6 +133,8 @@ to_string(const Entity_kind kind)
       return "face";
     case (Entity_kind::BOUNDARY_FACE):
       return "boundary_face";
+    case (Entity_kind::BOUNDARY_EDGE):
+      return "boundary_edge";
     case (Entity_kind::BOUNDARY_NODE):
       return "boundary_node";
     case (Entity_kind::EDGE):

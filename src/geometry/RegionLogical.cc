@@ -45,6 +45,7 @@ RegionLogical::RegionLogical(const std::string& name,
   else if (operation_str == "union") operation_ = BoolOpType::UNION;
   else if (operation_str == "intersect") operation_ = BoolOpType::INTERSECT;
   else if (operation_str == "subtract") operation_ = BoolOpType::SUBTRACT;
+  else if (operation_str == "boundary") operation_ = BoolOpType::BOUNDARY;
   else {
     Errors::Message mesg("Unknown logical operation type requested on regions");
     amanzi_throw(mesg);

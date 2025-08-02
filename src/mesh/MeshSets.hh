@@ -93,6 +93,12 @@ View_type<const Entity_ID, MemSpace_kind::HOST> resolveMeshSetBoundary(
   const Parallel_kind ptype,
   const MeshCache<MemSpace_kind::HOST>& mesh);
 
+View_type<const Entity_ID, MemSpace_kind::HOST> resolveMeshSetRegionBoundary(
+  const std::string& rname,
+  const Entity_kind kind,
+  const Parallel_kind ptype,
+  const MeshCache<MemSpace_kind::HOST>& mesh);
+
 View_type<const Entity_ID, MemSpace_kind::HOST> resolveMeshSetEnumerated(
   const AmanziGeometry::RegionEnumerated& region,
   const Entity_kind kind,
