@@ -99,6 +99,12 @@
       <Parameter name="high coordinate" type="Array(double)" value="{0.33, 1.0, 1.0}"/>
     </ParameterList>
   </ParameterList>
+  <ParameterList name="Bottom Surface">
+    <ParameterList name="region: box">
+      <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
+      <Parameter name="high coordinate" type="Array(double)" value="{1.0, 1.0, 0.0}"/>
+    </ParameterList>
+  </ParameterList>
   <ParameterList name="Point">
     <ParameterList name="region: point">
       <Parameter name="coordinate" type="Array(double)" value="{0.5, 0.5, 0.5}"/>
@@ -127,6 +133,12 @@
     <ParameterList name="region: logical">
       <Parameter name="operation" type="string" value="intersect"/>
       <Parameter name="regions" type="Array(string)" value="{Left Box, Bottom LS}"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="Boundary_Bottom Surface">
+    <ParameterList name="region: logical">
+      <Parameter name="operation" type="string" value="boundary"/>
+      <Parameter name="regions" type="Array(string)" value="{Bottom Surface}"/>
     </ParameterList>
   </ParameterList>
   <!-- empty sets -->

@@ -31,7 +31,9 @@ resolveMeshSet(const AmanziGeometry::Region& region,
 {
   // special function to deal with BOUNDARY_*, so no other function needs to
   // deal with them.
-  if (kind == Entity_kind::BOUNDARY_NODE || kind == Entity_kind::BOUNDARY_FACE) {
+  if (kind == Entity_kind::BOUNDARY_NODE || 
+      kind == Entity_kind::BOUNDARY_EDGE || 
+      kind == Entity_kind::BOUNDARY_FACE) {
     return Impl::resolveBoundaryEntityMeshSet(region, kind, ptype, mesh);
   }
 
@@ -480,7 +482,7 @@ resolveMeshSetAll(const AmanziGeometry::Region& region,
 
 
 //
-// Helper function to return BOUNDARY entities
+// Helper function to return domain BOUNDARY entities
 //
 View_type<const Entity_ID, MemSpace_kind::HOST>
 resolveMeshSetBoundary(const AmanziGeometry::Region& region,
@@ -517,6 +519,59 @@ resolveMeshSetBoundary(const AmanziGeometry::Region& region,
 
   return ents;
 }
+
+
+//
+// Helper function to return region BOUNDARY entities
+//
+View_type<const Entity_ID, MemSpace_kind::HOST>
+resolveMeshSetRegionBoundary(const std::string& rname,
+                             const Entity_kind kind,
+                             const Parallel_kind ptype,
+                             const MeshCache<MemSpace_kind::HOST>& mesh)
+{
+  AMANZI_ASSERT(kind != Entity_kind::CELL);
+  AMANZI_ASSERT(kind != Entity_kind::NODE);
+  Entity_kind kind_up = Entity_kind(kind + 1);
+
+  auto ents_up = mesh.getSetEntities(rname, kind_up, ptype);
+  auto ents = mesh.getSetEntities(rname, kind, ptype);
+
+  bool ghosted = (ptype != Parallel_kind::OWNED);
+  auto& mesh_map = mesh.getMap(kind, ghosted);
+
+  Entity_ID_View result("SetLogicalBnd", mesh_map.NumMyElements());
+  Entity_ID_View result_g("ghosted SetLogicalBnd", mesh_map.NumMyElements());
+  Entity_ID nowned = mesh.getNumEntities(kind, Parallel_kind::OWNED);
+
+  Kokkos::deep_copy(result, 0);
+  for (Entity_ID lid : ents_up) {
+    if (kind_up == Entity_kind::FACE) {
+      const auto& edges = mesh.getFaceEdges(lid);
+      for (auto e : edges) result[e]++;
+    } else if (kind_up == Entity_kind::CELL) {
+      const auto& faces = mesh.getCellFaces(lid);
+      for (auto f : faces) result[f]++;
+    }
+  }
+
+  std::size_t count = 0, count_g = 0;
+  for (int n = 0; n < mesh_map.NumMyElements(); ++n) {
+    if (result[n] == 1) {
+      if (n < nowned) { result[count++] = n;
+      } else {
+        result_g[count_g++] = n;
+      }
+    }
+  }
+
+  for (std::size_t i = 0; i != count_g; ++i) {
+    result[count++] = result_g[i];
+  }
+  Kokkos::resize(result, count);
+  return result;
+}
+
 
 View_type<const Entity_ID, MemSpace_kind::HOST>
 resolveMeshSetEnumerated(const AmanziGeometry::RegionEnumerated& region,
@@ -754,6 +809,10 @@ resolveMeshSetLogical(const AmanziGeometry::RegionLogical& region,
                             std::back_inserter(lresult));
         vectorToConstView(result, lresult);
       }
+    } break;
+    case (AmanziGeometry::BoolOpType::BOUNDARY): {
+      const auto& rname = region.get_component_regions()[0];
+      result = resolveMeshSetRegionBoundary(rname, kind, ptype, mesh);
     } break;
     default: {
       // note this should have errored already!
