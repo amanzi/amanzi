@@ -40,7 +40,10 @@ TEST(MESH_SETS_3CUBE)
     std::cout << std::endl
               << "Testing 3D Box 3x3x3 with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh = createStructuredUnitHex(Preference{ frm }, 3, 3, 3, comm, gm);
+    auto plist = Teuchos::rcp(new Teuchos::ParameterList());
+    plist->set<bool>("request edges", true);
+    plist->set<bool>("request faces", true);
+    auto mesh = createStructuredUnitHex(Preference{ frm }, 3, 3, 3, comm, gm, plist);
     testHexMeshSets3x3x3(mesh, false, frm);
   }
 }

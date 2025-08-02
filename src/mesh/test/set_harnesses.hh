@@ -457,9 +457,22 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framewor
         CHECK_CLOSE_SUMALL(0, n_ents, *mesh->getComm());
       }
 
+    } else if (r_name == "Boundary_Bottom Surface") {
+      if (mesh->hasEdges()) {
+        CHECK(mesh->isValidSetType(r->get_type(), AmanziMesh::Entity_kind::CELL));
+
+        int n_ents =
+          mesh->getSetSize(r_name, AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_kind::OWNED);
+        CHECK_CLOSE_SUMALL(12, n_ents, *mesh->getComm());
+      }
+
     } else if (r_name == "Unit Hex") {
       // pass -- this is used for extraction method
       continue;
+
+    } else if (r_name == "Bottom Surface") {
+      continue;
+
     } else {
       std::cout << "Bad set name: \"" << r_name << "\"" << std::endl;
       CHECK(false);
@@ -473,7 +486,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framewor
 //
 
 //
-// Tests Mesh sets on a 3x3x3 hex
+// Tests Mesh sets on a 3x3 qquad
 //
 template<class Mesh_type>
 void
