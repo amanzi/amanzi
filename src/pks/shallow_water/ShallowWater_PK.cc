@@ -92,12 +92,12 @@ ShallowWater_PK::Setup()
   // constant fields
   //-------------------------------
   if (!S_->HasRecord("gravity")) {
-    S_->Require<AmanziGeometry::Point>("gravity", Tags::DEFAULT, "state");
+    S_->Require<AmanziGeometry::Point>("gravity", Tags::DEFAULT);
   }
 
   // required for calculating hydrostatic pressure
-  S_->Require<double>("const_fluid_density", Tags::DEFAULT, "state");
-  S_->Require<double>("atmospheric_pressure", Tags::DEFAULT, "state");
+  S_->Require<double>("const_fluid_density", Tags::DEFAULT);
+  S_->Require<double>("atmospheric_pressure", Tags::DEFAULT);
 
   //-------------------------------
   // primary fields
