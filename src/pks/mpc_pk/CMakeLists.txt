@@ -107,7 +107,8 @@ if (ENABLE_AmanziPhysicsModule)
       SoluteDiffusionMatrixFracture.cc
       SurfaceSubsurface_PK.cc
       WaterStorageDarcyStressSplit.cc
-      WaterStorageStressSplit.cc)
+      WaterStorageStressSplit.cc
+      )
 
   set(mpc_tree_link_libs pks flow transport multiphase shallow_water time_integration data_structures state)
 
@@ -120,15 +121,17 @@ else()
       PK_MPCSubcycled.hh
       PK_MPC.hh
       PK_MPCAdditive.hh
-      TransportMatrixFracture_PK.hh    
-      ReactiveTransport_PK.hh)
+      # TransportMatrixFracture_PK.hh    
+      # ReactiveTransport_PK.hh
+      )
 
   set(mpc_tree_src_files 
       PK_MPCWeak.cc 
       PK_MPCSequential.cc 
       PK_MPCSubcycled.cc 
-      TransportMatrixFracture_PK.cc        
-      ReactiveTransport_PK.cc)
+      # TransportMatrixFracture_PK.cc        
+      # ReactiveTransport_PK.cc
+      )
 
    set(mpc_tree_link_libs pks transport time_integration data_structures state)
 

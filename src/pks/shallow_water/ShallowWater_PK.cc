@@ -11,7 +11,6 @@
 
 /*
  Shallow water PK
-
 */
 
 #include <algorithm>

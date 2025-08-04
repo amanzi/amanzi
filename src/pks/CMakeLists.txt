@@ -108,9 +108,9 @@ endif()
   add_subdirectory(chemistry)
   add_subdirectory(transport)
   add_subdirectory(shallow_water)
+  add_subdirectory(mpc_pk)
 
 if (ENABLE_AmanziPhysicsModule)
-  add_subdirectory(dummy)
-  add_subdirectory(mpc_pk)
+  add_subdirectory(dummy) 
 endif()
 
