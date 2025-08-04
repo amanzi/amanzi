@@ -41,34 +41,34 @@ RegisteredPKFactory<PK_MPCStrong<PK_BDF>> PK_MPCStrong<PK_BDF>::reg_("mpc strong
 RegisteredPKFactory<PK_MPCSubcycled> PK_MPCSubcycled::reg_("mpc subcycled");
 RegisteredPKFactory<PK_MPCWeak> PK_MPCWeak::reg_("mpc weak");
 
-RegisteredPKFactory<FlowEnergy_PK> FlowEnergy_PK::reg_("thermal flow");
-RegisteredPKFactory<FlowEnergyMatrixFracture_PK> FlowEnergyMatrixFracture_PK::reg_(
-  "thermal flow matrix fracture");
-RegisteredPKFactory<FlowReactiveTransport_PK> FlowReactiveTransport_PK::reg_(
-  "flow reactive transport");
-RegisteredPKFactory<FlowMatrixFracture_PK> FlowMatrixFracture_PK::reg_("darcy matrix fracture");
-RegisteredPKFactory<MultiphaseMatrixFracture_PK> MultiphaseMatrixFracture_PK::reg_(
-  "multiphase matrix fracture");
+// RegisteredPKFactory<FlowEnergy_PK> FlowEnergy_PK::reg_("thermal flow");
+// RegisteredPKFactory<FlowEnergyMatrixFracture_PK> FlowEnergyMatrixFracture_PK::reg_(
+//   "thermal flow matrix fracture");
+// RegisteredPKFactory<FlowReactiveTransport_PK> FlowReactiveTransport_PK::reg_(
+//   "flow reactive transport");
+// RegisteredPKFactory<FlowMatrixFracture_PK> FlowMatrixFracture_PK::reg_("darcy matrix fracture");
+// RegisteredPKFactory<MultiphaseMatrixFracture_PK> MultiphaseMatrixFracture_PK::reg_(
+//   "multiphase matrix fracture");
 
-RegisteredPKFactory<ReactiveTransport_PK> ReactiveTransport_PK::reg_("reactive transport");
+// RegisteredPKFactory<ReactiveTransport_PK> ReactiveTransport_PK::reg_("reactive transport");
 
-// integrated matrix-fracture models
-RegisteredPKFactory<TransportMatrixFracture_PK> TransportMatrixFracture_PK::reg_(
-  "transport matrix fracture");
-RegisteredPKFactory<ChemistryMatrixFracture_PK> ChemistryMatrixFracture_PK::reg_(
-  "chemistry matrix fracture");
-RegisteredPKFactory<EnergyMatrixFracture_PK> EnergyMatrixFracture_PK::reg_(
-  "energy matrix fracture");
+// // integrated matrix-fracture models
+// RegisteredPKFactory<TransportMatrixFracture_PK> TransportMatrixFracture_PK::reg_(
+//   "transport matrix fracture");
+// RegisteredPKFactory<ChemistryMatrixFracture_PK> ChemistryMatrixFracture_PK::reg_(
+//   "chemistry matrix fracture");
+// RegisteredPKFactory<EnergyMatrixFracture_PK> EnergyMatrixFracture_PK::reg_(
+//   "energy matrix fracture");
 
-RegisteredPKFactory<TransportMatrixFractureImplicit_PK> TransportMatrixFractureImplicit_PK::reg_(
-  "transport matrix fracture implicit");
-RegisteredPKFactory<ReactiveTransportMatrixFracture_PK> ReactiveTransportMatrixFracture_PK::reg_(
-  "reactive transport matrix fracture");
+// RegisteredPKFactory<TransportMatrixFractureImplicit_PK> TransportMatrixFractureImplicit_PK::reg_(
+//   "transport matrix fracture implicit");
+// RegisteredPKFactory<ReactiveTransportMatrixFracture_PK> ReactiveTransportMatrixFracture_PK::reg_(
+//   "reactive transport matrix fracture");
 
-RegisteredPKFactory<MechanicsFlowMatrixFracture_PK> MechanicsFlowMatrixFracture_PK::reg_(
-  "mechanics and coupled flow");
-RegisteredPKFactory<MechanicsFlow_PK> MechanicsFlow_PK::reg_("mechanics and flow");
-RegisteredPKFactory<FlowMechanics_PK> FlowMechanics_PK::reg_("flow and mechanics");
+// RegisteredPKFactory<MechanicsFlowMatrixFracture_PK> MechanicsFlowMatrixFracture_PK::reg_(
+//   "mechanics and coupled flow");
+// RegisteredPKFactory<MechanicsFlow_PK> MechanicsFlow_PK::reg_("mechanics and flow");
+// RegisteredPKFactory<FlowMechanics_PK> FlowMechanics_PK::reg_("flow and mechanics");
 
 // integrated surface-subsurface models
 RegisteredPKFactory<SurfaceSubsurface_PK> SurfaceSubsurface_PK::reg_("surface subsurface");

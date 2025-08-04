@@ -121,6 +121,8 @@ else()
       PK_MPCSubcycled.hh
       PK_MPC.hh
       PK_MPCAdditive.hh
+      ShallowWaterTransport_PK.hh
+      SurfaceSubsurface_PK.hh
       # TransportMatrixFracture_PK.hh    
       # ReactiveTransport_PK.hh
       )
@@ -128,7 +130,9 @@ else()
   set(mpc_tree_src_files 
       PK_MPCWeak.cc 
       PK_MPCSequential.cc 
-      PK_MPCSubcycled.cc 
+      PK_MPCSubcycled.cc
+      ShallowWaterTransport_PK.cc
+      SurfaceSubsurface_PK.cc
       # TransportMatrixFracture_PK.cc        
       # ReactiveTransport_PK.cc
       )
@@ -140,7 +144,6 @@ endif()
 set(mpc_tree_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 add_amanzi_library(mpc_tree SOURCE ${mpc_tree_src_files}
                    LINK_LIBS ${mpc_tree_link_libs} ${mpc_tree_tpl_libs})
-
 
 add_install_include_file(${mpc_tree_inc_files} pks_mpc_reg.hh)
 
