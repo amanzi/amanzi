@@ -14,18 +14,18 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   VERSION ${HDF5_VERSION_MAJOR} ${HDF5_VERSION_MINOR} ${HDF5_VERSION_PATCH})
 
 # --- Patch the original code
-set(HDF5_patch_file hdf5-1.10.6-rpath.patch)
-set(HDF5_sh_patch ${HDF5_prefix_dir}/hdf5-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/hdf5-patch-step.sh.in
-               ${HDF5_sh_patch}
-               @ONLY)
-# configure the CMake patch step
-set(HDF5_cmake_patch ${HDF5_prefix_dir}/hdf5-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/hdf5-patch-step.cmake.in
-               ${HDF5_cmake_patch}
-               @ONLY)
-# set the patch command
-set(HDF5_PATCH_COMMAND ${CMAKE_COMMAND} -P ${HDF5_cmake_patch})     
+# set(HDF5_patch_file hdf5-1.10.6-rpath.patch)
+# set(HDF5_sh_patch ${HDF5_prefix_dir}/hdf5-patch-step.sh)
+# configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/hdf5-patch-step.sh.in
+#                ${HDF5_sh_patch}
+#                @ONLY)
+# # configure the CMake patch step
+# set(HDF5_cmake_patch ${HDF5_prefix_dir}/hdf5-patch-step.cmake)
+# configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/hdf5-patch-step.cmake.in
+#                ${HDF5_cmake_patch}
+#                @ONLY)
+# # set the patch command
+# set(HDF5_PATCH_COMMAND ${CMAKE_COMMAND} -P ${HDF5_cmake_patch})     
 
 # --- Define configure parameters
 set(HDF5_CMAKE_CACHE_ARGS "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}")
