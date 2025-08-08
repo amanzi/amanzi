@@ -103,10 +103,7 @@ class PDE_DiffusionMultiMesh {
   void ApplyBCs(bool primary, bool eliminate, bool essential_eqn);
 
   // calculate fluxes after solving the problem
-  void UpdateFlux(const Teuchos::Ptr<const TreeVector>& u, const Teuchos::Ptr<TreeVector>& flux)
-  {
-    exit(0);
-  }
+  void UpdateFlux(const Teuchos::Ptr<const TreeVector>& u, const Teuchos::Ptr<TreeVector>& flux);
 
   // access
   Teuchos::RCP<Operators::TreeOperator> get_matrix() { return matrix_; }
@@ -141,7 +138,7 @@ class PDE_DiffusionMultiMesh {
 
   std::vector<std::string> names_;
   std::map<std::string, Teuchos::RCP<std::vector<WhetStone::Tensor>>> K_;
-  std::map<std::string, std::vector<WhetStone::DenseMatrix>> Wff_cells_;
+  std::vector<std::vector<WhetStone::DenseMatrix>> matrices_grad_;
 
   std::vector<Teuchos::RCP<PDE_Diffusion>> pdes_;
   std::vector<Teuchos::RCP<Operator_MultiMesh>> ops_;

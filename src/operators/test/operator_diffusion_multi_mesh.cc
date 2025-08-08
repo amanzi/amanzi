@@ -154,7 +154,7 @@ TestDiffusionMultiMesh(double tol)
 
   // create a source terms
   auto op = pde->get_matrix();
-  TreeVector rhs(op->DomainMap()), sol(op->DomainMap());
+  TreeVector rhs(op->DomainMap());
   rhs.SubVector(0)->SetData(op->get_operator_block(0, 0)->rhs());
   rhs.SubVector(1)->SetData(op->get_operator_block(1, 1)->rhs());
 
@@ -187,11 +187,15 @@ TestDiffusionMultiMesh(double tol)
   op->ComputeInverse();
   // std::cout << *op->A() << std::endl; exit(0);
 
-  op->ApplyInverse(rhs, sol);
+  auto sol = Teuchos::rcp(new TreeVector(op->DomainMap()));
+  op->ApplyInverse(rhs, *sol);
+
+  auto flux = Teuchos::rcp(new TreeVector(op->DomainMap()));
+  pde->UpdateFlux(sol.ptr(), flux.ptr());
 
   // error calculation
-  Epetra_MultiVector& p1 = *sol.SubVector(0)->Data()->ViewComponent("cell");
-  Epetra_MultiVector& p2 = *sol.SubVector(1)->Data()->ViewComponent("cell");
+  auto& p1 = *sol->SubVector(0)->Data()->ViewComponent("cell");
+  auto& p2 = *sol->SubVector(1)->Data()->ViewComponent("cell");
 
   double pnorm1, l2_err1, inf_err1, pnorm2, l2_err2, inf_err2;
   ana1.ComputeCellError(p1, 0.0, pnorm1, l2_err1, inf_err1);
@@ -208,19 +212,44 @@ TestDiffusionMultiMesh(double tol)
   if (MyPID == 0) {
     l2_err1 /= pnorm1;
     l2_err2 /= pnorm2;
-    printf("L2 =%9.6f  Inf =%9.6f  min/max = %9.6f %9.6f  #cells=%d\n",
+    printf("L2(p) =%9.6f  Inf =%9.6f  min/max = %9.6f %9.6f  #cells=%d\n",
            l2_err1,
            inf_err1,
            p1min,
            p1max,
            ncells1_owned);
-    printf("L2 =%9.6f  Inf =%9.6f  min/max = %9.6f %9.6f  #cells=%d\n",
+    printf("L2(p) =%9.6f  Inf =%9.6f  min/max = %9.6f %9.6f  #cells=%d\n",
            l2_err2,
            inf_err2,
            p2min,
            p2max,
            ncells2_owned);
   }
+
+  auto& flux1 = *flux->SubVector(0)->Data()->ViewComponent("face");
+  auto& flux2 = *flux->SubVector(1)->Data()->ViewComponent("face");
+  
+  double unorm1, unorm2;
+  ana1.ComputeFaceError(flux1, 0.0, unorm1, l2_err1, inf_err1);
+  ana2.ComputeFaceError(flux2, 0.0, unorm2, l2_err2, inf_err2);
+
+  if (MyPID == 0) {
+    l2_err1 /= unorm1;
+    l2_err2 /= unorm2;
+    printf("L2(u) =%9.6f  Inf =%9.6f\n", l2_err1, inf_err1);
+    printf("L2(u) =%9.6f  Inf =%9.6f\n", l2_err2, inf_err2);
+  }
+
+  double tot_flux1(0.0), tot_flux2(0.0);
+  for (int f = 0; f < nfaces1_wghost; ++f) {
+    const auto& xf = mesh1->getFaceCentroid(f);
+    if (std::fabs(xf[0] - 0.5) < 1e-5) tot_flux1 += flux1[0][f];
+  }
+  for (int f = 0; f < nfaces2_wghost; ++f) {
+    const auto& xf = mesh2->getFaceCentroid(f);
+    if (std::fabs(xf[0] - 0.5) < 1e-5) tot_flux2 += flux2[0][f];
+  }
+  printf("Total interface flux: %9.6f, err =%9.6f\n", tot_flux1, tot_flux1 + tot_flux2);
 
   // i/o
   Teuchos::ParameterList iolist;

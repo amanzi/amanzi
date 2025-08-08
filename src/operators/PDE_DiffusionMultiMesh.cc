@@ -126,6 +126,14 @@ PDE_DiffusionMultiMesh::Init(const Teuchos::RCP<State>& S)
                                                   interface_data_[i0]));
     matrix_->set_operator_block(i0, i0, op);
   }
+
+  // interface matrices without stability term
+  matrices_grad_.resize(nmeshes);
+  for (int n = 0; n < nmeshes; ++n) {
+    int ncells_owned = meshes_[names_[n]]->getNumEntities(AmanziMesh::Entity_kind::CELL,
+                                                          AmanziMesh::Parallel_kind::OWNED);
+    matrices_grad_[n].resize(ncells_owned);
+  }
 }
 
 
@@ -166,35 +174,38 @@ PDE_DiffusionMultiMesh::ModifyMatrices_(int ib, const InterfaceData& data)
     }
 
     // populate a flux coupling matrix
-    WhetStone::DenseMatrix C(nfaces + 1, ncol), CT(ncol, nfaces + 1);
-    WhetStone::DenseMatrix L(nfaces + 1, ncol), LT(ncol, nfaces + 1);
-    C.PutScalar(0.0);
-    L.PutScalar(0.0);
+    if (ncol > nfaces + 1) {
+      WhetStone::DenseMatrix C(nfaces + 1, ncol), CT(ncol, nfaces + 1);
+      WhetStone::DenseMatrix L(nfaces + 1, ncol), LT(ncol, nfaces + 1);
+      C.PutScalar(0.0);
+      L.PutScalar(0.0);
 
-    ncol = nfaces + 1;
-    for (int n = 0; n < nfaces; ++n) {
-      int f = faces[n];
-      auto it = data.find(f);
-      if (it == data.end()) {
-        C(n, n) = 1.0;
-      } else {
-        double scale =
-          stability_ * std::pow(meshes_[names_[ib]]->getFaceArea(f), (d_ - 2.0) / (d_ - 1.0));
-        C(n, n) = 0.5;
-        L(n, n) = -scale;
-        for (auto coef : it->second) {
-          C(n, ncol) = coef.second / 2;
-          L(n, ncol) = coef.second * scale;
-          ncol++;
+      ncol = nfaces + 1;
+      for (int n = 0; n < nfaces; ++n) {
+        int f = faces[n];
+        auto it = data.find(f);
+        if (it == data.end()) {
+          C(n, n) = 1.0;
+        } else {
+          double scale =
+            stability_ * std::pow(meshes_[names_[ib]]->getFaceArea(f), (d_ - 2.0) / (d_ - 1.0));
+          C(n, n) = 0.5;
+          L(n, n) = -scale;
+          for (auto coef : it->second) {
+            C(n, ncol) = coef.second / 2;
+            L(n, ncol) = coef.second * scale;
+            ncol++;
+          }
         }
       }
+      C(nfaces, nfaces) = 1.0;
+
+      CT.Transpose(C);
+      LT.Transpose(L);
+
+      matrices_grad_[ib][c] = CT * (op->matrices)[c] * C;;
+      (op->matrices)[c] = matrices_grad_[ib][c] + LT * L;
     }
-    C(nfaces, nfaces) = 1.0;
-
-    CT.Transpose(C);
-    LT.Transpose(L);
-
-    (op->matrices)[c] = CT * (op->matrices)[c] * C + LT * L;
   }
 }
 
@@ -283,6 +294,73 @@ PDE_DiffusionMultiMesh::ApplyBCs(bool primary, bool eliminate, bool essential_eq
           }
         }
       }
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Flux for each mesh face
+* **************************************************************** */
+void
+PDE_DiffusionMultiMesh::UpdateFlux(const Teuchos::Ptr<const TreeVector>& u,
+                                   const Teuchos::Ptr<TreeVector>& flux)
+{
+  for (int ib = 0; ib < matrix_->get_row_size(); ++ib) {
+    auto op = *matrix_->get_operator_block(ib, ib)->begin();
+
+    const auto& data = interface_data_[ib];
+    const auto& interface_block = interface_block_[ib];
+
+    const auto& u_cell = *u->SubVector(ib)->Data()->ViewComponent("cell");
+    const auto& u_face = *u->SubVector(ib)->Data()->ViewComponent("face");
+    auto& flux_face = *flux->SubVector(ib)->Data()->ViewComponent("face");
+
+    int nfaces_owned = flux_face.MyLength();
+    std::vector<int> hits(nfaces_owned, 0);
+
+    for (int c = 0; c < op->matrices.size(); ++c) {
+      int nrows = op->matrices[c].NumRows();
+
+      const auto& [faces, dirs] = meshes_[names_[ib]]->getCellFacesAndDirections(c);
+      int nfaces = faces.size();
+      int ncol(nfaces + 1);
+
+      WhetStone::DenseVector v(nrows), av(nrows), scale(nfaces);
+      for (int n = 0; n < nfaces; n++) {
+        int f = faces[n];
+        v(n) = u_face[0][f];
+        scale(n) = 1.0;
+
+        auto it = data.find(f);
+        if (it != data.end()) {
+          int ib_other = interface_block[f];
+          const auto& u_other = *u->SubVector(ib_other)->Data()->ViewComponent("face");
+          for (auto coef : it->second) {
+            v(ncol++) = u_other[0][coef.first];
+          }
+          scale(n) = 2.0;
+        }
+      }
+      v(nfaces) = u_cell[0][c];
+
+      if (ncol > nfaces + 1) {
+        matrices_grad_[ib][c].Multiply(v, av, false);
+      } else if (op->matrices_shadow[c].NumRows() == 0) {
+        op->matrices[c].Multiply(v, av, false);
+      } else {
+        op->matrices_shadow[c].Multiply(v, av, false);
+      }
+
+      for (int n = 0; n < nfaces; n++) {
+        int f = faces[n];
+        flux_face[0][f] -= av(n) * dirs[n] * scale(n);
+        hits[f]++;
+      }
+    }
+
+    for (int f = 0; f != nfaces_owned; ++f) {
+      flux_face[0][f] /= hits[f];
     }
   }
 }
