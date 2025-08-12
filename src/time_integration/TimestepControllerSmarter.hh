@@ -35,6 +35,9 @@ nonlinearities.
    * `"count before increasing increase factor`" ``[int]`` Require this many
      successive increasions before multiplying :math:`f_{increase}` by itself.
 
+   INCLUDES
+
+   - `"timestep-controller-recoverable-spec`"
 
 */
 
