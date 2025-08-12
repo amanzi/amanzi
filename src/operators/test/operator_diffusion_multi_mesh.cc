@@ -40,7 +40,7 @@
 #include "Analytic00.hh"
 
 void
-ModifyMesh1(Amanzi::AmanziMesh::Mesh& mesh)
+ModifyMesh2(Amanzi::AmanziMesh::Mesh& mesh)
 {
   int nnodes_owned = mesh.getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE,
                                          Amanzi::AmanziMesh::Parallel_kind::OWNED);
@@ -52,7 +52,6 @@ ModifyMesh1(Amanzi::AmanziMesh::Mesh& mesh)
   }
   mesh.recacheGeometry();
 }
-
 
 /* *****************************************************************
 * This test diffusion solver with full tensor and source term.
@@ -86,9 +85,11 @@ TestDiffusionMultiMesh(double tol)
   RCP<Mesh> mesh2 = meshfactory.create(0.5, 0.0, 1.0, 1.0, 5, 5);
 
   int ncells1_owned = mesh1->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
+  int nfaces1_owned = mesh1->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
   int nfaces1_wghost = mesh1->getNumEntities(Entity_kind::FACE, Parallel_kind::ALL);
 
   int ncells2_owned = mesh2->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
+  int nfaces2_owned = mesh2->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
   int nfaces2_wghost = mesh2->getNumEntities(Entity_kind::FACE, Parallel_kind::ALL);
 
   // populate diffusion coefficient
@@ -98,9 +99,9 @@ TestDiffusionMultiMesh(double tol)
   Analytic00 ana1(mesh1, 1), ana2(mesh2, 1);
 
   // create sets and modify meshes after
-  mesh1->getSetEntities("cut1", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
-  mesh2->getSetEntities("cut1", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
-  ModifyMesh1(*mesh2);
+  const auto& block1 = mesh1->getSetEntities("cut1", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  const auto& block2 = mesh2->getSetEntities("cut1", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  ModifyMesh2(*mesh2);
 
   auto Kc1 = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   for (int c = 0; c < ncells1_owned; ++c) {
@@ -226,8 +227,8 @@ TestDiffusionMultiMesh(double tol)
            ncells2_owned);
   }
 
-  auto& flux1 = *flux->SubVector(0)->Data()->ViewComponent("face");
-  auto& flux2 = *flux->SubVector(1)->Data()->ViewComponent("face");
+  auto& flux1 = *flux->SubVector(0)->Data()->ViewComponent("face", true);
+  auto& flux2 = *flux->SubVector(1)->Data()->ViewComponent("face", true);
   
   double unorm1, unorm2;
   ana1.ComputeFaceError(flux1, 0.0, unorm1, l2_err1, inf_err1);
@@ -236,19 +237,16 @@ TestDiffusionMultiMesh(double tol)
   if (MyPID == 0) {
     l2_err1 /= unorm1;
     l2_err2 /= unorm2;
-    printf("L2(u) =%9.6f  Inf =%9.6f\n", l2_err1, inf_err1);
-    printf("L2(u) =%9.6f  Inf =%9.6f\n", l2_err2, inf_err2);
+    printf("L2(u) =%9.6f  Inf =%9.6f  |u|=%9.6f\n", l2_err1, inf_err1, unorm1);
+    printf("L2(u) =%9.6f  Inf =%9.6f  |u|=%9.6f\n", l2_err2, inf_err2, unorm2);
   }
 
   double tot_flux1(0.0), tot_flux2(0.0);
-  for (int f = 0; f < nfaces1_wghost; ++f) {
-    const auto& xf = mesh1->getFaceCentroid(f);
-    if (std::fabs(xf[0] - 0.5) < 1e-5) tot_flux1 += flux1[0][f];
-  }
-  for (int f = 0; f < nfaces2_wghost; ++f) {
-    const auto& xf = mesh2->getFaceCentroid(f);
-    if (std::fabs(xf[0] - 0.5) < 1e-5) tot_flux2 += flux2[0][f];
-  }
+  for (int f : block1) tot_flux1 += flux1[0][f];
+  ana1.GlobalOp("sum", &tot_flux1, 1);
+
+  for (int f : block2) tot_flux2 += flux2[0][f];
+  ana2.GlobalOp("sum", &tot_flux2, 1);
   printf("Total interface flux: %9.6f, err =%9.6f\n", tot_flux1, tot_flux1 + tot_flux2);
 
   // i/o
