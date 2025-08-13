@@ -69,17 +69,18 @@ TransportSourceFunction_Alquimia::~TransportSourceFunction_Alquimia()
 
 
 /* ******************************************************************
-* Internal subroutine that defines a boundary function.
+* Internal subroutine that defines a source cell
 ****************************************************************** */
 void
 TransportSourceFunction_Alquimia::Init_(const std::vector<std::string>& regions)
 {
+  // Note that this source works only on OWNED cells -- if GHOSTED sources are
+  // needed, they should be communicated prior to use.
   for (int i = 0; i < regions.size(); ++i) {
     auto block = mesh_->getSetEntities(
       regions[i], AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     int nblock = block.size();
 
-    // Now get the cells that are attached to these faces.
     for (int n = 0; n < nblock; ++n) {
       int c = block[n];
       value_[c].resize(chem_engine_->NumPrimarySpecies());
