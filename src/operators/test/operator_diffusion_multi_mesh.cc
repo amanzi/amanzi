@@ -256,13 +256,13 @@ TestDiffusionMultiMesh(double tol)
   auto& p1_f = *sol->SubVector(0)->Data()->ViewComponent("face");
   auto& p2_f = *sol->SubVector(1)->Data()->ViewComponent("face");
   for (int f : block1) {
-    int c = getBoundaryFaceInternalCell(*mesh1, f);
+    int c = getFaceOnBoundaryInternalCell(*mesh1, f);
     mesh1->getFaceNormal(f, c, &dir);
     sum += p1_f[0][f] * flux1[0][f] * dir;
   }
 
   for (int f : block2) {
-    int c = getBoundaryFaceInternalCell(*mesh2, f);
+    int c = getFaceOnBoundaryInternalCell(*mesh2, f);
     mesh2->getFaceNormal(f, c, &dir);
     sum += p2_f[0][f] * flux2[0][f] * dir;
   }
