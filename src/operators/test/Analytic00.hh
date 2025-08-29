@@ -32,7 +32,7 @@
 class Analytic00 : public AnalyticBase {
  public:
   Analytic00(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
-             int order,
+             int order = 1,
              double g = 0.0,
              const Amanzi::AmanziGeometry::Point v = Amanzi::AmanziGeometry::Point(2),
              double K = 1.0,

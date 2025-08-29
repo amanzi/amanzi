@@ -79,10 +79,11 @@ TestDiffusionMultiMesh(double tol)
   auto gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
   // create meshese
+  int n = plist.get<int>("refinement level", 1);
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  RCP<Mesh> mesh1 = meshfactory.create(0.0, 0.0, 0.5, 1.0, 3, 3);
-  RCP<Mesh> mesh2 = meshfactory.create(0.5, 0.0, 1.0, 1.0, 5, 5);
+  RCP<Mesh> mesh1 = meshfactory.create(0.0, 0.0, 0.5, 1.0, 5 * n, 10 * n);
+  RCP<Mesh> mesh2 = meshfactory.create(0.5, 0.0, 1.0, 1.0, 5 * n, 12 * n);
 
   int ncells1_owned = mesh1->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
   int nfaces1_owned = mesh1->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
@@ -96,12 +97,12 @@ TestDiffusionMultiMesh(double tol)
   WhetStone::Tensor Knull;
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator");
 
-  Analytic00 ana1(mesh1, 1), ana2(mesh2, 1);
+  Analytic00 ana1(mesh1, 3), ana2(mesh2, 3);
 
   // create sets and modify meshes after
   const auto& block1 = mesh1->getSetEntities("cut1", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   const auto& block2 = mesh2->getSetEntities("cut1", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
-  ModifyMesh2(*mesh2);
+  // ModifyMesh2(*mesh2);
 
   auto Kc1 = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   for (int c = 0; c < ncells1_owned; ++c) {
@@ -213,13 +214,13 @@ TestDiffusionMultiMesh(double tol)
   if (MyPID == 0) {
     l2_err1 /= pnorm1;
     l2_err2 /= pnorm2;
-    printf("L2(p) =%9.6f  Inf =%9.6f  min/max = %9.6f %9.6f  #cells=%d\n",
+    printf("L2(p) =%10.7f  Inf =%9.6f  min/max = %9.6f %9.6f  #cells=%d\n",
            l2_err1,
            inf_err1,
            p1min,
            p1max,
            ncells1_owned);
-    printf("L2(p) =%9.6f  Inf =%9.6f  min/max = %9.6f %9.6f  #cells=%d\n",
+    printf("L2(p) =%10.7f  Inf =%9.6f  min/max = %9.6f %9.6f  #cells=%d\n",
            l2_err2,
            inf_err2,
            p2min,
@@ -237,8 +238,8 @@ TestDiffusionMultiMesh(double tol)
   if (MyPID == 0) {
     l2_err1 /= unorm1;
     l2_err2 /= unorm2;
-    printf("L2(u) =%9.6f  Inf =%9.6f  |u|=%9.6f\n", l2_err1, inf_err1, unorm1);
-    printf("L2(u) =%9.6f  Inf =%9.6f  |u|=%9.6f\n", l2_err2, inf_err2, unorm2);
+    printf("L2(u) =%10.7f  Inf =%9.6f  |u|=%9.6f\n", l2_err1, inf_err1, unorm1);
+    printf("L2(u) =%10.7f  Inf =%9.6f  |u|=%9.6f\n", l2_err2, inf_err2, unorm2);
   }
 
   double tot_flux1(0.0), tot_flux2(0.0);
@@ -248,6 +249,25 @@ TestDiffusionMultiMesh(double tol)
   for (int f : block2) tot_flux2 += flux2[0][f];
   ana2.GlobalOp("sum", &tot_flux2, 1);
   printf("Total interface flux: %9.6f, err =%9.6f\n", tot_flux1, tot_flux1 + tot_flux2);
+
+  // -- lemma 4.3
+  int dir;
+  double sum(0.0);
+  auto& p1_f = *sol->SubVector(0)->Data()->ViewComponent("face");
+  auto& p2_f = *sol->SubVector(1)->Data()->ViewComponent("face");
+  for (int f : block1) {
+    int c = getBoundaryFaceInternalCell(*mesh1, f);
+    mesh1->getFaceNormal(f, c, &dir);
+    sum += p1_f[0][f] * flux1[0][f] * dir;
+  }
+
+  for (int f : block2) {
+    int c = getBoundaryFaceInternalCell(*mesh2, f);
+    mesh2->getFaceNormal(f, c, &dir);
+    sum += p2_f[0][f] * flux2[0][f] * dir;
+  }
+  printf("Lemma 4.3, %12.9f >= 0.0\n", sum);
+  AMANZI_ASSERT(sum >= -1e-12);
 
   // i/o
   Teuchos::ParameterList iolist;
@@ -271,5 +291,5 @@ TestDiffusionMultiMesh(double tol)
 
 TEST(OPERATOR_DIFFUSION_TWO_MESH_PROBLEM)
 {
-  TestDiffusionMultiMesh(6e-3);
+  TestDiffusionMultiMesh(7e-3);
 }

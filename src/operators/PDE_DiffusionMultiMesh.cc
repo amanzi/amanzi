@@ -203,7 +203,7 @@ PDE_DiffusionMultiMesh::ModifyMatrices_(int ib, const InterfaceData& data)
       CT.Transpose(C);
       LT.Transpose(L);
 
-      matrices_grad_[ib][c] = CT * (op->matrices)[c] * C;;
+      matrices_grad_[ib][c] = CT * (op->matrices)[c] * C;
       (op->matrices)[c] = matrices_grad_[ib][c] + LT * L;
     }
   }

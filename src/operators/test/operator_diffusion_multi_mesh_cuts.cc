@@ -37,15 +37,37 @@
 #include "OperatorDefs.hh"
 #include "PDE_DiffusionMultiMesh.hh"
 
+#include "Analytic00.hh"
 #include "Analytic01.hh"
 #include "Analytic01b.hh"
+
+
+void
+ModifyMesh(Amanzi::AmanziMesh::Mesh& mesh,
+           const Amanzi::AmanziGeometry::Point& scale,
+           const Amanzi::AmanziGeometry::Point& shift)
+{
+  int d = shift.dim();
+  int nnodes_owned = mesh.getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE,
+                                         Amanzi::AmanziMesh::Parallel_kind::OWNED);
+
+  for (int n = 0; n < nnodes_owned; ++n) {
+    auto xp = mesh.getNodeCoordinate(n);
+    for (int i = 0; i < d; ++i) {
+      xp[i] = scale[i] * xp[i] + shift[i];
+    }
+    mesh.setNodeCoordinate(n, xp);
+  }
+  mesh.recacheGeometry();
+}
+
 
 /* *****************************************************************
 * This test diffusion solver with full tensor and source term.
 * **************************************************************** */
 template<class Analytic>
 void
-TestDiffusionMultiMesh(int d, double tol)
+TestDiffusionMultiMesh(int d, double tol, const std::string& filename = "")
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -70,10 +92,17 @@ TestDiffusionMultiMesh(int d, double tol)
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<Mesh> mesh1, mesh2, mesh3;
-  if (d == 2) {
+  if (d == 2 && filename == "") {
     mesh1 = meshfactory.create(0.0, 0.5, 0.5, 1.0, 5, 5);
-    mesh2 = meshfactory.create(0.0, 0.0, 0.5, 0.5, 7, 7);
-    mesh3 = meshfactory.create(0.5, 0.0, 1.0, 1.0, 10, 14);
+    mesh2 = meshfactory.create(0.0, 0.0, 0.5, 0.5, 5, 5);
+    mesh3 = meshfactory.create(0.5, 0.0, 1.0, 1.0, 10, 10);
+  } else if (d == 2 && filename != "") {
+    mesh1 = meshfactory.create(filename);
+    mesh2 = meshfactory.create(filename);
+    mesh3 = meshfactory.create(filename);
+    ModifyMesh(*mesh1, AmanziGeometry::Point(0.5, 0.5), AmanziGeometry::Point(0.0, 0.5));
+    ModifyMesh(*mesh2, AmanziGeometry::Point(0.5, 0.5), AmanziGeometry::Point(0.0, 0.0));
+    ModifyMesh(*mesh3, AmanziGeometry::Point(0.5, 1.0), AmanziGeometry::Point(0.5, 0.0));
   } else {
     mesh1 = meshfactory.create(0.0, 0.5, 0.0, 0.5, 1.0, 1.0, 5, 5, 5);
     mesh2 = meshfactory.create(0.0, 0.0, 0.0, 0.5, 0.5, 1.0, 7, 7, 5);
@@ -149,7 +178,7 @@ TestDiffusionMultiMesh(int d, double tol)
 
   for (int f = 0; f < nfaces3_wghost; ++f) {
     const Point& xf = mesh3->getFaceCentroid(f);
-    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
+    if (fabs(xf[1]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
         (d == 3 && (fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6))) {
       bc3_model[f] = OPERATOR_BC_DIRICHLET;
       bc3_value[f] = ana3.pressure_exact(xf, 0.0);
@@ -289,6 +318,7 @@ TestDiffusionMultiMesh(int d, double tol)
 
 TEST(OPERATOR_DIFFUSION_TWO_MESH_PROBLEM)
 {
+  TestDiffusionMultiMesh<Analytic01>(2, 5e-2, "test/median7x8.exo");
   TestDiffusionMultiMesh<Analytic01>(2, 5e-2);
   TestDiffusionMultiMesh<Analytic01b>(3, 1e-1);
 }
