@@ -107,7 +107,7 @@ class PDE_DiffusionMultiMesh {
 
   // access
   Teuchos::RCP<Operators::TreeOperator> get_matrix() { return matrix_; }
-  const std::vector<InterfaceData>& get_interface_data() { return interface_data_; }
+  const std::vector<InterfaceData>& get_interface_weights() { return interface_weights_; }
 
  protected:
   // utilities to define surface-surface intersection
@@ -136,6 +136,7 @@ class PDE_DiffusionMultiMesh {
   std::vector<std::vector<std::string>> interface_meshes_;
   std::vector<std::vector<int>> interface_block_;
   std::vector<InterfaceData> interface_data_;
+  std::vector<InterfaceData> interface_weights_;
 
   std::vector<std::string> names_;
   std::map<std::string, Teuchos::RCP<std::vector<WhetStone::Tensor>>> K_;

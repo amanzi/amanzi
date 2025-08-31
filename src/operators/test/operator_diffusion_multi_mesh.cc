@@ -288,11 +288,12 @@ TestDiffusionMultiMesh(double tol, int icase)
   for (int f : block2) tot_flux2 += flux2[0][f];
   ana2.GlobalOp("sum", &tot_flux2, 1);
   printf("Total interface flux: %9.6f, err =%9.6f\n", tot_flux1, tot_flux1 + tot_flux2);
+  CHECK(std::fabs(tot_flux1 + tot_flux2) < 1e-12);
 
   // -- lemma 4.3
   int dir;
   double sum(0.0);
-  auto interface_data = pde->get_interface_data();
+  auto interface_weights = pde->get_interface_weights();
 
   auto& p1_f = *sol->SubVector(0)->Data()->ViewComponent("face");
   auto& p2_f = *sol->SubVector(1)->Data()->ViewComponent("face");
@@ -301,7 +302,7 @@ TestDiffusionMultiMesh(double tol, int icase)
     mesh1->getFaceNormal(f, c, &dir);
    
     double pavg(p1_f[0][f]);
-    for (auto data : interface_data[0][f]) {
+    for (auto data : interface_weights[0][f]) {
       int f2 = data.first;
       pavg += data.second * p2_f[0][f2];
     }
@@ -313,14 +314,14 @@ TestDiffusionMultiMesh(double tol, int icase)
     mesh2->getFaceNormal(f, c, &dir);
 
     double pavg(p2_f[0][f]);
-    for (auto data : interface_data[1][f]) {
+    for (auto data : interface_weights[1][f]) {
       int f1 = data.first;
       pavg += data.second * p1_f[0][f1];
     }
     sum += pavg * flux2[0][f] * dir;
   }
   printf("Lemma 4.3, %12.9f >= 0.0\n", sum / 2);
-  AMANZI_ASSERT(sum >= -1e-12);
+  CHECK(sum >= -1e-12);
 
   // i/o
   Teuchos::ParameterList iolist;

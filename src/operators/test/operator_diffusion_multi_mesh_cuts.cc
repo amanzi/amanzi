@@ -313,43 +313,84 @@ TestDiffusionMultiMesh(int d, double tol, const std::string& filename = "")
   }
 
   // -- lemma 4.3
-  int dir;
-  double sum(0.0);
-  auto interface_data = pde->get_interface_data();
+  auto interface_weights = pde->get_interface_weights();
+  std::vector<Teuchos::RCP<AmanziMesh::Mesh>> meshes({ mesh1, mesh2, mesh3 });
 
-  auto& p1_f = *sol->SubVector(0)->Data()->ViewComponent("face");
-  auto& p2_f = *sol->SubVector(1)->Data()->ViewComponent("face");
-  auto& flux1 = *flux->SubVector(0)->Data()->ViewComponent("face", true);
-  auto& flux2 = *flux->SubVector(1)->Data()->ViewComponent("face", true);
+  for (int k = 0; k < 3; ++k) {
+    int i1, i2, dir, l1, l2;
+    double sum(0.0);
+    std::string cutname;
+    if (k == 0) {
+      i1 = 0;
+      i2 = 1;
+      cutname = "cut2";
+      l1 = 4;
+      l2 = 5;
+    } else if (k == 1) {
+      i1 = 0;
+      i2 = 2;
+      cutname = "cut1top";
+      l1 = 0;
+      l2 = 1;
+    } else if (k == 2) {
+      i1 = 1;
+      i2 = 2;
+      cutname = "cut1bottom";
+      l1 = 2;
+      l2 = 3;
+    }
 
-  const auto& block1 = mesh1->getSetEntities("cut2", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
-  const auto& block2 = mesh2->getSetEntities("cut2", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+    auto& p1_f = *sol->SubVector(i1)->Data()->ViewComponent("face");
+    auto& p2_f = *sol->SubVector(i2)->Data()->ViewComponent("face");
+    auto& flux1 = *flux->SubVector(i1)->Data()->ViewComponent("face", true);
+    auto& flux2 = *flux->SubVector(i2)->Data()->ViewComponent("face", true);
 
-  for (int f : block1) {
-    int c = getFaceOnBoundaryInternalCell(*mesh1, f);
-    mesh1->getFaceNormal(f, c, &dir);
+    const auto& block1 = meshes[i1]->getSetEntities(cutname, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+    const auto& block2 = meshes[i2]->getSetEntities(cutname, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+
+    double tot_flux1(0.0), tot_flux2(0.0);
+    for (int f : block1) {
+      int c = getFaceOnBoundaryInternalCell(*meshes[i1], f);
+      meshes[i1]->getFaceNormal(f, c, &dir);
+      tot_flux1 += flux1[0][f] * dir;
+    }
+    ana1.GlobalOp("sum", &tot_flux1, 1);
+
+    for (int f : block2) {
+      int c = getFaceOnBoundaryInternalCell(*meshes[i2], f);
+      meshes[i2]->getFaceNormal(f, c, &dir);
+      tot_flux2 += flux2[0][f] * dir;
+    }
+    ana1.GlobalOp("sum", &tot_flux2, 1);
+    printf("Total interface flux: %9.6f, err =%9.6f\n", tot_flux1, tot_flux1 + tot_flux2);
+    CHECK(std::fabs(tot_flux1 + tot_flux2) < 1e-12);
+
+    for (int f : block1) {
+      int c = getFaceOnBoundaryInternalCell(*meshes[i1], f);
+      meshes[i1]->getFaceNormal(f, c, &dir);
    
-    double pavg(p1_f[0][f]);
-    for (auto data : interface_data[0][f]) {
-      int f2 = data.first;
-      pavg += data.second * p2_f[0][f2];
+      double pavg(p1_f[0][f]);
+      for (auto data : interface_weights[l1][f]) {
+        int f2 = data.first;
+        pavg += data.second * p2_f[0][f2];
+      }
+      sum += pavg * flux1[0][f] * dir;
     }
-    sum += pavg * flux1[0][f] * dir;
-  }
 
-  for (int f : block2) {
-    int c = getFaceOnBoundaryInternalCell(*mesh2, f);
-    mesh2->getFaceNormal(f, c, &dir);
+    for (int f : block2) {
+      int c = getFaceOnBoundaryInternalCell(*meshes[i2], f);
+      meshes[i2]->getFaceNormal(f, c, &dir);
 
-    double pavg(p2_f[0][f]);
-    for (auto data : interface_data[1][f]) {
-      int f1 = data.first;
-      pavg += data.second * p1_f[0][f1];
+      double pavg(p2_f[0][f]);
+      for (auto data : interface_weights[l2][f]) {
+        int f1 = data.first;
+        pavg += data.second * p1_f[0][f1];
+      }
+      sum += pavg * flux2[0][f] * dir;
     }
-    sum += pavg * flux2[0][f] * dir;
+    printf("Lemma 4.3, %12.9f >= 0.0\n", sum / 2);
+    CHECK(sum >= -1e-12);
   }
-  printf("Lemma 4.3, %12.9f >= 0.0\n", sum / 2);
-  AMANZI_ASSERT(sum >= -1e-12);
 
   // i/o
   Teuchos::ParameterList iolist;
@@ -382,5 +423,5 @@ TEST(OPERATOR_DIFFUSION_TWO_MESH_PROBLEM)
 {
   TestDiffusionMultiMesh<Analytic01>(2, 5e-2);
   TestDiffusionMultiMesh<Analytic01b>(3, 1e-1);
-  TestDiffusionMultiMesh<Analytic01>(2, 5e-2, "test/median15x16.exo");
+  TestDiffusionMultiMesh<Analytic01>(2, 5e-2, "test/median7x8.exo");
 }

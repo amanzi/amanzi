@@ -56,7 +56,6 @@ PDE_DiffusionMultiMesh::Init(const Teuchos::RCP<State>& S)
   // parse interface data
   Teuchos::ParameterList interfaces = plist_.sublist("interfaces");
   std::vector<std::string> names, rgns;
-  std::vector<InterfaceData> interface_data;
 
   for (auto& it : interfaces) {
     auto sublist = interfaces.sublist(it.first);
@@ -77,11 +76,11 @@ PDE_DiffusionMultiMesh::Init(const Teuchos::RCP<State>& S)
     for (int k = 0; k < 2; ++k) {
       meshToMeshMapParticles_(*submeshes[k], rgns[k], *submeshes[1 - k], rgns[1 - k], data);
 
-      interface_data.push_back(data);
+      interface_weights_.push_back(data);
       interface_meshes_.push_back({ names[k], names[1 - k] });
     }
   }
-  int ninterfaces = interface_data.size();
+  int ninterfaces = interface_weights_.size();
 
   // create tree vector space
   auto tvs = Teuchos::rcp(new TreeVectorSpace());
@@ -112,10 +111,10 @@ PDE_DiffusionMultiMesh::Init(const Teuchos::RCP<State>& S)
       if (interface_meshes_[k][0] == names_[i0]) {
         int i1 = std::distance(names_.begin(),
                                std::find(names_.begin(), names_.end(), interface_meshes_[k][1]));
-        for (auto it : interface_data[k]) {
+        for (auto it : interface_weights_[k]) {
           interface_block_[i0][it.first] = i1;
         }
-        interface_data_[i0].insert(interface_data[k].begin(), interface_data[k].end());
+        interface_data_[i0].insert(interface_weights_[k].begin(), interface_weights_[k].end());
       }
     }
 
