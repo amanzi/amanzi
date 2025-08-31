@@ -30,6 +30,8 @@
   Analytic05: linear solution with non-symmetric, non-constant
               tensor coefficient
   Analytic07: trigonometric solution with identity coefficients
+  Analytic08: trigonometric solution with discontinuous coefficient
+              and curvilinear discontinuity line. 
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_BASE_HH_
@@ -211,7 +213,7 @@ AnalyticBase::ComputeFaceError(Epetra_MultiVector& u,
       l2_err += std::pow((tmp - u[0][g + k]) / area, 2.0);
       inf_err = std::max(inf_err, fabs(tmp - u[0][g + k]) / area);
       unorm += std::pow(tmp / area, 2.0);
-      // std::cout << f << " xf=" << xf << " u=" << u[0][g + k] << " u_ex=" << tmp << " err=" << inf_err << std::endl;
+      // std::cout << f << " xf=" << xf << " u=" << u[0][g + k] << " u_ex=" << tmp << " err=" << inf_err << " " << dir << std::endl;
     }
   }
 #ifdef HAVE_MPI

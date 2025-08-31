@@ -38,7 +38,11 @@
 #include "PDE_DiffusionMultiMesh.hh"
 
 #include "Analytic00.hh"
+#include "Analytic08.hh"
 
+/* *****************************************************************
+* Modify meshes
+* **************************************************************** */
 void
 ModifyMesh2(Amanzi::AmanziMesh::Mesh& mesh)
 {
@@ -47,17 +51,45 @@ ModifyMesh2(Amanzi::AmanziMesh::Mesh& mesh)
 
   for (int n = 0; n < nnodes_owned; ++n) {
     auto xp = mesh.getNodeCoordinate(n);
+    auto yp = mesh.getNodeCoordinate(n);
     xp[1] = xp[1] * (2.0 - xp[1]);
     mesh.setNodeCoordinate(n, xp);
   }
   mesh.recacheGeometry();
 }
 
+
+void ModifyMesh(Amanzi::AmanziMesh::Mesh& mesh, int nx, int id)
+{
+  int nnodes_owned = mesh.getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE,
+                                         Amanzi::AmanziMesh::Parallel_kind::OWNED);
+
+  double amp(0.04);
+
+  for (int n = 0; n < nnodes_owned; ++n) {
+    int i = n % (nx + 1);
+    auto xp = mesh.getNodeCoordinate(n);
+    double s = 0.1 * std::sin(2 * M_PI * xp[1]);
+
+    if (id == 1) {
+      double xmax = 0.5 + amp * std::sin(4 * M_PI * xp[1]);
+      xp[0] = i * xmax / nx;
+    } else if (id == 2) {
+      double xmax = 0.5 + amp * std::sin(4 * M_PI * xp[1]);
+      xp[0] = xmax + i * (1.0 - xmax) / nx;
+    }
+    mesh.setNodeCoordinate(n, xp);
+  }
+  mesh.recacheGeometry();
+}
+
+
 /* *****************************************************************
 * This test diffusion solver with full tensor and source term.
 * **************************************************************** */
+template<class Analytic>
 void
-TestDiffusionMultiMesh(double tol)
+TestDiffusionMultiMesh(double tol, int icase)
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -80,10 +112,12 @@ TestDiffusionMultiMesh(double tol)
 
   // create meshese
   int n = plist.get<int>("refinement level", 1);
+  int n1x(5 * n), n1y(12 * n);
+  int n2x(5 * n), n2y(10 * n);
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  RCP<Mesh> mesh1 = meshfactory.create(0.0, 0.0, 0.5, 1.0, 5 * n, 10 * n);
-  RCP<Mesh> mesh2 = meshfactory.create(0.5, 0.0, 1.0, 1.0, 5 * n, 12 * n);
+  RCP<Mesh> mesh1 = meshfactory.create(0.0, 0.0, 0.5, 1.0, n1x, n1y);
+  RCP<Mesh> mesh2 = meshfactory.create(0.5, 0.0, 1.0, 1.0, n2x, n2y);
 
   int ncells1_owned = mesh1->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
   int nfaces1_owned = mesh1->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
@@ -97,12 +131,17 @@ TestDiffusionMultiMesh(double tol)
   WhetStone::Tensor Knull;
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator");
 
-  Analytic00 ana1(mesh1, 3), ana2(mesh2, 3);
+  Analytic ana1(mesh1, 3), ana2(mesh2, 3);
 
   // create sets and modify meshes after
   const auto& block1 = mesh1->getSetEntities("cut1", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   const auto& block2 = mesh2->getSetEntities("cut1", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
-  // ModifyMesh2(*mesh2);
+  if (icase == 1) {
+    // ModifyMesh2(*mesh2);
+  } else if (icase == 2) {
+    ModifyMesh(*mesh1, n1x, 1);
+    ModifyMesh(*mesh2, n2x, 2);
+  }
 
   auto Kc1 = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   for (int c = 0; c < ncells1_owned; ++c) {
@@ -253,20 +292,34 @@ TestDiffusionMultiMesh(double tol)
   // -- lemma 4.3
   int dir;
   double sum(0.0);
+  auto interface_data = pde->get_interface_data();
+
   auto& p1_f = *sol->SubVector(0)->Data()->ViewComponent("face");
   auto& p2_f = *sol->SubVector(1)->Data()->ViewComponent("face");
   for (int f : block1) {
     int c = getFaceOnBoundaryInternalCell(*mesh1, f);
     mesh1->getFaceNormal(f, c, &dir);
-    sum += p1_f[0][f] * flux1[0][f] * dir;
+   
+    double pavg(p1_f[0][f]);
+    for (auto data : interface_data[0][f]) {
+      int f2 = data.first;
+      pavg += data.second * p2_f[0][f2];
+    }
+    sum += pavg * flux1[0][f] * dir;
   }
 
   for (int f : block2) {
     int c = getFaceOnBoundaryInternalCell(*mesh2, f);
     mesh2->getFaceNormal(f, c, &dir);
-    sum += p2_f[0][f] * flux2[0][f] * dir;
+
+    double pavg(p2_f[0][f]);
+    for (auto data : interface_data[1][f]) {
+      int f1 = data.first;
+      pavg += data.second * p1_f[0][f1];
+    }
+    sum += pavg * flux2[0][f] * dir;
   }
-  printf("Lemma 4.3, %12.9f >= 0.0\n", sum);
+  printf("Lemma 4.3, %12.9f >= 0.0\n", sum / 2);
   AMANZI_ASSERT(sum >= -1e-12);
 
   // i/o
@@ -291,5 +344,6 @@ TestDiffusionMultiMesh(double tol)
 
 TEST(OPERATOR_DIFFUSION_TWO_MESH_PROBLEM)
 {
-  TestDiffusionMultiMesh(7e-3);
+  TestDiffusionMultiMesh<Analytic00>(7e-3, 1);
+  TestDiffusionMultiMesh<Analytic08>(7e-3, 2);
 }

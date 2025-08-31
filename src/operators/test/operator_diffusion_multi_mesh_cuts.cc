@@ -62,6 +62,24 @@ ModifyMesh(Amanzi::AmanziMesh::Mesh& mesh,
 }
 
 
+void
+ModifyMesh2(Amanzi::AmanziMesh::Mesh& mesh)
+{
+  double a(0.5);
+  int nnodes_owned = mesh.getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE,
+                                         Amanzi::AmanziMesh::Parallel_kind::OWNED);
+
+  for (int n = 0; n < nnodes_owned; ++n) {
+    auto xp = mesh.getNodeCoordinate(n);
+    auto yp = xp;
+    xp[0] = yp[0] * (1.0 + a * yp[0]) / (1.0 + a);
+    xp[1] = yp[1] * (1.0 + a * yp[1]) / (1.0 + a);
+    mesh.setNodeCoordinate(n, xp);
+  }
+  mesh.recacheGeometry();
+}
+
+
 /* *****************************************************************
 * This test diffusion solver with full tensor and source term.
 * **************************************************************** */
@@ -100,6 +118,7 @@ TestDiffusionMultiMesh(int d, double tol, const std::string& filename = "")
     mesh1 = meshfactory.create(filename);
     mesh2 = meshfactory.create(filename);
     mesh3 = meshfactory.create(filename);
+    ModifyMesh2(*mesh2);
     ModifyMesh(*mesh1, AmanziGeometry::Point(0.5, 0.5), AmanziGeometry::Point(0.0, 0.5));
     ModifyMesh(*mesh2, AmanziGeometry::Point(0.5, 0.5), AmanziGeometry::Point(0.0, 0.0));
     ModifyMesh(*mesh3, AmanziGeometry::Point(0.5, 1.0), AmanziGeometry::Point(0.5, 0.0));
@@ -200,7 +219,7 @@ TestDiffusionMultiMesh(int d, double tol, const std::string& filename = "")
 
   // create a source terms
   auto op = pde->get_matrix();
-  TreeVector rhs(op->DomainMap()), sol(op->DomainMap());
+  TreeVector rhs(op->DomainMap());
   rhs.SubVector(0)->SetData(op->get_operator_block(0, 0)->rhs());
   rhs.SubVector(1)->SetData(op->get_operator_block(1, 1)->rhs());
   rhs.SubVector(2)->SetData(op->get_operator_block(2, 2)->rhs());
@@ -241,12 +260,16 @@ TestDiffusionMultiMesh(int d, double tol, const std::string& filename = "")
   op->ComputeInverse();
   // std::cout << *op->A() << std::endl; exit(0);
 
-  op->ApplyInverse(rhs, sol);
+  auto sol = Teuchos::rcp(new TreeVector(op->DomainMap()));
+  op->ApplyInverse(rhs, *sol);
+
+  auto flux = Teuchos::rcp(new TreeVector(op->DomainMap()));
+  pde->UpdateFlux(sol.ptr(), flux.ptr());
 
   // error calculation
-  Epetra_MultiVector& p1 = *sol.SubVector(0)->Data()->ViewComponent("cell");
-  Epetra_MultiVector& p2 = *sol.SubVector(1)->Data()->ViewComponent("cell");
-  Epetra_MultiVector& p3 = *sol.SubVector(2)->Data()->ViewComponent("cell");
+  Epetra_MultiVector& p1 = *sol->SubVector(0)->Data()->ViewComponent("cell");
+  Epetra_MultiVector& p2 = *sol->SubVector(1)->Data()->ViewComponent("cell");
+  Epetra_MultiVector& p3 = *sol->SubVector(2)->Data()->ViewComponent("cell");
 
   double pnorm1, l2_err1, inf_err1, pnorm2, l2_err2, inf_err2, pnorm3, l2_err3, inf_err3;
   ana1.ComputeCellError(p1, 0.0, pnorm1, l2_err1, inf_err1);
@@ -289,6 +312,45 @@ TestDiffusionMultiMesh(int d, double tol, const std::string& filename = "")
            ncells3_owned);
   }
 
+  // -- lemma 4.3
+  int dir;
+  double sum(0.0);
+  auto interface_data = pde->get_interface_data();
+
+  auto& p1_f = *sol->SubVector(0)->Data()->ViewComponent("face");
+  auto& p2_f = *sol->SubVector(1)->Data()->ViewComponent("face");
+  auto& flux1 = *flux->SubVector(0)->Data()->ViewComponent("face", true);
+  auto& flux2 = *flux->SubVector(1)->Data()->ViewComponent("face", true);
+
+  const auto& block1 = mesh1->getSetEntities("cut2", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  const auto& block2 = mesh2->getSetEntities("cut2", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+
+  for (int f : block1) {
+    int c = getFaceOnBoundaryInternalCell(*mesh1, f);
+    mesh1->getFaceNormal(f, c, &dir);
+   
+    double pavg(p1_f[0][f]);
+    for (auto data : interface_data[0][f]) {
+      int f2 = data.first;
+      pavg += data.second * p2_f[0][f2];
+    }
+    sum += pavg * flux1[0][f] * dir;
+  }
+
+  for (int f : block2) {
+    int c = getFaceOnBoundaryInternalCell(*mesh2, f);
+    mesh2->getFaceNormal(f, c, &dir);
+
+    double pavg(p2_f[0][f]);
+    for (auto data : interface_data[1][f]) {
+      int f1 = data.first;
+      pavg += data.second * p1_f[0][f1];
+    }
+    sum += pavg * flux2[0][f] * dir;
+  }
+  printf("Lemma 4.3, %12.9f >= 0.0\n", sum / 2);
+  AMANZI_ASSERT(sum >= -1e-12);
+
   // i/o
   Teuchos::ParameterList iolist;
   iolist.set<std::string>("file name base", "plot1");
@@ -318,7 +380,7 @@ TestDiffusionMultiMesh(int d, double tol, const std::string& filename = "")
 
 TEST(OPERATOR_DIFFUSION_TWO_MESH_PROBLEM)
 {
-  TestDiffusionMultiMesh<Analytic01>(2, 5e-2, "test/median7x8.exo");
   TestDiffusionMultiMesh<Analytic01>(2, 5e-2);
   TestDiffusionMultiMesh<Analytic01b>(3, 1e-1);
+  TestDiffusionMultiMesh<Analytic01>(2, 5e-2, "test/median15x16.exo");
 }
