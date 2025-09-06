@@ -96,7 +96,7 @@ TestDiffusionMultiMesh(int d, double tol, const std::string& filename = "")
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: 2D multi mesh problem: three meshes\n";
+  if (MyPID == 0) std::cout << "\nTest: " << d << "D multi mesh problem: three meshes, file=" << filename << "\n";
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion_multi_mesh_cuts.xml";
@@ -106,14 +106,15 @@ TestDiffusionMultiMesh(int d, double tol, const std::string& filename = "")
   ParameterList region_list = plist.sublist("regions" + to_string(d));
   auto gm = Teuchos::rcp(new GeometricModel(d, region_list, *comm));
 
-  // create meshese
+  // create meshes
+  int n = plist.get<int>("refinement level", 1);
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<Mesh> mesh1, mesh2, mesh3;
   if (d == 2 && filename == "") {
-    mesh1 = meshfactory.create(0.0, 0.5, 0.5, 1.0, 5, 5);
-    mesh2 = meshfactory.create(0.0, 0.0, 0.5, 0.5, 5, 5);
-    mesh3 = meshfactory.create(0.5, 0.0, 1.0, 1.0, 10, 10);
+    mesh1 = meshfactory.create(0.0, 0.5, 0.5, 1.0, 5 * n, 5 * n);
+    mesh2 = meshfactory.create(0.0, 0.0, 0.5, 0.5, 5 * n, 5 * n);
+    mesh3 = meshfactory.create(0.5, 0.0, 1.0, 1.0, 10 * n, 10 * n);
   } else if (d == 2 && filename != "") {
     mesh1 = meshfactory.create(filename);
     mesh2 = meshfactory.create(filename);
@@ -123,9 +124,9 @@ TestDiffusionMultiMesh(int d, double tol, const std::string& filename = "")
     ModifyMesh(*mesh2, AmanziGeometry::Point(0.5, 0.5), AmanziGeometry::Point(0.0, 0.0));
     ModifyMesh(*mesh3, AmanziGeometry::Point(0.5, 1.0), AmanziGeometry::Point(0.5, 0.0));
   } else {
-    mesh1 = meshfactory.create(0.0, 0.5, 0.0, 0.5, 1.0, 1.0, 5, 5, 5);
-    mesh2 = meshfactory.create(0.0, 0.0, 0.0, 0.5, 0.5, 1.0, 7, 7, 5);
-    mesh3 = meshfactory.create(0.5, 0.0, 0.0, 1.0, 1.0, 1.0, 9, 8, 7);
+    mesh1 = meshfactory.create(0.0, 0.5, 0.0, 0.5, 1.0, 1.0, 5 * n, 5 * n, 5 * n);
+    mesh2 = meshfactory.create(0.0, 0.0, 0.0, 0.5, 0.5, 1.0, 7 * n, 7 * n, 5 * n);
+    mesh3 = meshfactory.create(0.5, 0.0, 0.0, 1.0, 1.0, 1.0, 9 * n, 8 * n, 7 * n);
   }
 
   int ncells1_owned = mesh1->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
@@ -141,7 +142,7 @@ TestDiffusionMultiMesh(int d, double tol, const std::string& filename = "")
   WhetStone::Tensor Knull;
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator");
 
-  Analytic ana1(mesh1), ana2(mesh2), ana3(mesh3);
+  Analytic ana1(mesh1, 3), ana2(mesh2, 3), ana3(mesh3, 3);
 
   auto Kc1 = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   for (int c = 0; c < ncells1_owned; ++c) {
@@ -421,7 +422,7 @@ TestDiffusionMultiMesh(int d, double tol, const std::string& filename = "")
 
 TEST(OPERATOR_DIFFUSION_TWO_MESH_PROBLEM)
 {
-  TestDiffusionMultiMesh<Analytic01>(2, 5e-2);
-  TestDiffusionMultiMesh<Analytic01b>(3, 1e-1);
+  TestDiffusionMultiMesh<Analytic01>(2, 5e-2); // lemma 4.3 gives zero
   TestDiffusionMultiMesh<Analytic01>(2, 5e-2, "test/median7x8.exo");
+  TestDiffusionMultiMesh<Analytic01b>(3, 1e-1);
 }

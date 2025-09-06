@@ -1,6 +1,8 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
 
+  <Parameter name="refinement level" type="int" value="1"/>
+
   <ParameterList name="regions2">
     <ParameterList name="cut1top">
       <ParameterList name="region: box">

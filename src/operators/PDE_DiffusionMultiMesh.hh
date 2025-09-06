@@ -117,6 +117,12 @@ class PDE_DiffusionMultiMesh {
                                const std::string& rgn2,
                                InterfaceData& data12);
 
+  void meshToMeshMapConvexHull_(const AmanziMesh::Mesh& mesh1,
+                                const std::string& rgn1,
+                                const AmanziMesh::Mesh& mesh2,
+                                const std::string& rgn2,
+                                InterfaceData& data12);
+
   // Note: if no initial guess, set f2_guess to -1
   int findFace_(const AmanziGeometry::Point& xf1,
                 const AmanziGeometry::Point& ray,
@@ -124,6 +130,13 @@ class PDE_DiffusionMultiMesh {
                 const std::string& rgn2,
                 int f2_guess,
                 int* stage);
+
+  bool pointInTriangle_(const AmanziGeometry::Point& testpnt,
+                        const AmanziGeometry::Point& xa,
+                        const AmanziGeometry::Point& xb,
+                        const AmanziGeometry::Point& xc,
+                        std::array<double, 3>& lambdas,
+                        double tol = 1e-10);
 
   void ModifyMatrices_(int ib, const InterfaceData& data);
 
@@ -133,6 +146,8 @@ class PDE_DiffusionMultiMesh {
   int d_;
 
   double stability_;
+  std::string method_;
+
   std::vector<std::vector<std::string>> interface_meshes_;
   std::vector<std::vector<int>> interface_block_;
   std::vector<InterfaceData> interface_data_;

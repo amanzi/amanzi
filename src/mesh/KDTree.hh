@@ -77,9 +77,8 @@ class KDTree {
   }
 
   // find the first n points closest to the given point p
-  std::vector<unsigned int> SearchNearest(const AmanziGeometry::Point& p,
-                                          Double_List& dist_sqr,
-                                          int n = 1)
+  std::pair<std::vector<unsigned int>, std::vector<double>>
+  SearchNearest(const AmanziGeometry::Point& p, int n = 1)
   {
     AMANZI_ASSERT(tree_ != NULL);
 
@@ -87,7 +86,7 @@ class KDTree {
     for (int i = 0; i < p.dim() ; ++i) query[i] = p[i];
 
     std::vector<unsigned int> idx(n);
-    dist_sqr.resize(n);
+    std::vector<double> dist_sqr(n);
 
     int m = tree_->knnSearch(&query[0], n, &idx[0], &dist_sqr[0]);
 
@@ -95,7 +94,7 @@ class KDTree {
     idx.resize(m);
     dist_sqr.resize(m);
 
-    return idx;
+    return std::make_pair(idx, dist_sqr);
   }
 
   // find all points in the sphere of centered to the given point p

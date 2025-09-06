@@ -14,8 +14,11 @@
 
 #include <vector>
 
-#include "Point.hh"
+#include "nanoflann.hpp"
+
+#include "KDTree.hh"
 #include "MeshDefs.hh"
+#include "Point.hh"
 
 #include "Op_Cell_FaceCell.hh"
 #include "Operator_MultiMesh.hh"
@@ -51,6 +54,7 @@ PDE_DiffusionMultiMesh::Init(const Teuchos::RCP<State>& S)
   }
 
   stability_ = plist_.get<double>("stability constant");
+  method_ = plist_.get<std::string>("intersection method");
   d_ = meshes_[names_[0]]->getSpaceDimension();
 
   // parse interface data
@@ -74,7 +78,11 @@ PDE_DiffusionMultiMesh::Init(const Teuchos::RCP<State>& S)
 
     InterfaceData data;
     for (int k = 0; k < 2; ++k) {
-      meshToMeshMapParticles_(*submeshes[k], rgns[k], *submeshes[1 - k], rgns[1 - k], data);
+      if (method_ == "particles") {
+        meshToMeshMapParticles_(*submeshes[k], rgns[k], *submeshes[1 - k], rgns[1 - k], data);
+      } else {
+        meshToMeshMapConvexHull_(*submeshes[k], rgns[k], *submeshes[1 - k], rgns[1 - k], data);
+      }
 
       interface_weights_.push_back(data);
       interface_meshes_.push_back({ names[k], names[1 - k] });
@@ -462,7 +470,7 @@ PDE_DiffusionMultiMesh::meshToMeshMapParticles_(const AmanziMesh::Mesh& mesh1,
   }
 
   // -- verify
-  double sum, tol(1e-14);
+  double sum, tol(1e-12);
   for (int n = 0; n < nblock1; ++n) {
     int f1 = block1[n];
     sum = 0.0;
@@ -480,6 +488,122 @@ PDE_DiffusionMultiMesh::meshToMeshMapParticles_(const AmanziMesh::Mesh& mesh1,
     *vo_->os() << "interface names: \"" << rgn1 << "\" or \"" << rgn2 << "\", areas: " << sum1
                << " " << sum2 << "\n  " << count << " particles in the 2nd stage out of " << count2
                << " (" << 100.0 * count / count2 << "%)" << std::endl;
+  }
+}
+
+
+/* *****************************************************************
+* Convex interpolation on mesh2 for face cetroids on mesh1
+* **************************************************************** */
+void
+PDE_DiffusionMultiMesh::meshToMeshMapConvexHull_(const AmanziMesh::Mesh& mesh1,
+                                                 const std::string& rgn1,
+                                                 const AmanziMesh::Mesh& mesh2,
+                                                 const std::string& rgn2,
+                                                 InterfaceData& data12)
+{
+  const auto& block1 = mesh1.getSetEntities(rgn1, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int nblock1 = block1.size();
+
+  const auto& block2 = mesh2.getSetEntities(rgn2, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int nblock2 = block2.size();
+
+  // construct a kd-tree index:
+  std::vector<Amanzi::AmanziGeometry::Point> points;
+  for (int f2 : block2) points.push_back(mesh2.getFaceCentroid(f2));
+
+  Amanzi::AmanziMesh::PointCloud cloud;
+  cloud.Init(&points);
+
+  AmanziMesh::KDTree tree;
+  tree.Init(&points);
+
+  // find closest face centroid on mesh2
+  int f2a, f2b, f2c, count(0);
+  bool flag, found;
+  double d2a, d2b;
+
+  data12.clear();
+
+  for (int n1 = 0; n1 < nblock1; ++n1) {
+    int f1 = block1[n1];
+    const auto& xp1 = mesh1.getFaceCentroid(f1);
+
+    int num(10);
+    auto [idx, dist2] = tree.SearchNearest(xp1, num);
+    num = idx.size();
+
+    if (d_ == 2) {
+      f2a = block2[idx[0]];
+      d2a = std::sqrt(dist2[0]);
+      const auto& xp2 = mesh2.getFaceCentroid(f2a);
+      AmanziGeometry::Point v2a = xp2 - xp1;
+      
+      found = false;
+      for (int n = 1; n < num; ++n) {
+        f2b = block2[idx[n]];
+        const auto& xp2 = mesh2.getFaceCentroid(f2b);
+        AmanziGeometry::Point v2b = xp2 - xp1;
+
+        if (v2a * v2b < 0.0) {
+          d2b = std::sqrt(dist2[n]);
+          found = true;
+          break;
+        }
+      }
+
+      if (!found) {
+        if (dist2[0] < 1e-24) {
+          data12[f1][f2a] = 1.0;
+        } else {
+          f2b = block2[idx[1]];
+          d2b = std::sqrt(dist2[1]);
+
+          data12[f1][f2a] = d2b / (d2b - d2a);
+          data12[f1][f2b] = 1.0 - d2b / (d2b - d2a);
+          count++;
+        }
+      } else {
+        data12[f1][f2a] = d2b / (d2a + d2b);
+        data12[f1][f2b] = d2a / (d2a + d2b);
+      }
+
+    } else if (d_ == 3) {
+      std::array<double, 3> lambdas;
+
+      f2a = block2[idx[0]];
+      found = false;
+
+      for (int i1 = 1; i1 < num; ++i1) {
+        for (int i2 = i1 + 1; i2 < num; ++i2) {
+          flag = pointInTriangle_(xp1, points[idx[0]], points[idx[i1]], points[idx[i2]], lambdas);
+          if (flag) {
+            f2b = block2[idx[i1]];    
+            f2c = block2[idx[i2]];    
+            data12[f1][f2a] = lambdas[0];
+            data12[f1][f2b] = lambdas[1];
+            data12[f1][f2c] = lambdas[2];
+
+            found = true;
+            break;
+          }
+        }
+        if (found) break;
+      }
+
+      // boundary effect: take the closest point
+      if (!found) {
+        data12[f1][f2a] = 1.0;
+        count++;
+      }
+    }
+  }
+
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "interface names: \"" << rgn1 << "\" or \"" << rgn2 
+               << "\n " << count << " points outside a simplex " 
+               << " (" << 100.0 * count / nblock1 << "%)" << std::endl;
   }
 }
 
@@ -547,6 +671,63 @@ PDE_DiffusionMultiMesh::findFace_(const AmanziGeometry::Point& xf1,
 
   AMANZI_ASSERT(f2min >= 0);
   return f2min;
+}
+
+
+/* *****************************************************************
+* Check if point is inside 3D triangle 
+* **************************************************************** */
+bool
+PDE_DiffusionMultiMesh::pointInTriangle_(const AmanziGeometry::Point& testpnt,
+                                         const AmanziGeometry::Point& xa,
+                                         const AmanziGeometry::Point& xb,
+                                         const AmanziGeometry::Point& xc,
+                                         std::array<double, 3>& lambdas,
+                                         double tol)
+{
+  int i0(0), i1(1);
+  if (d_ == 3) {
+    double xmax = std::max(std::fabs(xb[0] - xa[0]), std::fabs(xc[0] - xa[0]));
+    double ymax = std::max(std::fabs(xb[1] - xa[1]), std::fabs(xc[1] - xa[1]));
+    double zmax = std::max(std::fabs(xb[2] - xa[2]), std::fabs(xc[2] - xa[2]));
+
+    // projection on one of the three planes: XY, XZ, and YZ
+    if (zmax <= std::min(xmax, ymax)) {
+      i0 = 0;
+      i1 = 1;
+    } else if (ymax <= std::min(xmax, zmax)) {
+      i0 = 0;
+      i1 = 2;
+    } else if (xmax <= std::min(ymax, zmax)) {
+      i0 = 1;
+      i1 = 2;
+    }
+  }
+
+  double a[2], b[2], c[2];
+  a[0] = xa[i0] - xc[i0];
+  a[1] = xa[i1] - xc[i1];
+
+  b[0] = xb[i0] - xc[i0];
+  b[1] = xb[i1] - xc[i1];
+
+  c[0] = testpnt[i0] - xc[i0];
+  c[1] = testpnt[i1] - xc[i1];
+
+  double det = a[0] * b[1] - a[1] * b[0];
+  double norma = a[0] * a[0] + a[1] * a[1];
+  double normb = b[0] * b[0] + b[1] * b[1];
+  if (std::abs(det) < tol * std::sqrt(norma * normb)) return false;
+
+  lambdas[0] = (b[1] * c[0] - b[0] * c[1]) / det;
+  lambdas[1] = (a[0] * c[1] - a[1] * c[0]) / det;
+  lambdas[2] = 1.0 - lambdas[0] - lambdas[1];
+
+  if (lambdas[0] >= -tol && lambdas[1] >= -tol && lambdas[2] >= -tol) {
+    for (int i = 0; i < 3; ++i) lambdas[i] = std::fabs(lambdas[i]);
+    return true;
+  }
+  return false;
 }
 
 } // namespace Operators
