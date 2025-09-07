@@ -76,6 +76,8 @@ PDE_DiffusionMultiMesh::Init(const Teuchos::RCP<State>& S)
     rgns = sublist.get<Teuchos::Array<std::string>>("common surface regions").toVector();
     AMANZI_ASSERT(rgns.size() == 2);
 
+    double kappa = sublist.get<double>("contact conductance", 0.0);
+
     InterfaceData data;
     for (int k = 0; k < 2; ++k) {
       if (method_ == "particles") {
@@ -86,6 +88,7 @@ PDE_DiffusionMultiMesh::Init(const Teuchos::RCP<State>& S)
 
       interface_weights_.push_back(data);
       interface_meshes_.push_back({ names[k], names[1 - k] });
+      interface_conductance_.push_back(kappa);
     }
   }
   int ninterfaces = interface_weights_.size();
@@ -107,30 +110,33 @@ PDE_DiffusionMultiMesh::Init(const Teuchos::RCP<State>& S)
   matrix_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
 
   // create "diagonal" operators
-  interface_block_.resize(nmeshes);
-  interface_data_.resize(nmeshes);
+  boundary_block_.resize(nmeshes);
+  boundary_data_.resize(nmeshes);
+  boundary_conductance_.resize(nmeshes);
 
   for (int i0 = 0; i0 < nmeshes; ++i0) {
     int nfaces_wghost = meshes_[names_[i0]]->getNumEntities(AmanziMesh::Entity_kind::FACE,
                                                             AmanziMesh::Parallel_kind::ALL);
-    interface_block_[i0].resize(nfaces_wghost, -1);
+    boundary_block_[i0].resize(nfaces_wghost, -1);
+    boundary_conductance_[i0].resize(nfaces_wghost);
 
     for (int k = 0; k < ninterfaces; ++k) {
       if (interface_meshes_[k][0] == names_[i0]) {
         int i1 = std::distance(names_.begin(),
                                std::find(names_.begin(), names_.end(), interface_meshes_[k][1]));
         for (auto it : interface_weights_[k]) {
-          interface_block_[i0][it.first] = i1;
+          boundary_block_[i0][it.first] = i1;
+          boundary_conductance_[i0][it.first] = interface_conductance_[k];
         }
-        interface_data_[i0].insert(interface_weights_[k].begin(), interface_weights_[k].end());
+        boundary_data_[i0].insert(interface_weights_[k].begin(), interface_weights_[k].end());
       }
     }
 
     auto op = Teuchos::rcp(new Operator_MultiMesh(plist_,
                                                   pdes_[i0]->global_operator(),
                                                   pdes_[i0]->local_op(),
-                                                  interface_block_[i0],
-                                                  interface_data_[i0]));
+                                                  boundary_block_[i0],
+                                                  boundary_data_[i0]));
     matrix_->set_operator_block(i0, i0, op);
   }
 
@@ -156,7 +162,7 @@ PDE_DiffusionMultiMesh::UpdateMatrices(const Teuchos::RCP<const TreeVector>& flu
     op->Init();
 
     pdes_[i]->UpdateMatrices(Teuchos::null, Teuchos::null);
-    ModifyMatrices_(i, interface_data_[i]);
+    ModifyMatrices_(i, boundary_data_[i]);
   }
 }
 
@@ -168,6 +174,8 @@ void
 PDE_DiffusionMultiMesh::ModifyMatrices_(int ib, const InterfaceData& data)
 {
   auto op = *matrix_->get_operator_block(ib, ib)->begin();
+
+  double beta = (d_ - 2.0) / (d_ - 1.0);
 
   for (int c = 0; c < op->matrices.size(); ++c) {
     const auto& faces = meshes_[names_[ib]]->getCellFaces(c);
@@ -194,14 +202,25 @@ PDE_DiffusionMultiMesh::ModifyMatrices_(int ib, const InterfaceData& data)
         if (it == data.end()) {
           C(n, n) = 1.0;
         } else {
-          double scale =
-            stability_ * std::pow(meshes_[names_[ib]]->getFaceArea(f), (d_ - 2.0) / (d_ - 1.0));
-          C(n, n) = 0.5;
-          L(n, n) = -scale;
-          for (auto coef : it->second) {
-            C(n, ncol) = coef.second / 2;
-            L(n, ncol) = coef.second * scale;
-            ncol++;
+          double scale = boundary_conductance_[ib][f];
+          if (scale > 0.0) {
+            scale *= meshes_[names_[ib]]->getFaceArea(f);
+
+            L(n, n) = -scale;
+            for (auto coef : it->second) {
+              L(n, ncol) = coef.second * scale;
+              ncol++;
+            }
+          } else {
+            scale = stability_ * std::pow(meshes_[names_[ib]]->getFaceArea(f), beta);
+
+            C(n, n) = 0.5;
+            L(n, n) = -scale;
+            for (auto coef : it->second) {
+              C(n, ncol) = coef.second / 2;
+              L(n, ncol) = coef.second * scale;
+              ncol++;
+            }
           }
         }
       }
@@ -226,8 +245,8 @@ PDE_DiffusionMultiMesh::ApplyBCs(bool primary, bool eliminate, bool essential_eq
   for (int ib = 0; ib < matrix_->get_row_size(); ++ib) {
     auto op = *matrix_->get_operator_block(ib, ib)->begin();
 
-    const auto& data = interface_data_[ib];
-    const auto& interface_block = interface_block_[ib];
+    const auto& data = boundary_data_[ib];
+    const auto& boundary_block = boundary_block_[ib];
 
     const std::vector<int>& bc_model_trial = (pdes_[ib]->get_bcs_trial())[0]->bc_model();
     const std::vector<int>& bc_model_test = (pdes_[ib]->get_bcs_test())[0]->bc_model();
@@ -279,7 +298,7 @@ PDE_DiffusionMultiMesh::ApplyBCs(bool primary, bool eliminate, bool essential_eq
               auto it = data.find(f2);
               if (it != data.end()) {
                 for (auto coef : it->second) {
-                  int jb = interface_block[f2];
+                  int jb = boundary_block[f2];
                   AMANZI_ASSERT(jb >= 0);
                   auto& tmp_face =
                     *matrix_->get_operator_block(jb, jb)->rhs()->ViewComponent("face", true);
@@ -316,8 +335,8 @@ PDE_DiffusionMultiMesh::UpdateFlux(const Teuchos::Ptr<const TreeVector>& u,
   for (int ib = 0; ib < matrix_->get_row_size(); ++ib) {
     auto op = *matrix_->get_operator_block(ib, ib)->begin();
 
-    const auto& data = interface_data_[ib];
-    const auto& interface_block = interface_block_[ib];
+    const auto& data = boundary_data_[ib];
+    const auto& boundary_block = boundary_block_[ib];
 
     const auto& u_cell = *u->SubVector(ib)->Data()->ViewComponent("cell");
     const auto& u_face = *u->SubVector(ib)->Data()->ViewComponent("face");
@@ -341,7 +360,7 @@ PDE_DiffusionMultiMesh::UpdateFlux(const Teuchos::Ptr<const TreeVector>& u,
 
         auto it = data.find(f);
         if (it != data.end()) {
-          int ib_other = interface_block[f];
+          int ib_other = boundary_block[f];
           const auto& u_other = *u->SubVector(ib_other)->Data()->ViewComponent("face");
           for (auto coef : it->second) {
             v(ncol++) = u_other[0][coef.first];

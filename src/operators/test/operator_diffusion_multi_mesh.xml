@@ -54,6 +54,7 @@
         <ParameterList name="interface 1">
           <Parameter name="meshes" type="Array(string)" value="{mesh1, mesh2}"/>
           <Parameter name="common surface regions" type="Array(string)" value="{cut1, cut1}"/>
+          <Parameter name="contact conductance" type="double" value="0.0"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="verbose object">

@@ -38,6 +38,7 @@
 #include "PDE_DiffusionMultiMesh.hh"
 
 #include "Analytic00.hh"
+#include "Analytic02.hh"
 #include "Analytic08.hh"
 
 /* *****************************************************************
@@ -251,6 +252,8 @@ TestDiffusionMultiMesh(double tol, int icase)
   p2.MaxValue(&p2max);
 
   if (MyPID == 0) {
+    printf("total: L2(p) =%10.7f  Inf =%9.6f\n", 
+           std::sqrt(l2_err1 * l2_err1 + l2_err2 * l2_err2), std::max(inf_err1, inf_err2));
     l2_err1 /= pnorm1;
     l2_err2 /= pnorm2;
     printf("L2(p) =%10.7f  Inf =%9.6f  min/max = %9.6f %9.6f  #cells=%d\n",
@@ -305,6 +308,7 @@ TestDiffusionMultiMesh(double tol, int icase)
     for (auto data : interface_weights[0][f]) {
       int f2 = data.first;
       pavg += data.second * p2_f[0][f2];
+      // std::cout << f << " " << f2 << " " << data.second << std::endl;
     }
     sum += pavg * flux1[0][f] * dir;
   }
@@ -345,6 +349,6 @@ TestDiffusionMultiMesh(double tol, int icase)
 
 TEST(OPERATOR_DIFFUSION_TWO_MESH_PROBLEM)
 {
-  TestDiffusionMultiMesh<Analytic00>(7e-3, 1);
   TestDiffusionMultiMesh<Analytic08>(7e-3, 2);
+  TestDiffusionMultiMesh<Analytic00>(7e-3, 1);
 }

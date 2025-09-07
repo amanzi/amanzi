@@ -63,7 +63,7 @@ namespace Operators {
 
 class PDE_DiffusionMultiMesh {
  public:
-  const int REFINE = 9;
+  const int REFINE = 10;
 
  public:
   PDE_DiffusionMultiMesh(Teuchos::ParameterList& plist);
@@ -146,12 +146,15 @@ class PDE_DiffusionMultiMesh {
   int d_;
 
   double stability_;
+  std::vector<double> interface_conductance_;
   std::string method_;
 
   std::vector<std::vector<std::string>> interface_meshes_;
-  std::vector<std::vector<int>> interface_block_;
-  std::vector<InterfaceData> interface_data_;
   std::vector<InterfaceData> interface_weights_;
+
+  std::vector<std::vector<int>> boundary_block_;
+  std::vector<std::vector<double>> boundary_conductance_;
+  std::vector<InterfaceData> boundary_data_;
 
   std::vector<std::string> names_;
   std::map<std::string, Teuchos::RCP<std::vector<WhetStone::Tensor>>> K_;
