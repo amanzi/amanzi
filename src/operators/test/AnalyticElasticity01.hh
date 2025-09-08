@@ -22,23 +22,25 @@ class AnalyticElasticity01 : public AnalyticElasticityBase {
  public:
   AnalyticElasticity01(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
                        double mu = 1.0,
-                       double lambda = 0.0,
-                       bool flag = false)
-    : AnalyticElasticityBase(mesh), mu_(mu), lambda_(lambda), flag_(flag) {};
+                       double lambda = 0.0)
+    : AnalyticElasticityBase(mesh), mu_(mu), lambda_(lambda) {};
   ~AnalyticElasticity01() {};
 
   Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t)
   {
     int d = mesh_->getSpaceDimension();
-    if (lambda_ == 0.0 && !flag_) {
+    if (lambda_ == 0.0) {
       Amanzi::WhetStone::Tensor K(d, 1);
       K(0, 0) = 2 * mu_;
       return K;
     } else {
-      Amanzi::WhetStone::Tensor K(2, 4);
-      K(0, 0) = K(1, 1) = 2 * mu_ + lambda_;
-      K(1, 0) = K(0, 1) = lambda_;
-      K(2, 2) = K(3, 3) = 2 * mu_;
+      Amanzi::WhetStone::Tensor K(d, 4);
+      for (int i = 0; i < d * d; ++i) K(i, i) = 2 * mu_;
+      for (int i = 0; i < d; ++i) {
+        for (int j = 0; j < d; ++j) {
+          K(i, j) += lambda_;
+        }
+      }
       return K;
     }
   }
@@ -52,6 +54,11 @@ class AnalyticElasticity01 : public AnalyticElasticityBase {
     double y = p[1];
     out[0] = x + y;
     out[1] = x - 2 * y;
+
+    if (d == 3) {
+      // double z = p[2];
+      // out[2] = x - 2 * y - 3 * z;
+    }
     return out;
   }
 
@@ -65,7 +72,8 @@ class AnalyticElasticity01 : public AnalyticElasticityBase {
 
   virtual Amanzi::WhetStone::Tensor stress_exact(const Amanzi::AmanziGeometry::Point& p, double t)
   {
-    Amanzi::WhetStone::Tensor T(2, 2);
+    int d = mesh_->getSpaceDimension();
+    Amanzi::WhetStone::Tensor T(d, 2);
     T(0, 0) = 2 * mu_ - lambda_;
     T(0, 1) = T(1, 0) = 2 * mu_;
     T(1, 1) = -4 * mu_ - lambda_;
@@ -79,7 +87,6 @@ class AnalyticElasticity01 : public AnalyticElasticityBase {
 
  private:
   double mu_, lambda_;
-  bool flag_;
 };
 
 #endif

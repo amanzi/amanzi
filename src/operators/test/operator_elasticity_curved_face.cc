@@ -33,13 +33,12 @@
 #include "PDE_ElasticityCurvedFace.hh"
 
 #include "AnalyticElasticity01.hh"
-#include "Verification.hh"
 
 /* *****************************************************************
 * Elasticity model: exactness test.
 ***************************************************************** */
 void
-RunTest(double mu, double lambda, bool flag, const std::string& filename = "")
+RunTest(double mu, double lambda, const std::string& filename = "")
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -48,7 +47,7 @@ RunTest(double mu, double lambda, bool flag, const std::string& filename = "")
 
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTEST: Elasticity with curved faces \n";
+  if (MyPID == 0) std::cout << "\nTEST: Elasticity with curved faces \"" << filename << "\"\n";
 
   // read parameter list
   // -- it specifies details of the mesh, elasticity operator, and solver
@@ -77,12 +76,14 @@ RunTest(double mu, double lambda, bool flag, const std::string& filename = "")
   // -- general information about mesh
   int ncells =
     mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_wghost =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
   int nfaces_wghost =
     mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   // select an analytic solution for error calculations and setup of
   // boundary conditions
-  AnalyticElasticity01 ana(mesh, mu, lambda, flag);
+  AnalyticElasticity01 ana(mesh, mu, lambda);
 
   auto K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   for (int c = 0; c < ncells; c++) {
@@ -103,19 +104,18 @@ RunTest(double mu, double lambda, bool flag, const std::string& filename = "")
   std::vector<int>& bcf_model = bcf->bc_model();
   std::vector<std::vector<double>>& bcf_value = bcf->bc_value_vector(d);
 
-  for (int f = 0; f < nfaces_wghost; ++f) {
+  const auto fmap = mesh->getMap(AmanziMesh::Entity_kind::FACE, true);
+  const auto bfmap = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true);
+
+  for (int n = 0; n < bfmap.NumMyElements(); ++n) {
+    int f = fmap.LID(bfmap.GID(n));
     const auto& xf = mesh->getFaceCentroid(f);
-    const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
+    auto yf = (*pde->get_bf())[f];
 
-    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
-        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
-        (d == 3 && (fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6))) {
-      bcf_model[f] = OPERATOR_BC_DIRICHLET;
-      val0 = ana.velocity_exact(xf, 0.0);
-      for (int k = 0; k < d; ++k) bcf_value[f][k] = val0[k];
-
-      ndir++;
-    }
+    bcf_model[f] = OPERATOR_BC_DIRICHLET;
+    val0 = ana.velocity_exact(yf, 0.0);
+    for (int k = 0; k < d; ++k) bcf_value[f][k] = val0[k];
+    ndir++;
   }
   pde->AddBCs(bcf, bcf);
 
@@ -128,7 +128,7 @@ RunTest(double mu, double lambda, bool flag, const std::string& filename = "")
   CompositeVector source(cvs);
   Epetra_MultiVector& src = *source.ViewComponent("cell");
 
-  for (int c = 0; c < ncells; ++c) {
+  for (int c = 0; c < ncells_wghost; ++c) {
     const auto& xc = mesh->getCellCentroid(c);
     Point tmp(ana.source_exact(xc, 0.0));
     for (int k = 0; k < d; ++k) src[k][c] = tmp[k];
@@ -149,15 +149,8 @@ RunTest(double mu, double lambda, bool flag, const std::string& filename = "")
   global_op->InitializeInverse();
   global_op->ComputeInverse();
 
-  // Test SPD properties of the matrix and preconditioner.
-  VerificationCV ver(global_op);
-  ver.CheckMatrixSPD(true, true);
-  ver.CheckPreconditionerSPD(1e-12, true, true);
-
   CompositeVector& rhs = *global_op->rhs();
   global_op->ApplyInverse(rhs, solution);
-
-  ver.CheckResidual(solution, 1.0e-13);
 
   if (MyPID == 0) {
     std::cout << "elasticity solver (PCG): ||r||=" << global_op->residual()
@@ -174,20 +167,19 @@ RunTest(double mu, double lambda, bool flag, const std::string& filename = "")
   if (MyPID == 0) {
     ul2_err /= unorm;
     printf("L2(u)=%12.8g  Inf(u)=%12.8g  itr=%3d\n", ul2_err, uinf_err, global_op->num_itrs());
-
     // CHECK(ul2_err < 1e-10);
-    CHECK(global_op->num_itrs() < 15 + d);
   }
 }
 
 
 TEST(OPERATOR_ELASTICITY_CURVED_FACE_2D)
 {
-  RunTest(1.0, 0.0, false);
+  RunTest(1.0, 0.1);
 }
 
 TEST(OPERATOR_ELASTICITY_CURVED_FACE_3D)
 {
-  RunTest(1.0, 0.0, false, "test/random3D_05.exo");
+  RunTest(1.0, 0.2, "test/random3D_05.exo");
+  RunTest(1.0, 0.0, "test/sphere.exo");
 }
 

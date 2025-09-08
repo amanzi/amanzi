@@ -161,7 +161,7 @@ MFD3D_Diffusion_CurvedFace::L2Cell(int c,
   vc.Reshape(d_, 1, true);
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
-    const AmanziGeometry::Point& fm = mesh_->getFaceCentroid(f);
+    const AmanziGeometry::Point fm = (*bf_)[f];
 
     for (int k = 0; k < d_; k++) {
       double Rik = fm[k] - cm[k];

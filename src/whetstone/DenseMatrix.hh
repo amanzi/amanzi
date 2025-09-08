@@ -233,6 +233,7 @@ operator!=(const DenseMatrix& A, const DenseMatrix& B)
 
 // triple product of matrices and vectors inserted into submatrix 
 // of A at position (i0, j0). The matrix M must be a square matrix.
+// Vectors represent diagonal matrices.
 inline void
 TripleMatrixProduct(const DenseVector& ML,
                     const DenseMatrix& M,

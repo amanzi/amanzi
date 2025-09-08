@@ -95,7 +95,7 @@ RunTest(int icase, double mu, double lambda, double tol = 1e-10)
 
   // select an analytic solution for error calculations and setup of
   // boundary conditions
-  Analytic ana(mesh, mu, lambda, false);
+  Analytic ana(mesh, mu, lambda);
 
   auto K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   for (int c = 0; c < ncells_owned; c++) {

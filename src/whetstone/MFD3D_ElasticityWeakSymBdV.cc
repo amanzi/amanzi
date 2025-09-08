@@ -97,7 +97,6 @@ MFD3D_ElasticityWeakSymBdV::L2consistency(int c, const Tensor& T, DenseMatrix& N
     double area = mesh_->getFaceArea(f);
     const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
     AmanziGeometry::Point normal = mesh_->getFaceNormal(f);
-    // normal *= dirs[n];
     auto coordsys = std::make_shared<AmanziGeometry::SurfaceCoordinateSystem>(xf, normal);
 
     for (int m = 0; m < modes; ++m) {
@@ -118,7 +117,7 @@ MFD3D_ElasticityWeakSymBdV::L2consistency(int c, const Tensor& T, DenseMatrix& N
         fmono.InverseChangeCoordinates(xf, *coordsys->tau());
         polys[1] = &fmono;
 
-        N((l + 1) * d_ + k0, m) = numi.IntegratePolynomialsFace(f, polys);
+        N(row0 + (l + 1) * d_ + k0, m) = numi.IntegratePolynomialsFace(f, polys);
       }
     }
     row0 += d_ * d_;
@@ -223,7 +222,6 @@ MFD3D_ElasticityWeakSymBdV::RotationMatrix(int c, DenseMatrix& G)
     double area = mesh_->getFaceArea(f);
     const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
     AmanziGeometry::Point normal = mesh_->getFaceNormal(f);
-    // normal *= dirs[n];
     auto coordsys = std::make_shared<AmanziGeometry::SurfaceCoordinateSystem>(xf, normal);
 
     for (int i0 = 0; i0 < nd; ++i0) {
@@ -240,19 +238,19 @@ MFD3D_ElasticityWeakSymBdV::RotationMatrix(int c, DenseMatrix& G)
         fmono.InverseChangeCoordinates(xf, *coordsys->tau());
         polys[1] = &fmono;
 
-        set_index_(d_, i0, index);
+        set_index_(d_, i1, index);
         Polynomial cmono1(d_, index, 1.0);
         cmono1.set_origin(xc);
         polys[0] = &cmono1;
 
-        G((l + 1) * d_ + i0, i0) = numi.IntegratePolynomialsFace(f, polys);
+        G(row0 + (l + 1) * d_ + i0, i0) = numi.IntegratePolynomialsFace(f, polys);
 
-        set_index_(d_, i1, index);
+        set_index_(d_, i0, index);
         Polynomial cmono2(d_, index, -1.0);
         cmono2.set_origin(xc);
         polys[0] = &cmono2;
 
-        G((l + 1) * d_ + i1, i0) = numi.IntegratePolynomialsFace(f, polys);
+        G(row0 + (l + 1) * d_ + i1, i0) = numi.IntegratePolynomialsFace(f, polys);
       }
     }
     row0 += d_ * d_;
@@ -280,16 +278,15 @@ MFD3D_ElasticityWeakSymBdV::StiffnessMatrix(int c, const Tensor& T, DenseMatrix&
   A.Reshape(nrows, nrows);
 
   // stress continuity constraint
+  const auto& faces = mesh_->getCellFaces(c);
+  int nfaces = faces.size();
+
   DenseVector D(nm);
-  int nfaces = nm / (d_ * d_);
 
   int row(0);
   for (int n = 0; n < nfaces; ++n) {
-    for (int k = 0; k < d_; ++k) {
-      int i0 = row + k;
-      D(i0) = -B(i0, k);
-      for (int l = 0; l < d_ - 1; ++l) D(i0 + (l + 1) * d_) = D(i0);
-    }
+    double area = mesh_->getFaceArea(faces[n]);
+    for (int k = 0; k < d_ * d_; ++k) D(row + k) = -area;
     row += d_ * d_;
   }
 
@@ -313,6 +310,7 @@ MFD3D_ElasticityWeakSymBdV::StiffnessMatrix(int c, const Tensor& T, DenseMatrix&
   for (int i = 0; i < nrows; ++i) {
     for (int j = i + 1; j < nrows; ++j) A(j, i) = A(i, j);
   }
+
 
   return 0;
 }

@@ -22,8 +22,7 @@ class AnalyticElasticity03 : public AnalyticElasticityBase {
  public:
   AnalyticElasticity03(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
                        double mu = 1.0,
-                       double lambda = 0.0,
-                       bool flag = false)
+                       double lambda = 0.0)
     : AnalyticElasticityBase(mesh), mu_(mu), lambda_(lambda), a_(2.0) {};
   ~AnalyticElasticity03() {};
 
