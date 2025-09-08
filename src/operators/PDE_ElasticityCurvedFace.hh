@@ -47,6 +47,8 @@ class PDE_ElasticityCurvedFace : public PDE_Abstract {
     Init_(plist);
   };
 
+  std::shared_ptr<std::vector<AmanziGeometry::Point>> get_bf() { return bf_; }
+
  private:
   void Init_(Teuchos::ParameterList& plist)
   {
