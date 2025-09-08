@@ -127,11 +127,13 @@ class PDE_Abstract : public PDE_HelperDiscretization {
   void Init_(Teuchos::ParameterList& plist);
   void CreateStaticMatrices_();
 
+ protected:
+  Teuchos::RCP<WhetStone::BilinearForm> mfd_;
+
  private:
   std::string matrix_;
   bool grad_on_test_;
 
-  Teuchos::RCP<WhetStone::BilinearForm> mfd_;
   Teuchos::RCP<InterfaceWhetStone> interface_;
 
   CoefType coef_type_;

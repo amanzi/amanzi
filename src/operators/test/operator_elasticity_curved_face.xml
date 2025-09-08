@@ -71,7 +71,7 @@
     <ParameterList name="elasticity operator">
       <Parameter name="matrix type" type="string" value="stiffness"/>
       <ParameterList name="schema">
-        <Parameter name="method" type="string" value="elasticity weak symmetry BdV"/>
+        <Parameter name="method" type="string" value="elasticity weak symmetry curved face"/>
         <Parameter name="method order" type="int" value="1"/>
         <Parameter name="base" type="string" value="cell"/>
       </ParameterList>

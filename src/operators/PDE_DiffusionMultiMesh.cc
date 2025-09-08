@@ -531,9 +531,6 @@ PDE_DiffusionMultiMesh::meshToMeshMapConvexHull_(const AmanziMesh::Mesh& mesh1,
   std::vector<Amanzi::AmanziGeometry::Point> points;
   for (int f2 : block2) points.push_back(mesh2.getFaceCentroid(f2));
 
-  Amanzi::AmanziMesh::PointCloud cloud;
-  cloud.Init(&points);
-
   AmanziMesh::KDTree tree;
   tree.Init(&points);
 
