@@ -231,6 +231,76 @@ operator!=(const DenseMatrix& A, const DenseMatrix& B)
 }
 
 
+// triple product of matrices and vectors inserted into submatrix 
+// of A at position (i0, j0). The matrix M must be a square matrix.
+inline void
+TripleMatrixProduct(const DenseVector& ML,
+                    const DenseMatrix& M,
+                    const DenseVector& MR,
+                    DenseMatrix& A,
+                    int i0,
+                    int j0)
+{
+  int nm = M.NumCols();
+
+  for (int i = 0; i < nm; ++i) {
+    for (int j = 0; j < nm; ++j) {
+      A(i + i0, j + j0) = M(i, j) * ML(i) * MR(j);
+    }
+  }
+}
+
+
+inline void
+TripleMatrixProduct(const DenseVector& ML,
+                    const DenseMatrix& M,
+                    const DenseMatrix& MR,
+                    DenseMatrix& A,
+                    int i0,
+                    int j0)
+{
+  int nm = M.NumCols();
+  int nr = MR.NumCols();
+
+  for (int i = 0; i < nm; ++i) {
+    for (int j = 0; j < nr; ++j) {
+      double sum(0.0);
+      for (int k = 0; k < nm; ++k) {
+        sum += M(i, k) * ML(i) * MR(k, j);
+      }
+      A(i + i0, j + j0) = sum;
+    }
+  }
+}
+
+
+inline void
+TripleMatrixProduct(const DenseMatrix& ML,
+                    const DenseMatrix& M,
+                    const DenseMatrix& MR,
+                    DenseMatrix& A,
+                    int i0,
+                    int j0)
+{
+  int nm = M.NumCols();
+  int nl = ML.NumCols();
+  int nr = MR.NumCols();
+
+  for (int i = 0; i < nl; ++i) {
+    for (int j = 0; j < nr; ++j) {
+      double sum(0.0);
+      for (int k = 0; k < nm; ++k) {
+        for (int l = 0; l < nm; ++l) {
+          sum += M(k, l) * ML(k, i) * MR(l, j);
+        }
+      }
+      A(i + i0, j + j0) = sum;
+    }
+  }
+}
+
+
+// i/o
 inline void
 PrintMatrix(const DenseMatrix& A, const char* format = "%12.5f", int mmax = 0)
 {

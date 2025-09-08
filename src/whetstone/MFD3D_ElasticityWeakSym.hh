@@ -12,10 +12,13 @@
   Release name: naka-to.
 
   The mimetic finite difference method for elasticity with weak symmetry.
-  Stress: linear normal component per face (d*d dofs)
-    (1) order is: zero moments, d first moments
+  Stress: 1 normal component per face (d dofs)
   Displacement: 1 value per cell (d dofs)
-  Rotations:    1 value per cell (d dofs)
+  Rotations:    1 value per cell (d dofs in 3D, 1 dof in 2D)
+
+  Reference: Mathematics of Computation, Volume 76, Number 260, 2007, p.1699–1723
+             Mixed finite element methods for linear elasticity with weakly imposed symmetry
+             D.N. Arnold, R.S. Falk, R.Winther
 */
 
 #ifndef AMANZI_MFD3D_ELASTICITY_WEAK_SYMMETRY_HH_
@@ -34,10 +37,10 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D_ElasticityWeakSymmetry : public MFD3D {
+class MFD3D_ElasticityWeakSym : public MFD3D {
  public:
-  MFD3D_ElasticityWeakSymmetry(const Teuchos::ParameterList& plist,
-                               const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+  MFD3D_ElasticityWeakSym(const Teuchos::ParameterList& plist,
+                          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : MFD3D(mesh) {};
 
   // required methods
@@ -45,13 +48,13 @@ class MFD3D_ElasticityWeakSymmetry : public MFD3D {
   virtual std::vector<SchemaItem> schema() const override
   {
     std::vector<SchemaItem> items;
-    items.push_back(std::make_tuple(AmanziMesh::FACE, DOF_Type::SCALAR, d_ * d_));
+    items.push_back(std::make_tuple(AmanziMesh::FACE, DOF_Type::SCALAR, d_));
     items.push_back(std::make_tuple(AmanziMesh::CELL, DOF_Type::SCALAR, d_ * (d_ + 1) / 2));
     return items;
   }
 
   // -- mass matrices
-  int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
+  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
   virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override;
 
   // -- stiffness matrix
@@ -61,33 +64,10 @@ class MFD3D_ElasticityWeakSymmetry : public MFD3D {
   virtual int DivergenceMatrix(int c, DenseMatrix& B) override;
 
   // rotation metrix
-  void RotationMatrix(int c, DenseMatrix& G);
+  virtual void RotationMatrix(int c, DenseMatrix& G);
 
  private:
-  void set_index_(int d, int k, int* index);
-
-  void TripleMatrixProduct_(const DenseVector& ML,
-                            const DenseMatrix& Minv,
-                            const DenseVector& MR,
-                            DenseMatrix& A,
-                            int i0,
-                            int j0);
-
-  void TripleMatrixProduct_(const DenseVector& ML,
-                            const DenseMatrix& Minv,
-                            const DenseMatrix& MR,
-                            DenseMatrix& A,
-                            int i0,
-                            int j0);
-
-  void TripleMatrixProduct_(const DenseMatrix& ML,
-                            const DenseMatrix& Minv,
-                            const DenseMatrix& MR,
-                            DenseMatrix& A,
-                            int i0,
-                            int j0);
-
-  static RegisteredFactory<MFD3D_ElasticityWeakSymmetry> reg_;
+  static RegisteredFactory<MFD3D_ElasticityWeakSym> reg_;
 };
 
 } // namespace WhetStone

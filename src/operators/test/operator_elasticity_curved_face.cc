@@ -30,8 +30,7 @@
 #include "WhetStoneMeshUtils.hh"
 
 // Amanzi::Operators
-#include "PDE_Abstract.hh"
-#include "SurfaceCoordinateSystem.hh"
+#include "PDE_ElasticityCurvedFace.hh"
 
 #include "AnalyticElasticity01.hh"
 #include "Verification.hh"
@@ -40,7 +39,7 @@
 * Elasticity model: exactness test.
 ***************************************************************** */
 void
-RunTest(double mu, double lambda, bool flag, const std::string& method)
+RunTest(double mu, double lambda, bool flag, const std::string& filename = "")
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -49,16 +48,13 @@ RunTest(double mu, double lambda, bool flag, const std::string& method)
 
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0)
-    std::cout << "\nTEST: 2D elasticity exactness test for \"" << method << "\"\n";
+  if (MyPID == 0) std::cout << "\nTEST: Elasticity with curved faces \n";
 
   // read parameter list
   // -- it specifies details of the mesh, elasticity operator, and solver
-  std::string xmlFileName = "test/operator_elasticity_weak_symmetry.xml";
+  std::string xmlFileName = "test/operator_elasticity_curved_face.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
-  plist.sublist("PK operator").sublist("elasticity operator").sublist("schema")
-       .set<std::string>("method", method);
 
   // create the MSTK mesh framework
   // -- geometric model is not created. Instead, we specify boundary conditions
@@ -67,7 +63,16 @@ RunTest(double mu, double lambda, bool flag, const std::string& method)
   mesh_list->set<bool>("request faces", true);
   MeshFactory meshfactory(comm, Teuchos::null, mesh_list);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 5, 5);
+
+  int d;
+  Teuchos::RCP<Mesh> mesh;
+  if (filename == "") {
+    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 5, 5);
+    d = 2;
+  } else {
+    mesh = meshfactory.create(filename);
+    d = 3;
+  }
 
   // -- general information about mesh
   int ncells =
@@ -79,8 +84,7 @@ RunTest(double mu, double lambda, bool flag, const std::string& method)
   // boundary conditions
   AnalyticElasticity01 ana(mesh, mu, lambda, flag);
 
-  Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
-    Teuchos::rcp(new std::vector<WhetStone::Tensor>());
+  auto K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->getCellCentroid(c);
     const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
@@ -88,42 +92,27 @@ RunTest(double mu, double lambda, bool flag, const std::string& method)
   }
 
   // create a PDE: operator and boundary conditions
-  // -- XML list speficies discretization method and location of degrees of freedom
-  // -- (called schema). This seems redundant but only when use a low-order method.
   Teuchos::ParameterList op_list = plist.sublist("PK operator").sublist("elasticity operator");
-  Teuchos::RCP<PDE_Abstract> pde = Teuchos::rcp(new PDE_Abstract(op_list, mesh));
+  auto pde = Teuchos::rcp(new PDE_ElasticityCurvedFace(op_list, mesh));
 
   // populate boundary conditions: type (called model) and value
-  // -- normal component of velocity on boundary faces (a scalar)
   int ndir(0), nshear(0), nkinematic(0);
   AmanziGeometry::Point val0(2), val1(2), val2(2);
 
-  Teuchos::RCP<BCs> bcf =
-    Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::VECTOR));
+  auto bcf = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::VECTOR));
   std::vector<int>& bcf_model = bcf->bc_model();
-  int ndofs = (method == "elasticity weak symmetry BdV") ? 4 : 2;
-  std::vector<std::vector<double>>& bcf_value = bcf->bc_value_vector(ndofs);
+  std::vector<std::vector<double>>& bcf_value = bcf->bc_value_vector(d);
 
   for (int f = 0; f < nfaces_wghost; ++f) {
     const auto& xf = mesh->getFaceCentroid(f);
     const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
 
-    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||
-        fabs(xf[1] - 1.0) < 1e-6) {
+    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
+        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
+        (d == 3 && (fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6))) {
       bcf_model[f] = OPERATOR_BC_DIRICHLET;
       val0 = ana.velocity_exact(xf, 0.0);
-      for (int k = 0; k < 2; ++k) bcf_value[f][k] = val0[k];
-
-      if (ndofs == 4) {
-        auto coordsys = std::make_shared<AmanziGeometry::SurfaceCoordinateSystem>(xf, normal);
-        const auto& tau = (*coordsys->tau())[0];
-
-        val1 = ana.velocity_exact(xf - tau / 2, 0.0);
-        val2 = ana.velocity_exact(xf + tau / 2, 0.0);
-        for (int k = 0; k < 2; ++k) {
-          bcf_value[f][k + 2] = (val2[k] - val1[k]) / 6 / 4;
-        }
-      }
+      for (int k = 0; k < d; ++k) bcf_value[f][k] = val0[k];
 
       ndir++;
     }
@@ -142,7 +131,7 @@ RunTest(double mu, double lambda, bool flag, const std::string& method)
   for (int c = 0; c < ncells; ++c) {
     const auto& xc = mesh->getCellCentroid(c);
     Point tmp(ana.source_exact(xc, 0.0));
-    for (int k = 0; k < 2; ++k) src[k][c] = tmp[k];
+    for (int k = 0; k < d; ++k) src[k][c] = tmp[k];
   }
 
   // populate the elasticity operator
@@ -187,13 +176,18 @@ RunTest(double mu, double lambda, bool flag, const std::string& method)
     printf("L2(u)=%12.8g  Inf(u)=%12.8g  itr=%3d\n", ul2_err, uinf_err, global_op->num_itrs());
 
     // CHECK(ul2_err < 1e-10);
-    CHECK(global_op->num_itrs() < 15);
+    CHECK(global_op->num_itrs() < 15 + d);
   }
 }
 
 
-TEST(OPERATOR_ELASTICITY_WEAK_SYMMETRY_EXACTNESS)
+TEST(OPERATOR_ELASTICITY_CURVED_FACE_2D)
 {
-  RunTest(1.0, 0.0, false, "elasticity weak symmetry BdV");
-  RunTest(1.0, 0.0, false, "elasticity weak symmetry");
+  RunTest(1.0, 0.0, false);
 }
+
+TEST(OPERATOR_ELASTICITY_CURVED_FACE_3D)
+{
+  RunTest(1.0, 0.0, false, "test/random3D_05.exo");
+}
+

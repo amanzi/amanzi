@@ -25,7 +25,9 @@
 #include "MFD3D_Electromagnetics.hh"
 #include "MFD3D_Elasticity.hh"
 #include "MFD3D_ElasticityGradDiv.hh"
-#include "MFD3D_ElasticityWeakSymmetry.hh"
+#include "MFD3D_ElasticityWeakSym.hh"
+#include "MFD3D_ElasticityWeakSymBdV.hh"
+#include "MFD3D_ElasticityWeakSym_CurvedFace.hh"
 #include "MFD3D_Lagrange.hh"
 #include "MFD3D_LagrangeAnyOrder.hh"
 #include "MFD3D_LagrangeSerendipity.hh"
@@ -51,8 +53,12 @@ RegisteredFactory<MFD3D_Diffusion_CurvedFace> MFD3D_Diffusion_CurvedFace::reg_(
 
 RegisteredFactory<MFD3D_Elasticity> MFD3D_Elasticity::reg_("elasticity");
 RegisteredFactory<MFD3D_ElasticityGradDiv> MFD3D_ElasticityGradDiv::reg_("elasticity graddiv");
-RegisteredFactory<MFD3D_ElasticityWeakSymmetry> MFD3D_ElasticityWeakSymmetry::reg_(
+RegisteredFactory<MFD3D_ElasticityWeakSym> MFD3D_ElasticityWeakSym::reg_(
   "elasticity weak symmetry");
+RegisteredFactory<MFD3D_ElasticityWeakSymBdV> MFD3D_ElasticityWeakSymBdV::reg_(
+  "elasticity weak symmetry BdV");
+RegisteredFactory<MFD3D_ElasticityWeakSym_CurvedFace> MFD3D_ElasticityWeakSym_CurvedFace::reg_(
+  "elasticity weak symmetry curved face");
 
 RegisteredFactory<MFD3D_Electromagnetics> MFD3D_Electromagnetics::reg_("electromagnetics");
 RegisteredFactory<MFD3D_Lagrange> MFD3D_Lagrange::reg_("Lagrange");
