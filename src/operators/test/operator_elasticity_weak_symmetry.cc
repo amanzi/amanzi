@@ -123,13 +123,17 @@ RunTest(int d, double mu, double lambda, const std::string& method)
 
       if (ndofs == d * d) {
         auto coordsys = std::make_shared<AmanziGeometry::SurfaceCoordinateSystem>(xf, normal);
-        const auto& tau = (*coordsys->tau())[0];
 
-        val1 = ana.velocity_exact(xf - tau / 2, 0.0);
-        val2 = ana.velocity_exact(xf + tau / 2, 0.0);
-        for (int k = 0; k < d; ++k) {
-          bcf_value[f][k + 2] = (val2[k] - val1[k]) / 6 / 4; // FIXME
-        }
+        if (d == 2) {
+          const auto& tau = (*coordsys->tau())[0];
+          val1 = ana.velocity_exact(xf - tau / 2, 0.0);
+          val2 = ana.velocity_exact(xf + tau / 2, 0.0);
+          for (int k = 0; k < d; ++k) {
+            bcf_value[f][d + k] = (val2[k] - val1[k]) / 12;
+          }
+        } else {
+          // FIXME
+        } 
       }
 
       ndir++;
@@ -205,5 +209,5 @@ TEST(OPERATOR_ELASTICITY_WEAK_SYMMETRY_EXACTNESS)
   RunTest(2, 1.0, 0.1, "elasticity weak symmetry");
 
   RunTest(3, 1.0, 0.1, "elasticity weak symmetry");
-  // RunTest(3, 1.0, 0.1, "elasticity weak symmetry BdV");
+  RunTest(3, 1.0, 0.1, "elasticity weak symmetry BdV");
 }
