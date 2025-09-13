@@ -138,7 +138,7 @@ class AnalyticBase : public Amanzi::WhetStone::WhetStoneFunction {
 
 
 /* ******************************************************************
-* Error for cell-based fields
+* discarete L2 error for cell-based fields
 ****************************************************************** */
 inline void
 AnalyticBase::ComputeCellError(Epetra_MultiVector& p,
@@ -174,7 +174,7 @@ AnalyticBase::ComputeCellError(Epetra_MultiVector& p,
 
 
 /* ******************************************************************
-* Error for face-based fields
+* Discrete L2 error for face-based fields
 ****************************************************************** */
 inline void
 AnalyticBase::ComputeFaceError(Epetra_MultiVector& u,
@@ -194,6 +194,7 @@ AnalyticBase::ComputeFaceError(Epetra_MultiVector& u,
 
   int dir;
   for (int c = 0; c < ncells; ++c) {
+    double volume = mesh_->getCellVolume(c);
     const auto& faces = mesh_->getCellFaces(c);
     int nfaces = faces.size();
 
@@ -210,9 +211,9 @@ AnalyticBase::ComputeFaceError(Epetra_MultiVector& u,
       int k =
         (fmap.ElementSize() == 1) ? 0 : Amanzi::Operators::UniqueIndexFaceToCells(*mesh_, f, c);
 
-      l2_err += std::pow((tmp - u[0][g + k]) / area, 2.0);
+      l2_err += std::pow((tmp - u[0][g + k]) / area, 2.0) * volume;
       inf_err = std::max(inf_err, fabs(tmp - u[0][g + k]) / area);
-      unorm += std::pow(tmp / area, 2.0);
+      unorm += std::pow(tmp / area, 2.0) * volume;
       // std::cout << f << " xf=" << xf << " u=" << u[0][g + k] << " u_ex=" << tmp << " err=" << inf_err << " " << dir << std::endl;
     }
   }

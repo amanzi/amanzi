@@ -93,6 +93,7 @@
       <Parameter name="meshes" type="Array(string)" value="{mesh1, mesh2, mesh3}"/>
       <Parameter name="stability constant" type="double" value="0.5"/>
       <Parameter name="intersection method" type="string" value="particles"/>
+      <Parameter name="number of particles" type="int" value="10"/>
       <ParameterList name="interfaces">
         <ParameterList name="interface 1">
           <Parameter name="meshes" type="Array(string)" value="{mesh1, mesh3}"/>

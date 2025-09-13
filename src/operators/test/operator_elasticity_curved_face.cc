@@ -38,7 +38,7 @@
 * Elasticity model: exactness test.
 ***************************************************************** */
 void
-RunTest(double mu, double lambda, bool flag, const std::string& filename = "")
+RunTest(double mu, double lambda, const std::string& filename = "")
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -83,7 +83,7 @@ RunTest(double mu, double lambda, bool flag, const std::string& filename = "")
 
   // select an analytic solution for error calculations and setup of
   // boundary conditions
-  AnalyticElasticity01 ana(mesh, mu, lambda, flag);
+  AnalyticElasticity01 ana(mesh, mu, lambda);
 
   auto K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   for (int c = 0; c < ncells; c++) {
@@ -174,12 +174,12 @@ RunTest(double mu, double lambda, bool flag, const std::string& filename = "")
 
 TEST(OPERATOR_ELASTICITY_CURVED_FACE_2D)
 {
-  RunTest(1.0, 0.0, false);
+  RunTest(1.0, 0.1);
 }
 
 TEST(OPERATOR_ELASTICITY_CURVED_FACE_3D)
 {
-  RunTest(1.0, 0.0, false, "test/random3D_05.exo");
-  RunTest(1.0, 0.0, false, "test/sphere.exo");
+  RunTest(1.0, 0.2, "test/random3D_05.exo");
+  RunTest(1.0, 0.0, "test/sphere.exo");
 }
 

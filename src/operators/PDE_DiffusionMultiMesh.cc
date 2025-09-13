@@ -55,6 +55,7 @@ PDE_DiffusionMultiMesh::Init(const Teuchos::RCP<State>& S)
 
   stability_ = plist_.get<double>("stability constant");
   method_ = plist_.get<std::string>("intersection method");
+  nparticles_ = plist_.get<int>("number of particles", 10);
   d_ = meshes_[names_[0]]->getSpaceDimension();
 
   // parse interface data
@@ -420,40 +421,40 @@ PDE_DiffusionMultiMesh::meshToMeshMapParticles_(const AmanziMesh::Mesh& mesh1,
     const AmanziGeometry::Point& ray = mesh1.getFaceNormal(f1, c1, &dir);
 
     if (d_ == 2) {
-      for (int k = 0; k < REFINE; ++k) {
-        s = double(k + 0.5) / REFINE;
+      for (int k = 0; k < nparticles_; ++k) {
+        s = double(k + 0.5) / nparticles_;
         auto xa1 = coords1[0] * (1.0 - s) + coords1[1] * s;
 
         f2 = findFace_(xa1, ray, mesh2, rgn2, f2, &stage);
         if (stage == 1) count++;
 
-        data12[f1][f2] += mesh1.getFaceArea(f1) / REFINE;
+        data12[f1][f2] += mesh1.getFaceArea(f1) / nparticles_;
       }
     } else if (d_ == 3) {
       int nnodes = coords1.size();
       AmanziGeometry::Point xa1(d_);
 
       if (nnodes == 4) { // quadrilateral
-        for (int k = 0; k < REFINE; ++k) {
-          s = double(k + 0.5) / REFINE;
+        for (int k = 0; k < nparticles_; ++k) {
+          s = double(k + 0.5) / nparticles_;
 
-          for (int l = 0; l < REFINE; ++l) {
-            r = double(l + 0.5) / REFINE;
+          for (int l = 0; l < nparticles_; ++l) {
+            r = double(l + 0.5) / nparticles_;
             xa1 = coords1[0] * (1.0 - s) * (1.0 - r) + coords1[1] * s * (1.0 - r) +
                   coords1[2] * s * r + coords1[3] * (1.0 - s) * r;
 
             f2 = findFace_(xa1, ray, mesh2, rgn2, f2, &stage);
             if (stage == 1) count++;
-            data12[f1][f2] += mesh1.getFaceArea(f1) / REFINE / REFINE;
+            data12[f1][f2] += mesh1.getFaceArea(f1) / nparticles_ / nparticles_;
           }
         }
       } else if (nnodes == 3) { // triangle
-        int m(0), ntri((REFINE + 1) * REFINE / 2);
-        for (int k = 0; k < REFINE; ++k) {
-          s = double(k + 0.333) / REFINE;
+        int m(0), ntri((nparticles_ + 1) * nparticles_ / 2);
+        for (int k = 0; k < nparticles_; ++k) {
+          s = double(k + 0.333) / nparticles_;
 
-          for (int l = 0; l < REFINE; ++l) {
-            r = double(l + 0.333) / REFINE;
+          for (int l = 0; l < nparticles_; ++l) {
+            r = double(l + 0.333) / nparticles_;
             t = 1.0 - s - r;
             if (t > 0.0) {
               xa1 = coords1[0] * s + coords1[1] * r + coords1[2] * t;
@@ -501,7 +502,7 @@ PDE_DiffusionMultiMesh::meshToMeshMapParticles_(const AmanziMesh::Mesh& mesh1,
   }
 
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-    int count2 = nblock1 * std::pow(REFINE, d_ - 1);
+    int count2 = nblock1 * std::pow(nparticles_, d_ - 1);
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "interface names: \"" << rgn1 << "\" or \"" << rgn2 << "\", areas: " << sum1

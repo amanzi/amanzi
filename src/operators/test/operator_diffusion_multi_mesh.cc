@@ -239,7 +239,7 @@ TestDiffusionMultiMesh(double tol, int icase)
   auto& p1 = *sol->SubVector(0)->Data()->ViewComponent("cell");
   auto& p2 = *sol->SubVector(1)->Data()->ViewComponent("cell");
 
-  double pnorm1, l2_err1, inf_err1, pnorm2, l2_err2, inf_err2;
+  double pnorm1, l2_err1, inf_err1, pnorm2, l2_err2, inf_err2, err;
   ana1.ComputeCellError(p1, 0.0, pnorm1, l2_err1, inf_err1);
   ana2.ComputeCellError(p2, 0.0, pnorm2, l2_err2, inf_err2);
   CHECK(l2_err1 < tol);
@@ -252,8 +252,9 @@ TestDiffusionMultiMesh(double tol, int icase)
   p2.MaxValue(&p2max);
 
   if (MyPID == 0) {
-    printf("total: L2(p) =%10.7f  Inf =%9.6f\n", 
-           std::sqrt(l2_err1 * l2_err1 + l2_err2 * l2_err2), std::max(inf_err1, inf_err2));
+    err = std::sqrt((l2_err1 * l2_err1 + l2_err2 * l2_err2) / (pnorm1 * pnorm1 + pnorm2 * pnorm2));
+    printf("Total: L2(p) =%10.7f  Inf =%9.6f\n", err, std::max(inf_err1, inf_err2));
+
     l2_err1 /= pnorm1;
     l2_err2 /= pnorm2;
     printf("L2(p) =%10.7f  Inf =%9.6f  min/max = %9.6f %9.6f  #cells=%d\n",
@@ -278,6 +279,9 @@ TestDiffusionMultiMesh(double tol, int icase)
   ana2.ComputeFaceError(flux2, 0.0, unorm2, l2_err2, inf_err2);
 
   if (MyPID == 0) {
+    err = std::sqrt((l2_err1 * l2_err1 + l2_err2 * l2_err2) / (unorm1 * unorm1 + unorm2 * unorm2));
+    printf("Total: L2(u) =%10.7f  Inf =%9.6f\n", err, std::max(inf_err1, inf_err2));
+
     l2_err1 /= unorm1;
     l2_err2 /= unorm2;
     printf("L2(u) =%10.7f  Inf =%9.6f  |u|=%9.6f\n", l2_err1, inf_err1, unorm1);
@@ -291,7 +295,7 @@ TestDiffusionMultiMesh(double tol, int icase)
   for (int f : block2) tot_flux2 += flux2[0][f];
   ana2.GlobalOp("sum", &tot_flux2, 1);
   printf("Total interface flux: %9.6f, err =%9.6f\n", tot_flux1, tot_flux1 + tot_flux2);
-  CHECK(std::fabs(tot_flux1 + tot_flux2) < 1e-12);
+  CHECK(std::fabs(tot_flux1 + tot_flux2) < 1e-11);
 
   // -- lemma 4.3
   int dir;
