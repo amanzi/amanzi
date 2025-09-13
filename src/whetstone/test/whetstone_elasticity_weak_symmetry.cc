@@ -160,7 +160,7 @@ TEST(ELASTICITY_WEAK_SYMMETRY_2D)
 /* **************************************************************** */
 TEST(ELASTICITY_WEAK_SYMMETRY_3D)
 {
-  std::cout << "\nTEST: 3D matrices for elasticity with weak symmetry" << std::endl;
+  std::cout << "\nTest: 3D matrices for elasticity with weak symmetry" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
