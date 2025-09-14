@@ -71,12 +71,10 @@ TEST(ELASTICITY_WEAK_SYMMETRY_2D)
       T(0, 1) = T(1, 0) = lambda;
       T(2, 2) = T(3, 3) = mu;
     }
-    Tensor Tinv(T);
-    Tinv.Inverse();
 
-    mfd.MassMatrix(0, Tinv, M);
+    mfd.MassMatrix(0, T, M);
     mfd.RotationMatrix(0, G);
-    mfd.StiffnessMatrix(0, Tinv, A);
+    mfd.StiffnessMatrix(0, T, A);
 
     printf("Mass matrix for cell 0, method=%d size=%d\n", method, M.NumRows());
     PrintMatrix(M, "%8.4f ");
@@ -133,7 +131,7 @@ TEST(ELASTICITY_WEAK_SYMMETRY_2D)
     CHECK_CLOSE((mu + lambda) * volume, vxx, 1e-10);
     CHECK_CLOSE(0.0, vxy, 1e-10);
 
-    // verify exact integration property for mass matrix
+    // verify exact integration property for stiffness matrix
     std::vector<double> vx(mrows);
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
@@ -188,12 +186,10 @@ TEST(ELASTICITY_WEAK_SYMMETRY_3D)
       T(0, 0) = T(1, 1) = T(2, 2) = lambda + mu;
       T(0, 1) = T(1, 0) = T(0, 2) = T(2, 0) = T(1, 2) = T(2, 1) = lambda;
     }
-    Tensor Tinv(T);
-    Tinv.Inverse();
 
-    mfd.MassMatrix(0, Tinv, M);
+    mfd.MassMatrix(0, T, M);
     mfd.RotationMatrix(0, G);
-    mfd.StiffnessMatrix(0, Tinv, A);
+    mfd.StiffnessMatrix(0, T, A);
 
     printf("Mass matrix for cell 0, method=%d size=%d\n", method, M.NumRows());
     PrintMatrix(M, "%8.4f ", 12);
@@ -312,12 +308,10 @@ TEST(ELASTICITY_WEAK_SYMMETRY_BDV_2D)
       T(0, 1) = T(1, 0) = lambda;
       T(2, 2) = T(3, 3) = mu;
     }
-    Tensor Tinv(T);
-    Tinv.Inverse();
 
-    mfd.MassMatrix(0, Tinv, M);
+    mfd.MassMatrix(0, T, M);
     mfd.RotationMatrix(0, G);
-    mfd.StiffnessMatrix(0, Tinv, A);
+    mfd.StiffnessMatrix(0, T, A);
 
     printf("Mass matrix for cell 0, method=%d size=%d\n", method, M.NumRows());
     PrintMatrix(M, "%8.4f ", 6);
@@ -444,9 +438,9 @@ RunWeakSymmetryBdV3D(const std::string& filename)
     Tensor Tinv(T);
     Tinv.Inverse();
 
-    mfd.MassMatrix(0, Tinv, M);
+    mfd.MassMatrix(0, T, M);
     mfd.RotationMatrix(0, G);
-    mfd.StiffnessMatrix(0, Tinv, A);
+    mfd.StiffnessMatrix(0, T, A);
 
     printf("Mass matrix for cell 0, method=%d\n", method);
     PrintMatrix(M, "%8.4f ", 12);

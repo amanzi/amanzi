@@ -165,7 +165,10 @@ MFD3D_ElasticityWeakSymBdV::MassMatrix(int c, const Tensor& T, DenseMatrix& M)
 {
   DenseMatrix N;
 
-  int ok = L2consistency(c, T, N, M);
+  Tensor Tinv(T);
+  Tinv.Inverse();
+
+  int ok = L2consistency(c, Tinv, N, M);
   if (ok) return ok;
 
   StabilityScalar_(N, M);
