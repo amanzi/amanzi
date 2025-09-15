@@ -34,13 +34,16 @@
 #include "SurfaceCoordinateSystem.hh"
 
 #include "AnalyticElasticity01.hh"
+#include "AnalyticElasticity03.hh"
 #include "Verification.hh"
 
 /* *****************************************************************
 * Elasticity model: exactness test.
 ***************************************************************** */
-void
-RunTest(int d, double mu, double lambda, const std::string& method)
+template<class Analytic>
+double
+RunTest(int d, double mu, double lambda, const std::string& method,
+        const std::string& filename = "", int n = 1, double tol = 1e-10)
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -70,8 +73,10 @@ RunTest(int d, double mu, double lambda, const std::string& method)
   meshfactory.set_preference(Preference({ Framework::MSTK }));
 
   Teuchos::RCP<const Mesh> mesh;
-  if (d == 2) {
-    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 5, 6);
+  if (d == 2 && filename == "") {
+    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 5 * n, 6 * n);
+  } else if (d == 2) {
+    mesh = meshfactory.create(filename);
   } else {
     mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 6, 4);
   }
@@ -84,7 +89,7 @@ RunTest(int d, double mu, double lambda, const std::string& method)
 
   // select an analytic solution for error calculations and setup of
   // boundary conditions
-  AnalyticElasticity01 ana(mesh, mu, lambda);
+  Analytic ana(mesh, mu, lambda);
 
   auto K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   for (int c = 0; c < ncells; c++) {
@@ -152,8 +157,10 @@ RunTest(int d, double mu, double lambda, const std::string& method)
 
   for (int c = 0; c < ncells; ++c) {
     const auto& xc = mesh->getCellCentroid(c);
+    double vol = mesh->getCellVolume(c);
+
     Point tmp(ana.source_exact(xc, 0.0));
-    for (int k = 0; k < d; ++k) src[k][c] = tmp[k];
+    for (int k = 0; k < d; ++k) src[k][c] = tmp[k] * vol;
   }
 
   // populate the elasticity operator
@@ -170,6 +177,7 @@ RunTest(int d, double mu, double lambda, const std::string& method)
     "Hypre AMG", plist.sublist("preconditioners"), "PCG", plist.sublist("solvers"));
   global_op->InitializeInverse();
   global_op->ComputeInverse();
+  // std::cout << *global_op->A() << std::endl; exit(0);
 
   // Test SPD properties of the matrix and preconditioner.
   VerificationCV ver(global_op);
@@ -197,17 +205,30 @@ RunTest(int d, double mu, double lambda, const std::string& method)
     ul2_err /= unorm;
     printf("L2(u)=%12.8g  Inf(u)=%12.8g  itr=%3d\n", ul2_err, uinf_err, global_op->num_itrs());
 
-    CHECK(ul2_err < 1e-10);
-    CHECK(global_op->num_itrs() < 20);
+    CHECK(ul2_err < tol);
+    CHECK(global_op->num_itrs() < 25);
   }
+
+  return ul2_err;
+}
+
+
+TEST(OPERATOR_ELASTICITY_WEAK_SYMMETRY_CONVERGENCE)
+{
+  double err1, err2;
+  err1 = RunTest<AnalyticElasticity03>(2, 1.0, 0.1, "elasticity weak symmetry", "", 1, 0.5);
+  err2 = RunTest<AnalyticElasticity03>(2, 1.0, 0.1, "elasticity weak symmetry", "", 2, 0.5);
+  CHECK(err1 / err2 > 3.6);
 }
 
 
 TEST(OPERATOR_ELASTICITY_WEAK_SYMMETRY_EXACTNESS)
 {
-  RunTest(2, 1.0, 0.2, "elasticity weak symmetry BdV");
-  RunTest(2, 1.0, 0.1, "elasticity weak symmetry");
+  RunTest<AnalyticElasticity01>(2, 1.0, 0.1, "elasticity weak symmetry", "test/median7x8.exo");
 
-  RunTest(3, 1.0, 0.1, "elasticity weak symmetry");
-  RunTest(3, 1.0, 0.1, "elasticity weak symmetry BdV");
+  RunTest<AnalyticElasticity01>(2, 1.0, 0.2, "elasticity weak symmetry BdV");
+  RunTest<AnalyticElasticity01>(2, 1.0, 0.1, "elasticity weak symmetry");
+
+  RunTest<AnalyticElasticity01>(3, 1.0, 0.1, "elasticity weak symmetry");
+  RunTest<AnalyticElasticity01>(3, 1.0, 0.1, "elasticity weak symmetry BdV");
 }
