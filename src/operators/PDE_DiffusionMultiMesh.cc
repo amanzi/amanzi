@@ -177,6 +177,7 @@ PDE_DiffusionMultiMesh::ModifyMatrices_(int ib, const InterfaceData& data)
   auto op = *matrix_->get_operator_block(ib, ib)->begin();
 
   double beta = (d_ - 2.0) / (d_ - 1.0);
+  double alpha = std::sqrt(stability_);
 
   for (int c = 0; c < op->matrices.size(); ++c) {
     const auto& faces = meshes_[names_[ib]]->getCellFaces(c);
@@ -213,7 +214,7 @@ PDE_DiffusionMultiMesh::ModifyMatrices_(int ib, const InterfaceData& data)
               ncol++;
             }
           } else {
-            scale = stability_ * std::pow(meshes_[names_[ib]]->getFaceArea(f), beta);
+            scale = alpha * std::pow(meshes_[names_[ib]]->getFaceArea(f), beta);
 
             C(n, n) = 0.5;
             L(n, n) = -scale;
