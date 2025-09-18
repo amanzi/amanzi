@@ -198,7 +198,13 @@
 #                - update Alquimia to version 1.1.0
 #                - update ExprTK to version 0.0.3
 #   0.98.12      - update Alquimia to version 1.2.0
-
+#   0.98.13      - update hypre to 2.31.0
+#                - update PETSc to 3.21
+#                - add fmt 11.2, new dependency of SEACAS
+#                - update SEACAS to date tage v250414
+#                - update superLU to 6.0.1
+#                - update superLU_dist to 8.2.1
+#                - update netcdf-c to 4.9.3
 
 include(CMakeParseArguments)
 
@@ -251,7 +257,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 98)
-set(AMANZI_TPLS_VERSION_PATCH 12)
+set(AMANZI_TPLS_VERSION_PATCH 13)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
