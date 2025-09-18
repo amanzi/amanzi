@@ -53,8 +53,6 @@ jobs:
         tags: ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{env.ARCH}}-mpich
         build-args: |
           amanzi_branch=${{env.AMANZI_BRANCH}}
-          trilinos_ver="15-1-0"
-          petsc_ver="3.21"
 
   fix-manifest:
     runs-on: ubuntu-latest
