@@ -53,6 +53,7 @@ jobs:
         tags: ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{env.ARCH}}-mpich
         build-args: |
           amanzi_branch=${{env.AMANZI_BRANCH}}
+          mpi_flavor=mpich
 
   fix-manifest:
     runs-on: ubuntu-latest
