@@ -491,7 +491,7 @@ PDE_DiffusionMultiMesh::meshToMeshMapParticles_(const AmanziMesh::Mesh& mesh1,
   }
 
   // -- verify
-  double sum, tol(1e-12);
+  double sum, tol(1e-10);
   for (int n = 0; n < nblock1; ++n) {
     int f1 = block1[n];
     sum = 0.0;

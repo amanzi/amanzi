@@ -26,6 +26,7 @@
 
 // Amanzi
 #include "MeshFactory.hh"
+#include "Mesh_MSTK.hh"
 #include "Tensor.hh"
 #include "WhetStoneMeshUtils.hh"
 
@@ -33,6 +34,50 @@
 #include "PDE_ElasticityCurvedFace.hh"
 
 #include "AnalyticElasticity01.hh"
+
+namespace Amanzi {
+
+struct MyMeshAlgorithms : public AmanziMesh::MeshAlgorithms {
+  const double AMPX = 0.03;
+  const double AMPY = 0.09;
+
+  virtual std::tuple<double, AmanziGeometry::Point, AmanziMesh::cPoint_View>
+  computeFaceGeometry(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_ID f) const override {
+    auto [area, centroid, normals] = MeshAlgorithms::computeFaceGeometry(mesh, f);
+
+    const auto& nodes = mesh.getFaceNodes(f);
+    auto xp1 = mesh.getNodeCoordinate(nodes[0]); 
+    auto xp2 = mesh.getNodeCoordinate(nodes[1]); 
+
+    // consistent change of normal on different processors requires orientation 
+    int dir;
+    auto cells = mesh.getFaceCells(f);
+    mesh.getFaceNormal(f, cells[0], &dir);
+   
+    // function psi1 
+    double dx1 = dir * AMPX * std::sin(M_PI * xp1[0]) * std::sin(M_PI * xp1[1]);
+    double dx2 = dir * AMPX * std::sin(M_PI * xp2[0]) * std::sin(M_PI * xp2[1]);
+
+    // function psi12
+    double dy1 = dir * AMPY * xp1[0] * (1.0 - xp1[0]) * xp1[1] * (1.0 - xp1[1]);
+    double dy2 = dir * AMPY * xp2[0] * (1.0 - xp2[0]) * xp2[1] * (1.0 - xp2[1]);
+
+    AmanziMesh::Point_View new_normals("new_normals", normals.size());
+    new_normals[0] = normals[0];
+    new_normals[0][0] += dx1 - dx2;
+    new_normals[0][1] += dy1 - dy2;
+
+    if (normals.size() == 2) {
+      new_normals[1] = normals[1];
+      new_normals[1][0] -= dx1 - dx2;
+      new_normals[1][1] -= dy1 - dy2;
+    }
+
+    return std::make_tuple(area, centroid, new_normals);
+  }
+};
+} // namespace Amanzi
+
 
 /* *****************************************************************
 * Elasticity model: exactness test.
@@ -66,8 +111,11 @@ RunTest(double mu, double lambda, const std::string& filename = "")
   int d;
   Teuchos::RCP<Mesh> mesh;
   if (filename == "") {
-    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 5, 5);
+    // mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 5, 5);
     d = 2;
+    auto mesh_fw = Teuchos::rcp(new Mesh_MSTK(0.0, 0.0, 1.0, 1.0, 5, 5, comm));
+    auto algorithms = Teuchos::rcp(new MyMeshAlgorithms());
+    mesh = Teuchos::rcp(new AmanziMesh::MeshCache<MemSpace_kind::HOST>(mesh_fw, algorithms, Teuchos::null));
   } else {
     mesh = meshfactory.create(filename);
     d = 3;
@@ -167,7 +215,7 @@ RunTest(double mu, double lambda, const std::string& filename = "")
   if (MyPID == 0) {
     ul2_err /= unorm;
     printf("L2(u)=%12.8g  Inf(u)=%12.8g  itr=%3d\n", ul2_err, uinf_err, global_op->num_itrs());
-    // CHECK(ul2_err < 1e-10);
+    CHECK(ul2_err < 1e-10);
   }
 }
 

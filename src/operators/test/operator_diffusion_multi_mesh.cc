@@ -38,6 +38,7 @@
 #include "PDE_DiffusionMultiMesh.hh"
 
 #include "Analytic00.hh"
+#include "Analytic01.hh"
 #include "Analytic02.hh"
 #include "Analytic08.hh"
 
@@ -52,8 +53,8 @@ ModifyMesh2(Amanzi::AmanziMesh::Mesh& mesh)
 
   for (int n = 0; n < nnodes_owned; ++n) {
     auto xp = mesh.getNodeCoordinate(n);
-    auto yp = mesh.getNodeCoordinate(n);
     xp[1] = xp[1] * (2.0 - xp[1]);
+    // xp[1] = xp[1] + 0.06 * std::sin(4.0 * M_PI * xp[1]);
     mesh.setNodeCoordinate(n, xp);
   }
   mesh.recacheGeometry();
@@ -227,7 +228,8 @@ TestDiffusionMultiMesh(double tol, int icase)
   op->set_inverse_parameters(inv_list);
   op->InitializeInverse();
   op->ComputeInverse();
-  // std::cout << *op->A() << std::endl; exit(0);
+  // op->A()->Print(std::cout); exit(0);
+  // std::cout << setw(16) << setprecision(12) << *op->A() << std::endl; exit(0);
 
   auto sol = Teuchos::rcp(new TreeVector(op->DomainMap()));
   op->ApplyInverse(rhs, *sol);
@@ -294,7 +296,7 @@ TestDiffusionMultiMesh(double tol, int icase)
 
   for (int f : block2) tot_flux2 += flux2[0][f];
   ana2.GlobalOp("sum", &tot_flux2, 1);
-  printf("Total interface flux: %9.6f, err =%9.6f\n", tot_flux1, tot_flux1 + tot_flux2);
+  printf("Total interface flux: %12.9f, err =%12.9f\n", tot_flux1, tot_flux1 + tot_flux2);
   CHECK(std::fabs(tot_flux1 + tot_flux2) < 1e-11);
 
   // -- lemma 4.3
@@ -312,7 +314,7 @@ TestDiffusionMultiMesh(double tol, int icase)
     for (auto data : interface_weights[0][f]) {
       int f2 = data.first;
       pavg += data.second * p2_f[0][f2];
-      // std::cout << f << " " << f2 << " " << data.second << std::endl;
+      // std::cout << f << " " << nfaces1_owned + f2 << " " << data.second << std::endl;
     }
     sum += pavg * flux1[0][f] * dir;
   }
@@ -325,11 +327,32 @@ TestDiffusionMultiMesh(double tol, int icase)
     for (auto data : interface_weights[1][f]) {
       int f1 = data.first;
       pavg += data.second * p1_f[0][f1];
+      // std::cout << nfaces1_owned + f << " " << f1 << " " << data.second << std::endl;
     }
     sum += pavg * flux2[0][f] * dir;
   }
   printf("Lemma 4.3, %12.9f >= 0.0\n", sum / 2);
   CHECK(sum >= -1e-12);
+
+  // interface pressure error
+  double l2_err(0.0), pnorm(0.0);
+  for (int f : block1) {
+    const auto& xf = mesh1->getFaceCentroid(f);
+    double area = mesh1->getFaceArea(f);
+
+    double tmp = ana1.pressure_exact(xf, 0.0);
+    l2_err += std::pow(tmp - p1_f[0][f], 2) * area;
+    pnorm += tmp * tmp * area;
+  }
+  for (int f : block2) {
+    const auto& xf = mesh2->getFaceCentroid(f);
+    double area = mesh2->getFaceArea(f);
+
+    double tmp = ana2.pressure_exact(xf, 0.0);
+    l2_err += std::pow(tmp - p2_f[0][f], 2) * area;
+    pnorm += tmp * tmp * area;
+  }
+  printf("Interface absolute error: L2(p)=%12.9f\n", std::sqrt(l2_err / pnorm));
 
   // i/o
   Teuchos::ParameterList iolist;
