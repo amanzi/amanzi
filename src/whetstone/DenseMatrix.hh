@@ -301,6 +301,24 @@ TripleMatrixProduct(const DenseMatrix& ML,
 }
 
 
+inline double
+VectorMatrixVector(const DenseVector& v,
+                   const DenseMatrix& M,
+                   const DenseVector& w)
+{
+  int nr = v.NumRows();
+  int nc = w.NumRows();
+
+  double sum(0.0);
+  for (int i = 0; i < nr; ++i) {
+    for (int j = 0; j < nc; ++j) {
+      sum += M(i, j) * v(i) * w(j);
+    }
+  }
+  return sum;
+}
+
+
 // i/o
 inline void
 PrintMatrix(const DenseMatrix& A, const char* format = "%12.5f", int mmax = 0)

@@ -106,13 +106,9 @@ TEST(ELASTICITY_STIFFNESS_2D)
       xy(2 * i + 1) = p[1];
     }
 
-    double vxx = 0.0, vxy = 0.0, volume = mesh->getCellVolume(cell);
-    for (int i = 0; i < nrows; i++) {
-      for (int j = 0; j < nrows; j++) {
-        vxx += A(i, j) * xx(i) * xx(j);
-        vxy += A(i, j) * yy(i) * xx(j);
-      }
-    }
+    double volume = mesh->getCellVolume(cell);
+    double vxx = VectorMatrixVector(xx, A, xx);
+    double vxy = VectorMatrixVector(yy, A, xx);
     CHECK_CLOSE((2 * mu + lambda) * volume, vxx, 1e-10);
     CHECK_CLOSE(lambda * volume, vxy, 1e-10);
 
@@ -183,13 +179,9 @@ TEST(ELASTICITY_STIFFNESS_3D)
     xy(3 * i + 2) = 0.0;
   }
 
-  double vxx = 0.0, vxy = 0.0, volume = mesh->getCellVolume(cell);
-  for (int i = 0; i < nrows; i++) {
-    for (int j = 0; j < nrows; j++) {
-      vxx += A(i, j) * xx(i) * xx(j);
-      vxy += A(i, j) * xx(i) * yy(j);
-    }
-  }
+  double volume = mesh->getCellVolume(cell);
+  double vxx = VectorMatrixVector(xx, A, xx);
+  double vxy = VectorMatrixVector(xx, A, yy);
   CHECK_CLOSE(vxx, volume, 1e-10);
   CHECK_CLOSE(vxy, 0.0, 1e-10);
 

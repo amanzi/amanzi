@@ -180,8 +180,8 @@ RunTest(int icase, double mu, double lambda, double tol = 1e-10)
   VerificationCV ver(global_op);
   ver.CheckMatrixSPD(true, true);
 
-  // get and assemble the global operator
-  global_op->UpdateRHS(source, true); // FIXME volume is missing but RHS is zero
+  // get and assemble the global operator (volume was included)
+  global_op->UpdateRHS(source, true);
   op->ApplyBCs(true, true, true);
 
   // create preconditoner using the base operator class

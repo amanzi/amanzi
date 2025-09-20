@@ -118,15 +118,11 @@ TEST(ELASTICITY_WEAK_SYMMETRY_2D)
       rr[2 * i + 1] = p3[1] / area;
     }
 
-    double vxx(0.0), vxy(0.0), rot(0.0);
+    double rot(0.0);
+    for (int i = 0; i < nrows; i++) rot += G(i, 0) * rr[i];
+    double vxx = VectorMatrixVector(xx, M, xx);
+    double vxy = VectorMatrixVector(yy, M, xx);
     double volume = mesh->getCellVolume(0);
-    for (int i = 0; i < nrows; i++) {
-      rot += G(i, 0) * rr[i];
-      for (int j = 0; j < nrows; j++) {
-        vxx += M(i, j) * xx[i] * xx[j];
-        vxy += M(i, j) * yy[i] * xx[j];
-      }
-    }
     CHECK_CLOSE(-volume, rot, 1e-10);
     CHECK_CLOSE((mu + lambda) * volume, vxx, 1e-10);
     CHECK_CLOSE(0.0, vxy, 1e-10);
@@ -144,12 +140,7 @@ TEST(ELASTICITY_WEAK_SYMMETRY_2D)
     vx[2 * nfaces] = xc[0];
     vx[2 * nfaces + 1] = xc[1];
 
-    double axx(0.0);
-    for (int i = 0; i < mrows; i++) {
-      for (int j = 0; j < mrows; j++) {
-        axx += A(i, j) * vx[i] * vx[j];
-      }
-    }
+    double axx = VectorMatrixVector(vx, A, vx);
     CHECK_CLOSE((4 * lambda + 2 * mu) * volume, axx, 1e-10);
   }
 }
@@ -236,15 +227,11 @@ TEST(ELASTICITY_WEAK_SYMMETRY_3D)
       rr[3 * i + 2] = p3[2] / area;
     }
 
-    double vxx(0.0), vxy(0.0), rot(0.0);
+    double rot(0.0);
+    for (int i = 0; i < nrows; i++) rot += G(i, 0) * rr[i];
+    double vxx = VectorMatrixVector(xx, M, xx);
+    double vxy = VectorMatrixVector(yy, M, xx);
     double volume = mesh->getCellVolume(0);
-    for (int i = 0; i < nrows; i++) {
-      rot += G(i, 0) * rr[i];
-      for (int j = 0; j < nrows; j++) {
-        vxx += M(i, j) * xx[i] * xx[j];
-        vxy += M(i, j) * yy[i] * xx[j];
-      }
-    }
     CHECK_CLOSE(-volume, rot, 1e-10);
     CHECK_CLOSE((mu + lambda) * volume, vxx, 1e-10);
     CHECK_CLOSE(0.0, vxy, 1e-10);
@@ -264,12 +251,7 @@ TEST(ELASTICITY_WEAK_SYMMETRY_3D)
     vx[3 * nfaces + 1] = xc[1];
     vx[3 * nfaces + 2] = xc[2];
 
-    double axx(0.0);
-    for (int i = 0; i < mrows; i++) {
-      for (int j = 0; j < mrows; j++) {
-        axx += A(i, j) * vx[i] * vx[j];
-      }
-    }
+    double axx = VectorMatrixVector(vx, A, vx);
     CHECK_CLOSE((9 * lambda + 3 * mu) * volume, axx, 1e-10);
   }
 }
@@ -353,15 +335,11 @@ TEST(ELASTICITY_WEAK_SYMMETRY_BDV_2D)
       rr[4 * i + 1] = p3[1] / area;
     }
 
-    double vxx(0.0), vxy(0.0), rot(0.0);
+    double rot(0.0);
+    for (int i = 0; i < nrows; i++) rot += G(i, 0) * rr[i];
+    double vxx = VectorMatrixVector(xx, M, xx);
+    double vxy = VectorMatrixVector(yy, M, xx);
     double volume = mesh->getCellVolume(0);
-    for (int i = 0; i < nrows; i++) {
-      rot += G(i, 0) * rr[i];
-      for (int j = 0; j < nrows; j++) {
-        vxx += M(i, j) * xx[i] * xx[j];
-        vxy += M(i, j) * yy[i] * xx[j];
-      }
-    }
     CHECK_CLOSE(-volume, rot, 1e-10);
     CHECK_CLOSE((mu + lambda) * volume, vxx, 1e-10);
     CHECK_CLOSE(0.0, vxy, 1e-10);
@@ -383,13 +361,7 @@ TEST(ELASTICITY_WEAK_SYMMETRY_BDV_2D)
     vx[4 * nfaces] = 0.0;
     vx[4 * nfaces + 1] = xc[1];
 
-    double axx(0.0);
-    for (int i = 0; i < mrows; i++) {
-      for (int j = 0; j < mrows; j++) {
-        axx += A(i, j) * vx[i] * vx[j];
-      }
-    }
-
+    double axx = VectorMatrixVector(vx, A, vx);
     CHECK_CLOSE((lambda + mu) * volume, axx, 1e-10);
   }
 }
@@ -485,17 +457,13 @@ RunWeakSymmetryBdV3D(const std::string& filename)
       for (int k = 0; k < 3; ++k) rr[9 * i + k] = p[k] / area;
     }
 
-    double vxx(0.0), vxy(0.0), vzz(0.0), rot(0.0);
+    double rot(0.0);
+    for (int i = 0; i < nrows; i++) rot += G(i, 0) * rr[i];
+    double vxx = VectorMatrixVector(xx, M, xx);
+    double vxy = VectorMatrixVector(yy, M, xx);
+    double vzz = VectorMatrixVector(zz, M, zz);
     double volume = mesh->getCellVolume(0);
 
-    for (int i = 0; i < nrows; i++) {
-      rot += G(i, 0) * rr[i];
-      for (int j = 0; j < nrows; j++) {
-        vxx += M(i, j) * xx[i] * xx[j];
-        vxy += M(i, j) * yy[i] * xx[j];
-        vzz += M(i, j) * zz[i] * zz[j];
-      }
-    }
     CHECK_CLOSE(-volume, rot, 1e-10);
     CHECK_CLOSE((mu + lambda) * volume, vxx, 1e-10);
     CHECK_CLOSE(0.0, vxy, 1e-10);
@@ -542,12 +510,7 @@ RunWeakSymmetryBdV3D(const std::string& filename)
     vx[9 * nfaces] = xc[0];
     vx[9 * nfaces + 1] = 1.0;
 
-    double axx(0.0);
-    for (int i = 0; i < mrows; i++) {
-      for (int j = 0; j < mrows; j++) {
-        axx += A(i, j) * vx[i] * vx[j];
-      }
-    }
+    double axx = VectorMatrixVector(vx, A, vx);
     CHECK_CLOSE((lambda + mu) * volume, axx, 1e-10);
   }
 }

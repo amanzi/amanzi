@@ -128,17 +128,15 @@ TEST(DG3D_MASS_MATRIX)
 
     // accuracy test
     if (k > 0) {
-      DenseVector v1(nk), v2(nk), v3(nk);
+      DenseVector v1(nk);
       const AmanziGeometry::Point& xc = mesh->getCellCentroid(0);
       v1.PutScalar(0.0);
       v1(0) = xc[0] + 2 * xc[1] + 3 * xc[2];
       v1(1) = 0.5;
       v1(2) = 1.0;
       v1(3) = 1.5;
-      v2 = v1;
 
-      M0.Multiply(v1, v3, false);
-      double integral(v2 * v3);
+      double integral = VectorMatrixVector(v1, M0, v1);
       printf("  inner product = %10.6f\n", integral);
       CHECK_CLOSE(integral, 61.0 / 96.0, 1e-12);
     }
@@ -520,7 +518,7 @@ TEST(DG2D_ADVECTION_MATRIX_CELL)
     }
 
     // accuracy test for functions 1+x and 1+x
-    DenseVector v1(nk), v2(nk), v3(nk);
+    DenseVector v1(nk);
     if (k > 0) {
       const AmanziGeometry::Point& xc = mesh->getCellCentroid(0);
       double scale = std::pow(mesh->getCellVolume(0), 0.5);
@@ -529,10 +527,8 @@ TEST(DG2D_ADVECTION_MATRIX_CELL)
       v1(0) = 2 + xc[0] + 3 * xc[1];
       v1(1) = 1.0 * scale;
       v1(2) = 3.0 * scale;
-      v2 = v1;
 
-      A0.Multiply(v1, v3, false);
-      double integral(v2 * v3);
+      double integral = VectorMatrixVector(v1, A0, v1);
       printf("  inner product = %10.6f\n", integral);
       printf("  centroid = %10.6f %10.6f\n", xc[0], xc[1]);
 
@@ -551,8 +547,7 @@ TEST(DG2D_ADVECTION_MATRIX_CELL)
     }
 
     if (k > 0) {
-      A0.Multiply(v1, v3, false);
-      double integral(v2 * v3);
+      double integral = VectorMatrixVector(v1, A0, v1);
       printf("  inner product = %10.6f\n", integral);
     }
   }
@@ -618,7 +613,7 @@ TEST(DG3D_ADVECTION_MATRIX_CELL)
     }
 
     // accuracy test for functions 1+x and 1+x
-    DenseVector v1(nk), v2(nk), v3(nk);
+    DenseVector v1(nk);
     if (k > 0) {
       const AmanziGeometry::Point& xc = mesh->getCellCentroid(0);
       double scale = std::pow(mesh->getCellVolume(0), 1.0 / 3);
@@ -627,10 +622,8 @@ TEST(DG3D_ADVECTION_MATRIX_CELL)
       v1(0) = 2 + xc[0] + 3 * xc[1];
       v1(1) = 1.0 * scale;
       v1(2) = 3.0 * scale;
-      v2 = v1;
 
-      A0.Multiply(v1, v3, false);
-      double integral(v2 * v3);
+      double integral = VectorMatrixVector(v1, A0, v1);
       printf("  inner product = %10.6f\n", integral);
       printf("  centroid = %10.6f %10.6f\n", xc[0], xc[1]);
 

@@ -27,7 +27,6 @@
 #include "MFD3D_Electromagnetics.hh"
 #include "Tensor.hh"
 
-#if 0
 /* ******************************************************************
 * Mass matrix in 2D
 ****************************************************************** */
@@ -40,11 +39,8 @@ TEST(MASS_MATRIX_2D)
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: Mass matrix for edge elements in 2D" << std::endl;
-#ifdef HAVE_MPI
   auto comm = Amanzi::getDefaultComm();
-#else
-  auto comm = Amanzi::getCommSelf();
-#endif
+
   Teuchos::RCP<Teuchos::ParameterList> factory_plist = Teuchos::rcp(new Teuchos::ParameterList());
   factory_plist->set<bool>("request edges", true);
   factory_plist->set<bool>("request faces", true);
@@ -116,7 +112,6 @@ TEST(MASS_MATRIX_2D)
   }
 }
 
-#endif
 
 /* ******************************************************************
 * Mass matrix in 3D
@@ -218,7 +213,6 @@ TEST(MASS_MATRIX_3D_CUBE)
   MassMatrix3D("", 12);
 }
 
-#if 0
 
 TEST(MASS_MATRIX_3D_HEX)
 {
@@ -442,4 +436,3 @@ TEST(STIFFNESS_MATRIX_3D_24SIDES)
 {
   StiffnessMatrix3D("test/cube_triangulated.exo", 10);
 }
-#endif

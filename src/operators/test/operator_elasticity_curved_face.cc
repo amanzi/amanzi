@@ -178,17 +178,19 @@ RunTest(double mu, double lambda, const std::string& filename = "")
 
   for (int c = 0; c < ncells_wghost; ++c) {
     const auto& xc = mesh->getCellCentroid(c);
+    double vol = mesh->getCellVolume(c);
+
     Point tmp(ana.source_exact(xc, 0.0));
-    for (int k = 0; k < d; ++k) src[k][c] = tmp[k];
+    for (int k = 0; k < d; ++k) src[k][c] = tmp[k] * vol;
   }
 
   // populate the elasticity operator
   pde->Setup(K, false);
   pde->UpdateMatrices();
 
-  // get and assemble the global operator
+  // get and assemble the global operator (volume was included)
   Teuchos::RCP<Operator> global_op = pde->global_operator();
-  global_op->UpdateRHS(source, true); // FIXME
+  global_op->UpdateRHS(source, true);
   pde->ApplyBCs(true, true, true);
 
   // create preconditoner using the base operator class
@@ -228,6 +230,7 @@ TEST(OPERATOR_ELASTICITY_CURVED_FACE_2D)
 TEST(OPERATOR_ELASTICITY_CURVED_FACE_3D)
 {
   RunTest(1.0, 0.2, "test/random3D_05.exo");
-  RunTest(1.0, 0.0, "test/sphere.exo");
+  RunTest(1.0, 0.0, "test/shell.exo");
+  // RunTest(1.0, 0.0, "test/sphere.exo");
 }
 

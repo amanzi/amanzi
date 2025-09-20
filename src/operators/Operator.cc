@@ -635,11 +635,13 @@ Operator::ComputeInverse()
 
 /* ******************************************************************
 * Update the RHS with this vector.
-* Note that derived classes may reimplement this with a volume term.
 ****************************************************************** */
 void
 Operator::UpdateRHS(const CompositeVector& source, bool volume_included)
 {
+  // A derived class should implement the volume factor
+  if (!volume_included) AMANZI_ASSERT(false);
+
   for (auto& it : *rhs_) {
     if (source.HasComponent(it)) {
       rhs_->ViewComponent(it, false)->Update(1.0, *source.ViewComponent(it, false), 1.0);

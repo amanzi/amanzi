@@ -1353,7 +1353,7 @@ HDF5_MPI::readFieldData_(Epetra_Vector& x, const std::string& varname, datatype_
   if (ndims < 0) return -3;
   if (ndims > 2) return -3;
 
-  int globaldims[ndims], localdims[ndims];
+  int globaldims[3], localdims[3];
   parallelIO_get_dataset_dims(globaldims, data_file_, h5path, &IOgroup_);
   localdims[0] = x.MyLength();
   if (ndims == 2) {

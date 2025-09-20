@@ -134,7 +134,7 @@ class SolverNox : public Solver<VectorClass, VectorSpace> {
 
   // access
   double tolerance() { return tol_; }
-  double residual() { return 0.0; } // FIXME
+  double residual() { return solver_->getSolutionGroup().getNormF(); }
   int num_itrs() { return solver_->getNumIterations(); }
   int returned_code() { return 0; }
   int pc_calls() { return 0; }

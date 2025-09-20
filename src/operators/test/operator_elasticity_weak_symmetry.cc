@@ -167,9 +167,9 @@ RunTest(int d, double mu, double lambda, const std::string& method,
   pde->Setup(K, false);
   pde->UpdateMatrices();
 
-  // get and assemble the global operator
+  // get and assemble the global operator (volume was included before)
   Teuchos::RCP<Operator> global_op = pde->global_operator();
-  global_op->UpdateRHS(source, true); // FIXME
+  global_op->UpdateRHS(source, true);
   pde->ApplyBCs(true, true, true);
 
   // create preconditoner using the base operator class

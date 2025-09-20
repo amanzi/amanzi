@@ -275,9 +275,9 @@ RunTest(int icase,
   op->SetTensorCoefficient(K);
   op->UpdateMatrices();
 
-  // get and assemble the global operator
+  // get and assemble the global operator (volume was included before)
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  global_op->UpdateRHS(source, true); // FIXME volume is missing but RHS is zero
+  global_op->UpdateRHS(source, true);
   op->ApplyBCs(true, true, true);
 
   // create preconditoner using the base operator class

@@ -256,7 +256,7 @@ main(int argc, char* argv[])
     // unpermute mixed elements
     // loop through elements to get type list
     std::cout << "E>> collect element information" << std::endl;
-    int elem_types[num_elems][3];
+    std::vector<std::array<int, 3>> elem_types(num_elems);
     int elem_cnt = 0;
     for (int i = 0; i < num_elems; i++) {
       elem_types[i][0] = elems[elem_cnt];
