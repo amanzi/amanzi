@@ -12,7 +12,8 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   VERSION ${SuperLU_VERSION_MAJOR} ${SuperLU_VERSION_MINOR} ${SuperLU_VERSION_PATCH})
 
 # --- Patch the original code
-set(SuperLU_patch_file superlu-osx-shared.patch superlu-stdio-conflict.patch)
+set(SuperLU_patch_file superlu-osx-shared.patch
+                       superlu-stdio-conflict.patch)
 set(SuperLU_sh_patch ${SuperLU_prefix_dir}/superlu-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/superlu-patch-step.sh.in
                ${SuperLU_sh_patch}
