@@ -92,19 +92,22 @@ add_install_include_file(${pks_inc_files})
 if (BUILD_TESTS) 
 endif()
 
+
 if (ENABLE_AmanziPhysicsModule)
   # this should go first
   add_subdirectory(eos)
   add_subdirectory(evaluators)
 
+
   add_subdirectory(flow)
   add_subdirectory(energy)
   add_subdirectory(multiphase)
-  add_subdirectory(navier_stokes)
   add_subdirectory(mechanics)
 endif()
 
   # chemistry should be processed before transport
+
+  add_subdirectory(navier_stokes)      
   add_subdirectory(chemistry)
   add_subdirectory(transport)
   add_subdirectory(shallow_water)

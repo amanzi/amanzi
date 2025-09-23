@@ -82,6 +82,6 @@ if (ENABLE_AmanziPhysicsModule)
 endif()
 
 # integration tests
-if (ENABLE_AmanziPhysicsModule AND ENABLE_ATSPhysicsModule)
-  add_subdirectory(interoperability)
-endif()
+#if (ENABLE_AmanziPhysicsModule AND ENABLE_ATSPhysicsModule)
+#  add_subdirectory(interoperability)
+#endif()

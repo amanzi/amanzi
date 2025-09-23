@@ -74,7 +74,7 @@ ModelEvaluator<Model>::Evaluate_(const State& S, const std::vector<CompositeVect
   int ncells = data.MyLength();
 
   if (deps_.size() > 0) {
-    const auto& dep0 = *S.Get<CompositeVector>(deps_[0]).ViewComponent("cell");
+    const auto& dep0 = *S.Get<CompositeVector>(deps_[0], Tags::DEFAULT).ViewComponent("cell");
     for (int c = 0; c != ncells; ++c) {
       data[0][c] = model_->second[(*model_->first)[c]]->Value(dep0[0][c]);
     }
