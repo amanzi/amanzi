@@ -45,6 +45,29 @@
 /* *****************************************************************
 * Modify meshes
 * **************************************************************** */
+double random(double range) {
+  return 2 * range * (double(rand()) / RAND_MAX - 0.5);
+}
+
+void
+ModifyMesh1(Amanzi::AmanziMesh::Mesh& mesh,
+           const Amanzi::AmanziGeometry::Point& scale,
+           const Amanzi::AmanziGeometry::Point& shift)
+{
+  int d = shift.dim();
+  int nnodes_owned = mesh.getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE,
+                                         Amanzi::AmanziMesh::Parallel_kind::OWNED);
+
+  for (int n = 0; n < nnodes_owned; ++n) {
+    auto xp = mesh.getNodeCoordinate(n);
+    for (int i = 0; i < d; ++i) {
+      xp[i] = scale[i] * xp[i] + shift[i];
+    }
+    mesh.setNodeCoordinate(n, xp);
+  }
+  mesh.recacheGeometry();
+}
+
 void
 ModifyMesh2(Amanzi::AmanziMesh::Mesh& mesh)
 {
@@ -53,15 +76,17 @@ ModifyMesh2(Amanzi::AmanziMesh::Mesh& mesh)
 
   for (int n = 0; n < nnodes_owned; ++n) {
     auto xp = mesh.getNodeCoordinate(n);
-    xp[1] = xp[1] * (2.0 - xp[1]);
+    // xp[1] = xp[1] * (2.0 - xp[1]);
     // xp[1] = xp[1] + 0.06 * std::sin(4.0 * M_PI * xp[1]);
+    if (std::fabs(xp[1]) > 1e-5 && std::fabs(1 - xp[1]) > 1e-5)
+      xp[1] += random(std::sqrt(0.03 / nnodes_owned));
     mesh.setNodeCoordinate(n, xp);
   }
   mesh.recacheGeometry();
 }
 
 
-void ModifyMesh(Amanzi::AmanziMesh::Mesh& mesh, int nx, int id)
+void ModifyMesh3(Amanzi::AmanziMesh::Mesh& mesh, int nx, int id)
 {
   int nnodes_owned = mesh.getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE,
                                          Amanzi::AmanziMesh::Parallel_kind::OWNED);
@@ -91,7 +116,9 @@ void ModifyMesh(Amanzi::AmanziMesh::Mesh& mesh, int nx, int id)
 * **************************************************************** */
 template<class Analytic>
 void
-TestDiffusionMultiMesh(double tol, int icase)
+TestDiffusionMultiMesh(double tol, int icase, int level = 1, 
+                       const std::string& filename1 = "",
+                       const std::string& filename2 = "")
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -113,13 +140,19 @@ TestDiffusionMultiMesh(double tol, int icase)
   auto gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
   // create meshese
-  int n = plist.get<int>("refinement level", 1);
+  int n = level;
   int n1x(5 * n), n1y(12 * n);
   int n2x(5 * n), n2y(10 * n);
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  RCP<Mesh> mesh1 = meshfactory.create(0.0, 0.0, 0.5, 1.0, n1x, n1y);
-  RCP<Mesh> mesh2 = meshfactory.create(0.5, 0.0, 1.0, 1.0, n2x, n2y);
+  RCP<Mesh> mesh1, mesh2;
+  if (filename1 == "") {
+    mesh1 = meshfactory.create(0.0, 0.0, 0.5, 1.0, n1x, n1y);
+    mesh2 = meshfactory.create(0.5, 0.0, 1.0, 1.0, n2x, n2y);
+  } else {
+    mesh1 = meshfactory.create(filename1);
+    mesh2 = meshfactory.create(filename2);
+  }
 
   int ncells1_owned = mesh1->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
   int nfaces1_owned = mesh1->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
@@ -129,21 +162,25 @@ TestDiffusionMultiMesh(double tol, int icase)
   int nfaces2_owned = mesh2->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
   int nfaces2_wghost = mesh2->getNumEntities(Entity_kind::FACE, Parallel_kind::ALL);
 
+  const auto& block1 = mesh1->getSetEntities("cut1", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  const auto& block2 = mesh2->getSetEntities("cut1", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+
+  // modify meshes 
+  if (filename1 != "") {
+    ModifyMesh1(*mesh1, AmanziGeometry::Point(0.5, 1.0), AmanziGeometry::Point(0.0, 0.0));
+    ModifyMesh1(*mesh2, AmanziGeometry::Point(0.5, 1.0), AmanziGeometry::Point(0.5, 0.0));
+  } else if (icase == 1) {
+    ModifyMesh2(*mesh2);
+  } else if (icase == 2) {
+    ModifyMesh3(*mesh1, n1x, 1);
+    ModifyMesh3(*mesh2, n2x, 2);
+  }
+
   // populate diffusion coefficient
   WhetStone::Tensor Knull;
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator");
 
   Analytic ana1(mesh1, 3), ana2(mesh2, 3);
-
-  // create sets and modify meshes after
-  const auto& block1 = mesh1->getSetEntities("cut1", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
-  const auto& block2 = mesh2->getSetEntities("cut1", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
-  if (icase == 1) {
-    // ModifyMesh2(*mesh2);
-  } else if (icase == 2) {
-    ModifyMesh(*mesh1, n1x, 1);
-    ModifyMesh(*mesh2, n2x, 2);
-  }
 
   auto Kc1 = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   for (int c = 0; c < ncells1_owned; ++c) {
@@ -228,7 +265,6 @@ TestDiffusionMultiMesh(double tol, int icase)
   op->set_inverse_parameters(inv_list);
   op->InitializeInverse();
   op->ComputeInverse();
-  // op->A()->Print(std::cout); exit(0);
   // std::cout << setw(16) << setprecision(12) << *op->A() << std::endl; exit(0);
 
   auto sol = Teuchos::rcp(new TreeVector(op->DomainMap()));
@@ -314,7 +350,6 @@ TestDiffusionMultiMesh(double tol, int icase)
     for (auto data : interface_weights[0][f]) {
       int f2 = data.first;
       pavg += data.second * p2_f[0][f2];
-      // std::cout << f << " " << nfaces1_owned + f2 << " " << data.second << std::endl;
     }
     sum += pavg * flux1[0][f] * dir;
   }
@@ -327,7 +362,6 @@ TestDiffusionMultiMesh(double tol, int icase)
     for (auto data : interface_weights[1][f]) {
       int f1 = data.first;
       pavg += data.second * p1_f[0][f1];
-      // std::cout << nfaces1_owned + f << " " << f1 << " " << data.second << std::endl;
     }
     sum += pavg * flux2[0][f] * dir;
   }
@@ -352,7 +386,7 @@ TestDiffusionMultiMesh(double tol, int icase)
     l2_err += std::pow(tmp - p2_f[0][f], 2) * area;
     pnorm += tmp * tmp * area;
   }
-  printf("Interface absolute error: L2(p)=%12.9f\n", std::sqrt(l2_err / pnorm));
+  printf("Interface absolute error: L2(p)=%12.9f\n", std::sqrt(l2_err));
 
   // i/o
   Teuchos::ParameterList iolist;
@@ -376,6 +410,7 @@ TestDiffusionMultiMesh(double tol, int icase)
 
 TEST(OPERATOR_DIFFUSION_TWO_MESH_PROBLEM)
 {
+  TestDiffusionMultiMesh<Analytic01>(2e-1, 1, 1, "test/median8_filtered.exo", "test/poly8.exo");
   TestDiffusionMultiMesh<Analytic08>(7e-3, 2);
   TestDiffusionMultiMesh<Analytic00>(7e-3, 1);
 }

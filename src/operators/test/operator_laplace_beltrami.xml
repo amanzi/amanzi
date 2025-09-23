@@ -73,12 +73,12 @@
   <ParameterList name="solvers">
     <ParameterList name="PCG">
       <Parameter name="iterative method" type="string" value="pcg"/>
-      <ParameterList name="verbose object">
-        <Parameter name="verbosity level" type="string" value="high"/>
-      </ParameterList>
       <ParameterList name="pcg parameters">
         <Parameter name="error tolerance" type="double" value="1e-16"/>
         <Parameter name="maximum number of iterations" type="int" value="200"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="low"/>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Amanzi GMRES">
@@ -108,7 +108,7 @@
         <Parameter name="relaxation type up" type="int" value="14"/>
         <Parameter name="coarsen type" type="int" value="0"/>
         <Parameter name="tolerance" type="double" value="0.0"/>
-        <Parameter name="verbosity" type="int" value="3"/>
+        <Parameter name="verbosity" type="int" value="0"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

@@ -322,6 +322,7 @@ if (ENABLE_TESTS)
         # Test: electromagnetics 
         add_amanzi_test(operators_electromagnetics operators_electromagnetics
                         KIND unit
+                        NPROCS 2
                         SOURCE test/Main.cc test/AnalyticElectromagneticsBase.cc
                                             test/operator_electromagnetics.cc 
                                             test/operator_magnetic_diffusion.cc
@@ -361,7 +362,7 @@ if (ENABLE_TESTS)
 
     add_amanzi_test(operators_diffusion_curved_face operators_diffusion_curved_face
                     KIND unit
-                    NPROCS 2
+                    NPROCS 3
                     SOURCE test/Main.cc test/operator_diffusion_curved_face.cc
                     LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
                     

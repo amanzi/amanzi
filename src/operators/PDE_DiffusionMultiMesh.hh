@@ -9,8 +9,28 @@
 
 /*!
 
-Mimetic Finite Difference class of methods for diffusion on a set of
-possibly non-matching meshes
+Mimetic Finite Difference class of methods for diffusion on a collection of
+non-matching meshes with gaps and overlaps.
+
+.. _pde-diffusion-multi-mesh-spec:
+.. admonition:: pde-diffusion-multi-mesh-spec
+
+   * `"meshes`" ``[Array(string)]`` lists names of all submeshes.
+
+   * `"intersection method`" ``[string]`` specifies method for computing 
+     weights. the available options are ``particles`` and ``convex hull``.
+
+   * `"stability constant`" ``[double]`` a positive number which penalizes
+     solution jump across interfaces.
+
+   * `"number of particles`" ``[int]`` specifies the number of particles per
+     mesh face.
+
+   * `"assemble stability matrix`" ``[bool]`` defines analysis parameter for
+     building stabilizing matrix which excludes also boundary conditions.
+     Default value is *false*.
+
+   * `"interfaces`" ``[list]`` contains sublists of interfaces data.
 
 Example:
 
@@ -21,8 +41,14 @@ Example:
     <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
     <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
     <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-    <Parameter name="gravity" type="bool" value="false"/>
+
     <Parameter name="meshes" type="Array(string)" value="{mesh1, mesh2, mesh3}"/>
+    <Parameter name="intersection method" type="string" value="particles"/>
+
+    <Parameter name="stability constant" type="double" value="1.0"/>
+    <Parameter name="number of particles" type="int" value="10"/>
+    <Parameter name="assemble stability matrix" type="bool" value="false"/>
+
     <ParameterList name="interfaces">
       <ParameterList name="interface 1">
         <Parameter name="meshes" type="Array(string)" value="{mesh1, mesh2}"/>
@@ -163,6 +189,9 @@ class PDE_DiffusionMultiMesh {
   Teuchos::RCP<Operators::TreeOperator> matrix_;
 
   Teuchos::RCP<VerboseObject> vo_;
+
+ private:
+  bool assemble_stability_matrix_;
 };
 
 } // namespace Operators
