@@ -13,8 +13,8 @@
 namespace Amanzi {
 
 TimestepControllerRecoverable::TimestepControllerRecoverable(const std::string& name,
-        Teuchos::ParameterList& plist,
-        const Teuchos::RCP<State>& S)
+                                                             Teuchos::ParameterList& plist,
+                                                             const Teuchos::RCP<State>& S)
   : name_(Keys::cleanName(name, true)),
     dt_name_(Keys::cleanName(name, true) + "_dt_internal"),
     S_(S)
@@ -36,7 +36,7 @@ TimestepControllerRecoverable::TimestepControllerRecoverable(const std::string& 
   if (plist.isParameter("min timestep [s]")) {
     dt_min_ = plist.get<double>("min timestep [s]");
   } else {
-    dt_min_ = plist.get<double>("min timestep", 10*std::numeric_limits<double>::min());
+    dt_min_ = plist.get<double>("min timestep", 10 * std::numeric_limits<double>::min());
   }
 
   // create state memory for internal dt and give it to state
@@ -61,9 +61,7 @@ TimestepControllerRecoverable::getTimestep(double dt, int iterations, bool valid
   double dt_prev_recommended = *dt_internal_;
   double dt_recommended = getTimestep_(dt, iterations, valid);
 
-  if (dt <= dt_prev_recommended &&
-      dt <= dt_recommended &&
-      dt_recommended < dt_prev_recommended) {
+  if (dt <= dt_prev_recommended && dt <= dt_recommended && dt_recommended < dt_prev_recommended) {
     // We took a smaller step than we recommended, likely due to
     // constraints from other PKs or events like vis (dt <= dt_internal),
     // and it worked well enough that the newly recommended step size
@@ -76,7 +74,8 @@ TimestepControllerRecoverable::getTimestep(double dt, int iterations, bool valid
 
   if (dt_recommended < dt_min_) {
     Errors::TimestepCrash msg;
-    msg << "TimestepController reduced the timestep to " << dt_recommended << ", which is less than the minimum allowed dt, " << dt_min_;
+    msg << "TimestepController reduced the timestep to " << dt_recommended
+        << ", which is less than the minimum allowed dt, " << dt_min_;
     Exceptions::amanzi_throw(msg);
   }
 

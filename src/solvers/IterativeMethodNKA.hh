@@ -70,17 +70,19 @@ fall off the end of the space.
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template <class Matrix,
-          class Preconditioner = Matrix,
-          class Vector = typename Matrix::Vector_t,
-          class VectorSpace = typename Vector::VectorSpace_t>
+template<class Matrix,
+         class Preconditioner = Matrix,
+         class Vector = typename Matrix::Vector_t,
+         class VectorSpace = typename Vector::VectorSpace_t>
 class IterativeMethodNKA
   : public InverseIterativeMethod<Matrix, Preconditioner, Vector, VectorSpace> {
  private:
   using InvIt = InverseIterativeMethod<Matrix, Preconditioner, Vector, VectorSpace>;
 
  public:
-  IterativeMethodNKA() : InvIt() {}
+  IterativeMethodNKA()
+    : InvIt()
+  {}
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override final;
 
@@ -100,19 +102,19 @@ class IterativeMethodNKA
   IterativeMethodNKA(const IterativeMethodNKA& other) = delete;
 
  private:
-  using InvIt::m_;
+  using InvIt::CheckConvergence_;
+  using InvIt::criteria_;
   using InvIt::h_;
-  using InvIt::vo_;
-  using InvIt::num_itrs_;
+  using InvIt::inited_;
+  using InvIt::krylov_dim_;
+  using InvIt::m_;
   using InvIt::max_itrs_;
-  using InvIt::tol_;
+  using InvIt::num_itrs_;
   using InvIt::residual_;
   using InvIt::returned_code_;
-  using InvIt::CheckConvergence_;
-  using InvIt::krylov_dim_;
-  using InvIt::inited_;
-  using InvIt::criteria_;
   using InvIt::rnorm0_;
+  using InvIt::tol_;
+  using InvIt::vo_;
 
   Teuchos::RCP<NKA_Base<Vector, VectorSpace>> nka_;
   int nka_dim_;
@@ -121,7 +123,7 @@ class IterativeMethodNKA
 
 
 // Apply the inverse, x <-- A^-1 b
-template <class Matrix, class Preconditioner, class Vector, class VectorSpace>
+template<class Matrix, class Preconditioner, class Vector, class VectorSpace>
 int
 IterativeMethodNKA<Matrix, Preconditioner, Vector, VectorSpace>::NKA_(const Vector& f,
                                                                       Vector& x,
@@ -200,7 +202,7 @@ IterativeMethodNKA<Matrix, Preconditioner, Vector, VectorSpace>::NKA_(const Vect
  * "maximum number of iterations" [int] default = 100
  * "convergence criteria" Array(string) default = "{relative rhs}"
  ****************************************************************** */
-template <class Matrix, class Preconditioner, class Vector, class VectorSpace>
+template<class Matrix, class Preconditioner, class Vector, class VectorSpace>
 void
 IterativeMethodNKA<Matrix, Preconditioner, Vector, VectorSpace>::set_inverse_parameters(
   Teuchos::ParameterList& plist)

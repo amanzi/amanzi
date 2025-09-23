@@ -37,10 +37,10 @@ namespace Operators {
 
 class ReconstructionCellPolynomial : public Reconstruction {
  public:
-  ReconstructionCellPolynomial(){};
+  ReconstructionCellPolynomial() {};
   ReconstructionCellPolynomial(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
-    : Reconstruction(mesh), poly_(Teuchos::null){};
-  ~ReconstructionCellPolynomial(){};
+    : Reconstruction(mesh), poly_(Teuchos::null) {};
+  ~ReconstructionCellPolynomial() {};
 
   // save pointer to the already distributed field.
   virtual void Init(Teuchos::ParameterList& plist) override;
@@ -92,8 +92,8 @@ class ReconstructionCellPolynomial : public Reconstruction {
   // using a smoothness criterion.
   void CellAllAdjCells_(AmanziMesh::Entity_ID c, std::set<AmanziMesh::Entity_ID>& cells) const;
 
-  void
-  CellAdjCellsTwoLevels_(AmanziMesh::Entity_ID c, std::set<AmanziMesh::Entity_ID>& cells) const;
+  void CellAdjCellsTwoLevels_(AmanziMesh::Entity_ID c,
+                              std::set<AmanziMesh::Entity_ID>& cells) const;
 
   void CellAllAdjFaces_(AmanziMesh::Entity_ID c,
                         const std::set<AmanziMesh::Entity_ID>& cells,

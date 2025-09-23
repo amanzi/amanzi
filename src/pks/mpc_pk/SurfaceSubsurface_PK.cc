@@ -141,7 +141,9 @@ SurfaceSubsurface_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   while (!done) {
     // do not overstep
-    if (t_old + dt_done + dt_next > t_new) { dt_next = t_new - t_old - dt_done; }
+    if (t_old + dt_done + dt_next > t_new) {
+      dt_next = t_new - t_old - dt_done;
+    }
 
     // take the step
     fail = sub_pks_[slave_]->AdvanceStep(t_old + dt_done, t_old + dt_done + dt_next, reinit);

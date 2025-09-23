@@ -33,8 +33,9 @@ class Op_Face_Face : public Op {
       Teuchos::rcp(new Epetra_MultiVector(mesh->getMap(AmanziMesh::Entity_kind::FACE, false), 1));
   }
 
-  virtual void
-  ApplyMatrixFreeOp(const Operator* assembler, const CompositeVector& X, CompositeVector& Y) const
+  virtual void ApplyMatrixFreeOp(const Operator* assembler,
+                                 const CompositeVector& X,
+                                 CompositeVector& Y) const
   {
     assembler->ApplyMatrixFreeOp(*this, X, Y);
   }
@@ -62,7 +63,9 @@ class Op_Face_Face : public Op {
     if (scaling.HasComponent("face")) {
       const Epetra_MultiVector& s_f = *scaling.ViewComponent("face", false);
       for (int k = 0; k != s_f.NumVectors(); ++k) {
-        for (int i = 0; i != s_f.MyLength(); ++i) { (*diag)[k][i] *= s_f[0][i]; }
+        for (int i = 0; i != s_f.MyLength(); ++i) {
+          (*diag)[k][i] *= s_f[0][i];
+        }
       }
     }
   }

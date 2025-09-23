@@ -16,7 +16,7 @@ namespace Amanzi {
 namespace AmanziSolvers {
 
 // functor for minimization
-template <class Vector>
+template<class Vector>
 struct LineSearchFunctor {
   LineSearchFunctor(const Teuchos::RCP<SolverFnBase<Vector>>& my_fn,
                     const Teuchos::RCP<const Vector>& u0_,

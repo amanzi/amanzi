@@ -86,24 +86,24 @@ namespace AmanziMesh {
 // Creates a pair of maps, <ALL, OWNED>, for a given entity_kind.
 // Uses GIDs provided by the Mesh object.
 //
-template <class Mesh_type>
-std::pair<Map_ptr_type, Map_ptr_type>
-createMapsFromMeshGIDs(const Mesh_type& mesh, const Entity_kind kind);
+template<class Mesh_type>
+std::pair<Map_ptr_type, Map_ptr_type> createMapsFromMeshGIDs(const Mesh_type& mesh,
+                                                             const Entity_kind kind);
 
 //
 // Creates a pair of maps, <ALL, OWNED>, for a given entity_kind.
 // Uses a natural ordering of GIDs, proc 0 == 0...n, proc 1 = n..., etc.
 //
-template <class Mesh_type>
-std::pair<Map_ptr_type, Map_ptr_type>
-createMapsFromContiguousGIDs(const Mesh_type& mesh, const Entity_kind kind);
+template<class Mesh_type>
+std::pair<Map_ptr_type, Map_ptr_type> createMapsFromContiguousGIDs(const Mesh_type& mesh,
+                                                                   const Entity_kind kind);
 
 //
 // Creates contiguous maps, using the provided maps to communicate new ghost
 // global IDs.
 //
-std::pair<Map_ptr_type, Map_ptr_type>
-createContiguousMaps(const Map_ptr_type& ghosted, const Map_ptr_type& owned);
+std::pair<Map_ptr_type, Map_ptr_type> createContiguousMaps(const Map_ptr_type& ghosted,
+                                                           const Map_ptr_type& owned);
 
 
 class MeshMaps {
@@ -116,9 +116,9 @@ class MeshMaps {
   void initialize(const MeshFramework& mesh, bool renumber = false);
 
   // The list of local face IDs for each boundary_face, owned or ghosted.
-  template <MemSpace_kind MEM>
-  View_type<const Entity_ID, MEM>
-  getBoundaryFaces(const Parallel_kind ptype = Parallel_kind::ALL) const
+  template<MemSpace_kind MEM>
+  View_type<const Entity_ID, MEM> getBoundaryFaces(
+    const Parallel_kind ptype = Parallel_kind::ALL) const
   {
     if (ptype == Parallel_kind::ALL) {
       return view<MEM>(boundary_faces_);
@@ -134,9 +134,9 @@ class MeshMaps {
   }
 
   // The list of local node IDs for each boundary_face, owned or ghosted.
-  template <MemSpace_kind MEM>
-  View_type<const Entity_ID, MEM>
-  getBoundaryNodes(const Parallel_kind ptype = Parallel_kind::ALL) const
+  template<MemSpace_kind MEM>
+  View_type<const Entity_ID, MEM> getBoundaryNodes(
+    const Parallel_kind ptype = Parallel_kind::ALL) const
   {
     if (ptype == Parallel_kind::ALL) {
       return view<MEM>(boundary_nodes_);
@@ -176,7 +176,7 @@ class MeshMaps {
 
 
 // returns used, owned
-template <class Mesh_type>
+template<class Mesh_type>
 std::pair<Map_ptr_type, Map_ptr_type>
 createMapsFromMeshGIDs(const Mesh_type& mesh, const Entity_kind kind)
 {
@@ -192,7 +192,7 @@ createMapsFromMeshGIDs(const Mesh_type& mesh, const Entity_kind kind)
 // Creates a pair of maps, <ALL, OWNED>, for a given entity_kind,
 // using a natural ordering of GIDs, proc 0 == 0...n, proc 1 = n..., etc.
 //
-template <class Mesh_type>
+template<class Mesh_type>
 std::pair<Map_ptr_type, Map_ptr_type>
 createMapsFromContiguousGIDs(const Mesh_type& mesh, const Entity_kind kind)
 {

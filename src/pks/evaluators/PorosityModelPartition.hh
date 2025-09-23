@@ -27,9 +27,9 @@ typedef std::vector<Teuchos::RCP<Porosity>> PorosityModelList;
 typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, PorosityModelList> PorosityModelPartition;
 
 // Non-member factory
-Teuchos::RCP<PorosityModelPartition>
-CreatePorosityModelPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                             Teuchos::RCP<Teuchos::ParameterList> plist);
+Teuchos::RCP<PorosityModelPartition> CreatePorosityModelPartition(
+  Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+  Teuchos::RCP<Teuchos::ParameterList> plist);
 
 } // namespace Evaluators
 } // namespace Amanzi

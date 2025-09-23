@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="1.6-dev">
+<amanzi_input type="unstructured" version="1.7-dev">
     <misc>
       <echo_translated_input file_name="oldspec.xml" format="unstructured_native" />
     </misc>
@@ -44,10 +44,10 @@
       </macros>
     </definitions>
     <process_kernels>
-      <comments>Single-phase transient flow</comments>
-      <flow model="saturated" state="on" />
-      <transport state="off" />
-      <chemistry engine="none" state="off" />
+      <pk mode="transient">
+        <comments>Single-phase transient flow</comments>
+        <flow model="saturated" state="on" />
+      </pk>
     </process_kernels>
     <execution_controls>
       <verbosity level="high" />

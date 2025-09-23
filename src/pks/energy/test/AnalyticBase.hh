@@ -20,19 +20,22 @@
 
 class AnalyticBase {
  public:
-  AnalyticBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : mesh_(mesh){};
-  ~AnalyticBase(){};
+  AnalyticBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
+    : mesh_(mesh) {};
+  ~AnalyticBase() {};
 
   // problem coefficients: conductivity and fluid velocity
-  virtual Amanzi::WhetStone::Tensor
-  Conductivity(int c, const Amanzi::AmanziGeometry::Point& p, double t) = 0;
-  virtual Amanzi::AmanziGeometry::Point
-  FluidVelocity(int c, const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::WhetStone::Tensor Conductivity(int c,
+                                                 const Amanzi::AmanziGeometry::Point& p,
+                                                 double t) = 0;
+  virtual Amanzi::AmanziGeometry::Point FluidVelocity(int c,
+                                                      const Amanzi::AmanziGeometry::Point& p,
+                                                      double t) = 0;
 
   // primary variable is temperature: provide its derivatives
   virtual double temperature_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
-  virtual Amanzi::AmanziGeometry::Point
-  flux_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::AmanziGeometry::Point flux_exact(const Amanzi::AmanziGeometry::Point& p,
+                                                   double t) = 0;
 
   // error calculation: L2 and maximum norms
   void ComputeCellError(const Epetra_MultiVector& temp,

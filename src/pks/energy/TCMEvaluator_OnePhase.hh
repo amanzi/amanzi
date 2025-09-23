@@ -31,7 +31,7 @@ The single-phase model accepts the following parameters:
 
     * `"reference conductivity`" ``[double]`` defines constant or reference conductivity.
 
-    * `"reference temperature`" ``[double]`` defines temperature at which reference 
+    * `"reference temperature`" ``[double]`` defines temperature at which reference
       conductivity of liquid is calculated. Default value is 298.15 [K].
 
     * `"Sutherland constant`" ``[double]`` defines parameter in temperature dependence.
@@ -53,10 +53,10 @@ The single-phase model accepts the following parameters:
     * `"reference conductivity`" ``[double]`` defines constant or reference conductivity.
       Default value is 0.6065 [W/m/K].
 
-    * `"reference temperature`" ``[double]`` defines temperature at which reference 
+    * `"reference temperature`" ``[double]`` defines temperature at which reference
       conductivity of liquid is calculated. Default value is 298.15 [K].
 
-    * `"polynomial expansion`" ``[Array(double)]`` collect coefficients in the quadratic 
+    * `"polynomial expansion`" ``[Array(double)]`` collect coefficients in the quadratic
       representation of the thermal conductivity of liquid with respect to the dimensionless
       parameter T/Tref.
 

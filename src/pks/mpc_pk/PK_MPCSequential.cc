@@ -65,7 +65,7 @@ PK_MPCSequential::get_dt()
 void
 PK_MPCSequential::set_dt(double dt)
 {
-  for (auto pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) (*pk)->set_dt(dt);
+  for (auto pk = sub_pks_.begin() ; pk != sub_pks_.end(); ++pk) (*pk)->set_dt(dt);
 }
 
 

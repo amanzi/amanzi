@@ -23,7 +23,7 @@ namespace Operators {
 
 class Operator_Factory {
  public:
-  Operator_Factory(){};
+  Operator_Factory() {};
 
   void set_mesh(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) { mesh_ = mesh; }
   void set_cvs(const CompositeVectorSpace& cvs)

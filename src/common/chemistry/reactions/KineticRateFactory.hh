@@ -29,8 +29,8 @@ class KineticRate;
 
 class KineticRateFactory {
  public:
-  KineticRateFactory(){};
-  ~KineticRateFactory(){};
+  KineticRateFactory() {};
+  ~KineticRateFactory() {};
 
   KineticRate* Create(const Teuchos::ParameterList& plist,
                       const Mineral& mineral,

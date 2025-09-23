@@ -23,7 +23,7 @@
 
 using namespace Amanzi;
 
-template <class MeshAudit_type, class Mesh_type>
+template<class MeshAudit_type, class Mesh_type>
 void
 test2D(const Teuchos::RCP<Mesh_type>& mesh)
 {
@@ -61,7 +61,7 @@ test2D(const Teuchos::RCP<Mesh_type>& mesh)
   testMeshAudit<MeshAudit_type, Mesh_type>(mesh);
 }
 
-template <class MeshAudit_type, class Mesh_type>
+template<class MeshAudit_type, class Mesh_type>
 void
 test3D(const Teuchos::RCP<Mesh_type>& mesh)
 {

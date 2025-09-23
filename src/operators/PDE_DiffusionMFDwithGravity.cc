@@ -55,9 +55,9 @@ PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
     Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
     Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
     if (k_ != Teuchos::null) {
-      if (k_->HasComponent("cell")) k_cell = k_->ViewComponent("cell");
-      if (k_->HasComponent("face")) k_face = k_->ViewComponent("face", true);
-      if (k_->HasComponent("grav")) k_face = k_->ViewComponent("grav", true);
+      if (k_->HasComponent("cell") ) k_cell = k_->ViewComponent("cell");
+      if (k_->HasComponent("face") ) k_face = k_->ViewComponent("face", true);
+      if (k_->HasComponent("grav") ) k_face = k_->ViewComponent("grav", true);
     }
 
     int dir;
@@ -111,7 +111,7 @@ PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
       // add gravity term to the right-hand side vector.
       // -- use always for the finite volume method
       if (fv_flag) {
-        if (K_.get()) Kc = (*K_)[c];
+        if (K_.get() ) Kc = (*K_)[c];
         AmanziGeometry::Point Kcg(Kc * g_);
 
         for (int n = 0; n < nfaces; n++) {
@@ -185,9 +185,9 @@ PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector
   Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
   Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
   if (k_ != Teuchos::null) {
-    if (k_->HasComponent("cell")) k_cell = k_->ViewComponent("cell");
-    if (k_->HasComponent("face")) k_face = k_->ViewComponent("face", true);
-    if (k_->HasComponent("grav")) k_face = k_->ViewComponent("grav", true);
+    if (k_->HasComponent("cell") ) k_cell = k_->ViewComponent("cell");
+    if (k_->HasComponent("face") ) k_face = k_->ViewComponent("face", true);
+    if (k_->HasComponent("grav") ) k_face = k_->ViewComponent("grav", true);
   }
 
   int dim = mesh_->getSpaceDimension();
@@ -230,7 +230,7 @@ PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector
     }
 
     if (fv_flag) {
-      if (K_.get()) Kc = (*K_)[c];
+      if (K_.get() ) Kc = (*K_)[c];
       AmanziGeometry::Point Kcg(Kc * g_);
 
       for (int n = 0; n < nfaces; n++) {
@@ -276,7 +276,9 @@ PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector
     }
   }
 
-  for (int f = 0; f < nfaces_owned; f++) { flux_data[0][f] += grav_flux[0][f] / hits[f]; }
+  for (int f = 0; f < nfaces_owned; f++) {
+    flux_data[0][f] += grav_flux[0][f] / hits[f];
+  }
 }
 
 
@@ -298,9 +300,9 @@ PDE_DiffusionMFDwithGravity::UpdateFluxManifold_(const Teuchos::Ptr<const Compos
   Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
   Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
   if (k_ != Teuchos::null) {
-    if (k_->HasComponent("cell")) k_cell = k_->ViewComponent("cell");
-    if (k_->HasComponent("face")) k_face = k_->ViewComponent("face", true);
-    if (k_->HasComponent("grav")) k_face = k_->ViewComponent("grav", true);
+    if (k_->HasComponent("cell") ) k_cell = k_->ViewComponent("cell");
+    if (k_->HasComponent("face") ) k_face = k_->ViewComponent("face", true);
+    if (k_->HasComponent("grav") ) k_face = k_->ViewComponent("grav", true);
   }
 
   int dim = mesh_->getSpaceDimension();
@@ -337,7 +339,7 @@ PDE_DiffusionMFDwithGravity::UpdateFluxManifold_(const Teuchos::Ptr<const Compos
       for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
     }
 
-    if (K_.get()) Kc = (*K_)[c];
+    if (K_.get() ) Kc = (*K_)[c];
     AmanziGeometry::Point Kcg(Kc * g_);
 
     double rho = rho_c ? (*rho_c)[0][c] : rho_;
@@ -365,7 +367,9 @@ PDE_DiffusionMFDwithGravity::UpdateFluxManifold_(const Teuchos::Ptr<const Compos
   // if f is on a processor boundary, some g are not initialized
   grav.GatherGhostedToMaster(Add);
 
-  for (int g = 0; g < ndofs_owned; ++g) { flux_data[0][g] += grav_data[0][g]; }
+  for (int g = 0; g < ndofs_owned; ++g) {
+    flux_data[0][g] += grav_data[0][g];
+  }
 }
 
 
@@ -379,10 +383,8 @@ PDE_DiffusionMFDwithGravity::Init_(Teuchos::ParameterList& plist)
 
   // gravity discretization
   std::string name = plist.get<std::string>("gravity term discretization", "hydraulic head");
-  if (name == "hydraulic head")
-    gravity_method_ = OPERATOR_GRAVITY_HH;
-  else
-    gravity_method_ = OPERATOR_GRAVITY_FV;
+  if (name == "hydraulic head") gravity_method_ = OPERATOR_GRAVITY_HH;
+  else gravity_method_ = OPERATOR_GRAVITY_FV;
 
   gravity_term_initialized_ = false;
 }

@@ -27,8 +27,11 @@ class ObservableLineSegment : public virtual ObservableAmanzi {
                         Teuchos::ParameterList& units_plist,
                         Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
-  virtual void
-  ComputeObservation(State& S, double* value, double* volume, std::string& unit, double dt);
+  virtual void ComputeObservation(State& S,
+                                  double* value,
+                                  double* volume,
+                                  std::string& unit,
+                                  double dt);
   virtual int ComputeRegionSize();
   void ComputeInterpolationPoints(Teuchos::RCP<const AmanziGeometry::Region> reg_ptr);
 
@@ -41,13 +44,12 @@ class ObservableLineSegment : public virtual ObservableAmanzi {
 };
 
 
-inline
-ObservableLineSegment::ObservableLineSegment(std::string variable,
-                                             std::string region,
-                                             std::string functional,
-                                             Teuchos::ParameterList& plist,
-                                             Teuchos::ParameterList& units_plist,
-                                             Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+inline ObservableLineSegment::ObservableLineSegment(std::string variable,
+                                                    std::string region,
+                                                    std::string functional,
+                                                    Teuchos::ParameterList& plist,
+                                                    Teuchos::ParameterList& units_plist,
+                                                    Teuchos::RCP<const AmanziMesh::Mesh> mesh)
   : ObservableAmanzi(variable, region, functional, plist, units_plist, mesh)
 {
   interpolation_ = plist.get<std::string>("interpolation", "linear");

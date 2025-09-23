@@ -21,9 +21,12 @@
 
 namespace Amanzi {
 
-class PK_PhysicalBDF : public PK_Physical, public PK_BDF {
+class PK_PhysicalBDF
+  : public PK_Physical
+  , public PK_BDF {
  public:
-  PK_PhysicalBDF() : PK(), PK_Physical(), PK_BDF(){};
+  PK_PhysicalBDF()
+    : PK(), PK_Physical(), PK_BDF() {};
 
   PK_PhysicalBDF(Teuchos::ParameterList& pk_tree,
                  const Teuchos::RCP<Teuchos::ParameterList>& glist,
@@ -31,10 +34,10 @@ class PK_PhysicalBDF : public PK_Physical, public PK_BDF {
                  const Teuchos::RCP<TreeVector>& soln)
     : PK(pk_tree, glist, S, soln),
       PK_Physical(pk_tree, glist, S, soln),
-      PK_BDF(pk_tree, glist, S, soln){};
+      PK_BDF(pk_tree, glist, S, soln) {};
 
   // Virtual destructor
-  virtual ~PK_PhysicalBDF(){};
+  virtual ~PK_PhysicalBDF() {};
 };
 
 } // namespace Amanzi

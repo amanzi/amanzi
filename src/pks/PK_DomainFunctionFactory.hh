@@ -35,13 +35,13 @@
 
 namespace Amanzi {
 
-template <class FunctionBase>
+template<class FunctionBase>
 class PK_DomainFunctionFactory {
  public:
   PK_DomainFunctionFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                            const Teuchos::RCP<State>& S)
-    : mesh_(mesh), S_(S){};
-  ~PK_DomainFunctionFactory(){};
+    : mesh_(mesh), S_(S) {};
+  ~PK_DomainFunctionFactory() {};
 
   Teuchos::RCP<FunctionBase> Create(Teuchos::ParameterList& plist,
                                     AmanziMesh::Entity_kind kind,
@@ -63,7 +63,7 @@ class PK_DomainFunctionFactory {
 };
 
 
-template <class FunctionBase>
+template<class FunctionBase>
 Teuchos::RCP<FunctionBase>
 PK_DomainFunctionFactory<FunctionBase>::Create(Teuchos::ParameterList& plist,
                                                const std::string& keyword,
@@ -134,8 +134,7 @@ PK_DomainFunctionFactory<FunctionBase>::Create(Teuchos::ParameterList& plist,
     return func;
   } else if (model == "first order exchange") {
     AMANZI_ASSERT(kind == AmanziMesh::Entity_kind::CELL);
-    plist.sublist("source function")
-      .set<std::string>("exchanged quantity tag", tag.get());
+    plist.sublist("source function").set<std::string>("exchanged quantity tag", tag.get());
     Teuchos::RCP<PK_DomainFunctionFirstOrderExchange<FunctionBase>> func =
       Teuchos::rcp(new PK_DomainFunctionFirstOrderExchange<FunctionBase>(mesh_, plist, kind));
     func->Init(plist, keyword);
@@ -170,7 +169,7 @@ PK_DomainFunctionFactory<FunctionBase>::Create(Teuchos::ParameterList& plist,
 }
 
 
-template <class FunctionBase>
+template<class FunctionBase>
 Teuchos::RCP<FunctionBase>
 PK_DomainFunctionFactory<FunctionBase>::Create(Teuchos::ParameterList& plist,
                                                AmanziMesh::Entity_kind kind,

@@ -26,7 +26,7 @@ namespace Operators {
 
 class Op_Factory {
  public:
-  Op_Factory(){};
+  Op_Factory() {};
 
   void set_mesh(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) { mesh_ = mesh; }
   Teuchos::RCP<const AmanziMesh::Mesh> mesh() const { return mesh_; }

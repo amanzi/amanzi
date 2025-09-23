@@ -25,11 +25,11 @@ namespace Operators {
 
 class PDE_ElasticityFactory {
  public:
-  PDE_ElasticityFactory(){};
-  ~PDE_ElasticityFactory(){};
+  PDE_ElasticityFactory() {};
+  ~PDE_ElasticityFactory() {};
 
-  Teuchos::RCP<PDE_Elasticity>
-  Create(Teuchos::ParameterList& oplist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+  Teuchos::RCP<PDE_Elasticity> Create(Teuchos::ParameterList& oplist,
+                                      const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
   {
     bool fractured_matrix = oplist.sublist("schema").isParameter("fracture");
 

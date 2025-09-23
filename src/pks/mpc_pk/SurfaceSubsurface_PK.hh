@@ -33,7 +33,7 @@ class SurfaceSubsurface_PK : public PK_MPCSubcycled {
                        const Teuchos::RCP<State>& S,
                        const Teuchos::RCP<TreeVector>& soln);
 
-  ~SurfaceSubsurface_PK(){};
+  ~SurfaceSubsurface_PK() {};
 
   // PK methods
   // -- dt is the minimum of the sub pks

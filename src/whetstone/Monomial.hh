@@ -46,7 +46,7 @@ class Monomial : public PolynomialBase {
     coefs_.Reshape(1);
     coefs_(0) = coef;
   }
-  ~Monomial(){};
+  ~Monomial() {};
 
   // typical operations with monomials
   // -- polynomial values
@@ -87,7 +87,9 @@ Monomial::Value(const AmanziGeometry::Point& xp) const
 {
   double tmp = coefs_(0);
   if (tmp != 0.0) {
-    for (int i = 0; i < d_; ++i) { tmp *= std::pow(xp[i] - origin_[i], multi_index_[i]); }
+    for (int i = 0; i < d_; ++i) {
+      tmp *= std::pow(xp[i] - origin_[i], multi_index_[i]);
+    }
   }
   return tmp;
 }

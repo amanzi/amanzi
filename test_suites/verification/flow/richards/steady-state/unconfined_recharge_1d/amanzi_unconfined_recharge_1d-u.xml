@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="1.6-dev">
+<amanzi_input type="unstructured" version="1.7-dev">
     <misc>
       <echo_translated_input file_name="oldspec.xml" format="unstructured_native" />
     </misc>
@@ -26,10 +26,10 @@
       </macros>
     </definitions>
     <process_kernels>
-      <comments>Variably saturated flow</comments>
-      <flow model="richards" state="on" />
-      <transport state="off" />
-      <chemistry engine="none" state="off" />
+      <pk mode="steady">
+        <comments>Variably saturated flow</comments>
+        <flow model="richards" state="on"/>
+      </pk>
     </process_kernels>
     <phases>
       <liquid_phase name="water">

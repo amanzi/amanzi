@@ -141,7 +141,9 @@ PDE_ElasticityFracturedMatrix::UpdateMatrices(const Teuchos::Ptr<const Composite
       int ndofs = nmap.ElementSize(nodes[n]);
       int shift = cell_to_nodes_[c][n];
 
-      for (int k = 0; k < 3; ++k) { map[3 * n + k] = np + ndofs * k + shift; }
+      for (int k = 0; k < 3; ++k) {
+        map[3 * n + k] = np + ndofs * k + shift;
+      }
       np += 3 * ndofs;
     }
 
@@ -163,7 +165,9 @@ PDE_ElasticityFracturedMatrix::UpdateMatrices(const Teuchos::Ptr<const Composite
       Anew.PutScalar(0.0);
 
       for (int i = 0; i < nrows; ++i) {
-        for (int j = 0; j < nrows; ++j) { Anew(map[i], map[j]) = Acell(i, j); }
+        for (int j = 0; j < nrows; ++j) {
+          Anew(map[i], map[j]) = Acell(i, j);
+        }
       }
 
       local_op_->matrices[c] = Anew;
@@ -274,10 +278,8 @@ PDE_ElasticityFracturedMatrix::ApplyBCs(bool primary, bool eliminate, bool essen
 
         if (eliminate) {
           for (int m = 0; m < np; m++) {
-            if (m < np0)
-              rhs_node[comp[m]][lid[m]] -= Acell(m, n) * value;
-            else
-              rhs_face[0][lid[m]] -= Acell(m, n) * value;
+            if (m < np0) rhs_node[comp[m]][lid[m]] -= Acell(m, n) * value;
+            else rhs_face[0][lid[m]] -= Acell(m, n) * value;
             Acell(m, n) = 0.0;
           }
         }
@@ -374,7 +376,9 @@ PDE_ElasticityFracturedMatrix::UpdateFlux(const Teuchos::Ptr<const CompositeVect
     }
   }
 
-  for (int g = 0; g != ndofs_owned; ++g) { flux_data[0][g] /= hits[g]; }
+  for (int g = 0; g != ndofs_owned; ++g) {
+    flux_data[0][g] /= hits[g];
+  }
 
   flux->GatherGhostedToMaster();
 }
@@ -404,7 +408,9 @@ PDE_ElasticityFracturedMatrix::ComputeCellStrain(const CompositeVector& u, int c
     int first = nmap.FirstPointInElement(v);
     int shift = cell_to_nodes_[c][n];
 
-    for (int k = 0; k < 3; ++k) { dofs(np++) = u_n[k][first + shift]; }
+    for (int k = 0; k < 3; ++k) {
+      dofs(np++) = u_n[k][first + shift];
+    }
   }
 
   // optional face DoFs

@@ -40,7 +40,9 @@ class DenseMatrix {
   DenseMatrix(const DenseMatrix& B, int m1, int m2, int n1, int n2);
   ~DenseMatrix()
   {
-    if (data_ != NULL && access_ == WHETSTONE_DATA_ACCESS_COPY) { delete[] data_; }
+    if (data_ != NULL && access_ == WHETSTONE_DATA_ACCESS_COPY) {
+      delete[] data_;
+    }
   }
 
   // primary members
@@ -55,7 +57,9 @@ class DenseMatrix {
   {
     if (this != &B) {
       if (mem_ < B.m_ * B.n_) {
-        if (data_ != NULL) { delete[] data_; }
+        if (data_ != NULL) {
+          delete[] data_;
+        }
         mem_ = B.m_ * B.n_;
         data_ = new double[mem_];
       }
@@ -215,7 +219,7 @@ operator==(const DenseMatrix& A, const DenseMatrix& B)
   if (A.NumRows() != B.NumRows()) return false;
   if (A.NumCols() != B.NumCols()) return false;
   for (int i = 0; i != A.NumRows() * A.NumCols(); ++i)
-    if (A.Values()[i] != B.Values()[i]) return false;
+    if (A.Values() [i] != B.Values()[i]) return false;
   return true;
 }
 
@@ -227,6 +231,95 @@ operator!=(const DenseMatrix& A, const DenseMatrix& B)
 }
 
 
+// triple product of matrices and vectors inserted into submatrix 
+// of A at position (i0, j0). The matrix M must be a square matrix.
+// Vectors represent diagonal matrices.
+inline void
+TripleMatrixProduct(const DenseVector& ML,
+                    const DenseMatrix& M,
+                    const DenseVector& MR,
+                    DenseMatrix& A,
+                    int i0,
+                    int j0)
+{
+  int nm = M.NumCols();
+
+  for (int i = 0; i < nm; ++i) {
+    for (int j = 0; j < nm; ++j) {
+      A(i + i0, j + j0) = M(i, j) * ML(i) * MR(j);
+    }
+  }
+}
+
+
+inline void
+TripleMatrixProduct(const DenseVector& ML,
+                    const DenseMatrix& M,
+                    const DenseMatrix& MR,
+                    DenseMatrix& A,
+                    int i0,
+                    int j0)
+{
+  int nm = M.NumCols();
+  int nr = MR.NumCols();
+
+  for (int i = 0; i < nm; ++i) {
+    for (int j = 0; j < nr; ++j) {
+      double sum(0.0);
+      for (int k = 0; k < nm; ++k) {
+        sum += M(i, k) * ML(i) * MR(k, j);
+      }
+      A(i + i0, j + j0) = sum;
+    }
+  }
+}
+
+
+inline void
+TripleMatrixProduct(const DenseMatrix& ML,
+                    const DenseMatrix& M,
+                    const DenseMatrix& MR,
+                    DenseMatrix& A,
+                    int i0,
+                    int j0)
+{
+  int nm = M.NumCols();
+  int nl = ML.NumCols();
+  int nr = MR.NumCols();
+
+  for (int i = 0; i < nl; ++i) {
+    for (int j = 0; j < nr; ++j) {
+      double sum(0.0);
+      for (int k = 0; k < nm; ++k) {
+        for (int l = 0; l < nm; ++l) {
+          sum += M(k, l) * ML(k, i) * MR(l, j);
+        }
+      }
+      A(i + i0, j + j0) = sum;
+    }
+  }
+}
+
+
+inline double
+VectorMatrixVector(const DenseVector& v,
+                   const DenseMatrix& M,
+                   const DenseVector& w)
+{
+  int nr = v.NumRows();
+  int nc = w.NumRows();
+
+  double sum(0.0);
+  for (int i = 0; i < nr; ++i) {
+    for (int j = 0; j < nc; ++j) {
+      sum += M(i, j) * v(i) * w(j);
+    }
+  }
+  return sum;
+}
+
+
+// i/o
 inline void
 PrintMatrix(const DenseMatrix& A, const char* format = "%12.5f", int mmax = 0)
 {

@@ -1,4 +1,4 @@
-<amanzi_input version="1.6-dev" type="unstructured">
+<amanzi_input version="1.7-dev" type="unstructured">
 
   <model_description name="SR Test Problem">
     <comments>Steady-State Saturated: linear pressure profile</comments>
@@ -13,10 +13,10 @@
   </model_description>
 
   <process_kernels>
-    <comments>Single phase flow only</comments>
-    <flow state = "on" model = "saturated"/>
-    <transport state = "off" algorithm="none"/>
-    <chemistry state = "off" engine="none"/>
+    <pk mode="steady">
+      <comments>Single phase flow only</comments>
+      <flow state = "on" model = "saturated"/>
+    </pk>
   </process_kernels>
   
   <phases>
@@ -106,7 +106,7 @@
     <material name="Soil">
       <comments>Homogeneous material properties throughout the entire domain</comments>
       <mechanical_properties>
-        <porosity value="0.25"/>
+        <porosity model="constant" value="0.25"/>
         <specific_storage model="constant" value="0.0"/>
       </mechanical_properties>
       <permeability x="9.998680356931206e-13" y="9.998680356931206e-13" z="9.998680356931206e-13"/>

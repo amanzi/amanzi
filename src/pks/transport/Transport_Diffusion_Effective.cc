@@ -129,8 +129,12 @@ Transport_PK::DiffusionSolverEffective(Epetra_MultiVector& tcc_next, double t_ol
 
     // set the initial guess
     auto& sol_cell = *sol.ViewComponent("cell");
-    for (int c = 0; c < ncells_owned; c++) { sol_cell[0][c] = tcc_next[i][c]; }
-    if (sol.HasComponent("face")) { sol.ViewComponent("face")->PutScalar(0.0); }
+    for (int c = 0; c < ncells_owned; c++) {
+      sol_cell[0][c] = tcc_next[i][c];
+    }
+    if (sol.HasComponent("face")) {
+      sol.ViewComponent("face")->PutScalar(0.0);
+    }
 
     op->Init();
     Teuchos::RCP<std::vector<WhetStone::Tensor>> Dptr = Teuchos::rcpFromRef(D_);
@@ -152,7 +156,9 @@ Transport_PK::DiffusionSolverEffective(Epetra_MultiVector& tcc_next, double t_ol
       Exceptions::amanzi_throw(msg);
     }
 
-    for (int c = 0; c < ncells_owned; c++) { tcc_next[i][c] = sol_cell[0][c]; }
+    for (int c = 0; c < ncells_owned; c++) {
+      tcc_next[i][c] = sol_cell[0][c];
+    }
   }
 }
 

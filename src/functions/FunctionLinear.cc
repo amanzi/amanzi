@@ -52,7 +52,7 @@ FunctionLinear::operator()(const std::vector<double>& x) const
     m << "FunctionLinear expects higher-dimensional argument.";
     Exceptions::amanzi_throw(m);
   }
-  for (int j = 0; j < grad_.size(); ++j) y += grad_[j] * (x[j] - x0_[j]);
+  for (int j = 0; j < grad_.size() ; ++j) y += grad_[j] * (x[j] - x0_[j]);
   return y;
 }
 

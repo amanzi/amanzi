@@ -29,8 +29,8 @@ namespace AmanziEOS {
 
 class VaporLiquid {
  public:
-  VaporLiquid(){};
-  virtual ~VaporLiquid(){};
+  VaporLiquid() {};
+  virtual ~VaporLiquid() {};
 
   virtual double k(double T) const = 0;
 

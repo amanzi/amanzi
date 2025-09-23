@@ -39,8 +39,8 @@ struct MeshAlgorithms {
   // virtual std::pair<double, AmanziGeometry::Point>
   // computeCellGeometry(const Mesh& mesh, const Entity_ID c) const;
 
-  virtual std::pair<double, AmanziGeometry::Point>
-  computeCellGeometry(const MeshHost& mesh, const Entity_ID c) const
+  virtual std::pair<double, AmanziGeometry::Point> computeCellGeometry(const MeshHost& mesh,
+                                                                       const Entity_ID c) const
   {
     return Impl::computeCellGeometry(mesh, c);
   }
@@ -49,8 +49,9 @@ struct MeshAlgorithms {
   // virtual std::tuple<double, AmanziGeometry::Point, typename Mesh::cPoint_View>
   // computeFaceGeometry(const Mesh& mesh, const Entity_ID f) const;
 
-  virtual std::tuple<double, AmanziGeometry::Point, typename Mesh::cPoint_View>
-  computeFaceGeometry(const MeshHost& mesh, const Entity_ID f) const
+  virtual std::tuple<double, AmanziGeometry::Point, typename Mesh::cPoint_View> computeFaceGeometry(
+    const MeshHost& mesh,
+    const Entity_ID f) const
   {
     return Impl::computeFaceGeometry(mesh, f);
   }
@@ -59,8 +60,9 @@ struct MeshAlgorithms {
   // virtual std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
   // computeEdgeGeometry(const Mesh& mesh, const Entity_ID e) const;
 
-  virtual std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
-  computeEdgeGeometry(const MeshHost& mesh, const Entity_ID e) const
+  virtual std::pair<AmanziGeometry::Point, AmanziGeometry::Point> computeEdgeGeometry(
+    const MeshHost& mesh,
+    const Entity_ID e) const
   {
     return Impl::computeEdgeGeometry(mesh, e);
   }

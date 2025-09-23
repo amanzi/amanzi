@@ -35,7 +35,7 @@ class WRM_vanGenuchten : public WRM {
                             double sr,
                             std::string& krel_function,
                             double pc0 = 0.0);
-  ~WRM_vanGenuchten(){};
+  ~WRM_vanGenuchten() {};
 
   // required methods from the base class
   double k_relative(double pc) const;

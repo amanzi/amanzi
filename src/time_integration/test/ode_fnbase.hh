@@ -61,7 +61,9 @@ class nonlinearODE : public Amanzi::BDFFnBase<Epetra_Vector> {
   void UpdatePreconditioner(double t, Teuchos::RCP<const Epetra_Vector> up, double h)
   {
     // do nothing since the preconditioner is the identity
-    if (Pu_ == Teuchos::null) { Pu_ = Teuchos::rcp(new Epetra_Vector(*up)); }
+    if (Pu_ == Teuchos::null) {
+      Pu_ = Teuchos::rcp(new Epetra_Vector(*up));
+    }
 
     if (exact_jacobian_) {
       *Pu_ = *up;
@@ -76,20 +78,21 @@ class nonlinearODE : public Amanzi::BDFFnBase<Epetra_Vector> {
 
   void compute_udot(double t,
                     Teuchos::RCP<const Epetra_Vector> u,
-                    Teuchos::RCP<const Epetra_Vector> udot){};
+                    Teuchos::RCP<const Epetra_Vector> udot) {};
 
 
   bool IsAdmissible(Teuchos::RCP<const Epetra_Vector> up) { return true; }
-  bool
-  ModifyPredictor(double h, Teuchos::RCP<const Epetra_Vector> u0, Teuchos::RCP<Epetra_Vector> u)
+  bool ModifyPredictor(double h,
+                       Teuchos::RCP<const Epetra_Vector> u0,
+                       Teuchos::RCP<Epetra_Vector> u)
   {
     return false;
   }
-  Amanzi::AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-  ModifyCorrection(double h,
-                   Teuchos::RCP<const Epetra_Vector> res,
-                   Teuchos::RCP<const Epetra_Vector> u,
-                   Teuchos::RCP<Epetra_Vector> du)
+  Amanzi::AmanziSolvers::FnBaseDefs::ModifyCorrectionResult ModifyCorrection(
+    double h,
+    Teuchos::RCP<const Epetra_Vector> res,
+    Teuchos::RCP<const Epetra_Vector> u,
+    Teuchos::RCP<Epetra_Vector> du)
   {
     return Amanzi::AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
   }

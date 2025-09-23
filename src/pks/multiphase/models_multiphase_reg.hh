@@ -22,7 +22,7 @@ namespace Amanzi {
 namespace Utils {
 
 // explicity instantitate the static data of factory
-template <>
+template<>
 Factory<Multiphase::WRMmp>::map_type* Factory<Multiphase::WRMmp>::map_;
 
 } // namespace Utils

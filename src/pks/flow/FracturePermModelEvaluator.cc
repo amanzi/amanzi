@@ -43,7 +43,7 @@ FracturePermModelEvaluator::FracturePermModelEvaluator(Teuchos::ParameterList& p
 FracturePermModelEvaluator::FracturePermModelEvaluator(const FracturePermModelEvaluator& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
     fpm_(other.fpm_),
-    aperture_key_(other.aperture_key_){};
+    aperture_key_(other.aperture_key_) {};
 
 
 /* ******************************************************************

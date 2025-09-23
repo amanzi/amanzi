@@ -48,9 +48,13 @@ MeshMaps_VEM::VelocityCell(int c,
   } else {
     for (int i = 0; i < d_; ++i) {
       std::vector<Polynomial> vvf, vve;
-      for (int n = 0; n < vf.size(); ++n) { vvf.push_back(vf[n][i]); }
+      for (int n = 0; n < vf.size(); ++n) {
+        vvf.push_back(vf[n][i]);
+      }
 
-      for (int n = 0; n < ve.size(); ++n) { vve.push_back(ve[n][i]); }
+      for (int n = 0; n < ve.size(); ++n) {
+        vve.push_back(ve[n][i]);
+      }
 
       if (projector_ == "H1") {
         mfd->H1Cell(c, vve, vvf, NULL, vc[i]);
@@ -91,10 +95,8 @@ MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& vf) const
         ve.push_back(v[i]);
       }
 
-      if (projector_ == "L2")
-        mfd->L2Face(f, ve, NULL, vf[i]);
-      else if (projector_ == "H1")
-        mfd->H1Face(f, ve, NULL, vf[i]);
+      if (projector_ == "L2") mfd->L2Face(f, ve, NULL, vf[i]);
+      else if (projector_ == "H1") mfd->H1Face(f, ve, NULL, vf[i]);
     }
   }
 }
@@ -136,7 +138,9 @@ MeshMaps_VEM::LeastSquareProjector_Cell_(int order,
       const auto& xf = mesh0_->getFaceCentroid(faces[n]);
       x1.push_back(xf);
 
-      for (int i = 0; i < d_; ++i) { px2[i] = vf[n][i].Value(xf); }
+      for (int i = 0; i < d_; ++i) {
+        px2[i] = vf[n][i].Value(xf);
+      }
       x2.push_back(px2);
     }
   }

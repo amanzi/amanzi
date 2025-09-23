@@ -12,7 +12,8 @@
 
 namespace Amanzi {
 
-ReaderNetCDF::ReaderNetCDF(const std::string& filename) : filename_(filename), file_(-1)
+ReaderNetCDF::ReaderNetCDF(const std::string& filename)
+  : filename_(filename), file_(-1)
 {
   int ierr = nc_open(filename.c_str(), NC_NOWRITE, &file_);
   if (ierr) {
@@ -30,7 +31,7 @@ ReaderNetCDF::~ReaderNetCDF()
 }
 
 
-std::pair<int,int>
+std::pair<int, int>
 ReaderNetCDF::findVarOrGroup_(std::string lvarname) const
 {
   int ncid = file_;

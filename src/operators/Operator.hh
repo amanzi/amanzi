@@ -225,7 +225,7 @@ class Operator : public Matrix<CompositeVector, CompositeVectorSpace> {
   Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
            Teuchos::ParameterList& plist,
            const Schema& schema)
-    : Operator(cvs, cvs, plist, schema, schema){};
+    : Operator(cvs, cvs, plist, schema, schema) {};
 
   virtual ~Operator() = default;
 
@@ -243,10 +243,12 @@ class Operator : public Matrix<CompositeVector, CompositeVectorSpace> {
   }
   // -- icomputes Y = A * X + scalar * Y
   virtual int Apply(const CompositeVector& X, CompositeVector& Y, double scalar) const;
-  virtual int
-  ApplyAssembled(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const;
-  virtual int
-  ApplyUnassembled(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const;
+  virtual int ApplyAssembled(const CompositeVector& X,
+                             CompositeVector& Y,
+                             double scalar = 0.0) const;
+  virtual int ApplyUnassembled(const CompositeVector& X,
+                               CompositeVector& Y,
+                               double scalar = 0.0) const;
   virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const override;
 
   // versions that make it easier to deal with Amanzi input spec format
@@ -275,8 +277,10 @@ class Operator : public Matrix<CompositeVector, CompositeVectorSpace> {
   // -- wrapper
   virtual void AssembleMatrix();
   // -- first dispatch
-  virtual void
-  AssembleMatrix(const SuperMap& map, MatrixFE& matrix, int my_block_row, int my_block_col) const;
+  virtual void AssembleMatrix(const SuperMap& map,
+                              MatrixFE& matrix,
+                              int my_block_row,
+                              int my_block_col) const;
 
   // modifiers
   // -- add a vector to operator's rhs vector
@@ -354,36 +358,48 @@ class Operator : public Matrix<CompositeVector, CompositeVectorSpace> {
 
  public:
   // visit methods for Apply
-  virtual int
-  ApplyMatrixFreeOp(const Op_Cell_FaceCell& op, const CompositeVector& X, CompositeVector& Y) const;
-  virtual int
-  ApplyMatrixFreeOp(const Op_Cell_Face& op, const CompositeVector& X, CompositeVector& Y) const;
-  virtual int
-  ApplyMatrixFreeOp(const Op_Cell_Node& op, const CompositeVector& X, CompositeVector& Y) const;
-  virtual int
-  ApplyMatrixFreeOp(const Op_Cell_Edge& op, const CompositeVector& X, CompositeVector& Y) const;
-  virtual int
-  ApplyMatrixFreeOp(const Op_Cell_Cell& op, const CompositeVector& X, CompositeVector& Y) const;
-  virtual int
-  ApplyMatrixFreeOp(const Op_Cell_Schema& op, const CompositeVector& X, CompositeVector& Y) const;
+  virtual int ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
+                                const CompositeVector& X,
+                                CompositeVector& Y) const;
+  virtual int ApplyMatrixFreeOp(const Op_Cell_Face& op,
+                                const CompositeVector& X,
+                                CompositeVector& Y) const;
+  virtual int ApplyMatrixFreeOp(const Op_Cell_Node& op,
+                                const CompositeVector& X,
+                                CompositeVector& Y) const;
+  virtual int ApplyMatrixFreeOp(const Op_Cell_Edge& op,
+                                const CompositeVector& X,
+                                CompositeVector& Y) const;
+  virtual int ApplyMatrixFreeOp(const Op_Cell_Cell& op,
+                                const CompositeVector& X,
+                                CompositeVector& Y) const;
+  virtual int ApplyMatrixFreeOp(const Op_Cell_Schema& op,
+                                const CompositeVector& X,
+                                CompositeVector& Y) const;
 
-  virtual int
-  ApplyMatrixFreeOp(const Op_Face_Cell& op, const CompositeVector& X, CompositeVector& Y) const;
-  virtual int
-  ApplyMatrixFreeOp(const Op_Face_Face& op, const CompositeVector& X, CompositeVector& Y) const;
+  virtual int ApplyMatrixFreeOp(const Op_Face_Cell& op,
+                                const CompositeVector& X,
+                                CompositeVector& Y) const;
+  virtual int ApplyMatrixFreeOp(const Op_Face_Face& op,
+                                const CompositeVector& X,
+                                CompositeVector& Y) const;
   virtual int ApplyMatrixFreeOp(const Op_Face_CellBndFace& op,
                                 const CompositeVector& X,
                                 CompositeVector& Y) const;
-  virtual int
-  ApplyMatrixFreeOp(const Op_Face_Schema& op, const CompositeVector& X, CompositeVector& Y) const;
+  virtual int ApplyMatrixFreeOp(const Op_Face_Schema& op,
+                                const CompositeVector& X,
+                                CompositeVector& Y) const;
 
-  virtual int
-  ApplyMatrixFreeOp(const Op_Edge_Edge& op, const CompositeVector& X, CompositeVector& Y) const;
+  virtual int ApplyMatrixFreeOp(const Op_Edge_Edge& op,
+                                const CompositeVector& X,
+                                CompositeVector& Y) const;
 
-  virtual int
-  ApplyMatrixFreeOp(const Op_Node_Node& op, const CompositeVector& X, CompositeVector& Y) const;
-  virtual int
-  ApplyMatrixFreeOp(const Op_Node_Schema& op, const CompositeVector& X, CompositeVector& Y) const;
+  virtual int ApplyMatrixFreeOp(const Op_Node_Node& op,
+                                const CompositeVector& X,
+                                CompositeVector& Y) const;
+  virtual int ApplyMatrixFreeOp(const Op_Node_Schema& op,
+                                const CompositeVector& X,
+                                CompositeVector& Y) const;
 
   virtual int ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
                                 const CompositeVector& X,
@@ -391,11 +407,13 @@ class Operator : public Matrix<CompositeVector, CompositeVectorSpace> {
   virtual int ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
                                 const CompositeVector& X,
                                 CompositeVector& Y) const;
-  virtual int
-  ApplyMatrixFreeOp(const Op_MeshInjection& op, const CompositeVector& X, CompositeVector& Y) const;
+  virtual int ApplyMatrixFreeOp(const Op_MeshInjection& op,
+                                const CompositeVector& X,
+                                CompositeVector& Y) const;
 
-  virtual int
-  ApplyMatrixFreeOp(const Op_Diagonal& op, const CompositeVector& X, CompositeVector& Y) const;
+  virtual int ApplyMatrixFreeOp(const Op_Diagonal& op,
+                                const CompositeVector& X,
+                                CompositeVector& Y) const;
 
   // visit methods for symbolic assemble
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,

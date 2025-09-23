@@ -25,7 +25,9 @@
 
 namespace Amanzi {
 
-class PK_Implicit : public PK, public ImplicitFn {};
+class PK_Implicit
+  : public PK
+  , public ImplicitFn {};
 
 } // namespace Amanzi
 

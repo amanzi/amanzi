@@ -165,12 +165,16 @@ NavierStokes_PK::ComputeOperatorBCs()
 
   for (int i = 0; i < op_bcs_.size(); ++i) {
     std::vector<int>& bc_model = op_bcs_[i]->bc_model();
-    for (int n = 0; n < bc_model.size(); n++) { bc_model[n] = Operators::OPERATOR_BC_NONE; }
+    for (int n = 0; n < bc_model.size(); n++) {
+      bc_model[n] = Operators::OPERATOR_BC_NONE;
+    }
 
     if (op_bcs_[i]->type() == WhetStone::DOF_Type::POINT) {
       mv = i;
       std::vector<AmanziGeometry::Point>& bc_value = op_bcs_[i]->bc_value_point();
-      for (int n = 0; n < bc_value.size(); n++) { bc_value[n] = AmanziGeometry::Point(d); }
+      for (int n = 0; n < bc_value.size(); n++) {
+        bc_value[n] = AmanziGeometry::Point(d);
+      }
     }
   }
   mf = 1 - mv;
@@ -185,7 +189,9 @@ NavierStokes_PK::ComputeOperatorBCs()
         int n = it->first;
         bc_model[n] = Operators::OPERATOR_BC_DIRICHLET;
 
-        for (int k = 0; k < d; ++k) { bc_value[n][k] = it->second[k]; }
+        for (int k = 0; k < d; ++k) {
+          bc_value[n][k] = it->second[k];
+        }
       }
     }
 

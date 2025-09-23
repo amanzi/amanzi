@@ -28,7 +28,7 @@ IO_Fields(double t_out,
 
   // create pid vector
   Epetra_MultiVector pid(hh);
-  for (int c = 0; c < pid.MyLength(); c++) pid[0][c] = MyPID;
+  for (int c = 0; c < pid.MyLength() ; c++) pid[0][c] = MyPID;
 
   auto comp = Amanzi::AmanziMesh::Entity_kind::CELL;
   io.InitializeCycle(t_out, iter, "");

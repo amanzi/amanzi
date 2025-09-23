@@ -27,11 +27,11 @@
 
 SUITE(BeakerTests)
 {
-  using Amanzi::AmanziChemistry::Beaker;
-  using Amanzi::AmanziChemistry::BeakerState;
-  using Amanzi::AmanziChemistry::BeakerParameters;
-  using Amanzi::AmanziChemistry::SimpleThermoDatabase;
   using Amanzi::AmanziChemistry::ActivityModelFactory;
+  using Amanzi::AmanziChemistry::Beaker;
+  using Amanzi::AmanziChemistry::BeakerParameters;
+  using Amanzi::AmanziChemistry::BeakerState;
+  using Amanzi::AmanziChemistry::SimpleThermoDatabase;
 
   TEST(CheckBadActivityModel)
   {

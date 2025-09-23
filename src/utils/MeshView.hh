@@ -16,7 +16,7 @@
 
 namespace Kokkos {
 
-template <class DataType, class... Properties>
+template<class DataType, class... Properties>
 struct MeshView : public Kokkos::View<DataType, Properties...> {
   using baseView = Kokkos::View<DataType, Properties...>;
   using baseView::baseView;
@@ -29,8 +29,12 @@ struct MeshView : public Kokkos::View<DataType, Properties...> {
                               typename traits::memory_traits>;
   using const_iterator = Impl::View_iter<const_type>;
 
-  MeshView(const baseView& bv) : baseView(bv) {}
-  MeshView(const MeshView& bv) : baseView(bv) {}
+  MeshView(const baseView& bv)
+    : baseView(bv)
+  {}
+  MeshView(const MeshView& bv)
+    : baseView(bv)
+  {}
 
   KOKKOS_FUNCTION MeshView& operator=(const MeshView& other)
   {
@@ -57,17 +61,17 @@ struct MeshView : public Kokkos::View<DataType, Properties...> {
 
   KOKKOS_INLINE_FUNCTION const_iterator cend() const { return const_iterator(*this, this->size()); }
 
-  template <typename other_iterator>
+  template<typename other_iterator>
   void insert(iterator v0_e, other_iterator v1_b, other_iterator v1_e)
   {
     //assert(v0_e - *this->end() != 0 && "Only insert at end supported for MeshViews");
     std::size_t size = v1_e - v1_b;
     std::size_t csize = this->size();
     Kokkos::resize(*this, size + csize);
-    for (int i = csize; i < this->size(); ++i, ++v1_b) this->operator[](i) = *(v1_b);
+    for (int i = csize; i < this->size() ; ++i, ++v1_b) this->operator[](i) = *(v1_b);
   }
 
-  template <typename MV>
+  template<typename MV>
   KOKKOS_INLINE_FUNCTION void fromConst(const MV& cmv)
   {
     Kokkos::resize(*this, cmv.size());
@@ -75,7 +79,7 @@ struct MeshView : public Kokkos::View<DataType, Properties...> {
   }
 };
 
-template <class SubDataType, class... SubProperties, class... Args>
+template<class SubDataType, class... SubProperties, class... Args>
 MeshView<SubDataType, SubProperties...>
 subview(Kokkos::MeshView<SubDataType, SubProperties...> v, Args... args)
 {
@@ -85,7 +89,7 @@ subview(Kokkos::MeshView<SubDataType, SubProperties...> v, Args... args)
   return ret;
 }
 
-template <class DataType, class Arg1Type = void, class Arg2Type = void, class Arg3Type = void>
+template<class DataType, class Arg1Type = void, class Arg2Type = void, class Arg3Type = void>
 struct MeshDualView : public Kokkos::ViewTraits<DataType, Arg1Type, Arg2Type, Arg3Type> {
   using traits = Kokkos::ViewTraits<DataType, Arg1Type, Arg2Type, Arg3Type>;
   using host_mirror_space = typename traits::host_mirror_space;
@@ -109,7 +113,7 @@ struct MeshDualView : public Kokkos::ViewTraits<DataType, Arg1Type, Arg2Type, Ar
   MeshDualView(const MeshDualView& src)
     : modified_flags(src.modified_flags), d_view(src.d_view), h_view(src.h_view)
   {}
-  template <class SS, class LS, class DS, class MS>
+  template<class SS, class LS, class DS, class MS>
   MeshDualView(const MeshDualView<SS, LS, DS, MS>& src)
     : modified_flags(src.modified_flags), d_view(src.d_view), h_view(src.h_view)
   {}

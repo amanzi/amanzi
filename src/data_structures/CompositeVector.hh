@@ -141,8 +141,6 @@ DOCUMENT VANDELAY HERE! FIX ME --etc
 namespace Amanzi {
 
 class CompositeVector {
-
-
  public:
   using VectorSpace_t = CompositeVectorSpace;
   // -- Constructors --
@@ -150,13 +148,16 @@ class CompositeVector {
 
   // Constructor from a CompositeVectorSpace (which is like a VectorSpace).
   CompositeVector(const CompositeVectorSpace& space)
-    : CompositeVector(space, space.Ghosted(), init_mode_default) {}
+    : CompositeVector(space, space.Ghosted(), init_mode_default)
+  {}
 
   CompositeVector(const CompositeVectorSpace& space, bool ghosted)
-    : CompositeVector(space, ghosted, init_mode_default) {}
+    : CompositeVector(space, ghosted, init_mode_default)
+  {}
 
   CompositeVector(const CompositeVectorSpace& space, InitMode mode)
-    : CompositeVector(space, space.Ghosted(), mode) {}
+    : CompositeVector(space, space.Ghosted(), mode)
+  {}
 
   // Copy constructor.
   CompositeVector(const CompositeVector& other)
@@ -197,7 +198,10 @@ class CompositeVector {
   // HasImportedComponent() indicates that only a const view may be obtained
   // via a call to the const version of ViewComponent(), as the component may
   // be imported (e.g. boundary_face imported from face).
-  bool HasImportedComponent(const std::string& name) const { return map_->HasImportedComponent(name); }
+  bool HasImportedComponent(const std::string& name) const
+  {
+    return map_->HasImportedComponent(name);
+  }
 
   int NumComponents() const { return size(); }
   AmanziMesh::Entity_kind Location(const std::string& name) const { return map_->Location(name); }
@@ -213,8 +217,8 @@ class CompositeVector {
   }
 
   // Access the VectorSpace for each component.
-  Teuchos::RCP<const Epetra_BlockMap>
-  ComponentMap(const std::string& name, bool ghosted = false) const
+  Teuchos::RCP<const Epetra_BlockMap> ComponentMap(const std::string& name,
+                                                   bool ghosted = false) const
   {
     return ghosted ? ghostvec_->ComponentMap(name) : mastervec_->ComponentMap(name);
   }
@@ -224,8 +228,8 @@ class CompositeVector {
   // Access a view of a single component's data.
   //
   // Const access -- this does not tag as changed.
-  Teuchos::RCP<const Epetra_MultiVector>
-  ViewComponent(const std::string& name, bool ghosted = false) const;
+  Teuchos::RCP<const Epetra_MultiVector> ViewComponent(const std::string& name,
+                                                       bool ghosted = false) const;
 
   // View entries in the vectors
   //
@@ -369,8 +373,10 @@ class CompositeVector {
                           double scalarThis);
 
   // this <- scalarAB * A@B + scalarThis*this  (@ is the elementwise product
-  int
-  Multiply(double scalarAB, const CompositeVector& A, const CompositeVector& B, double scalarThis);
+  int Multiply(double scalarAB,
+               const CompositeVector& A,
+               const CompositeVector& B,
+               double scalarThis);
 
   // this <- scalarAB * A^-1@B + scalarThis*this  (@ is the elementwise product
   int ReciprocalMultiply(double scalarAB,
@@ -474,7 +480,9 @@ CompositeVector::PutScalarGhosted(double scalar)
       for (int i = size_owned; i != size_ghosted; ++i) {
         int first = vec.Map().FirstPointInElement(i);
         int ndofs = vec.Map().ElementSize(i);
-        for (int k = 0; k < ndofs; ++k) { vec[j][first + k] = scalar; }
+        for (int k = 0; k < ndofs; ++k) {
+          vec[j][first + k] = scalar;
+        }
       }
     }
   }
@@ -597,14 +605,12 @@ CompositeVector::Random()
 // -----------------------------------------------------------------------------
 // Non-member functions.
 // -----------------------------------------------------------------------------
-void
-DeriveFaceValuesFromCellValues(CompositeVector&);
+void DeriveFaceValuesFromCellValues(CompositeVector&);
 
-void
-AddComponent(Teuchos::RCP<CompositeVector>& cv,
-             const std::string& name,
-             AmanziMesh::Entity_kind kind,
-             int dim);
+void AddComponent(Teuchos::RCP<CompositeVector>& cv,
+                  const std::string& name,
+                  AmanziMesh::Entity_kind kind,
+                  int dim);
 
 } // namespace Amanzi
 

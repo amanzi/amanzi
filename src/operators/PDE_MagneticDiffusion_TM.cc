@@ -156,7 +156,9 @@ PDE_MagneticDiffusion_TM::ApplyBCs_Node_(const Teuchos::Ptr<const BCs>& bc_f,
     auto nodes = mesh_->getCellNodes(c);
     int nnodes = nodes.size();
 
-    for (int n = 0; n < nnodes; ++n) { node_get_cells[nodes[n]]++; }
+    for (int n = 0; n < nnodes; ++n) {
+      node_get_cells[nodes[n]]++;
+    }
   }
 
   for (int c = 0; c != ncells_owned; ++c) {

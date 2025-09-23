@@ -40,7 +40,7 @@ namespace Flow {
 class MultiscaleFlowPorosity_DPM : public MultiscaleFlowPorosity {
  public:
   MultiscaleFlowPorosity_DPM(Teuchos::ParameterList& plist);
-  ~MultiscaleFlowPorosity_DPM(){};
+  ~MultiscaleFlowPorosity_DPM() {};
 
   // Calculate field water storage assuming pressure equilibrium
   virtual double ComputeField(double phi, double n_l, double prm) override;

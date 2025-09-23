@@ -47,7 +47,7 @@ class ApertureModelEvaluator
                                           const std::vector<CompositeVector*>& results) override;
 
  protected:
-  virtual void EnsureCompatibility_ToDeps_(State& S) override{};
+  virtual void EnsureCompatibility_ToDeps_(State& S) override {};
 
  private:
   void UpdateOverburdenPressure_(const State& S);
@@ -57,7 +57,6 @@ class ApertureModelEvaluator
   Teuchos::RCP<ApertureModelPartition> apm_;
   Key pressure_key_;
 
-  bool use_stress_ = false;
   std::vector<double> pov_; // overburden pressure
 
  private:

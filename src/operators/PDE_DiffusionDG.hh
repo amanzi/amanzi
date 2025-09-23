@@ -52,9 +52,9 @@ class PDE_DiffusionDG : public PDE_HelperDiscretization {
 
   // main virtual members
   // -- setup
-  template <typename T>
-  void
-  Setup(const std::shared_ptr<std::vector<T>>& Kc, const std::shared_ptr<std::vector<double>>& Kf);
+  template<typename T>
+  void Setup(const std::shared_ptr<std::vector<T>>& Kc,
+             const std::shared_ptr<std::vector<double>>& Kf);
 
   // -- creation of an operator
   using PDE_HelperDiscretization::UpdateMatrices;
@@ -92,7 +92,7 @@ class PDE_DiffusionDG : public PDE_HelperDiscretization {
 /* ******************************************************************
 * Speciation of a member function
 ****************************************************************** */
-template <>
+template<>
 inline void
 PDE_DiffusionDG::Setup(const std::shared_ptr<std::vector<WhetStone::Tensor>>& Kc,
                        const std::shared_ptr<std::vector<double>>& Kf)
@@ -104,7 +104,7 @@ PDE_DiffusionDG::Setup(const std::shared_ptr<std::vector<WhetStone::Tensor>>& Kc
     new InterfaceWhetStoneDG<WhetStone::DG_Modal, CoefficientModel<WhetStone::Tensor>>(dg_, coef));
 }
 
-template <>
+template<>
 inline void
 PDE_DiffusionDG::Setup(const std::shared_ptr<std::vector<WhetStone::WhetStoneFunction*>>& Kc,
                        const std::shared_ptr<std::vector<double>>& Kf)
@@ -117,7 +117,7 @@ PDE_DiffusionDG::Setup(const std::shared_ptr<std::vector<WhetStone::WhetStoneFun
       dg_, coef));
 }
 
-template <>
+template<>
 inline void
 PDE_DiffusionDG::Setup(const std::shared_ptr<std::vector<WhetStone::MatrixPolynomial>>& Kc,
                        const std::shared_ptr<std::vector<double>>& Kf)

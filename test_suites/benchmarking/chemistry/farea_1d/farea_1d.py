@@ -236,7 +236,6 @@ if __name__ == "__main__":
         ats = True
 
     except Exception as err:
-        print(err)
         ats = False
     
         

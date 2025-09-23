@@ -48,7 +48,7 @@ TotalComponentStorage_Jaffre::TotalComponentStorage_Jaffre(Teuchos::ParameterLis
 ****************************************************************** */
 TotalComponentStorage_Jaffre::TotalComponentStorage_Jaffre(
   const TotalComponentStorage_Jaffre& other)
-  : MultiphaseEvaluator(other){};
+  : MultiphaseEvaluator(other) {};
 
 
 Teuchos::RCP<Evaluator>
@@ -104,13 +104,19 @@ TotalComponentStorage_Jaffre::EvaluatePartialDerivative_(
       result_c[0][c] = sl[0][c] * nl[0][c] + (1.0 - sl[0][c]) * ng[0][c];
     }
   } else if (wrt_key == saturation_liquid_key_) {
-    for (int c = 0; c != ncells; ++c) { result_c[0][c] = phi[0][c] * (nl[0][c] - ng[0][c]); }
+    for (int c = 0; c != ncells; ++c) {
+      result_c[0][c] = phi[0][c] * (nl[0][c] - ng[0][c]);
+    }
   }
 
   else if (wrt_key == mol_density_liquid_key_) {
-    for (int c = 0; c != ncells; ++c) { result_c[0][c] = phi[0][c] * sl[0][c]; }
+    for (int c = 0; c != ncells; ++c) {
+      result_c[0][c] = phi[0][c] * sl[0][c];
+    }
   } else if (wrt_key == mol_density_gas_key_) {
-    for (int c = 0; c != ncells; ++c) { result_c[0][c] = phi[0][c] * (1.0 - sl[0][c]); }
+    for (int c = 0; c != ncells; ++c) {
+      result_c[0][c] = phi[0][c] * (1.0 - sl[0][c]);
+    }
   }
 }
 

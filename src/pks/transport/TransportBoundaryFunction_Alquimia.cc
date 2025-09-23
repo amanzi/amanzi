@@ -27,14 +27,15 @@ TransportBoundaryFunction_Alquimia::TransportBoundaryFunction_Alquimia(
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
   Teuchos::RCP<AmanziChemistry::Alquimia_PK> alquimia_pk,
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine)
-  : name_("alquimia bc"),
-    mesh_(mesh),
+  : mesh_(mesh),
     alquimia_pk_(alquimia_pk),
-    chem_engine_(chem_engine)
+    chem_engine_(chem_engine),
+    TransportDomainFunction(plist)
 {
   // Check arguments.
   if (chem_engine_ != Teuchos::null) {
-    chem_engine_->InitState(beaker_.properties, beaker_.state, beaker_.aux_data, beaker_.aux_output);
+    chem_engine_->InitState(
+      beaker_.properties, beaker_.state, beaker_.aux_data, beaker_.aux_output);
     chem_engine_->GetPrimarySpeciesNames(tcc_names_);
   } else {
     Errors::Message msg;
@@ -111,7 +112,9 @@ TransportBoundaryFunction_Alquimia::Compute(double t_old, double t_new)
 
     // Move the concentrations into place.
     std::vector<double>& values = it->second;
-    for (int i = 0; i < values.size(); i++) { values[i] = beaker_.state.total_mobile.data[i]; }
+    for (int i = 0; i < values.size(); i++) {
+      values[i] = beaker_.state.total_mobile.data[i];
+    }
   }
 }
 

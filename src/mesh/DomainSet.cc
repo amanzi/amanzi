@@ -24,7 +24,9 @@ DomainSet::DomainSet(const std::string& name,
   : name_(name), indexing_parent_(indexing_parent)
 {
   // construct the collection of mesh names
-  for (const auto& index : indices) { meshes_.emplace_back(Keys::getDomainInSet(name, index)); }
+  for (const auto& index : indices) {
+    meshes_.emplace_back(Keys::getDomainInSet(name, index));
+  }
 }
 
 
@@ -48,7 +50,9 @@ DomainSet::doImport(const std::string& subdomain,
   const auto& map = getSubdomainMap(subdomain);
 
   for (int j = 0; j != src.NumVectors(); ++j) {
-    for (int c = 0; c != src.MyLength(); ++c) { target[j][map[c]] = src[j][c]; }
+    for (int c = 0; c != src.MyLength(); ++c) {
+      target[j][map[c]] = src[j][c];
+    }
   }
 }
 
@@ -73,7 +77,9 @@ DomainSet::doExport(const std::string& subdomain,
   const auto& map = getSubdomainMap(subdomain);
 
   for (int j = 0; j != src.NumVectors(); ++j) {
-    for (int c = 0; c != target.MyLength(); ++c) { target[j][c] = src[j][map[c]]; }
+    for (int c = 0; c != target.MyLength(); ++c) {
+      target[j][c] = src[j][map[c]];
+    }
   }
 }
 

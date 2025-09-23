@@ -29,7 +29,7 @@ namespace Operators {
 /* *****************************************************************
 * Specialization for CompositeVector: Functional evaluation
 ***************************************************************** */
-template <>
+template<>
 void
 RemapDG<CompositeVector>::FunctionalTimeDerivative(double t,
                                                    const CompositeVector& u,
@@ -53,7 +53,7 @@ RemapDG<CompositeVector>::FunctionalTimeDerivative(double t,
 /* *****************************************************************
 * Limiting the non-conservative field at time t
 ***************************************************************** */
-template <>
+template<>
 void
 RemapDG<CompositeVector>::ModifySolution(double t, CompositeVector& u)
 {
@@ -63,7 +63,7 @@ RemapDG<CompositeVector>::ModifySolution(double t, CompositeVector& u)
 
   // solve the problem with the mass matrix
   auto& matrices = op_reac_->local_op()->matrices;
-  for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
+  for (int n = 0; n < matrices.size() ; ++n) matrices[n].InverseSPD();
   op_reac_->global_operator()->Apply(u, *field_);
 
   // limit non-conservative field and update the conservative field
@@ -75,7 +75,7 @@ RemapDG<CompositeVector>::ModifySolution(double t, CompositeVector& u)
     ApplyLimiter(t, *field_);
 
     // -- recover original mass matrices FIXME (lipnikov@lanl.gov)
-    for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
+    for (int n = 0; n < matrices.size() ; ++n) matrices[n].InverseSPD();
 
     // -- shift mean values
     auto& climiter = *limiter_->limiter();
@@ -86,7 +86,9 @@ RemapDG<CompositeVector>::ModifySolution(double t, CompositeVector& u)
       double a = climiter[c];
       if (a < 1.0) {
         double mass(0.0);
-        for (int i = 0; i < nk; ++i) { mass += matrices[c](i, 0) * orig_c[i][c]; }
+        for (int i = 0; i < nk; ++i) {
+          mass += matrices[c](i, 0) * orig_c[i][c];
+        }
 
         field_c[0][c] = a * orig_c[0][c] + (1.0 - a) * mass / matrices[c](0, 0);
       }
@@ -101,7 +103,7 @@ RemapDG<CompositeVector>::ModifySolution(double t, CompositeVector& u)
 /* *****************************************************************
 * Change between conservative and non-conservative variables.
 ***************************************************************** */
-template <>
+template<>
 void
 RemapDG<CompositeVector>::NonConservativeToConservative(double t,
                                                         const CompositeVector& u,
@@ -113,7 +115,7 @@ RemapDG<CompositeVector>::NonConservativeToConservative(double t,
 }
 
 
-template <>
+template<>
 void
 RemapDG<CompositeVector>::ConservativeToNonConservative(double t,
                                                         const CompositeVector& u,
@@ -123,7 +125,7 @@ RemapDG<CompositeVector>::ConservativeToNonConservative(double t,
   op_reac_->UpdateMatrices(t);
 
   auto& matrices = op_reac_->local_op()->matrices;
-  for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
+  for (int n = 0; n < matrices.size() ; ++n) matrices[n].InverseSPD();
 
   op_reac_->global_operator()->Apply(u, v);
 }
@@ -132,7 +134,7 @@ RemapDG<CompositeVector>::ConservativeToNonConservative(double t,
 /* *****************************************************************
 * Specialization for TreeVector: functional evaluation
 ***************************************************************** */
-template <>
+template<>
 void
 RemapDG<TreeVector>::FunctionalTimeDerivative(double t, const TreeVector& u, TreeVector& f)
 {
@@ -162,7 +164,7 @@ RemapDG<TreeVector>::FunctionalTimeDerivative(double t, const TreeVector& u, Tre
   op_reac_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   auto& matrices = op_reac_->local_op()->matrices;
-  for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
+  for (int n = 0; n < matrices.size() ; ++n) matrices[n].InverseSPD();
   op_reac_->global_operator()->Apply(tmp, *f.SubVector(1)->Data());
 
   nfun_++;
@@ -172,7 +174,7 @@ RemapDG<TreeVector>::FunctionalTimeDerivative(double t, const TreeVector& u, Tre
 /* *****************************************************************
 * Limiting the non-conservative field at time t
 ***************************************************************** */
-template <>
+template<>
 void
 RemapDG<TreeVector>::ModifySolution(double t, TreeVector& u)
 {
@@ -196,7 +198,7 @@ RemapDG<TreeVector>::ModifySolution(double t, TreeVector& u)
 
   // solve the problem with the mass matrix
   auto& matrices = op_reac_->local_op()->matrices;
-  for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
+  for (int n = 0; n < matrices.size() ; ++n) matrices[n].InverseSPD();
   op_reac_->global_operator()->Apply(*u.SubVector(0)->Data(), *field_);
 
   // limit non-conservative field and update the conservative field
@@ -208,7 +210,7 @@ RemapDG<TreeVector>::ModifySolution(double t, TreeVector& u)
     ApplyLimiter(t, *field_);
 
     // -- recover original mass matrices FIXME (lipnikov@lanl.gov)
-    for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
+    for (int n = 0; n < matrices.size() ; ++n) matrices[n].InverseSPD();
 
     // -- shift mean values
     auto& climiter = *limiter_->limiter();
@@ -219,7 +221,9 @@ RemapDG<TreeVector>::ModifySolution(double t, TreeVector& u)
       double a = climiter[c];
       if (a < 1.0) {
         double mass(0.0);
-        for (int i = 0; i < mk; ++i) { mass += matrices[c](i, 0) * orig_c[i][c]; }
+        for (int i = 0; i < mk; ++i) {
+          mass += matrices[c](i, 0) * orig_c[i][c];
+        }
 
         field_c[0][c] = a * orig_c[0][c] + (1.0 - a) * mass / matrices[c](0, 0);
       }
@@ -234,7 +238,7 @@ RemapDG<TreeVector>::ModifySolution(double t, TreeVector& u)
 /* *****************************************************************
 * Change between conservative and non-conservative variables.
 ***************************************************************** */
-template <>
+template<>
 void
 RemapDG<TreeVector>::NonConservativeToConservative(double t, const TreeVector& u, TreeVector& v)
 {
@@ -256,7 +260,7 @@ RemapDG<TreeVector>::NonConservativeToConservative(double t, const TreeVector& u
 }
 
 
-template <>
+template<>
 void
 RemapDG<TreeVector>::ConservativeToNonConservative(double t, const TreeVector& u, TreeVector& v)
 {
@@ -275,7 +279,7 @@ RemapDG<TreeVector>::ConservativeToNonConservative(double t, const TreeVector& u
 
   // conversion is inverse matrix-vector product
   auto& matrices = op_reac_->local_op()->matrices;
-  for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
+  for (int n = 0; n < matrices.size() ; ++n) matrices[n].InverseSPD();
 
   op_reac_->global_operator()->Apply(*u.SubVector(0)->Data(), *v.SubVector(0)->Data());
 }

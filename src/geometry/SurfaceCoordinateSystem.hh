@@ -31,7 +31,7 @@ class SurfaceCoordinateSystem {
   {
     Init();
   }
-  ~SurfaceCoordinateSystem(){};
+  ~SurfaceCoordinateSystem() {};
 
   // calculate orthogonal vectors of the surface coordinate system
   void Init();

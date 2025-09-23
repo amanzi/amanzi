@@ -7,11 +7,18 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-/*
-  State
+// Utilities for I/O of State data.
 
-  Utilities for I/O of State data.
+/*!
+
+.. _exodus-file-initialization-spec:
+.. admonition:: exodus-file-initialization-spec
+
+   * `"file`" ``[string]`` The filename to read.
+   * `"attributes`" ``[Array(string)]`` List of variables to read from the file.
+
 */
+
 
 #ifndef STATE_IO_HH_
 #define STATE_IO_HH_
@@ -27,38 +34,29 @@
 namespace Amanzi {
 
 // Visualization
-void
-WriteVis(Visualization& vis, State& S);
+void WriteVis(Visualization& vis, State& S);
 
 // Checkpointing
-void
-ReadCheckpoint(const Comm_ptr_type& comm, State& S, const std::string& filename);
+void ReadCheckpoint(const Comm_ptr_type& comm, State& S, const std::string& filename);
 
-double
-ReadCheckpointInitialTime(const Comm_ptr_type& comm, std::string filename);
+double ReadCheckpointInitialTime(const Comm_ptr_type& comm, std::string filename);
 
-int
-ReadCheckpointPosition(const Comm_ptr_type& comm, std::string filename);
+int ReadCheckpointPosition(const Comm_ptr_type& comm, std::string filename);
 
-void
-ReadCheckpointObservations(const Comm_ptr_type& comm,
-                           std::string filename,
-                           Amanzi::ObservationData& obs_data);
+void ReadCheckpointObservations(const Comm_ptr_type& comm,
+                                std::string filename,
+                                Amanzi::ObservationData& obs_data);
 
-void
-DeformCheckpointMesh(State& S, Key domain);
+void DeformCheckpointMesh(State& S, Key domain);
 
 // Reading from files
-void
-ReadVariableFromExodusII(Teuchos::ParameterList& plist, CompositeVector& var);
+void ReadVariableFromExodusII(Teuchos::ParameterList& plist, CompositeVector& var);
 
 // Statistics
-void
-WriteStateStatistics(const State& S,
-                     const VerboseObject& vo,
-                     const Teuchos::EVerbosityLevel vl = Teuchos::VERB_HIGH);
-void
-WriteStateStatistics(const State& S);
+void WriteStateStatistics(const State& S,
+                          const VerboseObject& vo,
+                          const Teuchos::EVerbosityLevel vl = Teuchos::VERB_HIGH);
+void WriteStateStatistics(const State& S);
 
 } // namespace Amanzi
 

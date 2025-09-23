@@ -27,7 +27,7 @@ namespace Amanzi {
 * where k is the nonlinear function provided by the model
 * and p0, T, dir, p, g, bc are constant parameters.
 ****************************************************************** */
-template <class Model>
+template<class Model>
 class BoundaryFluxFn {
  public:
   typedef double (Model::*NonlinFunc)(double p) const;
@@ -80,7 +80,7 @@ class BoundaryFluxFn {
 /* ******************************************************************
 * Bisection solver based on toms748 algorithm.
 ****************************************************************** */
-template <class Model>
+template<class Model>
 class BoundaryFaceSolver {
  public:
   typedef double (Model::*NonlinFunc)(double p) const;
@@ -134,7 +134,7 @@ class BoundaryFaceSolver {
 };
 
 
-template <class Model>
+template<class Model>
 double
 BoundaryFaceSolver<Model>::SolveBisection(double face_val,
                                           double min_val,

@@ -78,7 +78,7 @@ RunTest(const std::string& xmlInFileName)
   Teuchos::ParameterList state_plist = plist->sublist("state");
   auto S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
-  if (submesh.get()) S->RegisterMesh(domain, submesh);
+  if (submesh.get() ) S->RegisterMesh(domain, submesh);
 
   Amanzi::ObservationData obs_data;
   Amanzi::CycleDriver cycle_driver(plist, S, comm, obs_data);

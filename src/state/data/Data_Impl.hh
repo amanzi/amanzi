@@ -40,28 +40,28 @@ namespace Impl {
 // underlying interface with type erasure
 class Data_Intf {
  public:
-  virtual ~Data_Intf(){};
+  virtual ~Data_Intf() {};
 
   // note, this clone is expected to return an empty Data object, so as not to
   // require a Clone method or copy constructor for the data itself -- that is
   // the job of the factory.
   virtual std::unique_ptr<Data_Intf> CloneEmpty() const = 0;
 
-  template <typename T>
+  template<typename T>
   const T& Get() const;
-  template <typename T>
+  template<typename T>
   T& GetW();
 
-  template <typename T>
+  template<typename T>
   Teuchos::RCP<const T> GetPtr() const;
-  template <typename T>
+  template<typename T>
   Teuchos::RCP<T> GetPtrW();
 
-  template <typename T>
+  template<typename T>
   void SetPtr(Teuchos::RCP<T> t);
-  template <typename T>
+  template<typename T>
   void Assign(const T& t);
-  template <typename T>
+  template<typename T>
   bool ValidType() const;
 
   // virtual interface for ad-hoc polymorphism
@@ -87,19 +87,23 @@ class Data_Intf {
 
 
 // underlying implementation of type erasure
-template <typename T>
+template<typename T>
 class Data_Impl : public Data_Intf {
  public:
-  Data_Impl(){};
-  Data_Impl(Teuchos::RCP<T> t) : t_(std::move(t)){};
+  Data_Impl() {};
+  Data_Impl(Teuchos::RCP<T> t)
+    : t_(std::move(t)) {};
 
   // Data_Impl(const Data_Impl<T>& other) :
   //     t_(Teuchos::rcp(new T(*other.t_))) {}
 
-  Data_Impl(Data_Impl<T>&& other) noexcept : t_(std::move(other.t_)) {}
+  Data_Impl(Data_Impl<T>&& other) noexcept
+    : t_(std::move(other.t_))
+  {}
 
-  template <typename... Ts>
-  Data_Impl(Ts&&... ts) : t_(Teuchos::rcp(new T(std::forward<Ts...>(ts...))))
+  template<typename... Ts>
+  Data_Impl(Ts&&... ts)
+    : t_(Teuchos::rcp(new T(std::forward<Ts...>(ts...))))
   {}
 
   virtual std::unique_ptr<Data_Intf> CloneEmpty() const override
@@ -165,7 +169,7 @@ class Data_Impl : public Data_Intf {
 
 // Implementations of the underlying functions of the interface class, these
 // cast to the correct type and provide access.
-template <typename T>
+template<typename T>
 const T&
 Data_Intf::Get() const
 {
@@ -178,7 +182,7 @@ Data_Intf::Get() const
   return p->Get();
 }
 
-template <typename T>
+template<typename T>
 T&
 Data_Intf::GetW()
 {
@@ -191,7 +195,7 @@ Data_Intf::GetW()
   return p->GetW();
 }
 
-template <typename T>
+template<typename T>
 Teuchos::RCP<const T>
 Data_Intf::GetPtr() const
 {
@@ -204,7 +208,7 @@ Data_Intf::GetPtr() const
   return p->GetPtr();
 }
 
-template <typename T>
+template<typename T>
 Teuchos::RCP<T>
 Data_Intf::GetPtrW()
 {
@@ -217,7 +221,7 @@ Data_Intf::GetPtrW()
   return p->GetPtrW();
 }
 
-template <typename T>
+template<typename T>
 void
 Data_Intf::SetPtr(Teuchos::RCP<T> t)
 {
@@ -230,7 +234,7 @@ Data_Intf::SetPtr(Teuchos::RCP<T> t)
   p->SetPtr(std::move(t));
 }
 
-template <typename T>
+template<typename T>
 void
 Data_Intf::Assign(const T& t)
 {
@@ -243,15 +247,13 @@ Data_Intf::Assign(const T& t)
   p->Assign(t);
 }
 
-template <typename T>
+template<typename T>
 bool
 Data_Intf::ValidType() const
 {
   auto p = dynamic_cast<const Data_Impl<T>*>(this);
-  if (!p)
-    return false;
-  else
-    return true;
+  if (!p) return false;
+  else return true;
 }
 
 } // namespace Impl

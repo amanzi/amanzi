@@ -81,7 +81,7 @@ UnstructuredObservations::Setup(const Teuchos::Ptr<State>& S)
 {
   // set the communicator
   comm_ = Teuchos::null;
-  if (S->HasMesh(writing_domain_)) comm_ = S->GetMesh(writing_domain_)->getComm();
+  if (S->HasMesh(writing_domain_) ) comm_ = S->GetMesh(writing_domain_)->getComm();
 
   // require fields, evaluators
   for (auto& obs : observables_) {
@@ -259,7 +259,7 @@ UnstructuredObservations::Write_(double time, const std::vector<double>& obs)
 void
 UnstructuredObservations::Flush()
 {
-  if (fid_.get()) fid_->flush();
+  if (fid_.get() ) fid_->flush();
 }
 
 

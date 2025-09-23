@@ -26,12 +26,12 @@
 class AnalyticDG03 : public AnalyticDGBase {
  public:
   AnalyticDG03(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order, bool advection)
-    : AnalyticDGBase(mesh, order, advection){};
-  ~AnalyticDG03(){};
+    : AnalyticDGBase(mesh, order, advection) {};
+  ~AnalyticDG03() {};
 
   // diffusion tensor
-  virtual Amanzi::WhetStone::Tensor
-  Tensor(const Amanzi::AmanziGeometry::Point& p, double t) override
+  virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p,
+                                           double t) override
   {
     Amanzi::WhetStone::Tensor K(d_, 2);
     if (d_ == 3) {
@@ -90,7 +90,9 @@ class AnalyticDG03 : public AnalyticDGBase {
     }
     v[0](0, 0) = 0.1;
 
-    if (d_ == 3) { v[2].Reshape(d_, 0, true); }
+    if (d_ == 3) {
+      v[2].Reshape(d_, 0, true);
+    }
   }
 
   // -- reaction

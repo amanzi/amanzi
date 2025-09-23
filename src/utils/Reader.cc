@@ -24,7 +24,8 @@ createReader(const std::string& filename)
     return std::make_unique<ReaderNetCDF>(filename);
   } else {
     Errors::Message msg;
-    msg << "Unable to create a reader for \"" << filename << "\" -- valid extensions are .nc and .h5";
+    msg << "Unable to create a reader for \"" << filename
+        << "\" -- valid extensions are .nc and .h5";
     Exceptions::amanzi_throw(msg);
   }
   return nullptr;

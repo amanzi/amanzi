@@ -41,15 +41,14 @@ namespace Operators {
 class LimiterCell {
  public:
   LimiterCell(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh);
-  ~LimiterCell(){};
+  ~LimiterCell() {};
 
   // limiting reconstruction data (gradient or full solution)
   // -- identify inflow boundaries (optional)
-  void
-  Init(Teuchos::ParameterList& plist, const Teuchos::RCP<const Epetra_MultiVector>& flux = Teuchos::null);
+  void Init(Teuchos::ParameterList& plist,
+            const Teuchos::RCP<const Epetra_MultiVector>& flux = Teuchos::null);
 
-  void
-  SetFlux(const Teuchos::RCP<const Epetra_MultiVector>& flux);
+  void SetFlux(const Teuchos::RCP<const Epetra_MultiVector>& flux);
 
   // -- limit reconstructed data (typically gradeient) using neighboors
   //    and boundary data. Actual work is done by the 4th function down.

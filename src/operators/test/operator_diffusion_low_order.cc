@@ -468,7 +468,7 @@ SUITE(DIFFUSION)
   // Exact solution
 #if ASSEMBLING
 
-#  if FV
+#if FV
   TEST(Analytic00_Linear1_FV_Dirichlet_structured2d_ILU)
   {
     std::cout << "Test: "
@@ -498,8 +498,8 @@ SUITE(DIFFUSION)
                  AmanziMesh::Entity_kind::UNKNOWN,
                  1e-12);
   }
-#  endif
-#  if MFD
+#endif
+#if MFD
   TEST(Analytic00_Linear1_MFD_DirichletNeumann_structured2d_ifpack2_ILUT)
   {
     std::cout << "Test: "
@@ -528,8 +528,8 @@ SUITE(DIFFUSION)
                  true,
                  AmanziMesh::Entity_kind::UNKNOWN);
   }
-#  endif
-#  if NLFV
+#endif
+#if NLFV
   TEST(Analytic00_Linear1_NLFV_DirichletNeumann_structured2d_ifpack2_ILUT)
   {
     std::cout << "Test: "
@@ -591,7 +591,7 @@ SUITE(DIFFUSION)
                  AmanziMesh::Entity_kind::UNKNOWN,
                  1e-12);
   }
-#  endif
+#endif
 #endif
 
   //
@@ -854,7 +854,7 @@ SUITE(DIFFUSION)
   //       MFD is still exact
   //       NLFV must converge to be exact.  Also, NLFV loses symmetry as it iterates.
 #if ASSEMBLING
-#  if FV
+#if FV
   TEST(Analytic00_Linear1_FV_DirichletNeumann_Wiggled_ifpack2_ILUT)
   {
     std::cout << "Test: "
@@ -884,8 +884,8 @@ SUITE(DIFFUSION)
                  AmanziMesh::Entity_kind::UNKNOWN,
                  2.e-2);
   }
-#  endif
-#  if MFD
+#endif
+#if MFD
   // on mfd: default, these have a tolerance of 1.e-12.  On TPFA, it is the same as FV?
   TEST(Analytic00_Linear1_MFD_DirichletNeumann_Wiggled_ifpack2_ILUT)
   {
@@ -916,8 +916,8 @@ SUITE(DIFFUSION)
                  AmanziMesh::Entity_kind::UNKNOWN,
                  2e-2);
   }
-#  endif
-#  if NLFV
+#endif
+#if NLFV
   TEST(Analytic00_Linear1_NLFV_DirichletNeumann_Wiggled_ifpack2_ILUT)
   {
     std::cout << "Test: "
@@ -990,7 +990,7 @@ SUITE(DIFFUSION)
                  "00",
                  15);
   }
-#  endif
+#endif
 
   //
   // with polyhedral mesh
@@ -998,7 +998,7 @@ SUITE(DIFFUSION)
   // NOTE: FV cannot be exact
   //       MFD is still exact
   //       NLFV must converge to be exact.  Also, NLFV loses symmetry as it iterates.
-#  if FV
+#if FV
   TEST(Analytic00_Linear1_FV_DirichletNeumann_Poly_ifpack2_ILUT)
   {
     std::cout << "Test: "
@@ -1028,8 +1028,8 @@ SUITE(DIFFUSION)
                  AmanziMesh::Entity_kind::UNKNOWN,
                  3e-2);
   }
-#  endif
-#  if MFD
+#endif
+#if MFD
   // on mfd: default, these have a tolerance of 1.e-12.  On TPFA, it is the same as FV?
   TEST(Analytic00_Linear1_MFD_DirichletNeumann_Poly_ifpack2_ILUT)
   {
@@ -1060,8 +1060,8 @@ SUITE(DIFFUSION)
                  AmanziMesh::Entity_kind::UNKNOWN,
                  2.8e-2);
   }
-#  endif
-#  if NLFV
+#endif
+#if NLFV
   TEST(Analytic00_Linear1_NLFV_DirichletNeumann_Poly_ifpack2_ILUT)
   {
     std::cout << "Test: "
@@ -1133,13 +1133,13 @@ SUITE(DIFFUSION)
                  "00",
                  15);
   }
-#  endif
+#endif
 
   //
   // Analytic00_Quadratic: test case for quadratic equations
   // polynomial with coefficient=1
   //
-#  if FV
+#if FV
   TEST(Analytic00_Quadratic1_FV_DirichletNeumann_structured2d_ifpack2_ILUT)
   {
     std::cout << "Test: "
@@ -1172,8 +1172,8 @@ SUITE(DIFFUSION)
                  0.006,
                  2);
   }
-#  endif
-#  if MFD
+#endif
+#if MFD
   TEST(Analytic00_Quadratic1_MFD_DirichletNeumann_structured2d_ifpack2_ILUT)
   {
     std::cout << "Test: "
@@ -1207,8 +1207,8 @@ SUITE(DIFFUSION)
                  0.006,
                  2);
   }
-#  endif
-#  if NLFV
+#endif
+#if NLFV
   TEST(Analytic00_Quadratic1_NLFV_DirichletNeumann_structured2d_ifpack2_ILUT)
   {
     std::cout << "Test: "
@@ -1275,12 +1275,12 @@ SUITE(DIFFUSION)
                  0.006,
                  2);
   }
-#  endif
+#endif
 
   //
   // Analytic02: Tensor diffusion.  Note FV cannot be exact for this problem.
   // This test replaces old operator_diffusion.cc mixed tests.
-#  if FV
+#if FV
   TEST(Analytic02_FV_DirichletNeumann_structured2d_ifpack2_ILUT)
   {
     std::cout << "Test: "
@@ -1297,9 +1297,9 @@ SUITE(DIFFUSION)
          1,
          "02");
   }
-#  endif
+#endif
 
-#  if MFD
+#if MFD
   // on mfd: default, these have a tolerance of 1.e-12.  On TPFA, it is the same as FV?
   TEST(Analytic02_MFD_DirichletNeumann_structured2d_ifpack2_ILUT)
   {
@@ -1404,12 +1404,12 @@ SUITE(DIFFUSION)
                  1,
                  "02");
   }
-#  endif
+#endif
 
   //
   // With NLFV
   //
-#  if NLFV
+#if NLFV
   TEST(Analytic02_NLFV_DirichletNeumann_structured2d_ifpack2_ILUT)
   {
     std::cout << "Test: "
@@ -1640,7 +1640,7 @@ SUITE(DIFFUSION)
                  "02",
                  20);
   }
-#  endif
+#endif
 #endif
 
   //

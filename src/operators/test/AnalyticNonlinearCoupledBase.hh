@@ -23,7 +23,8 @@
 
 class AnalyticNonlinearCoupledBase {
  public:
-  AnalyticNonlinearCoupledBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : mesh_(mesh){};
+  AnalyticNonlinearCoupledBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
+    : mesh_(mesh) {};
   virtual ~AnalyticNonlinearCoupledBase() = default;
 
   // analytic solution for diffusion problem with gravity
@@ -76,18 +77,18 @@ class AnalyticNonlinearCoupledBase {
   virtual double exact1(const Amanzi::AmanziGeometry::Point& p, double t) const = 0;
 
   // -- gradient of continuous velocity grad(h), where h = p + g z
-  virtual Amanzi::AmanziGeometry::Point
-  gradient_exact0(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
-  virtual Amanzi::AmanziGeometry::Point
-  gradient_exact1(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::AmanziGeometry::Point gradient_exact0(const Amanzi::AmanziGeometry::Point& p,
+                                                        double t) = 0;
+  virtual Amanzi::AmanziGeometry::Point gradient_exact1(const Amanzi::AmanziGeometry::Point& p,
+                                                        double t) = 0;
 
   // -- source term
   virtual double source_exact0(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
   virtual double source_exact1(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
 
   // derived quantity: Darcy velocity -K * grad(h)
-  virtual Amanzi::AmanziGeometry::Point
-  velocity_exact0(const Amanzi::AmanziGeometry::Point& p, double t)
+  virtual Amanzi::AmanziGeometry::Point velocity_exact0(const Amanzi::AmanziGeometry::Point& p,
+                                                        double t)
   {
     Amanzi::WhetStone::Tensor K = Tensor00(p, t);
     Amanzi::AmanziGeometry::Point g = gradient_exact0(p, t);
@@ -96,8 +97,8 @@ class AnalyticNonlinearCoupledBase {
     double kr = ScalarCoefficient00(u, v);
     return -(K * g) * kr;
   }
-  virtual Amanzi::AmanziGeometry::Point
-  velocity_exact1(const Amanzi::AmanziGeometry::Point& p, double t)
+  virtual Amanzi::AmanziGeometry::Point velocity_exact1(const Amanzi::AmanziGeometry::Point& p,
+                                                        double t)
   {
     Amanzi::WhetStone::Tensor K = Tensor11(p, t);
     Amanzi::AmanziGeometry::Point g = gradient_exact1(p, t);

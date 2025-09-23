@@ -30,7 +30,7 @@ ExprTK::Initialize(int n, const std::string& formula)
 
   expression_.register_symbol_table(symbol_table_);
 
-  if (!parser_.compile(formula, expression_)) return false;
+  if (!parser_.compile(formula, expression_) ) return false;
   return true;
 }
 

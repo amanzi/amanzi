@@ -31,16 +31,17 @@
 
 namespace Amanzi {
 
-template <class FunctionBase>
-class PK_DomainFunctionFirstOrderExchange : public FunctionBase,
-                                            public Functions::UniqueMeshFunction {
+template<class FunctionBase>
+class PK_DomainFunctionFirstOrderExchange
+  : public FunctionBase
+  , public Functions::UniqueMeshFunction {
  public:
   PK_DomainFunctionFirstOrderExchange(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                       const Teuchos::ParameterList& plist,
                                       AmanziMesh::Entity_kind kind)
     : FunctionBase(plist),
       UniqueMeshFunction(mesh, AmanziMesh::Parallel_kind::OWNED),
-      kind_(kind){};
+      kind_(kind) {};
   virtual ~PK_DomainFunctionFirstOrderExchange() = default;
 
   // member functions
@@ -56,8 +57,8 @@ class PK_DomainFunctionFirstOrderExchange : public FunctionBase,
   }
 
  protected:
-  using FunctionBase::value_;
   using FunctionBase::keyword_;
+  using FunctionBase::value_;
 
   Teuchos::RCP<State> S_;
 
@@ -74,7 +75,7 @@ class PK_DomainFunctionFirstOrderExchange : public FunctionBase,
 /* ******************************************************************
 * Initialization adds a single function to the list of unique specs.
 ****************************************************************** */
-template <class FunctionBase>
+template<class FunctionBase>
 void
 PK_DomainFunctionFirstOrderExchange<FunctionBase>::Init(const Teuchos::ParameterList& plist,
                                                         const std::string& keyword)
@@ -111,7 +112,7 @@ PK_DomainFunctionFirstOrderExchange<FunctionBase>::Init(const Teuchos::Parameter
 /* ******************************************************************
 * Compute and distribute the result by FirstOrderExchange.
 ****************************************************************** */
-template <class FunctionBase>
+template<class FunctionBase>
 void
 PK_DomainFunctionFirstOrderExchange<FunctionBase>::Compute(double t0, double t1)
 {
@@ -124,8 +125,9 @@ PK_DomainFunctionFirstOrderExchange<FunctionBase>::Compute(double t0, double t1)
   args[0] = t1;
 
   // get the mole fraction, water contents
-  S_->GetEvaluator(exchanged_key_, exchanged_tag_).Update(*S_, exchanged_key_+"_first_order_exchange");
-  S_->GetEvaluator(lwc_key_, lwc_tag_).Update(*S_, lwc_key_+"_first_order_exchange");
+  S_->GetEvaluator(exchanged_key_, exchanged_tag_)
+    .Update(*S_, exchanged_key_ + "_first_order_exchange");
+  S_->GetEvaluator(lwc_key_, lwc_tag_).Update(*S_, lwc_key_ + "_first_order_exchange");
   const auto& ex = *S_->Get<CompositeVector>(exchanged_key_, exchanged_tag_).ViewComponent("cell");
   const auto& lwc = *S_->Get<CompositeVector>(lwc_key_, lwc_tag_).ViewComponent("cell");
 
@@ -141,7 +143,8 @@ PK_DomainFunctionFirstOrderExchange<FunctionBase>::Compute(double t0, double t1)
 
       // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
       for (int i = 0; i < nfun; ++i) {
-        val_vec[i] = -(*uspec->first->second)(args)[i] * ex[i][c] * lwc[0][c] / mesh_->getCellVolume(c);
+        val_vec[i] =
+          -(*uspec->first->second)(args)[i] * ex[i][c] * lwc[0][c] / mesh_->getCellVolume(c);
       }
       value_[c] = val_vec;
     }

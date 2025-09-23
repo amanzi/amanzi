@@ -24,13 +24,13 @@ namespace Operators {
 class PDE_DiffusionWithGravity : public virtual PDE_Diffusion {
  public:
   PDE_DiffusionWithGravity(const Teuchos::RCP<Operator>& global_op)
-    : PDE_Diffusion(global_op), is_scalar_(false){};
+    : PDE_Diffusion(global_op), is_scalar_(false) {};
 
   PDE_DiffusionWithGravity(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : PDE_Diffusion(mesh), is_scalar_(false){};
+    : PDE_Diffusion(mesh), is_scalar_(false) {};
 
   PDE_DiffusionWithGravity(const Teuchos::RCP<AmanziMesh::Mesh>& mesh)
-    : PDE_Diffusion(mesh), is_scalar_(false){};
+    : PDE_Diffusion(mesh), is_scalar_(false) {};
 
   virtual ~PDE_DiffusionWithGravity() = default;
 
@@ -45,7 +45,9 @@ class PDE_DiffusionWithGravity : public virtual PDE_Diffusion {
   virtual void SetDensity(const Teuchos::RCP<const CompositeVector>& rho)
   {
     is_scalar_ = false;
-    if (rho->HasComponent("cell")) { rho_cv_ = rho; }
+    if (rho->HasComponent("cell")) {
+      rho_cv_ = rho;
+    }
   }
 
   double GetDensity(int c)

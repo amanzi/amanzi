@@ -48,7 +48,7 @@ class Op_Diagonal : public Op {
     matrices.resize(row_inds->size(), null_matrix);
     matrices_shadow = matrices;
   }
-  ~Op_Diagonal(){};
+  ~Op_Diagonal() {};
 
   virtual Teuchos::RCP<Op> DeepClone() const override
   {

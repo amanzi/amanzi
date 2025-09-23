@@ -187,7 +187,8 @@ class Evaluator_PDE_Diagonal : public EvaluatorSecondary {
 
 class Evaluator_PDE_DiffusionFV : public EvaluatorSecondary {
  public:
-  Evaluator_PDE_DiffusionFV(Teuchos::ParameterList& plist) : EvaluatorSecondary(plist)
+  Evaluator_PDE_DiffusionFV(Teuchos::ParameterList& plist)
+    : EvaluatorSecondary(plist)
   {
     tag_ = make_tag(plist.get<std::string>("tag"));
 
@@ -211,8 +212,9 @@ class Evaluator_PDE_DiffusionFV : public EvaluatorSecondary {
     return Teuchos::rcp(new Evaluator_PDE_DiffusionFV(*this));
   };
 
-  virtual bool
-  IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const override
+  virtual bool IsDifferentiableWRT(const State& S,
+                                   const Key& wrt_key,
+                                   const Tag& wrt_tag) const override
   {
     return false;
   }

@@ -37,7 +37,7 @@ class to include the water content term.
 
    - `"velocity`"
    - `"porosity`" Note this is only used if `"is surface`" = False.
-   
+
 */
 
 #pragma once
@@ -49,14 +49,14 @@ class to include the water content term.
 namespace Amanzi {
 namespace Transport {
 
-class EvaluatorMDM : public EvaluatorSecondary
-{
+class EvaluatorMDM : public EvaluatorSecondary {
  public:
   // constructor format for all derived classes
   explicit EvaluatorMDM(Teuchos::ParameterList& plist);
 
   EvaluatorMDM(const EvaluatorMDM& other) = default;
-  virtual Teuchos::RCP<Evaluator> Clone() const override {
+  virtual Teuchos::RCP<Evaluator> Clone() const override
+  {
     return Teuchos::rcp(new EvaluatorMDM(*this));
   }
 
@@ -64,16 +64,16 @@ class EvaluatorMDM : public EvaluatorSecondary
   // Required methods from EvaluatorSecondaryMonotypeCV
   virtual void Update_(State& S) override;
 
-  virtual void UpdateDerivative_(State& S,
-          const Key& wrt_key,
-          const Tag& wrt_tag) override
+  virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Tag& wrt_tag) override
   {
     AMANZI_ASSERT(false); // not implemented
   }
 
   virtual void EnsureCompatibility(State& S) override;
 
-  virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const override
+  virtual bool IsDifferentiableWRT(const State& S,
+                                   const Key& wrt_key,
+                                   const Tag& wrt_tag) const override
   {
     // derivatives not implemented
     return false;
@@ -88,8 +88,6 @@ class EvaluatorMDM : public EvaluatorSecondary
 
  private:
   static Utils::RegisteredFactory<Evaluator, EvaluatorMDM> reg_;
-
-
 };
 
 } // namespace Transport

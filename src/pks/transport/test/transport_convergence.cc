@@ -255,10 +255,8 @@ ConvergenceBoxMeshes(int order, double tol, std::string limiter)
     TPK.spatial_disc_order = TPK.temporal_disc_order = order;
 
     // advance the state
-    if (nx == 20)
-      dt0 = TPK.StableTimeStep(-1);
-    else
-      dt0 /= 2;
+    if (nx == 20) dt0 = TPK.StableTimeStep(-1);
+    else dt0 /= 2;
 
     int iter = 0;
     double t_old(0.0), t_new(0.0), dt, T1(2.0);
@@ -276,7 +274,9 @@ ConvergenceBoxMeshes(int order, double tol, std::string limiter)
 
       t_old = t_new;
 
-      if (TPK.internal_tests_) { TPK.VV_CheckTracerBounds(*tcc, 0, 0.0, 1.0, 1e-12); }
+      if (TPK.internal_tests_) {
+        TPK.VV_CheckTracerBounds(*tcc, 0, 0.0, 1.0, 1e-12);
+      }
       iter++;
     }
     // for (int k = 0; k < nx; ++k) std::cout << (*tcc)[0][k] << std::endl;

@@ -70,8 +70,8 @@ TEST(MPC_DRIVER_FLOW)
   {
     Amanzi::CycleDriver cycle_driver(glist, S, comm, obs_data);
     // try {
-      cycle_driver.Go();
-      S->Get<CompositeVector>("saturation_liquid").MeanValue(&avg1);
+    cycle_driver.Go();
+    S->Get<CompositeVector>("saturation_liquid").MeanValue(&avg1);
     // } catch (const std::exception& e) {
     //   std::cerr << e.what() << "\n\n";
     //   ;

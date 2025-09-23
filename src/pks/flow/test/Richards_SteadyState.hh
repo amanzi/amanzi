@@ -58,7 +58,9 @@ AdvanceToSteadyState(Teuchos::RCP<State> S,
       RPK.UpdatePreconditioner(T0, soln, dT0);
     }
 
-    while (RPK.get_bdf1_dae()->AdvanceStep(dT, dTnext, soln)) { dT = dTnext; }
+    while (RPK.get_bdf1_dae()->AdvanceStep(dT, dTnext, soln)) {
+      dT = dTnext;
+    }
     RPK.VV_ReportSeepageOutflow(S.ptr(), dT);
     RPK.get_bdf1_dae()->CommitSolution(dT, soln);
 

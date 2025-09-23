@@ -216,7 +216,9 @@ MFD3D_Electromagnetics::MassMatrixDiagonal(int c, const Tensor& T, DenseMatrix& 
   int nedges = edges.size();
 
   M.PutScalar(0.0);
-  for (int n = 0; n < nedges; n++) { M(n, n) = d_ * volume / (nedges * T(0, 0)); }
+  for (int n = 0; n < nedges; n++) {
+    M(n, n) = d_ * volume / (nedges * T(0, 0));
+  }
   return 0;
 }
 

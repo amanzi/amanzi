@@ -152,7 +152,7 @@ FlowMechanics_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   std::vector<std::string> fields(
     { pressure_key_, saturation_liquid_key_, displacement_key_, vol_strain_key_ });
-  if (S_->HasRecord(water_storage_key_)) fields.push_back(water_storage_key_);
+  if (S_->HasRecord(water_storage_key_) ) fields.push_back(water_storage_key_);
 
   StateArchive archive(S_, vo_);
   archive.Add(fields, Tags::DEFAULT);

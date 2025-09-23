@@ -24,7 +24,7 @@ void
 PKUtils_CalculatePermeabilityFactorInWell(const Teuchos::Ptr<State>& S,
                                           Teuchos::RCP<Epetra_MultiVector>& Kxy)
 {
-  if (!S->HasRecord("permeability", Tags::DEFAULT)) return;
+  if (!S->HasRecord("permeability", Tags::DEFAULT) ) return;
 
   const auto& cv = S->Get<CompositeVector>("permeability", Tags::DEFAULT);
   cv.ScatterMasterToGhosted("cell");

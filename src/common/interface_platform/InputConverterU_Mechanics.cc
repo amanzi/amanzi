@@ -54,8 +54,8 @@ InputConverterU::TranslateMechanics_(const std::string& domain)
   bool flag;
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_mechanics_controls", flag);
   if (flag) {
-   // -- insert operator sublist
-   inode = GetUniqueElementByTagsString_(node, "biot_model", flag);
+    // -- insert operator sublist
+    inode = GetUniqueElementByTagsString_(node, "biot_model", flag);
     if (flag) {
       std::string method = GetTextContentS_(inode, "undrained_split, fixed_stress_split");
       biot_undrained_split = (method == "undrained_split");
@@ -126,8 +126,7 @@ InputConverterU::TranslateMechanics_(const std::string& domain)
 
   // evaluators
   Teuchos::ParameterList& aux = glist_->sublist("state").sublist("evaluators");
-  aux.sublist("volumetric_strain")
-    .set<std::string>("evaluator type", "volumetric strain");
+  aux.sublist("volumetric_strain").set<std::string>("evaluator type", "volumetric strain");
 
   out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
   return out_list;
@@ -176,8 +175,10 @@ InputConverterU::TranslateMechanicsSSM_()
 
     if (model == "hardin_drnevich") {
       found = true;
-      double gamma = GetAttributeValueD_(node, "reference_shear_strain", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa");
-      double Gmax = GetAttributeValueD_(node, "maximum_shear_stress", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa");
+      double gamma =
+        GetAttributeValueD_(node, "reference_shear_strain", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa");
+      double Gmax =
+        GetAttributeValueD_(node, "maximum_shear_stress", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa");
 
       ssm_list.set<std::string>("model", "Hardin Drnevich")
         .set<double>("reference shear strain", gamma)

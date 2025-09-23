@@ -34,7 +34,7 @@ class EnergyOnePhase_PK : public Energy_PK {
                     const Teuchos::RCP<Teuchos::ParameterList>& glist,
                     const Teuchos::RCP<State>& S,
                     const Teuchos::RCP<TreeVector>& soln);
-  virtual ~EnergyOnePhase_PK(){};
+  virtual ~EnergyOnePhase_PK() {};
 
   // methods required for PK intrefcae
   virtual void Setup() final;
@@ -42,7 +42,7 @@ class EnergyOnePhase_PK : public Energy_PK {
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) final;
-  virtual void CalculateDiagnostics(const Tag& tag) final{};
+  virtual void CalculateDiagnostics(const Tag& tag) final {};
 
   double get_dt() final { return dt_; }
   void set_dt(double dt) final { dt_ = dt; }
@@ -56,8 +56,8 @@ class EnergyOnePhase_PK : public Energy_PK {
                                   Teuchos::RCP<const TreeVector> u_old,
                                   Teuchos::RCP<TreeVector> u_new,
                                   Teuchos::RCP<TreeVector> g) final;
-  virtual double
-  ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) final;
+  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
+                           Teuchos::RCP<const TreeVector> du) final;
 
   // -- management of the preconditioner
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt);

@@ -44,7 +44,8 @@ add_amanzi_library(whetstone
                           MFD3D_Diffusion.cc MFD3D_Diffusion_Surface.cc MFD3D_Diffusion_Other.cc 
                           MFD3D_Diffusion_CurvedFace.cc 
                           MFD3D_Elasticity.cc MFD3D_ElasticityGradDiv.cc 
-                          MFD3D_ElasticityWeakSymmetry.cc 
+                          MFD3D_ElasticityWeakSym.cc MFD3D_ElasticityWeakSymBdV.cc 
+                          MFD3D_ElasticityWeakSym_CurvedFace.cc 
                           MFD3D_Electromagnetics.cc MFD3D_Electromagnetics_Surface.cc
                           MFD3D_GeneralizedDiffusion.cc
                           MFD3D_Lagrange.cc MFD3D_LagrangeAnyOrder.cc
@@ -77,7 +78,9 @@ add_amanzi_library(whetstone
                            MFD3D_CrouzeixRaviartSerendipity.hh
                            MFD3D_Diffusion.hh MFD3D_Diffusion_CurvedFace.hh
                            MFD3D_Elasticity.hh MFD3D_ElasticityGradDiv.hh
-                           MFD3D_ElasticityWeakSymmetry.hh
+                           MFD3D_ElasticityWeakSym.hh
+                           MFD3D_ElasticityWeakSymBdV.hh
+                           MFD3D_ElasticityWeakSym_CurvedFace.hh
                            MFD3D_Electromagnetics.hh
                            MFD3D_GeneralizedDiffusion.hh
                            MFD3D_Lagrange.hh MFD3D_LagrangeAnyOrder.hh 
@@ -123,6 +126,11 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/whetstone_elasticity.cc
                            test/whetstone_elasticity_other.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(whetstone_elasticity_weak_symmetry whetstone_elasticity_weak_symmetry
+                    KIND unit
+                    SOURCE test/Main.cc test/whetstone_elasticity_weak_symmetry.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: matrices for electromagnetics

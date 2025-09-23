@@ -28,7 +28,7 @@ namespace AmanziSolvers {
 #define AA_FALSE 0
 #define AA_EOL -1
 
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 class AA_Base {
  public:
   //AA_Base(int mvec, double vtol, const VectorSpace& map);
@@ -79,7 +79,7 @@ class AA_Base {
 /* ******************************************************************
  * Allocate memory
  ***************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 AA_Base<Vector, VectorSpace>::AA_Base(int mvec, double vtol, double beta, const VectorSpace& map)
 {
   mvec_ = std::max(mvec, 1); // we cannot have mvec_ < 1
@@ -116,7 +116,7 @@ AA_Base<Vector, VectorSpace>::AA_Base(int mvec, double vtol, double beta, const 
 /* ******************************************************************
  * Destroy memory
  ***************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 AA_Base<Vector, VectorSpace>::~AA_Base()
 {
   delete[] u_;
@@ -133,7 +133,7 @@ AA_Base<Vector, VectorSpace>::~AA_Base()
 // /* ******************************************************************
 //  * TBW
 //  ***************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 void
 AA_Base<Vector, VectorSpace>::Relax()
 {
@@ -160,7 +160,7 @@ AA_Base<Vector, VectorSpace>::Relax()
 // /* ******************************************************************
 //  * TBW
 //  ***************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 void
 AA_Base<Vector, VectorSpace>::Restart()
 {
@@ -182,7 +182,7 @@ AA_Base<Vector, VectorSpace>::Restart()
 }
 
 
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 void
 AA_Base<Vector, VectorSpace>::QRdelete()
 {
@@ -245,7 +245,7 @@ AA_Base<Vector, VectorSpace>::QRdelete()
 }
 
 
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 void
 AA_Base<Vector, VectorSpace>::TestQR(int nv)
 {
@@ -281,7 +281,7 @@ AA_Base<Vector, VectorSpace>::TestQR(int nv)
 /* ******************************************************************
  * TBW
  ***************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 void
 AA_Base<Vector, VectorSpace>::Correction(const Vector& f,
                                          Vector& dir,
@@ -428,26 +428,22 @@ AA_Base<Vector, VectorSpace>::Correction(const Vector& f,
 
 
   if (num_vec_ < mvec_) {
-    if (first_f_ < 0) { first_f_ = 0; }
+    if (first_f_ < 0) {
+      first_f_ = 0;
+    }
     last_f_ = new_f_;
     new_f_++;
     if (new_f_ > mvec_) new_f_ = 0;
     num_vec_++;
   } else {
-    if (first_f_ >= mvec_)
-      first_f_ = 0;
-    else
-      first_f_++;
+    if (first_f_ >= mvec_) first_f_ = 0;
+    else first_f_++;
 
-    if (last_f_ >= mvec_)
-      last_f_ = 0;
-    else
-      last_f_++;
+    if (last_f_ >= mvec_) last_f_ = 0;
+    else last_f_++;
 
-    if (new_f_ >= mvec_)
-      new_f_ = 0;
-    else
-      new_f_++;
+    if (new_f_ >= mvec_) new_f_ = 0;
+    else new_f_++;
   }
 
   // std::cout<<"new_f "<<new_f_<<" first "<<first_f_<<" last "<<last_f_<<"\n";

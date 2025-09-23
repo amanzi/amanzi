@@ -25,8 +25,8 @@
 
 
 struct AmanziUnstructuredGridSimulationDriver
-  : public Amanzi::Simulator,
-    public Teuchos::VerboseObject<AmanziUnstructuredGridSimulationDriver> {
+  : public Amanzi::Simulator
+  , public Teuchos::VerboseObject<AmanziUnstructuredGridSimulationDriver> {
  public:
   // constructor for native XML
   explicit AmanziUnstructuredGridSimulationDriver(const std::string& xmlInFileName);
@@ -36,11 +36,13 @@ struct AmanziUnstructuredGridSimulationDriver
                                          xercesc::DOMDocument* input,
                                          const std::string& output_prefix);
 
-  virtual Amanzi::Simulator::ReturnType
-  Run(const Amanzi::Comm_ptr_type& comm, Amanzi::ObservationData& observations_data);
+  virtual Amanzi::Simulator::ReturnType Run(const Amanzi::Comm_ptr_type& comm,
+                                            Amanzi::ObservationData& observations_data);
 
-  virtual void
-  Summarize() { if (getVerbLevel() > Teuchos::VERB_LOW) Teuchos::TimeMonitor::summarize(); }
+  virtual void Summarize()
+  {
+    if (getVerbLevel() > Teuchos::VERB_LOW) Teuchos::TimeMonitor::summarize();
+  }
 
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> InitGeometricModel();
   int InitMesh(Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel>& gm,

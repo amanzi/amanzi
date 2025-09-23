@@ -25,8 +25,8 @@ namespace Flow {
 
 class WRM_saturated : public WRM {
  public:
-  explicit WRM_saturated(Teuchos::ParameterList& plist){};
-  ~WRM_saturated(){};
+  explicit WRM_saturated(Teuchos::ParameterList& plist) {};
+  ~WRM_saturated() {};
 
   // required methods from the base class
   double k_relative(double pc) const { return 1.0; }

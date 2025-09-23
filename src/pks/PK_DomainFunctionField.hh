@@ -44,21 +44,21 @@ the domain function.
 
 namespace Amanzi {
 
-template <class FunctionBase>
+template<class FunctionBase>
 class PK_DomainFunctionField : public FunctionBase {
  public:
   PK_DomainFunctionField(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                          const Teuchos::RCP<State>& S,
                          AmanziMesh::Entity_kind kind)
-    : S_(S), mesh_(mesh), kind_(kind){};
+    : S_(S), mesh_(mesh), kind_(kind) {};
 
   PK_DomainFunctionField(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                          const Teuchos::RCP<State>& S,
                          const Teuchos::ParameterList& plist,
                          AmanziMesh::Entity_kind kind)
-    : FunctionBase(plist), S_(S), mesh_(mesh), kind_(kind){};
+    : FunctionBase(plist), S_(S), mesh_(mesh), kind_(kind) {};
 
-  ~PK_DomainFunctionField(){};
+  ~PK_DomainFunctionField() {};
 
   typedef std::vector<std::string> RegionList;
   typedef std::pair<RegionList, AmanziMesh::Entity_kind> Domain;
@@ -73,8 +73,8 @@ class PK_DomainFunctionField : public FunctionBase {
   virtual DomainFunction_kind getType() const override { return DomainFunction_kind::FIELD; }
 
  protected:
-  using FunctionBase::value_;
   using FunctionBase::keyword_;
+  using FunctionBase::value_;
   Teuchos::RCP<State> S_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
@@ -92,7 +92,7 @@ class PK_DomainFunctionField : public FunctionBase {
 /* ******************************************************************
 * Initialization adds a single function to the list of unique specs.
 ****************************************************************** */
-template <class FunctionBase>
+template<class FunctionBase>
 void
 PK_DomainFunctionField<FunctionBase>::Init(const Teuchos::ParameterList& plist,
                                            const std::string& keyword)
@@ -101,7 +101,7 @@ PK_DomainFunctionField<FunctionBase>::Init(const Teuchos::ParameterList& plist,
   keyword_ = keyword;
   submodel_ = "rate";
 
-  if (plist.isParameter("submodel")) submodel_ = plist.get<std::string>("submodel");
+  if (plist.isParameter("submodel") ) submodel_ = plist.get<std::string>("submodel");
   std::vector<std::string> regions = plist.get<Teuchos::Array<std::string>>("regions").toVector();
 
   try {
@@ -132,7 +132,8 @@ PK_DomainFunctionField<FunctionBase>::Init(const Teuchos::ParameterList& plist,
       tags_.push_back(tag);
       // component_key_ = flist.get<std::string>("component", "cell");
     }
-    num_cells_ = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+    num_cells_ =
+      mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
   } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "error in source sublist : " << msg.what();
@@ -161,12 +162,12 @@ PK_DomainFunctionField<FunctionBase>::Init(const Teuchos::ParameterList& plist,
 /* ******************************************************************
 * Update the field and stick it in the value map.
 ****************************************************************** */
-template <class FunctionBase>
+template<class FunctionBase>
 void
 PK_DomainFunctionField<FunctionBase>::Compute(double t0, double t1)
 {
-  int num_fields = field_keys_.size();      // number of field evaluators
-  std::vector<double> val_vec(num_fields);  // vector values
+  int num_fields = field_keys_.size();     // number of field evaluators
+  std::vector<double> val_vec(num_fields); // vector values
   std::vector<std::vector<double>> field_all(num_fields, std::vector<double>(num_cells_));
 
   // For multiple field evaluators (fe), loop through each fe to retrieve the values for each cell.
@@ -180,7 +181,8 @@ PK_DomainFunctionField<FunctionBase>::Compute(double t0, double t1)
       S_->GetEvaluator(field_key_, tag).Update(*S_, field_key_);
     }
     // reference to coressponding fe
-    const Epetra_MultiVector& field_vec = *S_->Get<CompositeVector>(field_key_, tag).ViewComponent("cell", false);
+    const Epetra_MultiVector& field_vec =
+      *S_->Get<CompositeVector>(field_key_, tag).ViewComponent("cell", false);
 
     // loop through every cell to update the intermediate variables
     for (auto c : *entity_ids_) {
@@ -190,7 +192,9 @@ PK_DomainFunctionField<FunctionBase>::Compute(double t0, double t1)
 
   // Update source values (value_)
   for (auto c : *entity_ids_) {
-    for (int i = 0; i < num_fields; ++i) { val_vec[i] = field_all[i][c]; }
+    for (int i = 0; i < num_fields; ++i) {
+      val_vec[i] = field_all[i][c];
+    }
     value_[c] = val_vec;
   }
 }

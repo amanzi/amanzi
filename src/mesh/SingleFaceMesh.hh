@@ -45,7 +45,7 @@ class SingleFaceMesh : public AmanziMesh::Mesh {
     is_sfm_ = true;
   }
 
-  ~SingleFaceMesh(){};
+  ~SingleFaceMesh() {};
 
   void cacheSFM(const Teuchos::RCP<const AmanziMesh::Mesh>& mc,
                 int f,

@@ -11,7 +11,7 @@
 
 //#define ABORT_ON_FLOATING_POINT_EXCEPTIONS
 #ifdef __APPLE__
-#  include <xmmintrin.h>
+#include <xmmintrin.h>
 #endif
 
 #include <cstdlib>
@@ -51,7 +51,7 @@ int
 main(int argc, char** argv)
 {
 #ifdef ABORT_ON_FLOATING_POINT_EXCEPTIONS
-#  ifdef __APPLE__
+#ifdef __APPLE__
   // Make floating point exceptions abort the program. runtime error
   // message isn't helpful, but running in gdb will stop at the
   // correct line. This may code may not be apple specific....
@@ -60,7 +60,7 @@ main(int argc, char** argv)
   _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_DIV_ZERO);
   _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_OVERFLOW);
   _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_UNDERFLOW);
-#  endif
+#endif
 #endif
 
   std::stringstream message;
@@ -99,7 +99,9 @@ main(int argc, char** argv)
     abort();
   }
 
-  if (debug_batch_driver) { PrintInput(simulation_params, components, vo); }
+  if (debug_batch_driver) {
+    PrintInput(simulation_params, components, vo);
+  }
 
   double time_units_conversion = 1.0;
   char time_units = 's';
@@ -137,9 +139,13 @@ main(int argc, char** argv)
       // solve for free-ion concentrations
       chem->Speciate(&components, parameters);
       chem->CopyBeakerToComponents(&components);
-      if (vo->getVerbLevel() >= Teuchos::VERB_EXTREME) { chem->DisplayResults(); }
+      if (vo->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+        chem->DisplayResults();
+      }
       bool using_sorption = false;
-      if (components.total_sorbed.size() > 0) { using_sorption = true; }
+      if (components.total_sorbed.size() > 0) {
+        using_sorption = true;
+      }
       if (simulation_params.num_time_steps != 0) {
         message.str("");
         message << "-- Test Beaker Reaction Stepping -------------------------------------"
@@ -177,7 +183,9 @@ main(int argc, char** argv)
         }
         vo->Write(Teuchos::VERB_HIGH, "---- Final Speciation\n");
         chem->Speciate(&components, parameters);
-        if (vo->getVerbLevel() >= Teuchos::VERB_EXTREME) { chem->DisplayResults(); }
+        if (vo->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+          chem->DisplayResults();
+        }
       }
     } else {
       vo->Write(Teuchos::VERB_HIGH, "No database file specified in input file.\n");
@@ -242,56 +250,56 @@ CommandLineOptions(int argc,
 
   while ((option = getopt(argc, argv, "di:ht:v:?")) != -1) {
     switch (option) {
-    case 'd': {
-      *debug_batch_driver = true;
-      break;
-    }
-    case 'i': {
-      /* input file name */
-      input_file_name->assign(optarg);
-      error = EXIT_SUCCESS;
-      break;
-    }
-    case 't': {
-      /* template file name */
-      template_file_name->assign(optarg);
-      error = EXIT_SUCCESS;
-      break;
-    }
-    case 'v': {
-      verbosity_name->assign(optarg);
-      break;
-    }
-    case '?':
-    case 'h': { /* help mode */
-      /* print some help stuff and exit without doing anything */
-      std::cout << argv[0] << " command line options:" << std::endl;
-      std::cout << "    -d" << std::endl;
-      std::cout << "         debugging flag for batch driver" << std::endl;
-      std::cout << "    -i string " << std::endl;
-      std::cout << "         input file name" << std::endl;
-      std::cout << std::endl;
-      std::cout << "    -t string" << std::endl;
-      std::cout << "         write a template input file" << std::endl;
-      std::cout << std::endl;
-      std::cout << "    -v string" << std::endl;
-      std::cout << "         additional verbosity level:" << std::endl;
-      std::cout << "            silent" << std::endl;
-      std::cout << "            terse" << std::endl;
-      std::cout << "            verbose" << std::endl;
-      std::cout << "            debug" << std::endl;
-      std::cout << "            debug_beaker" << std::endl;
-      std::cout << "            debug_database" << std::endl;
-      std::cout << "            debug_mineral_kinetics" << std::endl;
-      std::cout << "            debug_ion_exchange" << std::endl;
-      std::cout << "            debug_newton_solver" << std::endl;
-      error = -1;
-      break;
-    }
-    default: {
-      /* no options */
-      break;
-    }
+      case 'd': {
+        *debug_batch_driver = true;
+        break;
+      }
+      case 'i': {
+        /* input file name */
+        input_file_name->assign(optarg);
+        error = EXIT_SUCCESS;
+        break;
+      }
+      case 't': {
+        /* template file name */
+        template_file_name->assign(optarg);
+        error = EXIT_SUCCESS;
+        break;
+      }
+      case 'v': {
+        verbosity_name->assign(optarg);
+        break;
+      }
+      case '?':
+      case 'h': { /* help mode */
+        /* print some help stuff and exit without doing anything */
+        std::cout << argv[0] << " command line options:" << std::endl;
+        std::cout << "    -d" << std::endl;
+        std::cout << "         debugging flag for batch driver" << std::endl;
+        std::cout << "    -i string " << std::endl;
+        std::cout << "         input file name" << std::endl;
+        std::cout << std::endl;
+        std::cout << "    -t string" << std::endl;
+        std::cout << "         write a template input file" << std::endl;
+        std::cout << std::endl;
+        std::cout << "    -v string" << std::endl;
+        std::cout << "         additional verbosity level:" << std::endl;
+        std::cout << "            silent" << std::endl;
+        std::cout << "            terse" << std::endl;
+        std::cout << "            verbose" << std::endl;
+        std::cout << "            debug" << std::endl;
+        std::cout << "            debug_beaker" << std::endl;
+        std::cout << "            debug_database" << std::endl;
+        std::cout << "            debug_mineral_kinetics" << std::endl;
+        std::cout << "            debug_ion_exchange" << std::endl;
+        std::cout << "            debug_newton_solver" << std::endl;
+        error = -1;
+        break;
+      }
+      default: {
+        /* no options */
+        break;
+      }
     }
   }
 
@@ -501,7 +509,9 @@ ParseComponentValue(const std::string& raw_line, std::vector<double>* component)
   if (param.size() != 0) {
     ac::StringTokenizer param_value(param.at(1), spaces);
     double value;
-    if (param_value.size() > 0) { value = std::atof(param_value.at(0).c_str()); }
+    if (param_value.size() > 0) {
+      value = std::atof(param_value.at(0).c_str());
+    }
     component->push_back(value);
   }
 
@@ -519,7 +529,9 @@ ParseComponentValue(const std::string& raw_line, double* component)
   if (param.size() != 0) {
     ac::StringTokenizer param_value(param.at(1), spaces);
     double value = 0.;
-    if (param_value.size() > 0) { value = std::atof(param_value.at(0).c_str()); }
+    if (param_value.size() > 0) {
+      value = std::atof(param_value.at(0).c_str());
+    }
     *component = value;
   }
 
@@ -596,22 +608,22 @@ SetupTextOutput(const SimulationParameters& simulation_params,
     if (simulation_params.text_time_units.size() > 0) {
       *time_units = std::tolower(simulation_params.text_time_units.at(0));
       switch (*time_units) {
-      case 's':
-        break;
-      case 'm':
-        *time_units_conversion = 60.0;
-        break;
-      case 'h':
-        *time_units_conversion = 60.0 * 60.0;
-        break;
-      case 'd':
-        *time_units_conversion = 60.0 * 60.0 * 24.0;
-        break;
-      case 'y':
-        *time_units_conversion = 60.0 * 60.0 * 24.0 * 365.25;
-        break;
-      default:
-        break;
+        case 's':
+          break;
+        case 'm':
+          *time_units_conversion = 60.0;
+          break;
+        case 'h':
+          *time_units_conversion = 60.0 * 60.0;
+          break;
+        case 'd':
+          *time_units_conversion = 60.0 * 60.0 * 24.0;
+          break;
+        case 'y':
+          *time_units_conversion = 60.0 * 60.0 * 24.0 * 365.25;
+          break;
+        default:
+          break;
       }
     }
     *time_units_conversion = 1.0 / (*time_units_conversion);
@@ -627,12 +639,12 @@ WriteTextOutputHeader(std::fstream* text_output,
 {
   if (text_output->is_open()) {
     *text_output << "# Time(" << time_units << ")";
-    for (std::vector<std::string>::const_iterator name = names.begin(); name != names.end();
+    for (std::vector<std::string>::const_iterator name = names.begin() ; name != names.end();
          ++name) {
       *text_output << " , " << *name;
     }
     if (using_sorption) {
-      for (std::vector<std::string>::const_iterator name = names.begin(); name != names.end();
+      for (std::vector<std::string>::const_iterator name = names.begin() ; name != names.end();
            ++name) {
         *text_output << " , " << *name << "_sorbed";
       }

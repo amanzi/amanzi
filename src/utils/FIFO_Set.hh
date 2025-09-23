@@ -21,7 +21,7 @@ stored as a vector under the hood.
 namespace Amanzi {
 namespace Utils {
 
-template <typename T>
+template<typename T>
 class FIFO_Set {
   using Container_type = std::vector<T>;
 

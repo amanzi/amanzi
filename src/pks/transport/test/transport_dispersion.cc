@@ -369,5 +369,3 @@ TEST(GAS_DIFFUSION)
   GMV::write_cell_data(tcc, 1, "Component_1");
   GMV::close_data_file();
 }
-
-

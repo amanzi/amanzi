@@ -28,13 +28,13 @@
 class AnalyticDG08 : public AnalyticDGBase {
  public:
   AnalyticDG08(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order, bool advection)
-    : AnalyticDGBase(mesh, order, advection){};
-  ~AnalyticDG08(){};
+    : AnalyticDGBase(mesh, order, advection) {};
+  ~AnalyticDG08() {};
 
   // analytic data in conventional Taylor basis
   // -- diffusion tensor
-  virtual Amanzi::WhetStone::Tensor
-  Tensor(const Amanzi::AmanziGeometry::Point& p, double t) override
+  virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p,
+                                           double t) override
   {
     Amanzi::WhetStone::Tensor K(2, 1);
     K(0, 0) = 1.0;
@@ -156,10 +156,8 @@ AnalyticDG08::DistanceNotchedCircle_(double x0, double y0, double sn, double cs)
   // cone above notch
   if (y >= H && H * x >= -W * y && H * x <= W * y) {
     dy = y - H;
-    if (x >= 0.0)
-      dist = -std::pow((x - W) * (x - W) + dy * dy, 0.5);
-    else
-      dist = -std::pow((x + W) * (x + W) + dy * dy, 0.5);
+    if (x >= 0.0) dist = -std::pow((x - W) * (x - W) + dy * dy, 0.5);
+    else dist = -std::pow((x + W) * (x + W) + dy * dy, 0.5);
   }
   // inside notch
   else if (y >= 0.0 && std::fabs(x) <= W) {

@@ -33,7 +33,7 @@ class MechanicsFracturedMatrix_PK : public MechanicsSmallStrain_PK {
                               const Teuchos::RCP<State>& S,
                               const Teuchos::RCP<TreeVector>& soln);
 
-  ~MechanicsFracturedMatrix_PK(){};
+  ~MechanicsFracturedMatrix_PK() {};
 
   // methods required for PK interface
   virtual void Setup() final;

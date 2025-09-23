@@ -40,7 +40,7 @@
 /* *****************************************************************
 * Elasticity model: exactness test.
 ***************************************************************** */
-template <class Analytic>
+template<class Analytic>
 double
 RunTest(int icase,
         const std::string& solver,
@@ -94,7 +94,7 @@ RunTest(int icase,
 
   // select an analytic solution for error calculations and setup of
   // boundary conditions
-  Analytic ana(mesh, mu, lambda, flag);
+  Analytic ana(mesh, mu, lambda);
 
   auto K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   for (int c = 0; c < ncells_owned; c++) {
@@ -275,9 +275,9 @@ RunTest(int icase,
   op->SetTensorCoefficient(K);
   op->UpdateMatrices();
 
-  // get and assemble the global operator
+  // get and assemble the global operator (volume was included before)
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  global_op->UpdateRHS(source, true); // FIXME volume is missing but RHS is zero
+  global_op->UpdateRHS(source, true);
   op->ApplyBCs(true, true, true);
 
   // create preconditoner using the base operator class
@@ -296,7 +296,9 @@ RunTest(int icase,
   CompositeVector& rhs = *global_op->rhs();
   global_op->ApplyInverse(rhs, solution);
 
-  if (icase == 1 || icase == 2) { ver.CheckResidual(solution, 1.0e-13); }
+  if (icase == 1 || icase == 2) {
+    ver.CheckResidual(solution, 1.0e-13);
+  }
 
   if (MyPID == 0) {
     std::cout << ana.Tensor(mesh->getCellCentroid(0), 0.0) << std::endl;

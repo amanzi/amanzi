@@ -141,7 +141,9 @@ ActivityModelPitzerHWM::Setup(const ActivityModelParameters& parameters,
     if (name_species.at(isp) == "Cl-") index_cl_species = isp;
     if (name_species.at(isp) == "K+") index_k_species = isp;
   }
-  if (index_cl_species > -1 && index_k_species > -1) { macinnes_scaled = true; }
+  if (index_cl_species > -1 && index_k_species > -1) {
+    macinnes_scaled = true;
+  }
 }
 
 
@@ -207,7 +209,9 @@ ActivityModelPitzerHWM::EvaluateVector(
   if (macinnes_scaled && index_cl_species > -1) {
     gcl = gamma->at(index_cl_species);
     for (int i = 0; i < number_species; i++)
-      if (i != index_h2o_species) { gamma->at(i) *= pow((gcl / gclm), charge.at(i)); }
+      if (i != index_h2o_species) {
+        gamma->at(i) *= pow((gcl / gclm), charge.at(i));
+      }
   }
   *water_activity = osmotic_coefficient;
 }
@@ -234,7 +238,9 @@ ActivityModelPitzerHWM::ComputemQcmProduct(std::vector<double>& gamma, double& o
     gamma.at(j) += miCij * Z_;
   }
   osmotic_coefficient += Z_ * qc;
-  for (int i = 0; i < gamma.size(); i++) { gamma.at(i) += std::abs(charge.at(i)) * qc; }
+  for (int i = 0; i < gamma.size(); i++) {
+    gamma.at(i) += std::abs(charge.at(i)) * qc;
+  }
 }
 
 
@@ -276,7 +282,9 @@ ActivityModelPitzerHWM::ComputemQmProduct(std::vector<double>& gamma, double& os
     gamma.at(j) += 2.0 * qij * mi;
   }
   osmotic_coefficient += q2phi;
-  for (int i = 0; i < gamma.size(); i++) { gamma.at(i) += charge.at(i) * charge.at(i) * q2prim; }
+  for (int i = 0; i < gamma.size(); i++) {
+    gamma.at(i) += charge.at(i) * charge.at(i) * q2prim;
+  }
 }
 
 
@@ -288,7 +296,9 @@ ActivityModelPitzerHWM::ComputemTmmProduct(std::vector<double>& gamma, double& o
 {
   double tril(0.0);
   std::vector<double> vector;
-  for (int i = 0; i < number_species; i++) { vector.push_back(0.0); }
+  for (int i = 0; i < number_species; i++) {
+    vector.push_back(0.0);
+  }
   for (int nz = 0; nz < number_non_zero_psi; nz++) {
     double Psiijk(psi_virial.at(nz).GetVirial());
     int i(psi_virial.at(nz).GetIsp1());
@@ -335,7 +345,9 @@ ActivityModelPitzerHWM::ComputeDebyeHuckelTerm(std::vector<double>& gamma,
     isp++;
     (*i) = charge.at(isp) * charge.at(isp) * dh;
   }
-  if (macinnes_scaled) { gclm = gclm_(dh); }
+  if (macinnes_scaled) {
+    gclm = gclm_(dh);
+  }
 }
 
 
@@ -754,7 +766,9 @@ ActivityModelPitzerHWM::SetVirialCoefficient(const std::vector<double>& virial,
 
   } else if (typevirial == "lamda") {
     number_non_zero_lamda++;
-    for (auto j = virial.begin(); j != virial.end(); j++) { vir.SetPol((*j)); }
+    for (auto j = virial.begin(); j != virial.end(); j++) {
+      vir.SetPol((*j));
+    }
     vir.SetIsp1(isp1);
     vir.SetIsp2(isp2);
     lamda_virial.push_back(vir);
@@ -856,7 +870,9 @@ ActivityModelPitzerHWM::AssignIndexJFunctions()
         for (int k = 0; k < number_non_zero_theta && not_found; k++) {
           int isp1(theta_virial.at(k).GetIsp1());
           int isp2(theta_virial.at(k).GetIsp2());
-          if ((isp1 == i && isp2 == j) || (isp1 == j && isp2 == i)) { not_found = false; }
+          if ((isp1 == i && isp2 == j) || (isp1 == j && isp2 == i)) {
+            not_found = false;
+          }
         }
         if (not_found) {
           number_non_zero_theta++;

@@ -67,11 +67,11 @@ class Debugger {
   void WriteVector(const std::string& vname,
                    const Teuchos::Ptr<const CompositeVector>& vec,
                    bool include_faces = false,
-                   std::vector<std::string> const * subfield_names = nullptr);
+                   std::vector<std::string> const* subfield_names = nullptr);
 
   void WriteCellVector(const std::string& name,
                        const Epetra_MultiVector& vec,
-                       std::vector<std::string> const * subfield_names = nullptr);
+                       std::vector<std::string> const* subfield_names = nullptr);
 
   // Write boundary condition data.
   void WriteBoundaryConditions(const std::vector<int>& flag, const std::vector<double>& data);

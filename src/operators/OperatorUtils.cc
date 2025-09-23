@@ -49,7 +49,7 @@ CopyCompositeVectorToSuperVector(const SuperMap& smap,
     for (int k = 0; k < num; ++k) {
       const std::vector<int>& inds = smap.Indices(block_num, name, k);
       const Epetra_MultiVector& data = *cv.ViewComponent(name);
-      for (int n = 0; n != data.MyLength(); ++n) sv[inds[n]] = data[k][n];
+      for (int n = 0; n != data.MyLength() ; ++n) sv[inds[n]] = data[k][n];
     }
   }
 
@@ -78,7 +78,7 @@ CopySuperVectorToCompositeVector(const SuperMap& smap,
     for (int k = 0; k < num; ++k) {
       const std::vector<int>& inds = smap.Indices(block_num, name, k);
       Epetra_MultiVector& data = *cv.ViewComponent(name);
-      for (int n = 0; n != data.MyLength(); ++n) data[k][n] = sv[inds[n]];
+      for (int n = 0; n != data.MyLength() ; ++n) data[k][n] = sv[inds[n]];
     }
   }
 
@@ -115,7 +115,9 @@ MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n_dofs)
     row_size += 8 * i;
   }
 
-  if (schema & OPERATOR_SCHEMA_INDICES) { row_size += 1; }
+  if (schema & OPERATOR_SCHEMA_INDICES) {
+    row_size += 1;
+  }
 
   return row_size * n_dofs;
 }

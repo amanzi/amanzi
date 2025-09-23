@@ -36,7 +36,8 @@ using namespace Amanzi::AmanziMesh;
  ****************************************************************** */
 class AEvaluator : public EvaluatorSecondaryMonotype<double> {
  public:
-  AEvaluator(Teuchos::ParameterList& plist) : EvaluatorSecondaryMonotype<double>(plist)
+  AEvaluator(Teuchos::ParameterList& plist)
+    : EvaluatorSecondaryMonotype<double>(plist)
   {
     dependencies_.insert(std::make_pair(Key{ "fb" }, Tags::DEFAULT));
   }

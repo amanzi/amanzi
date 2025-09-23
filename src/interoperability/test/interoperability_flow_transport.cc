@@ -45,7 +45,7 @@ class ATS_Richards : public Richards {
                const Teuchos::RCP<Teuchos::ParameterList>& glist,
                const Teuchos::RCP<State>& S,
                const Teuchos::RCP<TreeVector>& soln)
-    : PK(pk_tree, glist, S, soln), Richards(pk_tree, glist, S, soln){};
+    : PK(pk_tree, glist, S, soln), Richards(pk_tree, glist, S, soln) {};
 
   virtual void Setup() override
   {

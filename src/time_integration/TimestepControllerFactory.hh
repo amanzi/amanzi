@@ -49,7 +49,7 @@ Available types include:
 
 namespace Amanzi {
 
-template <class Vector>
+template<class Vector>
 Teuchos::RCP<TimestepController>
 createTimestepController(const std::string& name,
                          Teuchos::ParameterList& slist,

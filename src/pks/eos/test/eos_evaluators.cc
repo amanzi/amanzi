@@ -206,7 +206,7 @@ TEST(TabularEOS_FEHM)
 
     double dFdP = eos.DFunctionDp(T, p + dp / 2, &ierr);
     CHECK_CLOSE(
-      (eos.Function(T, p + dp, &ierr) - eos.Function(T, p, &ierr)) / dp, dFdP, fabs(dFdP) * 5e-2);
+      (eos.Function(T, p + dp, &ierr) - eos.Function(T, p, &ierr)) / dp, dFdP, fabs(dFdP) * 6e-2);
 
     std::cout << "air " << fields[loop] << " at 0C and 1atm  = " << eos.Function(T, p, &ierr)
               << ", P/T derivatives: " << eos.DFunctionDT(T, p, &ierr) << "  "

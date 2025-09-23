@@ -38,19 +38,13 @@ FunctionBilinearAndTime::FunctionBilinearAndTime(const std::string& filename,
   auto reader = createReader(filename_);
   reader->read(time_header, times_);
 
-  if (row_coordinate == "x")
-    row_index_ = 1;
-  else if (row_coordinate == "y")
-    row_index_ = 2;
-  else if (row_coordinate == "z")
-    row_index_ = 3;
+  if (row_coordinate == "x") row_index_ = 1;
+  else if (row_coordinate == "y") row_index_ = 2;
+  else if (row_coordinate == "z") row_index_ = 3;
 
-  if (col_coordinate == "x")
-    col_index_ = 1;
-  else if (col_coordinate == "y")
-    col_index_ = 2;
-  else if (col_coordinate == "z")
-    col_index_ = 3;
+  if (col_coordinate == "x") col_index_ = 1;
+  else if (col_coordinate == "y") col_index_ = 2;
+  else if (col_coordinate == "z") col_index_ = 3;
 }
 
 

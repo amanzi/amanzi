@@ -26,13 +26,13 @@
 class AnalyticDG04 : public AnalyticDGBase {
  public:
   AnalyticDG04(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order, bool advection)
-    : AnalyticDGBase(mesh, order, advection){};
-  ~AnalyticDG04(){};
+    : AnalyticDGBase(mesh, order, advection) {};
+  ~AnalyticDG04() {};
 
   // analytic data in conventional Taylor basis
   // -- diffusion tensor
-  virtual Amanzi::WhetStone::Tensor
-  Tensor(const Amanzi::AmanziGeometry::Point& p, double t) override
+  virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p,
+                                           double t) override
   {
     Amanzi::WhetStone::Tensor K(2, 1);
     K(0, 0) = 1.0;

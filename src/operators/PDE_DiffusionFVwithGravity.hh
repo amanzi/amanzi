@@ -36,7 +36,9 @@ namespace Operators {
 
 class BCs;
 
-class PDE_DiffusionFVwithGravity : public PDE_DiffusionFV, public PDE_DiffusionWithGravity {
+class PDE_DiffusionFVwithGravity
+  : public PDE_DiffusionFV
+  , public PDE_DiffusionWithGravity {
  public:
   PDE_DiffusionFVwithGravity(Teuchos::ParameterList& plist, const Teuchos::RCP<Operator>& global_op)
     : PDE_Diffusion(global_op),
@@ -145,7 +147,7 @@ class PDE_DiffusionFVwithGravity : public PDE_DiffusionFV, public PDE_DiffusionW
 
   // -- modify an operator
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
-  virtual void ModifyMatrices(const CompositeVector& u) override{};
+  virtual void ModifyMatrices(const CompositeVector& u) override {};
   virtual void ScaleMassMatrices(double s) override
   {
     ComputeTransmissibility_(gravity_term_);

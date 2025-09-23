@@ -62,7 +62,9 @@ InverseSchurComplement::ApplyInverse(const CompositeVector& X, CompositeVector& 
                       Operators::OPERATOR_SCHEMA_RULE_EXACT) &&
           (op->diag->MyLength() == ncells_owned)) {
         // diagonal schema
-        for (int c = 0; c != ncells_owned; ++c) { D_c[0][c] += (*op->diag)[0][c]; }
+        for (int c = 0; c != ncells_owned; ++c) {
+          D_c[0][c] += (*op->diag)[0][c];
+        }
       } else if (op->Matches(Operators::OPERATOR_SCHEMA_BASE_FACE,
                              Operators::OPERATOR_SCHEMA_RULE_SUBSET) &&
                  op->matrices.size() == nfaces_owned) {

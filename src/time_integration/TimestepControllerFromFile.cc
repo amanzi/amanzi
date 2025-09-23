@@ -55,8 +55,7 @@ TimestepControllerFromFile::getTimestep(double dt, int iterations, bool valid)
     new_dt = dt_history_[current_ - 1];
     current_++;
   } else {
-    Errors::Message m(
-      "TimestepController: file contains insufficient number of timestep values.");
+    Errors::Message m("TimestepController: file contains insufficient number of timestep values.");
     Exceptions::amanzi_throw(m);
   }
   return new_dt;

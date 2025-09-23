@@ -22,7 +22,7 @@ namespace Impl {
 //
 // Default is false
 //
-template <typename Operator, typename Dummy = void>
+template<typename Operator, typename Dummy = void>
 struct is_assembled {
   const static bool value = false;
 };
@@ -30,7 +30,7 @@ struct is_assembled {
 //
 // is_assembled::value == true if Operator has method FillComplete()
 //
-template <typename Operator>
+template<typename Operator>
 struct is_assembled<
   Operator,
   typename std::enable_if<std::is_member_function_pointer<
@@ -45,7 +45,7 @@ struct is_assembled<
 //
 // Default is false
 //
-template <typename Operator, typename Dummy = void>
+template<typename Operator, typename Dummy = void>
 struct is_assembling {
   const static bool value = false;
 };
@@ -53,7 +53,7 @@ struct is_assembling {
 //
 // is_assembling::value == true if Operator has method AssembleMatrix()
 //
-template <typename Operator>
+template<typename Operator>
 struct is_assembling<Operator,
                      typename std::enable_if<std::is_member_function_pointer<
                        decltype(static_cast<Teuchos::RCP<Epetra_CrsMatrix> (Operator::*)(void)>(

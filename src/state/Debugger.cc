@@ -56,7 +56,7 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
         // debug the neighboring cells
         auto fcells = mesh->getFaceCells(lf);
         for (const auto& c : fcells)
-          if (c < cell_map.NumMyElements()) vcells.emplace_back(cell_map.GID(c));
+          if (c < cell_map.NumMyElements() ) vcells.emplace_back(cell_map.GID(c));
       }
     }
   }
@@ -120,7 +120,9 @@ void
 Debugger::WriteCellInfo(bool include_faces)
 {
   Teuchos::OSTab tab1 = vo_->getOSTab();
-  if (vo_->os_OK(verb_level_)) { *vo_->os() << "Debug Cells Information:" << std::endl; }
+  if (vo_->os_OK(verb_level_)) {
+    *vo_->os() << "Debug Cells Information:" << std::endl;
+  }
 
   for (int i = 0; i != dc_.size(); ++i) {
     AmanziMesh::Entity_ID c0 = dc_[i];
@@ -154,7 +156,7 @@ void
 Debugger::WriteVector(const std::string& vname,
                       const Teuchos::Ptr<const CompositeVector>& vec,
                       bool include_faces,
-                      std::vector<std::string> const * subfield_names)
+                      std::vector<std::string> const* subfield_names)
 {
   int n_vecs = 0;
   Teuchos::RCP<const Epetra_MultiVector> vec_c;
@@ -185,7 +187,7 @@ Debugger::WriteVector(const std::string& vname,
 
       if (dcvo_[i]->os_OK(verb_level_)) {
         if (subfield_names != nullptr) {
-          *dcvo_[i]->os() << formatter_.formatHeader(vname+"."+(*subfield_names)[j], c0_gid);
+          *dcvo_[i]->os() << formatter_.formatHeader(vname + "." + (*subfield_names)[j], c0_gid);
         } else {
           *dcvo_[i]->os() << formatter_.formatHeader(vname, c0_gid);
         }
@@ -218,7 +220,7 @@ Debugger::WriteVector(const std::string& vname,
 void
 Debugger::WriteCellVector(const std::string& name,
                           const Epetra_MultiVector& vec,
-                          std::vector<std::string> const * subfield_names)
+                          std::vector<std::string> const* subfield_names)
 {
   int n_vecs = vec.NumVectors();
   if (subfield_names != nullptr) {
@@ -233,13 +235,12 @@ Debugger::WriteCellVector(const std::string& name,
 
       if (dcvo_[i]->os_OK(verb_level_)) {
         if (subfield_names != nullptr) {
-          *dcvo_[i]->os() << formatter_.formatHeader(name+'.'+(*subfield_names)[j], c0_gid);
+          *dcvo_[i]->os() << formatter_.formatHeader(name + '.' + (*subfield_names)[j], c0_gid);
         } else {
           *dcvo_[i]->os() << formatter_.formatHeader(name, c0_gid);
         }
 
-        *dcvo_[i]->os() << formatter_.format(vec[j][c0])
-                        << std::endl;
+        *dcvo_[i]->os() << formatter_.format(vec[j][c0]) << std::endl;
       }
     }
   }
@@ -296,7 +297,8 @@ Debugger::WriteVectors(const std::vector<std::string>& names,
             auto [fnums0, dirs] = mesh_->getCellFacesAndDirections(c0);
 
             for (unsigned int n = 0; n != fnums0.size(); ++n) {
-              AmanziMesh::Entity_ID bf = AmanziMesh::getFaceOnBoundaryBoundaryFace(*mesh_, fnums0[n]);
+              AmanziMesh::Entity_ID bf =
+                AmanziMesh::getFaceOnBoundaryBoundaryFace(*mesh_, fnums0[n]);
               if (bf >= 0) *dcvo_[i]->os() << " " << formatter_.format((*vec_bf)[j][bf]);
             }
           }

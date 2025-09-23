@@ -111,7 +111,7 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
 
   // -- postprocessing: place holder
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
-                          const Teuchos::Ptr<CompositeVector>& u) override{};
+                          const Teuchos::Ptr<CompositeVector>& u) override {};
 
   // -- cell-based algorithms
   virtual WhetStone::Tensor ComputeCellStrain(const CompositeVector& u, int c);

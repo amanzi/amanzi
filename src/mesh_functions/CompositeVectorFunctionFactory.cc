@@ -25,10 +25,10 @@ namespace Functions {
 
 Teuchos::RCP<CompositeVectorFunction>
 CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
-        CompositeVectorSpace& sample,
-        std::vector<std::string>& componentname_list,
-        bool dot_with_normal,
-        const std::string& spatial_dist_method)
+                              CompositeVectorSpace& sample,
+                              std::vector<std::string>& componentname_list,
+                              bool dot_with_normal,
+                              const std::string& spatial_dist_method)
 {
   Teuchos::RCP<MeshFunction> mesh_func = Teuchos::rcp(new MeshFunction(sample.Mesh()));
   componentname_list.clear();
@@ -97,14 +97,15 @@ CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
       // parse special case: initialize all existing components
       if (components.size() == 1 && components[0] == "*") {
         components.clear();
-        for (auto it = sample.begin(); it != sample.end(); ++it) components.emplace_back(*it);
+        for (auto it = sample.begin() ; it != sample.end(); ++it) components.emplace_back(*it);
       }
 
       // grab the name of the locations from the list
       std::vector<AmanziMesh::Entity_kind> locations;
       if (sublist.isParameter("location")) {
         if (sublist.isType<std::string>("location")) {
-          locations.emplace_back(AmanziMesh::createEntityKind(sublist.get<std::string>("location")));
+          locations.emplace_back(
+            AmanziMesh::createEntityKind(sublist.get<std::string>("location")));
         } else {
           Errors::Message msg;
           msg << "CompositeVectorFunctionFactory \"" << plist.name() << "(" << name << ")"
@@ -190,17 +191,17 @@ CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
   }
 
   // create the function
-  return Teuchos::rcp(new CompositeVectorFunction(mesh_func, componentname_list, dot_with_normal, spatial_dist_method));
+  return Teuchos::rcp(new CompositeVectorFunction(
+    mesh_func, componentname_list, dot_with_normal, spatial_dist_method));
 };
-
 
 
 Teuchos::RCP<CompositeVectorFunction>
 CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
-        const CompositeVectorSpace& sample,
-        std::vector<std::string>& componentname_list,
-        bool dot_with_normal,
-        const std::string& spatial_dist_method)
+                              const CompositeVectorSpace& sample,
+                              std::vector<std::string>& componentname_list,
+                              bool dot_with_normal,
+                              const std::string& spatial_dist_method)
 {
   Teuchos::RCP<MeshFunction> mesh_func = Teuchos::rcp(new MeshFunction(sample.Mesh()));
   componentname_list.clear();
@@ -269,7 +270,7 @@ CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
       // parse special case: initialize all existing components
       if (components.size() == 1 && components[0] == "*") {
         components.clear();
-        for (auto it = sample.begin(); it != sample.end(); ++it) components.emplace_back(*it);
+        for (auto it = sample.begin() ; it != sample.end(); ++it) components.emplace_back(*it);
       }
 
       // create the function
@@ -329,7 +330,8 @@ CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
   }
 
   // create the function
-  return Teuchos::rcp(new CompositeVectorFunction(mesh_func, componentname_list, dot_with_normal, spatial_dist_method));
+  return Teuchos::rcp(new CompositeVectorFunction(
+    mesh_func, componentname_list, dot_with_normal, spatial_dist_method));
 };
 
 

@@ -21,9 +21,10 @@
 namespace Amanzi {
 namespace Flow {
 
-Utils::RegisteredFactory<Evaluator, ApertureDarcyEvaluator> ApertureDarcyEvaluator::reg_("linearized aperture");
+Utils::RegisteredFactory<Evaluator, ApertureDarcyEvaluator> ApertureDarcyEvaluator::reg_(
+  "linearized aperture");
 Utils::RegisteredFactory<Evaluator, WaterStorage> WaterStorage::reg_("water storage");
-template <>
+template<>
 Utils::RegisteredFactory<Evaluator, ModelEvaluator<SpecificStorage>>
   ModelEvaluator<SpecificStorage>::reg_("specific storage");
 

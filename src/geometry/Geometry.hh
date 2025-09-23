@@ -39,7 +39,7 @@ namespace AmanziGeometry {
 // volumes of tets created by connecting the polyhedron center to
 // a face center and an edge of the face
 
-template <typename PVT>
+template<typename PVT>
 void
 polyhed_get_vol_centroid(PVT& ccoords,
                          const std::size_t nf,
@@ -116,14 +116,14 @@ polyhed_get_vol_centroid(PVT& ccoords,
 
           (*centroid) += tvolume * tcentroid; // sum up 1st moment
           (*volume) += tvolume;               // sum up 0th moment
-        }                                     // for each edge of face
+        } // for each edge of face
       }
 
       offset += nfnodes[i];
     }
 
     (*centroid) /= (*volume); // centroid = 1st moment / 0th moment
-  }                           // end if (np > 4)
+  } // end if (np > 4)
 
   (*volume) /= 6; // Account for multiplier here rather than in
                   // computation of each tet
@@ -151,7 +151,7 @@ polyhed_get_vol_centroid(PVT& ccoords,
 // Assuming that the polyhedron's faces can be broken into
 // triangular subfaces, this routine checks that the test point
 // forms a positive volume with each triangular subface
-template <class PVT>
+template<class PVT>
 bool
 point_in_polyhed(const Point testpnt,
                  const PVT& ccoords,
@@ -217,7 +217,7 @@ point_in_polyhed(const Point testpnt,
 // self-intersecting polygon has positive volume. This situation
 // might occur in dynamic meshes
 
-template <typename PVT>
+template<typename PVT>
 void
 polygon_get_area_centroid_normal(PVT& coords, double* area, Point* centroid, Point* normal)
 {
@@ -252,7 +252,7 @@ polygon_get_area_centroid_normal(PVT& coords, double* area, Point* centroid, Poi
     (*area) = norm(*normal);
     (*centroid) = center;
 
-    if (dim == 2 && (*normal)[0] <= 0.0) negvol = true;
+    if (dim == 2 && (*normal) [0] <= 0.0) negvol = true;
   } else {
     // Compute the area of each triangle formed by
     // the center point and each polygon edge
@@ -292,7 +292,7 @@ polygon_get_area_centroid_normal(PVT& coords, double* area, Point* centroid, Poi
 
 
 // Check if point is in polygon by Jordan's crossing algorithm
-template <class PVT>
+template<class PVT>
 bool
 point_in_polygon(const Point& testpnt, const PVT& coords)
 {
@@ -322,7 +322,7 @@ point_in_polygon(const Point& testpnt, const PVT& coords)
 }
 
 
-template <class PVT>
+template<class PVT>
 bool
 point_in_polygon_flat(const Point& testpnt, const PVT& coords, int i0, int i1)
 {

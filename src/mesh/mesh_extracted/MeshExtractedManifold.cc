@@ -16,7 +16,7 @@ Extract a manifold mesh defined by a region associated with *setname*.
 .. admonition:: region-box-spec
 
   * `"extract all_faces`" extract all ghost faces existing in the parent mesh.
-  
+
 */
 
 #include <set>
@@ -57,9 +57,9 @@ MeshExtractedManifold::MeshExtractedManifold(
     flattened_(flattened),
     extract_all_faces_(false)
 {
-  if (plist_.get()) extract_all_faces_ = plist_->sublist("unstructured")
-                                                .sublist("submesh")
-                                                .get<bool>("extract all faces", false);
+  if (plist_.get())
+    extract_all_faces_ =
+      plist_->sublist("unstructured").sublist("submesh").get<bool>("extract all faces", false);
 
   vo_ = Teuchos::rcp(new VerboseObject(comm_, "MeshExtractedManifold", *plist_));
 
@@ -134,10 +134,8 @@ MeshExtractedManifold::InitEpetraMaps()
 std::size_t
 MeshExtractedManifold::getNumEntities(const Entity_kind kind, const Parallel_kind ptype) const
 {
-  if (ptype == Parallel_kind::OWNED)
-    return nents_owned_[kind];
-  else if (ptype == Parallel_kind::ALL)
-    return nents_owned_[kind] + nents_ghost_[kind];
+  if (ptype == Parallel_kind::OWNED) return nents_owned_[kind];
+  else if (ptype == Parallel_kind::ALL) return nents_owned_[kind] + nents_ghost_[kind];
 
   return nents_ghost_[kind];
 }
@@ -170,7 +168,9 @@ MeshExtractedManifold::getCellFacesAndDirs(const Entity_ID c,
   if (!flattened_ && fdirs) {
     Direction_View lfdirs;
     lfdirs.fromConst(*fdirs);
-    for (int i = 0; i < nfaces; ++i) { (lfdirs)[i] = 1; }
+    for (int i = 0; i < nfaces; ++i) {
+      (lfdirs)[i] = 1;
+    }
     *fdirs = lfdirs;
   }
   faces = lfaces;
@@ -256,7 +256,7 @@ MeshExtractedManifold::getEdgeCells(const Entity_ID e, cEntity_ID_View& cells) c
   for (int i = 0; i < nfaces; ++i) {
     int f = faces[i];
     auto it = parent_to_entid_[Entity_kind::CELL].find(f);
-    if (it != parent_to_entid_[Entity_kind::CELL].end()) lcells[cells_ct++] = it->second;
+    if (it != parent_to_entid_[Entity_kind::CELL].end() ) lcells[cells_ct++] = it->second;
   }
   Kokkos::resize(lcells, cells_ct);
   cells = lcells;
@@ -279,7 +279,7 @@ MeshExtractedManifold::getFaceCells(const Entity_ID f, cEntity_ID_View& cells) c
   int cells_ct = 0;
   for (int i = 0; i < nfaces; ++i) {
     auto it = parent_to_entid_[Entity_kind::CELL].find(faces[i]);
-    if (it != parent_to_entid_[Entity_kind::CELL].end()) lcells[cells_ct++] = it->second;
+    if (it != parent_to_entid_[Entity_kind::CELL].end() ) lcells[cells_ct++] = it->second;
   }
   Kokkos::resize(lcells, cells_ct);
   cells = lcells;
@@ -373,7 +373,7 @@ MeshExtractedManifold::InitParentMaps(const std::string& setname)
       auto [lsetents, lvfs] =
         parent_mesh_->getSetEntitiesAndVolumeFractions(setname, kind_p, Parallel_kind::ALL);
       Kokkos::realloc(setents, lsetents.size());
-      for (size_t k = 0; k != lsetents.size(); ++k) setents(k) = lsetents(k);
+      for (size_t k = 0; k != lsetents.size() ; ++k) setents(k) = lsetents(k);
     }
 
     std::map<Entity_ID, int> marked_ents = EnforceOneLayerOfGhosts_(setname, kind_p, &setents);
@@ -399,7 +399,9 @@ MeshExtractedManifold::InitParentMaps(const std::string& setname)
     // create reverse ordered map
     std::map<Entity_ID, Entity_ID>& ids_d = parent_to_entid_[kind_d];
     ids_d.clear();
-    for (std::size_t n = 0; n != ids_p.size(); ++n) { ids_d[ids_p[n]] = n; }
+    for (std::size_t n = 0; n != ids_p.size(); ++n) {
+      ids_d[ids_p[n]] = n;
+    }
   }
 }
 
@@ -436,10 +438,14 @@ MeshExtractedManifold::TryExtension_(const std::string& setname,
       setents_tmp.insert(f);
     } else if (kind_p == Entity_kind::EDGE) {
       parent_mesh_->getFaceEdgesAndDirs(f, edges, &dirs);
-      for (int i = 0; i < edges.size(); ++i) { setents_tmp.insert(edges[i]); }
+      for (int i = 0; i < edges.size(); ++i) {
+        setents_tmp.insert(edges[i]);
+      }
     } else if (kind_p == Entity_kind::NODE) {
       parent_mesh_->getFaceNodes(f, nodes);
-      for (int i = 0; i < nodes.size(); ++i) { setents_tmp.insert(nodes[i]); }
+      for (int i = 0; i < nodes.size(); ++i) {
+        setents_tmp.insert(nodes[i]);
+      }
     }
   }
 
@@ -450,7 +456,7 @@ MeshExtractedManifold::TryExtension_(const std::string& setname,
 /* ******************************************************************
 * Limits the set of parent objects to only one layer of ghosts.
 ****************************************************************** */
-template <class Entity_ID_View_Type>
+template<class Entity_ID_View_Type>
 std::map<Entity_ID, int>
 MeshExtractedManifold::EnforceOneLayerOfGhosts_(const std::string& setname,
                                                 Entity_kind kind,
@@ -477,11 +483,11 @@ MeshExtractedManifold::EnforceOneLayerOfGhosts_(const std::string& setname,
     int f = fullset[n];
     if (f < nfaces_owned) {
       parent_mesh_->getFaceNodes(f, nodes);
-      for (int i = 0; i < nodes.size(); ++i) nodeset0[nodes[i]] = MASTER;
+      for (int i = 0; i < nodes.size() ; ++i) nodeset0[nodes[i]] = MASTER;
 
       if (kind == Entity_kind::EDGE) {
         parent_mesh_->getFaceEdgesAndDirs(f, edges, &dirs);
-        for (int i = 0; i < edges.size(); ++i) edgeset[edges[i]] = MASTER;
+        for (int i = 0; i < edges.size() ; ++i) edgeset[edges[i]] = MASTER;
       }
 
       faceset[f] = MASTER;
@@ -507,20 +513,16 @@ MeshExtractedManifold::EnforceOneLayerOfGhosts_(const std::string& setname,
       if (found) {
         for (int i = 0; i < nodes.size(); ++i) {
           auto it = nodeset.find(nodes[i]);
-          if (it == nodeset.end())
-            nodeset[nodes[i]] = GHOST;
-          else
-            it->second |= GHOST;
+          if (it == nodeset.end() ) nodeset[nodes[i]] = GHOST;
+          else it->second |= GHOST;
         }
 
         if (kind == Entity_kind::EDGE) {
           parent_mesh_->getFaceEdgesAndDirs(f, edges, &dirs);
           for (int i = 0; i < edges.size(); ++i) {
             auto it = edgeset.find(edges[i]);
-            if (it == edgeset.end())
-              edgeset[edges[i]] = GHOST;
-            else
-              it->second |= GHOST;
+            if (it == edgeset.end() ) edgeset[edges[i]] = GHOST;
+            else it->second |= GHOST;
           }
         }
 
@@ -531,7 +533,7 @@ MeshExtractedManifold::EnforceOneLayerOfGhosts_(const std::string& setname,
 
   // resolve master+ghost entities
   std::set<Entity_ID> auxset;
-  for (int n = 0; n < fullset.size(); ++n) auxset.insert(fullset[n]);
+  for (int n = 0; n < fullset.size() ; ++n) auxset.insert(fullset[n]);
 
   if (kind == Entity_kind::FACE) {
     return faceset;

@@ -74,7 +74,7 @@
         <Parameter name="end period time" type="double" value="200.0"/>
         <ParameterList name="PK tree">
           <ParameterList name="reactive transport">
-            <Parameter name="PK type" type="string" value="reactive transport"/>
+            <Parameter name="PK type" type="string" value="chemistry and transport"/>
             <ParameterList name="transport">
               <Parameter name="PK type" type="string" value="transport"/>
             </ParameterList>

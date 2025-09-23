@@ -109,10 +109,11 @@ especially with an approximate Jacobian.
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 class SolverNKA : public Solver<Vector, VectorSpace> {
  public:
-  SolverNKA(Teuchos::ParameterList& plist) : plist_(plist){};
+  SolverNKA(Teuchos::ParameterList& plist)
+    : plist_(plist) {};
 
   SolverNKA(Teuchos::ParameterList& plist,
             const Teuchos::RCP<SolverFnBase<Vector>>& fn,
@@ -183,7 +184,7 @@ class SolverNKA : public Solver<Vector, VectorSpace> {
 /* ******************************************************************
 * Public Init method.
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 void
 SolverNKA<Vector, VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn,
                                      const VectorSpace& map)
@@ -200,7 +201,7 @@ SolverNKA<Vector, VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector>>& f
 /* ******************************************************************
 * Initialization of the NKA solver.
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 void
 SolverNKA<Vector, VectorSpace>::Init_()
 {
@@ -240,7 +241,7 @@ SolverNKA<Vector, VectorSpace>::Init_()
 /* ******************************************************************
 * The body of NKA solver
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 int
 SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u)
 {
@@ -301,10 +302,8 @@ SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u)
       previous_error = error;
       r->Norm2(&l2_error);
 
-      if (norm_type_ == SOLVER_NORM_LINF)
-        error = residual_ = fn_->ErrorNorm(u, r);
-      else if (norm_type_ == SOLVER_NORM_L2)
-        error = residual_ = l2_error;
+      if (norm_type_ == SOLVER_NORM_LINF) error = residual_ = fn_->ErrorNorm(u, r);
+      else if (norm_type_ == SOLVER_NORM_L2) error = residual_ = l2_error;
 
       // We attempt to catch non-convergence early.
       if (num_itrs_ == 1) {
@@ -443,10 +442,8 @@ SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u)
       previous_error = error;
       du_tmp->Norm2(&l2_error);
 
-      if (norm_type_ == SOLVER_NORM_LINF)
-        error = residual_ = fn_->ErrorNorm(u, du_tmp);
-      else if (norm_type_ == SOLVER_NORM_L2)
-        error = residual_ = l2_error;
+      if (norm_type_ == SOLVER_NORM_LINF) error = residual_ = fn_->ErrorNorm(u, du_tmp);
+      else if (norm_type_ == SOLVER_NORM_L2) error = residual_ = l2_error;
 
       int ierr = NKA_ErrorControl_(error, previous_error, l2_error);
       if (ierr == SOLVER_CONVERGED) return num_itrs_;
@@ -472,7 +469,7 @@ SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u)
 /* ******************************************************************
 * Internal convergence control.
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 int
 SolverNKA<Vector, VectorSpace>::NKA_ErrorControl_(double error,
                                                   double previous_error,

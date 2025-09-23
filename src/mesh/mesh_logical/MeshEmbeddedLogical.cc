@@ -201,19 +201,14 @@ MeshEmbeddedLogical::getEntityParent(const Entity_kind kind, const Entity_ID ent
 {
   if (kind == Entity_kind::CELL) {
     auto ncells_log = log_mesh_->getNumEntities(kind, Parallel_kind::OWNED);
-    if (entid < ncells_log)
-      return entid;
-    else
-      return entid - ncells_log;
+    if (entid < ncells_log) return entid;
+    else return entid - ncells_log;
   } else if (kind == Entity_kind::FACE) {
     auto nfaces_log = log_mesh_->getNumEntities(kind, Parallel_kind::OWNED);
     int nfaces_extra = extra_face_cell_ids_.size<MemSpace_kind::HOST>();
-    if (entid < nfaces_log)
-      return entid;
-    else if (entid >= (nfaces_log + nfaces_extra))
-      return entid - nfaces_log - nfaces_extra;
-    else
-      return -1;
+    if (entid < nfaces_log) return entid;
+    else if (entid >= (nfaces_log + nfaces_extra) ) return entid - nfaces_log - nfaces_extra;
+    else return -1;
   } else {
     return -1;
   }
@@ -225,8 +220,7 @@ MeshEmbeddedLogical::getCellType(const Entity_ID cellid) const
   auto ncells_log = log_mesh_->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
   if (cellid < ncells_log)
     return log_mesh_->getCellType(getEntityParent(Entity_kind::CELL, cellid));
-  else
-    return bg_mesh_->getCellType(getEntityParent(Entity_kind::CELL, cellid));
+  else return bg_mesh_->getCellType(getEntityParent(Entity_kind::CELL, cellid));
 }
 
 std::size_t
@@ -241,7 +235,7 @@ MeshEmbeddedLogical::getNumEntities(const Entity_kind kind, const Parallel_kind 
 Entity_GID
 MeshEmbeddedLogical::getEntityGID(const Entity_kind kind, const Entity_ID lid) const
 {
-  if (getComm()->NumProc() == 1) return lid;
+  if (getComm() ->NumProc() == 1) return lid;
   if (kind == Entity_kind::CELL) {
     return cell_map_->GID(lid);
   } else if (kind == Entity_kind::FACE) {
@@ -308,11 +302,11 @@ MeshEmbeddedLogical::getCellFacesAndDirs(const Entity_ID c,
     }
     int size = lfaces.size();
     Kokkos::resize(lfaces, size + vfaces.size());
-    for (int i = size, j = 0; i < lfaces.size(); ++i, ++j) lfaces[i] = vfaces[j];
+    for (int i = size, j = 0; i < lfaces.size() ; ++i, ++j) lfaces[i] = vfaces[j];
     if (dirs) {
       int lsize = ldirs.size();
       Kokkos::resize(ldirs, lsize + vdirs.size());
-      for (int i = lsize, j = 0; i < ldirs.size(); ++i, ++j) ldirs[i] = vdirs[j];
+      for (int i = lsize, j = 0; i < ldirs.size() ; ++i, ++j) ldirs[i] = vdirs[j];
       *dirs = ldirs;
     }
 
@@ -322,7 +316,7 @@ MeshEmbeddedLogical::getCellFacesAndDirs(const Entity_ID c,
     bg_mesh_->getCellFacesAndDirs(c - ncells_log, faces, dirs);
     if (dirs) ldirs.fromConst(*dirs);
     lfaces.fromConst(faces);
-    for (int i = 0; i != faces.size(); ++i) lfaces[i] += (nfaces_log + nfaces_extra);
+    for (int i = 0; i != faces.size() ; ++i) lfaces[i] += (nfaces_log + nfaces_extra);
 
     // check for extras
     for (int f = 0; f != extra_face_cell_ids_.size<MemSpace_kind::HOST>(); ++f) {
@@ -333,11 +327,11 @@ MeshEmbeddedLogical::getCellFacesAndDirs(const Entity_ID c,
     }
     int size = lfaces.size();
     Kokkos::resize(lfaces, size + vfaces.size());
-    for (int i = size, j = 0; i < lfaces.size(); ++i, ++j) lfaces[i] = vfaces[j];
+    for (int i = size, j = 0; i < lfaces.size() ; ++i, ++j) lfaces[i] = vfaces[j];
     if (dirs) {
       int lsize = ldirs.size();
       Kokkos::resize(ldirs, lsize + vdirs.size());
-      for (int i = lsize, j = 0; i < ldirs.size(); ++i, ++j) ldirs[i] = vdirs[j];
+      for (int i = lsize, j = 0; i < ldirs.size() ; ++i, ++j) ldirs[i] = vdirs[j];
       *dirs = ldirs;
     }
   }
@@ -372,11 +366,11 @@ MeshEmbeddedLogical::getCellFacesAndBisectors(const Entity_ID c,
     }
     int size = lfaces.size();
     Kokkos::resize(lfaces, size + vfaces.size());
-    for (int i = size, j = 0; i < lfaces.size(); ++i, ++j) lfaces[i] = vfaces[j];
+    for (int i = size, j = 0; i < lfaces.size() ; ++i, ++j) lfaces[i] = vfaces[j];
     if (bisectors) {
       int lsize = lbis.size();
       Kokkos::resize(lbis, lsize + vbisectors.size());
-      for (int i = lsize, j = 0; i < lbis.size(); ++i, ++j) lbis[i] = vbisectors[j];
+      for (int i = lsize, j = 0; i < lbis.size() ; ++i, ++j) lbis[i] = vbisectors[j];
       *bisectors = lbis;
     }
   } else {
@@ -385,7 +379,7 @@ MeshEmbeddedLogical::getCellFacesAndBisectors(const Entity_ID c,
     bg_mesh_->getCellFacesAndBisectors(c - ncells_log, faces, bisectors);
     lbis.fromConst(*bisectors);
     lfaces.fromConst(faces);
-    for (int i = 0; i != lfaces.size(); ++i) lfaces[i] += (nfaces_log + nfaces_extra);
+    for (int i = 0; i != lfaces.size() ; ++i) lfaces[i] += (nfaces_log + nfaces_extra);
 
     // check for extras
     for (int f = 0; f != extra_face_cell_ids_.size<MemSpace_kind::HOST>(); ++f) {
@@ -397,11 +391,11 @@ MeshEmbeddedLogical::getCellFacesAndBisectors(const Entity_ID c,
     }
     int size = lfaces.size();
     Kokkos::resize(lfaces, size + vfaces.size());
-    for (int i = size, j = 0; i < lfaces.size(); ++i, ++j) lfaces[i] = vfaces[j];
+    for (int i = size, j = 0; i < lfaces.size() ; ++i, ++j) lfaces[i] = vfaces[j];
     if (bisectors) {
       int lsize = lbis.size();
       Kokkos::resize(lbis, lsize + vbisectors.size());
-      for (int i = lsize, j = 0; i < lbis.size(); ++i, ++j) lbis[i] = vbisectors[j];
+      for (int i = lsize, j = 0; i < lbis.size() ; ++i, ++j) lbis[i] = vbisectors[j];
       *bisectors = lbis;
     }
   }
@@ -412,20 +406,16 @@ double
 MeshEmbeddedLogical::getCellVolume(const Entity_ID c) const
 {
   auto ncells_log = log_mesh_->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
-  if (c < ncells_log)
-    return log_mesh_->getCellVolume(c);
-  else
-    return bg_mesh_->getCellVolume(c - ncells_log);
+  if (c < ncells_log) return log_mesh_->getCellVolume(c);
+  else return bg_mesh_->getCellVolume(c - ncells_log);
 }
 
 AmanziGeometry::Point
 MeshEmbeddedLogical::getCellCentroid(const Entity_ID c) const
 {
   auto ncells_log = log_mesh_->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
-  if (c < ncells_log)
-    return log_mesh_->getCellCentroid(c);
-  else
-    return bg_mesh_->getCellCentroid(c - ncells_log);
+  if (c < ncells_log) return log_mesh_->getCellCentroid(c);
+  else return bg_mesh_->getCellCentroid(c - ncells_log);
 }
 
 

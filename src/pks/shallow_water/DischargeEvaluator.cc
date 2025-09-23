@@ -61,7 +61,9 @@ DischargeEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*
 
   int ncells = result_c.MyLength();
   for (int c = 0; c != ncells; ++c) {
-    for (int i = 0; i < 2; ++i) { result_c[i][c] = h_c[0][c] * u_c[i][c]; }
+    for (int i = 0; i < 2; ++i) {
+      result_c[i][c] = h_c[0][c] * u_c[i][c];
+    }
   }
 }
 
@@ -81,7 +83,9 @@ DischargeEvaluator::EvaluatePartialDerivative_(const State& S,
   int ncells = result_c.MyLength();
   if (wrt_key == primary_variable_key_) {
     for (int c = 0; c != ncells; ++c) {
-      for (int i = 0; i < 2; ++i) { result_c[i][c] = u_c[i][c]; }
+      for (int i = 0; i < 2; ++i) {
+        result_c[i][c] = u_c[i][c];
+      }
     }
   } else {
     AMANZI_ASSERT(false);

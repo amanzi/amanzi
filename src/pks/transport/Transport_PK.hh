@@ -216,6 +216,7 @@ and temporal accuracy, and verbosity:
 #include "FCT.hh"
 #include "Key.hh"
 #include "LimiterCell.hh"
+#include "ModelAssumptions.hh"
 #include "PK.hh"
 #include "PK_Explicit.hh"
 #include "PK_Factory.hh"
@@ -228,8 +229,8 @@ and temporal accuracy, and verbosity:
 
 #include "Chemistry_PK.hh"
 #ifdef ALQUIMIA_ENABLED
-#  include "Alquimia_PK.hh"
-#  include "ChemistryEngine.hh"
+#include "Alquimia_PK.hh"
+#include "ChemistryEngine.hh"
 #endif
 
 // Amanzi::Transport
@@ -243,8 +244,7 @@ and temporal accuracy, and verbosity:
 namespace Amanzi {
 namespace Transport {
 
-typedef double
-AnalyticFunction(const AmanziGeometry::Point&, const double);
+typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
 class Transport_PK : public PK_Physical {
  public:
@@ -258,18 +258,18 @@ class Transport_PK : public PK_Physical {
                const std::string& pk_list_name,
                std::vector<std::string>& component_names);
 
-  virtual ~Transport_PK(){};
+  virtual ~Transport_PK() {};
 
   // members required by PK interface
-  virtual void parseParameterList() override {};
+  virtual void parseParameterList() override;
   virtual void Setup() override;
   virtual void Initialize() override;
 
   virtual double get_dt() override;
-  virtual void set_dt(double dt) override{};
+  virtual void set_dt(double dt) override {};
 
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
-  virtual void CalculateDiagnostics(const Tag& tag) override{};
+  virtual void CalculateDiagnostics(const Tag& tag) override {};
 
   virtual std::string name() override { return "transport"; }
 
@@ -328,8 +328,9 @@ class Transport_PK : public PK_Physical {
                                        const CompositeVector& component,
                                        CompositeVector& f,
                                        bool scale);
-  void
-  FunctionalTimeDerivative_FCT_(double t, const CompositeVector& component, CompositeVector& f);
+  void FunctionalTimeDerivative_FCT_(double t,
+                                     const CompositeVector& component,
+                                     CompositeVector& f);
 
   // sources and sinks for components from n0 to n1 including
   void ComputeSources_(double tp,
@@ -434,8 +435,9 @@ class Transport_PK : public PK_Physical {
   std::string passwd_;
   Method_t method_;
 
-  bool transport_on_manifold_;
-  bool subcycling_, use_transport_porosity_, use_effective_diffusion_;
+  // physical models and assumptions
+  ModelAssumptions assumptions_;
+  bool subcycling_;
   int dim;
 
   Teuchos::RCP<AmanziChemistry::Chemistry_PK> chem_pk_;
@@ -462,7 +464,7 @@ class Transport_PK : public PK_Physical {
   Teuchos::RCP<MDMPartition> mdm_;
   std::vector<WhetStone::Tensor> D_;
 
-  bool flag_dispersion_, flag_diffusion_, use_dispersion_;
+  bool flag_dispersion_, flag_diffusion_;
   std::vector<int> axi_symmetry_; // axi-symmetry direction of permeability tensor
   std::string dispersion_preconditioner, dispersion_solver;
 

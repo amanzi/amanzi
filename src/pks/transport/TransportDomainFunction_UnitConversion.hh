@@ -50,7 +50,7 @@ _vector_ coefficient, but not the scalar one.
 namespace Amanzi {
 namespace Transport {
 
-template <class T, AmanziMesh::Entity_kind E>
+template<class T, AmanziMesh::Entity_kind E>
 class TransportDomainFunction_UnitConversion : public T {
  public:
   using T::T;
@@ -108,9 +108,11 @@ class TransportDomainFunction_UnitConversion : public T {
 
 #ifdef ALQUIMIA_ENABLED
 using TransportBoundaryFunction_Alquimia_Units =
-  TransportDomainFunction_UnitConversion<TransportBoundaryFunction_Alquimia, AmanziMesh::Entity_kind::FACE>;
+  TransportDomainFunction_UnitConversion<TransportBoundaryFunction_Alquimia,
+                                         AmanziMesh::Entity_kind::FACE>;
 using TransportSourceFunction_Alquimia_Units =
-  TransportDomainFunction_UnitConversion<TransportSourceFunction_Alquimia, AmanziMesh::Entity_kind::CELL>;
+  TransportDomainFunction_UnitConversion<TransportSourceFunction_Alquimia,
+                                         AmanziMesh::Entity_kind::CELL>;
 using TransportSourceFunction_Concentrations =
   TransportDomainFunction_UnitConversion<TransportDomainFunction, AmanziMesh::Entity_kind::CELL>;
 #endif

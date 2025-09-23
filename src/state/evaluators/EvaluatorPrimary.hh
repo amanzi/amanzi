@@ -78,8 +78,9 @@ class EvaluatorPrimary_ : public Evaluator {
 
   virtual bool IsDependency(const State& S, const Key& key, const Tag& tag) const override final;
   virtual bool ProvidesKey(const Key& key, const Tag& tag) const override final;
-  virtual bool
-  IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const override final
+  virtual bool IsDifferentiableWRT(const State& S,
+                                   const Key& wrt_key,
+                                   const Tag& wrt_tag) const override final
   {
     return ProvidesKey(wrt_key, wrt_tag);
   }
@@ -113,7 +114,7 @@ class EvaluatorPrimary_ : public Evaluator {
 // Class to set types that can do requirements for compatibility and
 // derivatives.
 //
-template <typename Data_t, typename DataFactory_t = NullFactory>
+template<typename Data_t, typename DataFactory_t = NullFactory>
 class EvaluatorPrimary : public EvaluatorPrimary_ {
  public:
   using EvaluatorPrimary_::EvaluatorPrimary_;
@@ -148,14 +149,14 @@ class EvaluatorPrimary : public EvaluatorPrimary_ {
 };
 
 
-template <>
+template<>
 inline void
 EvaluatorPrimary<double>::UpdateDerivative_(State& S)
 {
   S.GetDerivativeW<double>(my_key_, my_tag_, my_key_, my_tag_, my_key_) = 1.0;
 }
 
-template <>
+template<>
 inline void
 EvaluatorPrimary<CompositeVector, CompositeVectorSpace>::UpdateDerivative_(State& S)
 {
@@ -164,7 +165,7 @@ EvaluatorPrimary<CompositeVector, CompositeVectorSpace>::UpdateDerivative_(State
 
 // Implementatin for a CV also updates derivatives, but not clear why it is
 // done for primary variables
-template <>
+template<>
 inline void
 EvaluatorPrimary<CompositeVector, CompositeVectorSpace>::EnsureCompatibility(State& S)
 {

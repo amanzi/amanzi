@@ -298,7 +298,7 @@ if __name__ == "__main__":
 
         ats = len(u_ATS)
 
-    except:
+    except Exception as err:
         ats = 0
 
         

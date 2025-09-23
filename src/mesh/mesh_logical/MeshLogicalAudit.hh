@@ -80,7 +80,9 @@ class MeshLogicalAudit {
   typedef bool (MeshLogicalAudit::*Test)() const;
 
   struct Vertex {
-    Vertex() : status(Status_kind::NONE) {}
+    Vertex()
+      : status(Status_kind::NONE)
+    {}
     std::string name;
     mutable int status;
     Test test;

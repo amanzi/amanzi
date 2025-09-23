@@ -74,8 +74,8 @@ PDE_DiffusionFVwithGravity::UpdateMatrices(const Teuchos::Ptr<const CompositeVec
     // preparing upwind data
     Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
     if (k_ != Teuchos::null) {
-      if (k_->HasComponent("face")) k_face = k_->ViewComponent("face", true);
-      if (k_->HasComponent("grav")) k_face = k_->ViewComponent("grav", true);
+      if (k_->HasComponent("face") ) k_face = k_->ViewComponent("face", true);
+      if (k_->HasComponent("grav") ) k_face = k_->ViewComponent("grav", true);
     }
 
     for (int c = 0; c != ncells_owned; ++c) {
@@ -104,7 +104,9 @@ PDE_DiffusionFVwithGravity::ApplyBCs(bool primary, bool eliminate, bool essentia
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
 
   for (int f = 0; f < nfaces_owned; f++) {
-    if (bc_model[f] == OPERATOR_BC_NEUMANN) { (*gravity_face)[0][f] = 0.0; }
+    if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+      (*gravity_face)[0][f] = 0.0;
+    }
   }
 }
 
@@ -157,7 +159,7 @@ PDE_DiffusionFVwithGravity::ComputeJacobianLocal_(int mcells,
     if (little_k_ == OPERATOR_LITTLE_K_UPWIND) {
       double flux0to1;
       flux0to1 = trans_face[0][f] * dpres;
-      if (gravity_face.get()) flux0to1 += face_dir_0to1 * (*gravity_face)[0][f];
+      if (gravity_face.get() ) flux0to1 += face_dir_0to1 * (*gravity_face)[0][f];
       if (flux0to1 > OPERATOR_UPWIND_RELATIVE_TOLERANCE) { // Upwind
         dKrel_dp[0] = dkdp_cell[0];
         dKrel_dp[1] = 0.0;
@@ -190,7 +192,7 @@ PDE_DiffusionFVwithGravity::ComputeJacobianLocal_(int mcells,
       pres[1] = bc_value_f;
       dpres = pres[0] - pres[1]; // + grn;
       Jpp(0, 0) = trans_face[0][f] * dpres * dkdp_cell[0];
-      if (gravity_face.get()) Jpp(0, 0) += face_dir_0to1 * (*gravity_face)[0][f] * dkdp_cell[0];
+      if (gravity_face.get() ) Jpp(0, 0) += face_dir_0to1 * (*gravity_face)[0][f] * dkdp_cell[0];
     } else {
       Jpp(0, 0) = 0.0;
     }
@@ -226,7 +228,7 @@ PDE_DiffusionFVwithGravity::ComputeTransmissibility_(Teuchos::RCP<CompositeVecto
   Kc(0, 0) = 1.0;
 
   for (int c = 0; c < ncells_owned; ++c) {
-    if (K_.get()) Kc = (*K_)[c];
+    if (K_.get() ) Kc = (*K_)[c];
     const auto& faces = mesh_->getCellFaces(c);
     int nfaces = faces.size();
 

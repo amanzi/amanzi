@@ -26,14 +26,14 @@
 namespace Amanzi {
 namespace Multiphase {
 
-template <class Model>
+template<class Model>
 using ModelPartition =
   std::pair<Teuchos::RCP<Functions::MeshPartition>, std::vector<Teuchos::RCP<Model>>>;
 
 /* ******************************************************************
 * Non-member factory.
 ****************************************************************** */
-template <class Model>
+template<class Model>
 Teuchos::RCP<ModelPartition<Model>>
 CreateModelPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                      Teuchos::RCP<Teuchos::ParameterList> plist,

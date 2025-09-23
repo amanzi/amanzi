@@ -196,7 +196,9 @@ PDE_DiffusionFVonManifolds::UpdateMatrices(const Teuchos::Ptr<const CompositeVec
 
         Aface.Multiply(v, av, false);
 
-        for (int n = 0; n < ndofs; ++n) { rhs_c[0][cells[n]] += av(n); }
+        for (int n = 0; n < ndofs; ++n) {
+          rhs_c[0][cells[n]] += av(n);
+        }
       }
     }
   }
@@ -284,7 +286,7 @@ PDE_DiffusionFVonManifolds::UpdateFlux(const Teuchos::Ptr<const CompositeVector>
       }
 
       flux[0][g] = dir * beta_f[0][g] * tmp;
-      if (k_f.get()) flux[0][g] *= (*k_f)[0][g];
+      if (k_f.get() ) flux[0][g] *= (*k_f)[0][g];
 
     } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
       double value = bc_value[f];
@@ -346,7 +348,7 @@ PDE_DiffusionFVonManifolds::ComputeBeta_()
       a = mesh_->getFaceCentroid(f) - mesh_->getCellCentroid(c);
       beta_f[0][g + i] = mesh_->getFaceArea(f) / norm(a);
 
-      if (K_.get()) Kc = (*K_)[c];
+      if (K_.get() ) Kc = (*K_)[c];
       const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f, c);
       double perm = (Kc * a) * normal;
       double dxn = a * normal;

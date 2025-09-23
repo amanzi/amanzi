@@ -65,7 +65,7 @@ namespace Transport {
 class MDM_Isotropic : public MDM {
  public:
   explicit MDM_Isotropic(Teuchos::ParameterList& plist);
-  ~MDM_Isotropic(){};
+  ~MDM_Isotropic() {};
 
   // Required methods from the base class
   // -- scalar dispersion tensor.

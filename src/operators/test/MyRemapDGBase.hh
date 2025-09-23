@@ -24,14 +24,14 @@
 
 namespace Amanzi {
 
-template <class AnalyticDG>
+template<class AnalyticDG>
 class MyRemapDGBase : public Operators::RemapDG {
  public:
   MyRemapDGBase(const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
                 const Teuchos::RCP<AmanziMesh::Mesh> mesh1,
                 Teuchos::ParameterList& plist)
-    : RemapDG(mesh0, mesh1, plist), tprint_(0.0), l2norm_(-1.0), dt_output_(0.1){};
-  ~MyRemapDGBase(){};
+    : RemapDG(mesh0, mesh1, plist), tprint_(0.0), l2norm_(-1.0), dt_output_(0.1) {};
+  ~MyRemapDGBase() {};
 
   // CFL condition
   double StabilityCondition();
@@ -53,7 +53,7 @@ class MyRemapDGBase : public Operators::RemapDG {
 /* *****************************************************************
 * Initialization of the consistent jacobian determinant
 ***************************************************************** */
-template <class AnalyticDG>
+template<class AnalyticDG>
 double
 MyRemapDGBase<AnalyticDG>::StabilityCondition()
 {
@@ -73,7 +73,7 @@ MyRemapDGBase<AnalyticDG>::StabilityCondition()
 /* *****************************************************************
 * Compute initial mass
 ***************************************************************** */
-template <class AnalyticDG>
+template<class AnalyticDG>
 double
 MyRemapDGBase<AnalyticDG>::InitialMass(const CompositeVector& p1, int order)
 {
@@ -99,7 +99,7 @@ MyRemapDGBase<AnalyticDG>::InitialMass(const CompositeVector& p1, int order)
 /* *****************************************************************
 * Print statistics using conservative field u
 ***************************************************************** */
-template <class AnalyticDG>
+template<class AnalyticDG>
 void
 MyRemapDGBase<AnalyticDG>::CollectStatistics(double t, const CompositeVector& u)
 {
@@ -107,7 +107,7 @@ MyRemapDGBase<AnalyticDG>::CollectStatistics(double t, const CompositeVector& u)
   if (tglob >= tprint_) {
     op_reac_->UpdateMatrices(Teuchos::null);
     auto& matrices = op_reac_->local_op()->matrices;
-    for (int n = 0; n < matrices.size(); ++n) matrices[n].Inverse();
+    for (int n = 0; n < matrices.size() ; ++n) matrices[n].Inverse();
 
     auto& rhs = *op_reac_->global_operator()->rhs();
     op_reac_->global_operator()->Apply(u, rhs);

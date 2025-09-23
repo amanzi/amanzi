@@ -34,7 +34,7 @@ class Porosity_Compressible : public Porosity {
 
     factor_ = porosity_ * c_;
   }
-  ~Porosity_Compressible(){};
+  ~Porosity_Compressible() {};
 
   // required methods from the base class
   virtual double PorosityValue(double p) override

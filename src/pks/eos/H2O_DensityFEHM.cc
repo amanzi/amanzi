@@ -40,7 +40,7 @@ H2O_DensityFEHM::H2O_DensityFEHM(Teuchos::ParameterList& eos_plist)
     z8_(3.0456698e-10),
     y9_(-1.8383009e-07),
     z9_(-1.2221899e-10),
-    T0_(273.15){};
+    T0_(273.15) {};
 
 
 double

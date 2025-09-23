@@ -32,9 +32,8 @@ namespace Amanzi {
 class State;
 
 class EvaluatorVelocityReconstruction
-  : public EvaluatorSecondaryMonotype<CompositeVector,CompositeVectorSpace> {
-
-public:
+  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+ public:
   explicit EvaluatorVelocityReconstruction(Teuchos::ParameterList& plist);
   EvaluatorVelocityReconstruction(const EvaluatorVelocityReconstruction& other) = default;
   virtual Teuchos::RCP<Evaluator> Clone() const override;
@@ -45,7 +44,10 @@ public:
 
   // This should get some careful thought of the right strategy.  Punting for
   // now --etc
-  virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const override {
+  virtual bool IsDifferentiableWRT(const State& S,
+                                   const Key& wrt_key,
+                                   const Tag& wrt_tag) const override
+  {
     return false;
   }
 
@@ -59,12 +61,12 @@ public:
                                           const std::vector<CompositeVector*>& results) override
   {}
 
-protected:
+ protected:
   // helper function -- calls Require on all dependencies
   // Called in Basics
   virtual void EnsureCompatibility_ToDeps_(State& S) override;
 
-protected:
+ protected:
   Key flux_key_;
   Key molar_dens_key_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -74,5 +76,3 @@ protected:
 };
 
 } // namespace Amanzi
-
-

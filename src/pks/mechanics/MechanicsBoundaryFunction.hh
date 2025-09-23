@@ -32,7 +32,8 @@ namespace Mechanics {
 
 class MechanicsBoundaryFunction : public PK_DomainFunction {
  public:
-  MechanicsBoundaryFunction() : bc_name_("undefined"){};
+  MechanicsBoundaryFunction()
+    : bc_name_("undefined") {};
   MechanicsBoundaryFunction(const Teuchos::ParameterList& plist);
 
   // modifiers and access

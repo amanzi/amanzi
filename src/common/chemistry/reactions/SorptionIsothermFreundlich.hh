@@ -27,7 +27,7 @@ class SorptionIsothermFreundlich : public SorptionIsotherm {
  public:
   SorptionIsothermFreundlich();
   SorptionIsothermFreundlich(double KD, double n);
-  ~SorptionIsothermFreundlich(){};
+  ~SorptionIsothermFreundlich() {};
 
   // returns sorbed concentration
   double Evaluate(const Species& primary_species);

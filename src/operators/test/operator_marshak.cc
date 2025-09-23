@@ -158,20 +158,20 @@ RunTestMarshak(std::string op_list_name, double TemperatureFloor)
     // add diffusion operator
     Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_list_name);
     PDE_DiffusionFactory diff_factory;
-    Teuchos::RCP<PDE_Diffusion> op = diff_factory.Create(olist, mesh, bc);
+    Teuchos::RCP<PDE_Diffusion> pde = diff_factory.Create(olist, mesh, bc);
 
-    op->Setup(K, knc->values(), knc->derivatives());
-    op->UpdateMatrices(flux.ptr(), solution.ptr());
+    pde->Setup(K, knc->values(), knc->derivatives());
+    pde->UpdateMatrices(flux.ptr(), solution.ptr());
 
     // get the global operator
-    Teuchos::RCP<Operator> global_op = op->global_operator();
+    Teuchos::RCP<Operator> global_op = pde->global_operator();
 
     // add accumulation terms
-    PDE_Accumulation op_acc(AmanziMesh::Entity_kind::CELL, global_op);
-    op_acc.AddAccumulationDelta(*solution, heat_capacity, heat_capacity, dt, "cell");
+    PDE_Accumulation pde_acc(AmanziMesh::Entity_kind::CELL, global_op);
+    pde_acc.AddAccumulationDelta(*solution, heat_capacity, heat_capacity, dt, "cell");
 
     // apply BCs and assemble
-    op->ApplyBCs(true, true, true);
+    pde->ApplyBCs(true, true, true);
     global_op->set_inverse_parameters(
       "Hypre AMG", plist.sublist("preconditioners"), "Amanzi GMRES", plist.sublist("solvers"));
     global_op->InitializeInverse();
@@ -181,7 +181,6 @@ RunTestMarshak(std::string op_list_name, double TemperatureFloor)
     Epetra_MultiVector sol_old(sol_new);
 
     CompositeVector rhs = *global_op->rhs();
-    //    global_op->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
     global_op->ApplyInverse(rhs, *solution);
 
     step++;

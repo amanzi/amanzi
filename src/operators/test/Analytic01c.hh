@@ -24,10 +24,11 @@
 
 class Analytic01c : public AnalyticBase {
  public:
-  Analytic01c(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : AnalyticBase(mesh), g_(0.0){};
+  Analytic01c(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
+    : AnalyticBase(mesh), g_(0.0) {};
   Analytic01c(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, double g)
-    : AnalyticBase(mesh), g_(g){};
-  ~Analytic01c(){};
+    : AnalyticBase(mesh), g_(g) {};
+  ~Analytic01c() {};
 
   Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t)
   {

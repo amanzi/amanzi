@@ -135,8 +135,12 @@ GeneralRxn::AddContributionToResidual(std::vector<double>* residual, double por_
 {
   // por_den_sat_vol = porosity*water_density*saturation*volume
   double effective_rate = 0.0;
-  if (kf_ > 0.0) { effective_rate += kf_ * std::exp(lnOcf_ + lnOcb_); }
-  if (kb_ > 0.0) { effective_rate -= kf_ * std::exp(lnOcf_ + lnOcb_ + lnQkb_ - lnQkf_); }
+  if (kf_ > 0.0) {
+    effective_rate += kf_ * std::exp(lnOcf_ + lnOcb_);
+  }
+  if (kb_ > 0.0) {
+    effective_rate -= kf_ * std::exp(lnOcf_ + lnOcb_ + lnQkb_ - lnQkf_);
+  }
   effective_rate *= por_den_sat_vol;
 
   for (int i = 0; i < ncomp_; i++) {
@@ -200,7 +204,9 @@ GeneralRxn::Display(const Teuchos::Ptr<VerboseObject> vo) const
   for (unsigned int i = 0; i < species_names_.size(); i++) {
     if (stoichiometry_.at(i) < 0) {
       message << -stoichiometry_.at(i) << " " << species_names_.at(i);
-      if (i < species_ids_f_.size() - 1) { message << " + "; }
+      if (i < species_ids_f_.size() - 1) {
+        message << " + ";
+      }
     }
   }
 
@@ -209,7 +215,9 @@ GeneralRxn::Display(const Teuchos::Ptr<VerboseObject> vo) const
   for (int i = 0; i < species_names_.size(); i++) {
     if (stoichiometry_.at(i) > 0) {
       message << stoichiometry_.at(i) << " " << species_names_.at(i);
-      if (i < species_names_.size() - 1) { message << " + "; }
+      if (i < species_names_.size() - 1) {
+        message << " + ";
+      }
     }
   }
   message << std::endl;
@@ -221,7 +229,9 @@ GeneralRxn::Display(const Teuchos::Ptr<VerboseObject> vo) const
 
     for (int i = 0; i < species_ids_f_.size(); i++) {
       message << "a_(" << species_names_[i] << ")^(" << orders_oc_[i] << ")";
-      if (i < species_ids_f_.size() - 1) { message << " * "; }
+      if (i < species_ids_f_.size() - 1) {
+        message << " * ";
+      }
     }
   }
   message << std::endl
@@ -230,7 +240,9 @@ GeneralRxn::Display(const Teuchos::Ptr<VerboseObject> vo) const
     message << " * ";
     for (int i = 0; i < species_ids_b_.size(); i++) {
       message << "a_(" << species_names_[i] << ")^(" << orders_oc_[ncomp_forward_ + i] << ")";
-      if (i < species_ids_b_.size() - 1) { message << " * "; }
+      if (i < species_ids_b_.size() - 1) {
+        message << " * ";
+      }
     }
   }
   vo->Write(Teuchos::VERB_HIGH, message.str());

@@ -25,7 +25,8 @@ namespace Amanzi {
 class ObservationData {
  public:
   struct DataQuadruple {
-    DataQuadruple() : time(-1), value(-1), is_valid(false), unit(""){};
+    DataQuadruple()
+      : time(-1), value(-1), is_valid(false), unit("") {};
     void print(std::ostream& os) const
     {
       os << "is_valid=" << is_valid << ", time=" << time << ", data=" << value << ", unit=" << unit
@@ -36,7 +37,7 @@ class ObservationData {
     std::string unit;
   };
 
-  ObservationData(){};
+  ObservationData() {};
 
   std::vector<ObservationData::DataQuadruple> operator[](const std::string& label) const
   {

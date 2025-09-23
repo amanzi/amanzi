@@ -94,7 +94,7 @@ TEST(BOX_REGION_2D)
   pin.push_back(Amanzi::AmanziGeometry::Point(9.9, 8.));
   pin.push_back(Amanzi::AmanziGeometry::Point(11, 7.9));
 
-  for (std::vector<Amanzi::AmanziGeometry::Point>::iterator p = pout.begin(); p != pout.end();
+  for (std::vector<Amanzi::AmanziGeometry::Point>::iterator p = pout.begin() ; p != pout.end();
        ++p) {
     CHECK(!reg->inside(*p));
   }
@@ -179,7 +179,7 @@ TEST(BOX_REGION_3D)
   pin.push_back(Amanzi::AmanziGeometry::Point(3., 4., 8.001));
   pin.push_back(Amanzi::AmanziGeometry::Point(-3, -4, -6));
 
-  for (std::vector<Amanzi::AmanziGeometry::Point>::iterator p = pout.begin(); p != pout.end();
+  for (std::vector<Amanzi::AmanziGeometry::Point>::iterator p = pout.begin() ; p != pout.end();
        ++p) {
     CHECK(!reg->inside(*p));
   }
@@ -212,7 +212,9 @@ TEST(BOXREGION_VOFS_2D_INTERSECTION)
 
     Amanzi::AmanziGeometry::IntersectConvexPolygons(xy1, xy2, xy3);
 
-    for (int i = 0; i < xy3.size(); ++i) { std::cout << i << " xy=" << xy3[i] << std::endl; }
+    for (int i = 0; i < xy3.size(); ++i) {
+      std::cout << i << " xy=" << xy3[i] << std::endl;
+    }
     CHECK(xy3.size() == sizes[n++]);
   }
 }

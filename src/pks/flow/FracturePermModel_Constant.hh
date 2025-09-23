@@ -29,7 +29,7 @@ class FracturePermModel_Constant : public FracturePermModel {
   {
     value_ = plist.get<double>("value");
   }
-  ~FracturePermModel_Constant(){};
+  ~FracturePermModel_Constant() {};
 
   // required methods from the base class
   inline double Permeability(double aperture) { return value_; }

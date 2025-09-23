@@ -36,7 +36,7 @@ namespace Impl {
 //
 // Move data from the vector to a flat vector.
 //
-template <class Vector>
+template<class Vector>
 void
 copyToSuperVector(const Teuchos::RCP<const Operators::SuperMap>& smap,
                   const Vector& v,
@@ -46,7 +46,7 @@ copyToSuperVector(const Teuchos::RCP<const Operators::SuperMap>& smap,
   AMANZI_ASSERT(sv.get());
   Operators::copyToSuperVector(*smap, v, *sv);
 }
-template <>
+template<>
 void inline copyToSuperVector<Epetra_Vector>(const Teuchos::RCP<const Operators::SuperMap>& smap,
                                              const Epetra_Vector& v,
                                              Teuchos::RCP<Epetra_Vector>& sv)
@@ -58,7 +58,7 @@ void inline copyToSuperVector<Epetra_Vector>(const Teuchos::RCP<const Operators:
 //
 // Move data from the flat vector to the vector
 //
-template <class Vector>
+template<class Vector>
 void
 copyFromSuperVector(const Teuchos::RCP<const Operators::SuperMap>& smap,
                     const Epetra_Vector& sv,
@@ -67,7 +67,7 @@ copyFromSuperVector(const Teuchos::RCP<const Operators::SuperMap>& smap,
   AMANZI_ASSERT(smap.get());
   copyFromSuperVector(*smap, sv, v);
 }
-template <>
+template<>
 void inline copyFromSuperVector<Epetra_Vector>(const Teuchos::RCP<const Operators::SuperMap>& smap,
                                                const Epetra_Vector& sv,
                                                Epetra_Vector& v)
@@ -78,7 +78,7 @@ void inline copyFromSuperVector<Epetra_Vector>(const Teuchos::RCP<const Operator
 //
 // Get a SuperMap if possible/needed.
 //
-template <class Operator>
+template<class Operator>
 typename std::enable_if<is_assembling<Operator>::value,
                         std::tuple<Teuchos::RCP<const Operators::SuperMap>,
                                    Teuchos::RCP<Epetra_Vector>,
@@ -92,7 +92,7 @@ getSuperMap(Operator& m)
 }
 
 
-template <class Operator>
+template<class Operator>
 typename std::enable_if<is_assembled<Operator>::value,
                         std::tuple<Teuchos::RCP<Operators::SuperMap>,
                                    Teuchos::RCP<Epetra_Vector>,
@@ -107,7 +107,7 @@ getSuperMap(Operator& m)
 //
 // Assemble the matrix and get it.
 //
-template <class Operator>
+template<class Operator>
 typename std::enable_if<is_assembling<Operator>::value, Teuchos::RCP<Epetra_CrsMatrix>>::type
 assembleMatrix(const Teuchos::RCP<Operator>& m)
 {
@@ -115,7 +115,7 @@ assembleMatrix(const Teuchos::RCP<Operator>& m)
   return m->A();
 }
 
-template <class Operator>
+template<class Operator>
 typename std::enable_if<is_assembled<Operator>::value, Teuchos::RCP<Epetra_CrsMatrix>>::type
 assembleMatrix(const Teuchos::RCP<Operator>& m)
 {
@@ -127,7 +127,7 @@ assembleMatrix(const Teuchos::RCP<Operator>& m)
 //
 // Just get a matrix (may be unassembled)
 //
-template <class Operator>
+template<class Operator>
 typename std::enable_if<is_assembling<Operator>::value, Teuchos::RCP<Epetra_CrsMatrix>>::type
 getMatrix(const Teuchos::RCP<Operator>& h)
 {
@@ -135,7 +135,7 @@ getMatrix(const Teuchos::RCP<Operator>& h)
   return h->A();
 }
 
-template <class Operator>
+template<class Operator>
 typename std::enable_if<is_assembled<Operator>::value, Teuchos::RCP<Epetra_CrsMatrix>>::type
 getMatrix(const Teuchos::RCP<Operator>& h)
 {
@@ -149,7 +149,7 @@ getMatrix(const Teuchos::RCP<Operator>& h)
 // Class for assembled inverse methods.
 //
 
-template <class Operator, class Preconditioner, class Vector, class VectorSpace>
+template<class Operator, class Preconditioner, class Vector, class VectorSpace>
 void
 InverseAssembled<Operator, Preconditioner, Vector, VectorSpace>::set_inverse_parameters(
   Teuchos::ParameterList& plist)
@@ -159,7 +159,7 @@ InverseAssembled<Operator, Preconditioner, Vector, VectorSpace>::set_inverse_par
 }
 
 
-template <class Operator, class Preconditioner, class Vector, class VectorSpace>
+template<class Operator, class Preconditioner, class Vector, class VectorSpace>
 void
 InverseAssembled<Operator, Preconditioner, Vector, VectorSpace>::InitializeInverse()
 {
@@ -182,7 +182,7 @@ InverseAssembled<Operator, Preconditioner, Vector, VectorSpace>::InitializeInver
 }
 
 
-template <class Operator, class Preconditioner, class Vector, class VectorSpace>
+template<class Operator, class Preconditioner, class Vector, class VectorSpace>
 void
 InverseAssembled<Operator, Preconditioner, Vector, VectorSpace>::ComputeInverse()
 {
@@ -194,7 +194,7 @@ InverseAssembled<Operator, Preconditioner, Vector, VectorSpace>::ComputeInverse(
 }
 
 
-template <class Operator, class Preconditioner, class Vector, class VectorSpace>
+template<class Operator, class Preconditioner, class Vector, class VectorSpace>
 int
 InverseAssembled<Operator, Preconditioner, Vector, VectorSpace>::ApplyInverse(const Vector& X,
                                                                               Vector& Y) const

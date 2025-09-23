@@ -80,7 +80,7 @@ PKFactory::CreatePK(std::string pk_name,
 
         // -- overwrite the domain name
         Key new_domain = Keys::getDomainInSet(ds_name, std::get<1>(pk_triple));
-        if (pk_list_new.isParameter("domain name")) pk_list_new.set("domain name", new_domain);
+        if (pk_list_new.isParameter("domain name") ) pk_list_new.set("domain name", new_domain);
 
         // -- overwrite sub pks names with prepended domain
         if (pk_list_new.isParameter("PKs order")) {
@@ -160,10 +160,9 @@ PKFactory::WriteChoices(std::ostream& os) const
 {
   os << "Valid types:" << std::endl
      << "--------------------------------------------------" << std::endl;
-  for (auto choice : *GetMap()) os << " - \"" << choice.first << "\"" << std::endl;
+  for (auto choice : *GetMap() ) os << " - \"" << choice.first << "\"" << std::endl;
   os << "--------------------------------------------------" << std::endl << std::endl;
 }
-
 
 
 std::string PKFactory::list_pks;

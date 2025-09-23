@@ -18,10 +18,10 @@
 #include "RegionLabeledSet.hh"
 
 #ifdef HAVE_MESH_MSTK
-#  include "Mesh_MSTK.hh"
+#include "Mesh_MSTK.hh"
 #endif
 #ifdef HAVE_MESH_MOAB
-#  include "Mesh_MOAB.hh"
+#include "Mesh_MOAB.hh"
 #endif
 
 namespace Amanzi {
@@ -39,11 +39,15 @@ MeshFrameworkFactory::MeshFrameworkFactory(const Comm_ptr_type& comm,
                                            const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : comm_(comm), preference_(), plist_(plist), gm_(gm)
 {
-  if (comm_ == Teuchos::null) { comm_ = Amanzi::getDefaultComm(); }
+  if (comm_ == Teuchos::null) {
+    comm_ = Amanzi::getDefaultComm();
+  }
 
   set_preference(default_preference());
 
-  if (plist_ == Teuchos::null) { plist_ = Teuchos::rcp(new Teuchos::ParameterList()); }
+  if (plist_ == Teuchos::null) {
+    plist_ = Teuchos::rcp(new Teuchos::ParameterList());
+  }
 
   vo_ = Teuchos::rcp(new VerboseObject(comm_, "Amanzi::MeshFactory", *plist_));
 
@@ -307,7 +311,9 @@ MeshFrameworkFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
 {
   // we have sane defaults from the parent mesh for some things
   auto gm = Teuchos::RCP<const AmanziGeometry::GeometricModel>(gm_);
-  if (gm == Teuchos::null) { gm = inmesh->getGeometricModel(); }
+  if (gm == Teuchos::null) {
+    gm = inmesh->getGeometricModel();
+  }
 
   // create the comm via split
   Comm_ptr_type comm = Teuchos::null;
@@ -381,7 +387,7 @@ MeshFrameworkFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
     // greedy solution for more than one sets. A new region is forced into GM
     std::string setname(setnames[0]);
     if (setnames.size() > 1) {
-      for (int i = 1; i < setnames.size(); ++i) setname += "_" + setnames[i];
+      for (int i = 1; i < setnames.size() ; ++i) setname += "_" + setnames[i];
       auto rgn = Teuchos::rcp(new AmanziGeometry::RegionLogical(setname, -1, "union", setnames));
       Teuchos::rcp_const_cast<AmanziGeometry::GeometricModel>(gm)->AddRegion(rgn);
     }

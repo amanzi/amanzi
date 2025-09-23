@@ -21,8 +21,12 @@ namespace Amanzi {
 
 class Tag {
  public:
-  Tag() : tag_("") {}
-  explicit Tag(const std::string& tag) : tag_(tag) {}
+  Tag()
+    : tag_("")
+  {}
+  explicit Tag(const std::string& tag)
+    : tag_(tag)
+  {}
   Tag(const Tag& other) = default;
 
   void set(const std::string& key) { tag_ = key; }
@@ -49,7 +53,8 @@ class Tag {
 
 
 inline Errors::Message&
-operator<<(Errors::Message& message, const Tag& tag) {
+operator<<(Errors::Message& message, const Tag& tag)
+{
   message.add_data(tag.get());
   return message;
 }
@@ -70,7 +75,7 @@ make_tag(const std::string& key)
 
 namespace std {
 
-template <>
+template<>
 struct hash<Amanzi::Tag> {
   std::size_t operator()(const Amanzi::Tag& tag) const
   {

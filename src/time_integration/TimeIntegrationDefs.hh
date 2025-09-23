@@ -16,9 +16,6 @@
 #define AMANZI_TIME_INTEGRATION_CONSTANTS_HH_
 
 
-namespace Amanzi {
-
-
-} // namespace Amanzi
+namespace Amanzi {} // namespace Amanzi
 
 #endif

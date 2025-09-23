@@ -41,7 +41,7 @@ DirectMethodAmesos::set_inverse_parameters(Teuchos::ParameterList& plist)
   vo_ = Teuchos::rcp(new VerboseObject(vo_name, plist));
 
   Teuchos::OSTab tab = vo_->getOSTab();
-  if (vo_->os_OK(Teuchos::VERB_EXTREME)) *vo_->os() << "set_inverse_parameters()" << std::endl;
+  if (vo_->os_OK(Teuchos::VERB_EXTREME) ) *vo_->os() << "set_inverse_parameters()" << std::endl;
 
   inited_ = true;
 }
@@ -54,7 +54,7 @@ void
 DirectMethodAmesos::InitializeInverse()
 {
   Teuchos::OSTab tab = vo_->getOSTab();
-  if (vo_->os_OK(Teuchos::VERB_EXTREME)) *vo_->os() << "InitializeInverse()" << std::endl;
+  if (vo_->os_OK(Teuchos::VERB_EXTREME) ) *vo_->os() << "InitializeInverse()" << std::endl;
 
   AMANZI_ASSERT(inited_);
   AMANZI_ASSERT(h_.get());
@@ -69,7 +69,7 @@ void
 DirectMethodAmesos::ComputeInverse()
 {
   Teuchos::OSTab tab = vo_->getOSTab();
-  if (vo_->os_OK(Teuchos::VERB_EXTREME)) *vo_->os() << "ComputeInverse()" << std::endl;
+  if (vo_->os_OK(Teuchos::VERB_EXTREME) ) *vo_->os() << "ComputeInverse()" << std::endl;
 
   if (!updated_) {
     // NOTE, this appears to be a bug in Klu, where if it has not been actually
@@ -168,18 +168,18 @@ std::string
 DirectMethodAmesos::returned_code_string() const
 {
   switch (returned_code_) {
-  case (0):
-    return "success";
-  case (1):
-    return "singular matrix";
-  case (2):
-    return "non-symmetric matrix";
-  case (3):
-    return "non-positive-definite matrix";
-  case (4):
-    return "insufficient memory";
-  case (-22):
-    return "singular matrix found on NumericFactorization";
+    case (0):
+      return "success";
+    case (1):
+      return "singular matrix";
+    case (2):
+      return "non-symmetric matrix";
+    case (3):
+      return "non-positive-definite matrix";
+    case (4):
+      return "insufficient memory";
+    case (-22):
+      return "singular matrix found on NumericFactorization";
   }
   return "unknown error";
 }

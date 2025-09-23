@@ -46,6 +46,7 @@
   <ParameterList name="PK operator">
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
     <ParameterList name="diffusion curved face">
+      <Parameter name="penalty" type="double" value="1.0"/>
       <Parameter name="discretization primary" type="string" value="mfd: curved face"/>
       <Parameter name="discretization secondary" type="string" value="mfd: default"/>
       <Parameter name="schema" type="Array(string)" value="{face, cell}"/>

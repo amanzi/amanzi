@@ -67,7 +67,7 @@ namespace Evaluators {
 
 class Porosity {
  public:
-  virtual ~Porosity(){};
+  virtual ~Porosity() {};
   virtual double PorosityValue(double p) = 0;
   virtual double dPorositydPressure(double p) = 0; // derivative wrt to pressure
 

@@ -22,8 +22,8 @@
 namespace Amanzi {
 namespace SimulatorFactory {
 
-std::unique_ptr<Simulator>
-Create(const std::string& input_filename, const std::string& output_prefix);
+std::unique_ptr<Simulator> Create(const std::string& input_filename,
+                                  const std::string& output_prefix);
 
 } // namespace SimulatorFactory
 } // namespace Amanzi

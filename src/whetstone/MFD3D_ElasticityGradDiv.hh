@@ -39,7 +39,7 @@ class MFD3D_ElasticityGradDiv : public MFD3D {
  public:
   MFD3D_ElasticityGradDiv(const Teuchos::ParameterList& plist,
                           const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : MFD3D(mesh){};
+    : MFD3D(mesh) {};
 
   // required methods
   // -- schema

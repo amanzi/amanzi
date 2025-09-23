@@ -83,7 +83,8 @@ FCT::Compute(const CompositeVector& flux_lo,
     bounds = limiter_->get_bounds();
   } else {
     Teuchos::RCP<CompositeVector> tmp_bounds;
-    limiter_->BoundsForCells(*field_, bc_model, bc_value, OPERATOR_LIMITER_STENCIL_C2C_ALL, tmp_bounds);
+    limiter_->BoundsForCells(
+      *field_, bc_model, bc_value, OPERATOR_LIMITER_STENCIL_C2C_ALL, tmp_bounds);
     bounds = tmp_bounds;
   }
   auto& bounds_c = *bounds->ViewComponent("cell");
@@ -121,10 +122,8 @@ FCT::Compute(const CompositeVector& flux_lo,
     if (cells.size() == 2) {
       double tmp = -flux_ho_f[0][f] + flux_lo_f[0][f];
 
-      if (tmp > 0.0)
-        alpha[f] = std::min({ alpha[f], pos_c[0][cells[0]], neg_c[0][cells[1]] });
-      else
-        alpha[f] = std::min({ alpha[f], neg_c[0][cells[0]], pos_c[0][cells[1]] });
+      if (tmp > 0.0) alpha[f] = std::min({ alpha[f], pos_c[0][cells[0]], neg_c[0][cells[1]] });
+      else alpha[f] = std::min({ alpha[f], neg_c[0][cells[0]], pos_c[0][cells[1]] });
     }
   }
 

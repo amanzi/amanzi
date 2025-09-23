@@ -34,7 +34,7 @@ FunctionPolynomial::FunctionPolynomial(const std::vector<double>& c,
   int n = pmax_ - pmin_ + 1;
   c_.resize(n);
   c_.assign(n, 0.0);
-  for (int j = 0; j < c.size(); ++j) c_[p[j] - pmin_] += c[j];
+  for (int j = 0; j < c.size() ; ++j) c_[p[j] - pmin_] += c[j];
   x0_ = x0;
 }
 

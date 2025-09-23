@@ -29,21 +29,21 @@ namespace Operators {
 
 class InterfaceWhetStone {
  public:
-  InterfaceWhetStone(){};
-  virtual ~InterfaceWhetStone(){};
+  InterfaceWhetStone() {};
+  virtual ~InterfaceWhetStone() {};
 
-  virtual void MassMatrix(int c, WhetStone::DenseMatrix& Acell){};
-  virtual void MassMatrixInverse(int c, WhetStone::DenseMatrix& Acell){};
-  virtual void StiffnessMatrix(int c, WhetStone::DenseMatrix& Acell){};
-  virtual void FaceMatrixJump(int f, int c1, int c2, WhetStone::DenseMatrix& Aface){};
+  virtual void MassMatrix(int c, WhetStone::DenseMatrix& Acell) {};
+  virtual void MassMatrixInverse(int c, WhetStone::DenseMatrix& Acell) {};
+  virtual void StiffnessMatrix(int c, WhetStone::DenseMatrix& Acell) {};
+  virtual void FaceMatrixJump(int f, int c1, int c2, WhetStone::DenseMatrix& Aface) {};
 };
 
 
-template <class T, class U>
+template<class T, class U>
 class InterfaceWhetStoneDG : public InterfaceWhetStone {
  public:
   InterfaceWhetStoneDG(const Teuchos::RCP<T>& dg, const std::shared_ptr<U>& coef)
-    : dg_(dg), coef_(coef){};
+    : dg_(dg), coef_(coef) {};
 
   virtual void StiffnessMatrix(int c, WhetStone::DenseMatrix& Acell) override
   {
@@ -61,11 +61,11 @@ class InterfaceWhetStoneDG : public InterfaceWhetStone {
 };
 
 
-template <class T, class U>
+template<class T, class U>
 class InterfaceWhetStoneMFD : public InterfaceWhetStone {
  public:
   InterfaceWhetStoneMFD(const Teuchos::RCP<T>& mfd, const std::shared_ptr<U>& coef)
-    : mfd_(mfd), coef_(coef){};
+    : mfd_(mfd), coef_(coef) {};
 
   virtual void MassMatrix(int c, WhetStone::DenseMatrix& Acell) override
   {

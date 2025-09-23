@@ -21,7 +21,7 @@ This list is optional.
 
   * `"regions`" ``[Array(string)]`` is the list of regions where this model should be applied.
 
-  * `"xxx parameters`" ``[list]`` provides parameters for the model specified by variable 
+  * `"xxx parameters`" ``[list]`` provides parameters for the model specified by variable
     `"multiscale model`".
 
 */
@@ -39,7 +39,7 @@ namespace Transport {
 
 class MultiscaleTransportPorosity {
  public:
-  virtual ~MultiscaleTransportPorosity(){};
+  virtual ~MultiscaleTransportPorosity() {};
 
   // Compute solute flux: icomp - component id, phi - matrix porosity,
   // tcc_m_aux - vector of concentration values in secondary nodes,

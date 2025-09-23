@@ -54,8 +54,8 @@ class MyRemapDGc : public Operators::RemapDG<CompositeVector> {
       dt_output_(0.1),
       l2norm_(-1.0),
       T1_(T1),
-      tini_(0.0){};
-  ~MyRemapDGc(){};
+      tini_(0.0) {};
+  ~MyRemapDGc() {};
 
   // create basic structures at time zero
   void Init(const Teuchos::RCP<WhetStone::DG_Modal> dg);
@@ -95,7 +95,7 @@ class MyRemapDGc : public Operators::RemapDG<CompositeVector> {
 void
 MyRemapDGc::Init(const Teuchos::RCP<WhetStone::DG_Modal> dg)
 {
-  if (mesh0_->getComm()->MyPID() == 0) std::cout << "Computing static data on mesh scheleton...\n";
+  if (mesh0_->getComm() ->MyPID() == 0) std::cout << "Computing static data on mesh scheleton...\n";
   InitializeOperators(dg);
   StaticEdgeFaceVelocities();
   StaticCellVelocity();
@@ -120,7 +120,7 @@ MyRemapDGc::Init(const Teuchos::RCP<WhetStone::DG_Modal> dg)
     J0_[c].set_origin(mesh0_->getCellCentroid(c));
   }
 
-  if (mesh0_->getComm()->MyPID() == 0) std::cout << "Computing static data in mesh cells...\n";
+  if (mesh0_->getComm() ->MyPID() == 0) std::cout << "Computing static data in mesh cells...\n";
   StaticFaceCoVelocity();
   StaticCellCoVelocity();
 }
@@ -132,7 +132,7 @@ MyRemapDGc::Init(const Teuchos::RCP<WhetStone::DG_Modal> dg)
 void
 MyRemapDGc::ReInit(double tini)
 {
-  if (mesh0_->getComm()->MyPID() == 0) std::cout << "Computing static data on mesh scheleton...\n";
+  if (mesh0_->getComm() ->MyPID() == 0) std::cout << "Computing static data on mesh scheleton...\n";
   for (int f = 0; f < nfaces_wghost_; ++f) velf_vec0_[f] += velf_vec_[f];
 
   if (mesh0_->hasEdges()) {
@@ -153,12 +153,12 @@ MyRemapDGc::ReInit(double tini)
 
   StaticCellVelocity();
 
-  if (mesh0_->getComm()->MyPID() == 0) std::cout << "Computing static data in mesh cells...\n";
+  if (mesh0_->getComm() ->MyPID() == 0) std::cout << "Computing static data in mesh cells...\n";
   StaticFaceCoVelocity();
   StaticCellCoVelocity();
 
   // re-calculate static matrices
-  if (mesh0_->getComm()->MyPID() == 0) std::cout << "Computing static matrices for operators...\n";
+  if (mesh0_->getComm() ->MyPID() == 0) std::cout << "Computing static matrices for operators...\n";
   op_adv_->Setup(velc_, true);
   op_reac_->Setup(det_, true);
   op_flux_->Setup(velf_.ptr(), true);
@@ -259,7 +259,7 @@ MyRemapDGc::CollectStatistics(double t, const CompositeVector& u)
   if (tglob >= tprint_) {
     op_reac_->UpdateMatrices(t);
     auto& matrices = op_reac_->local_op()->matrices;
-    for (int n = 0; n < matrices.size(); ++n) matrices[n].Inverse();
+    for (int n = 0; n < matrices.size() ; ++n) matrices[n].Inverse();
 
     auto& rhs = *op_reac_->global_operator()->rhs();
     op_reac_->global_operator()->Apply(u, rhs);
@@ -305,7 +305,7 @@ MyRemapDGc::CollectStatistics(double t, const CompositeVector& u)
 * Remap of polynomilas in two dimensions. Explicit time scheme.
 * Dual formulation places gradient and jumps on a test function.
 ***************************************************************** */
-template <class AnalyticDG>
+template<class AnalyticDG>
 void
 RemapTestsCurved(std::string file_name,
                  int nx,

@@ -41,13 +41,13 @@ class Polynomial;
 class MeshMapsBase {
  public:
   MeshMapsBase(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-    : mesh0_(mesh), mesh1_(mesh), d_(mesh1_->getSpaceDimension()){};
+    : mesh0_(mesh), mesh1_(mesh), d_(mesh1_->getSpaceDimension()) {};
 
   MeshMapsBase(Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
                Teuchos::RCP<const AmanziMesh::Mesh> mesh1)
-    : mesh0_(mesh0), mesh1_(mesh1), d_(mesh1_->getSpaceDimension()){};
+    : mesh0_(mesh0), mesh1_(mesh1), d_(mesh1_->getSpaceDimension()) {};
 
-  virtual ~MeshMapsBase(){};
+  virtual ~MeshMapsBase() {};
 
   // Maps
   // -- pseudo-velocity
@@ -60,18 +60,19 @@ class MeshMapsBase {
 
   // -- Nanson formula. Face deformation is defined completely by the
   //    deformation map in this formula: X = x + map(x)
-  void
-  NansonFormula(int f, const VectorSpaceTimePolynomial& map, VectorSpaceTimePolynomial& cn) const;
+  void NansonFormula(int f,
+                     const VectorSpaceTimePolynomial& map,
+                     VectorSpaceTimePolynomial& cn) const;
 
   // -- Jacobian
   void Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const;
 
   // -- matrix of cofactors
-  template <typename Matrix>
+  template<typename Matrix>
   void Cofactors(const Matrix& J, Matrix& C) const;
 
   // -- determinant
-  template <typename Matrix, typename Vector>
+  template<typename Matrix, typename Vector>
   void Determinant(const Matrix& J, Vector& det) const;
 
   // Miscalleneous
@@ -94,7 +95,7 @@ class MeshMapsBase {
 /* ******************************************************************
 * Calculation of matrix of cofactors.
 ****************************************************************** */
-template <typename Matrix>
+template<typename Matrix>
 void
 MeshMapsBase::Cofactors(const Matrix& J, Matrix& C) const
 {
@@ -129,7 +130,7 @@ MeshMapsBase::Cofactors(const Matrix& J, Matrix& C) const
 /* ******************************************************************
 * Calculate detminant of a matrix.
 ****************************************************************** */
-template <typename Matrix, typename Poly>
+template<typename Matrix, typename Poly>
 void
 MeshMapsBase::Determinant(const Matrix& J, Poly& det) const
 {

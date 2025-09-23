@@ -141,12 +141,15 @@ class HDF5_MPI {
   void createXdmfMeshVisit_();
 
   Teuchos::XMLObject addXdmfHeaderGlobal_();
-  Teuchos::XMLObject
-  addXdmfHeaderLocal_(const std::string& name, const double value, const int cycle);
+  Teuchos::XMLObject addXdmfHeaderLocal_(const std::string& name,
+                                         const double value,
+                                         const int cycle);
   Teuchos::XMLObject addXdmfTopo_(const int cycle);
   Teuchos::XMLObject addXdmfGeo_(const int cycle);
-  Teuchos::XMLObject
-  addXdmfAttribute_(std::string varname, std::string location, int length, std::string h5path);
+  Teuchos::XMLObject addXdmfAttribute_(std::string varname,
+                                       std::string location,
+                                       int length,
+                                       std::string h5path);
 
   Teuchos::XMLObject findGridNode_(Teuchos::XMLObject xmlobject);
   Teuchos::XMLObject findMeshNode_(Teuchos::XMLObject xmlobject);

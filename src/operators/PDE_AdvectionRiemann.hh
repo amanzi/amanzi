@@ -51,7 +51,7 @@ class PDE_AdvectionRiemann : public PDE_Advection {
 
   // main members
   // -- setup for various flux algorithms
-  virtual void Setup(const CompositeVector& u) final{};
+  virtual void Setup(const CompositeVector& u) final {};
 
   void Setup(const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial>>& Kc,
              const Teuchos::RCP<std::vector<WhetStone::Polynomial>>& Kf)
@@ -68,10 +68,10 @@ class PDE_AdvectionRiemann : public PDE_Advection {
   // -- generate linearized operator: standard interface
   using PDE_Advection::UpdateMatrices;
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                              const Teuchos::Ptr<const CompositeVector>& p) final{};
+                              const Teuchos::Ptr<const CompositeVector>& p) final {};
 
-  virtual void
-  UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u, double (*)(double)) final{};
+  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
+                              double (*)(double)) final {};
 
   // -- generate linearized operator: new interface
   void UpdateMatrices(const std::vector<WhetStone::Polynomial>& u);

@@ -50,10 +50,11 @@ interface about how to update the continuation parameter.
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 class SolverContinuation : public Solver<Vector, VectorSpace> {
  public:
-  SolverContinuation(Teuchos::ParameterList& plist) : plist_(plist){};
+  SolverContinuation(Teuchos::ParameterList& plist)
+    : plist_(plist) {};
 
   SolverContinuation(Teuchos::ParameterList& plist,
                      const Teuchos::RCP<SolverFnBase<Vector>>& fn,
@@ -110,7 +111,7 @@ class SolverContinuation : public Solver<Vector, VectorSpace> {
 /* ******************************************************************
 * Public Init method.
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 void
 SolverContinuation<Vector, VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn,
                                               const VectorSpace& map)
@@ -124,7 +125,7 @@ SolverContinuation<Vector, VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Ve
 /* ******************************************************************
 * Initialization of the NKA solver.
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 void
 SolverContinuation<Vector, VectorSpace>::Init_()
 {
@@ -142,7 +143,7 @@ SolverContinuation<Vector, VectorSpace>::Init_()
 /* ******************************************************************
 * The body of NKA solver
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 int
 SolverContinuation<Vector, VectorSpace>::Solve_(const Teuchos::RCP<Vector>& u)
 {
@@ -166,7 +167,9 @@ SolverContinuation<Vector, VectorSpace>::Solve_(const Teuchos::RCP<Vector>& u)
 
     num_itrs_ += solver_->num_itrs();
 
-    if (ierr) { return solver_->returned_code(); }
+    if (ierr) {
+      return solver_->returned_code();
+    }
 
     itr++;
   } while (itr <= n_cont_steps_);

@@ -34,7 +34,7 @@ WRMEvaluator::WRMEvaluator(Teuchos::ParameterList& plist, const Teuchos::RCP<WRM
 WRMEvaluator::WRMEvaluator(const WRMEvaluator& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
     wrm_(other.wrm_),
-    pressure_key_(other.pressure_key_){};
+    pressure_key_(other.pressure_key_) {};
 
 
 /* ******************************************************************

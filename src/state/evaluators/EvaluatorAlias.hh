@@ -25,12 +25,12 @@ namespace Amanzi {
 
 class EvaluatorAlias : public Evaluator {
  public:
-  EvaluatorAlias(const Key& key, const Tag& alias_tag, const Tag& target_tag) :
-    Evaluator(EvaluatorType::ALIAS),
-    my_key_(key),
-    my_tag_(alias_tag),
-    target_key_(key),
-    target_tag_(target_tag)
+  EvaluatorAlias(const Key& key, const Tag& alias_tag, const Tag& target_tag)
+    : Evaluator(EvaluatorType::ALIAS),
+      my_key_(key),
+      my_tag_(alias_tag),
+      target_key_(key),
+      target_tag_(target_tag)
   {}
 
   virtual Teuchos::RCP<Evaluator> Clone() const override;
@@ -44,8 +44,10 @@ class EvaluatorAlias : public Evaluator {
 
   bool Update(State& S, const Key& request) override;
 
-  bool
-  UpdateDerivative(State& S, const Key& requester, const Key& wrt_key, const Tag& wrt_tag) override;
+  bool UpdateDerivative(State& S,
+                        const Key& requester,
+                        const Key& wrt_key,
+                        const Tag& wrt_tag) override;
 
   bool IsDependency(const State& S, const Key& key, const Tag& tag) const override;
 
@@ -54,8 +56,7 @@ class EvaluatorAlias : public Evaluator {
   //
   // Searches the dependency graph to see if this evaluator depends upon the
   // evaluator named key.
-  bool
-  IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const override;
+  bool IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const override;
 
   // Does this provide key?
   // Returns true if key is a field owned by this evaluator, false otherwise.
@@ -79,4 +80,3 @@ class EvaluatorAlias : public Evaluator {
 };
 
 } // namespace Amanzi
-

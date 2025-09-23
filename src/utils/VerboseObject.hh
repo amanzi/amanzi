@@ -53,7 +53,7 @@ In general, the levels are as follows:
      Update() writes info about the state of the dependency graph trace to
      debug whether it is actually updated or not.
 
-     
+
 Example:
 
 .. code-block:: xml

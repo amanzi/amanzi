@@ -225,7 +225,8 @@ EvaluatorIndependentFromFile::Update_(State& S)
   }
 
 
-  if (locname_ == AmanziMesh::Entity_kind::CELL && (cv.HasComponent("boundary_face") || cv.HasComponent("face")))
+  if (locname_ == AmanziMesh::Entity_kind::CELL &&
+      (cv.HasComponent("boundary_face") || cv.HasComponent("face")))
     DeriveFaceValuesFromCellValues(cv);
 }
 

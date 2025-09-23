@@ -59,26 +59,28 @@ InputConverterU::TranslateFlow_(const std::string& mode,
   std::string update_upwind("every timestep");
 
   // process expert parameters
-  bool flag;
-  node = GetUniqueElementByTagsString_(
-    "unstructured_controls, unstr_flow_controls, rel_perm_method", flag);
+  bool flag, use_overburden_stress(false);
+  std::string prefix("unstructured_controls, unstr_flow_controls, ");
+
+  node = GetUniqueElementByTagsString_(prefix + "rel_perm_method", flag);
   if (flag) rel_perm = mm.transcode(node->getTextContent());
 
   rel_perm_out = rel_perm;
   Amanzi::replace_all(rel_perm_out, "-", ": ");
   std::replace(rel_perm_out.begin(), rel_perm_out.end(), '_', ' ');
 
-  node = GetUniqueElementByTagsString_(
-    "unstructured_controls, unstr_flow_controls, update_upwind_frequency", flag);
+  node = GetUniqueElementByTagsString_(prefix + "update_upwind_frequency", flag);
   if (flag) update_upwind = mm.transcode(node->getTextContent());
   replace(update_upwind.begin(), update_upwind.end(), '_', ' ');
 
-  node = GetUniqueElementByTagsString_(
-    "unstructured_controls, unstr_flow_controls, optional_fields", flag);
+  node = GetUniqueElementByTagsString_(prefix + "optional_fields", flag);
   if (flag) {
     auto fields = CharToStrings_(mm.transcode(node->getTextContent()));
     out_list.set<Teuchos::Array<std::string>>("optional fields", fields);
   }
+
+  node = GetUniqueElementByTagsString_(prefix + "use_overburden_stress", flag);
+  if (flag) use_overburden_stress = GetTextContentL_(node);
 
   node = GetUniqueElementByTagsString_(
     "unstructured_controls, unstr_nonlinear_solver, max_correction_change", flag);
@@ -94,6 +96,9 @@ InputConverterU::TranslateFlow_(const std::string& mode,
     out_list.sublist("physical models and assumptions")
       .set<bool>("flow and transport in fractures", true);
   }
+
+  out_list.sublist("physical models and assumptions")
+    .set<bool>("use overburden stress", use_overburden_stress);
 
   if (pk_model == "darcy") {
     flow_list = &out_list;
@@ -718,10 +723,9 @@ InputConverterU::TranslateFlowBCs_(const std::string& domain)
 
   // correct list of boundary conditions for given domain
   bool flag;
-  if (domain == "matrix")
-    node = GetUniqueElementByTagsString_("boundary_conditions", flag);
-  else
+  if (domain == "fracture")
     node = GetUniqueElementByTagsString_("fracture_network, boundary_conditions", flag);
+  else node = GetUniqueElementByTagsString_("boundary_conditions", flag);
   if (!flag) return out_list;
 
   node_list = node->getChildNodes();
@@ -762,7 +766,9 @@ InputConverterU::TranslateFlowBCs_(const std::string& domain)
 
     // -- identify a BC that do not require forms (the global BC)
     bool global_bc(false);
-    if (bctype_in == "linear_pressure" || bctype_in == "linear_hydrostatic") { global_bc = true; }
+    if (bctype_in == "linear_pressure" || bctype_in == "linear_hydrostatic") {
+      global_bc = true;
+    }
 
     // -- identify a hard-coded BC that uses spatially dependent functions
     //    temporarily, we assume that it is also the global BC.
@@ -821,23 +827,23 @@ InputConverterU::TranslateFlowBCs_(const std::string& domain)
     if (bctype_in == "inward_mass_flux") {
       bctype = "mass flux";
       bcname = "outward mass flux";
-      for (int k = 0; k < bcs.values.size(); k++) bcs.values[k] *= -1;
+      for (int k = 0; k < bcs.values.size() ; k++) bcs.values[k] *= -1;
     } else if (bctype_in == "inward_mass_flux_distributed") {
       bctype = "mass flux";
       bcname = "outward mass flux";
-      for (int k = 0; k < bcs.values.size(); k++) bcs.values[k] *= -1;
-      for (int k = 0; k < bcs.forms.size(); k++) bcs.forms[k] = "volume";
+      for (int k = 0; k < bcs.values.size() ; k++) bcs.values[k] *= -1;
+      for (int k = 0; k < bcs.forms.size() ; k++) bcs.forms[k] = "volume";
     } else if (bctype_in == "outward_mass_flux") {
       bctype = "mass flux";
       bcname = "outward mass flux";
     } else if (bctype_in == "outward_volumetric_flux") {
       bctype = "mass flux";
       bcname = "outward mass flux";
-      for (int k = 0; k < bcs.values.size(); k++) bcs.values[k] *= rho_;
+      for (int k = 0; k < bcs.values.size() ; k++) bcs.values[k] *= rho_;
     } else if (bctype_in == "inward_volumetric_flux") {
       bctype = "mass flux";
       bcname = "outward mass flux";
-      for (int k = 0; k < bcs.values.size(); k++) bcs.values[k] *= -rho_;
+      for (int k = 0; k < bcs.values.size() ; k++) bcs.values[k] *= -rho_;
     } else if (bctype_in == "uniform_pressure" || bctype_in == "linear_pressure") {
       bctype = "pressure";
       bcname = "boundary pressure";
@@ -848,7 +854,7 @@ InputConverterU::TranslateFlowBCs_(const std::string& domain)
       bctype = "seepage face";
       bcname = "outward mass flux";
       bcs.values = bcs.fluxes;
-      for (int k = 0; k < bcs.values.size(); k++) bcs.values[k] *= -1;
+      for (int k = 0; k < bcs.values.size() ; k++) bcs.values[k] *= -1;
     } else if (bctype_in == "field_pressure") {
       bctype = "coupling";
       bcname = "boundary pressure";
@@ -969,10 +975,8 @@ InputConverterU::TranslateSources_(const std::string& domain,
   DOMNode *node, *phase;
   DOMElement* element;
 
-  if (domain == "fracture")
-    node = GetUniqueElementByTagsString_("fracture_network, sources", flag);
-  else
-    node = GetUniqueElementByTagsString_("sources", flag);
+  if (domain == "fracture") node = GetUniqueElementByTagsString_("fracture_network, sources", flag);
+  else node = GetUniqueElementByTagsString_("sources", flag);
 
   if (!flag) return out_list;
   children = node->getChildNodes();
@@ -1006,10 +1010,8 @@ InputConverterU::TranslateSources_(const std::string& domain,
 
     if (srctype == "volume_weighted") {
       weight = "volume";
-      if (pkname == "flow")
-        unit = "kg/s";
-      else if (pkname == "energy")
-        unit = "J/s";
+      if (pkname == "flow") unit = "kg/s";
+      else if (pkname == "energy") unit = "J/s";
     } else if (srctype == "perm_weighted") {
       weight = "permeability";
       unit = "kg/s";

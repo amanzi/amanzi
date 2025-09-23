@@ -41,7 +41,9 @@ RegionPoint::inside(const Point& p) const
   }
 
   bool result(true);
-  for (int i = 0; i != p.dim(); ++i) { result = result & (fabs(p[i] - p_[i]) < tol_); }
+  for (int i = 0; i != p.dim(); ++i) {
+    result = result & (fabs(p[i] - p_[i]) < tol_);
+  }
   return result;
 }
 

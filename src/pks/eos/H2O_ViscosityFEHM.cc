@@ -42,7 +42,7 @@ H2O_ViscosityFEHM::H2O_ViscosityFEHM(Teuchos::ParameterList& eos_plist)
     z8_(-0.25147022e-05),
     y9_(0.47180171e-10),
     z9_(0.22144660e-05),
-    T0_(273.15){};
+    T0_(273.15) {};
 
 
 double

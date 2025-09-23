@@ -152,7 +152,9 @@ TEST(ADVANCE_TWO_FRACTURES)
 
   // test that solute enter the second fracture
   double tcc_max(0.0);
-  for (int n = 0; n < block.size(); ++n) { tcc_max = std::max(tcc_max, tcc[0][block[n]]); }
+  for (int n = 0; n < block.size(); ++n) {
+    tcc_max = std::max(tcc_max, tcc[0][block[n]]);
+  }
   double tmp = tcc_max;
   mesh->getComm()->MaxAll(&tmp, &tcc_max, 1);
   CHECK(tcc_max > 0.25);

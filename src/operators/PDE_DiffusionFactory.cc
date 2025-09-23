@@ -37,7 +37,7 @@ namespace Operators {
 * Constructors
 ****************************************************************** */
 PDE_DiffusionFactory::PDE_DiffusionFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-  : mesh_(mesh), const_k_(1.0), gravity_(false), manifolds_(false), const_b_(0.0){};
+  : mesh_(mesh), const_k_(1.0), gravity_(false), manifolds_(false), const_b_(0.0) {};
 
 
 PDE_DiffusionFactory::PDE_DiffusionFactory(Teuchos::ParameterList& oplist,
@@ -97,8 +97,8 @@ PDE_DiffusionFactory::Create(const Teuchos::RCP<Operator>& global_op)
 
   gravity_ = false;
   manifolds_ = false;
-  if (oplist_.isParameter("gravity")) gravity_ = oplist_.get<bool>("gravity");
-  if (oplist_.isParameter("manifolds")) manifolds_ = oplist_.get<bool>("manifolds");
+  if (oplist_.isParameter("gravity") ) gravity_ = oplist_.get<bool>("gravity");
+  if (oplist_.isParameter("manifolds") ) manifolds_ = oplist_.get<bool>("manifolds");
 
   if (gravity_ && norm(g_) == 0.0) {
     double tmp = oplist_.get<double>("gravity magnitude");
@@ -167,19 +167,15 @@ PDE_DiffusionFactory::Create(const Teuchos::RCP<Operator>& global_op)
     op->SetConstantTensorCoefficient(const_K_);
   }
 
-  if (k_ != Teuchos::null)
-    op->SetScalarCoefficient(k_, dkdu_);
-  else
-    op->SetConstantScalarCoefficient(const_k_);
+  if (k_ != Teuchos::null) op->SetScalarCoefficient(k_, dkdu_);
+  else op->SetConstantScalarCoefficient(const_k_);
 
   if (gravity_) {
     auto op_tmp = Teuchos::rcp_dynamic_cast<PDE_DiffusionWithGravity>(op);
     op_tmp->SetGravity(g_);
 
-    if (b_ != Teuchos::null)
-      op_tmp->SetDensity(b_);
-    else
-      op_tmp->SetDensity(const_b_);
+    if (b_ != Teuchos::null) op_tmp->SetDensity(b_);
+    else op_tmp->SetDensity(const_b_);
   }
 
   return op;

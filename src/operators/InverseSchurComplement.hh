@@ -20,10 +20,11 @@ namespace AmanziSolvers {
 //
 // Class for assembled inverse methods.
 //
-class InverseSchurComplement : public Inverse<Operators::Operator,
-                                              Operators::Operator,
-                                              CompositeVector,
-                                              CompositeVectorSpace> {
+class InverseSchurComplement
+  : public Inverse<Operators::Operator,
+                   Operators::Operator,
+                   CompositeVector,
+                   CompositeVectorSpace> {
  public:
   InverseSchurComplement() {}
 

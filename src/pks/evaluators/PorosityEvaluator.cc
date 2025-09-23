@@ -65,7 +65,7 @@ PorosityEvaluator::PorosityEvaluator(const PorosityEvaluator& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
     pom_(other.pom_),
     initialized_(other.initialized_),
-    pressure_key_(other.pressure_key_){};
+    pressure_key_(other.pressure_key_) {};
 
 
 /* ******************************************************************

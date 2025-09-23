@@ -89,8 +89,9 @@ class Beaker {
   // i/o
   void Display() const;
   void DisplayComponents(const BeakerState& state) const;
-  void
-  DisplayTotalColumns(const double time, const BeakerState& total, const bool display_free) const;
+  void DisplayTotalColumns(const double time,
+                           const BeakerState& total,
+                           const bool display_free) const;
   void DisplayResults() const;
 
   // accessors and modifiers
@@ -116,8 +117,9 @@ class Beaker {
   const std::vector<Colloid>& colloids() const { return colloids_; }
 
  protected:
-  void
-  SetupActivityModel(std::string model, std::string pitzer_database, std::string pitzer_jfunction);
+  void SetupActivityModel(std::string model,
+                          std::string pitzer_database,
+                          std::string pitzer_jfunction);
   void VerifyState(const BeakerState& state) const;
 
   void AddIonExchangeRxn(const IonExchangeRxn& ionx_rxn);

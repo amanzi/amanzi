@@ -32,7 +32,7 @@ namespace Multiphase {
 class WRMmp_vanGenuchten : public WRMmp {
  public:
   WRMmp_vanGenuchten(Teuchos::ParameterList& plist);
-  ~WRMmp_vanGenuchten(){};
+  ~WRMmp_vanGenuchten() {};
 
   // required methods from the base class
   virtual double k_relative(double sl, int phase);

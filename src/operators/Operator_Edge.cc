@@ -74,12 +74,16 @@ Operator_Edge::ApplyMatrixFreeOp(const Op_Cell_Edge& op,
       int nedges = edges.size();
 
       WhetStone::DenseVector v(nedges), av(nedges);
-      for (int n = 0; n != nedges; ++n) { v(n) = Xe[0][edges[n]]; }
+      for (int n = 0; n != nedges; ++n) {
+        v(n) = Xe[0][edges[n]];
+      }
 
       const WhetStone::DenseMatrix& Acell = op.matrices[c];
       Acell.Multiply(v, av, false);
 
-      for (int n = 0; n != nedges; ++n) { Ye[0][edges[n]] += av(n); }
+      for (int n = 0; n != nedges; ++n) {
+        Ye[0][edges[n]] += av(n);
+      }
     }
   }
   return 0;
@@ -100,7 +104,9 @@ Operator_Edge::ApplyMatrixFreeOp(const Op_Edge_Edge& op,
   Epetra_MultiVector& Yc = *Y.ViewComponent("edge");
 
   for (int k = 0; k != Xc.NumVectors(); ++k) {
-    for (int e = 0; e != nedges_owned; ++e) { Yc[k][e] += Xc[k][e] * (*op.diag)[k][e]; }
+    for (int e = 0; e != nedges_owned; ++e) {
+      Yc[k][e] += Xc[k][e] * (*op.diag)[k][e];
+    }
   }
   return 0;
 }

@@ -30,7 +30,7 @@ class SSM_HardinDrnevich : public SSM {
     Gmax_ = plist.get<double>("maximum shear stress");
     gamma_ref_ = plist.get<double>("reference shear strain");
   }
-  virtual ~SSM_HardinDrnevich(){};
+  virtual ~SSM_HardinDrnevich() {};
 
   // gamma - shear strain, e - volumetric strain
   virtual double ShearStress(double gamma) { return Gmax_ / (1.0 + gamma / gamma_ref_); }

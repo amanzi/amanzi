@@ -52,8 +52,8 @@ class MyRemapDG : public Operators::RemapDG<TreeVector> {
       dt_output_(0.1),
       l2norm_(-1.0),
       T1_(1.0),
-      tini_(0.0){};
-  ~MyRemapDG(){};
+      tini_(0.0) {};
+  ~MyRemapDG() {};
 
   // time control
   double global_time(double t) { return tini_ + t * T1_; }
@@ -111,7 +111,7 @@ MyRemapDG::CollectStatistics(double t, const TreeVector& u)
     op_reac_->Setup(det_, false);
     op_reac_->UpdateMatrices(t);
     auto& matrices = op_reac_->local_op()->matrices;
-    for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
+    for (int n = 0; n < matrices.size() ; ++n) matrices[n].InverseSPD();
 
     auto& rhs = *op_reac_->global_operator()->rhs();
     op_reac_->global_operator()->Apply(*u.SubVector(0)->Data(), rhs);

@@ -56,9 +56,10 @@ namespace Operators {
 
 class Upwind {
  public:
-  Upwind(){};
-  Upwind(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh), face_comp_("face"){};
-  virtual ~Upwind(){};
+  Upwind() {};
+  Upwind(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    : mesh_(mesh), face_comp_("face") {};
+  virtual ~Upwind() {};
 
   // main methods
   // -- initialization of control parameters

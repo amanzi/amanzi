@@ -9,10 +9,10 @@
 */
 
 /*
-  MoMas benchmark example: 2 component Hydrogen (H) and water (W) to show gas 
-  phase appearance/disappearance with assumptions/model as in [Gharbia, Jaffre' 14]. 
-  Primary variables are pressure liquid, saturation liquid, and molar density 
-  of hydrogen in liquid phase. 
+  MoMas benchmark example: 2 component Hydrogen (H) and water (W) to show gas
+  phase appearance/disappearance with assumptions/model as in [Gharbia, Jaffre' 14].
+  Primary variables are pressure liquid, saturation liquid, and molar density
+  of hydrogen in liquid phase.
 */
 
 #include <cstdlib>
@@ -133,7 +133,9 @@ run_test(const std::string& domain, const std::string& filename)
   std::vector<std::vector<double>> nlfv_data;
 
   while (t < tend && iloop < 1000) {
-    while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 2.0; }
+    while (MPK->AdvanceStep(t, t + dt, false)) {
+      dt /= 2.0;
+    }
 
     MPK->CommitStep(t, t + dt, Tags::DEFAULT);
 

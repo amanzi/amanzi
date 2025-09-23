@@ -52,10 +52,8 @@ Mesh_MOAB::Mesh_MOAB(const std::string& filename,
     }
   }
 
-  if (!mbcomm_.get() || mbcomm_->size() == 1)
-    serial_run = true;
-  else
-    serial_run = false;
+  if (!mbcomm_.get() || mbcomm_->size() == 1) serial_run = true;
+  else serial_run = false;
 
   if (!serial_run) {
     // Load partitioned mesh - serial read of mesh with partition
@@ -471,7 +469,7 @@ Mesh_MOAB::init_pface_dirs()
   ErrorCheck_(result, "Could not get exchange tag data successfully");
 
   faceflip = new bool[AllFaces.size()];
-  for (int i = 0; i < AllFaces.size(); i++) faceflip[i] = false;
+  for (int i = 0; i < AllFaces.size() ; i++) faceflip[i] = false;
 
   for (auto it = NotOwnedFaces.begin(); it != NotOwnedFaces.end(); it++) {
     moab::Range fcells;
@@ -520,8 +518,8 @@ Mesh_MOAB::init_pface_dirs()
         ErrorCheck_(result, "Problem getting tag data");
 
         if (vo_.get() && vo_->os_OK(Teuchos::VERB_LOW)) {
-          *vo_->os() << "Face cells mismatch between master and ghost (processor " << mbcomm_->rank()
-                     << ")" << std::endl;
+          *vo_->os() << "Face cells mismatch between master and ghost (processor "
+                     << mbcomm_->rank() << ")" << std::endl;
           *vo_->os() << " Face " << face_gid << std::endl;
           *vo_->os() << "Master cells " << master_cell0_gid << " " << master_cell1_gid << std::endl;
           *vo_->os() << "Ghost cells " << ghost_cell0_gid << " " << ghost_cell1_gid << std::endl;
@@ -593,12 +591,9 @@ Mesh_MOAB::init_set_info()
       std::string label = lsrgn->label();
       std::string entity_type_str = lsrgn->entity_str();
 
-      if (entity_type_str == "CELL")
-        internal_name = internal_name_of_set(rgn, CELL);
-      else if (entity_type_str == "FACE")
-        internal_name = internal_name_of_set(rgn, FACE);
-      else if (entity_type_str == "NODE")
-        internal_name = internal_name_of_set(rgn, NODE);
+      if (entity_type_str == "CELL") internal_name = internal_name_of_set(rgn, CELL);
+      else if (entity_type_str == "FACE") internal_name = internal_name_of_set(rgn, FACE);
+      else if (entity_type_str == "NODE") internal_name = internal_name_of_set(rgn, NODE);
 
       result = mbcore_->tag_get_handle(
         internal_name.c_str(), 1, MB_TYPE_INTEGER, tag, MB_TAG_CREAT | MB_TAG_SPARSE);
@@ -633,56 +628,56 @@ std::size_t
 Mesh_MOAB::getNumEntities(Entity_kind kind, Parallel_kind ptype) const
 {
   switch (kind) {
-  case NODE:
-    switch (ptype) {
-    case Parallel_kind::OWNED:
-      return !serial_run ? OwnedVerts.size() : AllVerts.size();
+    case NODE:
+      switch (ptype) {
+        case Parallel_kind::OWNED:
+          return !serial_run ? OwnedVerts.size() : AllVerts.size();
+          break;
+        case Parallel_kind::GHOST:
+          return !serial_run ? NotOwnedVerts.size() : 0;
+          break;
+        case Parallel_kind::ALL:
+          return AllVerts.size();
+          break;
+        default:
+          return 0;
+      }
       break;
-    case Parallel_kind::GHOST:
-      return !serial_run ? NotOwnedVerts.size() : 0;
+
+    case FACE:
+      switch (ptype) {
+        case Parallel_kind::OWNED:
+          return !serial_run ? OwnedFaces.size() : AllFaces.size();
+          break;
+        case Parallel_kind::GHOST:
+          return !serial_run ? NotOwnedFaces.size() : 0;
+          break;
+        case Parallel_kind::ALL:
+          return AllFaces.size();
+          break;
+        default:
+          return 0;
+      }
       break;
-    case Parallel_kind::ALL:
-      return AllVerts.size();
+
+    case CELL:
+      switch (ptype) {
+        case Parallel_kind::OWNED:
+          return !serial_run ? OwnedCells.size() : AllCells.size();
+          break;
+        case Parallel_kind::GHOST:
+          return !serial_run ? GhostCells.size() : 0;
+          break;
+        case Parallel_kind::ALL:
+          return AllCells.size();
+          break;
+        default:
+          return 0;
+      }
+
       break;
     default:
-      return 0;
-    }
-    break;
-
-  case FACE:
-    switch (ptype) {
-    case Parallel_kind::OWNED:
-      return !serial_run ? OwnedFaces.size() : AllFaces.size();
-      break;
-    case Parallel_kind::GHOST:
-      return !serial_run ? NotOwnedFaces.size() : 0;
-      break;
-    case Parallel_kind::ALL:
-      return AllFaces.size();
-      break;
-    default:
-      return 0;
-    }
-    break;
-
-  case CELL:
-    switch (ptype) {
-    case Parallel_kind::OWNED:
-      return !serial_run ? OwnedCells.size() : AllCells.size();
-      break;
-    case Parallel_kind::GHOST:
-      return !serial_run ? GhostCells.size() : 0;
-      break;
-    case Parallel_kind::ALL:
-      return AllCells.size();
-      break;
-    default:
-      return 0;
-    }
-
-    break;
-  default:
-    std::cerr << "Count requested for unknown entity type" << std::endl;
+      std::cerr << "Count requested for unknown entity type" << std::endl;
   }
 
   return 0;
@@ -1089,12 +1084,9 @@ Mesh_MOAB::getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
     }
 
     Tag tag;
-    if (kind == CELL)
-      tag = cstag;
-    else if (kind == FACE)
-      tag = sstag;
-    else if (kind == NODE)
-      tag = nstag;
+    if (kind == CELL) tag = cstag;
+    else if (kind == FACE) tag = sstag;
+    else if (kind == NODE) tag = nstag;
 
     mbcore_->get_entities_by_type_and_tag(0, MBENTITYSET, &tag, NULL, 1, sets);
     for (auto it = sets.begin(); it != sets.end(); ++it) {
@@ -1147,41 +1139,41 @@ Mesh_MOAB::getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
     nent_loc = 0; // reset and count to get the real number
 
     switch (ptype) {
-    case Parallel_kind::OWNED:
-      for (auto it = mset1.begin(); it != mset1.end(); ++it) {
-        moab::EntityHandle ent = *it;
+      case Parallel_kind::OWNED:
+        for (auto it = mset1.begin(); it != mset1.end(); ++it) {
+          moab::EntityHandle ent = *it;
 
-        mbcomm_->get_pstatus(ent, pstatus);
-        if ((pstatus & PSTATUS_NOT_OWNED) == 0) {
+          mbcomm_->get_pstatus(ent, pstatus);
+          if ((pstatus & PSTATUS_NOT_OWNED) == 0) {
+            mbcore_->tag_get_data(lid_tag, &ent, 1, &lid);
+            lsetents[nent_loc++] = lid;
+          }
+        }
+        break;
+      case Parallel_kind::GHOST:
+        for (auto it = mset1.begin(); it != mset1.end(); ++it) {
+          moab::EntityHandle ent = *it;
+
+          mbcomm_->get_pstatus(ent, pstatus);
+          if ((pstatus & PSTATUS_NOT_OWNED) == 1) {
+            mbcore_->tag_get_data(lid_tag, &ent, 1, &lid);
+            lsetents[nent_loc++] = lid;
+          }
+        }
+        break;
+      case Parallel_kind::ALL:
+        for (auto it = mset1.begin(); it != mset1.end(); ++it) {
+          moab::EntityHandle ent = *it;
+
           mbcore_->tag_get_data(lid_tag, &ent, 1, &lid);
           lsetents[nent_loc++] = lid;
         }
-      }
-      break;
-    case Parallel_kind::GHOST:
-      for (auto it = mset1.begin(); it != mset1.end(); ++it) {
-        moab::EntityHandle ent = *it;
+        break;
 
-        mbcomm_->get_pstatus(ent, pstatus);
-        if ((pstatus & PSTATUS_NOT_OWNED) == 1) {
-          mbcore_->tag_get_data(lid_tag, &ent, 1, &lid);
-          lsetents[nent_loc++] = lid;
-        }
-      }
-      break;
-    case Parallel_kind::ALL:
-      for (auto it = mset1.begin(); it != mset1.end(); ++it) {
-        moab::EntityHandle ent = *it;
-
-        mbcore_->tag_get_data(lid_tag, &ent, 1, &lid);
-        lsetents[nent_loc++] = lid;
-      }
-      break;
-
-    default:
-      Errors::Message mesg("Unknown geometric entity");
-      amanzi_throw(mesg);
-      break;
+      default:
+        Errors::Message mesg("Unknown geometric entity");
+        amanzi_throw(mesg);
+        break;
     }
 
     Kokkos::resize(lsetents, nent_loc);
@@ -1325,20 +1317,20 @@ Mesh_MOAB::GID(Entity_ID lid, Entity_kind kind) const
   Entity_ID gid;
 
   switch (kind) {
-  case NODE:
-    ent = node_id_to_handle[lid];
-    break;
+    case NODE:
+      ent = node_id_to_handle[lid];
+      break;
 
-  case FACE:
-    ent = face_id_to_handle[lid];
-    break;
+    case FACE:
+      ent = face_id_to_handle[lid];
+      break;
 
-  case CELL:
-    ent = cell_id_to_handle[lid];
-    break;
+    case CELL:
+      ent = cell_id_to_handle[lid];
+      break;
 
-  default:
-    std::cerr << "Global ID requested for unknown entity type" << std::endl;
+    default:
+      std::cerr << "Global ID requested for unknown entity type" << std::endl;
   }
 
   int result = mbcore_->tag_get_data(gid_tag, &ent, 1, &gid);
@@ -1358,20 +1350,20 @@ Mesh_MOAB::getEntityPtype(const Entity_kind kind, const Entity_ID entid) const
   unsigned char pstatus;
 
   switch (kind) {
-  case NODE:
-    ent = node_id_to_handle[entid];
-    break;
+    case NODE:
+      ent = node_id_to_handle[entid];
+      break;
 
-  case FACE:
-    ent = face_id_to_handle[entid];
-    break;
+    case FACE:
+      ent = face_id_to_handle[entid];
+      break;
 
-  case CELL:
-    ent = cell_id_to_handle[entid];
-    break;
+    case CELL:
+      ent = cell_id_to_handle[entid];
+      break;
 
-  default:
-    AMANZI_ASSERT("Global ID requested for unknown entity type");
+    default:
+      AMANZI_ASSERT("Global ID requested for unknown entity type");
   }
 
   mbcomm_->get_pstatus(ent, pstatus);
@@ -1404,19 +1396,13 @@ Mesh_MOAB::internal_name_of_set(const Teuchos::RCP<const AmanziGeometry::Region>
       Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(r);
     std::string label = lsrgn->label();
 
-    if (entity_kind == CELL)
-      internal_name = "matset_" + label;
-    else if (entity_kind == FACE)
-      internal_name = "sideset_" + label;
-    else if (entity_kind == NODE)
-      internal_name = "nodeset_" + label;
+    if (entity_kind == CELL) internal_name = "matset_" + label;
+    else if (entity_kind == FACE) internal_name = "sideset_" + label;
+    else if (entity_kind == NODE) internal_name = "nodeset_" + label;
   } else {
-    if (entity_kind == CELL)
-      internal_name = "CELLSET_" + r->get_name();
-    else if (entity_kind == FACE)
-      internal_name = "FACESET_" + r->get_name();
-    else if (entity_kind == NODE)
-      internal_name = "NODESET_" + r->get_name();
+    if (entity_kind == CELL) internal_name = "CELLSET_" + r->get_name();
+    else if (entity_kind == FACE) internal_name = "FACESET_" + r->get_name();
+    else if (entity_kind == NODE) internal_name = "NODESET_" + r->get_name();
   }
 
   return internal_name;

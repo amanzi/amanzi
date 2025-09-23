@@ -95,7 +95,7 @@ RegionLineSegment::intersect(const std::vector<Point>& polytope,
     for (int i = 0; i < faces.size(); i++) {
       intersct = false;
       std::vector<Point> plane(faces[i].size());
-      for (int j = 0; j < plane.size(); j++) plane[j] = polytope[faces[i][j]];
+      for (int j = 0; j < plane.size() ; j++) plane[j] = polytope[faces[i][j]];
       double t = PlaneLineIntersection(plane, line);
 
       v1 = p0_ + t * (p1_ - p0_);
@@ -114,7 +114,9 @@ RegionLineSegment::intersect(const std::vector<Point>& polytope,
       } else if (diff_y < eps) { //projection to plane x-z
         vp[0] = v1[0];
         vp[1] = v1[2];
-        for (int j = 0; j < plane.size(); j++) { plane[j][1] = plane[j][2]; }
+        for (int j = 0; j < plane.size(); j++) {
+          plane[j][1] = plane[j][2];
+        }
       } else {
         vp = v1;
       }
@@ -190,7 +192,7 @@ RegionLineSegment::ComputeInterLinePoints(const std::vector<Point>& polytope,
     for (int i = 0; i < faces.size(); i++) {
       intersct = false;
       std::vector<Point> plane(faces[i].size());
-      for (int j = 0; j < plane.size(); j++) plane[j] = polytope[faces[i][j]];
+      for (int j = 0; j < plane.size() ; j++) plane[j] = polytope[faces[i][j]];
       double t = PlaneLineIntersection(plane, line);
       //if ((t<0)||(t>1)) continue;
 
@@ -210,7 +212,9 @@ RegionLineSegment::ComputeInterLinePoints(const std::vector<Point>& polytope,
       } else if (diff_y < eps) { //projection to plane x-z
         vp[0] = v1[0];
         vp[1] = v1[2];
-        for (int j = 0; j < plane.size(); j++) { plane[j][1] = plane[j][2]; }
+        for (int j = 0; j < plane.size(); j++) {
+          plane[j][1] = plane[j][2];
+        }
       } else {
         vp = v1;
       }
@@ -282,7 +286,9 @@ PlaneLineIntersection(const std::vector<Point>& plane, const std::vector<Point>&
   double t1 = det_aux(row1, smatr1);
   double t2 = det_aux(row2, smatr2);
 
-  if (fabs(t2) < 1e-10) { return nan(""); }
+  if (fabs(t2) < 1e-10) {
+    return nan("");
+  }
 
   return -t1 / t2;
 }

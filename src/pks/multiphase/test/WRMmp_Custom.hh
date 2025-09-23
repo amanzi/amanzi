@@ -24,7 +24,7 @@ namespace Multiphase {
 class WRMmp_Custom : public WRMmp {
  public:
   WRMmp_Custom(Teuchos::ParameterList& plist) { coef_ = plist.get<double>("coefficient", 1.0); }
-  ~WRMmp_Custom(){};
+  ~WRMmp_Custom() {};
 
   // required methods from the base class
   virtual double k_relative(double Sw, int phase) { return 1.0; }

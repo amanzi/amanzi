@@ -36,7 +36,7 @@ exaustive functional format capability provided in Amanzi's :ref:`Functions` lib
        This is used when, for instance, the function represents a total {mass,
        energy, etc} flux of a source that is uniformly distributed across the
        region such that the integral is equal to the function value.
-     
+
    * `"function`" ``[composite-vector-function-spec-list]``
 
 */

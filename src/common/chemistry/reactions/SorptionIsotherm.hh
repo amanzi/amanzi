@@ -28,7 +28,7 @@ class SorptionIsotherm {
   enum SorptionIsothermType { FREUNDLICH, LANGMUIR, LINEAR };
 
   SorptionIsotherm(const std::string& name, const SorptionIsothermType type);
-  virtual ~SorptionIsotherm(){};
+  virtual ~SorptionIsotherm() {};
 
   // returns sorbed concentration
   virtual double Evaluate(const Species& primary_species) = 0;

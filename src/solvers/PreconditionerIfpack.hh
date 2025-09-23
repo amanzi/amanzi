@@ -104,7 +104,8 @@ namespace AmanziSolvers {
 
 class PreconditionerIfpack : public Preconditioner {
  public:
-  PreconditionerIfpack() : Preconditioner(), initialized_(false){};
+  PreconditionerIfpack()
+    : Preconditioner(), initialized_(false) {};
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& list) override final;
   virtual void InitializeInverse() override final;

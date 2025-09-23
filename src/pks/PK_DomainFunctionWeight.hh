@@ -32,13 +32,15 @@ computational domain.
 
 namespace Amanzi {
 
-template <class FunctionBase>
-class PK_DomainFunctionWeight : public FunctionBase, public Functions::UniqueMeshFunction {
+template<class FunctionBase>
+class PK_DomainFunctionWeight
+  : public FunctionBase
+  , public Functions::UniqueMeshFunction {
  public:
   PK_DomainFunctionWeight(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                           AmanziMesh::Entity_kind kind)
-    : UniqueMeshFunction(mesh, AmanziMesh::Parallel_kind::OWNED), kind_(kind){};
-  ~PK_DomainFunctionWeight(){};
+    : UniqueMeshFunction(mesh, AmanziMesh::Parallel_kind::OWNED), kind_(kind) {};
+  ~PK_DomainFunctionWeight() {};
 
   // member functions
   void Init(const Teuchos::ParameterList& plist,
@@ -50,9 +52,9 @@ class PK_DomainFunctionWeight : public FunctionBase, public Functions::UniqueMes
   virtual DomainFunction_kind getType() const override { return DomainFunction_kind::WEIGHT; }
 
  protected:
-  using FunctionBase::value_;
   using FunctionBase::domain_volume_;
   using FunctionBase::keyword_;
+  using FunctionBase::value_;
 
   Teuchos::RCP<const Epetra_MultiVector> weight_;
 
@@ -65,7 +67,7 @@ class PK_DomainFunctionWeight : public FunctionBase, public Functions::UniqueMes
 /* ******************************************************************
 * Initialization adds a single function to the list of unique specs.
 ****************************************************************** */
-template <class FunctionBase>
+template<class FunctionBase>
 void
 PK_DomainFunctionWeight<FunctionBase>::Init(const Teuchos::ParameterList& plist,
                                             const std::string& keyword,
@@ -97,7 +99,7 @@ PK_DomainFunctionWeight<FunctionBase>::Init(const Teuchos::ParameterList& plist,
 /* ******************************************************************
 * Compute and distribute the result by volume.
 ****************************************************************** */
-template <class FunctionBase>
+template<class FunctionBase>
 void
 PK_DomainFunctionWeight<FunctionBase>::Compute(double t0, double t1)
 {

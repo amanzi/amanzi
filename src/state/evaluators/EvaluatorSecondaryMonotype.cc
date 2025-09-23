@@ -28,7 +28,7 @@ namespace Amanzi {
 // ---------------------------------------------------------------------------
 // Updates the derivative for doubles
 // ---------------------------------------------------------------------------
-template <>
+template<>
 void
 EvaluatorSecondaryMonotype<double>::UpdateDerivative_(State& S,
                                                       const Key& wrt_key,
@@ -58,9 +58,11 @@ EvaluatorSecondaryMonotype<double>::UpdateDerivative_(State& S,
       // partial F / partial x
       std::vector<double> tmp_data(my_keys_.size(), 0.);
       std::vector<double*> tmp(my_keys_.size());
-      for (int i = 0; i != my_keys_.size(); ++i) { tmp[i] = &tmp_data[i]; }
+      for (int i = 0; i != my_keys_.size(); ++i) {
+        tmp[i] = &tmp_data[i];
+      }
       EvaluatePartialDerivative_(S, wrt_key, wrt_tag, tmp);
-      for (int i = 0; i != my_keys_.size(); ++i) (*results[i]) += tmp_data[i];
+      for (int i = 0; i != my_keys_.size() ; ++i) (*results[i]) += tmp_data[i];
 
     } else if (S.GetEvaluator(dep.first, dep.second).IsDependency(S, wrt_key, wrt_tag)) {
       // partial F / partial dep * ddep/dx
@@ -72,11 +74,13 @@ EvaluatorSecondaryMonotype<double>::UpdateDerivative_(State& S,
       // -- partial F / partial dep
       std::vector<double> tmp_data(my_keys_.size(), 0.);
       std::vector<double*> tmp(my_keys_.size());
-      for (int i = 0; i != my_keys_.size(); ++i) { tmp[i] = &tmp_data[i]; }
+      for (int i = 0; i != my_keys_.size(); ++i) {
+        tmp[i] = &tmp_data[i];
+      }
       EvaluatePartialDerivative_(S, dep.first, dep.second, tmp);
 
       // sum
-      for (int i = 0; i != my_keys_.size(); ++i) (*results[i]) += ddep * tmp_data[i];
+      for (int i = 0; i != my_keys_.size() ; ++i) (*results[i]) += ddep * tmp_data[i];
     }
   }
 }
@@ -85,7 +89,7 @@ EvaluatorSecondaryMonotype<double>::UpdateDerivative_(State& S,
 // ---------------------------------------------------------------------------
 // Updates the derivative for CompositeVectors
 // ---------------------------------------------------------------------------
-template <>
+template<>
 void
 EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::UpdateDerivative_(
   State& S,
@@ -116,9 +120,11 @@ EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::UpdateDerivat
       // partial F / partial x
       std::vector<CompositeVector> tmp_data(my_keys_.size(), *results[0]);
       std::vector<CompositeVector*> tmp(my_keys_.size());
-      for (int i = 0; i != my_keys_.size(); ++i) { tmp[i] = &tmp_data[i]; }
+      for (int i = 0; i != my_keys_.size(); ++i) {
+        tmp[i] = &tmp_data[i];
+      }
       EvaluatePartialDerivative_(S, wrt_key, wrt_tag, tmp);
-      for (int i = 0; i != my_keys_.size(); ++i) results[i]->Update(1., tmp_data[i], 1.);
+      for (int i = 0; i != my_keys_.size() ; ++i) results[i]->Update(1., tmp_data[i], 1.);
 
     } else if (!S.GetEvaluator(dep.first, dep.second).ProvidesKey(wrt_key, wrt_tag) &&
                S.GetEvaluator(dep.first, dep.second).IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
@@ -132,11 +138,13 @@ EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::UpdateDerivat
       // -- partial F / partial dep
       std::vector<CompositeVector> tmp_data(my_keys_.size(), *results[0]);
       std::vector<CompositeVector*> tmp(my_keys_.size());
-      for (int i = 0; i != my_keys_.size(); ++i) { tmp[i] = &tmp_data[i]; }
+      for (int i = 0; i != my_keys_.size(); ++i) {
+        tmp[i] = &tmp_data[i];
+      }
       EvaluatePartialDerivative_(S, dep.first, dep.second, tmp);
 
       // sum
-      for (int i = 0; i != my_keys_.size(); ++i) results[i]->Multiply(1., ddep, tmp_data[i], 1.);
+      for (int i = 0; i != my_keys_.size() ; ++i) results[i]->Multiply(1., ddep, tmp_data[i], 1.);
     }
   }
 
@@ -163,7 +171,7 @@ EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::UpdateDerivat
 // If multiple of my_keys are evaluated, it can be useful to make sure that all
 // of my keys share the same structure.
 // ---------------------------------------------------------------------------
-template <>
+template<>
 void
 EvaluatorSecondaryMonotype<CompositeVector,
                            CompositeVectorSpace>::EnsureCompatibility_StructureSame_(State& S)
@@ -189,7 +197,7 @@ EvaluatorSecondaryMonotype<CompositeVector,
 // of my_keys has already been set, either by user code, or by calls to
 // dependencies EnsureCompatibility_FromDeps_()
 // ---------------------------------------------------------------------------
-template <>
+template<>
 void
 EvaluatorSecondaryMonotype<CompositeVector,
                            CompositeVectorSpace>::EnsureCompatibility_DerivStructure_(State& S)
@@ -211,7 +219,7 @@ EvaluatorSecondaryMonotype<CompositeVector,
 // ---------------------------------------------------------------------------
 // Get vector structure for my_keys from dependencies.
 // ---------------------------------------------------------------------------
-template <>
+template<>
 void
 EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::EnsureCompatibility_FromDeps_(
   State& S,
@@ -255,7 +263,7 @@ EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::EnsureCompati
 //
 //   EnsureCompatibility_ToDeps_(S, cell_bf_fac);
 // ---------------------------------------------------------------------------
-template <>
+template<>
 void
 EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::EnsureCompatibility_ToDeps_(
   State& S)
@@ -270,7 +278,7 @@ EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::EnsureCompati
 // Push fac structure to dependencies, potentially change the Mesh based on the
 // domain name.
 // ---------------------------------------------------------------------------
-template <>
+template<>
 void
 EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::EnsureCompatibility_ToDeps_(
   State& S,
@@ -283,7 +291,7 @@ EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::EnsureCompati
 }
 
 
-template <>
+template<>
 void
 EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::EnsureCompatibility_ToDeps_(
   State& S,
@@ -298,7 +306,7 @@ EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::EnsureCompati
   }
 }
 
-template <>
+template<>
 Teuchos::Ptr<const Comm_type>
 EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::get_comm_(const State& S) const
 {

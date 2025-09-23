@@ -30,9 +30,11 @@ namespace WhetStone {
 
 class NLFV {
  public:
-  NLFV() : mesh_(Teuchos::null){};
-  NLFV(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh){};
-  ~NLFV(){};
+  NLFV()
+    : mesh_(Teuchos::null) {};
+  NLFV(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    : mesh_(mesh) {};
+  ~NLFV() {};
 
   void HarmonicAveragingPoint(int f,
                               int c1,

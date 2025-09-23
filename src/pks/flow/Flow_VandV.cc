@@ -110,11 +110,15 @@ Flow_PK::VV_ValidateBCs() const
     }
 
     if (bcs_[i]->get_bc_name() == "flux") {
-      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) { flux_faces.insert(it->first); }
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        flux_faces.insert(it->first);
+      }
     }
 
     if (bcs_[i]->get_bc_name() == "head") {
-      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) { head_faces.insert(it->first); }
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        head_faces.insert(it->first);
+      }
     }
 
     if (bcs_[i]->get_bc_name() == "coupling") {
@@ -345,7 +349,7 @@ Flow_PK::VV_PrintSourceExtrema() const
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH && nsrcs > 0) {
     Teuchos::RCP<const Epetra_MultiVector> aperture;
-    if (flow_on_manifold_)
+    if (assumptions_.flow_on_manifold)
       aperture = S_->Get<CompositeVector>(aperture_key_, Tags::DEFAULT).ViewComponent("cell");
 
     double smin(1.0e+99), smax(-1.0e+99);
@@ -361,7 +365,7 @@ Flow_PK::VV_PrintSourceExtrema() const
 
           double vol = mesh_->getCellVolume(c);
 
-          if (flow_on_manifold_) {
+          if (assumptions_.flow_on_manifold) {
             areas[i] += vol;
             rates[i] += tmp * vol;
             vol *= (*aperture)[0][c];
@@ -379,7 +383,7 @@ Flow_PK::VV_PrintSourceExtrema() const
     mesh_->getComm()->MaxAll(&tmp2, &smax, 1);
     mesh_->getComm()->SumAll(aux1.data(), rates.data(), nsrcs);
     mesh_->getComm()->SumAll(aux2.data(), volumes.data(), nsrcs);
-    if (flow_on_manifold_) {
+    if (assumptions_.flow_on_manifold) {
       std::vector<double> aux3(areas);
       mesh_->getComm()->SumAll(aux3.data(), areas.data(), nsrcs);
     }
@@ -387,7 +391,7 @@ Flow_PK::VV_PrintSourceExtrema() const
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "sources: total min/max: " << smin << "/" << smax << std::endl;
     for (int i = 0; i < nsrcs; ++i) {
-      if (flow_on_manifold_) {
+      if (assumptions_.flow_on_manifold) {
         *vo_->os() << " src #" << i << ": area=" << areas[i] << " m^2"
                    << ", rate=" << rates[i] << " kg/s"
                    << ", mean aperture=" << volumes[i] / areas[i] << " m" << std::endl;

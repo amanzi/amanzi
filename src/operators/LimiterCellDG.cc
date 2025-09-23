@@ -43,7 +43,7 @@ namespace Operators {
 * Work in progress: initialization like in Transport PK.
 ******************************************************************* */
 LimiterCellDG::LimiterCellDG(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
-  : LimiterCell(mesh){};
+  : LimiterCell(mesh) {};
 
 
 /* ******************************************************************
@@ -100,7 +100,9 @@ LimiterCellDG::LimiterScalarDG_(const WhetStone::DG_Modal& dg,
   AmanziGeometry::Point x1(dim), x2(dim), xm(dim);
   int order = WhetStone::PolynomialSpaceOrder(dim, nk);
 
-  if (!external_bounds_) { BoundsForCells(*field_, bc_model, bc_value, stencil_id_, bounds_); }
+  if (!external_bounds_) {
+    BoundsForCells(*field_, bc_model, bc_value, stencil_id_, bounds_);
+  }
 
   int ilast = (dim == 2) ? 1 : 0;
 

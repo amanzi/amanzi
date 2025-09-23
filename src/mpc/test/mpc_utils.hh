@@ -32,14 +32,14 @@ getObservations(const std::string& filename, int skip)
   do {
     std::string word;
     ifs >> word;
-    if (ifs.eof()) break;
+    if (ifs.eof() ) break;
 
     for (int i = 0; i < skip; ++i) ifs >> word;
     double val1 = std::atof(word.c_str());
     ifs >> word;
     double val2 = std::atof(word.c_str());
     data.push_back(std::make_pair(val1, val2));
-    if (ifs.eof()) break;
+    if (ifs.eof() ) break;
   } while (true);
 
   return data;

@@ -48,8 +48,9 @@ class Op_Face_CellBndFace : public Op {
     matrices_shadow = matrices;
   }
 
-  virtual void
-  ApplyMatrixFreeOp(const Operator* assembler, const CompositeVector& X, CompositeVector& Y) const
+  virtual void ApplyMatrixFreeOp(const Operator* assembler,
+                                 const CompositeVector& X,
+                                 CompositeVector& Y) const
   {
     assembler->ApplyMatrixFreeOp(*this, X, Y);
   }

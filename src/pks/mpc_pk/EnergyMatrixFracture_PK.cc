@@ -164,7 +164,7 @@ EnergyMatrixFracture_PK::Initialize()
   // -- indices transmissibimility coefficients for matrix-fracture flux
   auto eval = S_->GetEvaluatorPtr(heat_diffusion_to_matrix_key_, Tags::DEFAULT);
   auto eval_tmp = Teuchos::rcp_dynamic_cast<HeatDiffusionMatrixFracture>(eval);
-  if (eval_tmp.get()) eval_tmp->Update(*S_, "coupled energy");
+  if (eval_tmp.get() ) eval_tmp->Update(*S_, "coupled energy");
 
   const auto& kn = *S_->Get<CV_t>(heat_diffusion_to_matrix_key_).ViewComponent("cell");
 

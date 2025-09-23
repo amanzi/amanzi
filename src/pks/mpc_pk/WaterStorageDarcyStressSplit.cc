@@ -49,7 +49,7 @@ WaterStorageDarcyStressSplit::WaterStorageDarcyStressSplit(Teuchos::ParameterLis
 ****************************************************************** */
 WaterStorageDarcyStressSplit::WaterStorageDarcyStressSplit(
   const WaterStorageDarcyStressSplit& other)
-  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other){};
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other) {};
 
 
 Teuchos::RCP<Evaluator>

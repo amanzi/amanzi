@@ -47,7 +47,9 @@ Record::Record(const Record& other, const Tag* tag)
 void
 Record::WriteVis(const Visualization& vis, const std::vector<std::string>* subfieldnames) const
 {
-  if (io_vis()) { data_.WriteVis(vis, vis_fieldname(), subfieldnames); }
+  if (io_vis()) {
+    data_.WriteVis(vis, vis_fieldname(), subfieldnames);
+  }
 }
 
 void

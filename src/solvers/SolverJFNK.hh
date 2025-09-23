@@ -80,10 +80,12 @@ inverse, the estimate of the inverse.
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 class SolverJFNK : public Solver<Vector, VectorSpace> {
  public:
-  SolverJFNK(Teuchos::ParameterList& plist) : plist_(plist) {}
+  SolverJFNK(Teuchos::ParameterList& plist)
+    : plist_(plist)
+  {}
 
   SolverJFNK(Teuchos::ParameterList& plist,
              const Teuchos::RCP<SolverFnBase<Vector>>& fn,
@@ -121,7 +123,7 @@ class SolverJFNK : public Solver<Vector, VectorSpace> {
 /* ******************************************************************
 * Public Init method.
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 void
 SolverJFNK<Vector, VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn,
                                       const VectorSpace& map)

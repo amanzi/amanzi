@@ -54,14 +54,14 @@ specify it here.
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template <class Matrix,
-          class Preconditioner = Matrix,
-          class Vector = typename Matrix::Vector_t,
-          class VectorSpace = typename Vector::Space_t>
+template<class Matrix,
+         class Preconditioner = Matrix,
+         class Vector = typename Matrix::Vector_t,
+         class VectorSpace = typename Vector::Space_t>
 class InverseIterativeMethod : public Inverse<Matrix, Preconditioner, Vector, VectorSpace> {
  public:
   InverseIterativeMethod()
-    : Inverse<Matrix, Preconditioner, Vector, VectorSpace>(), inited_(false){};
+    : Inverse<Matrix, Preconditioner, Vector, VectorSpace>(), inited_(false) {};
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override;
   virtual void InitializeInverse() override { h_->InitializeInverse(); }
@@ -96,14 +96,14 @@ class InverseIterativeMethod : public Inverse<Matrix, Preconditioner, Vector, Ve
   virtual std::string returned_code_string() const override
   {
     switch (this->returned_code()) {
-    case AmanziSolvers::LIN_SOLVER_NON_SPD_APPLY:
-      return "Linear system is not SPD.";
-    case AmanziSolvers::LIN_SOLVER_NON_SPD_APPLY_INVERSE:
-      return "Linear system is not SPD.";
-    case AmanziSolvers::LIN_SOLVER_MAX_ITERATIONS:
-      return "Maximum iterations are reached in solution of linear system.";
-    case AmanziSolvers::LIN_SOLVER_RESIDUAL_OVERFLOW:
-      return "Residual overflow in solution of linear system.";
+      case AmanziSolvers::LIN_SOLVER_NON_SPD_APPLY:
+        return "Linear system is not SPD.";
+      case AmanziSolvers::LIN_SOLVER_NON_SPD_APPLY_INVERSE:
+        return "Linear system is not SPD.";
+      case AmanziSolvers::LIN_SOLVER_MAX_ITERATIONS:
+        return "Maximum iterations are reached in solution of linear system.";
+      case AmanziSolvers::LIN_SOLVER_RESIDUAL_OVERFLOW:
+        return "Residual overflow in solution of linear system.";
     }
 
     if (this->returned_code() < 0) {
@@ -137,7 +137,7 @@ class InverseIterativeMethod : public Inverse<Matrix, Preconditioner, Vector, Ve
 //
 // Parse the input spec.
 //
-template <class Matrix, class Preconditioner, class Vector, class VectorSpace>
+template<class Matrix, class Preconditioner, class Vector, class VectorSpace>
 void inline InverseIterativeMethod<Matrix, Preconditioner, Vector, VectorSpace>::
   set_inverse_parameters(Teuchos::ParameterList& plist)
 {
@@ -182,13 +182,13 @@ void inline InverseIterativeMethod<Matrix, Preconditioner, Vector, VectorSpace>:
 //
 // Check whether convergence criteria are satisfied.
 //
-template <class Matrix, class Preconditioner, class Vector, class VectorSpace>
+template<class Matrix, class Preconditioner, class Vector, class VectorSpace>
 int inline InverseIterativeMethod<Matrix, Preconditioner, Vector, VectorSpace>::CheckConvergence_(
   double rnorm,
   double fnorm) const
 {
   if (rnorm > overflow_tol_) {
-    if (vo_->os_OK(Teuchos::VERB_MEDIUM)) *vo_->os() << "Diverged, ||r||=" << rnorm << std::endl;
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM) ) *vo_->os() << "Diverged, ||r||=" << rnorm << std::endl;
     return LIN_SOLVER_RESIDUAL_OVERFLOW;
   }
 

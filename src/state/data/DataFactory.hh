@@ -34,15 +34,20 @@ namespace Impl {
 // thing factory wrapper
 class DataFactory {
  public:
-  DataFactory() : p_(std::unique_ptr<DataFactory_Intf>()){};
+  DataFactory()
+    : p_(std::unique_ptr<DataFactory_Intf>()) {};
 
-  DataFactory(DataFactory_Intf* t, Data_Intf* d) : p_(t), data_p_(d) {}
+  DataFactory(DataFactory_Intf* t, Data_Intf* d)
+    : p_(t), data_p_(d)
+  {}
 
   DataFactory(const DataFactory& other)
     : p_(other.p_->Clone()), data_p_(other.data_p_->CloneEmpty())
   {}
 
-  DataFactory(DataFactory&& other) noexcept : p_(std::move(other.p_)) {}
+  DataFactory(DataFactory&& other) noexcept
+    : p_(std::move(other.p_))
+  {}
 
   void swap(DataFactory& other) noexcept
   {
@@ -58,25 +63,25 @@ class DataFactory {
 
   bool HasType() const { return p_.get(); }
 
-  template <typename T>
+  template<typename T>
   bool ValidType() const
   {
     return data_p_->ValidType<T>();
   }
 
-  template <typename T, typename F>
+  template<typename T, typename F>
   bool ValidType() const
   {
     return p_->ValidType<T, F>();
   }
 
-  template <typename T, typename F>
+  template<typename T, typename F>
   const F& Get() const
   {
     return p_->Get<T, F>();
   }
 
-  template <typename T, typename F>
+  template<typename T, typename F>
   F& GetW()
   {
     return p_->GetW<T, F>();
@@ -96,14 +101,14 @@ class DataFactory {
 };
 
 
-template <typename T, typename F>
+template<typename T, typename F>
 DataFactory
 dataFactory(const F& f)
 {
   return DataFactory(new DataFactory_Impl<T, F>(f), new Data_Impl<T>());
 }
 
-template <typename T, typename F>
+template<typename T, typename F>
 typename std::enable_if<std::is_default_constructible<F>::value, DataFactory>::type
 dataFactory()
 {

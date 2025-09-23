@@ -24,23 +24,20 @@ inline std::string
 to_string(const Framework framework)
 {
   switch (framework) {
-  case (Framework::MSTK):
-    return "MSTK";
-  case (Framework::SIMPLE):
-    return "Simple";
-  case (Framework::MOAB):
-    return "MOAB";
-  default:
-    return "unknown";
+    case (Framework::MSTK):
+      return "MSTK";
+    case (Framework::SIMPLE):
+      return "Simple";
+    case (Framework::MOAB):
+      return "MOAB";
+    default:
+      return "unknown";
   }
 }
 
-Preference
-default_preference();
-bool
-framework_enabled(Framework f);
-Preference
-filter_preference(const Preference& pref);
+Preference default_preference();
+bool framework_enabled(Framework f);
+Preference filter_preference(const Preference& pref);
 
 
 } // namespace AmanziMesh

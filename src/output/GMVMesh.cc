@@ -31,10 +31,8 @@ write_mesh_to_file_(const AmanziMesh::Mesh& mesh, std::string filename)
     xc = mesh.getNodeCoordinate(i);
     x[i] = xc[0];
     y[i] = xc[1];
-    if (dim == 3)
-      z[i] = xc[2];
-    else
-      z[i] = 0.0;
+    if (dim == 3) z[i] = xc[2];
+    else z[i] = 0.0;
   }
   gmvwrite_node_data(&num_nodes, x, y, z);
 
@@ -78,10 +76,8 @@ write_mesh_to_file_(const AmanziMesh::Mesh& mesh, std::string filename)
     } else if (dim == 3 && dim_cell == 2) {
       gmvwrite_cell_type((char*)"general 1", nnodes, xh);
     } else if (dim == 2) {
-      if (nnodes == 4)
-        gmvwrite_cell_type((char*)"quad", 4, xh);
-      else
-        gmvwrite_cell_type((char*)"general 1", nnodes, xh);
+      if (nnodes == 4) gmvwrite_cell_type((char*)"quad", 4, xh);
+      else gmvwrite_cell_type((char*)"general 1", nnodes, xh);
     }
   }
 
@@ -117,7 +113,7 @@ suffix_no(std::string& suffix, unsigned int cycleno)
   unsigned int digits = suffix.length() - 1;
 
   suffix[0] = '.';
-  if (cycleno >= pow(10.0, static_cast<double>(digits))) throw std::exception();
+  if (cycleno >= pow(10.0, static_cast<double>(digits) )) throw std::exception();
 
   // suffix[digits] = '0' + cycleno%10;
   // int div = 10;

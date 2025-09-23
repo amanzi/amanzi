@@ -39,11 +39,11 @@ CreateLookupTable(Teuchos::ParameterList& plist)
   msg << "\nFailed to open/read data from file: " << filename;
 
   ifs.open(filename, std::ifstream::in);
-  if (ifs.fail()) Exceptions::amanzi_throw(msg);
+  if (ifs.fail() ) Exceptions::amanzi_throw(msg);
 
   char line[100];
   ifs.getline(line, 100);
-  if (ifs.fail()) Exceptions::amanzi_throw(msg);
+  if (ifs.fail() ) Exceptions::amanzi_throw(msg);
   std::string format = (strncmp(line, "Amanzi", 6) == 0) ? "Amanzi" : "FEHM";
   ifs.close();
 

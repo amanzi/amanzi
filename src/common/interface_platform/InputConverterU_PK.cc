@@ -170,6 +170,13 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
   }
 
   // remaining BDF1 parameters
+  std::string prefix("numerical_controls, unstructured_controls, unstr_transient_controls, ");
+  node = GetUniqueElementByTagsString_(prefix + "extrapolation_damping_factor", flag);
+  if (flag) {
+    double factor = GetTextContentD_(node, "", false, 1.0);
+    bdf1.set<double>("extrapolation damping factor", factor);
+  }
+
   bdf1.set<int>("max preconditioner lag iterations", TI_MAX_PC_LAG);
   bdf1.set<bool>("extrapolate initial guess", true);
   bdf1.set<double>("restart tolerance relaxation factor", TI_TOL_RELAX_FACTOR);
@@ -431,8 +438,7 @@ InputConverterU::TranslateDiffusionOperator_(const std::string& disc_methods,
   Amanzi::replace_all(nonlinear_coef_out, "-", ": ");
   std::replace(nonlinear_coef_out.begin(), nonlinear_coef_out.end(), '_', ' ');
 
-  if (nonlinear_coef == "upwind-darcy_velocity")
-    nonlinear_coef_out = "upwind: face";
+  if (nonlinear_coef == "upwind-darcy_velocity") nonlinear_coef_out = "upwind: face";
   else if (nonlinear_coef == "upwind-amanzi" || nonlinear_coef == "upwind-amanzi_new")
     nonlinear_coef_out = "divk: cell-face";
 

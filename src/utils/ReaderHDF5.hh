@@ -35,8 +35,13 @@ class ReaderHDF5 : public Reader {
 
   void read(const std::string& varname, Teuchos::Array<double>& vec, int index = -1) const override;
   void read(const std::string& varname, Teuchos::Array<int>& vec, int index = -1) const override;
-  void read(const std::string& varname, Teuchos::SerialDenseMatrix<int, double>& vec, int index = -1) const override;
-  void read(const std::string& varname, Teuchos::SerialDenseMatrix<int, int>& vec, int index = -1) const override {
+  void read(const std::string& varname,
+            Teuchos::SerialDenseMatrix<int, double>& vec,
+            int index = -1) const override;
+  void read(const std::string& varname,
+            Teuchos::SerialDenseMatrix<int, int>& vec,
+            int index = -1) const override
+  {
     AMANZI_ASSERT(false); // not implemented
   }
 

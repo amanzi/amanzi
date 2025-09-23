@@ -31,7 +31,8 @@ namespace AmanziEOS {
 // Equation of State model
 class DensityTabular : public EOS_Density {
  public:
-  DensityTabular(Teuchos::ParameterList& plist) : EOS_Density(plist)
+  DensityTabular(Teuchos::ParameterList& plist)
+    : EOS_Density(plist)
   {
     table_ = CreateLookupTable(plist);
   }

@@ -14,7 +14,7 @@
 */
 
 #ifdef ALQUIMIA_ENABLED
-#  include "Alquimia_PK.hh"
+#include "Alquimia_PK.hh"
 #endif
 #include "Amanzi_PK.hh"
 

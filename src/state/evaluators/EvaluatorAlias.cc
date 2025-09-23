@@ -20,7 +20,8 @@ Note this may be any type of evaluator -- primary, secondary, or independent.
 namespace Amanzi {
 
 Teuchos::RCP<Evaluator>
-EvaluatorAlias::Clone() const {
+EvaluatorAlias::Clone() const
+{
   return Teuchos::rcp(new EvaluatorAlias(*this));
 }
 
@@ -52,7 +53,7 @@ EvaluatorAlias::operator=(const Evaluator& other)
 KeyTag
 EvaluatorAlias::get_target() const
 {
-  return KeyTag{target_key_, target_tag_};
+  return KeyTag{ target_key_, target_tag_ };
 }
 
 
@@ -63,7 +64,10 @@ EvaluatorAlias::Update(State& S, const Key& request)
 }
 
 bool
-EvaluatorAlias::UpdateDerivative(State& S, const Key& requester, const Key& wrt_key, const Tag& wrt_tag)
+EvaluatorAlias::UpdateDerivative(State& S,
+                                 const Key& requester,
+                                 const Key& wrt_key,
+                                 const Tag& wrt_tag)
 {
   return S.GetEvaluator(target_key_, target_tag_).UpdateDerivative(S, requester, wrt_key, wrt_tag);
 }
@@ -85,7 +89,7 @@ bool
 EvaluatorAlias::IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const
 {
   return (wrt_key == my_key_ && wrt_tag == my_tag_) ||
-    S.GetEvaluator(target_key_, target_tag_).IsDifferentiableWRT(S, wrt_key, wrt_tag);
+         S.GetEvaluator(target_key_, target_tag_).IsDifferentiableWRT(S, wrt_key, wrt_tag);
 }
 
 
@@ -128,7 +132,8 @@ EvaluatorAlias::SetChanged(State& S)
   Teuchos::RCP<Evaluator> target_eval = S.GetEvaluatorPtr(target_key_, target_tag_);
   auto target_eval_as_primary = Teuchos::rcp_dynamic_cast<EvaluatorPrimary_>(target_eval);
   if (target_eval_as_primary == Teuchos::null) {
-    Errors::Message msg("SetChanged called on an aliased evaluator whose target is not a primary evaluator");
+    Errors::Message msg(
+      "SetChanged called on an aliased evaluator whose target is not a primary evaluator");
     Exceptions::amanzi_throw(msg);
   }
   target_eval_as_primary->SetChanged();

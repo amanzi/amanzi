@@ -27,8 +27,8 @@ namespace WhetStone {
 // base class for splines
 class SplinePolynomial {
  public:
-  SplinePolynomial(){};
-  ~SplinePolynomial(){};
+  SplinePolynomial() {};
+  ~SplinePolynomial() {};
 
   virtual double Value(double x) const = 0;
   virtual double GradientValue(double x) const = 0;
@@ -38,8 +38,8 @@ class SplinePolynomial {
 // cubic interpolant between two points
 class SplineCubic : public SplinePolynomial {
  public:
-  SplineCubic(){};
-  ~SplineCubic(){};
+  SplineCubic() {};
+  ~SplineCubic() {};
 
   void Setup(double x0, double f0, double df0, double x1, double f1, double df1);
 
@@ -59,8 +59,8 @@ class SplineCubic : public SplinePolynomial {
 // quadratic interpolant between two points
 class SplineQuadratic : public SplinePolynomial {
  public:
-  SplineQuadratic(){};
-  ~SplineQuadratic(){};
+  SplineQuadratic() {};
+  ~SplineQuadratic() {};
 
   void Setup(double x0, double f0, double df0, double x1, double f1);
 
@@ -80,8 +80,8 @@ class SplineQuadratic : public SplinePolynomial {
 // linear interpolant exterior to the interval defined by two points
 class SplineExteriorLinear : public SplinePolynomial {
  public:
-  SplineExteriorLinear(){};
-  ~SplineExteriorLinear(){};
+  SplineExteriorLinear() {};
+  ~SplineExteriorLinear() {};
 
   void Setup(double x0, double f0, double df0, double x1, double f1, double df1);
 

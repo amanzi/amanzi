@@ -14,17 +14,17 @@
 
 #ifdef ENABLE_Structured
 
-#  include <float.h>
-#  include <unistd.h>
-#  include <sys/stat.h>
-#  include <sys/types.h>
-#  include "BoxLib.H"
-#  include "Utility.H"
+#include <float.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include "BoxLib.H"
+#include "Utility.H"
 
-#  include "errors.hh"
-#  include "exceptions.hh"
-#  include "StringExt.hh"
-#  include "InputConverterS.hh"
+#include "errors.hh"
+#include "exceptions.hh"
+#include "StringExt.hh"
+#include "InputConverterS.hh"
 
 namespace Amanzi {
 namespace AmanziInput {
@@ -47,17 +47,17 @@ ConvertTimeToSeconds(const string& time_string)
     double value = atof(tokens[0].c_str());
     double factor;
     switch (tokens[1][0]) {
-    case 'h':
-      factor = 3600.0;
-      break;
-    case 'd':
-      factor = 3600.0 * 24.0;
-      break;
-    case 'y':
-      factor = 3600.0 * 24.0 * 365.25;
-      break;
-    default:
-      factor = 1.0;
+      case 'h':
+        factor = 3600.0;
+        break;
+      case 'd':
+        factor = 3600.0 * 24.0;
+        break;
+      case 'y':
+        factor = 3600.0 * 24.0 * 365.25;
+        break;
+      default:
+        factor = 1.0;
     }
     value *= factor;
     stringstream s;
@@ -153,7 +153,7 @@ list<string>
 MakePPEntry(const vector<string>& ss)
 {
   list<string> pp;
-  for (size_t i = 0; i < ss.size(); ++i) pp.push_back(MangleString(ss[i]));
+  for (size_t i = 0; i < ss.size() ; ++i) pp.push_back(MangleString(ss[i]));
   return pp;
 }
 
@@ -258,8 +258,7 @@ InputConverterS::ParseMechProperty_(DOMElement* mech_prop_node,
         AddToTable(table,
                    MakePPPrefix("rock", material_name, property_name, "filename"),
                    MakePPEntry(filename));
-      } else
-        ThrowErrorIllformed_("materials->mechanical_properties", "type", property_name);
+      } else ThrowErrorIllformed_("materials->mechanical_properties", "type", property_name);
       AddToTable(
         table, MakePPPrefix("rock", material_name, property_name, "type"), MakePPEntry(type));
     } else {
@@ -305,7 +304,9 @@ InputConverterS::ParseMechProperty_(DOMElement* mech_prop_node,
   return non_zero_diffusion;
 }
 
-InputConverterS::InputConverterS(const string& input_filename) : InputConverter(input_filename) {}
+InputConverterS::InputConverterS(const string& input_filename)
+  : InputConverter(input_filename)
+{}
 
 InputConverterS::InputConverterS(const string& input_filename, xercesc::DOMDocument* input_doc)
   : InputConverter(input_filename, input_doc)
@@ -333,12 +334,9 @@ InputConverterS::ParseDefinitions_()
         string name = GetAttributeValueS_(constant, "name");
         string type = GetAttributeValueS_(constant, "type");
         string value = GetAttributeValueS_(constant, "value");
-        if (type == "time")
-          labeled_times_[name] = value;
-        else if (type == "numerical")
-          labeled_numbers_[name] = value;
-        else if (type == "area_mass_flux")
-          labeled_area_mass_fluxes_[name] = value;
+        if (type == "time") labeled_times_[name] = value;
+        else if (type == "numerical") labeled_numbers_[name] = value;
+        else if (type == "area_mass_flux") labeled_area_mass_fluxes_[name] = value;
       }
     }
   }
@@ -459,7 +457,9 @@ InputConverterS::ParseExecutionControls_()
     DOMElement* echo_elt = static_cast<DOMElement*>(echo_node);
     string echo_file_name = GetAttributeValueS_(echo_elt, "file_name", TYPE_NONE, true);
     string echo_file_format = GetAttributeValueS_(echo_elt, "format", TYPE_NONE, false);
-    if (echo_file_format.empty()) { echo_file_format = "native"; }
+    if (echo_file_format.empty()) {
+      echo_file_format = "native";
+    }
     if (echo_file_format != "native") {
       Errors::Message msg;
       msg << "An error occurred during parsing \"echo_translated_input\"\n";
@@ -478,7 +478,9 @@ InputConverterS::ParseExecutionControls_()
   if (found) {
     DOMNode* defaults =
       GetUniqueElementByTagsString_("execution_controls, execution_control_defaults", found);
-    if (!found) { ThrowErrorMisschild_("execution_controls", "execution_control_defaults"); }
+    if (!found) {
+      ThrowErrorMisschild_("execution_controls", "execution_control_defaults");
+    }
 
     DOMElement* def = static_cast<DOMElement*>(defaults);
 
@@ -495,7 +497,9 @@ InputConverterS::ParseExecutionControls_()
     default_vals["mode"] = GetAttributeValueS_(def, "mode", TYPE_NUMERICAL, true);
     default_vals["method"] = GetAttributeValueS_(def, "method", TYPE_NUMERICAL, true);
     string this_max_cycles = GetAttributeValueS_(def, "max_cycles", TYPE_NUMERICAL, false);
-    if (!this_max_cycles.empty()) { default_vals["max_cycles"] = this_max_cycles; }
+    if (!this_max_cycles.empty()) {
+      default_vals["max_cycles"] = this_max_cycles;
+    }
 
     vector<DOMNode*> control_nodes = GetChildren_(controls_block, "execution_control", found);
     if (!found) {
@@ -514,7 +518,7 @@ InputConverterS::ParseExecutionControls_()
         DOMElement* control_elt = static_cast<DOMElement*>(control_nodes[i]);
         for (size_t j = 0; j < controls_size; ++j) {
           string str = GetAttributeValueS_(control_elt, control_names[j].c_str(), TYPE_NONE, false);
-          if (!str.empty()) exec_control[i][control_names[j]] = str;
+          if (!str.empty() ) exec_control[i][control_names[j]] = str;
         }
       }
 
@@ -522,7 +526,9 @@ InputConverterS::ParseExecutionControls_()
         for (map<string, string>::const_iterator it = exec_control[i].begin();
              it != exec_control[i].end();
              ++it) {
-          if (it->first == "start") { exec_control[i - 1]["end"] = it->second; }
+          if (it->first == "start") {
+            exec_control[i - 1]["end"] = it->second;
+          }
         }
       }
 
@@ -534,10 +540,8 @@ InputConverterS::ParseExecutionControls_()
           if (it->first == "start" || it->first == "end" || it->first == "init_dt" ||
               it->first == "max_dt") {
             map<string, string>::const_iterator iter = labeled_times_.find(it->second);
-            if (iter != labeled_times_.end())
-              it->second = ConvertTimeToSeconds(iter->second);
-            else
-              it->second = ConvertTimeToSeconds(it->second);
+            if (iter != labeled_times_.end() ) it->second = ConvertTimeToSeconds(iter->second);
+            else it->second = ConvertTimeToSeconds(it->second);
           }
         }
       }
@@ -652,8 +656,8 @@ InputConverterS::ParseNumericalControls_(const string& flow_model)
   // Common controls -- currently empty.
   GetUniqueElementByTagsString_("numerical_controls, common_controls", found);
 
-#  define CONTROLS_ARE_ATTRIBUTES // Otherwise, controls are children
-#  undef CONTROLS_ARE_ATTRIBUTES
+#define CONTROLS_ARE_ATTRIBUTES // Otherwise, controls are children
+#undef CONTROLS_ARE_ATTRIBUTES
 
   // Structured controls.
   DOMNode* structured_controls =
@@ -680,19 +684,19 @@ InputConverterS::ParseNumericalControls_(const string& flow_model)
     ts_controls["limit_function_evals"] = "1000000";
     ts_controls["do_grid_sequence"] = "true";
     ts_controls["grid_sequence_new_level_dt_factor"] = "1";
-#  ifdef CONTROLS_ARE_ATTRIBUTES
+#ifdef CONTROLS_ARE_ATTRIBUTES
     vector<DOMNode*> tsc = GetChildren_(structured_controls, "str_time_step_controls", found);
     if (found) {
       for (size_t i = 0; i < tsc.size(); ++i) {
         DOMElement* control_elt = static_cast<DOMElement*>(tsc[i]);
-        for (map<string, string>::iterator it = ts_controls.begin(); it != ts_controls.end();
+        for (map<string, string>::iterator it = ts_controls.begin() ; it != ts_controls.end();
              ++it) {
           string str = GetAttributeValueS_(control_elt, it->first.c_str(), TYPE_NONE, false);
-          if (!str.empty()) it->second = str;
+          if (!str.empty() ) it->second = str;
         }
       }
     }
-#  else
+#else
     DOMElement* ssc = GetChildByName_(structured_controls, "str_time_step_controls", found);
     if (found) {
       DOMNodeList* children = ssc->getChildNodes();
@@ -700,15 +704,17 @@ InputConverterS::ParseNumericalControls_(const string& flow_model)
         DOMNode* inode = children->item(i);
         if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
         char* cname = mm.transcode(inode->getNodeName());
-        for (map<string, string>::iterator it = ts_controls.begin(); it != ts_controls.end();
+        for (map<string, string>::iterator it = ts_controls.begin() ; it != ts_controls.end();
              ++it) {
-          if (it->first == cname) { it->second = mm.transcode(inode->getTextContent()); }
+          if (it->first == cname) {
+            it->second = mm.transcode(inode->getTextContent());
+          }
         }
       }
     }
-#  endif
+#endif
     if (ts_controls.size() > 0) {
-      for (map<string, string>::const_iterator it = ts_controls.begin(); it != ts_controls.end();
+      for (map<string, string>::const_iterator it = ts_controls.begin() ; it != ts_controls.end();
            ++it) {
         string s_parameter_name = "steady_" + it->first;
         AddToTable(
@@ -742,19 +748,19 @@ InputConverterS::ParseNumericalControls_(const string& flow_model)
       flow_controls["rel_perm_method"] = "upwind-darcy_velocity";
     }
 
-#  ifdef CONTROLS_ARE_ATTRIBUTES
+#ifdef CONTROLS_ARE_ATTRIBUTES
     vector<DOMNode*> flc = GetChildren_(structured_controls, "str_flow_controls", found);
     if (found) {
       for (size_t i = 0; i < flc.size(); ++i) {
         DOMElement* control_elt = static_cast<DOMElement*>(flc[i]);
-        for (map<string, string>::iterator it = flow_controls.begin(); it != flow_controls.end();
+        for (map<string, string>::iterator it = flow_controls.begin() ; it != flow_controls.end();
              ++it) {
           string str = GetAttributeValueS_(control_elt, it->first.c_str(), TYPE_NONE, false);
-          if (!str.empty()) it->second = str;
+          if (!str.empty() ) it->second = str;
         }
       }
     }
-#  else
+#else
     DOMElement* stc = GetChildByName_(structured_controls, "str_flow_controls", found);
     if (found) {
       DOMNodeList* children = stc->getChildNodes();
@@ -762,13 +768,15 @@ InputConverterS::ParseNumericalControls_(const string& flow_model)
         DOMNode* inode = children->item(i);
         if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
         char* cname = mm.transcode(inode->getNodeName());
-        for (map<string, string>::iterator it = flow_controls.begin(); it != flow_controls.end();
+        for (map<string, string>::iterator it = flow_controls.begin() ; it != flow_controls.end();
              ++it) {
-          if (it->first == cname) { it->second = mm.transcode(inode->getTextContent()); }
+          if (it->first == cname) {
+            it->second = mm.transcode(inode->getTextContent());
+          }
         }
       }
     }
-#  endif
+#endif
 
     if (flow_controls.size() > 0) {
       for (map<string, string>::const_iterator it = flow_controls.begin();
@@ -790,7 +798,7 @@ InputConverterS::ParseNumericalControls_(const string& flow_model)
     map<string, string> transport_controls;
     transport_controls["max_n_subcycle_transport"] = "20";
     transport_controls["cfl"] = "1";
-#  ifdef CONTROLS_ARE_ATTRIBUTES
+#ifdef CONTROLS_ARE_ATTRIBUTES
     vector<DOMNode*> trc = GetChildren_(structured_controls, "str_transport_controls", found);
     if (found) {
       for (size_t i = 0; i < trc.size(); ++i) {
@@ -799,11 +807,11 @@ InputConverterS::ParseNumericalControls_(const string& flow_model)
              it != transport_controls.end();
              ++it) {
           string str = GetAttributeValueS_(control_elt, it->first.c_str(), TYPE_NONE, false);
-          if (!str.empty()) it->second = str;
+          if (!str.empty() ) it->second = str;
         }
       }
     }
-#  else
+#else
     DOMElement* trc = GetChildByName_(structured_controls, "str_transport_controls", found);
     if (found) {
       DOMNodeList* children = trc->getChildNodes();
@@ -814,11 +822,13 @@ InputConverterS::ParseNumericalControls_(const string& flow_model)
         for (map<string, string>::iterator it = transport_controls.begin();
              it != transport_controls.end();
              ++it) {
-          if (it->first == cname) { it->second = mm.transcode(inode->getTextContent()); }
+          if (it->first == cname) {
+            it->second = mm.transcode(inode->getTextContent());
+          }
         }
       }
     }
-#  endif
+#endif
     if (transport_controls.size() > 0) {
       for (map<string, string>::const_iterator it = transport_controls.begin();
            it != transport_controls.end();
@@ -875,10 +885,8 @@ InputConverterS::ParseNumericalControls_(const string& flow_model)
             } else if (strcmp(rc_ename, "start_time") == 0 || strcmp(rc_ename, "end_time") == 0) {
               string thisTime = mm.transcode(jnode->getTextContent());
               map<string, string>::const_iterator iter = labeled_times_.find(thisTime);
-              if (iter != labeled_times_.end())
-                rc_data[rc_name][rc_ename].push_back(iter->second);
-              else
-                rc_data[rc_name][rc_ename].push_back(thisTime);
+              if (iter != labeled_times_.end() ) rc_data[rc_name][rc_ename].push_back(iter->second);
+              else rc_data[rc_name][rc_ename].push_back(thisTime);
             } else {
               if (strcmp(rc_ename, "value_greater") == 0 || strcmp(rc_ename, "value_less") == 0 ||
                   strcmp(rc_ename, "adjacent_difference_greater") == 0 ||
@@ -895,9 +903,11 @@ InputConverterS::ParseNumericalControls_(const string& flow_model)
             }
           }
         } else {
-          for (map<string, string>::iterator it = amr_controls.begin(); it != amr_controls.end();
+          for (map<string, string>::iterator it = amr_controls.begin() ; it != amr_controls.end();
                ++it) {
-            if (it->first == cname) { it->second = mm.transcode(inode->getTextContent()); }
+            if (it->first == cname) {
+              it->second = mm.transcode(inode->getTextContent());
+            }
           }
         }
       }
@@ -999,8 +1009,7 @@ InputConverterS::ParseMesh_()
 
     // Coordinate system is 0, which is probably "Cartesian." -- MSD: Actually 0 == cartesian, so yes
     AddToTable(table, MakePPPrefix("geometry", "coord_sys"), MakePPEntry(0));
-  } else
-    ThrowErrorMisschild_("mesh", "generate", "mesh");
+  } else ThrowErrorMisschild_("mesh", "generate", "mesh");
 
   ParmParse::appendTable(table);
 }
@@ -1018,7 +1027,7 @@ MakeBox(list<ParmParse::PP_entry>& table,
   AddToTable(table, MakePPPrefix("geometry", name, "purpose"), MakePPEntry(purpose));
 }
 
-#  include <PMAMR_Labels.H>
+#include <PMAMR_Labels.H>
 void
 InputConverterS::ParseRegions_()
 {
@@ -1135,7 +1144,9 @@ InputConverterS::ParseRegions_()
 
     // FIXME: color functions (what files do we read from?)
     vector<DOMNode*> colors = GetChildren_(regions, "color", found);
-    for (size_t i = 0; i < colors.size(); ++i) {}
+    for (size_t i = 0; i < colors.size(); ++i) {
+      
+    }
 
     // point
     vector<DOMNode*> points = GetChildren_(regions, "point", found);
@@ -1246,12 +1257,16 @@ InputConverterS::ParseRegions_()
       // rotated_polygon
       // FIXME
       vector<DOMNode*> rotated_polygons = GetChildren_(regions, "rotated_polygon", found);
-      for (size_t i = 0; i < rotated_polygons.size(); ++i) {}
+      for (size_t i = 0; i < rotated_polygons.size(); ++i) {
+        
+      }
 
       // swept_polygon
       // FIXME
       vector<DOMNode*> swept_polygons = GetChildren_(regions, "swept_polygon", found);
-      for (size_t i = 0; i < swept_polygons.size(); ++i) {}
+      for (size_t i = 0; i < swept_polygons.size(); ++i) {
+        
+      }
     }
 
     // logical
@@ -1380,7 +1395,9 @@ InputConverterS::ParseGeochemistry_()
           for (size_t g = 0; g < gccs.size(); ++g) {
             DOMElement* constraint = static_cast<DOMElement*>(gccs[g]);
             string constraint_name = GetAttributeValueS_(constraint, "name");
-            if (!constraint_name.empty()) { constraint_names_.push_back(constraint_name); }
+            if (!constraint_name.empty()) {
+              constraint_names_.push_back(constraint_name);
+            }
           }
         }
       }
@@ -1498,8 +1515,7 @@ InputConverterS::ParseMaterials_(bool& do_tracer_diffusion)
             AddToTable(table,
                        MakePPPrefix("rock", mat_name, "permeability", "data_file"),
                        MakePPEntry(data_file));
-          } else
-            ThrowErrorIllformed_("materials", "type", "permeability");
+          } else ThrowErrorIllformed_("materials", "type", "permeability");
         }
       } else {
         string x = GetAttributeValueS_(conductivity, "x", TYPE_NUMERICAL, false);
@@ -1540,8 +1556,7 @@ InputConverterS::ParseMaterials_(bool& do_tracer_diffusion)
             AddToTable(table,
                        MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "data_file"),
                        MakePPEntry(data_file));
-          } else
-            ThrowErrorIllformed_("materials", "type", "hydraulic_conductivity");
+          } else ThrowErrorIllformed_("materials", "type", "hydraulic_conductivity");
         }
       }
 
@@ -1556,8 +1571,7 @@ InputConverterS::ParseMaterials_(bool& do_tracer_diffusion)
         else if (model == "brooks_corey")
           AddToTable(
             table, MakePPPrefix("rock", mat_name, "cpl", "type"), MakePPEntry("BrooksCorey"));
-        else if (model != "none")
-          ThrowErrorIllformed_("materials", "type", "cap_pressure");
+        else if (model != "none") ThrowErrorIllformed_("materials", "type", "cap_pressure");
 
         if ((model == "van_genuchten") || (model == "brooks_corey")) {
           DOMElement* parameters = GetChildByName_(cap_pressure, "parameters", found, true);
@@ -1594,8 +1608,7 @@ InputConverterS::ParseMaterials_(bool& do_tracer_diffusion)
           AddToTable(table, MakePPPrefix("rock", mat_name, "Kr_model"), MakePPEntry("Mualem"));
         else if (model == "burdine")
           AddToTable(table, MakePPPrefix("rock", mat_name, "Kr_model"), MakePPEntry("Burdine"));
-        else if (model != "none")
-          ThrowErrorIllformed_("materials", "type", "rel_perm");
+        else if (model != "none") ThrowErrorIllformed_("materials", "type", "rel_perm");
 
         if (model == "mualem") {
           // We stick in a default "ell" value, since ell doesn't appear
@@ -1764,7 +1777,9 @@ InputConverterS::ParsePhases_(bool& do_tracer_diffusion)
           AddToTable(table,
                      MakePPPrefix("tracer", sol_name, "molecularDiffusivity"),
                      MakePPEntry(diff_coeff));
-          if (atof(diff_coeff.c_str()) != 0) { do_tracer_diffusion = true; }
+          if (atof(diff_coeff.c_str()) != 0) {
+            do_tracer_diffusion = true;
+          }
         }
       }
     }
@@ -1831,7 +1846,9 @@ InputConverterS::ParseInitialConditions_()
                   if (ic_type_labels[i] == "velocity") {
                     vel.push_back(GetAttributeValueS_(elt, "x"));
                     vel.push_back(GetAttributeValueS_(elt, "y"));
-                    if (dim_ > 2) { vel.push_back(GetAttributeValueS_(elt, "z")); }
+                    if (dim_ > 2) {
+                      vel.push_back(GetAttributeValueS_(elt, "z"));
+                    }
                   } else {
                     values.push_back(GetAttributeValueS_(elt, "value"));
                   }
@@ -1887,7 +1904,9 @@ InputConverterS::ParseInitialConditions_()
             sfound = true;
 
             vector<string> conc(solutes_.size());
-            for (int s = 0; s < solutes_.size(); ++s) { conc[s] = "0.0"; }
+            for (int s = 0; s < solutes_.size(); ++s) {
+              conc[s] = "0.0";
+            }
             vector<DOMNode*> sols = GetChildren_(sc, "uniform_conc", found);
 
             if (sols.size() > 0) {
@@ -2052,10 +2071,8 @@ InputConverterS::ParseBoundaryConditions_()
                         bc_type_labels[i] == "outward_mass_flux") {
                       map<string, string>::const_iterator iter =
                         labeled_area_mass_fluxes_.find(this_value);
-                      if (iter != labeled_area_mass_fluxes_.end())
-                        values.push_back(iter->second);
-                      else
-                        values.push_back(this_value);
+                      if (iter != labeled_area_mass_fluxes_.end() ) values.push_back(iter->second);
+                      else values.push_back(this_value);
                     } else {
                       values.push_back(this_value);
                     }
@@ -2064,8 +2081,7 @@ InputConverterS::ParseBoundaryConditions_()
                     map<string, string>::const_iterator iter = labeled_times_.find(this_start);
                     if (iter != labeled_times_.end())
                       starts.push_back(ConvertTimeToSeconds(iter->second));
-                    else
-                      starts.push_back(ConvertTimeToSeconds(this_start));
+                    else starts.push_back(ConvertTimeToSeconds(this_start));
                   }
 
                   // Get extra info, if required
@@ -2088,7 +2104,9 @@ InputConverterS::ParseBoundaryConditions_()
                     csys.push_back(
                       GetAttributeValueS_(elt, "coordinate_system", TYPE_NONE, false, "absolute"));
                     string sms_ = GetAttributeValueS_(elt, "submodel", TYPE_NONE, false);
-                    if (!sms_.empty()) { sms.push_back(sms_); }
+                    if (!sms_.empty()) {
+                      sms.push_back(sms_);
+                    }
                   }
 
                   if (bc_type_labels[i] == "seepage_face") {
@@ -2167,16 +2185,13 @@ InputConverterS::ParseBoundaryConditions_()
                 for (int s = 0; s < solutes_.size() && !found; ++s) {
                   if (this_spec == solutes_[s]) {
                     map<string, string>::const_iterator iterV = labeled_numbers_.find(this_conc);
-                    if (iterV != labeled_numbers_.end())
-                      conc[s].push_back(iterV->second);
-                    else
-                      conc[s].push_back(this_conc);
+                    if (iterV != labeled_numbers_.end() ) conc[s].push_back(iterV->second);
+                    else conc[s].push_back(this_conc);
 
                     map<string, string>::const_iterator iterT = labeled_times_.find(this_time);
                     if (iterT != labeled_times_.end())
                       ctime[s].push_back(ConvertTimeToSeconds(iterT->second));
-                    else
-                      ctime[s].push_back(ConvertTimeToSeconds(this_time));
+                    else ctime[s].push_back(ConvertTimeToSeconds(this_time));
 
                     cfunc[s].push_back(this_func);
                     found = true;
@@ -2192,7 +2207,9 @@ InputConverterS::ParseBoundaryConditions_()
                 }
               }
               for (int s = 0; s < solutes_.size(); ++s) {
-                if (conc[s].size() == 0) { conc[s].push_back("0.0"); }
+                if (conc[s].size() == 0) {
+                  conc[s].push_back("0.0");
+                }
               }
               for (int s = 0; s < solutes_.size(); ++s) {
                 AddToTable(table,
@@ -2236,7 +2253,9 @@ InputConverterS::ParseBoundaryConditions_()
                     vector<string> thisgic;
                     thisgic.push_back(constraint_name);
                     string condition_time = GetAttributeValueS_(geocon, "start");
-                    if (!condition_time.empty()) { thisgic.push_back(condition_time); }
+                    if (!condition_time.empty()) {
+                      thisgic.push_back(condition_time);
+                    }
                     string condition_form = GetAttributeValueS_(geocon, "function");
                     if (!condition_form.empty()) {
                       if (condition_form != "constant") {
@@ -2273,8 +2292,7 @@ InputConverterS::ParseBoundaryConditions_()
                   map<string, string>::const_iterator iterT = labeled_times_.find(this_time);
                   if (iterT != labeled_times_.end())
                     gicdata[g][1] = ConvertTimeToSeconds(iterT->second);
-                  else
-                    gicdata[g][1] = ConvertTimeToSeconds(this_time);
+                  else gicdata[g][1] = ConvertTimeToSeconds(this_time);
                 }
               }
 

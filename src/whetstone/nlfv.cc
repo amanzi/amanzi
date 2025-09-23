@@ -32,8 +32,8 @@ namespace WhetStone {
 *
 * Input: face f, two cells sharing this face, and two co-normal
 *        vectors Tni = Ti * normal where fixed normal is used.
-*        Second function assumes that Ti = I. 
-*      
+*        Second function assumes that Ti = I.
+*
 * Output: HAP p and weight w.
 ****************************************************************** */
 void

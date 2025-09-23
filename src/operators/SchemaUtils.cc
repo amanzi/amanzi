@@ -97,7 +97,9 @@ AssembleVectorCellOp(int c,
     else if (kind == AmanziMesh::Entity_kind::CELL) {
       Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
 
-      for (int k = 0; k < num; ++k) { Xc[k][c] += v(m++); }
+      for (int k = 0; k < num; ++k) {
+        Xc[k][c] += v(m++);
+      }
     }
 
     else {
@@ -130,7 +132,9 @@ AssembleVectorFaceOp(int f,
       int ncells = cells.size();
 
       for (int n = 0; n != ncells; ++n) {
-        for (int k = 0; k < num; ++k) { Xf[k][cells[n]] += v(m++); }
+        for (int k = 0; k < num; ++k) {
+          Xf[k][cells[n]] += v(m++);
+        }
       }
     }
   }
@@ -160,7 +164,9 @@ AssembleVectorNodeOp(int n,
       int ncells = cells.size();
 
       for (int i = 0; i != ncells; ++i) {
-        for (int k = 0; k < num; ++k) { Xc[k][cells[i]] += v(m++); }
+        for (int k = 0; k < num; ++k) {
+          Xc[k][cells[i]] += v(m++);
+        }
       }
     }
   }
@@ -245,7 +251,9 @@ ExtractVectorCellOp(int c,
     else if (kind == AmanziMesh::Entity_kind::CELL) {
       const Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
 
-      for (int k = 0; k < num; ++k) { v(m++) = Xc[k][c]; }
+      for (int k = 0; k < num; ++k) {
+        v(m++) = Xc[k][c];
+      }
     }
 
     else {
@@ -280,7 +288,9 @@ ExtractVectorFaceOp(int f,
       int ncells = cells.size();
 
       for (int n = 0; n != ncells; ++n) {
-        for (int k = 0; k < num; ++k) { v(m++) = Xf[k][cells[n]]; }
+        for (int k = 0; k < num; ++k) {
+          v(m++) = Xf[k][cells[n]];
+        }
       }
     }
   }
@@ -310,7 +320,9 @@ ExtractVectorNodeOp(int n,
       int ncells = cells.size();
 
       for (int i = 0; i != ncells; ++i) {
-        for (int k = 0; k < num; ++k) { v(m++) = Xc[k][cells[i]]; }
+        for (int k = 0; k < num; ++k) {
+          v(m++) = Xc[k][cells[i]];
+        }
       }
     }
   }

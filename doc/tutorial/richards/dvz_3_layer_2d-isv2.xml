@@ -1,4 +1,4 @@
-<amanzi_input version="1.6-dev" type="unstructured">
+<amanzi_input version="1.7-dev" type="unstructured">
 
   <model_description name="BC Cribs">
     <comments>Three homogeneous layers in 2D with two cribs discharging Tc-99</comments>
@@ -77,9 +77,14 @@
   <!--  if flow,transport,chemistry are missing, this implies that state == off -->
   <process_kernels>
     <comments>This is a proposed comment field for process_kernels</comments>
-    <flow state = "on" model = "richards"/>
-    <transport state = "on" algorithm = "explicit first-order" sub_cycling = "on"/>
-    <chemistry state = "off" engine = "none"/>
+    <pk mode="steady">
+      <flow state = "on" model = "richards"/>
+    </pk>
+    <pk mode="transient">
+      <flow state = "on" model = "richards"/>
+      <transport state="on" algorithm="explicit first-order" sub_cycling="on"/>
+      <subcycled name="mpc" model="default">flow,transport</subcycled>
+    </pk>
   </process_kernels>
 
   <phases>
@@ -100,10 +105,7 @@
     <execution_control_defaults init_dt="10"  max_dt="20 y" reduction_factor="0.8" 
                                 increase_factor="1.25" mode="transient" method="bdf1"/>
     <execution_control start="0.0;y"  end="1956.0,y" init_dt= "1000" max_dt="500.0 y" reduction_factor="0.8" mode="steady"/>
-    <execution_control start="B-17_release_begin" />
-    <execution_control start="B-17_release_end" />
-    <execution_control start="B-18_release_begin" />
-    <execution_control start="B-18_release_end" end="3000.0;y" />
+    <execution_control start="B-17_release_begin" end="3000.0; y" mode="transient"/>
   </execution_controls>
 
   <!-- There are few different ways to iterate to steady-state -

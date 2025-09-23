@@ -48,7 +48,7 @@ class IonExchangeRxn {
   IonExchangeRxn(IonExchangeSite* ionx_sites,
                  const std::vector<IonExchangeComplex>& ionx_complexes);
   explicit IonExchangeRxn(IonExchangeSite ionx_sites);
-  ~IonExchangeRxn(){};
+  ~IonExchangeRxn() {};
 
   // add complexes to the reaction
   void AddIonExchangeComplex(const IonExchangeComplex& complex);

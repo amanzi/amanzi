@@ -28,7 +28,8 @@
 
 class Analytic03 : public AnalyticBase {
  public:
-  Analytic03(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : AnalyticBase(mesh)
+  Analytic03(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
+    : AnalyticBase(mesh)
   {
     k1 = 1.0;
     k2 = 20.0;
@@ -38,7 +39,7 @@ class Analytic03 : public AnalyticBase {
 
     dim = mesh_->getSpaceDimension();
   }
-  ~Analytic03(){};
+  ~Analytic03() {};
 
   Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t)
   {
@@ -54,8 +55,8 @@ class Analytic03 : public AnalyticBase {
   }
 
   // gradient of scalar factor of the tensor
-  Amanzi::AmanziGeometry::Point
-  ScalarTensorGradient(const Amanzi::AmanziGeometry::Point& p, double t)
+  Amanzi::AmanziGeometry::Point ScalarTensorGradient(const Amanzi::AmanziGeometry::Point& p,
+                                                     double t)
   {
     double x = p[0];
     double y = p[1];

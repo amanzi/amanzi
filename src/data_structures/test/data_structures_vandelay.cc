@@ -93,7 +93,8 @@ SUITE(VANDELAY_COMPOSITE_VECTOR)
     CHECK_CLOSE((*x)("cell", 1, 0), 2.0, 0.00001);
     CHECK_CLOSE((*x)("face", 0, 0), 2.0, 0.00001);
 
-    *x2->ViewComponent("boundary_face", false) = *std::as_const(*x).ViewComponent("boundary_face", false);
+    *x2->ViewComponent("boundary_face", false) =
+      *std::as_const(*x).ViewComponent("boundary_face", false);
     CHECK_CLOSE((*x2)("boundary_face", 0, 0), 2.0, 0.00001);
   }
 
@@ -106,7 +107,8 @@ SUITE(VANDELAY_COMPOSITE_VECTOR)
     CHECK_CLOSE((*x)("cell", 1, 0), 2.0, 0.00001);
     CHECK_CLOSE((*x)("face", 0, 0), 2.0, 0.00001);
 
-    *x2->ViewComponent("boundary_face", false) = *std::as_const(*x).ViewComponent("boundary_face", false);
+    *x2->ViewComponent("boundary_face", false) =
+      *std::as_const(*x).ViewComponent("boundary_face", false);
 
     // test the scatter of boundary_faces
     x2->ScatterMasterToGhosted("boundary_face");

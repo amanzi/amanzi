@@ -70,7 +70,7 @@ MeshLogicalEmbeddedSperry::CreateLogical_(const std::string& pftname, int column
   double root_bottom_z = ground_surface[2] - max_rooting_depth_;
   int n_cells_root_zone = 0;
   for (auto f : faces_of_col) {
-    if (root_bottom_z >= bg_mesh_->face_centroid(f)[2]) break;
+    if (root_bottom_z >= bg_mesh_->face_centroid(f) [2]) break;
     n_cells_root_zone++;
   }
 

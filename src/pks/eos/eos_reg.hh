@@ -42,10 +42,10 @@ namespace AmanziEOS {
 
 // registry of method
 Utils::RegisteredFactory<Evaluator, EOSDensityEvaluator> EOSDensityEvaluator::reg_("eos");
-Utils::RegisteredFactory<Evaluator, IsobaricEOSEvaluator>
-  IsobaricEOSEvaluator::reg_("isobaric eos");
-Utils::RegisteredFactory<Evaluator, MolarFractionGasEvaluator>
-  MolarFractionGasEvaluator::reg_("molar fraction gas");
+Utils::RegisteredFactory<Evaluator, IsobaricEOSEvaluator> IsobaricEOSEvaluator::reg_(
+  "isobaric eos");
+Utils::RegisteredFactory<Evaluator, MolarFractionGasEvaluator> MolarFractionGasEvaluator::reg_(
+  "molar fraction gas");
 Utils::RegisteredFactory<Evaluator, EOSViscosityEvaluator> EOSViscosityEvaluator::reg_("viscosity");
 
 Utils::RegisteredFactory<EOS_Density, IdealGas_Density> IdealGas_Density::reg_("ideal gas");
@@ -60,15 +60,15 @@ Utils::RegisteredFactory<EOS_SaturatedVaporPressure, H2O_SaturatedVaporPressure>
 Utils::RegisteredFactory<EOS_Viscosity, IdealGas_Viscosity> IdealGas_Viscosity::reg_("ideal gas");
 Utils::RegisteredFactory<EOS_Viscosity, H2O_Viscosity> H2O_Viscosity::reg_("liquid water 0-30C");
 Utils::RegisteredFactory<EOS_Viscosity, ViscosityConstant> ViscosityConstant::reg_("constant");
-Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityFEHM>
-  H2O_ViscosityFEHM::reg_("liquid water FEHM");
+Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityFEHM> H2O_ViscosityFEHM::reg_(
+  "liquid water FEHM");
 Utils::RegisteredFactory<EOS_Viscosity, ViscosityTabular> ViscosityTabular::reg_("lookup table");
 
-Utils::RegisteredFactory<EOS_Diffusion, VaporInGas_Diffusion>
-  VaporInGas_Diffusion::reg_("vapor in gas");
+Utils::RegisteredFactory<EOS_Diffusion, VaporInGas_Diffusion> VaporInGas_Diffusion::reg_(
+  "vapor in gas");
 
-Utils::RegisteredFactory<COM_Tortuosity, COM_MillingtonQuirk>
-  COM_MillingtonQuirk::reg_("Millington Quirk");
+Utils::RegisteredFactory<COM_Tortuosity, COM_MillingtonQuirk> COM_MillingtonQuirk::reg_(
+  "Millington Quirk");
 
 Utils::RegisteredFactory<EOS_ThermalConductivity, IdealGas_ThermalConductivity>
   IdealGas_ThermalConductivity::reg_("ideal gas");

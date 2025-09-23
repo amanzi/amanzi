@@ -45,7 +45,7 @@ namespace Transport {
 class MDM_BurnettFrind : public MDM {
  public:
   explicit MDM_BurnettFrind(Teuchos::ParameterList& plist);
-  ~MDM_BurnettFrind(){};
+  ~MDM_BurnettFrind() {};
 
   // Required methods from the base class
   // -- dispersion tensor of rank 2

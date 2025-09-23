@@ -99,7 +99,7 @@ class PKFactory {
 };
 
 
-template <typename T>
+template<typename T>
 PK*
 CreateT(Teuchos::ParameterList& pk_tree,
         const Teuchos::RCP<Teuchos::ParameterList>& global_list,
@@ -110,7 +110,7 @@ CreateT(Teuchos::ParameterList& pk_tree,
 }
 
 
-template <typename T>
+template<typename T>
 class RegisteredPKFactory : public PKFactory {
  public:
   // Constructor for the registered factory.  Needs some error checking in

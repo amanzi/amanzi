@@ -35,10 +35,11 @@ namespace Amanzi {
 
 class PK_DomainFunction {
  public:
-  PK_DomainFunction() : domain_volume_(-1.0){};
+  PK_DomainFunction()
+    : domain_volume_(-1.0) {};
 
   PK_DomainFunction(const Teuchos::ParameterList& plist)
-    : domain_volume_(-1.0), name_(Keys::cleanPListName(plist)){};
+    : domain_volume_(-1.0), name_(Keys::cleanPListName(plist)) {};
 
   virtual ~PK_DomainFunction() = default;
 

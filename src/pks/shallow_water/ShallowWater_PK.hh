@@ -83,7 +83,9 @@ The list of global parameters include:
 namespace Amanzi {
 namespace ShallowWater {
 
-class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
+class ShallowWater_PK
+  : public PK_Physical
+  , public PK_Explicit<TreeVector> {
  public:
   ShallowWater_PK(Teuchos::ParameterList& pk_tree,
                   const Teuchos::RCP<Teuchos::ParameterList>& glist,
@@ -142,8 +144,11 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
                             const Epetra_MultiVector& B_n);
 
 
-  std::vector<double>
-  NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n);
+  std::vector<double> NumericalSourceBedSlope(int c,
+                                              double htc,
+                                              double Bc,
+                                              double Bmax,
+                                              const Epetra_MultiVector& B_n);
 
   virtual void UpdateSecondaryFields();
 

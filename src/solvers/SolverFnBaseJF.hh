@@ -34,7 +34,7 @@
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 class SolverFnBaseJF : public SolverFnBase<Vector> {
  public:
   SolverFnBaseJF(Teuchos::ParameterList& plist,
@@ -49,15 +49,15 @@ class SolverFnBaseJF : public SolverFnBase<Vector> {
   }
 
   // preconditioner application
-  virtual int
-  ApplyPreconditioner(const Teuchos::RCP<const Vector>& r, const Teuchos::RCP<Vector>& Pr);
+  virtual int ApplyPreconditioner(const Teuchos::RCP<const Vector>& r,
+                                  const Teuchos::RCP<Vector>& Pr);
 
   // Update the preconditioner
   virtual void UpdatePreconditioner(const Teuchos::RCP<const Vector>& u0);
 
   // error norm
-  virtual double
-  ErrorNorm(const Teuchos::RCP<const Vector>& u, const Teuchos::RCP<const Vector>& du)
+  virtual double ErrorNorm(const Teuchos::RCP<const Vector>& u,
+                           const Teuchos::RCP<const Vector>& du)
   {
     return fn_->ErrorNorm(u, du);
   }
@@ -88,7 +88,7 @@ class SolverFnBaseJF : public SolverFnBase<Vector> {
 
 
 // constructor
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 SolverFnBaseJF<Vector, VectorSpace>::SolverFnBaseJF(Teuchos::ParameterList& plist,
                                                     const Teuchos::RCP<SolverFnBase<Vector>> fn,
                                                     const VectorSpace& map)
@@ -114,7 +114,7 @@ SolverFnBaseJF<Vector, VectorSpace>::SolverFnBaseJF(Teuchos::ParameterList& plis
 
 
 // preconditioner application
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 int
 SolverFnBaseJF<Vector, VectorSpace>::ApplyPreconditioner(const Teuchos::RCP<const Vector>& r,
                                                          const Teuchos::RCP<Vector>& Pr)
@@ -124,7 +124,7 @@ SolverFnBaseJF<Vector, VectorSpace>::ApplyPreconditioner(const Teuchos::RCP<cons
 
 
 // preconditioner update
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 void
 SolverFnBaseJF<Vector, VectorSpace>::UpdatePreconditioner(const Teuchos::RCP<const Vector>& u0)
 {

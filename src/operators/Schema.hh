@@ -33,11 +33,11 @@ namespace Operators {
 class Schema {
  public:
   // default and code compatibility constructors
-  Schema(){};
+  Schema() {};
   Schema(AmanziMesh::Entity_kind kind, int nvec) { Init(kind, nvec); }
   Schema(int schema_old) { Init(schema_old); } // old schema must go away FIXME
 
-  ~Schema(){};
+  ~Schema() {};
 
   // member functions
   void Init(int schema_old);
@@ -54,8 +54,9 @@ class Schema {
 
   void Finalize(Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
-  void
-  ComputeOffset(int c, Teuchos::RCP<const AmanziMesh::Mesh> mesh, std::vector<int>& offset) const;
+  void ComputeOffset(int c,
+                     Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                     std::vector<int>& offset) const;
 
   // local converters operators/strings/mesh
   int OldSchema() const;
@@ -83,8 +84,8 @@ class Schema {
   {
     os << "base=" << AmanziMesh::to_string(s.get_base()) << "\n";
     for (auto it = s.begin(); it != s.end(); ++it) {
-      os << " item: kind=" << AmanziMesh::to_string(std::get<0>(*it)) << ", num=" << std::get<2>(*it)
-         << ", type=" << (int)std::get<1>(*it) << "\n";
+      os << " item: kind=" << AmanziMesh::to_string(std::get<0>(*it))
+         << ", num=" << std::get<2>(*it) << ", type=" << (int)std::get<1>(*it) << "\n";
     }
     return os;
   }

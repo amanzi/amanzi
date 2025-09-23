@@ -111,9 +111,9 @@ runTest(int order)
   auto& tcc_f = *Snew->Get<CompositeVector>("fracture-total_component_concentration", Tags::DEFAULT)
                    .ViewComponent("cell");
 
-  for (int c = 0; c < tcc_m.MyLength(); ++c) CHECK(tcc_m[0][c] <= 1.0 && tcc_m[0][c] >= 0.0);
+  for (int c = 0; c < tcc_m.MyLength() ; ++c) CHECK(tcc_m[0][c] <= 1.0 && tcc_m[0][c] >= 0.0);
 
-  for (int c = 0; c < tcc_f.MyLength(); ++c) CHECK(tcc_f[0][c] <= 1.0 && tcc_f[0][c] >= 0.0);
+  for (int c = 0; c < tcc_f.MyLength() ; ++c) CHECK(tcc_f[0][c] <= 1.0 && tcc_f[0][c] >= 0.0);
 
   // verify solute observations
   int count(0);

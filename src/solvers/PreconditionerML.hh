@@ -60,7 +60,8 @@ namespace AmanziSolvers {
 
 class PreconditionerML : public Preconditioner {
  public:
-  PreconditionerML() : Preconditioner(), initialized_(false){};
+  PreconditionerML()
+    : Preconditioner(), initialized_(false) {};
 
   virtual ~PreconditionerML()
   {

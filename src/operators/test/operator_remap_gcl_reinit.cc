@@ -53,8 +53,8 @@ class MyRemapDGr : public Operators::RemapDG<TreeVector> {
       dt_output_(0.1),
       l2norm_(-1.0),
       T1_(T1),
-      tini_(0.0){};
-  ~MyRemapDGr(){};
+      tini_(0.0) {};
+  ~MyRemapDGr() {};
 
   // create basic structures at each cycle
   void Init(const Teuchos::RCP<WhetStone::DG_Modal> dg);
@@ -93,7 +93,7 @@ class MyRemapDGr : public Operators::RemapDG<TreeVector> {
 void
 MyRemapDGr::Init(const Teuchos::RCP<WhetStone::DG_Modal> dg)
 {
-  if (mesh0_->getComm()->MyPID() == 0) std::cout << "Computing static data on mesh scheleton...\n";
+  if (mesh0_->getComm() ->MyPID() == 0) std::cout << "Computing static data on mesh scheleton...\n";
   InitializeOperators(dg);
   StaticEdgeFaceVelocities();
 
@@ -121,7 +121,7 @@ MyRemapDGr::Init(const Teuchos::RCP<WhetStone::DG_Modal> dg)
 
   StaticFaceCoVelocity();
 
-  if (mesh0_->getComm()->MyPID() == 0) std::cout << "Computing static data in mesh cells...\n";
+  if (mesh0_->getComm() ->MyPID() == 0) std::cout << "Computing static data in mesh cells...\n";
   StaticCellCoVelocity();
 }
 
@@ -132,7 +132,7 @@ MyRemapDGr::Init(const Teuchos::RCP<WhetStone::DG_Modal> dg)
 void
 MyRemapDGr::ReInit(double tini)
 {
-  if (mesh0_->getComm()->MyPID() == 0) std::cout << "Computing static data on mesh scheleton...\n";
+  if (mesh0_->getComm() ->MyPID() == 0) std::cout << "Computing static data on mesh scheleton...\n";
   for (int f = 0; f < nfaces_wghost_; ++f) velf_vec0_[f] += velf_vec_[f];
 
   if (mesh0_->hasEdges()) {
@@ -155,7 +155,7 @@ MyRemapDGr::ReInit(double tini)
   StaticCellVelocity();
 
   StaticFaceCoVelocity();
-  if (mesh0_->getComm()->MyPID() == 0) std::cout << "Computing static data in mesh cells...\n";
+  if (mesh0_->getComm() ->MyPID() == 0) std::cout << "Computing static data in mesh cells...\n";
   StaticCellCoVelocity();
 
   /*
@@ -261,7 +261,7 @@ MyRemapDGr::CollectStatistics(double t, const TreeVector& u)
     op_reac_->Setup(det_, false);
     op_reac_->UpdateMatrices(t);
     auto& matrices = op_reac_->local_op()->matrices;
-    for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
+    for (int n = 0; n < matrices.size() ; ++n) matrices[n].InverseSPD();
 
     auto& rhs = *op_reac_->global_operator()->rhs();
     op_reac_->global_operator()->Apply(*u.SubVector(0)->Data(), rhs);

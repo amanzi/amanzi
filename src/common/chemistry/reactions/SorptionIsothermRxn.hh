@@ -32,11 +32,11 @@ class MatrixBlock;
 
 class SorptionIsothermRxn {
  public:
-  SorptionIsothermRxn(){};
+  SorptionIsothermRxn() {};
   SorptionIsothermRxn(const std::string& species_name,
                       const int species_id,
                       std::shared_ptr<SorptionIsotherm> isotherm);
-  ~SorptionIsothermRxn(){};
+  ~SorptionIsothermRxn() {};
 
   const std::vector<double>& GetIsothermParameters() const;
 

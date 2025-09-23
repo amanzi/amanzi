@@ -26,7 +26,8 @@ namespace Flow {
 
 class SpecificStorage_Standard : public SpecificStorage {
  public:
-  SpecificStorage_Standard(Teuchos::ParameterList& plist) : SpecificStorage(plist)
+  SpecificStorage_Standard(Teuchos::ParameterList& plist)
+    : SpecificStorage(plist)
   {
     beta_f_ = plist.get<double>("fluid compressibility");
     beta_m_ = plist.get<double>("matrix compressibility");

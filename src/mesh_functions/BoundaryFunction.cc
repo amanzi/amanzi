@@ -46,7 +46,9 @@ void
 BoundaryFunction::Compute(double time)
 {
   // lazily generate space for the values
-  if (!finalized_) { Finalize(); }
+  if (!finalized_) {
+    Finalize();
+  }
 
   if (unique_specs_.size() == 0) return;
 
@@ -81,14 +83,18 @@ void
 BoundaryFunction::Finalize()
 {
   finalized_ = true;
-  if (unique_specs_.size() == 0) { return; }
+  if (unique_specs_.size() == 0) {
+    return;
+  }
 
   // Create the map of values, for now just setting up memory.
   for (UniqueSpecList::const_iterator uspec = unique_specs_[AmanziMesh::Entity_kind::FACE]->begin();
        uspec != unique_specs_[AmanziMesh::Entity_kind::FACE]->end();
        ++uspec) {
     Teuchos::RCP<MeshIDs> ids = (*uspec)->second;
-    for (MeshIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) { value_[*id]; };
+    for (MeshIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
+      value_[*id];
+    };
   }
 
   //TODO: Verify that the faces in this_domain are all boundary faces.

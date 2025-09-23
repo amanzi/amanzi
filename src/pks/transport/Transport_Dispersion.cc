@@ -231,8 +231,12 @@ Transport_PK::DispersionSolver(const Epetra_MultiVector& tcc_prev,
 
     // set the initial guess
     Epetra_MultiVector& sol_cell = *sol.ViewComponent("cell");
-    for (int c = 0; c < ncells_owned; c++) { sol_cell[0][c] = tcc_next[i][c]; }
-    if (sol.HasComponent("face")) { sol.ViewComponent("face")->PutScalar(0.0); }
+    for (int c = 0; c < ncells_owned; c++) {
+      sol_cell[0][c] = tcc_next[i][c];
+    }
+    if (sol.HasComponent("face")) {
+      sol.ViewComponent("face")->PutScalar(0.0);
+    }
 
     op->Init();
     Teuchos::RCP<std::vector<WhetStone::Tensor>> Dptr = Teuchos::rcpFromRef(D_);
@@ -262,7 +266,9 @@ Transport_PK::DispersionSolver(const Epetra_MultiVector& tcc_prev,
     residual += op->residual();
     num_itrs += op->num_itrs();
 
-    for (int c = 0; c < ncells_owned; c++) { tcc_next[i][c] = sol_cell[0][c]; }
+    for (int c = 0; c < ncells_owned; c++) {
+      tcc_next[i][c] = sol_cell[0][c];
+    }
   }
 
   // Diffuse gaseous components. We ignore dispersion
@@ -281,8 +287,12 @@ Transport_PK::DispersionSolver(const Epetra_MultiVector& tcc_prev,
 
     // set initial guess
     Epetra_MultiVector& sol_cell = *sol.ViewComponent("cell");
-    for (int c = 0; c < ncells_owned; c++) { sol_cell[0][c] = tcc_next[i][c]; }
-    if (sol.HasComponent("face")) { sol.ViewComponent("face")->PutScalar(0.0); }
+    for (int c = 0; c < ncells_owned; c++) {
+      sol_cell[0][c] = tcc_next[i][c];
+    }
+    if (sol.HasComponent("face")) {
+      sol.ViewComponent("face")->PutScalar(0.0);
+    }
 
     op->Init();
     Teuchos::RCP<std::vector<WhetStone::Tensor>> Dptr = Teuchos::rcpFromRef(D_);
@@ -299,7 +309,7 @@ Transport_PK::DispersionSolver(const Epetra_MultiVector& tcc_prev,
     op1->ApplyBCs(true, true, true);
 
     // add accumulation term.
-    AMANZI_ASSERT(!transport_on_manifold_);
+    AMANZI_ASSERT(!assumptions_.flow_on_manifold);
     Epetra_MultiVector& fac1 = *factor.ViewComponent("cell");
     Epetra_MultiVector& fac0 = *factor0.ViewComponent("cell");
 
@@ -324,7 +334,9 @@ Transport_PK::DispersionSolver(const Epetra_MultiVector& tcc_prev,
     residual += op->residual();
     num_itrs += op->num_itrs();
 
-    for (int c = 0; c < ncells_owned; c++) { tcc_next[i][c] = sol_cell[0][c]; }
+    for (int c = 0; c < ncells_owned; c++) {
+      tcc_next[i][c] = sol_cell[0][c];
+    }
   }
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {

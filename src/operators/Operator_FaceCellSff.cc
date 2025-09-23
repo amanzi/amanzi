@@ -59,7 +59,9 @@ Operator_FaceCellSff::AssembleMatrix(const SuperMap& map,
       if (((*it)->schema_old() == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL)) &&
           ((*it)->diag->MyLength() == ncells_owned)) {
         // diagonal schema
-        for (int c = 0; c != ncells_owned; ++c) { D_c[0][c] += (*(*it)->diag)[0][c]; }
+        for (int c = 0; c != ncells_owned; ++c) {
+          D_c[0][c] += (*(*it)->diag)[0][c];
+        }
       }
     }
   }
@@ -139,13 +141,17 @@ Operator_FaceCellSff::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
       int nfaces = faces.size();
 
       WhetStone::DenseVector v(nfaces + 1), av(nfaces + 1);
-      for (int n = 0; n != nfaces; ++n) { v(n) = Xf[0][faces[n]]; }
+      for (int n = 0; n != nfaces; ++n) {
+        v(n) = Xf[0][faces[n]];
+      }
       v(nfaces) = Xc[0][c];
 
       const WhetStone::DenseMatrix& Acell = op.matrices[c];
       Acell.Multiply(v, av, false);
 
-      for (int n = 0; n != nfaces; ++n) { Yf[0][faces[n]] += av(n); }
+      for (int n = 0; n != nfaces; ++n) {
+        Yf[0][faces[n]] += av(n);
+      }
       Yc[0][c] += av(nfaces);
     }
   }

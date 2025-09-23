@@ -115,7 +115,7 @@ SUITE(GeochemistryTestsChemistryPK)
 
   ChemistryPKTest::~ChemistryPKTest() {}
 
-  void ChemistryPKTest::RunTest(const std::string name, double* gamma){};
+  void ChemistryPKTest::RunTest(const std::string name, double* gamma) {};
 
 
   /* ***************************************************************************

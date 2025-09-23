@@ -28,15 +28,14 @@
 namespace Amanzi {
 
 // Average permeability tensor in horizontal direction.
-void
-PKUtils_CalculatePermeabilityFactorInWell(const Teuchos::Ptr<State>& S,
-                                          Teuchos::RCP<Epetra_MultiVector>& Kxy);
+void PKUtils_CalculatePermeabilityFactorInWell(const Teuchos::Ptr<State>& S,
+                                               Teuchos::RCP<Epetra_MultiVector>& Kxy);
 
-AmanziGeometry::Point
-PKUtils_EntityCoordinates(int id, AmanziMesh::Entity_ID kind, const AmanziMesh::Mesh& mesh);
+AmanziGeometry::Point PKUtils_EntityCoordinates(int id,
+                                                AmanziMesh::Entity_ID kind,
+                                                const AmanziMesh::Mesh& mesh);
 
-void
-PKUtils_FluxToVector(const State& S, const CompositeVector& flux, CompositeVector& grad);
+void PKUtils_FluxToVector(const State& S, const CompositeVector& flux, CompositeVector& grad);
 
 } // namespace Amanzi
 

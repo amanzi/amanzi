@@ -26,19 +26,22 @@ SUITE(SOLVERS)
   class LinearFn : public AmanziSolvers::SolverFnBase<Epetra_Vector> {
    public:
     LinearFn() {}
-    LinearFn(const Teuchos::RCP<Epetra_Map>& map) : map_(map)
+    LinearFn(const Teuchos::RCP<Epetra_Map>& map)
+      : map_(map)
     {
       rhs_ = Teuchos::rcp(new Epetra_Vector(*map_));
       soln_ = Teuchos::rcp(new Epetra_Vector(*map_));
     };
-    ~LinearFn(){};
-    LinearFn(const LinearFn& other) : map_(other.map_) {}
+    ~LinearFn() {};
+    LinearFn(const LinearFn& other)
+      : map_(other.map_)
+    {}
 
     Teuchos::RCP<LinearFn> Clone() const { return Teuchos::rcp(new LinearFn(*this)); }
 
     // computes the non-linear functional r = F(u)
-    virtual void
-    Residual(const Teuchos::RCP<Epetra_Vector>& u, const Teuchos::RCP<Epetra_Vector>& r)
+    virtual void Residual(const Teuchos::RCP<Epetra_Vector>& u,
+                          const Teuchos::RCP<Epetra_Vector>& r)
     {
       Apply(*u, *r);
       r->Update(-1., *rhs_, 1.);
@@ -82,7 +85,9 @@ SUITE(SOLVERS)
 
     bool CheckSolution(const Epetra_Vector& soln)
     {
-      for (int i = 0; i < 5; i++) { CHECK_CLOSE((*soln_)[i], soln[i], 1e-6); }
+      for (int i = 0; i < 5; i++) {
+        CHECK_CLOSE((*soln_)[i], soln[i], 1e-6);
+      }
       return true;
     }
 

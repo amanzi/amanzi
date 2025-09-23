@@ -28,7 +28,7 @@ class SurfaceSite {
  public:
   SurfaceSite();
   SurfaceSite(const std::string& name, int id, const Teuchos::ParameterList& plist);
-  ~SurfaceSite(){};
+  ~SurfaceSite() {};
 
   // adds a pointer to mineral list
   void AddMineral(Mineral* mineral);

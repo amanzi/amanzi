@@ -37,11 +37,11 @@ class PDE_AdvectionUpwindFactory {
   Teuchos::RCP<PDE_AdvectionUpwind> Create(const Teuchos::RCP<Operator>& global_op = Teuchos::null);
 
   // backward compatibility
-  Teuchos::RCP<PDE_AdvectionUpwind>
-  Create(Teuchos::ParameterList& oplist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+  Teuchos::RCP<PDE_AdvectionUpwind> Create(Teuchos::ParameterList& oplist,
+                                           const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
-  Teuchos::RCP<PDE_AdvectionUpwind>
-  Create(Teuchos::ParameterList& oplist, const Teuchos::RCP<Operator>& global_op);
+  Teuchos::RCP<PDE_AdvectionUpwind> Create(Teuchos::ParameterList& oplist,
+                                           const Teuchos::RCP<Operator>& global_op);
 
  private:
   Teuchos::ParameterList oplist_;

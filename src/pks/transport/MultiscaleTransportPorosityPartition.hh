@@ -28,13 +28,12 @@ typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, MsTList>
   MultiscaleTransportPorosityPartition;
 
 // Non-member factory takes the global trnsport list
-Teuchos::RCP<MultiscaleTransportPorosityPartition>
-CreateMultiscaleTransportPorosityPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                                           Teuchos::RCP<Teuchos::ParameterList> tplist);
+Teuchos::RCP<MultiscaleTransportPorosityPartition> CreateMultiscaleTransportPorosityPartition(
+  Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+  Teuchos::RCP<Teuchos::ParameterList> tplist);
 
 // Non-member function quering partition
-int
-NumberMatrixNodes(Teuchos::RCP<MultiscaleTransportPorosityPartition>& msp);
+int NumberMatrixNodes(Teuchos::RCP<MultiscaleTransportPorosityPartition>& msp);
 
 } // namespace Transport
 } // namespace Amanzi

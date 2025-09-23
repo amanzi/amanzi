@@ -27,9 +27,8 @@ typedef std::vector<Teuchos::RCP<WRM>> WRMList;
 typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, WRMList> WRMPartition;
 
 // Non-member factory
-Teuchos::RCP<WRMPartition>
-CreateWRMPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                   Teuchos::RCP<Teuchos::ParameterList> plist);
+Teuchos::RCP<WRMPartition> CreateWRMPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                                              Teuchos::RCP<Teuchos::ParameterList> plist);
 
 } // namespace Flow
 } // namespace Amanzi

@@ -9,7 +9,7 @@
 
 /*!
 
-Field evaluator for specific molar enthalpy, 
+Field evaluator for specific molar enthalpy,
 
 .. math::
 

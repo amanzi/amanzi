@@ -16,7 +16,7 @@
 namespace Amanzi {
 namespace Utils {
 
-template <typename M>
+template<typename M>
 std::ostream&
 dump_map(const M& map, std::ostream& stream)
 {
@@ -27,7 +27,7 @@ dump_map(const M& map, std::ostream& stream)
   return stream;
 }
 
-template <typename V>
+template<typename V>
 std::ostream&
 dump_vector_as_map(const V& data, std::ostream& stream)
 {

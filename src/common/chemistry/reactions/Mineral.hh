@@ -102,7 +102,7 @@ class Mineral : public SecondarySpecies {
           const std::string& name,
           const Teuchos::ParameterList& plist,
           const std::vector<Species>& primary_species);
-  ~Mineral(){};
+  ~Mineral() {};
 
   // update molalities
   void Update(const std::vector<Species>& primary_species, const Species& water_species);
@@ -125,7 +125,7 @@ class Mineral : public SecondarySpecies {
   double molar_volume() const { return molar_volume_; }
 
   // not supported yet
-  void UpdateSpecificSurfaceArea(){};
+  void UpdateSpecificSurfaceArea() {};
 
   double volume_fraction() const { return volume_fraction_; }
   void set_volume_fraction(double d) { volume_fraction_ = d; }

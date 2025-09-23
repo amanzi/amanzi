@@ -34,10 +34,11 @@
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 class SolverNKA_LS_ATS : public Solver<Vector, VectorSpace> {
  public:
-  SolverNKA_LS_ATS(Teuchos::ParameterList& plist) : plist_(plist){};
+  SolverNKA_LS_ATS(Teuchos::ParameterList& plist)
+    : plist_(plist) {};
 
   SolverNKA_LS_ATS(Teuchos::ParameterList& plist,
                    const Teuchos::RCP<SolverFnBase<Vector>>& fn,
@@ -112,7 +113,7 @@ class SolverNKA_LS_ATS : public Solver<Vector, VectorSpace> {
 /* ******************************************************************
  * Public Init method.
  ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 void
 SolverNKA_LS_ATS<Vector, VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn,
                                             const VectorSpace& map)
@@ -129,7 +130,7 @@ SolverNKA_LS_ATS<Vector, VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vect
 /* ******************************************************************
  * Initialization of the NKA solver.
  ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 void
 SolverNKA_LS_ATS<Vector, VectorSpace>::Init_()
 {
@@ -187,7 +188,7 @@ SolverNKA_LS_ATS<Vector, VectorSpace>::Init_()
 /* ******************************************************************
  * The body of NKA solver
  ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 int
 SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector>& u)
 {
@@ -260,7 +261,9 @@ SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector>& u
     num_itrs_++;
 
     // evaluate precon at the beginning of the method
-    if (vo_->os_OK(Teuchos::VERB_HIGH)) { *vo_->os() << "Updating preconditioner." << std::endl; }
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      *vo_->os() << "Updating preconditioner." << std::endl;
+    }
     pc_updates_++;
     fn_->UpdatePreconditioner(u);
 

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<amanzi_input type="unstructured" version="1.6-dev">
+<amanzi_input type="unstructured" version="1.7-dev">
     <misc>
         <echo_translated_input format="unstructured_native"/>
     </misc>
@@ -16,9 +16,9 @@
         </macros>
     </definitions>
     <process_kernels>
+      <pk mode="transient">
         <flow model="richards" state="on"/>
-        <transport state="off"/>
-        <chemistry engine="none" state="off"/>
+      </pk>
     </process_kernels>
     <phases>
         <liquid_phase name="water">

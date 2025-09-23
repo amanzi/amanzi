@@ -36,11 +36,12 @@ namespace WhetStone {
 
 class MeshMaps_FEM : public MeshMapsBase {
  public:
-  MeshMaps_FEM(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : MeshMapsBase(mesh){};
+  MeshMaps_FEM(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    : MeshMapsBase(mesh) {};
   MeshMaps_FEM(Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
                Teuchos::RCP<const AmanziMesh::Mesh> mesh1)
-    : MeshMapsBase(mesh0, mesh1){};
-  ~MeshMaps_FEM(){};
+    : MeshMapsBase(mesh0, mesh1) {};
+  ~MeshMaps_FEM() {};
 
   // remap pseudo velocity
   virtual void VelocityCell(int c,

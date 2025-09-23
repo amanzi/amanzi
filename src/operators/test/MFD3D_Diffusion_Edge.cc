@@ -80,7 +80,9 @@ MFD3D_Diffusion_Edge::H1consistency(int c, const Tensor& K, DenseMatrix& N, Dens
 
         double tmp = ((tau ^ normal) * (xf - xe0)) * dirs[n] * edirs[m] / area;
 
-        for (int k = 0; k < d_; ++k) { N(map[m], k) += normal[k] * tmp / area; }
+        for (int k = 0; k < d_; ++k) {
+          N(map[m], k) += normal[k] * tmp / area;
+        }
       }
     }
   }

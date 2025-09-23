@@ -27,11 +27,13 @@
 namespace Amanzi {
 namespace WhetStone {
 
-template <class T>
+template<class T>
 class MatrixObjects {
  public:
-  MatrixObjects() : d_(0), m_(0), n_(0){};
-  MatrixObjects(int d, int m, int n, int order) : d_(d), m_(m), n_(n), order_(order)
+  MatrixObjects()
+    : d_(0), m_(0), n_(0) {};
+  MatrixObjects(int d, int m, int n, int order)
+    : d_(d), m_(m), n_(n), order_(order)
   {
     polys_.resize(m_);
     for (int i = 0; i < m_; ++i) {
@@ -39,7 +41,7 @@ class MatrixObjects {
       for (int j = 0; j < n_; ++j) polys_[i][j].Reshape(d_, order, true);
     }
   }
-  ~MatrixObjects(){};
+  ~MatrixObjects() {};
 
   // reshape polynomial with erase (optionally) memory
   void Reshape(int d, int m, int n, int order, bool reset = false);
@@ -60,7 +62,7 @@ class MatrixObjects {
   double NormInf() const;
 
   // ring algebra
-  template <typename U>
+  template<typename U>
   MatrixObjects& operator*=(const U val)
   {
     for (int i = 0; i < m_; ++i)
@@ -121,7 +123,7 @@ class MatrixObjects {
   {
     os << "Matrix of Objects: " << poly.NumRows() << " x " << poly.NumCols() << std::endl;
     for (int i = 0; i < poly.NumRows(); ++i)
-      for (int j = 0; j < poly.NumCols(); ++j) os << "i=" << i << ", j=" << j << " " << poly(i, j);
+      for (int j = 0; j < poly.NumCols() ; ++j) os << "i=" << i << ", j=" << j << " " << poly(i, j);
     return os;
   }
 
@@ -139,7 +141,7 @@ typedef MatrixObjects<SpaceTimePolynomial> MatrixSpaceTimePolynomial;
 /* ******************************************************************
 * Re-shape polynomials
 ****************************************************************** */
-template <class T>
+template<class T>
 void
 MatrixObjects<T>::Reshape(int d, int m, int n, int order, bool reset)
 {
@@ -150,7 +152,9 @@ MatrixObjects<T>::Reshape(int d, int m, int n, int order, bool reset)
   polys_.resize(m_);
   for (int i = 0; i < m_; ++i) {
     polys_[i].resize(n_);
-    for (int j = 0; j < n_; ++j) { polys_[i][j].Reshape(d, order, reset); }
+    for (int j = 0; j < n_; ++j) {
+      polys_[i][j].Reshape(d, order, reset);
+    }
   }
 }
 
@@ -158,7 +162,7 @@ MatrixObjects<T>::Reshape(int d, int m, int n, int order, bool reset)
 /* ******************************************************************
 * Calculate value at a point
 ****************************************************************** */
-template <class T>
+template<class T>
 DenseMatrix
 MatrixObjects<T>::Value(const AmanziGeometry::Point& xp) const
 {
@@ -174,7 +178,7 @@ MatrixObjects<T>::Value(const AmanziGeometry::Point& xp) const
 /* ******************************************************************
 * Ring algebra
 ****************************************************************** */
-template <class T>
+template<class T>
 MatrixObjects<T>&
 MatrixObjects<T>::operator+=(const MatrixObjects<T>& mp)
 {
@@ -184,7 +188,7 @@ MatrixObjects<T>::operator+=(const MatrixObjects<T>& mp)
   return *this;
 }
 
-template <class T>
+template<class T>
 MatrixObjects<T>&
 MatrixObjects<T>::operator-=(const MatrixObjects<T>& mp)
 {
@@ -198,7 +202,7 @@ MatrixObjects<T>::operator-=(const MatrixObjects<T>& mp)
 /* ******************************************************************
 * Matrix-vector operations
 ***************************************************************** */
-template <class T>
+template<class T>
 void
 MatrixObjects<T>::Multiply(const VectorObjects<T>& v, VectorObjects<T>& av, bool transpose)
 {
@@ -208,7 +212,9 @@ MatrixObjects<T>::Multiply(const VectorObjects<T>& v, VectorObjects<T>& av, bool
     for (int i = 0; i < m_; ++i) {
       av[i] = polys_[i][0] * v[0];
 
-      for (int k = 1; k < n_; ++k) { av[i] += polys_[i][k] * v[k]; }
+      for (int k = 1; k < n_; ++k) {
+        av[i] += polys_[i][k] * v[k];
+      }
     }
   } else {
     av.resize(n_);
@@ -216,13 +222,15 @@ MatrixObjects<T>::Multiply(const VectorObjects<T>& v, VectorObjects<T>& av, bool
     for (int i = 0; i < n_; ++i) {
       av[i] = polys_[0][i] * v[0];
 
-      for (int k = 1; k < m_; ++k) { av[i] += polys_[k][i] * v[k]; }
+      for (int k = 1; k < m_; ++k) {
+        av[i] += polys_[k][i] * v[k];
+      }
     }
   }
 }
 
 
-template <class T>
+template<class T>
 void
 MatrixObjects<T>::Multiply(const DenseVector& v, VectorObjects<T>& av, bool transpose)
 {
@@ -231,20 +239,24 @@ MatrixObjects<T>::Multiply(const DenseVector& v, VectorObjects<T>& av, bool tran
     for (int i = 0; i < m_; ++i) {
       av[i] = polys_[i][0] * v(0);
 
-      for (int k = 1; k < n_; ++k) { av[i] += polys_[i][k] * v(k); }
+      for (int k = 1; k < n_; ++k) {
+        av[i] += polys_[i][k] * v(k);
+      }
     }
   } else {
     av.resize(n_);
     for (int i = 0; i < n_; ++i) {
       av[i] = polys_[0][i] * v(0);
 
-      for (int k = 1; k < m_; ++k) { av[i] += polys_[k][i] * v(k); }
+      for (int k = 1; k < m_; ++k) {
+        av[i] += polys_[k][i] * v(k);
+      }
     }
   }
 }
 
 
-template <class T>
+template<class T>
 void
 MatrixObjects<T>::Multiply(const AmanziGeometry::Point& p,
                            VectorObjects<T>& av,
@@ -258,14 +270,18 @@ MatrixObjects<T>::Multiply(const AmanziGeometry::Point& p,
     for (int i = 0; i < m_; ++i) {
       av[i] = polys_[i][0] * p[0];
 
-      for (int k = 1; k < d; ++k) { av[i] += polys_[i][k] * p[k]; }
+      for (int k = 1; k < d; ++k) {
+        av[i] += polys_[i][k] * p[k];
+      }
     }
   } else {
     av.resize(d);
     for (int i = 0; i < d; ++i) {
       av[i] = polys_[0][i] * p[0];
 
-      for (int k = 1; k < d; ++k) { av[i] += polys_[k][i] * p[k]; }
+      for (int k = 1; k < d; ++k) {
+        av[i] += polys_[k][i] * p[k];
+      }
     }
   }
 }
@@ -274,7 +290,7 @@ MatrixObjects<T>::Multiply(const AmanziGeometry::Point& p,
 /* ******************************************************************
 * Set same origin for all polynomials without modyfying them
 ****************************************************************** */
-template <class T>
+template<class T>
 void
 MatrixObjects<T>::set_origin(const AmanziGeometry::Point& origin)
 {
@@ -286,7 +302,7 @@ MatrixObjects<T>::set_origin(const AmanziGeometry::Point& origin)
 /* ******************************************************************
 * Change all polynomials to new same origin
 ****************************************************************** */
-template <class T>
+template<class T>
 void
 MatrixObjects<T>::ChangeOrigin(const AmanziGeometry::Point& origin)
 {
@@ -298,7 +314,7 @@ MatrixObjects<T>::ChangeOrigin(const AmanziGeometry::Point& origin)
 /* ******************************************************************
 * Maximum norm
 ****************************************************************** */
-template <class T>
+template<class T>
 double
 MatrixObjects<T>::NormInf() const
 {
@@ -312,7 +328,7 @@ MatrixObjects<T>::NormInf() const
 
 // non-member functions
 // -- gradient
-template <class T>
+template<class T>
 MatrixObjects<T>
 Gradient(const VectorObjects<T>& p)
 {

@@ -21,7 +21,8 @@ namespace Multiphase {
 /* ******************************************************************
 * Constructor.
 ****************************************************************** */
-NCP_MoleFractions::NCP_MoleFractions(Teuchos::ParameterList& plist) : MultiphaseEvaluator(plist)
+NCP_MoleFractions::NCP_MoleFractions(Teuchos::ParameterList& plist)
+  : MultiphaseEvaluator(plist)
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
@@ -37,7 +38,8 @@ NCP_MoleFractions::NCP_MoleFractions(Teuchos::ParameterList& plist) : Multiphase
 /* ******************************************************************
 * Copy constructors.
 ****************************************************************** */
-NCP_MoleFractions::NCP_MoleFractions(const NCP_MoleFractions& other) : MultiphaseEvaluator(other){};
+NCP_MoleFractions::NCP_MoleFractions(const NCP_MoleFractions& other)
+  : MultiphaseEvaluator(other) {};
 
 
 Teuchos::RCP<Evaluator>
@@ -61,7 +63,7 @@ NCP_MoleFractions::Evaluate_(const State& S, const std::vector<CompositeVector*>
 
   for (int c = 0; c != ncells; ++c) {
     double sum(vg[0][c]);
-    for (int i = 0; i < xg.NumVectors(); ++i) sum += xg[i][c];
+    for (int i = 0; i < xg.NumVectors() ; ++i) sum += xg[i][c];
     result_c[0][c] = 1.0 - sum;
   }
 }

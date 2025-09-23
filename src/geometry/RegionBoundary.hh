@@ -47,7 +47,6 @@ class RegionBoundary : public Region {
 
   // Is the the specified point inside this region
   bool inside(const Point& p) const;
-
 };
 
 } // namespace AmanziGeometry

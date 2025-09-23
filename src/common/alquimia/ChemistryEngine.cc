@@ -24,8 +24,8 @@
 
 // Support for manipulating floating point exception handling.
 #ifdef _GNU_SOURCE
-#  define AMANZI_USE_FENV
-#  include <fenv.h>
+#define AMANZI_USE_FENV
+#include <fenv.h>
 #endif
 
 namespace Amanzi {
@@ -287,7 +287,9 @@ ChemistryEngine::GetAuxiliaryOutputNames(
   int N = metadata->mineral_names.size;
   if (N > 0) {
     std::vector<std::string> mineral_names;
-    for (int i = 0; i < N; ++i) { mineral_names.emplace_back(metadata->mineral_names.data[i]); }
+    for (int i = 0; i < N; ++i) {
+      mineral_names.emplace_back(metadata->mineral_names.data[i]);
+    }
     aux_names.emplace_back("mineral_saturation_index");
     subfield_names.emplace_back(mineral_names);
     aux_names.emplace_back("mineral_reaction_rate");
@@ -298,7 +300,9 @@ ChemistryEngine::GetAuxiliaryOutputNames(
   N = metadata->primary_names.size;
   if (N > 0) {
     std::vector<std::string> primary_names;
-    for (int i = 0; i < N; ++i) { primary_names.emplace_back(metadata->primary_names.data[i]); }
+    for (int i = 0; i < N; ++i) {
+      primary_names.emplace_back(metadata->primary_names.data[i]);
+    }
     aux_names.emplace_back("primary_free_ion_concentration");
     subfield_names.emplace_back(primary_names);
     aux_names.emplace_back("primary_activity_coeff");
@@ -309,7 +313,9 @@ ChemistryEngine::GetAuxiliaryOutputNames(
   N = this->NumAqueousComplexes();
   if (N > 0) {
     std::vector<std::string> secondary_names;
-    for (int i = 0; i < N; ++i) { secondary_names.emplace_back(std::to_string(i)); }
+    for (int i = 0; i < N; ++i) {
+      secondary_names.emplace_back(std::to_string(i));
+    }
     aux_names.emplace_back("secondary_free_ion_concentration");
     subfield_names.emplace_back(secondary_names);
     aux_names.emplace_back("secondary_activity_coeff");
@@ -468,8 +474,7 @@ ChemistryEngine::AddAqueousConstraint(const std::string& condition_name,
     if (!associated_species.empty())
       condition->aqueous_constraints.data[index].associated_species =
         strdup(associated_species.c_str());
-    else
-      condition->aqueous_constraints.data[index].associated_species = NULL;
+    else condition->aqueous_constraints.data[index].associated_species = NULL;
   } else {
     Errors::Message msg;
     msg << "ChemistryEngine::AddAqueousConstraint: no condition named '" << condition_name << "'.";

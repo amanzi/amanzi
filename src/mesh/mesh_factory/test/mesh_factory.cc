@@ -260,7 +260,9 @@ SUITE(MeshFramework)
     MeshFrameworkFactory meshfactory(comm);
 
     bool available = false;
-    if (framework_enabled(Framework::MSTK)) { available = true; }
+    if (framework_enabled(Framework::MSTK)) {
+      available = true;
+    }
 
     if (framework_enabled(Framework::MOAB)) {
       if (!parallel) available = true;

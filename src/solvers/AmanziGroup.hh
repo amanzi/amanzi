@@ -18,7 +18,7 @@
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template <class VectorClass>
+template<class VectorClass>
 class AmanziGroup : public NOX::Abstract::Group {
  public:
   AmanziGroup(const Teuchos::RCP<SolverFnBase<VectorClass>> fn)
@@ -58,8 +58,9 @@ class AmanziGroup : public NOX::Abstract::Group {
   }
 
   // Compute x = grp.x + step * d
-  void
-  computeX(const NOX::Abstract::Group& grp, const NOX::Abstract::Vector& d, double step) override
+  void computeX(const NOX::Abstract::Group& grp,
+                const NOX::Abstract::Vector& d,
+                double step) override
   {
     const AmanziGroup<VectorClass>& sourceGroup =
       dynamic_cast<const AmanziGroup<VectorClass>&>(grp);
@@ -114,10 +115,10 @@ class AmanziGroup : public NOX::Abstract::Group {
   }
 
 
-  NOX::Abstract::Group::ReturnType
-  applyJacobianInverse(Teuchos::ParameterList& params,
-                       const NOX::Abstract::Vector& input,
-                       NOX::Abstract::Vector& result) const override
+  NOX::Abstract::Group::ReturnType applyJacobianInverse(
+    Teuchos::ParameterList& params,
+    const NOX::Abstract::Vector& input,
+    NOX::Abstract::Vector& result) const override
   {
     assert(0);
     const NoxVector<VectorClass>* input_a = dynamic_cast<const NoxVector<VectorClass>*>(&input);

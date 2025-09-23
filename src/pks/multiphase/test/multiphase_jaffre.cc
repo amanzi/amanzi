@@ -9,10 +9,10 @@
 */
 
 /*
-  MoMas benchmark example: 2 component Hydrogen (H) and water (W) to show gas 
-  phase appearance/disappearance with assumptions/model as in [Gharbia, Jaffre' 14]. 
-  Primary variables are pressure liquid, saturation liquid, and molar density 
-  of hydrogen in liquid phase. 
+  MoMas benchmark example: 2 component Hydrogen (H) and water (W) to show gas
+  phase appearance/disappearance with assumptions/model as in [Gharbia, Jaffre' 14].
+  Primary variables are pressure liquid, saturation liquid, and molar density
+  of hydrogen in liquid phase.
 */
 
 #include <cstdlib>
@@ -114,7 +114,9 @@ run_test(const std::string& domain, const std::string& filename)
   std::vector<double> time_step_size;
 
   while (t < tend && iloop < 100000) {
-    while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 2.0; }
+    while (MPK->AdvanceStep(t, t + dt, false)) {
+      dt /= 2.0;
+    }
 
     MPK->CommitStep(t, t + dt, Tags::DEFAULT);
 
@@ -152,8 +154,14 @@ run_test(const std::string& domain, const std::string& filename)
     // observation
     const auto& u0 = *S->Get<CompositeVector>("pressure_liquid").ViewComponent("cell");
     // std::cout << "OBS: " << t << " " << u0[0][0] << std::endl;
-    if (std::fabs(t - 3.2342e+12) < 0.05e+12) { nhit0++; CHECK_CLOSE(u0[0][0], 1.14164e+06, 0.01e+06); }
-    if (std::fabs(t - 1.7521e+13) < 0.01e+13) { nhit1++; CHECK_CLOSE(u0[0][0], 766137, 0.005e+06); }
+    if (std::fabs(t - 3.2342e+12) < 0.05e+12) {
+      nhit0++;
+      CHECK_CLOSE(u0[0][0], 1.14164e+06, 0.01e+06);
+    }
+    if (std::fabs(t - 1.7521e+13) < 0.01e+13) {
+      nhit1++;
+      CHECK_CLOSE(u0[0][0], 766137, 0.005e+06);
+    }
   }
   WriteStateStatistics(*S, *vo);
   CHECK(nhit0 > 0 && nhit1 > 0);

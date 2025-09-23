@@ -14,16 +14,16 @@
 
 #include <string>
 #ifndef XMLPARAMETERLISTWRITER_H
-#  define XMLPARAMETERLISTWRITER_H
+#define XMLPARAMETERLISTWRITER_H
 
-#  include "Teuchos_ParameterList.hpp"
-#  include "Teuchos_XMLObject.hpp"
-#  include "Teuchos_Utils.hpp"
-#  include "Teuchos_ArrayView.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_XMLObject.hpp"
+#include "Teuchos_Utils.hpp"
+#include "Teuchos_ArrayView.hpp"
 
 namespace Teuchos {
 
-#  if 0
+#if 0
 template<>
 class ToStringTraits<double> {
  public:
@@ -35,7 +35,7 @@ class ToStringTraits<double> {
     return os.str();
   }
 };
-#  endif
+#endif
 
 class Amanzi_XMLParameterListWriter {
  public:

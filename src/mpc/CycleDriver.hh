@@ -47,12 +47,12 @@ to handle multiphysics process kernels (PKs) and multiple time periods.
            available options are (`"darcy`", `"richards`", `"transport`", `"one-phase energy`",
            `"two-phase energy`", `"reactive transport`", `"flow reactive transport`",
            `"thermal richards`", `"chemistry`", `"transport implicit`", `"transport matrix fracture`",
-           `"transport matrix fracture implicit`", `"flow`", and `"darcy matrix fracture`").
+           `"transport matrix fracture implicit`", `"flow`", and `"flow matrix fracture`").
 
          * `"start period time`" ``[double]`` is the start time of the current time period.
 
          * `"end period time`" ``[double]`` is the end time of the current time period.
- 
+
          * `"maximum cycle number`" ``[int]`` is the maximum allowed number of cycles in
            the current time period. Special value -1 means unlimited number of cycles.
 
@@ -226,7 +226,7 @@ StateVisFields(const State& S)
   std::set<std::string> fields;
   for (auto it = S.data_begin(); it != S.data_end(); ++it) {
     for (auto& e : *it->second) {
-      if (e.second->io_vis()) fields.insert(it->first);
+      if (e.second->io_vis() ) fields.insert(it->first);
     }
   }
   return fields;

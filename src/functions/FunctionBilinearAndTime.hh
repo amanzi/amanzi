@@ -91,7 +91,7 @@ class FunctionBilinearAndTime : public Function {
 
   FunctionBilinearAndTime(const FunctionBilinearAndTime& other);
 
-  ~FunctionBilinearAndTime(){};
+  ~FunctionBilinearAndTime() {};
   std::unique_ptr<Function> Clone() const
   {
     return std::make_unique<FunctionBilinearAndTime>(*this);

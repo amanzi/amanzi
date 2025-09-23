@@ -46,7 +46,9 @@ InputConverterU::TranslatePreconditioners_()
   out_list.sublist("Trilinos ML") = TranslateTrilinosML_();
   out_list.sublist("Hypre AMG") = TranslateHypreAMG_();
   out_list.sublist("Block ILU") = TranslateBILU_();
-  if (multiphase_) { out_list.sublist("ILU") = TranslateILU_(); }
+  if (multiphase_) {
+    out_list.sublist("ILU") = TranslateILU_();
+  }
 
   return out_list;
 }

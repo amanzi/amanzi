@@ -45,8 +45,12 @@ extern "C"
 
 class LUSolver {
  public:
-  LUSolver() : size_(0) { ipiv_.clear(); }
-  ~LUSolver(){};
+  LUSolver()
+    : size_(0)
+  {
+    ipiv_.clear();
+  }
+  ~LUSolver() {};
 
   void Initialize(int size)
   {
@@ -60,7 +64,9 @@ class LUSolver {
     int ierr, nrhs(1), n(A->size());
     for (int i = 0; i < n; ++i) {
       double big(0.0);
-      for (int j = 0; j < n; ++j) { big = std::max(big, fabs((*A)(i, j))); }
+      for (int j = 0; j < n; ++j) {
+        big = std::max(big, fabs((*A)(i, j)));
+      }
       for (int j = 0; j < n; ++j) (*A)(i, j) /= big;
       (*b)[i] /= big;
     }

@@ -36,7 +36,8 @@
 #include "State.hh"
 
 
-void RunTest(int icase)
+void
+RunTest(int icase)
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -64,8 +65,9 @@ void RunTest(int icase)
   Amanzi::ObservationData obs_data;
 
   Teuchos::ParameterList state_plist = plist->sublist("state");
-  if (icase == 1) state_plist.sublist("evaluators").sublist("fracture-aperture") =
-    state_plist.sublist("evaluators").sublist("fracture-aperture-dynamic");
+  if (icase == 1)
+    state_plist.sublist("evaluators").sublist("fracture-aperture") =
+      state_plist.sublist("evaluators").sublist("fracture-aperture-dynamic");
   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
 
@@ -128,7 +130,8 @@ void RunTest(int icase)
   }
 }
 
-TEST(MPC_DRIVER_FLOW_MATRIX_FRACTURE) {
+TEST(MPC_DRIVER_FLOW_MATRIX_FRACTURE)
+{
   RunTest(0);
   RunTest(1);
 }

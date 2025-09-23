@@ -58,7 +58,9 @@ Operator_Cell::ApplyMatrixFreeOp(const Op_Cell_Cell& op,
   Epetra_MultiVector& Yc = *Y.ViewComponent("cell");
 
   for (int k = 0; k != Xc.NumVectors(); ++k) {
-    for (int c = 0; c != ncells_owned; ++c) { Yc[k][c] += Xc[k][c] * (*op.diag)[k][c]; }
+    for (int c = 0; c != ncells_owned; ++c) {
+      Yc[k][c] += Xc[k][c] * (*op.diag)[k][c];
+    }
   }
   return 0;
 }
@@ -82,12 +84,16 @@ Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
     int ncells = cells.size();
 
     WhetStone::DenseVector v(ncells), av(ncells);
-    for (int n = 0; n != ncells; ++n) { v(n) = Xc[0][cells[n]]; }
+    for (int n = 0; n != ncells; ++n) {
+      v(n) = Xc[0][cells[n]];
+    }
 
     const WhetStone::DenseMatrix& Aface = op.matrices[f];
     Aface.Multiply(v, av, false);
 
-    for (int n = 0; n != ncells; ++n) { Yc[0][cells[n]] += av(n); }
+    for (int n = 0; n != ncells; ++n) {
+      Yc[0][cells[n]] += av(n);
+    }
   }
   return 0;
 }

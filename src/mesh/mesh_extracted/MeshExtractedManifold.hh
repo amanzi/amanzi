@@ -50,7 +50,7 @@ class MeshExtractedManifold : public MeshFramework {
     const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
     const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null,
     bool flattened = false);
-  ~MeshExtractedManifold(){};
+  ~MeshExtractedManifold() {};
 
   // initialization
   void InitParentMaps(const std::string& setname);
@@ -77,8 +77,8 @@ class MeshExtractedManifold : public MeshFramework {
   // general mesh information
   // -- number of entities of any kind (cell, face, node) and in a
   //    particular category (OWNED, GHOST, ALL)
-  virtual std::size_t
-  getNumEntities(const Entity_kind kind, const Parallel_kind ptype) const override;
+  virtual std::size_t getNumEntities(const Entity_kind kind,
+                                     const Parallel_kind ptype) const override;
 
   // -- faces
   // On a distributed mesh, all nodes (OWNED or GHOST) of the face are returned
@@ -120,8 +120,8 @@ class MeshExtractedManifold : public MeshFramework {
   virtual AmanziGeometry::Point getNodeCoordinate(const Entity_ID n) const override;
 
   // Mesh Sets for ICs, BCs, Material Properties
-  virtual bool
-  isValidSetType(const AmanziGeometry::RegionType rtype, const Entity_kind kind) const override
+  virtual bool isValidSetType(const AmanziGeometry::RegionType rtype,
+                              const Entity_kind kind) const override
   {
     return true;
   }
@@ -150,7 +150,7 @@ class MeshExtractedManifold : public MeshFramework {
                      Entity_kind kind_p,
                      Entity_kind kind_d,
                      Entity_ID_View* setents) const;
-  template <class Entity_ID_View_Type>
+  template<class Entity_ID_View_Type>
   std::map<Entity_ID, int> EnforceOneLayerOfGhosts_(const std::string& setname,
                                                     Entity_kind kind,
                                                     Entity_ID_View_Type* setents) const;

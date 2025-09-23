@@ -19,7 +19,7 @@ matrix of types *advection* and *flux*, respectively.
 .. admonition:: advection_op-spec
 
   * `"pks operator name`" ``[list]`` a PK specific name for the advection operator.
- 
+
     * `"method`" ``[string]`` defines a discretization method. The available option is `"dg modal`".
 
     * `"method order`" ``[int]`` defines method order. For example, the classical low-order finite
@@ -102,7 +102,7 @@ namespace Operators {
 class PDE_Advection : public PDE_HelperDiscretization {
  public:
   PDE_Advection(Teuchos::ParameterList& plist, const Teuchos::RCP<Operator>& global_op)
-    : PDE_HelperDiscretization(global_op){};
+    : PDE_HelperDiscretization(global_op) {};
 
   PDE_Advection(Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : PDE_HelperDiscretization(mesh)
@@ -110,7 +110,7 @@ class PDE_Advection : public PDE_HelperDiscretization {
     global_op_ = Teuchos::null;
   }
 
-  virtual ~PDE_Advection(){};
+  virtual ~PDE_Advection() {};
 
   // main members
   // -- setup
@@ -122,7 +122,7 @@ class PDE_Advection : public PDE_HelperDiscretization {
 
   // -- standard interface for flux calculation
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
-                          const Teuchos::Ptr<CompositeVector>& u) override{};
+                          const Teuchos::Ptr<CompositeVector>& u) override {};
 
   // -- extended interface for flux calculation
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& h,

@@ -30,7 +30,7 @@ namespace Flow {
 
 class Permeability {
  public:
-  virtual ~Permeability(){};
+  virtual ~Permeability() {};
   virtual double Factor(double phi) = 0;
   virtual double dFactordPorosity(double phi) = 0;
 };

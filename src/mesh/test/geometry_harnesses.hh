@@ -21,7 +21,7 @@ using namespace Amanzi::AmanziMesh;
 //
 // This is a helper function -- simply runs MeshAudit
 //
-template <class MeshAudit_type, class Mesh_type>
+template<class MeshAudit_type, class Mesh_type>
 void
 testMeshAudit(const Teuchos::RCP<Mesh_type>& mesh)
 {
@@ -36,7 +36,7 @@ testMeshAudit(const Teuchos::RCP<Mesh_type>& mesh)
 //
 // Used to check that partial counts add up to global count in parallel tests.
 //
-template <typename T>
+template<typename T>
 void
 CHECK_CLOSE_SUMALL(T exp, T contrib, const Amanzi::Comm_type& comm, T tol = 0)
 {
@@ -67,7 +67,7 @@ CHECK_MPI_ALL(std::vector<int>& contrib, const Amanzi::Comm_type& comm)
 //
 // Tests geometry given expected values
 //
-template <class Mesh_type>
+template<class Mesh_type>
 void
 testMeshGeometry(const Teuchos::RCP<Mesh_type>& mesh,
                  const Point_List& exp_cell_centroids,
@@ -195,7 +195,7 @@ testMeshGeometry(const Teuchos::RCP<Mesh_type>& mesh,
 //
 // Form the expected values and call testGeometry for a 2D box
 //
-template <class Mesh_type>
+template<class Mesh_type>
 void
 testGeometryQuad(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny)
 {
@@ -263,7 +263,7 @@ testGeometryQuad(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny)
 //
 // Form the expected values and call testGeometry for a 3D cube
 //
-template <class Mesh_type>
+template<class Mesh_type>
 void
 testGeometryCube(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int nz)
 {
@@ -357,7 +357,7 @@ testGeometryCube(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int nz)
 //
 // Note this is valid on 2D quads too with default value nz = -1
 //
-template <class Mesh_type>
+template<class Mesh_type>
 void
 testExteriorMapsUnitBox(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int nz = -1)
 {
@@ -388,7 +388,9 @@ testExteriorMapsUnitBox(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int
         break;
       }
     }
-    if (!found) { std::cout << "not found: " << bf << " at " << f_centroid << std::endl; }
+    if (!found) {
+      std::cout << "not found: " << bf << " at " << f_centroid << std::endl;
+    }
     CHECK(found);
   }
 
@@ -445,7 +447,7 @@ testExteriorMapsUnitBox(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int
 //
 // Test a columnar system
 //
-template <MemSpace_kind MEM>
+template<MemSpace_kind MEM>
 inline void
 testColumnsUniformDz(const MeshCache<MEM>& mesh, double dz)
 {
@@ -463,13 +465,17 @@ testColumnsUniformDz(const MeshCache<MEM>& mesh, double dz)
     // check all owned cells first, then all ghosted
     if (owned) {
       if (cells[0] < ncells_owned) {
-        for (const auto& c : cells) { CHECK(c < ncells_owned); }
+        for (const auto& c : cells) {
+          CHECK(c < ncells_owned);
+        }
       } else {
         owned = false;
       }
     }
     if (!owned) {
-      for (const auto& c : cells) { CHECK(c >= ncells_owned); }
+      for (const auto& c : cells) {
+        CHECK(c >= ncells_owned);
+      }
     }
 
     // check geometry

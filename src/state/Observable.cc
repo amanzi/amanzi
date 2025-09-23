@@ -181,7 +181,7 @@ Observable::Setup(const Teuchos::Ptr<State>& S)
     }
   } else {
     // not a domain set, just use as normal
-    if (!S->HasMesh(domain)) return;
+    if (!S->HasMesh(domain) ) return;
     mesh = S->GetMesh(domain);
   }
 
@@ -278,7 +278,7 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
 
   // deal with the time integrated case for the first observation
   if (time_integrated_ && std::isnan(old_time_)) {
-    for (int i = 0; i != get_num_vectors(); ++i) data[start_loc + i] = 0.;
+    for (int i = 0; i != get_num_vectors() ; ++i) data[start_loc + i] = 0.;
     old_time_ = S->get_time();
     return;
   }
@@ -433,10 +433,14 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
           value[i] = global_value[i] / global_value[get_num_vectors()];
         }
       } else if (reduction_ == "integral" || reduction_ == "extensive integral") {
-        for (int i = 0; i != get_num_vectors(); ++i) { value[i] = global_value[i]; }
+        for (int i = 0; i != get_num_vectors(); ++i) {
+          value[i] = global_value[i];
+        }
       }
     } else {
-      for (int i = 0; i != get_num_vectors(); ++i) { value[i] = nan; }
+      for (int i = 0; i != get_num_vectors(); ++i) {
+        value[i] = nan;
+      }
     }
   } else if (reduction_ == "minimum") {
     std::vector<double> global_value(value);
@@ -451,13 +455,17 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
   }
 
   // copy back from value into the data array
-  for (int i = 0; i != get_num_vectors(); ++i) { data[start_loc + i] = value[i]; }
+  for (int i = 0; i != get_num_vectors(); ++i) {
+    data[start_loc + i] = value[i];
+  }
 
   // factor of dt for time integration
   if (time_integrated_) {
     double dt = S->get_time() - old_time_;
     old_time_ = S->get_time();
-    for (int i = 0; i != get_num_vectors(); ++i) { data[start_loc + i] *= dt; }
+    for (int i = 0; i != get_num_vectors(); ++i) {
+      data[start_loc + i] *= dt;
+    }
   }
 }
 

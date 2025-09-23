@@ -61,8 +61,8 @@ class RegionLineSegment : public Region {
   // a 0 if not.
   //
   // Polyhedron with counter clockwise ordered faces (wrt normals)
-  double
-  intersect(const std::vector<Point>& polytope, const std::vector<std::vector<int>>& faces) const;
+  double intersect(const std::vector<Point>& polytope,
+                   const std::vector<std::vector<int>>& faces) const;
 
   void ComputeInterLinePoints(const std::vector<Point>& polytope,
                               const std::vector<std::vector<int>>& faces,
@@ -75,11 +75,9 @@ class RegionLineSegment : public Region {
   //bool complete_;
 };
 
-double
-PlaneLineIntersection(const std::vector<Point>& plane, const std::vector<Point>& line);
+double PlaneLineIntersection(const std::vector<Point>& plane, const std::vector<Point>& line);
 
-double
-det_aux(const std::vector<double>& first_row, const std::vector<double>& submatr);
+double det_aux(const std::vector<double>& first_row, const std::vector<double>& submatr);
 
 } // namespace AmanziGeometry
 } // namespace Amanzi

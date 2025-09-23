@@ -87,7 +87,7 @@ class BCs;
 
 class PDE_DiffusionFactory {
  public:
-  PDE_DiffusionFactory(){};
+  PDE_DiffusionFactory() {};
   PDE_DiffusionFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   PDE_DiffusionFactory(Teuchos::ParameterList& oplist,
                        const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
@@ -142,28 +142,28 @@ class PDE_DiffusionFactory {
                                      const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                      const Teuchos::RCP<BCs>& bc);
 
-  Teuchos::RCP<PDE_Diffusion>
-  Create(Teuchos::ParameterList& oplist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+  Teuchos::RCP<PDE_Diffusion> Create(Teuchos::ParameterList& oplist,
+                                     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
-  Teuchos::RCP<PDE_Diffusion>
-  Create(Teuchos::ParameterList& oplist, const Teuchos::RCP<Operator>& global_op);
+  Teuchos::RCP<PDE_Diffusion> Create(Teuchos::ParameterList& oplist,
+                                     const Teuchos::RCP<Operator>& global_op);
 
   // Diffusion operators with gravity.
-  Teuchos::RCP<PDE_DiffusionWithGravity>
-  CreateWithGravity(Teuchos::ParameterList& oplist,
-                    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                    const Teuchos::RCP<BCs>& bc);
+  Teuchos::RCP<PDE_DiffusionWithGravity> CreateWithGravity(
+    Teuchos::ParameterList& oplist,
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+    const Teuchos::RCP<BCs>& bc);
 
   Teuchos::RCP<PDE_DiffusionWithGravity> CreateWithGravity(Teuchos::ParameterList& oplist,
                                                            const Teuchos::RCP<Operator>& global_op,
                                                            const Teuchos::RCP<BCs>& bc);
 
-  Teuchos::RCP<PDE_DiffusionWithGravity>
-  CreateWithGravity(Teuchos::ParameterList& oplist,
-                    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+  Teuchos::RCP<PDE_DiffusionWithGravity> CreateWithGravity(
+    Teuchos::ParameterList& oplist,
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
-  Teuchos::RCP<PDE_DiffusionWithGravity>
-  CreateWithGravity(Teuchos::ParameterList& oplist, const Teuchos::RCP<Operator>& global_op);
+  Teuchos::RCP<PDE_DiffusionWithGravity> CreateWithGravity(Teuchos::ParameterList& oplist,
+                                                           const Teuchos::RCP<Operator>& global_op);
 
  private:
   Teuchos::ParameterList oplist_;

@@ -23,19 +23,19 @@
 #include "Kokkos_Core.hpp"
 
 #ifdef TRILINOS_TPETRA_STACK
-#  include "Teuchos_Comm.hpp"
-#  include "Teuchos_MpiComm.hpp"
-#  include "Teuchos_SerialComm.hpp"
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_MpiComm.hpp"
+#include "Teuchos_SerialComm.hpp"
 #else
 
-#  include "Epetra_MpiComm.h"
-#  include "Epetra_SerialComm.h"
-#  include "Epetra_Map.h"
-#  include "Epetra_Import.h"
+#include "Epetra_MpiComm.h"
+#include "Epetra_SerialComm.h"
+#include "Epetra_Map.h"
+#include "Epetra_Import.h"
 #endif
 
 namespace Teuchos {
-template <typename T>
+template<typename T>
 inline Teuchos::RCP<T>
 rcp(std::unique_ptr<T>&& in)
 {
@@ -58,16 +58,16 @@ using DefaultHost = Kokkos::Device<DefaultHostExecutionSpace, DefaultHostMemoryS
 
 #ifdef TRILINOS_TPETRA_STACK
 typedef Teuchos::Comm<int> Comm_type;
-#  ifdef HAVE_MPI
+#ifdef HAVE_MPI
 typedef Teuchos::MpiComm<int> MpiComm_type;
 typedef Teuchos::SerialComm<int> SerialComm_type;
-#  endif
+#endif
 #else
 typedef Epetra_Comm Comm_type;
-#  ifdef HAVE_MPI
+#ifdef HAVE_MPI
 typedef Epetra_MpiComm MpiComm_type;
 typedef Epetra_SerialComm SerialComm_type;
-#  endif
+#endif
 #endif
 
 typedef Teuchos::RCP<const Comm_type> Comm_ptr_type;
@@ -79,7 +79,7 @@ using Import_ptr_type = Teuchos::RCP<Import_type>;
 
 enum class MemSpace_kind { HOST, DEVICE };
 
-template <MemSpace_kind MEM>
+template<MemSpace_kind MEM>
 using MemoryLocation = std::
   conditional_t<MEM == MemSpace_kind::DEVICE, Kokkos::DefaultExecutionSpace, Kokkos::HostSpace>;
 

@@ -51,7 +51,7 @@ WaterStorageStressSplit::WaterStorageStressSplit(Teuchos::ParameterList& plist)
 * Copy constructors.
 ****************************************************************** */
 WaterStorageStressSplit::WaterStorageStressSplit(const WaterStorageStressSplit& other)
-  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other){};
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other) {};
 
 
 Teuchos::RCP<Evaluator>
@@ -107,11 +107,17 @@ WaterStorageStressSplit::EvaluatePartialDerivative_(const State& S,
   int ncells = results[0]->size("cell");
 
   if (wrt_key == porosity_key_) {
-    for (int c = 0; c != ncells; ++c) { result_v[0][c] = s_l[0][c] * n_l[0][c]; }
+    for (int c = 0; c != ncells; ++c) {
+      result_v[0][c] = s_l[0][c] * n_l[0][c];
+    }
   } else if (wrt_key == saturation_key_) {
-    for (int c = 0; c != ncells; ++c) { result_v[0][c] = phi[0][c] * n_l[0][c]; }
+    for (int c = 0; c != ncells; ++c) {
+      result_v[0][c] = phi[0][c] * n_l[0][c];
+    }
   } else if (wrt_key == mol_density_liquid_key_) {
-    for (int c = 0; c != ncells; ++c) { result_v[0][c] = phi[0][c] * s_l[0][c]; }
+    for (int c = 0; c != ncells; ++c) {
+      result_v[0][c] = phi[0][c] * s_l[0][c];
+    }
   } else if (wrt_key == pressure_key_) {
     for (int c = 0; c != ncells; ++c) {
       double stability = FixedStressStability(E[0][c], nu[0][c], b[0][c]);

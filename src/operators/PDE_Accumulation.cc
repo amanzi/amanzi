@@ -46,11 +46,15 @@ PDE_Accumulation::AddAccumulationTerm(const CompositeVector& du, const std::stri
 
   if (m == m0) {
     for (int k = 0; k < m; k++) {
-      for (int i = 0; i < n; i++) { diag[k][i] += duc[k][i]; }
+      for (int i = 0; i < n; i++) {
+        diag[k][i] += duc[k][i];
+      }
     }
   } else if (m == 1) {
     for (int k = 0; k < m0; k++) {
-      for (int i = 0; i < n; i++) { diag[k][i] += duc[0][i]; }
+      for (int i = 0; i < n; i++) {
+        diag[k][i] += duc[0][i];
+      }
     }
   } else {
     AMANZI_ASSERT(false);
@@ -134,7 +138,9 @@ PDE_Accumulation::AddAccumulationTerm(const CompositeVector& du1,
   } else {
     for (int k = 0; k < m0; k++) {
       int k0 = std::min(0, k);
-      for (int i = 0; i < n0; i++) { diag[k][i] += alpha * du1c[k0][i] * du2c[k0][i]; }
+      for (int i = 0; i < n0; i++) {
+        diag[k][i] += alpha * du1c[k0][i] * du2c[k0][i];
+      }
     }
   }
 }
@@ -273,7 +279,7 @@ PDE_Accumulation::AddAccumulationDeltaNoVolume(const CompositeVector& u0,
                                                const CompositeVector& ss,
                                                const std::string& name)
 {
-  if (!ss.HasComponent(name)) AMANZI_ASSERT(false);
+  if (!ss.HasComponent(name) ) AMANZI_ASSERT(false);
 
   Teuchos::RCP<Op> op = FindOp_(name);
   Epetra_MultiVector& diag = *op->diag;
@@ -303,7 +309,9 @@ PDE_Accumulation::CalculateEntityVolume_(CompositeVector& volume, const std::str
   if (name == "cell" && volume.HasComponent("cell")) {
     Epetra_MultiVector& vol = *volume.ViewComponent(name);
 
-    for (int c = 0; c != ncells_owned; ++c) { vol[0][c] = mesh_->getCellVolume(c); }
+    for (int c = 0; c != ncells_owned; ++c) {
+      vol[0][c] = mesh_->getCellVolume(c);
+    }
 
   } else if (name == "face" && volume.HasComponent("face")) {
     // Missing code.
@@ -317,7 +325,9 @@ PDE_Accumulation::CalculateEntityVolume_(CompositeVector& volume, const std::str
       auto edges = mesh_->getCellEdges(c);
       int nedges = edges.size();
 
-      for (int i = 0; i < nedges; i++) { vol[0][edges[i]] += mesh_->getCellVolume(c) / nedges; }
+      for (int i = 0; i < nedges; i++) {
+        vol[0][edges[i]] += mesh_->getCellVolume(c) / nedges;
+      }
     }
     volume.GatherGhostedToMaster(name);
 
@@ -336,7 +346,9 @@ PDE_Accumulation::CalculateEntityVolume_(CompositeVector& volume, const std::str
         WhetStone::PolygonCentroidWeights(*mesh_, nodes, cellvolume, weights);
       }
 
-      for (int i = 0; i < nnodes; i++) { vol[0][nodes[i]] += weights[i] * cellvolume; }
+      for (int i = 0; i < nnodes; i++) {
+        vol[0][nodes[i]] += weights[i] * cellvolume;
+      }
     }
     volume.GatherGhostedToMaster(name);
 
@@ -471,7 +483,9 @@ PDE_Accumulation::ApplyBCs()
 
         for (int i = 0; i < diag.MyLength(); i++) {
           if (bc_model[i] == OPERATOR_BC_DIRICHLET) {
-            for (int k = 0; k < m; ++k) { diag[k][i] = 0.0; }
+            for (int k = 0; k < m; ++k) {
+              diag[k][i] = 0.0;
+            }
           } else if (bc_model[i] == OPERATOR_BC_KINEMATIC) {
             const auto& normal = WhetStone::getNodeUnitNormal(*mesh_, i);
             int k = (std::fabs(normal[0]) > std::fabs(normal[1])) ? 0 : 1;
@@ -494,7 +508,7 @@ PDE_Accumulation::FindOp_(const std::string& name) const
 {
   for (auto it = local_ops_.begin(); it != local_ops_.end(); ++it) {
     const Schema& schema = (*it)->schema_row();
-    if (AmanziMesh::to_string(schema.get_base()) == name) return *it;
+    if (AmanziMesh::to_string(schema.get_base() ) == name) return *it;
   }
   return Teuchos::null;
 }

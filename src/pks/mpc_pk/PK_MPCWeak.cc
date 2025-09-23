@@ -46,7 +46,9 @@ PK_MPCWeak::AdvanceStep(double t_old, double t_new, bool reinit)
   bool fail = false;
   for (PK_MPC<PK>::SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
     fail = (*pk)->AdvanceStep(t_old, t_new, reinit);
-    if (fail) { return fail; }
+    if (fail) {
+      return fail;
+    }
   }
   return fail;
 }

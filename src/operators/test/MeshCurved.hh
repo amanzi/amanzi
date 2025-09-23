@@ -39,7 +39,7 @@ class MeshCurved : public Mesh_MSTK {
              const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : Mesh_MSTK(x0, y0, z0, x1, y1, z1, nx, ny, nz, comm, gm, plist),
       edge_ho_nodes_(nullptr),
-      face_ho_nodes_(nullptr){};
+      face_ho_nodes_(nullptr) {};
 
   MeshCurved(double x0,
              double y0,
@@ -50,15 +50,15 @@ class MeshCurved : public Mesh_MSTK {
              const Comm_ptr_type& comm,
              const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
              const Teuchos::RCP<Teuchos::ParameterList>& plist)
-    : Mesh_MSTK(x0, y0, x1, y1, nx, ny, comm, gm, plist), face_ho_nodes_(nullptr){};
+    : Mesh_MSTK(x0, y0, x1, y1, nx, ny, comm, gm, plist), face_ho_nodes_(nullptr) {};
 
   MeshCurved(const std::string& filename,
              const Comm_ptr_type& comm,
              const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
              const Teuchos::RCP<Teuchos::ParameterList>& plist)
-    : Mesh_MSTK(filename.c_str(), comm, gm, plist), face_ho_nodes_(nullptr){};
+    : Mesh_MSTK(filename.c_str(), comm, gm, plist), face_ho_nodes_(nullptr) {};
 
-  ~MeshCurved(){};
+  ~MeshCurved() {};
 
   // new implementtion of some basis functions
   // -- volume/area of cell

@@ -283,7 +283,7 @@ MeshLogical::operator==(const MeshLogical& other)
     if (cell_face_bisectors_.getRowUnmanaged<MemSpace_kind::HOST>(i).size() !=
         other.cell_face_bisectors_.getRowUnmanaged<MemSpace_kind::HOST>(i).size())
       return false;
-    for (size_t j = 0; j != cell_face_bisectors_.getRowUnmanaged<MemSpace_kind::HOST>(i).size();
+    for (size_t j = 0; j != cell_face_bisectors_.getRowUnmanaged<MemSpace_kind::HOST>(i) .size();
          ++j)
       if (AmanziGeometry::norm(cell_face_bisectors_.get<MemSpace_kind::HOST>(i, j) -
                                other.cell_face_bisectors_.get<MemSpace_kind::HOST>(i, j)) > _eps)

@@ -75,7 +75,7 @@ The following parameters are common for all supported engines.
 
 // Amanzi
 #ifdef ALQUIMIA_ENABLED
-#  include "ChemistryEngine.hh"
+#include "ChemistryEngine.hh"
 #endif
 #include "Key.hh"
 #include "Mesh.hh"

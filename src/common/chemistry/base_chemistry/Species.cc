@@ -39,7 +39,7 @@ Species::Species()
     charge_(0),
     gram_molecular_weight_(0.0),
     ion_size_parameter_(0.0),
-    name_(""){};
+    name_("") {};
 
 
 Species::Species(int id, const std::string& name, const Teuchos::ParameterList& plist)
@@ -58,7 +58,9 @@ Species::Species(int id, const std::string& name, const Teuchos::ParameterList& 
   }
 
   charge_ = 0.0;
-  if (plist.isParameter("charge")) { charge_ = plist.get<int>("charge"); }
+  if (plist.isParameter("charge")) {
+    charge_ = plist.get<int>("charge");
+  }
 
   gram_molecular_weight_ = plist.get<double>("gram molecular weight");
 

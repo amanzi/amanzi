@@ -20,7 +20,8 @@
 namespace Amanzi {
 
 // Copy constructor
-TreeVectorSpace::TreeVectorSpace(const TreeVectorSpace& other) : comm_(other.comm_)
+TreeVectorSpace::TreeVectorSpace(const TreeVectorSpace& other)
+  : comm_(other.comm_)
 {
   if (other.data_ != Teuchos::null) {
     data_ = Teuchos::rcp(new CompositeVectorSpace(*other.data_));
@@ -43,7 +44,7 @@ TreeVectorSpace::SameAs(const TreeVectorSpace& other) const
     return false;
   if (subvecs_.size() != other.subvecs_.size()) return false;
   for (int i = 0; i != subvecs_.size(); ++i)
-    if (!subvecs_[i]->SameAs(*other.subvecs_[i])) return false;
+    if (!subvecs_[i]->SameAs(*other.subvecs_[i]) ) return false;
   return true;
 }
 
@@ -52,10 +53,10 @@ bool
 TreeVectorSpace::SubsetOf(const TreeVectorSpace& other) const
 {
   if (data_ != Teuchos::null && other.data_ == Teuchos::null) return false;
-  if (data_ != Teuchos::null && !data_->SubsetOf(*other.data_)) return false;
+  if (data_ != Teuchos::null && !data_->SubsetOf(*other.data_) ) return false;
   if (subvecs_.size() != other.subvecs_.size()) return false;
   for (int i = 0; i != subvecs_.size(); ++i)
-    if (!subvecs_[i]->SubsetOf(*other.subvecs_[i])) return false;
+    if (!subvecs_[i]->SubsetOf(*other.subvecs_[i]) ) return false;
   return true;
 }
 
@@ -93,7 +94,9 @@ Teuchos::RCP<const TreeVectorSpace>
 TreeVectorSpace::SubVector(int index) const
 {
   // Get a pointer to the sub-vector by index
-  if (index < subvecs_.size()) { return subvecs_[index]; }
+  if (index < subvecs_.size()) {
+    return subvecs_[index];
+  }
   return Teuchos::null;
 };
 

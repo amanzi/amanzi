@@ -46,11 +46,14 @@ class Evaluator_PDE_Diffusion : public EvaluatorSecondary {
   // jac-op handled in EnsureCompatibility()
   // virtual void EnsureCompatibleDerivative(State &S, const Key& wrt_key, const Tag& wrt_tag) override {};
 
-  virtual bool
-  UpdateDerivative(State& S, const Key& requestor, const Key& wrt_key, const Tag& wrt_tag) override;
+  virtual bool UpdateDerivative(State& S,
+                                const Key& requestor,
+                                const Key& wrt_key,
+                                const Tag& wrt_tag) override;
 
-  virtual bool
-  IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const override
+  virtual bool IsDifferentiableWRT(const State& S,
+                                   const Key& wrt_key,
+                                   const Tag& wrt_tag) const override
   {
     return IsDependency(S, wrt_key, wrt_tag) && !jac_op_key_.empty();
   }

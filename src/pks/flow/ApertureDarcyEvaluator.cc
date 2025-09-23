@@ -48,7 +48,7 @@ ApertureDarcyEvaluator::ApertureDarcyEvaluator(const ApertureDarcyEvaluator& oth
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
     ref_pressure_key_(other.ref_pressure_key_),
     pressure_key_(other.pressure_key_),
-    compliance_key_(other.compliance_key_){};
+    compliance_key_(other.compliance_key_) {};
 
 
 /* ******************************************************************

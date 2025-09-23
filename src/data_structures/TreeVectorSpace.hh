@@ -27,8 +27,10 @@ class CompositeVectorSpace;
 class TreeVectorSpace {
  public:
   // Constructor
-  TreeVectorSpace() : comm_(Amanzi::getDefaultComm()){};
-  TreeVectorSpace(const Comm_ptr_type& comm) : comm_(comm){};
+  TreeVectorSpace()
+    : comm_(Amanzi::getDefaultComm()) {};
+  TreeVectorSpace(const Comm_ptr_type& comm)
+    : comm_(comm) {};
   TreeVectorSpace(const Teuchos::RCP<const CompositeVectorSpace>& cvfac)
     : data_(cvfac), comm_(cvfac->Comm())
   {}

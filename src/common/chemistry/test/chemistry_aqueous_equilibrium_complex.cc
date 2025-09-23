@@ -103,7 +103,7 @@ SUITE(GeochemistryTestsAqueousEquilibriumComplex)
       .set<double>("equilibrium constant", logK_);
   }
 
-  AqueousEquilibriumComplexTest::~AqueousEquilibriumComplexTest(){};
+  AqueousEquilibriumComplexTest::~AqueousEquilibriumComplexTest() {};
 
   //
   // most of the basic functionality comes from the parent SecondarySpecies class.

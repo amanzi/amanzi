@@ -33,8 +33,9 @@ class Op_Edge_Edge : public Op {
       Teuchos::rcp(new Epetra_MultiVector(mesh->getMap(AmanziMesh::Entity_kind::EDGE, false), 1));
   }
 
-  virtual void
-  ApplyMatrixFreeOp(const Operator* assembler, const CompositeVector& X, CompositeVector& Y) const
+  virtual void ApplyMatrixFreeOp(const Operator* assembler,
+                                 const CompositeVector& X,
+                                 CompositeVector& Y) const
   {
     assembler->ApplyMatrixFreeOp(*this, X, Y);
   }
@@ -62,7 +63,9 @@ class Op_Edge_Edge : public Op {
     if (scaling.HasComponent("edge")) {
       const Epetra_MultiVector& s_e = *scaling.ViewComponent("edge", false);
       for (int k = 0; k != s_e.NumVectors(); ++k) {
-        for (int i = 0; i != s_e.MyLength(); ++i) { (*diag)[k][i] *= s_e[0][i]; }
+        for (int i = 0; i != s_e.MyLength(); ++i) {
+          (*diag)[k][i] *= s_e[0][i];
+        }
       }
     }
   }

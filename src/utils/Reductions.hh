@@ -22,28 +22,32 @@ struct MaxLoc {
   int gid;
 };
 
-inline MaxLoc createEmptyMaxLoc()
+inline MaxLoc
+createEmptyMaxLoc()
 {
   return { std::numeric_limits<double>::lowest(), -1 };
 }
 
 inline std::ostream&
-operator<<(std::ostream& os, const MaxLoc& ml) {
+operator<<(std::ostream& os, const MaxLoc& ml)
+{
   os << "[" << ml.gid << "] " << ml.value;
   return os;
 }
 
 // Compute {min value, location}, {max value, location}
-using MinMaxLoc = std::array<MaxLoc,2>;
+using MinMaxLoc = std::array<MaxLoc, 2>;
 
-inline MinMaxLoc createEmptyMinMaxLoc()
+inline MinMaxLoc
+createEmptyMinMaxLoc()
 {
   return { MaxLoc{ std::numeric_limits<double>::max(), -1 },
            MaxLoc{ std::numeric_limits<double>::lowest(), -1 } };
 }
 
 inline std::ostream&
-operator<<(std::ostream& os, const MinMaxLoc& mml) {
+operator<<(std::ostream& os, const MinMaxLoc& mml)
+{
   os << mml[0] << ", " << mml[1];
   return os;
 }

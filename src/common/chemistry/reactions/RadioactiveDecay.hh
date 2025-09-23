@@ -73,7 +73,7 @@ class RadioactiveDecay {
   RadioactiveDecay();
   RadioactiveDecay(const Teuchos::ParameterList& plist,
                    const std::map<std::string, int>& name_to_id);
-  ~RadioactiveDecay(){};
+  ~RadioactiveDecay() {};
 
   // update forward and reverse effective reaction rates
   void UpdateRate(const std::vector<double>& total,

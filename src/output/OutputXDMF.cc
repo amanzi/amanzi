@@ -69,7 +69,8 @@ OutputXDMF::WriteVector(const Epetra_Vector& vec,
     const auto& map = vec.Map();
     if (map.MaxElementSize() > 1) {
       Epetra_Vector vec_node(mesh_->getMap(AmanziMesh::Entity_kind::NODE, false));
-      int nnodes = mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
+      int nnodes =
+        mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
 
       for (int n = 0; n < nnodes; ++n) {
         int g = map.FirstPointInElement(n);
@@ -128,7 +129,9 @@ void
 OutputXDMF::ReadMultiVector(Epetra_MultiVector& vec, const std::vector<std::string>& names) const
 {
   AMANZI_ASSERT(names.size() == vec.NumVectors());
-  for (int i = 0; i != vec.NumVectors(); ++i) { io_->readData(*vec(i), names[i]); }
+  for (int i = 0; i != vec.NumVectors(); ++i) {
+    io_->readData(*vec(i), names[i]);
+  }
 }
 
 

@@ -28,8 +28,9 @@ namespace Amanzi {
 
 class ParallelCommunication {
  public:
-  ParallelCommunication(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh){};
-  ~ParallelCommunication(){};
+  ParallelCommunication(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    : mesh_(mesh) {};
+  ~ParallelCommunication() {};
 
   // data management
   void CopyMasterEntity2GhostEntity(const AmanziMesh::Entity_kind& kind, Epetra_IntVector& vhost);

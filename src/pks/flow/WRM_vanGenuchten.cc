@@ -192,8 +192,7 @@ WRM_vanGenuchten::dKdPc(double pc) const
     double dkdse;
     if (function_ == FLOW_WRM_MUALEM)
       dkdse = (1.0 - y) * (l_ * (1.0 - y) + 2 * x * y / (1.0 - x)) * pow(se, l_ - 1.0);
-    else
-      dkdse = (2 * (1.0 - y) + x / (1.0 - x)) * se;
+    else dkdse = (2 * (1.0 - y) + x / (1.0 - x)) * se;
 
     return dkdse * dsdp / (1.0 - sr_);
 

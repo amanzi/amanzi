@@ -48,7 +48,7 @@ EOSViscosityEvaluator::EOSViscosityEvaluator(Teuchos::ParameterList& plist)
 EOSViscosityEvaluator::EOSViscosityEvaluator(const EOSViscosityEvaluator& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
     visc_(other.visc_),
-    temp_key_(other.temp_key_){};
+    temp_key_(other.temp_key_) {};
 
 
 Teuchos::RCP<Evaluator>

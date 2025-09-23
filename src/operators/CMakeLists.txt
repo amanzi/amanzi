@@ -92,6 +92,7 @@ set(operators_inc_files
     InverseSchurComplement.hh
     Operator_FaceCellSff.hh
     Operator_Factory.hh
+    Operator_MultiMesh.hh
     Operator_Node.hh
     Operator_Schema.hh
     PDE_Abstract.hh
@@ -117,7 +118,9 @@ set(operators_inc_files
     PDE_DiffusionDG.hh
     PDE_DiffusionFracturedMatrix.hh
     PDE_DiffusionCurvedFace.hh
+    PDE_DiffusionMultiMesh.hh
     PDE_Elasticity.hh
+    PDE_ElasticityCurvedFace.hh
     PDE_ElasticityFracturedMatrix.hh
     PDE_Electromagnetics.hh
     PDE_MagneticDiffusion.hh
@@ -165,6 +168,7 @@ set(operators_src_files
   InverseSchurComplement.cc
   Operator_FaceCellScc.cc Operator_FaceCellSff.cc
   Operator_Factory.cc
+  Operator_MultiMesh.cc 
   Operator_Node.cc
   Operator_Schema.cc
   PDE_Accumulation.cc
@@ -180,9 +184,9 @@ set(operators_src_files
   PDE_DiffusionNLFV.cc PDE_DiffusionNLFVwithGravity.cc
   PDE_DiffusionNLFVwithBndFaces.cc PDE_DiffusionNLFVwithBndFacesGravity.cc
   PDE_DiffusionDG.cc
-  PDE_DiffusionCurvedFace.cc
   PDE_DiffusionFracturedMatrix.cc
   PDE_DiffusionFactory.cc
+  PDE_DiffusionMultiMesh.cc 
   PDE_HelperDiscretization.cc
   PDE_Elasticity.cc
   PDE_ElasticityFracturedMatrix.cc
@@ -292,6 +296,16 @@ if (ENABLE_TESTS)
                         LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
                     
         add_amanzi_test(operators_coupled_diffusion_2pe operators_coupled_diffusion NPROCS 2 KIND unit)
+
+        add_amanzi_test(operators_diffusion_multi_mesh operators_diffusion_multi_mesh
+                        KIND unit
+                        SOURCE test/Main.cc test/operator_diffusion_multi_mesh.cc
+                        LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+        add_amanzi_test(operators_diffusion_multi_mesh_cuts operators_diffusion_multi_mesh_cuts
+                        KIND unit
+                        SOURCE test/Main.cc test/operator_diffusion_multi_mesh_cuts.cc
+                        LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
         # convergence rates
         add_amanzi_test(operators_diffusion_convergence operators_diffusion_convergence
@@ -449,6 +463,12 @@ if (ENABLE_TESTS)
     add_amanzi_test(operators_elasticity_weak_symmetry operators_elasticity_weak_symmetry
                     KIND unit
                     SOURCE test/Main.cc test/operator_elasticity_weak_symmetry.cc
+                    LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(operators_elasticity_curved_face operators_elasticity_curved_face
+                    KIND unit
+                    NPROCS 2
+                    SOURCE test/Main.cc test/operator_elasticity_curved_face.cc
                     LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(operators_elasticity_fractured_matrix operators_elasticity_fractured_matrix

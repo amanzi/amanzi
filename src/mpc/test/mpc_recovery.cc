@@ -56,9 +56,9 @@ using namespace Amanzi::AmanziGeometry;
 using namespace Amanzi::Operators;
 
 /* ****************************************************************
-* Analysis of Failure/Recovery 
+* Analysis of Failure/Recovery
 * ************************************************************** */
-template <class PK>
+template<class PK>
 void
 Run(const std::string& xmlFileName, int dim, const std::vector<double>& dt, int iTP, int icase = -1)
 {
@@ -191,7 +191,9 @@ Run(const std::string& xmlFileName, int dim, const std::vector<double>& dt, int 
   }
 
   // compare states
-  for (int i = 0; i < 2; ++i) { pk[i]->CalculateDiagnostics(Tags::DEFAULT); }
+  for (int i = 0; i < 2; ++i) {
+    pk[i]->CalculateDiagnostics(Tags::DEFAULT);
+  }
 
   double err, fnorm;
   for (auto r = S[0]->data_begin(); r != S[0]->data_end(); ++r) {
@@ -224,8 +226,8 @@ TEST(MPC_RECOVERY_COUPLED_THERMAL_FLOW)
 
   ::Run<FlowEnergyMatrixFracture_PK>(
     "test/mpc_coupled_thermal_flow_richards.xml", 3, { 10.0, 10.0, 10.0 }, 1);
-    // round-off errors are observed between two states/two runs
-    // "test/mpc_coupled_thermal_flow_richards.xml", 3, { 0.1, 0.1, 0.1 }, 1);
+  // round-off errors are observed between two states/two runs
+  // "test/mpc_coupled_thermal_flow_richards.xml", 3, { 0.1, 0.1, 0.1 }, 1);
 }
 
 TEST(MPC_RECOVERY_FLOW_RICHARDS)

@@ -35,8 +35,9 @@ class Op_Cell_Edge : public Op {
     matrices_shadow = matrices;
   }
 
-  virtual void
-  ApplyMatrixFreeOp(const Operator* assembler, const CompositeVector& X, CompositeVector& Y) const
+  virtual void ApplyMatrixFreeOp(const Operator* assembler,
+                                 const CompositeVector& X,
+                                 CompositeVector& Y) const
   {
     assembler->ApplyMatrixFreeOp(*this, X, Y);
   }
@@ -67,7 +68,9 @@ class Op_Cell_Edge : public Op {
       for (int c = 0; c != matrices.size(); ++c) {
         auto nodes = mesh_->getCellNodes(c);
         for (int n = 0; n != nodes.size(); ++n) {
-          for (int m = 0; m != nodes.size(); ++m) { matrices[c](n, m) *= s_n[0][nodes[n]]; }
+          for (int m = 0; m != nodes.size(); ++m) {
+            matrices[c](n, m) *= s_n[0][nodes[n]];
+          }
         }
       }
     }

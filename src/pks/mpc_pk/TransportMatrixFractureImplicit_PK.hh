@@ -57,10 +57,11 @@ class TransportMatrixFractureImplicit_PK : public PK_MPCStrong<PK_BDF> {
                                   Teuchos::RCP<TreeVector> u_new,
                                   Teuchos::RCP<TreeVector> f) override;
 
-  virtual void
-  UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, double dtp) override;
-  virtual int
-  ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, Teuchos::RCP<TreeVector> Y) override;
+  virtual void UpdatePreconditioner(double tp,
+                                    Teuchos::RCP<const TreeVector> u,
+                                    double dtp) override;
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
+                                  Teuchos::RCP<TreeVector> Y) override;
 
  private:
   bool AdvanceStepLO_(double t_old, double t_new, int* tot_itrs);

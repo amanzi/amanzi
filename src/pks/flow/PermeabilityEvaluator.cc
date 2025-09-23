@@ -46,7 +46,7 @@ PermeabilityEvaluator::PermeabilityEvaluator(Teuchos::ParameterList& plist,
 PermeabilityEvaluator::PermeabilityEvaluator(const PermeabilityEvaluator& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
     ppm_(other.ppm_),
-    porosity_key_(other.porosity_key_){};
+    porosity_key_(other.porosity_key_) {};
 
 
 /* ******************************************************************

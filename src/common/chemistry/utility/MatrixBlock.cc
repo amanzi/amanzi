@@ -21,16 +21,20 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
-MatrixBlock::MatrixBlock() : size_(0), cols_(0), A_(NULL) {}
+MatrixBlock::MatrixBlock()
+  : size_(0), cols_(0), A_(NULL)
+{}
 
 
-MatrixBlock::MatrixBlock(int size) : size_(size), cols_(size)
+MatrixBlock::MatrixBlock(int size)
+  : size_(size), cols_(size)
 {
   A_ = new double[size_ * size_];
 }
 
 
-MatrixBlock::MatrixBlock(int size, int cols) : size_(size), cols_(cols)
+MatrixBlock::MatrixBlock(int size, int cols)
+  : size_(size), cols_(cols)
 {
   A_ = new double[size_ * cols_];
 }
@@ -66,7 +70,9 @@ MatrixBlock::PutScalar(double val)
 void
 MatrixBlock::SetDiagonal(double d)
 {
-  for (int i = 0; i < size_; i++) { A_[i * size_ + i] = d; }
+  for (int i = 0; i < size_; i++) {
+    A_[i * size_ + i] = d;
+  }
 }
 
 
@@ -76,7 +82,9 @@ MatrixBlock::GetRowAbsMax(int irow)
   double max = 0.0;
   for (int i = 0; i < cols_; i++) {
     double value = std::fabs(A_[i * size_ + irow]);
-    if (value > max) { max = value; }
+    if (value > max) {
+      max = value;
+    }
   }
   return max;
 }
@@ -85,14 +93,18 @@ MatrixBlock::GetRowAbsMax(int irow)
 void
 MatrixBlock::ScaleRow(int irow, double scale)
 {
-  for (int i = 0; i < cols_; i++) { A_[i * size_ + irow] *= scale; }
+  for (int i = 0; i < cols_; i++) {
+    A_[i * size_ + irow] *= scale;
+  }
 }
 
 
 void
 MatrixBlock::ScaleColumn(int icol, double scale)
 {
-  for (int i = 0; i < size_; i++) { A_[icol * size_ + i] *= scale; }
+  for (int i = 0; i < size_; i++) {
+    A_[icol * size_ + i] *= scale;
+  }
 }
 
 

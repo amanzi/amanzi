@@ -21,7 +21,7 @@
 
 namespace Amanzi {
 // This is not an optimal implementation, but we can improve it later
-template <class Op, class Vector>
+template<class Op, class Vector>
 class AmanziBelosOp : public Belos::Operator<double> {
  private:
   typedef double ScalarType;
@@ -47,10 +47,8 @@ class AmanziBelosOp : public Belos::Operator<double> {
     for (int i = 0; i < nvecs; i++) {
       Teuchos::RCP<Vector> singleX = cmx->getVector(i);
       Teuchos::RCP<Vector> singleY = cmy->getVector(i);
-      if (applyInverse_)
-        op_->ApplyInverse(*singleX, *singleY);
-      else
-        op_->Apply(*singleX, *singleY);
+      if (applyInverse_) op_->ApplyInverse(*singleX, *singleY);
+      else op_->Apply(*singleX, *singleY);
     }
   }
 

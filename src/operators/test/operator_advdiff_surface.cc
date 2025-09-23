@@ -132,7 +132,9 @@ TEST(ADVECTION_DIFFUSION_SURFACE)
   int nfaces =
     surfmesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   Point vel(4.0, 4.0, 0.0);
-  for (int f = 0; f < nfaces; f++) { uf[0][f] = vel * surfmesh->getFaceNormal(f); }
+  for (int f = 0; f < nfaces; f++) {
+    uf[0][f] = vel * surfmesh->getFaceNormal(f);
+  }
 
   op_adv->Setup(*u);
   op_adv->UpdateMatrices(u.ptr());

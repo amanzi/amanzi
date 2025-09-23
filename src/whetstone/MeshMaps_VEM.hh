@@ -46,7 +46,7 @@ class MeshMaps_VEM : public MeshMapsBase {
   {
     ParseInputParameters_(plist);
   }
-  ~MeshMaps_VEM(){};
+  ~MeshMaps_VEM() {};
 
   // remap pseudo velocity
   virtual void VelocityFace(int f, VectorPolynomial& vf) const override;

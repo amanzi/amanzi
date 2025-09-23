@@ -100,12 +100,11 @@ namespace AmanziGeometry {
 
 class Region;
 
-Teuchos::RCP<Region>
-createRegion(const std::string& reg_name,
-             const std::string& reg_type,
-             int reg_id,
-             Teuchos::ParameterList& reg_spec,
-             const Comm_type& comm);
+Teuchos::RCP<Region> createRegion(const std::string& reg_name,
+                                  const std::string& reg_type,
+                                  int reg_id,
+                                  Teuchos::ParameterList& reg_spec,
+                                  const Comm_type& comm);
 
 // deprecate this, this old style
 inline Teuchos::RCP<Region>

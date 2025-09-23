@@ -63,7 +63,7 @@ class FunctionBilinear : public Function {
                    const Teuchos::SerialDenseMatrix<int, double>& v,
                    const int xi,
                    const int yi);
-  ~FunctionBilinear(){};
+  ~FunctionBilinear() {};
   std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionBilinear>(*this); }
   double operator()(const std::vector<double>& x) const;
 

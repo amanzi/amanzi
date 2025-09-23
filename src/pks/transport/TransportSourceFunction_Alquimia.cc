@@ -27,11 +27,15 @@ TransportSourceFunction_Alquimia::TransportSourceFunction_Alquimia(
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
   Teuchos::RCP<AmanziChemistry::Alquimia_PK> alquimia_pk,
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine)
-  : mesh_(mesh), alquimia_pk_(alquimia_pk), chem_engine_(chem_engine)
+  : mesh_(mesh),
+    alquimia_pk_(alquimia_pk),
+    chem_engine_(chem_engine),
+    TransportDomainFunction(plist)
 {
   // Check arguments.
   if (chem_engine_ != Teuchos::null) {
-    chem_engine_->InitState(beaker_.properties, beaker_.state, beaker_.aux_data, beaker_.aux_output);
+    chem_engine_->InitState(
+      beaker_.properties, beaker_.state, beaker_.aux_data, beaker_.aux_output);
     chem_engine_->GetPrimarySpeciesNames(tcc_names_);
   } else {
     Errors::Message msg;
@@ -46,6 +50,8 @@ TransportSourceFunction_Alquimia::TransportSourceFunction_Alquimia(
   std::vector<double> times = plist.get<Teuchos::Array<double>>("times").toVector();
   std::vector<std::string> conditions =
     plist.get<Teuchos::Array<std::string>>("geochemical conditions").toVector();
+
+  set_location("interior");
 
   // Function of geochemical conditions and the associates regions.
   f_ = Teuchos::rcp(new FunctionTabularString(times, conditions));
@@ -70,7 +76,7 @@ TransportSourceFunction_Alquimia::Init_(const std::vector<std::string>& regions)
 {
   for (int i = 0; i < regions.size(); ++i) {
     auto block = mesh_->getSetEntities(
-      regions[i], AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+      regions[i], AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     int nblock = block.size();
 
     // Now get the cells that are attached to these faces.

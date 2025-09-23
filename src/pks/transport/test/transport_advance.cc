@@ -50,7 +50,7 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK)
 
   for (int frm = 0; frm < framework.size(); frm++) {
     std::cout << "Test: advance with framework " << framework_name[frm] << std::endl;
-    if (!framework_enabled(framework[frm])) continue;
+    if (!framework_enabled(framework[frm]) ) continue;
 #ifdef HAVE_MPI
     Comm_ptr_type comm = Amanzi::getDefaultComm();
 #else
@@ -143,7 +143,9 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK)
     for (int k = 0; k < 4; k++) CHECK_CLOSE((*tcc)[0][k], 1.0, 1e-6);
 
     if (framework[frm] == Framework::SIMPLE) {
-      for (int k = 0; k < 19; k++) { CHECK(((*tcc)[0][k] - (*tcc)[0][k + 1]) > -1e-15); }
+      for (int k = 0; k < 19; k++) {
+        CHECK(((*tcc)[0][k] - (*tcc)[0][k + 1]) > -1e-15);
+      }
     }
   }
 }

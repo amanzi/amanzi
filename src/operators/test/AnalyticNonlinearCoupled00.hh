@@ -33,7 +33,7 @@
 class AnalyticNonlinearCoupled00 : public AnalyticNonlinearCoupledBase {
  public:
   AnalyticNonlinearCoupled00(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
-    : AnalyticNonlinearCoupledBase(mesh){};
+    : AnalyticNonlinearCoupledBase(mesh) {};
 
   // analytic solution for diffusion problem with gravity
   bool isBlock(int i, int j) { return i == j ? true : false; }

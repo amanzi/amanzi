@@ -8,10 +8,13 @@
 */
 
 /*
-  This is the mpc_pk component of the Amanzi code.
+  MPC PKs
 
   Class for subcycling a slave step within a master step.
   Assumes that intermediate_time() can be used (i.e. this is not nestable?)
+
+  NOTe: if master passes, slave will try to subcycle with adaptive time step
+  or simulation fails.
 
   See additional documentation in the base class src/pks/mpc_pk/PK_MPC.hh
 */
@@ -71,12 +74,10 @@ PK_MPCSubcycled::AdvanceStep(double t_old, double t_new, bool reinit)
   if (fail) return fail;
 
   master_dt_ = t_new - t_old;
-  if (slave_dt_ > master_dt_) slave_dt_ = master_dt_;
+  sub_pks_[master_]->CommitStep(t_old, t_new, Tags::DEFAULT);
 
   slave_dt_ = sub_pks_[slave_]->get_dt();
-
-  // --etc: unclear if state should be commited?
-  sub_pks_[master_]->CommitStep(t_old, t_new, Tags::DEFAULT);
+  if (slave_dt_ > master_dt_) slave_dt_ = master_dt_;
 
   // advance the slave, subcycling if needed
   S_->set_intermediate_time(t_old);
@@ -86,10 +87,9 @@ PK_MPCSubcycled::AdvanceStep(double t_old, double t_new, bool reinit)
   double dt_done = 0.;
   while (!done) {
     // do not overstep
-    if (t_old + dt_done + dt_next > t_new) { dt_next = t_new - t_old - dt_done; }
-
-    // set the intermediate time
-    S_->set_intermediate_time(t_old + dt_done + dt_next);
+    if (t_old + dt_done + dt_next > t_new) {
+      dt_next = t_new - t_old - dt_done;
+    }
 
     // take the step
     fail = sub_pks_[slave_]->AdvanceStep(t_old + dt_done, t_old + dt_done + dt_next, reinit);
@@ -98,28 +98,33 @@ PK_MPCSubcycled::AdvanceStep(double t_old, double t_new, bool reinit)
       // if fail, cut the step and try again
       dt_next /= 2;
     } else {
-      // if success, commit the state and increment to next intermediate
+      // set the intermediate time
+      S_->set_intermediate_time(t_old + dt_done + dt_next);
+
       // -- etc: unclear if state should be commited or not?
       sub_pks_[slave_]->CommitStep(t_old + dt_done, t_old + dt_done + dt_next, Tags::DEFAULT);
       dt_done += dt_next;
-    }
 
-    dt_next = sub_pks_[slave_]->get_dt();
+      // allow dt to grow only when success
+      dt_next = sub_pks_[slave_]->get_dt();
+    }
 
     // check for done condition
     done =
-      (std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1 * min_dt_) || // finished the step
-      (dt_next < min_dt_);                                                     // failed
+      (std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1 * min_dt_) || (dt_next < min_dt_);
   }
 
-  if (std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1 * min_dt_) {
-    // done, success
-    // --etc: unclear if state should be commited or not?
-    CommitStep(t_old, t_new, Tags::DEFAULT);
-    return false;
-  } else {
-    return true;
-  }
+  return false;
+}
+
+
+// -----------------------------------------------------------------------------
+// Make necessary operatios by the end of the timesteps.
+// -----------------------------------------------------------------------------
+void
+PK_MPCSubcycled::CommitStep(double t_old, double t_new, const Tag& tag)
+{
+  sub_pks_[slave_]->CommitStep(t_old, t_new, tag);
 }
 
 } // namespace Amanzi

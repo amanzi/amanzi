@@ -149,7 +149,9 @@ struct obs_test {
       *S->GetW<CV>("id", Tags::DEFAULT, "my_password").ViewComponent("cell");
     auto& cell_map = S->GetMesh("domain")->getMap(AmanziMesh::Entity_kind::CELL, false);
 
-    for (int c = 0; c != id_c.MyLength(); ++c) { id_c[0][c] = cell_map.GID(c); }
+    for (int c = 0; c != id_c.MyLength(); ++c) {
+      id_c[0][c] = cell_map.GID(c);
+    }
   }
 
   void advance(double dt)
@@ -166,7 +168,8 @@ struct obs_test {
 
 
 struct obs_domain_set_test : public obs_test {
-  obs_domain_set_test() : obs_test()
+  obs_domain_set_test()
+    : obs_test()
   {
     // create the surface mesh
     auto parent = S->GetMesh("domain");

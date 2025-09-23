@@ -18,8 +18,8 @@
   Rotations:    1 value per cell (d dofs)
 */
 
-#ifndef AMANZI_MFD3D_ELASTICITY_WEAK_SYMMETRY_HH_
-#define AMANZI_MFD3D_ELASTICITY_WEAK_SYMMETRY_HH_
+#ifndef AMANZI_MFD3D_ELASTICITY_WEAK_SYMMETRY_BEIRAO_DA_VEIGA_HH_
+#define AMANZI_MFD3D_ELASTICITY_WEAK_SYMMETRY_BEIRAO_DA_VEIGA_HH_
 
 #include "Teuchos_RCP.hpp"
 
@@ -34,11 +34,11 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D_ElasticityWeakSymmetry : public MFD3D {
+class MFD3D_ElasticityWeakSymBdV : public MFD3D {
  public:
-  MFD3D_ElasticityWeakSymmetry(const Teuchos::ParameterList& plist,
+  MFD3D_ElasticityWeakSymBdV(const Teuchos::ParameterList& plist,
                                const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : MFD3D(mesh){};
+    : MFD3D(mesh) {};
 
   // required methods
   // -- schema for displacement and rotations in the stiffness matrix
@@ -66,28 +66,7 @@ class MFD3D_ElasticityWeakSymmetry : public MFD3D {
  private:
   void set_index_(int d, int k, int* index);
 
-  void TripleMatrixProduct_(const DenseVector& ML,
-                            const DenseMatrix& Minv,
-                            const DenseVector& MR,
-                            DenseMatrix& A,
-                            int i0,
-                            int j0);
-
-  void TripleMatrixProduct_(const DenseVector& ML,
-                            const DenseMatrix& Minv,
-                            const DenseMatrix& MR,
-                            DenseMatrix& A,
-                            int i0,
-                            int j0);
-
-  void TripleMatrixProduct_(const DenseMatrix& ML,
-                            const DenseMatrix& Minv,
-                            const DenseMatrix& MR,
-                            DenseMatrix& A,
-                            int i0,
-                            int j0);
-
-  static RegisteredFactory<MFD3D_ElasticityWeakSymmetry> reg_;
+  static RegisteredFactory<MFD3D_ElasticityWeakSymBdV> reg_;
 };
 
 } // namespace WhetStone

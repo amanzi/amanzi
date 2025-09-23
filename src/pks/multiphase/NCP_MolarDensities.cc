@@ -21,7 +21,8 @@ namespace Multiphase {
 /* ******************************************************************
 * Constructor.
 ****************************************************************** */
-NCP_MolarDensities::NCP_MolarDensities(Teuchos::ParameterList& plist) : MultiphaseEvaluator(plist)
+NCP_MolarDensities::NCP_MolarDensities(Teuchos::ParameterList& plist)
+  : MultiphaseEvaluator(plist)
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
@@ -40,7 +41,7 @@ NCP_MolarDensities::NCP_MolarDensities(Teuchos::ParameterList& plist) : Multipha
 * Copy constructors.
 ****************************************************************** */
 NCP_MolarDensities::NCP_MolarDensities(const NCP_MolarDensities& other)
-  : MultiphaseEvaluator(other){};
+  : MultiphaseEvaluator(other) {};
 
 
 Teuchos::RCP<Evaluator>
@@ -65,7 +66,7 @@ NCP_MolarDensities::Evaluate_(const State& S, const std::vector<CompositeVector*
 
   for (int c = 0; c != ncells; ++c) {
     double sum = ng[0][c] * xg[0][c];
-    for (int i = 0; i < tcc.NumVectors(); ++i) sum += tcc[i][c];
+    for (int i = 0; i < tcc.NumVectors() ; ++i) sum += tcc[i][c];
     result_c[0][c] = ng[0][c] - sum;
   }
 }

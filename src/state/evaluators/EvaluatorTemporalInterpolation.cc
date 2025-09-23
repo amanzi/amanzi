@@ -28,9 +28,9 @@ EvaluatorTemporalInterpolation::EvaluatorTemporalInterpolation(Teuchos::Paramete
   dependencies_.insert(next_);
 
   // also depend upon time at all three tags
-  dependencies_.insert(KeyTag{"time", my_keys_.front().second});
-  dependencies_.insert(KeyTag{"time", current_tag});
-  dependencies_.insert(KeyTag{"time", next_tag});
+  dependencies_.insert(KeyTag{ "time", my_keys_.front().second });
+  dependencies_.insert(KeyTag{ "time", current_tag });
+  dependencies_.insert(KeyTag{ "time", next_tag });
 }
 
 // ---------------------------------------------------------------------------
@@ -47,8 +47,8 @@ void
 EvaluatorTemporalInterpolation::EnsureCompatibility(State& S)
 {
   // claim ownership
-  auto& fac = S.Require<CompositeVector, CompositeVectorSpace>(my_keys_.front().first,
-          my_keys_.front().second, my_keys_.front().first);
+  auto& fac = S.Require<CompositeVector, CompositeVectorSpace>(
+    my_keys_.front().first, my_keys_.front().second, my_keys_.front().first);
 
   EnsureCompatibility_Flags_(S);
 
@@ -70,7 +70,8 @@ EvaluatorTemporalInterpolation::Update_(State& S)
   double t_next = S.get_time(next_.second);
   double t_this = S.get_time(my_keys_.front().second);
 
-  CompositeVector& result = S.GetW<CompositeVector>(my_keys_.front().first, my_keys_.front().second, my_keys_.front().first);
+  CompositeVector& result = S.GetW<CompositeVector>(
+    my_keys_.front().first, my_keys_.front().second, my_keys_.front().first);
   const CompositeVector& var_current = S.Get<CompositeVector>(current_.first, current_.second);
   const CompositeVector& var_next = S.Get<CompositeVector>(next_.first, next_.second);
   AMANZI_ASSERT(t_this >= t_current);
@@ -80,7 +81,7 @@ EvaluatorTemporalInterpolation::Update_(State& S)
   if (t_next - t_current > 0.) {
     a = (t_this - t_current) / (t_next - t_current);
   }
-  result.Update(1-a, var_current, a, var_next, 0);
+  result.Update(1 - a, var_current, a, var_next, 0);
 }
 
 // void

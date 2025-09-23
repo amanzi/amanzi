@@ -39,8 +39,8 @@ class NonlinearProblem6 : public Amanzi::AmanziSolvers::SolverFnBase<Epetra_Vect
     return 0;
   }
 
-  double
-  ErrorNorm(const Teuchos::RCP<const Epetra_Vector>& u, const Teuchos::RCP<const Epetra_Vector>& du)
+  double ErrorNorm(const Teuchos::RCP<const Epetra_Vector>& u,
+                   const Teuchos::RCP<const Epetra_Vector>& du)
   {
     double norm_du, norm_u;
     du->NormInf(&norm_du);
@@ -67,7 +67,7 @@ class NonlinearProblem6 : public Amanzi::AmanziSolvers::SolverFnBase<Epetra_Vect
     }
   }
 
-  void ChangedSolution(){};
+  void ChangedSolution() {};
 
  protected:
   double atol_, rtol_;

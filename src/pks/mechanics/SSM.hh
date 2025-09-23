@@ -11,8 +11,8 @@
 
 User defines small strain models in sublist *SSM models*.
 It contains as many sublists, e.g. _SOIL1 and _SOIL2, as there are different soils.
-The small strain models are associated with non-overlapping regions. 
-Each of the sublists (e.g. _SOIL1) includes a few mandatory parameters: *regions names*, 
+The small strain models are associated with non-overlapping regions.
+Each of the sublists (e.g. _SOIL1) includes a few mandatory parameters: *regions names*,
 *model name*, and parameters for the selected model.
 
 * `"model`" [string] specifies a model for the soil.
@@ -47,7 +47,7 @@ namespace Mechanics {
 
 class SSM {
  public:
-  virtual ~SSM(){};
+  virtual ~SSM() {};
   // gamma - shear strain, e - volumetric strain
   virtual double ShearStress(double gamma) = 0;
   virtual double BulkModulus(double e) = 0;

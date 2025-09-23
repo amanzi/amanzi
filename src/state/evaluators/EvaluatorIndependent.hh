@@ -62,8 +62,9 @@ class EvaluatorIndependent_ : public Evaluator {
 
   virtual bool IsDependency(const State& S, const Key& key, const Tag& tag) const override final;
   virtual bool ProvidesKey(const Key& key, const Tag& tag) const override final;
-  virtual bool
-  IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const override final;
+  virtual bool IsDifferentiableWRT(const State& S,
+                                   const Key& wrt_key,
+                                   const Tag& wrt_tag) const override final;
 
   virtual void EnsureCompatibility(State& S) override;
 
@@ -89,7 +90,7 @@ class EvaluatorIndependent_ : public Evaluator {
 };
 
 
-template <class Data_t, class DataFactory_t = NullFactory>
+template<class Data_t, class DataFactory_t = NullFactory>
 class EvaluatorIndependent : public EvaluatorIndependent_ {
  public:
   using EvaluatorIndependent_::EvaluatorIndependent_;

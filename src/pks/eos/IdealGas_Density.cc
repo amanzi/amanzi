@@ -18,7 +18,8 @@
 namespace Amanzi {
 namespace AmanziEOS {
 
-IdealGas_Density::IdealGas_Density(Teuchos::ParameterList& plist) : EOS_Density(plist)
+IdealGas_Density::IdealGas_Density(Teuchos::ParameterList& plist)
+  : EOS_Density(plist)
 {
   R_ = plist.get<double>("ideal gas constant", 8.31446261815324);
   M_ = plist.get<double>("molar mass");

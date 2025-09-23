@@ -20,7 +20,9 @@ void
 StateArchive::Add(const std::vector<std::string>& fields, const Tag& tag)
 {
   tag_ = tag;
-  for (const auto& name : fields) { fields_.emplace(name, S_->Get<CompositeVector>(name, tag)); }
+  for (const auto& name : fields) {
+    fields_.emplace(name, S_->Get<CompositeVector>(name, tag));
+  }
 }
 
 
@@ -97,7 +99,7 @@ const CompositeVector&
 StateArchive::get(const std::string& name)
 {
   auto it = fields_.find(name);
-  if (it != fields_.end()) return it->second;
+  if (it != fields_.end() ) return it->second;
   AMANZI_ASSERT(false);
   // hide warnings
   return fields_.begin()->second;

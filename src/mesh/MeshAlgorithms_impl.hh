@@ -18,7 +18,7 @@ namespace AmanziMesh {
 // -----------------------------------------------------------------------------
 // Given a boundary face ID, get the corresponding face ID
 // -----------------------------------------------------------------------------
-template <class Mesh_type>
+template<class Mesh_type>
 KOKKOS_INLINE_FUNCTION Entity_ID
 getBoundaryFaceFace(const Mesh_type& mesh, Entity_ID bf)
 {
@@ -29,7 +29,7 @@ getBoundaryFaceFace(const Mesh_type& mesh, Entity_ID bf)
 // -----------------------------------------------------------------------------
 // Given a boundary face ID, get the cell internal to that face.
 // -----------------------------------------------------------------------------
-template <class Mesh_type>
+template<class Mesh_type>
 KOKKOS_INLINE_FUNCTION Entity_ID
 getBoundaryFaceInternalCell(const Mesh_type& mesh, Entity_ID bf)
 {
@@ -39,7 +39,7 @@ getBoundaryFaceInternalCell(const Mesh_type& mesh, Entity_ID bf)
 // -----------------------------------------------------------------------------
 // Given a face ID, and assuming it is a boundary face, get the cell internal.
 // -----------------------------------------------------------------------------
-template <class Mesh_type>
+template<class Mesh_type>
 KOKKOS_INLINE_FUNCTION Entity_ID
 getFaceOnBoundaryInternalCell(const Mesh_type& mesh, Entity_ID f)
 {
@@ -63,7 +63,7 @@ getFaceOnBoundaryInternalCell(const Mesh_type& mesh, Entity_ID f)
 // -----------------------------------------------------------------------------
 // Exterior boundary normal: dir = 0 for internal face
 // -----------------------------------------------------------------------------
-template <class Mesh_type>
+template<class Mesh_type>
 KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
 getFaceNormalExterior(const Mesh_type& mesh, int f, int* dir)
 {
@@ -77,7 +77,7 @@ getFaceNormalExterior(const Mesh_type& mesh, int f, int* dir)
 // -----------------------------------------------------------------------------
 // Given a face ID, get the corresponding boundary face ID (assuming it is a bf)
 // -----------------------------------------------------------------------------
-template <MemSpace_kind MEM>
+template<MemSpace_kind MEM>
 Entity_ID
 getFaceOnBoundaryBoundaryFace(const MeshCache<MEM>& mesh, Entity_ID f)
 {
@@ -90,7 +90,7 @@ getFaceOnBoundaryBoundaryFace(const MeshCache<MEM>& mesh, Entity_ID f)
 // -----------------------------------------------------------------------------
 // Given a boundary face ID, get the cell internal to that face.
 // -----------------------------------------------------------------------------
-template <MemSpace_kind MEM>
+template<MemSpace_kind MEM>
 Entity_ID
 getBoundaryFaceInternalCell(const MeshCache<MEM>& mesh, Entity_ID bf)
 {
@@ -101,7 +101,7 @@ getBoundaryFaceInternalCell(const MeshCache<MEM>& mesh, Entity_ID bf)
 // -----------------------------------------------------------------------------
 // Given a face ID, and assuming it is a boundary face, get the cell internal.
 // -----------------------------------------------------------------------------
-template <MemSpace_kind MEM>
+template<MemSpace_kind MEM>
 Entity_ID
 getFaceOnBoundaryInternalCell(const MeshCache<MEM>& mesh, Entity_ID f)
 {
@@ -113,7 +113,7 @@ getFaceOnBoundaryInternalCell(const MeshCache<MEM>& mesh, Entity_ID f)
 // -----------------------------------------------------------------------------
 // Given a vector on faces, import to vector on boundary faces
 // -----------------------------------------------------------------------------
-template <MemSpace_kind MEM>
+template<MemSpace_kind MEM>
 void
 copyFacesToBoundaryFaces(const MeshCache<MEM>& mesh,
                          const Epetra_MultiVector& faces,
@@ -126,7 +126,7 @@ copyFacesToBoundaryFaces(const MeshCache<MEM>& mesh,
 // -----------------------------------------------------------------------------
 // Given a vector on faces, import to vector on boundary faces
 // -----------------------------------------------------------------------------
-template <MemSpace_kind MEM>
+template<MemSpace_kind MEM>
 void
 copyBoundaryFacesToFaces(const MeshCache<MEM>& mesh,
                          const Epetra_MultiVector& boundary_faces,
@@ -139,7 +139,7 @@ copyBoundaryFacesToFaces(const MeshCache<MEM>& mesh,
 // -----------------------------------------------------------------------------
 // Given a vector on cells, set the boundary_face entries by their internal cell
 // -----------------------------------------------------------------------------
-template <MemSpace_kind MEM>
+template<MemSpace_kind MEM>
 void
 copyCellsToBoundaryFaces(const MeshCache<MEM>& mesh,
                          const Epetra_MultiVector& cells,
@@ -148,7 +148,9 @@ copyCellsToBoundaryFaces(const MeshCache<MEM>& mesh,
   AMANZI_ASSERT(cells.NumVectors() == boundary_faces.NumVectors());
   for (Entity_ID bf = 0; bf != boundary_faces.MyLength(); ++bf) {
     Entity_ID c = getBoundaryFaceInternalCell(mesh, bf);
-    for (int i = 0; i != boundary_faces.NumVectors(); ++i) { boundary_faces[i][bf] = cells[i][c]; }
+    for (int i = 0; i != boundary_faces.NumVectors(); ++i) {
+      boundary_faces[i][bf] = cells[i][c];
+    }
   }
 }
 
@@ -449,7 +451,7 @@ MeshAlgorithms::computeCellFacesAndBisectors(const MeshHost& mesh,
 // }
 
 
-template <MemSpace_kind MEM>
+template<MemSpace_kind MEM>
 void
 cacheAll(MeshCache<MEM>& mesh)
 {
@@ -467,15 +469,19 @@ cacheAll(MeshCache<MEM>& mesh)
   }
 }
 
-template <MemSpace_kind MEM>
+template<MemSpace_kind MEM>
 void
 cacheDefault(MeshCache<MEM>& mesh)
 {
   // caches what the developers currently think is best
-  if (mesh.hasNodes()) { mesh.cacheNodeCoordinates(); }
+  if (mesh.hasNodes()) {
+    mesh.cacheNodeCoordinates();
+  }
   mesh.cacheCellFaces();
   mesh.cacheFaceCells();
-  if (mesh.hasNodes()) { mesh.cacheFaceNodes(); }
+  if (mesh.hasNodes()) {
+    mesh.cacheFaceNodes();
+  }
   mesh.cacheCellGeometry();
   mesh.cacheFaceGeometry();
   if (mesh.hasEdges()) {
@@ -486,7 +492,7 @@ cacheDefault(MeshCache<MEM>& mesh)
 }
 
 
-template <class Mesh_type>
+template<class Mesh_type>
 void
 deform(Mesh_type& mesh,
        const typename Mesh_type::cEntity_ID_View& nodeids,

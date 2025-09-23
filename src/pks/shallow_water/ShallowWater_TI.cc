@@ -66,7 +66,9 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVec
   q_c_tmp.PutScalar(0.0);
 
   // update boundary conditions given by [h u v]
-  for (int i = 0; i < bcs_.size(); ++i) { bcs_[i]->Compute(t, t); }
+  for (int i = 0; i < bcs_.size(); ++i) {
+    bcs_[i]->Compute(t, t);
+  }
 
   std::vector<int> bc_model_scalar(nfaces_wghost, Operators::OPERATOR_BC_NONE);
   std::vector<int> bc_model_vector(nfaces_wghost, Operators::OPERATOR_BC_NONE);
@@ -172,7 +174,9 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVec
 
     // calculate maximum bathymetry value on cell nodes
     double Bmax = 0.0;
-    for (int i = 0; i < cnodes.size(); ++i) { Bmax = std::max(B_n[0][cnodes[i]], Bmax); }
+    for (int i = 0; i < cnodes.size(); ++i) {
+      Bmax = std::max(B_n[0][cnodes[i]], Bmax);
+    }
 
     // check if cell is fully flooded and proceed with limiting
     if ((ht_c[0][c] > Bmax) && (ht_c[0][c] - B_c[0][c] > 0.0)) {
@@ -208,7 +212,9 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVec
   discharge_y_grad_->data()->ScatterMasterToGhosted("cell");
 
   // update source (external) terms
-  for (int i = 0; i < srcs_.size(); ++i) { srcs_[i]->Compute(t, t); }
+  for (int i = 0; i < srcs_.size(); ++i) {
+    srcs_[i]->Compute(t, t);
+  }
 
   // compute source (external) values
   // coupling submodel="rate" returns volumetric flux [m^3/s] integrated over
@@ -284,7 +290,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVec
       }
       if (bc_model_vector[f] == Operators::OPERATOR_BC_DIRICHLET) {
         if (outward_discharge_flag == true) {
-          UR[1] = bc_value_qx[f]; // This assumes that BC value is specified by taking the dot product with face normal
+          UR[1] = bc_value_qx
+            [f]; // This assumes that BC value is specified by taking the dot product with face normal
           UR[2] = bc_value_qy[f]; // This should probably be 0.
         } else {
           UR[1] = bc_value_qx[f] * normal[0] + bc_value_qy[f] * normal[1];

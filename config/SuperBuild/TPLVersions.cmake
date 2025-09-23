@@ -195,8 +195,9 @@
 #                - update HDF5 to 1.14.6
 #                - update netcdf-c to 4.9.2
 #                - update netcdf-fortran to 4.6.2
-#                - update Alquimia to version 1.1.1
+#                - update Alquimia to version 1.1.0
 #                - update ExprTK to version 0.0.3
+#   0.98.12      - update Alquimia to version 1.2.0
 
 
 include(CMakeParseArguments)
@@ -250,7 +251,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 98)
-set(AMANZI_TPLS_VERSION_PATCH 11)
+set(AMANZI_TPLS_VERSION_PATCH 12)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -554,13 +555,13 @@ set(PFLOTRAN_MD5_SUM        d44b5670223ea9e6fbb894a8842161e0)
 # TPL: Alquimia
 #
 set(Alquimia_VERSION_MAJOR 1)
-set(Alquimia_VERSION_MINOR 1)
-set(Alquimia_VERSION_PATCH 1)
+set(Alquimia_VERSION_MINOR 2)
+set(Alquimia_VERSION_PATCH 0)
 set(Alquimia_VERSION ${Alquimia_VERSION_MAJOR}.${Alquimia_VERSION_MINOR}.${Alquimia_VERSION_PATCH})
 set(Alquimia_URL_STRING     https://github.com/LBL-EESA/alquimia-dev/archive/refs/tags)
 set(Alquimia_ARCHIVE_FILE   v${Alquimia_VERSION}.tar.gz)
 set(Alquimia_SAVEAS_FILE    alquimia-dev-${Alquimia_VERSION}.tar.gz)
-set(Alquimia_MD5_SUM        4e288e576777d43a907cdfef71427449)
+set(Alquimia_MD5_SUM        63b3b60a48643a863f7fdfd97a8b79c6)
 
 #
 # TPL: Silo

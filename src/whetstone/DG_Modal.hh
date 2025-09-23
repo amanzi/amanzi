@@ -65,8 +65,10 @@ class DG_Modal : public BilinearForm {
   virtual int StiffnessMatrix(int c, const MatrixPolynomial& K, DenseMatrix& A) override;
 
   // -- advection matrices
-  virtual int
-  AdvectionMatrix(int c, const VectorPolynomial& uc, DenseMatrix& A, bool grad_on_test) override;
+  virtual int AdvectionMatrix(int c,
+                              const VectorPolynomial& uc,
+                              DenseMatrix& A,
+                              bool grad_on_test) override;
 
   // -- flux matrices
   //    returns point flux value (u.n) in the last parameter
@@ -88,10 +90,12 @@ class DG_Modal : public BilinearForm {
                             bool jump_on_test);
 
   // -- interface matrices: jumps and penalty
-  template <typename Coef, typename std::enable_if<!std::is_pointer<Coef>::value>::type* = nullptr>
+  template<typename Coef, typename std::enable_if<!std::is_pointer<Coef>::value>::type* = nullptr>
   int FaceMatrixJump(int f, const Coef& K1, const Coef& K2, DenseMatrix& A);
-  int
-  FaceMatrixJump(int f, const WhetStoneFunction* K1, const WhetStoneFunction* K2, DenseMatrix& A);
+  int FaceMatrixJump(int f,
+                     const WhetStoneFunction* K1,
+                     const WhetStoneFunction* K2,
+                     DenseMatrix& A);
 
   int FaceMatrixPenalty(int f, double Kf, DenseMatrix& A);
 
@@ -119,7 +123,7 @@ class DG_Modal : public BilinearForm {
 * Jump matrix for Taylor basis using tensors:
 *   \Int_f ( {K \grad \rho} [\psi] ) dS
 ****************************************************************** */
-template <typename Coef, typename std::enable_if<!std::is_pointer<Coef>::value>::type*>
+template<typename Coef, typename std::enable_if<!std::is_pointer<Coef>::value>::type*>
 int
 DG_Modal::FaceMatrixJump(int f, const Coef& K1, const Coef& K2, DenseMatrix& A)
 {

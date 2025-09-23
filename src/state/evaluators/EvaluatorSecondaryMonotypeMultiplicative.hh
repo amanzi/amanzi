@@ -30,7 +30,7 @@ namespace Amanzi {
 
 // By default, this class adds nothing on top of EvaluatorSecondary.
 // Specializations can do useful things though.
-template <typename Data_t, typename DataFactory_t = NullFactory>
+template<typename Data_t, typename DataFactory_t = NullFactory>
 class EvaluatorSecondaryMonotypeMultiplicative
   : public EvaluatorSecondaryMonotype<Data_t, DataFactory_t> {
  public:

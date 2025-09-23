@@ -87,7 +87,9 @@ TEST(MPC_WALKABOUT_2D)
 
   // -- overwite with constant velocity
   AmanziGeometry::Point vel(1.0, 2.0);
-  for (int f = 0; f < nfaces; ++f) { flow[0][f] = vel * mesh->getFaceNormal(f); }
+  for (int f = 0; f < nfaces; ++f) {
+    flow[0][f] = vel * mesh->getFaceNormal(f);
+  }
 
   // -- overwite with linear pressure
   for (int c = 0; c < ncells; ++c) {
@@ -101,7 +103,9 @@ TEST(MPC_WALKABOUT_2D)
 
   walkabout->CalculateDarcyVelocity(S, xyz, velocity);
 
-  for (int v = 0; v < nnodes; ++v) { CHECK(norm(vel - velocity[v]) < 1e-10); }
+  for (int v = 0; v < nnodes; ++v) {
+    CHECK(norm(vel - velocity[v]) < 1e-10);
+  }
 
   // -- check interpolated pressure and saturation
   std::vector<int> material_ids;
@@ -166,7 +170,9 @@ TEST(MPC_WALKABOUT_3D)
   auto& flow = *S->GetW<CompositeVector>(key, Tags::DEFAULT, key).ViewComponent("face");
   auto& pres = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
 
-  for (int f = 0; f < nfaces; ++f) { flow[0][f] = vel * mesh->getFaceNormal(f); }
+  for (int f = 0; f < nfaces; ++f) {
+    flow[0][f] = vel * mesh->getFaceNormal(f);
+  }
 
   pres.PutScalar(1.0);
 
@@ -177,7 +183,9 @@ TEST(MPC_WALKABOUT_3D)
   std::vector<AmanziGeometry::Point> xyz, velocity;
   walkabout->CalculateDarcyVelocity(S, xyz, velocity);
 
-  for (int v = 0; v < nnodes; ++v) { CHECK(norm(vel - velocity[v]) < 1e-10); }
+  for (int v = 0; v < nnodes; ++v) {
+    CHECK(norm(vel - velocity[v]) < 1e-10);
+  }
 
   // -- check interpolated pressure
   std::vector<int> material_ids;

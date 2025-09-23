@@ -44,7 +44,9 @@ MeanPressure(const Amanzi::State& S)
   int ncells = p.MyLength();
 
   double mean(0.0);
-  for (int c = 0; c < ncells; c++) { mean += p[0][c]; }
+  for (int c = 0; c < ncells; c++) {
+    mean += p[0][c];
+  }
   return mean / ncells;
 }
 
@@ -141,5 +143,7 @@ TEST(RICHARDS_TWO_FRACTURES)
   WriteStateStatistics(*S);
 
   const auto& p = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
-  for (int c = 0; c < p.MyLength(); c++) { CHECK(p[0][c] > 76000.0 && p[0][c] < 101000.0); }
+  for (int c = 0; c < p.MyLength(); c++) {
+    CHECK(p[0][c] > 76000.0 && p[0][c] < 101000.0);
+  }
 }

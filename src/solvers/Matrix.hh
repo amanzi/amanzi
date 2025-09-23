@@ -57,7 +57,7 @@ Developer notes:
 
 namespace Amanzi {
 
-template <class Vector, class VectorSpace = typename Vector::VectorSpace_t>
+template<class Vector, class VectorSpace = typename Vector::VectorSpace_t>
 class Matrix {
  public:
   using Vector_t = Vector;

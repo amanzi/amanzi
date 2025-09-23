@@ -255,7 +255,7 @@ if __name__ == "__main__":
                 x_ATS, c_ATS = GetXY_AmanziU_1D(path_to_ATS, root_ats, comp, 1)
                 v_ATS[i][j] = c_ATS
 
-    except RuntimeError:
+    except Exception:
         ats = 0
         
         

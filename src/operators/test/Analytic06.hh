@@ -21,7 +21,9 @@
 
 class Analytic06 : public AnalyticBase {
  public:
-  Analytic06(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : AnalyticBase(mesh), ana_(mesh) {}
+  Analytic06(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
+    : AnalyticBase(mesh), ana_(mesh)
+  {}
 
   Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t)
   {

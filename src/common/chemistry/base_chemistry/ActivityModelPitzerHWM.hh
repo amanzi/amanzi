@@ -35,7 +35,7 @@ class VirialCoefficient;
 class ActivityModelPitzerHWM : public ActivityModel {
  public:
   ActivityModelPitzerHWM();
-  ~ActivityModelPitzerHWM(){};
+  ~ActivityModelPitzerHWM() {};
 
   virtual void Setup(const ActivityModelParameters& parameters,
                      const std::vector<Species>& primary_species,
@@ -64,8 +64,9 @@ class ActivityModelPitzerHWM : public ActivityModel {
   void ComputeQmatrices();
   void ComputeBetaFunctions_();
   void ComputeJFunctions();
-  void
-  ComputeDebyeHuckelTerm(std::vector<double>& gamma, double& osmotic_coefficient, double& gclm);
+  void ComputeDebyeHuckelTerm(std::vector<double>& gamma,
+                              double& osmotic_coefficient,
+                              double& gclm);
   double gclm_(const double& dhterm);
   void PushPrivateVectors();
   void Update(const double& temperature, const double& pressure);

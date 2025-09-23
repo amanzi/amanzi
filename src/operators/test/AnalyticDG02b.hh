@@ -26,12 +26,12 @@
 class AnalyticDG02b : public AnalyticDGBase {
  public:
   AnalyticDG02b(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order, bool advection)
-    : AnalyticDGBase(mesh, order, advection){};
-  ~AnalyticDG02b(){};
+    : AnalyticDGBase(mesh, order, advection) {};
+  ~AnalyticDG02b() {};
 
   // diffusion tensor
-  virtual Amanzi::WhetStone::Tensor
-  Tensor(const Amanzi::AmanziGeometry::Point& p, double t) override
+  virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p,
+                                           double t) override
   {
     Amanzi::WhetStone::Tensor K(d_, 1);
     K(0, 0) = 0.0;
@@ -76,9 +76,13 @@ class AnalyticDG02b : public AnalyticDGBase {
 
     v.resize(d_);
     if (!advection_) {
-      for (int i = 0; i < 2; ++i) { v[i].Reshape(d_, 0, true); }
+      for (int i = 0; i < 2; ++i) {
+        v[i].Reshape(d_, 0, true);
+      }
     } else {
-      for (int i = 0; i < 2; ++i) { v[i].Reshape(d_, 2, true); }
+      for (int i = 0; i < 2; ++i) {
+        v[i].Reshape(d_, 2, true);
+      }
       v[0](0, 0) = 0.1 + x - x * x;
       v[0](1, 0) = 1.0 - 2 * x;
       v[0](2, 0) = -1.0;

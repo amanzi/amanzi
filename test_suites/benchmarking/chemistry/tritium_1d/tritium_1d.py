@@ -153,7 +153,8 @@ if __name__ == "__main__":
         comp_ats = "total_component_concentration.Tritium"
         x_ATS, c_ATS = GetXY_AmanziU_1D(path_to_ATS,root_ats,comp_ats,1)
         ats = len(x_ATS)
-    except RuntimeError:
+
+    except Exception:
         ats = 0
 
         

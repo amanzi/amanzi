@@ -107,12 +107,12 @@ namespace Flow {
 
 class WRM {
  public:
-  virtual ~WRM(){};
+  virtual ~WRM() {};
 
   virtual double k_relative(double pc) const = 0;
   virtual double saturation(double pc) const = 0;
-  virtual double
-  dSdPc(double pc) const = 0; // derivative of saturation w.r.t. to capillary pressure
+  virtual double dSdPc(
+    double pc) const = 0; // derivative of saturation w.r.t. to capillary pressure
   virtual double capillaryPressure(double s) const = 0;
   virtual double residualSaturation() const = 0;
   virtual double dKdPc(double pc) const = 0;

@@ -11,7 +11,9 @@
 
 namespace Amanzi {
 
-DataDebug::DataDebug(Teuchos::RCP<AmanziMesh::MeshHost> mesh) : mesh_(mesh) {}
+DataDebug::DataDebug(Teuchos::RCP<AmanziMesh::MeshHost> mesh)
+  : mesh_(mesh)
+{}
 
 
 void

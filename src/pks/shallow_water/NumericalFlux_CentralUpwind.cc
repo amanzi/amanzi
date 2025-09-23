@@ -71,7 +71,9 @@ NumericalFlux_CentralUpwind::Compute(const std::vector<double>& UL,
     U_star[i] = (apx * UR[i] - amx * UL[i] - (FR[i] - FL[i])) / (apx - amx + eps1);
   }
 
-  for (int i = 0; i < 3; i++) { dU[i] = minmod(UR[i] - U_star[i], U_star[i] - UL[i]); }
+  for (int i = 0; i < 3; i++) {
+    dU[i] = minmod(UR[i] - U_star[i], U_star[i] - UL[i]);
+  }
 
   for (int i = 0; i < 3; i++) {
     F[i] = (apx * FL[i] - amx * FR[i] + apx * amx * (UR[i] - UL[i] - dU[i])) / (apx - amx + eps1);

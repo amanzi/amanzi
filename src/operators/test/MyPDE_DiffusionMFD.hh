@@ -29,7 +29,7 @@ class MyPDE_DiffusionMFD : public virtual PDE_DiffusionMFD {
  public:
   MyPDE_DiffusionMFD(Teuchos::ParameterList& plist,
                      const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : PDE_Diffusion(mesh), PDE_DiffusionMFD(plist, mesh){};
+    : PDE_Diffusion(mesh), PDE_DiffusionMFD(plist, mesh) {};
 
   // -- To calculate elemetal matrices, we can use input parameters flux
   //    and u from the previous nonlinear iteration. Otherwise, use null-pointers.
@@ -59,7 +59,7 @@ MyPDE_DiffusionMFD::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& fl
     k_cell = k_->ViewComponent("cell");
     k_face = k_->ViewComponent("face", true);
     k_grad = k_->ViewComponent("grad");
-    if (k_->HasComponent("twin")) k_twin = k_->ViewComponent("twin", true);
+    if (k_->HasComponent("twin") ) k_twin = k_->ViewComponent("twin", true);
   }
 
   // update matrix blocks
@@ -90,7 +90,7 @@ MyPDE_DiffusionMFD::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& fl
       }
     }
 
-    if (K_.get()) Kc = (*K_)[c];
+    if (K_.get() ) Kc = (*K_)[c];
     mfd.MassMatrixInverseDivKScaled(c, Kc, kc, kgrad, Wff);
 
     WhetStone::DenseMatrix Acell(nfaces + 1, nfaces + 1);

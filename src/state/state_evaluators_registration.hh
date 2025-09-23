@@ -48,8 +48,8 @@ Utils::RegisteredFactory<Evaluator, EvaluatorSecondaryMonotypeFromFunction>
   EvaluatorSecondaryMonotypeFromFunction::fac_("secondary variable from function");
 
 template<>
-Utils::RegisteredFactory<Evaluator, EvaluatorPrimaryCV>
-  EvaluatorPrimaryCV::fac_("primary variable");
+Utils::RegisteredFactory<Evaluator, EvaluatorPrimaryCV> EvaluatorPrimaryCV::fac_(
+  "primary variable");
 
 Utils::RegisteredFactory<Evaluator, EvaluatorTemporalInterpolation>
   EvaluatorTemporalInterpolation::fac_("temporal interpolation");

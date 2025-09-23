@@ -35,11 +35,13 @@ namespace WhetStone {
 class Basis_Natural : public Basis {
  public:
   Basis_Natural() { id_ = TAYLOR_BASIS_NATURAL; }
-  ~Basis_Natural(){};
+  ~Basis_Natural() {};
 
   // initialization
-  virtual void
-  Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order, Polynomial& integrals)
+  virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                    int c,
+                    int order,
+                    Polynomial& integrals)
   {
     order_ = order;
   }

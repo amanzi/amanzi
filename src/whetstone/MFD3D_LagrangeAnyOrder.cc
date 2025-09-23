@@ -214,7 +214,9 @@ MFD3D_LagrangeAnyOrder::H1consistency2D_(const Teuchos::RCP<const AmanziMesh::Me
               R_(pos0, col) += polys_f[0].Value(sm) * factor;
               R_(pos1, col) += polys_f[1].Value(sm) * factor;
 
-              for (int k = 0; k < m; ++k) { R_(row + k, col) += polys_f[k + 2].Value(sm) * factor; }
+              for (int k = 0; k < m; ++k) {
+                R_(row + k, col) += polys_f[k + 2].Value(sm) * factor;
+              }
             }
           }
         }
@@ -423,14 +425,14 @@ MFD3D_LagrangeAnyOrder::H1consistency3D_(int c,
         pos = std::distance(edges.begin(), std::find(edges.begin(), edges.end(), e));
         pos = rowe + pos * nde;
 
-        for (int k = 0; k < pe.size(); ++k) map.push_back(pos + k);
+        for (int k = 0; k < pe.size() ; ++k) map.push_back(pos + k);
       }
     }
 
     // -- map : interior face moments
     pos = std::distance(faces.begin(), std::find(faces.begin(), faces.end(), f));
     pos = rowf + pos * ndf;
-    for (int k = 0; k < pf.size(); ++k) map.push_back(pos + k);
+    for (int k = 0; k < pf.size() ; ++k) map.push_back(pos + k);
 
     vmapf.push_back(map);
   }
@@ -521,7 +523,9 @@ MFD3D_LagrangeAnyOrder::H1consistency3D_(int c,
       vbasisf[i].ChangeBasisNaturalToMy(v);
       Rf.Multiply(v, rv, false);
 
-      for (int k = 0; k < nrowsf; ++k) { R_(map[k], col) += rv(k); }
+      for (int k = 0; k < nrowsf; ++k) {
+        R_(map[k], col) += rv(k);
+      }
     }
 
     // N: degrees of freedom at edges
@@ -735,7 +739,9 @@ MFD3D_LagrangeAnyOrder::ProjectorCell_(int c,
     const DenseVector& v3 = moments->coefs();
     AMANZI_ASSERT(ndof_c == v3.NumRows());
 
-    for (int n = 0; n < ndof_c; ++n) { vdof(row + n) = v3(n); }
+    for (int n = 0; n < ndof_c; ++n) {
+      vdof(row + n) = v3(n);
+    }
   }
 
   // calculate polynomial coefficients (in vector v5)
@@ -748,7 +754,9 @@ MFD3D_LagrangeAnyOrder::ProjectorCell_(int c,
   // calculate the constant value for elliptic projector
   if (order_ == 1) {
     AmanziGeometry::Point grad(d_);
-    for (int j = 0; j < d_; ++j) { grad[j] = uc(1, j); }
+    for (int j = 0; j < d_; ++j) {
+      grad[j] = uc(1, j);
+    }
 
     double a1(0.0), a2(0.0), tmp;
     for (int n = 0; n < nfaces; ++n) {
@@ -784,9 +792,13 @@ MFD3D_LagrangeAnyOrder::ProjectorCell_(int c,
     M2.Multiply(v5, v6, false);
 
     const DenseVector& v3 = moments->coefs();
-    for (int n = 0; n < ndof_c; ++n) { v4(n) = v3(n) * mesh_->getCellVolume(c); }
+    for (int n = 0; n < ndof_c; ++n) {
+      v4(n) = v3(n) * mesh_->getCellVolume(c);
+    }
 
-    for (int n = 0; n < nd - ndof_c; ++n) { v4(ndof_c + n) = v6(n); }
+    for (int n = 0; n < nd - ndof_c; ++n) {
+      v4(ndof_c + n) = v6(n);
+    }
 
     M.Inverse();
     M.Multiply(v4, v5, false);
@@ -875,9 +887,13 @@ MFD3D_LagrangeAnyOrder::ProjectorCellFromDOFs_(int c,
     M2 = M.SubMatrix(ndof_c, nd, 0, nd);
     M2.Multiply(v5, v6, false);
 
-    for (int n = 0; n < ndof_c; ++n) { v4(n) = dofs(nnodes + n) * volume; }
+    for (int n = 0; n < ndof_c; ++n) {
+      v4(n) = dofs(nnodes + n) * volume;
+    }
 
-    for (int n = 0; n < nd - ndof_c; ++n) { v4(ndof_c + n) = v6(n); }
+    for (int n = 0; n < nd - ndof_c; ++n) {
+      v4(ndof_c + n) = v6(n);
+    }
 
     M.Inverse();
     M.Multiply(v4, v5, false);

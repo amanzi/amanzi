@@ -117,8 +117,8 @@ class BCs {
   BCs(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
       AmanziMesh::Entity_kind kind,
       WhetStone::DOF_Type type)
-    : status_(false), kind_(kind), type_(type), mesh_(mesh){};
-  ~BCs(){};
+    : status_(false), kind_(kind), type_(type), mesh_(mesh) {};
+  ~BCs() {};
 
   // non-const access
   Teuchos::RCP<const AmanziMesh::Mesh> mesh() const { return mesh_; }
@@ -172,7 +172,9 @@ class BCs {
       int nent = mesh_->getNumEntities(kind_, AmanziMesh::Parallel_kind::ALL);
       bc_value_vector_.resize(nent);
 
-      for (int i = 0; i < nent; ++i) { bc_value_vector_[i].resize(n); }
+      for (int i = 0; i < nent; ++i) {
+        bc_value_vector_[i].resize(n);
+      }
     }
     return bc_value_vector_;
   }

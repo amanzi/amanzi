@@ -31,7 +31,7 @@ class IonExchangeSite {
  public:
   IonExchangeSite();
   IonExchangeSite(const std::string& name, const Teuchos::ParameterList& plist);
-  virtual ~IonExchangeSite(){};
+  virtual ~IonExchangeSite() {};
 
   virtual void Display(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const;

@@ -60,7 +60,9 @@ RegionBoxVolumeFractions::RegionBoxVolumeFractions(const std::string& name,
   N_.set(dim);
 
   for (int i = 0; i < dim; ++i) {
-    for (int j = 0; j < dim; ++j) { N_(j, i) = normals_[i][j]; }
+    for (int j = 0; j < dim; ++j) {
+      N_(j, i) = normals_[i][j];
+    }
   }
   N_.Inverse();
 
@@ -110,7 +112,9 @@ RegionBoxVolumeFractions::inside(const Point& p) const
   Point phat(N_ * (p - p0_));
 
   bool result(true);
-  for (int i = 0; i != p.dim(); ++i) { result &= (phat[i] > -tol_ && phat[i] < 1.0 + tol_); }
+  for (int i = 0; i != p.dim(); ++i) {
+    result &= (phat[i] > -tol_ && phat[i] < 1.0 + tol_);
+  }
   return result;
 }
 
@@ -229,7 +233,9 @@ IntersectConvexPolygons(const std::vector<Point>& xy1,
   std::list<std::pair<double, Point>>::iterator it, it_next, it2;
 
   // populate list with the second polygon
-  for (int i = 0; i < xy2.size(); ++i) { result.push_back(std::make_pair(0.0, xy2[i])); }
+  for (int i = 0; i < xy2.size(); ++i) {
+    result.push_back(std::make_pair(0.0, xy2[i]));
+  }
 
   // intersect each edge of the first polygon with the result
   int n1 = xy1.size();
@@ -255,7 +261,7 @@ IntersectConvexPolygons(const std::vector<Point>& xy1,
     double d1, d2, tmp;
     for (it = result.begin(); it != result.end(); ++it) {
       it_next = it;
-      if (++it_next == result.end()) it_next = result.begin();
+      if (++it_next == result.end() ) it_next = result.begin();
 
       d1 = it->first;
       d2 = it_next->first;
@@ -281,7 +287,9 @@ IntersectConvexPolygons(const std::vector<Point>& xy1,
 
   xy3.clear();
   if (result.size() > 2) {
-    for (it = result.begin(); it != result.end(); ++it) { xy3.push_back(it->second); }
+    for (it = result.begin(); it != result.end(); ++it) {
+      xy3.push_back(it->second);
+    }
   }
 }
 
@@ -308,13 +316,17 @@ IntersectConvexPolyhedra(const std::vector<Point>& xyz1,
   std::list<ClippedFace> result(nfaces1);
 
   int nxyz = xyz1.size();
-  for (int i = 0; i < nxyz; ++i) { result_xyz.push_back(std::make_pair(0.0, xyz1[i])); }
+  for (int i = 0; i < nxyz; ++i) {
+    result_xyz.push_back(std::make_pair(0.0, xyz1[i]));
+  }
 
   int k(0);
   std::list<ClippedFace>::iterator itf;
 
   for (itf = result.begin(); itf != result.end(); ++itf, ++k) {
-    for (int n = 0; n < faces1[k].size(); ++n) { itf->nodes.push_back(faces1[k][n]); }
+    for (int n = 0; n < faces1[k].size(); ++n) {
+      itf->nodes.push_back(faces1[k][n]);
+    }
   }
 
   // clip polyhedron using the second polyhedron.
@@ -356,7 +368,7 @@ IntersectConvexPolyhedra(const std::vector<Point>& xyz1,
 #endif
       for (itv = itf->nodes.begin(); itv != itf->nodes.end(); ++itv) {
         itv_next = itv;
-        if (++itv_next == itf->nodes.end()) itv_next = itf->nodes.begin();
+        if (++itv_next == itf->nodes.end() ) itv_next = itf->nodes.begin();
 
         std::pair<double, Point>& p1 = result_xyz[*itv];
         std::pair<double, Point>& p2 = result_xyz[*itv_next];
@@ -414,10 +426,10 @@ IntersectConvexPolyhedra(const std::vector<Point>& xyz1,
           }
 
           itv_next = itv;
-          if (itv_next == itf->nodes.end()) itv_next = itf->nodes.begin();
+          if (itv_next == itf->nodes.end() ) itv_next = itf->nodes.begin();
 
           itv_prev = itv;
-          if (itv_prev == itf->nodes.begin()) itv_prev = itf->nodes.end();
+          if (itv_prev == itf->nodes.begin() ) itv_prev = itf->nodes.end();
           itv_prev--;
 
           itf->new_edge = std::make_pair(*itv_prev, *itv_next);
@@ -521,7 +533,9 @@ IntersectConvexPolyhedra(const std::vector<Point>& xyz1,
     // -- update face-to-nodes maps
     for (int i = 0; i < result.size(); ++i) {
       int nnodes = faces3[i].size();
-      for (int n = 0; n < nnodes; ++n) { faces3[i][n] = map[faces3[i][n]]; }
+      for (int n = 0; n < nnodes; ++n) {
+        faces3[i][n] = map[faces3[i][n]];
+      }
     }
   }
 }

@@ -39,7 +39,9 @@ NavierStokesBoundaryFunction::ComputeSubmodel(const Teuchos::RCP<const AmanziMes
       const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
 
       double tmp(0.0);
-      for (int k = 0; k < dim; ++k) { tmp += it->second[k] * normal[k]; }
+      for (int k = 0; k < dim; ++k) {
+        tmp += it->second[k] * normal[k];
+      }
       tmp /= norm(normal);
       it->second = std::vector<double>(1, tmp);
     }
