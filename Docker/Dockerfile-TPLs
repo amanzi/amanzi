@@ -11,6 +11,7 @@ ARG ver_tag
 ARG build_mpi=True
 ARG mpi_flavor=mpich
 ARG mpi_version=4.0.3
+ARG build_type=opt
 ARG TARGETARCH
 
 # Set timezone:
@@ -160,7 +161,7 @@ RUN if [ ${base_image} = "gcc" ] || [ ${mpi_flavor} = "openmpi" ]; then \
   # correct compiler libraries.
   export LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/lib:$LD_LIBRARY_PATH \
   && ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
-      --parallel=4 --opt \
+      --parallel=4 --${build_type} \
       --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/amanzi \
       --tpl-build-dir=/home/amanzi_user/amanzi_builddir/tpls \
       --tpl-download-dir=/home/amanzi_user/amanzi_builddir/tpls/Downloads \
@@ -172,7 +173,7 @@ RUN if [ ${base_image} = "gcc" ] || [ ${mpi_flavor} = "openmpi" ]; then \
       --with-python=/usr/bin/python ; \
   else \
     ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
-      --parallel=4 --opt \
+      --parallel=4 --${build_type} \
       --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/amanzi \
       --tpl-build-dir=/home/amanzi_user/amanzi_builddir/tpls \
       --tpl-download-dir=/home/amanzi_user/amanzi_builddir/tpls/Downloads \
