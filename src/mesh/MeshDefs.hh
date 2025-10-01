@@ -211,11 +211,15 @@ to_string(const Cell_kind ctype)
 }
 
 
-// Types of partitioners (partitioning scheme bundled into the name)
+// Types of partitioners
+//
+// Note, these int values are used in MSTK.  Changing the numbers would break
+// Mesh_MSTK.
 enum class Partitioner_kind {
   METIS = 0, // default
-  ZOLTAN_GRAPH,
-  ZOLTAN_RCB
+  ZOLTAN_GRAPH = 1,
+  ZOLTAN_RCB = 2,
+  PREPARTITIONED = 3
 };
 
 // Return an string description for each partitioner type
@@ -243,10 +247,12 @@ createPartitionerType(const std::string& pstring)
     return Partitioner_kind::ZOLTAN_GRAPH;
   } else if (pstring == "ZOLTAN_RCB" || pstring == "zoltan_rcb") {
     return Partitioner_kind::ZOLTAN_RCB;
+  } else if (pstring == "prepartitioned") {
+    return Partitioner_kind::PREPARTITIONED;
   } else {
     Errors::Message msg;
     msg << "Unknown Partitioner_kind string: \"" << pstring
-        << "\", valid are \"metis\", \"zoltan_graph\", \"zoltan_rcb\"";
+        << "\", valid are \"metis\", \"zoltan_graph\", \"zoltan_rcb\", \"prepartitioned\"";
     Exceptions::amanzi_throw(msg);
   }
   return Partitioner_kind::METIS;
