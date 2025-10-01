@@ -1,0 +1,39 @@
+diff -ruNbB mstk-3.3.6-source/src/par/MESH_Get_Partitioning.c mstk-3.3.6-source-prepartitioning/src/par/MESH_Get_Partitioning.c
+--- mstk-3.3.6-source/src/par/MESH_Get_Partitioning.c	2025-10-01 09:15:35
++++ mstk-3.3.6-source-prepartitioning/src/par/MESH_Get_Partitioning.c	2025-10-01 09:19:31
+@@ -112,6 +112,35 @@
+ 
+     break;
+   }
++  case 3: {
++    if (rank == 0) {
++      /* This relies on a user-provided attribute in the mesh file */
++      MAttrib_ptr att = MESH_AttribByName(mesh, "partition");
++      if (!att) {
++        MSTK_Report("MESH_GetPartition","No such attribute \"partition\"",MSTK_FATAL);
++      }
++      if (MAttrib_Get_EntDim(att) != MREGION) {
++        MSTK_Report("MESH_GetPartition","\"partition\" attribute is not of dim MREGION",MSTK_FATAL);
++      }
++      if (MAttrib_Get_Type(att) != DOUBLE) {
++        MSTK_Report("MESH_GetPartition","\"partition\" attribute is not of type DOUBLE",MSTK_FATAL);
++      }
++      if (MAttrib_Get_NumComps(att) != 1) {
++        MSTK_Report("MESH_GetPartition","\"partition\" attribute is not a scalar.",MSTK_FATAL);
++      }
++
++      *part = (int *) malloc(ncells*sizeof(int));
++
++      /* get the partition info from the attribute */
++      for(i = 0; i < ncells; i++) {
++        ment = MESH_Region(mesh,i);
++        MEnt_Get_AttVal(ment,att,NULL,&tmp,NULL);
++        (*part)[i] = (int)tmp;
++      }
++    }
++
++    break;
++  }
+   default:
+     MSTK_Report("MESH_Get_Partition","Unknown partitioning method",MSTK_FATAL);
+   }
