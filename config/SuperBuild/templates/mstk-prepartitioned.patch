@@ -1,10 +1,22 @@
 diff -ruNbB mstk-3.3.6-source/src/par/MESH_Get_Partitioning.c mstk-3.3.6-source-prepartitioning/src/par/MESH_Get_Partitioning.c
 --- mstk-3.3.6-source/src/par/MESH_Get_Partitioning.c	2025-10-01 09:15:35
-+++ mstk-3.3.6-source-prepartitioning/src/par/MESH_Get_Partitioning.c	2025-10-01 09:19:31
-@@ -112,6 +112,35 @@
++++ mstk-3.3.6-source-prepartitioning/src/par/MESH_Get_Partitioning.c	2025-10-01 15:59:17
+@@ -29,6 +29,8 @@
  
-     break;
-   }
+ int MESH_Get_Partitioning(Mesh_ptr mesh, int method, int **part, MSTK_Comm comm) {
+   int i, ok = 1, nf, nr, ncells=0;
++  double tmp = 0.;
++  MEntity_ptr ment;
+   int noptions;
+   char **options = (char **) malloc(10*sizeof(char *));
+   for (i = 0; i < 10; i++) options[i] = (char *) malloc(64*sizeof(char));
+@@ -109,6 +111,35 @@
+ #else
+     MSTK_Report("MESH_Partition","Zoltan not enabled",MSTK_FATAL);
+ #endif
++
++    break;
++  }
 +  case 3: {
 +    if (rank == 0) {
 +      /* This relies on a user-provided attribute in the mesh file */
@@ -31,9 +43,6 @@ diff -ruNbB mstk-3.3.6-source/src/par/MESH_Get_Partitioning.c mstk-3.3.6-source-
 +        (*part)[i] = (int)tmp;
 +      }
 +    }
-+
-+    break;
-+  }
-   default:
-     MSTK_Report("MESH_Get_Partition","Unknown partitioning method",MSTK_FATAL);
+ 
+     break;
    }
