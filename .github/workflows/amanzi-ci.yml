@@ -48,19 +48,31 @@ jobs:
       with:
         username: ${{secrets.DOCKERHUB_USERNAME}}
         password: ${{secrets.DOCKERHUB_PASSWORD}}
-    - name: Docker build
-      id: docker
-      working-directory: Docker
-      run: |
-        docker build --build-arg ARCH=linux/${{env.ARCH}} \
-        --build-arg amanzi_branch=${{env.AMANZI_BRANCH}} \
-        --build-arg amanzi_tpls_ver=${{env.AMANZI_TPLS_VER}} \
-        -t metsi/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{env.ARCH}}-latest \
-        -f Dockerfile-Amanzi-build .
-    - name: Docker push
-      working-directory: Docker
-      run:
-        docker push ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{env.ARCH}}-latest
+    - name: Build and push image - pull requests
+      if: github.event_name == 'pull_request' && github.base_ref == 'master'
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: ./Docker/Dockerfile-Amanzi-build
+        push: true
+        tags: metsi/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{env.ARCH}}-latest
+        build-args: |
+          ARCH=linux/${{env.ARCH}}
+          amanzi_branch=${{env.AMANZI_BRANCH}}
+          amanzi_tpls_ver=${{env.AMANZI_TPLS_VER}}
+          additional_bootstrap_args="--enable-reg_tests"
+    - name: Build and push image - on push
+      if: github.event_name == 'push'
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: ./Docker/Dockerfile-Amanzi-build
+        push: true
+        tags: metsi/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{env.ARCH}}-latest
+        build-args: |
+          ARCH=linux/${{env.ARCH}}
+          amanzi_branch=${{env.AMANZI_BRANCH}}
+          amanzi_tpls_ver=${{env.AMANZI_TPLS_VER}}  
   serial-tests:
     strategy:
       matrix:
@@ -126,7 +138,7 @@ jobs:
         with:
           username: ${{secrets.DOCKERHUB_USERNAME}}
           password: ${{secrets.DOCKERHUB_PASSWORD}}
-      - name: Pull images (remove with artifacts??)
+      - name: Pull images
         run: |
           docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-arm64-latest
           docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-amd64-latest
