@@ -19,12 +19,12 @@ ARG mpi_flavor=mpich
 ARG base_image=ubuntu
 ARG ver_tag=jammy
 ARG mpi_version=4.0.3
-ARG build_type=opt
 
 FROM metsi/amanzi-tpls:${amanzi_tpls_ver}-${mpi_flavor}-${base_image}-${ver_tag}
 LABEL Description="ATS CI: Build ATS in a Docker image."
 SHELL ["/bin/bash", "-c"]
 
+ARG build_type=opt
 ARG amanzi_branch=
 ARG ats_branch=
 ARG ats_tests_branch=
@@ -68,13 +68,14 @@ RUN git rev-parse --short HEAD
 WORKDIR /home/amanzi_user/amanzi
 
 ENV AMANZI_SRC_DIR=/home/amanzi_user/amanzi \
-    ATS_SRC_DIR=/home/amanzi_user/amanzi/src/physics/ats
+    ATS_SRC_DIR=/home/amanzi_user/amanzi/src/physics/ats \
+    BUILD_TYPE=${build_type}
 
 RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/ats \
    --tpl-config-file=${AMANZI_TPLS_DIR}/share/cmake/amanzi-tpl-config.cmake \
    --parallel=4 \
-   --${build_type} \
+   --${BUILD_TYPE} \
    --with-mpi=/usr \
    --enable-shared \
    --disable-structured \
