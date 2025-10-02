@@ -10,6 +10,7 @@ Help()
     echo "  --amanzi_branch     Which Amanzi branch should be used when building container? (Default: master)"
     echo "  --amanzi_src_dir    Where does the Amanzi repo reside on the current system?"
     echo "                      (Default: /ascem/amanzi/repos/amanzi-master)"
+    echo "  --ats_branch        Which ATS branch should be used when building container? (Default: master)"
     echo "  --ats_src_dir       Where does the ATS repo reside on the current system?"
     echo "                      (Default: \$amanzi_src_dir/src/physics/ats)"
     echo "  --amanzi_tpls_ver   Which version of the Amanzi TPLs should we build?"
@@ -51,6 +52,10 @@ case $i in
     amanzi_src_dir="${i#*=}"
     shift
     ;;
+    --ats_branch=*)
+    ats_branch="${i#*=}"
+    shift
+    ;;
     --ats_src_dir=*)
     ats_src_dir="${i#*=}"
     shift
@@ -64,7 +69,7 @@ case $i in
     shift
     ;;
     --build_type=*)
-    build_type="%{i$*=}"
+    build_type="${i#*=}"
     shift
     ;;
     --output_style=*)
@@ -102,6 +107,7 @@ output_style="${output_style:-}"
 multiarch="${multiarch:-False}"
 push="${push:-False}"
 mpi_flavor="${mpi_flavor:-mpich}"
+ats_branch="${ats_branch:-master}"
 ats_src_dir="${ats_src_dir:-$amanzi_src_dir/src/physics/ats}"
 cache="${cache:-}"
 build_type="${build_type:-opt}"
@@ -116,6 +122,7 @@ echo " - latest tag       $AMANZI_GIT_LATEST_TAG_VER"
 echo " - global hash      $AMANZI_GIT_GLOBAL_HASH"
 echo " - version string   $AMANZI_VER"
 echo ""
+
 
 ATS_GIT_LATEST_TAG_VER=`(cd $ats_src_dir; git tag -l ats-* | tail -n1 | sed -e 's/ats-//')`
 ATS_GIT_GLOBAL_HASH=`(cd $ats_src_dir; git rev-parse --short HEAD)`
@@ -152,6 +159,7 @@ then
         ${use_proxy} \
         ${push_arg} \
         --build-arg amanzi_branch=${amanzi_branch} \
+        --build-arg ats_branch=${ats_branch} \
         --build-arg amanzi_tpls_ver=${amanzi_tpls_ver} \
         --build-arg mpi_flavor=${mpi_flavor} \
         --build-arg build_type=${build_type} \
@@ -164,6 +172,7 @@ else
         ${use_proxy} \
         ${push_arg} \
         --build-arg amanzi_branch=${amanzi_branch} \
+        --build-arg ats_branch=${ats_branch} \
         --build-arg amanzi_tpls_ver=${amanzi_tpls_ver} \
         --build-arg mpi_flavor=${mpi_flavor} \
         --build-arg build_type=${build_type} \
