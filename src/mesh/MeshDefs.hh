@@ -216,10 +216,10 @@ to_string(const Cell_kind ctype)
 // Note, these int values are used in MSTK.  Changing the numbers would break
 // Mesh_MSTK.
 enum class Partitioner_kind {
-  METIS = 0, // default
-  ZOLTAN_GRAPH = 1,
-  ZOLTAN_RCB = 2,
-  PREPARTITIONED = 3
+  METIS = 0, // default METIS
+  ZOLTAN_GRAPH = 1, // default ZOLTAN
+  ZOLTAN_RCB = 2, // ZOLTAN but z-coordinate collapsed
+  FROM_EXO = 3 // coloring partition in the EXO file as an element variable
 };
 
 // Return an string description for each partitioner type
@@ -233,6 +233,8 @@ to_string(const Partitioner_kind partitioner_type)
       return "Partitioner_kind::ZOLTAN_GRAPH";
     case (Partitioner_kind::ZOLTAN_RCB):
       return "Partitioner_kind::ZOLTAN_RCB";
+    case (Partitioner_kind::FROM_EXO):
+      return "Partitioner_kind::FROM_EXO";
     default:
       return "unknown";
   }
@@ -247,12 +249,12 @@ createPartitionerType(const std::string& pstring)
     return Partitioner_kind::ZOLTAN_GRAPH;
   } else if (pstring == "ZOLTAN_RCB" || pstring == "zoltan_rcb") {
     return Partitioner_kind::ZOLTAN_RCB;
-  } else if (pstring == "prepartitioned") {
-    return Partitioner_kind::PREPARTITIONED;
+  } else if (pstring == "from exodus file") {
+    return Partitioner_kind::FROM_EXO;
   } else {
     Errors::Message msg;
     msg << "Unknown Partitioner_kind string: \"" << pstring
-        << "\", valid are \"metis\", \"zoltan_graph\", \"zoltan_rcb\", \"prepartitioned\"";
+        << "\", valid are \"metis\", \"zoltan_graph\", \"zoltan_rcb\", \"from exodus file\"";
     Exceptions::amanzi_throw(msg);
   }
   return Partitioner_kind::METIS;
