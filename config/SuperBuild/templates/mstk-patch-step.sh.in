@@ -6,13 +6,21 @@
 # Source and build locations
 mstk_src_dir=@MSTK_source_dir@
 
-patch_file=@SuperBuild_SOURCE_DIR@/templates/@MSTK_patch_file@
+OIFS=$IFS
+IFS=";"
+patch_files="@MSTK_patch_file@"
 
-if [ ! -e "${patch_file}" ] ; then
+for i in ${patch_files}; do
+
+ patch_file=@SuperBuild_SOURCE_DIR@/templates/${i}
+ echo "Applying patch: ${patch_file}"
+
+ if [ ! -e "${patch_file}" ] ; then
   echo "Patch file ${patch_file} does not exist"
   exit 10
-fi
+ fi
 
-cd ${mstk_src_dir}
-patch -p1 < ${patch_file}
-exit $?
+ (cd ${mstk_src_dir}; patch -p1 < ${patch_file})
+
+done
+
