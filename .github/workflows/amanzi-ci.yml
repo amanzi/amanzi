@@ -184,7 +184,7 @@ jobs:
         docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{env.ARCH}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest -L REG --output-on-failure"
   fix-manifest:
     runs-on: ubuntu-latest
-    needs: [parallel-tests, serial-tests]
+    needs: [parallel-tests, serial-tests, regression-tests]
     if: success()
     steps:
       - name: Check out the Amanzi repo
