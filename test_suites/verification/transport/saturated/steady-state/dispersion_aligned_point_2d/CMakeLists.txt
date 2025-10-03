@@ -8,4 +8,4 @@ add_amanzi_comparison_test(dispersion_aligned_point_2d
                            ABSOLUTE_TOLERANCE 1e-7
                            OBSERVATION "Tc-99 aqueous concentration"
                            REFERENCE ${DISPERSION_ALIGNED_POINT_2D_SOURCE_DIR}/golden_output/obs5_2_1_r5.out
-                           NPROCS 8)
+                           NPROCS 4)
