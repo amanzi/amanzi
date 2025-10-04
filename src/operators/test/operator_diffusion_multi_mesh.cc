@@ -78,7 +78,7 @@ ModifyMesh2(Amanzi::AmanziMesh::Mesh& mesh)
     auto xp = mesh.getNodeCoordinate(n);
     // xp[1] = xp[1] * (2.0 - xp[1]);
     // xp[1] = xp[1] + 0.06 * std::sin(4.0 * M_PI * xp[1]);
-    if (std::fabs(xp[1]) > 1e-5 && std::fabs(1 - xp[1]) > 1e-5)
+    if (std::fabs(xp[1]) > 1e-5 && std::fabs(1 - xp[1]) > 1e-5 &&  std::fabs(0.5 - xp[0]) > 1e-5)
       xp[1] += random(std::sqrt(0.03 / nnodes_owned));
     mesh.setNodeCoordinate(n, xp);
   }
@@ -162,16 +162,23 @@ TestDiffusionMultiMesh(double tol, int icase, int level = 1,
   int nfaces2_owned = mesh2->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
   int nfaces2_wghost = mesh2->getNumEntities(Entity_kind::FACE, Parallel_kind::ALL);
 
-  const auto& block1 = mesh1->getSetEntities("cut1", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
-  const auto& block2 = mesh2->getSetEntities("cut1", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
-
   // modify meshes 
+  cEntity_ID_View block1, block2;
   if (filename1 != "") {
     ModifyMesh1(*mesh1, AmanziGeometry::Point(0.5, 1.0), AmanziGeometry::Point(0.0, 0.0));
     ModifyMesh1(*mesh2, AmanziGeometry::Point(0.5, 1.0), AmanziGeometry::Point(0.5, 0.0));
+
+    block1 = mesh1->getSetEntities("cut1", AmanziMesh::Entity_kind::FACE, Parallel_kind::OWNED);
+    block2 = mesh2->getSetEntities("cut1", AmanziMesh::Entity_kind::FACE, Parallel_kind::OWNED);
   } else if (icase == 1) {
     ModifyMesh2(*mesh2);
+
+    block1 = mesh1->getSetEntities("cut1", AmanziMesh::Entity_kind::FACE, Parallel_kind::OWNED);
+    block2 = mesh2->getSetEntities("cut1", AmanziMesh::Entity_kind::FACE, Parallel_kind::OWNED);
   } else if (icase == 2) {
+    block1 = mesh1->getSetEntities("cut1", AmanziMesh::Entity_kind::FACE, Parallel_kind::OWNED);
+    block2 = mesh2->getSetEntities("cut1", AmanziMesh::Entity_kind::FACE, Parallel_kind::OWNED);
+
     ModifyMesh3(*mesh1, n1x, 1);
     ModifyMesh3(*mesh2, n2x, 2);
   }

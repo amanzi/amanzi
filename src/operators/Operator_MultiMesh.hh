@@ -29,6 +29,7 @@
 namespace Amanzi {
 namespace Operators {
 
+// for each interface face we keep a set of neighboring faces and projection weights
 typedef std::map<int, std::map<int, double>> InterfaceData;
 
 class Operator_MultiMesh : public Operator {

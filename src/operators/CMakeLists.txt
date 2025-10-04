@@ -148,7 +148,6 @@ set(operators_inc_files
     UpwindFluxManifolds.hh
     UpwindGravity.hh
     UpwindSecondOrder.hh
-    #Operator_DataHelpers.hh
     Evaluator_OperatorApply.hh
     Evaluator_PDE_Diffusion.hh
 )
@@ -218,11 +217,11 @@ add_amanzi_library(operators
 
 
 if (ENABLE_TESTS)
-  add_amanzi_executable(verify_operators
-                      SOURCE test/verify_operators.cc
-                      LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
-                      OUTPUT_NAME verify_operators
-                      OUTPUT_DIRECTORY ${OPERATORS_BINARY_DIR}/test)
+    add_amanzi_executable(verify_operators
+                          SOURCE test/verify_operators.cc
+                          LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                          OUTPUT_NAME verify_operators
+                          OUTPUT_DIRECTORY ${OPERATORS_BINARY_DIR}/test)
 
 
     # Add UnitTest includes
@@ -536,16 +535,16 @@ if (ENABLE_TESTS)
                     SOURCE test/Main.cc test/operators_state_container.cc
                     LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # Test: tangled mesh
-    # add_amanzi_test(operators_diffusion_tangled operators_diffusion_tangled
-    #                 KIND unit
-    #                 SOURCE test/Main.cc test/operator_diffusion_tangled.cc
-    #                 LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
     # Test: many meshes
     add_amanzi_test(operators_diffusion_schwarz operators_diffusion_schwarz
                     KIND unit
                     SOURCE test/Main.cc test/operator_diffusion_schwarz.cc
+                    LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    # Test: logical meshes
+    add_amanzi_test(operators_virtual_diffusion operators_virtual_diffusion
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_virtual_diffusion.cc
                     LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
 endif()

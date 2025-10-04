@@ -177,7 +177,7 @@ PDE_DiffusionMultiMesh::ModifyMatrices_(int ib, const InterfaceData& data)
 {
   auto op = *matrix_->get_operator_block(ib, ib)->begin();
 
-  double beta = (d_ - 2.0) / (d_ - 1.0);
+  double beta = (d_ - 2.0) / 2;
   double alpha = std::sqrt(stability_);
 
   for (int c = 0; c < op->matrices.size(); ++c) {

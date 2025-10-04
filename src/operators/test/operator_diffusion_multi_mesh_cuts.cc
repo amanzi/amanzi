@@ -40,7 +40,6 @@
 #include "Analytic00.hh"
 #include "Analytic01.hh"
 #include "Analytic01b.hh"
-#include "AnalyticMisha.hh"
 
 
 /* *****************************************************************
