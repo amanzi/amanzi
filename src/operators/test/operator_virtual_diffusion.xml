@@ -3,9 +3,11 @@
 
   <Parameter name="mesh cells in x direction" type="int" value="10"/>
   <Parameter name="mesh cells in y direction" type="int" value="10"/>
+  <Parameter name="mesh cells in z direction" type="int" value="10"/>
 
   <Parameter name="domain size in x direction" type="double" value="1.0"/>
   <Parameter name="domain size in y direction" type="double" value="1.0"/>
+  <Parameter name="domain size in z direction" type="double" value="1.0"/>
 
   <Parameter name="origin" type="Array(double)" value="{ 1.0, 1.0 }"/>
 

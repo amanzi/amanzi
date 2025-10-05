@@ -215,13 +215,13 @@ double random(double range) {
 * Supporting function: initialization of a cloud of points
 ***************************************************************** */
 void
-generatePointCloud(int nx, int ny,
-                   double Lx, double Ly,
-                   const std::vector<double>& origin,
-                   AmanziMesh::Point_List& face_centroids_bnd, 
-                   AmanziMesh::Point_List& face_normals_bnd, 
-                   AmanziMesh::Point_List& cell_centroids,
-                   std::vector<double>& cell_volumes)
+generatePointCloud2D(int nx, int ny,
+                     double Lx, double Ly,
+                     const std::vector<double>& origin,
+                     AmanziMesh::Point_List& face_centroids_bnd, 
+                     AmanziMesh::Point_List& face_normals_bnd, 
+                     AmanziMesh::Point_List& cell_centroids,
+                     std::vector<double>& cell_volumes)
 {
   int d = origin.size();
   double hx(Lx / nx), hy(Ly / ny);
@@ -255,6 +255,77 @@ generatePointCloud(int nx, int ny,
 
     face_centroids_bnd.push_back(AmanziGeometry::Point(0.0, Ly - hy * n - hy / 2));
     face_normals_bnd.push_back(AmanziGeometry::Point(-hy, 0.0));
+  }
+
+  // shift coordinates
+  for (int n = 0; n < cell_centroids.size(); ++n) {
+    for (int k = 0; k < d; ++k) cell_centroids[n][k] += origin[k];
+  }
+  for (int n = 0; n < face_centroids_bnd.size(); ++n) {
+    for (int k = 0; k < d; ++k) face_centroids_bnd[n][k] += origin[k];
+  }
+}
+
+
+void
+generatePointCloud3D(int nx, int ny, int nz,
+                     double Lx, double Ly, double Lz,
+                     const std::vector<double>& origin,
+                     AmanziMesh::Point_List& face_centroids_bnd, 
+                     AmanziMesh::Point_List& face_normals_bnd, 
+                     AmanziMesh::Point_List& cell_centroids,
+                     std::vector<double>& cell_volumes)
+{
+  int d = origin.size();
+  double hx(Lx / nx), hy(Ly / ny), hz(Lz / nz);
+  double hmin = std::min({ hx, hy, hz });
+  AmanziGeometry::Point xp(d);
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        double x = hx * (i + 0.5);
+        double y = hy * (j + 0.5);
+        double z = hz * (k + 0.5);
+
+        // xp[0] = x;
+        // xp[1] = y;
+        // xp[2] = z;
+        xp[0] = x + random(hmin / 12);
+        xp[1] = y + random(hmin / 12);
+        xp[2] = z + random(hmin / 12);
+        cell_centroids.push_back(xp);
+        cell_volumes.push_back(Lx * Ly * Lz / nx / ny / nz * (1.0 + random(0.0 / 12)));
+      }
+    }
+  }
+
+  for (int n = 0; n < nx; ++n) {
+    for (int m = 0; m < ny; ++m) {
+      face_centroids_bnd.push_back(AmanziGeometry::Point(hx * n + hx / 2, hy * m + hy / 2, 0.0));
+      face_normals_bnd.push_back(AmanziGeometry::Point(0.0, 0.0, -hx * hy));
+
+      face_centroids_bnd.push_back(AmanziGeometry::Point(hx * n + hx / 2, hy * m + hy / 2, Lz));
+      face_normals_bnd.push_back(AmanziGeometry::Point(0.0, 0.0, hx * hy));
+    }
+  }
+  for (int n = 0; n < ny; ++n) {
+    for (int m = 0; m < nz; ++m) {
+      face_centroids_bnd.push_back(AmanziGeometry::Point(0.0, hy * n + hy / 2, hz * m + hz / 2));
+      face_normals_bnd.push_back(AmanziGeometry::Point(-hy * hz, 0.0, 0.0));
+
+      face_centroids_bnd.push_back(AmanziGeometry::Point(Lx, hy * n + hy / 2, hz * m + hz / 2));
+      face_normals_bnd.push_back(AmanziGeometry::Point(hy * hz, 0.0, 0.0));
+    }
+  }
+  for (int n = 0; n < nx; ++n) {
+    for (int m = 0; m < nz; ++m) {
+      face_centroids_bnd.push_back(AmanziGeometry::Point(hx * n + hx / 2, 0.0, hz * m + hz / 2));
+      face_normals_bnd.push_back(AmanziGeometry::Point(0.0, -hx * hz, 0.0));
+
+      face_centroids_bnd.push_back(AmanziGeometry::Point(hx * n + hx / 2, Ly, hz * m + hz / 2));
+      face_normals_bnd.push_back(AmanziGeometry::Point(0.0, hx * hz, 0.0));
+    }
   }
 
   // shift coordinates
@@ -308,10 +379,7 @@ createConnectivityGraph(std::vector<AmanziGeometry::Point>& face_centroids_bnd,
   for (int n = 0; n < ncells; ++n) {
     std::vector<std::pair<size_t, double>> matches, filter0, filter1;
 
-    nanoflann::SearchParams params;
-    double query_pt[2] = { cell_centroids[n][0], cell_centroids[n][1] };
-
-    int nresults, mresults(0), nmin(4 - count[n]), nmax(6 - count[n]);
+    int nresults, mresults(0), nmin(2 * d - count[n]), nmax(3 * d - count[n]);
     int num = nmin - 1;
     while (mresults < nmin || mresults > nmax) {
       num++;

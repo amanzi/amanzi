@@ -133,9 +133,10 @@ RunTest(int icase, double mu, double lambda, double tol = 1e-10)
   std::vector<int>& bcf_model = bcf->bc_model();
   std::vector<double>& bcf_value = bcf->bc_value();
 
+  int dir;
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->getFaceCentroid(f);
-    const Point& normal = mesh->getFaceNormal(f);
+    const Point& normal = getFaceNormalExterior(*mesh, f, &dir);
     double area = mesh->getFaceArea(f);
 
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||

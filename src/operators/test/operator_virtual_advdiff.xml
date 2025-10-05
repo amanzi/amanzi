@@ -1,9 +1,9 @@
 <ParameterList>
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
 
-  <Parameter name="mesh cells in x direction" type="int" value="11"/>
-  <Parameter name="mesh cells in y direction" type="int" value="11"/>
-  <Parameter name="mesh cells in z direction" type="int" value="11"/>
+  <Parameter name="mesh cells in x direction" type="int" value="15"/>
+  <Parameter name="mesh cells in y direction" type="int" value="15"/>
+  <Parameter name="mesh cells in z direction" type="int" value="10"/>
 
   <Parameter name="domain size in x direction" type="double" value="1.0"/>
   <Parameter name="domain size in y direction" type="double" value="1.0"/>
@@ -17,6 +17,14 @@
 
   <ParameterList name="verbose object">
     <Parameter name="verbosity level" type="string" value="medium"/>
+  </ParameterList>
+
+  <ParameterList name="PK operator">
+    <ParameterList name="advection operator">
+      <Parameter name="schema" type="Array(string)" value="{cell}"/>
+      <Parameter name="method order" type="int" value="0"/>
+      <Parameter name="matrix type" type="string" value="advection"/>
+    </ParameterList>
   </ParameterList>
 
   <ParameterList name="preconditioners">

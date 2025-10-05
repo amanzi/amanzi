@@ -106,8 +106,8 @@ RunTest(int icase,
   // create a PDE: operator and boundary conditions
   // -- XML list speficies discretization method and location of degrees of freedom
   // -- (called schema). This seems redundant but only when use a low-order method.
-  Teuchos::RCP<PDE_Elasticity> op = Teuchos::rcp(new PDE_Elasticity(op_list, mesh));
-  op->Init(op_list);
+  Teuchos::RCP<PDE_Elasticity> pde = Teuchos::rcp(new PDE_Elasticity(op_list, mesh));
+  pde->Init(op_list);
 
   // populate boundary conditions: type (called model) and value
   // -- normal component of velocity on boundary faces (a scalar)
@@ -130,7 +130,7 @@ RunTest(int icase,
         ndir++;
       }
     }
-    op->AddBCs(bcf, bcf);
+    pde->AddBCs(bcf, bcf);
   }
 
   // -- full velocity at boundary nodes (a vector)
@@ -150,7 +150,7 @@ RunTest(int icase,
         ndir++;
       }
     }
-    op->AddBCs(bcv, bcv);
+    pde->AddBCs(bcv, bcv);
   }
 
   // -- full velocity at boundary nodes (a vector)
@@ -174,7 +174,7 @@ RunTest(int icase,
         nshear++;
       }
     }
-    op->AddBCs(bcf, bcf);
+    pde->AddBCs(bcf, bcf);
 
     auto bcv =
       Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::SCALAR));
@@ -192,7 +192,7 @@ RunTest(int icase,
         nkinematic++;
       }
     }
-    op->AddBCs(bcv, bcv);
+    pde->AddBCs(bcv, bcv);
 
     auto bcp =
       Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::POINT));
@@ -207,7 +207,7 @@ RunTest(int icase,
         ndir++;
       }
     }
-    op->AddBCs(bcp, bcp);
+    pde->AddBCs(bcp, bcp);
   }
 
   if (icase == 4) {
@@ -225,7 +225,7 @@ RunTest(int icase,
         ndir++;
       }
     }
-    op->AddBCs(bcv, bcv);
+    pde->AddBCs(bcv, bcv);
 
     auto bcf =
       Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::POINT));
@@ -243,11 +243,11 @@ RunTest(int icase,
         nshear++;
       }
     }
-    op->AddBCs(bcf, bcf);
+    pde->AddBCs(bcf, bcf);
   }
 
   // create and initialize solution
-  const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
+  const CompositeVectorSpace& cvs = pde->global_operator()->DomainMap();
   CompositeVector solution(cvs);
   solution.PutScalar(0.0);
 
@@ -272,13 +272,13 @@ RunTest(int icase,
   source.GatherGhostedToMaster("node");
 
   // populate the elasticity operator
-  op->SetTensorCoefficient(K);
-  op->UpdateMatrices();
+  pde->SetTensorCoefficient(K);
+  pde->UpdateMatrices();
 
   // get and assemble the global operator (volume was included before)
-  Teuchos::RCP<Operator> global_op = op->global_operator();
+  Teuchos::RCP<Operator> global_op = pde->global_operator();
   global_op->UpdateRHS(source, true);
-  op->ApplyBCs(true, true, true);
+  pde->ApplyBCs(true, true, true);
 
   // create preconditoner using the base operator class
   global_op->set_inverse_parameters(
@@ -328,7 +328,7 @@ RunTest(int icase,
   cvs2.SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
   CompositeVector e(cvs2);
-  op->ComputeVolumetricStrain(solution, e);
+  pde->ComputeVolumetricStrain(solution, e);
   const auto& e_c = *e.ViewComponent("cell");
 
   double el2_err(0.0);

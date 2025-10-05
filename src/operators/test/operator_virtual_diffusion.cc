@@ -30,7 +30,6 @@
 #include "MeshVirtual.hh"
 #include "Op_Face_Cell.hh"
 #include "Operator_Cell.hh"
-#include "PDE_Diffusion.hh"
 #include "PDE_DiffusionCurvedFace.hh"
 #include "Tensor.hh"
 
@@ -51,7 +50,7 @@ using namespace Amanzi::Operators;
 * Test
 ***************************************************************** */
 void
-RunTestVirtualDiffusion()
+RunTestVirtualDiffusion(int d)
 {
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
@@ -62,12 +61,19 @@ RunTestVirtualDiffusion()
   auto plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // read input parameters
-  int nx = plist->get<int>("mesh cells in x direction", 20);
-  int ny = plist->get<int>("mesh cells in y direction", 20);
-  double Lx = plist->get<double>("domain size in x direction", 1.0);
-  double Ly = plist->get<double>("domain size in y direction", 1.0);
+  int nx, ny, nz;
+  double Lx, Ly, Lz;
+  nx = plist->get<int>("mesh cells in x direction", 20);
+  ny = plist->get<int>("mesh cells in y direction", 20);
+  Lx = plist->get<double>("domain size in x direction", 1.0);
+  Ly = plist->get<double>("domain size in y direction", 1.0);
   std::vector<double> origin = plist->get<Teuchos::Array<double>>("origin").toVector();
-  int d = origin.size();
+
+  if (d == 3) {
+    nz = plist->get<int>("mesh cells in z direction", 20);
+    Lz = plist->get<double>("domain size in y direction", 1.0);
+    origin.push_back(1.0);
+  }
 
   // generate cloud of points
   std::vector<double> cell_volumes;
@@ -75,13 +81,23 @@ RunTestVirtualDiffusion()
   Point_List face_centroids_bnd;
   Point_List face_normals_bnd;
 
-  generatePointCloud(nx, ny,
-                     Lx, Ly, 
-                     origin,
-                     face_centroids_bnd, 
-                     face_normals_bnd, 
-                     cell_centroids,
-                     cell_volumes);
+  if (d == 2) {
+    generatePointCloud2D(nx, ny,
+                         Lx, Ly, 
+                         origin,
+                         face_centroids_bnd, 
+                         face_normals_bnd, 
+                         cell_centroids,
+                         cell_volumes);
+  } else {
+    generatePointCloud3D(nx, ny, nz,
+                         Lx, Ly, Lz,
+                         origin,
+                         face_centroids_bnd, 
+                         face_normals_bnd, 
+                         cell_centroids,
+                         cell_volumes);
+  }
 
   auto face_cells = createConnectivityGraph(face_centroids_bnd, cell_centroids);
 
@@ -120,6 +136,7 @@ RunTestVirtualDiffusion()
   auto& moments_f = *moments->ViewComponent("face");
 
   // -- verification
+  AmanziGeometry::Point normal(d);
   for (int c = 0; c < ncells; ++c) {
     const auto& [faces, dirs] = mesh1->getCellFacesAndDirections(c);
     int nfaces = faces.size();
@@ -127,7 +144,7 @@ RunTestVirtualDiffusion()
     double sum(0.0);
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
-      AmanziGeometry::Point normal(moments_f[0][f], moments_f[1][f]);
+      for (int k = 0; k < d; ++k) normal[k] = moments_f[k][f];
       sum += normal[0] * dirs[n];
     }
     CHECK_CLOSE(0.0, sum, 1e-8);
@@ -135,7 +152,7 @@ RunTestVirtualDiffusion()
 
   // create second virtual mesh with fully complete geometry
   for (int f = 0; f < nfaces; ++f) {
-    face_normals[f].set(moments_f[0][f], moments_f[1][f]);
+    for (int k = 0; k < d; ++k) face_normals[f][k] = moments_f[k][f];
   }
 
   auto mesh_fw2 = Teuchos::rcp(new MeshVirtual(comm,
@@ -171,8 +188,8 @@ RunTestVirtualDiffusion()
     const auto& [faces, dirs] = mesh2->getCellFacesAndDirections(c);
     int nfaces = faces.size();
 
-    for (int i = 0; i < 2; ++i) {
-      for (int j = 0; j < 2; ++j) {
+    for (int i = 0; i < d; ++i) {
+      for (int j = 0; j < d; ++j) {
         double sum(0.0);
         for (int n = 0; n < nfaces; ++n) {
           int f = faces[n];
@@ -252,6 +269,7 @@ RunTestVirtualDiffusion()
 
 TEST(OPERATOR_VIRTUAL_DIFFUSION)
 {
-  RunTestVirtualDiffusion();
+  RunTestVirtualDiffusion(2);
+  RunTestVirtualDiffusion(3);
 }
 

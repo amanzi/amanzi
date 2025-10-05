@@ -30,13 +30,13 @@
 #include "MeshVirtual.hh"
 #include "Op_Face_Cell.hh"
 #include "Operator_Cell.hh"
-#include "PDE_Diffusion.hh"
-#include "PDE_ElasticityCurvedFace.hh"
+#include "PDE_AdvectionUpwind.hh"
+#include "PDE_DiffusionCurvedFace.hh"
 #include "Tensor.hh"
 
 // Operators
-#include "AnalyticElasticity01.hh"
-#include "AnalyticElasticity03.hh"
+#include "Analytic00.hh"
+#include "Analytic03.hh"
 
 #include "operator_virtual.hh"
 
@@ -50,28 +50,28 @@ using namespace Amanzi::Operators;
 /* *****************************************************************
 * Test
 ***************************************************************** */
-double
-RunTestVirtualElasticity(int d, int level = 1)
+void
+RunTestVirtualAdvectionDiffusion(int d)
 {
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: elasticity solver on a virtual logical mesh \n";
+  if (MyPID == 0) std::cout << "\nTest: elliptic solver on a virtual logical mesh \n";
 
   // read parameter list
-  std::string xmlFileName = "test/operator_virtual_elasticity.xml";
+  std::string xmlFileName = "test/operator_virtual_advdiff.xml";
   auto plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // read input parameters
   int nx, ny, nz;
   double Lx, Ly, Lz;
-  nx = level * plist->get<int>("mesh cells in x direction", 20);
-  ny = level * plist->get<int>("mesh cells in y direction", 20);
+  nx = plist->get<int>("mesh cells in x direction", 20);
+  ny = plist->get<int>("mesh cells in y direction", 20);
   Lx = plist->get<double>("domain size in x direction", 1.0);
   Ly = plist->get<double>("domain size in y direction", 1.0);
   std::vector<double> origin = plist->get<Teuchos::Array<double>>("origin").toVector();
 
   if (d == 3) {
-    nz = level * plist->get<int>("mesh cells in z direction", 20);
+    nz = plist->get<int>("mesh cells in z direction", 20);
     Lz = plist->get<double>("domain size in y direction", 1.0);
     origin.push_back(1.0);
   }
@@ -136,21 +136,6 @@ RunTestVirtualElasticity(int d, int level = 1)
   auto moments = computeGeometryMoments(mesh1, nfaces_int, nfaces, plist);
   auto& moments_f = *moments->ViewComponent("face");
 
-  // -- verification
-  AmanziGeometry::Point normal(d);
-  for (int c = 0; c < ncells; ++c) {
-    const auto& [faces, dirs] = mesh1->getCellFacesAndDirections(c);
-    int nfaces = faces.size();
-
-    double sum(0.0);
-    for (int n = 0; n < nfaces; ++n) {
-      int f = faces[n];
-      for (int k = 0; k < d; ++k) normal[k] = moments_f[k][f];
-      sum += normal[0] * dirs[n];
-    }
-    CHECK_CLOSE(0.0, sum, 1e-8);
-  }
-
   // create second virtual mesh with fully complete geometry
   for (int f = 0; f < nfaces; ++f) {
     for (int k = 0; k < d; ++k) face_normals[f][k] = moments_f[k][f];
@@ -168,61 +153,55 @@ RunTestVirtualElasticity(int d, int level = 1)
     mesh_fw2, Teuchos::rcp(new MeshVirtualAlgorithms()), Teuchos::null));
 
   // -- initialize diffusion problem
+  AmanziGeometry::Point vel(1.0, 2.0);
+  auto ana = Teuchos::RCP(new Analytic00(mesh2, 2, 0.0, vel));
+
   Teuchos::ParameterList pde_list;
-  pde_list.set<double>("diagonal shift", 0.0);
-  pde_list.set<std::string>("matrix type", "stiffness");
-  pde_list.sublist("schema")
-    .set<std::string>("method", "elasticity weak symmetry curved face")
-    .set<int>("method order", 1)
-    .set<std::string>("base", "cell");
-  auto pde = Teuchos::rcp(new Operators::PDE_ElasticityCurvedFace(pde_list, mesh2));
+  pde_list.set<double>("penalty", 0.0);
+  auto pde = Teuchos::rcp(new Operators::PDE_DiffusionCurvedFace(pde_list, mesh2, nullptr));
   auto op = pde->global_operator();
 
   // -- set diffusion coefficient
-  auto ana = Teuchos::RCP(new AnalyticElasticity01(mesh2, 1.0, 1.0));
   auto K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   for (int c = 0; c < cell_centroids.size(); ++c) {
     const AmanziGeometry::Point& xc = mesh2->getCellCentroid(c);
-    const WhetStone::Tensor& Kc = ana->Tensor(xc, 0.0);
+    const WhetStone::Tensor& Kc = ana->TensorDiffusivity(xc, 0.0);
     K->push_back(Kc);
   }
-  pde->Setup(K, false);
-
-  // -- verification
-  auto bf = pde->get_bf();
-  for (int c = 0; c < ncells; ++c) {
-    const auto& [faces, dirs] = mesh2->getCellFacesAndDirections(c);
-    int nfaces = faces.size();
-
-    for (int i = 0; i < d; ++i) {
-      for (int j = 0; j < d; ++j) {
-        double sum(0.0);
-        for (int n = 0; n < nfaces; ++n) {
-          int f = faces[n];
-          const auto& normal = mesh2->getFaceNormal(f);
-          const AmanziGeometry::Point& xf = (*bf)[f];
-          sum += normal[i] * dirs[n] * xf[j];
-        }
-        CHECK_CLOSE(sum, ((i == j) ? mesh2->getCellVolume(c) : 0.0), 1e-10);
-      }
-    }
-  }
+  pde->SetTensorCoefficient(K);
 
   // -- finalize diffusion problem
-  auto bc = Teuchos::rcp(new Operators::BCs(mesh2, AmanziMesh::FACE, WhetStone::DOF_Type::VECTOR));
+  auto bc = Teuchos::rcp(new Operators::BCs(mesh2, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  auto& bc_value = bc->bc_value();
   auto& bc_model = bc->bc_model();
-  auto& bc_value = bc->bc_value_vector(d);
 
+  int dir;
+  auto bf = pde->get_bf();
   for (int f = nfaces_int; f < nfaces; ++f) {
+    const auto& xf0 = mesh2->getFaceCentroid(f); // original centroid
     const auto& xf = (*bf)[f];
-    bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
+    if (fabs(xf0[0] - 1.0) < 1e-6) {
+      bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
+      bc_value[f] = ana->pressure_exact(xf, 0.0);
+    } else if (fabs(xf0[1] - 1.0) < 1e-6) { // inflow bottom boundary
+      double area = mesh2->getFaceArea(f);
+      auto normal = getFaceNormalExterior(*mesh2, f, &dir) / area;
 
-    auto tmp = ana->velocity_exact(xf, 0.0);
-    for (int k = 0; k < d; ++k) bc_value[f][k] = tmp[k];
+      bc_model[f] = OPERATOR_BC_TOTAL_FLUX;
+      double flux1 = ana->velocity_exact(xf, 0.0) * normal;
+      double flux2 = (ana->advection_exact(xf, 0.0) * normal) * ana->pressure_exact(xf, 0.0);
+      bc_value[f] = flux1 + flux2;
+    } else if (fabs(xf0[0] - 2.0) < 1e-6 || fabs(xf0[1] - 2.0) < 1e-6) { // outflow right boundary
+      double area = mesh2->getFaceArea(f);
+      auto normal = getFaceNormalExterior(*mesh2, f, &dir);
+
+      bc_model[f] = OPERATOR_BC_NEUMANN;
+      bc_value[f] = (ana->velocity_exact(xf, 0.0) * normal) / area;
+    } else {
+      AMANZI_ASSERT(false);
+    }
   }
   pde->AddBCs(bc, bc);
-
-  op->Init();
 
   auto rhs = op->rhs();
   auto& rhs_c = *rhs->ViewComponent("cell");
@@ -230,12 +209,27 @@ RunTestVirtualElasticity(int d, int level = 1)
   for (int c = 0; c < ncells; ++c) {
     const auto& xc = mesh2->getCellCentroid(c);
     const auto& vol = mesh2->getCellVolume(c);
-    const auto& tmp = ana->source_exact(xc, 0.0);
-    for (int k = 0; k < d; ++k) rhs_c[k][c] = vol * tmp[k];
+    rhs_c[0][c] = vol * ana->source_exact(xc, 0.0);
   }
 
   pde->UpdateMatrices(Teuchos::null, Teuchos::null);
   pde->ApplyBCs(true, true, true);
+
+  // -- finalize advection operator
+  pde_list = plist->sublist("PK operator").sublist("advection operator");
+  auto pde_adv = Teuchos::rcp(new PDE_AdvectionUpwind(pde_list, op));
+  pde_adv->SetBCs(bc, bc);
+
+  auto u = Teuchos::rcp(new CompositeVector(*rhs));
+  auto& u_f = *u->ViewComponent("face");
+  for (int f = 0; f < nfaces; f++) {
+    auto tmp = ana->advection_exact((*bf)[f], 0.0);
+    u_f[0][f] = tmp * mesh2->getFaceNormal(f);
+  }
+
+  pde_adv->Setup(*u);
+  pde_adv->UpdateMatrices(u.ptr());
+  pde_adv->ApplyBCs(false, true, false);
 
   op->SymbolicAssembleMatrix();
   op->AssembleMatrix();
@@ -254,43 +248,26 @@ RunTestVirtualElasticity(int d, int level = 1)
   for (int c = 0; c < ncells; ++c) {
     const auto& xc = mesh2->getCellCentroid(c);
     double vol = mesh2->getCellVolume(c);
-    auto tmp = ana->velocity_exact(xc, 0.0);
+    double tmp = ana->pressure_exact(xc, 0.0);
 
-    for (int k = 0; k < d; ++k) {
-      inf_err = std::max(inf_err, std::fabs(tmp[k] - sol_c[k][c]));
-      l2_err += vol * std::pow(tmp[k] - sol_c[k][c], 2);
-      unorm += vol * std::pow(sol_c[k][c], 2);
-    }
+    inf_err = std::max(inf_err, std::fabs(tmp - sol_c[0][c]));
+    l2_err += vol * std::pow(tmp - sol_c[0][c], 2);
+    unorm += vol * std::pow(tmp, 2);
   }
   printf("L2(p) =%10.7f  Inf =%9.6f  |u|=%9.6f\n", std::sqrt(l2_err / unorm), inf_err, std::sqrt(unorm));
-  AMANZI_ASSERT(l2_err < 1e-8);
+  AMANZI_ASSERT(l2_err < 1e-3);
 
   // -- visualization
   std::ofstream file1("xyc");
   for (int c = 0; c < ncells; ++c) {
-    file1 << mesh2->getCellCentroid(c);
-    for (int k = 0; k < d; ++k) file1 << " " << sol_c[k][c];
-    file1 << std::endl;
+    file1 << mesh2->getCellCentroid(c) << " " << sol_c[0][c] << std::endl;
   }
   file1.close();
-
-  std::ofstream file2("xyn");
-  for (int f = 0; f < nfaces; ++f) {
-    file2 << (*bf)[f] << " " << mesh2->getFaceNormal(f) << std::endl;
-  }
-  file2.close();
-
-  return l2_err;
 }
 
 
-TEST(OPERATOR_VIRTUAL_ELASTICITY_2D)
+TEST(OPERATOR_VIRTUAL_ADVECTION_DIFFUSION)
 {
-  RunTestVirtualElasticity(2, 1);
+  RunTestVirtualAdvectionDiffusion(2);
 }
 
-
-TEST(OPERATOR_VIRTUAL_ELASTICITY_3D)
-{
-  RunTestVirtualElasticity(3);
-}

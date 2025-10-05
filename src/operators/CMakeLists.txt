@@ -552,5 +552,10 @@ if (ENABLE_TESTS)
                     SOURCE test/Main.cc test/operator_virtual_elasticity.cc
                     LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+    add_amanzi_test(operators_virtual_advdiff operators_virtual_advdiff
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_virtual_advdiff.cc
+                    LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
 endif()
                 
