@@ -642,5 +642,81 @@ RotationMatrix90(const AmanziGeometry::Point& u, bool ccw)
   return T;
 }
 
+
+/* ******************************************************************
+* Rotate tensors using Euler angles
+****************************************************************** */
+void Tensor::Rotate(double* angles)
+{
+  if (rank_ == 1) return;
+
+  // rotation matrix
+  Tensor R(d_, 2);
+  if (d_ == 2) {
+    double cs = std::cos(angles[0]);
+    double sn = std::sin(angles[0]);
+    R(0, 0) = R(1, 1) = cs;
+    R(1, 0) = sn;
+    R(0, 1) = -sn;
+  } else {
+    double cphi = std::cos(angles[0]);  // roll
+    double sphi = std::sin(angles[0]);
+    double ctheta = std::cos(angles[1]);  // pitch
+    double stheta = std::sin(angles[1]);
+    double cpsi = std::cos(angles[2]);  // yaw
+    double spsi = std::sin(angles[2]);
+
+    R(0, 0) = cpsi * ctheta;
+    R(0, 1) = cpsi * stheta * sphi - spsi * cphi;
+    R(0, 2) = cpsi * stheta * cphi + spsi * sphi;
+
+    R(1, 0) = spsi * ctheta;
+    R(1, 1) = spsi * stheta * sphi + cpsi * cphi;
+    R(1, 2) = spsi * stheta * cphi - cpsi * sphi;
+
+    R(2, 0) = -stheta;
+    R(2, 1) = ctheta * sphi;
+    R(2, 2) = ctheta * cphi;
+  }
+
+  Tensor RT(R); 
+  RT.Transpose();
+
+  // rotation of tensor
+  if (rank_ == 2) *this = R * (*this) * RT;
+
+  if (rank_ == 4) {
+    Tensor T(*this);
+
+    std::vector<int> map(d_ * d_);
+    if (d_ == 2) map = {0, 2, 3, 1};
+    if (d_ == 3) map = {0, 3, 7, 4, 1, 5, 8, 6, 2};
+
+    for (int p = 0; p < d_; ++p) {
+      for (int q = 0; q < d_; ++q) {
+        for (int r = 0; r < d_; ++r) {
+          for (int s = 0; s < d_; ++s) {
+            double sum = 0.0;
+            for (int i = 0; i < d_; ++i) {
+              for (int j = 0; j < d_; ++j) {
+                for (int k = 0; k < d_; ++k) {
+                  for (int l = 0; l < d_; ++l) {
+                    int m = d_ * i + j;
+                    int n = d_ * k + l;
+                    sum += R(p, i) * R(q, j) * R(r, k) * R(s, l) * T(map[m], map[n]);
+                  }
+                }
+              }
+            }
+            int m = d_ * p + q;
+            int n = d_ * r + s;
+            (*this)(map[m], map[n]) = sum;
+          }
+        }
+      }
+    }
+  }
+}
+
 } // namespace WhetStone
 } // namespace Amanzi

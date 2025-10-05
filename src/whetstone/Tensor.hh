@@ -62,6 +62,7 @@ class Tensor {
   void SymmetricPart();
   bool isZero();
   void SpectralBounds(double* lower, double* upper) const;
+  void Rotate(double* eulerAngles);
 
   // elementary operators
   Tensor& operator*=(double c);
