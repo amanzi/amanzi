@@ -56,6 +56,7 @@ PDE_DiffusionMultiMesh::Init(const Teuchos::RCP<State>& S)
   stability_ = plist_.get<double>("stability constant");
   method_ = plist_.get<std::string>("intersection method");
   nparticles_ = plist_.get<int>("number of particles", 10);
+  assemble_stability_matrix_ = plist_.get<bool>("assemble stability matrix", false);
   d_ = meshes_[names_[0]]->getSpaceDimension();
 
   // parse interface data
@@ -176,7 +177,7 @@ PDE_DiffusionMultiMesh::ModifyMatrices_(int ib, const InterfaceData& data)
 {
   auto op = *matrix_->get_operator_block(ib, ib)->begin();
 
-  double beta = (d_ - 2.0) / (d_ - 1.0);
+  double beta = (d_ - 2.0) / 2;
   double alpha = std::sqrt(stability_);
 
   for (int c = 0; c < op->matrices.size(); ++c) {
@@ -187,7 +188,7 @@ PDE_DiffusionMultiMesh::ModifyMatrices_(int ib, const InterfaceData& data)
     int ncol(nfaces + 1);
     for (int n = 0; n < nfaces; ++n) {
       auto it = data.find(faces[n]);
-      if (it != data.end() ) ncol += it->second.size();
+      if (it != data.end()) ncol += it->second.size();
     }
 
     // populate a flux coupling matrix
@@ -232,7 +233,10 @@ PDE_DiffusionMultiMesh::ModifyMatrices_(int ib, const InterfaceData& data)
       LT.Transpose(L);
 
       matrices_grad_[ib][c] = CT * (op->matrices)[c] * C;
-      (op->matrices)[c] = matrices_grad_[ib][c] + LT * L;
+      (op->matrices)[c] = (assemble_stability_matrix_) ? LT * L : matrices_grad_[ib][c] + LT * L;
+    }
+    else if (assemble_stability_matrix_) {
+      (op->matrices)[c].PutScalar(0.0);
     }
   }
 }
@@ -244,6 +248,8 @@ PDE_DiffusionMultiMesh::ModifyMatrices_(int ib, const InterfaceData& data)
 void
 PDE_DiffusionMultiMesh::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
+  if (assemble_stability_matrix_) return;
+
   for (int ib = 0; ib < matrix_->get_row_size(); ++ib) {
     auto op = *matrix_->get_operator_block(ib, ib)->begin();
 
@@ -373,6 +379,7 @@ PDE_DiffusionMultiMesh::UpdateFlux(const Teuchos::Ptr<const TreeVector>& u,
       v(nfaces) = u_cell[0][c];
 
       if (ncol > nfaces + 1) {
+        AMANZI_ASSERT(matrices_grad_[ib][c].NumCols() == v.NumRows());
         matrices_grad_[ib][c].Multiply(v, av, false);
       } else if (op->matrices_shadow[c].NumRows() == 0) {
         op->matrices[c].Multiply(v, av, false);

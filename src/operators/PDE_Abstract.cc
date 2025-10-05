@@ -231,6 +231,19 @@ PDE_Abstract::UpdateMatrices(double t)
 
 
 /* *******************************************************************
+* Optional calculation of flux from potential p
+******************************************************************* */
+void
+PDE_Abstract::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
+                         const Teuchos::Ptr<CompositeVector>& u)
+{
+  Errors::Message msg;
+  msg << "Unsupported flux update=\n";
+  Exceptions::amanzi_throw(msg);
+}
+
+
+/* *******************************************************************
 * Space-time coefficients can be pre-processed.
 ******************************************************************* */
 void

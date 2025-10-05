@@ -89,11 +89,11 @@
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-      <Parameter name="gravity" type="bool" value="false"/>
       <Parameter name="meshes" type="Array(string)" value="{mesh1, mesh2, mesh3}"/>
       <Parameter name="stability constant" type="double" value="0.5"/>
       <Parameter name="intersection method" type="string" value="particles"/>
       <Parameter name="number of particles" type="int" value="10"/>
+      <Parameter name="assemble stability matrix" type="bool" value="false"/>
       <ParameterList name="interfaces">
         <ParameterList name="interface 1">
           <Parameter name="meshes" type="Array(string)" value="{mesh1, mesh3}"/>
