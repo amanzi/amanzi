@@ -20,7 +20,7 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
                          VERSION ${MSTK_VERSION_MAJOR} ${MSTK_VERSION_MINOR} ${MSTK_VERSION_PATCH})
 
 # --- Patch the original code
-set(MSTK_patch_file mstk-cmake2.patch mstk-prepartitioned.patch)
+set(MSTK_patch_file mstk-cmake2.patch mstk-prepartitioned.patch mstk-mpich-gt4.3.patch)
 set(MSTK_sh_patch ${MSTK_prefix_dir}/mstk-patch-step.sh )
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/mstk-patch-step.sh.in
               ${MSTK_sh_patch}
