@@ -16,7 +16,8 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   VERSION ${SuperLUDist_VERSION_MAJOR} ${SuperLUDist_VERSION_MINOR} ${SuperLUDist_VERSION_PATCH})
   
 # --- Patch the original code
-set(SuperLUDist_patch_file superludist-stdio-conflict.patch)
+set(SuperLUDist_patch_file superludist-stdio-conflict.patch
+	superludist-outofsourcebuild.patch)
 set(SuperLUDist_sh_patch ${SuperLUDist_prefix_dir}/superludist-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/superludist-patch-step.sh.in
                ${SuperLUDist_sh_patch}
