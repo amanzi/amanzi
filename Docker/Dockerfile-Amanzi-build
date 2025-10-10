@@ -16,25 +16,27 @@ RUN echo "${AMANZI_TPLS_DIR}"
 ARG amanzi_branch=master
 ARG https_proxy=
 ARG http_proxy=
+ARG additional_bootstrap_args=
 
 # Change the Working Directory and update amanzi
 WORKDIR /home/amanzi_user/amanzi
 
 ENV https_proxy=$https_proxy \
-    http_proxy=$http_proxy
+    http_proxy=$http_proxy \
+    additional_bootstrap_args=$additional_bootstrap_args
 
 # Make sure we have updated branch information
-RUN echo "Amanzi branch = $amanzi_branch"
-RUN git remote prune origin
-RUN git fetch
-RUN git branch --list
+RUN echo "Amanzi branch = $amanzi_branch" \
+    && git remote prune origin \
+    && git fetch \
+    && git branch --list
 
 # Checkout the branch and update it forcibly, not through pull because
 # pull can do merges this branch already exists and is out of sync
 # with the remote
-RUN git checkout $amanzi_branch
-RUN git reset --hard origin/$amanzi_branch
-RUN git rev-parse --short HEAD
+RUN git checkout $amanzi_branch \
+    && git reset --hard origin/$amanzi_branch \
+    && git rev-parse --short HEAD
 
 # Make MPI oversubscribe (primarily affects openMPI on CI) if required
 ENV MPIEXEC_PREFLAGS=--oversubscribe
@@ -50,6 +52,7 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --enable-alquimia --enable-pflotran --enable-crunchtope \
    --with-mpi=/usr \
    --enable-shared \
+   ${additional_bootstrap_args} \
    && cd /home/amanzi_user/amanzi_builddir/amanzi 
 
 # Set path to make it easier to run amanzi

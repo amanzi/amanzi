@@ -1,6 +1,6 @@
 #
 # Build TPL:  SuperLU
-#   
+#
 # --- Define all the directories and common external project flags
 define_external_project_args(SuperLU
                              TARGET superlu)
@@ -10,9 +10,10 @@ include(${SuperBuild_SOURCE_DIR}/TPLVersions.cmake)
 amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   PREFIX SuperLU
   VERSION ${SuperLU_VERSION_MAJOR} ${SuperLU_VERSION_MINOR} ${SuperLU_VERSION_PATCH})
-  
+
 # --- Patch the original code
-set(SuperLU_patch_file superlu-osx-shared.patch)
+set(SuperLU_patch_file superlu-osx-shared.patch
+                       superlu-stdio-conflict.patch)
 set(SuperLU_sh_patch ${SuperLU_prefix_dir}/superlu-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/superlu-patch-step.sh.in
                ${SuperLU_sh_patch}
@@ -49,7 +50,7 @@ ExternalProject_Add(${SuperLU_BUILD_TARGET}
                     URL           ${SuperLU_URL}               # URL may be a web site OR a local file
                     URL_MD5       ${SuperLU_MD5_SUM}           # md5sum of the archive file
                     DOWNLOAD_NAME ${SuperLU_SAVEAS_FILE}       # file name to store (if not end of URL)
-                    # -- Patch 
+                    # -- Patch
                     PATCH_COMMAND ${SuperLU_PATCH_COMMAND}     # Mods to source
                     # -- Configure
                     SOURCE_DIR       ${SuperLU_source_dir}        # Source directory
@@ -62,7 +63,7 @@ ExternalProject_Add(${SuperLU_BUILD_TARGET}
                                      -DTPL_BLAS_LIBRARIES:STRING=${BLAS_LIBRARIES}
 
                     # -- Build
-                    BINARY_DIR      ${SuperLU_build_dir}       # Build directory 
+                    BINARY_DIR      ${SuperLU_build_dir}       # Build directory
                     BUILD_COMMAND   $(MAKE)
                     # -- Install
                     INSTALL_DIR     ${TPL_INSTALL_PREFIX}      # Install directory

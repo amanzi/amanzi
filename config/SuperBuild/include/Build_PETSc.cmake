@@ -152,7 +152,12 @@ message(STATUS ">>> Build_PETSc -- MPI COMPILERS: ${petsc_mpi_compilers}")
 
 # --- Set the name of the patch
 # set(PETSc_patch_file petsc-cmake.patch petsc-duplicate-libmpi.patch petsc-hypre.patch)
+
 set(PETSc_patch_file petsc-cmake.patch petsc-duplicate-libmpi.patch)
+if (PYTHON_VERSION_STRING VERSION_GREATER_EQUAL "3.13")
+  list(APPEND PETSc_patch_file petsc-python3.13.patch)
+endif()
+
 # --- Configure the bash patch script
 set(PETSc_sh_patch ${PETSc_prefix_dir}/petsc-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/petsc-patch-step.sh.in
