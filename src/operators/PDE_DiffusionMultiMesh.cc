@@ -84,8 +84,12 @@ PDE_DiffusionMultiMesh::Init(const Teuchos::RCP<State>& S)
     for (int k = 0; k < 2; ++k) {
       if (method_ == "particles") {
         meshToMeshMapParticles_(*submeshes[k], rgns[k], *submeshes[1 - k], rgns[1 - k], data);
-      } else {
+      } else if (method_ == "convex hull") {
         meshToMeshMapConvexHull_(*submeshes[k], rgns[k], *submeshes[1 - k], rgns[1 - k], data);
+      } else if (method_ == "reconstruction") {
+        meshToMeshMapReconstruction_(*submeshes[k], rgns[k], *submeshes[1 - k], rgns[1 - k], data);
+      } else {
+        AMANZI_ASSERT(false);
       }
 
       interface_weights_.push_back(data);
@@ -419,6 +423,7 @@ PDE_DiffusionMultiMesh::meshToMeshMapParticles_(const AmanziMesh::Mesh& mesh1,
 
   int f2(-1), dir, stage, count(0);
   double s, r, t;
+  AmanziGeometry::Point xa1_proj(d_);
 
   // count particle hits from mesh1 to mesh2
   for (int n = 0; n < nblock1; ++n) {
@@ -433,7 +438,7 @@ PDE_DiffusionMultiMesh::meshToMeshMapParticles_(const AmanziMesh::Mesh& mesh1,
         s = double(k + 0.5) / nparticles_;
         auto xa1 = coords1[0] * (1.0 - s) + coords1[1] * s;
 
-        f2 = findFace_(xa1, ray, mesh2, rgn2, f2, &stage);
+        f2 = findFace_(xa1, ray, mesh2, rgn2, f2, &stage, xa1_proj);
         if (stage == 1) count++;
 
         data12[f1][f2] += mesh1.getFaceArea(f1) / nparticles_;
@@ -451,7 +456,7 @@ PDE_DiffusionMultiMesh::meshToMeshMapParticles_(const AmanziMesh::Mesh& mesh1,
             xa1 = coords1[0] * (1.0 - s) * (1.0 - r) + coords1[1] * s * (1.0 - r) +
                   coords1[2] * s * r + coords1[3] * (1.0 - s) * r;
 
-            f2 = findFace_(xa1, ray, mesh2, rgn2, f2, &stage);
+            f2 = findFace_(xa1, ray, mesh2, rgn2, f2, &stage, xa1_proj);
             if (stage == 1) count++;
             data12[f1][f2] += mesh1.getFaceArea(f1) / nparticles_ / nparticles_;
           }
@@ -467,7 +472,7 @@ PDE_DiffusionMultiMesh::meshToMeshMapParticles_(const AmanziMesh::Mesh& mesh1,
             if (t > 0.0) {
               xa1 = coords1[0] * s + coords1[1] * r + coords1[2] * t;
 
-              f2 = findFace_(xa1, ray, mesh2, rgn2, f2, &stage);
+              f2 = findFace_(xa1, ray, mesh2, rgn2, f2, &stage, xa1_proj);
               if (stage == 1) count++;
               data12[f1][f2] += mesh1.getFaceArea(f1) / ntri;
               m++;
@@ -634,6 +639,203 @@ PDE_DiffusionMultiMesh::meshToMeshMapConvexHull_(const AmanziMesh::Mesh& mesh1,
 
 
 /* *****************************************************************
+* Approximate projection of mesh1 onto mesh2 using linear reconstruction
+* **************************************************************** */
+void
+PDE_DiffusionMultiMesh::meshToMeshMapReconstruction_(const AmanziMesh::Mesh& mesh1,
+                                                     const std::string& rgn1,
+                                                     const AmanziMesh::Mesh& mesh2,
+                                                     const std::string& rgn2,
+                                                     InterfaceData& data12)
+{
+  auto block1 = mesh1.getSetEntities(rgn1, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int nblock1 = block1.size();
+
+  auto tangent = buildTangentPlane_(mesh2, rgn2); 
+
+  data12.clear();
+
+  int f2(-1), dir, stage, count(0);
+  double s, r;
+  AmanziGeometry::Point xa1_proj(d_);
+
+  // count particle hits from mesh1 to mesh2
+  for (int n = 0; n < nblock1; ++n) {
+    int f1 = block1[n];
+    double da = mesh1.getFaceArea(f1) / nparticles_;
+    const auto& coords1 = mesh1.getFaceCoordinates(f1);
+
+    int c1 = getFaceOnBoundaryInternalCell(mesh1, f1);
+    const AmanziGeometry::Point& ray = mesh1.getFaceNormal(f1, c1, &dir);
+
+    if (d_ == 2) {
+      for (int k = 0; k < nparticles_; ++k) {
+        s = double(k + 0.5) / nparticles_;
+        auto xa1 = coords1[0] * (1.0 - s) + coords1[1] * s;
+
+        f2 = findFace_(xa1, ray, mesh2, rgn2, f2, &stage, xa1_proj);
+        if (stage == 1) count++;
+
+        auto dx = xa1_proj - mesh2.getFaceCentroid(f2);
+
+        data12[f1][f2] += da;
+        for (auto data : tangent[f2]) {
+          int f3 = data.first;  
+          data12[f1][f3] += da * dx * data.second;
+        }
+      }
+    } else {
+      int nnodes = coords1.size();
+      double da = mesh1.getFaceArea(f1) / nparticles_ / nparticles_;
+      AmanziGeometry::Point xa1(d_);
+
+      if (nnodes == 4) { // quadrilateral
+        for (int k = 0; k < nparticles_; ++k) {
+          s = double(k + 0.5) / nparticles_;
+
+          for (int l = 0; l < nparticles_; ++l) {
+            r = double(l + 0.5) / nparticles_;
+            xa1 = coords1[0] * (1.0 - s) * (1.0 - r) + coords1[1] * s * (1.0 - r) +
+                  coords1[2] * s * r + coords1[3] * (1.0 - s) * r;
+
+            f2 = findFace_(xa1, ray, mesh2, rgn2, f2, &stage, xa1_proj);
+            if (stage == 1) count++;
+
+            auto dx = xa1_proj - mesh2.getFaceCentroid(f2);
+
+            data12[f1][f2] += da;
+            for (auto data : tangent[f2]) {
+              int f3 = data.first;  
+              data12[f1][f3] += da * dx * data.second;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // compute interpolation coefficients for a scalar quantity
+  for (int n = 0; n < nblock1; ++n) {
+    int f1 = block1[n];
+    double area = mesh1.getFaceArea(f1);
+    for (auto& data : data12[f1]) data.second /= area;
+  }
+
+  // -- verify
+  double sum, tol(1e-10);
+  for (int n = 0; n < nblock1; ++n) {
+    int f1 = block1[n];
+    sum = 0.0;
+    for (auto& data : data12[f1]) {
+      sum += data.second;
+    }
+    AMANZI_ASSERT(sum <= 1.0 + tol);
+  }
+
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    int count2 = nblock1 * std::pow(nparticles_, d_ - 1);
+
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "interface names: \"" << rgn1 << "\" or \"" << rgn2 
+               << "\n  " << count << " particles in the 2nd stage out of " << count2
+               << " (" << 100.0 * count / count2 << "%)" << std::endl;
+  }
+}
+
+
+/* *****************************************************************
+* Linear reconstruction on interface faces
+* **************************************************************** */
+InterfaceDataTangent
+PDE_DiffusionMultiMesh::buildTangentPlane_(const AmanziMesh::Mesh& mesh, const std::string& rgn)
+{
+  auto block = mesh.getSetEntities(rgn, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int nblock = block.size();
+
+  InterfaceDataTangent map;
+
+  int f1, f2, f3;
+  for (int n = 0; n < nblock; ++n) {
+    f1 = block[n];
+    bool flag(false);
+    auto nodes = mesh.getFaceNodes(f1);
+
+    if (d_ == 2) {
+      for (auto v : nodes) {
+        auto faces = mesh.getNodeFaces(v);
+        for (auto f : faces) {
+          if (f != f1 && std::find(block.begin(), block.end(), f) != block.end()) {
+            f2 = f;
+            flag = true;
+            break;
+          }
+        }
+        if (flag) break;
+      }
+      AMANZI_ASSERT(flag);
+
+      const auto& x1 = mesh.getFaceCentroid(f1);
+      const auto& x2 = mesh.getFaceCentroid(f2);
+
+      auto dx = x2 - x1;
+      dx /= L22(dx);
+    
+      map[f1][f1] =-dx;
+      map[f1][f2] = dx;
+
+    } else {
+      AmanziGeometry::Point dx2(d_), dx3(d_);
+      const auto& x1 = mesh.getFaceCentroid(f1);
+
+      for (auto v : nodes) {
+        auto faces = mesh.getNodeFaces(v);
+        int nfaces = faces.size();
+
+        for (int k = 0; k < nfaces; ++k) {
+          f2 = faces[k];
+          if (f2 != f1 && std::find(block.begin(), block.end(), f2) != block.end()) {
+            for (int l = k + 1; l < nfaces; ++l) {
+              f3 = faces[l];
+              if (f3 != f1 && std::find(block.begin(), block.end(), f3) != block.end()) {
+                const auto& x2 = mesh.getFaceCentroid(f2);
+                const auto& x3 = mesh.getFaceCentroid(f3);
+
+                dx2 = x2 - x1;
+                dx3 = x3 - x1;
+                if (dx2 * dx3 >= 0.0) {
+                  flag = true;
+                  break;
+                }
+              }
+            }
+            if (flag) break;
+          }
+        }
+        if (flag) break;
+      }
+      AMANZI_ASSERT(flag);
+  
+      WhetStone::Tensor T(2, 2);
+      T(0, 0) = dx2 * dx2;
+      T(0, 1) = T(1, 0) = dx2 * dx3;
+      T(1, 1) = dx3 * dx3;
+
+      T.Inverse();
+
+      auto a1 = T(0, 0) * dx2 + T(0, 1) * dx3;
+      auto a2 = T(1, 0) * dx2 + T(1, 1) * dx3;
+
+      map[f1][f1] =-a1 - a2;
+      map[f1][f2] = a1;
+      map[f1][f3] = a2;
+    }
+  }
+
+  return map;
+}
+
+
+/* *****************************************************************
 * Given a point in mesh1, it returns face in mesh2
 * **************************************************************** */
 int
@@ -642,7 +844,8 @@ PDE_DiffusionMultiMesh::findFace_(const AmanziGeometry::Point& xf1,
                                   const AmanziMesh::Mesh& mesh2,
                                   const std::string& rgn2,
                                   int f2_guess,
-                                  int* stage)
+                                  int* stage,
+                                  AmanziGeometry::Point& xf1_proj)
 {
   const auto& block =
     mesh2.getSetEntities(rgn2, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
@@ -660,7 +863,7 @@ PDE_DiffusionMultiMesh::findFace_(const AmanziGeometry::Point& xf1,
     double angle = ray * normal;
     if (std::fabs(angle) < 1e-12) AMANZI_ASSERT(false);
     double s = ((xf1 - xf2) * normal) / angle;
-    auto xf1_proj = xf1 - s * ray;
+    xf1_proj = xf1 - s * ray;
 
     const auto& coords2 = mesh2.getFaceCoordinates(f2);
     if (d_ == 2 && (coords2[0] - xf1_proj) * (coords2[1] - xf1_proj) <= 0.0) return f2;
@@ -679,7 +882,7 @@ PDE_DiffusionMultiMesh::findFace_(const AmanziGeometry::Point& xf1,
 
     double angle = ray * normal;
     double s = ((xf1 - xf2) * normal) / angle;
-    auto xf1_proj = xf1 - s * ray;
+    xf1_proj = xf1 - s * ray;
 
     const auto& coords2 = mesh2.getFaceCoordinates(f2);
 

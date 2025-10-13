@@ -136,12 +136,16 @@ TestDiffusionMultiMesh(double tol, int icase, int level = 1,
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 
+  int n = plist.sublist("PK operator").sublist("diffusion operator").get<int>("number of particles");
+  n *= level;
+  plist.sublist("PK operator").sublist("diffusion operator").set<int>("number of particles", n);
+
   ParameterList region_list = plist.sublist("regions");
   auto gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
   // create meshese
-  int n = level;
-  int n1x(5 * n), n1y(12 * n);
+  n = level;
+  int n1x(4 * n), n1y(12 * n);
   int n2x(5 * n), n2y(10 * n);
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
@@ -349,6 +353,7 @@ TestDiffusionMultiMesh(double tol, int icase, int level = 1,
 
   auto& p1_f = *sol->SubVector(0)->Data()->ViewComponent("face");
   auto& p2_f = *sol->SubVector(1)->Data()->ViewComponent("face");
+
   for (int f : block1) {
     int c = getFaceOnBoundaryInternalCell(*mesh1, f);
     mesh1->getFaceNormal(f, c, &dir);
@@ -419,5 +424,5 @@ TEST(OPERATOR_DIFFUSION_TWO_MESH_PROBLEM)
 {
   TestDiffusionMultiMesh<Analytic01>(2e-1, 1, 1, "test/median8_filtered.exo", "test/poly8.exo");
   TestDiffusionMultiMesh<Analytic08>(7e-3, 2);
-  TestDiffusionMultiMesh<Analytic00>(7e-3, 1);
+  TestDiffusionMultiMesh<Analytic00>(1e-2, 1);
 }

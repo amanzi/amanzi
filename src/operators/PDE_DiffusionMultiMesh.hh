@@ -87,6 +87,9 @@ Example:
 namespace Amanzi {
 namespace Operators {
 
+// for each interface face we keep d neighboring faces and scaled tangent vectors to their centroids
+typedef std::map<int, std::map<int, AmanziGeometry::Point>> InterfaceDataTangent;
+
 class PDE_DiffusionMultiMesh {
  public:
   PDE_DiffusionMultiMesh(Teuchos::ParameterList& plist);
@@ -146,13 +149,22 @@ class PDE_DiffusionMultiMesh {
                                 const std::string& rgn2,
                                 InterfaceData& data12);
 
+  void meshToMeshMapReconstruction_(const AmanziMesh::Mesh& mesh1,
+                                    const std::string& rgn1,
+                                    const AmanziMesh::Mesh& mesh2,
+                                    const std::string& rgn2,
+                                    InterfaceData& data12);
+
+  InterfaceDataTangent buildTangentPlane_(const AmanziMesh::Mesh& mesh, const std::string& rgn);
+
   // Note: if no initial guess, set f2_guess to -1
   int findFace_(const AmanziGeometry::Point& xf1,
                 const AmanziGeometry::Point& ray,
                 const AmanziMesh::Mesh& mesh2,
                 const std::string& rgn2,
                 int f2_guess,
-                int* stage);
+                int* stage,
+                AmanziGeometry::Point& xf1_proj);
 
   bool pointInTriangle_(const AmanziGeometry::Point& testpnt,
                         const AmanziGeometry::Point& xa,

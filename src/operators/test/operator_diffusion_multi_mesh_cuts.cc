@@ -41,7 +41,6 @@
 #include "Analytic01.hh"
 #include "Analytic01b.hh"
 
-
 /* *****************************************************************
 * Modify meshes
 * **************************************************************** */
@@ -62,9 +61,11 @@ ModifyMesh(Amanzi::AmanziMesh::Mesh& mesh,
   for (int n = 0; n < nnodes_owned; ++n) {
     auto xp = mesh.getNodeCoordinate(n);
     if (std::fabs(xp[0]) > 1e-5 && std::fabs(1 - xp[0]) > 1e-5 &&
-        std::fabs(xp[1]) > 1e-5 && std::fabs(1 - xp[1]) > 1e-5) {
-      xp[0] += random(std::sqrt(0.03 / nnodes_owned));
-      xp[1] += random(std::sqrt(0.03 / nnodes_owned));
+        std::fabs(xp[1]) > 1e-5 && std::fabs(1 - xp[1]) > 1e-5 &&
+        std::fabs(xp[d - 1]) > 1e-5 && std::fabs(1 - xp[d - 1]) > 1e-5) {
+      xp[0] += random(0.15 / std::pow((double)nnodes_owned, 1.0 / d));
+      xp[1] += random(0.15 / std::pow((double)nnodes_owned, 1.0 / d));
+      if (d == 3) xp[2] += random(0.15 / std::pow((double)nnodes_owned, 1.0 / d));
     }
     for (int i = 0; i < d; ++i) {
       xp[i] = scale[i] * xp[i] + shift[i];
@@ -146,7 +147,7 @@ TestDiffusionMultiMesh(int d, double tol,
   RCP<Mesh> mesh1, mesh2, mesh3;
   if (d == 2) {
     if (filename == "") {
-      mesh1 = meshfactory.create(0.0, 0.0, 1.0, 1.0, 4 * n, 4 * n);
+      mesh1 = meshfactory.create(0.0, 0.0, 1.0, 1.0, 4 * n, 5 * n);
       mesh2 = meshfactory.create(0.0, 0.0, 1.0, 1.0, 5 * n, 4 * n);
       mesh3 = meshfactory.create(0.0, 0.0, 1.0, 1.0, 6 * n, 8 * n);
     } else if (filename != "") {
