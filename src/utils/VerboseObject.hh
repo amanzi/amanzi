@@ -154,6 +154,9 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
   // static rank to write on
   static unsigned int global_writing_rank;
 
+  // static rank to write on
+  static std::string global_logfile;
+
   // Color output for developers
   std::string color(const std::string& name) const;
   std::string reset() const;
@@ -164,6 +167,7 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
 
  protected:
   Comm_ptr_type comm_;
+  std::string logfile_;
 };
 
 

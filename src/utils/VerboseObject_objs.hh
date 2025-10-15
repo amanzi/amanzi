@@ -20,3 +20,5 @@ unsigned int Amanzi::VerboseObject::global_line_prefix_size = 18;
 
 // rank on which to write
 unsigned int Amanzi::VerboseObject::global_writing_rank = 0;
+
+std::string Amanzi::VerboseObject::global_logfile = "";
