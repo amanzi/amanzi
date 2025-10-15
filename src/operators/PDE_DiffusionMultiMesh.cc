@@ -706,7 +706,7 @@ PDE_DiffusionMultiMesh::meshToMeshMapReconstruction_(const AmanziMesh::Mesh& mes
             data12[f1][f2] += da;
             for (auto data : tangent[f2]) {
               int f3 = data.first;  
-              data12[f1][f3] += da * dx * data.second;
+              data12[f1][f3] += da * (dx * data.second);
             }
           }
         }
@@ -796,13 +796,13 @@ PDE_DiffusionMultiMesh::buildTangentPlane_(const AmanziMesh::Mesh& mesh, const s
           if (f2 != f1 && std::find(block.begin(), block.end(), f2) != block.end()) {
             for (int l = k + 1; l < nfaces; ++l) {
               f3 = faces[l];
-              if (f3 != f1 && std::find(block.begin(), block.end(), f3) != block.end()) {
+              if (f3 != f1 && f3 != f2 && std::find(block.begin(), block.end(), f3) != block.end()) {
                 const auto& x2 = mesh.getFaceCentroid(f2);
                 const auto& x3 = mesh.getFaceCentroid(f3);
 
                 dx2 = x2 - x1;
                 dx3 = x3 - x1;
-                if (dx2 * dx3 >= 0.0) {
+                if (std::fabs(dx2 * dx3) < 0.92 * norm(dx2) * norm(dx3)) {
                   flag = true;
                   break;
                 }

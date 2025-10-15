@@ -1,11 +1,20 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
 
-  <ParameterList name="regions">
+  <ParameterList name="regions2">
     <ParameterList name="cut1">
       <ParameterList name="region: plane">
         <Parameter name="point" type="Array(double)" value="{0.5, 0.0}"/>
         <Parameter name="normal" type="Array(double)" value="{1.0, 0.0}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="regions3">
+    <ParameterList name="cut1">
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.5, 0.0, 0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{1.0, 0.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -46,7 +55,7 @@
       <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
       <Parameter name="meshes" type="Array(string)" value="{mesh1, mesh2}"/>
       <Parameter name="stability constant" type="double" value="1.0"/>
-      <Parameter name="intersection method" type="string" value="particles"/>
+      <Parameter name="intersection method" type="string" value="reconstruction"/>
       <Parameter name="number of particles" type="int" value="10"/>
       <Parameter name="assemble stability matrix" type="bool" value="false"/>
       <ParameterList name="interfaces">
