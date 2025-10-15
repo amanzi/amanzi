@@ -189,7 +189,6 @@ TestDiffusionMultiMesh(int d, double tol,
   int nfaces3_wghost = mesh3->getNumEntities(Entity_kind::FACE, Parallel_kind::ALL);
 
   // populate diffusion coefficient
-  WhetStone::Tensor Knull;
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator");
 
   Analytic ana1(mesh1, 0), ana2(mesh2, 0), ana3(mesh3, 0);

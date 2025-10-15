@@ -116,7 +116,8 @@ void ModifyMesh3(Amanzi::AmanziMesh::Mesh& mesh, int nx, int id)
 * **************************************************************** */
 template<class Analytic>
 void
-TestDiffusionMultiMesh(double tol, int icase, int level = 1, 
+TestDiffusionMultiMesh(int d, 
+                       double tol, int icase, int level = 1, 
                        const std::string& filename1 = "",
                        const std::string& filename2 = "")
 {
@@ -129,7 +130,7 @@ TestDiffusionMultiMesh(double tol, int icase, int level = 1,
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: 2D multi mesh problem\n";
+  if (MyPID == 0) std::cout << "\nTest: " << d << "D multi mesh problem\n";
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion_multi_mesh.xml";
@@ -140,30 +141,33 @@ TestDiffusionMultiMesh(double tol, int icase, int level = 1,
   n *= level;
   plist.sublist("PK operator").sublist("diffusion operator").set<int>("number of particles", n);
 
-  ParameterList region_list = plist.sublist("regions");
-  auto gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
+  ParameterList region_list = plist.sublist("regions" + std::to_string(d));
+  auto gm = Teuchos::rcp(new GeometricModel(d, region_list, *comm));
 
   // create meshese
   n = level;
-  int n1x(4 * n), n1y(12 * n);
-  int n2x(5 * n), n2y(10 * n);
+  int n1x(4 * n), n1y(8 * n), n1z(6 * n);
+  int n2x(5 * n), n2y(10 * n), n2z(6 * n);
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<Mesh> mesh1, mesh2;
   if (filename1 == "") {
-    mesh1 = meshfactory.create(0.0, 0.0, 0.5, 1.0, n1x, n1y);
-    mesh2 = meshfactory.create(0.5, 0.0, 1.0, 1.0, n2x, n2y);
+    if (d == 2) {
+      mesh1 = meshfactory.create(0.0, 0.0, 0.5, 1.0, n1x, n1y);
+      mesh2 = meshfactory.create(0.5, 0.0, 1.0, 1.0, n2x, n2y);
+    } else {
+      mesh1 = meshfactory.create(0.0, 0.0, 0.0, 0.5, 1.0, 1.0, n1x, n1y, n1z);
+      mesh2 = meshfactory.create(0.5, 0.0, 0.0, 1.0, 1.0, 1.0, n2x, n2y, n2z);
+    }
   } else {
     mesh1 = meshfactory.create(filename1);
     mesh2 = meshfactory.create(filename2);
   }
 
   int ncells1_owned = mesh1->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
-  int nfaces1_owned = mesh1->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
   int nfaces1_wghost = mesh1->getNumEntities(Entity_kind::FACE, Parallel_kind::ALL);
 
   int ncells2_owned = mesh2->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
-  int nfaces2_owned = mesh2->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
   int nfaces2_wghost = mesh2->getNumEntities(Entity_kind::FACE, Parallel_kind::ALL);
 
   // modify meshes 
@@ -188,7 +192,6 @@ TestDiffusionMultiMesh(double tol, int icase, int level = 1,
   }
 
   // populate diffusion coefficient
-  WhetStone::Tensor Knull;
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator");
 
   Analytic ana1(mesh1, 3), ana2(mesh2, 3);
@@ -206,27 +209,29 @@ TestDiffusionMultiMesh(double tol, int icase, int level = 1,
   }
 
   // populate boundary data
-  auto bc1 =
-    Teuchos::rcp(new BCs(mesh1, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
+  auto bc1 = Teuchos::rcp(new BCs(mesh1, Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc1_model = bc1->bc_model();
   std::vector<double>& bc1_value = bc1->bc_value();
 
   for (int f = 0; f < nfaces1_wghost; ++f) {
     const Point& xf = mesh1->getFaceCentroid(f);
-    if (fabs(xf[0]) < 1e-6 || fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
+    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || 
+        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
+        fabs(xf[d - 1]) < 1e-6 || fabs(xf[d - 1] - 1.0) < 1e-6) {
       bc1_model[f] = OPERATOR_BC_DIRICHLET;
       bc1_value[f] = ana1.pressure_exact(xf, 0.0);
     }
   }
 
-  auto bc2 =
-    Teuchos::rcp(new BCs(mesh2, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
+  auto bc2 = Teuchos::rcp(new BCs(mesh2, Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc2_model = bc2->bc_model();
   std::vector<double>& bc2_value = bc2->bc_value();
 
   for (int f = 0; f < nfaces2_wghost; ++f) {
     const Point& xf = mesh2->getFaceCentroid(f);
-    if (fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
+    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || 
+        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
+        fabs(xf[d - 1]) < 1e-6 || fabs(xf[d - 1] - 1.0) < 1e-6) {
       bc2_model[f] = OPERATOR_BC_DIRICHLET;
       bc2_value[f] = ana2.pressure_exact(xf, 0.0);
     }
@@ -337,17 +342,23 @@ TestDiffusionMultiMesh(double tol, int icase, int level = 1,
     printf("L2(u) =%10.7f  Inf =%9.6f  |u|=%9.6f\n", l2_err2, inf_err2, unorm2);
   }
 
+  int dir;
   double tot_flux1(0.0), tot_flux2(0.0);
-  for (int f : block1) tot_flux1 += flux1[0][f];
-  ana1.GlobalOp("sum", &tot_flux1, 1);
+  for (int f : block1) {
+    int c = getFaceOnBoundaryInternalCell(*mesh1, f);
+    mesh1->getFaceNormal(f, c, &dir);
+    tot_flux1 += flux1[0][f] * dir;
+  }
 
-  for (int f : block2) tot_flux2 += flux2[0][f];
-  ana2.GlobalOp("sum", &tot_flux2, 1);
+  for (int f : block2) {
+    int c = getFaceOnBoundaryInternalCell(*mesh2, f);
+    mesh2->getFaceNormal(f, c, &dir);
+    tot_flux2 += flux2[0][f] * dir;
+  }
   printf("Total interface flux: %12.9f, err =%12.9f\n", tot_flux1, tot_flux1 + tot_flux2);
   CHECK(std::fabs(tot_flux1 + tot_flux2) < 1e-11);
 
   // -- lemma 4.3
-  int dir;
   double sum(0.0);
   auto interface_weights = pde->get_interface_weights();
 
@@ -422,7 +433,8 @@ TestDiffusionMultiMesh(double tol, int icase, int level = 1,
 
 TEST(OPERATOR_DIFFUSION_TWO_MESH_PROBLEM)
 {
-  TestDiffusionMultiMesh<Analytic01>(2e-1, 1, 1, "test/median8_filtered.exo", "test/poly8.exo");
-  TestDiffusionMultiMesh<Analytic08>(7e-3, 2);
-  TestDiffusionMultiMesh<Analytic00>(1e-2, 1);
+  TestDiffusionMultiMesh<Analytic01>(2, 2e-1, 1, 1, "test/median8_filtered.exo", "test/poly8.exo");
+  TestDiffusionMultiMesh<Analytic08>(2, 7e-3, 2);
+  TestDiffusionMultiMesh<Analytic00>(2, 1e-2, 1);
+  TestDiffusionMultiMesh<Analytic00>(3, 1e-2, 2);
 }
