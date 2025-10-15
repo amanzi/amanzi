@@ -198,7 +198,13 @@
 #                - update Alquimia to version 1.1.0
 #                - update ExprTK to version 0.0.3
 #   0.98.12      - update Alquimia to version 1.2.0
-
+#   0.98.13      - update hypre to 2.31.0
+#                - update PETSc to 3.21
+#                - add fmt 11.2, new dependency of SEACAS
+#                - update SEACAS to date tage v250414
+#                - update superLU to 6.0.1
+#                - update superLU_dist to 8.2.1
+#                - update netcdf-c to 4.9.3
 
 include(CMakeParseArguments)
 
@@ -251,7 +257,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 98)
-set(AMANZI_TPLS_VERSION_PATCH 12)
+set(AMANZI_TPLS_VERSION_PATCH 13)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -381,12 +387,13 @@ set(HDF5_MD5_SUM        63426c8e24086634eaf9179a8c5fe9e5)
 #
 set(NetCDF_VERSION_MAJOR 4)
 set(NetCDF_VERSION_MINOR 9)
-set(NetCDF_VERSION_PATCH 2)
+set(NetCDF_VERSION_PATCH 3)
 set(NetCDF_VERSION ${NetCDF_VERSION_MAJOR}.${NetCDF_VERSION_MINOR}.${NetCDF_VERSION_PATCH})
 set(NetCDF_URL_STRING     "https://github.com/Unidata/netcdf-c/archive/")
 set(NetCDF_ARCHIVE_FILE   v${NetCDF_VERSION}.tar.gz)
 set(NetCDF_SAVEAS_FILE    netcdf-${NetCDF_VERSION}.tar.gz)
-set(NetCDF_MD5_SUM        84acd096ab4f3300c20db862eecdf7c7)
+set(NetCDF_MD5_SUM        bc9eb96e1983bf90fb3a99cc358c5ac3)
+
 
 #
 # TPL: NetCDF Fortran
@@ -440,15 +447,15 @@ set(MOAB_MD5_SUM        935d18f8edf7dc3df625d9426a2d59e1)
 # TPL: HYPRE
 #
 set(HYPRE_VERSION_MAJOR  2)
-set(HYPRE_VERSION_MINOR  29)
+set(HYPRE_VERSION_MINOR  31)
 set(HYPRE_VERSION_PATCH  0)
 set(HYPRE_VERSION  ${HYPRE_VERSION_MAJOR}.${HYPRE_VERSION_MINOR}.${HYPRE_VERSION_PATCH})
 set(HYPRE_URL_STRING     "https://github.com/hypre-space/hypre/archive/")
 set(HYPRE_ARCHIVE_FILE   v${HYPRE_VERSION}.tar.gz)
 set(HYPRE_SAVEAS_FILE    hypre-${HYPRE_VERSION}.tar.gz)
-set(HYPRE_MD5_SUM        0b3abc221b216db97175709aa0bf94d7)
+set(HYPRE_MD5_SUM        d4990384b7b1d8b0357fc34d91530d49)
 set(HYPRE_GIT_REPOSITORY "https://github.com/hypre-space/hypre")
-set(HYPRE_GIT_TAG        "8f6bdc6ab8c9d01961fa0b3024a1969c6cb7877f")
+set(HYPRE_GIT_TAG        "d3243638e7dee5208cb4ea643610fa9bdb74123b")
 
 #
 # TPL: ParMetis
@@ -465,26 +472,26 @@ set(ParMetis_MD5_SUM        56ac6ebf6e7e8a522fa053c799dc7a92)
 #
 # TPL: SuperLU
 #
-set(SuperLU_VERSION_MAJOR  5)
-set(SuperLU_VERSION_MINOR  2)
-set(SuperLU_VERSION_PATCH  2)
+set(SuperLU_VERSION_MAJOR  6)
+set(SuperLU_VERSION_MINOR  0)
+set(SuperLU_VERSION_PATCH  1)
 set(SuperLU_VERSION  ${SuperLU_VERSION_MAJOR}.${SuperLU_VERSION_MINOR}.${SuperLU_VERSION_PATCH})
 set(SuperLU_URL_STRING     "https://github.com/xiaoyeli/superlu/archive/refs/tags")
 set(SuperLU_ARCHIVE_FILE   v${SuperLU_VERSION}.tar.gz)
 set(SuperLU_SAVEAS_FILE    superlu_${SuperLU_VERSION}.tar.gz)
-set(SuperLU_MD5_SUM        1e93259572bd2412674ed809a1446bd3)
+set(SuperLU_MD5_SUM        d15c61705f4ddf0777731d3f388e287f)
 
 #
 # TPL: SuperLU_Dist
 #
-set(SuperLUDist_VERSION_MAJOR  6)
-set(SuperLUDist_VERSION_MINOR  4)
-set(SuperLUDist_VERSION_PATCH  0)
+set(SuperLUDist_VERSION_MAJOR  8)
+set(SuperLUDist_VERSION_MINOR  2)
+set(SuperLUDist_VERSION_PATCH  1)
 set(SuperLUDist_VERSION  ${SuperLUDist_VERSION_MAJOR}.${SuperLUDist_VERSION_MINOR}.${SuperLUDist_VERSION_PATCH})
 set(SuperLUDist_URL_STRING     "https://github.com/xiaoyeli/superlu_dist/archive/refs/tags")
 set(SuperLUDist_ARCHIVE_FILE   v${SuperLUDist_VERSION}.tar.gz)
 set(SuperLUDist_SAVEAS_FILE    superlu_dist_${SuperLUDist_VERSION}.tar.gz)
-set(SuperLUDist_MD5_SUM        4001999cda77d6176077f160f1a4659a)
+set(SuperLUDist_MD5_SUM        fc81d1e200e18e31891b88bed3bf78be)
 
 #
 # TPL: Sowing (Built by PETSc!)
@@ -502,14 +509,14 @@ set(Sowing_MD5_SUM        da689d94e2565dada261a17f3c07448d)
 # TPL: PETSc
 #
 set(PETSc_VERSION_MAJOR  3)
-set(PETSc_VERSION_MINOR  20)
+set(PETSc_VERSION_MINOR  21)
 set(PETSc_VERSION_PATCH  0)
 set(PETSc_VERSION  ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR})
 set(PETSc_ARCHIVE_VERSION ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}.${PETSc_VERSION_PATCH})
 set(PETSc_URL_STRING     "https://gitlab.com/petsc/petsc/-/archive/v${PETSc_ARCHIVE_VERSION}")
 set(PETSc_ARCHIVE_FILE   petsc-v${PETSc_VERSION}.tar.gz)
 set(PETSc_SAVEAS_FILE    petsc-${PETSc_VERSION}.tar.gz)
-set(PETSc_MD5_SUM        1f17155e2077cb027f0838a27d02ef3c)
+set(PETSc_MD5_SUM        fb13054334d3a9c0559d250a9fade0cc)
 
 #
 # TPL: Trilinos
@@ -528,14 +535,14 @@ set(Trilinos_MD5_SUM       79237697af4fc42eaaf70f23104a8e12)
 #
 # TPL: SEACAS
 #
-set(SEACAS_VERSION_MAJOR 2022)
-set(SEACAS_VERSION_MINOR 02)
-set(SEACAS_VERSION_PATCH 16)
+set(SEACAS_VERSION_MAJOR 2025)
+set(SEACAS_VERSION_MINOR 04)
+set(SEACAS_VERSION_PATCH 14)
 set(SEACAS_VERSION ${SEACAS_VERSION_MAJOR}-${SEACAS_VERSION_MINOR}-${SEACAS_VERSION_PATCH})
 set(SEACAS_URL_STRING     "https://github.com/sandialabs/seacas/archive/refs/tags")
 set(SEACAS_ARCHIVE_FILE   v${SEACAS_VERSION}.tar.gz)
 set(SEACAS_SAVEAS_FILE    seacas-${SEACAS_VERSION}.tar.gz)
-set(SEACAS_MD5_SUM        40452d7badecb05a0e859eeeb010003d)
+set(SEACAS_MD5_SUM        bf498ca03f7c6b2e01a4fe5b0c3da22f)
 
 #
 # TPL: PFLOTRAN
@@ -623,3 +630,14 @@ set(EXPRTK_ARCHIVE_FILE  ${EXPRTK_VERSION}.tar.gz)
 set(EXPRTK_SAVEAS_FILE   exprtk-${EXPRTK_ARCHIVE_FILE})
 set(EXPRTK_MD5_SUM       b38c56a28c418052949ca272600148ad)
 
+#
+# TPL: fmt
+#
+set(FMT_VERSION_MAJOR 11)
+set(FMT_VERSION_MINOR 2)
+set(FMT_VERSION_PATCH 0)
+set(FMT_VERSION  ${FMT_VERSION_MAJOR}.${FMT_VERSION_MINOR}.${FMT_VERSION_PATCH})
+set(FMT_URL_STRING    "https://github.com/fmtlib/fmt/archive")
+set(FMT_ARCHIVE_FILE  ${FMT_VERSION}.tar.gz)
+set(FMT_SAVEAS_FILE   fmt-${FMT_ARCHIVE_FILE})
+set(FMT_MD5_SUM       2f3701cada629ca455c3388d1089f5bd)

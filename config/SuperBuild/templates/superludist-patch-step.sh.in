@@ -1,25 +1,25 @@
-#!/bin/sh
+#!/bin/bash
 
-# CMake generates this file 
+# CMake generates this file
+# Replaces each @VAR with value of ${VAR}
 
 # Source and build locations
-superlu_src_dir=@SuperLU_source_dir@
+superludist_src_dir=@SuperLUDist_source_dir@
 
-OIFS=$IFS
+OFS=$IFS
 IFS=";"
-patch_files="@SuperLU_patch_file@"
+patch_files="@SuperLUDist_patch_file@"
 
 for i in ${patch_files}; do
-
   patch_file=@SuperBuild_SOURCE_DIR@/templates/${i}
   echo "Applying patch: ${patch_file}"
 
   if [ ! -e "${patch_file}" ] ; then
-    echo "Patch file ${patch_file} does not exist"
+   echo "Patch file ${patch_file} does not exist"
     exit 10
   fi
 
-  cd ${superlu_src_dir}
+  cd ${superludist_src_dir}
   patch -p1 < ${patch_file}
 
 done

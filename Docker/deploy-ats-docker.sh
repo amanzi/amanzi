@@ -10,9 +10,11 @@ Help()
     echo "  --amanzi_branch     Which Amanzi branch should be used when building container? (Default: master)"
     echo "  --amanzi_src_dir    Where does the Amanzi repo reside on the current system?"
     echo "                      (Default: /ascem/amanzi/repos/amanzi-master)"
+    echo "  --ats_branch        Which ATS branch should be used when building container? (Default: master)"
     echo "  --ats_src_dir       Where does the ATS repo reside on the current system?"
     echo "                      (Default: \$amanzi_src_dir/src/physics/ats)"
-    echo "  --amanzi_tpls_ver   Which version of the Amanzi TPLs should we build? (Default: 0.98.9)"
+    echo "  --amanzi_tpls_ver   Which version of the Amanzi TPLs should we build?"
+    echo "  --build_type        Flag to specify opt, relwithdebinfo, or debug builds (Default: opt)"
     echo "  --output_style      Should we use the condensed or plain version of Docker output (Default: condensed)."
     echo "                      Set --output_style='plain' for expanded output"
     echo "  --multiarch         Build for both linux/amd64 and linux/arm64 instead of only local system architecture"
@@ -50,6 +52,10 @@ case $i in
     amanzi_src_dir="${i#*=}"
     shift
     ;;
+    --ats_branch=*)
+    ats_branch="${i#*=}"
+    shift
+    ;;
     --ats_src_dir=*)
     ats_src_dir="${i#*=}"
     shift
@@ -60,6 +66,10 @@ case $i in
     ;;
     --use_proxy)
     use_proxy="--build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy}"
+    shift
+    ;;
+    --build_type=*)
+    build_type="${i#*=}"
     shift
     ;;
     --output_style=*)
@@ -97,8 +107,10 @@ output_style="${output_style:-}"
 multiarch="${multiarch:-False}"
 push="${push:-False}"
 mpi_flavor="${mpi_flavor:-mpich}"
+ats_branch="${ats_branch:-master}"
 ats_src_dir="${ats_src_dir:-$amanzi_src_dir/src/physics/ats}"
 cache="${cache:-}"
+build_type="${build_type:-opt}"
 
 AMANZI_GIT_LATEST_TAG_VER=`(cd $amanzi_src_dir; git tag -l amanzi-* | tail -n1 | sed -e 's/amanzi-//')`
 AMANZI_GIT_GLOBAL_HASH=`(cd $amanzi_src_dir; git rev-parse --short HEAD)`
@@ -110,6 +122,7 @@ echo " - latest tag       $AMANZI_GIT_LATEST_TAG_VER"
 echo " - global hash      $AMANZI_GIT_GLOBAL_HASH"
 echo " - version string   $AMANZI_VER"
 echo ""
+
 
 ATS_GIT_LATEST_TAG_VER=`(cd $ats_src_dir; git tag -l ats-* | tail -n1 | sed -e 's/ats-//')`
 ATS_GIT_GLOBAL_HASH=`(cd $ats_src_dir; git rev-parse --short HEAD)`
@@ -146,8 +159,10 @@ then
         ${use_proxy} \
         ${push_arg} \
         --build-arg amanzi_branch=${amanzi_branch} \
+        --build-arg ats_branch=${ats_branch} \
         --build-arg amanzi_tpls_ver=${amanzi_tpls_ver} \
         --build-arg mpi_flavor=${mpi_flavor} \
+        --build-arg build_type=${build_type} \
         -f ${amanzi_src_dir}/Docker/Dockerfile-ATS \
         -t metsi/ats:${ATS_VER} .
 else
@@ -157,8 +172,10 @@ else
         ${use_proxy} \
         ${push_arg} \
         --build-arg amanzi_branch=${amanzi_branch} \
+        --build-arg ats_branch=${ats_branch} \
         --build-arg amanzi_tpls_ver=${amanzi_tpls_ver} \
         --build-arg mpi_flavor=${mpi_flavor} \
+        --build-arg build_type=${build_type} \
         -f ${amanzi_src_dir}/Docker/Dockerfile-ATS-build \
         -t metsi/ats:${ATS_VER} .
 fi
