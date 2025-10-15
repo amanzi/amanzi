@@ -61,7 +61,7 @@ request.
 namespace Amanzi {
 
 class EvaluatorMultiplicativeReciprocal
-  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+  : public EvaluatorSecondaryMonotypeCV {
  public:
   EvaluatorMultiplicativeReciprocal(Teuchos::ParameterList& plist);
   EvaluatorMultiplicativeReciprocal(const EvaluatorMultiplicativeReciprocal& other);
