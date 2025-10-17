@@ -56,7 +56,7 @@
       <Parameter name="meshes" type="Array(string)" value="{mesh1, mesh2}"/>
       <Parameter name="stability constant" type="double" value="1.0"/>
       <Parameter name="intersection method" type="string" value="reconstruction"/>
-      <Parameter name="number of particles" type="int" value="10"/>
+      <Parameter name="number of particles" type="int" value="1000"/>
       <Parameter name="assemble stability matrix" type="bool" value="false"/>
       <ParameterList name="interfaces">
         <ParameterList name="interface 1">
