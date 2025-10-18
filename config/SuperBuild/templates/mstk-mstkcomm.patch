@@ -1,0 +1,11 @@
+diff -ruN mstk-3.3.6-orig/include/MSTK_types.h mstk-3.3.6-source/include/MSTK_types.h
+--- mstk-3.3.6-orig/include/MSTK_types.h	2025-10-18 08:04:28
++++ mstk-3.3.6-source/include/MSTK_types.h	2025-10-18 08:05:17
+@@ -9,6 +9,7 @@
+ #ifndef _H_TYPESMSTK
+ #define _H_TYPESMSTK
+ 
++#include "MSTK_defines.h"
+ #ifdef MSTK_HAVE_MPI
+ #include "mpi.h"
+ typedef MPI_Comm MSTK_Comm;
