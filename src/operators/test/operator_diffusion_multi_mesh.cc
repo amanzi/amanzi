@@ -163,6 +163,8 @@ TestDiffusionMultiMesh(int d,
     mesh1 = meshfactory.create(filename1);
     mesh2 = meshfactory.create(filename2);
   }
+  mesh1->cacheFaceCoordinates();
+  mesh2->cacheFaceCoordinates();
 
   int ncells1_owned = mesh1->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
   int nfaces1_wghost = mesh1->getNumEntities(Entity_kind::FACE, Parallel_kind::ALL);

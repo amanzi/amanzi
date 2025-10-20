@@ -20,7 +20,6 @@
 #include <vector>
 
 // TPLs
-#include "KDTree.hh"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -36,6 +35,7 @@
 // Operators
 #include "Analytic00.hh"
 #include "Analytic03.hh"
+#include "Analytic09.hh"
 
 #include "operator_virtual.hh"
 
@@ -49,6 +49,7 @@ using namespace Amanzi::Operators;
 /* *****************************************************************
 * Test
 ***************************************************************** */
+template<class Analytic>
 void
 RunTestVirtualDiffusion(int d)
 {
@@ -170,6 +171,7 @@ RunTestVirtualDiffusion(int d)
   Teuchos::ParameterList pde_list;
   pde_list.set<double>("penalty", 0.0);
   auto ana = Teuchos::RCP(new Analytic00(mesh2, 1));
+  // auto ana = Teuchos::RCP(new Analytic09(mesh2, M_PI / 6));
   auto pde = Teuchos::rcp(new Operators::PDE_DiffusionCurvedFace(pde_list, mesh2, nullptr));
   auto op = pde->global_operator();
 
@@ -269,7 +271,8 @@ RunTestVirtualDiffusion(int d)
 
 TEST(OPERATOR_VIRTUAL_DIFFUSION)
 {
-  RunTestVirtualDiffusion(2);
-  RunTestVirtualDiffusion(3);
+  // RunTestVirtualDiffusion<Analytic09>(2);
+  RunTestVirtualDiffusion<Analytic00>(2);
+  RunTestVirtualDiffusion<Analytic00>(3);
 }
 
