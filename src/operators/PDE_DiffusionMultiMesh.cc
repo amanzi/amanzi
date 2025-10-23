@@ -16,6 +16,8 @@
 
 #include "nanoflann.hpp"
 
+#include "Function.hh"
+#include "FunctionFactory.hh"
 #include "KDTree.hh"
 #include "MeshDefs.hh"
 #include "Point.hh"
@@ -63,6 +65,8 @@ PDE_DiffusionMultiMesh::Init(const Teuchos::RCP<State>& S)
   Teuchos::ParameterList interfaces = plist_.sublist("interfaces");
   std::vector<std::string> names, rgns;
 
+  FunctionFactory factory;
+
   for (auto& it : interfaces) {
     auto sublist = interfaces.sublist(it.first);
     names = sublist.get<Teuchos::Array<std::string>>("meshes").toVector();
@@ -78,7 +82,10 @@ PDE_DiffusionMultiMesh::Init(const Teuchos::RCP<State>& S)
     rgns = sublist.get<Teuchos::Array<std::string>>("common surface regions").toVector();
     AMANZI_ASSERT(rgns.size() == 2);
 
-    double kappa = sublist.get<double>("contact conductance", 0.0);
+    // imperfect constact data
+    Teuchos::ParameterList tmp;
+    tmp.sublist("function-constant").set<double>("value", 0.0);
+    if (sublist.isSublist("contact conductance")) tmp = sublist.sublist("contact conductance");
 
     InterfaceData data;
     for (int k = 0; k < 2; ++k) {
@@ -94,7 +101,7 @@ PDE_DiffusionMultiMesh::Init(const Teuchos::RCP<State>& S)
 
       interface_weights_.push_back(data);
       interface_meshes_.push_back({ names[k], names[1 - k] });
-      interface_conductance_.push_back(kappa);
+      interface_conductance_.push_back(std::move(factory.Create(tmp)));
     }
   }
   int ninterfaces = interface_weights_.size();
@@ -120,6 +127,7 @@ PDE_DiffusionMultiMesh::Init(const Teuchos::RCP<State>& S)
   boundary_data_.resize(nmeshes);
   boundary_conductance_.resize(nmeshes);
 
+  std::vector<double> txyz(d_ + 1);
   for (int i0 = 0; i0 < nmeshes; ++i0) {
     int nfaces_wghost = meshes_[names_[i0]]->getNumEntities(AmanziMesh::Entity_kind::FACE,
                                                             AmanziMesh::Parallel_kind::ALL);
@@ -131,8 +139,12 @@ PDE_DiffusionMultiMesh::Init(const Teuchos::RCP<State>& S)
         int i1 = std::distance(names_.begin(),
                                std::find(names_.begin(), names_.end(), interface_meshes_[k][1]));
         for (auto it : interface_weights_[k]) {
-          boundary_block_[i0][it.first] = i1;
-          boundary_conductance_[i0][it.first] = interface_conductance_[k];
+          int f = it.first;
+          const auto& xf = meshes_[names_[i0]]->getFaceCentroid(f);
+          for (int i = 0; i < d_; ++i) txyz[i + 1] = xf[i];
+
+          boundary_block_[i0][f] = i1;
+          boundary_conductance_[i0][f] = interface_conductance_[k]->operator()(txyz);
         }
         boundary_data_[i0].insert(interface_weights_[k].begin(), interface_weights_[k].end());
       }

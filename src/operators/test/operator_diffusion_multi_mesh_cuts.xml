@@ -98,17 +98,29 @@
         <ParameterList name="interface 1">
           <Parameter name="meshes" type="Array(string)" value="{mesh1, mesh3}"/>
           <Parameter name="common surface regions" type="Array(string)" value="{cut1top, cut1top}"/>
-          <Parameter name="contact conductance" type="double" value="0.0"/>
+          <ParameterList name="contact conductance">
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="0.0"/>
+            </ParameterList>
+          </ParameterList>
         </ParameterList>
         <ParameterList name="interface 2">
           <Parameter name="meshes" type="Array(string)" value="{mesh2, mesh3}"/>
           <Parameter name="common surface regions" type="Array(string)" value="{cut1bottom, cut1bottom}"/>
-          <Parameter name="contact conductance" type="double" value="0.0"/>
+          <ParameterList name="contact conductance">
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="0.0"/>
+            </ParameterList>
+          </ParameterList>
         </ParameterList>
         <ParameterList name="interface 3">
           <Parameter name="meshes" type="Array(string)" value="{mesh1, mesh2}"/>
           <Parameter name="common surface regions" type="Array(string)" value="{cut2, cut2}"/>
-          <Parameter name="contact conductance" type="double" value="0.0"/>
+          <ParameterList name="contact conductance">
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="0.0"/>
+            </ParameterList>
+          </ParameterList>
         </ParameterList>
       </ParameterList>
       <ParameterList name="verbose object">

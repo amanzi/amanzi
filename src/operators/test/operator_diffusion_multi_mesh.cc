@@ -309,7 +309,7 @@ TestDiffusionMultiMesh(int d,
 
   if (MyPID == 0) {
     err = std::sqrt((l2_err1 * l2_err1 + l2_err2 * l2_err2) / (pnorm1 * pnorm1 + pnorm2 * pnorm2));
-    printf("Total: L2(p) =%10.7f  Inf =%9.6f\n", err, std::max(inf_err1, inf_err2));
+    printf("Total: L2(p) =%10.7f  Inf =%10.7f\n", err, std::max(inf_err1, inf_err2));
 
     l2_err1 /= pnorm1;
     l2_err2 /= pnorm2;
@@ -336,7 +336,7 @@ TestDiffusionMultiMesh(int d,
 
   if (MyPID == 0) {
     err = std::sqrt((l2_err1 * l2_err1 + l2_err2 * l2_err2) / (unorm1 * unorm1 + unorm2 * unorm2));
-    printf("Total: L2(u) =%10.7f  Inf =%9.6f\n", err, std::max(inf_err1, inf_err2));
+    printf("Total: L2(u) =%10.7f  Inf =%10.7f\n", err, std::max(inf_err1, inf_err2));
 
     l2_err1 /= unorm1;
     l2_err2 /= unorm2;

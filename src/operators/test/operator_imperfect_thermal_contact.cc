@@ -115,7 +115,7 @@ TestImperfectContact(int d,
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator");
 
   double k1(1.0), k2(1.0), L1(0.5), L2(0.5), R;
-  R = 1.0 / op_list.sublist("interfaces").sublist("interface 1").get<double>("contact conductance");
+  R = 1.0 / op_list.sublist("interfaces").sublist("interface 1").sublist("contact conductance").sublist("function-constant").get<double>("value");
 
   WhetStone::Tensor K(d, 1);
   auto Kc1 = Teuchos::rcp(new std::vector<WhetStone::Tensor>());

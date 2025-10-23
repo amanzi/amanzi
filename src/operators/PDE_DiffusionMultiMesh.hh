@@ -73,6 +73,7 @@ Example:
 
 #include "DenseMatrix.hh"
 #include "exceptions.hh"
+#include "Function.hh"
 #include "Point.hh"
 #include "State.hh"
 #include "VerboseObject.hh"
@@ -181,7 +182,7 @@ class PDE_DiffusionMultiMesh {
   int d_;
 
   double stability_;
-  std::vector<double> interface_conductance_;
+  std::vector<std::unique_ptr<Function>> interface_conductance_;
   std::string method_;
   int nparticles_;
 
