@@ -148,7 +148,9 @@ TestDiffusionMultiMesh(int d,
   n = level;
   int n1x(4 * n), n1y(8 * n), n1z(6 * n);
   int n2x(5 * n), n2y(10 * n), n2z(6 * n);
-  MeshFactory meshfactory(comm, gm);
+
+  auto mlist = Teuchos::rcp(new Teuchos::ParameterList(plist.sublist("mesh")));
+  MeshFactory meshfactory(comm, gm, mlist);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<Mesh> mesh1, mesh2;
   if (filename1 == "") {
@@ -165,11 +167,9 @@ TestDiffusionMultiMesh(int d,
   }
 
   int ncells1_owned = mesh1->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
-  int nfaces1_owned = mesh1->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
   int nfaces1_wghost = mesh1->getNumEntities(Entity_kind::FACE, Parallel_kind::ALL);
 
   int ncells2_owned = mesh2->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
-  int nfaces2_owned = mesh2->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
   int nfaces2_wghost = mesh2->getNumEntities(Entity_kind::FACE, Parallel_kind::ALL);
 
   // modify meshes 
@@ -194,7 +194,6 @@ TestDiffusionMultiMesh(int d,
   }
 
   // populate diffusion coefficient
-  WhetStone::Tensor Knull;
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator");
 
   Analytic ana1(mesh1, 3), ana2(mesh2, 3);
@@ -212,8 +211,7 @@ TestDiffusionMultiMesh(int d,
   }
 
   // populate boundary data
-  auto bc1 =
-    Teuchos::rcp(new BCs(mesh1, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
+  auto bc1 = Teuchos::rcp(new BCs(mesh1, Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc1_model = bc1->bc_model();
   std::vector<double>& bc1_value = bc1->bc_value();
 
@@ -227,8 +225,7 @@ TestDiffusionMultiMesh(int d,
     }
   }
 
-  auto bc2 =
-    Teuchos::rcp(new BCs(mesh2, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
+  auto bc2 = Teuchos::rcp(new BCs(mesh2, Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc2_model = bc2->bc_model();
   std::vector<double>& bc2_value = bc2->bc_value();
 
@@ -312,7 +309,7 @@ TestDiffusionMultiMesh(int d,
 
   if (MyPID == 0) {
     err = std::sqrt((l2_err1 * l2_err1 + l2_err2 * l2_err2) / (pnorm1 * pnorm1 + pnorm2 * pnorm2));
-    printf("Total: L2(p) =%10.7f  Inf =%9.6f\n", err, std::max(inf_err1, inf_err2));
+    printf("Total: L2(p) =%10.7f  Inf =%10.7f\n", err, std::max(inf_err1, inf_err2));
 
     l2_err1 /= pnorm1;
     l2_err2 /= pnorm2;
@@ -339,7 +336,7 @@ TestDiffusionMultiMesh(int d,
 
   if (MyPID == 0) {
     err = std::sqrt((l2_err1 * l2_err1 + l2_err2 * l2_err2) / (unorm1 * unorm1 + unorm2 * unorm2));
-    printf("Total: L2(u) =%10.7f  Inf =%9.6f\n", err, std::max(inf_err1, inf_err2));
+    printf("Total: L2(u) =%10.7f  Inf =%10.7f\n", err, std::max(inf_err1, inf_err2));
 
     l2_err1 /= unorm1;
     l2_err2 /= unorm2;

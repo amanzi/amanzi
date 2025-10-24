@@ -306,6 +306,11 @@ if (ENABLE_TESTS)
                         SOURCE test/Main.cc test/operator_diffusion_multi_mesh_cuts.cc
                         LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+        add_amanzi_test(operators_imperfect_contact operators_imperfect_thermal_contact
+                        KIND unit
+                        SOURCE test/Main.cc test/operator_imperfect_thermal_contact.cc
+                        LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
         # convergence rates
         add_amanzi_test(operators_diffusion_convergence operators_diffusion_convergence
                         KIND unit

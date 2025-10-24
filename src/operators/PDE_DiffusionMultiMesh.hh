@@ -73,6 +73,7 @@ Example:
 
 #include "DenseMatrix.hh"
 #include "exceptions.hh"
+#include "Function.hh"
 #include "Point.hh"
 #include "State.hh"
 #include "VerboseObject.hh"
@@ -155,6 +156,13 @@ class PDE_DiffusionMultiMesh {
                                     const std::string& rgn2,
                                     InterfaceData& data12);
 
+  virtual 
+  void meshToMeshMapUser_(const AmanziMesh::Mesh& mesh1,
+                                    const std::string& rgn1,
+                                    const AmanziMesh::Mesh& mesh2,
+                                    const std::string& rgn2,
+                                    InterfaceData& data12) { AMANZI_ASSERT(false); }
+
   InterfaceDataTangent buildTangentPlane_(const AmanziMesh::Mesh& mesh, const std::string& rgn);
 
   // Note: if no initial guess, set f2_guess to -1
@@ -181,7 +189,7 @@ class PDE_DiffusionMultiMesh {
   int d_;
 
   double stability_;
-  std::vector<double> interface_conductance_;
+  std::vector<std::unique_ptr<Function>> interface_conductance_;
   std::string method_;
   int nparticles_;
 

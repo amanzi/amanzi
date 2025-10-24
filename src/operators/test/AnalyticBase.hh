@@ -20,7 +20,7 @@
 
   Analytic00: polynomial solution with constant, scalar coefficient
   Analytic01: non-polynomial solution with full, non-constant tensor
-  Analytic02: linear solution with constant, tensor coefficient
+  Analytic02: linear solution with non-constant, tensor coefficient
   Analytic03: non-polynomial solution with discontinuous (scalar)
               coefficient
   Analytic03b: same as 03, but with the coef as a scalar instead of
@@ -32,6 +32,7 @@
   Analytic07: trigonometric solution with identity coefficients
   Analytic08: trigonometric solution with discontinuous coefficient
               and curvilinear discontinuity line. 
+  Analytic09: trigonometric solution with full constant tensor
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_BASE_HH_
