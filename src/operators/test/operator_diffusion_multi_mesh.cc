@@ -148,7 +148,9 @@ TestDiffusionMultiMesh(int d,
   n = level;
   int n1x(4 * n), n1y(8 * n), n1z(6 * n);
   int n2x(5 * n), n2y(10 * n), n2z(6 * n);
-  MeshFactory meshfactory(comm, gm);
+
+  auto mlist = Teuchos::rcp(new Teuchos::ParameterList(plist.sublist("mesh")));
+  MeshFactory meshfactory(comm, gm, mlist);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<Mesh> mesh1, mesh2;
   if (filename1 == "") {
@@ -163,8 +165,6 @@ TestDiffusionMultiMesh(int d,
     mesh1 = meshfactory.create(filename1);
     mesh2 = meshfactory.create(filename2);
   }
-  mesh1->cacheFaceCoordinates();
-  mesh2->cacheFaceCoordinates();
 
   int ncells1_owned = mesh1->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
   int nfaces1_wghost = mesh1->getNumEntities(Entity_kind::FACE, Parallel_kind::ALL);

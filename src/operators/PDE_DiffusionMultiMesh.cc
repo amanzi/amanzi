@@ -95,6 +95,8 @@ PDE_DiffusionMultiMesh::Init(const Teuchos::RCP<State>& S)
         meshToMeshMapConvexHull_(*submeshes[k], rgns[k], *submeshes[1 - k], rgns[1 - k], data);
       } else if (method_ == "reconstruction") {
         meshToMeshMapReconstruction_(*submeshes[k], rgns[k], *submeshes[1 - k], rgns[1 - k], data);
+      } else if (method_ == "intersection") {
+        meshToMeshMapUser_(*submeshes[k], rgns[k], *submeshes[1 - k], rgns[1 - k], data);
       } else {
         AMANZI_ASSERT(false);
       }

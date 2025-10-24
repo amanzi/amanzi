@@ -142,7 +142,8 @@ TestDiffusionMultiMesh(int d, double tol,
 
   // create meshes
   int n = level;
-  MeshFactory meshfactory(comm, gm);
+  auto mlist = Teuchos::rcp(new Teuchos::ParameterList(plist.sublist("mesh")));
+  MeshFactory meshfactory(comm, gm, mlist);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<Mesh> mesh1, mesh2, mesh3;
   if (d == 2) {
@@ -507,6 +508,7 @@ TestDiffusionMultiMesh(int d, double tol,
 
 TEST(OPERATOR_DIFFUSION_TWO_MESH_PROBLEM)
 {
+//TestDiffusionMultiMesh<Analytic01>(2, 5e-2, 1, "test/poly16.exo", "test/median16_filtered.exo");
   TestDiffusionMultiMesh<Analytic01>(2, 5e-2, 1); // lemma 4.3 gives zero
   TestDiffusionMultiMesh<Analytic01>(2, 5e-2, 1, "test/poly8.exo", "test/median7x8.exo");
   TestDiffusionMultiMesh<Analytic01b>(3, 1e-1, 1);

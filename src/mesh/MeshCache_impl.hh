@@ -2012,6 +2012,19 @@ cacheDefault(MeshCache<MEM>& mesh)
     mesh.cacheEdgeFaces();
     mesh.cacheEdgeGeometry();
   }
+
+  Teuchos::RCP<Teuchos::ParameterList> plist = mesh.getParameterList();
+  if (plist->isSublist("unstructured")) {
+    const auto& tmp = plist->sublist("unstructured");
+    if (tmp.isSublist("expert")) {
+      const auto& aux = tmp.sublist("expert");
+      if (aux.isParameter("cache face coordinates")) {
+        if (aux.get<bool>("cache face coordinates")) {
+          mesh.cacheFaceCoordinates();
+        }
+      }
+    }
+  }
 }
 
 

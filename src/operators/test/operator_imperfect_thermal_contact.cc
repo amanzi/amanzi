@@ -88,7 +88,8 @@ TestImperfectContact(int d,
   // create meshes
   int n1x(100), n1y(4), n1z(6);
   int n2x(100), n2y(5), n2z(6);
-  MeshFactory meshfactory(comm, gm);
+  auto mlist = Teuchos::rcp(new Teuchos::ParameterList(plist.sublist("mesh")));
+  MeshFactory meshfactory(comm, gm, mlist);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<Mesh> mesh1, mesh2;
   if (filename1 != "") {

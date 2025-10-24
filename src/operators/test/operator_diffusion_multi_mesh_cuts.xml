@@ -45,6 +45,14 @@
     </ParameterList>
   </ParameterList>
 
+  <ParameterList name="mesh">
+    <ParameterList name="unstructured">
+      <ParameterList name="expert">
+        <Parameter name="cache face coordinates" type="bool" value="true"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
   <ParameterList name="solvers">
     <ParameterList name="PCG">
       <Parameter name="iterative method" type="string" value="pcg"/>

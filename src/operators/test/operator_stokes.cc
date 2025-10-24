@@ -94,16 +94,17 @@ SUITE(OPERATOR_STOKES)
     std::vector<int>& bcf_model = bcf->bc_model();
     std::vector<double>& bcf_value = bcf->bc_value();
 
-    for (int f = 0; f < nfaces_wghost; f++) {
-      const Point& xf = mesh->getFaceCentroid(f);
-      if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||
-          fabs(xf[1] - 1.0) < 1e-6) {
-        const Point& normal = mesh->getFaceNormal(f);
-        double area = mesh->getFaceArea(f);
+    int nbfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::BOUNDARY_FACE,
+                                              AmanziMesh::Parallel_kind::ALL);
 
-        bcf_model[f] = OPERATOR_BC_DIRICHLET;
-        bcf_value[f] = (ana.velocity_exact(xf, 0.0) * normal) / area;
-      }
+    for (int bf = 0; bf != nbfaces_wghost; ++bf) {
+      int f = getBoundaryFaceFace(*mesh, bf);
+      const Point& xf = mesh->getFaceCentroid(f);
+      const Point& normal = mesh->getFaceNormal(f);
+      double area = mesh->getFaceArea(f);
+
+      bcf_model[f] = OPERATOR_BC_DIRICHLET;
+      bcf_value[f] = (ana.velocity_exact(xf, 0.0) * normal) / area;
     }
 
     // -- Dirichlet condition at nodes for the normal velocity component
@@ -112,14 +113,15 @@ SUITE(OPERATOR_STOKES)
     std::vector<int>& bcv_model = bcv->bc_model();
     std::vector<Point>& bcv_value = bcv->bc_value_point();
 
-    for (int v = 0; v < nnodes_wghost; ++v) {
+    int nbnodes_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::BOUNDARY_NODE,
+                                              AmanziMesh::Parallel_kind::ALL);
+
+    for (int bv = 0; bv < nbnodes_wghost; ++bv) {
+      int v = mesh->getBoundaryNodes()(bv);
       const auto xv = mesh->getNodeCoordinate(v);
 
-      if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 || fabs(xv[1]) < 1e-6 ||
-          fabs(xv[1] - 1.0) < 1e-6) {
-        bcv_model[v] = OPERATOR_BC_DIRICHLET;
-        bcv_value[v] = ana.velocity_exact(xv, 0.0);
-      }
+      bcv_model[v] = OPERATOR_BC_DIRICHLET;
+      bcv_value[v] = ana.velocity_exact(xv, 0.0);
     }
 
     // create a discrete PDE
