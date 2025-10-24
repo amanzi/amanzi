@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# CMake generates this file 
+# Replaces each @VAR@ with value of ${VAR}
+
+# Manual install required for 4.0.x versions
+cd @COOLPROP_source_dir@/src
+make install
+echo "make install returned $?"
+
+exit $?

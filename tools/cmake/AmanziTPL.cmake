@@ -100,6 +100,28 @@ endif()
 
 
 ##############################################################################
+# COOLPROP
+##############################################################################
+option(COOLPROP_INCLUDE_DIR "Path to CoolProp include directory")
+if(ENABLE_COOLPROP)
+  find_package(CoolProp)
+
+  if (COOLPROP_FOUND)
+    message(STATUS "COOLPROP Package information")
+    message(STATUS "\tCOOLPROP_VERSION      = ${COOLPROP_VERSION}")
+    message(STATUS "\tCOOLPROP_INCLUDE_DIRS = ${COOLPROP_INCLUDE_DIRS}")
+    message(STATUS "\tCOOLPROP_LIBRARY_DIR  = ${COOLPROP_LIBRARY_DIR}")
+    message(STATUS "\tCOOLPROP_LIBRARY      = ${COOLPROP_LIBRARY}")
+    message(STATUS "\tCOOLPROP_LIBRARIES    = ${COOLPROP_LIBRARIES}")
+    print_link_libraries(${COOLPROP_LIBRARY})
+    message(STATUS "")
+  else()
+    message(FATAL_ERROR "Can not locate COOLPROP library and/or include\n")
+  endif()
+endif()
+
+
+##############################################################################
 # HDF5 - http://www.hdfgroup.org/HDF5/
 ##############################################################################
 if (BUILD_SHARED_LIBS)

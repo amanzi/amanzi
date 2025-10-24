@@ -1,0 +1,24 @@
+diff --color -ruNbB coolprop-7.0.0-source/CMakeLists.txt coolprop-7.0.0-source_new/CMakeLists.txt
+--- coolprop-7.0.0-source/CMakeLists.txt	2025-10-15 20:18:11
++++ coolprop-7.0.0-source_new/CMakeLists.txt	2025-10-15 21:06:56
+@@ -611,6 +611,7 @@
+          "${CMAKE_CURRENT_SOURCE_DIR}/${COOLPROP_LIBRARY_SOURCE}")
+     add_library(${LIB_NAME} SHARED ${APP_SOURCES} ${COOLPROP_LIBRARY_EXPORTS})
+ 	
++    
+ 	## For arm64 builds, put the shared library in the Windows/64bit__arm64 folder
+ 	if(MSVC AND ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "ARM64" OR "${CMAKE_VS_PLATFORM_NAME}" STREQUAL "arm64"))
+ 		set(OUTPUT_FOLDER "shared_library/${CMAKE_SYSTEM_NAME}/${BITNESS}bit__arm64")
+@@ -620,10 +621,10 @@
+ 	
+     install(
+       TARGETS ${LIB_NAME}
+-      DESTINATION ${OUTPUT_FOLDER}
++      DESTINATION ${COOLPROP_INSTALL_PREFIX}/lib
+     )
+     install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/${COOLPROP_LIBRARY_HEADER}
+-            DESTINATION shared_library)
++            DESTINATION ${COOLPROP_INSTALL_PREFIX}/include)
+     set_property(
+       TARGET ${LIB_NAME}
+       APPEND_STRING

@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# CMake generates this file 
+# Replaces each @VAR@ with value of ${VAR}
+
+# Ensure a uniform build with the correct compiler
+export CC=@CMAKE_C_COMPILER@
+export CXX=@CMAKE_CXX_COMPILER@
+
+# coolprop in-source build under src 
+# At the moment, it looks like parallel builds don't work with Alquimia,
+# so this is an attempt to build it with only 1 thread.
+cd @COOLPROP_source_dir@/src
+make -j1 all 
+rc=$?
+echo "make all returned $rc"
+
+exit $rc

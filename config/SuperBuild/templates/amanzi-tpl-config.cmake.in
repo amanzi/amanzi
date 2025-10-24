@@ -152,3 +152,6 @@ set(SuperLUDist_DIR @SuperLUDist_DIR@ CACHE PATH "SuperLUDist installation prefi
 
 # CLM
 set(CLM_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "CLM installation prefix")
+
+# CoolProp
+set(COOLPROP_DIR @COOLPROP_INSTALL_PREFIX@ CACHE PATH "CoolProp installation prefix")

@@ -173,6 +173,7 @@ crunchtope=${FALSE}
 pflotran=${FALSE}
 shared=${TRUE}
 silo=${FALSE}
+coolprop=${TRUE}
 
 # -- arch sets machine-specific variables
 amanzi_arch=
@@ -603,6 +604,7 @@ Amanzi TPLs:
     openmp       = '"${openmp}"'
     pflotran     = '"${pflotran}"'
     silo         = '"${silo}"'
+    coolprop     = '"${coolprop}"'
     Spack        = '"${Spack}"'
     xsdk         = '"${xsdk}"'
     external_downloads = '"${external_downloads}"'
@@ -1892,6 +1894,7 @@ if [ -z "${tpl_config_file}" ]; then
       -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
       -DENABLE_Silo:BOOL=${silo} \
       -DENABLE_CLM:BOOL=${clm} \
+      -DENABLE_COOLPROP:BOOL=${coolprop} \
       -DENABLE_ELM_ATS_API:BOOL=${elm_ats_api} \
       -DENABLE_SPACK:BOOL=${Spack} \
       -DENABLE_Epetra:BOOL=${epetra} \

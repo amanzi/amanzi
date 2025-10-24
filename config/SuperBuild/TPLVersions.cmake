@@ -205,6 +205,9 @@
 #                - update superLU to 6.0.1
 #                - update superLU_dist to 8.2.1
 #                - update netcdf-c to 4.9.3
+#
+#   0.98.14      - added CoolProp version 7.0.0
+
 
 include(CMakeParseArguments)
 
@@ -257,7 +260,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 98)
-set(AMANZI_TPLS_VERSION_PATCH 13)
+set(AMANZI_TPLS_VERSION_PATCH 14)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -641,3 +644,18 @@ set(FMT_URL_STRING    "https://github.com/fmtlib/fmt/archive")
 set(FMT_ARCHIVE_FILE  ${FMT_VERSION}.tar.gz)
 set(FMT_SAVEAS_FILE   fmt-${FMT_ARCHIVE_FILE})
 set(FMT_MD5_SUM       2f3701cada629ca455c3388d1089f5bd)
+
+#
+# TPL: COOLPROP
+#
+set(COOLPROP_VERSION_MAJOR  7)
+set(COOLPROP_VERSION_MINOR  0)
+set(COOLPROP_VERSION_PATCH  0)
+set(COOLPROP_VERSION  ${COOLPROP_VERSION_MAJOR}.${COOLPROP_VERSION_MINOR}.${COOLPROP_VERSION_PATCH})
+#set(COOLPROP_URL_STRING     "https://github.com/hypre-space/hypre/archive/")
+#set(COOLPROP_ARCHIVE_FILE   v${COOLPROP_VERSION}.tar.gz)
+#set(COOLPROP_SAVEAS_FILE    hypre-${COOLPROP_VERSION}.tar.gz)
+#set(COOLPROP_MD5_SUM        0b3abc221b216db97175709aa0bf94d7)
+set(COOLPROP_GIT_REPOSITORY "https://github.com/CoolProp/CoolProp")
+set(COOLPROP_GIT_TAG        5659841)
+
