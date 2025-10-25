@@ -9,3 +9,68 @@ diff -ruN mstk-3.3.6-orig/include/MSTK_types.h mstk-3.3.6-source/include/MSTK_ty
  #ifdef MSTK_HAVE_MPI
  #include "mpi.h"
  typedef MPI_Comm MSTK_Comm;
+--- mstk-3.3.6-orig/utils/mkstruc/src/mkstruc.c	2021-01-26 09:16:36
++++ mstk-3.3.6-source/utils/mkstruc/src/mkstruc.c	2025-10-24 11:17:09
+@@ -12,9 +12,14 @@
+ #include <strings.h>
+ #include <math.h>
+ #include "MSTK.h"
++#ifdef MSTK_HAVE_MPI
++  #include <mpi.h>
++#endif
+ 
+ #include "mkstruc.h"
+ 
++
++
+ /*
+ 
+   Index directions for classification templates
+@@ -52,6 +57,7 @@
+ */
+ 
+ int main(int argc, char *argv[]) {
++
+   int mesh_type;
+   int i, j, k, ii, jj, kk, gid, gdim, nx, ny, nz;
+   double xyz[3], llx, lly, llz, urx, ury, urz, dx, dy, dz;
+@@ -83,7 +89,25 @@
+     exit(-1);
+   }
+ 
++
++#ifdef MSTK_HAVE_MPI
++  MPI_Init(&argc,&argv);
++#endif
++
+   MSTK_Init();
++
++  int rank=0, numprocs=1;
++#ifdef MSTK_HAVE_MPI
++
++  MSTK_Comm comm = MPI_COMM_WORLD;
++
++  MPI_Comm_rank(comm,&rank);
++  MPI_Comm_size(comm,&numprocs);
++
++#else
++  MSTK_Comm comm = NULL;
++#endif
++
+   mesh = MESH_New(F1);
+ 
+   strcpy(outfile,"struct.mstk");
+@@ -556,8 +580,12 @@
+     MV_Set_Coords(mv,xyz);
+   }
+ 
+-  MESH_WriteToFile(mesh,outfile,F1,NULL);
++  MESH_WriteToFile(mesh,outfile,F1,comm);
+ 
+   MESH_Delete(mesh);
++
++#ifdef MSTK_HAVE_MPI
++  MPI_Finalize();
++#endif
+ }
+ 
