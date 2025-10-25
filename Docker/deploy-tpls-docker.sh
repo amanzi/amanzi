@@ -21,6 +21,7 @@ Help()
     echo "                      (Default: /ascem/amanzi/repos/amanzi-master)"
     echo "  --amanzi_tpls_ver   Which version of the Amanzi TPLs should we build? (Default is output of get_tpl_version.sh)"
     echo "  --stop_before_tpls  Useful for debugging - stops docker image build at base stage and doesn't build TPLs"
+    echo "  --build_type        Flag to specify opt, relwithdebinfo, or debug builds (Default: opt)"
     echo "  --output_style      Should we use the condensed or plain version of Docker output (Default: condensed)"
     echo "  --multiarch         Build for both linux/amd64 and linux/arm64 instead of only local system architecture"
     echo "                      Assumes your already have Docker configured to build multiarchitecture images"
@@ -77,14 +78,6 @@ case $i in
     cmake_version="${i#*=}"
     shift
     ;;
-    --petsc_ver=*)
-    petsc_ver="${i#*=}"
-    shift
-    ;;
-    --trilinos_ver=*)
-    trilinos_ver="${i#*=}"
-    shift
-    ;;
     --amanzi_branch=*)
     amanzi_branch="${i#*=}"
     shift
@@ -103,6 +96,10 @@ case $i in
     ;;
     --use_proxy)
     use_proxy="--build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy}"
+    shift
+    ;;
+    --build_type=*)
+    build_type="${i#*=}"
     shift
     ;;
     --output_style=*)
@@ -134,14 +131,15 @@ build_mpi="${build_mpi:-True}"
 mpi_distro="${mpi_distro:-mpich}"
 mpi_version="${mpi_version:-4.0.3}"
 cmake_version="${cmake_version:-}"
-petsc_ver="${petsc_ver:-3.21}"
-trilinos_ver="${trilnos_ver:-15-1-0}"
+#petsc_ver="${petsc_ver:-3.21}"
+#trilinos_ver="${trilnos_ver:-15-1-0}"
 amanzi_branch="${amanzi_branch:-master}"
 amanzi_src_dir="${amanzi_src_dir:-/ascem/amanzi/repos/amanzi-master}"
 amanzi_tpls_ver="${amanzi_tpls_ver:-`get_tpl_version`}"
 stop_before_tpls="${stop_before_tpls:-False}"
 use_proxy="${use_proxy:-}"
 push="${push:-False}"
+build_type="${build_type:-opt}"
 output_style="${output_style:-}"
 multiarch="${multiarch:-False}"
 cache="${cache:-}"
@@ -184,6 +182,7 @@ then
         --build-arg base_image=${base_image} \
         --build-arg ver_tag=${ver_tag} \
         --build-arg cmake_version=${cmake_version} \
+        --build-arg build_type=${build_type} \
         ${use_proxy} \
         ${output} \
         -f ${amanzi_src_dir}/Docker/Dockerfile-TPLs \
@@ -203,6 +202,7 @@ else
         --build-arg base_image=${base_image} \
         --build-arg ver_tag=${ver_tag} \
         --build-arg cmake_version=${cmake_version} \
+        --build-arg build_type=${build_type} \
         ${use_proxy} \
         ${output} \
         -f ${amanzi_src_dir}/Docker/Dockerfile-TPLs \

@@ -1,0 +1,12 @@
+diff --color -ruN superlu-6.0.1-orig/EXAMPLE/dreadtriple_noheader.c superlu-6.0.1/EXAMPLE/dreadtriple_noheader.c
+--- superlu-6.0.1-orig/EXAMPLE/dreadtriple_noheader.c	2025-07-08 07:30:53
++++ superlu-6.0.1/EXAMPLE/dreadtriple_noheader.c	2025-07-08 07:33:34
+@@ -179,7 +179,7 @@
+ #if 0
+ void dreadrhs(int m, double *b)
+ {
+-    FILE *fp, *fopen();
++    FILE *fp;
+     int i, j;
+ 
+     if ( !(fp = fopen("b.dat", "r")) ) {
