@@ -18,19 +18,6 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   PREFIX NetCDF_Fortran
   VERSION ${NetCDF_Fortran_VERSION_MAJOR} ${NetCDF_Fortran_VERSION_MINOR} ${NetCDF_Fortran_VERSION_PATCH})
   
-# --- Patch original code
-set(NetCDF_Fortran_patch_file ) 
-set(NetCDF_Fortran_sh_patch ${NetCDF_Fortran_prefix_dir}/netcdf-fortran-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/netcdf-fortran-patch-step.sh.in
-               ${NetCDF_Fortran_sh_patch}
-               @ONLY)
-# configure the CMake patch step
-set(NetCDF_Fortran_cmake_patch ${NetCDF_Fortran_prefix_dir}/netcdf-fortran-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/netcdf-fortran-patch-step.cmake.in
-               ${NetCDF_Fortran_cmake_patch}
-               @ONLY)
-
-set(NetCDF_Fortran_PATCH_COMMAND ${CMAKE_COMMAND} -P ${NetCDF_Fortran_cmake_patch})
 
 # --- Define the configure command
 set(NetCDF_Fortran_CMAKE_CACHE_ARGS "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}")

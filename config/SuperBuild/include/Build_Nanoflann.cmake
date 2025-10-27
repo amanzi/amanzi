@@ -13,20 +13,13 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
                          PREFIX Nanoflann
                          VERSION ${Nanoflann_VERSION_MAJOR} ${Nanoflann_VERSION_MINOR} ${Nanoflann_VERSION_PATCH})
 
-# --- Set the name of the patch
+# --- Patch the source
 set(Nanoflann_patch_file nanoflann-cstdint-gcc13.patch)
-# --- Configure the bash patch script
-set(Nanoflann_sh_patch ${Nanoflann_prefix_dir}/nanoflann-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/nanoflann-patch-step.sh.in
-               ${Nanoflann_sh_patch}
-               @ONLY)
-# --- Configure the CMake patch step
-set(Nanoflann_cmake_patch ${Nanoflann_prefix_dir}/nanoflann-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/nanoflann-patch-step.cmake.in
-               ${Nanoflann_cmake_patch}
-               @ONLY)
-# --- Set the patch command
-set(Nanoflann_PATCH_COMMAND ${CMAKE_COMMAND} -P ${Nanoflann_cmake_patch})
+patch_tpl(Nanoflann
+          ${Nanoflann_prefix_dir}
+          ${Nanoflann_source_dir}
+          ${Nanoflann_stamp_dir}
+          Nanoflann_patch_file)
 
 # --- Define the install directory
 set(nanoflann_install_dir ${TPL_INSTALL_PREFIX})

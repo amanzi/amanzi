@@ -81,21 +81,13 @@ else()
   set(hypre_shared_opt "--disable-shared")
 endif()
 
-# --- Set the name of the patch
+# --- Patch the original source
 set(HYPRE_patch_file hypre-configure.patch)
-
-# --- Configure the bash patch script
-set(HYPRE_sh_patch ${HYPRE_prefix_dir}/hypre-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/hypre-patch-step.sh.in
-               ${HYPRE_sh_patch}
-               @ONLY)
-# --- Configure the CMake patch step
-set(HYPRE_cmake_patch ${HYPRE_prefix_dir}/hypre-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/hypre-patch-step.cmake.in
-               ${HYPRE_cmake_patch}
-               @ONLY)
-# --- Set the patch command
-set(HYPRE_PATCH_COMMAND ${CMAKE_COMMAND} -P ${HYPRE_cmake_patch})     
+patch_tpl(HYPRE
+          ${HYPRE_prefix_dir}
+          ${HYPRE_source_dir}
+          ${HYPRE_stamp_dir}
+          HYPRE_patch_file)
 
 # --- If downloads are disabled point to local repository
 if ( DISABLE_EXTERNAL_DOWNLOAD )
