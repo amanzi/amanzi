@@ -45,7 +45,7 @@ ExternalProject_Add(${CrunchTope_BUILD_TARGET}
                     URL          ${CrunchTope_URL}                    # URL may be a web site OR a local file
                     URL_MD5      ${CrunchTope_MD5_SUM}                # md5sum of the archive file
                     # -- Patch 
-                    # PATCH_COMMAND ${CrunchTope_PATCH_COMMAND}       # Mods to source
+                    PATCH_COMMAND ${CrunchTope_PATCH_COMMAND}       # Mods to source
                     # -- Configure
                     SOURCE_DIR    ${CrunchTope_source_dir}            # Source directory
                     CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}       # Ensure uniform build
