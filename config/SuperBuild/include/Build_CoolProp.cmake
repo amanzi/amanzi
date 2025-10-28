@@ -31,8 +31,15 @@ set(COOLPROP_PATCH_COMMAND ${CMAKE_COMMAND} -P ${COOLPROP_cmake_patch})
 
 # --- Define the arguments passed to CMake.
 
+set(COOLPROP_INSTALL_PREFIX ${TPL_INSTALL_PREFIX}/coolprop)
+
 set(COOLPROP_CMAKE_ARGS 
-      "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}"
+      "-DCMAKE_INSTALL_PREFIX:FILEPATH=${COOLPROP_INSTALL_PREFIX}"
+      "-DCMAKE_INSTALL_RPATH:FILEPATH=${COOLPROP_INSTALL_PREFIX}"
+      "-DCMAKE_BUILD_WITH_INSTALL_RPATH:BOOL=FALSE"
+      "-DCMAKE_SKIP_BUILD_RPATH:BOOL=FALSE"
+      "-DCMAKE_INSTALL_RPATH_USE_LINK_PATH:BOOL=FALSE"
+      "-DCMAKE_INSTALL_NAME_DIR=${COOLPROP_INSTALL_PREFIX}/lib"
       "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
       "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}"
       "-DCOOLPROP_SHARED_LIBRARY:BOOL=ON"
@@ -43,8 +50,6 @@ set(COOLPROP_CMAKE_ARGS
 if(CMAKE_MAJOR_VERSION VERSION_EQUAL "4")
   list(APPEND COOLPROP_CMAKE_ARGS "-DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.5")
 endif()
-
-set(COOLPROP_INSTALL_PREFIX ${TPL_INSTALL_PREFIX}/coolprop)
 
 # --- Add external project build and tie to the COOLPROP build target
 ExternalProject_Add(${COOLPROP_BUILD_TARGET}
@@ -65,14 +70,13 @@ ExternalProject_Add(${COOLPROP_BUILD_TARGET}
                                   -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}  # Ensure uniform build
                                   -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
                     # -- Build
-                    BINARY_DIR        ${COOLPROP_build_dir}       # Build directory 
-                    BUILD_COMMAND     $(MAKE)
+                    BINARY_DIR       ${COOLPROP_build_dir}        # Build directory 
+                    BUILD_COMMAND    $(MAKE)
                     # -- Install
                     INSTALL_DIR      ${COOLPROP_INSTALL_PREFIX}   # Install directory
                     INSTALL_COMMAND  $(MAKE) install
                     # -- Output control
-                    # -- Output control
                     ${COOLPROP_logging_args})
 
 include(BuildLibraryName)
-build_library_name(coolprop COOLPROP_C_LIB APPEND_PATH ${COOLPROP_INSTALL_PREFIX}/lib)
+build_library_name(coolprop COOLPROP_LIB APPEND_PATH ${COOLPROP_INSTALL_PREFIX}/lib)

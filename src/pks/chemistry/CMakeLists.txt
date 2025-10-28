@@ -122,6 +122,6 @@ if (BUILD_TESTS AND ENABLE_Unstructured)
                               mesh_functions mesh mesh_factory error_handling
                               ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES}
                               ${HDF5_LIBRARIES} ${XERCESC_LIBRARIES} ${XERCES_ICU_LIBRARIES}
-                              ${NOX_LIBRARIES})
+                              ${NOX_LIBRARIES} ${COOLPROP_LIBRARIES})
     endif()
 endif()

@@ -1,0 +1,300 @@
+<amanzi_input type="unstructured" version="1.7-dev">
+  <model_description name="flow in matrix and fracture network">
+    <author>Konstantin Lipnikov</author>
+    <units>
+      <length_unit>m</length_unit>
+      <time_unit>s</time_unit>
+      <mass_unit>kg</mass_unit>
+      <conc_unit>SI</conc_unit>
+    </units>
+
+    <constants>
+      <numerical_constant name="X0" value="-40.0 m"/>
+      <numerical_constant name="X1" value=" 40.0 m"/>
+
+      <numerical_constant name="Y0" value="-20.0 m"/>
+      <numerical_constant name="Y1" value=" 20.0 m"/>
+
+      <numerical_constant name="Z0" value="-8.0 m"/>
+      <numerical_constant name="Z1" value=" 0.0 m"/>
+
+      <numerical_constant name="KFN" value="2.0e-17 s^-1"/>
+    </constants>
+  </model_description>
+
+  <definitions>
+    <macros>
+      <time_macro name="Every100">
+        <start>0.1</start>
+        <timestep_interval>0.5 h</timestep_interval>
+      </time_macro>
+      <cycle_macro name="Every1000">
+        <start>0</start>
+        <timestep_interval>1000</timestep_interval>
+      </cycle_macro>
+    </macros>
+  </definitions>
+
+  <process_kernels>
+    <pk mode="transient">
+      <flow model="richards" state="on" />
+      <energy model="one-phase energy" state="on" />
+      <strongly_coupled name="mpc1">flow,energy</strongly_coupled>
+    </pk>
+  </process_kernels>
+
+  <phases>
+    <liquid_phase name="water">
+      <eos model="CoolProp"/>
+      <molar_mass>0.018</molar_mass>
+    </liquid_phase>
+  </phases>
+
+  <execution_controls>
+    <verbosity level="high"/>
+    <execution_control_defaults method="bdf1" init_dt="1.0" increase_factor="1.2" mode="steady" />
+    <execution_control end="1 h" init_dt="0.1" max_dt="1 h" method="bdf1" mode="transient" start="0.0"/>
+  </execution_controls>
+
+  <numerical_controls>
+    <unstructured_controls>
+      <!--gravity>off</gravity-->
+      <unstr_transient_controls>
+        <extrapolation_damping_factor>0.8</extrapolation_damping_factor>
+        <nonlinear_tolerance>1.0e-7</nonlinear_tolerance>
+      </unstr_transient_controls>
+      <unstr_mechanics_controls>
+        <use_fracture>false</use_fracture>
+      </unstr_mechanics_controls>
+      <unstr_flow_controls>
+        <!--use_overburden_stress>true</use_overburden_stress-->
+      </unstr_flow_controls>
+      <unstr_linear_solver>
+        <method>gmres</method>
+        <max_iterations>20</max_iterations>
+        <tolerance>1.0e-14</tolerance>
+      </unstr_linear_solver>
+    </unstructured_controls>
+  </numerical_controls>
+
+  <mesh framework="mstk">
+    <dimension>3</dimension>
+    <partitioner>metis</partitioner>
+    <generate>
+      <number_of_cells nx="80" ny = "40" nz="8"/>
+      <box low_coordinates="X0, Y0, Z0" high_coordinates = "X1, Y1, Z1"/>
+    </generate>
+  </mesh>
+
+  <regions>
+    <region name="EntireDomain">
+      <box low_coordinates="X0, Y0, Z0" high_coordinates="X1, Y1, Z1"/>
+    </region>
+    <region name="SurfaceTop">
+      <box low_coordinates="X0, Y0, Z1" high_coordinates="X1, Y1, Z1"/>
+    </region>
+    <region name="SurfaceBottom">
+      <box low_coordinates="X0, Y0, Z0" high_coordinates="X1, Y1, Z0"/>
+    </region>
+    <region name="SurfaceInlet">
+      <box low_coordinates="X0, Y0, Z0" high_coordinates="X0, Y1, Z1"/>
+    </region>
+    <region name="Outlet1">
+      <box low_coordinates="X1, Y0, Z0" high_coordinates="X1, 0.0, Z1"/>
+    </region>
+    <region name="Outlet2">
+      <box low_coordinates="X1, 0.0, Z0" high_coordinates="X1, Y1, Z1"/>
+    </region>
+    <region name="fracture1">
+      <box low_coordinates="X0, 0.0, Z0" high_coordinates="0.0, 0.0, Z1"/>
+    </region>
+    <region name="fracture2">
+      <box low_coordinates="0.0, -10.0, Z0" high_coordinates="0.0, 10.0, Z1"/>
+    </region>
+    <region name="fracture3">
+      <box low_coordinates="0.0, -10.0, Z0" high_coordinates="X1, -10.0, Z1"/>
+    </region>
+    <region name="fracture4">
+      <box low_coordinates="0.0, 10.0, Z0" high_coordinates="X1, 10.0, Z1"/>
+    </region>
+    <region name="fracture5">
+      <box low_coordinates="0.0, 0.0, Z0" high_coordinates="30.0, 0.0, Z1"/>
+    </region>
+    <logical name="fracture">
+      <operation>union</operation>
+      <region_list>fracture1,fracture2,fracture3,fracture4,fracture5</region_list>
+    </logical>
+  </regions>
+
+  <materials>
+    <material name="All">
+      <mechanical_properties>
+        <porosity model="compressible" value="0.1" compressibility="3.0e-9"/>
+        <particle_density value="2700.0"/>
+        <poisson_ratio value="0.2"/>
+        <young_modulus value="6.0e+6"/>
+      </mechanical_properties>
+
+      <cap_pressure model="saturated"/>
+      <permeability model="power law" x="1e-21" y="1e-21" z="1e-21" exponent="3" reference_porosity="0.1" />
+
+      <thermal_properties model="constant">
+        <liquid_conductivity model="constant" value="0.598"/>
+        <solid_conductivity model="constant" value="0.5"/>
+        <liquid_heat_capacity cv="76.0" model="linear"/>
+        <solid_heat_capacity cv="1180.0 J/K/kg" model="linear"/>
+      </thermal_properties>
+
+      <assigned_regions>EntireDomain</assigned_regions>
+    </material>
+  </materials>
+
+  <boundary_conditions>
+    <boundary_condition name="BC1">
+      <assigned_regions>SurfaceInlet</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <linear_pressure value="22.5e+6" reference_coord="0.0, 0.0, 0.0" gradient="0.0, 0.0, -9793.5192" />
+        </liquid_component>
+      </liquid_phase>
+      <thermal_component>
+        <uniform_temperature function="uniform" start="0.0" value="700.0 K"/>
+      </thermal_component>
+    </boundary_condition>
+    <boundary_condition name="BC2">
+      <assigned_regions>Outlet1,Outlet2</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <linear_pressure value="21.0e+6" reference_coord="0.0, 0.0, 0.0" gradient="0.0, 0.0, -9793.5192" />
+        </liquid_component>
+      </liquid_phase>
+    </boundary_condition>
+    <boundary_condition name="BC3">
+      <assigned_regions>SurfaceBottom</assigned_regions>
+      <mechanics_component>
+        <displacement function="uniform" start="0.0" vector="0.0, 0.0, 0.0"/>
+      </mechanics_component>
+    </boundary_condition>
+    <boundary_condition name="BC4">
+      <assigned_regions>SurfaceTop</assigned_regions>
+      <mechanics_component>
+        <displacement function="uniform" start="0.0" vector="0.0, 0.0, -0.01"/>
+      </mechanics_component>
+    </boundary_condition>
+  </boundary_conditions>
+
+  <initial_conditions>
+    <initial_condition name="IC">
+      <assigned_regions>EntireDomain</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <uniform_saturation name="IC1" value="1.0"/>
+          <linear_pressure value="21.0e+6" reference_coord="0.0, 0.0, 0.0" gradient="0.0, 0.0, -9793.5192" />
+        </liquid_component>
+      </liquid_phase>
+      <temperature formula="700.0"/>
+    </initial_condition>
+  </initial_conditions>
+
+  <fracture_network>
+    <materials>
+      <material name="All">
+        <mechanical_properties>
+          <porosity model="constant" value="1.0"/>
+          <particle_density value="2757.0" />
+        </mechanical_properties>
+
+        <cap_pressure model="saturated"/>
+
+        <permeability model="cubic law"/> 
+        <aperture model="Barton-Bandis" undeformed_aperture="1.0e-5" A="1e-11"
+                                        overburden_pressure="21e+6"  B="0.0"/>
+
+        <flow_diffusion_to_matrix model="constant" value="KFN"/>
+        <heat_diffusion_to_matrix model="constant" value="1e-10"/>
+
+        <thermal_properties model="constant">
+          <liquid_conductivity model="constant" value="0.598"/>
+          <solid_conductivity model="constant" value="0.5"/>
+          <liquid_heat_capacity cv="76.0" model="linear"/>
+          <solid_heat_capacity cv="1180.0 J/K/kg" model="linear"/>
+        </thermal_properties>
+        <assigned_regions>fracture</assigned_regions>
+      </material>
+    </materials>
+
+    <boundary_conditions>
+      <boundary_condition name="BC1">
+        <assigned_regions>SurfaceInlet</assigned_regions>
+        <liquid_phase name="water">
+          <liquid_component name="water">
+            <linear_pressure value="22.5e+6" reference_coord="0.0, 0.0, 0.0" gradient="0.0, 0.0, -9793.5192" />
+          </liquid_component>
+        </liquid_phase>
+        <thermal_component>
+          <uniform_temperature function="uniform" start="0.0" value="700.0 K"/>
+        </thermal_component>
+      </boundary_condition>
+      <boundary_condition name="BC2">
+        <assigned_regions>Outlet1</assigned_regions>
+        <liquid_phase name="water">
+          <liquid_component name="water">
+            <linear_pressure value="21.0e+6" reference_coord="0.0, 0.0, 0.0" gradient="0.0, 0.0, -9793.5192" />
+          </liquid_component>
+        </liquid_phase>
+        <thermal_component>
+          <uniform_temperature function="uniform" start="0.0" value="700.0 K"/>
+        </thermal_component>
+      </boundary_condition>
+      <boundary_condition name="BC3">
+        <assigned_regions>Outlet2</assigned_regions>
+        <liquid_phase name="water">
+          <liquid_component name="water">
+            <linear_pressure value="21.0e+6" reference_coord="0.0, 0.0, 0.0" gradient="0.0, 0.0, -9793.5192" />
+          </liquid_component>
+        </liquid_phase>
+        <thermal_component>
+          <uniform_temperature function="uniform" start="0.0" value="700.0 K"/>
+        </thermal_component>
+      </boundary_condition>
+    </boundary_conditions>
+
+    <initial_conditions>
+      <initial_condition name="IC">
+        <assigned_regions>fracture</assigned_regions>
+        <liquid_phase name="water">
+          <liquid_component name="water">
+            <uniform_saturation name="IC1" value="1.0"/>
+            <linear_pressure value="21.0e+6" reference_coord="0.0, 0.0, 0.0" gradient="0.0, 0.0, -9793.5192" />
+          </liquid_component>
+        </liquid_phase>
+        <temperature formula="700.0"/>
+      </initial_condition>
+    </initial_conditions>
+  </fracture_network>
+
+  <output>
+    <vis>
+      <units time="s"/>
+      <base_filename>plot</base_filename>
+      <num_digits>5</num_digits>
+      <time_macros>Every100</time_macros>
+    </vis>
+    <!--checkpoint>
+      <base_filename>CHKPOINT</base_filename>
+      <num_digits>5</num_digits>
+      <cycle_macros>Every1000</cycle_macros>
+    </checkpoint-->
+    <!--observations>
+      <filename>observation.out</filename>
+      <liquid_phase name="water">
+        <aqueous_pressure>
+          <domain_name>fracture</domain_name>
+          <assigned_regions>fracture</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Every100</time_macros>
+        </aqueous_pressure>
+      </liquid_phase>
+    </observations-->
+  </output>
+</amanzi_input>

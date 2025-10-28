@@ -51,7 +51,8 @@ set(eos_src_files
 
 add_amanzi_library(eos
                    SOURCE ${eos_src_files} HEADERS ${eos_inc_files}
-		   LINK_LIBS data_structures state atk CoolProp ${Epetra_LIBRARIES})
+		   LINK_LIBS data_structures state atk 
+                             ${COOLPROP_LIBRARIES} ${Epetra_LIBRARIES})
 if (APPLE AND BUILD_SHARED_LIBS)
   set_target_properties(eos PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
 endif()			  

@@ -370,7 +370,7 @@ TEST(SUPERCRITICAL)
     for (int j = -50; j < 50; ++j) {
        p = pc + i * dp;
        T = Tc + j * dT;
-       std::cout << p << " " << T << " " << eos_cool.Density(T, p) << " " << eos.Function(T, p, &ierr) << std::endl;
+       // std::cout << p << " " << T << " " << eos_cool.Density(T, p) << " " << eos.Function(T, p, &ierr) << std::endl;
     }
   }
 }
