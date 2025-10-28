@@ -21,6 +21,18 @@
                          SEACAS_patch_files)
 ]]
 function(patch_tpl name out_dir source_dir timestamps_dir patch_files)
+  # If no variable name was provided, bail out early.
+  if("${patch_files}" STREQUAL "")
+    message(STATUS "No patch file variable provided for ${name}, skipping.")
+    return()
+  endif()
+
+  # If the variable exists but is empty, also bail out.
+  if(NOT DEFINED ${patch_files} OR "${${patch_files}}" STREQUAL "")
+    message(STATUS "No patches listed in ${patch_files} for ${name}, skipping.")
+    return()
+  endif()
+
   message(STATUS "Applying ${name} patches:")
   foreach(item IN LISTS ${patch_files})
     message(STATUS "  - ${item}")

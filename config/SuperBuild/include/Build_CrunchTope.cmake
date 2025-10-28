@@ -34,7 +34,16 @@ set(CrunchTope_CMAKE_ARGS
 if(CMAKE_MAJOR_VERSION VERSION_EQUAL "4")
   list(APPEND CrunchTope_CMAKE_ARGS "-DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.5")
 endif()
-    
+
+
+# --- patch step is empty
+#set(CrunchTope_patch_file "")
+patch_tpl(CrunchTope
+        ${CrunchTope_prefix_dir}
+        ${CrunchTope_source_dir}
+        ${CrunchTope_stamp_dir}
+        CrunchTope_patch_file)
+
 # --- Add external project build and tie to the CrunchTope build target
 ExternalProject_Add(${CrunchTope_BUILD_TARGET}
                     DEPENDS   ${CrunchTope_PACKAGE_DEPENDS}           # Package dependency target
