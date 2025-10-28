@@ -16,6 +16,7 @@ project(EOS)
 
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})
+include_directories(${COOLPROP_INCLUDE_DIRS})
 
 #
 # Library: eos
@@ -25,10 +26,12 @@ set(eos_src_files
     EOSDensityEvaluator.cc
     EOSViscosityEvaluator.cc
     H2O_Density.cc
+    H2O_DensityCoolProp.cc
     H2O_DensityFEHM.cc
     H2O_ThermalConductivity.cc
     H2O_SaturatedVaporPressure.cc
     H2O_Viscosity.cc
+    H2O_ViscosityCoolProp.cc
     H2O_ViscosityFEHM.cc
     Henry_Solubility.cc
     IdealGas_Density.cc
@@ -48,7 +51,7 @@ set(eos_src_files
 
 add_amanzi_library(eos
                    SOURCE ${eos_src_files} HEADERS ${eos_inc_files}
-		   LINK_LIBS data_structures state atk ${Epetra_LIBRARIES})
+		   LINK_LIBS data_structures state atk CoolProp ${Epetra_LIBRARIES})
 if (APPLE AND BUILD_SHARED_LIBS)
   set_target_properties(eos PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
 endif()			  
@@ -70,9 +73,11 @@ set(eos_inc_files
     eos_reg.hh
     EOSFactory.hh
     H2O_Density.hh
+    H2O_DensityCoolProp.hh
     H2O_DensityFEHM.hh
     H2O_SaturatedVaporPressure.hh
     H2O_Viscosity.hh
+    H2O_ViscosityCoolProp.hh
     H2O_ViscosityFEHM.hh
     Henry_Solubility.hh
     IdealGas_Density.hh

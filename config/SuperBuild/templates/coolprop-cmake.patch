@@ -1,14 +1,17 @@
-diff --color -ruNbB coolprop-7.0.0-source/CMakeLists.txt coolprop-7.0.0-source_new/CMakeLists.txt
---- coolprop-7.0.0-source/CMakeLists.txt	2025-10-15 20:18:11
-+++ coolprop-7.0.0-source_new/CMakeLists.txt	2025-10-15 21:06:56
-@@ -611,6 +611,7 @@
-          "${CMAKE_CURRENT_SOURCE_DIR}/${COOLPROP_LIBRARY_SOURCE}")
-     add_library(${LIB_NAME} SHARED ${APP_SOURCES} ${COOLPROP_LIBRARY_EXPORTS})
- 	
-+    
- 	## For arm64 builds, put the shared library in the Windows/64bit__arm64 folder
- 	if(MSVC AND ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "ARM64" OR "${CMAKE_VS_PLATFORM_NAME}" STREQUAL "arm64"))
- 		set(OUTPUT_FOLDER "shared_library/${CMAKE_SYSTEM_NAME}/${BITNESS}bit__arm64")
+diff --color -ruN coolprop-7.0.0-orig/CMakeLists.txt coolprop-7.0.0-source/CMakeLists.txt
+--- coolprop-7.0.0-orig/CMakeLists.txt	2025-10-25 18:14:46
++++ coolprop-7.0.0-source/CMakeLists.txt	2025-10-25 18:09:16
+@@ -537,8 +537,9 @@
+     "src/CoolPropLib.cpp"
+     CACHE STRING "The file that contains the exported functions")
+ 
++file(GLOB COOLPROP_LIBRARY_HEADER_TMP RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "include/*.h")
+ set(COOLPROP_LIBRARY_HEADER
+-    "include/CoolPropLib.h"
++    ${COOLPROP_LIBRARY_HEADER_TMP}
+     CACHE STRING "The file that contains the export header")
+ 
+ set(COOLPROP_LIBRARY_NAME
 @@ -620,10 +621,10 @@
  	
      install(

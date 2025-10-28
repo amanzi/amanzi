@@ -25,6 +25,7 @@
 #include "EOS_SaturatedVaporPressure.hh"
 #include "EOSFactory.hh"
 #include "H2O_Density.hh"
+#include "H2O_DensityCoolProp.hh"
 #include "H2O_DensityFEHM.hh"
 #include "H2O_ViscosityFEHM.hh"
 #include "LookupTable_Amanzi.hh"
@@ -75,6 +76,34 @@ TEST(DensityEOS)
       der = eos_fehm.DDensityDp(T1, p);
       der_fd = eos_fehm.Density(T1, p + 0.5) - eos_fehm.Density(T1, p - 0.5);
       CHECK_CLOSE(der, der_fd, 1e-3 * std::fabs(der));
+    }
+  }
+
+  // next EOS
+  H2O_DensityCoolProp eos_cool(plist);
+
+  p = 101325.0;
+  for (int loop = 0; loop < 5; loop++) {
+    p *= 2.0;
+    d0 = 1200.0;
+    for (double T = 15; T < 300; T += 1.5) {
+      // check for subcritical liquid
+      if (eos_cool.get_phase(T + T0, p) != CoolProp::phases::iphase_liquid) continue;
+
+      d1 = eos_cool.Density(T + T0, p);
+      CHECK(d1 < 1001.0 && d1 > 550.0 && d1 < d0);
+      d0 = d1;
+
+      double der = eos_cool.DDensityDT(T + T0, p);
+      CHECK(der < 0.0);
+
+      // finite difference approximation
+      double T1(T + T0), dT(0.05);
+      double der_fd = (eos_cool.Density(T1 + dT, p) - eos_cool.Density(T1 - dT, p)) / (2 * dT);
+      CHECK_CLOSE(der, der_fd, 1e-3 * std::fabs(der));
+
+      der = eos_cool.DDensityDp(T1, p);
+      der_fd = eos_cool.Density(T1, p + 0.5) - eos_cool.Density(T1, p - 0.5);
     }
   }
 }
@@ -220,7 +249,7 @@ TEST(FactoryEOS)
 {
   using namespace Amanzi::AmanziEOS;
 
-  std::vector<std::string> names = { "liquid water 0-30C", "liquid water FEHM", "lookup table" };
+  std::vector<std::string> names = { "liquid water 0-30C", "liquid water FEHM", "lookup table", "liquid water CoolProp" };
 
   for (auto& name : names) {
     Teuchos::ParameterList plist;
@@ -319,3 +348,30 @@ TEST(Exceptions)
     AMANZI_ASSERT(false);
   }
 }
+
+
+TEST(SUPERCRITICAL)
+{
+  using namespace Amanzi::AmanziEOS;
+
+  Teuchos::ParameterList plist;
+  plist.set<double>("molar mass", 18.0153e-03).set<double>("density", 997.0);
+  H2O_DensityCoolProp eos_cool(plist);
+
+  int ierr;
+  plist.set<std::string>("table name", "test/h2o_nist_mod.eos")
+    .set<std::string>("field name", "density")
+    .set<std::string>("format", "FEHM");
+
+  LookupTable_FEHM eos(plist);
+
+  double pc(22.1e+6), Tc(647.0), dp(1.0e+5), dT(2.0), p, T;
+  for (int i = -50; i < 50; ++i) {
+    for (int j = -50; j < 50; ++j) {
+       p = pc + i * dp;
+       T = Tc + j * dT;
+       std::cout << p << " " << T << " " << eos_cool.Density(T, p) << " " << eos.Function(T, p, &ierr) << std::endl;
+    }
+  }
+}
+

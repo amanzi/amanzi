@@ -20,10 +20,12 @@
 #include "EOSFactory.hh"
 #include "EOSViscosityEvaluator.hh"
 #include "H2O_Density.hh"
+#include "H2O_DensityCoolProp.hh"
 #include "H2O_DensityFEHM.hh"
 #include "H2O_SaturatedVaporPressure.hh"
 #include "H2O_ThermalConductivity.hh"
 #include "H2O_Viscosity.hh"
+#include "H2O_ViscosityCoolProp.hh"
 #include "H2O_ViscosityFEHM.hh"
 #include "IdealGas_Density.hh"
 #include "IdealGas_Viscosity.hh"
@@ -52,6 +54,7 @@ Utils::RegisteredFactory<EOS_Density, IdealGas_Density> IdealGas_Density::reg_("
 Utils::RegisteredFactory<EOS_Density, VaporInGas_Density> VaporInGas_Density::reg_("vapor in gas");
 Utils::RegisteredFactory<EOS_Density, H2O_Density> H2O_Density::reg_("liquid water 0-30C");
 Utils::RegisteredFactory<EOS_Density, H2O_DensityFEHM> H2O_DensityFEHM::reg_("liquid water FEHM");
+Utils::RegisteredFactory<EOS_Density, H2O_DensityCoolProp> H2O_DensityCoolProp::reg_("liquid water CoolProp");
 Utils::RegisteredFactory<EOS_Density, DensityTabular> DensityTabular::reg_("lookup table");
 
 Utils::RegisteredFactory<EOS_SaturatedVaporPressure, H2O_SaturatedVaporPressure>
@@ -60,8 +63,8 @@ Utils::RegisteredFactory<EOS_SaturatedVaporPressure, H2O_SaturatedVaporPressure>
 Utils::RegisteredFactory<EOS_Viscosity, IdealGas_Viscosity> IdealGas_Viscosity::reg_("ideal gas");
 Utils::RegisteredFactory<EOS_Viscosity, H2O_Viscosity> H2O_Viscosity::reg_("liquid water 0-30C");
 Utils::RegisteredFactory<EOS_Viscosity, ViscosityConstant> ViscosityConstant::reg_("constant");
-Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityFEHM> H2O_ViscosityFEHM::reg_(
-  "liquid water FEHM");
+Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityFEHM> H2O_ViscosityFEHM::reg_("liquid water FEHM");
+Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityCoolProp> H2O_ViscosityCoolProp::reg_("liquid water CoolProp");
 Utils::RegisteredFactory<EOS_Viscosity, ViscosityTabular> ViscosityTabular::reg_("lookup table");
 
 Utils::RegisteredFactory<EOS_Diffusion, VaporInGas_Diffusion> VaporInGas_Diffusion::reg_(

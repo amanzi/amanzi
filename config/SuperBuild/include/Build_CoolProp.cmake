@@ -44,6 +44,7 @@ if(CMAKE_MAJOR_VERSION VERSION_EQUAL "4")
   list(APPEND COOLPROP_CMAKE_ARGS "-DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.5")
 endif()
 
+set(COOLPROP_INSTALL_PREFIX ${TPL_INSTALL_PREFIX}/coolprop)
 
 # --- Add external project build and tie to the COOLPROP build target
 ExternalProject_Add(${COOLPROP_BUILD_TARGET}
@@ -51,7 +52,7 @@ ExternalProject_Add(${COOLPROP_BUILD_TARGET}
                     TMP_DIR   ${COOLPROP_tmp_dir}                 # Temporary files directory
                     STAMP_DIR ${COOLPROP_stamp_dir}               # Timestamp and log directory
                     # -- Download and GIT definition
-                    GIT_REPOSITORY ${COOLPROP_GIT_REPOSITORY_TEMP}              
+                    GIT_REPOSITORY ${COOLPROP_GIT_REPOSITORY}              
                     GIT_TAG        ${COOLPROP_GIT_TAG}   
                     # -- Patch
                     PATCH_COMMAND ${COOLPROP_PATCH_COMMAND}       # Mods to source
@@ -67,12 +68,11 @@ ExternalProject_Add(${COOLPROP_BUILD_TARGET}
                     BINARY_DIR        ${COOLPROP_build_dir}       # Build directory 
                     BUILD_COMMAND     $(MAKE)
                     # -- Install
-                    INSTALL_DIR      ${TPL_INSTALL_PREFIX}/coolprop  # Install directory
+                    INSTALL_DIR      ${COOLPROP_INSTALL_PREFIX}   # Install directory
                     INSTALL_COMMAND  $(MAKE) install
                     # -- Output control
                     # -- Output control
                     ${COOLPROP_logging_args})
 
 include(BuildLibraryName)
-build_library_name(coolprop COOLPROP_C_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-set(COOLPROP_INSTALL_PREFIX ${TPL_INSTALL_PREFIX}/coolprop)
+build_library_name(coolprop COOLPROP_C_LIB APPEND_PATH ${COOLPROP_INSTALL_PREFIX}/lib)
