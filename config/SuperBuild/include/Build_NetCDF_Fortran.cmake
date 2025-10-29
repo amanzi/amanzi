@@ -17,7 +17,13 @@ endif()
 amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   PREFIX NetCDF_Fortran
   VERSION ${NetCDF_Fortran_VERSION_MAJOR} ${NetCDF_Fortran_VERSION_MINOR} ${NetCDF_Fortran_VERSION_PATCH})
-  
+
+# --- Patch the original source  
+patch_tpl(NetCDF_Fortran
+          ${NetCDF_Fortran_prefix_dir}
+          ${NetCDF_Fortran_source_dir}
+          ${NetCDF_Fortran_stamp_dir}
+          NetCDF_Fortran_patch_file)
 
 # --- Define the configure command
 set(NetCDF_Fortran_CMAKE_CACHE_ARGS "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}")

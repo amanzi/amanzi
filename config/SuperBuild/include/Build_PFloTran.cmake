@@ -14,7 +14,14 @@ define_external_project_args(PFLOTRAN
 amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   PREFIX PFLOTRAN
   VERSION ${PFLOTRAN_VERSION_MAJOR} ${PFLOTRAN_VERSION_MINOR} ${PFLOTRAN_VERSION_PATCH})
-  
+
+# --- Patch the original source  
+patch_tpl(PFLOTRAN
+          ${PFLOTRAN_prefix_dir}
+          ${PFLOTRAN_source_dir}
+          ${PFLOTRAN_stamp_dir}
+          PFLOTRAN_patch_file)  
+
 # --- Define the CMake configure parameters
 # Note:
 #      CMAKE_CACHE_ARGS requires -DVAR:<TYPE>=VALUE syntax
