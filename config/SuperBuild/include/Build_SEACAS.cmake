@@ -75,24 +75,23 @@ else()
 endif()
 
 #
-# --- Define the SEACAS patch step - mainly for nem_slice to be able
-# --- to handle columns
+# --- Define the SEACAS patch step
 #
-set(ENABLE_SEACAS_Patch OFF)
-if (ENABLE_SEACAS_Patch)
-  set(SEACAS_patch_file
-    seacas-nemslice.patch
-    seacas-exoduspy.patch
-    )
-  configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/seacas-patch-step.sh.in
-                 ${SEACAS_prefix_dir}/seacas-patch-step.sh
-                 @ONLY)
-  set(SEACAS_PATCH_COMMAND bash ${SEACAS_prefix_dir}/seacas-patch-step.sh)
-  message(STATUS "Applying SEACAS patches")
-else (ENABLE_SEACAS_Patch)
-  set(SEACAS_PATCH_COMMAND)
-  message(STATUS "Patch NOT APPLIED for SEACAS")
-endif (ENABLE_SEACAS_Patch)
+
+# patches exodus3.py with element sets, needed for columnar meshes and subdomains
+set(SEACAS_patch_file seacas-exoduspy.patch)
+
+# patches for nem_slice to be able handle columns
+set(ENABLE_SEACAS_NEMSLICE_Patch OFF)
+if (ENABLE_SEACAS_NEMSLICE_Patch)
+  list(APPEND SEACAS_patch_file seacas-nemslice.patch)
+endif()
+
+patch_tpl(SEACAS
+          ${SEACAS_prefix_dir}
+          ${SEACAS_source_dir}
+          ${SEACAS_stamp_dir}
+          SEACAS_patch_file)
 
 # --- Configure the package
 set(SEACAS_CMAKE_CACHE_ARGS

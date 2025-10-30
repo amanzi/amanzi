@@ -16,18 +16,13 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   VERSION ${SuperLUDist_VERSION_MAJOR} ${SuperLUDist_VERSION_MINOR} ${SuperLUDist_VERSION_PATCH})
   
 # --- Patch the original code
-set(SuperLUDist_patch_file superludist-stdio-conflict.patch superludist-outofsourcebuild.patch)
-set(SuperLUDist_sh_patch ${SuperLUDist_prefix_dir}/superludist-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/superludist-patch-step.sh.in
-               ${SuperLUDist_sh_patch}
-               @ONLY)
-# configure the CMake patch step
-set(SuperLUDist_cmake_patch ${SuperLUDist_prefix_dir}/superludist-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/superludist-patch-step.cmake.in
-               ${SuperLUDist_cmake_patch}
-               @ONLY)
-# set the patch command
-set(SuperLUDist_PATCH_COMMAND ${CMAKE_COMMAND} -P ${SuperLUDist_cmake_patch})
+set(SuperLUDist_patch_file superludist-stdio-conflict.patch)
+patch_tpl(SuperLUDist
+          ${SuperLUDist_prefix_dir}
+          ${SuperLUDist_source_dir}
+          ${SuperLUDist_stamp_dir}
+          SuperLUDist_patch_file)
+
 
 if(BUILD_SHARED_LIBS)
   set(SLU_BUILD_STATIC_LIBS FALSE)
