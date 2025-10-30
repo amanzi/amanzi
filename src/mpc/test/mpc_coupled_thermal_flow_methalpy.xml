@@ -254,7 +254,7 @@
       <ParameterList name="TP 0">
         <ParameterList name="PK tree">
           <ParameterList name="transient:flow and energy">
-            <Parameter name="PK type" type="string" value="thermal flow"/>
+            <Parameter name="PK type" type="string" value="flow and energy"/>
             <ParameterList name="transient:flow">
               <Parameter name="PK type" type="string" value="richards"/>
             </ParameterList>
@@ -284,7 +284,7 @@
   <ParameterList name="PKs">
 
     <ParameterList name="transient:flow and energy">
-      <Parameter isUsed="true" name="PK type" type="string" value="thermal flow"/>
+      <Parameter isUsed="true" name="PK type" type="string" value="flow and energy"/>
       <Parameter name="PKs order" type="Array(string)" value="{transient:flow, transient:energy}"/>
       <Parameter name="master PK index" type="int" value="0"/>
       <Parameter name="domain name" type="string" value="domain"/>

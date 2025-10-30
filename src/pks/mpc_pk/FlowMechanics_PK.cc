@@ -64,7 +64,7 @@ FlowMechanics_PK::Setup()
   saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid");
   water_storage_key_ = Keys::getKey(domain_, "water_storage");
 
-  thermal_flow_ = (Keys::getVarName(sub_pks_[0]->name()) == "thermal flow");
+  thermal_flow_ = (Keys::getVarName(sub_pks_[0]->name()) == "flow and energy");
 
   // mechanics
   auto mesh = S_->GetMesh(domain_);
