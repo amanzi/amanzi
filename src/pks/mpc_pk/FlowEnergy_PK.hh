@@ -120,7 +120,7 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
                                   Teuchos::RCP<TreeVector> Pu) override;
 
   // -- error norm for coupled system
-  std::string name() override { return "thermal flow"; }
+  std::string name() override { return "flow and energy"; }
 
  private:
   const Teuchos::RCP<Teuchos::ParameterList>& glist_;

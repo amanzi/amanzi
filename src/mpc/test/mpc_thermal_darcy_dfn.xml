@@ -64,7 +64,7 @@
       <ParameterList name="TP 0">
         <ParameterList name="PK tree">
           <ParameterList name="flow and energy">
-            <Parameter name="PK type" type="string" value="thermal flow"/>
+            <Parameter name="PK type" type="string" value="flow and energy"/>
             <ParameterList name="flow">
               <Parameter name="PK type" type="string" value="darcy"/>
             </ParameterList>
