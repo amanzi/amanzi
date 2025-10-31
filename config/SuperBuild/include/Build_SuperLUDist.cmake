@@ -16,7 +16,7 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   VERSION ${SuperLUDist_VERSION_MAJOR} ${SuperLUDist_VERSION_MINOR} ${SuperLUDist_VERSION_PATCH})
   
 # --- Patch the original code
-set(SuperLUDist_patch_file superludist-stdio-conflict.patch)
+set(SuperLUDist_patch_file superludist-stdio-conflict.patch superludist-fortran.patch)
 patch_tpl(SuperLUDist
           ${SuperLUDist_prefix_dir}
           ${SuperLUDist_source_dir}
