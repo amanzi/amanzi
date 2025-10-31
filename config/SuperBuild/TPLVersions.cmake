@@ -427,7 +427,7 @@ set(MOAB_VERSION ${MOAB_VERSION_MAJOR}.${MOAB_VERSION_MINOR}.${MOAB_VERSION_PATC
 set(MOAB_URL_STRING     "https://bitbucket.org/fathomteam/moab/get/")
 set(MOAB_ARCHIVE_FILE   ${MOAB_VERSION}.tar.gz)
 set(MOAB_SAVEAS_FILE    moab-${MOAB_VERSION}.tar.gz)
-set(MOAB_MD5_SUM        935d18f8edf7dc3df625d9426a2d59e1)
+set(MOAB_MD5_SUM        6d1352f554db4f95079c5829f0bc9aab)
 
 #
 # TPL: HYPRE
