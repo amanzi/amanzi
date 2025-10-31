@@ -151,7 +151,7 @@ set(petsc_mpi_compilers ${petsc_mpi_flags} ${petsc_compilers} ${petsc_compiler_f
 message(STATUS ">>> Build_PETSc -- MPI COMPILERS: ${petsc_mpi_compilers}")
 
 # --- Patch the source
-set(PETSc_patch_file petsc-cmake.patch petsc-duplicate-libmpi.patch)
+set(PETSc_patch_file petsc-cmake.patch petsc-duplicate-libmpi.patch petsc-hdf5-debug.patch)
 if (PYTHON_VERSION_STRING VERSION_GREATER_EQUAL "3.13")
   list(APPEND PETSc_patch_file petsc-python3.13.patch)
 endif()
