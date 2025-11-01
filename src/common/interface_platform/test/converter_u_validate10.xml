@@ -83,7 +83,7 @@
             <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.00100200000000000007"/>
+                <Parameter name="value" type="double" value="0.001002"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -95,10 +95,10 @@
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="regions" type="Array(string)" value="{All}"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.400000000000000022"/>
+                <Parameter name="value" type="double" value="0.4"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -114,7 +114,7 @@
       </ParameterList>
 
       <ParameterList name="const_fluid_viscosity">
-        <Parameter name="value" type="double" value="0.00100200000000000007"/>
+        <Parameter name="value" type="double" value="0.001002"/>
       </ParameterList>
 
       <ParameterList name="const_fluid_density">
@@ -126,7 +126,7 @@
       </ParameterList>
 
       <ParameterList name="atmospheric_pressure">
-        <Parameter name="value" type="double" value="101325.000000000000"/>
+        <Parameter name="value" type="double" value="101325.0"/>
       </ParameterList>
 
     </ParameterList>

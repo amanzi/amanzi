@@ -154,7 +154,7 @@
         <ParameterList name="function">
           <ParameterList name="RegionMiddle">
             <Parameter name="regions" type="Array(string)" value="{RegionMiddle}"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="0.4082"/>
@@ -163,7 +163,7 @@
           </ParameterList>
           <ParameterList name="RegionBottom">
             <Parameter name="regions" type="Array(string)" value="{RegionBottom}"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="0.2206"/>
@@ -172,7 +172,7 @@
           </ParameterList>
           <ParameterList name="RegionTop">
             <Parameter name="regions" type="Array(string)" value="{RegionTop}"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="0.234"/>
