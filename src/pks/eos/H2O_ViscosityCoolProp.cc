@@ -33,40 +33,62 @@ H2O_ViscosityCoolProp::H2O_ViscosityCoolProp(Teuchos::ParameterList& plist)
 double
 H2O_ViscosityCoolProp::Viscosity(double T, double p)
 {
-  state_->update(input_pairs::PT_INPUTS, p, T);
-  return state_->viscosity();
+  if (update(T, p)) return state_->viscosity();
+  return 0.0;
 };
 
 
 double
 H2O_ViscosityCoolProp::DViscosityDT(double T, double p)
 {
-  state_->update(input_pairs::PT_INPUTS, p, T);
-  double mu = state_->viscosity();
+  double mu(0.0);
+  if (update(T, p)) mu = state_->viscosity();
 
   double dT = 0.01;
-  state_->update(PT_INPUTS, p, T + dT);
-  return (state_->viscosity() - mu) / dT;
-
+  if (update(T + dT, p)) return (state_->viscosity() - mu) / dT;
+  return 0.0;
 };
 
 
 double
 H2O_ViscosityCoolProp::DViscosityDp(double T, double p)
 {
-  state_->update(input_pairs::PT_INPUTS, p, T);
-  double mu = state_->viscosity();
+  double mu(0.0);
+  if (update(T, p)) mu = state_->viscosity();
 
   double dp = 1000.0;
-  state_->update(PT_INPUTS, p + dp, T);
-  return (state_->viscosity() - mu) / dp;
+  if (update(T, p + dp)) return (state_->viscosity() - mu) / dp;
+  return 0.0;
 };
 
 
 CoolProp::phases
 H2O_ViscosityCoolProp::get_phase(double T, double p) {
-  state_->update(input_pairs::PT_INPUTS, p, T);
-  return state_->phase();
+  if (update(T, p)) return state_->phase();
+  return CoolProp::phases::iphase_liquid;
+}
+
+
+bool
+H2O_ViscosityCoolProp::update(double T, double p)
+{
+  try {
+    state_->update(input_pairs::PT_INPUTS, p, T);  
+    return true;
+  } 
+  catch (const CoolProp::ValueError &e) {
+    ierr_ = 1;
+    std::stringstream ss;
+    ss << e.what();
+    error_msg_ = ss.str();
+  }
+  catch (const std::exception &e) {
+    ierr_ = 1;
+    std::stringstream ss;
+    ss << e.what();
+    error_msg_ = ss.str();
+  }
+  return false;
 }
 
 } // namespace AmanziEOS

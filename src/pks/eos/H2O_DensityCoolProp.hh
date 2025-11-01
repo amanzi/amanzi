@@ -40,6 +40,7 @@ class H2O_DensityCoolProp : public EOS_Density {
   virtual double DMolarDensityDp(double T, double p) override { return DDensityDp(T, p) / M_; }
 
   CoolProp::phases get_phase(double T, double p);
+  bool update(double T, double p);
 
  private:
   CoolProp::AbstractState* state_;

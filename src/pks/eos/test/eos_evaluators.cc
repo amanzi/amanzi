@@ -27,6 +27,7 @@
 #include "H2O_Density.hh"
 #include "H2O_DensityCoolProp.hh"
 #include "H2O_DensityFEHM.hh"
+#include "H2O_ViscosityCoolProp.hh"
 #include "H2O_ViscosityFEHM.hh"
 #include "LookupTable_Amanzi.hh"
 #include "LookupTable_FEHM.hh"
@@ -288,7 +289,7 @@ TEST(Exceptions)
 {
   using namespace Amanzi::AmanziEOS;
 
-  std::vector<std::string> names = { "liquid water 0-30C", "liquid water FEHM", "lookup table" };
+  std::vector<std::string> names = { "liquid water 0-30C", "liquid water FEHM", "liquid water CoolProp", "lookup table" };
 
   std::cout << std::endl;
   for (auto& name : names) {
@@ -355,22 +356,30 @@ TEST(SUPERCRITICAL)
   using namespace Amanzi::AmanziEOS;
 
   Teuchos::ParameterList plist;
-  plist.set<double>("molar mass", 18.0153e-03).set<double>("density", 997.0);
-  H2O_DensityCoolProp eos_cool(plist);
+  plist.set<double>("molar mass", 18.0153e-03)
+       .set<double>("density", 997.0)
+       .set<std::string>("table name", "test/h2o_nist_mod.eos")
+       .set<std::string>("field name", "viscosity")
+       .set<std::string>("format", "FEHM");
+
+  H2O_ViscosityCoolProp eos_cool(plist);
+  H2O_ViscosityFEHM eos_fehm(plist);
+  LookupTable_FEHM eos_table(plist);
 
   int ierr;
-  plist.set<std::string>("table name", "test/h2o_nist_mod.eos")
-    .set<std::string>("field name", "density")
-    .set<std::string>("format", "FEHM");
-
-  LookupTable_FEHM eos(plist);
-
-  double pc(22.1e+6), Tc(647.0), dp(1.0e+5), dT(2.0), p, T;
+  double pc(22.1e+6), Tc(647.0), dp(5.0e+4), dT(1.0), p, T;
+  pc = 11.0e+6;
+  Tc = 500.0;
   for (int i = -50; i < 50; ++i) {
     for (int j = -50; j < 50; ++j) {
        p = pc + i * dp;
        T = Tc + j * dT;
-       // std::cout << p << " " << T << " " << eos_cool.Density(T, p) << " " << eos.Function(T, p, &ierr) << std::endl;
+       /*
+       std::cout << p << " " << T << " " << eos_cool.Viscosity(T, p) 
+                                  << " " << eos_fehm.Viscosity(T, p)
+                                  << " " << eos_table.Function(T, p, &ierr) 
+                                  << " " << eos_cool.get_phase(T, p) << std::endl;
+       */
     }
   }
 }

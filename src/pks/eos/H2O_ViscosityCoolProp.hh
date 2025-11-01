@@ -36,6 +36,7 @@ class H2O_ViscosityCoolProp : public EOS_Viscosity {
   virtual double DViscosityDp(double T, double p) override;
 
   CoolProp::phases get_phase(double T, double p);
+  bool update(double T, double p);
 
  private:
   CoolProp::AbstractState* state_;
