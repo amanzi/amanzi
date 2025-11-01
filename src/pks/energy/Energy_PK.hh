@@ -132,10 +132,7 @@ class Energy_PK : public PK_PhysicalBDF {
   //    modified, false if not
   bool ModifyPredictor(double dt,
                        Teuchos::RCP<const TreeVector> u0,
-                       Teuchos::RCP<TreeVector> u) override
-  {
-    return false;
-  }
+                       Teuchos::RCP<TreeVector> u) override;
 
   // -- possibly modifies the correction, after the nonlinear solver (NKA)
   //    has computed it, will return true if it did change the correction,

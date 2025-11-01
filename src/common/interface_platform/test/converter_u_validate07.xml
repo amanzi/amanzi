@@ -75,7 +75,7 @@
         <ParameterList name="function">
           <ParameterList name="TopRegion">
             <Parameter name="regions" type="Array(string)" value="{TopRegion}"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="2.206e-01"/>
@@ -84,7 +84,7 @@
           </ParameterList>
           <ParameterList name="BottomRegion">
             <Parameter name="regions" type="Array(string)" value="{BottomRegion}"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="0.3"/>
@@ -169,7 +169,7 @@
         <ParameterList name="function">
           <ParameterList name="fracture">
             <Parameter name="regions" type="Array(string)" value="{fracture}"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="4.000e-03"/>

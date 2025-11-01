@@ -543,6 +543,25 @@ Energy_PK::ModifyCorrection(double dt,
 
 
 /* ******************************************************************
+* Modify preconditior as needed.
+****************************************************************** */
+bool
+Energy_PK::ModifyPredictor(double dt,
+                           Teuchos::RCP<const TreeVector> u0,
+                           Teuchos::RCP<TreeVector> u)
+{
+  Teuchos::RCP<TreeVector> du = Teuchos::rcp(new TreeVector(*u));
+  du->Update(-1.0, *u0, 1.0);
+
+  ModifyCorrection(dt, Teuchos::null, u0, du);
+
+  *u = *u0;
+  u->Update(1.0, *du, 1.0);
+  return true;
+}
+
+
+/* ******************************************************************
 * Return a pointer to a local operator
 ****************************************************************** */
 Teuchos::RCP<Operators::Operator>
