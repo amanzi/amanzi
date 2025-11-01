@@ -14,17 +14,12 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 # --- Patch the original code
 set(SuperLU_patch_file superlu-osx-shared.patch
                        superlu-stdio-conflict.patch)
-set(SuperLU_sh_patch ${SuperLU_prefix_dir}/superlu-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/superlu-patch-step.sh.in
-               ${SuperLU_sh_patch}
-               @ONLY)
-# configure the CMake patch step
-set(SuperLU_cmake_patch ${SuperLU_prefix_dir}/superlu-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/superlu-patch-step.cmake.in
-               ${SuperLU_cmake_patch}
-               @ONLY)
-# set the patch command
-set(SuperLU_PATCH_COMMAND ${CMAKE_COMMAND} -P ${SuperLU_cmake_patch})
+patch_tpl(SuperLU
+          ${SuperLU_prefix_dir}
+          ${SuperLU_source_dir}
+          ${SuperLU_stamp_dir}
+          SuperLU_patch_file)
+
 
 # --- Define the arguments passed to CMake.
 set(SuperLU_CMAKE_ARGS

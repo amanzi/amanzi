@@ -16,21 +16,11 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 # --- Patch the original code
 set(NetCDF_patch_file netcdf-cmake.patch
                       netcdf-cmake-rpath.patch)
-#                     netcdf-cmake-dl.patch)
-#                     netcdf-cmake-namespace.patch)
-set(NetCDF_sh_patch ${NetCDF_prefix_dir}/netcdf-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/netcdf-patch-step.sh.in
-               ${NetCDF_sh_patch}
-               @ONLY)
-
-# configure the CMake patch step
-set(NetCDF_cmake_patch ${NetCDF_prefix_dir}/netcdf-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/netcdf-patch-step.cmake.in
-               ${NetCDF_cmake_patch}
-               @ONLY)
-
-# configure the CMake command file
-set(NetCDF_PATCH_COMMAND ${CMAKE_COMMAND} -P ${NetCDF_cmake_patch})     
+patch_tpl(NetCDF
+          ${NetCDF_prefix_dir}
+          ${NetCDF_source_dir}
+          ${NetCDF_stamp_dir}
+          NetCDF_patch_file)
 
 # --- Define the configure command
 set(NetCDF_CMAKE_CACHE_ARGS "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}")

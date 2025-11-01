@@ -67,18 +67,11 @@ set(CCSE_patch_file ccse-1.3.4-dependency.patch ccse-1.3.4-tools-compilers.patch
                     ccse-16.10-f90.patch
                     ccse-mpi4.patch
                     ccse-arm64.patch)
-# --- Configure the bash patch script
-set(CCSE_sh_patch ${CCSE_prefix_dir}/ccse-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ccse-patch-step.sh.in
-               ${CCSE_sh_patch}
-               @ONLY)
-# --- Configure the CMake patch step
-set(CCSE_cmake_patch ${CCSE_prefix_dir}/ccse-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ccse-patch-step.cmake.in
-               ${CCSE_cmake_patch}
-               @ONLY)
-# --- Set the patch command
-set(CCSE_PATCH_COMMAND ${CMAKE_COMMAND} -P ${CCSE_cmake_patch})     
+patch_tpl(CCSE
+          ${CCSE_prefix_dir}
+          ${CCSE_source_dir}
+          ${CCSE_stamp_dir}
+          CCSE_patch_file)
 
   
 # --- Add external project build and tie to the CCSE build target

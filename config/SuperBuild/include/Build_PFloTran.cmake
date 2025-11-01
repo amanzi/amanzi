@@ -14,21 +14,13 @@ define_external_project_args(PFLOTRAN
 amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   PREFIX PFLOTRAN
   VERSION ${PFLOTRAN_VERSION_MAJOR} ${PFLOTRAN_VERSION_MINOR} ${PFLOTRAN_VERSION_PATCH})
-  
-# --- Patch the original code
-# set(PFLOTRAN_patch_file pflotran-program.patch)
-set(PFLOTRAN_patch_file )
-set(PFLOTRAN_sh_patch ${PFLOTRAN_prefix_dir}/pflotran-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/pflotran-patch-step.sh.in
-               ${PFLOTRAN_sh_patch}
-               @ONLY)
-# configure the CMake patch step
-set(PFLOTRAN_cmake_patch ${PFLOTRAN_prefix_dir}/pflotran-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/pflotran-patch-step.cmake.in
-               ${PFLOTRAN_cmake_patch}
-               @ONLY)
-# set the patch command
-set(PFLOTRAN_PATCH_COMMAND ${CMAKE_COMMAND} -P ${PFLOTRAN_cmake_patch})
+
+# --- Patch the original source  
+patch_tpl(PFLOTRAN
+          ${PFLOTRAN_prefix_dir}
+          ${PFLOTRAN_source_dir}
+          ${PFLOTRAN_stamp_dir}
+          PFLOTRAN_patch_file)  
 
 # --- Define the CMake configure parameters
 # Note:

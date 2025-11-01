@@ -18,20 +18,11 @@ set(ParMetis_METIS_DIR ${METIS_source_dir})
 
 # --- Set the name of the patch
 set(ParMetis_patch_file parmetis-realtype.patch)
-
-# --- Configure the bash patch script
-set(ParMetis_sh_patch ${ParMetis_prefix_dir}/parmetis-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/parmetis-patch-step.sh.in
-               ${ParMetis_sh_patch}
-               @ONLY)
-# --- Configure the CMake patch step
-set(ParMetis_cmake_patch ${ParMetis_prefix_dir}/parmetis-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/parmetis-patch-step.cmake.in
-               ${ParMetis_cmake_patch}
-               @ONLY)
-
-# --- Set the patch command
-set(ParMetis_PATCH_COMMAND ${CMAKE_COMMAND} -P ${ParMetis_cmake_patch})     
+patch_tpl(ParMetis
+          ${ParMetis_prefix_dir}
+          ${ParMetis_source_dir}
+          ${ParMetis_stamp_dir}
+          ParMetis_patch_file)
 
 # --- Define the CMake configure parameters
 # Note:

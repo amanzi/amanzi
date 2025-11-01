@@ -62,23 +62,13 @@ else()
 endif()
 
 # --- Set the name of the patch 
-#set(Silo_patch_file silo-4.10.2-remove-mpiposix.patch
-#                    silo-4.10.2-debug-builds.patch
-#                    silo-4.10.2-static-tools.patch
-#                    silo-4.10.2-nouppercase.patch)
 set(Silo_patch_file silo-4.11.1-h5epr-semi-colon.patch)
+patch_tpl(Silo
+          ${Silo_prefix_dir}
+          ${Silo_source_dir}
+          ${Silo_stamp_dir}
+          Silo_patch_file)
 
-set(Silo_sh_patch ${Silo_prefix_dir}/silo-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/silo-patch-step.sh.in
-               ${Silo_sh_patch}
-               @ONLY)
-# --- Configure the CMake patch step
-set(Silo_cmake_patch ${Silo_prefix_dir}/silo-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/silo-patch-step.cmake.in
-               ${Silo_cmake_patch}
-               @ONLY)
-# --- Set the patch command
-set(Silo_PATCH_COMMAND ${CMAKE_COMMAND} -P ${Silo_cmake_patch})
 
 # --- Add external project build 
 ExternalProject_Add(${Silo_BUILD_TARGET}

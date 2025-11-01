@@ -15,19 +15,11 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 
 # --- Patch the original code
 set(ASCEMIO_patch_file ascemio-2.4-all.patch)
-set(ASCEMIO_sh_patch ${ASCEMIO_prefix_dir}/ascemio-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ascemio-patch-step.sh.in
-              ${ASCEMIO_sh_patch}
-              @ONLY)
-
-# configure the CMake patch step
-set(ASCEMIO_cmake_patch ${ASCEMIO_prefix_dir}/ascemio-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ascemio-patch-step.cmake.in
-              ${ASCEMIO_cmake_patch}
-              @ONLY)
-
-# set the patch command
-set(ASCEMIO_PATCH_COMMAND ${CMAKE_COMMAND} -P ${ASCEMIO_cmake_patch})
+patch_tpl(ASCEMIO
+          ${ASCEMIO_prefix_dir}
+          ${ASCEMIO_source_dir}
+          ${ASCEMIO_stamp_dir}
+          ASCEMIO_patch_file)
 
 # --- Define the arguments passed to CMake.
 set(ASCEMIO_CMAKE_ARGS

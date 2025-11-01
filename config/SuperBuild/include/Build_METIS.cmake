@@ -18,19 +18,11 @@ set(METIS_GKLIB_DIR ${METIS_source_dir}/GKlib)
 
 # --- Set the name of the patch
 set(METIS_patch_file metis-realtype.patch)
-
-# --- Configure the bash patch script
-set(METIS_sh_patch ${METIS_prefix_dir}/metis-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/metis-patch-step.sh.in
-               ${METIS_sh_patch}
-               @ONLY)
-# --- Configure the CMake patch step
-set(METIS_cmake_patch ${METIS_prefix_dir}/metis-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/metis-patch-step.cmake.in
-               ${METIS_cmake_patch}
-               @ONLY)
-# --- Set the patch command
-set(METIS_PATCH_COMMAND ${CMAKE_COMMAND} -P ${METIS_cmake_patch})     
+patch_tpl(METIS
+          ${METIS_prefix_dir}
+          ${METIS_source_dir}
+          ${METIS_stamp_dir}
+          METIS_patch_file)
 
 # --- Define the CMake configure parameters
 # Note:

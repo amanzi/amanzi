@@ -83,7 +83,7 @@ index c9c476822c5f26e2eb5543ae91d8635377ae9c7b..a843b94cdcc3117ea5d378e704bb11da
  import sys
  import logging
  sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
-@@ -36,6 +35,16 @@ def getlangsplit(name):
+@@ -36,7 +35,17 @@ def getlangsplit(name):
  def stripsplit(line):
    return line[len('#requires'):].replace("'","").split()
  
@@ -100,15 +100,4 @@ index c9c476822c5f26e2eb5543ae91d8635377ae9c7b..a843b94cdcc3117ea5d378e704bb11da
  PetscPKGS = 'sys vec mat dm ksp snes ts tao'.split()
  # the key is actually the language suffix, it won't work for suffixes such as 'kokkos.cxx' so use an _ and replace the _ as needed with .
  LANGS = dict(kokkos_cxx='KOKKOS', hip_cpp='HIP', sycl_cxx='SYCL', raja_cxx='RAJA', c='C', cxx='CXX', cpp='CPP', cu='CU', F='F', F90='F90')
-diff --git a/doc/changes/dev.rst b/doc/changes/dev.rst
-index c1c338d6ae83b496bb9c237fd8ec6d0ee326cd8c..600dc567c398d6008fff4cb7d4a0e6dc8bfa371e 100644
---- a/doc/changes/dev.rst
-+++ b/doc/changes/dev.rst
-@@ -14,6 +14,7 @@ Changes: Development
- .. rubric:: Configure/Build:
- 
- - Add ``--with-openmp-kernels``
-+- Update to work with python-3.13
- 
- .. rubric:: Sys:
  

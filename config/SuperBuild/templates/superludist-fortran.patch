@@ -1,0 +1,41 @@
+diff -ruN superlu_dist-8.2.1-orig/FORTRAN/CMakeLists.txt superlu_dist-8.2.1/FORTRAN/CMakeLists.txt
+--- superlu_dist-8.2.1-orig/FORTRAN/CMakeLists.txt	2025-10-09 15:45:04
++++ superlu_dist-8.2.1/FORTRAN/CMakeLists.txt	2025-10-31 11:47:56
+@@ -114,10 +114,33 @@
+ endif ()  ## enable_example
+ 
+ # Format superlu_dist_config.fh from superlu_dist_config.h in C
++# check to see if we are using bsd or gnu sed.
++execute_process(
++  COMMAND "${SED_EXECUTABLE}" --version
++  OUTPUT_VARIABLE _sed_out
++  ERROR_VARIABLE  _sed_err
++  RESULT_VARIABLE _sed_rc
++  OUTPUT_STRIP_TRAILING_WHITESPACE
++  ERROR_STRIP_TRAILING_WHITESPACE
++)
++if(_sed_rc EQUAL 0 AND _sed_out MATCHES "GNU sed")
++  set(SED_IS_GNU TRUE)
++else()
++  set(SED_IS_GNU FALSE) # BSD, etc.
++endif()
++
++# MODIFY FOR BSD sed
++if(APPLE AND NOT SED_IS_GNU)
++  set(SED_INPLACE -i "")
++else()
++  set(SED_INPLACE -i) 
++endif()
++
+ add_custom_command(
+   OUTPUT superlu_dist_config.fh
+-  COMMAND sed;'/^\\//;d';<;superlu_dist_config.h;>;superlu_dist_config.fh
+-  COMMAND cp;superlu_dist_config.fh;${SuperLU_DIST_SOURCE_DIR}/FORTRAN/.
++  COMMAND ${CMAKE_COMMAND} -E copy superlu_dist_config.h superlu_dist_config.fh
++  COMMAND sed ${SED_INPLACE} -E '/^\\//d' superlu_dist_config.fh
++  COMMAND ${CMAKE_COMMAND} -E copy superlu_dist_config.fh ${SuperLU_DIST_SOURCE_DIR}/FORTRAN/
+   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/FORTRAN
+ )
+-add_custom_target(config_f DEPENDS superlu_dist_config.fh)
++add_custom_target(config_f ALL DEPENDS ${CMAKE_BINARY_DIR}/FORTRAN/superlu_dist_config.fh)
+\ No newline at end of file
