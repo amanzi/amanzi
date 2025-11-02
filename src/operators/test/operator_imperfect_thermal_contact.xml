@@ -74,6 +74,10 @@
             <ParameterList name="function-constant">
               <Parameter name="value" type="double" value="1.0"/>
             </ParameterList>
+            <!--ParameterList name="function-exprtk">
+              <Parameter name="number of arguments" type="int" value="3"/>
+              <Parameter name="formula" type="string" value="1.0 + 10 * y"/>
+            </ParameterList-->
           </ParameterList>
         </ParameterList>
       </ParameterList>

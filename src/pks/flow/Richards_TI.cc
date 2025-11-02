@@ -598,11 +598,8 @@ Richards_PK::ModifyCorrection(double dt,
 
       int ncomp = u->Data()->size(*comp, false);
       for (int i = 0; i < ncomp; ++i) {
-        double tmp0 = pc[0][i] * max_change;
-        if (dpc[0][i] < -tmp0) {
-          npre_clipped++;
-          dpc[0][i] = -tmp0;
-        }
+        double tmp = std::fabs(pc[0][i]) * max_change;
+        dpc[0][i] = std::clamp(dpc[0][i], -tmp, tmp);
       }
     }
   }
