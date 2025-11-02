@@ -64,7 +64,8 @@ ModifyMesh(Amanzi::AmanziMesh::Mesh& mesh,
 void
 TestImperfectContact(int d,
                      const std::string& filename1 = "",
-                     const std::string& filename2 = "")
+                     const std::string& filename2 = "",
+                     int ibc = 0)
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -86,8 +87,8 @@ TestImperfectContact(int d,
   auto gm = Teuchos::rcp(new GeometricModel(d, region_list, *comm));
 
   // create meshes
-  int n1x(100), n1y(4), n1z(6);
-  int n2x(100), n2y(5), n2z(6);
+  int n1x(10), n1y(4), n1z(6);
+  int n2x(10), n2y(5), n2z(6);
   auto mlist = Teuchos::rcp(new Teuchos::ParameterList(plist.sublist("mesh")));
   MeshFactory meshfactory(comm, gm, mlist);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
@@ -117,6 +118,8 @@ TestImperfectContact(int d,
 
   double k1(1.0), k2(1.0), L1(0.5), L2(0.5), R;
   R = 1.0 / op_list.sublist("interfaces").sublist("interface 1").sublist("contact conductance").sublist("function-constant").get<double>("value");
+  double q = 1.0 / (R + L1 / k1 + L2 / k2);
+  // double jump = R * q;
 
   WhetStone::Tensor K(d, 1);
   auto Kc1 = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
@@ -144,6 +147,10 @@ TestImperfectContact(int d,
       bc1_model[f] = OPERATOR_BC_DIRICHLET;
       bc1_value[f] = xf[0];
     }
+    else if (ibc == 1 && (fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6)) {
+      bc1_model[f] = OPERATOR_BC_DIRICHLET;
+      bc1_value[f] = (q / k1) * xf[0];
+    }
   }
 
   auto bc2 = Teuchos::rcp(new BCs(mesh2, Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
@@ -155,6 +162,10 @@ TestImperfectContact(int d,
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6) {
       bc2_model[f] = OPERATOR_BC_DIRICHLET;
       bc2_value[f] = xf[0];
+    } 
+    else if (ibc == 1 && (fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6)) {
+      bc2_model[f] = OPERATOR_BC_DIRICHLET;
+      bc2_value[f] = 1.0 + (q / k2) * (xf[0] - L1 - L2);
     }
   }
 
@@ -198,15 +209,14 @@ TestImperfectContact(int d,
   auto flux = Teuchos::rcp(new TreeVector(op->DomainMap()));
   pde->UpdateFlux(sol.ptr(), flux.ptr());
 
-  // error calculation
+  // error analysis
+  // -- norms
   auto& p1 = *sol->SubVector(0)->Data()->ViewComponent("cell");
   auto& p2 = *sol->SubVector(1)->Data()->ViewComponent("cell");
 
   double pnorm1(0.0), l2_err1(0.0), inf_err1(0.0), pexact, err;
   double pnorm2(0.0), l2_err2(0.0), inf_err2(0.0);
 
-  double q = 1.0 / (R + L1 / k1 + L2 / k2);
-  // double jump = R * q;
   for (int c = 0; c < ncells1_owned; ++c) {
     const auto& xc = mesh1->getCellCentroid(c);
     pexact = (q / k1) * xc[0];
@@ -256,6 +266,29 @@ TestImperfectContact(int d,
            ncells2_owned);
   }
 
+  // -- lemma 4.3
+  auto block1 = mesh1->getSetEntities("cut1", AmanziMesh::Entity_kind::FACE, Parallel_kind::OWNED);
+  auto block2 = mesh2->getSetEntities("cut1", AmanziMesh::Entity_kind::FACE, Parallel_kind::OWNED);
+
+  auto& flux1 = *flux->SubVector(0)->Data()->ViewComponent("face", true);
+  auto& flux2 = *flux->SubVector(1)->Data()->ViewComponent("face", true);
+
+  int dir;
+  double tot_flux1(0.0), tot_flux2(0.0);
+  for (int f : block1) {
+    int c = getFaceOnBoundaryInternalCell(*mesh1, f);
+    mesh1->getFaceNormal(f, c, &dir);
+    tot_flux1 += flux1[0][f] * dir;
+  }
+
+  for (int f : block2) {
+    int c = getFaceOnBoundaryInternalCell(*mesh2, f);
+    mesh2->getFaceNormal(f, c, &dir);
+    tot_flux2 += flux2[0][f] * dir;
+  }
+  printf("Total interface flux: %12.9f, err =%12.9f\n", tot_flux1, tot_flux1 + tot_flux2);
+  CHECK(std::fabs(tot_flux1 + tot_flux2) < 1e-11);
+
   // i/o
   Teuchos::ParameterList iolist;
   iolist.set<std::string>("file name base", "plot1");
@@ -279,5 +312,5 @@ TestImperfectContact(int d,
 TEST(OPERATOR_DIFFUSION_TWO_MESH_PROBLEM)
 {
   TestImperfectContact(2);
-  TestImperfectContact(2, "test/median7x8.exo", "test/poly8.exo");
+  TestImperfectContact(2, "test/median7x8.exo", "test/poly8.exo", 1);
 }
