@@ -43,18 +43,12 @@ build_whitespace_string(moab_ldflags
                         ${moab_shared_dir})
 
 # --- Patch the original code
-set(MOAB_patch_file moab-install.patch moab-MPI_LIBRARY.patch moab-testbigendian.patch moab-homebrew.patch)
-set(MOAB_sh_patch ${MOAB_prefix_dir}/moab-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/moab-patch-step.sh.in
-               ${MOAB_sh_patch}
-               @ONLY)
-# configure the CMake patch step
-set(MOAB_cmake_patch ${MOAB_prefix_dir}/moab-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/moab-patch-step.cmake.in
-               ${MOAB_cmake_patch}
-               @ONLY)
-# set the patch command
-set(MOAB_PATCH_COMMAND ${CMAKE_COMMAND} -P ${MOAB_cmake_patch})
+set(MOAB_patch_file moab-MPI_LIBRARY.patch moab-testbigendian.patch moab-homebrew.patch)
+patch_tpl(MOAB
+          ${MOAB_prefix_dir}
+          ${MOAB_source_dir}
+          ${MOAB_stamp_dir}
+          MOAB_patch_file)
 
 # --- Define the arguments passed to CMake.
 set(MOAB_CMAKE_CACHE_ARGS 

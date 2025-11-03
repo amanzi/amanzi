@@ -83,6 +83,7 @@ macro(DEFINE_EXTERNAL_PROJECT_ARGS prefix)
                           LOG_DOWNLOAD  1 
                           LOG_UPDATE    1 
                           LOG_CONFIGURE 1
+                          LOG_PATCH     1
                           LOG_BUILD     1
                           LOG_TEST      1
                           LOG_INSTALL   1)
