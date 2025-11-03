@@ -154,7 +154,6 @@ RecordSet::isInitialized(Tag& failed)
 {
   for (auto& r : records_) {
     if (!r.second->initialized()) {
-      ;
       failed = r.first;
       return false;
     }

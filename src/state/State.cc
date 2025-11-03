@@ -627,7 +627,6 @@ void
 State::Setup()
 {
   require_time(Tags::DEFAULT);
-  GetRecordSetW("time").initializeTags();
   require_time(Tags::CURRENT);
   GetRecordSetW("time").initializeTags();
 
@@ -790,8 +789,8 @@ State::InitializeEvaluators()
       }
 
       tag.second->Update(*this, "state");
+      GetRecordW(e.first, tag.first, GetRecord(e.first, tag.first).owner()).set_initialized();
     }
-    GetRecordSetW(e.first).initializeTags();
   }
 }
 
