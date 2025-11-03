@@ -43,7 +43,7 @@ build_whitespace_string(moab_ldflags
                         ${moab_shared_dir})
 
 # --- Patch the original code
-set(MOAB_patch_file moab-install.patch moab-MPI_LIBRARY.patch moab-testbigendian.patch moab-homebrew.patch)
+set(MOAB_patch_file moab-MPI_LIBRARY.patch moab-testbigendian.patch moab-homebrew.patch)
 patch_tpl(MOAB
           ${MOAB_prefix_dir}
           ${MOAB_source_dir}
