@@ -1,3 +1,4 @@
+
 Introduction
 ============
 
@@ -52,27 +53,58 @@ Release Schedule
 The current version of Amanzi is |version|
 
 Older Versions
-~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^
 
  * Amanzi 1.0
 
 Future Releases
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 
  * Coming soon: Prototype of Non-isothermal Multiphase flow with phase disappearence
  
 
+Guides
+=======
+
 User Guide
-===========
+^^^^^^^^^^
 
-The User Guide is best viewed on the web 
-`[html] <UserGuide>`_.
+   .. _user_guide:
 
+   The User Guide is best viewed on the `web <../../../user_guide/_build/html/index.html>`_.
+
+Developer Guide
+^^^^^^^^^^^^^^^
+
+   .. _developer_guide:
+
+   Download the  `Developer Guide <../../guides/developer_guide.pdf>`_
+
+Theory Guide
+^^^^^^^^^^^^
+
+   .. _theory_guide:
+
+   Download the  `Theory Guide <../../guides/theory.pdf>`_
+
+Input Guide
+^^^^^^^^^^^
+   .. _input_guide:
+
+   The Input Guide is best viewed on the `web <../../../input_spec/build/html/index.html>`_.
+
+   .. .. _input_guide_s:
+
+   .. Download the  `Structured Input Guide <../../guides/AmanziInputSpec-s.pdf>`_
+
+   .. .. _input_guide_u:
+
+   .. Download the  `Unstructured Input Guide <../../guides/AmanziInputSpec-u.pdf>`_
 
 Downloads
 ==========
 
-Source code releases are availble from the Amanzi Github
+Source code releases are available from the Amanzi Github
 `Releases <https://github.com/amanzi/amanzi/releases>`_.
 
 
@@ -101,5 +133,4 @@ open-source license.  Copyright is held jointly by the contributing
 laboratories (LANL,LBNL,ORNL,PNNL). Included in the Amanzi source code is
 the growing set of unit, integration, regression, and benchmark tests
 that are used by the development and application teams.
-
 

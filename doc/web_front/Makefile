@@ -49,6 +49,8 @@ help:
 	@echo "  linkcheck  to check all external links for integrity"
 	@echo "  doctest    to run all doctests embedded in the documentation (if enabled)"
 	@echo ""
+	@echo "This variables are passed to the collect.py script ... "
+	@python collect.py --help
 	@echo " Environment Check "
 	@echo " AMANZI_UG_DIR  = $(AMANZI_UG_DIR)"
 	@echo " AMANZI_PYTHON  = $(AMANZI_PYTHON)"
@@ -56,6 +58,11 @@ help:
 
 clean:
 	-rm -rf $(BUILDDIR)/*
+	cd ../developer_guide && $(MAKE) distclean
+	cd ../theory_guide && $(MAKE) distclean
+	cd ../input_spec && $(MAKE) clean
+	-rm -rf guides/*
+
 
 html-ssl-set:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
@@ -65,7 +72,14 @@ html-ssl-set:
 html-ssl:
 	make MATHJAX_SSL=1 html-ssl-set
 
-html:
+html:	
+	@echo "Setting up guide indexes, and running any tests for this build ..."
+	@echo "Building Documentation and Theory Guides."
+	export PYTHONPATH=$(NEW_PYTHONPATH);\
+	cd ../developer_guide && $(MAKE) first
+	cd ../theory_guide && $(MAKE) first
+	cd ../input_spec && $(MAKE) all
+	python collect.py --full-guide
 	make MATHJAX_SSL=0 html-ssl-set
 
 dirhtml:

@@ -11,7 +11,7 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os, subprocess
+import sys, os, subprocess, re
 
 assert sys.version_info.major >= 3, 'Python 3.x is required to build documentation'
 
@@ -20,6 +20,17 @@ assert sys.version_info.major >= 3, 'Python 3.x is required to build documentati
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #sys.path.insert(0, os.path.abspath('.'))
 
+# -- Project information -----------------------------------------------------
+
+project = u'Amanzi'
+copyright = u'2024, Contributing National Laboratories (LANL, LBNL, ORNL, PNNL)'
+author = 'Erica Hinrichs'
+
+# The short X.Y version
+version = 'dev'
+# The full version, including alpha/beta/rc tags
+release = 'dev'
+
 # -- General configuration -----------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -27,6 +38,12 @@ assert sys.version_info.major >= 3, 'Python 3.x is required to build documentati
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
+
+sys.path.append(os.path.abspath('.'))
+
+# 
+#  Extensions 
+#
 extensions = ['sphinx.ext.todo', 
               'sphinx.ext.mathjax', 
               'sphinx.ext.ifconfig',
@@ -46,6 +63,26 @@ if ( os.environ['MATHJAX_SSL'] == "1" ):
 #endif
 
 
+# Add any paths that contain custom static files (such as style sheets) here,
+# relative to this directory. They are copied after the builtin static files,
+# so a file named "default.css" will overwrite the builtin "default.css".
+html_static_path = ['_static']
+
+html_css_files = [
+  'default.css',
+  'fix_eq_position.css',
+]
+
+#
+# Collect extensions
+#
+#extensions = ext_sphinx+ext_matplotlib+ext_ipython+ext_amanzi
+
+#if ( os.environ.get('MATHJAX_SSL') == "1" ):
+ #   mathjax_path='https://software.lanl.gov/ascem/tpls/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'
+#endif
+
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
@@ -58,10 +95,6 @@ source_suffix = '.rst'
 # The master toctree document.
 master_doc = 'index'
 
-# General information about the project.
-project = u'Amanzi'
-copyright = u'2020, Contributing National Laboratories (LANL, LBNL, ORNL, PNNL)'
-
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
@@ -70,11 +103,16 @@ decode = lambda x : x.decode(sys.stdout.encoding) if isinstance(x,bytes) else x
 
 amanzi_branch=decode(subprocess.check_output('git symbolic-ref --short HEAD',shell=True).rstrip())
 amanzi_global_id=decode(subprocess.check_output('git rev-parse --short HEAD',shell=True).rstrip())
-amanzi_latest_tag=decode(subprocess.check_output('git tag -l \'amanzi-*\'', shell=True)).split()[-1].rstrip()
-amanzi_latest_tag_ver=amanzi_latest_tag.replace('amanzi-','')
+# Tags are different on release branch
+if ( re.search(r'amanzi-(\d+)\.(\d+)',amanzi_branch) ):
+    amanzi_latest_tag=decode(subprocess.check_output('git tag -l \'amanzi-*\' | grep -v dev', shell=True)).split()[-1].rstrip()
+    amanzi_latest_tag_ver=amanzi_latest_tag.replace('amanzi-',' ')
+else:
+    amanzi_latest_tag=decode(subprocess.check_output('git tag -l \'amanzi-*\'', shell=True)).split()[-1].rstrip()
+    amanzi_latest_tag_ver=amanzi_latest_tag.replace('amanzi-',' ')
 
 # The short X.Y version.
-version = amanzi_latest_tag
+version = amanzi_latest_tag_ver
 # The full version, including alpha/beta/rc tags.
 #release = '0.80-dev'
 #release = amanzi_latest_tag_ver+"\_"+amanzi_global_id
@@ -119,12 +157,38 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'sphinx_rtd_theme'
+html_theme = 'pydata_sphinx_theme'
+html_title = "Amanzi"
+html_context = {
+    "default_mode": "auto"
+}
+
+html_sidebars = {
+    "**" : ["version",
+            "version-switcher",
+            "sidebar-nav-bs.html",
+            "page-toc.html",
+            ]
+}
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#html_theme_options = {}
+
+html_theme_options = {
+    "logo": {
+    "image_light": "_static/Amanzi-color.png",
+    "image_dark": "_static/Amanzi-Dark.png",
+    },
+    "navbar_start": ["navbar-logo"],
+    'prev_next_buttons_location': 'both',
+    "secondary_sidebar_items": [],
+    "switcher": {
+        "json_url": "_static/versions.json",
+        "version_match": 'v1.5',
+    },
+#    "navbar_start" : ["navbar-logo", ],
+}
 
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []
@@ -138,7 +202,7 @@ html_theme = 'sphinx_rtd_theme'
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-html_logo = 'Amanzi-color.png'
+# html_logo = 'Amanzi-color.png'
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
@@ -148,7 +212,7 @@ html_logo = 'Amanzi-color.png'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+# html_static_path = ['_static']
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
@@ -160,7 +224,7 @@ html_static_path = ['_static']
 
 # Custom sidebar templates, maps document names to template names.
 #html_sidebars = {'**':['searchbox.html']}
-html_sidebars = {'**':[]}
+# html_sidebars = {'**':[]}
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.
@@ -202,20 +266,20 @@ htmlhelp_basename = 'Amanzidoc'
 
 latex_elements = {
 # The paper size ('letterpaper' or 'a4paper').
-#'papersize': 'letterpaper',
+'papersize': 'letterpaper',
 
 # The font size ('10pt', '11pt' or '12pt').
-#'pointsize': '10pt',
+'pointsize': '11pt',
 
 # Additional stuff for the LaTeX preamble.
-'preamble': '\\usepackage[version=3]{mhchem}',
+'preamble': '\\usepackage[version=3]{mhchem}\n\\usepackage{amssymb,grffile}\n',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'Amanzi.tex', u'Amanzi Documentation',
-   u'Amanzi Development Team (LANL, LBNL, PNNL)', 'manual'),
+  ('index', 'AmanziUserGuide.tex', u'Amanzi User Guide',
+   u'Amanzi Development Team (LANL, LBNL, ORNL, PNNL)', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of

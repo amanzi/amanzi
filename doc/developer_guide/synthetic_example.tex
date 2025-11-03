@@ -45,12 +45,12 @@ class PDE_SecondOrderPoisson: public PDE_HelperDiscretization {
   virtual
   void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
                       const Teuchos::Ptr<const CompositeVector>& p);
-		
+    
   // postprocessing: calculate flux u from potential p
   virtual
   void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
                   const Teuchos::Ptr<CompositeVector>& u);
-		
+    
   // accessors
   Teuchos::RCP<CompositeVectorSpace> GetCVS() { return cvs_; }
 
@@ -73,30 +73,30 @@ In what follows we will explain how to define the global operator, we note that 
 We will approximate, for a cell $P$, the bilinear form $a$ as
 %
 \begin{equation}
-	a_P(p,q):=\int_P\nabla p\cdot\nabla q \approx p^I\cdot M_P q^I
+  a_P(p,q):=\int_P\nabla p\cdot\nabla q \approx p^I\cdot M_P q^I
 \end{equation}
 %
 where the superscript $I$ refers to the vector of degrees of freedom of $p$ and $q$. The matrix $M$ is given by
 %
 \begin{equation}\label{eq:LocStiffnessMat}
-	M_P = R(R^TN)^{\dagger}R^T+\lambda (I-N(N^TN)^{-1}N^T),\quad\lambda = \frac{2}{\# nodes}\mbox{tr}\left( R(R^TN)^{\dagger}R^T\right),
+  M_P = R(R^TN)^{\dagger}R^T+\lambda (I-N(N^TN)^{-1}N^T),\quad\lambda = \frac{2}{\# nodes}\mbox{tr}\left( R(R^TN)^{\dagger}R^T\right),
 \end{equation}
 %
 for 
 %
 \begin{equation}\label{eq:NandR}
-	N = \begin{pmatrix}
-		1 & x_{v_1}-x_P & y_{v_1}-y_P\\ 
-		1 & x_{v_2}-x_P & y_{v_2}-y_P\\ 
-		1 & x_{v_3}-x_P & y_{v_3}-y_P\\ 
-		1 & x_{v_4}-x_P & y_{v_4}-y_P
-	\end{pmatrix}\quad
-	R = \frac{1}{2}\begin{pmatrix}
-		0 & |e_4| n_x^{(4)}+|e_1|n_x^{(1)} & |e_4| n_y^{(4)}+|e_1|n_y^{(1)}\\
-		0 & |e_1| n_x^{(1)}+|e_2|n_x^{(2)} & |e_1| n_y^{(1)}+|e_2|n_y^{(2)}\\
-		0 & |e_2| n_x^{(2)}+|e_3|n_x^{(3)} & |e_2| n_y^{(2)}+|e_3|n_y^{(3)}\\
-		0 & |e_3| n_x^{(3)}+|e_4|n_x^{(4)} & |e_3| n_y^{(3)}+|e_4|n_y^{(4)}
-	\end{pmatrix}
+  N = \begin{pmatrix}
+    1 & x_{v_1}-x_P & y_{v_1}-y_P\\ 
+    1 & x_{v_2}-x_P & y_{v_2}-y_P\\ 
+    1 & x_{v_3}-x_P & y_{v_3}-y_P\\ 
+    1 & x_{v_4}-x_P & y_{v_4}-y_P
+  \end{pmatrix}\quad
+  R = \frac{1}{2}\begin{pmatrix}
+    0 & |e_4| n_x^{(4)}+|e_1|n_x^{(1)} & |e_4| n_y^{(4)}+|e_1|n_y^{(1)}\\
+    0 & |e_1| n_x^{(1)}+|e_2|n_x^{(2)} & |e_1| n_y^{(1)}+|e_2|n_y^{(2)}\\
+    0 & |e_2| n_x^{(2)}+|e_3|n_x^{(3)} & |e_2| n_y^{(2)}+|e_3|n_y^{(3)}\\
+    0 & |e_3| n_x^{(3)}+|e_4|n_x^{(4)} & |e_3| n_y^{(3)}+|e_4|n_y^{(4)}
+  \end{pmatrix}
 \end{equation}
 %
 where $\left\{\left(x_{v_i},y_{v_i}\right):1\le i\le 4\right\}$ is the set of vertices of the rectangle $P$, $\left\{\left(n_x^{(i)},n_y^{(i)}\right):1\le i\le 4\right\}$ makes a set of outward normal vectors to the edges of $P$. 
