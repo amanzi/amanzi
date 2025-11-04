@@ -18,7 +18,8 @@ namespace Amanzi {
 * Two constructors.
 ****************************************************************** */
 EvaluatorMultiplicativeReciprocal::EvaluatorMultiplicativeReciprocal(Teuchos::ParameterList& plist)
-  : EvaluatorSecondaryMonotypeCV(plist), n_dofs_(-1)
+  : EvaluatorSecondaryMonotypeCV(plist),
+    n_dofs_(-1)
 {
   if (plist_.isParameter("evaluator dependencies")) {
     Errors::Message msg;
@@ -252,6 +253,8 @@ EvaluatorMultiplicativeReciprocal::EnsureCompatibility_ToDeps_(State& S)
           } else {
             AMANZI_ASSERT(false);
           }
+        } else if (n_dofs_ == 1) {
+          dep_fac.AddComponent(comp, loc, n_dofs_);
         }
       }
     }
