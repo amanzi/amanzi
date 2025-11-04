@@ -150,26 +150,17 @@ endif()
 set(petsc_mpi_compilers ${petsc_mpi_flags} ${petsc_compilers} ${petsc_compiler_flags})
 message(STATUS ">>> Build_PETSc -- MPI COMPILERS: ${petsc_mpi_compilers}")
 
-# --- Set the name of the patch
-# set(PETSc_patch_file petsc-cmake.patch petsc-duplicate-libmpi.patch petsc-hypre.patch)
-
-set(PETSc_patch_file petsc-cmake.patch petsc-duplicate-libmpi.patch)
+# --- Patch the source
+set(PETSc_patch_file petsc-cmake.patch petsc-duplicate-libmpi.patch petsc-hdf5-debug.patch)
 if (PYTHON_VERSION_STRING VERSION_GREATER_EQUAL "3.13")
   list(APPEND PETSc_patch_file petsc-python3.13.patch)
 endif()
 
-# --- Configure the bash patch script
-set(PETSc_sh_patch ${PETSc_prefix_dir}/petsc-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/petsc-patch-step.sh.in
-               ${PETSc_sh_patch}
-               @ONLY)
-# --- Configure the CMake patch step
-set(PETSc_cmake_patch ${PETSc_prefix_dir}/petsc-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/petsc-patch-step.cmake.in
-               ${PETSc_cmake_patch}
-               @ONLY)
-# --- Set the patch command
-set(PETSc_PATCH_COMMAND ${CMAKE_COMMAND} -P ${PETSc_cmake_patch})     
+patch_tpl(PETSc
+          ${PETSc_prefix_dir}
+          ${PETSc_source_dir}
+          ${PETSc_stamp_dir}
+          PETSc_patch_file)
 
 # --- Add external project build 
 ExternalProject_Add(${PETSc_BUILD_TARGET}

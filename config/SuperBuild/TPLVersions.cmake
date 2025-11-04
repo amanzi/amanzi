@@ -360,19 +360,6 @@ set(UnitTest_SAVEAS_FILE    ${UnitTest_ARCHIVE_FILE})
 set(UnitTest_MD5_SUM        29f958e355e516e7ab016b467974728d) 
 
 #
-# TPL: Boost
-#
-set(Boost_VERSION_MAJOR 1)
-set(Boost_VERSION_MINOR 78)
-set(Boost_VERSION_PATCH 0)
-set(Boost_VERSION        ${Boost_VERSION_MAJOR}.${Boost_VERSION_MINOR}.${Boost_VERSION_PATCH})
-set(Boost_VERSION_STRING ${Boost_VERSION_MAJOR}_${Boost_VERSION_MINOR}_${Boost_VERSION_PATCH})
-set(Boost_URL_STRING     "https://boostorg.jfrog.io/artifactory/main/release/${Boost_VERSION}/source/")
-set(Boost_ARCHIVE_FILE   boost_${Boost_VERSION_STRING}.tar.bz2)
-set(Boost_SAVEAS_FILE    ${Boost_ARCHIVE_FILE})
-set(Boost_MD5_SUM        db0112a3a37a3742326471d20f1a186a)
-
-#
 # TPL: HDF5
 #
 set(HDF5_VERSION_MAJOR 1)
@@ -396,7 +383,6 @@ set(NetCDF_URL_STRING     "https://github.com/Unidata/netcdf-c/archive/")
 set(NetCDF_ARCHIVE_FILE   v${NetCDF_VERSION}.tar.gz)
 set(NetCDF_SAVEAS_FILE    netcdf-${NetCDF_VERSION}.tar.gz)
 set(NetCDF_MD5_SUM        bc9eb96e1983bf90fb3a99cc358c5ac3)
-
 
 #
 # TPL: NetCDF Fortran
@@ -441,10 +427,10 @@ set(MOAB_VERSION_MAJOR  5)
 set(MOAB_VERSION_MINOR  3)
 set(MOAB_VERSION_PATCH  1)
 set(MOAB_VERSION ${MOAB_VERSION_MAJOR}.${MOAB_VERSION_MINOR}.${MOAB_VERSION_PATCH})
-set(MOAB_URL_STRING     https://ftp.mcs.anl.gov/pub/fathom)
-set(MOAB_ARCHIVE_FILE   moab-${MOAB_VERSION}.tar.gz)
-set(MOAB_SAVEAS_FILE    ${MOAB_ARCHIVE_FILE})
-set(MOAB_MD5_SUM        935d18f8edf7dc3df625d9426a2d59e1)
+set(MOAB_URL_STRING     "https://bitbucket.org/fathomteam/moab/get/")
+set(MOAB_ARCHIVE_FILE   ${MOAB_VERSION}.tar.gz)
+set(MOAB_SAVEAS_FILE    moab-${MOAB_VERSION}.tar.gz)
+set(MOAB_MD5_SUM        6d1352f554db4f95079c5829f0bc9aab)
 
 #
 # TPL: HYPRE

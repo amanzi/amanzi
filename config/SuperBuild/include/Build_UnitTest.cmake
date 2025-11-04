@@ -50,17 +50,12 @@ endif()
 
 # --- Patch the original code
 set(UnitTest_patch_file unittest-cmake.patch unittest-testrunner.patch)
-set(UnitTest_sh_patch ${UnitTest_prefix_dir}/unittest-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/unittest-patch-step.sh.in
-               ${UnitTest_sh_patch}
-               @ONLY)
-# configure the CMake patch step
-set(UnitTest_cmake_patch ${UnitTest_prefix_dir}/unittest-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/unittest-patch-step.cmake.in
-               ${UnitTest_cmake_patch}
-               @ONLY)
-# set the patch command
-set(UnitTest_PATCH_COMMAND ${CMAKE_COMMAND} -P ${UnitTest_cmake_patch})
+patch_tpl(UnitTest
+          ${UnitTest_prefix_dir}
+          ${UnitTest_source_dir}
+          ${UnitTest_stamp_dir}
+          UnitTest_patch_file)
+
 
 # --- Add external project build 
 set(Unittest_CMAKE_ARGS 

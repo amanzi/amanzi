@@ -1,0 +1,29 @@
+diff -ruN petsc-3.21.0-orig/config/BuildSystem/config/packages/hdf5.py petsc-3.21.0/config/BuildSystem/config/packages/hdf5.py
+--- petsc-3.21.0-orig/config/BuildSystem/config/packages/hdf5.py	2025-10-31 15:18:01
++++ petsc-3.21.0/config/BuildSystem/config/packages/hdf5.py	2025-10-31 16:02:51
+@@ -12,7 +12,10 @@
+ #   getpwuid from the test for ac_func in gethostname getpwuid getrusage lstat
+     self.functions        = ['H5T_init']
+     self.includes         = ['hdf5.h']
+-    self.liblist          = [['libhdf5_hl.a', 'libhdf5.a']]
++    self.liblist          = [['libhdf5_hl.a', 'libhdf5.a'],
++                             ['libhdf5_hl_debug.a', 'libhdf5_debug.a'],
++                             ['hdf5_hl', 'hdf5'],
++                             ['hdf5_hl_debug', 'hdf5_debug']]
+     self.hastests         = 1
+     self.precisions       = ['single','double']
+     self.installwithbatch = 0
+@@ -91,7 +94,12 @@
+       # PETSc does not need the Fortran interface, but some users will call the Fortran interface
+       # and expect our standard linking to be sufficient.  Thus we try to link the Fortran
+       # libraries, but fall back to linking only C.
+-      self.liblist = [['libhdf5hl_fortran.a','libhdf5_fortran.a'] + libs for libs in self.liblist] + self.liblist
++      self.liblist = (
++        [['libhdf5hl_fortran.a','libhdf5_fortran.a'] + libs for libs in self.liblist] +
++        [['libhdf5hl_fortran_debug.a','libhdf5_fortran_debug.a'] + libs for libs in self.liblist] + 
++        [['hdf5hl_fortran', 'hdf5_fortran'] + libs for libs in self.liblist] +
++        [['hdf5hl_fortran_debug', 'hdf5_fortran_debug'] + libs for libs in self.liblist] +
++        self.liblist)
+     config.package.GNUPackage.configureLibrary(self)
+ 
+     for i in ['ZLIB_H','SZLIB_H','PARALLEL']:
