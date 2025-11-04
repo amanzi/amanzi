@@ -1,0 +1,950 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" data-theme="auto">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>2D Dispersive Transport in a Uniform Flow Field (diagonal) &#8212; Amanzi</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "auto";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "auto";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/fix_eq_position.css?v=19b1522f" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/default.css?v=f6536f91" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../../../_static/documentation_options.js?v=ec80fa03"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'verification/transport/dispersion_45_point_2d/amanzi_dispersion_45_point_2d';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://raw.githubusercontent.com/amanzi/amanzi/gh-pages/versions.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '1.5.0';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="1D Dispersive Transport with Dual Porosity Model" href="../dual_porosity_1d/amanzi_dual_porosity_1d.html" />
+    <link rel="prev" title="2D Dispersive Transport in a Uniform Flow Field (aligned)" href="../dispersion_aligned_point_2d/amanzi_dispersion_aligned_point_2d.html" /> 
+ <script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    TeX: {
+        extensions: ["mhchem.js"]
+    }
+  });
+</script>
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="auto">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+
+
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../_static/Amanzi-color.png" class="logo__image only-light" alt="Amanzi - Home"/>
+    <img src="../../../_static/Amanzi-Dark.png" class="logo__image only-dark pst-js-only" alt="Amanzi - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../background/index.html">
+    Background
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../background/getting_started.html">
+    Getting Started with Amanzi
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../capabilities/index.html">
+    Amanzi Features and Capabilities
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../input/index.html">
+    Amanzi Input Description
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../install/index.html">
+    Building Amanzi
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../tutorial/index.html">
+    Tutorial
+  </a>
+</li>
+
+
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="../../index.html">
+    Verification Testing
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../benchmarking/index.html">
+    Benchmark Testing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../background/index.html">
+    Background
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../background/getting_started.html">
+    Getting Started with Amanzi
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../capabilities/index.html">
+    Amanzi Features and Capabilities
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../input/index.html">
+    Amanzi Input Description
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../install/index.html">
+    Building Amanzi
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorial/index.html">
+    Tutorial
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../../index.html">
+    Verification Testing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../benchmarking/index.html">
+    Benchmark Testing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item"><!-- This will display the version of the docs -->
+Version  1.6.0</div>
+        <div class="sidebar-primary-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../confined_flow/index.html">Confined Flow Tests</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../confined_flow/linear_head_head_1d/amanzi_linear_head_head_1d.html">Steady-State One-Dimensional Flow with Head Boundary Conditions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../confined_flow/linear_flux_head_1d/amanzi_linear_flux_head_1d.html">Steady-State One-Dimensional Flow with Flux and Head Boundary Conditions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../confined_flow/linear_materials_serial_1d/amanzi_linear_materials_serial_1d.html">Steady-State One-Dimensional Flow: Materials in Serial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../confined_flow/linear_materials_parallel_1d/amanzi_linear_materials_parallel_1d.html">Steady-State One-Dimensional Flow: Materials in Parallel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../confined_flow/theis_isotropic_1d/amanzi_theis_isotropic_1d.html">Transient One-Dimensional Confined Flow to a Pumping Well (Theis)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../confined_flow/butler_pod_2d/amanzi_butler_pod_2d.html">Transient Flow in a 2D Confined Aquifer with a Disc Embedded in A Matrix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../confined_flow/butler_strip_2d/amanzi_butler_strip_2d.html">Transient Flow in a 2D Confined Aquifer with a Linear Strip</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../confined_flow/hantush_anisotropic_2d/amanzi_hantush_anisotropic_2d.html">Transient Flow to a Pumping Well in an Anisotropic Aquifer (Hantush)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../confined_flow/boundedDomain_2d/amanzi_boundedDomain_2d.html">Transient Drawdown due to Pumping Wells in a Bounded Domain</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../unconfined_flow/index.html">Unconfined Flow Tests</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../unconfined_flow/unconfined_no_recharge_1d/amanzi_unconfined_no_recharge_1d.html">Steady-State Flow in an Unconfined Aquifer: Head, and Flux Boundary Conditions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../unconfined_flow/unconfined_seepage_1d/amanzi_unconfined_seepage_1d.html">Steady-State Unconfined Flow with a Seepage Boundary Condition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../unconfined_flow/unconfined_layered_2d/amanzi_unconfined_layered_2d.html">Steady-State Flow in an Unconfined Multi-Aquifer System</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../infiltration/index.html">Infiltration Flow Tests</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../infiltration/infiltration_1d/amanzi_infiltration_1d.html">Infiltration 1D</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="../index.html">Transport of Solutes: Advection, Dispersion and Diffusion</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../dispersion_aligned_point_2d/amanzi_dispersion_aligned_point_2d.html">2D Dispersive Transport in a Uniform Flow Field (aligned)</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">2D Dispersive Transport in a Uniform Flow Field (diagonal)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dual_porosity_1d/amanzi_dual_porosity_1d.html">1D Dispersive Transport with Dual Porosity Model</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../mechanics/index.html">Mechanics</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../mechanics/consolidation_1d/amanzi_consolidation_1d.html">Soil Consolidation</a></li>
+</ul>
+</details></li>
+</ul>
+</div>
+</nav></div>
+        <div class="sidebar-primary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#capabilities-tested">Capabilities Tested</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#background">Background</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#model">Model</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#problem-specification">Problem Specification</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#schematic">Schematic</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mesh">Mesh</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#variables">Variables</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#results-and-comparison">Results and Comparison</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#references">References</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#about">About</a></li>
+</ul>
+  </nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Verification Testing</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Transport of Solutes: Advection, Dispersion and Diffusion</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">2D Dispersive Transport in a Uniform Flow Field (diagonal)</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="d-dispersive-transport-in-a-uniform-flow-field-diagonal">
+<span id="amanzi-dispersion-45-point-2d"></span><h1>2D Dispersive Transport in a Uniform Flow Field (diagonal)<a class="headerlink" href="#d-dispersive-transport-in-a-uniform-flow-field-diagonal" title="Link to this heading">#</a></h1>
+<section id="capabilities-tested">
+<h2>Capabilities Tested<a class="headerlink" href="#capabilities-tested" title="Link to this heading">#</a></h2>
+<p>This two-dimensional transport problem — with a constant rate mass
+loading point source in a steady-state flow field — tests the Amanzi
+flow process kernel as well as advection and dispersion features of the transport process kernel. It is a slight modification
+of the previous test (<a class="reference internal" href="../dispersion_aligned_point_2d/amanzi_dispersion_aligned_point_2d.html#aligned-case"><span class="std std-ref">2D Dispersive Transport in a Uniform Flow Field (aligned)</span></a>): the direction
+of the velocity field is rotated by <span class="math notranslate nohighlight">\(45^\circ\)</span> counter-clockwise with respect to the
+mesh. Thus, the test simulates non-grid-aligned advective and dispersive transport.
+Capabilities tested include:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>single-phase, one-dimensional flow</p></li>
+<li><p>two-dimensional transport</p></li>
+<li><p>steady-state saturated flow</p></li>
+<li><p>constant-rate solute mass injection well</p></li>
+<li><p>advective transport</p></li>
+<li><p>dispersive transport</p></li>
+<li><p>longitudinal and transverse dispersivity</p></li>
+<li><p>non-reactive (conservative) solute</p></li>
+<li><p>homogeneous porous medium</p></li>
+<li><p>isotropic porous medium</p></li>
+<li><p>statically refined (non-uniform) mesh</p></li>
+</ul>
+</div></blockquote>
+<p>For details on this test, see <a class="reference internal" href="#about-diagonal-dispersion"><span class="std std-ref">About</span></a>.</p>
+</section>
+<section id="background">
+<h2>Background<a class="headerlink" href="#background" title="Link to this heading">#</a></h2>
+<p>Numerical dispersion caused by flow and transport processes not aligned with the
+rectangular grid can cause numerical solutions to be innacurate. Such flow and transport
+regimes can arise if different solutes are injected at different rates, or if the model domain
+is characterized by geologic media with non-uniform anisotropy, to name a couple examples. It
+is therefore desirable to minimize this numerical dispersion in numerical flow and transport
+schemes.</p>
+<p>This test problem is a slight modification of the previous test (<a class="reference internal" href="../dispersion_aligned_point_2d/amanzi_dispersion_aligned_point_2d.html#aligned-case"><span class="std std-ref">2D Dispersive Transport in a Uniform Flow Field (aligned)</span></a>):
+the direction of the velocity field is rotated by <span class="math notranslate nohighlight">\(45^\circ\)</span>
+counter-clockwise with respect to the mesh.</p>
+</section>
+<section id="model">
+<h2>Model<a class="headerlink" href="#model" title="Link to this heading">#</a></h2>
+<p>The analytical solution addresses the advection-dispersion equation
+(saturation <span class="math notranslate nohighlight">\(s_l = 1\)</span>):</p>
+<div class="math notranslate nohighlight">
+\[\phi \frac{\partial C}{\partial t}
+= Q + {\nabla \cdot }(\phi \boldsymbol{D} \nabla C),\]</div>
+<p>where <span class="math notranslate nohighlight">\(\phi\)</span> is porosity, <span class="math notranslate nohighlight">\(C\)</span> is the solute concentration [kg/m<sup>3</sup>], <span class="math notranslate nohighlight">\(t\)</span> is time [s], <span class="math notranslate nohighlight">\(Q\)</span> is solute mass injection rate [kg of tracer/m<sup>3</sup>/s], and <span class="math notranslate nohighlight">\(\boldsymbol{D}\)</span> is the dispersion tensor:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\boldsymbol{D} = \begin{pmatrix}
+D_{xx} &amp; D_{xy} \\[0.5ex]
+D_{yx} &amp; D_{yy}
+\end{pmatrix}.\end{split}\]</div>
+<p>Let <span class="math notranslate nohighlight">\(\boldsymbol{v} = (v_x,\,v_y)\)</span> denote the pore velocity.
+Then, the diagonal entries in the dispersion tensor are</p>
+<div class="math notranslate nohighlight">
+\[D_{xx} = \alpha_L \frac{v_x^2}{\| \boldsymbol{v}\|}
++ \alpha_T \frac{v_y^2}{\| \boldsymbol{v}\|},
+\qquad
+D_{yy} = \alpha_L \frac{v_y^2}{\| \boldsymbol{v}\|}
++ \alpha_L \frac{v_x^2}{\| \boldsymbol{v}\|},\]</div>
+<p>where <span class="math notranslate nohighlight">\(\alpha_L\)</span> is longitudinal dispersivity [m] and <span class="math notranslate nohighlight">\(\alpha_T\)</span> is transverse dispersivity [m].
+The off-diagonal entries are:</p>
+<div class="math notranslate nohighlight">
+\[D_{xy} = D_{yx}
+= (\alpha_L - \alpha_T) \frac{v_x\, v_y}{\| \boldsymbol{v}\|}.\]</div>
+</section>
+<section id="problem-specification">
+<h2>Problem Specification<a class="headerlink" href="#problem-specification" title="Link to this heading">#</a></h2>
+<section id="schematic">
+<h3>Schematic<a class="headerlink" href="#schematic" title="Link to this heading">#</a></h3>
+<p>The flow direction and source location are shown in the following schematic.</p>
+<figure class="align-center align-default" id="id58">
+<a class="reference internal image-reference" href="../../../_images/schematic4.png"><img alt="../../../_images/schematic4.png" src="../../../_images/schematic4.png" style="width: 600px;" />
+</a>
+<figcaption>
+<p><span class="caption-text"><strong>Plume from point source loading in a constant uniform groundwater flow field.</strong></span><a class="headerlink" href="#id58" title="Link to this image">#</a></p>
+</figcaption>
+</figure>
+</section>
+<section id="mesh">
+<h3>Mesh<a class="headerlink" href="#mesh" title="Link to this heading">#</a></h3>
+<p>The background mesh consists of square cells with size <span class="math notranslate nohighlight">\(H=15\)</span> m.
+It has 83 grid cells in the x-direction and 83 grid cells in the y-direction.
+The mesh is gradually refined toward the source such that the well is
+represented by a square cell of <span class="math notranslate nohighlight">\(h=0.46875\)</span> [m] (<span class="math notranslate nohighlight">\(h = H/32\)</span>).
+The mesh refinement adds 8.4% more cells.</p>
+<figure class="align-center align-default" id="id59">
+<img alt="../../../_images/mesh1.png" src="../../../_images/mesh1.png" />
+<figcaption>
+<p><span class="caption-text"><strong>Computational mesh with 7468 cells and static refinement around the well.</strong></span><a class="headerlink" href="#id59" title="Link to this image">#</a></p>
+</figcaption>
+</figure>
+</section>
+<section id="variables">
+<h3>Variables<a class="headerlink" href="#variables" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>initial concentration condition:    <span class="math notranslate nohighlight">\(C(x,0)=0 \: \text{[kg/m}^3\text{]}\)</span></p></li>
+<li><p>constant solute mass injection rate:    <span class="math notranslate nohighlight">\(Q=8.1483 \times 10^{-8} \: \text{[kg/m}^3\text{/s]}\)</span></p></li>
+<li><p>volumetric fluid flux:    <span class="math notranslate nohighlight">\(\boldsymbol{q}=(1.3176 \times 10^{-6},\,1.3176 \times 10^{-6}) \: \text{[m}^3 \text{/(m}^2 \text{ s)]}\)</span> or <span class="math notranslate nohighlight">\(\text{[m/s]}\)</span></p></li>
+<li><p>Material properties:</p>
+<ul>
+<li><p>isotropic hydraulic conductivity:    <span class="math notranslate nohighlight">\(K = 84.41 \: \text{[m/d]}\)</span>
+derived from <span class="math notranslate nohighlight">\(K=\frac{k \rho g}{\mu}\)</span>, where permeability <span class="math notranslate nohighlight">\(k = 1.0 \times 10^{-10} \text{ [m}^2\text{]}\)</span></p></li>
+<li><p>porosity:    <span class="math notranslate nohighlight">\(\phi=0.35\)</span></p></li>
+<li><p>longitudinal dispersivity:    <span class="math notranslate nohighlight">\(\alpha_L=21.3 \: \text{[m]}\)</span></p></li>
+<li><p>transverse dispersivity:    <span class="math notranslate nohighlight">\(\alpha_T=4.3 \: \text{[m]}\)</span></p></li>
+<li><p>fluid density:    <span class="math notranslate nohighlight">\(\rho = 998.2 \: \text{[kg/m}^3\text{]}\)</span></p></li>
+<li><p>dynamic viscosity:    <span class="math notranslate nohighlight">\(\mu = 1.002 \times 10^{-3} \: \text{[Pa} \cdot \text{s]}\)</span></p></li>
+<li><p>gravitational acceleration:    <span class="math notranslate nohighlight">\(g = 9.807 \: \text{[m/s}^2\text{]}\)</span></p></li>
+</ul>
+</li>
+<li><p>total simulation time:    <span class="math notranslate nohighlight">\(t=1400 \: \text{[d]}\)</span></p></li>
+</ul>
+</section>
+</section>
+<section id="results-and-comparison">
+<h2>Results and Comparison<a class="headerlink" href="#results-and-comparison" title="Link to this heading">#</a></h2>
+<p>The plume structure is characterized by three line cuts.
+The first cut is given by line <span class="math notranslate nohighlight">\(y=x\)</span> that goes through the well.
+The two other cuts are given by tranverse cuts <span class="math notranslate nohighlight">\(y=-x\)</span> and <span class="math notranslate nohighlight">\(y=\sqrt{848}-x\)</span>.</p>
+<p>(<a class="reference download internal" download="" href="../../../_downloads/2bf766323a06947a126c8219773a574a/amanzi_dispersion_45_point_2d-a.py"><code class="xref download docutils literal notranslate"><span class="pre">Source</span> <span class="pre">code</span></code></a>, <a class="reference download internal" download="" href="../../../_downloads/31cc46dec7df71e9e362770d5578da8c/amanzi_dispersion_45_point_2d-a.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="../../../_downloads/2cf0fc881f226addcf285063d3d9fb41/amanzi_dispersion_45_point_2d-a.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="../../../_downloads/377fc9e38ad3209fd905b04a9233fc72/amanzi_dispersion_45_point_2d-a.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</p>
+<figure class="align-center">
+<img alt="../../../_images/amanzi_dispersion_45_point_2d-a.png" class="plot-directive" src="../../../_images/amanzi_dispersion_45_point_2d-a.png" />
+</figure>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>x [m]</p></th>
+<th class="head"><p>Analytic (AT123D-AT)</p></th>
+<th class="head"><p>Amanzi First-Order</p></th>
+<th class="head"><p>Amanzi Second-Order</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>-296.98</p></td>
+<td><p>2.938459E-10</p></td>
+<td><p>3.44205e-09</p></td>
+<td><p>9.49164e-10</p></td>
+</tr>
+<tr class="row-odd"><td><p>-212.13</p></td>
+<td><p>1.880539E-08</p></td>
+<td><p>6.94953e-08</p></td>
+<td><p>2.72514e-08</p></td>
+</tr>
+<tr class="row-even"><td><p>-127.28</p></td>
+<td><p>0.129059E-05</p></td>
+<td><p>1.42371e-06</p></td>
+<td><p>7.76863e-07</p></td>
+</tr>
+<tr class="row-odd"><td><p>-42.43</p></td>
+<td><p>0.113739E-03</p></td>
+<td><p>5.11845e-05</p></td>
+<td><p>4.61099e-05</p></td>
+</tr>
+<tr class="row-even"><td><p>0.00</p></td>
+<td><p>0.377547E-02</p></td>
+<td><p>4.43307e-03</p></td>
+<td><p>4.27107e-03</p></td>
+</tr>
+<tr class="row-odd"><td><p>42.43</p></td>
+<td><p>0.833669E-03</p></td>
+<td><p>6.06773e-04</p></td>
+<td><p>7.02422e-04</p></td>
+</tr>
+<tr class="row-even"><td><p>127.28</p></td>
+<td><p>0.508029E-03</p></td>
+<td><p>3.32882e-04</p></td>
+<td><p>4.29206e-04</p></td>
+</tr>
+<tr class="row-odd"><td><p>212.13</p></td>
+<td><p>0.397582E-03</p></td>
+<td><p>2.62877e-04</p></td>
+<td><p>3.56990e-04</p></td>
+</tr>
+<tr class="row-even"><td><p>212.13</p></td>
+<td><p>0.397582E-03</p></td>
+<td><p>2.62877e-04</p></td>
+<td><p>3.56990e-04</p></td>
+</tr>
+<tr class="row-odd"><td><p>296.98</p></td>
+<td><p>0.333776E-03</p></td>
+<td><p>2.20378e-04</p></td>
+<td><p>3.08951e-04</p></td>
+</tr>
+<tr class="row-even"><td><p>381.84</p></td>
+<td><p>0.284057E-03</p></td>
+<td><p>1.86443e-04</p></td>
+<td><p>2.68503e-04</p></td>
+</tr>
+<tr class="row-odd"><td><p>466.69</p></td>
+<td><p>0.234339E-03</p></td>
+<td><p>1.52919e-04</p></td>
+<td><p>2.25520e-04</p></td>
+</tr>
+<tr class="row-even"><td><p>551.54</p></td>
+<td><p>0.179028E-03</p></td>
+<td><p>1.17087e-04</p></td>
+<td><p>1.74392e-04</p></td>
+</tr>
+<tr class="row-odd"><td><p>636.40</p></td>
+<td><p>0.121285E-03</p></td>
+<td><p>8.09264e-05</p></td>
+<td><p>1.19134e-04</p></td>
+</tr>
+<tr class="row-even"><td><p>721.25</p></td>
+<td><p>0.702010E-04</p></td>
+<td><p>4.91573e-05</p></td>
+<td><p>6.92730e-05</p></td>
+</tr>
+<tr class="row-odd"><td><p>806.10</p></td>
+<td><p>0.338008E-04</p></td>
+<td><p>2.57479e-05</p></td>
+<td><p>3.34020e-05</p></td>
+</tr>
+<tr class="row-even"><td><p>890.95</p></td>
+<td><p>0.132446E-04</p></td>
+<td><p>1.14898e-05</p></td>
+<td><p>1.31490e-05</p></td>
+</tr>
+<tr class="row-odd"><td><p>975.81</p></td>
+<td><p>0.417241E-05</p></td>
+<td><p>4.34007e-06</p></td>
+<td><p>4.19779e-06</p></td>
+</tr>
+<tr class="row-even"><td><p>1060.66</p></td>
+<td><p>0.104343E-05</p></td>
+<td><p>1.38453e-06</p></td>
+<td><p>1.08664e-06</p></td>
+</tr>
+<tr class="row-odd"><td><p>1145.51</p></td>
+<td><p>0.205903E-06</p></td>
+<td><p>3.73300e-07</p></td>
+<td><p>2.29090e-07</p></td>
+</tr>
+<tr class="row-even"><td><p>1230.37</p></td>
+<td><p>0.319697E-07</p></td>
+<td><p>8.53397e-08</p></td>
+<td><p>3.96315e-08</p></td>
+</tr>
+<tr class="row-odd"><td><p>1315.22</p></td>
+<td><p>0.387359E-08</p></td>
+<td><p>1.71874e-08</p></td>
+<td><p>5.76306e-09</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The analytic data were computed with the AT123DAT software package.
+A difference observed near downstream boundary for the Amanzi with the
+first-order transport scheme (Amanzi(1st)).
+The second-order transport scheme provides excellent match.</p>
+<p>(<a class="reference download internal" download="" href="../../../_downloads/60c1ce703c22344a1dce6c4e2197351d/amanzi_dispersion_45_point_2d-b.py"><code class="xref download docutils literal notranslate"><span class="pre">Source</span> <span class="pre">code</span></code></a>, <a class="reference download internal" download="" href="../../../_downloads/7983c1a13d154c18a40eba037062531f/amanzi_dispersion_45_point_2d-b.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="../../../_downloads/ec28e069e84883b674c9d2374f9caddb/amanzi_dispersion_45_point_2d-b.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="../../../_downloads/8fb84f9822259f76d9c133884aef7192/amanzi_dispersion_45_point_2d-b.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</p>
+<figure class="align-center">
+<img alt="../../../_images/amanzi_dispersion_45_point_2d-b.png" class="plot-directive" src="../../../_images/amanzi_dispersion_45_point_2d-b.png" />
+</figure>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>y [m]</p></th>
+<th class="head"><p>Analytic (AT123D-AT)</p></th>
+<th class="head"><p>Amanzi First-Order</p></th>
+<th class="head"><p>Amanzi Second-Order</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0.00</p></td>
+<td><p>3.775286E-03</p></td>
+<td><p>4.43307e-03</p></td>
+<td><p>4.27107e-03</p></td>
+</tr>
+<tr class="row-odd"><td><p>42.43</p></td>
+<td><p>3.775286E-03</p></td>
+<td><p>8.18044e-05</p></td>
+<td><p>6.71725e-05</p></td>
+</tr>
+<tr class="row-even"><td><p>84.85</p></td>
+<td><p>3.775286E-03</p></td>
+<td><p>1.76911e-05</p></td>
+<td><p>9.27840e-06</p></td>
+</tr>
+<tr class="row-odd"><td><p>127.28</p></td>
+<td><p>3.775286E-03</p></td>
+<td><p>3.55340e-06</p></td>
+<td><p>8.92789e-07</p></td>
+</tr>
+<tr class="row-even"><td><p>169.71</p></td>
+<td><p>3.775286E-03</p></td>
+<td><p>7.75699e-07</p></td>
+<td><p>9.38170e-08</p></td>
+</tr>
+<tr class="row-odd"><td><p>212.13</p></td>
+<td><p>3.775286E-03</p></td>
+<td><p>1.72197e-07</p></td>
+<td><p>9.86303e-09</p></td>
+</tr>
+<tr class="row-even"><td><p>254.56</p></td>
+<td><p>3.775286E-03</p></td>
+<td><p>3.78140e-08</p></td>
+<td><p>9.72459e-10</p></td>
+</tr>
+<tr class="row-odd"><td><p>296.98</p></td>
+<td><p>3.775286E-03</p></td>
+<td><p>8.02207e-09</p></td>
+<td><p>8.50556e-11</p></td>
+</tr>
+<tr class="row-even"><td><p>339.41</p></td>
+<td><p>3.775286E-03</p></td>
+<td><p>1.60306e-09</p></td>
+<td><p>6.41251e-12</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Link to this heading">#</a></h2>
+<span class="target" id="id1"></span></section>
+<section id="about">
+<span id="about-diagonal-dispersion"></span><h2>About<a class="headerlink" href="#about" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Directory:  testing/verification/transport/saturated/steady-state/dispersion_45_point_2d</p></li>
+<li><p>Author:  Konstantin Lipnikov</p></li>
+<li><p>Maintainer:  David Moulton (<a class="reference external" href="mailto:moulton&#37;&#52;&#48;lanl&#46;gov">moulton<span>&#64;</span>lanl<span>&#46;</span>gov</a>)</p></li>
+<li><p>Input Files:</p>
+<ul>
+<li><p>amanzi_dispersion_45_point_2d-u.xml, Spec Version 2.3</p></li>
+<li><p>mesh amanzi_dispersion_45_point_2d.exo</p></li>
+</ul>
+</li>
+</ul>
+<ul class="simple">
+<li><p>Analytic solution computed with AT123D-AT</p>
+<ul>
+<li><p>Subdirectory: at123d-at</p></li>
+<li><p>Input Files:</p>
+<ul>
+<li><p>at123d-at_centerline.list, at123d-at_centerline.in</p></li>
+<li><p>at123d-at_slice_x=0.in</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<div class="admonition-todo admonition" id="id57">
+<p class="admonition-title">Todo</p>
+<ul class="simple">
+<li><p>write script to generate the tranverse cut at distance 420 m from well [jpo]</p></li>
+<li><p>need *.list file for slice x=0? [jpo]</p></li>
+</ul>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../dispersion_aligned_point_2d/amanzi_dispersion_aligned_point_2d.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">2D Dispersive Transport in a Uniform Flow Field (aligned)</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../dual_porosity_1d/amanzi_dual_porosity_1d.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">1D Dispersive Transport with Dual Porosity Model</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024, Contributing National Laboratories (LANL, LBNL, ORNL, PNNL).
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

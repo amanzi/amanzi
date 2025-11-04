@@ -1,0 +1,516 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" data-theme="auto">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Introduction &#8212; Amanzi</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "auto";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "auto";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="_static/default.css?v=f6536f91" />
+    <link rel="stylesheet" type="text/css" href="_static/fix_eq_position.css" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="_static/documentation_options.js?v=ec80fa03"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'index';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '_static/versions.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v1.5';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+ <script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    TeX: {
+        extensions: ["mhchem.js"]
+    }
+  });
+</script>
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="auto">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+
+
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="#">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="_static/Amanzi-color.png" class="logo__image only-light" alt="Amanzi - Home"/>
+    <img src="_static/Amanzi-Dark.png" class="logo__image only-dark pst-js-only" alt="Amanzi - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item"><!-- This will display the version of the docs -->
+Version  1.6.0</div>
+        <div class="sidebar-primary-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        <div class="sidebar-primary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Introduction</a></li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#release-schedule">Release Schedule</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#older-versions">Older Versions</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#future-releases">Future Releases</a></li>
+</ul>
+</li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#guides">Guides</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#user-guide">User Guide</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#developer-guide">Developer Guide</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#theory-guide">Theory Guide</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#input-guide">Input Guide</a></li>
+</ul>
+</li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#downloads">Downloads</a></li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#system-and-software-requirements">System and Software Requirements</a></li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#open-source-open-development">Open Source / Open Development</a></li>
+</ul>
+
+  </nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none"></div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Link to this heading">#</a></h1>
+<p>Amanzi provides a flexible and extensible parallel flow and reactive
+transport simulation capability for environmental applications. It
+includes general polyhedral mesh infrastructure, which leverages MSTK,
+advanced discretizations of process models, including traditional
+finite volume schemes, mimetic finite differences, and nonlinear
+finite volumes. In addition, it provides advanced nonlinear solvers,
+such as Nonlinear Krylov Acceleration (NKA) and Anderson Acceleration,
+and leverages Trilinos-ML and Hypre Algebraic Multigrid for scalable
+solvers. The reaction of contaminants and minerals carried by the flow
+through the surrounding rock and soil is modeled through a general
+software interface called Alquimia that allows Amanzi to interface
+with a variety of powerful geochemistry engines including PFLOTRAN and
+CrunchFlow.</p>
+<a class="reference internal image-reference" href="_images/farea-composite-white-2006.png"><img alt="_images/farea-composite-white-2006.png" src="_images/farea-composite-white-2006.png" style="width: 35%;" />
+</a>
+<a class="reference internal image-reference" href="_images/amanzi-dfn-fig2a-cropped.png"><img alt="_images/amanzi-dfn-fig2a-cropped.png" src="_images/amanzi-dfn-fig2a-cropped.png" style="width: 30%;" />
+</a>
+<a class="reference internal image-reference" href="_images/WasteTank-AMR.png"><img alt="_images/WasteTank-AMR.png" src="_images/WasteTank-AMR.png" style="width: 30%;" />
+</a>
+<p>The code is parallel and leverages open-source parallel
+frameworks such as Trilinos, PETSc. Amanzi has been used to model
+contaminant migration at various DOE waste sites (e.g., Nevada
+National Security Site, and Savannah River), and is generally
+applicable to groundwater contaminant migration under partially
+saturated, nonisothermal conditions and its interaction with surface
+water.</p>
+<p>The multiphysics framework in Amanzi is called Arcos, and it provides
+modelers with the flexibility they need to creatively decompose
+complex problems and explore a variety of mixed-dimensional model
+configurations to develop understanding and make predictions of
+environmental systems. In particular, Arcos provides flexibility for
+hierarchical weak and strong coupling of processes with subcycling of
+mixed dimensions. This capability in conjuction with Amanzi’s powerful
+mesh infrastructure, which supports the splitting and subsetting of
+meshes, enables creative conceptual modeling. Applications in Amanzi
+include, coupling flow and transport on discrete-fracture-networks
+(DFNs) and the background matrix, while applications in the <a class="reference external" href="https://amanzi.github.io/ats">Advanced
+Terrestrial Simulator (ATS)</a> include,
+integrated hydrology coupling surface and subsurface processes; and an
+intermediate scale thermal hydrology model of polygonal tundra based
+on one-dimensional columns coupled to the two-dimensional surface.</p>
+</section>
+<section id="release-schedule">
+<h1>Release Schedule<a class="headerlink" href="#release-schedule" title="Link to this heading">#</a></h1>
+<p>The current version of Amanzi is  1.6.0</p>
+<section id="older-versions">
+<h2>Older Versions<a class="headerlink" href="#older-versions" title="Link to this heading">#</a></h2>
+<blockquote>
+<div><ul class="simple">
+<li><p>Amanzi 1.0</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="future-releases">
+<h2>Future Releases<a class="headerlink" href="#future-releases" title="Link to this heading">#</a></h2>
+<blockquote>
+<div><ul class="simple">
+<li><p>Coming soon: Prototype of Non-isothermal Multiphase flow with phase disappearence</p></li>
+</ul>
+</div></blockquote>
+</section>
+</section>
+<section id="guides">
+<h1>Guides<a class="headerlink" href="#guides" title="Link to this heading">#</a></h1>
+<section id="user-guide">
+<h2>User Guide<a class="headerlink" href="#user-guide" title="Link to this heading">#</a></h2>
+<blockquote>
+<div><p id="id1">The User Guide is best viewed on the <a class="reference external" href="../../../user_guide/_build/html/index.html">web</a>.</p>
+</div></blockquote>
+</section>
+<section id="developer-guide">
+<h2>Developer Guide<a class="headerlink" href="#developer-guide" title="Link to this heading">#</a></h2>
+<blockquote>
+<div><p id="id2">Download the  <a class="reference external" href="../../guides/developer_guide.pdf">Developer Guide</a></p>
+</div></blockquote>
+</section>
+<section id="theory-guide">
+<h2>Theory Guide<a class="headerlink" href="#theory-guide" title="Link to this heading">#</a></h2>
+<blockquote>
+<div><p id="id4">Download the  <a class="reference external" href="../../guides/theory.pdf">Theory Guide</a></p>
+</div></blockquote>
+</section>
+<section id="input-guide">
+<h2>Input Guide<a class="headerlink" href="#input-guide" title="Link to this heading">#</a></h2>
+<blockquote>
+<div><p id="id6">The Input Guide is best viewed on the <a class="reference external" href="../../../input_spec/build/html/index.html">web</a>.</p>
+</div></blockquote>
+</section>
+</section>
+<section id="downloads">
+<h1>Downloads<a class="headerlink" href="#downloads" title="Link to this heading">#</a></h1>
+<p>Source code releases are available from the Amanzi Github
+<a class="reference external" href="https://github.com/amanzi/amanzi/releases">Releases</a>.</p>
+</section>
+<section id="system-and-software-requirements">
+<h1>System and Software Requirements<a class="headerlink" href="#system-and-software-requirements" title="Link to this heading">#</a></h1>
+<p>Amanzi is written in C++,C, and Fortran, and is readily built on
+modern Linux/Unix systems, including Ubuntu, RedHat Enterprise, and
+CentOS, as well as Mac OSX.  There are a large number of Third Party
+Libraries that it uses, so to make the build process easier Amanzi’s
+build system will download and build all the TPLs for you.  To get
+started you will need a modern Linux/Unix/OSX system with</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>CMake (version &gt;= 3.17.0),</p></li>
+<li><p>A recent GNU &gt;= 7.5, Clang &gt;=5, or Intel compiler &gt;= 19, suporting the C++14 standard.</p></li>
+<li><p>MPI (e.g., OpenMPI version &gt; 3.1)</p></li>
+</ul>
+</div></blockquote>
+<p>Details are provided in the Installation Instructions in the User Guide.</p>
+</section>
+<section id="open-source-open-development">
+<h1>Open Source / Open Development<a class="headerlink" href="#open-source-open-development" title="Link to this heading">#</a></h1>
+<p>Amanzi is developed and distributed under the three-clause BSD
+open-source license.  Copyright is held jointly by the contributing
+laboratories (LANL,LBNL,ORNL,PNNL). Included in the Amanzi source code is
+the growing set of unit, integration, regression, and benchmark tests
+that are used by the development and application teams.</p>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024, Contributing National Laboratories (LANL, LBNL, ORNL, PNNL).
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
