@@ -16,21 +16,13 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 
 # --- Patch the original code
 set(COOLPROP_patch_file coolprop-cmake.patch)
-                       
-set(COOLPROP_sh_patch ${COOLPROP_prefix_dir}/coolprop-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/coolprop-patch-step.sh.in
-               ${COOLPROP_sh_patch}
-               @ONLY)
-# configure the CMake patch step
-set(COOLPROP_cmake_patch ${COOLPROP_prefix_dir}/coolprop-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/coolprop-patch-step.cmake.in
-               ${COOLPROP_cmake_patch}
-               @ONLY)
-# set the patch command
-set(COOLPROP_PATCH_COMMAND ${CMAKE_COMMAND} -P ${COOLPROP_cmake_patch})
+patch_tpl(COOLPROP
+          ${COOLPROP_prefix_dir}
+          ${COOLPROP_source_dir}
+          ${COOLPROP_stamp_dir}
+          COOLPROP_patch_file)
 
 # --- Define the arguments passed to CMake.
-
 set(COOLPROP_INSTALL_PREFIX ${TPL_INSTALL_PREFIX}/coolprop)
 
 set(COOLPROP_CMAKE_ARGS 
