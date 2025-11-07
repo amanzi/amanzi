@@ -479,6 +479,22 @@ Energy_PK::ComputeBCs(const CompositeVector& u)
     }
   }
 
+  // mark missing boundary conditions as zero flux conditions
+  missed_bc_faces_ = 0;
+  for (int f = 0; f < nfaces_owned; f++) {
+    if (bc_model[f] == Operators::OPERATOR_BC_NONE) {
+      auto cells = mesh_->getFaceCells(f);
+      int ncells = cells.size();
+
+      if (ncells == 1) {
+        bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
+        bc_value[f] = 0.0;
+        missed_bc_faces_++;
+      }
+    }
+  }
+
+  // count essential conditions
   dirichlet_bc_faces_ = 0;
   for (int f = 0; f < nfaces_owned; ++f) {
     if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) dirichlet_bc_faces_++;
@@ -489,13 +505,13 @@ Energy_PK::ComputeBCs(const CompositeVector& u)
 #endif
 
   // additional boundary conditions
-  // -- copy essential conditions to primary variables
+  // -- copy essential conditions to primary variable and update dependend fields
   BoundaryDataToFaces_(*op_bc_, S_->GetW<CV_t>(temperature_key_, Tags::DEFAULT, passwd_));
 
-  // -- populate BCs
   S_->GetEvaluator(enthalpy_key_).Update(*S_, passwd_);
   const auto& enth = *S_->Get<CV_t>(enthalpy_key_).ViewComponent("boundary_face", true);
 
+  // -- populate BCs
   std::vector<int>& bc_model_enth_ = op_bc_enth_->bc_model();
   std::vector<double>& bc_value_enth_ = op_bc_enth_->bc_value();
 
@@ -598,12 +614,16 @@ Energy_PK::BoundaryDataToFaces_(const Operators::BCs& bcs, CompositeVector& u)
     const Epetra_Map& bfmap = u.Mesh()->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false);
     const Epetra_Map& fmap = u.Mesh()->getMap(AmanziMesh::Entity_kind::FACE, false);
 
+    auto& u_c = *u.ViewComponent("cell", false);
     auto& u_bf = *u.ViewComponent("boundary_face", false);
 
     for (int bf = 0; bf != u_bf.MyLength(); ++bf) {
       AmanziMesh::Entity_ID f = fmap.LID(bfmap.GID(bf));
       if (bcs.bc_model()[f] == Operators::OPERATOR_BC_DIRICHLET) {
         u_bf[0][bf] = bcs.bc_value()[f];
+      } else {
+        int c = mesh_->getFaceCell(f, 0);
+        u_bf[0][bf] = u_c[0][c];
       }
     }
   }
