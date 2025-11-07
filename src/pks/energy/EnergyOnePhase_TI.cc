@@ -147,7 +147,7 @@ EnergyOnePhase_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
   }
 
   // verify and finalize preconditioner
-  op_preconditioner_->Verify();
+  // op_preconditioner_->Verify();
   op_preconditioner_->ComputeInverse();
 }
 

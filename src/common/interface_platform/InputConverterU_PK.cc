@@ -426,6 +426,7 @@ InputConverterU::TranslateDiffusionOperator_(const std::string& disc_methods,
     if (tmp == "mfd: two point flux approximation") tmp = "mfd: two-point flux approximation";
     methods[i] = tmp;
   }
+  if (methods.size() == 1 && methods[0] == "fv: default") methods.push_back(methods[0]);
   if (methods.size() == 1) methods.push_back("mfd: optimized for sparsity");
 
   tmp_list.set<std::string>("discretization primary", methods[0]);
@@ -445,6 +446,8 @@ InputConverterU::TranslateDiffusionOperator_(const std::string& disc_methods,
   // -- limitations
   if (fracture_network_ && domain == "fracture" && pk != "multiphase")
     nonlinear_coef_out = "standard: cell";
+
+  if (methods[0] == "fv: default" && pk == "energy") nonlinear_coef_out.clear();
 
   if (nonlinear_coef_out != "") tmp_list.set("nonlinear coefficient", nonlinear_coef_out);
 
@@ -489,20 +492,20 @@ InputConverterU::TranslateDiffusionOperator_(const std::string& disc_methods,
   }
 
   // fixing miscalleneous scenarious
-  if (pc_method == "linearized_operator" && pk == "flow") {
-    out_list.sublist("diffusion operator")
-      .sublist("preconditioner")
-      .set<std::string>("Newton correction", "approximate Jacobian");
+  std::string nc("");
+  if (nonlinear_solver == "newton") {
+    nc = "true Jacobian";
+  } else if (methods[0] == "fv: default" && pk != "multiphase") {
+    nc = "true Jacobian";
+  } else if (pc_method == "linearized_operator" && pk == "flow") {
+    nc = "approximate Jacobian";
+  } else if (nonlinear_solver == "newton-picard") {
+    nc = "approximate Jacobian";
   }
 
-  if (nonlinear_solver == "newton") {
-    Teuchos::ParameterList& pc_list =
-      out_list.sublist("diffusion operator").sublist("preconditioner");
-    pc_list.set<std::string>("Newton correction", "true Jacobian");
-  } else if (nonlinear_solver == "newton-picard") {
-    Teuchos::ParameterList& pc_list =
-      out_list.sublist("diffusion operator").sublist("preconditioner");
-    pc_list.set<std::string>("Newton correction", "approximate Jacobian");
+  if (nc != "") {
+    out_list.sublist("diffusion operator").sublist("preconditioner")
+      .set<std::string>("Newton correction", nc);
   }
 
   return out_list;
