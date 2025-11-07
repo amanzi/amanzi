@@ -9,7 +9,6 @@
 include(PrintVariable)
 include(TestManager)
 
-#
 # Define a project name
 # After this command the following varaibles are defined
 #   ENERGY_SOURCE_DIR
@@ -21,6 +20,7 @@ project(ENERGY)
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
+
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
@@ -39,9 +39,7 @@ include_directories(${SOLVERS_SOURCE_DIR})
 include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
 
-#
-# Library: energy
-#
+# Library files
 set(energy_src_files Energy_PK.cc
                      EnergyOnePhase_PK.cc EnergyOnePhase_TI.cc
                      EnergyTwoPhase_PK.cc EnergyTwoPhase_TI.cc
@@ -67,9 +65,7 @@ add_amanzi_library(energy SOURCE ${energy_src_files}
                              time_integration data_structures
                              ${energy_tpl_libs})
 
-#
 # Install Targets
-#
 set(energy_inc_files 
   Energy_PK.hh
   EnergyDefs.hh
@@ -95,19 +91,15 @@ set(energy_inc_files
 add_install_include_file(${energy_inc_files})
 
 if (BUILD_TESTS) 
-
-    # Add UnitTest include directoy
     include_directories(${UnitTest_INCLUDE_DIRS})
     include_directories(${MESH_FACTORY_SOURCE_DIR})
+    include_directories(${ENERGY_SOURCE_DIR})
 
     # Copy test directory files if an out of source build
     if (NOT (${ENERGY_SOURCE_DIR} EQUAL ${ENERGY_BINARY_DIR}) )
       file(GLOB DataFiles "${ENERGY_SOURCE_DIR}/test/*.xml")
       file(COPY ${DataFiles} DESTINATION ${ENERGY_BINARY_DIR}/test/)
     endif()
-
-    # Add the flow directory to the include paths
-    include_directories(${ENERGY_SOURCE_DIR})
 
     set(amanzi_libs geometry mesh mesh_factory eos energy pks eos state operators whetstone data_structures)
 
@@ -123,30 +115,33 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/energy_newton_picard.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # Test: 3
+    # Tests: convergence
     add_amanzi_test(energy_convergence energy_convergence
                     KIND int
                     SOURCE test/Main.cc test/energy_convergence.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # Test: 4
+    add_amanzi_test(energy_convergence_src energy_convergence_src
+                    KIND int
+                    SOURCE test/Main.cc test/energy_convergence_src.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+                    
+    # Test: single phase
     add_amanzi_test(energy_one_phase energy_one_phase
                     KIND int
                     NPROCS 2 
                     SOURCE test/Main.cc test/energy_one_phase.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # Test: 5
-    add_amanzi_test(energy_convergence_src energy_convergence_src
+    add_amanzi_test(energy_one_phase_fv energy_one_phase_fv
                     KIND int
-                    SOURCE test/Main.cc test/energy_convergence_src.cc
+                    SOURCE test/Main.cc test/energy_one_phase_fv.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
                     
-    # Test: 6
+    # Test: preconditioner
     add_amanzi_test(energy_jacobian energy_jacobian
                     KIND int
                     SOURCE test/Main.cc test/energy_jacobian.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-                    
 endif()
 

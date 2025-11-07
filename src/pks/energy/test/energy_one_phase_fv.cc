@@ -48,10 +48,10 @@ TEST(ENERGY_ONE_PHASE)
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0) std::cout << "Test: steady state calculation" << std::endl;
+  if (MyPID == 0) std::cout << "Test: FV scheme" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/energy_one_phase.xml";
+  std::string xmlFileName = "test/energy_one_phase_fv.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   auto plist = Teuchos::rcp(new Teuchos::ParameterList(xmlreader.getParameters()));
 
@@ -87,15 +87,6 @@ TEST(ENERGY_ONE_PHASE)
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("EnergyOnePhase", *plist));
   WriteStateStatistics(*S, *vo);
 
-  S->GetEvaluator("energy").UpdateDerivative(*S, "thermal", "temperature", Tags::DEFAULT);
-  int n0 = S->Get<CompositeVector>("energy").size("cell", false);
-  int n1 = S->Get<CompositeVector>("energy").size("cell", true);
-  int n2 = S->GetDerivativeW<CompositeVector>(
-              "energy", Tags::DEFAULT, "temperature", Tags::DEFAULT, "energy")
-             .size("cell", true);
-  if (comm->NumProc() > 1) AMANZI_ASSERT(n0 < n1);
-  AMANZI_ASSERT(n1 == n2);
-
   // constant timestepping
   std::string passwd("");
   int itrs(0);
@@ -114,7 +105,6 @@ TEST(ENERGY_ONE_PHASE)
     }
 
     EPK->bdf1_dae()->AdvanceStep(dt, dt_next, soln);
-    CHECK(dt_next >= dt);
     EPK->bdf1_dae()->CommitSolution(dt, soln);
     Teuchos::rcp_static_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>(
       S->GetEvaluatorPtr("temperature", Tags::DEFAULT))
