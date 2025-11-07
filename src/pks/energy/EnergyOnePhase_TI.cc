@@ -35,7 +35,7 @@ EnergyOnePhase_PK::FunctionalResidual(double t_old,
 {
   double dt = t_new - t_old;
 
-  // update BCs and conductivity
+  // update BCs, BOUNDARY_FACE component (if any), and conductivity
   temperature_eval_->SetChanged();
   UpdateSourceBoundaryData(t_old, t_new, *u_new->Data());
 

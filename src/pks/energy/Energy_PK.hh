@@ -199,7 +199,7 @@ class Energy_PK : public PK_PhysicalBDF {
   // boundary conditons
   std::vector<Teuchos::RCP<PK_DomainFunction>> bc_temperature_;
   std::vector<Teuchos::RCP<PK_DomainFunction>> bc_flux_;
-  int dirichlet_bc_faces_;
+  int dirichlet_bc_faces_, missed_bc_faces_;
 
   // source terms
   std::vector<Teuchos::RCP<PK_DomainFunction>> srcs_;

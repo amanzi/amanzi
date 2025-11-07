@@ -230,7 +230,8 @@ EnergyOnePhase_PK::Initialize()
   // output of initialization summary
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "temperature BC assigned to " << dirichlet_bc_faces_ << " faces\n\n"
+    *vo_->os() << "temperature BC assigned to " << dirichlet_bc_faces_ << " faces\n"
+               << "default (zero-gradient) BC assigned to " << missed_bc_faces_ << " faces\n\n" 
                << "solution vector: ";
     solution->Print(*vo_->os(), false);
     *vo_->os() << "matrix: " << my_operator(Operators::OPERATOR_MATRIX)->PrintDiagnostics()
