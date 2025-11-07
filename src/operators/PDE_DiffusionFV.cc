@@ -270,7 +270,8 @@ PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 
         if (bc_model[f] == OPERATOR_BC_DIRICHLET && primary) {
           rhs_cell[0][c] += bc_value[f] * trans_face[0][f] * (k_face.get() ? (*k_face)[0][f] : 1.0);
-        } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+        } else if (bc_model[f] == OPERATOR_BC_NEUMANN ||
+                   bc_model[f] == OPERATOR_BC_TOTAL_FLUX) {
           local_op_->matrices_shadow[f] = local_op_->matrices[f];
           local_op_->matrices[f](0, 0) = 0.0;
 

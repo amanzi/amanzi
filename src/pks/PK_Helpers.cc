@@ -42,7 +42,6 @@ applyDirichletBCs(const Operators::BCs& bcs, CompositeVector& u)
 
   } else if (u.HasComponent("boundary_face")) {
     Epetra_MultiVector& u_bf = *u.ViewComponent("boundary_face", false);
-    const Epetra_MultiVector& u_c = *u.ViewComponent("cell", false);
     const Epetra_Map& vandalay_map =
       u.Mesh()->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false);
     const Epetra_Map& face_map = u.Mesh()->getMap(AmanziMesh::Entity_kind::FACE, false);

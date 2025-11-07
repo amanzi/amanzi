@@ -116,10 +116,24 @@ Energy_PK::Setup()
   S_->Require<double>("const_fluid_molar_mass", Tags::DEFAULT, "state");
 
   // require primary state variables
-  std::vector<std::string> names({ "cell", "face" });
-  std::vector<int> ndofs(2, 1);
-  std::vector<AmanziMesh::Entity_kind> locations(
-    { AmanziMesh::Entity_kind::CELL, AmanziMesh::Entity_kind::FACE });
+  std::vector<std::string> names({ "cell" });
+  std::vector<AmanziMesh::Entity_kind> locations({ AmanziMesh::Entity_kind::CELL });
+  std::vector<int> ndofs(1, 1);
+
+  Teuchos::RCP<Teuchos::ParameterList> list1 = Teuchos::sublist(ep_list_, "operators", true);
+  Teuchos::RCP<Teuchos::ParameterList> list2 = Teuchos::sublist(list1, "diffusion operator", true);
+  Teuchos::RCP<Teuchos::ParameterList> list3 = Teuchos::sublist(list2, "matrix", true);
+  std::string name = list3->get<std::string>("discretization primary");
+
+  if (name != "fv: default" && name != "nlfv: default") {
+    names.push_back("face");
+    locations.push_back(AmanziMesh::Entity_kind::FACE);
+    ndofs.push_back(1);
+  } else {
+    names.push_back("boundary_face");
+    locations.push_back(AmanziMesh::Entity_kind::BOUNDARY_FACE);
+    ndofs.push_back(1);
+  }
 
   S_->Require<CV_t, CVS_t>(temperature_key_, Tags::DEFAULT)
     .SetMesh(mesh_)
@@ -476,7 +490,7 @@ Energy_PK::ComputeBCs(const CompositeVector& u)
 
   // additional boundary conditions
   // -- copy essential conditions to primary variables
-  // BoundaryDataToFaces(op_bc_, *S_->GetFieldData(temperature_key_, passwd_));
+  BoundaryDataToFaces_(*op_bc_, S_->GetW<CV_t>(temperature_key_, Tags::DEFAULT, passwd_));
 
   // -- populate BCs
   S_->GetEvaluator(enthalpy_key_).Update(*S_, passwd_);
@@ -501,6 +515,17 @@ Energy_PK::ComputeBCs(const CompositeVector& u)
       bc_value_enth_[f] = bc_value[f];
     }
   }
+}
+
+
+/* ******************************************************************
+* Clip temperature changed
+****************************************************************** */
+int
+Energy_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, Teuchos::RCP<TreeVector> Y)
+{
+  Y->PutScalar(0.0);
+  return op_preconditioner_->ApplyInverse(*X->Data(), *Y->Data());
 }
 
 
@@ -558,6 +583,30 @@ Energy_PK::ModifyPredictor(double dt,
   *u = *u0;
   u->Update(1.0, *du, 1.0);
   return true;
+}
+
+
+/* ******************************************************************
+* Apply Dirichlet data to a vector, oly for boundary_face component.
+* NOTE: helper function applyDirichletBCs() does not work for a 
+*       fractured matrix.
+****************************************************************** */
+void
+Energy_PK::BoundaryDataToFaces_(const Operators::BCs& bcs, CompositeVector& u)
+{
+  if (u.HasComponent("boundary_face")) {
+    const Epetra_Map& bfmap = u.Mesh()->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false);
+    const Epetra_Map& fmap = u.Mesh()->getMap(AmanziMesh::Entity_kind::FACE, false);
+
+    auto& u_bf = *u.ViewComponent("boundary_face", false);
+
+    for (int bf = 0; bf != u_bf.MyLength(); ++bf) {
+      AmanziMesh::Entity_ID f = fmap.LID(bfmap.GID(bf));
+      if (bcs.bc_model()[f] == Operators::OPERATOR_BC_DIRICHLET) {
+        u_bf[0][bf] = bcs.bc_value()[f];
+      }
+    }
+  }
 }
 
 

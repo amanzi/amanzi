@@ -114,11 +114,8 @@ class Energy_PK : public PK_PhysicalBDF {
 
   // methods required for time integration
   // -- management of the preconditioner
-  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
-                                  Teuchos::RCP<TreeVector> hu) override
-  {
-    return op_preconditioner_->ApplyInverse(*u->Data(), *hu->Data());
-  }
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
+                                  Teuchos::RCP<TreeVector> Y) override;
 
   // -- check the admissibility of a solution
   //    override with the actual admissibility check
@@ -166,6 +163,9 @@ class Energy_PK : public PK_PhysicalBDF {
 
   // -- for unit tests
   std::vector<WhetStone::Tensor>& get_K() { return K; }
+
+ private:
+  void BoundaryDataToFaces_(const Operators::BCs& bcs, CompositeVector& u);
 
  public:
   int ncells_owned, ncells_wghost;
