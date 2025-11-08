@@ -22,32 +22,22 @@ jobs:
             mpi_ver: "4.0.3"
             target: tpls
           - base_image: gcc
-            ver_tag: "14"
-            mpi_distro: mpich
-            mpi_ver: "4.2.3"
-            target: tpls
-          - base_image: gcc
             ver_tag: latest
             mpi_distro: mpich
             mpi_ver: "4.3.1"
             target: tpls
-            cmake_version: "4.1.1"
+            cmake_version: "4.2.0"
           - base_image: ubuntu
             ver_tag: jammy
             mpi_distro: openmpi
             mpi_ver: "4.1.8"
             target: tpls
           - base_image: gcc
-            ver_tag: "14"
-            mpi_distro: openmpi
-            mpi_ver: "5.0.5"
-            target: tpls
-          - base_image: gcc
             ver_tag: latest
             mpi_distro: openmpi
             mpi_ver: "5.0.8"
             target: tpls
-            cmake_version: "4.1.1"
+            cmake_version: "4.2.0"
     runs-on: ${{matrix.os}}
     steps:
     - name: Check out the Amanzi repo
@@ -105,16 +95,10 @@ jobs:
             ver_tag: jammy
             mpi_distro: mpich
           - base_image: gcc
-            ver_tag: "14"
-            mpi_distro: mpich
-          - base_image: gcc
             ver_tag: latest
             mpi_distro: mpich
           - base_image: ubuntu
             ver_tag: jammy
-            mpi_distro: openmpi
-          - base_image: gcc
-            ver_tag: "14"
             mpi_distro: openmpi
           - base_image: gcc
             ver_tag: latest
