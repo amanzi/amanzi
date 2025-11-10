@@ -35,6 +35,7 @@
 #include "Flow_PK.hh"
 #include "MultiscaleFlowPorosityPartition.hh"
 #include "RelPermEvaluator.hh"
+#include "StateArchive.hh"
 #include "WRMPartition.hh"
 #include "WRM.hh"
 
@@ -63,6 +64,7 @@ class Richards_PK : public Flow_PK {
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
+  virtual void FailStep(double t_old, double t_new, const Tag& tag) override;
 
   virtual std::string name() override { return Keys::getKey(domain_, "richards"); }
 
@@ -177,7 +179,7 @@ class Richards_PK : public Flow_PK {
  private:
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
 
-  // pointerds to primary field
+  // pointers to primary field
   const Teuchos::RCP<TreeVector> soln_;
   Teuchos::RCP<CompositeVector> solution;
 
@@ -210,7 +212,7 @@ class Richards_PK : public Flow_PK {
   // time integrators
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>> bdf1_dae_;
   int error_control_, num_itrs_;
-  double dt_desirable_;
+  double dt_desirable_, dt_recommended_;
   std::vector<std::pair<double, double>> dT_history_;
   bool initialize_with_darcy_; // global state of initialization.
 
@@ -221,6 +223,7 @@ class Richards_PK : public Flow_PK {
   int functional_max_cell;
 
   // copies of state fields
+  Teuchos::RCP<StateArchive> archive_;
   Teuchos::RCP<CompositeVector> mol_flowrate_copy;
 
   // upwind

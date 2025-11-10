@@ -173,31 +173,12 @@ TEST(ENERGY_CONVERGENCE_SRC)
     int itrs(0);
     double t(0.0), t1(100), dt_next;
     while (t < t1) {
-      // swap conserved quntity (no backup, we check dt_next instead)
-      const auto& e = S->Get<CompositeVector>("energy");
-      auto& e_prev = S->GetW<CompositeVector>("prev_energy", Tags::DEFAULT, passwd);
-      e_prev = e;
-
-      if (itrs == 0) {
-        Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*soln));
-        udot->PutScalar(0.0);
-        EPK->bdf1_dae()->SetInitialState(t, soln, udot);
-        EPK->UpdatePreconditioner(t, soln, dt);
-      }
-
-      EPK->bdf1_dae()->AdvanceStep(dt, dt_next, soln);
-      CHECK(dt_next >= dt);
-      EPK->bdf1_dae()->CommitSolution(dt, soln);
-      Teuchos::rcp_static_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>(
-        S->GetEvaluatorPtr("temperature", Tags::DEFAULT))
-        ->SetChanged();
+      EPK->AdvanceStep(t, t + dt, false);
+      EPK->CommitStep(t, t + dt, Tags::DEFAULT);
 
       t += dt;
       itrs++;
     }
-
-    EPK->CommitStep(0.0, 1.0, Tags::DEFAULT);
-
 
     // calculate errors
     auto temp = S->GetPtr<CompositeVector>("temperature", Tags::DEFAULT);

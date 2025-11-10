@@ -285,7 +285,9 @@ CycleDriver::Initialize()
 
   // commit the initial conditions.
   if (!restart_requested_) {
-    pk_->CommitStep(S_->get_time(), S_->get_time(), Tags::DEFAULT);
+    // KL: State was already initialized. What are reasons for commit?
+    //     Initialization of secondary fields should be done in PK's Initialize().
+    // pk_->CommitStep(S_->get_time(), S_->get_time(), Tags::DEFAULT);
   }
 }
 
@@ -1099,7 +1101,10 @@ CycleDriver::ResetDriver(int time_pr_id)
 
   // Initialize the process kernels and verify
   pk_->Initialize();
-  pk_->CommitStep(S_->get_time(), S_->get_time(), Tags::DEFAULT);
+  // KL: State is valid after reset. What are reasons for commit?
+  //     Initialization of secondary fields should be done in Initialize().
+  //     BDF history is now updated by CommitStep() which makes this call wrong.
+  // pk_->CommitStep(S_->get_time(), S_->get_time(), Tags::DEFAULT);
   S_->CheckAllFieldsInitialized();
 
   S_->GetMeshPartition("materials");

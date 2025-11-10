@@ -429,6 +429,8 @@ Richards_PK::Setup()
   // frequently used evaluators outside of field registration
   pressure_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
     S_->GetEvaluatorPtr(pressure_key_, Tags::DEFAULT));
+  mol_flowrate_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
+    S_->GetEvaluatorPtr(mol_flowrate_key_, Tags::DEFAULT));
 
   // set unit
   S_->GetRecordSetW(pressure_key_).set_units("Pa");
@@ -911,7 +913,7 @@ bool
 Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   AMANZI_ASSERT(bdf1_dae_ != Teuchos::null);
-  double dt_recommended(dt_);
+  dt_recommended_ = dt_;
   dt_ = t_new - t_old;
 
   // save a copy of primary and conservative fields
@@ -922,8 +924,8 @@ Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     fields.push_back(water_storage_msp_key_);
   }
 
-  StateArchive archive(S_, vo_);
-  archive.Add(fields, Tags::DEFAULT);
+  archive_ = Teuchos::rcp(new StateArchive(S_, vo_));
+  archive_->Add(fields, Tags::DEFAULT);
 
   // enter subspace
   if (reinit && solution->HasComponent("face")) {
@@ -949,39 +951,9 @@ Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   if (failed) {
     dt_ = dt_next_;
 
-    archive.Restore("");
+    archive_->Restore("");
     pressure_eval_->SetChanged();
-
-    return failed;
   }
-
-  // commit solution (should we do it here ?)
-  bdf1_dae_->CommitSolution(dt_, soln_);
-  pressure_eval_->SetChanged();
-
-  dt_tuple times(t_old, dt_);
-  dT_history_.push_back(times);
-  num_itrs_++;
-
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    VV_ReportWaterBalance(S_.ptr());
-    VV_ReportMultiscale();
-  }
-  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-    VV_ReportSeepageOutflow(S_.ptr(), dt_);
-  }
-
-  if (dt_ <= dt_recommended && dt_ <= dt_next_ && dt_next_ < dt_recommended) {
-    // If we took a smaller step than we recommended, likely due to constraints
-    // from other PKs or events like vis (dt_ <= dt_recommended), and it worked
-    // well enough that the newly recommended step size didn't decrease (dt_ <=
-    // dt_next_), then we don't want to reduce our recommendation for the next
-    // step.
-    dt_ = dt_recommended;
-  } else {
-    dt_ = dt_next_;
-  }
-
   return failed;
 }
 
@@ -992,10 +964,18 @@ Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void
 Richards_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
+  // commit solution to time history
+  if (bdf1_dae_.get()) bdf1_dae_->CommitSolution(dt_, soln_);
+  pressure_eval_->SetChanged();
+
+  dt_tuple times(t_old, dt_);
+  dT_history_.push_back(times);
+  num_itrs_++;
+
   // update previous fields
   std::vector<std::string> fields({ saturation_liquid_key_, water_storage_key_, aperture_key_ });
-  StateArchive archive(S_, vo_);
-  archive.CopyFieldsToPrevFields(fields, "", false);
+  StateArchive archive_tmp(S_, vo_);
+  archive_tmp.CopyFieldsToPrevFields(fields, "", false);
 
   // update flow rates
   ComputeMolarFlowRate_(false);
@@ -1008,7 +988,37 @@ Richards_PK::CommitStep(double t_old, double t_new, const Tag& tag)
   // update time derivative
   *pdot_cells_prev = *pdot_cells;
 
-  dt_ = dt_next_;
+  // statistics
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    VV_ReportWaterBalance(S_.ptr());
+    VV_ReportMultiscale();
+  }
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    VV_ReportSeepageOutflow(S_.ptr(), dt_);
+  }
+
+  // set time step for next cycle (should go last)
+  if (dt_ <= dt_recommended_ && dt_ <= dt_next_ && dt_next_ < dt_recommended_) {
+    // If we took a smaller step than we recommended, likely due to constraints
+    // from other PKs or events like vis (dt_ <= dt_recommended_), and it worked
+    // well enough that the newly recommended step size didn't decrease (dt_ <=
+    // dt_next_), then we don't want to reduce our recommendation for the next
+    // step.
+    dt_ = dt_recommended_;
+  } else {
+    dt_ = dt_next_;
+  }
+}
+
+
+/* ******************************************************************
+* Restore state to the previous step
+****************************************************************** */
+void
+Richards_PK::FailStep(double t_old, double t_new, const Tag& tag)
+{
+  archive_->Restore("");
+  pressure_eval_->SetChanged();
 }
 
 

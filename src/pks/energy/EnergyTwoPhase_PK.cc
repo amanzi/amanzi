@@ -354,16 +354,7 @@ EnergyTwoPhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
     archive.Restore("");
     temperature_eval_->SetChanged();
-    return failed;
   }
-
-  // commit solution (should we do it here ?)
-  bdf1_dae_->CommitSolution(dt_, soln_);
-  temperature_eval_->SetChanged();
-
-  num_itrs_++;
-  dt_ = dt_next_;
-
   return failed;
 }
 
@@ -374,6 +365,11 @@ EnergyTwoPhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void
 EnergyTwoPhase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
+  // commit solution to time history
+  if (bdf1_dae_.get()) bdf1_dae_->CommitSolution(dt_, soln_);
+  temperature_eval_->SetChanged();
+
+  num_itrs_++;
   dt_ = dt_next_;
 
   // update previous fields

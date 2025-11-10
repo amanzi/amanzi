@@ -283,6 +283,8 @@ Darcy_PK::Setup()
   // save frequently used evaluators
   pressure_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
     S_->GetEvaluatorPtr(pressure_key_, Tags::DEFAULT));
+  mol_flowrate_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
+    S_->GetEvaluatorPtr(mol_flowrate_key_, Tags::DEFAULT));
 
   // set units
   S_->GetRecordSetW(pressure_key_).set_units("Pa");
@@ -423,6 +425,10 @@ Darcy_PK::Initialize()
     name, *preconditioner_list_, solver_name_, *linear_operator_list_, true);
   op_->InitializeInverse();
 
+  // set up operators for evaluators
+  auto eval = S_->GetEvaluatorPtr(vol_flowrate_key_, Tags::DEFAULT);
+  Teuchos::rcp_dynamic_cast<VolumetricFlowRateEvaluator>(eval)->set_bc(op_bc_);
+
   // Optional step: calculate hydrostatic solution consistent with BCs.
   // We have to do it only once per time period.
   bool init_darcy(false);
@@ -431,11 +437,8 @@ Darcy_PK::Initialize()
     bool wells_on = ti_list_->sublist("initialization").get<bool>("active wells", false);
     SolveFullySaturatedProblem(*solution, wells_on);
     init_darcy = true;
+    CommitStep(t_ini, t_ini, Tags::DEFAULT);
   }
-
-  // set up operators for evaluators
-  auto eval = S_->GetEvaluatorPtr(vol_flowrate_key_, Tags::DEFAULT);
-  Teuchos::rcp_dynamic_cast<VolumetricFlowRateEvaluator>(eval)->set_bc(op_bc_);
 
   // Verbose output of initialization statistics.
   InitializeStatistics_(init_darcy);

@@ -163,7 +163,7 @@ void
 Chemistry_PK::CommitStep(double t_old, double t_new, const Tag& tag_next)
 {
   AMANZI_ASSERT(tag_next == tag_next_ || tag_next == Tags::NEXT);
-  Tag tag_current = tag_next == tag_next_ ? tag_current_ : Tags::CURRENT;
+  Tag tag_current = (tag_next == tag_next_) ? tag_current_ : Tags::CURRENT;
   copyFields_(tag_current_, tag_next);
 
   if (tcc_tag_next_ != tag_next) {

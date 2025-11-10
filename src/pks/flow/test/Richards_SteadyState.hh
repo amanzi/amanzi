@@ -61,10 +61,8 @@ AdvanceToSteadyState(Teuchos::RCP<State> S,
     while (RPK.get_bdf1_dae()->AdvanceStep(dT, dTnext, soln)) {
       dT = dTnext;
     }
-    RPK.VV_ReportSeepageOutflow(S.ptr(), dT);
-    RPK.get_bdf1_dae()->CommitSolution(dT, soln);
 
-    T_physics = RPK.get_bdf1_dae()->time();
+    T_physics += dT;
     dT = dTnext;
     itrs++;
 

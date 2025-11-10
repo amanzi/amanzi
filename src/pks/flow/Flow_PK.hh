@@ -373,6 +373,7 @@ class Flow_PK : public PK_PhysicalBDF {
   // field evaluators (MUST GO AWAY lipnikov@lanl.gov)
   Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>> pressure_eval_;
   Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>> pressure_msp_eval_;
+  Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>> mol_flowrate_eval_;
 
   // physical models and assumptions
   ModelAssumptions assumptions_;
