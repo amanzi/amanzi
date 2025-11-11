@@ -19,6 +19,7 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 set(Alquimia_patch_file alquimia-cmake.patch
                         alquimia-FindPETSc.patch
                         alquimia-MPIlocation.patch
+                        alquimia-cmake2.patch
                         )
 patch_tpl(Alquimia
           ${Alquimia_prefix_dir}
