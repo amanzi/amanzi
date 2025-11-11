@@ -1,6 +1,6 @@
-diff --color -ruN alquimia-1.2.0-source/CMakeLists.txt alquimia-1.2.0-patch-source/CMakeLists.txt
---- alquimia-1.2.0-source/CMakeLists.txt	2025-11-10 20:33:13
-+++ alquimia-1.2.0-patch-source/CMakeLists.txt	2025-11-10 20:52:06
+diff --color -ruN alquimia-1.2.0-source-backup/CMakeLists.txt alquimia-1.2.0-source/CMakeLists.txt
+--- alquimia-1.2.0-source-backup/CMakeLists.txt	2025-11-10 21:02:40
++++ alquimia-1.2.0-source/CMakeLists.txt	2025-11-10 21:06:16
 @@ -184,9 +184,6 @@
    if (NOT PETSC_DIR)
      message(FATAL_ERROR "PETSC_DIR must be set for the requested engines to be enabled.")
@@ -11,18 +11,9 @@ diff --color -ruN alquimia-1.2.0-source/CMakeLists.txt alquimia-1.2.0-patch-sour
  
    message(STATUS "--- SM: PETSC_DIR >>> ${PETSC_DIR}")
    message(STATUS "--- SM: PETSC_ARCH >>> ${PETSC_ARCH}")
-@@ -229,7 +226,7 @@
-   include_directories(${PETSC_INCLUDES})
- 
-   # Include PETSc in the rpath.
--  if(DEFINED ENV{PETSC_ARCH})
-+  if(DEFINED PETSC_ARCH)
-     set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH}:${PETSC_DIR}/${PETSC_ARCH}/lib")
-   else()
-     set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH}:${PETSC_DIR}/lib")
-diff --color -ruN alquimia-1.2.0-source/alquimia/CMakeLists.txt alquimia-1.2.0-patch-source/alquimia/CMakeLists.txt
---- alquimia-1.2.0-source/alquimia/CMakeLists.txt	2025-11-10 20:33:13
-+++ alquimia-1.2.0-patch-source/alquimia/CMakeLists.txt	2025-11-10 20:44:40
+diff --color -ruN alquimia-1.2.0-source-backup/alquimia/CMakeLists.txt alquimia-1.2.0-source/alquimia/CMakeLists.txt
+--- alquimia-1.2.0-source-backup/alquimia/CMakeLists.txt	2025-11-10 21:02:40
++++ alquimia-1.2.0-source/alquimia/CMakeLists.txt	2025-11-10 21:05:40
 @@ -27,9 +27,13 @@
  endif()
  
@@ -40,36 +31,3 @@ diff --color -ruN alquimia-1.2.0-source/alquimia/CMakeLists.txt alquimia-1.2.0-p
    if (PETSC_LIBRARIES)
      list(APPEND ALQUIMIA_TPLS ${PETSC_LIBRARIES})
    endif()
-@@ -37,6 +41,7 @@
-     list(APPEND ALQUIMIA_TPLS ${PETSC_LDFLAGS})
-   endif()
- endif()
-+
- 
- include_directories(${ALQUIMIA_INCLUDE_DIRS})
- add_library(alquimia ${ALQUIMIA_SOURCES})
-diff --color -ruN alquimia-1.2.0-source/cmake/Modules/FindPETSc.cmake alquimia-1.2.0-patch-source/cmake/Modules/FindPETSc.cmake
---- alquimia-1.2.0-source/cmake/Modules/FindPETSc.cmake	2025-11-10 20:33:13
-+++ alquimia-1.2.0-patch-source/cmake/Modules/FindPETSc.cmake	2025-11-10 20:36:23
-@@ -125,7 +125,9 @@
-   message (SEND_ERROR "The pair PETSC_DIR=${PETSC_DIR} PETSC_ARCH=${PETSC_ARCH} do not specify a valid PETSc installation")
- endif ()
- 
--if (petsc_conf_rules AND petsc_conf_variables AND NOT petsc_config_current)
-+if (petsc_config_current)
-+  set(PETSC_EXECUTABLE_RUNS YES)
-+elseif (petsc_conf_rules AND petsc_conf_variables)
-   petsc_get_version()
- 
-   # Put variables into environment since they are needed to get
-@@ -335,7 +337,10 @@
-   mark_as_advanced (PETSC_INCLUDES PETSC_LIBRARIES PETSC_COMPILER PETSC_DEFINITIONS PETSC_MPIEXEC PETSC_EXECUTABLE_RUNS)
- endif ()
- 
-+
- include (FindPackageHandleStandardArgs)
- find_package_handle_standard_args (PETSc
-   "PETSc could not be found.  Be sure to set PETSC_DIR and PETSC_ARCH."
-   PETSC_INCLUDES PETSC_LIBRARIES PETSC_EXECUTABLE_RUNS)
-+
-+
