@@ -304,10 +304,11 @@ EnergyOnePhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   bool failed = bdf1_dae_->AdvanceStep(dt_, dt_next_, soln_);
   if (failed) {
     dt_ = dt_next_;
-
     archive_->Restore("");
     temperature_eval_->SetChanged();
   }
+
+  dt_ = dt_next_;
   return failed;
 }
 
@@ -319,12 +320,10 @@ void
 EnergyOnePhase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
   // commit solution to time history
-  dt_ = t_new - t_old;
-  if (bdf1_dae_.get()) bdf1_dae_->CommitSolution(dt_, soln_);
+  if (bdf1_dae_.get()) bdf1_dae_->CommitSolution(t_new - t_old, soln_);
   temperature_eval_->SetChanged();
 
   num_itrs_++;
-  dt_ = dt_next_;
 
   // update previous fields
   std::vector<std::string> fields({ energy_key_ });

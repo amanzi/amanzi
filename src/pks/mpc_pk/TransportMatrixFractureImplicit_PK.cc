@@ -419,10 +419,28 @@ TransportMatrixFractureImplicit_PK::AdvanceStepHO_(double t_old, double t_new, i
   *tcc_m = *soln_->SubVector(0)->Data();
   *tcc_f = *soln_->SubVector(1)->Data();
 
-  bdf1_dae_->CommitSolution(dt_, soln_);
   *tot_itrs = bdf1_dae_->number_nonlinear_steps() - *tot_itrs;
 
   return false;
+}
+
+
+/* *******************************************************************
+* Commit solution to the history
+******************************************************************* */
+void
+TransportMatrixFractureImplicit_PK::CommitStep(double t_old, double t_new, const Tag& tag)
+{
+  if (nspace_m_ == 1 && nspace_f_ == 1) {
+    PK_MPCStrong<PK_BDF>::CommitStep(t_old, t_new, tag);
+  } else if (nspace_m_ == 2 && nspace_f_ == 2) {
+    double dt = t_new - t_old;
+    bdf1_dae_->CommitSolution(dt, soln_);
+
+    for (unsigned int i = 0; i != sub_pks_.size(); ++i) {
+      sub_pks_[i]->CommitStep(t_old, t_new, tag);
+    }
+  }
 }
 
 

@@ -56,11 +56,7 @@ class Richards_PK : public Flow_PK {
   virtual void Initialize() final;
 
   virtual double get_dt() override { return dt_; }
-  virtual void set_dt(double dt) override
-  {
-    dt_ = dt;
-    dt_desirable_ = dt_;
-  }
+  virtual void set_dt(double dt) override { dt_ = dt; }
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
@@ -212,7 +208,6 @@ class Richards_PK : public Flow_PK {
   // time integrators
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>> bdf1_dae_;
   int error_control_, num_itrs_;
-  double dt_desirable_, dt_recommended_;
   std::vector<std::pair<double, double>> dT_history_;
   bool initialize_with_darcy_; // global state of initialization.
 

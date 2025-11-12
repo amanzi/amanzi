@@ -485,21 +485,18 @@ BlockVector::MeanValue(double* value) const
 
   int ierr(0), n(0), n_loc;
   double value_loc[1];
-  std::cout << "MeanValue: ";
 
   *value = 0.0;
   for (int i = 0; i != num_components_; ++i) {
     n_loc = data_[i]->GlobalLength();
     for (int lcv_vector = 0; lcv_vector != data_[i]->NumVectors(); ++lcv_vector) {
       ierr = (*data_[i])(lcv_vector)->MeanValue(value_loc);
-      std::cout << names_[i] << ":" << lcv_vector << " = " << value_loc << ", ";
       if (ierr) return ierr;
       *value += value_loc[0] * n_loc;
       n += n_loc;
     }
   }
   *value /= n;
-  std::cout << std::endl;
   return ierr;
 };
 

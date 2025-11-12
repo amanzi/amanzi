@@ -512,7 +512,7 @@ CycleDriver::get_dt(bool after_failure)
   std::vector<std::pair<double, double>>::iterator it;
   std::vector<std::pair<double, double>>::iterator it_max;
 
-  for (it = reset_info_.begin() , it_max = reset_max_.begin(); it != reset_info_.end();
+  for (it = reset_info_.begin(), it_max = reset_max_.begin(); it != reset_info_.end();
        ++it, ++it_max) {
     if (S_->get_time() == it->first) {
       if (reset_max_.size() > 0) {
@@ -536,7 +536,8 @@ CycleDriver::get_dt(bool after_failure)
 
   // check if the step size has gotten too small
   if (dt < min_dt_) {
-    Errors::Message message("CycleDriver: error, timestep too small");
+    Errors::Message message;
+    message << "CycleDriver: error, timestep too small (" << dt << " < " << min_dt_ << ")";
     Exceptions::amanzi_throw(message);
   }
 
@@ -620,7 +621,7 @@ CycleDriver::Advance(double dt)
       }
       reinit = true;
     }
-
+ 
     fail = pk_->AdvanceStep(S_->get_time(), S_->get_time() + dt, reinit);
   }
 

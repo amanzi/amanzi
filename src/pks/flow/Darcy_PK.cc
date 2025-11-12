@@ -322,7 +322,6 @@ Darcy_PK::Initialize()
   // -- times
   double t_ini = S_->get_time();
   dt_next_ = dt_;
-  dt_desirable_ = dt_; // The minimum desirable timestep from now on.
   dt_history_.clear();
 
   // Initialize local fields and evaluators.
@@ -610,7 +609,7 @@ Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   // estimate time multiplier
-  dt_desirable_ = ts_control_->getTimestep(dt_MPC, 1, true);
+  dt_ = ts_control_->getTimestep(dt_MPC, 1, true);
 
   // Darcy_PK always takes the suggested timestep and cannot fail
   dt_tuple times(t_new, dt_MPC);
@@ -627,6 +626,8 @@ Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void
 Darcy_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
+  double dt = t_new - t_old;
+
   ComputeMolarFlowRate_(true);
   S_->GetEvaluator(vol_flowrate_key_).Update(*S_, passwd_);
 
@@ -634,7 +635,7 @@ Darcy_PK::CommitStep(double t_old, double t_new, const Tag& tag)
   S_->GetW<CV_t>(prev_water_storage_key_, Tags::DEFAULT, passwd_) =
     S_->Get<CV_t>(water_storage_key_, Tags::DEFAULT);
 
-  if (coupled_to_matrix_ || assumptions_.flow_on_manifold) VV_FractureConservationLaw();
+  if (coupled_to_matrix_ || assumptions_.flow_on_manifold) VV_FractureConservationLaw(dt);
 
   // update time derivative
   *pdot_cells_prev = *pdot_cells;
