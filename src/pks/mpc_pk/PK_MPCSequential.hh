@@ -54,6 +54,9 @@ class PK_MPCSequential : public PK_MPC<PK> {
  protected:
   int max_itrs_, num_itrs_;
   double error_norm_, tol_;
+
+ private:
+  static RegisteredPKFactory<PK_MPCSequential> reg_;
 };
 
 } // namespace Amanzi
