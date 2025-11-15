@@ -293,6 +293,15 @@ InputConverterU::TranslateCycleDriver_()
         mpcs[pkname].mpc_type = (model == "default") ? "weakly default" : "weakly";
         mpcs[pkname].matrix_fracture = coupled_flow_;
 
+      } else if (strcmp(tagname, "sequentially_coupled") == 0) {
+        pkname = GetAttributeValueS_(jnode, "name");
+        model = GetAttributeValueS_(jnode, "model", TYPE_NUMERICAL, false, "");
+
+        mpcs[pkname].is_mpc = true;
+        mpcs[pkname].pks = CharToStrings_(mm.transcode(jnode->getTextContent()));
+        mpcs[pkname].mpc_type = (model == "default") ? "sequentially default" : "sequentially";
+        mpcs[pkname].matrix_fracture = coupled_flow_;
+
       } else if (strcmp(tagname, "subcycled") == 0) {
         pkname = GetAttributeValueS_(jnode, "name");
         model = GetAttributeValueS_(jnode, "model", TYPE_NUMERICAL, false, "");
@@ -355,6 +364,8 @@ InputConverterU::TranslateCycleDriver_()
           mpcname = params.pks[0] + " and " + params.pks[1];
           if (params.mpc_type == "weakly default") {
             params.basename = "mpc weak";
+          } else if (params.mpc_type == "sequentially default") {
+            params.basename = "mpc sequential";
           } else if (params.mpc_type == "subcycled default") {
             params.basename = "mpc subcycled";
           } else {

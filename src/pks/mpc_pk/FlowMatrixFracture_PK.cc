@@ -253,6 +253,9 @@ FlowMatrixFracture_PK::Initialize()
     double dt(-1e+98), dt_solver;
     bool fail = time_stepper_->AdvanceStep(dt, dt_solver, solution_);
     if (fail) Exceptions::amanzi_throw("Solver for coupled flow did not converge.");
+
+    double t_ini = S_->get_time();
+    CommitStep(t_ini, t_ini, Tags::DEFAULT);
   }
 
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {

@@ -630,9 +630,7 @@ Flow_PK::ComputeMolarFlowRate_(bool mass_to_molar)
   my_pde(Operators::PDE_DIFFUSION)->UpdateFlux(p.ptr(), flux.ptr());
   if (mass_to_molar) flux->Scale(1.0 / molar_mass_);
 
-  auto eval = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
-    S_->GetEvaluatorPtr(mol_flowrate_key_, Tags::DEFAULT));
-  eval->SetChanged();
+  mol_flowrate_eval_->SetChanged();
 }
 
 

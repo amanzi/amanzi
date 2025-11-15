@@ -229,21 +229,15 @@ MechanicsSmallStrain_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // trying to make a step
   bool failed(false);
   failed = bdf1_dae_->AdvanceStep(dt_, dt_next_, soln_);
+
   if (failed) {
     dt_ = dt_next_;
-
     archive.Restore("");
     eval_->SetChanged();
-
-    return failed;
   }
 
-  // commit solution (should we do it here ?)
-  bdf1_dae_->CommitSolution(dt_, soln_);
-  eval_->SetChanged();
-  num_itrs_++;
-
-  return false;
+  dt_ = dt_next_;
+  return failed;
 }
 
 
@@ -253,6 +247,11 @@ MechanicsSmallStrain_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void
 MechanicsSmallStrain_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
+  bdf1_dae_->CommitSolution(t_new - t_old, soln_);
+  eval_->SetChanged();
+
+  num_itrs_++;
+
   S_->GetEvaluator(hydrostatic_stress_key_).Update(*S_, "mechanics");
   S_->GetEvaluator(vol_strain_key_).Update(*S_, "mechanics");
 }

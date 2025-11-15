@@ -161,7 +161,6 @@ Run(const std::string& xmlFileName, int dim, const std::vector<double>& dt, int 
 
     pk[i]->Initialize();
     S[i]->CheckAllFieldsInitialized();
-    pk[i]->CommitStep(0.0, 1.0, Tags::DEFAULT);
     pk[i]->CalculateDiagnostics(Tags::DEFAULT);
 
     // WriteStateStatistics(*S[i]);

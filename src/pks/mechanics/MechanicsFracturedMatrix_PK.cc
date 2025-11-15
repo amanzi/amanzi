@@ -180,7 +180,7 @@ MechanicsFracturedMatrix_PK::FunctionalResidual(double t_old,
 void
 MechanicsFracturedMatrix_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
-  MechanicsSmallStrain_PK::Setup();
+  MechanicsSmallStrain_PK::CommitStep(t_old, t_new, tag);
 
   // compute aperture as diference of twin face DoFs
   auto& a_c = *S_->GetW<CV_t>(aperture_key_, Tags::DEFAULT, aperture_key_).ViewComponent("cell");

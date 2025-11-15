@@ -21,6 +21,7 @@
 #include "BDF1_TI.hh"
 #include "IEM.hh"
 #include "PK_Factory.hh"
+#include "StateArchive.hh"
 
 // Energy
 #include "Energy_PK.hh"
@@ -42,6 +43,7 @@ class EnergyOnePhase_PK : public Energy_PK {
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) final;
+  virtual void FailStep(double t_old, double t_new, const Tag& tag);
   virtual void CalculateDiagnostics(const Tag& tag) final {};
 
   double get_dt() final { return dt_; }
@@ -77,6 +79,8 @@ class EnergyOnePhase_PK : public Energy_PK {
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>> bdf1_dae_;
   int num_itrs_;
   double dt_, dt_next_;
+
+  Teuchos::RCP<StateArchive> archive_;
 
   // factory registration
   static RegisteredPKFactory<EnergyOnePhase_PK> reg_;

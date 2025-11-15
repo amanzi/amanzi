@@ -10,7 +10,7 @@
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 100, -1}"/>
   </ParameterList>
   <ParameterList name="regions">
-    <ParameterList name="Bottom Surface Outside All">
+    <ParameterList name="Bottom Surface">
       <ParameterList name="region: box">
         <Parameter name="high coordinate" type="Array(double)" value="{216.000, 0.0}"/>
         <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
@@ -37,7 +37,6 @@
     <ParameterList name="Top Surface">
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{0.0, 120.000}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{136.000, 120.000}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{216.000, 120.000}"/>
       </ParameterList>
     </ParameterList>
@@ -371,7 +370,7 @@
       <ParameterList name="boundary conditions">
         <ParameterList name="pressure">
           <ParameterList name="BC 0">
-            <Parameter name="regions" type="Array(string)" value="{Bottom Surface Outside All}"/>
+            <Parameter name="regions" type="Array(string)" value="{Bottom Surface}"/>
             <Parameter name="spatial distribution method" type="string" value="none"/>
             <ParameterList name="boundary pressure">
               <ParameterList name="function-constant">
