@@ -28,9 +28,9 @@ namespace Flow {
 * TBW
 ****************************************************************** */
 void
-Flow_PK::VV_FractureConservationLaw() const
+Flow_PK::VV_FractureConservationLaw(double dt) const
 {
-  if (!coupled_to_matrix_ || fabs(dt_) < 1e+10) return;
+  if (!coupled_to_matrix_ || fabs(dt) < 1e+10) return;
 
   const auto& fracture_flux =
     *S_->Get<CompositeVector>("fracture-volumetric_flow_rate").ViewComponent("face", true);
@@ -191,14 +191,14 @@ Flow_PK::VV_ValidateBCs() const
 * Reports water balance.
 ******************************************************************* */
 void
-Flow_PK::VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const
+Flow_PK::VV_ReportWaterBalance(const Teuchos::Ptr<State>& S, double dt) const
 {
   const auto& phi = *S->Get<CompositeVector>(porosity_key_).ViewComponent("cell");
   const auto& flowrate = *S->Get<CompositeVector>(vol_flowrate_key_).ViewComponent("face", true);
   const auto& ws = *S->Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
 
   std::vector<int>& bc_model = op_bc_->bc_model();
-  double mass_bc_dT = WaterVolumeChangePerSecond(bc_model, flowrate) * rho_ * dt_;
+  double mass_bc_dT = WaterVolumeChangePerSecond(bc_model, flowrate) * rho_ * dt;
 
   double mass_amanzi = 0.0;
   for (int c = 0; c < ncells_owned; c++) {
@@ -227,7 +227,7 @@ Flow_PK::VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const
 * Calculate flow out of the current seepage face.
 ******************************************************************* */
 void
-Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S, double dT) const
+Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S, double dt) const
 {
   const auto& flowrate = *S->Get<CompositeVector>(vol_flowrate_key_).ViewComponent("face");
 
@@ -253,7 +253,7 @@ Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S, double dT) const
   mesh_->getComm()->SumAll(&tmp, &outflow, 1);
 
   outflow *= rho_;
-  seepage_mass_ += outflow * dT;
+  seepage_mass_ += outflow * dt;
 
   if (MyPID == 0 && nbcs > 0) {
     Teuchos::OSTab tab = vo_->getOSTab();

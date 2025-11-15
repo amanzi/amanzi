@@ -392,6 +392,7 @@ double
 RunTest(int test, double dt)
 {
   auto comm = Amanzi::getDefaultComm();
+  std::cout << "\nTEST #" << test << std::endl;
 
   // create mesh
   std::string xmlname = "test/mpc_default.xml";

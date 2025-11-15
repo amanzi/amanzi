@@ -15,6 +15,7 @@
 
 #include "PK_MPCStrong.hh"
 #include "PK_MPCSubcycled.hh"
+#include "PK_MPCSequential.hh"
 
 #include "EnergyMatrixFracture_PK.hh"
 #include "FlowEnergy_PK.hh"
@@ -40,6 +41,7 @@ template<>
 RegisteredPKFactory<PK_MPCStrong<PK_BDF>> PK_MPCStrong<PK_BDF>::reg_("mpc strong");
 RegisteredPKFactory<PK_MPCSubcycled> PK_MPCSubcycled::reg_("mpc subcycled");
 RegisteredPKFactory<PK_MPCWeak> PK_MPCWeak::reg_("mpc weak");
+RegisteredPKFactory<PK_MPCSequential> PK_MPCSequential::reg_("mpc sequential");
 
 RegisteredPKFactory<FlowEnergy_PK> FlowEnergy_PK::reg_("flow and energy");
 RegisteredPKFactory<FlowEnergyMatrixFracture_PK> FlowEnergyMatrixFracture_PK::reg_(
