@@ -952,18 +952,18 @@ Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     dt_ = dt_next_;
     archive_->Restore("");
     pressure_eval_->SetChanged();
-  }
 
-  // set time step for next cycle (should go last)
-  if (dt_ <= dt_recommended && dt_ <= dt_next_ && dt_next_ < dt_recommended) {
-    // If we took a smaller step than we recommended, likely due to constraints
-    // from other PKs or events like vis (dt_ <= dt_recommended), and it worked
-    // well enough that the newly recommended step size didn't decrease (dt_ <=
-    // dt_next_), then we don't want to reduce our recommendation for the next
-    // step.
-    dt_ = dt_recommended;
   } else {
-    dt_ = dt_next_;
+    if (dt_ <= dt_next_ && dt_next_ < dt_recommended) {
+      // If we took a smaller step than we recommended, likely due to constraints
+      // from other PKs or events like vis (dt_ <= dt_recommended), and it worked
+      // well enough that the newly recommended step size didn't decrease (dt_ <=
+      // dt_next_), then we don't want to reduce our recommendation for the next
+      // step.
+      dt_ = dt_recommended;
+    } else {
+      dt_ = dt_next_;
+    }
   }
 
   return failed;
