@@ -143,6 +143,21 @@ if __name__ == "__main__":
     except:
         unstruct_crunch = False
 
+    # ATS
+    try:
+        print("looking for ATS")
+        path_to_ATS = os.path.join(os.environ['ATS_SRC_DIR'], 'testing',
+                                   'ats-regression-tests', '07_reactive_transport',
+                                   'amanzi_benchmark-tritium.regression')
+        root_ats = "ats_vis"
+        comp_ats = "total_component_concentration.Tritium"
+        x_ATS, c_ATS = GetXY_AmanziU_1D(path_to_ATS,root_ats,comp_ats,1)
+        ats = len(x_ATS)
+
+    except Exception:
+        ats = 0
+
+        
     # Do plot
     if (native > 0):
         nat = ax.plot(x_amanziU_native, c_amanziU_native,'rx',markersize=8,label='AmanziU(2nd-Order)+Native',linewidth=2)
@@ -162,6 +177,10 @@ if __name__ == "__main__":
     if (struct_crunch > 0):
         sam_crunch = ax.plot(x_amanziS_crunch, c_amanziS_crunch,'g*',label='AmanziS+Alquimia(CrunchFlow)',linewidth=2) 
 
+    if (ats > 0):
+        ax.plot(x_ATS, c_ATS, 'c-x', label='ATS', linewidth=2)
+
+        
     pfl = ax.plot(x_pflotran, c_pflotran,'b-',label='PFloTran',linewidth=2)
     crunch = ax.plot(x_crunchflow, c_crunchflow,'m*',markersize=10,label='CrunchFlow(OS3D)',linewidth=2)
 
@@ -192,6 +211,8 @@ if __name__ == "__main__":
         sams = a.plot(x_amanziS, c_amanziS,'g-',label='AmanziS+Alq(PFT)',linewidth=2) 
     if (struct_crunch>0):
         sams_crunch = a.plot(x_amanziS_crunch, c_amanziS_crunch,'g*',label='AmanziS+Alq(CF)',linewidth=2) 
+    if (ats > 0):
+        a.plot(x_ATS, c_ATS, 'c-x', label='ATS', linewidth=2)
 
     pfls = a.plot(x_pflotran, c_pflotran,'b-',label='PFloTran',linewidth=2)
     cfs = a.plot(x_crunchflow, c_crunchflow,'m*',markersize=9,label='CrunchFlow',linewidth=2)

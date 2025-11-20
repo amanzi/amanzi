@@ -83,15 +83,6 @@ MechanicsElasticity_PK::Initialize()
   num_itrs_ = 0;
   double t_ini = S_->get_time();
 
-  // -- control parameters
-  auto physical_models = Teuchos::sublist(ec_list_, "physical models and assumptions");
-  use_gravity_ = physical_models->get<bool>("use gravity");
-  thermoelasticity_ = physical_models->get<bool>("thermoelasticity", false);
-
-  split_undrained_ = physical_models->get<bool>("biot scheme: undrained split", false);
-  split_fixed_stress_ = physical_models->get<bool>("biot scheme: fixed stress split", false);
-  poroelasticity_ = split_undrained_ || split_fixed_stress_;
-
   // Create pointers to the primary flow field displacement.
   solution_ = S_->GetPtrW<CV_t>(displacement_key_, Tags::DEFAULT, passwd_);
   soln_->SetData(solution_);
@@ -100,7 +91,8 @@ MechanicsElasticity_PK::Initialize()
   std::string ti_method_name = ti_list_->get<std::string>("time integration method", "none");
   if (ti_method_name == "BDF1") {
     Teuchos::ParameterList& bdf1_list = ti_list_->sublist("BDF1");
-    bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1", bdf1_list, *this, soln_->get_map(), S_));
+    bdf1_dae_ = Teuchos::rcp(
+      new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1", bdf1_list, *this, soln_->get_map(), S_));
   }
 
   // Initialize matrix and preconditioner
@@ -109,14 +101,13 @@ MechanicsElasticity_PK::Initialize()
   // -- create elastic block
   auto tmp1 = ec_list_->sublist("operators").sublist("elasticity operator");
   op_matrix_elas_ = opfactory.Create(tmp1, mesh_);
-
   op_matrix_ = op_matrix_elas_->global_operator();
 
   // -- extensions: The undrained split method add anotehr operator which has
   //    the grad-div structure. It is critical that it uses a separate global
   //    operator pointer. Its local matrices are shared with the original
   //    physics operator.
-  if (split_undrained_) {
+  if (assumptions_.undrained_split) {
     std::string method = tmp1.sublist("schema").get<std::string>("method");
     tmp1.sublist("schema").set<std::string>("method", method + " graddiv");
     op_matrix_graddiv_ = opfactory.Create(tmp1, mesh_);
@@ -156,7 +147,9 @@ MechanicsElasticity_PK::Initialize()
 
   // we set up operators and can trigger re-initialization of stress
   eval_hydro_stress_->set_op(op_matrix_elas_);
-  eval_vol_strain_->set_op(op_matrix_elas_);
+  Teuchos::rcp_dynamic_cast<Evaluators::VolumetricStrainEvaluator>(
+    S_->GetEvaluatorPtr(vol_strain_key_, Tags::DEFAULT))
+    ->set_op(op_matrix_elas_);
   eval_->SetChanged();
 
   // summary of initialization
@@ -194,16 +187,16 @@ MechanicsElasticity_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // add external forces
   auto rhs = op_matrix_->rhs();
-  if (use_gravity_) AddGravityTerm(*rhs);
-  if (poroelasticity_) AddPressureGradient(*rhs);
-  if (thermoelasticity_) AddTemperatureGradient(*rhs);
+  if (assumptions_.use_gravity) AddGravityTerm(*rhs);
+  if (assumptions_.poroelasticity) AddPressureGradient(*rhs);
+  if (assumptions_.thermoelasticity) AddTemperatureGradient(*rhs);
 
   // update the matrix = preconditioner
   op_matrix_elas_->UpdateMatrices();
   op_matrix_elas_->ApplyBCs(true, true, true);
 
   // extensions
-  if (split_undrained_) {
+  if (assumptions_.undrained_split) {
     auto u = S_->Get<CV_t>(displacement_key_, Tags::DEFAULT);
     op_matrix_graddiv_->SetScalarCoefficient(
       S_->Get<CV_t>(undrained_split_coef_key_, Tags::DEFAULT));
@@ -219,7 +212,7 @@ MechanicsElasticity_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "elasticity solver (PCG): ||r||_H=" << op->residual() << " itr=" << op->num_itrs()
-               << " code=" << op->returned_code() << std::endl;
+               << " code=" << op->returned_code() << " size=" << rhs->GlobalLength() << std::endl;
   }
 
   if (ierr != 0) {

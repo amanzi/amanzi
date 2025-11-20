@@ -9,7 +9,7 @@ Amanzi depends on several external software packages or third party libraries
 (TPL) to build. Before building Amanzi a user must either build each of these 
 TPLs, provide an installation path for each TPL or define the include directories
 and libraries needed for each TPL. We recommend that users build Amanzi and all the
-TPLs using the ``boostrap.sh`` shell script found in the ``config`` directory. 
+TPLs using the ``boostrap.sh`` shell script found in the root directory. 
 The script can be run from the source directory. On most
 UNIX flavored systems, this script will build and install Amanzi and all the required
 TPLs with little information from the user. The script has prerequisites for

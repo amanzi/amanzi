@@ -1,40 +1,45 @@
-#FROM ubuntu:latest
-#FROM ubuntu:artful
-#FROM ubuntu:bionic
-#FROM ubuntu:focal
-FROM ubuntu:jammy
-
+ARG base_image=ubuntu
+ARG ver_tag=jammy
+FROM ${base_image}:${ver_tag} AS base
 
 LABEL Description="This image contains all of the third-party libraries needed by Amanzi (based on the specified branch, default branch is master)."
 
-# MPI flavor (mpich|openmpi)
+# Build arguments
+ARG cmake_version
+ARG base_image
+ARG ver_tag
 ARG build_mpi=True
 ARG mpi_flavor=mpich
 ARG mpi_version=4.0.3
+ARG build_type=opt
 ARG TARGETARCH
 
 # Set timezone:
 RUN ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime && echo $CONTAINER_TIMEZONE > /etc/timezone
 
-RUN apt-get -q update -y && apt-get install -y tzdata && apt-get -q install -y \
+RUN apt-get -q update -y && apt-get install -y tzdata && \
+  if [ "$base_image" = "ubuntu" ]; then \
+    echo "Installing compilers..." \
+    && apt-get -q install -y \
+      g++ \
+      gfortran; \
+  fi && \
+  apt-get -q install -y \
   apt-utils \
-  #  cmake \
   curl \
   libcurl4-openssl-dev \
   emacs \
   gedit \
-  g++ \
-  gfortran \
   git \
   groff \
   libblas-dev \
   liblapacke-dev \
   liblapack-dev \
-  #  lib${mpi_flavor}-dev \
   libssl-dev \
   m4 \
   make \
   openssl \
+  pkg-config \
   python3 \
   python3-distutils \
   python3-pip \
@@ -42,10 +47,14 @@ RUN apt-get -q update -y && apt-get install -y tzdata && apt-get -q install -y \
   rsync \
   wget \
   vim \
-  zlib1g-dev \
-  && apt-get clean \
+  zlib1g-dev && \
+  if [ "$base_image" = "gcc" ]; then \
+    echo  "Installing h5py in debian image..." \
+    && apt-get -q install -y \
+	      python3-h5py; \
+  fi && \
+  apt-get clean \
   && rm -rf /var/lib/apt/lists/*
-
 
 # install MPI - if mpich, custom compile; if openmpi, install precompiled binary
 RUN if [ "$build_mpi" = "True" ]; then \
@@ -53,8 +62,8 @@ RUN if [ "$build_mpi" = "True" ]; then \
   && wget https://www.mpich.org/static/downloads/${mpi_version}/mpich-${mpi_version}.tar.gz \
   && tar xvf mpich-${mpi_version}.tar.gz \
   && cd mpich-${mpi_version} \
-  && FFLAGS="-fallow-argument-mismatch" FCFLAGS="-fallow-argument-mismatch" ./configure --enable-shared --with-device=ch3:sock --enable-fast=all,Os --prefix=/usr \
-  && make \
+  && FFLAGS="-fallow-argument-mismatch" FCFLAGS="-fallow-argument-mismatch" ./configure --enable-shared --with-device=ch3:sock --enable-fast=all,Os --prefix=/usr/local \
+  && make -j4 \
   && make install \
   && cd ../ \
   && rm -r mpich-${mpi_version}/ \
@@ -64,8 +73,9 @@ RUN if [ "$build_mpi" = "True" ]; then \
   && wget https://download.open-mpi.org/release/open-mpi/v${mpi_version_major}/openmpi-${mpi_version}.tar.gz \
   && tar xvf openmpi-${mpi_version}.tar.gz \
   && cd openmpi-${mpi_version} \
-  && FFLAGS="-fallow-argument-mismatch" FCFLAGS="-fallow-argument-mismatch" ./configure --enable-shared --prefix=/usr \
-  && make \
+  && export LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/lib:$LD_LIBRARY_PATH \
+  && FFLAGS="-fallow-argument-mismatch" FCFLAGS="-fallow-argument-mismatch" ./configure --enable-shared --prefix=/usr/local \
+  && make -j4 \
   && make install \
   && cd ../ \
   && rm -r openmpi-${mpi_version}/ \
@@ -79,6 +89,8 @@ RUN if [ "$build_mpi" = "True" ]; then \
 # Versions change and we cannot set environment variables from command output.
 ARG petsc_ver
 ARG trilinos_ver
+ARG https_proxy
+ARG http_proxy
 ARG amanzi_branch=master
 
 # Installation paths
@@ -97,11 +109,11 @@ RUN groupadd -r amanzi_user \
 USER amanzi_user
 
 # Set the current working directory as the users home directory
-# (creates teh directory if it doesn't exist)
+# (creates the directory if it doesn't exist)
 WORKDIR /home/amanzi_user
 
-# ENV https_proxy=proxyout.lanl.gov:8080 \
-#     http_proxy=proxyout.lanl.gov:8080
+ENV https_proxy=${https_proxy} \
+    http_proxy=${http_proxy}
 
 # Clone the amanzi git repo.
 RUN git clone https://github.com/amanzi/amanzi.git
@@ -115,22 +127,65 @@ RUN if [ "$amanzi_branch" != "master" ]; then \
   echo "Amanzi branch = $amanzi_branch"; \
   git branch --list
 
+
+# Check to see if we've requested a newer cmake than what bootstrap requires
+USER root
+RUN export cmake_minimum_version=$(grep '^cmake_version=' bootstrap.sh | cut -d= -f2) \
+    && echo "${cmake_minimum_version}" "${cmake_version}" \
+    && if printf "%s\n%s\n" "${cmake_minimum_version}" "${cmake_version}" | sort -V -C ; then \
+    # install cmake:
+      export cmake_major_minor=$(echo "${cmake_version}" | cut -d. -f1,2) \
+      && echo $cmake_major_minor \
+      && cd /home/amanzi_user \
+      && wget https://cmake.org/files/v${cmake_major_minor}/cmake-${cmake_version}.tar.gz \
+      && tar -xvf cmake-${cmake_version}.tar.gz \
+      && cd cmake-${cmake_version} \
+      && ./bootstrap \ 
+      && make -j4 \
+      && make install; fi
+
+USER amanzi_user
+
+
+#===========================================================================
+# here and above can be run with --target base in the docker build command
+#===========================================================================
+FROM base AS tpls
+
 # Build and install the TPLs using bootstrap.sh, and remove
 # the source, objects, etc. after installation to save space.
-RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
-  --parallel=4 --opt \
-  --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/amanzi \
-  --tpl-build-dir=/home/amanzi_user/amanzi_builddir/tpls \
-  --tpl-download-dir=/home/amanzi_user/amanzi_builddir/tpls/Downloads \
-  --disable-build_amanzi --disable-build_user_guide \
-  --enable-shared --enable-structured --enable-silo \
-  --enable-alquimia --enable-pflotran --enable-crunchtope \
-  --enable-pf_clm \
-  --with-mpi=/usr \
-  --with-python=/usr/bin/python \
+# Consider adding ...
+#  --enable-mesh_moab 
+RUN if [ ${base_image} = "gcc" ] || [ ${mpi_flavor} = "openmpi" ]; then \
+  # need to set LD_LIBRARY_PATH just for build stage to link libpetsc.so to
+  # correct compiler libraries.
+  export LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/lib:$LD_LIBRARY_PATH \
+  && ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
+      --parallel=4 --${build_type} \
+      --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/amanzi \
+      --tpl-build-dir=/home/amanzi_user/amanzi_builddir/tpls \
+      --tpl-download-dir=/home/amanzi_user/amanzi_builddir/tpls/Downloads \
+      --disable-build_amanzi --disable-build_user_guide \
+      --enable-shared --enable-structured --enable-silo \
+      --enable-alquimia --enable-pflotran --enable-crunchtope \
+      --enable-pf_clm --enable-mesh_moab \
+      --with-mpi=/usr/local \
+      --with-python=/usr/bin/python ; \
+  else \
+    ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
+      --parallel=4 --${build_type} \
+      --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/amanzi \
+      --tpl-build-dir=/home/amanzi_user/amanzi_builddir/tpls \
+      --tpl-download-dir=/home/amanzi_user/amanzi_builddir/tpls/Downloads \
+      --disable-build_amanzi --disable-build_user_guide \
+      --enable-shared --enable-structured --enable-silo \
+      --enable-alquimia --enable-pflotran --enable-crunchtope \
+      --enable-pf_clm --enable-mesh_moab \
+      --with-mpi=/usr/local \
+      --with-python=/usr/bin/python ; \
+  fi \
   && git checkout master \
   && rm -r /home/amanzi_user/amanzi_builddir \
-  && rm -r /home/amanzi_user/amanzi/build/tools/ \
   && cd /home/amanzi_user/install \
   && find . -type f -name '*.pdf' -exec rm {} \; \
   && find . -type f -name '*.png' -exec rm {} \; \
@@ -138,20 +193,20 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
 
 ENV HDF5_DIR=/home/amanzi_user/install/tpls
 
-# Note this installs numpy as well
-RUN pip3 install --no-cache-dir --upgrade pip \
-  && pip3 install --no-cache-dir --no-binary=h5py h5py
-
 # Set the LD_LIBRARY_PATH for Amanzi builds in the next stage
-ENV LD_LIBRARY_PATH=${AMANZI_TPLS_DIR}/lib:${AMANZI_PETSC_LIBS}:${AMANZI_TRILINOS_LIBS}:${AMANZI_SEACAS_LIBS}
+ENV LD_LIBRARY_PATH=${AMANZI_TPLS_DIR}/lib:${AMANZI_PETSC_LIBS}:${AMANZI_TRILINOS_LIBS}:${AMANZI_SEACAS_LIBS}:/usr/local/lib64:/usr/local/lib:/usr/lib
 RUN echo $LD_LIBRARY_PATH
 
 # Set path to pick up any tools installed during bootstrap
 ENV PATH=/home/amanzi_user/amanzi/install/tools/bin:${PATH}
 RUN echo $PATH
 
-# Unset proxy
-# ENV https_proxy= \
-#    http_proxy=
+# Note this installs numpy as well
+RUN if [ "$base_image" = "ubuntu" ]; then \
+      pip3 install --no-cache-dir --upgrade pip \
+      && pip3 install --no-cache-dir --no-binary=h5py h5py; fi
+
+
+
 
 

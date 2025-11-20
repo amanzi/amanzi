@@ -183,8 +183,9 @@ if __name__ == "__main__":
 
         native = True
 
-    except:
+    except Exception as err:
         native = False
+        print(err)
         pass    
 
 
@@ -200,7 +201,7 @@ if __name__ == "__main__":
             x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
             Ca_amanzi_alquimia = Ca_amanzi_alquimia +[c_amanzi_alquimia]
 
-        comp = 'free_ion_species.H+'
+        comp = 'primary_free_ion_concentration.H+'
         pH_amanzi_alquimia = []
         for i, time in enumerate(times):
             x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
@@ -214,7 +215,8 @@ if __name__ == "__main__":
 
         alq = True
 
-    except:
+    except Exception as err:
+        print(err)
         alq = False
 
     # Amanzi U + Alquimia + PFloTran chemistry with writer
@@ -229,7 +231,7 @@ if __name__ == "__main__":
             x_amanzi_alquimia_w, c_amanzi_alquimia_w = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
             Ca_amanzi_alquimia_w = Ca_amanzi_alquimia_w +[c_amanzi_alquimia_w]
 
-        comp = 'free_ion_species.H+'
+        comp = 'primary_free_ion_concentration.H+'
         pH_amanzi_alquimia_w = []
         for i, time in enumerate(times):
             x_amanzi_alquimia_w, c_amanzi_alquimia_w = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
@@ -243,7 +245,8 @@ if __name__ == "__main__":
 
         alq_writer = True
 
-    except:
+    except Exception as err:
+        print(err)
         alq_writer = False
         
     # Amanzi U + Alquimia + CruchFlow chemistry
@@ -258,7 +261,7 @@ if __name__ == "__main__":
             x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
             Ca_amanzi_alquimia_crunch = Ca_amanzi_alquimia_crunch +[c_amanzi_alquimia_crunch]
 
-        comp = 'free_ion_species.H+'
+        comp = 'primary_free_ion_concentration.H+'
         pH_amanzi_alquimia_crunch = []
         for i, time in enumerate(times):
            x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
@@ -272,10 +275,43 @@ if __name__ == "__main__":
 
         alq_crunch = True
 
-    except:
+    except Exception as err:
+        print(err)
         alq_crunch = False
 
-    
+
+    # Amanzi U + Alquimia + CruchFlow chemistry
+    try:
+        print("looking for ATS")
+        path_to_ATS = os.path.join(os.environ['ATS_SRC_DIR'], 'testing',
+                                   'ats-regression-tests', '07_reactive_transport',
+                                   'amanzi_benchmark-calcite.regression')
+
+        root_ATS = "ats_vis"
+        comp = 'total_component_concentration.Ca++'
+        Ca_ATS = []
+        for i, time in enumerate(times):
+            x_ATS, c_ATS = GetXY_AmanziU_1D(path_to_ATS, root_ATS, comp, 1)
+            Ca_ATS = Ca_ATS +[c_ATS]
+
+        comp = 'primary_free_ion_concentration.H+'
+        pH_ATS = []
+        for i, time in enumerate(times):
+           x_ATS, c_ATS = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
+           pH_ATS = pH_ATS +[-np.log10(c_ATS)]
+
+        comp = 'mineral_volume_fractions.Calcite'
+        VF_ATS = []
+        for i, time in enumerate(times):
+           x_ATS, c_ATS = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
+           VF_ATS = VF_ATS +[c_ATS]
+
+        ats = True
+
+    except Exception as err:
+        ats = False
+
+        
     # Amanzi S + Alquimia + PFloTran chemistry
     try:
         # import pdb; pdb.set_trace()
@@ -329,6 +365,8 @@ if __name__ == "__main__":
             ax[0].plot(x_amanzi_alquimia_crunch, Ca_amanzi_alquimia_crunch[i],'r*',linewidth=2,markersize=CRUNCH_MARKER_SIZE)
         if native:
             ax[0].plot(x_amanzi_native, Ca_amanzi_native[i],'rx')
+        if ats:
+            ax[0].plot(x_ATS, Ca_ATS[i], 'c-x')
 
         ax[0].plot(x_pflotran_OS, Ca_pflotran_OS[i],'-',linewidth=PFLOTRAN_LINE_WIDTH,c=PFLOTRAN_LINE_COLOR)
         ax[0].plot(x_crunchflow, Ca_crunchOS3D[i],'m*',markersize=CRUNCH_MARKER_SIZE)
@@ -342,6 +380,10 @@ if __name__ == "__main__":
         if native:
             ax[1].plot(x_amanzi_native, pH_amanzi_native[i],'rx',label='AmanziU(2nd-O) Native Chem.')
 
+        if ats:
+            ax[1].plot(x_ATS, pH_ATS[i], 'c-x', label='ATS+Crunch')
+
+            
         ax[1].plot(x_pflotran_OS, pH_pflotran_OS[i],'-',linewidth=PFLOTRAN_LINE_WIDTH,c=PFLOTRAN_LINE_COLOR)
         ax[1].plot(x_crunchflow, pH_crunchOS3D[i],'m*',markersize=CRUNCH_MARKER_SIZE)
 
@@ -366,6 +408,9 @@ if __name__ == "__main__":
                 ax[2].plot(x_amanzi_alquimia_crunch, VF_amanzi_alquimia_crunch[i],'r*',linewidth=2,markersize=CRUNCH_MARKER_SIZE)
             if native:
                 ax[2].plot(x_amanzi_native, VF_amanzi_native[i],'rx')
+
+            if ats:
+                ax[2].plot(x_ATS, VF_ATS[i], 'c-x')
 
             ax[2].plot(x_pflotran_OS, VF_pflotran_OS[i],'-',linewidth=PFLOTRAN_LINE_WIDTH,c=PFLOTRAN_LINE_COLOR)
 

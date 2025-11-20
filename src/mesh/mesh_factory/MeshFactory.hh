@@ -29,8 +29,8 @@ struct MeshFactory : public MeshFrameworkFactory {
   Teuchos::RCP<Mesh> create(const std::string& filename)
   {
     Teuchos::RCP<MeshFramework> mesh_fw = MeshFrameworkFactory::create(filename);
-    auto mesh = Teuchos::rcp(
-      new Mesh(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), plist_));
+    auto mesh =
+      Teuchos::rcp(new Mesh(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), plist_));
     return mesh;
   }
 
@@ -47,7 +47,7 @@ struct MeshFactory : public MeshFrameworkFactory {
     Teuchos::RCP<MeshFramework> mesh_fw =
       MeshFrameworkFactory::create(x0, y0, z0, x1, y1, z1, nx, ny, nz);
     auto mesh = Teuchos::rcp(
-      new Mesh(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
+      new Mesh(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), plist_));
     return mesh;
   }
 
@@ -60,7 +60,7 @@ struct MeshFactory : public MeshFrameworkFactory {
   {
     Teuchos::RCP<MeshFramework> mesh_fw = MeshFrameworkFactory::create(x0, y0, x1, y1, nx, ny);
     auto mesh = Teuchos::rcp(
-      new Mesh(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
+      new Mesh(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), plist_));
     return mesh;
   }
 

@@ -34,10 +34,12 @@ class PK_MPCSubcycled : public PK_MPC<PK> {
   // PK methods
   // -- dt is the minimum of the sub pks
   virtual double get_dt();
-  virtual void set_dt(double dt){};
+  virtual void set_dt(double dt) {};
 
   // -- advance each sub pk dt.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
+
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag);
 
  protected:
   int master_;

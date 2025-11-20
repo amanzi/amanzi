@@ -64,7 +64,7 @@ InputConverterU::TranslateEnergy_(const std::string& domain, const std::string& 
 
   std::string disc_method("mfd-optimized_for_sparsity");
   node = GetUniqueElementByTagsString_(root + ", discretization_method", flag);
-  if (flag) disc_method = mm.transcode(node->getNodeName());
+  if (flag) disc_method = mm.transcode(node->getTextContent());
 
   node = GetUniqueElementByTagsString_(root + ", preconditioning_strategy", flag);
   if (flag) pc_method = mm.transcode(node->getNodeName());
@@ -79,9 +79,22 @@ InputConverterU::TranslateEnergy_(const std::string& domain, const std::string& 
     "unstructured_controls, unstr_nonlinear_solver, modify_correction", flag);
 
   // insert operator sublist
+  // -- diffusion
   out_list.sublist("operators") = TranslateDiffusionOperator_(
     disc_method, pc_method, nonlinear_solver, "standard-cell", "", domain, false, "energy");
 
+  if (disc_method == "fv-default") {
+    out_list.sublist("operators").sublist("diffusion operator").sublist("conductivity")
+      .set<std::string>("upwind method", "upwind: darcy velocity")
+      .set<std::string>("upwind frequency", "every timestep")
+      .sublist("upwind parameters")
+      .set<double>("tolerance", 1e-12)
+      .set<std::string>("method", "cell-based")
+      .set<int>("polynomial order", 1)
+      .set<std::string>("limiter", "Barth-Jespersen");
+  }
+
+  // -- advection
   auto& adv_list = out_list.sublist("operators").sublist("advection operator");
   if (fracture_network_ && domain != "fracture")
     adv_list.set<Teuchos::Array<std::string>>("fracture", fracture_regions_);
@@ -139,6 +152,8 @@ InputConverterU::TranslateEnergy_(const std::string& domain, const std::string& 
     }
   }
 
+  out_list.sublist("fracture aperture models") = TranslateFAM_(domain);
+
   // insert time integrator
   std::string err_options("energy"),
     unstr_controls("unstructured_controls, unstr_transient_controls");
@@ -195,10 +210,9 @@ InputConverterU::TranslateEnergyBCs_(const std::string& domain)
 
   // correct list of boundary conditions for given domain
   bool flag;
-  if (domain == "matrix")
-    node = GetUniqueElementByTagsString_("boundary_conditions", flag);
-  else
+  if (domain == "fracture")
     node = GetUniqueElementByTagsString_("fracture_network, boundary_conditions", flag);
+  else node = GetUniqueElementByTagsString_("boundary_conditions", flag);
   if (!flag) return out_list;
 
   int ibc(0);

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<amanzi_input type="unstructured" version="1.6-dev">
+<amanzi_input type="unstructured" version="1.7-dev">
     <model_description name="farea_1d">
         <comments>farea_1d	Thu Jun 23 15:00:31 PDT 2016</comments>
     </model_description>
@@ -13,9 +13,16 @@
         </macros>
     </definitions>
     <process_kernels>
-        <flow model="saturated" state="on"/>
-        <transport state="on"/>
+      <pk mode="steady">
+        <flow state="on" model="saturated"/>
+      </pk>
+      <pk mode="transient">
+        <flow state="on" model="saturated"/>
+        <transport state="on" />
 	<chemistry database="farea-full.dat" engine="pflotran" state="on"/>
+        <weakly_coupled name="reactive transport">chemistry,transport</weakly_coupled>
+        <weakly_coupled name="mpc">flow,reactive transport</weakly_coupled>
+      </pk>
     </process_kernels>
     <phases>
         <liquid_phase name="water">
@@ -34,7 +41,7 @@
                     <primary coefficient_of_diffusion="1.0E-9">Na+</primary>
                     <primary coefficient_of_diffusion="1.0E-9">SiO2(aq)</primary>
                     <primary coefficient_of_diffusion="1.0E-9">SO4--</primary>
-                    <primary backward_rate="0.0" coefficient_of_diffusion="1.0E-9" first_order_decay_constant="1.78577e-09 ">Tritium</primary>
+                    <primary backward_rate="0.0" coefficient_of_diffusion="1.0E-9" first_order_decay_rate_constant="1.78577e-09 ">Tritium</primary>
                     <primary coefficient_of_diffusion="1.0E-9">NO3-</primary>
                     <primary coefficient_of_diffusion="1.0E-9">UO2++</primary>
                 </primaries>

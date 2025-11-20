@@ -64,7 +64,7 @@ PDE_Electromagnetics::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
   Kc(0, 0) = 1.0;
 
   for (int c = 0; c < ncells_owned; c++) {
-    if (K_.get()) Kc = (*K_)[c];
+    if (K_.get() ) Kc = (*K_)[c];
     mfd_->StiffnessMatrix(c, Kc, Acell);
     local_op_->matrices[c] = Acell;
   }
@@ -120,7 +120,9 @@ PDE_Electromagnetics::ApplyBCs_Edge_(const Teuchos::Ptr<const BCs>& bc_f,
     auto edges = mesh_->getCellEdges(c);
     int nedges = edges.size();
 
-    for (int n = 0; n < nedges; ++n) { edge_ncells[edges[n]]++; }
+    for (int n = 0; n < nedges; ++n) {
+      edge_ncells[edges[n]]++;
+    }
   }
 
   for (int c = 0; c != ncells_owned; ++c) {

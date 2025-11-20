@@ -80,8 +80,8 @@ class DomainSet {
     }
     return *maps_.at(subdomain);
   }
-  void
-  setSubdomainMap(const std::string& subdomain, const Teuchos::RCP<const std::vector<int>>& map)
+  void setSubdomainMap(const std::string& subdomain,
+                       const Teuchos::RCP<const std::vector<int>>& map)
   {
     maps_[subdomain] = map;
   }
@@ -91,8 +91,8 @@ class DomainSet {
   }
 
   // import from subdomain to parent domain
-  void
-  doImport(const std::vector<const Epetra_MultiVector*>& src, Epetra_MultiVector& target) const;
+  void doImport(const std::vector<const Epetra_MultiVector*>& src,
+                Epetra_MultiVector& target) const;
 
   // import from subdomain to parent domain
   void doImport(const std::string& subdomain,
@@ -117,17 +117,17 @@ class DomainSet {
 // helper functions to create importers
 //
 // Creates an importer from an extracted mesh entity to its parent entities.
-Teuchos::RCP<const std::vector<int>>
-createMapToParent(const AmanziMesh::Mesh& subdomain_mesh,
-                  const AmanziMesh::Entity_kind& src_kind = AmanziMesh::Entity_kind::CELL);
+Teuchos::RCP<const std::vector<int>> createMapToParent(
+  const AmanziMesh::Mesh& subdomain_mesh,
+  const AmanziMesh::Entity_kind& src_kind = AmanziMesh::Entity_kind::CELL);
 
 //
 // Creates an importer from a surface mesh lifted from an extracted subdomain
 // mesh to the global surface mesh (which itself was lifted from the extracted
 // subdomain's parent mesh).
-Teuchos::RCP<const std::vector<int>>
-createMapSurfaceToSurface(const AmanziMesh::Mesh& subdomain_mesh,
-                          const AmanziMesh::Mesh& parent_mesh);
+Teuchos::RCP<const std::vector<int>> createMapSurfaceToSurface(
+  const AmanziMesh::Mesh& subdomain_mesh,
+  const AmanziMesh::Mesh& parent_mesh);
 
 } // namespace AmanziMesh
 } // namespace Amanzi

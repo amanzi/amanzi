@@ -47,54 +47,54 @@ enum class RegionType {
 std::string inline to_string(const RegionType rtype)
 {
   switch (rtype) {
-  case (RegionType::BOX): {
-    return "region: box";
-  } break;
-  case (RegionType::PLANE): {
-    return "region: plane";
-  } break;
-  case (RegionType::LABELEDSET): {
-    return "region: labeled set";
-  } break;
-  case (RegionType::LAYER): {
-    return "region: layer";
-  } break;
-  case (RegionType::SURFACE): {
-    return "region: surface";
-  } break;
-  case (RegionType::POINT): {
-    return "region: point";
-  } break;
-  case (RegionType::COLORFUNCTION): {
-    return "region: color function";
-  } break;
-  case (RegionType::LOGICAL): {
-    return "region: logical";
-  } break;
-  case (RegionType::POLYGON): {
-    return "region: polygon";
-  } break;
-  case (RegionType::ENUMERATED): {
-    return "region: enumerated";
-  } break;
-  case (RegionType::BOUNDARY): {
-    return "region: boundary";
-  } break;
-  case (RegionType::BOX_VOF): {
-    return "region: box vof";
-  } break;
-  case (RegionType::LINE_SEGMENT): {
-    return "region: line segment";
-  } break;
-  case (RegionType::CYLINDER): {
-    return "region: cylinder";
-  } break;
-  case (RegionType::ALL): {
-    return "region: all";
-  } break;
-  default: {
-    return "unknown";
-  }
+    case (RegionType::BOX): {
+      return "region: box";
+    } break;
+    case (RegionType::PLANE): {
+      return "region: plane";
+    } break;
+    case (RegionType::LABELEDSET): {
+      return "region: labeled set";
+    } break;
+    case (RegionType::LAYER): {
+      return "region: layer";
+    } break;
+    case (RegionType::SURFACE): {
+      return "region: surface";
+    } break;
+    case (RegionType::POINT): {
+      return "region: point";
+    } break;
+    case (RegionType::COLORFUNCTION): {
+      return "region: color function";
+    } break;
+    case (RegionType::LOGICAL): {
+      return "region: logical";
+    } break;
+    case (RegionType::POLYGON): {
+      return "region: polygon";
+    } break;
+    case (RegionType::ENUMERATED): {
+      return "region: enumerated";
+    } break;
+    case (RegionType::BOUNDARY): {
+      return "region: boundary";
+    } break;
+    case (RegionType::BOX_VOF): {
+      return "region: box vof";
+    } break;
+    case (RegionType::LINE_SEGMENT): {
+      return "region: line segment";
+    } break;
+    case (RegionType::CYLINDER): {
+      return "region: cylinder";
+    } break;
+    case (RegionType::ALL): {
+      return "region: all";
+    } break;
+    default: {
+      return "unknown";
+    }
   }
 }
 
@@ -109,9 +109,9 @@ operator<<(std::ostream& os, const RegionType& rtype)
 enum class LifeCycleType { PERMANENT = 0, TEMPORARY };
 
 
-enum class BoolOpType { NOBOOLEAN = -1, COMPLEMENT, UNION, INTERSECT, SUBTRACT };
-
-const double TOL = 1.0e-08;
+// Note boundary of a set is a topological concept, not purely geometric.
+// It may be implemented using closure and complement operations.
+enum class BoolOpType { NOBOOLEAN = -1, COMPLEMENT, UNION, INTERSECT, SUBTRACT, BOUNDARY };
 
 // arbitrary number to avoid clashing
 // with IDs of LabeledSet regions

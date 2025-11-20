@@ -159,7 +159,7 @@ PDE_Elasticity::ComputeHydrostaticStress(const CompositeVector& u, CompositeVect
   const auto& u_n = *u.ViewComponent("node", true);
 
   Teuchos::RCP<const Epetra_MultiVector> u_f;
-  if (u.HasComponent("face")) u_f = u.ViewComponent("face", true);
+  if (u.HasComponent("face") ) u_f = u.ViewComponent("face", true);
 
   int d = mesh_->getSpaceDimension();
   auto mfd3d = Teuchos::rcp_dynamic_cast<WhetStone::MFD3D>(mfd_);
@@ -174,7 +174,9 @@ PDE_Elasticity::ComputeHydrostaticStress(const CompositeVector& u, CompositeVect
     dofs.Reshape(d * nnodes);
     for (int n = 0; n < nnodes; ++n) {
       int v = nodes[n];
-      for (int k = 0; k < d; ++k) { dofs(d * n + k) = u_n[k][v]; }
+      for (int k = 0; k < d; ++k) {
+        dofs(d * n + k) = u_n[k][v];
+      }
     }
 
     // optional face DoFs
@@ -203,12 +205,13 @@ PDE_Elasticity::ComputeHydrostaticStress(const CompositeVector& u, CompositeVect
     WhetStone::Tensor CTc = Cc * Tc;
 
     for (int k = 0; k < d; ++k) p_c[0][c] += CTc(k, k);
+    p_c[0][c] /= 3;
   }
 }
 
 
 /* ******************************************************************
-* Cell-centered volumetric strain 
+* Cell-centered volumetric strain
 ****************************************************************** */
 void
 PDE_Elasticity::ComputeVolumetricStrain(const CompositeVector& u, CompositeVector& e)
@@ -331,7 +334,7 @@ PDE_Elasticity::ApplyBCs_ShearStress_(const BCs& bc,
 
   auto rhs = global_op_->rhs();
   Teuchos::RCP<Epetra_MultiVector> rhs_node;
-  if (rhs()->HasComponent("node")) rhs_node = rhs->ViewComponent("node", true);
+  if (rhs() ->HasComponent("node")) rhs_node = rhs->ViewComponent("node", true);
 
   rhs->PutScalarGhosted(0.0);
 
@@ -354,7 +357,9 @@ PDE_Elasticity::ApplyBCs_ShearStress_(const BCs& bc,
         double value = bc_value[f];
         for (int m = 0; m < nlnodes; ++m) {
           int v = lnodes[m];
-          for (int k = 0; k < d; ++k) { (*rhs_node)[k][v] += value * tau[k] * weights[m]; }
+          for (int k = 0; k < d; ++k) {
+            (*rhs_node)[k][v] += value * tau[k] * weights[m];
+          }
         }
       }
     }
@@ -376,7 +381,7 @@ PDE_Elasticity::ApplyBCs_Traction_(const BCs& bc, bool primary, bool eliminate, 
 
   auto rhs = global_op_->rhs();
   Teuchos::RCP<Epetra_MultiVector> rhs_node;
-  if (rhs()->HasComponent("node")) rhs_node = rhs->ViewComponent("node", true);
+  if (rhs() ->HasComponent("node")) rhs_node = rhs->ViewComponent("node", true);
 
   rhs->PutScalarGhosted(0.0);
 
@@ -398,7 +403,9 @@ PDE_Elasticity::ApplyBCs_Traction_(const BCs& bc, bool primary, bool eliminate, 
         auto& value = bc_value[f];
         for (int m = 0; m < nlnodes; ++m) {
           int v = lnodes[m];
-          for (int k = 0; k < d; ++k) { (*rhs_node)[k][v] += value[k] * weights[m] * area; }
+          for (int k = 0; k < d; ++k) {
+            (*rhs_node)[k][v] += value[k] * weights[m] * area;
+          }
         }
       }
     }
@@ -420,8 +427,8 @@ PDE_Elasticity::ApplyBCs_Kinematic_(const BCs& bc, bool primary, bool eliminate,
 
   auto rhs = global_op_->rhs();
   Teuchos::RCP<Epetra_MultiVector> rhs_node, rhs_face;
-  if (rhs()->HasComponent("node")) rhs_node = rhs->ViewComponent("node", true);
-  if (rhs()->HasComponent("face")) rhs_face = rhs->ViewComponent("face", true);
+  if (rhs() ->HasComponent("node")) rhs_node = rhs->ViewComponent("node", true);
+  if (rhs() ->HasComponent("face")) rhs_face = rhs->ViewComponent("face", true);
 
   rhs->PutScalarGhosted(0.0);
 
@@ -437,7 +444,9 @@ PDE_Elasticity::ApplyBCs_Kinematic_(const BCs& bc, bool primary, bool eliminate,
 
       if (bc_model[v] == OPERATOR_BC_KINEMATIC) {
         double value = bc_value[v];
-        if (local_op_->matrices_shadow[c].NumRows() == 0) { local_op_->matrices_shadow[c] = Acell; }
+        if (local_op_->matrices_shadow[c].NumRows() == 0) {
+          local_op_->matrices_shadow[c] = Acell;
+        }
         auto cells = mesh_->getNodeCells(v);
         int ncells = cells.size();
 
@@ -521,7 +530,9 @@ PDE_Elasticity::ComputeCellStrain(const CompositeVector& u, int c)
 
   for (int n = 0; n < nnodes; ++n) {
     int v = nodes[n];
-    for (int k = 0; k < d; ++k) { dofs(d * n + k) = u_n[k][v]; }
+    for (int k = 0; k < d; ++k) {
+      dofs(d * n + k) = u_n[k][v];
+    }
   }
 
   // optional face DoFs

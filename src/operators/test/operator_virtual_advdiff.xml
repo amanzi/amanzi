@@ -1,0 +1,58 @@
+<ParameterList>
+  <Parameter name="Native Unstructured Input" type="bool" value="true"/>
+
+  <Parameter name="mesh cells in x direction" type="int" value="15"/>
+  <Parameter name="mesh cells in y direction" type="int" value="15"/>
+  <Parameter name="mesh cells in z direction" type="int" value="10"/>
+
+  <Parameter name="domain size in x direction" type="double" value="1.0"/>
+  <Parameter name="domain size in y direction" type="double" value="1.0"/>
+  <Parameter name="domain size in z direction" type="double" value="1.0"/>
+
+  <Parameter name="origin" type="Array(double)" value="{ 1.0, 1.0 }"/>
+
+  <ParameterList name="domain">
+    <Parameter name="spatial dimension" type="int" value="2"/>
+  </ParameterList>
+
+  <ParameterList name="verbose object">
+    <Parameter name="verbosity level" type="string" value="medium"/>
+  </ParameterList>
+
+  <ParameterList name="PK operator">
+    <ParameterList name="advection operator">
+      <Parameter name="schema" type="Array(string)" value="{cell}"/>
+      <Parameter name="method order" type="int" value="0"/>
+      <Parameter name="matrix type" type="string" value="advection"/>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="preconditioners">
+    <ParameterList name="Hypre AMG">
+      <Parameter name="preconditioning method" type="string" value="boomer amg"/>
+      <ParameterList name="boomer amg parameters">
+        <Parameter name="tolerance" type="double" value="0.0"/>
+        <Parameter name="smoother sweeps" type="int" value="3"/>
+        <Parameter name="cycle applications" type="int" value="5"/>
+        <Parameter name="strong threshold" type="double" value="0.5"/>
+        <Parameter name="relaxation type" type="int" value="3"/>
+        <Parameter name="cycle type" type="int" value="1"/>
+        <Parameter name="coarsen type" type="int" value="0"/>
+        <Parameter name="verbosity" type="int" value="0"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="solvers">
+    <ParameterList name="PCG">
+      <Parameter name="iterative method" type="string" value="pcg"/>
+      <ParameterList name="pcg parameters">
+        <Parameter name="maximum number of iterations" type="int" value="400"/>
+        <Parameter name="error tolerance" type="double" value="1e-10"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="medium"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>

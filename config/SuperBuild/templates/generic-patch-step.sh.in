@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# CMake generates this file 
+# Replaces each @VAR@ with value of ${VAR}
+
+# Source and build locations
+src_dir=@source_dir@
+
+OIFS=$IFS
+IFS=";"
+patch_files="@local_patch_files@"
+
+for i in ${patch_files}; do
+ patch_file=@SuperBuild_SOURCE_DIR@/templates/${i}
+ echo "Applying patch: ${patch_file}"
+
+ if [ ! -e "${patch_file}" ] ; then
+  echo "Patch file ${patch_file} does not exist"
+  exit 10
+ fi
+
+ (cd ${src_dir}; patch -p1 < ${patch_file})
+
+done
+
+IFS=$OIFS
+
+exit $?

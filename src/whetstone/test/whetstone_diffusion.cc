@@ -29,19 +29,22 @@
 #include "MFD3D_Lagrange.hh"
 #include "Tensor.hh"
 
-std::pair<double, double> EigenvaluesSVD(Amanzi::WhetStone::DenseMatrix& M) 
+std::pair<double, double>
+EigenvaluesSVD(Amanzi::WhetStone::DenseMatrix& M)
 {
   int n(M.NumRows()), lwork(100), info;
-  double U[n*n], V[n*n], S[100], work[lwork];
+  double S[100];
+  std::vector<double> U(n * n), V(n * n), work(lwork);
 
-  Amanzi::WhetStone::DGESVD_F77("A", "A", &n, &n, M.Values(), &n, S, U, &n, V, &n, work, &lwork, &info);
+  Amanzi::WhetStone::DGESVD_F77(
+    "A", "A", &n, &n, M.Values(), &n, S, U.data(), &n, V.data(), &n, work.data(), &lwork, &info);
 
   double emin(1e+10), emax(0.0);
   for (int i = 0; i < n; ++i) {
     emin = std::min(emin, S[i]);
     emax = std::max(emax, S[i]);
   }
-  return std::pair<double, double>(emin, emax);
+  return std::make_pair(emin, emax);
 }
 
 
@@ -611,7 +614,9 @@ TEST(DARCY_STIFFNESS_2D_EDGE)
 
   DenseMatrix A;
   for (int method = 0; method < 1; method++) {
-    if (method == 0) { mfd.StiffnessMatrix(cell, T, A); }
+    if (method == 0) {
+      mfd.StiffnessMatrix(cell, T, A);
+    }
 
     printf("Stiffness matrix for cell %3d\n", cell);
     PrintMatrix(A, "%8.4f ");
@@ -914,7 +919,8 @@ TEST(DARCY_MASS_DEGENERATE_3D)
 
     // eigenvalues
     auto e0 = EigenvaluesSVD(M0);
-    std::cout << "eig(M0): " << e0.first << " " << e0.second << " " << e0.first / e0.second << std::endl;
+    std::cout << "eig(M0): " << e0.first << " " << e0.second << " " << e0.first / e0.second
+              << std::endl;
 
     auto e1 = EigenvaluesSVD(M1);
     double cond1 = e1.second / e1.first;
@@ -926,4 +932,3 @@ TEST(DARCY_MASS_DEGENERATE_3D)
     CHECK(cond1 / cond2 < 2.0 && cond1 / cond2 > 0.5);
   }
 }
-

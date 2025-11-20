@@ -50,17 +50,12 @@ endif()
 
 # --- Patch the original code
 set(UnitTest_patch_file unittest-cmake.patch unittest-testrunner.patch)
-set(UnitTest_sh_patch ${UnitTest_prefix_dir}/unittest-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/unittest-patch-step.sh.in
-               ${UnitTest_sh_patch}
-               @ONLY)
-# configure the CMake patch step
-set(UnitTest_cmake_patch ${UnitTest_prefix_dir}/unittest-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/unittest-patch-step.cmake.in
-               ${UnitTest_cmake_patch}
-               @ONLY)
-# set the patch command
-set(UnitTest_PATCH_COMMAND ${CMAKE_COMMAND} -P ${UnitTest_cmake_patch})
+patch_tpl(UnitTest
+          ${UnitTest_prefix_dir}
+          ${UnitTest_source_dir}
+          ${UnitTest_stamp_dir}
+          UnitTest_patch_file)
+
 
 # --- Add external project build 
 set(Unittest_CMAKE_ARGS 
@@ -68,6 +63,12 @@ set(Unittest_CMAKE_ARGS
    ${Unittest_CMAKE_TPL_ARGS}
    ${Unittest_CMAKE_EXTRA_ARGS})
 
+# --- Override minimum version
+# --- Cache Args may need the type to be float? 
+if(CMAKE_MAJOR_VERSION VERSION_EQUAL "4")
+  list(APPEND Unittest_CMAKE_ARGS "-DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.5")
+endif()
+ 
 ExternalProject_add(${UnitTest_BUILD_TARGET}
                     DEPENDS   ${UnitTest_PACKAGE_DEPENDS}          # Package dependency target
                     TMP_DIR   ${UnitTest_tmp_dir}                  # Temporary files directory

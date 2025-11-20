@@ -22,7 +22,8 @@ FunctionPointer::FunctionPointer(double (*f)(const double*, const double*),
   }
 }
 
-FunctionPointer::FunctionPointer(const FunctionPointer& source) : f_(source.f_), np_(0), p_(0)
+FunctionPointer::FunctionPointer(const FunctionPointer& source)
+  : f_(source.f_), np_(0), p_(0)
 {
   if (source.p_) {
     np_ = source.np_;

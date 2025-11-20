@@ -1,6 +1,5 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-
   <!--  REGIONS  -->
   <ParameterList name="regions">
   </ParameterList>
@@ -28,7 +27,6 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
@@ -43,11 +41,9 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <!--  OPERATORS  -->
   <ParameterList name="PK operator">
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-
     <!-- NODE 2, FACE 1 scheme -->
     <ParameterList name="elasticity operator">
       <Parameter name="matrix type" type="string" value="stiffness"/>
@@ -58,6 +54,4 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
 </ParameterList>
-

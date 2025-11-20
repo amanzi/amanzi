@@ -1,4 +1,4 @@
-<amanzi_input version="1.6-dev" type="unstructured">
+<amanzi_input version="1.7-dev" type="unstructured">
 
   <model_description name="1D Flow and Transport w/ calcite dissolution">
     <units>
@@ -25,10 +25,16 @@
   </definitions>
 
   <process_kernels>
-    <flow state="on" model="saturated"/>
-    <transport state="on" />
-    <chemistry state="on" engine="pflotran" database="calcite.dat" />
-    <!--chemistry state="on" engine="pflotran" input_filename="1d-calcite-trim.in" database="calcite.dat"/-->
+    <pk mode="steady">
+      <flow state="on" model="saturated"/>
+    </pk>
+    <pk mode="transient">
+      <flow state="on" model="saturated"/>
+      <transport state="on" />
+      <chemistry state="on" engine="pflotran" database="calcite.dat" />
+      <weakly_coupled name="reactive transport">chemistry,transport</weakly_coupled>
+      <weakly_coupled name="mpc">flow,reactive transport</weakly_coupled>
+    </pk>
   </process_kernels>
 
   <phases>
@@ -111,8 +117,6 @@
         <maximum_newton_iterations>150</maximum_newton_iterations>
         <auxiliary_data>pH</auxiliary_data>
         <initial_time_step>220000.0</initial_time_step>
-        <max_time_step>220000.0</max_time_step>
-        <time_step_cut_threshold>5</time_step_cut_threshold>
       </unstr_chemistry_controls>
 
       <unstr_linear_solver>

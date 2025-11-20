@@ -7,11 +7,10 @@
   Authors: Markus Berndt
            Ethan Coon (ecoon@lanl.gov)
 */
-
-//! IOEvent: base time/timestep control determing when in time to do something.
 /*!
 
-The IOEvent is used for multiple objects that need to indicate simulation times or cycles on which to do something.
+The IOEvent is used by multiple objects that need to indicate simulation times
+or cycles on which to do something.
 
 .. _io-event-spec:
 .. admonition:: io-event-spec
@@ -70,7 +69,8 @@ namespace Amanzi {
 namespace Utils {
 
 class TimeStepManager;
-template<typename T> struct Event;
+template<typename T>
+struct Event;
 
 class IOEvent : public Teuchos::VerboseObject<IOEvent> {
  public:
@@ -104,4 +104,3 @@ class IOEvent : public Teuchos::VerboseObject<IOEvent> {
 
 } // namespace Utils
 } // namespace Amanzi
-

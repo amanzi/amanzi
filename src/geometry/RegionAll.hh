@@ -7,22 +7,24 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-//! A region consisting of all entities on a mesh.
+//! A region consisting of the entirety of space in any dimension.
 /*!
 
-No parameters required.
+No parameters are required.
 
-.. admonition:: region_all-spec
+`"region type`" = `"all`"
 
-  * `"empty`" ``[bool]`` **True** This is simply here to avoid issues with empty lists.
+.. _region-all-spec:
+.. admonition:: region-all-spec
+
+   * `"empty`" ``[bool]`` **True** This is simply here to avoid issues with empty lists.
 
 Example:
 
 .. code-block:: xml
 
-   <ParameterList name="domain">  <!-- parent list -->
-     <ParameterList name="region: all">
-     </ParameterList>
+   <ParameterList name="domain">
+     <Parameter name="region type" type="string" value="all"/>
    </ParameterList>
 
 */

@@ -61,7 +61,7 @@ Richards_PK::FunctionalResidual(double t_old,
   S_->GetEvaluator(alpha_key_).Update(*S_, "flow");
   auto& alpha = S_->GetW<CV_t>(alpha_key_, Tags::DEFAULT, alpha_key_);
 
-  if (!flow_on_manifold_) {
+  if (!assumptions_.flow_on_manifold) {
     std::vector<int>& bc_model = op_bc_->bc_model();
 
     *alpha_upwind_->ViewComponent("cell") = *alpha.ViewComponent("cell");
@@ -109,10 +109,14 @@ Richards_PK::FunctionalResidual(double t_old,
   }
 
   // add vapor diffusion
-  if (vapor_diffusion_) { Functional_AddVaporDiffusion_(f->Data()); }
+  if (assumptions_.vapor_diffusion) {
+    Functional_AddVaporDiffusion_(f->Data());
+  }
 
   // add water storage in matrix
-  if (multiscale_porosity_) { Functional_AddMassTransferMatrix_(dt_, f->Data()); }
+  if (assumptions_.msm_porosity) {
+    Functional_AddMassTransferMatrix_(dt_, f->Data());
+  }
 
   // calculate normalized residual
   functional_max_norm = 0.0;
@@ -366,7 +370,7 @@ Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, d
   auto& alpha = S_->GetW<CompositeVector>(alpha_key_, alpha_key_);
   S_->GetEvaluator(alpha_key_).Update(*S_, "flow");
 
-  if (!flow_on_manifold_) {
+  if (!assumptions_.flow_on_manifold) {
     *alpha_upwind_->ViewComponent("cell") = *alpha.ViewComponent("cell");
     Operators::BoundaryFacesToFaces(bc_model, alpha, *alpha_upwind_);
     upwind_->Compute(*mol_flowrate_copy, bc_model, *alpha_upwind_);
@@ -408,7 +412,7 @@ Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, d
 
   // Add vapor diffusion. We assume that the corresponding local operator
   // has been already populated during functional evaluation.
-  if (vapor_diffusion_) {
+  if (assumptions_.vapor_diffusion) {
     Teuchos::RCP<CompositeVector> kvapor_pres = Teuchos::rcp(new CompositeVector(u->Data()->Map()));
     Teuchos::RCP<CompositeVector> kvapor_temp = Teuchos::rcp(new CompositeVector(u->Data()->Map()));
     CalculateVaporDiffusionTensor_(kvapor_pres, kvapor_temp);
@@ -557,10 +561,8 @@ Richards_PK::ModifyCorrection(double dt,
     double pc = atm_pressure_ - uc[0][c];
     double sat = wrm_->second[(*wrm_->first)[c]]->saturation(pc);
     double sat_pert;
-    if (sat >= 0.5)
-      sat_pert = sat - max_sat_pert;
-    else
-      sat_pert = sat + max_sat_pert;
+    if (sat >= 0.5) sat_pert = sat - max_sat_pert;
+    else sat_pert = sat + max_sat_pert;
 
     double press_pert =
       atm_pressure_ - wrm_->second[(*wrm_->first)[c]]->capillaryPressure(sat_pert);
@@ -570,10 +572,8 @@ Richards_PK::ModifyCorrection(double dt,
       // std::cout << "clip saturation: c=" << c << " p=" << uc[0][c]
       //           << " dp: " << duc[0][c] << " -> " << du_pert_max << std::endl;
 
-      if (duc[0][c] >= 0.0)
-        duc[0][c] = du_pert_max;
-      else
-        duc[0][c] = -du_pert_max;
+      if (duc[0][c] >= 0.0) duc[0][c] = du_pert_max;
+      else duc[0][c] = -du_pert_max;
 
       nsat_clipped++;
     }
@@ -598,11 +598,8 @@ Richards_PK::ModifyCorrection(double dt,
 
       int ncomp = u->Data()->size(*comp, false);
       for (int i = 0; i < ncomp; ++i) {
-        double tmp0 = pc[0][i] * max_change;
-        if (dpc[0][i] < -tmp0) {
-          npre_clipped++;
-          dpc[0][i] = -tmp0;
-        }
+        double tmp = std::fabs(pc[0][i]) * max_change;
+        dpc[0][i] = std::clamp(dpc[0][i], -tmp, tmp);
       }
     }
   }

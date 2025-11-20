@@ -58,7 +58,7 @@ namespace Amanzi {
 class InputAnalysis {
  public:
   InputAnalysis(Teuchos::RCP<const AmanziMesh::Mesh> mesh, const std::string& domain)
-    : mesh_(mesh), domain_(domain), vo_(NULL){};
+    : mesh_(mesh), domain_(domain), vo_(NULL) {};
   ~InputAnalysis()
   {
     if (vo_ != NULL) delete vo_;
@@ -70,7 +70,7 @@ class InputAnalysis {
   void OutputBCs();
 
   // supporting members
-  template <class Iterator>
+  template<class Iterator>
   Iterator SelectUniqueEntries(Iterator first, Iterator last);
 
  private:

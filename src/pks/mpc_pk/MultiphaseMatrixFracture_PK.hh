@@ -57,8 +57,8 @@ class MultiphaseMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u, double dt) override;
 
   // // preconditioner application
-  virtual int
-  ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) override;
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
+                                  Teuchos::RCP<TreeVector> Pu) override;
 
   std::string name() override { return "multiphase matrix-fracture"; }
 

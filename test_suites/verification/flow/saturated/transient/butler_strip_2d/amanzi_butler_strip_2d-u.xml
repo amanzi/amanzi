@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="1.6-dev">
+<amanzi_input type="unstructured" version="1.7-dev">
   <model_description name="SR Test Problem">
     <comments>Confined aquifer transient drawdown (Butler and Liu, 1991)</comments>
     <model_id>Butler</model_id>
@@ -42,16 +42,16 @@
   </definitions>
 
   <process_kernels>
-    <comments>Single-phase transient flow</comments>
-    <flow model="saturated" state="on" />
-    <transport state="off" />
-    <chemistry engine="none" state="off" />
+    <pk mode="transient">
+      <comments>Single-phase transient flow</comments>
+      <flow model="saturated" state="on" />
+    </pk>
   </process_kernels>
 
   <execution_controls>
     <verbosity level="high" />
-    <execution_control_defaults increase_factor="1.5" init_dt="3.64" max_dt="1.64e7" method="bdf1" />
-    <execution_control end="1.64e7" init_dt="3.64" mode="transient" start="0.0" />
+    <execution_control_defaults increase_factor="1.5" init_dt="1.0" max_dt="1.64e7" method="bdf1" />
+    <execution_control end="1.64e7" init_dt="1.0" mode="transient" start="0.0" />
   </execution_controls>
 
   <numerical_controls>
@@ -168,7 +168,7 @@
       <assigned_regions>xz1,xz2,yz1,yz2</assigned_regions>
       <liquid_phase name="water">
         <liquid_component name="water">
-          <uniform_pressure function="constant" start="1.07785e6" value="1.07785e6" />
+          <uniform_pressure function="constant" start="0.0" value="1.07785e6" />
         </liquid_component>
       </liquid_phase>
     </boundary_condition>

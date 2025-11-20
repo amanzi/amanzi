@@ -61,11 +61,15 @@ DeRham_Node::L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& 
   // calculate upper part of R T R^T / volume
   for (int i = 0; i < nnodes; i++) {
     double a = N(i, 0) * T(0, 0) / volume;
-    for (int j = i; j < nnodes; j++) { Mc(i, j) = a * N(j, 0); }
+    for (int j = i; j < nnodes; j++) {
+      Mc(i, j) = a * N(j, 0);
+    }
   }
 
   // populate matrix N
-  for (int i = 0; i < nnodes; i++) { N(i, 0) = 1.0; }
+  for (int i = 0; i < nnodes; i++) {
+    N(i, 0) = 1.0;
+  }
 
   return 0;
 }

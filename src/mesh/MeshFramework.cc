@@ -23,7 +23,7 @@ MeshFramework::MeshFramework(const Comm_ptr_type& comm,
                              const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : comm_(comm), gm_(gm), plist_(plist), space_dim_(-1), manifold_dim_(-1), vis_mesh_(Teuchos::null)
 {
-  if (!plist_.get()) plist_ = Teuchos::rcp(new Teuchos::ParameterList("mesh"));
+  if (!plist_.get() ) plist_ = Teuchos::rcp(new Teuchos::ParameterList("mesh"));
   vo_ = Teuchos::rcp(new VerboseObject(comm, "MeshFramework", *plist_));
 }
 
@@ -47,7 +47,7 @@ MeshFramework::getEntityGIDs(const Entity_kind kind, bool ghosted) const
 {
   auto count = getNumEntities(kind, ghosted ? Parallel_kind::ALL : Parallel_kind::OWNED);
   View_type<Entity_GID, MemSpace_kind::HOST> gids("gids", count);
-  for (int lid = 0; lid != gids.size(); ++lid) gids(lid) = getEntityGID(kind, lid);
+  for (int lid = 0; lid != gids.size() ; ++lid) gids(lid) = getEntityGID(kind, lid);
   return gids;
 }
 
@@ -73,14 +73,14 @@ MeshFramework::getCellType_(const Entity_ID c,
 {
   if (getManifoldDimension() == 2) {
     switch (faces.size()) {
-    case 3:
-      return Cell_kind::TRI;
-      break;
-    case 4:
-      return Cell_kind::QUAD;
-      break;
-    default:
-      return Cell_kind::POLYGON;
+      case 3:
+        return Cell_kind::TRI;
+        break;
+      case 4:
+        return Cell_kind::QUAD;
+        break;
+      default:
+        return Cell_kind::POLYGON;
     }
   } else if (getManifoldDimension() == 3) {
     int nquads = 0;
@@ -91,28 +91,21 @@ MeshFramework::getCellType_(const Entity_ID c,
     }
 
     switch (faces.size()) {
-    case 4:
-      if (nquads == 0)
-        return Cell_kind::TET;
-      else
+      case 4:
+        if (nquads == 0) return Cell_kind::TET;
+        else return Cell_kind::POLYHED;
+        break;
+      case 5:
+        if (nquads == 1) return Cell_kind::PYRAMID;
+        else if (nquads == 3) return Cell_kind::PRISM;
+        else return Cell_kind::POLYHED;
+        break;
+      case 6:
+        if (nquads == 6) return Cell_kind::HEX;
+        else return Cell_kind::POLYHED;
+        break;
+      default:
         return Cell_kind::POLYHED;
-      break;
-    case 5:
-      if (nquads == 1)
-        return Cell_kind::PYRAMID;
-      else if (nquads == 3)
-        return Cell_kind::PRISM;
-      else
-        return Cell_kind::POLYHED;
-      break;
-    case 6:
-      if (nquads == 6)
-        return Cell_kind::HEX;
-      else
-        return Cell_kind::POLYHED;
-      break;
-    default:
-      return Cell_kind::POLYHED;
     }
   } else {
     Errors::Message msg;

@@ -40,7 +40,9 @@ class RecordSet {
  public:
   // constructors
   RecordSet() {}
-  RecordSet(Key fieldname) : fieldname_(fieldname), vis_fieldname_(fieldname) {}
+  RecordSet(Key fieldname)
+    : fieldname_(fieldname), vis_fieldname_(fieldname)
+  {}
 
   // delete things that suggest this could be duplicated, etc
   RecordSet(const RecordSet& other) = delete;
@@ -60,10 +62,8 @@ class RecordSet {
   void set_units(const std::string& units) { units_ = units; }
   void set_subfieldnames(const std::vector<std::string>& subfieldnames)
   {
-    if (!subfieldnames_)
-      subfieldnames_ = std::make_unique<std::vector<std::string>>(subfieldnames);
-    else
-      *subfieldnames_ = subfieldnames;
+    if (!subfieldnames_) subfieldnames_ = std::make_unique<std::vector<std::string>>(subfieldnames);
+    else *subfieldnames_ = subfieldnames;
   }
 
   // pass-throughs for other functionality
@@ -101,67 +101,69 @@ class RecordSet {
         e.second->data_ = std::forward<Impl::Data>(factory_.Create());
       }
     }
-    for (auto& pair : aliases_) { records_[pair.first]->AssignPtr(*records_[pair.second]); }
+    for (auto& pair : aliases_) {
+      records_[pair.first]->AssignPtr(*records_[pair.second]);
+    }
   }
 
   // Data setters/getters
-  template <typename T>
+  template<typename T>
   const T& Get(const Tag& tag = Tags::DEFAULT) const
   {
     return GetRecord(tag).Get<T>();
   }
 
-  template <typename T>
+  template<typename T>
   T& GetW(const Tag& tag, const Key& owner)
   {
     return GetRecord(tag).GetW<T>(owner);
   }
-  template <typename T>
+  template<typename T>
   T& GetW(const Key& owner)
   {
     return GetW<T>(Tags::DEFAULT, owner);
   }
 
-  template <typename T>
+  template<typename T>
   Teuchos::RCP<const T> GetPtr(const Tag& tag = Tags::DEFAULT) const
   {
     return GetRecord(tag).GetPtr<T>();
   }
 
-  template <typename T>
+  template<typename T>
   Teuchos::RCP<T> GetPtrW(const Tag& tag, const Key& owner)
   {
     return GetRecord(tag).GetPtrW<T>(owner);
   }
-  template <typename T>
+  template<typename T>
   Teuchos::RCP<T> GetPtrW(const Key& owner)
   {
     return GetPtrW<T>(Tags::DEFAULT, owner);
   }
 
-  template <typename T>
+  template<typename T>
   void SetPtr(const Tag& tag, const Key& owner, const Teuchos::RCP<T>& t)
   {
     GetRecord(tag).SetPtr<T>(owner, t);
   }
-  template <typename T>
+  template<typename T>
   void SetPtr(const Key& owner, const Teuchos::RCP<T>& t)
   {
     SetPtr<T>(Tags::DEFAULT, owner, t);
   }
 
-  template <typename T>
+  template<typename T>
   void Assign(const Tag& tag, const Key& owner, const T& t)
   {
     GetRecord(tag).Assign<T>(owner, t);
   }
-  template <typename T>
+  template<typename T>
   void Assign(const Key& owner, const T& t)
   {
     Assign<T>(Tags::DEFAULT, owner, t);
   }
 
-  template <typename T, typename F>
+  template<typename T, typename F>
   F& GetFactory()
   {
     return factory_.GetW<T, F>();
@@ -169,7 +171,7 @@ class RecordSet {
 
   bool HasType() { return factory_.HasType(); }
 
-  template <typename T, typename F>
+  template<typename T, typename F>
   F& SetType(const F& f)
   {
     if (!factory_.HasType()) {
@@ -185,27 +187,31 @@ class RecordSet {
     return GetFactory<T, F>();
   }
 
-  template <typename T, typename F>
+  template<typename T, typename F>
   F& SetType()
   {
-    if (!factory_.HasType()) { factory_ = Impl::dataFactory<T, F>(); }
+    if (!factory_.HasType()) {
+      factory_ = Impl::dataFactory<T, F>();
+    }
     return GetFactory<T, F>();
   }
 
-  template <typename T>
+  template<typename T>
   void SetType()
   {
-    if (!factory_.HasType()) { factory_ = Impl::dataFactory<T, NullFactory>(); }
+    if (!factory_.HasType()) {
+      factory_ = Impl::dataFactory<T, NullFactory>();
+    }
     GetFactory<T, NullFactory>(); // checks valid type
   }
 
-  template <typename T, typename F>
+  template<typename T, typename F>
   bool ValidType() const
   {
     return factory_.ValidType<T, F>();
   }
 
-  template <typename T>
+  template<typename T>
   bool ValidType() const
   {
     return factory_.ValidType<T>();

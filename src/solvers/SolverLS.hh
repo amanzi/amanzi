@@ -83,10 +83,11 @@ Note, this always monitors the residual.
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 class SolverLS : public Solver<Vector, VectorSpace> {
  public:
-  SolverLS(Teuchos::ParameterList& plist) : plist_(plist){};
+  SolverLS(Teuchos::ParameterList& plist)
+    : plist_(plist) {};
 
   SolverLS(Teuchos::ParameterList& plist,
            const Teuchos::RCP<SolverFnBase<Vector>>& fn,
@@ -154,7 +155,7 @@ class SolverLS : public Solver<Vector, VectorSpace> {
 /* ******************************************************************
 * Public Init method.
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 void
 SolverLS<Vector, VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn,
                                     const VectorSpace& map)
@@ -167,7 +168,7 @@ SolverLS<Vector, VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn
 /* ******************************************************************
 * Initialization of the NKA solver.
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 void
 SolverLS<Vector, VectorSpace>::Init_()
 {
@@ -195,7 +196,7 @@ SolverLS<Vector, VectorSpace>::Init_()
 }
 
 
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 int
 SolverLS<Vector, VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
 {
@@ -312,7 +313,7 @@ SolverLS<Vector, VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
 /* ******************************************************************
 * Internal convergence control.
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 int
 SolverLS<Vector, VectorSpace>::BT_ErrorControl_(double error,
                                                 double previous_error,

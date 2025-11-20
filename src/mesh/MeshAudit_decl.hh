@@ -17,15 +17,15 @@ namespace AmanziMesh {
 namespace Impl {
 
 // base class for MeshAudit mixins
-template <class Mesh_type>
+template<class Mesh_type>
 class MeshAudit_Base {
  public:
   MeshAudit_Base(const Teuchos::RCP<const Mesh_type>& mesh, std::ostream& os);
 
  protected:
   // helpers for doing the testing
-  bool
-  areDistinctValues_(const AmanziMesh::View_type<const Entity_ID, MemSpace_kind::HOST>& list) const;
+  bool areDistinctValues_(
+    const AmanziMesh::View_type<const Entity_ID, MemSpace_kind::HOST>& list) const;
   void writeList_(const Entity_ID_List&) const;
   bool globalAny_(bool) const;
   int isSameFace_(const AmanziMesh::View_type<const Entity_ID, MemSpace_kind::HOST>,
@@ -44,7 +44,7 @@ class MeshAudit_Base {
 };
 
 
-template <class Mesh_type>
+template<class Mesh_type>
 class MeshAudit_Geometry : public MeshAudit_Base<Mesh_type> {
  public:
   MeshAudit_Geometry(const Teuchos::RCP<const Mesh_type>& mesh, std::ostream& os = std::cout)
@@ -84,7 +84,7 @@ class MeshAudit_Geometry : public MeshAudit_Base<Mesh_type> {
 };
 
 
-template <class Mesh_type>
+template<class Mesh_type>
 class MeshAudit_Maps : public MeshAudit_Geometry<Mesh_type> {
  public:
   MeshAudit_Maps(const Teuchos::RCP<const Mesh_type>& mesh, std::ostream& os = std::cout)
@@ -117,7 +117,7 @@ class MeshAudit_Maps : public MeshAudit_Geometry<Mesh_type> {
 };
 
 
-template <class Mesh_type>
+template<class Mesh_type>
 class MeshAudit_Sets : public MeshAudit_Maps<Mesh_type> {
  public:
   MeshAudit_Sets(const Teuchos::RCP<const Mesh_type>& mesh, std::ostream& os = std::cout)
@@ -159,7 +159,7 @@ class MeshAudit_Sets : public MeshAudit_Maps<Mesh_type> {
 };
 
 
-template <typename MeshAudit_type>
+template<typename MeshAudit_type>
 class AuditDirectedGraph {
  public:
   enum Status_kind : int { NONE = 0, GOOD = 1, FAIL = 2, SKIP = 3 };
@@ -169,7 +169,9 @@ class AuditDirectedGraph {
 
   // The vertex type for the test dependency graph.
   struct Vertex {
-    Vertex() : status(Status_kind::NONE) {}
+    Vertex()
+      : status(Status_kind::NONE)
+    {}
     mutable int status;
     std::string name;
     Test test;
@@ -284,45 +286,42 @@ class AuditDirectedGraph {
 //
 // Don't call the former -- the latter will call the former.
 //
-template <class MeshAudit_type>
-void
-createTestDependencies_Base(MeshAudit_type& audit, AuditDirectedGraph<MeshAudit_type>& graph);
+template<class MeshAudit_type>
+void createTestDependencies_Base(MeshAudit_type& audit, AuditDirectedGraph<MeshAudit_type>& graph);
 
-template <class MeshAudit_type>
-void
-createTestDependencies_Geometry(MeshAudit_type& audit, AuditDirectedGraph<MeshAudit_type>& graph);
+template<class MeshAudit_type>
+void createTestDependencies_Geometry(MeshAudit_type& audit,
+                                     AuditDirectedGraph<MeshAudit_type>& graph);
 
-template <class MeshAudit_type>
-void
-createTestDependencies_Maps(MeshAudit_type& audit, AuditDirectedGraph<MeshAudit_type>& graph);
+template<class MeshAudit_type>
+void createTestDependencies_Maps(MeshAudit_type& audit, AuditDirectedGraph<MeshAudit_type>& graph);
 
-template <class MeshAudit_type>
-void
-createTestDependencies_Sets(MeshAudit_type& audit, AuditDirectedGraph<MeshAudit_type>& graph);
+template<class MeshAudit_type>
+void createTestDependencies_Sets(MeshAudit_type& audit, AuditDirectedGraph<MeshAudit_type>& graph);
 
 // Call these instead
-template <class Mesh_type>
+template<class Mesh_type>
 void
 createTestDependencies(MeshAudit_Base<Mesh_type>& audit,
                        AuditDirectedGraph<MeshAudit_Base<Mesh_type>>& graph)
 {
   createTestDependencies_Base(audit, graph);
 }
-template <class Mesh_type>
+template<class Mesh_type>
 void
 createTestDependencies(MeshAudit_Geometry<Mesh_type>& audit,
                        AuditDirectedGraph<MeshAudit_Geometry<Mesh_type>>& graph)
 {
   createTestDependencies_Geometry(audit, graph);
 }
-template <class Mesh_type>
+template<class Mesh_type>
 void
 createTestDependencies(MeshAudit_Maps<Mesh_type>& audit,
                        AuditDirectedGraph<MeshAudit_Maps<Mesh_type>>& graph)
 {
   createTestDependencies_Maps(audit, graph);
 }
-template <class Mesh_type>
+template<class Mesh_type>
 void
 createTestDependencies(MeshAudit_Sets<Mesh_type>& audit,
                        AuditDirectedGraph<MeshAudit_Sets<Mesh_type>>& graph)
@@ -333,7 +332,7 @@ createTestDependencies(MeshAudit_Sets<Mesh_type>& audit,
 } // namespace Impl
 
 
-template <class Mesh_type, template <typename T> class MeshAudit_type>
+template<class Mesh_type, template<typename T> class MeshAudit_type>
 class MeshAudit_ {
  public:
   MeshAudit_(const Teuchos::RCP<const Mesh_type>& mesh, std::ostream& os = std::cout)

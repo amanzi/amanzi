@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="1.6-dev">
+<amanzi_input type="unstructured" version="1.7-dev">
     <model_description name="Richards-1D-infiltration_sand_loam" />
     <definitions>
       <macros>
@@ -20,9 +20,9 @@
       </macros>
     </definitions>
     <process_kernels>
-      <flow model="richards" state="on" />
-      <transport state="off" />
-      <chemistry engine="none" state="off" />
+      <pk mode="steady">
+        <flow model="richards" state="on" />
+      </pk>
     </process_kernels>
     <execution_controls>
       <verbosity level="medium" />

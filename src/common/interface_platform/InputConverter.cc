@@ -177,7 +177,7 @@ InputConverter::ParseVersion_()
 
       Errors::Message msg;
       msg << "The input version " << version << " is not supported. "
-          << "Supported versions is " << ss1.str() << ".\n";
+          << "Supported version is " << ss1.str() << ".\n";
       Exceptions::amanzi_throw(msg);
     }
   } else {
@@ -248,7 +248,7 @@ void
 InputConverter::ParseGeochemistry_()
 {
   bool flag;
-  DOMNode* node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
+  auto node = GetPKChemistryPointer_(flag);
   if (!flag) return;
 
   std::string engine = GetAttributeValueS_(node, "engine");
@@ -408,7 +408,7 @@ InputConverter::GetUniqueElementByTagsString_(const DOMNode* node1,
 ****************************************************************** */
 DOMElement*
 InputConverter::GetUniqueChildByAttribute_(xercesc::DOMNode* node,
-                                           const char* attr_name,
+                                           const std::string& attr_name,
                                            const std::string& attr_value,
                                            bool& flag,
                                            bool exception)
@@ -427,8 +427,8 @@ InputConverter::GetUniqueChildByAttribute_(xercesc::DOMNode* node,
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
     DOMElement* element = static_cast<DOMElement*>(inode);
-    if (element->hasAttribute(mm.transcode(attr_name))) {
-      char* text = mm.transcode(element->getAttribute(mm.transcode(attr_name)));
+    if (element->hasAttribute(mm.transcode(attr_name.c_str()))) {
+      char* text = mm.transcode(element->getAttribute(mm.transcode(attr_name.c_str())));
       if (strcmp(text, attr_value.c_str()) == 0) {
         child = element;
         n++;
@@ -584,10 +584,10 @@ InputConverter::GetSameChildNodes_(DOMNode* node, std::string& name, bool& flag,
 * Verifies existance
 ****************************************************************** */
 bool
-InputConverter::HasAttribute_(DOMElement* elem, const char* attr_name)
+InputConverter::HasAttribute_(DOMElement* elem, const std::string& attr_name)
 {
   MemoryManager mm;
-  return elem->hasAttribute(mm.transcode(attr_name));
+  return elem->hasAttribute(mm.transcode(attr_name.c_str()));
 }
 
 
@@ -596,7 +596,7 @@ InputConverter::HasAttribute_(DOMElement* elem, const char* attr_name)
 ****************************************************************** */
 double
 InputConverter::GetAttributeValueD_(DOMElement* elem,
-                                    const char* attr_name,
+                                    const std::string& attr_name,
                                     const std::string& type,
                                     double valmin,
                                     double valmax,
@@ -610,8 +610,8 @@ InputConverter::GetAttributeValueD_(DOMElement* elem,
   Errors::Message msg;
   std::string text, parsed, found_type, unit_in;
 
-  if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
-    text = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
+  if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name.c_str()))) {
+    text = mm.transcode(elem->getAttribute(mm.transcode(attr_name.c_str())));
     if (text.size() == 0) {
       msg << "Attribute \"" << attr_name << "\" cannot be empty.\n";
       Exceptions::amanzi_throw(msg);
@@ -668,7 +668,7 @@ InputConverter::GetAttributeValueD_(DOMElement* elem,
 ****************************************************************** */
 int
 InputConverter::GetAttributeValueL_(DOMElement* elem,
-                                    const char* attr_name,
+                                    const std::string& attr_name,
                                     const std::string& type,
                                     int valmin,
                                     int valmax,
@@ -679,8 +679,8 @@ InputConverter::GetAttributeValueL_(DOMElement* elem,
   MemoryManager mm;
 
   std::string text, parsed, found_type;
-  if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
-    text = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
+  if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name.c_str()))) {
+    text = mm.transcode(elem->getAttribute(mm.transcode(attr_name.c_str())));
 
     // process constants
     found_type = GetConstantType_(text, parsed);
@@ -718,7 +718,7 @@ InputConverter::GetAttributeValueL_(DOMElement* elem,
 ****************************************************************** */
 std::string
 InputConverter::GetAttributeValueS_(DOMElement* elem,
-                                    const char* attr_name,
+                                    const std::string& attr_name,
                                     const std::string& type,
                                     bool exception,
                                     std::string default_val)
@@ -727,8 +727,8 @@ InputConverter::GetAttributeValueS_(DOMElement* elem,
   MemoryManager mm;
 
   std::string text, found_type;
-  if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
-    text = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
+  if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name.c_str()))) {
+    text = mm.transcode(elem->getAttribute(mm.transcode(attr_name.c_str())));
     trim(text);
 
     // check the list of global constants
@@ -760,7 +760,7 @@ InputConverter::GetAttributeValueS_(DOMElement* elem,
 ****************************************************************** */
 std::vector<double>
 InputConverter::GetAttributeVectorD_(DOMElement* elem,
-                                     const char* attr_name,
+                                     const std::string& attr_name,
                                      int length,
                                      std::string unit,
                                      bool exception,
@@ -769,9 +769,9 @@ InputConverter::GetAttributeVectorD_(DOMElement* elem,
   std::vector<double> val;
   MemoryManager mm;
 
-  if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
+  if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name.c_str()))) {
     std::vector<std::string> unit_in;
-    char* text_content = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
+    char* text_content = mm.transcode(elem->getAttribute(mm.transcode(attr_name.c_str())));
     val = MakeVector_(text_content, unit_in, mol_mass);
 
     for (int i = 0; i < unit_in.size(); ++i) {
@@ -805,13 +805,13 @@ InputConverter::GetAttributeVectorD_(DOMElement* elem,
 * Extract attribute of type vector<string>.
 ****************************************************************** */
 std::vector<std::string>
-InputConverter::GetAttributeVectorS_(DOMElement* elem, const char* attr_name, bool exception)
+InputConverter::GetAttributeVectorS_(DOMElement* elem, const std::string& attr_name, bool exception)
 {
   std::vector<std::string> val, tmp;
   MemoryManager mm;
 
-  if (elem->hasAttribute(mm.transcode(attr_name))) {
-    char* text_content = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
+  if (elem->hasAttribute(mm.transcode(attr_name.c_str()))) {
+    char* text_content = mm.transcode(elem->getAttribute(mm.transcode(attr_name.c_str())));
     tmp = CharToStrings_(text_content);
     for (int i = 0; i < tmp.size(); ++i) {
       std::string parsed_val;
@@ -900,7 +900,9 @@ InputConverter::GetChildVectorS_(DOMNode* node,
 * Extract atribute of type std::string.
 ****************************************************************** */
 std::string
-InputConverter::GetAttributeValueS_(DOMNode* node, const char* attr_name, const char* options)
+InputConverter::GetAttributeValueS_(DOMNode* node,
+                                    const std::string& attr_name,
+                                    const char* options)
 {
   DOMElement* element = static_cast<DOMElement*>(node);
 
@@ -1067,7 +1069,7 @@ int
 InputConverter::GetPosition_(const std::vector<std::string>& names, const std::string& name)
 {
   for (int i = 0; i < names.size(); ++i) {
-    if (strcmp(names[i].c_str(), name.c_str()) == 0) return i;
+    if (strcmp(names[i].c_str() , name.c_str()) == 0) return i;
   }
 
   Errors::Message msg;
@@ -1342,7 +1344,9 @@ InputConverter::ThrowErrorMisschild_(const std::string& section,
   Errors::Message msg;
   msg << "Amanzi::InputConverter: an error occurred during parsing node \"" << section << "\"\n";
   msg << "  No child \"" << missing << "\" found";
-  if (!name.empty()) { msg << " for \"" << name << "\""; }
+  if (!name.empty()) {
+    msg << " for \"" << name << "\"";
+  }
   msg << ".\n";
   msg << "  Please correct and try again \n";
   Exceptions::amanzi_throw(msg);
@@ -1381,9 +1385,8 @@ InputConverter::CreateINFile_(std::string& filename, int rank)
 
   // database filename and controls
   bool flag;
-  node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
-  element = static_cast<DOMElement*>(node);
-  std::string datfilename = GetAttributeValueS_(element, "database", TYPE_NONE, true, "");
+  node = GetPKChemistryPointer_(flag);
+  std::string datfilename = GetAttributeValueS_(node, "database", TYPE_NONE, true, "");
 
   struct stat buffer;
   int status = stat(datfilename.c_str(), &buffer);
@@ -1395,10 +1398,8 @@ InputConverter::CreateINFile_(std::string& filename, int rank)
   // add relative path from xmlfilename_ to datfilename (simplified code)
   size_t pos0;
   std::string path(xmlfilename_);
-  if ((pos0 = path.find_last_of('/')) == std::string::npos)
-    path = "./";
-  else
-    path.erase(path.begin() + pos0, path.end());
+  if ((pos0 = path.find_last_of('/') ) == std::string::npos) path = "./";
+  else path.erase(path.begin() + pos0, path.end());
 
   controls << "  DATABASE " << std::filesystem::relative(datfilename, path).string().c_str()
            << "\n";
@@ -1410,14 +1411,18 @@ InputConverter::CreateINFile_(std::string& filename, int rank)
     std::string tmp("  ACTIVITY_COEFFICIENTS TIMESTEP");
     if (flag) {
       std::string value = TrimString_(mm.transcode(node->getTextContent()));
-      if (value == "off") { tmp = "  ACTIVITY_COEFFICIENTS OFF"; }
+      if (value == "off") {
+        tmp = "  ACTIVITY_COEFFICIENTS OFF";
+      }
     }
     controls << tmp << "\n";
 
     node = GetUniqueElementByTagsString_(base, "log_formulation", flag);
     if (flag) {
       std::string value = TrimString_(mm.transcode(node->getTextContent()));
-      if (value == "on") { controls << "  LOG_FORMULATION \n"; }
+      if (value == "on") {
+        controls << "  LOG_FORMULATION \n";
+      }
     } else {
       controls << "  LOG_FORMULATION \n";
     }
@@ -1437,7 +1442,9 @@ InputConverter::CreateINFile_(std::string& filename, int rank)
     node = GetUniqueElementByTagsString_(base, "use_full_geochemistry", flag);
     if (flag) {
       std::string value = TrimString_(mm.transcode(node->getTextContent()));
-      if (value == "on") { controls << "  USE_FULL_GEOCHEMISTRY \n"; }
+      if (value == "on") {
+        controls << "  USE_FULL_GEOCHEMISTRY \n";
+      }
     } else {
       controls << "  USE_FULL_GEOCHEMISTRY \n";
     }
@@ -1464,8 +1471,8 @@ InputConverter::CreateINFile_(std::string& filename, int rank)
       primaries << "    " << name << "\n";
       element = static_cast<DOMElement*>(inode);
 
-      if (element->hasAttribute(mm.transcode("first_order_decay_constant"))) {
-        double decay = GetAttributeValueD_(element, "first_order_decay_constant");
+      if (element->hasAttribute(mm.transcode("first_order_decay_rate_constant"))) {
+        double decay = GetAttributeValueD_(element, "first_order_decay_rate_constant");
         name = TrimString_(mm.transcode(inode->getTextContent()));
         decayrates << "    REACTION " << name << " <-> \n";
         decayrates << "    RATE_CONSTANT " << decay << "\n";
@@ -1638,7 +1645,9 @@ InputConverter::CreateINFile_(std::string& filename, int rank)
 
                 double value = GetAttributeValueD_(kelement, "value");
                 cation_selectivity.push_back(value);
-                if (value == 1.0) { first_cation = k; }
+                if (value == 1.0) {
+                  first_cation = k;
+                }
               }
 
               ion_list.set<Teuchos::Array<std::string>>("cations", cation_names);
@@ -1934,7 +1943,9 @@ InputConverter::CreateINFile_(std::string& filename, int rank)
         in_file << isotherms.str();
         in_file << "    /\n";
       }
-      if (!complexes.str().empty()) { in_file << complexes.str(); }
+      if (!complexes.str().empty()) {
+        in_file << complexes.str();
+      }
       if (!cations.str().empty()) {
         in_file << "    ION_EXCHANGE_RXN\n";
         in_file << cations.str();
@@ -1965,6 +1976,30 @@ InputConverter::CreateINFile_(std::string& filename, int rank)
   }
 
   return infilename;
+}
+
+
+/* ******************************************************************
+* Helper utility for two stuctures of process_kernel lists
+****************************************************************** */
+DOMNode*
+InputConverter::GetPKChemistryPointer_(bool& flag)
+{
+  MemoryManager mm;
+  DOMNode* node = NULL;
+  DOMNodeList* children;
+
+  node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
+  if (!flag) {
+    node = GetUniqueElementByTagsString_("process_kernels", flag);
+    children = static_cast<DOMElement*>(node)->getElementsByTagName(mm.transcode("pk"));
+    for (int i = 0; i < children->getLength(); ++i) {
+      node = GetUniqueElementByTagsString_(children->item(i), "chemistry", flag);
+      if (flag) break;
+    }
+  }
+
+  return node;
 }
 
 

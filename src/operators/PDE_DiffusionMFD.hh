@@ -10,6 +10,90 @@
 
 // PDE_DiffusionMFD: elliptic operators using the MFD family of discretizations.
 
+// DEVELOPER NOTE: this documentation covers both PDE_DiffusionMFD AND
+// PDE_DiffusionMFDwithGravity
+
+/*!
+
+Mimetic Finite Difference class of methods for diffusion.
+
+`"discretization primary`" = `"mfd: *`"
+
+.. _pde-diffusion-mfd-spec:
+.. admonition:: pde-diffusion-mfd-spec
+
+   * `"nonlinear coefficient`" ``[string]`` **none** specifies a method for treating
+     nonlinear diffusion coefficient, if any. Available options are `"none`",
+     `"upwind: face`", `"divk: cell-face`" (default), `"divk: face`",
+     `"standard: cell`", `"divk: cell-face-twin`" and `"divk:
+     cell-grad-face-twin`".  Symmetry preserving methods are the divk-family of
+     methods and the classical cell-centered method (`"standard: cell`"). The
+     first part of the name indicates the base scheme.  The second part (after
+     the semi-column) indicates required components of the composite vector
+     that must be provided by a physical PK.
+
+   * `"discretization secondary`" ``[string]`` **optional** specifies the most robust
+     discretization method that is used when the primary selection fails to
+     satisfy all a priori conditions.  This is typically `"mfd: default`", and
+     is used only when an MFD `"discretization primary`" is used.
+
+   * `"gravity term discretization`" ``[string]`` **"hydraulic head"** selects
+     a model for discretizing the gravity term. Available options are
+     `"hydraulic head`" [default] and `"finite volume`".  The first option
+     starts with equation for the shifted solution, i.e. the hydraulic head,
+     and derives gravity discretization by the reserve shifting.  The second
+     option is based on the divergence formula.
+
+   * `"consistent faces`" ``[list]`` **optional** may contain a `"preconditioner`" and
+     `"linear operator`" list (see sections :ref:`Preconditioners` and
+     :ref:`Linear Solvers` respectively).  If these lists are provided, then,
+     given a set of cell values, the faces constraints that satisfy the
+     constraint equation in MFD may be computed by assembling and inverting the
+     face-only system.  This is not currently used by any Amanzi PKs.
+
+   * `"diffusion tensor`" ``[string]`` **symmetric** allows us to solve problems with
+     symmetric and non-symmetric (but positive definite) tensors. Available
+     options are *symmetric* (default) and *nonsymmetric*.
+
+   * `"use manifold flux`" ``[bool]`` **false** Computes the flux using
+     algorithms and data structures for manifolds or fracture networks.
+
+   INCLUDES:
+
+   - ``[pde-diffusion-spec]``
+
+Example:
+
+.. code-block:: xml
+
+  <ParameterList name="pks operator name">
+    <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
+    <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
+    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+    <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+    <Parameter name="gravity" type="bool" value="true"/>
+    <Parameter name="gravity term discretization" type="string" value="hydraulic head"/>
+    <Parameter name="gravity magnitude" type="double" value="9.81"/>
+    <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
+    <Parameter name="Newton correction" type="string" value="true Jacobian"/>
+
+    <ParameterList name="consistent faces">
+      <ParameterList name="linear solver">
+        ...
+      </ParameterList>
+      <ParameterList name="preconditioner">
+        ...
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+This example creates a p-lambda system, i.e. the pressure is
+discretized in mesh cells and on mesh faces.
+The preconditioner is defined on faces only, i.e. cell-based unknowns
+are eliminated explicitly and the preconditioner is applied to the
+Schur complement.
+
+*/
 
 #ifndef AMANZI_OPERATOR_PDE_DIFFUSION_MFD_HH_
 #define AMANZI_OPERATOR_PDE_DIFFUSION_MFD_HH_
@@ -27,54 +111,6 @@
 #include "Operator.hh"
 #include "OperatorDefs.hh"
 #include "PDE_Diffusion.hh"
-
-/*!
-
-Additional options available only for the MFD family of discretizations include:
-
-.. admonition:: diffusion_op_addon-spec
-
-  * `"nonlinear coefficient`" ``[string]`` specifies a method for treating nonlinear
-    diffusion coefficient, if any. Available options are `"none`", `"upwind:
-    face`", `"divk: cell-face`" (default), `"divk: face`", `"standard: cell`",
-    `"divk: cell-face-twin`" and `"divk: cell-grad-face-twin`".  Symmetry
-    preserving methods are the divk-family of methods and the classical
-    cell-centered method (`"standard: cell`"). The first part of the name
-    indicates the base scheme.  The second part (after the semi-column)
-    indicates required components of the composite vector that must be provided
-    by a physical PK.
-
-  * `"discretization secondary`" ``[string]`` specifies the most robust
-    discretization method that is used when the primary selection fails to
-    satisfy all a priori conditions.  This is typically `"mfd: default`", and is
-    used only when an MFD `"discretization primary`" is used.
-
-  * `"schema`" ``[Array(string)]`` defines the operator stencil. It is a collection of
-    geometric objects.  Typically this is set by the implementation and is not provided.
-
-  * `"preconditioner schema`" ``[Array(string)]`` **{face,cell}** Defines the
-    preconditioner stencil.  It is needed only when the default assembling
-    procedure is not desirable. If skipped, the `"schema`" is used instead.
-    In addition to the default, **{face}** may be used, which forms the Schur
-    complement.
-
-  * `"consistent faces`" ``[list]`` may contain a `"preconditioner`" and
-    `"linear operator`" list (see sections Preconditioners_ and LinearSolvers_
-    respectively).  If these lists are provided, and the `"discretization
-    primary`" is of type `"mfd: *`", then the diffusion method
-    UpdateConsistentFaces() can be used.  This method, given a set of cell
-    values, determines the faces constraints that satisfy the constraint
-    equation in MFD by assembling and inverting the face-only system.  This is
-    not currently used by any Amanzi PKs.
-
-  * `"diffusion tensor`" ``[string]`` allows us to solve problems with symmetric and
-    non-symmetric (but positive definite) tensors. Available options are *symmetric*
-    (default) and *nonsymmetric*.
-
-  * `"use manifold flux`"  ``[bool]`` **false** Computes the flux using algorithms
-    and data structures for manifolds or fracture networks.
-
-*/
 
 namespace Amanzi {
 namespace Operators {
@@ -105,8 +141,8 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
   // main virtual members for populating an operator
   virtual void Init(Teuchos::ParameterList& plist);
 
-  virtual void
-  SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor>>& K) override;
+  virtual void SetTensorCoefficient(
+    const Teuchos::RCP<const std::vector<WhetStone::Tensor>>& K) override;
   virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
                                     const Teuchos::RCP<const CompositeVector>& dkdp) override;
 
@@ -123,10 +159,10 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
                                               const Teuchos::Ptr<const CompositeVector>& u,
                                               double scalar_factor = 1) override;
 
-  virtual void
-  UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
-                                 const Teuchos::Ptr<const CompositeVector>& u,
-                                 const Teuchos::Ptr<const CompositeVector>& factor) override;
+  virtual void UpdateMatricesNewtonCorrection(
+    const Teuchos::Ptr<const CompositeVector>& flux,
+    const Teuchos::Ptr<const CompositeVector>& u,
+    const Teuchos::Ptr<const CompositeVector>& factor) override;
 
   // modify matrix due to boundary conditions
   //    primary=true indicates that the operator updates both matrix and right-hand

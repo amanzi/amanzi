@@ -25,7 +25,7 @@ namespace Amanzi {
 // ---------------------------------------------------------------------------
 EvaluatorPrimary_::EvaluatorPrimary_(Teuchos::ParameterList& plist)
   : my_key_(Keys::cleanPListName(plist.name())),
-    my_tag_(Keys::readTag(plist, "tag")),
+    my_tag_(Keys::readTag(plist)),
     vo_(Keys::cleanPListName(plist.name()), plist)
 {
   type_ = EvaluatorType::PRIMARY;
@@ -73,16 +73,21 @@ EvaluatorPrimary_::Update(State& S, const Key& request)
 {
   Teuchos::OSTab tab = vo_.getOSTab();
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-    *vo_.os() << "Primary Variable " << my_key_ << " requested by " << request << std::endl;
+    *vo_.os() << "Primary Variable " << Keys::getKey(my_key_, my_tag_) << " requested by "
+              << request << std::endl;
   }
 
   if (requests_.find(request) == requests_.end()) {
-    if (vo_.os_OK(Teuchos::VERB_EXTREME)) { *vo_.os() << "  Has changed... " << std::endl; }
+    if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
+      *vo_.os() << "  Has changed... " << std::endl;
+    }
     requests_.insert(request);
     return true;
 
   } else {
-    if (vo_.os_OK(Teuchos::VERB_EXTREME)) { *vo_.os() << "  Has not changed... " << std::endl; }
+    if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
+      *vo_.os() << "  Has not changed... " << std::endl;
+    }
     return false;
   }
 }
@@ -114,7 +119,9 @@ EvaluatorPrimary_::UpdateDerivative(State& S,
   }
 
   if (deriv_requests_.size() == 0) {
-    if (vo_.os_OK(Teuchos::VERB_EXTREME)) { *vo_.os() << "  ... updating." << std::endl; }
+    if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
+      *vo_.os() << "  ... updating." << std::endl;
+    }
     // derivative with respect to me, lazy calculate, answer is 1
     UpdateDerivative_(S);
   }
@@ -126,7 +133,9 @@ EvaluatorPrimary_::UpdateDerivative(State& S,
     deriv_requests_.insert(std::make_tuple(wrt_key, wrt_tag, request));
     return true;
   } else {
-    if (vo_.os_OK(Teuchos::VERB_EXTREME)) { *vo_.os() << "  ... has not changed." << std::endl; }
+    if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
+      *vo_.os() << "  ... has not changed." << std::endl;
+    }
     return false;
   }
 }
@@ -173,7 +182,7 @@ std::string
 EvaluatorPrimary_::WriteToString() const
 {
   std::stringstream result;
-  result << my_key_ << std::endl << "  Type: primary" << std::endl;
+  result << my_key_ << std::endl << "  type: primary" << std::endl;
   return result.str();
 }
 

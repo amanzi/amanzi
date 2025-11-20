@@ -42,7 +42,7 @@
 /* *****************************************************************
 * TBW
 * **************************************************************** */
-template <class Analytic>
+template<class Analytic>
 void
 CurlCurl(double c_t,
          int nx,
@@ -80,10 +80,8 @@ CurlCurl(double c_t,
   meshfactory.set_preference(Preference({ Framework::MSTK }));
 
   RCP<const Mesh> mesh;
-  if (nx > 0)
-    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx);
-  else
-    mesh = meshfactory.create("test/hex_split_faces5.exo");
+  if (nx > 0) mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx);
+  else mesh = meshfactory.create("test/hex_split_faces5.exo");
 
   // create resistivity coefficient
   double time = 1.0;

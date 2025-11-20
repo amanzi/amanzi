@@ -105,6 +105,8 @@ void
 MechanicsFlow_PK::Initialize()
 {
   InitializeCVField(S_, *vo_, undrained_split_coef_key_, Tags::DEFAULT, "", 0.0);
+  InitializeCVField(S_, *vo_, biot_key_, Tags::DEFAULT, "", 1.0);
+
   PK_MPCSequential::Initialize();
 }
 
@@ -117,7 +119,7 @@ MechanicsFlow_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   std::vector<std::string> fields(
     { pressure_key_, saturation_liquid_key_, displacement_key_, vol_strain_key_ });
-  if (S_->HasRecord(water_storage_key_)) fields.push_back(water_storage_key_);
+  if (S_->HasRecord(water_storage_key_) ) fields.push_back(water_storage_key_);
 
   StateArchive archive(S_, vo_);
   archive.Add(fields, Tags::DEFAULT);

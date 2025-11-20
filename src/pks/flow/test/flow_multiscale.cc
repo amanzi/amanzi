@@ -84,7 +84,9 @@ RunTest(const std::string& filename, double tol)
   auto& pf = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
   auto& pm = *S->GetW<CompositeVector>("pressure_msp", passwd).ViewComponent("cell");
 
-  for (int c = 0; c < pf.MyLength(); c++) { pm[0][c] = pf[0][c]; }
+  for (int c = 0; c < pf.MyLength(); c++) {
+    pm[0][c] = pf[0][c];
+  }
 
   // initialize the Richards process kernel
   RPK->Initialize();

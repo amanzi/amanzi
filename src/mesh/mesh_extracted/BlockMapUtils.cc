@@ -75,7 +75,9 @@ createContiguousMaps(Teuchos::RCP<const AmanziMesh::MeshFramework> mesh,
 
   int m_all_new = std::max(n_all_new, 1);
   std::vector<int> global_id_ghosted(m_all_new);
-  for (int i = 0; i < n_owned; i++) { global_id_ghosted[i] = continuous_map->GID(i); }
+  for (int i = 0; i < n_owned; i++) {
+    global_id_ghosted[i] = continuous_map->GID(i);
+  }
 
   int k = n_owned;
   for (int i = 0; i < n_ghost; i++) {

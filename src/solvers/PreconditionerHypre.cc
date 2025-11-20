@@ -117,13 +117,11 @@ PreconditionerHypre::InitBoomer_()
 
   // verbosity
   int vlevel_int = 0;
-  if (vo_->getVerbLevel() == Teuchos::VERB_HIGH) {
-    vlevel_int = 1;
-  } else if (vo_->getVerbLevel() == Teuchos::VERB_EXTREME) {
+  if (vo_->getVerbLevel() == Teuchos::VERB_EXTREME) {
     vlevel_int = 3;
   }
 
-  if (plist_.isParameter("verbosity")) vlevel_int = plist_.get<int>("verbosity");
+  if (plist_.isParameter("verbosity") ) vlevel_int = plist_.get<int>("verbosity");
   HYPRE_BoomerAMGSetPrintLevel(method_, vlevel_int);
 
   HYPRE_BoomerAMGSetTol(method_, plist_.get<double>("tolerance", 0.0));
@@ -169,7 +167,9 @@ PreconditionerHypre::InitBoomer_()
     // IfpHypre_::Compute() gets called (for every call but the last) and when
     // IfpHypre_ gets destroyed (for the last call).
     int* indices = new int[block_indices_->size()];
-    for (int i = 0; i != block_indices_->size(); ++i) { indices[i] = (*block_indices_)[i]; }
+    for (int i = 0; i != block_indices_->size(); ++i) {
+      indices[i] = (*block_indices_)[i];
+    }
     HYPRE_BoomerAMGSetDofFunc(method_, indices);
   }
 

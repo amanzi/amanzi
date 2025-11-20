@@ -142,8 +142,24 @@ if __name__ == "__main__":
         struct_crunch = len(x_amanziS_crunch)
     except:
         struct_crunch = 0
+
+    # ATS
+    try:
+        print("looking for ATS")
+        path_to_ATS = os.path.join(os.environ['ATS_SRC_DIR'], 'testing',
+                                   'ats-regression-tests', '07_reactive_transport',
+                                   'amanzi_benchmark-tracer.regression')
+        root_ats = "ats_vis"
+        comp_ats = "total_component_concentration.tracer"
+        x_ATS, c_ATS = GetXY_AmanziU_1D(path_to_ATS,root_ats,comp_ats,1)
+        ats = len(x_ATS)
+
+    except Exception as err:
+        ats = 0
+
         
-# plotting --------------------------------------------------------
+    # plotting --------------------------------------------------------
+    os.chdir(CWD)
     fig = plt.figure(figsize=[8.00,5.25])
     ax = fig.add_subplot()
     
@@ -177,7 +193,11 @@ if __name__ == "__main__":
 
     # struct amanzi alquimia + pflotran
     if (struct_crunch>0):
-        sam = ax.plot(x_amanziS_crunch, c_amanziS_crunch,'g*',label='AmanziS+Alq(CF)',linewidth=2) 
+        sam = ax.plot(x_amanziS_crunch, c_amanziS_crunch,'g*',label='AmanziS+Alq(CF)',linewidth=2)
+
+    if (ats > 0):
+        print('plotting ATS')
+        ax.plot(x_ATS, c_ATS, 'c-x', label='ATS', linewidth=2)
         
 # figure look
     # axes
@@ -188,9 +208,11 @@ if __name__ == "__main__":
     plt.subplots_adjust(left=0.22,bottom=0.15,right=0.95,top=0.90)
     plt.legend(loc='upper right',fontsize=13)
     plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",x=0.57,fontsize=20)
-    plt.tick_params(axis='both', which='major', labelsize=20)
+    print(f'saving figure: {root}_1d.png')
+    # plt.savefig(os.path.join(local_path,root+"_1d.png"
 
-    plt.savefig(root+"_1d.png",format="png")
+    print(f'saving figure: {root}_1d.png')
+    plt.savefig(os.path.join(local_path,root+"_1d.png"),format="png")
     # plt.show()
     # plt.close()
 

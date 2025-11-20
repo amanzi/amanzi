@@ -39,15 +39,13 @@ class ReactiveTransportMatrixFracture_PK : public PK_MPCSubcycled {
                                      const Teuchos::RCP<State>& S,
                                      const Teuchos::RCP<TreeVector>& soln);
 
-  ~ReactiveTransportMatrixFracture_PK(){};
+  ~ReactiveTransportMatrixFracture_PK() {};
 
   // PK methods
   // -- dt is the minimum of the sub pks
   virtual double get_dt() override;
-  virtual void set_dt(double dt) override;
 
   virtual void Setup() override;
-  virtual void Initialize() override;
 
   // -- advance each sub pk from t_old to t_new.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
@@ -58,6 +56,7 @@ class ReactiveTransportMatrixFracture_PK : public PK_MPCSubcycled {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain_, mesh_fracture_;
 
   Teuchos::RCP<ChemistryMatrixFracture_PK> coupled_chemistry_pk_;
+  int coupled_chemistry_id_, coupled_transport_id_;
 
   Key tcc_matrix_key_, tcc_fracture_key_;
 

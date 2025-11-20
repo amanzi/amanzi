@@ -26,9 +26,11 @@ namespace WhetStone {
 
 class PolynomialIterator {
  public:
-  PolynomialIterator() : d_(0){};
-  PolynomialIterator(int d) : d_(d){};
-  ~PolynomialIterator(){};
+  PolynomialIterator()
+    : d_(0) {};
+  PolynomialIterator(int d)
+    : d_(d) {};
+  ~PolynomialIterator() {};
 
   // set iterator to the monomials group of order k0
   PolynomialIterator& begin(int k0 = 0)

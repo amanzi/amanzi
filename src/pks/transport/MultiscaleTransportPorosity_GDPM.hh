@@ -69,7 +69,7 @@ namespace Transport {
 class MultiscaleTransportPorosity_GDPM : public MultiscaleTransportPorosity {
  public:
   MultiscaleTransportPorosity_GDPM(Teuchos::ParameterList& plist);
-  ~MultiscaleTransportPorosity_GDPM(){};
+  ~MultiscaleTransportPorosity_GDPM() {};
 
   // Compute solute flux: icomp - component id, phi - matrix porosity,
   // tcc_m_aux - vector of concentration values in secondary nodes,

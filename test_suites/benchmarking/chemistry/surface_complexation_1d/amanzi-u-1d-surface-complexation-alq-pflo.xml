@@ -1,4 +1,4 @@
-<amanzi_input version="1.6-dev" type="unstructured">
+<amanzi_input version="1.7-dev" type="unstructured">
   <misc>
     <echo_translated_input file_name="oldspec.xml"/>
   </misc>
@@ -28,9 +28,16 @@
   </definitions>
 
   <process_kernels>
-    <flow state="on" model="saturated"/>
-    <transport state="on" />
-    <chemistry state="on" engine="pflotran" input_filename="1d-surface-complexation.in" database="surface-complexation.dat"/>
+    <pk mode="steady">
+      <flow state="on" model="saturated"/>
+     </pk>
+    <pk mode="transient">
+      <flow state="on" model="saturated"/>
+      <transport state="on" />
+      <chemistry state="on" engine="pflotran" input_filename="1d-surface-complexation.in" database="surface-complexation.dat"/>
+      <weakly_coupled name="reactive transport">chemistry,transport</weakly_coupled>
+      <weakly_coupled name="mpc">flow,reactive transport</weakly_coupled>
+    </pk>
   </process_kernels>
 
   <phases>
@@ -76,6 +83,7 @@
 
       <unstr_chemistry_controls>
 	  <auxiliary_data>pH</auxiliary_data>
+          <initial_time_step>1.e7</initial_time_step>
       </unstr_chemistry_controls>
 
       <unstr_steady-state_controls>

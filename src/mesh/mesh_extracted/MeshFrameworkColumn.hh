@@ -65,8 +65,9 @@ namespace AmanziMesh {
 
 struct MeshColumnAlgorithms : public MeshAlgorithms {
   // lumped things for more efficient calculation
-  virtual std::pair<double, AmanziGeometry::Point>
-  computeCellGeometry(const MeshHost& mesh, const Entity_ID c) const override;
+  virtual std::pair<double, AmanziGeometry::Point> computeCellGeometry(
+    const MeshHost& mesh,
+    const Entity_ID c) const override;
 };
 
 
@@ -87,23 +88,23 @@ class MeshFrameworkColumn : public MeshFramework {
 
   // Number of entities of any kind (cell, face, node) and in a
   // particular category (OWNED, GHOST, ALL)
-  virtual std::size_t
-  getNumEntities(const Entity_kind kind, const Parallel_kind ptype) const override
+  virtual std::size_t getNumEntities(const Entity_kind kind,
+                                     const Parallel_kind ptype) const override
   {
     std::size_t count;
     switch (kind) {
-    case Entity_kind::FACE: {
-      count = (ptype == Parallel_kind::GHOST) ? 0 : column_faces_.size();
-      break;
-    }
-    case Entity_kind::BOUNDARY_FACE: {
-      count = 2;
-      break;
-    }
-    default: {
-      count = col3D_mesh_->getNumEntities(kind, ptype);
-      break;
-    }
+      case Entity_kind::FACE: {
+        count = (ptype == Parallel_kind::GHOST) ? 0 : column_faces_.size();
+        break;
+      }
+      case Entity_kind::BOUNDARY_FACE: {
+        count = 2;
+        break;
+      }
+      default: {
+        count = col3D_mesh_->getNumEntities(kind, ptype);
+        break;
+      }
     }
     return count;
   }
@@ -113,12 +114,12 @@ class MeshFrameworkColumn : public MeshFramework {
   {
     Entity_ID ent = -1;
     switch (kind) {
-    case Entity_kind::FACE:
-      ent = col3D_mesh_->getEntityParent(kind, column_faces_(lid));
-      break;
-    default:
-      ent = col3D_mesh_->getEntityParent(kind, lid);
-      break;
+      case Entity_kind::FACE:
+        ent = col3D_mesh_->getEntityParent(kind, column_faces_(lid));
+        break;
+      default:
+        ent = col3D_mesh_->getEntityParent(kind, lid);
+        break;
     }
     return ent;
   }
@@ -169,8 +170,8 @@ class MeshFrameworkColumn : public MeshFramework {
   //
   // Mesh modification
   //-------------------
-  virtual void
-  setNodeCoordinate(const Entity_ID nodeid, const AmanziGeometry::Point& ncoord) override
+  virtual void setNodeCoordinate(const Entity_ID nodeid,
+                                 const AmanziGeometry::Point& ncoord) override
   {
     col3D_mesh_->setNodeCoordinate(nodeid, ncoord);
   }
@@ -228,7 +229,7 @@ class MeshFrameworkColumn : public MeshFramework {
 namespace Impl {
 
 // helper function
-template <class Mesh_type>
+template<class Mesh_type>
 std::pair<double, AmanziGeometry::Point>
 computeMeshColumnCellGeometry(const Mesh_type& mesh, const Entity_ID c)
 {

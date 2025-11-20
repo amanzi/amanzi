@@ -26,12 +26,10 @@ is inherited and included by each actual PK, lives in the "PKs" sublist of
 "main", and has all needed parameters.
 
 .. _pk-spec:
-.. _pk-typed-spec:
 .. admonition:: pk-spec
 
-    * `"PK type`" ``[string]`` One of the registered PK types.  Note this must
-      match the corresponding entry in the ``[pk-typed-spec]``
-    * `"verbose object`" ``[verbose-object-spec]`` **optional** See `Verbose Object`_
+   * `"verbose object`" ``[verbose-object-spec]`` **optional** See
+     :ref:`Verbose Object`
 
 Example:
 
@@ -62,10 +60,10 @@ Developer's note:
   (following the Usage notes in src/pks/PK_Factory.hh) to register the
   derived PK with the PK factory.
 
-  By desing, modifications to the “state->evaluators” list should be done 
-  on construction of a PK. For instance, Energy PK should write 
+  By desing, modifications to the “state->evaluators” list should be done
+  on construction of a PK. For instance, Energy PK should write
   state->evaluators->temperature->evaluator type=primary,
-  after having read its domain name and assorted keys, see also ATS 
+  after having read its domain name and assorted keys, see also ATS
   issue 167.
 
 */
@@ -87,7 +85,7 @@ class State;
 
 class PK {
  public:
-  PK(){};
+  PK() {};
   // Required constructor of the form:
   PK(Teuchos::ParameterList& pk_tree,
      const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
@@ -118,10 +116,8 @@ class PK {
     }
 
     //  some tests provide nullptr
-    if (solution.get())
-      vo_ = Teuchos::rcp(new VerboseObject(solution->Comm(), name_, *vo_plist));
-    else
-      vo_ = Teuchos::rcp(new VerboseObject(getDefaultComm(), name_, *vo_plist));
+    if (solution.get() ) vo_ = Teuchos::rcp(new VerboseObject(solution->Comm(), name_, *vo_plist));
+    else vo_ = Teuchos::rcp(new VerboseObject(getDefaultComm(), name_, *vo_plist));
   };
 
   // Virtual destructor

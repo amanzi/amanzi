@@ -60,7 +60,8 @@ using namespace Amanzi::AmanziMesh;
  ****************************************************************** */
 class AEvaluator : public EvaluatorSecondaryMonotype<double> {
  public:
-  AEvaluator(Teuchos::ParameterList& plist) : EvaluatorSecondaryMonotype<double>(plist)
+  AEvaluator(Teuchos::ParameterList& plist)
+    : EvaluatorSecondaryMonotype<double>(plist)
   {
     dependencies_.insert(std::make_pair(Key("fb"), Tags::DEFAULT));
     dependencies_.insert(std::make_pair(Key("fc"), Tags::DEFAULT));
@@ -108,7 +109,8 @@ class AEvaluator : public EvaluatorSecondaryMonotype<double> {
  ****************************************************************** */
 class CEvaluator : public EvaluatorSecondaryMonotype<double> {
  public:
-  CEvaluator(Teuchos::ParameterList& plist) : EvaluatorSecondaryMonotype<double>(plist)
+  CEvaluator(Teuchos::ParameterList& plist)
+    : EvaluatorSecondaryMonotype<double>(plist)
   {
     dependencies_.insert(std::make_pair(Key("fd"), Tags::DEFAULT));
     dependencies_.insert(std::make_pair(Key("fg"), Tags::DEFAULT));
@@ -144,7 +146,8 @@ class CEvaluator : public EvaluatorSecondaryMonotype<double> {
  ****************************************************************** */
 class DEvaluator : public EvaluatorSecondaryMonotype<double> {
  public:
-  DEvaluator(Teuchos::ParameterList& plist) : EvaluatorSecondaryMonotype<double>(plist)
+  DEvaluator(Teuchos::ParameterList& plist)
+    : EvaluatorSecondaryMonotype<double>(plist)
   {
     dependencies_.insert(std::make_pair(Key("fg"), Tags::DEFAULT));
   }
@@ -165,7 +168,9 @@ class DEvaluator : public EvaluatorSecondaryMonotype<double> {
                                           const Tag& wrt_tag,
                                           const std::vector<double*>& results) override
   {
-    if (wrt_key == "fg") { (*results[0]) = 2.; }
+    if (wrt_key == "fg") {
+      (*results[0]) = 2.;
+    }
   }
 };
 
@@ -174,7 +179,8 @@ class DEvaluator : public EvaluatorSecondaryMonotype<double> {
  ****************************************************************** */
 class EEvaluator : public EvaluatorSecondaryMonotype<double> {
  public:
-  EEvaluator(Teuchos::ParameterList& plist) : EvaluatorSecondaryMonotype<double>(plist)
+  EEvaluator(Teuchos::ParameterList& plist)
+    : EvaluatorSecondaryMonotype<double>(plist)
   {
     dependencies_.insert(std::make_pair(Key("fd"), Tags::DEFAULT));
     dependencies_.insert(std::make_pair(Key("ff"), Tags::DEFAULT));
@@ -213,7 +219,8 @@ class EEvaluator : public EvaluatorSecondaryMonotype<double> {
  ****************************************************************** */
 class FEvaluator : public EvaluatorSecondaryMonotype<double> {
  public:
-  FEvaluator(Teuchos::ParameterList& plist) : EvaluatorSecondaryMonotype<double>(plist)
+  FEvaluator(Teuchos::ParameterList& plist)
+    : EvaluatorSecondaryMonotype<double>(plist)
   {
     dependencies_.insert(std::make_pair(Key("fg"), Tags::DEFAULT));
   }
@@ -234,7 +241,9 @@ class FEvaluator : public EvaluatorSecondaryMonotype<double> {
                                           const Tag& wrt_tag,
                                           const std::vector<double*>& results) override
   {
-    if (wrt_key == "fg") { (*results[0]) = 2.; }
+    if (wrt_key == "fg") {
+      (*results[0]) = 2.;
+    }
   }
 };
 
@@ -243,7 +252,8 @@ class FEvaluator : public EvaluatorSecondaryMonotype<double> {
  ****************************************************************** */
 class HEvaluator : public EvaluatorSecondaryMonotype<double> {
  public:
-  HEvaluator(Teuchos::ParameterList& plist) : EvaluatorSecondaryMonotype<double>(plist)
+  HEvaluator(Teuchos::ParameterList& plist)
+    : EvaluatorSecondaryMonotype<double>(plist)
   {
     dependencies_.insert(std::make_pair(Key("ff"), Tags::DEFAULT));
   }
@@ -264,7 +274,9 @@ class HEvaluator : public EvaluatorSecondaryMonotype<double> {
                                           const Tag& wrt_tag,
                                           const std::vector<double*>& results) override
   {
-    if (wrt_key == "ff") { (*results[0]) = 2.; }
+    if (wrt_key == "ff") {
+      (*results[0]) = 2.;
+    }
   }
 };
 

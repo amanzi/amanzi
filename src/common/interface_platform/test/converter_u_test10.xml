@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="1.6-dev">
+<amanzi_input type="unstructured" version="1.7-dev">
   <model_description name="Integrated Hydrology">
     <units>
       <length_unit>m</length_unit>
@@ -83,7 +83,7 @@
   <materials>
     <material name="All">
       <mechanical_properties>
-        <porosity value="0.4"/>
+        <porosity model="constant" value="0.4"/>
       </mechanical_properties>
       <assigned_regions>All</assigned_regions>
     </material>

@@ -672,7 +672,9 @@ SUITE(SURFACE_SUBSURFACE)
     // op_coupling12->UpdateMatrices(Teuchos::null, Teuchos::null);
 
     auto values23 = std::make_shared<std::vector<double>>(9);
-    for (int k = 0; k < 9; ++k) { (*values23)[k] = 4.2; }
+    for (int k = 0; k < 9; ++k) {
+      (*values23)[k] = 4.2;
+    }
     op_coupling23->Setup(values23, -1.0);
     op_coupling23->UpdateMatrices(Teuchos::null, Teuchos::null);
 

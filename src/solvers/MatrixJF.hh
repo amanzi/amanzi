@@ -56,13 +56,13 @@ the action of the Jacobian.  They are documented in Knoll & Keyes 2004 paper.
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 class MatrixJF {
  public:
   using Vector_t = Vector;
   using VectorSpace_t = VectorSpace;
 
-  MatrixJF(){}; // default constructor for LinOp usage
+  MatrixJF() {}; // default constructor for LinOp usage
 
   MatrixJF(Teuchos::ParameterList& plist,
            const Teuchos::RCP<SolverFnBase<Vector>> fn,
@@ -108,7 +108,7 @@ class MatrixJF {
 
 
 // Forward (Apply) operator
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 int
 MatrixJF<Vector, VectorSpace>::Apply(const Vector& x, Vector& b) const
 {
@@ -133,7 +133,7 @@ MatrixJF<Vector, VectorSpace>::Apply(const Vector& x, Vector& b) const
 
 
 // Forward (Apply) operator
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 int
 MatrixJF<Vector, VectorSpace>::ApplyInverse(const Vector& b, Vector& x) const
 {
@@ -144,7 +144,7 @@ MatrixJF<Vector, VectorSpace>::ApplyInverse(const Vector& b, Vector& x) const
 }
 
 
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 void
 MatrixJF<Vector, VectorSpace>::set_linearization_point(const Teuchos::RCP<const Vector>& u)
 {
@@ -153,7 +153,7 @@ MatrixJF<Vector, VectorSpace>::set_linearization_point(const Teuchos::RCP<const 
 }
 
 
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 double
 MatrixJF<Vector, VectorSpace>::CalculateEpsilon_(const Vector& u, const Vector& x) const
 {

@@ -24,7 +24,7 @@ namespace Transport {
 * Non-member factory.
 ****************************************************************** */
 Teuchos::RCP<MDMPartition>
-CreateMDMPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+CreateMDMPartition(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                    Teuchos::RCP<Teuchos::ParameterList> plist,
                    bool& flag)
 {
@@ -38,7 +38,12 @@ CreateMDMPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
     std::string name = lcv->first;
     if (plist->isSublist(name)) {
       Teuchos::ParameterList sublist = plist->sublist(name);
-      regions.push_back(sublist.get<Teuchos::Array<std::string>>("regions").toVector());
+
+      if (sublist.isParameter("region")) {
+        regions.push_back(std::vector<std::string>{ sublist.get<std::string>("region") });
+      } else {
+        regions.push_back(sublist.get<Teuchos::Array<std::string>>("regions").toVector());
+      }
 
       mdm = factory.Create(sublist);
       mdm->set_dim(mesh->getSpaceDimension());

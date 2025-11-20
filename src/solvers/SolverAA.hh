@@ -68,10 +68,11 @@ This is a variation of the GMRES solver for nonlinear problems.
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 class SolverAA : public Solver<Vector, VectorSpace> {
  public:
-  SolverAA(Teuchos::ParameterList& plist) : plist_(plist){};
+  SolverAA(Teuchos::ParameterList& plist)
+    : plist_(plist) {};
 
   SolverAA(Teuchos::ParameterList& plist,
            const Teuchos::RCP<SolverFnBase<Vector>>& fn,
@@ -142,7 +143,7 @@ class SolverAA : public Solver<Vector, VectorSpace> {
 /* ******************************************************************
 * Public Init method.
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 void
 SolverAA<Vector, VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn,
                                     const VectorSpace& map)
@@ -159,7 +160,7 @@ SolverAA<Vector, VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn
 /* ******************************************************************
 * Initialization of the AA solver.
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 void
 SolverAA<Vector, VectorSpace>::Init_()
 {
@@ -197,7 +198,7 @@ SolverAA<Vector, VectorSpace>::Init_()
 /* ******************************************************************
 * The body of AA solver
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 int
 SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u)
 {
@@ -389,7 +390,7 @@ SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u)
 /* ******************************************************************
 * Internal convergence control.
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 int
 SolverAA<Vector, VectorSpace>::AA_ErrorControl_(double error,
                                                 double previous_error,

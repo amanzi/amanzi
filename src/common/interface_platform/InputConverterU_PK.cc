@@ -170,6 +170,13 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
   }
 
   // remaining BDF1 parameters
+  std::string prefix("numerical_controls, unstructured_controls, unstr_transient_controls, ");
+  node = GetUniqueElementByTagsString_(prefix + "extrapolation_damping_factor", flag);
+  if (flag) {
+    double factor = GetTextContentD_(node, "", false, 1.0);
+    bdf1.set<double>("extrapolation damping factor", factor);
+  }
+
   bdf1.set<int>("max preconditioner lag iterations", TI_MAX_PC_LAG);
   bdf1.set<bool>("extrapolate initial guess", true);
   bdf1.set<double>("restart tolerance relaxation factor", TI_TOL_RELAX_FACTOR);
@@ -419,6 +426,7 @@ InputConverterU::TranslateDiffusionOperator_(const std::string& disc_methods,
     if (tmp == "mfd: two point flux approximation") tmp = "mfd: two-point flux approximation";
     methods[i] = tmp;
   }
+  if (methods.size() == 1 && methods[0] == "fv: default") methods.push_back(methods[0]);
   if (methods.size() == 1) methods.push_back("mfd: optimized for sparsity");
 
   tmp_list.set<std::string>("discretization primary", methods[0]);
@@ -431,14 +439,15 @@ InputConverterU::TranslateDiffusionOperator_(const std::string& disc_methods,
   Amanzi::replace_all(nonlinear_coef_out, "-", ": ");
   std::replace(nonlinear_coef_out.begin(), nonlinear_coef_out.end(), '_', ' ');
 
-  if (nonlinear_coef == "upwind-darcy_velocity")
-    nonlinear_coef_out = "upwind: face";
+  if (nonlinear_coef == "upwind-darcy_velocity") nonlinear_coef_out = "upwind: face";
   else if (nonlinear_coef == "upwind-amanzi" || nonlinear_coef == "upwind-amanzi_new")
     nonlinear_coef_out = "divk: cell-face";
 
   // -- limitations
   if (fracture_network_ && domain == "fracture" && pk != "multiphase")
     nonlinear_coef_out = "standard: cell";
+
+  if (methods[0] == "fv: default" && pk == "energy") nonlinear_coef_out.clear();
 
   if (nonlinear_coef_out != "") tmp_list.set("nonlinear coefficient", nonlinear_coef_out);
 
@@ -483,20 +492,20 @@ InputConverterU::TranslateDiffusionOperator_(const std::string& disc_methods,
   }
 
   // fixing miscalleneous scenarious
-  if (pc_method == "linearized_operator" && pk == "flow") {
-    out_list.sublist("diffusion operator")
-      .sublist("preconditioner")
-      .set<std::string>("Newton correction", "approximate Jacobian");
+  std::string nc("");
+  if (nonlinear_solver == "newton") {
+    nc = "true Jacobian";
+  } else if (methods[0] == "fv: default" && pk != "multiphase") {
+    nc = "true Jacobian";
+  } else if (pc_method == "linearized_operator" && pk == "flow") {
+    nc = "approximate Jacobian";
+  } else if (nonlinear_solver == "newton-picard") {
+    nc = "approximate Jacobian";
   }
 
-  if (nonlinear_solver == "newton") {
-    Teuchos::ParameterList& pc_list =
-      out_list.sublist("diffusion operator").sublist("preconditioner");
-    pc_list.set<std::string>("Newton correction", "true Jacobian");
-  } else if (nonlinear_solver == "newton-picard") {
-    Teuchos::ParameterList& pc_list =
-      out_list.sublist("diffusion operator").sublist("preconditioner");
-    pc_list.set<std::string>("Newton correction", "approximate Jacobian");
+  if (nc != "") {
+    out_list.sublist("diffusion operator").sublist("preconditioner")
+      .set<std::string>("Newton correction", nc);
   }
 
   return out_list;

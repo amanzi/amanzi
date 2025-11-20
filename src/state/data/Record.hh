@@ -31,7 +31,7 @@ class Visualization;
 
 class Record {
  public:
-  Record(){};
+  Record() {};
   Record(Key fieldname, Tag tag, Key owner = "");
   Record(const Record& other, const Tag* tag = nullptr);
 
@@ -55,8 +55,8 @@ class Record {
   void set_io_vis(bool io_vis = true) { io_vis_ = io_vis; }
 
   // pass-throughs for other functionality
-  void
-  WriteVis(const Visualization& vis, const std::vector<std::string>* subfieldnames = nullptr) const;
+  void WriteVis(const Visualization& vis,
+                const std::vector<std::string>* subfieldnames = nullptr) const;
   void WriteCheckpoint(const Checkpoint& chkp,
                        const Tag& tag,
                        bool post_mortem = false,
@@ -69,7 +69,7 @@ class Record {
                   bool force = false);
 
   // Data setters/getters
-  template <typename T>
+  template<typename T>
   const T& Get() const
   {
     try {
@@ -81,7 +81,7 @@ class Record {
     }
   }
 
-  template <typename T>
+  template<typename T>
   T& GetW(const Key& owner)
   {
     AssertOwnerOrDie(owner);
@@ -94,7 +94,7 @@ class Record {
     }
   }
 
-  template <typename T>
+  template<typename T>
   Teuchos::RCP<const T> GetPtr() const
   {
     try {
@@ -106,7 +106,7 @@ class Record {
     }
   }
 
-  template <typename T>
+  template<typename T>
   Teuchos::RCP<T> GetPtrW(const Key& owner)
   {
     AssertOwnerOrDie(owner);
@@ -119,7 +119,7 @@ class Record {
     }
   }
 
-  template <typename T>
+  template<typename T>
   void SetPtr(const Key& owner, const Teuchos::RCP<T>& t)
   {
     AssertOwnerOrDie(owner);
@@ -132,7 +132,7 @@ class Record {
     }
   }
 
-  template <typename T>
+  template<typename T>
   void Assign(const Key& owner, const T& t)
   {
     AssertOwnerOrDie(owner);
@@ -151,7 +151,7 @@ class Record {
   // consistency checking
   void AssertOwnerOrDie(const Key& owner) const;
 
-  template <typename T>
+  template<typename T>
   bool ValidType() const
   {
     return data_.ValidType<T>();

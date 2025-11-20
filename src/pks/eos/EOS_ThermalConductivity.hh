@@ -23,8 +23,9 @@ namespace AmanziEOS {
 
 class EOS_ThermalConductivity {
  public:
-  EOS_ThermalConductivity(Teuchos::ParameterList& plist) : plist_(plist), ierr_(0){};
-  virtual ~EOS_ThermalConductivity(){};
+  EOS_ThermalConductivity(Teuchos::ParameterList& plist)
+    : plist_(plist), ierr_(0) {};
+  virtual ~EOS_ThermalConductivity() {};
 
   virtual double ThermalConductivity(double T, double phi) = 0;
   virtual double DThermalConductivityDT(double T, double phi) = 0;

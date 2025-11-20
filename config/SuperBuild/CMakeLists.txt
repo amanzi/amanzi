@@ -577,6 +577,9 @@ include(ExternalProject)
 # Include the macro that defines uniform build, install and Add_ExternalProject args
 include(DefineExternalProjectArgs)
 
+# Include the macro that is used for patching TPLs
+include(PatchTPL)
+
 # Set of CMake configure arguments to pass to Amanzi once the TPLs are built
 set(Amanzi_TPL_CMAKE_ARGS)
 
@@ -760,6 +763,9 @@ if (ENABLE_PETSC OR ENABLE_Structured)
     set(PETSC_DIR ${PETSC_INSTALL_PREFIX})
   endif()
 endif()
+
+# FMT
+include(${SuperBuild_BUILD_FILES_DIR}/Build_fmt.cmake)
 
 # SEACAS
 include(${SuperBuild_BUILD_FILES_DIR}/Build_SEACAS.cmake)

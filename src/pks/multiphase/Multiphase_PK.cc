@@ -12,7 +12,7 @@
 /*
   MultiPhase PK
 
-  Multiphase multi-component flow. 
+  Multiphase multi-component flow.
 */
 
 
@@ -164,7 +164,7 @@ Multiphase_PK::Setup()
 
   // model assumptions
   auto physical_models = Teuchos::sublist(mp_list_, "physical models and assumptions");
-  flow_on_manifold_ = physical_models->get<bool>("flow and transport in fractures", false);
+  assumptions_.Init(*physical_models, *mesh_);
 
   // extract information about nonlinear system
   component_names_ = mp_list_->sublist("molecular diffusion")
@@ -239,14 +239,15 @@ Multiphase_PK::Setup()
   // conserved quantities
   // -- total water storage
 
-  // water saturation 
+  // water saturation
   for (const auto& name : soln_names_) {
     if (!S_->HasRecord(name)) {
       auto elist = MyRequire_(name, passwd_);
       auto eval = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
       S_->SetEvaluator(name, Tags::DEFAULT, eval);
 
-      S_->RequireDerivative<CV_t, CVS_t>(name, Tags::DEFAULT, name, Tags::DEFAULT, name).SetGhosted();
+      S_->RequireDerivative<CV_t, CVS_t>(name, Tags::DEFAULT, name, Tags::DEFAULT, name)
+        .SetGhosted();
     }
   }
 
@@ -276,7 +277,7 @@ Multiphase_PK::Setup()
 
   // Darcy volume fluxes
   if (!S_->HasRecord(mol_flowrate_liquid_key_)) {
-    if (!flow_on_manifold_) {
+    if (!assumptions_.flow_on_manifold) {
       S_->Require<CV_t, CVS_t>(mol_flowrate_liquid_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)
         ->SetGhosted(true)
@@ -290,7 +291,7 @@ Multiphase_PK::Setup()
   }
 
   if (!S_->HasRecord(mol_flowrate_gas_key_)) {
-    if (!flow_on_manifold_) {
+    if (!assumptions_.flow_on_manifold) {
       S_->Require<CV_t, CVS_t>(mol_flowrate_gas_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)
         ->SetGhosted(true)
@@ -884,7 +885,8 @@ Multiphase_PK::Initialize()
   if (!bdf1_list.isSublist("verbose object"))
     bdf1_list.sublist("verbose object") = mp_list_->sublist("verbose object");
 
-  bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1", bdf1_list, *this, soln_->get_map(), S_));
+  bdf1_dae_ = Teuchos::rcp(
+    new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1", bdf1_list, *this, soln_->get_map(), S_));
 
   // upwind operator with a face model (FIXME)
   Operators::UpwindFactory upwfact;
@@ -922,7 +924,9 @@ Multiphase_PK::Initialize()
   // io
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    for (const auto& name : soln_names_) { *vo_->os() << "unknown: \"" << name << "\"\n"; }
+    for (const auto& name : soln_names_) {
+      *vo_->os() << "unknown: \"" << name << "\"\n";
+    }
     for (int i = 0; i < bcs_.size(); i++) {
       *vo_->os() << "bc \"" << bcs_[i]->keyword() << "\" has " << bcs_[i]->size() << " entities"
                  << std::endl;
@@ -1083,7 +1087,9 @@ Multiphase_PK::ModifyCorrection(double h,
     if (name == mol_density_liquid_key_) {
       // clip molar density to range [0; +\infty]
       for (int i = 0; i < uc.NumVectors(); ++i) {
-        for (int c = 0; c < ncells_owned_; ++c) { duc[i][c] = std::min(duc[i][c], uc[i][c]); }
+        for (int c = 0; c < ncells_owned_; ++c) {
+          duc[i][c] = std::min(duc[i][c], uc[i][c]);
+        }
       }
 
     } else if (name == x_gas_key_) {
@@ -1116,7 +1122,7 @@ Multiphase_PK::InitMPSystem_(const std::string& eqn_name, int eqn_id, int eqn_nu
 {
   system_[eqn_name] = false;
   const auto& plist = mp_list_->sublist("system");
-  if (!plist.isSublist(eqn_name)) return eqn_id;
+  if (!plist.isSublist(eqn_name) ) return eqn_id;
 
   auto slist = plist.sublist(eqn_name);
   system_[eqn_name] = true;
@@ -1183,7 +1189,9 @@ Multiphase_PK::InitMPSystem_(const std::string& eqn_name, int eqn_id, int eqn_nu
   }
 
   // remove solution vector from the list of secondary names
-  for (const auto& soln : soln_names_) { secondary_names_.erase(soln); }
+  for (const auto& soln : soln_names_) {
+    secondary_names_.erase(soln);
+  }
 
   return eqn_id + eqn_num;
 }

@@ -72,11 +72,11 @@ PolygonCentroidWeights(const AmanziMesh::Mesh& mesh,
 // Faces of ptype of cell c that are connected to node v.
 ****************************************************************** */
 inline void
-node_get_cell_faces(const AmanziMesh::Mesh& mesh,
-                    const AmanziMesh::Entity_ID v,
-                    const AmanziMesh::Entity_ID c,
-                    const AmanziMesh::Parallel_kind ptype,
-                    AmanziMesh::Entity_ID_View* faces)
+getNodeCellFaces(const AmanziMesh::Mesh& mesh,
+                 const AmanziMesh::Entity_ID v,
+                 const AmanziMesh::Entity_ID c,
+                 const AmanziMesh::Parallel_kind ptype,
+                 AmanziMesh::Entity_ID_View* faces)
 {
   AmanziMesh::Entity_ID_List vfaces;
   int nfaces_owned =
@@ -99,6 +99,48 @@ node_get_cell_faces(const AmanziMesh::Mesh& mesh,
     }
   }
   vectorToView(*faces, vfaces);
+}
+
+
+/* ******************************************************************
+// Nodes of ptype of cell c that are connected to node v.
+****************************************************************** */
+inline void
+getNodeCellNodes(const AmanziMesh::Mesh& mesh,
+                 const AmanziMesh::Entity_ID v,
+                 const AmanziMesh::Entity_ID c,
+                 const AmanziMesh::Parallel_kind ptype,
+                 AmanziMesh::Entity_ID_View* nodes)
+{
+  AmanziMesh::Entity_ID_List vnodes;
+  int nnodes_owned =
+    mesh.getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
+
+  const auto& faces = mesh.getCellFaces(c);
+  int nfaces = faces.size();
+
+  for (int i = 0; i < nfaces; ++i) {
+    int f = faces[i];
+    auto nodes = mesh.getFaceNodes(f);
+    int nnodes = nodes.size();
+
+    for (int k = 0; k < nnodes; ++k) {
+      if (nodes[k] == v) {
+        // previous node
+        int v1 = nodes[(k + nnodes - 1) % nnodes];
+        if (ptype == AmanziMesh::Parallel_kind::OWNED && v1 >= nnodes_owned) continue;
+        if (std::find(vnodes.begin(), vnodes.end(), v1) == vnodes.end()) vnodes.push_back(v1);
+
+        // next node
+        int v2 = nodes[(k + 1) % nnodes];
+        if (ptype == AmanziMesh::Parallel_kind::OWNED && v2 >= nnodes_owned) continue;
+        if (std::find(vnodes.begin(), vnodes.end(), v2) == vnodes.end()) vnodes.push_back(v2);
+
+        break;
+      }
+    }
+  }
+  vectorToView(*nodes, vnodes);
 }
 
 

@@ -63,7 +63,9 @@ Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
       for (int n = 0; n != nfaces; ++n) {
         int f = faces[n];
         int first = map.FirstPointInElement(f);
-        for (int k = 0; k < map.ElementSize(f); ++k) { v(m++) = Xf[0][first + k]; }
+        for (int k = 0; k < map.ElementSize(f); ++k) {
+          v(m++) = Xf[0][first + k];
+        }
       }
       v(npoints) = Xc[0][c];
 
@@ -74,7 +76,9 @@ Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
       for (int n = 0; n != nfaces; ++n) {
         int f = faces[n];
         int first = map.FirstPointInElement(f);
-        for (int k = 0; k < map.ElementSize(f); ++k) { Yf[0][first + k] += av(m++); }
+        for (int k = 0; k < map.ElementSize(f); ++k) {
+          Yf[0][first + k] += av(m++);
+        }
       }
       Yc[0][c] += av(npoints);
     }
@@ -102,12 +106,16 @@ Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_Face& op,
       int nfaces = faces.size();
 
       WhetStone::DenseVector v(nfaces), av(nfaces);
-      for (int n = 0; n != nfaces; ++n) { v(n) = Xf[0][faces[n]]; }
+      for (int n = 0; n != nfaces; ++n) {
+        v(n) = Xf[0][faces[n]];
+      }
 
       const WhetStone::DenseMatrix& Acell = op.matrices[c];
       Acell.Multiply(v, av, false);
 
-      for (int n = 0; n != nfaces; ++n) { Yf[0][faces[n]] += av(n); }
+      for (int n = 0; n != nfaces; ++n) {
+        Yf[0][faces[n]] += av(n);
+      }
     }
   }
   return 0;
@@ -123,7 +131,9 @@ Operator_FaceCell::ApplyMatrixFreeOp(const Op_Face_Face& op,
   Epetra_MultiVector& Yf = *Y.ViewComponent("face");
 
   for (int k = 0; k != Xf.NumVectors(); ++k) {
-    for (int f = 0; f != nfaces_owned; ++f) { Yf[k][f] += Xf[k][f] * (*op.diag)[k][f]; }
+    for (int f = 0; f != nfaces_owned; ++f) {
+      Yf[k][f] += Xf[k][f] * (*op.diag)[k][f];
+    }
   }
   return 0;
 }

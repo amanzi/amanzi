@@ -22,7 +22,7 @@ namespace Amanzi {
 //
 // Get the right view from a dual view
 //
-template <MemSpace_kind M, typename DualView>
+template<MemSpace_kind M, typename DualView>
 KOKKOS_INLINE_FUNCTION auto& // Kokkos::MeshView of the same type as DV, on M
 view(DualView& dv)
 {
@@ -37,7 +37,7 @@ view(DualView& dv)
 //
 // Conversion from view on host to vector
 //
-template <typename T, typename... Args>
+template<typename T, typename... Args>
 std::vector<std::remove_cv_t<T>>
 asVector(const Kokkos::MeshView<T*, Args...> view)
 {
@@ -46,7 +46,7 @@ asVector(const Kokkos::MeshView<T*, Args...> view)
   // currently no fix for this -- C++20 will use span
   std::vector<std::remove_cv_t<T>> vec;
   vec.reserve(view.size());
-  for (int i = 0; i != view.size(); ++i) vec.emplace_back(view[i]);
+  for (int i = 0; i != view.size() ; ++i) vec.emplace_back(view[i]);
   return vec;
 }
 
@@ -54,7 +54,7 @@ asVector(const Kokkos::MeshView<T*, Args...> view)
 //
 // Conversion from vector to non-owning view on host.
 //
-template <typename T>
+template<typename T>
 Kokkos::MeshView<const T*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
 toNonOwningView(const std::vector<T>& vec)
 {
@@ -64,24 +64,24 @@ toNonOwningView(const std::vector<T>& vec)
   return my_view;
 }
 
-template <typename V, typename T>
+template<typename V, typename T>
 void
 vectorToConstView(V& view, const std::vector<T> vec)
 {
   Kokkos::MeshView<T*> lview("", vec.size());
-  for (int i = 0; i < lview.size(); ++i) lview[i] = vec[i];
+  for (int i = 0; i < lview.size() ; ++i) lview[i] = vec[i];
   view = std::move(lview);
 }
 
-template <typename V, typename T>
+template<typename V, typename T>
 void
 vectorToView(V& view, const std::vector<T> vec)
 {
   Kokkos::resize(view, vec.size());
-  for (int i = 0; i < view.size(); ++i) view[i] = vec[i];
+  for (int i = 0; i < view.size() ; ++i) view[i] = vec[i];
 }
 
-template <typename V, typename T>
+template<typename V, typename T>
 void
 setToView(V& view, const std::set<T> vec)
 {
@@ -94,7 +94,7 @@ setToView(V& view, const std::set<T> vec)
 // Conversion between list and dual view through deep copy and sync.
 //
 // NOTE: change this to DefaultDevice!
-template <typename T, typename MemSpace = Kokkos::HostSpace>
+template<typename T, typename MemSpace = Kokkos::HostSpace>
 Kokkos::MeshDualView<typename std::remove_const<T>::type*, MemSpace>
 asDualView(const std::vector<T>& in)
 {
@@ -106,7 +106,7 @@ asDualView(const std::vector<T>& in)
   return dv;
 }
 
-template <typename T, typename MemSpace = Kokkos::HostSpace, typename... Args>
+template<typename T, typename MemSpace = Kokkos::HostSpace, typename... Args>
 Kokkos::MeshDualView<typename std::remove_const<T>::type*, MemSpace>
 asDualView(const Kokkos::MeshView<T*, Args...>& in)
 {
@@ -117,32 +117,32 @@ asDualView(const Kokkos::MeshView<T*, Args...>& in)
   return dv;
 }
 
-template <class...>
+template<class...>
 struct types {};
-template <class T>
+template<class T>
 struct function_traits : function_traits<decltype(&T::operator())> {};
-template <class T, class C>
+template<class T, class C>
 struct function_traits<T C::*> : function_traits<T> {
   using class_type = C;
 };
-template <class R, class... PP>
+template<class R, class... PP>
 struct function_traits<R(PP...)> {
   using return_type = R;
   using parameter_types = std::tuple<PP...>;
 };
-template <class R, class... PP>
+template<class R, class... PP>
 struct function_traits<R(PP...) const> : function_traits<R(PP...)> {};
 // In C++23, these can be merged into the above:
-template <class R, class... PP>
+template<class R, class... PP>
 struct function_traits<R(PP...) noexcept> : function_traits<R(PP...)> {};
-template <class R, class... PP>
+template<class R, class... PP>
 struct function_traits<R(PP...) const noexcept> : function_traits<R(PP...)> {};
 
-template <class V>
+template<class V>
 using dual_view_t = Kokkos::MeshDualView<typename V::data_type, Kokkos::DefaultHostExecutionSpace>;
 
 namespace detail {
-template <typename Func, typename F, typename... PP>
+template<typename Func, typename F, typename... PP>
 auto
 asDualViews(Func& mesh_func, int count, std::tuple<F, PP...>*)
 {
@@ -154,7 +154,7 @@ asDualViews(Func& mesh_func, int count, std::tuple<F, PP...>*)
 }
 } // namespace detail
 
-template <typename Func>
+template<typename Func>
 auto
 asDualView(Func&& mesh_func, int count)
 {
@@ -168,14 +168,14 @@ asDualView(Func&& mesh_func, int count)
 
 // note, this template is left here despite not being used in case of future
 // refactoring for a more general struct.
-template <typename T>
+template<typename T>
 struct RaggedArray_DualView {
   using View_type = Kokkos::MeshView<T*, Kokkos::DefaultHostExecutionSpace>;
   using Entity_ID_View = View_type;
 
   using type_t = T;
 
-  template <MemSpace_kind MEM>
+  template<MemSpace_kind MEM>
   using constview = Kokkos::MeshView<const T*, MemoryLocation<MEM>>;
 
   Kokkos::MeshDualView<int*> rows;
@@ -208,7 +208,7 @@ struct RaggedArray_DualView {
     update<MemSpace_kind::DEVICE>();
   }
 
-  template <MemSpace_kind MEM>
+  template<MemSpace_kind MEM>
   KOKKOS_INLINE_FUNCTION auto getRowUnmanaged(int row)
   {
     const std::size_t size = view<MEM>(rows)[row + 1] - view<MEM>(rows)[row];
@@ -216,7 +216,7 @@ struct RaggedArray_DualView {
     return Kokkos::MeshView<T*, MemoryLocation<MEM>>(ptr, size);
   }
 
-  template <MemSpace_kind MEM>
+  template<MemSpace_kind MEM>
   KOKKOS_INLINE_FUNCTION auto getRowUnmanaged(int row) const
   {
     const std::size_t size = view<MEM>(rows)[row + 1] - view<MEM>(rows)[row];
@@ -224,45 +224,45 @@ struct RaggedArray_DualView {
     return Kokkos::MeshView<T*, MemoryLocation<MEM>>(ptr, size);
   }
 
-  template <MemSpace_kind MEM>
+  template<MemSpace_kind MEM>
   KOKKOS_INLINE_FUNCTION auto getRow(int row)
   {
     return Kokkos::subview(view<MEM>(entries),
                            Kokkos::make_pair(view<MEM>(rows)[row], view<MEM>(rows)[row + 1]));
   }
 
-  template <MemSpace_kind MEM>
+  template<MemSpace_kind MEM>
   KOKKOS_INLINE_FUNCTION auto getRow(int row) const
   {
     return Kokkos::subview(view<MEM>(entries),
                            Kokkos::make_pair(view<MEM>(rows)[row], view<MEM>(rows)[row + 1]));
   }
 
-  template <MemSpace_kind MEM>
+  template<MemSpace_kind MEM>
   KOKKOS_INLINE_FUNCTION T& get(int row, int i)
   {
     return view<MEM>(entries)[view<MEM>(rows)[row] + i];
   }
 
-  template <MemSpace_kind MEM>
+  template<MemSpace_kind MEM>
   KOKKOS_INLINE_FUNCTION const T& get(int row, int i) const
   {
     return view<MEM>(entries)[view<MEM>(rows)[row] + i];
   }
 
-  template <MemSpace_kind MEM>
+  template<MemSpace_kind MEM>
   KOKKOS_INLINE_FUNCTION int size() const
   {
     return view<MEM>(rows).size() - 1;
   }
 
-  template <MemSpace_kind MEM>
+  template<MemSpace_kind MEM>
   KOKKOS_INLINE_FUNCTION int size(int row) const
   {
     return view<MEM>(rows)[row + 1] - view<MEM>(rows)[row];
   }
 
-  template <MemSpace_kind MEM>
+  template<MemSpace_kind MEM>
   void update()
   {
     if constexpr (MEM == MemSpace_kind::HOST) {
@@ -285,7 +285,9 @@ struct RaggedArray_DualView {
     rows.resize(s1 + 1);
     entries.resize(s1 * s2);
     rows.h_view[0] = 0;
-    for (int i = 1; i < s1 + 1; ++i) { rows.h_view[i] = rows.h_view[i - 1] + s2; }
+    for (int i = 1; i < s1 + 1; ++i) {
+      rows.h_view[i] = rows.h_view[i - 1] + s2;
+    }
     update<MemSpace_kind::DEVICE>();
   }
 };
@@ -293,7 +295,7 @@ struct RaggedArray_DualView {
 //
 // Cache a RaggedArray from a callable, e.g. getCellFaces()
 //
-template <typename T, typename Func>
+template<typename T, typename Func>
 auto
 asRaggedArray_DualView(Func mesh_func, int count)
 {
@@ -314,7 +316,9 @@ asRaggedArray_DualView(Func mesh_func, int count)
 
   for (int i = 0; i != count; ++i) {
     const auto& ent = ents[i];
-    for (int j = 0; j != ent.size(); ++j) { adj.template get<MemSpace_kind::HOST>(i, j) = ent[j]; }
+    for (int j = 0; j != ent.size(); ++j) {
+      adj.template get<MemSpace_kind::HOST>(i, j) = ent[j];
+    }
   }
 
   Kokkos::deep_copy(adj.rows.view_device(), adj.rows.view_host());
@@ -322,7 +326,7 @@ asRaggedArray_DualView(Func mesh_func, int count)
   return adj;
 }
 
-template <typename T, typename List>
+template<typename T, typename List>
 KOKKOS_INLINE_FUNCTION bool
 is_present(const T& v, const List& l)
 {
@@ -333,7 +337,7 @@ is_present(const T& v, const List& l)
 }
 
 // Find the right number of threads
-template <typename T>
+template<typename T>
 constexpr int
 ThreadsPerTeams()
 {
@@ -352,7 +356,7 @@ ThreadsPerTeams()
 // and thus the cache was never directly modified.
 // Using the view interface, a const view is returned from the cache
 // and the behavior of using this view directly is made impossible.
-template <typename VT>
+template<typename VT>
 auto
 alloc_and_deep_copy(const VT& const_view)
 {

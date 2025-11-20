@@ -36,7 +36,8 @@
 /* *****************************************************************
 * Clone an operator and replace matrices
 ***************************************************************** */
-void Print(const Amanzi::Operators::Operator& global_op)
+void
+Print(const Amanzi::Operators::Operator& global_op)
 {
   int nops = global_op.size();
   std::cout << "================\n" << "number of ops: " << nops << std::endl;
@@ -71,7 +72,7 @@ TEST(OPERATOR_CLONE)
   // create parameter list
   Teuchos::ParameterList op_list;
   op_list.set<std::string>("discretization primary", "mfd: default")
-         .set<Teuchos::Array<std::string>>("schema", { "face", "cell" });
+    .set<Teuchos::Array<std::string>>("schema", { "face", "cell" });
 
   // create a mesh framework
   MeshFactory meshfactory(comm);
@@ -116,7 +117,8 @@ TEST(OPERATOR_CLONE)
   Print(*global_op);
 
   auto it0 = global_op->begin();
-  auto it1 = it0++;;
+  auto it1 = it0++;
+  ;
   CHECK(&(*it0)->matrices == &opt->matrices);
   CHECK(&(*it1)->matrices == &ops->matrices);
 

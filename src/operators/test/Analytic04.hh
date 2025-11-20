@@ -31,8 +31,9 @@
 
 class Analytic04 : public AnalyticBase {
  public:
-  Analytic04(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : AnalyticBase(mesh){};
-  ~Analytic04(){};
+  Analytic04(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
+    : AnalyticBase(mesh) {};
+  ~Analytic04() {};
 
   Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t)
   {

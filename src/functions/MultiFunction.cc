@@ -53,7 +53,8 @@ MultiFunction::MultiFunction(const std::vector<Teuchos::RCP<const Function>>& fu
   values_ = new double[functions_.size()];
 };
 
-MultiFunction::MultiFunction(const Teuchos::RCP<const Function>& function) : functions_(1, function)
+MultiFunction::MultiFunction(const Teuchos::RCP<const Function>& function)
+  : functions_(1, function)
 {
   values_ = new double[1];
 };
@@ -75,7 +76,11 @@ MultiFunction::MultiFunction(Teuchos::ParameterList& plist)
       for (int lcv = 1; lcv != (ndofs + 1); ++lcv) {
         std::stringstream sublist_name;
         sublist_name << "dof " << lcv << " function";
-        functions_.push_back(Teuchos::rcp(factory.Create(plist.sublist(sublist_name.str()))));
+        if (plist.isSublist(sublist_name.str())) {
+          functions_.emplace_back(Teuchos::rcp(factory.Create(plist.sublist(sublist_name.str()))));
+        } else {
+          functions_.emplace_back(Teuchos::null);
+        }
       }
     } else {
       // ERROR -- invalid number of dofs
@@ -98,6 +103,7 @@ MultiFunction::MultiFunction(Teuchos::ParameterList& plist)
   };
 
   values_ = new double[functions_.size()];
+  for (int i = 0; i < functions_.size() ; ++i) values_[i] = 0.0;
 }
 
 
@@ -117,7 +123,11 @@ MultiFunction::size() const
 double*
 MultiFunction::operator()(const std::vector<double>& xt) const
 {
-  for (int i = 0; i != size(); ++i) { values_[i] = (*functions_[i])(xt); }
+  for (int i = 0; i != size(); ++i) {
+    if (functions_[i] != Teuchos::null) {
+      values_[i] = (*functions_[i])(xt);
+    }
+  }
   return values_;
 };
 

@@ -87,7 +87,9 @@ SUITE(GeochemistryTestsSecondarySpecies)
   //
   class MockSecondarySpecies : public ac::SecondarySpecies {
    public:
-    MockSecondarySpecies() : SecondarySpecies() {}
+    MockSecondarySpecies()
+      : SecondarySpecies()
+    {}
     MockSecondarySpecies(const std::string name,
                          const int id,
                          const Teuchos::ParameterList& plist,
@@ -95,12 +97,12 @@ SUITE(GeochemistryTestsSecondarySpecies)
       : SecondarySpecies(id, name, plist, primary_species)
     {}
 
-    virtual void
-    Update(const std::vector<Species>& primary_species, const Species& water_species){};
-    virtual void AddContributionToTotal(std::vector<double>* total){};
+    virtual void Update(const std::vector<Species>& primary_species, const Species& water_species) {
+    };
+    virtual void AddContributionToTotal(std::vector<double>* total) {};
 
     void AddContributionToDTotal(const std::vector<ac::Species>& primary_species,
-                                 ac::MatrixBlock* dtotal){};
+                                 ac::MatrixBlock* dtotal) {};
   };
 
   //

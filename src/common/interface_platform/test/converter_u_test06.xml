@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="1.6-dev">
+<amanzi_input type="unstructured" version="1.7-dev">
   <model_description name="flow and transport in fractures">
     <author>Konstantin Lipnikov</author>
     <units>
@@ -35,9 +35,14 @@
   </definitions>
 
   <process_kernels>
-    <flow model="constant" state="on"/>
-    <transport state="on" />
-    <chemistry engine="amanzi" state="on"/>
+    <pk mode="steady">
+      <flow model="saturated" state="on"/>
+    </pk>
+    <pk mode="transient">
+      <transport state="on" />
+      <chemistry engine="amanzi" state="on"/>
+      <weakly_coupled name="mpc">chemistry,transport</weakly_coupled>
+    </pk>
   </process_kernels>
 
   <phases>
@@ -113,7 +118,7 @@
   <materials>
     <material name="Homogeneous">
       <mechanical_properties>
-        <porosity value="0.25" />
+        <porosity model="constant" value="0.25" />
       </mechanical_properties>
       <permeability x="1.0e-5" y="1.0e-5" z="1.0e-5" />
       <assigned_regions>EntireDomain</assigned_regions>
@@ -160,7 +165,7 @@
     <materials>
       <material name="Uniform">
         <mechanical_properties>
-          <porosity value="0.004"/>
+          <porosity model="constant" value="0.004"/>
         </mechanical_properties>
 
         <permeability model="cubic law"/>

@@ -42,6 +42,8 @@ include_directories(${HDF5_INCLUDE_DIRS})
 set(pks_src_files PK_Factory.cc
                   PK_Utils.cc
                   PK_Physical.cc
+                  PK_Physical_Default.cc
+                  PK_Helpers.cc
                   StateArchive.cc)
 
 add_amanzi_library(pks
@@ -55,11 +57,13 @@ add_amanzi_library(pks
 #
 set(pks_inc_files 
   CommonDefs.hh
+  PK_Helpers.hh
   PK.hh
   PK_BDF.hh
   PK_Implicit.hh
   PK_Explicit.hh
   PK_Physical.hh
+  PK_Physical_Default.hh
   PK_PhysicalExplicit.hh
   PK_PhysicalBDF.hh
   PK_DomainFunction.hh
@@ -91,6 +95,7 @@ endif()
 if (ENABLE_AmanziPhysicsModule)
   # this should go first
   add_subdirectory(eos)
+  add_subdirectory(evaluators)
 
   add_subdirectory(flow)
   add_subdirectory(energy)

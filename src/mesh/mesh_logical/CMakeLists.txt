@@ -34,6 +34,7 @@ set(mesh_logical_src MeshLogical.cc
 		     MeshLogicalFactory.cc
                      MeshLogicalAudit.cc
 		     MeshEmbeddedLogical.cc
+                     MeshVirtual.cc
                      )
 
 add_amanzi_library(mesh_logical SOURCE ${mesh_logical_src}
@@ -77,12 +78,14 @@ if (BUILD_TESTS)
     # Test link libraries
     set(mesh_logical_test_link_libs mesh_logical mesh mesh_mstk geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # Test: init
-    set(mesh_logical_test_src_files test/Main.cc test/mesh_logical_geometry.cc)
-
     add_amanzi_test(mesh_logical_geometry mesh_logical_geometry
       KIND unit
-      SOURCE ${mesh_logical_test_src_files}
+      SOURCE test/Main.cc test/mesh_logical_geometry.cc
+      LINK_LIBS ${mesh_logical_test_link_libs})
+
+    add_amanzi_test(mesh_virtual_geometry mesh_virtual_geometry
+      KIND unit
+      SOURCE test/Main.cc test/mesh_virtual_geometry.cc
       LINK_LIBS ${mesh_logical_test_link_libs})
   endif()
 endif()

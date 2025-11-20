@@ -28,6 +28,7 @@ include_directories(${ATK_SOURCE_DIR})
 include_directories(${CHEM_INCLUDES_DIR})
 include_directories(${CHEMPK_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
+include_directories(${EVALUATORS_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_FACTORY_SOURCE_DIR})
@@ -53,34 +54,55 @@ set(transport_inc_files
   MDMPartition.hh
   MDM_Isotropic.hh
   MDM_Bear.hh
+  EvaluatorMDM.hh
   MultiscaleTransportPorosity.hh
   MultiscaleTransportPorosityFactory.hh
   MultiscaleTransportPorosityPartition.hh
   MultiscaleTransportPorosity_DPM.hh
   MultiscaleTransportPorosity_GDPM.hh
+  models_transport_reg.hh
   TransportDomainFunction.hh
   TransportBoundaryFunction_Alquimia.hh
   TransportBoundaryFunction_Chemistry.hh
   TransportSourceFunction_Alquimia.hh
+)
+
+set(transport_src_files
+  MDM_Isotropic.cc
+  MDM_Bear.cc
+  MDM_BurnettFrind.cc
+  MDM_LichtnerKelkarRobinson.cc
+  MDMPartition.cc
+  MDMFactory.cc
+  EvaluatorMDM.cc
+  MultiscaleTransportPorosity_DPM.cc
+  MultiscaleTransportPorosity_GDPM.cc
+  MultiscaleTransportPorosityPartition.cc
+  MultiscaleTransportPorosityFactory.cc
+  TransportBoundaryFunction_Alquimia.cc
+  TransportSourceFunction_Alquimia.cc
+)
+
+
+if (ENABLE_AmanziPhysicsModule)
+set(transport_inc_files
+  ${transport_inc_files}
   TransportDefs.hh
   Transport_PK.hh
   TransportImplicit_PK.hh
   TransportExplicit_PK.hh
-  models_transport_reg.hh)
+)
 
-set(transport_src_files Transport_PK.cc Transport_TI.cc
-                        TransportImplicit_PK.cc TransportImplicit_TI.cc 
-                        TransportExplicit_PK.cc TransportExplicit_TI.cc 
-                        Transport_VandV.cc Transport_Initialize.cc 
-                        Transport_Dispersion.cc Transport_Diffusion_Effective.cc
-                        Transport_HenryLaw.cc
-                        MDM_Isotropic.cc MDM_Bear.cc MDM_BurnettFrind.cc MDM_LichtnerKelkarRobinson.cc
-                        MDMPartition.cc MDMFactory.cc
-                        MultiscaleTransportPorosityFactory.cc
-                        MultiscaleTransportPorosity_DPM.cc MultiscaleTransportPorosity_GDPM.cc
-                        MultiscaleTransportPorosityPartition.cc
-                        TransportBoundaryFunction_Alquimia.cc
-                        TransportSourceFunction_Alquimia.cc)
+set(transport_src_files
+  ${transport_src_files}                  
+  Transport_PK.cc Transport_TI.cc
+  TransportImplicit_PK.cc TransportImplicit_TI.cc 
+  TransportExplicit_PK.cc TransportExplicit_TI.cc 
+  Transport_VandV.cc Transport_Initialize.cc 
+  Transport_Dispersion.cc Transport_Diffusion_Effective.cc
+  Transport_HenryLaw.cc
+)
+endif()
 
 if (ENABLE_ALQUIMIA)
   set(geochem_lib geochemistry)

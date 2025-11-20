@@ -89,21 +89,28 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
   linear_solver_list_ = Teuchos::sublist(glist, "solvers");
   nonlinear_solver_list_ = Teuchos::sublist(glist, "nonlinear solvers");
 
+  // other variables and io
+  dt_prev_ = 1e+91;
+
+  Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist, "units");
+  units_.Init(*units_list);
+
+  vo_ = Teuchos::null;
+}
+
+
+/* ******************************************************************
+* Parser
+******************************************************************* */
+void
+Transport_PK::Transport_PK::parseParameterList()
+{
   subcycling_ = tp_list_->get<bool>("transport subcycling", true);
 
   // domain and primary evaluators
   domain_ = tp_list_->template get<std::string>("domain name", "domain");
   tcc_key_ = Keys::getKey(domain_, "total_component_concentration");
   AddDefaultPrimaryEvaluator(S_, tcc_key_);
-
-  // other variables
-  dt_prev_ = 1e+91;
-
-  // initialize io
-  Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist, "units");
-  units_.Init(*units_list);
-
-  vo_ = Teuchos::null;
 }
 
 
@@ -150,9 +157,10 @@ void
 Transport_PK::SetupAlquimia()
 {
   if (chem_pk_ == Teuchos::null) return;
-
   alquimia_pk_ = Teuchos::rcp_dynamic_cast<AmanziChemistry::Alquimia_PK>(chem_pk_);
-  chem_engine_ = chem_pk_->chem_engine();
+  if (alquimia_pk_ != Teuchos::null) {
+    chem_engine_ = alquimia_pk_->getChemEngine();
+  }
 
   if (chem_engine_ != Teuchos::null) {
     // Retrieve the component names (primary and secondary) from the chemistry
@@ -183,26 +191,25 @@ Transport_PK::Setup()
 
   // cross-coupling of PKs
   auto physical_models = Teuchos::sublist(tp_list_, "physical models and assumptions");
-  bool abs_perm = physical_models->get<bool>("permeability field is required", false);
-  std::string multiscale_model =
-    physical_models->get<std::string>("multiscale model", "single continuum");
-  transport_on_manifold_ = physical_models->get<bool>("flow and transport in fractures", false);
-  use_transport_porosity_ = physical_models->get<bool>("effective transport porosity", false);
-  use_effective_diffusion_ = physical_models->get<bool>("effective transport diffusion", false);
-  use_dispersion_ = physical_models->get<bool>("use dispersion solver", true);
+  assumptions_.Init(*physical_models, *mesh_);
+
+  if (chem_pk_ == Teuchos::null) {
+    for (int i = 0; i < 2; ++i) {
+      std::string sibling = "sibling " + std::to_string(i);
+      if (tp_list_->isParameter(sibling)) {
+        auto tmp = tp_list_->get<Teuchos::RCP<Amanzi::PK>>(sibling, Teuchos::null);
+        chem_pk_ = Teuchos::rcp_dynamic_cast<AmanziChemistry::Chemistry_PK>(tmp);
+        break;
+      }
+    }
+  }
 
   // generate keys here to be available for setup of the base class
   permeability_key_ = Keys::getKey(domain_, "permeability");
   porosity_key_ = Keys::getKey(domain_, "porosity");
   transport_porosity_key_ = Keys::getKey(domain_, "transport_porosity");
-
-  std::string tmp =
-    physical_models->get<std::string>("volumetric flow rate key", "volumetric_flow_rate");
-  vol_flowrate_key_ = Keys::getKey(domain_, tmp);
-
-  tmp = physical_models->get<std::string>("saturation key", "saturation_liquid");
-  saturation_liquid_key_ = Keys::getKey(domain_, tmp);
-
+  vol_flowrate_key_ = Keys::getKey(domain_, assumptions_.vol_flowrate);
+  saturation_liquid_key_ = Keys::getKey(domain_, assumptions_.sat_liquid);
   tortuosity_key_ = Keys::getKey(domain_, "tortuosity");
 
   wc_key_ = Keys::getKey(domain_, "water_content");
@@ -217,14 +224,14 @@ Transport_PK::Setup()
   // require state fields when Flow PK is off
   S_->Require<double>("const_fluid_density", Tags::DEFAULT, "state");
 
-  if (!S_->HasRecord(permeability_key_) && abs_perm) {
+  if (!S_->HasRecord(permeability_key_) && assumptions_.abs_perm) {
     S_->Require<CV_t, CVS_t>(permeability_key_, Tags::DEFAULT, permeability_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, dim);
   }
   if (!S_->HasRecord(vol_flowrate_key_)) {
-    if (transport_on_manifold_) {
+    if (assumptions_.flow_on_manifold) {
       auto cvs = Operators::CreateManifoldCVS(mesh_);
       *S_->Require<CV_t, CVS_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_)
          .SetMesh(mesh_)
@@ -246,7 +253,7 @@ Transport_PK::Setup()
   }
 
   // require domain specific fields
-  if (transport_on_manifold_) {
+  if (assumptions_.flow_on_manifold) {
     S_->Require<CV_t, CVS_t>(aperture_key_, Tags::DEFAULT, aperture_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
@@ -283,7 +290,7 @@ Transport_PK::Setup()
     S_->RequireEvaluator(porosity_key_, Tags::DEFAULT);
   }
 
-  if (use_transport_porosity_) {
+  if (assumptions_.use_transport_porosity) {
     if (!S_->HasRecord(transport_porosity_key_)) {
       S_->Require<CV_t, CVS_t>(transport_porosity_key_, Tags::DEFAULT, transport_porosity_key_)
         .SetMesh(mesh_)
@@ -302,11 +309,11 @@ Transport_PK::Setup()
 
     std::vector<std::string> listm(
       { Keys::getVarName(porosity_key_), Keys::getVarName(saturation_liquid_key_) });
-    if (transport_on_manifold_) listm.push_back(Keys::getVarName(aperture_key_));
+    if (assumptions_.flow_on_manifold) listm.push_back(Keys::getVarName(aperture_key_));
 
     Teuchos::ParameterList elist(wc_key_);
     elist.set<std::string>("my key", wc_key_)
-      .set<Teuchos::Array<std::string>>("multiplicative dependencies", listm)
+      .set<Teuchos::Array<std::string>>("multiplicative dependency key suffixes", listm)
       .set<std::string>("tag", "");
     auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
     S_->SetEvaluator(wc_key_, Tags::DEFAULT, eval);
@@ -330,8 +337,10 @@ Transport_PK::Setup()
 
     Teuchos::ParameterList elist(aux_key);
     elist.set<std::string>("my key", aux_key)
-      .set<Teuchos::Array<std::string>>("multiplicative dependencies", { "total_component_concentration" })
-      .set<Teuchos::Array<std::string>>("reciprocal dependencies", { "mass_density_liquid" })
+      .set<Teuchos::Array<std::string>>("multiplicative dependency key suffixes",
+                                        { "total_component_concentration" })
+      .set<Teuchos::Array<std::string>>("reciprocal dependency key suffixes",
+                                        { "mass_density_liquid" })
       .set<std::string>("tag", "");
     auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
     S_->SetEvaluator(aux_key, Tags::DEFAULT, eval);
@@ -339,7 +348,7 @@ Transport_PK::Setup()
 
   // require multiscale fields
   multiscale_porosity_ = false;
-  if (multiscale_model == "dual continuum discontinuous matrix") {
+  if (assumptions_.msm_name == "dual continuum discontinuous matrix") {
     multiscale_porosity_ = true;
     msp_ = CreateMultiscaleTransportPorosityPartition(mesh_, tp_list_);
 
@@ -387,7 +396,7 @@ Transport_PK::Setup()
   }
 
   // temporary fields
-  S_->Require<CV_t, CVS_t>(tcc_key_, Tags::COPY, passwd_, component_names_);
+  S_->Require<CV_t, CVS_t>(tcc_key_, Tags::COPY, passwd_, component_names_).SetGhosted(true);
 
 #ifdef ALQUIMIA_ENABLED
   SetupAlquimia();
@@ -397,7 +406,9 @@ Transport_PK::Setup()
   S_->GetRecordSetW(tcc_key_).set_units("mol/m^3");
   S_->GetRecordSetW(porosity_key_).set_units("-");
   S_->GetRecordSetW(saturation_liquid_key_).set_units("-");
-  if (transport_on_manifold_) { S_->GetRecordSetW(aperture_key_).set_units("m"); }
+  if (assumptions_.flow_on_manifold) {
+    S_->GetRecordSetW(aperture_key_).set_units("m");
+  }
 }
 
 
@@ -449,7 +460,7 @@ Transport_PK::Initialize()
   S_->Get<CV_t>(vol_flowrate_key_).ScatterMasterToGhosted("face");
 
   phi = S_->Get<CV_t>(porosity_key_).ViewComponent("cell");
-  if (use_transport_porosity_) {
+  if (assumptions_.use_transport_porosity) {
     transport_phi = S_->Get<CV_t>(transport_porosity_key_).ViewComponent("cell");
   } else {
     transport_phi = phi;
@@ -652,7 +663,7 @@ Transport_PK::Initialize()
     *vo_->os() << "Number of components: " << component_names_.size() << std::endl
                << "cfl=" << cfl_ << " spatial/temporal discretization: " << spatial_disc_order
                << " " << temporal_disc_order << std::endl
-               << "using transport porosity: " << use_transport_porosity_ << std::endl;
+               << "using transport porosity: " << assumptions_.use_transport_porosity << std::endl;
     *vo_->os() << vo_->color("green") << "Initialization of PK is complete." << vo_->reset()
                << std::endl
                << std::endl;
@@ -713,7 +724,9 @@ Transport_PK::StableTimeStep(int n)
   for (int f = 0; f < nfaces_wghost; f++) {
     for (int k = 0; k < upwind_cells_[f].size(); k++) {
       int c = upwind_cells_[f][k];
-      if (c >= 0) { total_outflux[c] += fabs(upwind_flux_[f][k]); }
+      if (c >= 0) {
+        total_outflux[c] += fabs(upwind_flux_[f][k]);
+      }
     }
   }
 
@@ -753,12 +766,9 @@ Transport_PK::StableTimeStep(int n)
     outflux = total_outflux[c];
     if (outflux > TRANSPORT_SMALL_CELL_OUTFLUX) {
       vol = mesh_->getCellVolume(c);
-      if (n == 0)
-        dt_cell = vol * wc_prev[0][c] / outflux;
-      else if (n == 1)
-        dt_cell = vol * wc[0][c] / outflux;
-      else
-        dt_cell = vol * std::min(wc_prev[0][c], wc[0][c]) / outflux;
+      if (n == 0) dt_cell = vol * wc_prev[0][c] / outflux;
+      else if (n == 1) dt_cell = vol * wc[0][c] / outflux;
+      else dt_cell = vol * std::min(wc_prev[0][c], wc[0][c]) / outflux;
     }
     if (dt_cell > 0.0 && dt_cell < dt_) {
       dt_ = dt_cell;
@@ -900,7 +910,8 @@ Transport_PK::CommitStep(double t_old, double t_new, const Tag& tag)
   dt_prev_ = std::min(dt_, t_new - t_old);
   S_->GetW<CV_t>(tcc_key_, Tags::DEFAULT, passwd_) = *tcc_tmp;
   Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
-    S_->GetEvaluatorPtr(tcc_key_, Tags::DEFAULT))->SetChanged();
+    S_->GetEvaluatorPtr(tcc_key_, Tags::DEFAULT))
+    ->SetChanged();
 }
 
 
@@ -995,8 +1006,7 @@ Transport_PK::ComputeBCs_(std::vector<int>& bc_model, std::vector<double>& bc_va
           }
         }
       }
-    }
-    else if (bcs_[m]->get_location() == "interface") {
+    } else if (bcs_[m]->get_location() == "interface") {
       for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
         int f = it->first;
         bc_model[f] = Operators::OPERATOR_BC_NEUMANN;

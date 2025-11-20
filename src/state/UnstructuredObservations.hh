@@ -8,31 +8,30 @@
            Ethan Coon (ecoon@lanl.gov)
 */
 
-//! Collection of Observations on an unstructured mesh to be written to a common file.
-/*
-  State
-
-*/
-
-
 /*!
-
+Observations are a localized-in-space but frequent-in-time view of simulation
+output, designed to get at useful diagnostic quantities such as hydrographs,
+total water content, quantities at a point, etc.  These allow frequent
+collection in time without saving huge numbers of visualization files to do
+postprocessing.  In fact, these should be though of as orthogonal data queries
+to visualization -- visualization is pointwise in time but complete in space,
+while observations are pointwise/finite in space but complete in time.
 
 .. _observation-spec:
 .. admonition:: observation-spec
 
-    * `"observation output filename`" ``[string]`` user-defined name for the file
-      that the observations are written to.
-    * `"delimiter`" ``[string]`` **COMMA** Delimiter to split columns of the file
-    *  `"write interval`" ``[int]`` **1** Interval of observations on which to flush IO files.
-    * `"time units`" ``[string]`` **s** Controls the unit of the time column in the observation file.
-    * `"domain`" ``[string]`` **"domain"** Can be used to set the communicator which writes (defaults to the standard subsurface domain).
-    * `"observed quantities`" ``[observable-spec-list]`` A list of Observable_
-      objects that are all put in the same file.
+   * `"observation output filename`" ``[string]`` user-defined name for the file
+     that the observations are written to.
+   * `"delimiter`" ``[string]`` **COMMA** Delimiter to split columns of the file
+   *  `"write interval`" ``[int]`` **1** Interval of observations on which to flush IO files.
+   * `"time units`" ``[string]`` **s** Controls the unit of the time column in the observation file.
+   * `"domain`" ``[string]`` **"domain"** Can be used to set the communicator which writes (defaults to the standard subsurface domain).
+   * `"observed quantities`" ``[observable-spec-list]`` A list of Observable_
+     objects that are all put in the same file.
 
-    INCLUDES:
+   INCLUDES:
 
-    - ``[io-event-spec]`` An IOEvent_ spec
+   - ``[io-event-spec]`` An :ref:`IOEvent` spec.
 
 Note, for backwards compatibility, an ``observable-spec`` may be directly
 included within the `observation-spec` if it is the only variable to be
@@ -91,10 +90,8 @@ class UnstructuredObservations : public Utils::IOEvent {
 
 
 // non-member functions
-bool
-portable_name(const std::string& name);
-bool
-portable_filename(const std::string& filename);
+bool portable_name(const std::string& name);
+bool portable_filename(const std::string& filename);
 
 
 } // namespace Amanzi

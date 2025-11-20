@@ -30,7 +30,8 @@ namespace Amanzi {
 
 class HeatConduction {
  public:
-  HeatConduction(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh), ana_(mesh)
+  HeatConduction(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    : mesh_(mesh), ana_(mesh)
   {
     int dim = mesh_->getSpaceDimension();
     cvs_.SetMesh(mesh_);
@@ -42,7 +43,7 @@ class HeatConduction {
     values_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs_, true));
     derivatives_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs_, true));
   }
-  ~HeatConduction(){};
+  ~HeatConduction() {};
 
   // main members
   void UpdateValues(const CompositeVector& u,

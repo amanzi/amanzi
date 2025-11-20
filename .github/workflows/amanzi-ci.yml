@@ -9,7 +9,10 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, ubuntu-24.04-arm ]
+    runs-on: ${{ matrix.os }}
     name: Build Docker container
     steps:
     - name: Check out the Amanzi repo
@@ -33,22 +36,63 @@ jobs:
     - name: Output the TPLs version
       run:
         echo "TPLs version = ${{env.AMANZI_TPLS_VER}}"
+    - name: Get runner architecture
+      run: |
+        if [[ ${{matrix.os}} == "ubuntu-24.04-arm" ]]; then
+          echo "ARCH=arm64" >> $GITHUB_ENV
+        else
+          echo "ARCH=amd64" >> $GITHUB_ENV
+        fi
     - name: Login to Docker Hub
       uses: docker/login-action@v3
       with:
         username: ${{secrets.DOCKERHUB_USERNAME}}
         password: ${{secrets.DOCKERHUB_PASSWORD}}
-    - name: Docker build
-      id: docker
-      working-directory: Docker
-      run:
-        docker build --build-arg amanzi_branch=${{env.AMANZI_BRANCH}} --build-arg amanzi_tpls_ver=${{env.AMANZI_TPLS_VER}} -t metsi/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest -f Dockerfile-Amanzi-build .
-    - name: Docker push
-      working-directory: Docker
-      run:
-        docker push ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest
+    - name: Check for open PR to master from this branch
+      uses: actions/github-script@v7
+      id: pr_check
+      with:
+        script: |
+          const branch = context.ref.replace('refs/heads/', '');
+          const { data: prs } = await github.rest.pulls.list({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'open',
+            head: `${context.repo.owner}:${branch}`,
+            base: 'master',
+            per_page: 1
+          });
+          core.setOutput('exist_pr_to_master', prs.length > 0 ? 'true' : 'false');    
+    - name: Build and push image - on push
+      if: steps.pr_check.outputs.exist_pr_to_master != 'true'
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: ./Docker/Dockerfile-Amanzi-build
+        push: true
+        tags: metsi/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{env.ARCH}}-latest
+        build-args: |
+          ARCH=linux/${{env.ARCH}}
+          amanzi_branch=${{env.AMANZI_BRANCH}}
+          amanzi_tpls_ver=${{env.AMANZI_TPLS_VER}}  
+    - name: Build and push image - pull requests
+      if: steps.pr_check.outputs.exist_pr_to_master == 'true'
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: ./Docker/Dockerfile-Amanzi-build
+        push: true
+        tags: metsi/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{env.ARCH}}-latest
+        build-args: |
+          ARCH=linux/${{env.ARCH}}
+          amanzi_branch=${{env.AMANZI_BRANCH}}
+          amanzi_tpls_ver=${{env.AMANZI_TPLS_VER}}
+          additional_bootstrap_args=--enable-reg_tests
   serial-tests:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, ubuntu-24.04-arm ]
+    runs-on: ${{ matrix.os }}
     name: serial tests
     needs: build
     steps:
@@ -57,13 +101,23 @@ jobs:
     - name: Set environment variables
       run:
         echo "AMANZI_BRANCH_TAG=$(echo $GITHUB_REF_NAME | sed -e 's/\//--/g')" >> $GITHUB_ENV
+    - name: Get runner architecture
+      run: |
+        if [[ ${{matrix.os}} == "ubuntu-24.04-arm" ]]; then
+         echo "ARCH=arm64" >> $GITHUB_ENV
+        else
+         echo "ARCH=amd64" >> $GITHUB_ENV
+        fi
     - name: Run tests
       id: tests
       working-directory: Docker
       run:
-        docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest -L SERIAL --output-on-failure"
+        docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{env.ARCH}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest -L SERIAL -LE REG --output-on-failure"
   parallel-tests:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, ubuntu-24.04-arm ]
+    runs-on: ${{ matrix.os }}
     name: parallel tests
     needs: build
     steps:
@@ -72,9 +126,84 @@ jobs:
     - name: Set environment variables
       run:
         echo "AMANZI_BRANCH_TAG=$(echo $GITHUB_REF_NAME | sed -e 's/\//--/g')" >> $GITHUB_ENV
+    - name: Get runner architecture
+      run: |
+        if [[ ${{matrix.os}} == "ubuntu-24.04-arm" ]]; then
+         echo "ARCH=arm64" >> $GITHUB_ENV
+        else
+          echo "ARCH=amd64" >> $GITHUB_ENV
+        fi
     - name: Run tests
       id: tests
       working-directory: Docker
       run:
-        docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest -L PARALLEL --output-on-failure"
-
+        docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{env.ARCH}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest -L PARALLEL -LE REG --output-on-failure"
+  regression-tests:
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, ubuntu-24.04-arm ]
+    runs-on: ${{ matrix.os }}
+    name: regression tests
+    needs: build
+    steps:
+    - name: Check for open PR to master from this branch
+      uses: actions/github-script@v7
+      id: pr_check
+      with:
+        script: |
+          const branch = context.ref.replace('refs/heads/', '');
+          const { data: prs } = await github.rest.pulls.list({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'open',
+            head: `${context.repo.owner}:${branch}`,
+            base: 'master',
+            per_page: 1
+          });
+          core.setOutput('exist_pr_to_master', prs.length > 0 ? 'true' : 'false'); 
+    - name: Check out the Amanzi repo
+      if: steps.pr_check.outputs.exist_pr_to_master == 'true'
+      uses: actions/checkout@v4
+    - name: Set environment variables
+      if: steps.pr_check.outputs.exist_pr_to_master == 'true'
+      run:
+        echo "AMANZI_BRANCH_TAG=$(echo $GITHUB_REF_NAME | sed -e 's/\//--/g')" >> $GITHUB_ENV
+    - name: Get runner architecture
+      if: steps.pr_check.outputs.exist_pr_to_master == 'true'
+      run: |
+        if [[ ${{matrix.os}} == "ubuntu-24.04-arm" ]]; then
+         echo "ARCH=arm64" >> $GITHUB_ENV
+        else
+          echo "ARCH=amd64" >> $GITHUB_ENV
+        fi
+    - name: Run tests
+      if: steps.pr_check.outputs.exist_pr_to_master == 'true'
+      id: tests
+      working-directory: Docker
+      run:
+        docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{env.ARCH}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest -L REG --output-on-failure"
+  fix-manifest:
+    runs-on: ubuntu-latest
+    needs: [parallel-tests, serial-tests, regression-tests]
+    if: success()
+    steps:
+      - name: Check out the Amanzi repo
+        uses: actions/checkout@v4
+      - name: Set environment variables
+        run:
+          echo "AMANZI_BRANCH_TAG=$(echo $GITHUB_REF_NAME | sed -e 's/\//--/g')" >> $GITHUB_ENV
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{secrets.DOCKERHUB_USERNAME}}
+          password: ${{secrets.DOCKERHUB_PASSWORD}}
+      - name: Pull images
+        run: |
+          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-arm64-latest
+          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-amd64-latest
+      - name: Edit manifest
+        run: |
+          docker manifest create ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest \
+            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-arm64-latest \
+            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-amd64-latest
+          docker manifest push ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest

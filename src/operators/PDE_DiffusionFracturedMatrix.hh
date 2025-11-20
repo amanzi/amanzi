@@ -19,7 +19,9 @@
 namespace Amanzi {
 namespace Operators {
 
-class PDE_DiffusionFracturedMatrix : public PDE_DiffusionMFD, public PDE_DiffusionWithGravity {
+class PDE_DiffusionFracturedMatrix
+  : public PDE_DiffusionMFD
+  , public PDE_DiffusionWithGravity {
  public:
   PDE_DiffusionFracturedMatrix(Teuchos::ParameterList& plist,
                                const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,

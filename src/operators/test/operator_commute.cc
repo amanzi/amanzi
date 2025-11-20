@@ -109,7 +109,9 @@ TEST(ADVECTION_DIFFUSION_COMMUTE)
   int nfaces =
     mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   Point vel(4.0, 4.0);
-  for (int f = 0; f < nfaces; f++) { uf[0][f] = vel * mesh->getFaceNormal(f); }
+  for (int f = 0; f < nfaces; f++) {
+    uf[0][f] = vel * mesh->getFaceNormal(f);
+  }
 
   // create the global op
   Teuchos::ParameterList plist1;
@@ -239,7 +241,9 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV)
   int nfaces =
     mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   Point vel(4.0, 4.0);
-  for (int f = 0; f < nfaces; f++) { uf[0][f] = vel * mesh->getFaceNormal(f); }
+  for (int f = 0; f < nfaces; f++) {
+    uf[0][f] = vel * mesh->getFaceNormal(f);
+  }
 
   // create the global op
   Teuchos::ParameterList plist1;

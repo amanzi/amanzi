@@ -44,10 +44,10 @@ class VolumetricFlowRateEvaluator
   virtual void EvaluatePartialDerivative_(const State& S,
                                           const Key& wrt_key,
                                           const Tag& wrt_tag,
-                                          const std::vector<CompositeVector*>& results) override{};
+                                          const std::vector<CompositeVector*>& results) override {};
 
   // since cell-based stress requires nodes, the default behavior is not applicable
-  virtual void EnsureCompatibility_ToDeps_(State& S) override{};
+  virtual void EnsureCompatibility_ToDeps_(State& S) override {};
 
  protected:
   Key domain_;

@@ -11,7 +11,7 @@
 #include <string>
 
 #ifdef _OPENMP
-#  include "omp.h"
+#include "omp.h"
 #endif
 
 #include "Teuchos_RCP.hpp"
@@ -116,11 +116,16 @@ SUITE(SOLVERS)
     Epetra_Vector u(map), v(map);
     for (int i = 0; i < N; i++) u[i] = 1.0 / (i + 2.0);
 
-    for (const auto& prec_name : {
-           "identity", "diagonal", "block ilu", "boomer amg", "ILU", "ml", "MGR"
+    for (const auto& prec_name : { "identity",
+                                   "diagonal",
+                                   "block ilu",
+                                   "boomer amg",
+                                   "ILU",
+                                   "ml",
+                                   "MGR"
 #if defined(HAVE_MUELU_EPETRA)
-             ,
-             "muelu"
+                                   ,
+                                   "muelu"
 #endif
          }) {
       std::cout << "Preconditioner: " << prec_name << std::endl
@@ -136,7 +141,7 @@ SUITE(SOLVERS)
   };
 
 #if 0
-#  ifdef _OPENMP
+#ifdef _OPENMP
 TEST(PRECONDITIONERS_OMP) {
   std::cout << "\nComparison of preconditioners for N=125" << std::endl;
 
@@ -145,7 +150,7 @@ TEST(PRECONDITIONERS_OMP) {
 
   double cpu0 = omp_get_wtime();
 
-#    pragma omp parallel for shared(map) num_threads(2)
+#pragma omp parallel for shared(map) num_threads(2)
   for (const auto& prec_name : {"identity", "diagonal"}) {
     auto m = matrix(*map);
 
@@ -187,6 +192,6 @@ TEST(PRECONDITIONERS_OMP) {
   std::cout << "CPU (serial): " << cpu1 - cpu0 << " [sec]  threads=" << nthreads << std::endl;
 
 };
-#  endif
+#endif
 #endif
 }

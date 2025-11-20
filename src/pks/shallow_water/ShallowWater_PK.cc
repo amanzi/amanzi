@@ -78,7 +78,8 @@ ShallowWater_PK::Setup()
   mesh_ = S_->GetMesh(domain_);
   dim_ = mesh_->getSpaceDimension();
 
-  ncells_owned_ = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  ncells_owned_ =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   // domain name
   velocity_key_ = Keys::getKey(domain_, "velocity");
@@ -129,8 +130,8 @@ ShallowWater_PK::Setup()
 
     Teuchos::ParameterList elist(discharge_key_);
     elist.set<std::string>("my key", discharge_key_)
-         .set<std::string>("primary variable key", primary_variable_key_)
-         .set<std::string>("tag", "");
+      .set<std::string>("primary variable key", primary_variable_key_)
+      .set<std::string>("tag", "");
     auto eval = Teuchos::rcp(new DischargeEvaluator(elist));
     S_->SetEvaluator(discharge_key_, Tags::DEFAULT, eval);
   }
@@ -174,8 +175,8 @@ ShallowWater_PK::Setup()
 
     Teuchos::ParameterList elist(hydrostatic_pressure_key_);
     elist.set<std::string>("my key", hydrostatic_pressure_key_)
-         .set<std::string>("primary variable key", water_depth_key_)
-         .set<std::string>("tag", "");
+      .set<std::string>("primary variable key", water_depth_key_)
+      .set<std::string>("tag", "");
 
     auto eval = Teuchos::rcp(new HydrostaticPressureEvaluator(elist));
     S_->SetEvaluator(hydrostatic_pressure_key_, Tags::DEFAULT, eval);
@@ -462,7 +463,9 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   UpdateSecondaryFields();
 
   // update source (external) terms
-  for (int i = 0; i < srcs_.size(); ++i) { srcs_[i]->Compute(t_old, t_new); }
+  for (int i = 0; i < srcs_.size(); ++i) {
+    srcs_[i]->Compute(t_old, t_new);
+  }
 
   // compute total source value for each timestep
   total_source_ = 0.0;
@@ -769,7 +772,9 @@ ShallowWater_PK::get_dt()
   }
 
   // reduce dt_min when dt is too large for completely dry conditions (h = 0, qx = 0, qy = 0)
-  if (dt >= d_min * 1.e8) { dt = d_min * dt_dry; }
+  if (dt >= d_min * 1.e8) {
+    dt = d_min * dt_dry;
+  }
 
   double dt_min;
   mesh_->getComm()->MinAll(&dt, &dt_min, 1);
@@ -867,7 +872,8 @@ ShallowWater_PK::UpdateSecondaryFields()
 {
   auto& ht_c =
     *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
-  const auto& h_c = *S_->Get<CV_t>(primary_variable_key_, Tags::DEFAULT).ViewComponent("cell", true);
+  const auto& h_c =
+    *S_->Get<CV_t>(primary_variable_key_, Tags::DEFAULT).ViewComponent("cell", true);
   const auto& B_c = *S_->Get<CV_t>(bathymetry_key_, Tags::DEFAULT).ViewComponent("cell", true);
 
   for (int c = 0; c < ncells_owned_; ++c) {
@@ -889,7 +895,9 @@ ShallowWater_PK::InitializeFields()
       *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
     auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
 
-    for (int c = 0; c < ncells_owned_; c++) { h_c[0][c] = ht_c[0][c] - B_c[0][c]; }
+    for (int c = 0; c < ncells_owned_; c++) {
+      h_c[0][c] = ht_c[0][c] - B_c[0][c];
+    }
 
     S_->GetRecordW(primary_variable_key_, Tags::DEFAULT, passwd_).set_initialized();
   }

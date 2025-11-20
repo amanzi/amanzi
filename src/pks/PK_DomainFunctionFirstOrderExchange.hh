@@ -31,16 +31,17 @@
 
 namespace Amanzi {
 
-template <class FunctionBase>
-class PK_DomainFunctionFirstOrderExchange : public FunctionBase,
-                                            public Functions::UniqueMeshFunction {
+template<class FunctionBase>
+class PK_DomainFunctionFirstOrderExchange
+  : public FunctionBase
+  , public Functions::UniqueMeshFunction {
  public:
   PK_DomainFunctionFirstOrderExchange(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                       const Teuchos::ParameterList& plist,
                                       AmanziMesh::Entity_kind kind)
     : FunctionBase(plist),
       UniqueMeshFunction(mesh, AmanziMesh::Parallel_kind::OWNED),
-      kind_(kind){};
+      kind_(kind) {};
   virtual ~PK_DomainFunctionFirstOrderExchange() = default;
 
   // member functions
@@ -56,47 +57,37 @@ class PK_DomainFunctionFirstOrderExchange : public FunctionBase,
   }
 
  protected:
-  using FunctionBase::value_;
   using FunctionBase::keyword_;
+  using FunctionBase::value_;
 
-  Teuchos::RCP<const State> S_;
+  Teuchos::RCP<State> S_;
 
  private:
   AmanziMesh::Entity_kind kind_;
-  Key tcc_key_;
-  Tag tcc_copy_;
+  Key exchanged_key_;
+  Tag exchanged_tag_;
 
-  Key saturation_key_, porosity_key_, molar_density_key_;
-  Tag saturation_copy_, porosity_copy_, molar_density_copy_;
+  Key lwc_key_;
+  Tag lwc_tag_;
 };
 
 
 /* ******************************************************************
 * Initialization adds a single function to the list of unique specs.
 ****************************************************************** */
-template <class FunctionBase>
+template<class FunctionBase>
 void
 PK_DomainFunctionFirstOrderExchange<FunctionBase>::Init(const Teuchos::ParameterList& plist,
                                                         const std::string& keyword)
 {
-  keyword_ = keyword;
-
-  // get the model parameters
   Teuchos::ParameterList blist = plist.sublist("source function");
-  std::string domain_name = blist.get<std::string>("domain name", "domain");
 
-  tcc_key_ = Keys::readKey(
-    blist, domain_name, "total component concentration", "total_component_concentration");
-  tcc_copy_ = Keys::readTag(blist, "total component concentration copy");
+  Key domain_name = Keys::readDomain(blist, "domain", "domain");
+  exchanged_key_ = Keys::readKey(blist, domain_name, "exchanged quantity", "mole_fraction");
+  exchanged_tag_ = Keys::readTag(blist, "exchanged quantity");
 
-  saturation_key_ = Keys::readKey(blist, domain_name, "saturation liquid", "ponded_depth");
-  saturation_copy_ = Keys::readTag(blist, "saturation liquid copy");
-
-  porosity_key_ = Keys::readKey(blist, domain_name, "porosity", "porosity");
-  porosity_copy_ = Keys::readTag(blist, "porosity copy");
-
-  molar_density_key_ = Keys::readKey(blist, domain_name, "molar density", "molar_density_liquid");
-  molar_density_copy_ = Keys::readTag(blist, "molar density copy");
+  lwc_key_ = Keys::readKey(blist, domain_name, "liquid water content", "water_content");
+  lwc_tag_ = Keys::readTag(blist, "liquid water content", exchanged_tag_);
 
   // get and check the regions
   auto regions = plist.get<Teuchos::Array<std::string>>("regions").toVector();
@@ -121,44 +112,41 @@ PK_DomainFunctionFirstOrderExchange<FunctionBase>::Init(const Teuchos::Parameter
 /* ******************************************************************
 * Compute and distribute the result by FirstOrderExchange.
 ****************************************************************** */
-template <class FunctionBase>
+template<class FunctionBase>
 void
 PK_DomainFunctionFirstOrderExchange<FunctionBase>::Compute(double t0, double t1)
 {
+  std::cout << "FirstOrderExchange" << std::endl;
   if (unique_specs_.size() == 0) return;
 
   // create the input tuple (time + space)
   int dim = mesh_->getSpaceDimension();
   std::vector<double> args(1 + dim);
+  args[0] = t1;
 
-  // get the tcc vector
-  const auto& tcc = *S_->Get<CompositeVector>(tcc_key_, tcc_copy_).ViewComponent("cell");
-  const auto& ws =
-    *S_->Get<CompositeVector>(saturation_key_, saturation_copy_).ViewComponent("cell");
-  const auto& phi = *S_->Get<CompositeVector>(porosity_key_, porosity_copy_).ViewComponent("cell");
-  const auto& mol_dens =
-    *S_->Get<CompositeVector>(molar_density_key_, molar_density_copy_).ViewComponent("cell");
+  // get the mole fraction, water contents
+  S_->GetEvaluator(exchanged_key_, exchanged_tag_)
+    .Update(*S_, exchanged_key_ + "_first_order_exchange");
+  S_->GetEvaluator(lwc_key_, lwc_tag_).Update(*S_, lwc_key_ + "_first_order_exchange");
+  const auto& ex = *S_->Get<CompositeVector>(exchanged_key_, exchanged_tag_).ViewComponent("cell");
+  const auto& lwc = *S_->Get<CompositeVector>(lwc_key_, lwc_tag_).ViewComponent("cell");
 
-  for (UniqueSpecList::const_iterator uspec = unique_specs_.at(kind_)->begin();
-       uspec != unique_specs_.at(kind_)->end();
-       ++uspec) {
-    args[0] = t1;
-    Teuchos::RCP<MeshIDs> ids = (*uspec)->second;
-    // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
-    int nfun = (*uspec)->first->second->size();
+  for (const auto& uspec : *unique_specs_.at(kind_)) {
+    // uspec is a RCP<pair<RCP<Spec>>, RCP<MeshIDs>>
+    Teuchos::RCP<MeshIDs> ids = uspec->second;
+    int nfun = uspec->first->second->size();
     std::vector<double> val_vec(nfun, 0.);
 
-    for (auto c = ids->begin(); c != ids->end(); ++c) {
-      auto xc = PKUtils_EntityCoordinates(*c, kind_, *mesh_);
-
+    for (auto c : *ids) {
+      const auto& xc = mesh_->getCentroid(kind_, c);
       for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
 
       // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
-      double tmp = ws[0][*c] * phi[0][*c] * mol_dens[0][*c];
       for (int i = 0; i < nfun; ++i) {
-        val_vec[i] = -(*(*uspec)->first->second)(args)[i] * tcc[i][*c] * tmp;
+        val_vec[i] =
+          -(*uspec->first->second)(args)[i] * ex[i][c] * lwc[0][c] / mesh_->getCellVolume(c);
       }
-      value_[*c] = val_vec;
+      value_[c] = val_vec;
     }
   }
 }

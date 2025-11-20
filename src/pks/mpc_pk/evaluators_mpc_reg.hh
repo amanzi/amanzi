@@ -22,10 +22,10 @@ namespace Amanzi {
 Utils::RegisteredFactory<Evaluator, SoluteDiffusionMatrixFracture>
   SoluteDiffusionMatrixFracture::reg_("solute diffusion to matrix");
 
-Utils::RegisteredFactory<Evaluator, HeatDiffusionMatrixFracture>
-  HeatDiffusionMatrixFracture::reg_("heat diffusion to matrix");
+Utils::RegisteredFactory<Evaluator, HeatDiffusionMatrixFracture> HeatDiffusionMatrixFracture::reg_(
+  "heat diffusion to matrix");
 
-Utils::RegisteredFactory<Evaluator, WaterStorageStressSplit>
-  WaterStorageStressSplit::reg_("water storage stress split");
+Utils::RegisteredFactory<Evaluator, WaterStorageStressSplit> WaterStorageStressSplit::reg_(
+  "water storage stress split");
 
 } // namespace Amanzi

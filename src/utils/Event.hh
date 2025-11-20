@@ -11,6 +11,7 @@
 
 #include <functional>
 #include <cmath>
+#include <algorithm>
 
 #include "exceptions.hh"
 #include "errors.hh"
@@ -64,22 +65,27 @@ struct EventList : public Event<Scalar> {
   {
     // make sure we only admit sorted arrays with unique entries
     std::sort(times_.begin(), times_.end());
-    times_.erase(std::unique(times_.begin(), times_.end(),
-                             [](Scalar a, Scalar b) { return isNearEqual<Scalar>(a,b); }), times_.end());
+    times_.erase(std::unique(times_.begin(),
+                             times_.end(),
+                             [](Scalar a, Scalar b) { return isNearEqual<Scalar>(a, b); }),
+                 times_.end());
   }
 
-  Scalar getNext(Scalar time) const override {
+  Scalar getNext(Scalar time) const override
+  {
     for (auto j : times_) {
       if (j > time && !isNearEqual(j, time)) {
         return j;
       }
     }
-    return (Scalar) -1;
+    return (Scalar)-1;
   }
 
-  bool contains(Scalar time) const override {
-    return std::find_if(times_.begin(), times_.end(),
-                        [=](Scalar j) { return isNearEqual(time, j); }) != times_.end();
+  bool contains(Scalar time) const override
+  {
+    return std::find_if(times_.begin(), times_.end(), [=](Scalar j) {
+             return isNearEqual(time, j);
+           }) != times_.end();
   }
 
  private:
@@ -93,9 +99,7 @@ struct EventList : public Event<Scalar> {
 template<typename Scalar>
 struct EventSPS : public Event<Scalar> {
   EventSPS(Scalar start, Scalar period, Scalar stop)
-    : start_(start),
-      period_(period),
-      stop_(stop)
+    : start_(start), period_(period), stop_(stop)
   {
     if (period_ <= (Scalar)0) {
       Errors::Message msg("EventSPS provided invalid period.");
@@ -103,12 +107,14 @@ struct EventSPS : public Event<Scalar> {
     }
   }
 
-  Scalar getNext(Scalar time) const override {
+  Scalar getNext(Scalar time) const override
+  {
     if (time < start_ && !isNearEqual(time, start_)) {
       return start_;
     } else {
       int n_periods = static_cast<int>(std::floor((double)(time - start_) / period_));
-      if (isNearEqual((double)(n_periods + 1), ((double)(time - start_) / period_))) n_periods += 1;
+      if (isNearEqual((double)
+        (n_periods + 1), ((double)(time - start_) / period_))) n_periods += 1;
       Scalar tmp = start_ + (n_periods + 1) * period_;
 
       if (stop_ < 0) {
@@ -123,16 +129,16 @@ struct EventSPS : public Event<Scalar> {
     }
   }
 
-  bool contains(Scalar time) const override {
+  bool contains(Scalar time) const override
+  {
     if (time < start_) return isNearEqual(time, start_);
     if (stop_ > 0 && time > stop_) return isNearEqual(time, stop_);
 
     double res = fmod(time - start_, period_);
-    return isNearEqual(res, 0.0) ||
-      isNearEqual(res, (double) period_);
+    return isNearEqual(res, 0.0) || isNearEqual(res, (double)period_);
   }
 
-private:
+ private:
   Scalar start_, period_, stop_;
 };
 

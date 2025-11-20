@@ -62,6 +62,7 @@ class Tensor {
   void SymmetricPart();
   bool isZero();
   void SpectralBounds(double* lower, double* upper) const;
+  void Rotate(double* eulerAngles);
 
   // elementary operators
   Tensor& operator*=(double c);
@@ -119,14 +120,11 @@ operator!=(const Tensor& T1, const Tensor& T2)
 }
 
 // -- expanding tensor to a constant size vector and reverse.
-void
-TensorToVector(const Tensor& T, DenseVector& v);
-void
-VectorToTensor(const DenseVector& v, Tensor& T);
+void TensorToVector(const Tensor& T, DenseVector& v);
+void VectorToTensor(const DenseVector& v, Tensor& T);
 
 // -- rotation about 3D axis given by unit vector u
-Tensor
-RotationMatrix90(const AmanziGeometry::Point& u, bool ccw);
+Tensor RotationMatrix90(const AmanziGeometry::Point& u, bool ccw);
 
 } // namespace WhetStone
 } // namespace Amanzi

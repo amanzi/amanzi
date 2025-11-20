@@ -81,7 +81,7 @@ namespace Operators {
 
 class PDE_Abstract : public PDE_HelperDiscretization {
  public:
-  PDE_Abstract(Teuchos::ParameterList& plist, Teuchos::RCP<Operator> global_op)
+  PDE_Abstract(Teuchos::ParameterList& plist, const Teuchos::RCP<Operator>& global_op)
     : PDE_HelperDiscretization(global_op),
       coef_type_(CoefType::CONSTANT),
       static_matrices_initialized_(false)
@@ -89,7 +89,7 @@ class PDE_Abstract : public PDE_HelperDiscretization {
     Init_(plist);
   }
 
-  PDE_Abstract(Teuchos::ParameterList& plist, Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+  PDE_Abstract(Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : PDE_HelperDiscretization(mesh),
       coef_type_(CoefType::CONSTANT),
       static_matrices_initialized_(false)
@@ -97,7 +97,7 @@ class PDE_Abstract : public PDE_HelperDiscretization {
     global_op_ = Teuchos::null;
     Init_(plist);
   }
-  ~PDE_Abstract(){};
+  ~PDE_Abstract() {};
 
   // main members
   // -- required by the interface
@@ -110,12 +110,12 @@ class PDE_Abstract : public PDE_HelperDiscretization {
   // -- setup can be used to change coefficient type before any call
   //    of UpdateMatrices. Note that pointers to previous coefficient
   //    values are not deleted
-  template <typename T>
+  template<typename T>
   void Setup(const Teuchos::RCP<std::vector<T>>& K, bool reset);
 
   // optional calculation of flux from potential p
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
-                          const Teuchos::Ptr<CompositeVector>& u) override{};
+                          const Teuchos::Ptr<CompositeVector>& u) override;
 
  protected:
   // available models for operator coefficient
@@ -127,11 +127,13 @@ class PDE_Abstract : public PDE_HelperDiscretization {
   void Init_(Teuchos::ParameterList& plist);
   void CreateStaticMatrices_();
 
+ protected:
+  Teuchos::RCP<WhetStone::BilinearForm> mfd_;
+
  private:
   std::string matrix_;
   bool grad_on_test_;
 
-  Teuchos::RCP<WhetStone::BilinearForm> mfd_;
   Teuchos::RCP<InterfaceWhetStone> interface_;
 
   CoefType coef_type_;
@@ -143,7 +145,7 @@ class PDE_Abstract : public PDE_HelperDiscretization {
 /* ******************************************************************
 * Specialization of Setup
 ****************************************************************** */
-template <>
+template<>
 inline void
 PDE_Abstract::Setup<WhetStone::Tensor>(const Teuchos::RCP<std::vector<WhetStone::Tensor>>& K,
                                        bool reset)
@@ -157,7 +159,7 @@ PDE_Abstract::Setup<WhetStone::Tensor>(const Teuchos::RCP<std::vector<WhetStone:
                                                                                             coef));
 }
 
-template <>
+template<>
 inline void
 PDE_Abstract::Setup<WhetStone::Polynomial>(
   const Teuchos::RCP<std::vector<WhetStone::Polynomial>>& K,
@@ -173,7 +175,7 @@ PDE_Abstract::Setup<WhetStone::Polynomial>(
       mfd_, coef));
 }
 
-template <>
+template<>
 inline void
 PDE_Abstract::Setup<WhetStone::VectorPolynomial>(
   const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial>>& K,
@@ -183,7 +185,7 @@ PDE_Abstract::Setup<WhetStone::VectorPolynomial>(
   coef_type_ = CoefType::VECTOR_POLYNOMIAL;
 }
 
-template <>
+template<>
 inline void
 PDE_Abstract::Setup<WhetStone::VectorSpaceTimePolynomial>(
   const Teuchos::RCP<std::vector<WhetStone::VectorSpaceTimePolynomial>>& K,

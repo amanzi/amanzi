@@ -72,7 +72,9 @@ PDE_DiffusionNLFVwithGravity::UpdateMatrices(const Teuchos::Ptr<const CompositeV
 
       Aface.Multiply(v, av, false);
 
-      for (int n = 0; n < ncells; n++) { rhs_cell[0][cells[n]] -= av(n); }
+      for (int n = 0; n < ncells; n++) {
+        rhs_cell[0][cells[n]] -= av(n);
+      }
     } else if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
       int c = cells[0];
       double zf = (mesh_->getFaceCentroid(f))[dim_ - 1];

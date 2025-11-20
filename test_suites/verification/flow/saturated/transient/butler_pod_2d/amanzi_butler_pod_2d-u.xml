@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="1.6-dev">
+<amanzi_input type="unstructured" version="1.7-dev">
   <misc>
     <echo_translated_input file_name="oldspec.xml" format="unstructured_native" />
   </misc>
@@ -45,10 +45,10 @@
   </definitions>
 
   <process_kernels>
-    <comments>Single-phase transient flow</comments>
-    <flow model="saturated" state="on" />
-    <transport state="off" />
-    <chemistry engine="none" state="off" />
+    <pk mode="transient">
+      <comments>Single-phase transient flow</comments>
+      <flow model="saturated" state="on" />
+    </pk>
   </process_kernels>
 
   <execution_controls>
@@ -150,7 +150,7 @@
       <assigned_regions>xz1,xz2,yz1,yz2</assigned_regions>
       <liquid_phase name="water">
         <liquid_component name="water">
-          <uniform_pressure function="constant" start="1.07785e6" value="1.07785e6" />
+          <uniform_pressure function="constant" start="0.0" value="1.07785e6" />
         </liquid_component>
       </liquid_phase>
     </boundary_condition>

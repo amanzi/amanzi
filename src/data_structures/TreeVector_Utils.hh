@@ -22,7 +22,7 @@ namespace Amanzi {
 
 
 // Create a BFS-ordered list of TreeVector(Space) nodes.
-template <class T>
+template<class T>
 void
 recurseTreeVectorBFS(T& tv, std::vector<Teuchos::RCP<T>>& list)
 {
@@ -30,7 +30,7 @@ recurseTreeVectorBFS(T& tv, std::vector<Teuchos::RCP<T>>& list)
   for (auto it : tv) recurseTreeVectorBFS<T>(*it, list);
 }
 
-template <class T>
+template<class T>
 void
 recurseTreeVectorBFS_const(const T& tv, std::vector<Teuchos::RCP<const T>>& list)
 {
@@ -39,7 +39,7 @@ recurseTreeVectorBFS_const(const T& tv, std::vector<Teuchos::RCP<const T>>& list
 }
 
 // Create a list of leaf nodes of the TreeVector(Space)
-template <class T>
+template<class T>
 std::vector<Teuchos::RCP<T>>
 collectTreeVectorLeaves(T& tv)
 {
@@ -54,7 +54,7 @@ collectTreeVectorLeaves(T& tv)
   return leaves;
 }
 
-template <class T>
+template<class T>
 std::vector<Teuchos::RCP<const T>>
 collectTreeVectorLeaves_const(const T& tv)
 {
@@ -64,12 +64,14 @@ collectTreeVectorLeaves_const(const T& tv)
 
   std::vector<Teuchos::RCP<const T>> leaves;
   for (auto it : list) {
-    if (it->Data() != Teuchos::null) { leaves.emplace_back(it); }
+    if (it->Data() != Teuchos::null) {
+      leaves.emplace_back(it);
+    }
   }
   return leaves;
 }
 
-template <class T>
+template<class T>
 int
 getNumTreeVectorLeaves(const T& tv)
 {

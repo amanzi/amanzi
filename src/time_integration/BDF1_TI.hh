@@ -30,40 +30,41 @@ via the time discretization scheme:
 .. _bdf1-ti-spec:
 .. admonition:: bdf1-ti-spec
 
-    * `"verbose object`" ``[verbose-object-spec]`` A `Verbose Object`_
+   * `"verbose object`" ``[verbose-object-spec]`` A `Verbose Object`_
 
-    * `"residual debugger`" ``[residual-debugger-spec]`` A `Residual Debugger`_ object.
+   * `"residual debugger`" ``[residual-debugger-spec]`` A `Residual Debugger`_ object.
 
-    * `"max preconditioner lag iterations`" ``[int]`` **0** specifies frequency
-      of preconditioner recalculation.
+   * `"max preconditioner lag iterations`" ``[int]`` **0** specifies frequency
+     of preconditioner recalculation.
 
-    * `"freeze preconditioner`" ``[bool]`` **false** enforces preconditioner to
-      be updated only once per non-linear solver. When set to true, the above
-      parameter is ignored.
+   * `"freeze preconditioner`" ``[bool]`` **false** enforces preconditioner to
+     be updated only once per non-linear solver. When set to true, the above
+     parameter is ignored.
 
-    * `"extrapolate initial guess`" ``[bool]`` **true** identifies forward time
-      extrapolation of the initial guess.
+   * `"extrapolate initial guess`" ``[bool]`` **true** identifies forward time
+     extrapolation of the initial guess.
 
-    * `"nonlinear iteration initial guess extrapolation order`" ``[int]`` **1**
-      defines extrapolation algorithm. Zero value implies no extrapolation.
+   * `"nonlinear iteration initial guess extrapolation order`" ``[int]`` **1**
+     defines extrapolation algorithm. Zero value implies no extrapolation.
 
-    * `"restart tolerance relaxation factor`" ``[double]`` **1** Changes the
-      nonlinear tolerance on restart. The time integrator is usually restarted
-      when a boundary condition changes drastically. It may be beneficial to
-      loosen the nonlinear tolerance on the first several timesteps after the
-      time integrator restart. The default value is 1, while a reasonable value
-      may be as large as 1000.
+   * `"restart tolerance relaxation factor`" ``[double]`` **1** Changes the
+     nonlinear tolerance on restart. The time integrator is usually restarted
+     when a boundary condition changes drastically. It may be beneficial to
+     loosen the nonlinear tolerance on the first several timesteps after the
+     time integrator restart. The default value is 1, while a reasonable value
+     may be as large as 1000.
 
-    * `"restart tolerance relaxation factor damping`" ``[double]`` **1**
-      Controls how fast the loosened nonlinear tolerance will revert back to
-      the one specified in `"nonlinear tolerance`". If the nonlinear tolerance
-      is "tol", the relaxation factor is "factor", and the damping is "d", and
-      the timestep count is "n" then the actual nonlinear tolerance is "tol *
-      max(1.0, factor * d ** n)". Reasonable values are between 0 and 1.
+   * `"restart tolerance relaxation factor damping`" ``[double]`` **1**
+     Controls how fast the loosened nonlinear tolerance will revert back to the
+     one specified in `"nonlinear tolerance`". If the nonlinear tolerance is
+     "tol", the relaxation factor is "factor", and the damping is "d", and the
+     timestep count is "n" then the actual nonlinear tolerance is "tol *
+     max(1.0, factor * d ** n)". Reasonable values are between 0 and 1.
 
-    INCLUDES
-    - ``[solver-typed-spec]`` *Uses a* Solver_.
-    - ``[timestep-controller-typed-spec]`` *Uses a* `Timestep Controller`_
+   INCLUDES
+
+   - ``[solver-typed-spec]`` *Uses a* Solver_.
+   - ``[timestep-controller-typed-spec]`` *Uses a* `Timestep Controller`_
 
 
 Note this also accepts an object that provides the `BDF1 Solver Interface`_.
@@ -113,7 +114,7 @@ Note this also accepts an object that provides the `BDF1 Solver Interface`_.
 
 namespace Amanzi {
 
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 class BDF1_TI {
  public:
   // Create the BDF Dae solver object, the nonlinear problem must be
@@ -125,8 +126,9 @@ class BDF1_TI {
           const Teuchos::RCP<State>& S = Teuchos::null);
 
   // initializes the state
-  void
-  SetInitialState(const double h, const Teuchos::RCP<const Vector>& u, const Teuchos::RCP<const Vector>& udot = Teuchos::null);
+  void SetInitialState(const double h,
+                       const Teuchos::RCP<const Vector>& u,
+                       const Teuchos::RCP<const Vector>& udot = Teuchos::null);
 
   // After a successful step, this method commits the new
   // solution to the solution history
@@ -134,9 +136,9 @@ class BDF1_TI {
 
   // Computes a step and returns true whan it fails.
   bool AdvanceStep(double dt,
-                const Teuchos::RCP<const Vector>& u_prev,
-                const Teuchos::RCP<Vector>& u,
-                double& dt_next);
+                   const Teuchos::RCP<const Vector>& u_prev,
+                   const Teuchos::RCP<Vector>& u,
+                   double& dt_next);
 
   bool AdvanceStep(double dt, double& dt_next, const Teuchos::RCP<Vector>& x)
   {
@@ -181,12 +183,12 @@ class BDF1_TI {
 /* ******************************************************************
 * Constructor
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 BDF1_TI<Vector, VectorSpace>::BDF1_TI(const std::string& name,
-        Teuchos::ParameterList& plist,
-        BDFFnBase<Vector>& fn,
-        const Teuchos::RCP<const VectorSpace>& space,
-        const Teuchos::RCP<State>& S)
+                                      Teuchos::ParameterList& plist,
+                                      BDFFnBase<Vector>& fn,
+                                      const Teuchos::RCP<const VectorSpace>& space,
+                                      const Teuchos::RCP<State>& S)
 {
   fn_ = Teuchos::rcpFromRef(fn);
 
@@ -223,7 +225,7 @@ BDF1_TI<Vector, VectorSpace>::BDF1_TI(const std::string& name,
 /* ******************************************************************
 * Initialize miscaleneous parameters.
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 void
 BDF1_TI<Vector, VectorSpace>::SetInitialState(const double t,
                                               const Teuchos::RCP<const Vector>& x,
@@ -239,10 +241,9 @@ BDF1_TI<Vector, VectorSpace>::SetInitialState(const double t,
 /* ******************************************************************
 * Record a successful solution to the history.
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 void
-BDF1_TI<Vector, VectorSpace>::CommitSolution(const double h,
-                                             const Teuchos::RCP<const Vector>& u)
+BDF1_TI<Vector, VectorSpace>::CommitSolution(const double h, const Teuchos::RCP<const Vector>& u)
 {
   double t = h + state_->uhist->MostRecentTime();
 
@@ -262,7 +263,7 @@ BDF1_TI<Vector, VectorSpace>::CommitSolution(const double h,
 /* ******************************************************************
 * Returns most recent time.
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 double
 BDF1_TI<Vector, VectorSpace>::time()
 {
@@ -273,12 +274,12 @@ BDF1_TI<Vector, VectorSpace>::time()
 /* ******************************************************************
 * Implementation of implicit Euler timestep.
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 bool
 BDF1_TI<Vector, VectorSpace>::AdvanceStep(double dt,
-        const Teuchos::RCP<const Vector>& u_prev,
-        const Teuchos::RCP<Vector>& u,
-        double& dt_next)
+                                          const Teuchos::RCP<const Vector>& u_prev,
+                                          const Teuchos::RCP<Vector>& u,
+                                          double& dt_next)
 {
   // initialize the output stream
   Teuchos::OSTab tab = vo_->getOSTab();
@@ -286,6 +287,7 @@ BDF1_TI<Vector, VectorSpace>::AdvanceStep(double dt,
   // print info about the timestep
   double tlast = state_->uhist->MostRecentTime();
   double tnew = tlast + dt;
+  double tnew_damped = tlast + state_->extrapolation_damping * dt;
 
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     *vo_->os() << "step " << state_->seq << " T = " << tlast << " [sec]  dT = " << dt << std::endl;
@@ -296,7 +298,7 @@ BDF1_TI<Vector, VectorSpace>::AdvanceStep(double dt,
   // Predicted solution (initial value for the nonlinear solver)
   if (state_->extrapolate_guess) {
     if (state_->uhist->history_size() > 1) {
-      state_->uhist->InterpolateSolution(tnew, *u);
+      state_->uhist->InterpolateSolution(tnew_damped, *u);
       fn_->ChangedSolution();
 
       if (fn_->IsAdmissible(u)) {
@@ -340,7 +342,9 @@ BDF1_TI<Vector, VectorSpace>::AdvanceStep(double dt,
     ierr = 1;
     itr = -1; // This should not be summed up into the global counter.
     code = AmanziSolvers::SOLVER_INTERNAL_EXCEPTION;
-    if (vo_->os_OK(Teuchos::VERB_HIGH)) { *vo_->os() << e.what() << std::endl; }
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      *vo_->os() << e.what() << std::endl;
+    }
   }
 
   if (ierr == 0) {
@@ -411,7 +415,7 @@ BDF1_TI<Vector, VectorSpace>::AdvanceStep(double dt,
 /* ******************************************************************
 * Report statistics.
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 void
 BDF1_TI<Vector, VectorSpace>::ReportStatistics_()
 {

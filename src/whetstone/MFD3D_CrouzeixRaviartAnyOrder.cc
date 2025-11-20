@@ -84,7 +84,9 @@ MFD3D_CrouzeixRaviartAnyOrder::H1consistency(int c,
 
   // calculate degrees of freedom
   Polynomial poly(d_, order_), pf(d_ - 1, order_ - 1), pc;
-  if (order_ > 1) { pc.Reshape(d_, order_ - 2); }
+  if (order_ > 1) {
+    pc.Reshape(d_, order_ - 2);
+  }
   int nd = poly.size();
   int ndf = pf.size();
   int ndc = pc.size();
@@ -139,7 +141,9 @@ MFD3D_CrouzeixRaviartAnyOrder::H1consistency(int c,
       Polynomial tmp = grad * conormal;
       tmp.ChangeCoordinates(xf, tau);
 
-      for (int n = 0; n < tmp.size(); ++n) { R_(row + n, col) = tmp(n); }
+      for (int n = 0; n < tmp.size(); ++n) {
+        R_(row + n, col) = tmp(n);
+      }
 
       for (auto jt = pf.begin(); jt < pf.end(); ++jt) {
         const int* jndex = jt.multi_index();
@@ -408,7 +412,9 @@ MFD3D_CrouzeixRaviartAnyOrder::ProjectorCell_(const Teuchos::RCP<const AmanziMes
     const DenseVector& v3 = moments->coefs();
     AMANZI_ASSERT(ndof_c == v3.NumRows());
 
-    for (int n = 0; n < ndof_c; ++n) { vdof(row + n) = v3(n); }
+    for (int n = 0; n < ndof_c; ++n) {
+      vdof(row + n) = v3(n);
+    }
   }
 
   // calculate polynomial coefficients (in natural basis)
@@ -421,7 +427,9 @@ MFD3D_CrouzeixRaviartAnyOrder::ProjectorCell_(const Teuchos::RCP<const AmanziMes
   // uniqueness requires to specify constant in polynomial
   if (order_ == 1) {
     AmanziGeometry::Point grad(d_);
-    for (int j = 0; j < d_; ++j) { grad[j] = uc(j + 1); }
+    for (int j = 0; j < d_; ++j) {
+      grad[j] = uc(j + 1);
+    }
 
     double a1(0.0), a2(0.0), tmp;
     for (int n = 0; n < nfaces; ++n) {
@@ -458,9 +466,13 @@ MFD3D_CrouzeixRaviartAnyOrder::ProjectorCell_(const Teuchos::RCP<const AmanziMes
     M2.Multiply(v5, v6, false);
 
     const DenseVector& v3 = moments->coefs();
-    for (int n = 0; n < ndof_c; ++n) { v4(n) = v3(n) * mymesh->getCellVolume(c); }
+    for (int n = 0; n < ndof_c; ++n) {
+      v4(n) = v3(n) * mymesh->getCellVolume(c);
+    }
 
-    for (int n = 0; n < nd - ndof_c; ++n) { v4(ndof_c + n) = v6(n); }
+    for (int n = 0; n < nd - ndof_c; ++n) {
+      v4(ndof_c + n) = v6(n);
+    }
 
     M.Inverse();
     M.Multiply(v4, v5, false);

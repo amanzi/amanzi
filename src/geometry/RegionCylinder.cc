@@ -9,7 +9,7 @@
 */
 
 /*
-  A halfspace (infinite) region in space, defined by a plane.
+  A region defined by an infinite cylinder.
 
 */
 

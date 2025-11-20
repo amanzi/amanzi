@@ -37,8 +37,8 @@ namespace Operators {
 
 class UpwindFactory {
  public:
-  Teuchos::RCP<Upwind>
-  Create(Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::ParameterList& plist);
+  Teuchos::RCP<Upwind> Create(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                              Teuchos::ParameterList& plist);
 };
 
 

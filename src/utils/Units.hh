@@ -52,7 +52,7 @@ typedef std::map<std::string, int> UnitData;
 
 class AtomicUnitForm {
  public:
-  AtomicUnitForm(){};
+  AtomicUnitForm() {};
   AtomicUnitForm(const std::string& key1, int i1) { data_[key1] = i1; }
   AtomicUnitForm(const std::string& key1, int i1, const std::string& key2, int i2)
   {
@@ -70,7 +70,7 @@ class AtomicUnitForm {
     data_[key2] = i2;
     data_[key3] = i3;
   }
-  ~AtomicUnitForm(){};
+  ~AtomicUnitForm() {};
 
   // elementary operations with reduced representations
   // -- optional replacement of a key
@@ -129,7 +129,7 @@ struct UnitsSystem {
       length(length_),
       concentration(concentration_),
       amount(amount_),
-      temperature(temperature_){};
+      temperature(temperature_) {};
 
   std::string time;
   std::string mass;
@@ -142,13 +142,18 @@ struct UnitsSystem {
 
 class Units {
  public:
-  Units() : system_("s", "kg", "m", "molar", "mol", "K") { Init(); }
-  Units(const std::string& concentration_unit) : system_("s", "kg", "m", "molar", "mol", "K")
+  Units()
+    : system_("s", "kg", "m", "molar", "mol", "K")
+  {
+    Init();
+  }
+  Units(const std::string& concentration_unit)
+    : system_("s", "kg", "m", "molar", "mol", "K")
   {
     system_.concentration = concentration_unit;
     Init();
   }
-  ~Units(){};
+  ~Units() {};
 
   // main members
   void Init();
@@ -168,14 +173,20 @@ class Units {
 
   // conversion/comparison of units
   // -- data
-  double
-  ConvertTime(double val, const std::string& in_unit, const std::string& out_unit, bool& flag);
+  double ConvertTime(double val,
+                     const std::string& in_unit,
+                     const std::string& out_unit,
+                     bool& flag);
 
-  double
-  ConvertMass(double val, const std::string& in_unit, const std::string& out_unit, bool& flag);
+  double ConvertMass(double val,
+                     const std::string& in_unit,
+                     const std::string& out_unit,
+                     bool& flag);
 
-  double
-  ConvertLength(double val, const std::string& in_unit, const std::string& out_unit, bool& flag);
+  double ConvertLength(double val,
+                       const std::string& in_unit,
+                       const std::string& out_unit,
+                       bool& flag);
 
   double ConvertConcentration(double val,
                               const std::string& in_unit,

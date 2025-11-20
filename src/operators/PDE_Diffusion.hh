@@ -27,115 +27,53 @@
 
 /*!
 
-Diffusion is the most frequently used operator. It employs the old schema.
+The diffusion operator supports multiple discretization methods to implement
+diffusion.
 
-.. admonition:: diffusion_op-spec
+.. _pde-diffusion-spec:
+.. admonition:: pde-diffusion-spec
 
-  * `"pks operator name`" ``[list]`` a PK specific name for the diffusion operator.
+   * `"discretization primary`" ``[string]`` specifies an advanced discretization method that
+     has useful properties under some a priori conditions on the mesh and/or permeability tensor.
+     The available options are `"mfd: optimized for sparsity`", `"mfd: optimized for monotonicity`",
+     `"mfd: default`", `"mfd: support operator`", `"mfd: two-point flux approximation`",
+     `"fv: default`", and `"nlfv: default`".
+     The first option is recommended for general meshes.
+     The second option is recommended for orthogonal meshes and diagonal absolute
+     permeability tensor.
 
-    * `"discretization primary`" ``[string]`` specifies an advanced discretization method that
-      has useful properties under some a priori conditions on the mesh and/or permeability tensor.
-      The available options are `"mfd: optimized for sparsity`", `"mfd: optimized for monotonicity`",
-      `"mfd: default`", `"mfd: support operator`", `"mfd: two-point flux approximation`",
-      `"fv: default`", and `"nlfv: default`".
-      The first option is recommended for general meshes.
-      The second option is recommended for orthogonal meshes and diagonal absolute
-      permeability tensor.
+   * `"discretization secondary`" ``[string]`` **optional** specifies the most
+     robust discretization method that is used when the primary selection fails
+     to satisfy all a priori conditions.  Default value is equal to that for
+     the primary discretization.
 
-    * `"discretization secondary`" ``[string]`` specifies the most robust discretization method
-      that is used when the primary selection fails to satisfy all a priori conditions.
-      Default value is equal to that for the primary discretization.
+   * `"diffusion tensor`" ``[string]`` **optional** specifies additional
+     properties of the diffusion tensor.  It allows us to solve problems with
+     non-symmetric but positive definite tensors.  Available options are
+     `"symmetric`" and `"nonsymmetric`".
 
-    * `"diffusion tensor`" ``[string]`` specifies additional properties of the diffusion tensor.
-      It allows us to solve problems with non-symmetric but positive definite tensors.
-      Available options are *symmetric* (default) and *nonsymmetric*.
+   * `"schema`" ``[Array(string)]`` **optional** defines the operator
+     stencil. It is a collection of geometric objects. It is `"{cell}`" for
+     finite volume schemes.  It is typically `"{face, cell}`" for mimetic
+     discretizations.  This is typically not set by the user.
 
-    * `"nonlinear coefficient`" ``[string]`` specifies a method for treating nonlinear diffusion
-      coefficient, if any. Available options are `"none`", `"upwind: face`", `"divk: cell-face`" (default),
-      `"divk: face`", `"standard: cell`", and `"divk: cell-face-twin`".
-      Symmetry preserving methods are the divk-family of methods and the classical cell-centered
-      method (`"standard: cell`"). The first part of the name indicates the base scheme.
-      The second part (after the semi-column) indicates required components of the composite vector
-      that must be provided by a physical PK.
-      Default is `"none`".
+   * `"preconditioner schema`" ``[Array(string)]`` **optional** defines the
+     preconditioner stencil.  It is needed only when the default assembling
+     procedure is not desirable.  If skipped, the `"schema`" is used instead.
+     For instance, if `"{face}`" is provided for a `"{face,cell}`" schema, then
+     the Schur complement is implemented for the preconditioner.
 
-    * `"schema`" ``[Array(string)]`` defines the operator stencil. It is a collection of
-      geometric objects. It equals to `"{cell}`" for finite volume schemes.
-      It is typically `"{face, cell}`" for mimetic discretizations.
+   * `"gravity`" ``[bool]`` **optional** specifies if flow is driven also by
+     the gravity.  This is typically set by the PK using this operator.
 
-    * `"preconditioner schema`" [Array(string)] defines the preconditioner stencil.
-      It is needed only when the default assembling procedure is not desirable.
-      If skipped, the `"schema`" is used instead.
-
-    * `"gravity`" ``[bool]`` specifies if flow is driven also by the gravity.
-
-    * `"gravity term discretization`" ``[string]`` selects a model for discretizing the
-      gravity term. Available options are `"hydraulic head`" [default] and `"finite volume`".
-      The first option starts with equation for the shifted solution, i.e. the hydraulic head,
-      and derives gravity discretization by the reserve shifting.
-      The second option is based on the divergence formula.
-
-    * `"gravity magnitude`" ``[double]`` defined magnitude of the gravity vector.
-
-    * `"Newton correction`" ``[string]`` specifies a model for correction (non-physical) terms
-      that must be added to the preconditioner. These terms approximate some Jacobian terms.
-      Available options are `"true Jacobian`" and `"approximate Jacobian`".
-      The FV scheme accepts only the first options. The othre schemes accept only the second option.
-
-    * `"scaled constraint equation`" ``[bool]`` rescales flux continuity equations on mesh faces.
-      These equations are divided by the nonlinear coefficient. This option allows us to
-      treat the case of zero nonlinear coefficient. At moment this feature does not work
-      with non-zero gravity term. Default is *false*.
-
-    * `"constraint equation scaling cutoff"`" ``[double]`` specifies the cutoff value for
-      applying rescaling strategy described above.
-
-    * `"consistent faces`" ``[list]`` may contain a `"preconditioner`" and
-      `"linear operator`" list (see sections Preconditioners_ and LinearSolvers_
-      respectively).  If these lists are provided, and the `"discretization
-      primary`" is of type `"mfd: *`", then the diffusion method
-      UpdateConsistentFaces() can be used.  This method, given a set of cell
-      values, determines the faces constraints that satisfy the constraint
-      equation in MFD by assembling and inverting the face-only system.  This is
-      not currently used by any Amanzi PKs.
-
-    * `"fracture`" ``[Array(string)]`` provides list of regions that defines a fracture network.
-      This parameter is used only by the coupled flow PK.
-
-
-Example:
-
-.. code-block:: xml
-
-  <ParameterList name="pks operator name">
-    <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
-    <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
-    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-    <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
-    <Parameter name="gravity" type="bool" value="true"/>
-    <Parameter name="gravity term discretization" type="string" value="hydraulic head"/>
-    <Parameter name="gravity magnitude" type="double" value="9.81"/>
-    <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
-    <Parameter name="Newton correction" type="string" value="true Jacobian"/>
-
-    <ParameterList name="consistent faces">
-      <ParameterList name="linear solver">
-        ...
-      </ParameterList>
-      <ParameterList name="preconditioner">
-        ...
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-
-This example creates a p-lambda system, i.e. the pressure is
-discretized in mesh cells and on mesh faces.
-The preconditioner is defined on faces only, i.e. cell-based unknowns
-are eliminated explicitly and the preconditioner is applied to the
-Schur complement.
+   * `"Newton correction`" ``[string]`` **none** specifies a model for
+     correction terms that may be added to the preconditioner for nonlinear
+     coefficients. These terms approximate some Jacobian terms.  Available
+     options are `"true Jacobian`" and `"approximate Jacobian`".  The FV scheme
+     accepts only the first option. The other schemes accept only the second
+     option.
 
 */
-
 
 /*
   Ghost elements of composite vectors k_ and dkdp_ are NOT used to be up to date.
@@ -152,28 +90,28 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
       K_(Teuchos::null),
       k_(Teuchos::null),
       dkdp_(Teuchos::null),
-      const_k_(1.0){};
+      const_k_(1.0) {};
 
   PDE_Diffusion(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : PDE_HelperDiscretization(mesh),
       K_(Teuchos::null),
       k_(Teuchos::null),
       dkdp_(Teuchos::null),
-      const_k_(1.0){};
+      const_k_(1.0) {};
 
   PDE_Diffusion(const Teuchos::RCP<AmanziMesh::Mesh>& mesh)
     : PDE_HelperDiscretization(mesh),
       K_(Teuchos::null),
       k_(Teuchos::null),
       dkdp_(Teuchos::null),
-      const_k_(1.0){};
+      const_k_(1.0) {};
 
   virtual ~PDE_Diffusion() = default;
 
   // main virtual members
   // -- setup
-  virtual void
-  SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor>>& K) = 0;
+  virtual void SetTensorCoefficient(
+    const Teuchos::RCP<const std::vector<WhetStone::Tensor>>& K) = 0;
   virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
                                     const Teuchos::RCP<const CompositeVector>& dkdp) = 0;
   void SetConstantScalarCoefficient(double k) { const_k_ = k; }
@@ -184,10 +122,10 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
                                               const Teuchos::Ptr<const CompositeVector>& u,
                                               double scalar_factor = 1.0) = 0;
 
-  virtual void
-  UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
-                                 const Teuchos::Ptr<const CompositeVector>& u,
-                                 const Teuchos::Ptr<const CompositeVector>& factor) = 0;
+  virtual void UpdateMatricesNewtonCorrection(
+    const Teuchos::Ptr<const CompositeVector>& flux,
+    const Teuchos::Ptr<const CompositeVector>& u,
+    const Teuchos::Ptr<const CompositeVector>& factor) = 0;
 
   // -- matrix modifications
   virtual void ModifyMatrices(const CompositeVector& u) = 0;
@@ -255,8 +193,8 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
 inline void
 PDE_Diffusion::ScaleMatricesColumns(const CompositeVector& s)
 {
-  if (!(local_op_schema_ & OPERATOR_SCHEMA_BASE_FACE)) AMANZI_ASSERT(false);
-  if (!s.HasComponent("cell")) AMANZI_ASSERT(false);
+  if (!(local_op_schema_ & OPERATOR_SCHEMA_BASE_FACE) ) AMANZI_ASSERT(false);
+  if (!s.HasComponent("cell") ) AMANZI_ASSERT(false);
 
   const auto& s_c = *s.ViewComponent("cell");
 
@@ -268,7 +206,9 @@ PDE_Diffusion::ScaleMatricesColumns(const CompositeVector& s)
 
     for (int n = 0; n < ncells; ++n) {
       double factor = s_c[0][cells[n]];
-      for (int m = 0; m < ncells; ++m) { Aface(m, n) *= factor; }
+      for (int m = 0; m < ncells; ++m) {
+        Aface(m, n) *= factor;
+      }
     }
   }
 }
@@ -283,7 +223,9 @@ PDE_Diffusion::little_k_space() const
   CompositeVectorSpace out;
   out.SetMesh(mesh_);
   out.SetGhosted();
-  if (little_k_ == OPERATOR_LITTLE_K_NONE) { return out; }
+  if (little_k_ == OPERATOR_LITTLE_K_NONE) {
+    return out;
+  }
   if (little_k_ != OPERATOR_LITTLE_K_UPWIND) {
     out.AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   }
@@ -319,10 +261,8 @@ PDE_Diffusion::set_jacobian_op(const Teuchos::RCP<Op>& op)
     if (local_op().get()) {
       auto index = std::find(global_operator()->begin(), global_operator()->end(), jac_op_) -
                    global_operator()->begin();
-      if (index != global_operator()->size())
-        global_operator()->OpPushBack(op);
-      else
-        global_operator()->OpReplace(op, index);
+      if (index != global_operator() ->size()) global_operator()->OpPushBack(op);
+      else global_operator()->OpReplace(op, index);
     } else {
       global_operator()->OpPushBack(op);
     }

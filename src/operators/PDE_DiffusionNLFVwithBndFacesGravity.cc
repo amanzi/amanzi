@@ -55,7 +55,9 @@ PDE_DiffusionNLFVwithBndFacesGravity::UpdateMatrices(
     }
   }
 
-  if (!is_scalar_) { rho_cv_->ScatterMasterToGhosted("cell"); }
+  if (!is_scalar_) {
+    rho_cv_->ScatterMasterToGhosted("cell");
+  }
 
   PDE_DiffusionNLFVwithBndFaces::UpdateMatrices(flux, hh.ptr());
 
@@ -83,7 +85,9 @@ PDE_DiffusionNLFVwithBndFacesGravity::UpdateMatrices(
 
       Aface.Multiply(v, av, false);
 
-      for (int n = 0; n < ncells; n++) { rhs_cell[0][cells[n]] -= av(n); }
+      for (int n = 0; n < ncells; n++) {
+        rhs_cell[0][cells[n]] -= av(n);
+      }
     } else if ((bc_model[f] == OPERATOR_BC_DIRICHLET) || (bc_model[f] == OPERATOR_BC_NEUMANN)) {
       int c = cells[0];
       double rho_g = GetDensity(c) * fabs(g_[dim_ - 1]);

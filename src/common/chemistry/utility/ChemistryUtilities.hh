@@ -39,7 +39,7 @@ ln_to_log(double d)
   return d * 0.434294481903252;
 }
 
-template <typename T>
+template<typename T>
 void
 PrintVector(const std::string& name,
             const std::vector<T>& data,
@@ -48,7 +48,9 @@ PrintVector(const std::string& name,
             const bool comma_seperated = false)
 {
   std::stringstream output;
-  if (precision > 0) { output << std::setprecision(precision); }
+  if (precision > 0) {
+    output << std::setprecision(precision);
+  }
   output << name << " : { ";
   for (auto i = data.begin(); i != data.end(); ++i) {
     output << *i;

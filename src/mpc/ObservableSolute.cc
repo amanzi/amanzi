@@ -31,7 +31,7 @@ ObservableSolute::ObservableSolute(std::string variable,
                                    Teuchos::ParameterList& plist,
                                    Teuchos::ParameterList& units_plist,
                                    Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-  : Observable(variable, region, functional, plist, units_plist, mesh){};
+  : ObservableAmanzi(variable, region, functional, plist, units_plist, mesh) {};
 
 
 /* ******************************************************************

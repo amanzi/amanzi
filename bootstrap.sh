@@ -135,7 +135,7 @@ no_color=$FALSE
 
 # Amanzi build configuration
 # -- components
-structured=$TRUE
+structured=$FALSE
 unstructured=$TRUE
 geochemistry=$TRUE
 amanzi_physics=${TRUE}
@@ -171,7 +171,7 @@ netcdf4=${TRUE}
 petsc=${FALSE}
 crunchtope=${FALSE}
 pflotran=${FALSE}
-shared=${FALSE}
+shared=${TRUE}
 silo=${FALSE}
 ecosim=${FALSE}
 

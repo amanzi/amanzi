@@ -34,18 +34,30 @@ class ReaderNetCDF : public Reader {
 
   bool hasVariableOrGroup(const std::string& varname) const override;
 
-  virtual void read(const std::string& varname, Teuchos::Array<double>& vec, int index = -1) const override {
+  virtual void read(const std::string& varname,
+                    Teuchos::Array<double>& vec,
+                    int index = -1) const override
+  {
     read_(varname, vec, index);
   }
-  virtual void read(const std::string& varname, Teuchos::Array<int>& vec, int index = -1) const override {
+  virtual void read(const std::string& varname,
+                    Teuchos::Array<int>& vec,
+                    int index = -1) const override
+  {
     read_(varname, vec, index);
   }
 
-  virtual void read(const std::string& varname, Teuchos::SerialDenseMatrix<int, double>& mat, int index = -1) const override {
+  virtual void read(const std::string& varname,
+                    Teuchos::SerialDenseMatrix<int, double>& mat,
+                    int index = -1) const override
+  {
     read_(varname, mat, index);
   }
 
-  virtual void read(const std::string& varname, Teuchos::SerialDenseMatrix<int, int>& mat, int index = -1) const override {
+  virtual void read(const std::string& varname,
+                    Teuchos::SerialDenseMatrix<int, int>& mat,
+                    int index = -1) const override
+  {
     read_(varname, mat, index);
   }
 
@@ -57,7 +69,9 @@ class ReaderNetCDF : public Reader {
   void read_(const std::string& varname, Teuchos::Array<Scalar>& vec, int index = -1) const;
 
   template<typename Scalar>
-  void read_(const std::string& varname, Teuchos::SerialDenseMatrix<int, Scalar>& vec, int index = -1) const;
+  void read_(const std::string& varname,
+             Teuchos::SerialDenseMatrix<int, Scalar>& vec,
+             int index = -1) const;
 
   std::string filename_;
   int file_;
@@ -72,7 +86,8 @@ ReaderNetCDF::read_(const std::string& varname, Teuchos::Array<Scalar>& vec, int
   auto [ncid, varid] = findVarOrGroup_(varname);
   if (varid < 0) {
     Errors::Message msg;
-    msg << "ReaderNetCDF: error opening variable \"" << varname << "\" in file \"" << filename_ << "\"";
+    msg << "ReaderNetCDF: error opening variable \"" << varname << "\" in file \"" << filename_
+        << "\"";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -90,8 +105,8 @@ ReaderNetCDF::read_(const std::string& varname, Teuchos::Array<Scalar>& vec, int
   if (index < 0) {
     if (ndims != 1) {
       Errors::Message msg;
-      msg << "ReaderNetCDF: incorrect number of dimensions, " << ndims << ", for variable \"" << varname
-          << "\" in file \"" << filename_ << "\" -- expected 1";
+      msg << "ReaderNetCDF: incorrect number of dimensions, " << ndims << ", for variable \""
+          << varname << "\" in file \"" << filename_ << "\" -- expected 1";
       Exceptions::amanzi_throw(msg);
     }
     vec.resize(dims[0]);
@@ -99,8 +114,8 @@ ReaderNetCDF::read_(const std::string& varname, Teuchos::Array<Scalar>& vec, int
   } else {
     if (ndims != 2) {
       Errors::Message msg;
-      msg << "ReaderNetCDF: incorrect number of dimensions, " << ndims << ", for variable \"" << varname
-          << "\" in file \"" << filename_ << "\" -- expected 2";
+      msg << "ReaderNetCDF: incorrect number of dimensions, " << ndims << ", for variable \""
+          << varname << "\" in file \"" << filename_ << "\" -- expected 2";
       Exceptions::amanzi_throw(msg);
     }
     if (index >= dims[0]) {
@@ -111,8 +126,8 @@ ReaderNetCDF::read_(const std::string& varname, Teuchos::Array<Scalar>& vec, int
     }
     vec.resize(dims[1]);
 
-    size_t start[2] = { (size_t) index, 0 };
-    size_t count[2] = { (size_t) 1, dims[1] };
+    size_t start[2] = { (size_t)index, 0 };
+    size_t count[2] = { (size_t)1, dims[1] };
     ierr = nc_get_vara(ncid, varid, start, count, vec.data());
     AMANZI_ASSERT(!ierr);
   }
@@ -121,14 +136,17 @@ ReaderNetCDF::read_(const std::string& varname, Teuchos::Array<Scalar>& vec, int
 
 template<typename Scalar>
 void
-ReaderNetCDF::read_(const std::string& varname, Teuchos::SerialDenseMatrix<int, Scalar>& mat, int index) const
+ReaderNetCDF::read_(const std::string& varname,
+                    Teuchos::SerialDenseMatrix<int, Scalar>& mat,
+                    int index) const
 {
   std::cout << "Reading Mat " << varname << " index " << index << std::endl;
 
   auto [ncid, varid] = findVarOrGroup_(varname);
   if (varid < 0) {
     Errors::Message msg;
-    msg << "ReaderNetCDF: error opening variable \"" << varname << "\" in file \"" << filename_ << "\"";
+    msg << "ReaderNetCDF: error opening variable \"" << varname << "\" in file \"" << filename_
+        << "\"";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -146,8 +164,8 @@ ReaderNetCDF::read_(const std::string& varname, Teuchos::SerialDenseMatrix<int, 
   if (index < 0) {
     if (ndims != 2) {
       Errors::Message msg;
-      msg << "ReaderNetCDF: incorrect number of dimensions, " << ndims << ", for variable \"" << varname
-          << "\" in file \"" << filename_ << "\" -- expected 2";
+      msg << "ReaderNetCDF: incorrect number of dimensions, " << ndims << ", for variable \""
+          << varname << "\" in file \"" << filename_ << "\" -- expected 2";
       Exceptions::amanzi_throw(msg);
     }
 
@@ -158,8 +176,8 @@ ReaderNetCDF::read_(const std::string& varname, Teuchos::SerialDenseMatrix<int, 
   } else {
     if (ndims != 3) {
       Errors::Message msg;
-      msg << "ReaderNetCDF: incorrect number of dimensions, " << ndims << ", for variable \"" << varname
-          << "\" in file \"" << filename_ << "\" -- expected 3";
+      msg << "ReaderNetCDF: incorrect number of dimensions, " << ndims << ", for variable \""
+          << varname << "\" in file \"" << filename_ << "\" -- expected 3";
       Exceptions::amanzi_throw(msg);
     }
     if (index >= dims[0]) {
@@ -172,8 +190,8 @@ ReaderNetCDF::read_(const std::string& varname, Teuchos::SerialDenseMatrix<int, 
     // NOTE: HDF5 is row-major, SerialDenseMatrix is column-major
     mat.shapeUninitialized(dims[2], dims[1]);
 
-    size_t start[3] = { (size_t) index, 0, 0 };
-    size_t count[3] = { (size_t) 1, dims[1], dims[2] };
+    size_t start[3] = { (size_t)index, 0, 0 };
+    size_t count[3] = { (size_t)1, dims[1], dims[2] };
     ierr = nc_get_vara(ncid, varid, start, count, mat.values());
     AMANZI_ASSERT(!ierr);
   }

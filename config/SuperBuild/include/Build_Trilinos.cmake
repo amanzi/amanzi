@@ -308,21 +308,17 @@ set(Trilinos_CMAKE_ARGS
 #
 
 # Trilinos patches
-set(ENABLE_Trilinos_Patch ON)
-if (ENABLE_Trilinos_Patch)
-  set(Trilinos_patch_file
+set(Trilinos_patch_file
     trilinos-duplicate-parameters.patch
     trilinos-ifpack.patch
+    trilinos-kokkos-kernels.patch
+    trilinos-metis-real_t.patch
     )
-  configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/trilinos-patch-step.sh.in
-                 ${Trilinos_prefix_dir}/trilinos-patch-step.sh
-                 @ONLY)
-  set(Trilinos_PATCH_COMMAND bash ${Trilinos_prefix_dir}/trilinos-patch-step.sh)
-  message(STATUS "Applying trilinos patches")
-else()
-  set(Trilinos_PATCH_COMMAND)
-  message(STATUS "Patch NOT APPLIED for trilinos")
-endif()
+patch_tpl(Trilinos
+          ${Trilinos_prefix_dir}
+          ${Trilinos_source_dir}
+          ${Trilinos_stamp_dir}
+          Trilinos_patch_file)
 
 # --- Define the Trilinos location
 set(Trilinos_install_dir ${TPL_INSTALL_PREFIX}/${Trilinos_BUILD_TARGET}-${Trilinos_VERSION})

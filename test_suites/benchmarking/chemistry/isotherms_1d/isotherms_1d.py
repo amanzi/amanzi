@@ -56,9 +56,8 @@ if __name__ == "__main__":
     amanzi_totc_crunch = [amanzi_totc_templ.format(x) for x in compcrunch] #range(len(components))]
 
     amanzi_sorb_templ = "total_sorbed.{0}"
-    amanzi_sorb = [amanzi_sorb_templ.format(x) for x in range(len(components))]
-    amanzi_sorb_crunch = [amanzi_sorb_templ.format(x) for x in range(len(compcrunch))]
-
+    amanzi_sorb = [amanzi_sorb_templ.format(x) for x in components]
+    amanzi_sorb_crunch = [amanzi_sorb_templ.format(x) for x in compcrunch]
 
 # pflotran data --->
     path_to_pflotran = "pflotran"
@@ -117,7 +116,8 @@ if __name__ == "__main__":
 
         native = len(x_native)  
 
-    except:
+    except Exception as err:
+        print(err)
         native = 0 
         pass
 
@@ -142,7 +142,8 @@ if __name__ == "__main__":
 
         alq = True
 
-    except:
+    except Exception as err:
+        print(err)
         alq = False
 
 # AmanziU + Alquimia + PFloTran WITH WRITER --->
@@ -165,7 +166,8 @@ if __name__ == "__main__":
 
         alq_writer = True
 
-    except:
+    except Exception as err:
+        print(err)
         alq_writer = False      
 
 # AmanziU + Alquimia + CrunchFlow chemistry --->
@@ -188,7 +190,8 @@ if __name__ == "__main__":
 
         alqc = True
 
-    except:
+    except Exception as err:
+        print(err)
         alqc = False
 
 
@@ -207,7 +210,8 @@ if __name__ == "__main__":
             compS = "{0}_Sorbed_Concentration".format(comp)
             x_amanziS, v_amanziS[j] = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS,1)
         struct = len(x_amanziS)
-    except:
+    except Exception as err:
+        print(err)
         struct = 0
 
 
@@ -223,9 +227,38 @@ if __name__ == "__main__":
         compS = "A_Sorbed_Concentration"
         x_amanziS_crunch, v_amanziS_crunch = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS,1)
         struct_c = len(x_amanziS_crunch)
-    except:
+    except Exception as err:
+        print(err)
         struct_c = 0
 
+        
+    # ATS
+    try:
+        print("looking for ATS")
+        path_to_ATS = os.path.join(os.environ['ATS_SRC_DIR'], 'testing',
+                                   'ats-regression-tests', '07_reactive_transport',
+                                   'amanzi_benchmark-isotherms.regression')
+        root_ats = "ats_vis"
+        comp_ats = "total_component_concentration.A"
+        x_ATS, u_ATS = GetXY_AmanziU_1D(path_to_ATS,root_ats,comp_ats,1)
+        ats = len(x_ATS)
+
+        u_ATS = [[[] for x in range(len(amanzi_totc_crunch))] for x in range(len(timesama))]
+        for i, time in enumerate(timesama):
+            for j, comp in enumerate(amanzi_totc_crunch):
+                x_ATS, c_ATS = GetXY_AmanziU_1D(path_to_ATS, root_ats, comp,1)
+                u_ATS[i][j] = c_ATS
+              
+        v_ATS = [[[] for x in range(len(amanzi_sorb_crunch))] for x in range(len(timesama))]
+        for i, time in enumerate(timesama):
+            for j, comp in enumerate(amanzi_sorb_crunch):
+                x_ATS, c_ATS = GetXY_AmanziU_1D(path_to_ATS, root_ats, comp, 1)
+                v_ATS[i][j] = c_ATS
+
+    except Exception:
+        ats = 0
+        
+        
 
 ## plotting ---------------------------------
     # subplots
@@ -318,6 +351,11 @@ if __name__ == "__main__":
         samc = ax[0].plot(x_amanziS_crunch, c_amanziS_crunch,'g*',label='AmanziS+Alq(CF)',linewidth=LINE_WIDTH) 
         samcv = ax[1].plot(x_amanziS_crunch, v_amanziS_crunch,'g*',linewidth=LINE_WIDTH) #,markersize=20) 
 
+    if ats:
+        ax[0].plot(x_ATS, u_ATS[i][0],color='c',linestyle='-',marker='x',linewidth=LINE_WIDTH,label='ATS+Crunch')
+        ax[1].plot(x_ATS, v_ATS[i][0],color='c',linestyle='-',marker='x',linewidth=LINE_WIDTH,label='ATS+Crunch')
+
+        
     # axes
     ax[0].set_title("Kd linear sorption model",fontsize=15)
     ax[1].set_xlabel("Distance (m)",fontsize=15)

@@ -25,6 +25,7 @@
 #include "IO.hh"
 #include "MeshAudit.hh"
 #include "eos_reg.hh"
+#include "evaluators_reg.hh"
 #include "evaluators_flow_reg.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
@@ -126,10 +127,8 @@ RunTest(const std::string xmlInFileName)
 
     double x1(xc[0] - a), x2(xc[0] + a), y(H - xc[1]);
     double tmp = std::asin(2 * a * y / std::sqrt((x1 * x1 + y * y) * (x2 * x2 + y * y)));
-    if (x1 * x2 + y * y > 0.0)
-      p_c[0][c] = factor * tmp;
-    else
-      p_c[0][c] = factor * (M_PI - tmp);
+    if (x1 * x2 + y * y > 0.0) p_c[0][c] = factor * tmp;
+    else p_c[0][c] = factor * (M_PI - tmp);
   }
 
   auto& p_f = *S->GetW<CompositeVector>("pressure", Tags::DEFAULT, "").ViewComponent("face");
@@ -139,10 +138,8 @@ RunTest(const std::string xmlInFileName)
 
     double x1(xf[0] - a), x2(xf[0] + a), y(H - xf[1]);
     double tmp = std::asin(2 * a * y / std::sqrt((x1 * x1 + y * y) * (x2 * x2 + y * y)));
-    if (x1 * x2 + y * y > 0.0)
-      p_f[0][f] = factor * tmp;
-    else
-      p_f[0][f] = factor * (M_PI - tmp);
+    if (x1 * x2 + y * y > 0.0) p_f[0][f] = factor * tmp;
+    else p_f[0][f] = factor * (M_PI - tmp);
   }
   Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>(
     S->GetEvaluatorPtr("pressure", Tags::DEFAULT))

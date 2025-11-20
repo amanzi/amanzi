@@ -52,8 +52,8 @@ if __name__ == "__main__":
     amanzi_totc_crunch = [amanzi_totc_templ.format(x) for x in compcrunch] #range(len(components))]
 
     amanzi_sorb_templ = "total_sorbed.{0}"
-    amanzi_sorb = [amanzi_sorb_templ.format(x+1) for x in range(len(components))]
-    amanzi_sorb_crunch = [amanzi_sorb_templ.format(x+1) for x in range(len(compcrunch))]
+    amanzi_sorb = [amanzi_sorb_templ.format(x) for x in components]
+    amanzi_sorb_crunch = [amanzi_sorb_templ.format(x) for x in compcrunch]
 
 # amanzi output (structured - alquimia)
     amanzi_totc_templ = "{0}_water_Concentration"
@@ -237,9 +237,42 @@ if __name__ == "__main__":
 
         alq_crunch = True
 
-    except:
+    except Exception as err:
+        print(err)
         alq_crunch = False
 
+
+# ATS --->
+    try:
+        print("looking for ATS")
+        path_to_ATS = os.path.join(os.environ['ATS_SRC_DIR'], 'testing',
+                                   'ats-regression-tests', '07_reactive_transport',
+                                   'amanzi_benchmark-surface_complexation.regression')
+        root_ATS = "ats_vis"
+        
+        u_ATS = [[[] for x in range(len(amanzi_totc))] for x in range(len(times))]
+        for i, time in enumerate(times):
+            for j, comp in enumerate(amanzi_totc):
+                x_ATS, c_ATS = GetXY_AmanziU_1D(path_to_ATS,root_ATS,comp,1)
+                u_ATS[i][j] = c_ATS
+
+        v_ATS = [[[] for x in range(len(amanzi_sorb))] for x in range(len(times))]
+        for i, time in enumerate(times):
+            for j, comp in enumerate(amanzi_sorb):
+                x_ATS, c_ATS = GetXY_AmanziU_1D(path_to_ATS,root_ATS,comp,1)
+                v_ATS[i][j] = c_ATS
+
+        pH_ATS = [ [] for x in range(len(times)) ]
+        comp = 'pH.0'
+        for i, time in enumerate(times):
+            x_ATS, c_ATS = GetXY_AmanziU_1D(path_to_ATS,root_ATS,comp,1)
+            pH_ATS[i] = c_ATS
+
+        ats = True
+
+    except Exception:
+        ats = False
+        
 
 # AmanziS + Alquimia + PFlowTran chemistry --->
     try:
@@ -416,6 +449,15 @@ if __name__ == "__main__":
         px.plot(x_amanzi_alquimia_crunch, pH_amanzi_alquimia_crunch[i],color='r',linestyle='None',marker='*',linewidth=2,label='AmanziU+Alquimia(CrunchFlow)')
 
 
+    # ATS
+    if ats:
+        for j, comp in enumerate(components):
+            ax[j].plot(x_ATS, u_ATS[i][j],color='c',linestyle='-',marker='x',linewidth=2)
+            bx[j].plot(x_ATS, v_ATS[i][j],color='c',linestyle='-',marker='x',linewidth=2,label='ATS')
+
+        px.plot(x_ATS, pH_ATS[i],color='c',linestyle='-',marker='x',linewidth=2,label='ATS')
+        
+
     # amanzi-structured-alquimia-pflotran
     if struct:
         for j, comp in enumerate(components):
@@ -462,8 +504,8 @@ if __name__ == "__main__":
         bx[i].yaxis.set_label_position("right")
 
     # Set axes to be shared + only have ticks on the bottom row
-    ax[0].get_shared_x_axes().join(*[ax[i] for i in range(main_rows)])
-    bx[0].get_shared_x_axes().join(*[bx[i] for i in range(main_rows)])
+    # ax[0].get_shared_x_axes().join(*[ax[i] for i in range(main_rows)])
+    # bx[0].get_shared_x_axes().join(*[bx[i] for i in range(main_rows)])
 
     for i in range(main_rows-1):
         ax[i].set_xticklabels([])
@@ -504,3 +546,4 @@ if __name__ == "__main__":
 
     # finally:
     #     pass 
+ 

@@ -81,7 +81,7 @@ PDE_DiffusionCurvedFace::UpdateMatrices(const Teuchos::Ptr<const CompositeVector
   if (const_K_.rank() > 0) Kc = const_K_;
 
   for (int c = 0; c < ncells_owned; c++) {
-    if (K_.get()) Kc = (*K_)[c];
+    if (K_.get() ) Kc = (*K_)[c];
     mfd.StiffnessMatrix(c, Kc, Acell);
     local_op_->matrices[c] = Acell;
   }
@@ -242,7 +242,9 @@ PDE_DiffusionCurvedFace::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u
     int nfaces = faces.size();
 
     WhetStone::DenseVector v(nfaces + 1), av(nfaces + 1);
-    for (int n = 0; n < nfaces; n++) { v(n) = u_face[0][faces[n]]; }
+    for (int n = 0; n < nfaces; n++) {
+      v(n) = u_face[0][faces[n]];
+    }
     v(nfaces) = u_cell[0][c];
 
     if (local_op_->matrices_shadow[c].NumRows() == 0) {
@@ -260,7 +262,9 @@ PDE_DiffusionCurvedFace::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u
     }
   }
 
-  for (int f = 0; f != nfaces_owned; ++f) { flux_data[0][f] /= hits[f]; }
+  for (int f = 0; f != nfaces_owned; ++f) {
+    flux_data[0][f] /= hits[f];
+  }
 }
 
 
@@ -284,7 +288,7 @@ PDE_DiffusionCurvedFace::CreateMassMatrices_()
 
   for (int c = 0; c < ncells_owned; c++) {
     int ok;
-    if (K_.get()) Kc = (*K_)[c];
+    if (K_.get() ) Kc = (*K_)[c];
 
     ok = mfd.MassMatrixInverse(c, Kc, Wff);
     Wff_cells_[c] = Wff;
@@ -305,7 +309,9 @@ PDE_DiffusionCurvedFace::CreateMassMatrices_()
 void
 PDE_DiffusionCurvedFace::ScaleMassMatrices(double s)
 {
-  for (int c = 0; c < ncells_owned; c++) { Wff_cells_[c] *= s; }
+  for (int c = 0; c < ncells_owned; c++) {
+    Wff_cells_[c] *= s;
+  }
 }
 
 
@@ -318,12 +324,18 @@ PDE_DiffusionCurvedFace::Init_(Teuchos::ParameterList& plist)
   int d = mesh_->getSpaceDimension();
   int nfaces_all = mesh_->getMap(AmanziMesh::Entity_kind::FACE, false).NumGlobalElements();
   int ncells_all = mesh_->getMap(AmanziMesh::Entity_kind::CELL, false).NumGlobalElements();
-  AMANZI_ASSERT(nfaces_all > d * ncells_all);
+  if (check_topology_compatibility_ && nfaces_all <= d * ncells_all) {
+    Errors::Message msg("The number of faces is smaller three times the number of cells.");
+    Exceptions::amanzi_throw(msg);
+  }
 
   if (weight_.get()) {
     AMANZI_ASSERT(weight_->HasComponent("face"));
     weight_->ScatterMasterToGhosted("face");
   }
+
+  penalty_ = plist.get<double>("penalty", 0.0);
+  check_topology_compatibility_ = plist.get<bool>("check topology compatibility", true);
 
   if (global_op_ == Teuchos::null) { // create operator
     global_op_schema_ = OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE;
@@ -406,10 +418,23 @@ PDE_DiffusionCurvedFace::Init_(Teuchos::ParameterList& plist)
   }
 
   // error analysis
-  double err(0.0);
-  for (int f = 0; f < nfaces_owned; ++f) { err += norm((*bf_)[f] - mesh_->getFaceCentroid(f)); }
+  double err(0.0), err_b(0.0), err_max(0.0);
+  for (int f = 0; f < nfaces_owned; ++f) {
+    err += norm((*bf_)[f] - mesh_->getFaceCentroid(f));
+    err_max = std::max(err_max, std::fabs(norm((*bf_)[f] - mesh_->getFaceCentroid(f))));
+  }
+
+  auto faces_bnd = mesh_->getBoundaryFaces();
+  for (int n = 0; n < faces_bnd.size(); ++n) {
+    int f = faces_bnd[n];
+    const auto& normal = mesh_->getFaceNormal(f);
+    double area = mesh_->getFaceArea(f);
+    err_b += std::fabs(((*bf_)[f] - mesh_->getFaceCentroid(f)) * normal) / area;
+  }
+
   if (mesh_->getComm()->MyPID() == 0) {
-    std::cout << "new face centroids deviation on rank zero is " << err / nfaces_owned << "\n\n";
+    std::cout << "new face centroids deviation on rank zero (max/avg): " << err_max << " "
+              << err / nfaces_owned << ", on boundary is " << err_b / faces_bnd.size() << "\n\n";
   }
 }
 
@@ -423,6 +448,9 @@ PDE_DiffusionCurvedFace::LSProblemSetupMatrix_(std::vector<WhetStone::DenseMatri
   int d = mesh_->getSpaceDimension();
 
   // matrix A A^T
+  WhetStone::Tensor W(d, 2);
+  AmanziGeometry::Point normal_w(d);
+
   matrices.resize(nfaces_owned);
 
   for (int f = 0; f < nfaces_owned; ++f) {
@@ -430,20 +458,30 @@ PDE_DiffusionCurvedFace::LSProblemSetupMatrix_(std::vector<WhetStone::DenseMatri
     auto cells = mesh_->getFaceCells(f);
     int ncells = cells.size();
 
+    // weight which penalizes the minimum-norm solution in the normal direction
+    if (ncells == 1) {
+      W = InverseTensorialWeigth_(normal);
+      normal_w = W * normal;
+    }
+
     int nrows = ncells * d;
     WhetStone::DenseMatrix Aface(nrows, nrows);
     Aface.PutScalar(0.0);
 
     for (int i1 = 0; i1 < d; ++i1) {
       for (int j1 = 0; j1 < d; ++j1) {
-        double val = normal[i1] * normal[j1];
-        Aface(i1, j1) = val;
         if (ncells == 2) {
+          double val = normal[i1] * normal[j1];
+          Aface(i1, j1) = val;
+
           int i2 = i1 + d;
           int j2 = j1 + d;
           Aface(i2, j2) = val;
           Aface(i1, j2) = -val;
           Aface(i2, j1) = -val;
+        } else {
+          double val = normal[i1] * normal_w[j1];
+          Aface(i1, j1) = val;
         }
       }
     }
@@ -454,7 +492,7 @@ PDE_DiffusionCurvedFace::LSProblemSetupMatrix_(std::vector<WhetStone::DenseMatri
   // optional weighted l2-norm
   if (weight_.get()) {
     const auto& weight_f = *weight_->ViewComponent("face");
-    for (int f = 0; f < nfaces_owned; ++f) matrices[f] /= weight_f[0][f]; 
+    for (int f = 0; f < nfaces_owned; ++f) matrices[f] /= weight_f[0][f];
   }
 }
 
@@ -509,8 +547,9 @@ PDE_DiffusionCurvedFace::LSProblemPrimarySolution_(const CompositeVector& sol, i
   }
 
   // optional weighted l2-norm
+  WhetStone::Tensor W(d, 2);
   Teuchos::RCP<const Epetra_MultiVector> weight_f;
-  if (weight_.get()) weight_f = weight_->ViewComponent("face", true);
+  if (weight_.get() ) weight_f = weight_->ViewComponent("face", true);
 
   // save to a vector which could be shared with WhetStone
   // add correction to generalized face centroid
@@ -520,7 +559,15 @@ PDE_DiffusionCurvedFace::LSProblemPrimarySolution_(const CompositeVector& sol, i
 
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
-      const auto& normal = mesh_->getFaceNormal(f);
+      auto normal = mesh_->getFaceNormal(f);
+
+      auto cells = mesh_->getFaceCells(f);
+      int ncells = cells.size();
+      if (ncells == 1) {
+        W = InverseTensorialWeigth_(normal);
+        AmanziGeometry::Point tmp(normal);
+        normal = W * tmp;
+      }
 
       if (weight_.get()) {
         double s = (*weight_f)[0][f];
@@ -533,7 +580,32 @@ PDE_DiffusionCurvedFace::LSProblemPrimarySolution_(const CompositeVector& sol, i
 
   bf->ScatterMasterToGhosted();
 
-  for (int f = 0; f < nfaces_wghost; ++f) { (*bf_)[f][i0] = bf_f[0][f]; }
+  for (int f = 0; f < nfaces_wghost; ++f) {
+    (*bf_)[f][i0] = bf_f[0][f];
+  }
+}
+
+
+/* ******************************************************************
+* Create tensorial weigth.
+****************************************************************** */
+WhetStone::Tensor
+PDE_DiffusionCurvedFace::InverseTensorialWeigth_(const AmanziGeometry::Point& normal)
+{
+  int d = normal.dim();
+  double area = L22(normal);
+
+  WhetStone::Tensor W(d, 2);
+
+  for (int i1 = 0; i1 < d; ++i1) {
+    for (int j1 = 0; j1 < d; ++j1) {
+      W(i1, j1) = normal[i1] * normal[j1] * penalty_ / area;
+    }
+    W(i1, i1) += 1.0;
+  }
+  W.Inverse();
+
+  return W;
 }
 
 } // namespace Operators

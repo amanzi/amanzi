@@ -45,8 +45,9 @@
 * **************************************************************** */
 class MyFunction : public Amanzi::WhetStone::WhetStoneFunction {
  public:
-  MyFunction(AnalyticDG02* ana) : ana_(ana){};
-  ~MyFunction(){};
+  MyFunction(AnalyticDG02* ana)
+    : ana_(ana) {};
+  ~MyFunction() {};
 
   virtual double Value(const Amanzi::AmanziGeometry::Point& x) const override
   {
@@ -156,13 +157,17 @@ OperatorDiffusionDG(std::string solver_name,
       bc_model[f] = OPERATOR_BC_DIRICHLET;
 
       ana.SolutionTaylor(xf, 0.0, coefs);
-      for (int i = 0; i < coefs.size(); ++i) { bc_value[f][i] = coefs(i); }
+      for (int i = 0; i < coefs.size(); ++i) {
+        bc_value[f][i] = coefs(i);
+      }
     } else {
       // bc_model[f] = OPERATOR_BC_NEUMANN;
       bc_model[f] = OPERATOR_BC_DIRICHLET;
 
       ana.SolutionTaylor(xf, 0.0, coefs);
-      for (int i = 0; i < coefs.size(); ++i) { bc_value[f][i] = coefs(i); }
+      for (int i = 0; i < coefs.size(); ++i) {
+        bc_value[f][i] = coefs(i);
+      }
     }
   }
 
@@ -205,14 +210,14 @@ OperatorDiffusionDG(std::string solver_name,
 
     // -- convert moment to my basis
     dg.cell_basis(c).LinearFormNaturalToMy(data);
-    for (int n = 0; n < pc.size(); ++n) { src_c[n][c] = data(n); }
+    for (int n = 0; n < pc.size(); ++n) {
+      src_c[n][c] = data(n);
+    }
   }
 
   // populate the diffusion operator
-  if (numi_order == 0)
-    op->Setup(Kc, Kf);
-  else
-    op->Setup(Kc_poly, Kf);
+  if (numi_order == 0) op->Setup(Kc, Kf);
+  else op->Setup(Kc_poly, Kf);
   // op->Setup(Kc_func, Kf);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
 

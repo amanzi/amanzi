@@ -7,7 +7,7 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-//! A mesh and vector structure aware utility for printing info.
+//! A utility for printing field values at specific IDs controlled by the user.
 /*!
 
 This is a utility that makes it easier for the user to control output written
@@ -16,17 +16,17 @@ functionality for a PK to write mesh geometry information and vector values of
 those elements to screen based upon verbosity levels.
 
 Note, most information is only written if the owning object's verbosity level
-from the `"Verbose Object`" spec is set to `"high`" or higher.
+from the `"verbose object`" spec is set to `"high`" or higher.
 
 .. debugger-spec:
 .. admonition:: debugger-spec
 
-    * `"debug cells`" ``[Array(int)]`` For each global ID of a cell provided
-      here, controls writing of vectors inside of the using PK.
+   * `"debug cells`" ``[Array(int)]`` **optional** For each global ID of a
+     cell provided here, controls writing of vectors inside of the using PK.
 
-    * `"debug faces`" ``[Array(int)]`` For each global ID of a face provided
-      here, writes all adjoining cell information as if each cell was included
-      in `"debug cells`".
+   * `"debug faces`" ``[Array(int)]`` **optional** For each global ID of a face provided
+     here, writes all adjoining cell information as if each cell was included
+     in `"debug cells`".
 
 */
 
@@ -66,9 +66,12 @@ class Debugger {
   // Write a vector individually.
   void WriteVector(const std::string& vname,
                    const Teuchos::Ptr<const CompositeVector>& vec,
-                   bool include_faces = false);
+                   bool include_faces = false,
+                   std::vector<std::string> const* subfield_names = nullptr);
 
-  void WriteCellVector(const std::string& name, const Epetra_MultiVector& vec);
+  void WriteCellVector(const std::string& name,
+                       const Epetra_MultiVector& vec,
+                       std::vector<std::string> const* subfield_names = nullptr);
 
   // Write boundary condition data.
   void WriteBoundaryConditions(const std::vector<int>& flag, const std::vector<double>& data);

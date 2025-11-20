@@ -37,6 +37,7 @@
 #include "dbc.hh"
 #include "eos_reg.hh"
 #include "errors.hh"
+#include "evaluators_reg.hh"
 #include "evaluators_flow_reg.hh"
 #include "evaluators_mpc_reg.hh"
 #include "evaluators_multiphase_reg.hh"
@@ -292,7 +293,9 @@ AmanziUnstructuredGridSimulationDriver::InitMesh(
     }
 
     comm_->SumAll(&ierr, &aerr, 1);
-    if (aerr > 0) { return Amanzi::Simulator::FAIL; }
+    if (aerr > 0) {
+      return Amanzi::Simulator::FAIL;
+    }
 
   } else { // generate parameters are specified
     std::cerr << rank << ": error: "

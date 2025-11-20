@@ -104,97 +104,51 @@ DOCUMENT VANDELAY HERE! FIX ME --etc
 #include "CompositeVector.hh"
 
 #ifndef MANAGED_COMMUNICATION
-#  define MANAGED_COMMUNICATION 0
+#define MANAGED_COMMUNICATION 0
 #endif
 
 namespace Amanzi {
 
-// Constructor
-CompositeVector::CompositeVector(const CompositeVectorSpace& space)
+// Private constructor
+CompositeVector::CompositeVector(const CompositeVectorSpace& space, bool ghosted, InitMode mode)
   : map_(Teuchos::rcp(new CompositeVectorSpace(space))),
-    ghosted_(space.ghosted_),
-    indexmap_(space.indexmap_),
-    names_(space.names_),
-    ghost_are_current_(space.NumComponents(), false)
-{
-  InitMap_(*map_);
-  CreateData_();
-}
-
-
-CompositeVector::CompositeVector(const CompositeVectorSpace& space, bool ghosted)
-  : map_(Teuchos::rcp(new CompositeVectorSpace(space, ghosted))),
     ghosted_(ghosted),
     indexmap_(space.indexmap_),
     names_(space.names_),
     ghost_are_current_(space.NumComponents(), false)
 {
-  InitMap_(*map_);
-  CreateData_();
-}
-
-
-CompositeVector::CompositeVector(const CompositeVector& other, InitMode mode)
-  : map_(Teuchos::rcp(new CompositeVectorSpace(*other.map_))),
-    ghosted_(other.ghosted_),
-    indexmap_(other.indexmap_),
-    names_(other.names_),
-    ghost_are_current_(other.map_->NumComponents(), false)
-{
-  InitMap_(*map_);
-  CreateData_();
-  InitData_(other, mode);
-}
-
-CompositeVector::CompositeVector(const CompositeVector& other, bool ghosted, InitMode mode)
-  : map_(Teuchos::rcp(new CompositeVectorSpace(*other.map_, ghosted))),
-    ghosted_(ghosted),
-    indexmap_(other.indexmap_),
-    names_(other.names_),
-    ghost_are_current_(other.map_->NumComponents(), false)
-{
-  InitMap_(*map_);
-  CreateData_();
-  InitData_(other, mode);
+  InitMap_();
+  if (mode > InitMode::NOALLOC) CreateData_();
+  if (mode == InitMode::ZERO) PutScalarMasterAndGhosted(0.);
 }
 
 
 void
-CompositeVector::InitMap_(const CompositeVectorSpace& space)
+CompositeVector::InitMap_()
 {
   // generate the master's maps
   std::vector<Teuchos::RCP<const Epetra_BlockMap>> mastermaps;
-  for (CompositeVectorSpace::name_iterator name = space.begin(); name != space.end(); ++name) {
-    mastermaps.emplace_back(space.Map(*name, false));
+  for (const auto& name : *map_) {
+    mastermaps.emplace_back(map_->Map(name, false));
   }
 
   // create the master BlockVector
-  mastervec_ = Teuchos::rcp(new BlockVector(Comm(), names_, mastermaps, space.num_dofs_));
+  mastervec_ = Teuchos::rcp(new BlockVector(Comm(), names_, mastermaps, map_->num_dofs_));
 
   // do the same for the ghosted Vector, if necessary
-  if (space.Ghosted()) {
+  if (ghosted_) {
     // generate the ghost's maps
     std::vector<Teuchos::RCP<const Epetra_BlockMap>> ghostmaps;
-    for (CompositeVectorSpace::name_iterator name = space.begin(); name != space.end(); ++name) {
-      ghostmaps.emplace_back(space.Map(*name, true));
+    for (const auto& name : *map_) {
+      ghostmaps.emplace_back(map_->Map(name, true));
     }
     // create the ghost BlockVector
-    ghostvec_ = Teuchos::rcp(new BlockVector(Comm(), names_, ghostmaps, space.num_dofs_));
+    ghostvec_ = Teuchos::rcp(new BlockVector(Comm(), names_, ghostmaps, map_->num_dofs_));
   } else {
     ghostvec_ = mastervec_;
   }
 };
 
-
-// Initialize data
-void
-CompositeVector::InitData_(const CompositeVector& other, InitMode mode)
-{
-  // Trilinos inits to 0
-  //  if (mode == INIT_MODE_ZERO) {
-  //    PutScalar(0.);
-  if (mode == INIT_MODE_COPY) { *this = other; }
-}
 
 // Sets sizes of vectors, instantiates Epetra_Vectors, and preps for lazy
 // creation of everything else.
@@ -245,7 +199,8 @@ CompositeVector::operator=(const CompositeVector& other)
       // If both are ghosted, copy the ghosted vector.
       // Exception: boundary_face component created on a fly is not ghosted
       for (name_iterator name = begin(); name != end(); ++name) {
-        bool ghosted = (*name == "boundary_face" && other.HasImportedComponent("face")) ? false : true;
+        bool ghosted =
+          (*name == "boundary_face" && other.HasImportedComponent("face")) ? false : true;
         Teuchos::RCP<Epetra_MultiVector> comp = ViewComponent(*name, ghosted);
         Teuchos::RCP<const Epetra_MultiVector> othercomp = other.ViewComponent(*name, ghosted);
         *comp = *othercomp;
@@ -302,6 +257,83 @@ CompositeVector::ViewComponent(const std::string& name, bool ghosted)
 };
 
 
+// View a vector slice of a single DoF
+Teuchos::RCP<const CompositeVector>
+CompositeVector::GetVector(size_t i) const
+{
+  std::vector<int> num_dofs_i(NumComponents(), 1);
+
+  std::vector<AmanziMesh::Entity_kind> locations;
+  int check_same_ndofs = -1;
+  for (const auto& name : names_) {
+    if (check_same_ndofs < 0) check_same_ndofs = NumVectors(name);
+
+    if (check_same_ndofs != NumVectors(name)) {
+      Errors::Message msg(
+        "Cannot slice a vector with differing numbers of DoFs across components.");
+      Exceptions::amanzi_throw(msg);
+    }
+    locations.emplace_back(Location(name));
+  }
+
+  // create the space
+  CompositeVectorSpace cvs;
+  cvs.SetMesh(map_->Mesh())->SetGhosted(ghosted_)->SetComponents(names_, locations, num_dofs_i);
+
+  // create the vector
+  auto cv = Teuchos::rcp(new CompositeVector(cvs, ghosted_, InitMode::NOALLOC));
+
+  // for each component, set the vector as the MultiVector's dof vector,
+  // through a NON-OWNING (these are owned by this's MultiVector) RCP to the
+  // Epetra_Vector.
+  for (const auto& name : names_) {
+    // Have to const-cast to construct the new vector, but will return the new
+    // vector as const.  This is safe, despite appearances.
+    Epetra_MultiVector const* comp_vec = (*ViewComponent(name, true))(i);
+    Teuchos::RCP<Epetra_MultiVector> comp_vec_ptr =
+      Teuchos::rcpFromRef<Epetra_MultiVector>(*const_cast<Epetra_MultiVector*>(comp_vec));
+    cv->SetComponent(name, comp_vec_ptr);
+  }
+  return cv;
+}
+
+
+// View a vector slice of a single DoF
+Teuchos::RCP<CompositeVector>
+CompositeVector::GetVector(size_t i)
+{
+  std::vector<int> num_dofs_i(NumComponents(), 1);
+
+  std::vector<AmanziMesh::Entity_kind> locations;
+  int check_same_ndofs = -1;
+  for (const auto& name : names_) {
+    if (check_same_ndofs < 0) check_same_ndofs = NumVectors(name);
+
+    if (check_same_ndofs != NumVectors(name)) {
+      Errors::Message msg(
+        "Cannot slice a vector with differing numbers of DoFs across components.");
+      Exceptions::amanzi_throw(msg);
+    }
+    locations.emplace_back(Location(name));
+  }
+
+  // create the space
+  CompositeVectorSpace cvs;
+  cvs.SetMesh(map_->Mesh())->SetGhosted(ghosted_)->SetComponents(names_, locations, num_dofs_i);
+
+  // create the vector
+  auto cv = Teuchos::rcp(new CompositeVector(cvs, ghosted_, InitMode::NOALLOC));
+
+  // for each component, set the vector as the MultiVector's dof vector,
+  // through a NON-OWNING (these are owned by this's MultiVector) RCP to the
+  // Epetra_Vector.
+  for (const auto& name : names_) {
+    cv->SetComponent(name, Teuchos::rcpFromRef(*(*ViewComponent(name, true))(i)));
+  }
+  return cv;
+}
+
+
 // Set data by pointer if possible, otherwise by copy.
 void
 CompositeVector::SetComponent(const std::string& name, const Teuchos::RCP<Epetra_MultiVector>& data)
@@ -347,20 +379,20 @@ CompositeVector::ScatterMasterToGhosted(const std::string& name, bool force) con
   // update ghost cells, which may be necessary for their discretization
   AMANZI_ASSERT(ghosted_);
 #ifdef HAVE_MPI
-#  if MANAGED_COMMUNICATION
+#if MANAGED_COMMUNICATION
   if (ghosted_ && ((!ghost_are_current_[Index_(name)]) || force)) {
-#  else
+#else
   if (ghosted_) {
-#  endif
+#endif
     // communicate
     Teuchos::RCP<Epetra_MultiVector> g_comp = ghostvec_->ViewComponent(name);
     Teuchos::RCP<const Epetra_MultiVector> m_comp = mastervec_->ViewComponent(name);
     g_comp->Import(*m_comp, importer(name), Insert);
 
-#  if MANAGED_COMMUNICATION
+#if MANAGED_COMMUNICATION
     // mark as communicated
     ghost_are_current_[Index_(name)] = true;
-#  endif
+#endif
   }
 #endif
 };
@@ -379,7 +411,9 @@ CompositeVector::ScatterMasterToGhosted(const std::string& name, bool force) con
 void
 CompositeVector::ScatterMasterToGhosted(Epetra_CombineMode mode) const
 {
-  for (name_iterator name = begin(); name != end(); ++name) { ScatterMasterToGhosted(*name, mode); }
+  for (name_iterator name = begin(); name != end(); ++name) {
+    ScatterMasterToGhosted(*name, mode);
+  }
 }
 
 // Scatter master values to ghosted values, on all components, in a mode.
@@ -417,7 +451,9 @@ CompositeVector::ScatterMasterToGhosted(const std::string& name, Epetra_CombineM
 void
 CompositeVector::GatherGhostedToMaster(Epetra_CombineMode mode)
 {
-  for (name_iterator name = begin(); name != end(); ++name) { GatherGhostedToMaster(*name, mode); }
+  for (name_iterator name = begin(); name != end(); ++name) {
+    GatherGhostedToMaster(*name, mode);
+  }
 };
 
 
@@ -464,19 +500,22 @@ CompositeVector::CreateVandelayVector_() const
     auto data = vandelay_import_->PermuteFromLIDs();
     int n = vandelay_import_->NumPermuteIDs();
 
-    for (int i = 0; i < n; ++i) { data[i] = map.FirstPointInElement(data[i]); }
+    for (int i = 0; i < n; ++i) {
+      data[i] = map.FirstPointInElement(data[i]);
+    }
   }
 }
 
 void
 CompositeVector::ApplyVandelay_() const
 {
-  if (vandelay_vector_owned_ == Teuchos::null) { CreateVandelayVector_(); }
+  if (vandelay_vector_owned_ == Teuchos::null) {
+    CreateVandelayVector_();
+  }
   if (vandelay_import_ == Teuchos::null)
     vandelay_vector_owned_->Import(
       *ViewComponent("face", false), Mesh()->getBoundaryFaceImporter(), Insert);
-  else
-    vandelay_vector_owned_->Import(*ViewComponent("face", false), *vandelay_import_, Insert);
+  else vandelay_vector_owned_->Import(*ViewComponent("face", false), *vandelay_import_, Insert);
 }
 
 
@@ -669,7 +708,9 @@ DeriveFaceValuesFromCellValues(CompositeVector& cv)
       int ncells = cells.size();
 
       double face_value = 0.0;
-      for (int n = 0; n != ncells; ++n) { face_value += cv_c[0][cells[n]]; }
+      for (int n = 0; n != ncells; ++n) {
+        face_value += cv_c[0][cells[n]];
+      }
       cv_f[0][f] = face_value / ncells;
     }
   } else if (cv.HasComponent("boundary_face")) {

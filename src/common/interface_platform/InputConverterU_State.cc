@@ -42,7 +42,9 @@ InputConverterU::TranslateState_()
 {
   Teuchos::ParameterList out_list;
 
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) { *vo_->os() << "Translating state" << std::endl; }
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    *vo_->os() << "Translating state" << std::endl;
+  }
 
   // first we write initial conditions for scalars and vectors, not region-specific
   Teuchos::ParameterList& out_ev = out_list.sublist("evaluators");
@@ -295,7 +297,7 @@ InputConverterU::TranslateState_()
 
     for (int i = 0; i < children->getLength(); i++) {
       DOMNode* inode = children->item(i);
-      if (DOMNode::ELEMENT_NODE != inode->getNodeType()) continue;
+      if (DOMNode::ELEMENT_NODE != inode->getNodeType() ) continue;
 
       node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
       std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
@@ -303,14 +305,18 @@ InputConverterU::TranslateState_()
 
       // -- dual porosity: matrix porosity
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, porosity", flag);
-      if (flag) { TranslateFieldIC_(node, "porosity_msp", "-", reg_str, regions, out_ic); }
+      if (flag) {
+        TranslateFieldIC_(node, "porosity_msp", "-", reg_str, regions, out_ic);
+      }
     }
   }
 
   // ----------------------------------------------------------------
   // optional fracture network
   // ----------------------------------------------------------------
-  if (fracture_regions_.size() > 0) { TranslateCommonContinuumFields_("fracture", out_ic, out_ev); }
+  if (fracture_regions_.size() > 0) {
+    TranslateCommonContinuumFields_("fracture", out_ic, out_ev);
+  }
 
   if (fracture_regions_.size() > 0 && eos_model_ == "") {
     AddIndependentFieldEvaluator_(
@@ -330,7 +336,7 @@ InputConverterU::TranslateState_()
 
     for (int i = 0; i < children->getLength(); i++) {
       DOMNode* inode = children->item(i);
-      if (DOMNode::ELEMENT_NODE != inode->getNodeType()) continue;
+      if (DOMNode::ELEMENT_NODE != inode->getNodeType() ) continue;
 
       node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
       std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
@@ -719,7 +725,7 @@ InputConverterU::TranslateState_()
       // -- temperature
       node = GetUniqueElementByTagsString_(inode, "temperature", flag);
       if (flag) {
-        TranslateFieldIC_(node, "temperature", "K", reg_str, regions, out_ic, "velue", { "*" });
+        TranslateFieldIC_(node, "temperature", "K", reg_str, regions, out_ic, "value", { "*" });
       }
 
       // -- geochemical condition
@@ -807,7 +813,7 @@ InputConverterU::TranslateState_()
 
     for (int i = 0; i < children->getLength(); i++) {
       DOMNode* inode = children->item(i);
-      if (DOMNode::ELEMENT_NODE != inode->getNodeType()) continue;
+      if (DOMNode::ELEMENT_NODE != inode->getNodeType() ) continue;
 
       node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
       std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
@@ -994,7 +1000,10 @@ InputConverterU::TranslateCommonContinuumFields_(const std::string& domain,
   DOMNode* node;
   DOMNodeList* children;
 
-  // material independent fields
+  // domain independent fields
+  // -- porosity
+  TranslatePOM_(domain, out_ic, out_ev);
+
   // -- viscosity
   node = GetUniqueElementByTagsString_("phases, gas_phase, viscosity", flag);
   if (flag) {
@@ -1058,16 +1067,6 @@ InputConverterU::TranslateCommonContinuumFields_(const std::string& domain,
       std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
       std::string reg_str = CreateNameFromVector_(regions);
 
-      // porosity
-      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, porosity", flag);
-      if (flag) {
-        TranslateFieldEvaluator_(
-          node, Keys::getKey(domain, "porosity"), "-", reg_str, regions, out_ic, out_ev);
-      } else {
-        msg << "Porosity element must be specified under mechanical_properties";
-        Exceptions::amanzi_throw(msg);
-      }
-
       // specific_yield
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, specific_yield", flag);
       if (flag)
@@ -1123,15 +1122,21 @@ InputConverterU::TranslateCommonContinuumFields_(const std::string& domain,
 
       // poisson ratio
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, poisson_ratio", flag);
-      if (flag) { TranslateFieldIC_(node, "poisson_ratio", "-", reg_str, regions, out_ic); }
+      if (flag) {
+        TranslateFieldIC_(node, "poisson_ratio", "-", reg_str, regions, out_ic);
+      }
 
       // Young modulus
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, young_modulus", flag);
-      if (flag) { TranslateFieldIC_(node, "young_modulus", "-", reg_str, regions, out_ic); }
+      if (flag) {
+        TranslateFieldIC_(node, "young_modulus", "-", reg_str, regions, out_ic);
+      }
 
       // Biot coefficient
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, biot_coefficient", flag);
-      if (flag) { TranslateFieldIC_(node, "biot_coefficient", "-", reg_str, regions, out_ic); }
+      if (flag) {
+        TranslateFieldIC_(node, "biot_coefficient", "-", reg_str, regions, out_ic);
+      }
 
       // internal energy for liquid
       node = GetUniqueElementByTagsString_(inode, "thermal_properties, liquid_heat_capacity", flag);
@@ -1214,7 +1219,7 @@ InputConverterU::TranslateFieldEvaluator_(DOMNode* node,
     field_ev.sublist("function")
       .sublist(reg_str)
       .set<Teuchos::Array<std::string>>("regions", regions)
-      .set<std::string>("component", "cell")
+      .set<std::string>("component", "*")
       .sublist("function")
       .sublist("function-constant")
       .set<double>("value", val);
@@ -1340,7 +1345,9 @@ InputConverterU::TranslateMaterialsPartition_()
         char* text_content = mm.transcode(node->getTextContent());
         std::vector<std::string> names = CharToStrings_(text_content);
 
-        for (int n = 0; n < names.size(); ++n) { regions.push_back(names[n]); }
+        for (int n = 0; n < names.size(); ++n) {
+          regions.push_back(names[n]);
+        }
       }
     }
   }
@@ -1387,7 +1394,8 @@ InputConverterU::TranslateStateICsAmanziGeochemistry_(Teuchos::ParameterList& ou
 
     std::string reg_str = CreateNameFromVector_(regions);
     Key tcc_key = Keys::getKey(domain, "total_component_concentration");
-    Teuchos::ParameterList& ic_list = out_list.sublist(tcc_key).sublist("function").sublist(reg_str);
+    Teuchos::ParameterList& ic_list =
+      out_list.sublist(tcc_key).sublist("function").sublist(reg_str);
 
     ic_list.set<Teuchos::Array<std::string>>("regions", regions)
       .set<std::string>("component", "cell");
@@ -1487,7 +1495,9 @@ InputConverterU::AddSecondaryFieldEvaluator_(Teuchos::ParameterList& out_ev,
   }
 
   // dependencies
-  for (auto dep : deps) { out_ev.sublist(field).set<std::string>(dep.first, dep.second); }
+  for (auto dep : deps) {
+    out_ev.sublist(field).set<std::string>(dep.first, dep.second);
+  }
 
   // extensions
   Key prefix = Keys::split(field, '-').first;

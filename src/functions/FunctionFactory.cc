@@ -40,40 +40,23 @@ FunctionFactory::Create(const std::string& function_type,
                         Teuchos::ParameterList& function_params) const
 {
   std::unique_ptr<Function> f;
-  if (function_type == "constant")
-    f = create_constant(function_params);
-  else if (function_type == "tabular")
-    f = create_tabular(function_params);
-  else if (function_type == "polynomial")
-    f = create_polynomial(function_params);
-  else if (function_type == "monomial")
-    f = create_monomial(function_params);
-  else if (function_type == "smooth step")
-    f = create_smooth_step(function_params);
-  else if (function_type == "linear")
-    f = create_linear(function_params);
-  else if (function_type == "separable")
-    f = create_separable(function_params);
-  else if (function_type == "additive")
-    f = create_additive(function_params);
-  else if (function_type == "multiplicative")
-    f = create_multiplicative(function_params);
-  else if (function_type == "composition")
-    f = create_composition(function_params);
-  else if (function_type == "static head")
-    f = create_static_head(function_params);
-  else if (function_type == "standard math")
-    f = create_standard_math(function_params);
-  else if (function_type == "bilinear")
-    f = create_bilinear(function_params);
-  else if (function_type == "bilinear and time")
-    f = create_bilinear_and_time(function_params);
-  else if (function_type == "distance")
-    f = create_distance(function_params);
-  else if (function_type == "squaredistance")
-    f = create_squaredistance(function_params);
-  else if (function_type == "exprtk")
-    f = create_exprtk(function_params);
+  if (function_type == "constant") f = create_constant(function_params);
+  else if (function_type == "tabular") f = create_tabular(function_params);
+  else if (function_type == "polynomial") f = create_polynomial(function_params);
+  else if (function_type == "monomial") f = create_monomial(function_params);
+  else if (function_type == "smooth step") f = create_smooth_step(function_params);
+  else if (function_type == "linear") f = create_linear(function_params);
+  else if (function_type == "separable") f = create_separable(function_params);
+  else if (function_type == "additive") f = create_additive(function_params);
+  else if (function_type == "multiplicative") f = create_multiplicative(function_params);
+  else if (function_type == "composition") f = create_composition(function_params);
+  else if (function_type == "static head") f = create_static_head(function_params);
+  else if (function_type == "standard math") f = create_standard_math(function_params);
+  else if (function_type == "bilinear") f = create_bilinear(function_params);
+  else if (function_type == "bilinear and time") f = create_bilinear_and_time(function_params);
+  else if (function_type == "distance") f = create_distance(function_params);
+  else if (function_type == "squaredistance") f = create_squaredistance(function_params);
+  else if (function_type == "exprtk") f = create_exprtk(function_params);
   else { // I don't recognize this function type
     Errors::Message m;
     m << "FunctionFactory: unknown function type: " << function_type.c_str();
@@ -157,14 +140,10 @@ FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
     int xi = 0;
     std::string x = params.get<std::string>("x header");
     std::string xc = params.get<std::string>("x coordinate", "t");
-    if (xc.compare(0, 1, "t") == 0)
-      xi = 0;
-    else if (xc.compare(0, 1, "x") == 0)
-      xi = 1;
-    else if (xc.compare(0, 1, "y") == 0)
-      xi = 2;
-    else if (xc.compare(0, 1, "z") == 0)
-      xi = 3;
+    if (xc.compare(0, 1, "t") == 0) xi = 0;
+    else if (xc.compare(0, 1, "x") == 0) xi = 1;
+    else if (xc.compare(0, 1, "y") == 0) xi = 2;
+    else if (xc.compare(0, 1, "z") == 0) xi = 3;
     std::string y = params.get<std::string>("y header");
 
     Teuchos::Array<double> vec_x;
@@ -177,10 +156,8 @@ FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
         Teuchos::Array<std::string> form_strings(params.get<Teuchos::Array<std::string>>("forms"));
         form.resize(form_strings.size());
         for (int i = 0; i < form_strings.size(); ++i) {
-          if (form_strings[i] == "linear")
-            form[i] = Form_kind::LINEAR;
-          else if (form_strings[i] == "constant")
-            form[i] = Form_kind::CONSTANT;
+          if (form_strings[i] == "linear") form[i] = Form_kind::LINEAR;
+          else if (form_strings[i] == "constant") form[i] = Form_kind::CONSTANT;
           else {
             Errors::Message m;
             m << "unknown form \"" << form_strings[i].c_str() << "\"";
@@ -213,14 +190,10 @@ FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
       std::vector<double> x(params.get<Teuchos::Array<double>>("x values").toVector());
       std::string xc = params.get<std::string>("x coordinate", "t");
       int xi = 0;
-      if (xc.compare(0, 1, "t") == 0)
-        xi = 0;
-      else if (xc.compare(0, 1, "x") == 0)
-        xi = 1;
-      else if (xc.compare(0, 1, "y") == 0)
-        xi = 2;
-      else if (xc.compare(0, 1, "z") == 0)
-        xi = 3;
+      if (xc.compare(0, 1, "t") == 0) xi = 0;
+      else if (xc.compare(0, 1, "x") == 0) xi = 1;
+      else if (xc.compare(0, 1, "y") == 0) xi = 2;
+      else if (xc.compare(0, 1, "z") == 0) xi = 3;
 
       std::vector<double> y(params.get<Teuchos::Array<double>>("y values").toVector());
       if (params.isParameter("forms")) {
@@ -232,10 +205,8 @@ FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
         std::vector<std::unique_ptr<Function>> func(nforms);
 
         for (int i = 0; i < nforms; ++i) {
-          if (form_strings[i] == "linear")
-            form[i] = Form_kind::LINEAR;
-          else if (form_strings[i] == "constant")
-            form[i] = Form_kind::CONSTANT;
+          if (form_strings[i] == "linear") form[i] = Form_kind::LINEAR;
+          else if (form_strings[i] == "constant") form[i] = Form_kind::CONSTANT;
           else {
             form[i] = Form_kind::FUNCTION;
             if (params.isSublist(form_strings[i])) {
@@ -556,14 +527,10 @@ FunctionFactory::create_bilinear(Teuchos::ParameterList& params) const
       int xi, yi(0); // input indices
       std::string x = params.get<std::string>("row header");
       std::string xdim = params.get<std::string>("row coordinate");
-      if (xdim.compare(0, 1, "t") == 0)
-        xi = 0;
-      else if (xdim.compare(0, 1, "x") == 0)
-        xi = 1;
-      else if (xdim.compare(0, 1, "y") == 0)
-        xi = 2;
-      else if (xdim.compare(0, 1, "z") == 0)
-        xi = 3;
+      if (xdim.compare(0, 1, "t") == 0) xi = 0;
+      else if (xdim.compare(0, 1, "x") == 0) xi = 1;
+      else if (xdim.compare(0, 1, "y") == 0) xi = 2;
+      else if (xdim.compare(0, 1, "z") == 0) xi = 3;
       else {
         Errors::Message m;
         m << "FunctionFactory: function-bilinear parameter error: invalid \"row coordinate\" \""
@@ -574,14 +541,10 @@ FunctionFactory::create_bilinear(Teuchos::ParameterList& params) const
 
       std::string y = params.get<std::string>("column header");
       std::string ydim = params.get<std::string>("column coordinate");
-      if (ydim.compare(0, 1, "t") == 0)
-        yi = 0;
-      else if (ydim.compare(0, 1, "x") == 0)
-        yi = 1;
-      else if (ydim.compare(0, 1, "y") == 0)
-        yi = 2;
-      else if (ydim.compare(0, 1, "z") == 0)
-        yi = 3;
+      if (ydim.compare(0, 1, "t") == 0) yi = 0;
+      else if (ydim.compare(0, 1, "x") == 0) yi = 1;
+      else if (ydim.compare(0, 1, "y") == 0) yi = 2;
+      else if (ydim.compare(0, 1, "z") == 0) yi = 3;
       else {
         Errors::Message m;
         m << "FunctionFactory: function-bilinear parameter error: invalid \"column coordinate\" \""

@@ -15,12 +15,17 @@ and physics.
 .. _verbose-object-spec:
 .. admonition:: verbose-object-spec
 
-   * `"verbosity level`" ``[string]`` **GLOBAL_VERBOSITY**, `"low`",
-     `"medium`", `"high`", `"extreme`" The default is set by the global
-     verbosity spec, (fix me!)  Typically, `"low`" prints out minimal
-     information, `"medium`" prints out errors and overall high level
-     information, `"high`" prints out basic debugging, and `"extreme`" prints
-     out local debugging information.
+   * `"verbosity level`" ``[string]`` **optional** valid options are:
+
+     - `"none`"
+     - `"low`"
+     - `"medium`"
+     - `"high`"
+     - `"extreme`"
+
+     The default is set by the global verbosity spec, wich can be set on the
+     command line, and defaults to `"medium`".  See below for a list of what
+     each level produces.
 
    * `"write on rank`" ``[int]`` **0** VerboseObjects only write on a single
      rank -- by deafult the 0th rank.  However, sometimes it is useful for
@@ -30,6 +35,24 @@ and physics.
    * `"output filename`" ``[string]`` **optional** Redirect this output to a
      specific file rather than writing to screen.  Note this will be done
      by-the-instance, so this may not catch as much as one might think.
+
+
+In general, the levels are as follows:
+
+   - `"none`" No log output at all
+   - `"low`" Basic flow control from the cycle driver including timing info of
+     each main step (mesh creation, setup, initialization, etc).  Each PK that
+     takes a step writes basic info for that step, including the size of the
+     step and the result of the step (success, fail, etc).
+   - `"medium`" In addition to the above, each PK that advances a step writes
+     basic error control information, e.g. nonlinear solver convergence
+     information.
+   - `"high`" In addition to the above, all PKs may write debug cells.
+     Evaluators write debug cell info.
+   - `"extreme`" Each subroutine of a PK writes some info for debugging.  Each
+     Update() writes info about the state of the dependency graph trace to
+     debug whether it is actually updated or not.
+
 
 Example:
 

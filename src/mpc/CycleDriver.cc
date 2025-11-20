@@ -54,11 +54,11 @@ rss_usage()
      defined(__MACH__))
   struct rusage usage;
   getrusage(RUSAGE_SELF, &usage);
-#  if (defined(__APPLE__) || defined(__MACH__))
+#if (defined(__APPLE__) || defined(__MACH__))
   return static_cast<double>(usage.ru_maxrss) / 1024.0 / 1024.0;
-#  else
+#else
   return static_cast<double>(usage.ru_maxrss) / 1024.0;
-#  endif
+#endif
 #else
   return 0.0;
 #endif
@@ -219,7 +219,9 @@ CycleDriver::Setup()
     }
     std::string plist_name = "mesh info " + mesh->first;
     // in the case of just a domain mesh, we want to allow no name.
-    if ((mesh->first == "domain") && !glist_->isSublist(plist_name)) { plist_name = "mesh info"; }
+    if ((mesh->first == "domain") && !glist_->isSublist(plist_name)) {
+      plist_name = "mesh info";
+    }
     if (glist_->isSublist(plist_name)) {
       auto& mesh_info_list = glist_->sublist(plist_name);
       Teuchos::RCP<Amanzi::MeshInfo> mesh_info =
@@ -282,7 +284,9 @@ CycleDriver::Initialize()
   S_->InitializeIOFlags();
 
   // commit the initial conditions.
-  if (!restart_requested_) { pk_->CommitStep(S_->get_time(), S_->get_time(), Tags::DEFAULT); }
+  if (!restart_requested_) {
+    pk_->CommitStep(S_->get_time(), S_->get_time(), Tags::DEFAULT);
+  }
 }
 
 
@@ -326,7 +330,9 @@ CycleDriver::ReportMemory()
     double mem = Amanzi::rss_usage();
 
     double percell(mem);
-    if (local_ncells > 0) { percell = mem / local_ncells; }
+    if (local_ncells > 0) {
+      percell = mem / local_ncells;
+    }
 
     double max_percell(0.0);
     double min_percell(0.0);
@@ -369,7 +375,8 @@ CycleDriver::ReportMemory()
       const Tag& tag = it->second->begin()->first;
       if (S_->GetRecord(it->first, tag).ValidType<CompositeVector>()) {
         doubles_count +=
-          n_tags * static_cast<double>(S_->Get<CompositeVector>(it->first, tag).GetLocalElementCount());
+          n_tags *
+          static_cast<double>(S_->Get<CompositeVector>(it->first, tag).GetLocalElementCount());
       }
     }
   }
@@ -455,7 +462,7 @@ CycleDriver::ReadParameterList_()
     {
       Teuchos::Array<double>::const_iterator it_tim;
       Teuchos::Array<double>::const_iterator it_dt;
-      for (it_tim = reset_times.begin(), it_dt = reset_times_dt.begin();
+      for (it_tim = reset_times.begin() , it_dt = reset_times_dt.begin();
            it_tim != reset_times.end();
            ++it_tim, ++it_dt) {
         reset_info_.push_back(std::make_pair(*it_tim, *it_dt));
@@ -469,7 +476,8 @@ CycleDriver::ReadParameterList_()
 
       Teuchos::Array<double>::const_iterator it_tim;
       Teuchos::Array<double>::const_iterator it_max;
-      for (it_tim = reset_times.begin(), it_max = reset_max_dt.begin(); it_tim != reset_times.end();
+      for (it_tim = reset_times.begin()
+        , it_max = reset_max_dt.begin(); it_tim != reset_times.end();
            ++it_tim, ++it_max) {
         reset_max_.push_back(std::make_pair(*it_tim, *it_max));
       }
@@ -502,10 +510,12 @@ CycleDriver::get_dt(bool after_failure)
   std::vector<std::pair<double, double>>::iterator it;
   std::vector<std::pair<double, double>>::iterator it_max;
 
-  for (it = reset_info_.begin(), it_max = reset_max_.begin(); it != reset_info_.end();
+  for (it = reset_info_.begin() , it_max = reset_max_.begin(); it != reset_info_.end();
        ++it, ++it_max) {
     if (S_->get_time() == it->first) {
-      if (reset_max_.size() > 0) { max_dt_ = it_max->second; }
+      if (reset_max_.size() > 0) {
+        max_dt_ = it_max->second;
+      }
 
       if (dt < it->second) {
         pk_->set_dt(dt);
@@ -568,7 +578,9 @@ CycleDriver::set_dt(double dt)
   }
 
   // cap the max step size
-  if (dt > max_dt_) { dt_ = max_dt_; }
+  if (dt > max_dt_) {
+    dt_ = max_dt_;
+  }
 
   // ask the step manager if this step is ok
   dt_ = tsm_->TimeStep(S_->get_time() + dt, dt);
@@ -596,7 +608,7 @@ CycleDriver::Advance(double dt)
   if (advance) {
     std::vector<std::pair<double, double>>::const_iterator it;
     for (it = reset_info_.begin(); it != reset_info_.end(); ++it) {
-      if (it->first == S_->get_time()) break;
+      if (it->first == S_->get_time() ) break;
     }
 
     if (it != reset_info_.end()) {
@@ -653,7 +665,9 @@ CycleDriver::Advance(double dt)
     dt_new = get_dt(fail);
     // Failed the timestep.
     // Potentially write out failed timestep for debugging
-    for (auto& vis : failed_visualization_) { WriteVis(*vis, *S_); }
+    for (auto& vis : failed_visualization_) {
+      WriteVis(*vis, *S_);
+    }
     // The timestep sizes have been updated, so copy back old soln and try again.
     // NOT YET IMPLEMENTED, requires PKs to deal with failure.  Fortunately
     // transport and chemistry never fail, so we shouldn't break things.
@@ -695,7 +709,9 @@ CycleDriver::Visualize(bool force, const Tag& tag)
   bool dump = force;
   if (!dump) {
     for (auto vis = visualization_.begin(); vis != visualization_.end(); ++vis) {
-      if ((*vis)->DumpRequested(S_->get_cycle(), S_->get_time())) { dump = true; }
+      if ((*vis)->DumpRequested(S_->get_cycle(), S_->get_time())) {
+        dump = true;
+      }
     }
   }
 
@@ -818,8 +834,8 @@ CycleDriver::Go()
     for (std::vector<std::pair<double, double>>::iterator it = reset_info_.begin();
          it != reset_info_.end();
          ++it) {
-      if (it->first <= S_->get_time()) it = reset_info_.erase(it);
-      if (it == reset_info_.end()) break;
+      if (it->first <= S_->get_time() ) it = reset_info_.erase(it);
+      if (it == reset_info_.end() ) break;
     }
 
     if (vo_->os_OK(Teuchos::VERB_LOW)) {
@@ -1083,6 +1099,7 @@ CycleDriver::ResetDriver(int time_pr_id)
 
   // Initialize the process kernels and verify
   pk_->Initialize();
+  pk_->CommitStep(S_->get_time(), S_->get_time(), Tags::DEFAULT);
   S_->CheckAllFieldsInitialized();
 
   S_->GetMeshPartition("materials");

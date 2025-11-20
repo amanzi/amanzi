@@ -245,6 +245,7 @@ Global parameters
 #include "CompositeVectorSpace.hh"
 #include "EvaluatorIndependentFunction.hh"
 #include "Key.hh"
+#include "ModelAssumptions.hh"
 #include "Operator.hh"
 #include "PK_DomainFunction.hh"
 #include "PK_PhysicalBDF.hh"
@@ -269,7 +270,7 @@ class Flow_PK : public PK_PhysicalBDF {
           const Teuchos::RCP<Teuchos::ParameterList>& glist,
           const Teuchos::RCP<State>& S,
           const Teuchos::RCP<TreeVector>& soln);
-  virtual ~Flow_PK(){};
+  virtual ~Flow_PK() {};
 
   // members required by PK interface
   virtual void parseParameterList() override {};
@@ -348,7 +349,7 @@ class Flow_PK : public PK_PhysicalBDF {
   int dim;
 
   std::string passwd_;
-  bool peaceman_model_, use_bulk_modulus_;
+  bool peaceman_model_;
 
   // Stationary physical quantatities
   std::vector<WhetStone::Tensor> K;
@@ -373,8 +374,8 @@ class Flow_PK : public PK_PhysicalBDF {
   Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>> pressure_eval_;
   Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>> pressure_msp_eval_;
 
-  // DFN model
-  bool flow_on_manifold_; // true for the DFN model
+  // physical models and assumptions
+  ModelAssumptions assumptions_;
   bool coupled_to_matrix_, coupled_to_fracture_;
 
   // names of state fields
@@ -386,7 +387,7 @@ class Flow_PK : public PK_PhysicalBDF {
   Key permeability_key_, permeability_eff_key_;
   Key water_storage_key_, prev_water_storage_key_;
   Key viscosity_liquid_key_, mol_density_liquid_key_, mass_density_liquid_key_;
-  Key aperture_key_, bulk_modulus_key_, hydrostatic_stress_key_;
+  Key aperture_key_, bulk_modulus_key_;
 
   // io
   Utils::Units units_;

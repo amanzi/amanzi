@@ -32,7 +32,7 @@ namespace AmanziInput {
 
 // Amanzi version
 #define AMANZI_SPEC_VERSION_MAJOR 1
-#define AMANZI_SPEC_VERSION_MINOR 6
+#define AMANZI_SPEC_VERSION_MINOR 7
 #define AMANZI_SPEC_VERSION_MICRO "dev"
 
 // constants
@@ -54,7 +54,7 @@ XERCES_CPP_NAMESPACE_USE
 */
 class MemoryManager {
  public:
-  MemoryManager(){};
+  MemoryManager() {};
   ~MemoryManager() { Destroy_(); }
 
   XMLCh* transcode(const char* str)
@@ -74,8 +74,8 @@ class MemoryManager {
  private:
   void Destroy_()
   {
-    for (auto it = pchar.begin(); it != pchar.end(); ++it) xercesc::XMLString::release(&*it);
-    for (auto it = xchar.begin(); it != xchar.end(); ++it) xercesc::XMLString::release(&*it);
+    for (auto it = pchar.begin() ; it != pchar.end(); ++it) xercesc::XMLString::release(&*it);
+    for (auto it = xchar.begin() ; it != xchar.end(); ++it) xercesc::XMLString::release(&*it);
   }
 
  private:
@@ -89,13 +89,11 @@ class MemoryManager {
 
 // Creates an XML parser with our desired settings. This parser must be deleted
 // after the document has been used.
-XercesDOMParser*
-CreateXMLParser();
+XercesDOMParser* CreateXMLParser();
 
 // Using the given XML parser, parses the document contained in the file with
 // the given name.
-DOMDocument*
-OpenXMLInput(XercesDOMParser* parser, const std::string& xml_input);
+DOMDocument* OpenXMLInput(XercesDOMParser* parser, const std::string& xml_input);
 //------------------------------------------------------------------------
 
 
@@ -116,6 +114,7 @@ class InputConverter {
   void ParseConstants_();
   void ParseGeochemistry_();
   void FilterNodes(const std::string& filter);
+  DOMNode* GetPKChemistryPointer_(bool& flag);
 
   // auto-generated input files
   // -- Pflotran input file
@@ -132,13 +131,15 @@ class InputConverter {
   //    leaves of the tree.
   xercesc::DOMNode* GetUniqueElementByTagsString_(const std::string& tags, bool& flag);
 
-  xercesc::DOMNode*
-  GetUniqueElementByTagsString_(const std::string& tags, bool& flag, bool exception);
+  xercesc::DOMNode* GetUniqueElementByTagsString_(const std::string& tags,
+                                                  bool& flag,
+                                                  bool exception);
 
   // -- modification of the previous routine where the first tag
   //    is replaced by a pointer to document's element
-  xercesc::DOMNode*
-  GetUniqueElementByTagsString_(const xercesc::DOMNode* node, const std::string& tags, bool& flag);
+  xercesc::DOMNode* GetUniqueElementByTagsString_(const xercesc::DOMNode* node,
+                                                  const std::string& tags,
+                                                  bool& flag);
 
   xercesc::DOMNode* GetUniqueElementByTagsString_(const xercesc::DOMNode* node,
                                                   const std::string& tags,
@@ -147,7 +148,7 @@ class InputConverter {
 
   // -- extract child with the given attribute
   xercesc::DOMElement* GetUniqueChildByAttribute_(xercesc::DOMNode* node,
-                                                  const char* attr_name,
+                                                  const std::string& attr_name,
                                                   const std::string& attr_value,
                                                   bool& flag,
                                                   bool exception = false);
@@ -161,7 +162,7 @@ class InputConverter {
   // ----------------
   //   Attributes
   // ----------------
-  bool HasAttribute_(DOMElement* elem, const char* attr_name);
+  bool HasAttribute_(DOMElement* elem, const std::string& attr_name);
 
   // -- extract and verify children
   // -- extract existing attribute value and verify it optionally against expected units
@@ -181,7 +182,7 @@ class InputConverter {
   //                if true, throw an exception.
   //    default_val = defult value
   int GetAttributeValueL_(xercesc::DOMElement* elem,
-                          const char* attr_name,
+                          const std::string& attr_name,
                           const std::string& type = TYPE_NUMERICAL,
                           int valmin = INT_MIN,
                           int valmax = INT_MAX,
@@ -189,7 +190,7 @@ class InputConverter {
                           int defaul_val = 0);
   double GetAttributeValueD_( // supports units except for ppbm
     xercesc::DOMElement* elem,
-    const char* attr_name,
+    const std::string& attr_name,
     const std::string& type = TYPE_NUMERICAL,
     double valmin = DVAL_MIN,
     double valmax = DVAL_MAX,
@@ -197,23 +198,24 @@ class InputConverter {
     bool exception = true,
     double default_val = 0.0);
   std::string GetAttributeValueS_(xercesc::DOMElement* elem,
-                                  const char* attr_name,
+                                  const std::string& attr_name,
                                   const std::string& type = TYPE_NUMERICAL,
                                   bool exception = true,
                                   std::string default_val = "");
   std::vector<double> GetAttributeVectorD_( // supports units except ppbm
     xercesc::DOMElement* elem,
-    const char* attr_name,
+    const std::string& attr_name,
     int length = -1,
     std::string unit = "",
     bool exception = true,
     double mol_mass = -1.0);
-  std::vector<std::string>
-  GetAttributeVectorS_(xercesc::DOMElement* elem, const char* attr_name, bool exception = true);
+  std::vector<std::string> GetAttributeVectorS_(xercesc::DOMElement* elem,
+                                                const std::string& attr_name,
+                                                bool exception = true);
 
   // -- node is used more often then element
   int GetAttributeValueL_(xercesc::DOMNode* node,
-                          const char* attr_name,
+                          const std::string& attr_name,
                           const std::string& type = TYPE_NUMERICAL,
                           int valmin = INT_MIN,
                           int valmax = INT_MAX,
@@ -225,7 +227,7 @@ class InputConverter {
   }
   double GetAttributeValueD_( // supports units except for ppbm
     xercesc::DOMNode* node,
-    const char* attr_name,
+    const std::string& attr_name,
     const std::string& type = TYPE_NUMERICAL,
     double valmin = DVAL_MIN,
     double valmax = DVAL_MAX,
@@ -237,7 +239,7 @@ class InputConverter {
     return GetAttributeValueD_(element, attr_name, type, valmin, valmax, unit, exception, val);
   }
   std::string GetAttributeValueS_(xercesc::DOMNode* node,
-                                  const char* attr_name,
+                                  const std::string& attr_name,
                                   const std::string& type = TYPE_NUMERICAL,
                                   bool exception = true,
                                   std::string val = "")
@@ -247,7 +249,7 @@ class InputConverter {
   }
   std::vector<double> GetAttributeVectorD_( // supports units except ppbm
     xercesc::DOMNode* node,
-    const char* attr_name,
+    const std::string& attr_name,
     int length = -1,
     std::string unit = "",
     bool exception = true,
@@ -256,16 +258,18 @@ class InputConverter {
     xercesc::DOMElement* element = static_cast<xercesc::DOMElement*>(node);
     return GetAttributeVectorD_(element, attr_name, length, unit, exception, mol_mass);
   }
-  std::vector<std::string>
-  GetAttributeVectorS_(xercesc::DOMNode* node, const char* attr_name, bool exception = true)
+  std::vector<std::string> GetAttributeVectorS_(xercesc::DOMNode* node,
+                                                const std::string& attr_name,
+                                                bool exception = true)
   {
     xercesc::DOMElement* element = static_cast<xercesc::DOMElement*>(node);
     return GetAttributeVectorS_(element, attr_name, exception);
   }
 
   // -- extract existing attribute value and verify it
-  std::string
-  GetAttributeValueS_(xercesc::DOMNode* node, const char* attr_name, const char* options);
+  std::string GetAttributeValueS_(xercesc::DOMNode* node,
+                                  const std::string& attr_name,
+                                  const char* options);
 
 
   // --------------
@@ -289,8 +293,10 @@ class InputConverter {
                                               bool exception = false);
 
   //    the name of identical nodes will be extracted too
-  std::vector<xercesc::DOMNode*>
-  GetSameChildNodes_(xercesc::DOMNode* node, std::string& name, bool& flag, bool exception = false);
+  std::vector<xercesc::DOMNode*> GetSameChildNodes_(xercesc::DOMNode* node,
+                                                    std::string& name,
+                                                    bool& flag,
+                                                    bool exception = false);
 
   // -- extract text content and verify it against list of options
   double GetTextContentD_( // supports units

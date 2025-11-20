@@ -42,7 +42,8 @@ namespace Amanzi {
 
 class HeatConduction {
  public:
-  HeatConduction(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh)
+  HeatConduction(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    : mesh_(mesh)
   {
     CompositeVectorSpace cvs;
     auto cmap = Amanzi::getMaps(*mesh_, AmanziMesh::Entity_kind::CELL);
@@ -55,7 +56,7 @@ class HeatConduction {
     values_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
     derivatives_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
   }
-  ~HeatConduction(){};
+  ~HeatConduction() {};
 
   // main members
   void UpdateValues(const CompositeVector& u)
@@ -65,13 +66,17 @@ class HeatConduction {
 
     int ncells =
       mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
-    for (int c = 0; c < ncells; c++) { values_c[0][c] = 0.3 + uc[0][c]; }
+    for (int c = 0; c < ncells; c++) {
+      values_c[0][c] = 0.3 + uc[0][c];
+    }
 
     const Epetra_MultiVector& uf = *u.ViewComponent("face", true);
     Epetra_MultiVector& values_f = *values_->ViewComponent("face", true);
     int nfaces =
       mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
-    for (int f = 0; f < nfaces; f++) { values_f[0][f] = 0.3 + uf[0][f]; }
+    for (int f = 0; f < nfaces; f++) {
+      values_f[0][f] = 0.3 + uf[0][f];
+    }
 
     derivatives_->PutScalar(1.0);
   }

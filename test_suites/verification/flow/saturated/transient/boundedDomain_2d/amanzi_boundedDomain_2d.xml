@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="1.6-dev">
+<amanzi_input type="unstructured" version="1.7-dev">
     <misc>
       <echo_translated_input file_name="oldspec.xml" format="unstructured_native" />
     </misc>
@@ -44,15 +44,15 @@
       </macros>
     </definitions>
     <process_kernels>
-      <comments>Single-phase transient flow</comments>
-      <flow model="saturated" state="on" />
-      <transport state="off" />
-      <chemistry engine="none" state="off" />
+      <pk mode="transient">
+        <comments>Single-phase transient flow</comments>
+        <flow model="saturated" state="on" />
+      </pk>
     </process_kernels>
     <execution_controls>
       <verbosity level="high" />
-      <execution_control_defaults increase_factor="1.5" init_dt="3.64" max_dt="1.e9" method="bdf1" />
-      <execution_control end="1.e9" init_dt="3.64" mode="transient" start="0.0" />
+      <execution_control_defaults increase_factor="1.5" init_dt="1.0" max_dt="1.e9" method="bdf1" />
+      <execution_control end="1.e9" init_dt="1.0" mode="transient" start="0.0" />
     </execution_controls>
     <numerical_controls>
       <unstructured_controls>
@@ -126,7 +126,7 @@
         <comments>Material properties for zone 1</comments>
         <assigned_regions>Zone_1</assigned_regions>
         <mechanical_properties>
-          <porosity value="0.25" />
+          <porosity model="constant" value="0.25"/>
           <specific_storage model="constant" value="2.0e-4" />
         </mechanical_properties>
         <permeability x="1.187E-9" y="1.187E-9" z="1.187E-9" />
@@ -135,7 +135,7 @@
         <comments>Material properties for zone 2</comments>
         <assigned_regions>Zone_2</assigned_regions>
         <mechanical_properties>
-          <porosity value="0.25" />
+          <porosity model="constant" value="0.25"/>
           <specific_storage model="constant" value="2.0e-4" />
         </mechanical_properties>
         <permeability x="1.187E-9" y="1.187E-9" z="1.187E-9" />
@@ -144,7 +144,7 @@
         <comments>Material properties for zone 3</comments>
         <assigned_regions>Zone_3</assigned_regions>
         <mechanical_properties>
-          <porosity value="0.25" />
+          <porosity model="constant" value="0.25"/>
           <specific_storage model="constant" value="2.0e-4" />
         </mechanical_properties>
         <permeability x="1.187E-9" y="1.187E-9" z="1.187E-9" />
@@ -167,7 +167,7 @@
         <assigned_regions>xz1,xz2</assigned_regions>
         <liquid_phase name="water">
           <liquid_component name="water">
-            <uniform_pressure function="constant" start="1.07785e6" value="1.07785e6" />
+            <uniform_pressure function="constant" start="0.0" value="1.07785e6" />
           </liquid_component>
         </liquid_phase>
       </boundary_condition>

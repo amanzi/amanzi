@@ -49,8 +49,8 @@ class MyRemapDG : public Operators::RemapDG<CompositeVector> {
     : Operators::RemapDG<CompositeVector>(mesh0, mesh1, plist),
       tprint_(0.0),
       dt_output_(0.1),
-      l2norm_(-1.0){};
-  ~MyRemapDG(){};
+      l2norm_(-1.0) {};
+  ~MyRemapDG() {};
 
   // time control
   // -- stability condition
@@ -127,7 +127,7 @@ MyRemapDG::CollectStatistics(double t, const CompositeVector& u)
   if (tglob >= tprint_) {
     op_reac_->UpdateMatrices(t);
     auto& matrices = op_reac_->local_op()->matrices;
-    for (int n = 0; n < matrices.size(); ++n) matrices[n].Inverse();
+    for (int n = 0; n < matrices.size() ; ++n) matrices[n].Inverse();
 
     auto& rhs = *op_reac_->global_operator()->rhs();
     op_reac_->global_operator()->Apply(u, rhs);
@@ -135,9 +135,10 @@ MyRemapDG::CollectStatistics(double t, const CompositeVector& u)
 
     Epetra_MultiVector& xc = *rhs.ViewComponent("cell");
     int nk = xc.NumVectors();
-    double xmax[nk], xmin[nk], lmax(-1.0), lmin(-1.0), lavg(-1.0);
-    xc.MaxValue(xmax);
-    xc.MinValue(xmin);
+    double lmax(-1.0), lmin(-1.0), lavg(-1.0);
+    std::vector<double> xmax(nk), xmin(nk);
+    xc.MaxValue(xmax.data());
+    xc.MinValue(xmin.data());
 
     if (limiter() != Teuchos::null) {
       const auto& lim = *limiter()->limiter();

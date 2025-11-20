@@ -98,7 +98,7 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
   // operators
   std::string disc_method("fv-default, fv-default");
   out_list.sublist("operators") =
-    TranslateDiffusionOperator_(disc_method, "", "", "upwind-face", "vapor matrix", domain, true);
+    TranslateDiffusionOperator_(disc_method, "", "", "upwind-face", "vapor matrix", domain, true, "multiphase");
 
   auto& tmp1 = out_list.sublist("operators").sublist("diffusion operator");
   auto& tmp2 = out_list.sublist("operators").sublist("molecular diffusion operator");
@@ -563,7 +563,7 @@ InputConverterU::TranslateMultiphaseBCs_()
       } else if (bctype_in == "inward_volumetric_flux") {
         bctype = "mass flux total";
         bcname = "outward mass flux";
-        for (int k = 0; k < values.size(); k++) values[k] *= -1;
+        for (int k = 0; k < values.size() ; k++) values[k] *= -1;
       } else if (bctype_in == "saturation") {
         bctype = "saturation";
         bcname = "boundary saturation";

@@ -20,7 +20,7 @@
 
   Analytic00: polynomial solution with constant, scalar coefficient
   Analytic01: non-polynomial solution with full, non-constant tensor
-  Analytic02: linear solution with constant, tensor coefficient
+  Analytic02: linear solution with non-constant, tensor coefficient
   Analytic03: non-polynomial solution with discontinuous (scalar)
               coefficient
   Analytic03b: same as 03, but with the coef as a scalar instead of
@@ -30,6 +30,9 @@
   Analytic05: linear solution with non-symmetric, non-constant
               tensor coefficient
   Analytic07: trigonometric solution with identity coefficients
+  Analytic08: trigonometric solution with discontinuous coefficient
+              and curvilinear discontinuity line. 
+  Analytic09: trigonometric solution with full constant tensor
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_BASE_HH_
@@ -47,13 +50,13 @@
 class AnalyticBase : public Amanzi::WhetStone::WhetStoneFunction {
  public:
   AnalyticBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
-    : mesh_(mesh), d_(mesh->getSpaceDimension()){};
-  ~AnalyticBase(){};
+    : mesh_(mesh), d_(mesh->getSpaceDimension()) {};
+  ~AnalyticBase() {};
 
   // analytic solution for diffusion problem with gravity
   // -- tensorial diffusion coefficient
-  virtual Amanzi::WhetStone::Tensor
-  TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p,
+                                                      double t) = 0;
 
   // -- scalar diffusion coefficient
   virtual double ScalarDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) { return 1.0; }
@@ -62,19 +65,19 @@ class AnalyticBase : public Amanzi::WhetStone::WhetStoneFunction {
   virtual double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) const = 0;
 
   // -- gradient of continuous velocity grad(h), where h = p - g z
-  virtual Amanzi::AmanziGeometry::Point
-  gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p,
+                                                       double t) = 0;
 
   // -- analytic advection function
-  virtual Amanzi::AmanziGeometry::Point
-  advection_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::AmanziGeometry::Point advection_exact(const Amanzi::AmanziGeometry::Point& p,
+                                                        double t) = 0;
 
   // -- source term
   virtual double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
 
   // derived quantity: Darcy velocity -K k grad(h)
-  virtual Amanzi::AmanziGeometry::Point
-  velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  virtual Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p,
+                                                       double t)
   {
     auto K = TensorDiffusivity(p, t);
     double kr = ScalarDiffusivity(p, t);
@@ -92,10 +95,16 @@ class AnalyticBase : public Amanzi::WhetStone::WhetStoneFunction {
   int get_dimension() const { return d_; }
 
   // error calculation
-  void
-  ComputeCellError(Epetra_MultiVector& p, double t, double& pnorm, double& l2_err, double& inf_err);
-  void
-  ComputeFaceError(Epetra_MultiVector& u, double t, double& unorm, double& l2_err, double& inf_err);
+  void ComputeCellError(Epetra_MultiVector& p,
+                        double t,
+                        double& pnorm,
+                        double& l2_err,
+                        double& inf_err);
+  void ComputeFaceError(Epetra_MultiVector& u,
+                        double t,
+                        double& unorm,
+                        double& l2_err,
+                        double& inf_err);
   void ComputeNodeError(Epetra_MultiVector& p,
                         double t,
                         double& pnorm,
@@ -130,7 +139,7 @@ class AnalyticBase : public Amanzi::WhetStone::WhetStoneFunction {
 
 
 /* ******************************************************************
-* Error for cell-based fields
+* discarete L2 error for cell-based fields
 ****************************************************************** */
 inline void
 AnalyticBase::ComputeCellError(Epetra_MultiVector& p,
@@ -166,7 +175,7 @@ AnalyticBase::ComputeCellError(Epetra_MultiVector& p,
 
 
 /* ******************************************************************
-* Error for face-based fields
+* Discrete L2 error for face-based fields
 ****************************************************************** */
 inline void
 AnalyticBase::ComputeFaceError(Epetra_MultiVector& u,
@@ -186,6 +195,7 @@ AnalyticBase::ComputeFaceError(Epetra_MultiVector& u,
 
   int dir;
   for (int c = 0; c < ncells; ++c) {
+    double volume = mesh_->getCellVolume(c);
     const auto& faces = mesh_->getCellFaces(c);
     int nfaces = faces.size();
 
@@ -202,10 +212,10 @@ AnalyticBase::ComputeFaceError(Epetra_MultiVector& u,
       int k =
         (fmap.ElementSize() == 1) ? 0 : Amanzi::Operators::UniqueIndexFaceToCells(*mesh_, f, c);
 
-      l2_err += std::pow((tmp - u[0][g + k]) / area, 2.0);
+      l2_err += std::pow((tmp - u[0][g + k]) / area, 2.0) * volume;
       inf_err = std::max(inf_err, fabs(tmp - u[0][g + k]) / area);
-      unorm += std::pow(tmp / area, 2.0);
-      // std::cout << f << " xf=" << xf << " u=" << u[0][g + k] << " u_ex=" << tmp << " err=" << inf_err << std::endl;
+      unorm += std::pow(tmp / area, 2.0) * volume;
+      // std::cout << f << " xf=" << xf << " u=" << u[0][g + k] << " u_ex=" << tmp << " err=" << inf_err << " " << dir << std::endl;
     }
   }
 #ifdef HAVE_MPI
@@ -436,10 +446,8 @@ AnalyticBase::GlobalOp(std::string op, double* val, int n)
   double* val_tmp = new double[n];
   for (int i = 0; i < n; ++i) val_tmp[i] = val[i];
 
-  if (op == "sum")
-    mesh_->getComm()->SumAll(val_tmp, val, n);
-  else if (op == "max")
-    mesh_->getComm()->MaxAll(val_tmp, val, n);
+  if (op == "sum") mesh_->getComm()->SumAll(val_tmp, val, n);
+  else if (op == "max") mesh_->getComm()->MaxAll(val_tmp, val, n);
 
   delete[] val_tmp;
 }

@@ -61,11 +61,13 @@ MDM_Isotropic::MDM_Isotropic(Teuchos::ParameterList& plist)
   }
 
   if (count > 1) {
-    Errors::Message msg("Only one of \"alpha\" and \"dispersion coefficient\" may be supplied.");
+    Errors::Message msg("Only one of \"alpha\" and \"dispersion coefficient\", and "
+                        "\"dispersivity\" may be supplied.");
     Exceptions::amanzi_throw(msg);
   }
   if (count == 0) {
-    Errors::Message msg("Either \"alpha\" or \"dispersion coefficient\" must be supplied.");
+    Errors::Message msg(
+      "Either \"alpha\", \"dispersion coefficient\", or \"dispersivity\" must be supplied.");
     Exceptions::amanzi_throw(msg);
   }
 }
@@ -85,7 +87,6 @@ MDM_Isotropic::ParseAlpha_(Teuchos::ParameterList& plist, const std::string& key
     alpha_ = (*alpha_func_)(args);
   } else {
     alpha_ = plist.get<double>(keyword, 0.0);
-    alpha_func_ = std::make_unique<FunctionConstant>(alpha_);
   }
 }
 
@@ -98,16 +99,18 @@ MDM_Isotropic::mech_dispersion(double t,
                                const AmanziGeometry::Point& xc,
                                const AmanziGeometry::Point& u,
                                int axi_symmetric,
-                               double s,
+                               double wc,
                                double phi) const
 {
-  std::vector<double> args(1 + dim_);
-  args[0] = t;
-  for (int i = 0; i < dim_; ++i) args[i + 1] = xc[i];
-  alpha_ = (*alpha_func_)(args);
+  if (alpha_func_ != nullptr) {
+    std::vector<double> args(1 + dim_);
+    args[0] = t;
+    for (int i = 0; i < dim_; ++i) args[i + 1] = xc[i];
+    alpha_ = (*alpha_func_)(args);
+  }
 
   WhetStone::Tensor D(dim_, 1);
-  D(0, 0) = dispersivity_ ? alpha_ * s * phi * norm(u) : alpha_ * s * phi;
+  D(0, 0) = dispersivity_ ? alpha_ * wc * norm(u) / phi : alpha_ * wc;
   return D;
 }
 

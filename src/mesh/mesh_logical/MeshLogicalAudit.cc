@@ -239,17 +239,15 @@ MeshLogicalAudit::check_face_refs_by_cells() const
 
   for (Entity_ID j = 0; j < ncell; ++j) {
     mesh->getCellFaces(j, cface);
-    for (int k = 0; k < cface.size(); ++k) (refs[cface[k]])++;
+    for (int k = 0; k < cface.size() ; ++k) (refs[cface[k]])++;
   }
 
   Entity_ID_List free_faces;
   Entity_ID_List bad_faces;
 
   for (int j = 0; j < nface; ++j) {
-    if (refs[j] == 0)
-      free_faces.push_back(j);
-    else if (refs[j] > 2)
-      bad_faces.push_back(j);
+    if (refs[j] == 0) free_faces.push_back(j);
+    else if (refs[j] > 2) bad_faces.push_back(j);
   }
 
   bool error = false;
@@ -282,7 +280,9 @@ MeshLogicalAudit::check_faces_cell_consistency() const
     mesh->getCellFaces(j, cface);
     for (int k = 0; k < cface.size(); ++k) {
       mesh->getFaceCells(cface[k], fcell);
-      if (std::find(fcell.begin(), fcell.end(), j) == fcell.end()) { bad_cells.push_back(j); }
+      if (std::find(fcell.begin(), fcell.end(), j) == fcell.end()) {
+        bad_cells.push_back(j);
+      }
     }
   }
 
@@ -291,7 +291,9 @@ MeshLogicalAudit::check_faces_cell_consistency() const
     mesh->getFaceCells(j, fcell);
     for (int k = 0; k < fcell.size(); ++k) {
       mesh->getCellFaces(fcell[k], cface);
-      if (std::find(cface.begin(), cface.end(), j) == cface.end()) { bad_faces.push_back(j); }
+      if (std::find(cface.begin(), cface.end(), j) == cface.end()) {
+        bad_faces.push_back(j);
+      }
     }
   }
 
@@ -366,7 +368,7 @@ MeshLogicalAudit::check_cell_degeneracy() const
 
   for (Entity_ID j = 0; j < ncell; ++j) {
     mesh->getCellFaces(j, cface); // should not fail
-    if (!distinct_values(cface)) bad_cells.push_back(j);
+    if (!distinct_values(cface) ) bad_cells.push_back(j);
   }
 
   bool error = false;
@@ -447,7 +449,9 @@ MeshLogicalAudit::check_cell_face_bisector_geometry() const
       continue;
     }
     for (int i = 0; i != cface.size(); ++i) {
-      if (AmanziGeometry::norm(bisectors[i]) < 1.e-10) { bad_cells.push_back(j); }
+      if (AmanziGeometry::norm(bisectors[i]) < 1.e-10) {
+        bad_cells.push_back(j);
+      }
     }
   }
 
@@ -500,7 +504,7 @@ MeshLogicalAudit::check_maps(const Epetra_Map& map_own, const Epetra_Map& map_us
   // necessarily uniformly) across all processers
 
   std::vector<int> owned_GIDs(map_own.NumMyElements());
-  for (int i = 0; i < map_own.NumMyElements(); i++) owned_GIDs[i] = map_own.GID(i);
+  for (int i = 0; i < map_own.NumMyElements() ; i++) owned_GIDs[i] = map_own.GID(i);
   std::sort(owned_GIDs.begin(), owned_GIDs.end());
 
   for (int i = 0; i < map_own.NumMyElements() - 1; i++) {
@@ -534,8 +538,7 @@ MeshLogicalAudit::check_maps(const Epetra_Map& map_own, const Epetra_Map& map_us
 
     // Verify that the used map extends the owned map.
     bool bad_map = false;
-    if (num_ovl < 0)
-      bad_map = true;
+    if (num_ovl < 0) bad_map = true;
     else {
       for (int j = 0; j < num_own; ++j)
         if (map_use.GID(j) != map_own.GID(j)) bad_map = true;
@@ -556,7 +559,7 @@ MeshLogicalAudit::check_maps(const Epetra_Map& map_own, const Epetra_Map& map_us
     map_own.RemoteIDList(num_ovl, gids, pids, lids);
     bad_map = false;
     for (int j = 0; j < num_ovl; ++j)
-      if (pids[j] < 0 || pids[j] == comm_->MyPID()) bad_map = true;
+      if (pids[j] < 0 || pids[j] == comm_->MyPID() ) bad_map = true;
     if (bad_map) {
       os << "ERROR: invalid ghosts in overlap map." << std::endl;
       error = true;
@@ -611,8 +614,8 @@ MeshLogicalAudit::check_cell_to_faces_ghost_data() const
 
   for (Entity_ID j = 0; j < ncell_own; ++j) {
     mesh->getCellFaces(j, cface);
-    for (int k = 0; k < cface.size(); ++k) gids(j, k) = face_map.GID(cface[k]);
-    for (int k = cface.size(); k < maxfaces; ++k) gids(j, k) = 0;
+    for (int k = 0; k < cface.size() ; ++k) gids(j, k) = face_map.GID(cface[k]);
+    for (int k = cface.size() ; k < maxfaces; ++k) gids(j, k) = 0;
   }
 
   // Import these GIDs to all used cells; sets values on ghost cells.
@@ -658,12 +661,11 @@ bool
 MeshLogicalAudit::check_face_partition() const
 {
   // Mark all the faces contained by owned cells.
-  bool owned[nface];
-  for (int j = 0; j < nface; ++j) owned[j] = false;
+  std::vector<bool> owned(nface, false);
   MeshHost::cEntity_ID_View cface;
   for (Entity_ID j = 0; j < mesh->getMap(Entity_kind::CELL, false).NumMyElements(); ++j) {
     mesh->getCellFaces(j, cface);
-    for (int k = 0; k < cface.size(); ++k) owned[cface[k]] = true;
+    for (int k = 0; k < cface.size() ; ++k) owned[cface[k]] = true;
   }
 
   // Verify that every owned face has been marked as belonging to an owned cell.
@@ -693,7 +695,7 @@ MeshLogicalAudit::same_face(const MeshHost::Entity_ID_View fnode1,
 {
   int nn = fnode1.size();
 
-  if (nn != fnode2.size()) return 0;
+  if (nn != fnode2.size() ) return 0;
 
   // Locate position in fnode1 of fnode2[0].
   int i, n;
@@ -734,7 +736,7 @@ MeshLogicalAudit::write_list(const Entity_ID_List& list, unsigned int max_out) c
 {
   int num_out = min((unsigned int)list.size(), max_out);
   for (int i = 0; i < num_out; ++i) os << " " << list[i];
-  if (num_out < list.size()) os << " [" << list.size() - num_out << " items omitted]";
+  if (num_out < list.size() ) os << " [" << list.size() - num_out << " items omitted]";
   os << std::endl;
 }
 

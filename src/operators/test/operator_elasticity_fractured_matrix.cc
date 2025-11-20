@@ -39,7 +39,7 @@
 /* *****************************************************************
 * Elasticity model: exactness test.
 ***************************************************************** */
-template <class Analytic>
+template<class Analytic>
 double
 RunTest(int icase, double mu, double lambda, double tol = 1e-10)
 {
@@ -50,8 +50,7 @@ RunTest(int icase, double mu, double lambda, double tol = 1e-10)
 
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0)
-    std::cout << "\nTEST: 3D elasticity: exactness test" << std::endl;
+  if (MyPID == 0) std::cout << "\nTEST: 3D elasticity: exactness test" << std::endl;
 
   // read parameter list
   // -- it specifies details of the mesh, elasticity operator, and solver
@@ -61,7 +60,9 @@ RunTest(int icase, double mu, double lambda, double tol = 1e-10)
   Teuchos::ParameterList op_list = plist.sublist("PK operator").sublist("elasticity operator");
 
   if (icase == 3) {
-    plist.sublist("regions").sublist("fracture").sublist("region: plane")
+    plist.sublist("regions")
+      .sublist("fracture")
+      .sublist("region: plane")
       .set<Teuchos::Array<double>>("normal", { 1.0, 1.0, 1.0 });
   }
 
@@ -76,10 +77,8 @@ RunTest(int icase, double mu, double lambda, double tol = 1e-10)
   MeshFactory meshfactory(comm, gm, mesh_list);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<const Mesh> mesh;
-  if (icase == 1)
-    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 6, 6, 6);
-  else 
-    mesh = meshfactory.create("test/tetrahedra.exo");
+  if (icase == 1) mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 6, 6, 6);
+  else mesh = meshfactory.create("test/tetrahedra.exo");
 
   // -- general information about mesh
   int ncells_owned =
@@ -89,13 +88,14 @@ RunTest(int icase, double mu, double lambda, double tol = 1e-10)
   int nnodes_wghost =
     mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
-  int nfaces_fracture = mesh->getSetEntities(
-    "fracture", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL).size();
+  int nfaces_fracture =
+    mesh->getSetEntities("fracture", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL)
+      .size();
   std::cout << "Mesh: cells=" << ncells_owned << " fracture faces=" << nfaces_fracture << std::endl;
 
   // select an analytic solution for error calculations and setup of
   // boundary conditions
-  Analytic ana(mesh, mu, lambda, false);
+  Analytic ana(mesh, mu, lambda);
 
   auto K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   for (int c = 0; c < ncells_owned; c++) {
@@ -119,9 +119,8 @@ RunTest(int icase, double mu, double lambda, double tol = 1e-10)
   for (int v = 0; v < nnodes_wghost; ++v) {
     auto xv = mesh->getNodeCoordinate(v);
 
-    if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 || 
-        fabs(xv[1]) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6 ||
-        fabs(xv[2]) < 1e-6 || fabs(xv[2] - 1.0) < 1e-6) {
+    if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 || fabs(xv[1]) < 1e-6 ||
+        fabs(xv[1] - 1.0) < 1e-6 || fabs(xv[2]) < 1e-6 || fabs(xv[2] - 1.0) < 1e-6) {
       bcv_model[v] = OPERATOR_BC_DIRICHLET;
       bcv_value[v] = ana.velocity_exact(xv, 0.0);
     }
@@ -129,18 +128,19 @@ RunTest(int icase, double mu, double lambda, double tol = 1e-10)
   op->AddBCs(bcv, bcv);
 
   // -- normal component of velocity on boundary faces (a scalar)
-  auto bcf = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
+  auto bcf =
+    Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bcf_model = bcf->bc_model();
   std::vector<double>& bcf_value = bcf->bc_value();
 
+  int dir;
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->getFaceCentroid(f);
-    const Point& normal = mesh->getFaceNormal(f);
+    const Point& normal = getFaceNormalExterior(*mesh, f, &dir);
     double area = mesh->getFaceArea(f);
 
-    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || 
-        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
-        fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6) {
+    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||
+        fabs(xf[1] - 1.0) < 1e-6 || fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6) {
       bcf_model[f] = OPERATOR_BC_DIRICHLET;
       bcf_value[f] = (ana.velocity_exact(xf, 0.0) * normal) / area;
     }
@@ -181,8 +181,8 @@ RunTest(int icase, double mu, double lambda, double tol = 1e-10)
   VerificationCV ver(global_op);
   ver.CheckMatrixSPD(true, true);
 
-  // get and assemble the global operator
-  global_op->UpdateRHS(source, true); // FIXME volume is missing but RHS is zero
+  // get and assemble the global operator (volume was included)
+  global_op->UpdateRHS(source, true);
   op->ApplyBCs(true, true, true);
 
   // create preconditoner using the base operator class

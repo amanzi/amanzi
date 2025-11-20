@@ -11,9 +11,9 @@
 
 This class populates region's data on a derived mesh using a field defined on
 the parent mesh. It extends capabilities provided by the "coupling" class by
-(a) including interpolation on the parent mesh, (b) rigorous treatment of 
-of special cases such as master child entity -> ghost parent entity, which 
-may happen for nodes and edges of the derived mesh. 
+(a) including interpolation on the parent mesh, (b) rigorous treatment of
+of special cases such as master child entity -> ghost parent entity, which
+may happen for nodes and edges of the derived mesh.
 
 */
 
@@ -38,12 +38,12 @@ may happen for nodes and edges of the derived mesh.
 
 namespace Amanzi {
 
-template <class FunctionBase>
+template<class FunctionBase>
 class PK_DomainFunctionParentMeshField : public FunctionBase {
  public:
   PK_DomainFunctionParentMeshField(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                    const Teuchos::RCP<const State>& S)
-    : mesh_(mesh), S_(S){};
+    : mesh_(mesh), S_(S) {};
   virtual ~PK_DomainFunctionParentMeshField() = default;
 
   typedef std::vector<std::string> RegionList;
@@ -57,11 +57,14 @@ class PK_DomainFunctionParentMeshField : public FunctionBase {
 
   // required member functions
   virtual void Compute(double t0, double t1) override;
-  virtual DomainFunction_kind getType() const override { return DomainFunction_kind::PARENT_MESH_FIELD; }
+  virtual DomainFunction_kind getType() const override
+  {
+    return DomainFunction_kind::PARENT_MESH_FIELD;
+  }
 
  protected:
-  using FunctionBase::value_;
   using FunctionBase::keyword_;
+  using FunctionBase::value_;
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<const State> S_;
@@ -78,7 +81,7 @@ class PK_DomainFunctionParentMeshField : public FunctionBase {
 /* ******************************************************************
 * Initialization adds a single function to the list of unique specs.
 ****************************************************************** */
-template <class FunctionBase>
+template<class FunctionBase>
 void
 PK_DomainFunctionParentMeshField<FunctionBase>::Init(const Teuchos::ParameterList& plist,
                                                      const std::string& keyword,
@@ -100,8 +103,9 @@ PK_DomainFunctionParentMeshField<FunctionBase>::Init(const Teuchos::ParameterLis
   AMANZI_ASSERT(region_kind == AmanziMesh::Entity_kind::FACE);
 
   // get field name and tag
-  field_key_ = slist.get<std::string>("external field key");
-  field_tag_ = Keys::readTag(slist, "external field tag");
+  Key domain_name = Keys::readDomain(slist, "domain", "domain");
+  field_key_ = Keys::readKey(slist, domain_name, "external field");
+  field_tag_ = Keys::readTag(slist, "external field");
 
   // create a list of domain ids
   RegionList regions = plist.get<Teuchos::Array<std::string>>("regions").toVector();
@@ -126,7 +130,7 @@ PK_DomainFunctionParentMeshField<FunctionBase>::Init(const Teuchos::ParameterLis
 /* ******************************************************************
 * Compute and distribute the result by coupling.
 ****************************************************************** */
-template <class FunctionBase>
+template<class FunctionBase>
 void
 PK_DomainFunctionParentMeshField<FunctionBase>::Compute(double t0, double t1)
 {

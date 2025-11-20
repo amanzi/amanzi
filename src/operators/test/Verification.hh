@@ -23,14 +23,17 @@
 #include "TreeOperator.hh"
 #include "TreeVector.hh"
 
-template <class Vector, class Operator>
+template<class Vector, class Operator>
 class Verification {
  public:
-  Verification(Teuchos::RCP<const Operator> op) : op_(op){};
-  ~Verification(){};
+  Verification(Teuchos::RCP<const Operator> op)
+    : op_(op) {};
+  ~Verification() {};
 
-  void
-  CheckMatrixSPD(bool symmetry = true, bool pos_def = true, int nloops = 2, bool assembled = false)
+  void CheckMatrixSPD(bool symmetry = true,
+                      bool pos_def = true,
+                      int nloops = 2,
+                      bool assembled = false)
   {
     Vector a(op_->DomainMap()), ha(a), b(a), hb(a);
 
@@ -127,7 +130,8 @@ class Verification {
         int n = Acell.NumRows();
 
         int info, ldv(1), lwork = 4 * n;
-        double VL, VR, dmem2[n], dwork[lwork];
+        double VL, VR;
+        std::vector<double> dmem2(n), dwork(lwork);
         Amanzi::WhetStone::DenseVector dmem1(n);
 
         Amanzi::WhetStone::DGEEV_F77("N",
@@ -136,12 +140,12 @@ class Verification {
                                      Acell.Values(),
                                      &n,
                                      dmem1.Values(),
-                                     dmem2,
+                                     dmem2.data(),
                                      &VL,
                                      &ldv,
                                      &VR,
                                      &ldv,
-                                     dwork,
+                                     dwork.data(),
                                      &lwork,
                                      &info);
 

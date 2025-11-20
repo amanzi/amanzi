@@ -6,70 +6,68 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
-
-//! State, a container for data.
-/*
-  State
-
-*/
-
 /*!
 
-State  is a  simple data-manager,  allowing PKs  to require,  read, and  write
-various fields.
+State is a simple data manager, allowing PKs to require, read, and write
+various fields. It:
 
 - Acts as a factory for data through the various require methods.
 - Provides some data protection by providing both const and non-const
-  data pointers to PKs.
-- Provides some initialization capability -- this is where all
-  independent variables can be initialized (as independent variables
-  are owned by state, not by any PK).
-
+  access to data.
+- Provides some initialization capability.
+- Can be visualized or checkpointed.
 
 .. _state-spec:
 .. admonition:: state-spec
 
    * `"evaluators`" ``[evaluator-typedinline-spec-list]`` A list of evaluators.
 
-   * `"initial conditions`" ``[list]`` A list of constant-in-time data.  Note
-     that `"initial conditions`" is not a particularly descriptive name here --
-     PDE initial conditions are generally not here.  This list consists of
+   * `"initial conditions`" ``[list]`` A list of constant-in-time data and
+     other constants (e.g. gravity and atmospheric pressure).  Note that
+     `"initial conditions`" is not a particularly descriptive name here -- PK
+     initial conditions are generally not here.
 
    * `"model parameters`" ``[list]`` A list of shared model parameters that can
      be used across all evaluators.
 
+   * `"debug`" ``[state-debug-spec]`` **optional**
+
+
+State also houses the dependency graph of all evaluators.
+
+Evaluators are individual terms used to build up a PK or MPCs.  Each
+term represents a variable in the equation, and can consist of primary
+variables (those that are solved for by a PK solver), independent
+variables (those that have no dependent variables but are provided by
+the user as data), and secondary variables (those that are functions
+of other variables).  Note that all three may be variable in space
+and/or time.
+
+
 .. _evaluator-typedinline-spec:
 .. admonition:: evaluator-typedinline-spec
 
-   * `"evaluator type`" ``[string]`` Type of the evaluator Included for
-     convenience in defining data that is not in the dependency graph,
-     constants are things (like gravity, or atmospheric pressure) which are
-     stored in state but never change.  Typically they're limited to scalars
-     and dense, local vectors.
+   * `"evaluator type`" ``[string]`` Type of the evaluator
 
 
-Example:
+State's debug spec is intended for use by PK and Evaluator developers, or occasionally
+users debugging input files.
 
-.. code-block:: xml
+.. _state-debug-spec:
+.. admonition:: state-debug-spec
 
-    <ParameterList name="state">
-      <Parameter name="initialization filename" type="string" value="_CHECK00123.h5"/>
-      <ParameterList name="evaluators">
-        <ParameterList name="pressure">
-          <Parameter name="evaluator type" type="string" value="primary variable" />
-        </ParameterList>
-      </ParameterList>
+   * `"data`" ``[Array(string)]`` A list of data.  If a variable is in this
+     list, a message is printed every time that data is required.  Setting a
+     breakpoint in a debugger on a line of code in
+     `State::CheckIsDebugData_()` will allow debugging all locations that
+     require this data, enabling debugging of incorrect or inconsistent require
+     statements.
 
-      <ParameterList name="initial conditions">
-        <Parameter name="time" type="double" value="0.0">
-        <ParameterList name="atmospheric pressure">
-          <Parameter name="value" type="double" value="101325.0" />
-        </ParameterList>
-        <ParameterList name="gravity">
-          <Parameter name="value" type="Array(double)" value="{0.0,0.0,-9.80665}" />
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
+   * `"evaluators`" ``[Array(string)]`` A list of evaluators.  If a variable is
+     in this list, a message is printed every time an evaluator for this
+     variable is reuqired.  Setting a breakpoint in a debugger in
+     `State::CheckIsDebugEval_()` will allow debugging of all locations that
+     require a given evaluator.
 
 */
 
@@ -101,6 +99,7 @@ Example:
 namespace Amanzi {
 
 class Evaluator;
+class EvaluatorAlias;
 
 enum StateConstructMode { STATE_CONSTRUCT_MODE_COPY_POINTERS, STATE_CONSTRUCT_MODE_COPY_DATA };
 
@@ -152,8 +151,9 @@ class State {
   void RegisterDomainMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh, bool deformable = false);
 
   // -- Register a mesh under a generic key.
-  void
-  RegisterMesh(const Key& key, const Teuchos::RCP<AmanziMesh::Mesh>& mesh, bool deformable = false);
+  void RegisterMesh(const Key& key,
+                    const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
+                    bool deformable = false);
 
   // Alias a mesh to an existing mesh
   void AliasMesh(const Key& target, const Key& alias);
@@ -204,9 +204,18 @@ class State {
   //
   // This Require call will not compile for factories F that do not have a
   // default constructor (e.g. Epetra_Map).
-  template <typename T, typename F>
-  F& Require(const Key& fieldname, const Tag& tag, const Key& owner = "", bool alias_ok = true)
+  //
+  // Note, aliases are created for tag == NEXT when:
+  //  1. there is no record at NEXT
+  //  2. there _is_ a record at another tag including next in the name
+  //  3. alias_ok is true
+  // This allows e.g. observations to use aliases for variables that would not
+  // otherwise exist, because they are only used in subcycled PKs, rather than
+  // forcing the creation and update of a true NEXT variable.
+  template<typename T, typename F>
+  F& Require(const Key& fieldname, const Tag& tag, const Key& owner = "", bool alias_ok = false)
   {
+    AMANZI_ASSERT(fieldname != "");
     CheckIsDebugData_(fieldname, tag);
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
@@ -217,13 +226,14 @@ class State {
 
   // This Require call is for factories that do not have a default constructor.
   // (e.g. Epetra_Map).
-  template <typename T, typename F>
+  template<typename T, typename F>
   F& Require(const F& f,
              const Key& fieldname,
              const Tag& tag,
              const Key& owner = "",
              bool alias_ok = true)
   {
+    AMANZI_ASSERT(fieldname != "");
     CheckIsDebugData_(fieldname, tag);
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
@@ -234,9 +244,10 @@ class State {
 
   // This Require call is for default-constructible data that does not need a
   // factory (e.g. plain-old-data like int, double, etc).
-  template <typename T>
+  template<typename T>
   void Require(const Key& fieldname, const Tag& tag, const Key& owner = "", bool alias_ok = true)
   {
+    AMANZI_ASSERT(fieldname != "");
     CheckIsDebugData_(fieldname, tag);
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
@@ -248,13 +259,14 @@ class State {
 
   // This Require call will not compile for factories F that do not have a
   // default constructor (e.g. Epetra_Map).
-  template <typename T, typename F>
+  template<typename T, typename F>
   F& Require(const Key& fieldname,
              const Tag& tag,
              const Key& owner,
              const std::vector<std::string>& subfield_names,
              bool alias_ok = true)
   {
+    AMANZI_ASSERT(fieldname != "");
     CheckIsDebugData_(fieldname, tag);
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
@@ -267,7 +279,7 @@ class State {
 
   // This Require call is for factories that do not have a default constructor.
   // (e.g. Epetra_Map).
-  template <typename T, typename F>
+  template<typename T, typename F>
   F& Require(const F& f,
              const Key& fieldname,
              const Tag& tag,
@@ -275,6 +287,7 @@ class State {
              const std::vector<std::string>& subfield_names,
              bool alias_ok = true)
   {
+    AMANZI_ASSERT(fieldname != "");
     CheckIsDebugData_(fieldname, tag);
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
@@ -315,7 +328,7 @@ class State {
   Record& GetRecordW(const Key& fieldname, const Tag& tag, const Key& owner);
 
   // Require derivatives
-  template <typename T, typename F>
+  template<typename T, typename F>
   F& RequireDerivative(const Key& key,
                        const Tag& tag,
                        const Key& wrt_key,
@@ -332,7 +345,7 @@ class State {
     return deriv_set.SetType<T, F>();
   }
 
-  template <typename T>
+  template<typename T>
   void RequireDerivative(const Key& key,
                          const Tag& tag,
                          const Key& wrt_key,
@@ -359,15 +372,17 @@ class State {
 
   // ignoring record access for now, this could be added to, e.g. vis
   // derivatives.
-  template <typename T>
-  const T&
-  GetDerivative(const Key& key, const Tag& tag, const Key& wrt_key, const Tag& wrt_tag) const
+  template<typename T>
+  const T& GetDerivative(const Key& key,
+                         const Tag& tag,
+                         const Key& wrt_key,
+                         const Tag& wrt_tag) const
   {
     Tag der_tag = make_tag(Keys::getKey(wrt_key, wrt_tag));
     return GetDerivativeSet(key, tag).Get<T>(der_tag);
   }
 
-  template <typename T>
+  template<typename T>
   T& GetDerivativeW(const Key& key,
                     const Tag& tag,
                     const Key& wrt_key,
@@ -378,15 +393,17 @@ class State {
     return GetDerivativeSetW(key, tag).GetW<T>(der_tag, owner);
   }
 
-  template <typename T>
-  Teuchos::RCP<const T>
-  GetDerivativePtr(const Key& key, const Tag& tag, const Key& wrt_key, const Tag& wrt_tag) const
+  template<typename T>
+  Teuchos::RCP<const T> GetDerivativePtr(const Key& key,
+                                         const Tag& tag,
+                                         const Key& wrt_key,
+                                         const Tag& wrt_tag) const
   {
     Tag der_tag = make_tag(Keys::getKey(wrt_key, wrt_tag));
     return GetDerivativeSet(key, tag).GetPtr<T>(der_tag);
   }
 
-  template <typename T>
+  template<typename T>
   Teuchos::RCP<T> GetDerivativePtrW(const Key& key,
                                     const Tag& tag,
                                     const Key& wrt_key,
@@ -399,21 +416,21 @@ class State {
 
   // Access to data
 #ifndef DISABLE_DEFAULT_TAG
-  template <typename T>
+  template<typename T>
   bool HasData(const Key& fieldname, const Tag& tag = Tags::DEFAULT) const
   {
     return HasRecord(fieldname, tag) && GetRecord(fieldname, tag).ValidType<T>();
   }
 
   // -- const
-  template <typename T>
+  template<typename T>
   const T& Get(const Key& fieldname, const Tag& tag = Tags::DEFAULT) const
   {
     return GetRecordSet(fieldname).Get<T>(tag);
   }
 
   // -- non-const
-  template <typename T>
+  template<typename T>
   T& GetW(const Key& fieldname, const Key& owner)
   {
     return GetW<T>(fieldname, Tags::DEFAULT, owner);
@@ -421,14 +438,14 @@ class State {
 
 #else
 
-  template <typename T>
+  template<typename T>
   bool HasData(const Key& fieldname, const Tag& tag) const
   {
     return HasRecord(fieldname, tag) && GetRecord(fieldname, tag).ValidType<T>();
   }
 
   // -- const
-  template <typename T>
+  template<typename T>
   const T& Get(const Key& fieldname, const Tag& tag) const
   {
     return GetRecordSet(fieldname).Get<T>(tag);
@@ -436,19 +453,19 @@ class State {
 
 #endif
 
-  template <typename T>
+  template<typename T>
   T& GetW(const Key& fieldname, const Tag& tag, const Key& owner)
   {
     return GetRecordSetW(fieldname).GetW<T>(tag, owner);
   }
 
-  template <typename T>
+  template<typename T>
   Teuchos::RCP<const T> GetPtr(const Key& fieldname, const Tag& tag) const
   {
     return GetRecordSet(fieldname).GetPtr<T>(tag);
   }
 
-  template <typename T>
+  template<typename T>
   Teuchos::RCP<T> GetPtrW(const Key& fieldname, const Tag& tag, const Key& owner)
   {
     return GetRecordSetW(fieldname).GetPtrW<T>(tag, owner);
@@ -457,7 +474,7 @@ class State {
   //
   // Sets by deep copy, not pointer
   //
-  template <typename T>
+  template<typename T>
   void Assign(const Key& fieldname, const Tag& tag, const Key& owner, const T& data)
   {
     return GetRecordSetW(fieldname).Assign(tag, owner, data);
@@ -465,7 +482,7 @@ class State {
 
 
   // Sets by pointer
-  template <typename T>
+  template<typename T>
   void SetPtr(const Key& fieldname, const Tag& tag, const Key& owner, const Teuchos::RCP<T>& data)
   {
     return GetRecordSetW(fieldname).SetPtr<T>(tag, owner, data);
@@ -494,9 +511,15 @@ class State {
 
   // -- allows PKs to add to this list to initial conditions
   Teuchos::ParameterList& ICList() { return state_plist_.sublist("initial conditions"); }
+  const Teuchos::ParameterList& ICList() const
+  {
+    return state_plist_.sublist("initial conditions");
+  }
+  Teuchos::ParameterList& GetICList(const Key& key);
+  bool HasICList(const Key& key) const;
 
   // Evaluator interface
-  Evaluator& RequireEvaluator(const Key& key, const Tag& tag);
+  Evaluator& RequireEvaluator(const Key& key, const Tag& tag, bool alias_ok = true);
 
 #ifndef DISABLE_DEFAULT_TAG
   // -- get/set
@@ -527,7 +550,7 @@ class State {
   // should be used and tested more thoroughly.
   //
   // Get a parameter list.
-  Teuchos::ParameterList GetModelParameters(std::string modelname);
+  const Teuchos::ParameterList& GetModelParameters(const std::string& modelname) const;
 
   // -----------------------------------------------------------------------------
   // State handles MeshPartitions
@@ -542,15 +565,12 @@ class State {
   // Time tags and vector copies
   // -----------------------------------------------------------------------------
   // Time accessor and mutators.
-  void require_time(const Tag& tag, const Key& owner = "time")
-  {
-    return Require<double>("time", tag, owner, false);
-  }
+  void require_time(const Tag& tag, const Key& owner = "time");
   double get_time(const Tag& tag = Tags::DEFAULT) const { return Get<double>("time", tag); }
-  void set_time(const Tag& tag, double value) { Assign("time", tag, "time", value); }
+  void set_time(const Tag& tag, double value);
   void set_time(double value) { Assign("time", Tags::DEFAULT, "time", value); }
 
-  void advance_time(const Tag& tag, double dt) { Assign("time", tag, "time", get_time(tag) + dt); }
+  void advance_time(const Tag& tag, double dt) { set_time(tag, get_time(tag) + dt); }
   void advance_time(double dt) { advance_time(Tags::DEFAULT, dt); }
 
   // can these go away in favor of time at different tags?
@@ -585,10 +605,11 @@ class State {
   // Accessors that return null if the Key does not exist.
   Teuchos::RCP<AmanziMesh::Mesh> GetMesh_(const Key& key) const;
   Teuchos::RCP<const Functions::MeshPartition> GetMeshPartition_(Key);
+  void SetEvaluator_(const Key& key, const Tag& tag, const Teuchos::RCP<Evaluator>& evaluator);
 
   // a hook to allow debuggers to connect
-  void CheckIsDebugEval_(const Key& key, const Tag& tag);
-  void CheckIsDebugData_(const Key& key, const Tag& tag);
+  bool CheckIsDebugEval_(const Key& key, const Tag& tag);
+  bool CheckIsDebugData_(const Key& key, const Tag& tag);
 
  private:
   Teuchos::RCP<VerboseObject> vo_;

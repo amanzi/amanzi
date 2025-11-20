@@ -95,7 +95,10 @@ MFD3D_Diffusion_CurvedFace::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
 int
 MFD3D_Diffusion_CurvedFace::MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W)
 {
-  int ok = MassMatrix(c, K, W);
+  Tensor Kinv(K);
+  Kinv.Inverse();
+
+  int ok = MassMatrix(c, Kinv, W);
   W.Inverse();
   return ok;
 }
@@ -122,10 +125,14 @@ MFD3D_Diffusion_CurvedFace::StiffnessMatrix(int c, const Tensor& K, DenseMatrix&
 
   double cntr(0.0);
   for (int i = 0; i < nfaces; ++i) {
-    for (int j = 0; j < nfaces; ++j) { A(i, j) = M(i, j) * area(i) * area(j); }
+    for (int j = 0; j < nfaces; ++j) {
+      A(i, j) = M(i, j) * area(i) * area(j);
+    }
 
     double add(0.0);
-    for (int j = 0; j < nfaces; ++j) { add -= M(i, j) * area(j); }
+    for (int j = 0; j < nfaces; ++j) {
+      add -= M(i, j) * area(j);
+    }
     A(nfaces, i) = A(i, nfaces) = add * area(i);
 
     cntr -= add * area(i);
@@ -154,7 +161,7 @@ MFD3D_Diffusion_CurvedFace::L2Cell(int c,
   vc.Reshape(d_, 1, true);
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
-    const AmanziGeometry::Point& fm = mesh_->getFaceCentroid(f);
+    const AmanziGeometry::Point fm = (*bf_)[f];
 
     for (int k = 0; k < d_; k++) {
       double Rik = fm[k] - cm[k];

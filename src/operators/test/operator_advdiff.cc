@@ -42,7 +42,7 @@
 /* *****************************************************************
 * Verify convergence of advection-diffusion solver for various BCs.
 * **************************************************************** */
-template <class Analytic>
+template<class Analytic>
 void
 AdvectionDiffusionStatic(int nx, double* error)
 {
@@ -247,7 +247,7 @@ TEST(ADVECTION_DIFFUSION_STATIC)
 /* *****************************************************************
 * Verify convergence of advection-diffusion solver for various BCs.
 * **************************************************************** */
-template <class Analytic>
+template<class Analytic>
 void
 AdvectionDiffusionTransient(int nx, int nloops, double* error)
 {

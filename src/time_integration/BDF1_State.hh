@@ -30,7 +30,7 @@
 
 namespace Amanzi {
 
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 struct BDF1_State {
   BDF1_State(const std::string& name,
              Teuchos::ParameterList& plist,
@@ -43,6 +43,7 @@ struct BDF1_State {
   bool extrapolate_guess; // extrapolate forward in time or use previous
                           // step as initial guess for nonlinear solver
   int extrapolation_order;
+  double extrapolation_damping;
 
   // Solution history
   Teuchos::RCP<SolutionHistory<Vector, VectorSpace>> uhist;
@@ -69,18 +70,17 @@ struct BDF1_State {
 
   // debug tool
   int report_failure;
-
 };
 
 
 /* ******************************************************************
 * Initiazition of fundamental parameters
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 BDF1_State<Vector, VectorSpace>::BDF1_State(const std::string& name,
-        Teuchos::ParameterList& plist,
-        const Teuchos::RCP<const VectorSpace>& space,
-        const Teuchos::RCP<State>& S)
+                                            Teuchos::ParameterList& plist,
+                                            const Teuchos::RCP<const VectorSpace>& space,
+                                            const Teuchos::RCP<State>& S)
   : freeze_pc(false),
     maxpclag(0),
     extrapolate_guess(true),
@@ -100,12 +100,13 @@ BDF1_State<Vector, VectorSpace>::BDF1_State(const std::string& name,
 
   // forward time extrapolation (fix me lipnikov@lanl.gov)
   extrapolate_guess = plist.get<bool>("extrapolate initial guess", true);
+  extrapolation_damping = plist.get<double>("extrapolation damping factor", 1.0);
   extrapolation_order = plist.get<int>("nonlinear iteration initial guess extrapolation order", 1);
   if (extrapolation_order == 0) extrapolate_guess = false;
 
   // solution history object
   double t0 = plist.get<double>("initial time", 0.0);
-  uhist = Teuchos::rcp(new SolutionHistory<Vector,VectorSpace>(name, uhist_size, t0, space, S));
+  uhist = Teuchos::rcp(new SolutionHistory<Vector, VectorSpace>(name, uhist_size, t0, space, S));
 
   // restart fine control
   tol_multiplier = plist.get<double>("restart tolerance relaxation factor", 1.0);

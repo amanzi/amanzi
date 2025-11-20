@@ -110,18 +110,9 @@ MechanicsSmallStrain_PK::Initialize()
 {
   Mechanics_PK::Initialize();
 
-  // -- miscalleneous defaults
+  // miscalleneous defaults
   num_itrs_ = 0;
   double t_ini = S_->get_time();
-
-  // -- control parameters
-  auto physical_models = Teuchos::sublist(ec_list_, "physical models and assumptions");
-  use_gravity_ = physical_models->get<bool>("use gravity");
-  thermoelasticity_ = physical_models->get<bool>("thermoelasticity", false);
-
-  split_undrained_ = physical_models->get<bool>("biot scheme: undrained split", false);
-  split_fixed_stress_ = physical_models->get<bool>("biot scheme: fixed stress split", false);
-  poroelasticity_ = split_undrained_ || split_fixed_stress_;
 
   // Create pointers to the primary flow field displacement.
   solution_ = S_->GetPtrW<CV_t>(displacement_key_, Tags::DEFAULT, passwd_);
@@ -131,7 +122,8 @@ MechanicsSmallStrain_PK::Initialize()
   std::string ti_method_name = ti_list_->get<std::string>("time integration method", "none");
   if (ti_method_name == "BDF1") {
     Teuchos::ParameterList& bdf1_list = ti_list_->sublist("BDF1");
-    bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1", bdf1_list, *this, soln_->get_map(), S_));
+    bdf1_dae_ = Teuchos::rcp(
+      new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1", bdf1_list, *this, soln_->get_map(), S_));
   }
 
   // Initialize matrix and preconditioner
@@ -149,7 +141,7 @@ MechanicsSmallStrain_PK::Initialize()
   //    the grad-div structure. It is critical that it uses a separate global
   //    operator pointer. Its local matrices are shared with the original
   //    physics operator.
-  if (split_undrained_) {
+  if (assumptions_.undrained_split) {
     std::string method = tmp1.sublist("schema").get<std::string>("method");
     tmp1.sublist("schema").set<std::string>("method", method + " graddiv");
     op_matrix_graddiv_ = factory.Create(tmp1, mesh_);
@@ -190,7 +182,9 @@ MechanicsSmallStrain_PK::Initialize()
 
   // we set up operators and can trigger re-initialization of stress
   eval_hydro_stress_->set_op(op_matrix_elas_);
-  eval_vol_strain_->set_op(op_matrix_elas_);
+  Teuchos::rcp_dynamic_cast<Evaluators::VolumetricStrainEvaluator>(
+    S_->GetEvaluatorPtr(vol_strain_key_, Tags::DEFAULT))
+    ->set_op(op_matrix_elas_);
   eval_shear_strain_->set_op(op_matrix_elas_);
   eval_->SetChanged();
 

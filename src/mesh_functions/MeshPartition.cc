@@ -48,7 +48,7 @@ MeshPartition::Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, cons
     auto block = mesh->getSetEntities(regions_[lcv], kind_, AmanziMesh::Parallel_kind::OWNED);
 
     for (auto id : block) {
-      if ((*map_)[id] >= 0) fail = 1;
+      if ((*map_) [id] >= 0) fail = 1;
       (*map_)[id] = lcv;
     }
   }
@@ -105,7 +105,7 @@ MeshPartition::Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
       regions_.push_back(regs[r]);
 
       for (auto id : block) {
-        if ((*map_)[id] >= 0) fail = 1;
+        if ((*map_) [id] >= 0) fail = 1;
         (*map_)[id] = lcv;
       }
     }
@@ -151,7 +151,7 @@ MeshPartition::Verify() const
   for (AmanziMesh::Entity_ID id = 0; id < map_->MyLength(); id++) {
     if ((*map_)[id] == default_value_) {
       Errors::Message msg("The following mesh partition regions do not cover the mesh:");
-      for (auto it = regions_.begin(); it != regions_.end(); ++it) msg << " " << *it;
+      for (auto it = regions_.begin() ; it != regions_.end(); ++it) msg << " " << *it;
       Exceptions::amanzi_throw(msg);
     }
   }

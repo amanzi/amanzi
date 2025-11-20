@@ -66,10 +66,8 @@ PDE_Abstract::Init_(Teuchos::ParameterList& plist)
   // discretization method:
   auto mfd_domain = WhetStone::BilinearFormFactory::Create(domain, mesh_);
   Teuchos::RCP<WhetStone::BilinearForm> mfd_range;
-  if (!symmetric)
-    mfd_range = WhetStone::BilinearFormFactory::Create(range, mesh_);
-  else
-    mfd_range = mfd_domain;
+  if (!symmetric) mfd_range = WhetStone::BilinearFormFactory::Create(range, mesh_);
+  else mfd_range = mfd_domain;
 
   // At the moment, a bilinear form is based on one
   // element, so we need to specify its non-default location
@@ -229,6 +227,19 @@ PDE_Abstract::UpdateMatrices(double t)
     msg << "Unsupported value of matrix=" << matrix_ << "\n";
     Exceptions::amanzi_throw(msg);
   }
+}
+
+
+/* *******************************************************************
+* Optional calculation of flux from potential p
+******************************************************************* */
+void
+PDE_Abstract::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
+                         const Teuchos::Ptr<CompositeVector>& u)
+{
+  Errors::Message msg;
+  msg << "Unsupported flux update=\n";
+  Exceptions::amanzi_throw(msg);
 }
 
 

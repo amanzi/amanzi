@@ -1,6 +1,5 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-
   <!--  REGIONS  -->
   <ParameterList name="regions">
     <ParameterList name="Universe">
@@ -9,32 +8,32 @@
     </ParameterList>
     <ParameterList name="ALL">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{2.0,1.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{2.0, 1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="LEFT">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{-1.0,0.0}"/>
+        <Parameter name="point" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{-1.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="RIGHT">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{2.0,0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{1.0,0.0}"/>
+        <Parameter name="point" type="Array(double)" value="{2.0, 0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{1.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="MIDDLE1">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{1.0,0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{1.0,0.0}"/>
+        <Parameter name="point" type="Array(double)" value="{1.0, 0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{1.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="MIDDLE2">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{1.01,0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{1.0,0.0}"/>
+        <Parameter name="point" type="Array(double)" value="{1.01, 0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{1.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -42,16 +41,14 @@
   <!--  OPERATORS  -->
   <ParameterList name="PK operators">
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-
     <ParameterList name="diffusion operator">
       <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-      <Parameter name="schema" type="Array(string)" value="{cell,face}"/>
+      <Parameter name="schema" type="Array(string)" value="{cell, face}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
       <Parameter name="gravity" type="bool" value="false"/>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="reconstruction">
     <Parameter name="polynomial order" type="int" value="0"/>
     <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
@@ -59,7 +56,6 @@
     <Parameter name="limiter location" type="string" value="node"/>
     <Parameter name="limiter cfl" type="double" value="1.0"/>
   </ParameterList>
-
   <!-- SOLVERS -->
   <ParameterList name="solvers">
     <ParameterList name="PCG">
@@ -78,7 +74,6 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
@@ -97,4 +92,3 @@
     </ParameterList>
   </ParameterList>
 </ParameterList>
-

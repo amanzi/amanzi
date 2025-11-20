@@ -115,7 +115,7 @@ SUITE(GeochemistryTestsChemistryPK)
 
   ChemistryPKTest::~ChemistryPKTest() {}
 
-  void ChemistryPKTest::RunTest(const std::string name, double* gamma){};
+  void ChemistryPKTest::RunTest(const std::string name, double* gamma) {};
 
 
   /* ***************************************************************************
@@ -139,18 +139,14 @@ SUITE(GeochemistryTestsChemistryPK)
   {
     // make sure that we can initialize the pk and internal chemistry
     // object correctly based on the xml input....
-    try {
-      cpk_ = new ac::Amanzi_PK(pk_tree_, glist_, state_, Teuchos::null);
-      cpk_->parseParameterList();
-      cpk_->Setup();
-      state_->Setup();
-      state_->InitializeFields();
-      state_->InitializeEvaluators();
-      cpk_->Initialize();
-    } catch (std::exception& e) {
-      std::cout << "ERROR test2 " << e.what() << std::endl;
-      throw e;
-    }
+    cpk_ = new ac::Amanzi_PK(pk_tree_, glist_, state_, Teuchos::null);
+    cpk_->parseParameterList();
+    cpk_->Setup();
+    state_->Setup();
+    state_->InitializeFields();
+    state_->InitializeEvaluators();
+    cpk_->Initialize();
+
     // assume all is right with the world if we exited w/o an error
     CHECK_EQUAL(0, 0);
   }
@@ -158,18 +154,14 @@ SUITE(GeochemistryTestsChemistryPK)
 
   TEST_FIXTURE(ChemistryPKTest, ChemistryPK_get_chem_output_names)
   {
-    try {
-      cpk_ = new ac::Amanzi_PK(pk_tree_, glist_, state_, Teuchos::null);
-      cpk_->parseParameterList();
-      cpk_->Setup();
-      state_->Setup();
-      state_->InitializeFields();
-      state_->InitializeEvaluators();
-      cpk_->Initialize();
-    } catch (std::exception& e) {
-      std::cout << "ERROR test3 " << e.what() << std::endl;
-      throw e;
-    }
+    cpk_ = new ac::Amanzi_PK(pk_tree_, glist_, state_, Teuchos::null);
+    cpk_->parseParameterList();
+    cpk_->Setup();
+    state_->Setup();
+    state_->InitializeFields();
+    state_->InitializeEvaluators();
+    cpk_->Initialize();
+
     std::vector<std::string> names;
     cpk_->set_chemistry_output_names(&names);
     std::cout << names.at(0) << "\n";

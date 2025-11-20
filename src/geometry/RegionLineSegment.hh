@@ -7,33 +7,28 @@
   Authors: Daniil Svyatsky (dasvyat@lanl.gov)
 */
 
-//! RegionLineSegment: A line segment, defined by two points in space.
+//! A line segment, defined by two points in space.
 /*!
 
-List *region: line segment* desribes a region defined by a line
-segment. This region is a set of cells which intersect with a line
-segment.  The line segment is allowed to intersect with one or more cells. Zero length
-line segments are allowed. The line segment is defined by its ends
-points.
+`"region type`" = `"line segment`"
 
 .. _region-line-segment-spec:
 .. admonition:: region-line-segment-spec
 
-    * `"end coordinate`" ``[Array(double)]`` Location of one end of a line
-      segment.
-    * `"opposite end coordinate`" ``[Array(double)]`` Location of the opposite
-      end of a line segment.
+   * `"end coordinate`" ``[Array(double)]`` Location of one end of a line
+     segment.
+   * `"opposite end coordinate`" ``[Array(double)]`` Location of the opposite
+     end of a line segment.
 
 Example:
 
 .. code-block:: xml
 
-   <ParameterList name="WELL"> <!-- parent list -->
-      <ParameterList name="region: line segment">
-        <Parameter name="end coordinate" type="Array(double)" value="{497542.44, 5393755.77, 0.0}"/>
-        <Parameter name="opposite end coordinate" type="Array(double)" value="{497542.44, 5393755.77, 100.0}"/>
-      </ParameterList>
-    </ParameterList>
+   <ParameterList name="WELL">
+     <Parameter name="region type" type="string" value="line segment"/>
+     <Parameter name="end coordinate" type="Array(double)" value="{497542.44, 5393755.77, 0.0}"/>
+     <Parameter name="opposite end coordinate" type="Array(double)" value="{497542.44, 5393755.77, 100.0}"/>
+   </ParameterList>
 
 */
 
@@ -66,8 +61,8 @@ class RegionLineSegment : public Region {
   // a 0 if not.
   //
   // Polyhedron with counter clockwise ordered faces (wrt normals)
-  double
-  intersect(const std::vector<Point>& polytope, const std::vector<std::vector<int>>& faces) const;
+  double intersect(const std::vector<Point>& polytope,
+                   const std::vector<std::vector<int>>& faces) const;
 
   void ComputeInterLinePoints(const std::vector<Point>& polytope,
                               const std::vector<std::vector<int>>& faces,
@@ -80,11 +75,9 @@ class RegionLineSegment : public Region {
   //bool complete_;
 };
 
-double
-PlaneLineIntersection(const std::vector<Point>& plane, const std::vector<Point>& line);
+double PlaneLineIntersection(const std::vector<Point>& plane, const std::vector<Point>& line);
 
-double
-det_aux(const std::vector<double>& first_row, const std::vector<double>& submatr);
+double det_aux(const std::vector<double>& first_row, const std::vector<double>& submatr);
 
 } // namespace AmanziGeometry
 } // namespace Amanzi

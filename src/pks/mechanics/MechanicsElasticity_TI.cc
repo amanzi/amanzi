@@ -38,9 +38,9 @@ MechanicsElasticity_PK::FunctionalResidual(double t_old,
 
   // Add external forces
   auto rhs = op_matrix_->rhs();
-  if (use_gravity_) AddGravityTerm(*rhs);
-  if (poroelasticity_) AddPressureGradient(*rhs);
-  if (thermoelasticity_) AddTemperatureGradient(*rhs);
+  if (assumptions_.use_gravity) AddGravityTerm(*rhs);
+  if (assumptions_.poroelasticity) AddPressureGradient(*rhs);
+  if (assumptions_.thermoelasticity) AddTemperatureGradient(*rhs);
 
   op_matrix_elas_->UpdateMatrices();
   op_matrix_elas_->ApplyBCs(true, true, true);
@@ -90,7 +90,7 @@ double
 MechanicsElasticity_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
                                   Teuchos::RCP<const TreeVector> du)
 {
-  if (!u->Data()->HasComponent("node")) return 0.0;
+  if (!u->Data() ->HasComponent("node")) return 0.0;
 
   const auto& uv = *u->Data()->ViewComponent("node");
   const auto& duv = *du->Data()->ViewComponent("node");

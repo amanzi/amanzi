@@ -80,7 +80,7 @@ EnergyTwoPhase_PK::Setup()
       .set<double>("liquid molar mass", molar_mass)
       .set<std::string>("tag", "");
     elist.setName(energy_key_);
-    if (flow_on_manifold_) elist.set<std::string>("aperture key", aperture_key_);
+    if (assumptions_.flow_on_manifold) elist.set<std::string>("aperture key", aperture_key_);
 
     auto ee = Teuchos::rcp(new TotalEnergyEvaluator(elist));
     S_->SetEvaluator(energy_key_, Tags::DEFAULT, ee);
@@ -269,7 +269,8 @@ EnergyTwoPhase_PK::Initialize()
     if (!bdf1_list.isSublist("verbose object"))
       bdf1_list.sublist("verbose object") = ep_list_->sublist("verbose object");
 
-    bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1", bdf1_list, *this, soln_->get_map(), S_));
+    bdf1_dae_ = Teuchos::rcp(
+      new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1", bdf1_list, *this, soln_->get_map(), S_));
   }
 
   // initialize boundary conditions

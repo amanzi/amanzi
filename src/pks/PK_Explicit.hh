@@ -24,10 +24,14 @@
 
 namespace Amanzi {
 
-template <class Vector>
-class PK_Explicit : virtual public PK, public Explicit_TI::fnBase<Vector> {
+template<class Vector>
+class PK_Explicit
+  : virtual public PK
+  , public Explicit_TI::fnBase<Vector> {
  public:
-  PK_Explicit() : PK(), Explicit_TI::fnBase<Vector>() {}
+  PK_Explicit()
+    : PK(), Explicit_TI::fnBase<Vector>()
+  {}
 
   PK_Explicit(Teuchos::ParameterList& pk_tree,
               const Teuchos::RCP<Teuchos::ParameterList>& global_plist,

@@ -24,8 +24,14 @@ namespace Transport {
 Teuchos::RCP<MDM>
 MDMFactory::Create(Teuchos::ParameterList& plist)
 {
-  std::string mdm_typename = plist.get<std::string>("model", "scalar");
-  Teuchos::ParameterList& tmp_list = plist.sublist("parameters for " + mdm_typename);
+  std::string mdm_typename;
+  if (plist.isParameter("model")) {
+    mdm_typename = plist.get<std::string>("model");
+  } else {
+    mdm_typename = plist.get<std::string>("mechanical dispersion type", "isotropic");
+  }
+
+  Teuchos::ParameterList& tmp_list = plist.sublist(mdm_typename + " parameters");
   return Teuchos::rcp(CreateInstance(mdm_typename, tmp_list));
 };
 

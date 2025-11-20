@@ -19,21 +19,6 @@ include(${SuperBuild_SOURCE_DIR}/TPLVersions.cmake)
 amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   PREFIX CrunchTope
   VERSION ${CRUNCHTOPE_VERSION_MAJOR} ${CRUNCHTOPE_VERSION_MINOR} ${CRUNCHTOPE_VERSION_PATCH})
-  
-
-# --- Patch the original code
-# set(CRUNCHTOPE_patch_file crunchtope-cmake.patch)
-# set(CRUNCHTOPE_sh_patch ${CRUNCHTOPE_prefix_dir}/crunchtope-patch-step.sh)
-# configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/crunchtope-patch-step.sh.in
-#               ${CRUNCHTOPE_sh_patch}
-#               @ONLY)
-# configure the CMake patch step
-#set(CRUNCHTOPE_cmake_patch ${CRUNCHTOPE_prefix_dir}/crunchtope-patch-step.cmake)
-#configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/crunchtope-patch-step.cmake.in
-#               ${CRUNCHTOPE_cmake_patch}
-#               @ONLY)
-# set the patch command
-#set(CRUNCHTOPE_PATCH_COMMAND ${CMAKE_COMMAND} -P ${CRUNCHTOPE_cmake_patch})
 
 # --- Define the arguments passed to CMake.
 set(CrunchTope_CMAKE_ARGS 
@@ -45,6 +30,20 @@ set(CrunchTope_CMAKE_ARGS
       "-DTPL_PETSC_INCLUDE_DIRS:PATH=${PETSc_DIR}/include"
       "-DPETSC_ARCH:PATH=.")
 
+# --- Override minimum version
+if(CMAKE_MAJOR_VERSION VERSION_EQUAL "4")
+  list(APPEND CrunchTope_CMAKE_ARGS "-DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.5")
+endif()
+
+
+# --- patch step is empty
+#set(CrunchTope_patch_file "")
+patch_tpl(CrunchTope
+        ${CrunchTope_prefix_dir}
+        ${CrunchTope_source_dir}
+        ${CrunchTope_stamp_dir}
+        CrunchTope_patch_file)
+
 # --- Add external project build and tie to the CrunchTope build target
 ExternalProject_Add(${CrunchTope_BUILD_TARGET}
                     DEPENDS   ${CrunchTope_PACKAGE_DEPENDS}           # Package dependency target
@@ -55,7 +54,7 @@ ExternalProject_Add(${CrunchTope_BUILD_TARGET}
                     URL          ${CrunchTope_URL}                    # URL may be a web site OR a local file
                     URL_MD5      ${CrunchTope_MD5_SUM}                # md5sum of the archive file
                     # -- Patch 
-                    # PATCH_COMMAND ${CrunchTope_PATCH_COMMAND}       # Mods to source
+                    PATCH_COMMAND ${CrunchTope_PATCH_COMMAND}       # Mods to source
                     # -- Configure
                     SOURCE_DIR    ${CrunchTope_source_dir}            # Source directory
                     CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}       # Ensure uniform build

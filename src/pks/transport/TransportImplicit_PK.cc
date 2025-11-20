@@ -68,26 +68,6 @@ TransportImplicit_PK::TransportImplicit_PK(Teuchos::ParameterList& pk_tree,
 
 
 /* ******************************************************************
-* Simple constructor for unit tests.
-****************************************************************** */
-TransportImplicit_PK::TransportImplicit_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                                           Teuchos::RCP<State> S,
-                                           const std::string& pk_list_name,
-                                           std::vector<std::string>& component_names)
-  : Transport_PK(glist, S, pk_list_name, component_names)
-{
-  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  tp_list_ = Teuchos::sublist(pk_list, pk_list_name, true);
-
-  // We also need miscaleneous sublists
-  preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
-  linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
-  if (tp_list_->isSublist("time integrator"))
-    ti_list_ = Teuchos::sublist(tp_list_, "time integrator", true);
-}
-
-
-/* ******************************************************************
 * Initialization
 ****************************************************************** */
 void
@@ -107,7 +87,7 @@ TransportImplicit_PK::Initialize()
 
   // operators
   // -- dispertion and/or diffusion
-  if (use_dispersion_) {
+  if (assumptions_.use_dispersion) {
     D_.resize(ncells_owned);
     Teuchos::RCP<std::vector<WhetStone::Tensor>> Dptr = Teuchos::rcpFromRef(D_);
     Teuchos::ParameterList& oplist_d =
@@ -123,7 +103,7 @@ TransportImplicit_PK::Initialize()
   // Solution vector does not match tcc in general, even for one species.
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh_)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)->SetGhosted(true);
-  if (use_dispersion_) cvs = op_diff_->global_operator()->DomainMap();
+  if (assumptions_.use_dispersion) cvs = op_diff_->global_operator()->DomainMap();
 
   solution_ = Teuchos::rcp(new CompositeVector(cvs));
   soln_->SetData(solution_);
@@ -159,8 +139,8 @@ TransportImplicit_PK::Initialize()
       udot->PutScalar(0.0);
 
       for (int i = 0; i < num_aqueous; i++) {
-        bdf1_dae_.push_back(
-          Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(name_, bdf1_list, *this, soln_->get_map(), S_)));
+        bdf1_dae_.push_back(Teuchos::rcp(
+          new BDF1_TI<TreeVector, TreeVectorSpace>(name_, bdf1_list, *this, soln_->get_map(), S_)));
         bdf1_dae_[i]->SetInitialState(0.0, soln_, udot);
       }
     } else {
@@ -258,7 +238,7 @@ TransportImplicit_PK::AdvanceStepLO_(double t_old, double t_new, int* tot_itrs)
     op_adv_->UpdateMatrices(S_->GetPtr<CV_t>(vol_flowrate_key_, Tags::DEFAULT).ptr());
     op_adv_->ApplyBCs(true, true, true);
 
-    if (use_dispersion_) {
+    if (assumptions_.use_dispersion) {
       int phase;
       double md;
       CalculateDispersionTensor_(t_old + dt_ / 2, *transport_phi, wc_c);
@@ -358,7 +338,7 @@ TransportImplicit_PK::UpdateLinearSystem(double t_old, double t_new, int compone
   op_adv_->UpdateMatrices(S_->GetPtr<CV_t>(vol_flowrate_key_, Tags::DEFAULT).ptr());
   op_adv_->ApplyBCs(true, true, true);
 
-  if (use_dispersion_) {
+  if (assumptions_.use_dispersion) {
     int phase;
     double md;
     CalculateDispersionTensor_(t_old + dt / 2, *transport_phi, wc_c);

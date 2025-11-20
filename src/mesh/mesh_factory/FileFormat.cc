@@ -36,19 +36,19 @@ fileFormatName(const FileFormat f)
 {
   std::string result;
   switch (f) {
-  case FileFormat::UNKNOWN:
-  default:
-    result = "Unknown";
-    break;
-  case FileFormat::EXODUS_II:
-    result = "ExodusII";
-    break;
-  case FileFormat::NEMESIS:
-    result = "ExodusII";
-    break;
-  case FileFormat::MOAB_HDF5:
-    result = "HDF5 (Framework::MOAB)";
-    break;
+    case FileFormat::UNKNOWN:
+    default:
+      result = "Unknown";
+      break;
+    case FileFormat::EXODUS_II:
+      result = "ExodusII";
+      break;
+    case FileFormat::NEMESIS:
+      result = "ExodusII";
+      break;
+    case FileFormat::MOAB_HDF5:
+      result = "HDF5 (Framework::MOAB)";
+      break;
   }
   return result;
 }
@@ -121,35 +121,41 @@ fileFormatFromFilename(const Comm_type& comm, std::string fname)
   std::string fmagic;
   bool ok(false);
   switch (result) {
-  case (FileFormat::UNKNOWN):
-    Exceptions::amanzi_throw(e);
-    break;
-  case (FileFormat::EXODUS_II):
-  case (FileFormat::NEMESIS):
-    fmagic.assign(buffer, NetCDFmagic1.size());
-    if (fmagic == NetCDFmagic1) { ok = true; }
-    fmagic.assign(buffer, NetCDFmagic2.size());
-    if (fmagic == NetCDFmagic2) { ok = true; }
-    if (!ok) {
-      e.add_data(": bad magic number, expected NetCDF");
+    case (FileFormat::UNKNOWN):
+      Exceptions::amanzi_throw(e);
+      break;
+    case (FileFormat::EXODUS_II):
+    case (FileFormat::NEMESIS):
+      fmagic.assign(buffer, NetCDFmagic1.size());
+      if (fmagic == NetCDFmagic1) {
+        ok = true;
+      }
+      fmagic.assign(buffer, NetCDFmagic2.size());
+      if (fmagic == NetCDFmagic2) {
+        ok = true;
+      }
+      if (!ok) {
+        e.add_data(": bad magic number, expected NetCDF");
+        fmagic.assign(buffer, HDF5magic.size());
+        if (fmagic == HDF5magic) {
+          ok = true;
+        } else {
+          e.add_data(", expected HDF5");
+        }
+      }
+      break;
+    case (FileFormat::MOAB_HDF5):
       fmagic.assign(buffer, HDF5magic.size());
       if (fmagic == HDF5magic) {
         ok = true;
       } else {
-        e.add_data(", expected HDF5");
+        e.add_data(": bad magic number, expected HDF5");
       }
-    }
-    break;
-  case (FileFormat::MOAB_HDF5):
-    fmagic.assign(buffer, HDF5magic.size());
-    if (fmagic == HDF5magic) {
-      ok = true;
-    } else {
-      e.add_data(": bad magic number, expected HDF5");
-    }
-    break;
+      break;
   }
-  if (!ok) { Exceptions::amanzi_throw(e); }
+  if (!ok) {
+    Exceptions::amanzi_throw(e);
+  }
 
   return result;
 }

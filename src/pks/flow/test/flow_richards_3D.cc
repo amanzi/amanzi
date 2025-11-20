@@ -53,8 +53,7 @@ TEST(FLOW_3D_RICHARDS)
 
   // create an SIMPLE mesh framework
   Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
-  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
+  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
 
   Preference pref;
   pref.clear();

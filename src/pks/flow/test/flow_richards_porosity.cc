@@ -136,8 +136,11 @@ TEST(FLOW_POROSITY_MODELS)
   phi.MaxValue(&pmax);
   CHECK(pmin + 0.02 < pmax);
 
-  Teuchos::ParameterList& tmp =
-    plist->sublist("PKs").sublist("flow").sublist("porosity models").sublist("POM for Material 2");
+  Teuchos::ParameterList& tmp = plist->sublist("state")
+                                  .sublist("evaluators")
+                                  .sublist("porosity")
+                                  .sublist("parameters")
+                                  .sublist("POM for Material 2");
   std::cout << "Mat2: ref pressure:" << tmp.get<double>("reference pressure") << std::endl;
   std::cout << "      compressibility:" << tmp.get<double>("pore compressibility") << std::endl;
   std::cout << "Porosity min = " << pmin << std::endl;

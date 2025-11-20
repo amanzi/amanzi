@@ -70,7 +70,8 @@ ComputeEigenvalues(const Amanzi::WhetStone::DenseMatrix& matrix,
   int n = A.NumRows();
 
   int info, ldv(1), lwork = 4 * n;
-  double VL, VR, dwork[lwork];
+  double VL, VR;
+  std::vector<double> dwork(lwork);
 
   real.Reshape(n);
   imag.Reshape(n);
@@ -86,7 +87,7 @@ ComputeEigenvalues(const Amanzi::WhetStone::DenseMatrix& matrix,
                                &ldv,
                                &VR,
                                &ldv,
-                               dwork,
+                               dwork.data(),
                                &lwork,
                                &info);
 }

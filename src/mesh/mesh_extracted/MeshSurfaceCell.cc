@@ -41,11 +41,9 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const MeshFramework>& parent
   parent_ = parent_mesh;
 
   // set dimensions
-  if (flatten) {
-    setSpaceDimension(2);
-  } else {
-    setSpaceDimension(3);
-  }
+  if (flatten) setSpaceDimension(2);
+  else setSpaceDimension(3);
+
   setManifoldDimension(2);
   parent_face_ = 0; // the parent face is always the 0th by construction of a
                     // MeshColumn
@@ -88,12 +86,12 @@ MeshSurfaceCell::getNumEntities(const Entity_kind kind, const Parallel_kind ptyp
 {
   int count;
   switch (kind) {
-  case Entity_kind::CELL:
-    count = 1;
-    break;
-  default: // num_nodes == num_faces == num_boundary_faces
-    count = nodes_.size();
-    break;
+    case Entity_kind::CELL:
+      count = 1;
+      break;
+    default: // num_nodes == num_faces == num_boundary_faces
+      count = nodes_.size();
+      break;
   }
   return count;
 }
@@ -107,7 +105,7 @@ MeshSurfaceCell::getCellNodes(const Entity_ID cellid, cEntity_ID_View& nodeids) 
 {
   AMANZI_ASSERT(cellid == 0);
   Entity_ID_View lnodeids("lnodesids", nodes_.size());
-  for (int i = 0; i != nodes_.size(); ++i) lnodeids[i] = i;
+  for (int i = 0; i != nodes_.size() ; ++i) lnodeids[i] = i;
   nodeids = lnodeids;
 }
 
@@ -167,7 +165,7 @@ MeshSurfaceCell::getCellFacesAndDirs(const Entity_ID cellid,
   AMANZI_ASSERT(cellid == 0);
   Entity_ID_View lfaceids("lfaceids", nodes_.size());
   Direction_View lface_dirs;
-  for (int i = 0; i != nodes_.size(); ++i) lfaceids[i] = i;
+  for (int i = 0; i != nodes_.size() ; ++i) lfaceids[i] = i;
   if (face_dirs) {
     Kokkos::resize(lface_dirs, nodes_.size());
     Kokkos::deep_copy(lface_dirs, 1);

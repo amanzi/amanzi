@@ -12,21 +12,22 @@
 
 #include <algorithm>
 #include <string>
+#include <vector>
 
 namespace Errors {
 
 #define CHAR_MAX_VALUE 127;
 
-void
-encode_string(std::string& s, int n, int m, int* out)
+inline void
+encode_string(std::string& s, int n, int m, std::vector<int>& out)
 {
   int mc = m * CHAR_MAX_VALUE;
   for (int i = 0; i < n; ++i) out[i] = mc + (int)s[i];
   out[n] = mc;
 }
 
-void
-decode_string(int* in, int n, std::string& s)
+inline void
+decode_string(const std::vector<int>& in, int n, std::string& s)
 {
   int m = in[n];
   for (int i = 0; i < n; ++i) s[i] = in[i] - m;

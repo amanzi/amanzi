@@ -21,13 +21,12 @@
 
 namespace Amanzi {
 
-class Observable;
+class ObservableAmanzi;
 
-Teuchos::RCP<Observable>
-CreateObservable(Teuchos::ParameterList& coord_plist,
-                 Teuchos::ParameterList& observable_plist,
-                 Teuchos::ParameterList& units_plist,
-                 Teuchos::RCP<const AmanziMesh::Mesh> mesh);
+Teuchos::RCP<ObservableAmanzi> CreateObservable(Teuchos::ParameterList& coord_plist,
+                                                Teuchos::ParameterList& observable_plist,
+                                                Teuchos::ParameterList& units_plist,
+                                                Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
 } // namespace Amanzi
 

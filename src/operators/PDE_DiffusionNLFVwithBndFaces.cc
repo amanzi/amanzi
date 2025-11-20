@@ -66,7 +66,9 @@ PDE_DiffusionNLFVwithBndFaces::Init_(Teuchos::ParameterList& plist)
   // upwind options (not used yet)
   std::string uwname = plist.get<std::string>("nonlinear coefficient", "upwind: face");
   little_k_ = OPERATOR_LITTLE_K_UPWIND;
-  if (uwname == "none") { little_k_ = OPERATOR_LITTLE_K_NONE; }
+  if (uwname == "none") {
+    little_k_ = OPERATOR_LITTLE_K_NONE;
+  }
 
   // Newton correction terms
   std::string jacobian = plist.get<std::string>("Newton correction", "none");
@@ -112,7 +114,9 @@ PDE_DiffusionNLFVwithBndFaces::SetScalarCoefficient(const Teuchos::RCP<const Com
   dkdp_ = dkdp;
 
   if (k_ != Teuchos::null) {
-    if (little_k_ == OPERATOR_LITTLE_K_UPWIND) { AMANZI_ASSERT(k_->HasComponent("face")); }
+    if (little_k_ == OPERATOR_LITTLE_K_UPWIND) {
+      AMANZI_ASSERT(k_->HasComponent("face"));
+    }
   }
   // if (dkdp_ != Teuchos::null) AMANZI_ASSERT(dkdp_->HasComponent("cell"));
 }
@@ -176,7 +180,9 @@ PDE_DiffusionNLFVwithBndFaces::InitStencils_()
       WhetStone::TensorToVector(Kc, data);
     }
 
-    for (int i = 0; i < dim_ * dim_; ++i) { Ktmp[i][c] = data(i); }
+    for (int i = 0; i < dim_ * dim_; ++i) {
+      Ktmp[i][c] = data(i);
+    }
   }
   cv_tmp->ScatterMasterToGhosted();
 
@@ -231,7 +237,7 @@ PDE_DiffusionNLFVwithBndFaces::InitStencils_()
     WhetStone::Tensor Kc(mesh_->getSpaceDimension(), 1);
     Kc(0, 0) = 1.0;
 
-    if (K_.get()) Kc = (*K_)[c];
+    if (K_.get() ) Kc = (*K_)[c];
 
     tau.clear();
     for (int n = 0; n < nfaces; n++) {
@@ -241,8 +247,8 @@ PDE_DiffusionNLFVwithBndFaces::InitStencils_()
     }
 
     // decompose co-normals
-    int ierr, ids[dim_];
-    double ws[dim_];
+    int ierr, ids[3];
+    double ws[3];
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
       const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
@@ -276,7 +282,7 @@ PDE_DiffusionNLFVwithBndFaces::InitStencils_()
       WhetStone::Tensor Kc(mesh_->getSpaceDimension(), 1);
       Kc(0, 0) = 1.0;
 
-      if (K_.get()) Kc = (*K_)[c];
+      if (K_.get() ) Kc = (*K_)[c];
       int face_itself;
 
       tau.clear();
@@ -294,8 +300,8 @@ PDE_DiffusionNLFVwithBndFaces::InitStencils_()
       const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
       conormal = -(Kc * normal) * dirs[face_itself];
 
-      int ierr, ids[dim_];
-      double ws[dim_];
+      int ierr, ids[3];
+      double ws[3];
 
       ierr = nlfv.PositiveDecomposition(face_itself, tau, conormal, manifold_dim_, ws, ids);
       AMANZI_ASSERT(ierr == 0);
@@ -388,7 +394,7 @@ PDE_DiffusionNLFVwithBndFaces::UpdateMatrices(const Teuchos::Ptr<const Composite
 
       // calculate little_k on the current face
       double kf(1.0);
-      if (k_face.get()) kf = (*k_face)[0][f];
+      if (k_face.get() ) kf = (*k_face)[0][f];
 
       // Calculate solution-dependent weigths using corrections to the
       // two-point flux. Note mu does not depend on one-sided flux.
@@ -512,8 +518,8 @@ PDE_DiffusionNLFVwithBndFaces::UpdateMatricesNewtonCorrection(
   // Correction is zero for linear problems
   if (k_ == Teuchos::null || dkdp_ == Teuchos::null) return;
 
-  if (k_->HasComponent("face")) k_->ScatterMasterToGhosted("face");
-  if (dkdp_->HasComponent("face")) dkdp_->ScatterMasterToGhosted("face");
+  if (k_->HasComponent("face") ) k_->ScatterMasterToGhosted("face");
+  if (dkdp_->HasComponent("face") ) dkdp_->ScatterMasterToGhosted("face");
 
   // Correction is not required
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_NONE) return;
@@ -663,7 +669,7 @@ PDE_DiffusionNLFVwithBndFaces::OneSidedFluxCorrections_(int i0,
 
       // scalar (nonlinear) coefficient
       double kf(1.0);
-      if (k_face.get()) kf = (*k_face)[0][f];
+      if (k_face.get() ) kf = (*k_face)[0][f];
 
       double sideflux(0.0);
       for (int i = i0; i < dim_; ++i) {
@@ -728,7 +734,7 @@ PDE_DiffusionNLFVwithBndFaces::OneSidedNeumannCorrections_(const CompositeVector
 
       // scalar (nonlinear) coefficient
       double kf(1.0);
-      if (k_face.get()) kf = (*k_face)[0][f];
+      if (k_face.get() ) kf = (*k_face)[0][f];
 
       for (k1 = 0; k1 < 2; k1++) {
         k2 = k1 * dim_;
@@ -868,7 +874,7 @@ PDE_DiffusionNLFVwithBndFaces::ApplyBCs(bool primary, bool eliminate, bool essen
 
         WhetStone::Tensor Kc(dim_, 1);
         Kc(0, 0) = 1.0;
-        if (K_.get()) Kc = (*K_)[c];
+        if (K_.get() ) Kc = (*K_)[c];
 
         const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
         AmanziGeometry::Point v(dim_);
@@ -924,10 +930,8 @@ PDE_DiffusionNLFVwithBndFaces::UpdateFlux(const Teuchos::Ptr<const CompositeVect
       double wg1 = wgt_sideflux[0][f];
       double wg2 = wgt_sideflux[1][f];
 
-      if (cells.size() == 2)
-        flux_data[0][f] = 0.5 * (wg1 - wg2) * dir;
-      else
-        flux_data[0][f] = dir * wg1;
+      if (cells.size() == 2) flux_data[0][f] = 0.5 * (wg1 - wg2) * dir;
+      else flux_data[0][f] = dir * wg1;
     }
   }
 }

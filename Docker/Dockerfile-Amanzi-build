@@ -1,5 +1,9 @@
 ARG amanzi_tpls_ver=latest
-FROM metsi/amanzi-tpls:${amanzi_tpls_ver}-mpich
+ARG base_image=ubuntu
+ARG ver_tag=jammy
+ARG mpi_distro=mpich
+ARG mpi_version=4.0.3
+FROM metsi/amanzi-tpls:${amanzi_tpls_ver}-${mpi_distro}-${base_image}-${ver_tag}
 LABEL Description="Amanzi: Build and install Amanzi in a Docker image."
 
 # Switch to amanzi_user
@@ -12,26 +16,33 @@ RUN echo "${AMANZI_TPLS_DIR}"
 ARG amanzi_branch=master
 ARG https_proxy=
 ARG http_proxy=
+ARG additional_bootstrap_args=
 
 # Change the Working Directory and update amanzi
 WORKDIR /home/amanzi_user/amanzi
 
 ENV https_proxy=$https_proxy \
-    http_proxy=$http_proxy
+    http_proxy=$http_proxy \
+    additional_bootstrap_args=$additional_bootstrap_args
 
 # Make sure we have updated branch information
-RUN echo "Amanzi branch = $amanzi_branch"
-RUN git remote prune origin
-RUN git fetch
-RUN git branch --list
+RUN echo "Amanzi branch = $amanzi_branch" \
+    && git remote prune origin \
+    && git fetch \
+    && git branch --list
 
 # Checkout the branch and update it forcibly, not through pull because
 # pull can do merges this branch already exists and is out of sync
 # with the remote
-RUN git checkout $amanzi_branch
-RUN git reset --hard origin/$amanzi_branch
-RUN git rev-parse --short HEAD
-  
+RUN git checkout $amanzi_branch \
+    && git reset --hard origin/$amanzi_branch \
+    && git rev-parse --short HEAD
+
+# Make MPI oversubscribe (primarily affects openMPI on CI) if required
+ENV MPIEXEC_PREFLAGS=--oversubscribe
+ENV OMPI_MCA_rmaps_base_oversubscribe=1
+ENV PRTE_MCA_rmaps_default_mapping_policy=":oversubscribe"
+
 RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/amanzi \
    --tpl-config-file=${AMANZI_TPLS_DIR}/share/cmake/amanzi-tpl-config.cmake \
@@ -41,9 +52,8 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --enable-alquimia --enable-pflotran --enable-crunchtope \
    --with-mpi=/usr \
    --enable-shared \
+   ${additional_bootstrap_args} \
    && cd /home/amanzi_user/amanzi_builddir/amanzi 
-
-#  && rm -r /home/amanzi_user/amanzi_builddir/
 
 # Set path to make it easier to run amanzi
 ENV PATH=/home/amanzi_user/install/bin:${PATH}

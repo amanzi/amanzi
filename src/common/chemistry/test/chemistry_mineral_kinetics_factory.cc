@@ -58,7 +58,8 @@ SUITE(GeochemistryTestsKineticRateFactory)
     ac::Species PO4_mmm;
   };
 
-  KineticRateFactoryTest::KineticRateFactoryTest() : mkf_(), kinetic_rate_(NULL)
+  KineticRateFactoryTest::KineticRateFactoryTest()
+    : mkf_(), kinetic_rate_(NULL)
   {
     Teuchos::ParameterList plist;
     plist.set<int>("charge", 1)

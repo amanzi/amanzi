@@ -27,8 +27,8 @@ namespace WhetStone {
 
 class MeshMapsFactory {
  public:
-  explicit MeshMapsFactory(){};
-  ~MeshMapsFactory(){};
+  explicit MeshMapsFactory() {};
+  ~MeshMapsFactory() {};
 
   // select numerical scheme using its name and order
   std::shared_ptr<MeshMapsBase> Create(const Teuchos::ParameterList& plist,

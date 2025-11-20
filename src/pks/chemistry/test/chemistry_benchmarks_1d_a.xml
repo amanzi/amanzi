@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="1.6-dev">
+<amanzi_input type="unstructured" version="1.7-dev">
   <model_description name="1D Flow and Transport w/ calcite dissolution">
     <units>
       <length_unit>m</length_unit>
@@ -24,9 +24,16 @@
   </definitions>
 
   <process_kernels>
-    <flow model="saturated" state="on" />
-    <transport state="on" />
-    <chemistry engine="amanzi" state="on" />
+    <pk mode="steady">
+      <flow model="saturated" state="on" />
+    </pk>
+    <pk mode="transient">
+      <flow model="saturated" state="on" />
+      <transport state="on" />
+      <chemistry engine="amanzi" state="on" />
+      <weakly_coupled name="reactive transport">chemistry,transport</weakly_coupled>
+      <weakly_coupled name="mpc">flow,reactive transport</weakly_coupled>
+    </pk>
   </process_kernels>
 
   <phases>
@@ -132,7 +139,7 @@
   <materials>
     <material name="Soil">
       <mechanical_properties>
-        <porosity value="0.25"/>
+        <porosity model="constant" value="0.25"/>
         <specific_storage model="constant" value="0.0"/>
       </mechanical_properties>
       <permeability x="1.E-12" y="1.E-12" z="1.E-12" />

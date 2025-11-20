@@ -64,7 +64,7 @@ FlowMechanics_PK::Setup()
   saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid");
   water_storage_key_ = Keys::getKey(domain_, "water_storage");
 
-  thermal_flow_ = (Keys::getVarName(sub_pks_[0]->name()) == "thermal flow");
+  thermal_flow_ = (Keys::getVarName(sub_pks_[0]->name()) == "flow and energy");
 
   // mechanics
   auto mesh = S_->GetMesh(domain_);
@@ -152,7 +152,7 @@ FlowMechanics_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   std::vector<std::string> fields(
     { pressure_key_, saturation_liquid_key_, displacement_key_, vol_strain_key_ });
-  if (S_->HasRecord(water_storage_key_)) fields.push_back(water_storage_key_);
+  if (S_->HasRecord(water_storage_key_) ) fields.push_back(water_storage_key_);
 
   StateArchive archive(S_, vo_);
   archive.Add(fields, Tags::DEFAULT);

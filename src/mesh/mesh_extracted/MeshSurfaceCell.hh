@@ -71,8 +71,8 @@ class MeshSurfaceCell : public MeshFramework {
   //
   // Number of entities of any kind (cell, face, node) and in a
   // particular category (OWNED, GHOST, ALL)
-  virtual std::size_t
-  getNumEntities(const Entity_kind kind, const Parallel_kind ptype) const override;
+  virtual std::size_t getNumEntities(const Entity_kind kind,
+                                     const Parallel_kind ptype) const override;
 
 
   // Get nodes of a cell
@@ -105,8 +105,8 @@ class MeshSurfaceCell : public MeshFramework {
   //-------------------
 
   // Set coordinates of node
-  virtual void
-  setNodeCoordinate(const Entity_ID nodeid, const AmanziGeometry::Point& ncoord) override
+  virtual void setNodeCoordinate(const Entity_ID nodeid,
+                                 const AmanziGeometry::Point& ncoord) override
   {
     nodes_[nodeid] = ncoord;
   }

@@ -232,9 +232,9 @@ The ``execution_control_defaults`` element specifies default values to be utiliz
 +------------------+----------------+----------------------------------+
 | max_dt           | time           | time value(,unit)                |
 +------------------+----------------+----------------------------------+
-| reduction_factor | exponential    | factor for reducing timestep    |
+| reduction_factor | exponential    | factor for reducing timestep     |
 +------------------+----------------+----------------------------------+
-| increase_factor  | exponential    | factor for increasing timestep  |
+| increase_factor  | exponential    | factor for increasing timestep   |
 +------------------+----------------+----------------------------------+
 | mode             | string         | ``steady, transient``            |
 +------------------+----------------+----------------------------------+
@@ -261,9 +261,9 @@ Individual time periods of the simulation are defined using ``execution_control`
 +------------------+----------------+----------------------------------------------------------+
 | max_dt           | time           | time value(,unit)                                        |
 +------------------+----------------+----------------------------------------------------------+
-| reduction_factor | exponential    | factor for reducing timestep                            |
+| reduction_factor | exponential    | factor for reducing timestep                             |
 +------------------+----------------+----------------------------------------------------------+
-| increase_factor  | exponential    | factor for increasing timestep                          |
+| increase_factor  | exponential    | factor for increasing timestep                           |
 +------------------+----------------+----------------------------------------------------------+
 | mode             | string         | ``steady, transient``                                    |
 +------------------+----------------+----------------------------------------------------------+
@@ -990,7 +990,7 @@ The subelement ``primaries`` is used for specifying reactive and non-reactive pr
 
     * ``coefficient_of_diffusion`` = "exponential", this is an optional attribute
 
-    * ``first_order_decay_constant`` = "exponential", this is an optional attribute
+    * ``first_order_decay_rate_constant`` = "exponential", this is an optional attribute
 
     * ``forward_rate`` = "exponential", this is a required attribute when being used with non-reactive primaries/solutes and automatically generating the chemistry engine input file
 

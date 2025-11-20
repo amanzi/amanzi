@@ -89,7 +89,7 @@ KineticRateTST::KineticRateTST()
     rate_constant_(0.0),
     log10_rate_constant_(0.0),
     Q_over_Keq_(1.0),
-    modifying_term_(1.0){};
+    modifying_term_(1.0) {};
 
 
 void

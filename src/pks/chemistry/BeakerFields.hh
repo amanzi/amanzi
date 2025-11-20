@@ -32,10 +32,13 @@ struct BeakerFields {
   Teuchos::RCP<Epetra_MultiVector> sorbed;
   Teuchos::RCP<Epetra_MultiVector> isotherm_kd, isotherm_freundlich_n, isotherm_langmuir_b;
 
-  Teuchos::RCP<Epetra_MultiVector> sorption_sites;
+  Teuchos::RCP<Epetra_MultiVector> surface_site_density;
   Teuchos::RCP<Epetra_MultiVector> surface_complex;
 
-  Teuchos::RCP<Epetra_MultiVector> ion_exchange_sites, ion_exchange_ref_cation_conc;
+  Teuchos::RCP<Epetra_MultiVector> cation_exchange_capacity, ion_exchange_ref_cation_conc;
+
+  Teuchos::RCP<const Epetra_MultiVector> tcc_old;
+  Teuchos::RCP<Epetra_MultiVector> tcc_new;
 };
 
 } // namespace AmanziChemistry

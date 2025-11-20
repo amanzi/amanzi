@@ -17,14 +17,18 @@
 
 #include "Teuchos_ParameterList.hpp"
 
+// Amanzi
+#include "ApertureModelEvaluator.hh"
 #include "EvaluatorMultiplicativeReciprocal.hh"
 #include "EvaluatorPrimary.hh"
 #include "Mesh.hh"
 #include "MeshAlgorithms.hh"
 #include "PK_DomainFunctionFactory.hh"
+#include "PorosityEvaluator.hh"
 #include "State.hh"
 #include "WhetStoneDefs.hh"
 
+// Amanzi::Energy
 #include "Energy_PK.hh"
 #include "EnthalpyEvaluator.hh"
 
@@ -41,7 +45,7 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
                      const Teuchos::RCP<Teuchos::ParameterList>& glist,
                      const Teuchos::RCP<State>& S,
                      const Teuchos::RCP<TreeVector>& soln)
-  : PK_PhysicalBDF(pk_tree, glist, S, soln), glist_(glist), passwd_(""), flow_on_manifold_(false)
+  : PK_PhysicalBDF(pk_tree, glist, S, soln), glist_(glist), passwd_("")
 {
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   ep_list_ = Teuchos::sublist(pk_list, name_, true);
@@ -71,7 +75,7 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
 
   // workflow can be affected by the list of models
   auto physical_models = Teuchos::sublist(ep_list_, "physical models and assumptions");
-  flow_on_manifold_ = physical_models->get<bool>("flow and transport in fractures", false);
+  assumptions_.Init(*physical_models, *mesh_);
 }
 
 
@@ -89,7 +93,8 @@ Energy_PK::Setup()
 
   aperture_key_ = Keys::getKey(domain_, "aperture");
   conductivity_eff_key_ = Keys::getKey(domain_, "thermal_conductivity_effective");
-  conductivity_gen_key_ = (!flow_on_manifold_) ? conductivity_key_ : conductivity_eff_key_;
+  conductivity_gen_key_ =
+    (!assumptions_.flow_on_manifold) ? conductivity_key_ : conductivity_eff_key_;
 
   ie_liquid_key_ = Keys::getKey(domain_, "internal_energy_liquid");
   ie_gas_key_ = Keys::getKey(domain_, "internal_energy_gas");
@@ -102,6 +107,7 @@ Energy_PK::Setup()
   x_gas_key_ = Keys::getKey(domain_, "molar_fraction_gas");
 
   mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
+  porosity_key_ = Keys::getKey(domain_, "porosity");
   sat_liquid_key_ = Keys::getKey(domain_, "saturation_liquid");
   pressure_key_ = Keys::getKey(domain_, "pressure");
 
@@ -110,10 +116,24 @@ Energy_PK::Setup()
   S_->Require<double>("const_fluid_molar_mass", Tags::DEFAULT, "state");
 
   // require primary state variables
-  std::vector<std::string> names({ "cell", "face" });
-  std::vector<int> ndofs(2, 1);
-  std::vector<AmanziMesh::Entity_kind> locations(
-    { AmanziMesh::Entity_kind::CELL, AmanziMesh::Entity_kind::FACE });
+  std::vector<std::string> names({ "cell" });
+  std::vector<AmanziMesh::Entity_kind> locations({ AmanziMesh::Entity_kind::CELL });
+  std::vector<int> ndofs(1, 1);
+
+  Teuchos::RCP<Teuchos::ParameterList> list1 = Teuchos::sublist(ep_list_, "operators", true);
+  Teuchos::RCP<Teuchos::ParameterList> list2 = Teuchos::sublist(list1, "diffusion operator", true);
+  Teuchos::RCP<Teuchos::ParameterList> list3 = Teuchos::sublist(list2, "matrix", true);
+  std::string name = list3->get<std::string>("discretization primary");
+
+  if (name != "fv: default" && name != "nlfv: default") {
+    names.push_back("face");
+    locations.push_back(AmanziMesh::Entity_kind::FACE);
+    ndofs.push_back(1);
+  } else {
+    names.push_back("boundary_face");
+    locations.push_back(AmanziMesh::Entity_kind::BOUNDARY_FACE);
+    ndofs.push_back(1);
+  }
 
   S_->Require<CV_t, CVS_t>(temperature_key_, Tags::DEFAULT)
     .SetMesh(mesh_)
@@ -194,7 +214,7 @@ Energy_PK::Setup()
   // -- molar flow rates as a regular field
   if (!S_->HasRecord(mol_flowrate_key_)) {
     CompositeVectorSpace cvs;
-    if (flow_on_manifold_) {
+    if (assumptions_.flow_on_manifold) {
       cvs = *Operators::CreateManifoldCVS(mesh_);
     } else {
       cvs.SetMesh(mesh_)->SetGhosted(true)->SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
@@ -207,23 +227,47 @@ Energy_PK::Setup()
   }
 
   // -- effective fracture conductivity
-  if (flow_on_manifold_) {
+  if (assumptions_.use_overburden_stress && domain_ == "domain") {
+    S_->Require<CV_t, CVS_t>("hydrostatic_stress", Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+  }
+
+  if (assumptions_.flow_on_manifold) {
     S_->Require<CV_t, CVS_t>(conductivity_eff_key_, Tags::DEFAULT, conductivity_eff_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
-    S_->Require<CV_t, CVS_t>(aperture_key_, Tags::DEFAULT, aperture_key_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-    S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
+    if (!S_->HasRecord(aperture_key_)) {
+      S_->Require<CV_t, CVS_t>(aperture_key_, Tags::DEFAULT, aperture_key_)
+        .SetMesh(mesh_)
+        ->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+
+      if (ep_list_->isSublist("fracture aperture models")) {
+        auto fam_list = Teuchos::sublist(ep_list_, "fracture aperture models", true);
+        auto fam = Evaluators::CreateApertureModelPartition(mesh_, fam_list);
+
+        Teuchos::ParameterList elist(aperture_key_);
+        elist.set<std::string>("aperture key", aperture_key_)
+          .set<std::string>("pressure key", pressure_key_)
+          .set<bool>("use overburden stress", assumptions_.use_overburden_stress)
+          .set<std::string>("tag", "");
+
+        auto eval = Teuchos::rcp(new Evaluators::ApertureModelEvaluator(elist, fam));
+        S_->SetEvaluator(aperture_key_, Tags::DEFAULT, eval);
+      } else {
+        S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
+      }
+    }
 
     Teuchos::ParameterList elist(conductivity_eff_key_);
     std::vector<std::string> listm(
       { Keys::getVarName(aperture_key_), Keys::getVarName(conductivity_key_) });
     elist.set<std::string>("my key", conductivity_eff_key_)
-      .set<Teuchos::Array<std::string>>("multiplicative dependencies", listm)
+      .set<Teuchos::Array<std::string>>("multiplicative dependency key suffixes", listm)
       .set<std::string>("tag", "");
     auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
     S_->SetEvaluator(conductivity_eff_key_, Tags::DEFAULT, eval);
@@ -245,23 +289,25 @@ Energy_PK::Setup()
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-    // S_->RequireEvaluator(pressure_key_, Tags::DEFAULT);
     AddDefaultPrimaryEvaluator(S_, pressure_key_);
   }
 
-  // -- fracture aperture
-  if (flow_on_manifold_) {
-    S_->Require<CV_t, CVS_t>(aperture_key_, Tags::DEFAULT, aperture_key_)
+  // -- porosity
+  if (!S_->HasRecord(porosity_key_)) {
+    S_->Require<CV_t, CVS_t>(porosity_key_, Tags::DEFAULT, porosity_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+    S_->RequireEvaluator(porosity_key_, Tags::DEFAULT);
   }
+
 
   // set units
   S_->GetRecordSetW(temperature_key_).set_units("K");
   S_->GetRecordSetW(mol_flowrate_key_).set_units("mol/s");
-  if (flow_on_manifold_) { S_->GetRecordSetW(aperture_key_).set_units("m"); }
+  if (assumptions_.flow_on_manifold) {
+    S_->GetRecordSetW(aperture_key_).set_units("m");
+  }
 }
 
 
@@ -366,11 +412,17 @@ Energy_PK::UpdateConductivityData(const Teuchos::Ptr<State>& S)
 void
 Energy_PK::UpdateSourceBoundaryData(double t_old, double t_new, const CompositeVector& u)
 {
-  for (int i = 0; i < bc_temperature_.size(); ++i) { bc_temperature_[i]->Compute(t_old, t_new); }
+  for (int i = 0; i < bc_temperature_.size(); ++i) {
+    bc_temperature_[i]->Compute(t_old, t_new);
+  }
 
-  for (int i = 0; i < bc_flux_.size(); ++i) { bc_flux_[i]->Compute(t_old, t_new); }
+  for (int i = 0; i < bc_flux_.size(); ++i) {
+    bc_flux_[i]->Compute(t_old, t_new);
+  }
 
-  for (int i = 0; i < srcs_.size(); ++i) { srcs_[i]->Compute(t_old, t_new); }
+  for (int i = 0; i < srcs_.size(); ++i) {
+    srcs_[i]->Compute(t_old, t_new);
+  }
 
   ComputeBCs(u);
 }
@@ -427,6 +479,22 @@ Energy_PK::ComputeBCs(const CompositeVector& u)
     }
   }
 
+  // mark missing boundary conditions as zero flux conditions
+  missed_bc_faces_ = 0;
+  for (int f = 0; f < nfaces_owned; f++) {
+    if (bc_model[f] == Operators::OPERATOR_BC_NONE) {
+      auto cells = mesh_->getFaceCells(f);
+      int ncells = cells.size();
+
+      if (ncells == 1) {
+        bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
+        bc_value[f] = 0.0;
+        missed_bc_faces_++;
+      }
+    }
+  }
+
+  // count essential conditions
   dirichlet_bc_faces_ = 0;
   for (int f = 0; f < nfaces_owned; ++f) {
     if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) dirichlet_bc_faces_++;
@@ -437,13 +505,13 @@ Energy_PK::ComputeBCs(const CompositeVector& u)
 #endif
 
   // additional boundary conditions
-  // -- copy essential conditions to primary variables
-  // BoundaryDataToFaces(op_bc_, *S_->GetFieldData(temperature_key_, passwd_));
+  // -- copy essential conditions to primary variable and update dependend fields
+  BoundaryDataToFaces_(*op_bc_, S_->GetW<CV_t>(temperature_key_, Tags::DEFAULT, passwd_));
 
-  // -- populate BCs
   S_->GetEvaluator(enthalpy_key_).Update(*S_, passwd_);
   const auto& enth = *S_->Get<CV_t>(enthalpy_key_).ViewComponent("boundary_face", true);
 
+  // -- populate BCs
   std::vector<int>& bc_model_enth_ = op_bc_enth_->bc_model();
   std::vector<double>& bc_value_enth_ = op_bc_enth_->bc_value();
 
@@ -463,6 +531,17 @@ Energy_PK::ComputeBCs(const CompositeVector& u)
       bc_value_enth_[f] = bc_value[f];
     }
   }
+}
+
+
+/* ******************************************************************
+* Clip temperature changed
+****************************************************************** */
+int
+Energy_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, Teuchos::RCP<TreeVector> Y)
+{
+  Y->PutScalar(0.0);
+  return op_preconditioner_->ApplyInverse(*X->Data(), *Y->Data());
 }
 
 
@@ -505,15 +584,60 @@ Energy_PK::ModifyCorrection(double dt,
 
 
 /* ******************************************************************
+* Modify preconditior as needed.
+****************************************************************** */
+bool
+Energy_PK::ModifyPredictor(double dt,
+                           Teuchos::RCP<const TreeVector> u0,
+                           Teuchos::RCP<TreeVector> u)
+{
+  Teuchos::RCP<TreeVector> du = Teuchos::rcp(new TreeVector(*u));
+  du->Update(-1.0, *u0, 1.0);
+
+  ModifyCorrection(dt, Teuchos::null, u0, du);
+
+  *u = *u0;
+  u->Update(1.0, *du, 1.0);
+  return true;
+}
+
+
+/* ******************************************************************
+* Apply Dirichlet data to a vector, oly for boundary_face component.
+* NOTE: helper function applyDirichletBCs() does not work for a 
+*       fractured matrix.
+****************************************************************** */
+void
+Energy_PK::BoundaryDataToFaces_(const Operators::BCs& bcs, CompositeVector& u)
+{
+  if (u.HasComponent("boundary_face")) {
+    const Epetra_Map& bfmap = u.Mesh()->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false);
+    const Epetra_Map& fmap = u.Mesh()->getMap(AmanziMesh::Entity_kind::FACE, false);
+
+    auto& u_c = *u.ViewComponent("cell", false);
+    auto& u_bf = *u.ViewComponent("boundary_face", false);
+
+    for (int bf = 0; bf != u_bf.MyLength(); ++bf) {
+      AmanziMesh::Entity_ID f = fmap.LID(bfmap.GID(bf));
+      if (bcs.bc_model()[f] == Operators::OPERATOR_BC_DIRICHLET) {
+        u_bf[0][bf] = bcs.bc_value()[f];
+      } else {
+        int c = mesh_->getFaceCell(f, 0);
+        u_bf[0][bf] = u_c[0][c];
+      }
+    }
+  }
+}
+
+
+/* ******************************************************************
 * Return a pointer to a local operator
 ****************************************************************** */
 Teuchos::RCP<Operators::Operator>
 Energy_PK::my_operator(const Operators::OperatorType& type)
 {
-  if (type == Operators::OPERATOR_MATRIX)
-    return op_matrix_;
-  else if (type == Operators::OPERATOR_PRECONDITIONER_RAW)
-    return op_preconditioner_;
+  if (type == Operators::OPERATOR_MATRIX) return op_matrix_;
+  else if (type == Operators::OPERATOR_PRECONDITIONER_RAW) return op_preconditioner_;
   return Teuchos::null;
 }
 

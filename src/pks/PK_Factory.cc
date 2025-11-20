@@ -80,7 +80,7 @@ PKFactory::CreatePK(std::string pk_name,
 
         // -- overwrite the domain name
         Key new_domain = Keys::getDomainInSet(ds_name, std::get<1>(pk_triple));
-        if (pk_list_new.isParameter("domain name")) pk_list_new.set("domain name", new_domain);
+        if (pk_list_new.isParameter("domain name") ) pk_list_new.set("domain name", new_domain);
 
         // -- overwrite sub pks names with prepended domain
         if (pk_list_new.isParameter("PKs order")) {
@@ -143,9 +143,7 @@ PKFactory::CreatePK(std::string pk_name,
     message << "PK Factory: PK \"" << pk_name << "\" requested type \"" << pk_type
             << "\" which is not a registered PK type.\n";
 
-    for (map_type::iterator it = GetMap()->begin(); it != GetMap()->end(); ++it) {
-      message << std::endl << "  option: " << it->first;
-    }
+    WriteChoices(message);
     Errors::Message msg(message.str());
     Exceptions::amanzi_throw(msg);
   }
@@ -154,6 +152,16 @@ PKFactory::CreatePK(std::string pk_name,
   num_pks++;
   if (list_pks.size() < 1024) list_pks += "|" + pk_name;
   return Teuchos::rcp(iter->second(pk_subtree, global_list, state, soln));
+}
+
+
+void
+PKFactory::WriteChoices(std::ostream& os) const
+{
+  os << "Valid types:" << std::endl
+     << "--------------------------------------------------" << std::endl;
+  for (auto choice : *GetMap() ) os << " - \"" << choice.first << "\"" << std::endl;
+  os << "--------------------------------------------------" << std::endl << std::endl;
 }
 
 

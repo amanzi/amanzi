@@ -112,14 +112,15 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
                                   Teuchos::RCP<TreeVector> f) override;
 
   // -- preconditioner
-  virtual void
-  UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt) override;
+  virtual void UpdatePreconditioner(double t,
+                                    Teuchos::RCP<const TreeVector> up,
+                                    double dt) override;
 
-  virtual int
-  ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) override;
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
+                                  Teuchos::RCP<TreeVector> Pu) override;
 
   // -- error norm for coupled system
-  std::string name() override { return "thermal flow"; }
+  std::string name() override { return "flow and energy"; }
 
  private:
   const Teuchos::RCP<Teuchos::ParameterList>& glist_;
@@ -135,9 +136,6 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
   Key ie_liquid_key_, energy_key_, particle_density_key_;
   Key mol_density_liquid_key_, mass_density_liquid_key_;
   Key sat_liquid_key_, ws_key_;
-
-  // eos
-  std::string eos_table_;
 
   // factory registration
   static RegisteredPKFactory<FlowEnergy_PK> reg_;

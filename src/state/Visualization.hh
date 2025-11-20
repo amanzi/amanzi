@@ -7,8 +7,6 @@
   Authors: Markus Berndt
            Ethan Coon (ecoon@lanl.gov)
 */
-
-//! Manages simulation output to disk.
 /*!
 
 A user may request periodic writes of field data for the purposes of
@@ -24,14 +22,15 @@ DOMAIN-NAME`".
 .. _visualization-spec:
 .. admonition:: visualization-spec
 
-    * `"file name base`" ``[string]`` **visdump_DOMAIN_data**
-    * `"dynamic mesh`" ``[bool]`` **false** Write mesh data for every
-      visualization dump; this facilitates visualizing deforming meshes.
-    * `"time units`" ``[string]`` **s** A valid time unit to convert time
-      into for output files.  One of `"s`", `"d`", `"y`", or `"yr 365`"
+   * `"file name base`" ``[string]`` **visdump_DOMAIN_data**
+   * `"dynamic mesh`" ``[bool]`` **false** Write mesh data for every
+     visualization dump; this facilitates visualizing deforming meshes.
+   * `"time units`" ``[string]`` **s** A valid time unit to convert time
+     into for output files.  One of `"s`", `"d`", `"y`", or `"yr 365`"
 
-    INCLUDES:
-    - ``[io-event-spec]`` An IOEvent_ spec
+   INCLUDES:
+
+   - ``[io-event-spec]`` An :ref:`IOEvent` spec.
 
 
 Example:
@@ -91,7 +90,7 @@ class Visualization : public Utils::IOEvent {
   virtual void FinalizeTimestep() const;
 
   // public interface for data clients
-  template <typename T>
+  template<typename T>
   void Write(const std::string& name, const T& t) const;
 
   virtual void WriteVector(const Epetra_MultiVector& vec,
@@ -121,21 +120,21 @@ class Visualization : public Utils::IOEvent {
 };
 
 
-template <>
+template<>
 inline void
 Visualization::Write<Epetra_Vector>(const std::string& name, const Epetra_Vector& t) const
 {
   WriteVector(t, name, AmanziMesh::Entity_kind::CELL);
 }
 
-template <>
+template<>
 inline void
 Visualization::Write<double>(const std::string& name, const double& t) const
 {
   visualization_output_->WriteAttribute(t, name);
 }
 
-template <>
+template<>
 inline void
 Visualization::Write<int>(const std::string& name, const int& t) const
 {

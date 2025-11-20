@@ -33,16 +33,15 @@ class Op_Cell_Schema : public Op {
                  const Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : Op(schema_row, schema_col, mesh)
   {
-    WhetStone::DenseMatrix null_matrix;
     matrices.resize(
-      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED),
-      null_matrix);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED));
     matrices_shadow = matrices;
   }
-  ~Op_Cell_Schema(){};
+  ~Op_Cell_Schema() {};
 
-  virtual void
-  ApplyMatrixFreeOp(const Operator* assembler, const CompositeVector& X, CompositeVector& Y) const
+  virtual void ApplyMatrixFreeOp(const Operator* assembler,
+                                 const CompositeVector& X,
+                                 CompositeVector& Y) const
   {
     assembler->ApplyMatrixFreeOp(*this, X, Y);
   }

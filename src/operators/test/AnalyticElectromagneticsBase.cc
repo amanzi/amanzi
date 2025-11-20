@@ -152,10 +152,8 @@ AnalyticElectromagneticsBase::GlobalOp(std::string op, double* val, int n)
   double* val_tmp = new double[n];
   for (int i = 0; i < n; ++i) val_tmp[i] = val[i];
 
-  if (op == "sum")
-    mesh_->getComm()->SumAll(val_tmp, val, n);
-  else if (op == "max")
-    mesh_->getComm()->MaxAll(val_tmp, val, n);
+  if (op == "sum") mesh_->getComm()->SumAll(val_tmp, val, n);
+  else if (op == "max") mesh_->getComm()->MaxAll(val_tmp, val, n);
 
   delete[] val_tmp;
 }

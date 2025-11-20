@@ -41,27 +41,34 @@ water content at an intermediate time (here called transport_current).
 
 namespace Amanzi {
 
-class EvaluatorTemporalInterpolation : public EvaluatorSecondaryMonotypeCV {
-
+class EvaluatorTemporalInterpolation : public EvaluatorSecondary {
  public:
   explicit EvaluatorTemporalInterpolation(Teuchos::ParameterList& plist);
   EvaluatorTemporalInterpolation(const EvaluatorTemporalInterpolation& other) = default;
   virtual Teuchos::RCP<Evaluator> Clone() const override;
 
+  virtual void EnsureCompatibility(State& S) override;
+
  protected:
   // Required methods from EvaluatorSecondaryMonotypeCV
-  virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& result) override;
-  virtual void EvaluatePartialDerivative_(const State& S,
-                                          const Key& wrt_key,
-                                          const Tag& wrt_tag,
-                                          const std::vector<CompositeVector*>& result) override;
+  virtual void Update_(State& S) override;
 
-protected:
+  // could implement this, but harder because chain rule is not in
+  // EvaluatorSecondary.  Do we need it?
+  virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Tag& wrt_tag) override {}
+
+  virtual bool IsDifferentiableWRT(const State& S,
+                                   const Key& wrt_key,
+                                   const Tag& wrt_tag) const override
+  {
+    return false;
+  }
+
+ protected:
   KeyTag current_, next_;
 
-private:
+ private:
   static Utils::RegisteredFactory<Evaluator, EvaluatorTemporalInterpolation> fac_;
-
 };
 
 } // namespace Amanzi

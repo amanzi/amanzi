@@ -282,7 +282,7 @@
       </ParameterList>
       <ParameterList name="Q">
         <Parameter name="evaluator type" type="string" value="multiplicative reciprocal"/>
-        <Parameter name="multiplicative dependencies" type="Array(string)" value="{ molar_density_liquid,
+        <Parameter name="multiplicative dependency key suffixes" type="Array(string)" value="{ molar_density_liquid,
                                                                                     strain_rate }"/>
         <Parameter name="coefficient" type="double" value="1.0"/>
       </ParameterList>

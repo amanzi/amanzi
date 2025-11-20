@@ -26,10 +26,11 @@ InputAnalysis::Init(Teuchos::ParameterList& plist)
 {
   plist_ = &plist;
 
+  Teuchos::ParameterList vo_list;
   if (plist.isSublist("analysis")) {
-    Teuchos::ParameterList vo_list = plist.sublist("analysis");
-    vo_ = new VerboseObject("InputAnalysis:" + domain_, vo_list);
+    vo_list = plist.sublist("analysis");
   }
+  vo_ = new VerboseObject("InputAnalysis:" + domain_, vo_list);
 }
 
 
@@ -39,7 +40,7 @@ InputAnalysis::Init(Teuchos::ParameterList& plist)
 void
 InputAnalysis::RegionAnalysis()
 {
-  if (!plist_->isSublist("analysis")) return;
+  if (!plist_->isSublist("analysis") ) return;
   Teuchos::ParameterList alist = plist_->sublist("analysis").sublist(domain_);
 
   Errors::Message msg;
@@ -253,7 +254,7 @@ InputAnalysis::RegionAnalysis()
 void
 InputAnalysis::OutputBCs()
 {
-  if (!plist_->isSublist("analysis")) return;
+  if (!plist_->isSublist("analysis") ) return;
   if (vo_->getVerbLevel() < Teuchos::VERB_EXTREME) return;
 
   int bc_counter = 0;
@@ -495,7 +496,7 @@ InputAnalysis::OutputBCs()
 /* ******************************************************************
 * Selects unique entries and places them in [first, last)
 ****************************************************************** */
-template <class Iterator>
+template<class Iterator>
 Iterator
 InputAnalysis::SelectUniqueEntries(Iterator first, Iterator last)
 {

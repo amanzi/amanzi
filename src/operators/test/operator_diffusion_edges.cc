@@ -41,7 +41,7 @@
 * This test diffusion solver with full tensor and source term.
 * The degrees of freedom are on mesh edges.
 * **************************************************************** */
-template <class Analytic>
+template<class Analytic>
 void
 TestDiffusionEdges(int dim, double tol, std::string filename)
 {
@@ -73,8 +73,7 @@ TestDiffusionEdges(int dim, double tol, std::string filename)
   RCP<const Mesh> mesh;
   if (dim == 2) mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 6, 7);
   // mesh = meshfactory.create("test/median32x33.exo", true, true);
-  else
-    mesh = meshfactory.create(filename);
+  else mesh = meshfactory.create(filename);
   // mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 1, 1, true, true);
 
   // modify diffusion coefficient

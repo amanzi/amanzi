@@ -37,32 +37,28 @@ namespace Amanzi {
 namespace WhetStone {
 
 // non-member functions
-double
-IntegrateFunctionsTriangle(const AmanziMesh::Point_List& xy,
-                           const std::vector<const WhetStoneFunction*>& funcs,
-                           int order);
+double IntegrateFunctionsTriangle(const AmanziMesh::Point_List& xy,
+                                  const std::vector<const WhetStoneFunction*>& funcs,
+                                  int order);
 
-double
-IntegrateFunctionsTetrahedron(const AmanziMesh::Point_List& xy,
+double IntegrateFunctionsTetrahedron(const AmanziMesh::Point_List& xy,
+                                     const std::vector<const WhetStoneFunction*>& funcs,
+                                     int order);
+
+double IntegrateFunctionsEdge(const AmanziGeometry::Point& x1,
+                              const AmanziGeometry::Point& x2,
                               const std::vector<const WhetStoneFunction*>& funcs,
                               int order);
 
-double
-IntegrateFunctionsEdge(const AmanziGeometry::Point& x1,
-                       const AmanziGeometry::Point& x2,
-                       const std::vector<const WhetStoneFunction*>& funcs,
-                       int order);
-
-double
-IntegratePolynomialsEdge(const AmanziGeometry::Point& x1,
-                         const AmanziGeometry::Point& x2,
-                         const std::vector<const PolynomialBase*>& polys);
+double IntegratePolynomialsEdge(const AmanziGeometry::Point& x1,
+                                const AmanziGeometry::Point& x2,
+                                const std::vector<const PolynomialBase*>& polys);
 
 
 class NumericalIntegration {
  public:
   NumericalIntegration(Teuchos::RCP<const AmanziMesh::Mesh> mesh);
-  ~NumericalIntegration(){};
+  ~NumericalIntegration() {};
 
   // main methods
   // integrate product of functions with quadrature order
@@ -79,8 +75,9 @@ class NumericalIntegration {
                                 const std::vector<const WhetStoneFunction*>& funcs,
                                 int order) const;
 
-  double
-  IntegrateFunctionsEdge(int e, const std::vector<const WhetStoneFunction*>& funcs, int order) const
+  double IntegrateFunctionsEdge(int e,
+                                const std::vector<const WhetStoneFunction*>& funcs,
+                                int order) const
   {
     AmanziGeometry::Point x1(d_), x2(d_);
     auto nodes = mesh_->getEdgeNodes(e);
@@ -116,10 +113,8 @@ class NumericalIntegration {
                                    const std::vector<const WhetStoneFunction*>& funcs,
                                    int order) const
   {
-    if (xy.size() == 3)
-      return IntegrateFunctionsTriangle(xy, funcs, order);
-    else if (xy.size() == 4)
-      return IntegrateFunctionsTetrahedron(xy, funcs, order);
+    if (xy.size() == 3) return IntegrateFunctionsTriangle(xy, funcs, order);
+    else if (xy.size() == 4) return IntegrateFunctionsTetrahedron(xy, funcs, order);
     return 0.0;
   }
 
@@ -161,8 +156,11 @@ class NumericalIntegration {
  private:
   void IntegrateMonomialsFace_(int c, int f, double factor, int k, Polynomial& integrals) const;
 
-  void
-  IntegrateMonomialsFaceReduction_(int c, int f, double factor, int k, Polynomial& integrals) const;
+  void IntegrateMonomialsFaceReduction_(int c,
+                                        int f,
+                                        double factor,
+                                        int k,
+                                        Polynomial& integrals) const;
 
   void IntegrateMonomialsEdge_(const AmanziGeometry::Point& x1,
                                const AmanziGeometry::Point& x2,
@@ -182,8 +180,7 @@ class NumericalIntegration {
 
 
 //  -- trace of polynomials on manifold
-Polynomial
-ConvertPolynomialsToSurfacePolynomial(
+Polynomial ConvertPolynomialsToSurfacePolynomial(
   const AmanziGeometry::Point& xf,
   const std::shared_ptr<AmanziGeometry::SurfaceCoordinateSystem>& coordsys,
   const std::vector<const PolynomialBase*>& polys);

@@ -48,12 +48,13 @@ class TreeVector {
 
   // Basic constructors of a TreeVector
   TreeVector();
-  TreeVector(const Comm_ptr_type& comm);
-  explicit TreeVector(const TreeVectorSpace& space, InitMode mode = INIT_MODE_NONE);
-  explicit TreeVector(const Teuchos::RCP<TreeVectorSpace>& space, InitMode mode = INIT_MODE_NONE);
+  explicit TreeVector(const Comm_ptr_type& comm);
+  explicit TreeVector(const TreeVectorSpace& space, InitMode mode = init_mode_default);
+  explicit TreeVector(const Teuchos::RCP<TreeVectorSpace>& space,
+                      InitMode mode = init_mode_default);
 
   // copy constructors
-  TreeVector(const TreeVector& other, InitMode mode = INIT_MODE_COPY);
+  TreeVector(const TreeVector& other);
 
   // Assignment operator.
   TreeVector& operator=(const TreeVector& other);
@@ -152,8 +153,10 @@ class TreeVector {
   int Multiply(double scalarAB, const TreeVector& A, const TreeVector& B, double scalarThis);
 
   // this <- scalarAB * A^-1@B + scalarThis*this  (@ is the elementwise product
-  int
-  ReciprocalMultiply(double scalarAB, const TreeVector& A, const TreeVector& B, double scalarThis);
+  int ReciprocalMultiply(double scalarAB,
+                         const TreeVector& A,
+                         const TreeVector& B,
+                         double scalarThis);
 
   // non-inherited extras
   void Print(std::ostream& os, bool data_io = true) const;

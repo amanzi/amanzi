@@ -1,4 +1,4 @@
-<amanzi_input version="1.6-dev" type="unstructured">
+<amanzi_input version="1.7-dev" type="unstructured">
   <model_description name="1D Flow and Transport w/ ion exchange">
     <units>
       <length_unit>m</length_unit>
@@ -24,9 +24,16 @@
   </definitions>
   
   <process_kernels>
-    <flow state="on" model="saturated"/>
-    <transport state="on" />
-    <chemistry state="on" engine="amanzi"/>
+    <pk mode="steady">
+      <flow state="on" model="saturated"/>
+     </pk>
+    <pk mode="transient">
+      <flow state="on" model="saturated"/>
+      <transport state="on" />
+      <chemistry state="on" engine="amanzi"/>
+      <weakly_coupled name="reactive transport">chemistry,transport</weakly_coupled>
+      <weakly_coupled name="mpc">flow,reactive transport</weakly_coupled>
+    </pk>
   </process_kernels>
   
   <phases>
@@ -76,8 +83,8 @@
         <time_step_control_method>simple</time_step_control_method>
         <maximum_newton_iterations>250</maximum_newton_iterations>
         <tolerance>1.5e-12</tolerance>
-        <max_time_step>1700000.0</max_time_step>
-        <initial_time_step>10000.0</initial_time_step>
+        <max_time_step>6.e10</max_time_step>
+        <initial_time_step>6.e10</initial_time_step>
         <time_step_cut_threshold>20</time_step_cut_threshold>
       </unstr_chemistry_controls>
       

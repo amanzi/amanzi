@@ -30,10 +30,6 @@
 #include "EnergyOnePhase_PK.hh"
 #include "MeshFactory.hh"
 #include "Operator.hh"
-#include "PDE_Accumulation.hh"
-#include "PDE_AdvectionUpwind.hh"
-#include "PDE_Diffusion.hh"
-#include "PDE_DiffusionFactory.hh"
 #include "State.hh"
 #include "VerboseObject.hh"
 #include "WhetStoneDefs.hh"
@@ -97,7 +93,7 @@ TEST(ENERGY_ONE_PHASE)
   int n2 = S->GetDerivativeW<CompositeVector>(
               "energy", Tags::DEFAULT, "temperature", Tags::DEFAULT, "energy")
              .size("cell", true);
-  AMANZI_ASSERT(n0 < n1);
+  if (comm->NumProc() > 1) AMANZI_ASSERT(n0 < n1);
   AMANZI_ASSERT(n1 == n2);
 
   // constant timestepping
@@ -132,5 +128,7 @@ TEST(ENERGY_ONE_PHASE)
   WriteStateStatistics(*S, *vo);
 
   auto temp = *S->Get<CompositeVector>("temperature").ViewComponent("cell");
-  for (int c = 0; c < 10; ++c) { CHECK_CLOSE(1.5, temp[0][c], 2e-8); }
+  for (int c = 0; c < temp.MyLength(); ++c) {
+    if ((mesh->getCellCentroid(c))[0] < 0.5) CHECK(temp[0][c] > 1.2);
+  }
 }

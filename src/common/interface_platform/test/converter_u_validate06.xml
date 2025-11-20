@@ -8,7 +8,6 @@
     <Parameter name="amount" type="string" value="mol"/>
     <Parameter isUsed="true" name="temperature" type="string" value="K"/>
   </ParameterList>
-
   <ParameterList name="mesh">
     <Parameter name="framework" type="string" value="MSTK"/>
     <Parameter name="partitioner" type="string" value="metis"/>
@@ -33,27 +32,25 @@
   <ParameterList name="domain">
     <Parameter name="spatial dimension" type="int" value="3"/>
   </ParameterList>
-
   <ParameterList name="regions">
     <ParameterList name="EntireDomain">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{  0.0,    0.0,   0.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{100.0, 100.0, 100.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="SurfaceInlet">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{ 0.0,   0.0,  90.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0, 90.0}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{0.0, 100.0, 100.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="SurfaceOutlet">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{  0.0,  0.0,  0.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{100.0, 0.0, 10.0}"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="fracture">
       <ParameterList name="region: labeled set">
         <Parameter name="file" type="string" value="single_fracture.exo"/>
@@ -65,7 +62,7 @@
     <ParameterList name="All">
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{-1.0e+99, -1.0e+99, -1.0e+99}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{1.0e+99,  1.0e+99,  1.0e+99}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0e+99, 1.0e+99, 1.0e+99}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="FRACTURE_NETWORK_INTERNAL">
@@ -103,7 +100,7 @@
             <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="5.55092978073827368e+01"/>
+                <Parameter name="value" type="double" value="55.5092978073827368"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -130,7 +127,7 @@
         <ParameterList name="function">
           <ParameterList name="EntireDomain">
             <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="0.25"/>
@@ -163,7 +160,7 @@
             <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="5.55092978073827368e+01"/>
+                <Parameter name="value" type="double" value="55.5092978073827368"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -175,10 +172,10 @@
         <ParameterList name="function">
           <ParameterList name="fracture">
             <Parameter name="regions" type="Array(string)" value="{fracture}"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="4.0e-03"/>
+                <Parameter name="value" type="double" value="0.004"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -246,7 +243,6 @@
         <Parameter name="number of dofs" type="int" value="1"/>
         <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
-
       <ParameterList name="temperature">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -254,7 +250,7 @@
             <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="2.98149999999999977e+02"/>
+                <Parameter name="value" type="double" value="298.149999999999977"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -269,7 +265,7 @@
             <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="2.98149999999999977e+02"/>
+                <Parameter name="value" type="double" value="298.149999999999977"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -278,17 +274,20 @@
         <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="initial conditions">
+
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -1.0}"/>
       </ParameterList>
+
       <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="1.0"/>
       </ParameterList>
+
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="1.0"/>
       </ParameterList>
+
       <ParameterList name="const_fluid_molar_mass">
         <Parameter name="value" type="double" value="0.018015"/>
       </ParameterList>
@@ -306,6 +305,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="fracture-saturation_liquid">
         <ParameterList name="function">
           <ParameterList name="ALL">
@@ -331,23 +331,24 @@
               <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.0e-05"/>
+                  <Parameter name="value" type="double" value="0.000010"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.0e-05"/>
+                  <Parameter name="value" type="double" value="0.000010"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 3 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.0e-05"/>
+                  <Parameter name="value" type="double" value="0.000010"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="fracture-diffusion_to_matrix">
         <ParameterList name="function">
           <ParameterList name="fracture">
@@ -361,6 +362,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="pressure">
         <ParameterList name="function">
           <ParameterList name="EntireDomain">
@@ -374,6 +376,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="total_component_concentration">
         <ParameterList name="function">
           <ParameterList name="EntireDomain">
@@ -391,6 +394,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="fracture-pressure">
         <ParameterList name="function">
           <ParameterList name="EntireDomain">
@@ -404,6 +408,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="fracture-total_component_concentration">
         <ParameterList name="function">
           <ParameterList name="EntireDomain">
@@ -425,6 +430,7 @@
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="0.0"/>
       </ParameterList>
+
     </ParameterList>
     <ParameterList name="mesh partitions">
       <ParameterList name="materials">
@@ -432,13 +438,12 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="cycle driver">
     <ParameterList name="time periods">
       <ParameterList name="TP 0">
         <ParameterList name="PK tree">
-          <ParameterList name="steady:coupled flow">
-            <Parameter name="PK type" type="string" value="darcy matrix fracture"/>
+          <ParameterList name="steady:flow matrix fracture">
+            <Parameter name="PK type" type="string" value="flow matrix fracture"/>
             <ParameterList name="steady:flow matrix">
               <Parameter name="PK type" type="string" value="darcy"/>
             </ParameterList>
@@ -455,18 +460,18 @@
       </ParameterList>
       <ParameterList name="TP 1">
         <ParameterList name="PK tree">
-          <ParameterList name="transient:coupled reactive transport">
-            <Parameter name="PK type" type="string" value="reactive transport matrix fracture"/>
-            <ParameterList name="transient:coupled chemistry">
+          <ParameterList name="transient:mpc">
+            <Parameter name="PK type" type="string" value="chemistry and transport matrix fracture"/>
+            <ParameterList name="transient:chemistry matrix fracture">
               <Parameter name="PK type" type="string" value="chemistry matrix fracture"/>
               <ParameterList name="transient:chemistry matrix">
-                <Parameter name="PK type" type="string" value="chemistry amanzi"/>
+                <Parameter name="PK type" type="string" value="amanzi"/>
               </ParameterList>
               <ParameterList name="transient:chemistry fracture">
-                <Parameter name="PK type" type="string" value="chemistry amanzi"/>
+                <Parameter name="PK type" type="string" value="amanzi"/>
               </ParameterList>
             </ParameterList>
-            <ParameterList name="transient:coupled transport">
+            <ParameterList name="transient:transport matrix fracture">
               <Parameter name="PK type" type="string" value="transport matrix fracture"/>
               <ParameterList name="transient:transport matrix">
                 <Parameter name="PK type" type="string" value="transport"/>
@@ -477,16 +482,14 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="start period time" type="double" value="0.0"/>
-        <Parameter name="end period time" type="double" value="1.0e+09"/>
+        <Parameter name="start period time" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="end period time" type="double" value="1.00000000000000000e+09"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial timestep" type="double" value="1.0e+04"/>
-        <Parameter name="maximum timestep" type="double" value="1.0e+07"/>
+        <Parameter name="initial timestep" type="double" value="1.00000000000000000e+04"/>
+        <Parameter name="maximum timestep" type="double" value="1.00000000000000000e+07"/>
       </ParameterList>
     </ParameterList>
-
     <Parameter name="component names" type="Array(string)" value="{Tritium}"/>
-    <Parameter name="number of liquid components" type="int" value="1"/>
     <Parameter name="component molar masses" type="Array(double)" value="{1.0}"/>
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{}"/>
@@ -497,18 +500,17 @@
       <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="PKs">
-    <ParameterList name="steady:coupled flow">
+
+    <ParameterList name="steady:flow matrix fracture">
       <Parameter name="PKs order" type="Array(string)" value="{steady:flow matrix, steady:flow fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
-      <Parameter name="PK type" type="string" value="darcy matrix fracture"/>
-
+      <Parameter name="PK type" type="string" value="flow matrix fracture"/>
+      <Parameter name="MPC type" type="bool" value="true"/>
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-
         <Parameter name="time integration method" type="string" value="BDF1"/>
         <ParameterList name="BDF1">
           <Parameter name="timestep controller type" type="string" value="standard"/>
@@ -518,14 +520,14 @@
             <Parameter name="timestep increase factor" type="double" value="1.0"/>
             <Parameter name="timestep reduction factor" type="double" value="0.8"/>
             <Parameter name="max timestep" type="double" value="4.3234e+17"/>
-            <Parameter name="min timestep" type="double" value="9.99999999999999955e-07"/>
+            <Parameter name="min timestep" type="double" value="9.99999999999999955e-7"/>
           </ParameterList>
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
+            <Parameter name="nonlinear tolerance" type="double" value="0.000010"/>
             <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
             <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
-            <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
+            <Parameter name="max du growth factor" type="double" value="1.0e+3"/>
             <Parameter name="max divergent iterations" type="int" value="3"/>
             <Parameter name="max nka vectors" type="int" value="10"/>
             <Parameter name="limit iterations" type="int" value="20"/>
@@ -547,6 +549,7 @@
           <Parameter name="active wells" type="bool" value="false"/>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
@@ -554,80 +557,87 @@
 
     <ParameterList name="steady:flow matrix">
       <Parameter name="domain name" type="string" value="domain"/>
+      <ParameterList name="physical models and assumptions">
+        <Parameter name="use overburden stress" type="bool" value="false"/>
+      </ParameterList>
+
       <ParameterList name="absolute permeability">
-	<Parameter name="coordinate system" type="string" value="cartesian"/>
+        <Parameter name="coordinate system" type="string" value="cartesian"/>
       </ParameterList>
       <ParameterList name="clipping parameters">
         <Parameter name="maximum correction change" type="double" value="-1.0"/>
       </ParameterList>
+
       <ParameterList name="operators">
-	<ParameterList name="diffusion operator">
-	  <ParameterList name="matrix">
-	    <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
-	    <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-	    <Parameter name="gravity" type="bool" value="true"/>
-	    <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
-	    <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
-	  </ParameterList>
-	  <ParameterList name="preconditioner">
-	    <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
-	    <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-	    <Parameter name="gravity" type="bool" value="true"/>
-	    <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
-	    <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
-	    <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
-	  </ParameterList>
-	  <ParameterList name="vapor matrix">
-	    <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
-	    <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-	    <Parameter name="gravity" type="bool" value="true"/>
-	    <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
-	    <Parameter name="exclude primary terms" type="bool" value="false"/>
-	    <Parameter name="scaled constraint equation" type="bool" value="false"/>
-	    <Parameter name="Newton correction" type="string" value="none"/>
+        <ParameterList name="diffusion operator">
+          <ParameterList name="matrix">
+            <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="gravity" type="bool" value="true"/>
             <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
-	  </ParameterList>
-	</ParameterList>
+            <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
+          </ParameterList>
+          <ParameterList name="preconditioner">
+            <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="gravity" type="bool" value="true"/>
+            <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
+            <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
+            <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
+          </ParameterList>
+          <ParameterList name="vapor matrix">
+            <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="gravity" type="bool" value="true"/>
+            <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
+            <Parameter name="exclude primary terms" type="bool" value="false"/>
+            <Parameter name="scaled constraint equation" type="bool" value="false"/>
+            <Parameter name="Newton correction" type="string" value="none"/>
+            <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
 
       <ParameterList name="time integrator">
-	<Parameter name="error control options" type="Array(string)" value="{pressure}"/>
-	<Parameter name="linear solver" type="string" value="AztecOO"/>
-	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-	<Parameter name="time integration method" type="string" value="none"/>
+        <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
+        <Parameter name="linear solver" type="string" value="AztecOO"/>
+        <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+        <Parameter name="time integration method" type="string" value="none"/>
       </ParameterList>
+
       <ParameterList name="boundary conditions">
-	<ParameterList name="pressure">
-	  <ParameterList name="BC 0">
-	    <Parameter name="regions" type="Array(string)" value="{SurfaceInlet}"/>
-	    <ParameterList name="boundary pressure">
-	      <ParameterList name="function-constant">
-		<Parameter name="value" type="double" value="4.0e+00"/>
-	      </ParameterList>
-	    </ParameterList>
-	    <Parameter name="spatial distribution method" type="string" value="none"/>
-	    <Parameter name="use area fractions" type="bool" value="false"/>
-	  </ParameterList>
-	  <ParameterList name="BC 1">
-	    <Parameter name="regions" type="Array(string)" value="{SurfaceOutlet}"/>
-	    <ParameterList name="boundary pressure">
-	      <ParameterList name="function-constant">
-		<Parameter name="value" type="double" value="1.0"/>
-	      </ParameterList>
-	    </ParameterList>
-	    <Parameter name="spatial distribution method" type="string" value="none"/>
-	    <Parameter name="use area fractions" type="bool" value="false"/>
-	  </ParameterList>
-	</ParameterList>
+        <ParameterList name="pressure">
+          <ParameterList name="BC 0">
+            <Parameter name="regions" type="Array(string)" value="{SurfaceInlet}"/>
+            <ParameterList name="boundary pressure">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="4.0"/>
+              </ParameterList>
+            </ParameterList>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
+            <Parameter name="use area fractions" type="bool" value="false"/>
+          </ParameterList>
+          <ParameterList name="BC 1">
+            <Parameter name="regions" type="Array(string)" value="{SurfaceOutlet}"/>
+            <ParameterList name="boundary pressure">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.0"/>
+              </ParameterList>
+            </ParameterList>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
+            <Parameter name="use area fractions" type="bool" value="false"/>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
+
       <ParameterList name="verbose object">
-	<Parameter name="verbosity level" type="string" value="high"/>
+        <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
     </ParameterList>
 
@@ -636,136 +646,189 @@
       <ParameterList name="clipping parameters">
         <Parameter name="maximum correction change" type="double" value="-1.0"/>
       </ParameterList>
+
       <ParameterList name="fracture permeability models">
-	<ParameterList name="FPM for fracture">
-	  <Parameter name="region" type="string" value="fracture"/>
-	  <Parameter name="model" type="string" value="cubic law"/>
-	  <Parameter name="aperture" type="double" value="0.0"/>
-	</ParameterList>
+        <ParameterList name="FPM for fracture">
+          <Parameter name="region" type="string" value="fracture"/>
+          <Parameter name="model" type="string" value="cubic law"/>
+          <Parameter name="aperture" type="double" value="0.0"/>
+        </ParameterList>
       </ParameterList>
+
       <ParameterList name="physical models and assumptions">
-	<Parameter name="flow and transport in fractures" type="bool" value="true"/>
+        <Parameter name="flow and transport in fractures" type="bool" value="true"/>
         <Parameter name="external aperture" type="bool" value="false"/>
+        <Parameter name="use overburden stress" type="bool" value="false"/>
       </ParameterList>
+
       <ParameterList name="absolute permeability">
-	<Parameter name="coordinate system" type="string" value="cartesian"/>
+        <Parameter name="coordinate system" type="string" value="cartesian"/>
       </ParameterList>
+
       <ParameterList name="operators">
-	<ParameterList name="diffusion operator">
-	  <ParameterList name="matrix">
-	    <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
-	    <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-	    <Parameter name="gravity" type="bool" value="true"/>
+        <ParameterList name="diffusion operator">
+          <ParameterList name="matrix">
+            <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="gravity" type="bool" value="true"/>
             <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
-	  </ParameterList>
-	  <ParameterList name="preconditioner">
-	    <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
-	    <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-	    <Parameter name="gravity" type="bool" value="true"/>
-	    <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
+          </ParameterList>
+          <ParameterList name="preconditioner">
+            <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="gravity" type="bool" value="true"/>
+            <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
             <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
-	  </ParameterList>
-	  <ParameterList name="vapor matrix">
-	    <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
-	    <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-	    <Parameter name="gravity" type="bool" value="true"/>
-	    <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
-	    <Parameter name="exclude primary terms" type="bool" value="false"/>
-	    <Parameter name="scaled constraint equation" type="bool" value="false"/>
-	    <Parameter name="Newton correction" type="string" value="none"/>
-	  </ParameterList>
-	</ParameterList>
+          </ParameterList>
+          <ParameterList name="vapor matrix">
+            <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="gravity" type="bool" value="true"/>
+            <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
+            <Parameter name="exclude primary terms" type="bool" value="false"/>
+            <Parameter name="scaled constraint equation" type="bool" value="false"/>
+            <Parameter name="Newton correction" type="string" value="none"/>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
 
       <ParameterList name="time integrator">
-	<Parameter name="error control options" type="Array(string)" value="{pressure}"/>
-	<Parameter name="linear solver" type="string" value="AztecOO"/>
-	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-	<Parameter name="time integration method" type="string" value="none"/>
+        <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
+        <Parameter name="linear solver" type="string" value="AztecOO"/>
+        <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+        <Parameter name="time integration method" type="string" value="none"/>
+      </ParameterList>
+
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
+      </ParameterList>
+
+    </ParameterList>
+
+    <ParameterList name="transient:mpc">
+      <Parameter name="PKs order" type="Array(string)" value="{transient:chemistry matrix fracture, transient:transport matrix fracture}"/>
+      <Parameter name="master PK index" type="int" value="0"/>
+      <Parameter name="PK type" type="string" value="chemistry and transport matrix fracture"/>
+      <Parameter name="MPC type" type="bool" value="true"/>
+      <Parameter name="domain name" type="string" value="domain"/>
+      <ParameterList name="time integrator">
+        <Parameter name="error control options" type="Array(string)" value="{residual}"/>
+        <Parameter name="linear solver" type="string" value="AztecOO"/>
+        <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+        <Parameter name="time integration method" type="string" value="BDF1"/>
+        <ParameterList name="BDF1">
+          <Parameter name="timestep controller type" type="string" value="standard"/>
+          <ParameterList name="timestep controller standard parameters">
+            <Parameter name="max iterations" type="int" value="15"/>
+            <Parameter name="min iterations" type="int" value="10"/>
+            <Parameter name="timestep increase factor" type="double" value="1.00000000000000000e+00"/>
+            <Parameter name="timestep reduction factor" type="double" value="8.00000000000000044e-01"/>
+            <Parameter name="max timestep" type="double" value="4.32340000000000000e+17"/>
+            <Parameter name="min timestep" type="double" value="9.99999999999999955e-07"/>
+          </ParameterList>
+          <Parameter name="solver type" type="string" value="nka"/>
+          <ParameterList name="nka parameters">
+            <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
+            <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+            <Parameter name="diverged l2 tolerance" type="double" value="1.00000000000000000e+10"/>
+            <Parameter name="max du growth factor" type="double" value="1.00000000000000000e+03"/>
+            <Parameter name="max divergent iterations" type="int" value="3"/>
+            <Parameter name="max nka vectors" type="int" value="10"/>
+            <Parameter name="limit iterations" type="int" value="20"/>
+            <Parameter name="modify correction" type="bool" value="false"/>
+          </ParameterList>
+          <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
+          <Parameter name="extrapolate initial guess" type="bool" value="true"/>
+          <Parameter name="restart tolerance relaxation factor" type="double" value="1.00000000000000000e+00"/>
+          <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.00000000000000000e+00"/>
+          <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
+          <ParameterList name="verbose object">
+            <Parameter name="verbosity level" type="string" value="high"/>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
       <ParameterList name="verbose object">
-	<Parameter name="verbosity level" type="string" value="high"/>
+        <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="transient:coupled reactive transport">
-      <Parameter name="PKs order" type="Array(string)" value="{transient:coupled chemistry, transient:coupled transport}"/>
-      <Parameter name="master PK index" type="int" value="1"/>
-      <Parameter name="PK type" type="string" value="reactive transport matrix fracture"/>
-    </ParameterList>
-
-    <ParameterList name="transient:coupled chemistry">
+    <ParameterList name="transient:chemistry matrix fracture">
       <Parameter name="PKs order" type="Array(string)" value="{transient:chemistry matrix, transient:chemistry fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
       <Parameter name="PK type" type="string" value="chemistry matrix fracture"/>
+      <Parameter name="MPC type" type="bool" value="true"/>
     </ParameterList>
 
     <ParameterList name="transient:chemistry matrix">
       <Parameter name="domain name" type="string" value="domain"/>
+      <Parameter name="primary variable password" type="string" value="state"/>
+
       <Parameter name="chemistry model" type="string" value="Amanzi"/>
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="maximum Newton iterations" type="int" value="100"/>
       <Parameter name="tolerance" type="double" value="1.0e-12"/>
-      <Parameter name="max timestep (s)" type="double" value="1.0e+10"/>
-      <Parameter name="min timestep (s)" type="double" value="1.0e+10"/>
-      <Parameter name="initial timestep (s)" type="double" value="1.0e+07"/>
-      <Parameter name="timestep cut threshold" type="int" value="8"/>
-      <Parameter name="timestep cut factor" type="double" value="2.0"/>
-      <Parameter name="timestep increase threshold" type="int" value="4"/>
-      <Parameter name="timestep increase factor" type="double" value="1.2"/>
-      <Parameter name="timestep control method" type="string" value="fixed"/>
       <Parameter name="initial conditions time" type="double" value="0.0"/>
       <Parameter name="number of component concentrations" type="int" value="1"/>
       <Parameter name="log formulation" type="bool" value="false"/>
       <Parameter name="convergence criterion" type="string" value="linear algebra: max norm"/>
-
       <ParameterList name="physical models and assumptions">
         <Parameter name="physics module" type="string" value="Amanzi"/>
       </ParameterList>
+
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
+      </ParameterList>
+
+      <ParameterList name="timestep controller" type="ParameterList">
+        <Parameter name="timestep controller type" type="string" value="fixed"/>
+        <ParameterList name="timestep controller fixed parameters" type="ParameterList">
+          <Parameter name="timestep [s]" type="double" value="1.0e+10"/>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="transient:chemistry fracture">
       <Parameter name="domain name" type="string" value="fracture"/>
+      <Parameter name="primary variable password" type="string" value="state"/>
+
       <Parameter name="chemistry model" type="string" value="Amanzi"/>
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="maximum Newton iterations" type="int" value="100"/>
       <Parameter name="tolerance" type="double" value="1.0e-12"/>
-      <Parameter name="max timestep (s)" type="double" value="1.0e+10"/>
-      <Parameter name="min timestep (s)" type="double" value="1.0e+10"/>
-      <Parameter name="initial timestep (s)" type="double" value="1.0e+07"/>
-      <Parameter name="timestep cut threshold" type="int" value="8"/>
-      <Parameter name="timestep cut factor" type="double" value="2.0e+00"/>
-      <Parameter name="timestep increase threshold" type="int" value="4"/>
-      <Parameter name="timestep increase factor" type="double" value="1.2"/>
-      <Parameter name="timestep control method" type="string" value="fixed"/>
       <Parameter name="initial conditions time" type="double" value="0.0"/>
       <Parameter name="number of component concentrations" type="int" value="1"/>
       <Parameter name="log formulation" type="bool" value="false"/>
       <Parameter name="convergence criterion" type="string" value="linear algebra: max norm"/>
-
       <ParameterList name="physical models and assumptions">
         <Parameter name="physics module" type="string" value="Amanzi"/>
       </ParameterList>
+
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
+
+      <ParameterList name="timestep controller" type="ParameterList">
+        <Parameter name="timestep controller type" type="string" value="fixed"/>
+        <ParameterList name="timestep controller fixed parameters" type="ParameterList">
+          <Parameter name="timestep [s]" type="double" value="1.0e+10"/>
+        </ParameterList>
+      </ParameterList>
+
     </ParameterList>
 
-    <ParameterList name="transient:coupled transport">
+    <ParameterList name="transient:transport matrix fracture">
       <Parameter name="PKs order" type="Array(string)" value="{transient:transport matrix, transient:transport fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
       <Parameter name="solver" type="string" value="Dispersion Solver"/>
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="PK type" type="string" value="transport matrix fracture"/>
+      <Parameter name="MPC type" type="bool" value="true"/>
     </ParameterList>
 
     <ParameterList name="transient:transport matrix">
@@ -786,11 +849,13 @@
         <Parameter name="limiter extension for transport" type="bool" value="true"/>
         <Parameter name="limiter stencil" type="string" value="face to cells"/>
       </ParameterList>
+
       <ParameterList name="molecular diffusion">
         <Parameter name="aqueous names" type="Array(string)" value="{Tritium}"/>
-        <Parameter name="aqueous values" type="Array(double)" value="{1.0e-09}"/>
+        <Parameter name="aqueous values" type="Array(double)" value="{1.0e-9}"/>
         <Parameter name="molar masses" type="Array(double)" value="{0.0}"/>
       </ParameterList>
+
       <ParameterList name="operators">
         <ParameterList name="diffusion operator">
           <ParameterList name="matrix">
@@ -799,7 +864,7 @@
             <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="gravity" type="bool" value="false"/>
-	    <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
+            <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
           </ParameterList>
           <ParameterList name="preconditioner">
             <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
@@ -807,7 +872,7 @@
             <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="gravity" type="bool" value="false"/>
-	    <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
+            <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
@@ -819,7 +884,7 @@
               <Parameter name="regions" type="Array(string)" value="{SurfaceInlet}"/>
               <ParameterList name="boundary concentration">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.0e-03"/>
+                  <Parameter name="value" type="double" value="0.0010"/>
                 </ParameterList>
               </ParameterList>
               <Parameter name="spatial distribution method" type="string" value="none"/>
@@ -828,6 +893,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <Parameter name="number of aqueous components" type="int" value="1"/>
       <Parameter name="number of gaseous components" type="int" value="0"/>
       <ParameterList name="physical models and assumptions">
@@ -835,9 +901,11 @@
         <Parameter name="use dispersion solver" type="bool" value="false"/>
         <Parameter name="permeability field is required" type="bool" value="false"/>
       </ParameterList>
+
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
+
     </ParameterList>
 
     <ParameterList name="transient:transport fracture">
@@ -851,7 +919,6 @@
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="enable internal tests" type="bool" value="false"/>
       <Parameter name="transport subcycling" type="bool" value="true"/>
-
       <ParameterList name="reconstruction">
         <Parameter name="polynomial order" type="int" value="0"/>
         <Parameter name="weight" type="string" value="constant"/>
@@ -859,11 +926,13 @@
         <Parameter name="limiter extension for transport" type="bool" value="true"/>
         <Parameter name="limiter stencil" type="string" value="face to cells"/>
       </ParameterList>
+
       <ParameterList name="molecular diffusion">
         <Parameter name="aqueous names" type="Array(string)" value="{Tritium}"/>
-        <Parameter name="aqueous values" type="Array(double)" value="{1.0e-09}"/>
+        <Parameter name="aqueous values" type="Array(double)" value="{1.0e-9}"/>
         <Parameter name="molar masses" type="Array(double)" value="{0.0}"/>
       </ParameterList>
+
       <ParameterList name="operators">
         <ParameterList name="diffusion operator">
           <ParameterList name="matrix">
@@ -884,6 +953,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <Parameter name="number of aqueous components" type="int" value="1"/>
       <Parameter name="number of gaseous components" type="int" value="0"/>
       <ParameterList name="physical models and assumptions">
@@ -892,10 +962,13 @@
         <Parameter name="permeability field is required" type="bool" value="false"/>
         <Parameter name="flow and transport in fractures" type="bool" value="true"/>
       </ParameterList>
+
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
+
     </ParameterList>
+
   </ParameterList>
 
   <ParameterList name="solvers">
@@ -947,7 +1020,6 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="preconditioners">
     <ParameterList name="Trilinos ML">
       <Parameter name="preconditioning method" type="string" value="ml"/>
@@ -993,7 +1065,6 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="thermodynamic database">
     <ParameterList name="primary species">
       <ParameterList name="A">
@@ -1030,21 +1101,20 @@
       <ParameterList name="complex_0">
         <Parameter name="reactant" type="string" value="A"/>
         <Parameter name="product" type="string" value="1.0 B"/>
-        <Parameter name="half life" type="double" value="3.9447e+08"/>
+        <Parameter name="half life" type="double" value="3.9447e+8"/>
       </ParameterList>
       <ParameterList name="complex_1">
         <Parameter name="reactant" type="string" value="B"/>
         <Parameter name="product" type="string" value="1.0 C"/>
-        <Parameter name="half life" type="double" value="7.8894e+08"/>
+        <Parameter name="half life" type="double" value="7.8894e+8"/>
       </ParameterList>
       <ParameterList name="complex_2">
         <Parameter name="reactant" type="string" value="C"/>
         <Parameter name="product" type="string" value=""/>
-        <Parameter name="half life" type="double" value="1.57788e+08"/>
+        <Parameter name="half life" type="double" value="1.57788e+8"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="analysis">
     <ParameterList name="domain">
       <Parameter name="used boundary condition regions" type="Array(string)" value="{SurfaceInlet, SurfaceOutlet, SurfaceInlet, SurfaceOutlet}"/>
@@ -1055,21 +1125,17 @@
       <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
   </ParameterList>
-
   <ParameterList name="visualization data">
     <Parameter name="file name base" type="string" value="plot_matrix"/>
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 2, -1}"/>
   </ParameterList>
-
   <ParameterList name="visualization data fracture">
     <Parameter name="file name base" type="string" value="plot_fracture"/>
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 2, -1}"/>
   </ParameterList>
-
   <ParameterList name="mesh info">
     <Parameter isUsed="true" name="filename" type="string" value="centroids"/>
   </ParameterList>
-
   <ParameterList name="mesh info fracture">
     <Parameter name="filename" type="string" value="centroids_fracture"/>
   </ParameterList>

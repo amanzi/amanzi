@@ -6,11 +6,25 @@
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+/*!
 
-/*
-  Transport PK
+Anisotropic mechanical dispersion model by Lichtner, Kelkar, and Robinson, that
+splits vertical from horizontal and longitudinal from transverse.
 
-  Anisotropic mechanical dispersion model.
+`"mechanical dispersion type`" = `"Lichtner-Kelkar-Robinson`"
+
+.. _mdm-lichtner-kelkar-robinson-spec
+.. admonition:: mdm-lichtner-kelkar-robinson-spec
+
+   * `"alpha_lv`" ``[double]`` **0.** Vertical longitudinal
+     dispersivity/dispersion coefficient.
+   * `"alpha_lh`" ``[double]`` **0.** Horizontal longitudinal
+     dispersivity/dispersion coefficient.
+   * `"alpha_tv`" ``[double]`` **0.** Vertical transverse
+     dispersivity/dispersion coefficient.
+   * `"alpha_th`" ``[double]`` **0.** Horizontal transverse
+     dispersivity/dispersion coefficient.
+
 */
 
 #ifndef AMANZI_MDM_LICHTNER_KELKAR_ROBINSON_HH_
@@ -33,7 +47,7 @@ namespace Transport {
 class MDM_LichtnerKelkarRobinson : public MDM {
  public:
   explicit MDM_LichtnerKelkarRobinson(Teuchos::ParameterList& plist);
-  ~MDM_LichtnerKelkarRobinson(){};
+  ~MDM_LichtnerKelkarRobinson() {};
 
   // Required methods from the base class
   // -- dispersion tensor of rank 2

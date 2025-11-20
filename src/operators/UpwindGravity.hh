@@ -38,14 +38,15 @@ namespace Operators {
 class UpwindGravity : public Upwind {
  public:
   UpwindGravity(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-    : Upwind(mesh), g_(mesh->getSpaceDimension()){};
-  ~UpwindGravity(){};
+    : Upwind(mesh), g_(mesh->getSpaceDimension()) {};
+  ~UpwindGravity() {};
 
   // main methods
   void Init(Teuchos::ParameterList& plist);
 
-  void
-  Compute(const CompositeVector& flux, const std::vector<int>& bc_model, CompositeVector& field);
+  void Compute(const CompositeVector& flux,
+               const std::vector<int>& bc_model,
+               CompositeVector& field);
 
  private:
   int method_, order_;

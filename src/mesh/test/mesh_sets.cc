@@ -31,14 +31,19 @@ TEST(MESH_SETS_3CUBE)
   // a 3D, generated, structured hex on the unit cube, NX=NY=NZ=3
   // works in MSTK & SIMPLE (in serial)
   std::vector<Framework> frameworks;
-  if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
-  if (getDefaultComm()->NumProc() == 1) frameworks.push_back(Framework::SIMPLE);
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
+  if (getDefaultComm() ->NumProc() == 1) frameworks.push_back(Framework::SIMPLE);
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
               << "Testing 3D Box 3x3x3 with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh = createStructuredUnitHex(Preference{ frm }, 3, 3, 3, comm, gm);
+    auto plist = Teuchos::rcp(new Teuchos::ParameterList());
+    plist->set<bool>("request edges", true);
+    plist->set<bool>("request faces", true);
+    auto mesh = createStructuredUnitHex(Preference{ frm }, 3, 3, 3, comm, gm, plist);
     testHexMeshSets3x3x3(mesh, false, frm);
   }
 }
@@ -56,7 +61,9 @@ TEST(MESH_SETS_3CUBE_EXO)
   // a 3D exodus file, structured hex on the unit cube, NX=NY=NZ=3
   // works in MSTK or MOAB
   std::vector<Framework> frameworks;
-  if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
   if (framework_enabled(Framework::MOAB) && getDefaultComm()->NumProc() == 1) {
     // moab only reads exo in serial, otherwise must read par
     frameworks.push_back(Framework::MOAB);
@@ -118,7 +125,9 @@ TEST(MESH_SETS_3QUAD)
   // a 2D, generated, structured hex on the unit cube, NX=NY=3
   // works in MSTK
   std::vector<Framework> frameworks;
-  if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl

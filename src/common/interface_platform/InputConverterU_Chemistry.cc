@@ -66,7 +66,7 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
   if (engine == "amanzi") {
     out_list.set<std::string>("chemistry model", "Amanzi");
 
-    node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
+    node = GetPKChemistryPointer_(flag);
 
     if (bgdfilename != "") {
       auto pair = Keys::split(bgdfilename, '.');
@@ -150,8 +150,14 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
       DOMNode* inode = children->item(i);
 
       double krate(-99.9);
-      krate = GetAttributeValueD_(
-        inode, "first_order_decay_constant", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "", false, -99.9);
+      krate = GetAttributeValueD_(inode,
+                                  "first_order_decay_rate_constant",
+                                  TYPE_NUMERICAL,
+                                  DVAL_MIN,
+                                  DVAL_MAX,
+                                  "",
+                                  false,
+                                  -99.9);
 
       if (krate != -99.9) {
         kin_rate_cnst.push_back(krate);
@@ -186,9 +192,10 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
     if (aqueous_reactions.size() > 0) {
       out_list.set<Teuchos::Array<std::string>>("aqueous_reactions", aqueous_reactions);
 
-      Teuchos::ParameterList& rate = ic_list.sublist("first_order_decay_constant");
+      std::string decay_constant_name = "first_order_decay_rate_constant";
+      Teuchos::ParameterList& rate = ic_list.sublist(decay_constant_name);
 
-      for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end();
+      for (std::vector<std::string>::const_iterator it = regions.begin() ; it != regions.end();
            it++) {
         Teuchos::ParameterList& aux3_list = rate.sublist("function")
                                               .sublist(*it)
@@ -230,7 +237,7 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
       Teuchos::ParameterList& surfarea = ic_list.sublist("mineral_specific_surface_area");
       Teuchos::ParameterList& rate = ic_list.sublist("mineral_rate_constant");
 
-      for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end();
+      for (std::vector<std::string>::const_iterator it = regions.begin() ; it != regions.end();
            it++) {
         Teuchos::ParameterList& aux1_list = volfrac.sublist("function")
                                               .sublist(*it)
@@ -282,7 +289,8 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
     // ion exchange
     node = GetUniqueElementByTagsString_(inode, "ion_exchange, cations", flag);
     if (flag) {
-      Teuchos::ParameterList& sites = ic_list.sublist("ion_exchange_sites");
+      std::string field_name = "cation_exchange_capacity";
+      Teuchos::ParameterList& sites = ic_list.sublist(field_name);
       double cec = GetAttributeValueD_(node, "cec", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "mol/m^3");
 
       for (auto it = regions.begin(); it != regions.end(); ++it) {
@@ -304,7 +312,7 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
       Teuchos::ParameterList& langmuir_b = ic_list.sublist("isotherm_langmuir_b");
       Teuchos::ParameterList& freundlich_n = ic_list.sublist("isotherm_freundlich_n");
 
-      for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end();
+      for (std::vector<std::string>::const_iterator it = regions.begin() ; it != regions.end();
            ++it) {
         Teuchos::ParameterList& aux1_list = kd.sublist("function")
                                               .sublist(*it)
@@ -369,7 +377,8 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
 
         sorption_sites.clear();
 
-        Teuchos::ParameterList& complexation = ic_list.sublist("sorption_sites");
+        std::string field_name = "surface_site_density";
+        Teuchos::ParameterList& complexation = ic_list.sublist(field_name);
         Teuchos::ParameterList& tmp_list =
           complexation.sublist("function")
             .sublist(site_str.str())
@@ -393,8 +402,8 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
   }
 
   // general parameters
-  int max_itrs(100), cut_threshold(8), increase_threshold(4);
-  double tol(1e-12), dt_max(1e+10), dt_min(1e+10), dt_init(1e+7), dt_cut(2.0), dt_increase(1.2);
+  int max_itrs(100), cut_threshold(20), increase_threshold(8);
+  double tol(1e-12), dt_max(1e+10), dt_min(1e-10), dt_init(1e+10), dt_cut(2.0), dt_increase(1.2);
 
   double ion_value;
   bool ion_guess(false), log_form(true);
@@ -450,18 +459,39 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
   out_list.set<std::string>("activity model", activity_model);
   if (pitzer_database.size() > 0)
     out_list.set<std::string>("Pitzer database file", pitzer_database);
-  out_list.set<int>("maximum Newton iterations", max_itrs);
-  out_list.set<double>("tolerance", tol);
-  out_list.set<double>("max timestep (s)", dt_max);
-  out_list.set<double>("min timestep (s)", dt_min);
-  out_list.set<double>("initial timestep (s)", dt_init);
-  out_list.set<int>("timestep cut threshold", cut_threshold);
-  out_list.set<double>("timestep cut factor", dt_cut);
-  out_list.set<int>("timestep increase threshold", increase_threshold);
-  out_list.set<double>("timestep increase factor", dt_increase);
-  out_list.set<std::string>("timestep control method", dt_method);
-  out_list.set<bool>("log formulation", log_form);
-  out_list.set<std::string>("convergence criterion", conv_criterion);
+  out_list.set<int>("maximum Newton iterations", max_itrs)
+    .set<double>("tolerance", tol)
+    .set<bool>("log formulation", log_form)
+    .set<std::string>("convergence criterion", conv_criterion)
+    .set<std::string>("primary variable password", "state");
+
+  // timestep controller
+  if (dt_method == "simple") {
+    out_list.sublist("timestep controller")
+      .set<std::string>("timestep controller type", "standard");
+    Teuchos::ParameterList& tsc_list =
+      out_list.sublist("timestep controller").sublist("timestep controller standard parameters");
+    tsc_list.set<double>("max timestep [s]", dt_max);
+    tsc_list.set<double>("min timestep [s]", dt_min);
+    tsc_list.set<double>("initial timestep [s]", dt_init);
+    tsc_list.set<int>("max iterations", cut_threshold);
+    tsc_list.set<double>("timestep reduction factor", 1. / dt_cut);
+    tsc_list.set<int>("min iterations", increase_threshold);
+    tsc_list.set<double>("timestep increase factor", dt_increase);
+
+  } else if (dt_method == "fixed") {
+    out_list.sublist("timestep controller").set<std::string>("timestep controller type", "fixed");
+    Teuchos::ParameterList& tsc_list =
+      out_list.sublist("timestep controller").sublist("timestep controller fixed parameters");
+    tsc_list.set<double>("timestep [s]", dt_init);
+
+  } else {
+    Errors::Message msg;
+    msg << "Unknown chemistry time_step_control_method \"" << dt_method
+        << "\" -- valid are \"fixed\" and \"simple\".";
+    Exceptions::amanzi_throw(msg);
+  }
+
   if (aux_data.size() > 0) out_list.set<Teuchos::Array<std::string>>("auxiliary data", aux_data);
   if (sorption_sites.size() > 0)
     out_list.set<Teuchos::Array<std::string>>("sorption sites", sorption_sites);
@@ -490,7 +520,7 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
   }
 
   // miscalleneous
-  out_list.set<double>("initial conditions time", ic_time_);
+  out_list.set<double>("initial conditions time", ic_time_chemistry_);
   out_list.set<int>("number of component concentrations", comp_names_all_.size());
 
   // assumption
@@ -498,30 +528,6 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
 
   out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
   return out_list;
-}
-
-
-/* ******************************************************************
-* Helper utility for two stuctures of process_kernel lists
-****************************************************************** */
-DOMNode*
-InputConverterU::GetPKChemistryPointer_(bool& flag)
-{
-  MemoryManager mm;
-  DOMNode* node = NULL;
-  DOMNodeList* children;
-
-  node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
-  if (!flag) {
-    node = GetUniqueElementByTagsString_("process_kernels", flag);
-    children = static_cast<DOMElement*>(node)->getElementsByTagName(mm.transcode("pk"));
-    for (int i = 0; i < children->getLength(); ++i) {
-      node = GetUniqueElementByTagsString_(children->item(i), "chemistry", flag);
-      if (flag) break;
-    }
-  }
-
-  return node;
 }
 
 } // namespace AmanziInput

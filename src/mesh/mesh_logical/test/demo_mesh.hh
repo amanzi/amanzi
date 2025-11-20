@@ -35,8 +35,7 @@ namespace Amanzi {
 namespace Testing {
 
 // Single segment of plant, manually generated
-inline
-Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
+inline Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
 demoMeshLogicalSegmentRegularManual()
 {
   using namespace Amanzi::AmanziMesh;
@@ -83,8 +82,7 @@ demoMeshLogicalSegmentRegularManual()
 
 
 // Single segment of plant with irregular mesh spacing
-inline
-Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
+inline Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
 demoMeshLogicalSegmentIrregularManual()
 {
   using namespace Amanzi::AmanziMesh;
@@ -129,8 +127,7 @@ demoMeshLogicalSegmentIrregularManual()
 }
 
 // Single coarse root to 1 meter, then branches to 4 fine roots
-inline
-Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
+inline Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
 demoMeshLogicalYManual()
 {
   using namespace Amanzi::AmanziMesh;
@@ -315,8 +312,7 @@ demoMeshLogicalYManual()
 
 
 // Single coarse root to 1 meter, then branches to 4 fine roots
-inline
-Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
+inline Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
 demoMeshLogicalFromXML(const std::string& meshname)
 {
   using namespace Amanzi::AmanziMesh;
@@ -353,8 +349,7 @@ class RegularMeshCellFromCoordFunctor {
 };
 
 // helper class to get indices from a regular mesh
-inline
-RegularMeshCellFromCoordFunctor::RegularMeshCellFromCoordFunctor(
+inline RegularMeshCellFromCoordFunctor::RegularMeshCellFromCoordFunctor(
   const Amanzi::AmanziGeometry::Point& X0,
   const Amanzi::AmanziGeometry::Point& X1,
   int nx,
@@ -367,8 +362,7 @@ RegularMeshCellFromCoordFunctor::RegularMeshCellFromCoordFunctor(
   dX_[2] = (X1_[2] - X0_[2]) / nz_;
 }
 
-inline
-Amanzi::AmanziMesh::Entity_ID
+inline Amanzi::AmanziMesh::Entity_ID
 RegularMeshCellFromCoordFunctor::operator()(const Amanzi::AmanziGeometry::Point& p)
 {
   Amanzi::AmanziGeometry::Point dp = p - X0_;
@@ -380,8 +374,7 @@ RegularMeshCellFromCoordFunctor::operator()(const Amanzi::AmanziGeometry::Point&
 };
 
 
-inline
-Teuchos::RCP<Amanzi::AmanziMesh::MeshEmbeddedLogical>
+inline Teuchos::RCP<Amanzi::AmanziMesh::MeshEmbeddedLogical>
 demoMeshLogicalYEmbedded()
 {
   using namespace Amanzi::AmanziMesh;

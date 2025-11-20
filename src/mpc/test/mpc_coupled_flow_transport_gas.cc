@@ -81,6 +81,7 @@ runTest()
   auto soln = Teuchos::rcp(new TreeVector());
   auto pk = Teuchos::rcp(new FlowReactiveTransport_PK(pk_tree, plist, S, soln));
 
+  pk->parseParameterList();
   pk->Setup();
   S->Setup();
   S->InitializeFields();

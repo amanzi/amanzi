@@ -20,21 +20,12 @@ set(Alquimia_patch_file alquimia-cmake.patch
                         alquimia-FindPETSc.patch
                         alquimia-MPIlocation.patch
                         )
-#                      
-#                       alquimia-undefined_ierr.patch  -looks like it is not needed
-#                       alquimia-clang-void.patch - Ethan committed this to Alquimia
-                     
-set(Alquimia_sh_patch ${Alquimia_prefix_dir}/alquimia-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/alquimia-patch-step.sh.in
-               ${Alquimia_sh_patch}
-               @ONLY)
-# configure the CMake patch step
-set(Alquimia_cmake_patch ${Alquimia_prefix_dir}/alquimia-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/alquimia-patch-step.cmake.in
-               ${Alquimia_cmake_patch}
-               @ONLY)
-# set the patch command
-set(Alquimia_PATCH_COMMAND ${CMAKE_COMMAND} -P ${Alquimia_cmake_patch})
+patch_tpl(Alquimia
+          ${Alquimia_prefix_dir}
+          ${Alquimia_source_dir}
+          ${Alquimia_stamp_dir}
+          Alquimia_patch_file)
+
 
 # --- Define the arguments passed to CMake.
 set(suffix "a")
@@ -60,6 +51,12 @@ set(Alquimia_CMAKE_ARGS
       "-DLAPACK_LIBRARIES=${LAPACK_LIBRARIES}"
       "-DMPI_PREFIX=${MPI_PREFIX}"
       "-DCMAKE_Fortran_FLAGS:STRING=-fPIC -w -Wno-unused-variable -ffree-line-length-0 -O3")
+
+# --- Override minimum version
+if(CMAKE_MAJOR_VERSION VERSION_EQUAL "4")
+  list(APPEND Alquimia_CMAKE_ARGS "-DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.5")
+endif()
+
 
 # --- Add external project build and tie to the Alquimia build target
 ExternalProject_Add(${Alquimia_BUILD_TARGET}
