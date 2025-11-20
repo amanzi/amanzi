@@ -41,7 +41,9 @@ PK_MPCSequential::PK_MPCSequential(Teuchos::ParameterList& pk_tree,
   auto sublist = Teuchos::sublist(tmp2, "time integrator", true);
 
   max_itrs_ = sublist->get<int>("maximum number of iterations", 100);
-  tol_ = sublist->get<double>("error tolerance", 1e-5);
+  tol_ = sublist->get<double>("error tolerance", 1e-6);
+
+  vo_ = Teuchos::rcp(new VerboseObject(soln->Comm(), "MPC_Sequential", *global_list));
 }
 
 
@@ -76,6 +78,7 @@ bool
 PK_MPCSequential::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   bool fail(false);
+  TreeVector solution_copy(*solution_);
 
   num_itrs_ = 0;
   error_norm_ = 1.0e+20;
@@ -85,7 +88,10 @@ PK_MPCSequential::AdvanceStep(double t_old, double t_new, bool reinit)
 
     for (auto pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
       fail = (*pk)->AdvanceStep(t_old, t_new, reinit);
-      if (fail) return fail;
+      if (fail) {
+        *solution_ = solution_copy;
+        return fail;
+      }
     }
     CommitSequentialStep(du, solution_);
 

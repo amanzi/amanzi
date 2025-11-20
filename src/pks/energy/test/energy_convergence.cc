@@ -134,8 +134,7 @@ TEST(ENERGY_CONVERGENCE)
 
     Teuchos::ParameterList pk_tree = plist->sublist("PKs").sublist("energy");
     Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-    Teuchos::RCP<EnergyOnePhase_PK> EPK =
-      Teuchos::rcp(new EnergyOnePhase_PK(pk_tree, plist, S, soln));
+    auto EPK = Teuchos::rcp(new EnergyOnePhase_PK(pk_tree, plist, S, soln));
 
     // overwrite enthalpy with a different model
     Teuchos::ParameterList ev_list;
@@ -171,31 +170,13 @@ TEST(ENERGY_CONVERGENCE)
     int itrs(0);
     double t(0.0), t1(0.5), dt_next;
     while (std::fabs(t - t1) > 1e-6) {
-      // swap conserved quntity (no backup, we check dt_next instead)
-      const auto& e = S->Get<CompositeVector>("energy");
-      auto& e_prev = S->GetW<CompositeVector>("prev_energy", Tags::DEFAULT, passwd);
-      e_prev = e;
-
-      if (itrs == 0) {
-        Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*soln));
-        udot->PutScalar(0.0);
-        EPK->bdf1_dae()->SetInitialState(t, soln, udot);
-        EPK->UpdatePreconditioner(t, soln, dt);
-      }
-
-      bool failed = EPK->bdf1_dae()->AdvanceStep(dt, dt_next, soln);
+      bool failed = EPK->AdvanceStep(t, t + dt, false);
       CHECK(!failed);
-      CHECK(dt_next >= dt);
-      EPK->bdf1_dae()->CommitSolution(dt, soln);
-      Teuchos::rcp_static_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>(
-        S->GetEvaluatorPtr("temperature", Tags::DEFAULT))
-        ->SetChanged();
+      EPK->CommitStep(t, t + dt, Tags::DEFAULT);
 
       t += dt;
       itrs++;
     }
-
-    EPK->CommitStep(0.0, 1.0, Tags::DEFAULT);
 
     // calculate errors
     auto temp = S->GetPtr<CompositeVector>("temperature", Tags::DEFAULT);
@@ -291,32 +272,15 @@ TEST(ENERGY_PRECONDITIONER)
     // constant timestepping
     std::string passwd("");
     int itrs(0);
-    double t(0.0), t1(0.5), dt(0.02), dt_next;
+    double t(0.0), t1(0.5), dt(0.02);
     while (t < t1) {
-      // swap conserved quntity (no backup, we check dt_next instead)
-      const auto& e = S->Get<CompositeVector>("energy");
-      auto& e_prev = S->GetW<CompositeVector>("prev_energy", Tags::DEFAULT, passwd);
-      e_prev = e;
-
-      if (itrs == 0) {
-        auto udot = Teuchos::rcp(new TreeVector(*soln));
-        udot->PutScalar(0.0);
-        EPK->bdf1_dae()->SetInitialState(t, soln, udot);
-        EPK->UpdatePreconditioner(t, soln, dt);
-      }
-
-      EPK->bdf1_dae()->AdvanceStep(dt, dt_next, soln);
-      CHECK(dt_next >= dt);
-      EPK->bdf1_dae()->CommitSolution(dt, soln);
-      Teuchos::rcp_static_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>(
-        S->GetEvaluatorPtr("temperature", Tags::DEFAULT))
-        ->SetChanged();
+      EPK->AdvanceStep(t, t + dt, false);
+      EPK->CommitStep(t, t + dt, Tags::DEFAULT);
 
       t += dt;
       itrs++;
     }
 
-    EPK->CommitStep(0.0, 1.0, Tags::DEFAULT);
     num_itrs[loop] = EPK->bdf1_dae()->number_nonlinear_steps();
     printf("number of nonlinear steps: %d  enthalphy term=%d\n", num_itrs[loop], 1 - loop);
     plist->sublist("PKs")

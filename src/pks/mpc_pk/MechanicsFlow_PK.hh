@@ -23,7 +23,6 @@
 
 namespace Amanzi {
 
-// class MechanicsFlow_PK : public PK_MPCWeak {
 class MechanicsFlow_PK : public PK_MPCSequential {
  public:
   MechanicsFlow_PK(Teuchos::ParameterList& pk_tree,

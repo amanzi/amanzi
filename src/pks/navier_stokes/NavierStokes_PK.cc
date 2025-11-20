@@ -398,18 +398,9 @@ NavierStokes_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "Reverted pressure, fluid_velocity" << std::endl;
-
-    return failed;
   }
 
-  // commit solution (should we do it here ?)
-  bdf1_dae_->CommitSolution(dt_, soln_);
-  pressure_eval_->SetChanged();
-  fluid_velocity_eval_->SetChanged();
-
-  num_itrs_++;
   dt_ = dt_next_;
-
   return failed;
 }
 
@@ -421,6 +412,14 @@ NavierStokes_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void
 NavierStokes_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
+  // commit solution to the history stack
+  double dt = t_new - t_old;
+  bdf1_dae_->CommitSolution(dt, soln_);
+  pressure_eval_->SetChanged();
+  fluid_velocity_eval_->SetChanged();
+
+  num_itrs_++;
+
   Teuchos::OSTab tab = vo_->getOSTab();
   double tmp1, tmp2;
   soln_u_->Norm2(&tmp1);

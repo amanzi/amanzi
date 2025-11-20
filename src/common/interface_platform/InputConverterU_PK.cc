@@ -372,6 +372,8 @@ InputConverterU::TranslateInitialization_(const std::string& unstr_controls)
   if (flag) {
     std::string text = mm.transcode(node->getTextContent());
     if (text == "aztec00" || text == "aztecoo") text = "AztecOO";
+    if (text == "pcg") text = "PCG with Hypre AMG";
+    if (text == "gmres") text = "GMRES with Hypre AMG";
     out_list.set<std::string>("linear solver", text);
   }
 

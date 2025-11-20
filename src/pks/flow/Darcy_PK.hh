@@ -47,12 +47,8 @@ class Darcy_PK : public Flow_PK {
   virtual void Setup() final;
   virtual void Initialize() final;
 
-  virtual void set_dt(double dt) override
-  {
-    dt_ = dt;
-    dt_desirable_ = dt;
-  }
-  virtual double get_dt() override { return dt_desirable_; }
+  virtual void set_dt(double dt) override { dt_ = dt; }
+  virtual double get_dt() override { return dt_; }
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
@@ -136,7 +132,7 @@ class Darcy_PK : public Flow_PK {
   Teuchos::RCP<Operators::PDE_Accumulation> op_acc_;
 
   int error_control_;
-  double dt_desirable_, dt_factor_;
+  double dt_factor_;
   std::vector<std::pair<double, double>> dt_history_; // statistics
 
   std::string solver_name_;

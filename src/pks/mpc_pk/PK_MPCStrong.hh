@@ -59,6 +59,7 @@ class PK_MPCStrong
 
   // -- advance each sub pk dt.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag);
 
   // PK_MPCStrong is an PK_Implicit
   // -- computes the non-linear functional g = g(t,u,udot)
@@ -116,7 +117,7 @@ class PK_MPCStrong
   using PK_MPC<PK_Base>::solution_;
 
   // timestep control
-  double dt_;
+  double dt_, dt_next_;
   Teuchos::RCP<Amanzi::BDF1_TI<TreeVector, TreeVectorSpace>> time_stepper_;
 
   Teuchos::RCP<Operators::TreeOperator> op_tree_matrix_, op_tree_pc_;
@@ -136,7 +137,7 @@ PK_MPCStrong<PK_Base>::PK_MPCStrong(Teuchos::ParameterList& pk_tree,
                                     const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                                     const Teuchos::RCP<State>& S,
                                     const Teuchos::RCP<TreeVector>& soln)
-  : PK_MPC<PK_Base>(pk_tree, global_list, S, soln), dt_(0.0){};
+  : PK_MPC<PK_Base>(pk_tree, global_list, S, soln), dt_(0.0), dt_next_(0.0) {};
 
 
 // -----------------------------------------------------------------------------
@@ -159,9 +160,6 @@ PK_MPCStrong<PK_Base>::Setup()
 
   // call each sub-PKs Setup()
   PK_MPC<PK_Base>::Setup();
-
-  // Set the initial timestep as the min of the sub-pk sizes.
-  dt_ = 1e+99;
 }
 
 
@@ -188,11 +186,8 @@ PK_MPCStrong<PK_Base>::Initialize()
     time_stepper_ = Teuchos::rcp(new Amanzi::BDF1_TI<TreeVector, TreeVectorSpace>(
       "BDF1", ts_plist, *this, solution_->get_map(), S_));
 
-    // -- initialize time derivative
-    Teuchos::RCP<TreeVector> solution_dot = Teuchos::rcp(new TreeVector(*solution_));
-    solution_dot->PutScalar(0.0);
-
-    // -- set initial state
+    // -- set initial state with zero time derivative
+    auto solution_dot = Teuchos::rcp(new TreeVector(solution_->Map(), InitMode::ZERO));
     time_stepper_->SetInitialState(S_->get_time(), solution_, solution_dot);
   }
 }
@@ -211,28 +206,47 @@ PK_MPCStrong<PK_Base>::AdvanceStep(double t_old, double t_new, bool reinit)
   TreeVector solution_copy(*solution_);
 
   // take a bdf timestep
-  double dt_solver;
-  bool fail;
+  bool failed;
   if (true) { // this is here simply to create a context for timer,
               // which stops the clock when it is destroyed at the
               // closing brace.
-    fail = time_stepper_->AdvanceStep(dt_, dt_solver, solution_);
+    failed = time_stepper_->AdvanceStep(dt_, dt_next_, solution_);
+    dt_ = dt_next_;
   }
 
-  if (!fail) {
-    // commit the step as successful
-    time_stepper_->CommitSolution(dt_, solution_);
-    dt_ = dt_solver;
-  } else {
-    // take the decreased timestep size
-    dt_ = dt_solver;
-
-    // recover the original solution
+  if (failed) {
     *solution_ = solution_copy;
     ChangedSolution();
   }
 
-  return fail;
+  return failed;
+}
+
+
+// -----------------------------------------------------------------------------
+// Commit solution to the history
+// -----------------------------------------------------------------------------
+template<class PK_Base>
+void
+PK_MPCStrong<PK_Base>::CommitStep(double t_old, double t_new, const Tag& tag)
+{
+  // internal dt_ is controlled by set and advance functions. 
+  // We should not overwrite it here.
+  double dt = t_new - t_old;
+
+  // A tree of MPC PKs may use many or only one time integrator.
+  if (time_stepper_.get()) {
+    if (dt == 0.0) {
+      auto solution_dot = Teuchos::rcp(new TreeVector(solution_->Map(), InitMode::ZERO));
+      time_stepper_->SetInitialState(t_new, solution_, solution_dot);
+    } else {
+      time_stepper_->CommitSolution(dt, solution_);
+    }
+  }
+
+  for (unsigned int i = 0; i != sub_pks_.size(); ++i) {
+    sub_pks_[i]->CommitStep(t_old, t_new, tag);
+  }
 }
 
 
@@ -321,7 +335,6 @@ PK_MPCStrong<PK_Base>::ErrorNorm(Teuchos::RCP<const TreeVector> u,
                                  Teuchos::RCP<const TreeVector> du)
 {
   double norm = 0.0;
-
   // loop over sub-PKs
   for (unsigned int i = 0; i != sub_pks_.size(); ++i) {
     // pull out the u sub-vector

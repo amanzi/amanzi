@@ -307,11 +307,11 @@ class Flow_PK : public PK_PhysicalBDF {
 
   // -- V&V
   void VV_ValidateBCs() const;
-  void VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const;
-  void VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S, double dT) const;
+  void VV_ReportWaterBalance(const Teuchos::Ptr<State>& S, double dt) const;
+  void VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S, double dt) const;
   void VV_PrintHeadExtrema(const CompositeVector& pressure) const;
   void VV_PrintSourceExtrema() const;
-  void VV_FractureConservationLaw() const;
+  void VV_FractureConservationLaw(double dt) const;
 
   // -- extensions
   void VerticalNormals(int c, AmanziGeometry::Point& n1, AmanziGeometry::Point& n2);
@@ -373,6 +373,7 @@ class Flow_PK : public PK_PhysicalBDF {
   // field evaluators (MUST GO AWAY lipnikov@lanl.gov)
   Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>> pressure_eval_;
   Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>> pressure_msp_eval_;
+  Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>> mol_flowrate_eval_;
 
   // physical models and assumptions
   ModelAssumptions assumptions_;
