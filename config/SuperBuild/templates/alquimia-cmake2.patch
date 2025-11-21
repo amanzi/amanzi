@@ -1,0 +1,33 @@
+diff --color -ruN alquimia-1.2.0-source-backup/CMakeLists.txt alquimia-1.2.0-source/CMakeLists.txt
+--- alquimia-1.2.0-source-backup/CMakeLists.txt	2025-11-10 21:02:40
++++ alquimia-1.2.0-source/CMakeLists.txt	2025-11-10 21:06:16
+@@ -184,9 +184,6 @@
+   if (NOT PETSC_DIR)
+     message(FATAL_ERROR "PETSC_DIR must be set for the requested engines to be enabled.")
+   endif()
+-  if(DEFINED ENV{PETSC_ARCH})
+-    set(PETSC_ARCH ${PETSC_ARCH})
+-  endif()
+ 
+   message(STATUS "--- SM: PETSC_DIR >>> ${PETSC_DIR}")
+   message(STATUS "--- SM: PETSC_ARCH >>> ${PETSC_ARCH}")
+diff --color -ruN alquimia-1.2.0-source-backup/alquimia/CMakeLists.txt alquimia-1.2.0-source/alquimia/CMakeLists.txt
+--- alquimia-1.2.0-source-backup/alquimia/CMakeLists.txt	2025-11-10 21:02:40
++++ alquimia-1.2.0-source/alquimia/CMakeLists.txt	2025-11-10 21:05:40
+@@ -27,9 +27,13 @@
+ endif()
+ 
+ if (ALQUIMIA_NEED_PETSC)
+-  list(APPEND ALQUIMIA_INCLUDE_DIRS $ENV{PETSC_DIR}/include)
+-  list(APPEND ALQUIMIA_INCLUDE_DIRS $ENV{PETSC_DIR}/include/petsc)
+-  list(APPEND ALQUIMIA_INCLUDE_DIRS $ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/include)
++  if (DEFINED PETSC_ARCH)
++    list(APPEND ALQUIMIA_INCLUDE_DIRS ${PETSC_DIR}/${PETSC_ARCH}/include)
++    list(APPEND ALQUIMIA_INCLUDE_DIRS ${PETSC_DIR}/${PETSC_ARCH}/include/petsc)
++  else()
++    list(APPEND ALQUIMIA_INCLUDE_DIRS ${PETSC_DIR}/include)
++    list(APPEND ALQUIMIA_INCLUDE_DIRS ${PETSC_DIR}/include/petsc)
++  endif()
+   if (PETSC_LIBRARIES)
+     list(APPEND ALQUIMIA_TPLS ${PETSC_LIBRARIES})
+   endif()
