@@ -45,11 +45,10 @@ AdvanceToSteadyState(Teuchos::RCP<State> S,
   double T1 = ti_specs.T1;
   double dT0 = ti_specs.dT0;
 
-  double T_physics = 0.0;
-  double dT(dT0), dTnext;
+  double Told, Tnew(0.0), dT(dT0), dTnext;
 
   int itrs = 0;
-  while (itrs < max_itrs && T_physics < T1) {
+  while (itrs < max_itrs && Tnew < T1) {
     if (itrs == 0) { // initialization of BDF1
       Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*soln));
       udot->PutScalar(0.0);
@@ -61,14 +60,13 @@ AdvanceToSteadyState(Teuchos::RCP<State> S,
     while (RPK.get_bdf1_dae()->AdvanceStep(dT, dTnext, soln)) {
       dT = dTnext;
     }
-    RPK.VV_ReportSeepageOutflow(S.ptr(), dT);
-    RPK.get_bdf1_dae()->CommitSolution(dT, soln);
 
-    T_physics = RPK.get_bdf1_dae()->time();
+    Told = Tnew;
+    Tnew += dT;
     dT = dTnext;
     itrs++;
 
-    double Tdiff = T1 - T_physics;
+    double Tdiff = T1 - Tnew;
     if (dTnext > Tdiff) {
       dT = Tdiff * 0.99999991; // To avoid hitting the wrong BC
       last_step = true;
@@ -102,8 +100,7 @@ AdvanceToSteadyState(Teuchos::RCP<State> S,
     }
 
     // commit step
-    RPK.CommitStep(T_physics - dT, T_physics, Tags::DEFAULT);
-    RPK.VV_ReportMultiscale();
+    RPK.CommitStep(Told, Tnew, Tags::DEFAULT);
   }
 
   ti_specs.num_itrs = itrs;

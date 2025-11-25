@@ -1011,16 +1011,7 @@ Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
     archive.Restore("");
     ChangedSolution();
-
-    return failed;
   }
-
-  bdf1_dae_->CommitSolution(t_new - t_old, soln_);
-  ChangedSolution();
-
-  dt_ = dt_next_;
-  num_ns_itrs_++;
-
   return failed;
 }
 
@@ -1031,6 +1022,13 @@ Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void
 Multiphase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
+  dt_ = t_new - t_old;
+  bdf1_dae_->CommitSolution(dt_, soln_);
+  ChangedSolution();
+
+  num_ns_itrs_++;
+  dt_ = dt_next_;
+
   // no BC for upwind algorithms
   std::vector<int> bcnone(nfaces_wghost_, Operators::OPERATOR_BC_NONE);
 

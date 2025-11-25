@@ -466,6 +466,11 @@ Amanzi_PK::Initialize()
   // figure out if any of the processes threw an error, if so all processes will re-throw
   ErrorAnalysis(ierr, internal_msg);
 
+  if (tag_next_ != tcc_tag_next_ && S_->GetRecord(key_, tcc_tag_next_).initialized()) {
+    assign(key_, tag_next_, tcc_tag_next_, *S_);
+    S_->GetRecordW(key_, tag_next_, passwd_).set_initialized();
+  }
+
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << vo_->color("green") << "Initialization of PK was successful, T=" << S_->get_time()

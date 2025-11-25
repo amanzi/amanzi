@@ -287,8 +287,8 @@ EnergyOnePhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // save a copy of primary and conservative fields
   std::vector<std::string> fields({ temperature_key_, energy_key_ });
-  StateArchive archive(S_, vo_);
-  archive.Add(fields, Tags::DEFAULT);
+  archive_ = Teuchos::rcp(new StateArchive(S_, vo_));
+  archive_->Add(fields, Tags::DEFAULT);
 
   // initialization
   if (num_itrs_ == 0) {
@@ -304,19 +304,11 @@ EnergyOnePhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   bool failed = bdf1_dae_->AdvanceStep(dt_, dt_next_, soln_);
   if (failed) {
     dt_ = dt_next_;
-
-    archive.Restore("");
+    archive_->Restore("");
     temperature_eval_->SetChanged();
-    return failed;
   }
 
-  // commit solution (should we do it here ?)
-  bdf1_dae_->CommitSolution(dt_, soln_);
-  temperature_eval_->SetChanged();
-
-  num_itrs_++;
   dt_ = dt_next_;
-
   return failed;
 }
 
@@ -327,12 +319,27 @@ EnergyOnePhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void
 EnergyOnePhase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
-  dt_ = dt_next_;
+  // commit solution to time history
+  if (bdf1_dae_.get()) bdf1_dae_->CommitSolution(t_new - t_old, soln_);
+  temperature_eval_->SetChanged();
+
+  num_itrs_++;
 
   // update previous fields
   std::vector<std::string> fields({ energy_key_ });
-  StateArchive archive(S_, vo_);
-  archive.CopyFieldsToPrevFields(fields, "", false);
+  StateArchive archive_tmp(S_, vo_);
+  archive_tmp.CopyFieldsToPrevFields(fields, "", false);
+}
+
+
+/* ******************************************************************
+* Restore state to the previous step
+****************************************************************** */
+void
+EnergyOnePhase_PK::FailStep(double t_old, double t_new, const Tag& tag)
+{
+  archive_->Restore("");
+  temperature_eval_->SetChanged();
 }
 
 } // namespace Energy

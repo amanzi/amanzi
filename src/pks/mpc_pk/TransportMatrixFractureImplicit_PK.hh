@@ -45,6 +45,7 @@ class TransportMatrixFractureImplicit_PK : public PK_MPCStrong<PK_BDF> {
 
   // -- advance each sub pk from t_old to t_new.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
 
   // -- miscaleneous methods
   virtual std::string name() override { return "coupled transport implicit"; }

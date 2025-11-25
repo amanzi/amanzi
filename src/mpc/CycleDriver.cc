@@ -285,7 +285,9 @@ CycleDriver::Initialize()
 
   // commit the initial conditions.
   if (!restart_requested_) {
-    pk_->CommitStep(S_->get_time(), S_->get_time(), Tags::DEFAULT);
+    // KL: State was already initialized. What are reasons for commit?
+    //     Initialization of secondary fields should be done in PK's Initialize().
+    // pk_->CommitStep(S_->get_time(), S_->get_time(), Tags::DEFAULT);
   }
 }
 
@@ -510,7 +512,7 @@ CycleDriver::get_dt(bool after_failure)
   std::vector<std::pair<double, double>>::iterator it;
   std::vector<std::pair<double, double>>::iterator it_max;
 
-  for (it = reset_info_.begin() , it_max = reset_max_.begin(); it != reset_info_.end();
+  for (it = reset_info_.begin(), it_max = reset_max_.begin(); it != reset_info_.end();
        ++it, ++it_max) {
     if (S_->get_time() == it->first) {
       if (reset_max_.size() > 0) {
@@ -534,7 +536,8 @@ CycleDriver::get_dt(bool after_failure)
 
   // check if the step size has gotten too small
   if (dt < min_dt_) {
-    Errors::Message message("CycleDriver: error, timestep too small");
+    Errors::Message message;
+    message << "CycleDriver: error, timestep too small (" << dt << " < " << min_dt_ << ")";
     Exceptions::amanzi_throw(message);
   }
 
@@ -618,7 +621,7 @@ CycleDriver::Advance(double dt)
       }
       reinit = true;
     }
-
+ 
     fail = pk_->AdvanceStep(S_->get_time(), S_->get_time() + dt, reinit);
   }
 
@@ -1099,7 +1102,10 @@ CycleDriver::ResetDriver(int time_pr_id)
 
   // Initialize the process kernels and verify
   pk_->Initialize();
-  pk_->CommitStep(S_->get_time(), S_->get_time(), Tags::DEFAULT);
+  // KL: State is valid after reset. What are reasons for commit?
+  //     Initialization of secondary fields should be done in Initialize().
+  //     BDF history is now updated by CommitStep() which makes this call wrong.
+  // pk_->CommitStep(S_->get_time(), S_->get_time(), Tags::DEFAULT);
   S_->CheckAllFieldsInitialized();
 
   S_->GetMeshPartition("materials");
