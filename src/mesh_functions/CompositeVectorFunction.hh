@@ -28,13 +28,18 @@ class CompositeVectorFunction final {
   CompositeVectorFunction(const Teuchos::RCP<const MeshFunction>& func,
                           const std::vector<std::string>& names,
                           bool dot_with_normal = false,
-                          const std::string& spatial_dist_method = "none");
+                          const std::string& spatial_dist_method = "none",
+			  bool must_cover = false);
   ~CompositeVectorFunction() = default;
 
   void Compute(double time,
                const Teuchos::Ptr<CompositeVector>& vec,
                const VerboseObject* vo = nullptr);
 
+  // confirm that, for all components that are touched, all entities of that type are touched
+  // e.g. the set of all regions covers the domain.  Need not be non-overlapping!
+  void CheckCovers();
+  
  protected:
   void Compute_(double time, const Teuchos::Ptr<CompositeVector>& vec, const VerboseObject* vo);
 

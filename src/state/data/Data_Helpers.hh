@@ -38,6 +38,8 @@
    * `"value`" ``[double]`` **optional** Constant value, same as `"constant`" above.
    * `"function`" ``[composite-vector-function-spec-list]`` **optional**
      Initialize from a function, see CompositeVectorFunction_
+   * `"check function covers entities`" ``[bool]`` **false** If function is used,
+     this confirms that the function touches all entities in the vector.
    * `"restart file`" ``[string]`` **optional** Path to a checkpoint file from
      which to read the values.
    * `"cells from file`" ``[string]`` **optional** Same as `"restart file`",

@@ -23,8 +23,11 @@ namespace Functions {
 CompositeVectorFunction::CompositeVectorFunction(const Teuchos::RCP<const MeshFunction>& func,
                                                  const std::vector<std::string>& names,
                                                  bool dot_with_normal,
-                                                 const std::string& spatial_dist_method)
-  : func_(func), dot_with_normal_(dot_with_normal), spatial_dist_method_(spatial_dist_method)
+                                                 const std::string& spatial_dist_method,
+						 bool must_cover)
+  : func_(func),
+    dot_with_normal_(dot_with_normal),
+    spatial_dist_method_(spatial_dist_method)
 {
   AMANZI_ASSERT(names.size() == func->size());
 
@@ -36,6 +39,8 @@ CompositeVectorFunction::CompositeVectorFunction(const Teuchos::RCP<const MeshFu
     cv_spec_list_.push_back(Teuchos::rcp(new CompositeVectorSpec(*name, *spec)));
     ++name;
   }
+
+  if (must_cover) CheckCovers();
 }
 
 void
@@ -276,6 +281,83 @@ CompositeVectorFunction::ComputeSpatiallyDistributed_(double time,
     }
   }
 #endif
+}
+
+
+void
+CompositeVectorFunction::CheckCovers()
+{
+  // get a set of entity kinds and regions that will be used
+  std::set<AmanziMesh::Entity_kind> kinds;
+  std::map<AmanziMesh::Entity_kind, std::set<std::string>> regions_by_kind;
+  for (const Teuchos::RCP<CompositeVectorSpec>& cv_spec : cv_spec_list_) {
+    auto [regions, kind] = *cv_spec->second->first;
+    kinds.insert(kind);
+    for (const auto& region : regions) regions_by_kind[kind].insert(region);
+  }
+
+  // create a CV with component per entity kind, 1 dof
+  CompositeVectorSpace cvs;
+  cvs.SetMesh(func_->mesh());
+  for (const AmanziMesh::Entity_kind& kind : kinds) {
+    cvs.AddComponent(AmanziMesh::to_string(kind), kind, 1);
+  }
+  CompositeVector cv(cvs);
+  cv.PutScalar(0.);
+
+  // populate the cv indicating number of touches
+  for (const auto& [kind, regions] : regions_by_kind) {
+    std::string kind_as_string = AmanziMesh::to_string(kind);
+    Epetra_MultiVector& vec = *cv.ViewComponent(kind_as_string, false);
+    
+    for (const std::string& region : regions) {
+      const auto& region_ids = func_->mesh()->getSetEntities(region, kind, AmanziMesh::Parallel_kind::OWNED);
+      for (const auto& e : region_ids) vec[0][e] += 1;
+    }
+  }
+
+  // diagnostics
+  for (const auto& comp : cv) {
+    int count[2] = {0,0};
+    AmanziMesh::Entity_GID where[2] = {-1, -1};
+    AmanziMesh::Entity_kind kind = AmanziMesh::createEntityKind(comp);
+    Epetra_MultiVector& vec = *cv.ViewComponent(comp, false);
+    for (int i = 0; i != vec.MyLength(); ++i) {
+      if (vec[0][i] == 0) {
+	count[0]++;
+	where[0] = func_->mesh()->getEntityGID(kind, i);
+      } else if (vec[0][i] > 1) {
+	count[1]++;
+	where[1] = func_->mesh()->getEntityGID(kind, i);
+      }
+    }
+
+    int count_g[2];
+    AmanziMesh::Entity_GID where_g[2];
+    cv.Comm()->SumAll(count, count_g, 2);
+
+    if (where[0] == -1) where[0] = std::numeric_limits<AmanziMesh::Entity_GID>::max();
+    if (where[1] == -1) where[1] = std::numeric_limits<AmanziMesh::Entity_GID>::max();
+    cv.Comm()->MinAll(where, where_g, 2);
+    if (where_g[0] == std::numeric_limits<AmanziMesh::Entity_GID>::max()) where_g[0] = -1;
+    if (where_g[1] == std::numeric_limits<AmanziMesh::Entity_GID>::max()) where_g[1] = -1;
+
+    if (count_g[0] > 0) {
+      Errors::Message msg;
+      msg << "CompositeVectorFunction component \"" << comp
+	  << "\" is not covered by the provided functions, which are defined on "
+	  << regions_by_kind[kind].size() << " regions:\n";
+      for (const auto& r : regions_by_kind[kind]) {
+	msg << "  \"" << r << "\"\n";
+      }
+      msg << "There are "
+	  << count_g[0] << " of " << vec.GlobalLength()
+	  << " total untouched entities, including GID " << where_g[0]
+	  << ", and there are " << count_g[1] << " entities that are touched more than once, including GID "
+	  << where_g[1] << ".";
+      Exceptions::amanzi_throw(msg);
+    }
+  }    
 }
 
 

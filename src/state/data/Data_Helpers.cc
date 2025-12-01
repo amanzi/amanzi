@@ -354,6 +354,18 @@ Initialize<CompositeVector>(Teuchos::ParameterList& plist,
     auto t_ptr = Teuchos::rcpFromRef(t).ptr();
     auto func =
       Functions::CreateCompositeVectorFunction(func_plist, t.Map(), complist, dot_with_normal);
+
+    if (plist.get<bool>("check function covers entities", false)) {
+      try {
+	func->CheckCovers();
+      } catch(Errors::Message& e) {
+	Errors::Message msg;
+	msg << "While initializing field \"" << fieldname << "\" the following error was thrown: "
+	    << e.what();
+	Exceptions::amanzi_throw(msg);
+      }
+    }
+
     func->Compute(t_ini, t_ptr);
     initialized = true;
   }
