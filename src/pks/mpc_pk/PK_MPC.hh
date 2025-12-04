@@ -93,7 +93,7 @@ class PK_MPC : virtual public PK {
 
 
 // -----------------------------------------------------------------------------
-// Setup of PK hierarchy from PList
+// Costructor
 // -----------------------------------------------------------------------------
 template<class PK_Base>
 PK_MPC<PK_Base>::PK_MPC(Teuchos::ParameterList& pk_tree,
@@ -127,7 +127,6 @@ PK_MPC<PK_Base>::PK_MPC(Teuchos::ParameterList& pk_tree,
   PKFactory pk_factory;
 
   for (int i = 0; i < pk_name.size(); ++i) {
-    //const std::string& sub_name = sub->first;
     const std::string& sub_name = pk_name[i];
     if (!plist->isSublist(sub_name)) {
       Errors::Message msg;
@@ -163,7 +162,7 @@ PK_MPC<PK_Base>::PK_MPC(Teuchos::ParameterList& pk_tree,
 
 
 // -----------------------------------------------------------------------------
-// Setup of PK hierarchy from PList
+// Parse parameter list.
 // -----------------------------------------------------------------------------
 template<class PK_Base>
 void

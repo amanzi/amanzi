@@ -308,7 +308,7 @@ Richards_PK::Setup()
     S_->SetEvaluator(relperm_key_, Tags::DEFAULT, eval);
   }
 
-  // optional porosity correction to permeability
+  // -- optional porosity correction to permeability
   if (assumptions_.use_ppm) {
     S_->Require<CV_t, CVS_t>(ppfactor_key_, Tags::DEFAULT, ppfactor_key_)
       .SetMesh(mesh_)
@@ -373,7 +373,7 @@ Richards_PK::Setup()
     S_->SetEvaluator(alpha_key_, Tags::DEFAULT, eval);
   }
 
-  // -- aperture evalutor
+  // -- aperture evaluator
   if (assumptions_.use_overburden_stress && domain_ == "domain") {
     S_->Require<CV_t, CVS_t>("hydrostatic_stress", Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)

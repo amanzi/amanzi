@@ -10,7 +10,7 @@
 /*
   MPC PK
 
-  Weak coupling of mechanics and flow PKs.
+  Weak coupling of mechanics and flow PKs using the fixed-stress operator split.
 */
 
 #include <string>
@@ -21,13 +21,23 @@
 #include "Transport_PK.hh"
 
 #include "FlowMechanics_PK.hh"
-#include "WaterStorageStressSplit.hh"
-#include "WaterStorageDarcyStressSplit.hh"
+#include "WaterStorageDarcyPoroelasticity.hh"
 
 namespace Amanzi {
 
 using CV_t = CompositeVector;
 using CVS_t = CompositeVectorSpace;
+
+// Optimal stability coefficient due to Makilic, Wheeler.
+// Convergence of iterative coupling for coupled flow and geomechanics.
+// Comput Geosci 2013.
+inline double
+FixedStressStability(double E, double nu, double b)
+{
+  double mu = E / (2 * (1 + nu));
+  return b * b / mu / 2;
+}
+
 
 /* ******************************************************************
 * Constructor
@@ -94,23 +104,12 @@ FlowMechanics_PK::Setup()
       .set<bool>("thermoelasticity", thermal_flow_);
   }
 
-  // flow
   // -- we re-define water_storage as a way to get the undrained split scheme
   if (Keys::getVarName(sub_pks_[0]->name()) == "darcy") {
     auto elist = RequireFieldForEvaluator(*S_, water_storage_key_);
     elist.set<std::string>("pressure key", pressure_key_);
 
-    auto eval = Teuchos::rcp(new WaterStorageDarcyStressSplit(elist));
-    S_->SetEvaluator(water_storage_key_, Tags::DEFAULT, eval);
-  } else {
-    auto elist = RequireFieldForEvaluator(*S_, water_storage_key_);
-
-    elist.set<std::string>("pressure key", pressure_key_)
-      .set<std::string>("saturation key", saturation_liquid_key_)
-      .set<std::string>("porosity key", porosity_key_);
-    // elist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-
-    auto eval = Teuchos::rcp(new WaterStorageStressSplit(elist));
+    auto eval = Teuchos::rcp(new WaterStorageDarcyPoroelasticity(elist));
     S_->SetEvaluator(water_storage_key_, Tags::DEFAULT, eval);
   }
 
@@ -157,6 +156,29 @@ FlowMechanics_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   StateArchive archive(S_, vo_);
   archive.Add(fields, Tags::DEFAULT);
 
+  // populate L-scheme stability constant
+  if (L_scheme_) {
+    Key key_stab = Keys::getKey(domain_, L_scheme_keys_[0] + "_stability");
+    auto& stability_c = *S_->GetW<CV_t>(key_stab, "state").ViewComponent("cell");
+
+    Key density_key = (Keys::getVarName(sub_pks_[0]->name()) == "darcy") ? "mass_density_liquid"
+                                                                         : "molar_density_liquid";
+    const auto& eta_c = *S_->Get<CompositeVector>(density_key).ViewComponent("cell");
+
+    const auto& E = *S_->Get<CompositeVector>("young_modulus").ViewComponent("cell");
+    const auto& nu = *S_->Get<CompositeVector>("poisson_ratio").ViewComponent("cell");
+    const auto& b = *S_->Get<CompositeVector>("biot_coefficient").ViewComponent("cell");
+
+    int ncells = b.MyLength();
+    for (int c = 0; c != ncells; ++c) {
+      double fss = FixedStressStability(E[0][c], nu[0][c], b[0][c]);
+      stability_c[0][c] = fss * eta_c[0][c];
+    }
+
+    Key key_prev = Keys::getKey(domain_, L_scheme_keys_[0] + "_prev");
+    *S_->GetW<CV_t>(key_prev, "state").ViewComponent("cell") = *S_->Get<CV_t>(pressure_key_).ViewComponent("cell");
+  }
+
   bool fail = PK_MPCSequential::AdvanceStep(t_old, t_new, reinit);
   if (fail) archive.Restore("");
 
@@ -188,38 +210,20 @@ FlowMechanics_PK::CommitSequentialStep(Teuchos::RCP<const TreeVector> u_old,
 {
   // access to pressures, depends on PK
   std::string name;
-  Teuchos::RCP<const Epetra_MultiVector> u0_c, u1_c;
+  Teuchos::RCP<const Epetra_MultiVector> u1_c;
   if (thermal_flow_) {
     auto mpc = Teuchos::rcp_dynamic_cast<PK_MPC<PK_BDF>>(sub_pks_[0]);
     name = Keys::getVarName((*mpc->begin())->name());
-    u0_c = u_old->SubVector(0)->SubVector(0)->Data()->ViewComponent("cell");
     u1_c = u_new->SubVector(0)->SubVector(0)->Data()->ViewComponent("cell");
   } else {
     name = Keys::getVarName(sub_pks_[0]->name());
-    u0_c = u_old->SubVector(0)->Data()->ViewComponent("cell");
     u1_c = u_new->SubVector(0)->Data()->ViewComponent("cell");
   }
 
-  const auto& E = *S_->Get<CompositeVector>("young_modulus").ViewComponent("cell");
-  const auto& nu = *S_->Get<CompositeVector>("poisson_ratio").ViewComponent("cell");
-  const auto& b = *S_->Get<CompositeVector>("biot_coefficient").ViewComponent("cell");
-
-  int ncells = b.MyLength();
-  Key prev = Keys::getKey(domain_, "prev_water_storage");
-  auto& ws_c = *S_->GetW<CV_t>(prev, Tags::DEFAULT, "").ViewComponent("cell");
-
-  if (name == "richards") {
-    const auto& eta_c = *S_->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell");
-    for (int c = 0; c != ncells; ++c) {
-      double stability = FixedStressStability(E[0][c], nu[0][c], b[0][c]);
-      ws_c[0][c] += stability * eta_c[0][c] * ((*u1_c)[0][c] - (*u0_c)[0][c]);
-    }
-  } else {
-    double rho = S_->Get<double>("const_fluid_density");
-    for (int c = 0; c != ncells; ++c) {
-      double stability = FixedStressStability(E[0][c], nu[0][c], b[0][c]);
-      ws_c[0][c] += stability * rho * ((*u1_c)[0][c] - (*u0_c)[0][c]);
-    }
+  // swap current/previous solutions for L-scheme
+  if (L_scheme_) {
+    Key key_prev = Keys::getKey(domain_, L_scheme_keys_[0] + "_prev");
+    *S_->GetW<CV_t>(key_prev, "state").ViewComponent("cell") = *u1_c;
   }
 }
 

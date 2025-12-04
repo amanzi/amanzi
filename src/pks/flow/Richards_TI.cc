@@ -118,6 +118,20 @@ Richards_PK::FunctionalResidual(double t_old,
     Functional_AddMassTransferMatrix_(dt_, f->Data());
   }
 
+  // add stabilization based on Lipschiz constant
+  if (assumptions_.L_scheme) {
+    Key key_stab = Keys::getKey(domain_, assumptions_.L_scheme_key + "_stability");
+    Key key_prev = Keys::getKey(domain_, assumptions_.L_scheme_key + "_prev");
+
+    const auto& stability_c = *S_->Get<CV_t>(key_stab).ViewComponent("cell");
+    const auto& u_prev_c = *S_->Get<CV_t>(key_prev).ViewComponent("cell");
+    const auto& u_new_c = *u_new->Data()->ViewComponent("cell");
+    for (int c = 0; c < ncells_owned; ++c) {
+      double factor = mesh_->getCellVolume(c) / dt_;
+      f_cell[0][c] += stability_c[0][c] * (u_new_c[0][c] - u_prev_c[0][c]) * factor;
+    }
+  }
+
   // calculate normalized residual
   functional_max_norm = 0.0;
   functional_max_cell = 0;
@@ -421,6 +435,12 @@ Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, d
     op_vapor_diff_->SetScalarCoefficient(kvapor_pres, Teuchos::null);
     op_vapor_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
     op_vapor_diff_->ApplyBCs(false, true, false);
+  }
+
+  if (assumptions_.L_scheme) {
+    Key key_stab = Keys::getKey(domain_, assumptions_.L_scheme_key + "_stability");
+    const auto& stability = S_->Get<CV_t>(key_stab);
+    op_acc_->AddAccumulationTerm(stability, dtp, "cell");
   }
 
   // finalize preconditioner

@@ -90,6 +90,16 @@ Darcy_PK::FunctionalResidual(double t_old,
     op_acc_->AddAccumulationDelta(*u_old->Data(), ss_g, ss_g, dt_, "cell");
   }
 
+  // add stabilization based on Lipschiz constant
+  if (assumptions_.L_scheme) {
+    Key key_stab = Keys::getKey(domain_, assumptions_.L_scheme_key + "_stability");
+    Key key_prev = Keys::getKey(domain_, assumptions_.L_scheme_key + "_prev");
+
+    const auto& stability = S_->Get<CV_t>(key_stab);
+    const auto& u_prev = S_->Get<CV_t>(key_prev);
+    op_acc_->AddAccumulationDelta(u_prev, stability, stability, dt_, "cell");
+  }
+
   op_diff_->ApplyBCs(true, true, true);
 
   CompositeVector& rhs = *op_->rhs();

@@ -37,7 +37,9 @@ struct ModelAssumptions {
       vol_flowrate(""),
       sat_liquid(""),
       lookup_table(""),
-      use_gravity(true) {};
+      use_gravity(true),
+      L_scheme(false),
+      L_scheme_key("") {};
 
   void Init(Teuchos::ParameterList plist, const AmanziMesh::Mesh& mesh)
   {
@@ -72,6 +74,9 @@ struct ModelAssumptions {
     lookup_table = plist.get<std::string>("eos lookup table", "");
 
     use_gravity = plist.get<bool>("use gravity", true);
+
+    L_scheme = plist.get<bool>("L-scheme stabilization", false);
+    L_scheme_key = plist.get<std::string>("L-scheme key", "");
   }
 
  public:
@@ -102,6 +107,9 @@ struct ModelAssumptions {
   std::string lookup_table;
 
   bool use_gravity;
+
+  bool L_scheme;
+  std::string L_scheme_key;
 };
 
 } // namespace Amanzi

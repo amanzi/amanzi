@@ -19,9 +19,14 @@
   See additional documentation in the base class src/pks/mpc_pk/PK_MPC.hh
 */
 
+#include "Key.hh"
+
 #include "PK_MPCSequential.hh"
 
 namespace Amanzi {
+
+using CV_t = CompositeVector;
+using CVS_t = CompositeVectorSpace;
 
 // -----------------------------------------------------------------------------
 // Constructor
@@ -43,7 +48,59 @@ PK_MPCSequential::PK_MPCSequential(Teuchos::ParameterList& pk_tree,
   max_itrs_ = sublist->get<int>("maximum number of iterations", 100);
   tol_ = sublist->get<double>("error tolerance", 1e-6);
 
+  // pass L-scheme options to sub-pks
+  L_scheme_ = sublist->get<bool>("L-scheme stabilization", false);
+  if (L_scheme_) {
+    Teuchos::Array<std::string> empty;
+    L_scheme_keys_ = sublist->get<Teuchos::Array<std::string>>("L-scheme fields", empty).toVector();
+
+    pks_names_ = my_list_->get<Teuchos::Array<std::string>>("PKs order").toVector();
+    for (auto& name : pks_names_) {
+      bool mpc = tmp1->sublist(name).get<bool>("MPC type", false);
+      if (mpc) continue;
+
+      std::string domain = tmp1->sublist(name).get<std::string>("domain", "");
+      Key key = Keys::getKey(domain, Keys::split(name, Keys::dset_delimiter).second);
+
+      tmp1->sublist(name).sublist("physical models and assumptions")
+        .set<bool>("L-scheme stabilization", true)
+        .set<std::string>("L-scheme key", key);
+      L_scheme_keys_.push_back(key);
+    }
+  }
+
   vo_ = Teuchos::rcp(new VerboseObject(soln->Comm(), "MPC_Sequential", *global_list));
+}
+
+
+// -----------------------------------------------------------------------------
+// Setup
+// -----------------------------------------------------------------------------
+void
+PK_MPCSequential::Setup()
+{
+  if (L_scheme_) {
+    for (const auto& key : L_scheme_keys_) {
+      auto mesh = S_->GetMesh(Keys::getDomain(key));
+
+      Key stability_key = key + "_stability";
+      Key prev_key = key + "_prev";
+
+      S_->Require<CV_t, CVS_t>(stability_key, Tags::DEFAULT, "state")
+        .SetMesh(mesh)
+        ->SetGhosted(true)
+        ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+      S_->GetRecordW(stability_key, "state").set_initialized();
+
+      S_->Require<CV_t, CVS_t>(prev_key, Tags::DEFAULT, "state")
+        .SetMesh(mesh)
+        ->SetGhosted(true)
+        ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+      S_->GetRecordW(prev_key, "state").set_initialized();
+    }
+  }
+
+  PK_MPC<PK>::Setup();
 }
 
 
@@ -123,10 +180,13 @@ PK_MPCSequential::AdvanceStep(double t_old, double t_new, bool reinit)
 double
 PK_MPCSequential::ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du)
 {
-  double err, unorm;
-  du->Norm2(&err);
-  u->Norm2(&unorm);
-  return err / unorm;
+  double err(0.0), err_i, unorm_i;
+  for (int i = 0; i < u->size(); ++i) { 
+    du->SubVector(i)->Norm2(&err_i);
+    u->SubVector(i)->Norm2(&unorm_i);
+    err = std::max(err, err_i / unorm_i);
+  }
+  return err;
 }
 
 } // namespace Amanzi
