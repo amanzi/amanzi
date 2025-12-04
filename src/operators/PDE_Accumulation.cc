@@ -508,7 +508,7 @@ PDE_Accumulation::FindOp_(const std::string& name) const
 {
   for (auto it = local_ops_.begin(); it != local_ops_.end(); ++it) {
     const Schema& schema = (*it)->schema_row();
-    if (AmanziMesh::to_string(schema.get_base() ) == name) return *it;
+    if (AmanziMesh::to_string(schema.get_base()) == name) return *it;
   }
   return Teuchos::null;
 }

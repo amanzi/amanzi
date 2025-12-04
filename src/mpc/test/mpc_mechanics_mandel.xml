@@ -321,8 +321,8 @@
       <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
   </ParameterList>
-  <ParameterList name="PKs">
 
+  <ParameterList name="PKs">
     <ParameterList name="transient:mechanics and flow">
       <Parameter isUsed="true" name="PK type" type="string" value="mechanics and flow"/>
       <Parameter name="PKs order" type="Array(string)" value="{transient:mechanics, transient:flow}"/>
@@ -331,6 +331,13 @@
         <Parameter name="error control options" type="Array(string)" value="{residual}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+        <ParameterList name="L-scheme">
+          <Parameter name="L-scheme stabilization" type="bool" value="true"/>
+          <Parameter name="minimum safety factor" type="double" value="0.01"/>
+          <Parameter name="maximum safety factor" type="double" value="10.0"/>
+        </ParameterList>
+        <Parameter name="maximum number of iterations" type="int" value="50"/>
+        <Parameter name="error tolerance" type="double" value="1.0e-06"/>
         <ParameterList name="dae constraint">
           <Parameter name="method" type="string" value="projection"/>
           <Parameter name="inflow krel correction" type="bool" value="true"/>

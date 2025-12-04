@@ -104,11 +104,11 @@ InputConverterU::TranslateMesh_()
         if (!flag) ThrowErrorIllformed_("mesh", "number_of_cells", "generate");
 
         std::vector<int> ncells;
-        int nx = GetAttributeValueL_(node, "nx");
+        int nx = GetAttributeValueI_(node, "nx");
         if (nx > 0) ncells.push_back(nx);
-        int ny = GetAttributeValueL_(node, "ny", TYPE_NUMERICAL, 0, INT_MAX, false, 0);
+        int ny = GetAttributeValueI_(node, "ny", TYPE_NUMERICAL, 0, INT_MAX, false, 0);
         if (ny > 0) ncells.push_back(ny);
-        int nz = GetAttributeValueL_(node, "nz", TYPE_NUMERICAL, 0, INT_MAX, false, 0);
+        int nz = GetAttributeValueI_(node, "nz", TYPE_NUMERICAL, 0, INT_MAX, false, 0);
         if (nz > 0) ncells.push_back(nz);
 
         if (ncells.size() != dim_) ThrowErrorIllformed_("mesh", "number_of_cells", "generate");
@@ -337,7 +337,7 @@ InputConverterU::TranslateRegions_()
 
         text = GetAttributeValueS_(reg_elem, "type");
         if (strcmp(text.c_str(), "color") == 0) {
-          int value = GetAttributeValueL_(reg_elem, "label");
+          int value = GetAttributeValueI_(reg_elem, "label");
           rfPL.set<int>("value", value);
           out_list.sublist(reg_name).sublist("region: color function") = rfPL;
         } else if (strcmp(text.c_str(), "labeled set") == 0) {
@@ -367,7 +367,7 @@ InputConverterU::TranslateRegions_()
       else if (strcmp(node_name, "level_set") == 0) {
         tree_["regions"].push_back(reg_name);
 
-        int dim = GetAttributeValueL_(reg_elem, "dimension");
+        int dim = GetAttributeValueI_(reg_elem, "dimension");
         std::string formula = GetAttributeValueS_(reg_elem, "formula");
 
         out_list.sublist(reg_name)

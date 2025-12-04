@@ -45,6 +45,7 @@ class EnergyOnePhase_PK : public Energy_PK {
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) final;
   virtual void FailStep(double t_old, double t_new, const Tag& tag);
   virtual void CalculateDiagnostics(const Tag& tag) final {};
+  virtual void ComputeLSchemeStability() final;
 
   double get_dt() final { return dt_; }
   void set_dt(double dt) final { dt_ = dt; }

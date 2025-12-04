@@ -277,6 +277,7 @@ class Flow_PK : public PK_PhysicalBDF {
   virtual void Setup() override;
   virtual void Initialize() override;
   virtual void CalculateDiagnostics(const Tag& tag) override { UpdateLocalFields_(S_.ptr()); }
+  virtual std::vector<Key> SetupLSchemeKey(Teuchos::ParameterList& plist) override;
 
   // other members of this PK.
   // -- initialize simple fields common for both flow models.
@@ -378,6 +379,9 @@ class Flow_PK : public PK_PhysicalBDF {
   // physical models and assumptions
   ModelAssumptions assumptions_;
   bool coupled_to_matrix_, coupled_to_fracture_;
+  
+  bool L_scheme_ = false;
+  Key L_scheme_stab_key_, L_scheme_prev_key_, L_scheme_data_key_;
 
   // names of state fields
   Key pressure_key_;

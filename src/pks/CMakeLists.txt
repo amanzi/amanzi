@@ -39,7 +39,8 @@ include_directories(${HDF5_INCLUDE_DIRS})
 #
 # Library: pks
 #
-set(pks_src_files PK_Factory.cc
+set(pks_src_files LScheme_Helpers.cc
+                  PK_Factory.cc
                   PK_Utils.cc
                   PK_Physical.cc
                   PK_Physical_Default.cc

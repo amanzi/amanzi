@@ -430,7 +430,7 @@ SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u)
       divergence_count = 0;
     }
 
-    // Next solution iterate and error estimate: u  = u - du
+    // Next solution iterate and error estimate: u := u - du
     u->Update(-1.0, *du, 1.0);
     fn_->ChangedSolution();
 

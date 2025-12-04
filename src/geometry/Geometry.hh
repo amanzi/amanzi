@@ -185,7 +185,6 @@ point_in_polyhed(const Point testpnt,
 
       for (int j = 0; j < nfnodes[i]; j++) { // for each edge of face
         // form tet from edge of face, face center and test point
-        Point tcentroid(3);
         int k, kp1;
 
         k = offset + j;

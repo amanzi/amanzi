@@ -19,9 +19,15 @@
   See additional documentation in the base class src/pks/mpc_pk/PK_MPC.hh
 */
 
+#include "Key.hh"
+#include "LScheme_Helpers.hh"
+
 #include "PK_MPCSequential.hh"
 
 namespace Amanzi {
+
+using CV_t = CompositeVector;
+using CVS_t = CompositeVectorSpace;
 
 // -----------------------------------------------------------------------------
 // Constructor
@@ -40,10 +46,17 @@ PK_MPCSequential::PK_MPCSequential(Teuchos::ParameterList& pk_tree,
   auto tmp2 = Teuchos::sublist(tmp1, pk_name, true);
   auto sublist = Teuchos::sublist(tmp2, "time integrator", true);
 
-  max_itrs_ = sublist->get<int>("maximum number of iterations", 100);
-  tol_ = sublist->get<double>("error tolerance", 1e-6);
+  max_itrs_ = sublist->get<int>("maximum number of iterations");
+  tol_ = sublist->get<double>("error tolerance");
 
-  vo_ = Teuchos::rcp(new VerboseObject(soln->Comm(), "MPC_Sequential", *global_list));
+  // other parameters
+  L_scheme_ = sublist->isSublist("L-scheme");
+  if (L_scheme_) {
+    auto tmp3 = sublist->sublist("L-scheme");
+    L_scheme_keys_ = SetupLSchemeKey(tmp3);
+  }
+
+  vo_ = Teuchos::rcp(new VerboseObject(soln->Comm(), "MPC_Sequential", *my_list_));
 }
 
 
@@ -67,7 +80,27 @@ PK_MPCSequential::get_dt()
 void
 PK_MPCSequential::set_dt(double dt)
 {
-  for (auto pk = sub_pks_.begin() ; pk != sub_pks_.end(); ++pk) (*pk)->set_dt(dt);
+  for (auto pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) (*pk)->set_dt(dt);
+}
+
+
+// -----------------------------------------------------------------------------
+// Extend initialization with optionla L-scheme
+// -----------------------------------------------------------------------------
+void
+PK_MPCSequential::Initialize()
+{
+  PK_MPC<PK>::Initialize();
+
+  if (L_scheme_) {
+    auto& plist = my_list_->sublist("time integrator").sublist("L-scheme");
+    auto& data = S_->GetW<LSchemeData>("l_scheme_data", "state");
+
+    for (auto& item : data) {
+      item.second.safety_factor_min = plist.get<double>("minimum safety factor", 0.01);
+      item.second.safety_factor_max = plist.get<double>("maximum safety factor", 10.0);
+    }
+  }
 }
 
 
@@ -80,26 +113,30 @@ PK_MPCSequential::AdvanceStep(double t_old, double t_new, bool reinit)
   bool fail(false);
   TreeVector solution_copy(*solution_);
 
-  num_itrs_ = 0;
-  error_norm_ = 1.0e+20;
+  // initialize L-scheme
+  InitializeLSchemeStep();
+  ComputeLSchemeStability();
 
-  while (error_norm_ > tol_ && num_itrs_ < max_itrs_) {
+  num_itrs_ = 0;
+  error_norm_ = 0.0;
+
+  while (num_itrs_ < 2 || (error_norm_ > tol_ && num_itrs_ < max_itrs_)) {
     auto du = Teuchos::rcp(new TreeVector(*solution_));
 
-    for (auto pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
-      fail = (*pk)->AdvanceStep(t_old, t_new, reinit);
+    for (int i = 0; i < sub_pks_.size(); ++i) {
+      fail = sub_pks_[i]->AdvanceStep(t_old, t_new, reinit);
       if (fail) {
         *solution_ = solution_copy;
+        for (int k = 0; k < i; ++k) {
+          sub_pks_[k]->FailStep(t_old, t_new, Tags::DEFAULT);
+        }
         return fail;
       }
     }
     CommitSequentialStep(du, solution_);
 
-    // calculate error
-    if (num_itrs_ > 0) {
-      du->Update(-1.0, *solution_, 1.0);
-      error_norm_ = ErrorNorm(solution_, du);
-    }
+    du->Update(-1.0, *solution_, 1.0);
+    error_norm_ = ErrorNorm(solution_, du);
     num_itrs_++;
 
     if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
@@ -123,10 +160,50 @@ PK_MPCSequential::AdvanceStep(double t_old, double t_new, bool reinit)
 double
 PK_MPCSequential::ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du)
 {
-  double err, unorm;
-  du->Norm2(&err);
-  u->Norm2(&unorm);
-  return err / unorm;
+  double err(0.0), err_i, unorm_i, r;
+  for (int i = 0; i < u->size(); ++i) { 
+    du->SubVector(i)->Norm2(&err_i);
+    u->SubVector(i)->Norm2(&unorm_i);
+    err = std::max(err, err_i / unorm_i);
+  }
+
+  // Redefine error norm using the true residual
+  if (L_scheme_) {
+    err = 0.0;
+    auto& data = S_->GetW<LSchemeData>("l_scheme_data", "state");
+
+    for (auto& item : data) {
+      item.second.seq_error[0] = item.second.last_step_residual;
+      r = item.second.update();
+      err = std::max(err, item.second.last_step_residual);
+
+      if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+        Teuchos::OSTab tab = vo_->getOSTab();
+        item.second.print(*vo_->os());
+      }
+      item.second.shift();
+    }
+  }
+  return err;
+}
+
+
+// -----------------------------------------------------------------------------
+// Update previous accumulation field
+// -----------------------------------------------------------------------------
+void
+PK_MPCSequential::CommitSequentialStep(Teuchos::RCP<const TreeVector> u_old,
+                                       Teuchos::RCP<const TreeVector> u_new)
+{
+  if (L_scheme_) {
+    for (int i = 0; i < sub_pks_.size(); ++i) {
+      if (!L_scheme_keys_[i].empty()) {
+        Key key_prev = L_scheme_keys_[i] + "_prev";
+        const auto& u1_c = *u_new->SubVector(i)->Data()->ViewComponent("cell");
+        *S_->GetW<CV_t>(key_prev, "state").ViewComponent("cell") = u1_c;
+      }
+    }
+  }
 }
 
 } // namespace Amanzi
