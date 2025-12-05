@@ -119,12 +119,9 @@ Richards_PK::FunctionalResidual(double t_old,
   }
 
   // add stabilization based on Lipschiz constant
-  if (assumptions_.L_scheme) {
-    Key key_stab = Keys::getKey(domain_, assumptions_.L_scheme_key + "_stability");
-    Key key_prev = Keys::getKey(domain_, assumptions_.L_scheme_key + "_prev");
-
-    const auto& stability_c = *S_->Get<CV_t>(key_stab).ViewComponent("cell");
-    const auto& u_prev_c = *S_->Get<CV_t>(key_prev).ViewComponent("cell");
+  if (L_scheme_) {
+    const auto& stability_c = *S_->Get<CV_t>(L_scheme_stab_key_).ViewComponent("cell");
+    const auto& u_prev_c = *S_->Get<CV_t>(L_scheme_prev_key_).ViewComponent("cell");
     const auto& u_new_c = *u_new->Data()->ViewComponent("cell");
     for (int c = 0; c < ncells_owned; ++c) {
       double factor = mesh_->getCellVolume(c) / dt_;
@@ -437,9 +434,8 @@ Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, d
     op_vapor_diff_->ApplyBCs(false, true, false);
   }
 
-  if (assumptions_.L_scheme) {
-    Key key_stab = Keys::getKey(domain_, assumptions_.L_scheme_key + "_stability");
-    const auto& stability = S_->Get<CV_t>(key_stab);
+  if (L_scheme_) {
+    const auto& stability = S_->Get<CV_t>(L_scheme_stab_key_);
     op_acc_->AddAccumulationTerm(stability, dtp, "cell");
   }
 

@@ -51,56 +51,10 @@ PK_MPCSequential::PK_MPCSequential(Teuchos::ParameterList& pk_tree,
   // pass L-scheme options to sub-pks
   L_scheme_ = sublist->get<bool>("L-scheme stabilization", false);
   if (L_scheme_) {
-    Teuchos::Array<std::string> empty;
-    L_scheme_keys_ = sublist->get<Teuchos::Array<std::string>>("L-scheme fields", empty).toVector();
-
-    pks_names_ = my_list_->get<Teuchos::Array<std::string>>("PKs order").toVector();
-    for (auto& name : pks_names_) {
-      bool mpc = tmp1->sublist(name).get<bool>("MPC type", false);
-      if (mpc) continue;
-
-      std::string domain = tmp1->sublist(name).get<std::string>("domain", "");
-      Key key = Keys::getKey(domain, Keys::split(name, Keys::dset_delimiter).second);
-
-      tmp1->sublist(name).sublist("physical models and assumptions")
-        .set<bool>("L-scheme stabilization", true)
-        .set<std::string>("L-scheme key", key);
-      L_scheme_keys_.push_back(key);
-    }
+    L_scheme_keys_ = SetupLSchemeKey();
   }
 
   vo_ = Teuchos::rcp(new VerboseObject(soln->Comm(), "MPC_Sequential", *global_list));
-}
-
-
-// -----------------------------------------------------------------------------
-// Setup
-// -----------------------------------------------------------------------------
-void
-PK_MPCSequential::Setup()
-{
-  if (L_scheme_) {
-    for (const auto& key : L_scheme_keys_) {
-      auto mesh = S_->GetMesh(Keys::getDomain(key));
-
-      Key stability_key = key + "_stability";
-      Key prev_key = key + "_prev";
-
-      S_->Require<CV_t, CVS_t>(stability_key, Tags::DEFAULT, "state")
-        .SetMesh(mesh)
-        ->SetGhosted(true)
-        ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-      S_->GetRecordW(stability_key, "state").set_initialized();
-
-      S_->Require<CV_t, CVS_t>(prev_key, Tags::DEFAULT, "state")
-        .SetMesh(mesh)
-        ->SetGhosted(true)
-        ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-      S_->GetRecordW(prev_key, "state").set_initialized();
-    }
-  }
-
-  PK_MPC<PK>::Setup();
 }
 
 
@@ -124,7 +78,7 @@ PK_MPCSequential::get_dt()
 void
 PK_MPCSequential::set_dt(double dt)
 {
-  for (auto pk = sub_pks_.begin() ; pk != sub_pks_.end(); ++pk) (*pk)->set_dt(dt);
+  for (auto pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) (*pk)->set_dt(dt);
 }
 
 

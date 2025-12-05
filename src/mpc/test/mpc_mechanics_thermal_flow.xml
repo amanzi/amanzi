@@ -354,7 +354,6 @@
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
         <Parameter name="time integration method" type="string" value="BDF1"/>
         <Parameter name="L-scheme stabilization" type="bool" value="true"/>
-        <Parameter name="L-scheme fields" type="Array(string)" value="{flow}"/>
         <ParameterList name="BDF1">
           <Parameter name="timestep controller type" type="string" value="standard"/>
           <ParameterList name="timestep controller standard parameters">
@@ -468,8 +467,6 @@
 
       <ParameterList name="physical models and assumptions">
         <Parameter name="porosity model" type="string" value="compressible"/>
-        <Parameter name="L-scheme stabilization" type="bool" value="true"/>
-        <Parameter name="L-scheme key" type="string" value="flow"/>
       </ParameterList>
 
       <ParameterList name="absolute permeability">

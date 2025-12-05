@@ -97,6 +97,10 @@ class FlowMechanics_PK : public PK_MPCSequential {
   virtual void Setup() override;
   virtual void Initialize() override;
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit) override;
+
+  virtual std::vector<Key> SetupLSchemeKey() override;
+  virtual void ComputeLSchemeStability() override {};
+
   virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
                            Teuchos::RCP<const TreeVector> du) override;
   virtual void CommitSequentialStep(Teuchos::RCP<const TreeVector> u_old,

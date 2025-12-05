@@ -59,6 +59,10 @@ class PK_MPC : virtual public PK {
   // -- calls all sub-PK initialize() methods
   virtual void Initialize();
 
+  // -- sets L-scheme values for sub-PKs 
+  virtual std::vector<Key> SetupLSchemeKey();
+  virtual void ComputeLSchemeStability();
+
   // -- set tags for integration period
   virtual void set_tags(const Tag& current, const Tag& next);
 
@@ -84,6 +88,10 @@ class PK_MPC : virtual public PK {
 
   // single solution vector for this pk only
   Teuchos::RCP<TreeVector> my_solution_;
+
+  // L-scheme data
+  bool L_scheme_ = false;
+  std::vector<Key> L_scheme_keys_;
 
   // plists
   Teuchos::RCP<Teuchos::ParameterList> global_list_;
@@ -246,6 +254,37 @@ PK_MPC<PK_Base>::getSubPKPlist_(int i)
   return Teuchos::sublist(Teuchos::sublist(global_list_, "PKs"), names[i]);
 }
 
+
+// -----------------------------------------------------------------------------
+// L-scheme stability constant is updated by PKs.
+// -----------------------------------------------------------------------------
+template<class PK_Base>
+std::vector<Key>
+PK_MPC<PK_Base>::SetupLSchemeKey()
+{
+  if (L_scheme_) {
+    for (auto pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
+      auto tmp = (*pk)->SetupLSchemeKey();
+      L_scheme_keys_.insert(L_scheme_keys_.end(), tmp.begin(), tmp.end());
+    }
+  }
+  return L_scheme_keys_;
+}
+
+
+// -----------------------------------------------------------------------------
+// L-scheme stability constant is updated by PKs.
+// -----------------------------------------------------------------------------
+template<class PK_Base>
+void
+PK_MPC<PK_Base>::ComputeLSchemeStability()
+{
+  if (L_scheme_) {
+    for (auto pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
+      (*pk)->ComputeLSchemeStability();
+    }
+  }
+}
 
 } // namespace Amanzi
 

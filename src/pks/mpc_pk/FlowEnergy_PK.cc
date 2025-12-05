@@ -305,5 +305,15 @@ FlowEnergy_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, Teuchos::RC
   }
 }
 
+// -----------------------------------------------------------------------------
+// L-scheme stability constant is updated by PKs.
+// -----------------------------------------------------------------------------
+std::vector<Key>
+FlowEnergy_PK::SetupLSchemeKey()
+{
+  auto tmp = sub_pks_[0]->SetupLSchemeKey();
+  L_scheme_keys_.insert(L_scheme_keys_.end(), tmp.begin(), tmp.end());
+  return L_scheme_keys_;
+}
 
 } // namespace Amanzi

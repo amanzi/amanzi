@@ -173,6 +173,12 @@ class PK {
   // Tag the primary variable as changed in the DAG
   virtual void ChangedSolutionPK(const Tag& tag) { AMANZI_ASSERT(false); }
 
+  // L-scheme support, only PK can estimate properly its Lipschitz constant.
+  // -- list of unique base names (with domain prefix) for stabilized variables
+  virtual std::vector<Key> SetupLSchemeKey() { return std::vector<Key>(); }
+  // -- update the Lipschitz constant
+  virtual void ComputeLSchemeStability() {};
+
  protected:
   Teuchos::RCP<Teuchos::ParameterList> plist_;
   std::string name_;

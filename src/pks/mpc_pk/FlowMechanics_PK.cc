@@ -158,7 +158,7 @@ FlowMechanics_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // populate L-scheme stability constant
   if (L_scheme_) {
-    Key key_stab = Keys::getKey(domain_, L_scheme_keys_[0] + "_stability");
+    Key key_stab = L_scheme_keys_[0] + "_stab";
     auto& stability_c = *S_->GetW<CV_t>(key_stab, "state").ViewComponent("cell");
 
     Key density_key = (Keys::getVarName(sub_pks_[0]->name()) == "darcy") ? "mass_density_liquid"
@@ -175,7 +175,7 @@ FlowMechanics_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       stability_c[0][c] = fss * eta_c[0][c];
     }
 
-    Key key_prev = Keys::getKey(domain_, L_scheme_keys_[0] + "_prev");
+    Key key_prev = L_scheme_keys_[0] + "_prev";
     *S_->GetW<CV_t>(key_prev, "state").ViewComponent("cell") = *S_->Get<CV_t>(pressure_key_).ViewComponent("cell");
   }
 
@@ -222,9 +222,23 @@ FlowMechanics_PK::CommitSequentialStep(Teuchos::RCP<const TreeVector> u_old,
 
   // swap current/previous solutions for L-scheme
   if (L_scheme_) {
-    Key key_prev = Keys::getKey(domain_, L_scheme_keys_[0] + "_prev");
+    Key key_prev = L_scheme_keys_[0] + "_prev";
     *S_->GetW<CV_t>(key_prev, "state").ViewComponent("cell") = *u1_c;
   }
+}
+
+
+/* ******************************************************************
+* L-scheme stability is applied to first (flow) PK.
+****************************************************************** */
+std::vector<Key>
+FlowMechanics_PK::SetupLSchemeKey()
+{
+  if (L_scheme_) {
+    auto tmp = sub_pks_[0]->SetupLSchemeKey();
+    L_scheme_keys_.insert(L_scheme_keys_.end(), tmp.begin(), tmp.end());
+  }
+  return L_scheme_keys_;
 }
 
 } // namespace Amanzi

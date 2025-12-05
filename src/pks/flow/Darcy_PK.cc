@@ -564,12 +564,9 @@ Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   // add stabilization based on Lipschiz constant
-  if (assumptions_.L_scheme) {
-    Key key_stab = Keys::getKey(domain_, assumptions_.L_scheme_key + "_stability");
-    Key key_prev = Keys::getKey(domain_, assumptions_.L_scheme_key + "_prev");
-
-    const auto& stability = S_->Get<CV_t>(key_stab);
-    const auto& u_prev = S_->Get<CV_t>(key_prev);
+  if (L_scheme_) {
+    const auto& stability = S_->Get<CV_t>(L_scheme_stab_key_);
+    const auto& u_prev = S_->Get<CV_t>(L_scheme_prev_key_);
     op_acc_->AddAccumulationDelta(u_prev, stability, stability, dt_, "cell");
   }
 

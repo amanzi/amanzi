@@ -223,6 +223,21 @@ Flow_PK::Setup()
     }
   }
 
+  // L-scheme support
+  if (L_scheme_) {
+    S_->Require<CV_t, CVS_t>(L_scheme_stab_key_, Tags::DEFAULT, "state")
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+    S_->GetRecordW(L_scheme_stab_key_, "state").set_initialized();
+
+    S_->Require<CV_t, CVS_t>(L_scheme_prev_key_, Tags::DEFAULT, "state")
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+    S_->GetRecordW(L_scheme_prev_key_, "state").set_initialized();
+  }
+
   // set units
   if (assumptions_.flow_on_manifold) S_->GetRecordSetW(aperture_key_).set_units("m");
 }
@@ -297,6 +312,20 @@ Flow_PK::Setup_LocalFields_()
     auto eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
     S_->SetEvaluator(darcy_velocity_key_, tag, eval);
   }
+}
+
+
+/* ******************************************************************
+* Helper function: local fields
+****************************************************************** */
+std::vector<Key>
+Flow_PK::SetupLSchemeKey()
+{
+  L_scheme_ = true;
+  Key key = Keys::getKey(domain_, "l_scheme_pressure");
+  L_scheme_stab_key_ = key + "_stab";
+  L_scheme_prev_key_ = key + "_prev";
+  return std::vector<Key>(1, key);
 }
 
 
