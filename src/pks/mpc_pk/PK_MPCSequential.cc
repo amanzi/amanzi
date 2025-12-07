@@ -91,16 +91,23 @@ PK_MPCSequential::AdvanceStep(double t_old, double t_new, bool reinit)
   bool fail(false);
   TreeVector solution_copy(*solution_);
 
+  // initialize L-scheme
+  InitializeLSchemeStep();
+  ComputeLSchemeStability();
+
   num_itrs_ = 0;
   error_norm_ = 1.0e+20;
 
   while (error_norm_ > tol_ && num_itrs_ < max_itrs_) {
     auto du = Teuchos::rcp(new TreeVector(*solution_));
 
-    for (auto pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
-      fail = (*pk)->AdvanceStep(t_old, t_new, reinit);
+    for (int i = 0; i < sub_pks_.size(); ++i) {
+      fail = sub_pks_[i]->AdvanceStep(t_old, t_new, reinit);
       if (fail) {
         *solution_ = solution_copy;
+        for (int k = 0; k < i; ++k) {
+          sub_pks_[k]->FailStep(t_old, t_new, Tags::DEFAULT);
+        }
         return fail;
       }
     }
@@ -141,6 +148,25 @@ PK_MPCSequential::ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const
     err = std::max(err, err_i / unorm_i);
   }
   return err;
+}
+
+
+// -----------------------------------------------------------------------------
+// Update previous accumulation field
+// -----------------------------------------------------------------------------
+void
+PK_MPCSequential::CommitSequentialStep(Teuchos::RCP<const TreeVector> u_old,
+                                       Teuchos::RCP<const TreeVector> u_new)
+{
+  if (L_scheme_) {
+    for (int i = 0; i < sub_pks_.size(); ++i) {
+      if (!L_scheme_keys_[i].empty()) {
+        Key key_prev = L_scheme_keys_[i] + "_prev";
+        const auto& u1_c = *u_new->SubVector(i)->Data()->ViewComponent("cell");
+        *S_->GetW<CV_t>(key_prev, "state").ViewComponent("cell") = u1_c;
+      }
+    }
+  }
 }
 
 } // namespace Amanzi

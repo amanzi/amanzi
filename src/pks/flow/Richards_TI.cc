@@ -118,7 +118,7 @@ Richards_PK::FunctionalResidual(double t_old,
     Functional_AddMassTransferMatrix_(dt_, f->Data());
   }
 
-  // add stabilization based on Lipschiz constant
+  // add stabilization based on Lipschitz constant
   if (L_scheme_) {
     const auto& stability_c = *S_->Get<CV_t>(L_scheme_stab_key_).ViewComponent("cell");
     const auto& u_prev_c = *S_->Get<CV_t>(L_scheme_prev_key_).ViewComponent("cell");

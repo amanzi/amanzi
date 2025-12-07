@@ -23,6 +23,8 @@
 namespace Amanzi {
 namespace Energy {
 
+using CV_t = CompositeVector;
+
 /* ******************************************************************
 * Computes the non-linear functional g = g(t,u,udot)
 ****************************************************************** */
@@ -88,6 +90,17 @@ EnergyOnePhase_PK::FunctionalResidual(double t_old,
   CompositeVector g_adv(g->Data()->Map());
   op_advection_->ComputeNegativeResidual(enthalpy, g_adv);
   g->Data()->Update(1.0, g_adv, 1.0);
+
+  // add stabilization based on Lipschitz constant
+  if (L_scheme_) {
+    const auto& stability_c = *S_->Get<CV_t>(L_scheme_stab_key_).ViewComponent("cell");
+    const auto& u_prev_c = *S_->Get<CV_t>(L_scheme_prev_key_).ViewComponent("cell");
+    const auto& u_new_c = *u_new->Data()->ViewComponent("cell");
+    for (int c = 0; c < ncells_owned; ++c) {
+      double factor = mesh_->getCellVolume(c) / dt_;
+      g_c[0][c] += stability_c[0][c] * (u_new_c[0][c] - u_prev_c[0][c]) * factor;
+    }
+  }
 }
 
 
@@ -144,6 +157,11 @@ EnergyOnePhase_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
     op_preconditioner_advection_->Setup(*flux);
     op_preconditioner_advection_->UpdateMatrices(flux.ptr(), dHdT.ptr());
     op_preconditioner_advection_->ApplyBCs(false, true, false);
+  }
+
+  if (L_scheme_) {
+    const auto& stability = S_->Get<CV_t>(L_scheme_stab_key_);
+    op_acc_->AddAccumulationTerm(stability, dt, "cell");
   }
 
   // verify and finalize preconditioner

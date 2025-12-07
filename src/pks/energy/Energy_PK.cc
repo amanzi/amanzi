@@ -301,6 +301,20 @@ Energy_PK::Setup()
     S_->RequireEvaluator(porosity_key_, Tags::DEFAULT);
   }
 
+  // L-scheme support
+  if (L_scheme_) {
+    S_->Require<CV_t, CVS_t>(L_scheme_stab_key_, Tags::DEFAULT, "state")
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+    S_->GetRecordW(L_scheme_stab_key_, "state").set_initialized();
+
+    S_->Require<CV_t, CVS_t>(L_scheme_prev_key_, Tags::DEFAULT, "state")
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+    S_->GetRecordW(L_scheme_prev_key_, "state").set_initialized();
+  }
 
   // set units
   S_->GetRecordSetW(temperature_key_).set_units("K");
@@ -599,6 +613,20 @@ Energy_PK::ModifyPredictor(double dt,
   *u = *u0;
   u->Update(1.0, *du, 1.0);
   return true;
+}
+
+
+/* ******************************************************************
+* L-scheme support
+****************************************************************** */
+std::vector<Key>
+Energy_PK::SetupLSchemeKey()
+{
+  L_scheme_ = true;
+  Key key = Keys::getKey(domain_, "l_scheme_temperature");
+  L_scheme_stab_key_ = key + "_stab";
+  L_scheme_prev_key_ = key + "_prev";
+  return std::vector<Key>(1, key);
 }
 
 

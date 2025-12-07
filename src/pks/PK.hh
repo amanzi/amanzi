@@ -175,7 +175,7 @@ class PK {
 
   // L-scheme support, only PK can estimate properly its Lipschitz constant.
   // -- list of unique base names (with domain prefix) for stabilized variables
-  virtual std::vector<Key> SetupLSchemeKey() { return std::vector<Key>(); }
+  virtual std::vector<Key> SetupLSchemeKey() { return std::vector<Key>(1); }
   // -- update the Lipschitz constant
   virtual void ComputeLSchemeStability() {};
 

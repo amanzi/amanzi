@@ -342,5 +342,24 @@ EnergyOnePhase_PK::FailStep(double t_old, double t_new, const Tag& tag)
   temperature_eval_->SetChanged();
 }
 
+
+/* ******************************************************************
+* Restore state to the previous step
+****************************************************************** */
+void
+EnergyOnePhase_PK::ComputeLSchemeStability()
+{ 
+  auto& stability_c = *S_->GetW<CV_t>(L_scheme_stab_key_, "state").ViewComponent("cell");
+
+  S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
+  const auto& dEdT =
+    S_->GetDerivative<CompositeVector>(energy_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT);
+  auto& tmp_c = *dEdT.ViewComponent("cell");
+
+  for (int c = 0; c < ncells_owned; ++c) {
+    stability_c[0][c] = std::fabs(tmp_c[0][c]) / 10;
+  }
+}
+
 } // namespace Energy
 } // namespace Amanzi

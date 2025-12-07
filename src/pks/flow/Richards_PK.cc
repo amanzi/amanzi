@@ -369,6 +369,10 @@ Richards_PK::Setup()
         alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_)
       .SetGhosted();
 
+    S_->RequireDerivative<CV_t, CVS_t>(
+        alpha_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, alpha_key_)
+      .SetGhosted();
+
     auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
     S_->SetEvaluator(alpha_key_, Tags::DEFAULT, eval);
   }
@@ -1021,6 +1025,51 @@ Richards_PK::FailStep(double t_old, double t_new, const Tag& tag)
 {
   archive_->Restore("");
   pressure_eval_->SetChanged();
+}
+
+
+/* ******************************************************************
+* Restore state to the previous step
+****************************************************************** */
+void
+Richards_PK::ComputeLSchemeStability()
+{ 
+  auto& stability_c = *S_->GetW<CV_t>(L_scheme_stab_key_, "state").ViewComponent("cell");
+
+  // accumulation
+  S_->GetEvaluator(water_storage_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
+  auto& dwc_dp = S_->GetDerivativeW<CV_t>(
+    water_storage_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, water_storage_key_);
+  const auto& tmp1 = *dwc_dp.ViewComponent("cell");
+
+  // diffusion 
+  auto& alpha_dp = S_->GetDerivativeW<CV_t>(
+    alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_);
+  const auto& tmp2 = *alpha_dp.ViewComponent("cell");
+
+  S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
+  auto& alpha_dT = S_->GetDerivativeW<CV_t>(
+    alpha_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, alpha_key_);
+  const auto& tmp3 = *alpha_dT.ViewComponent("cell");
+
+  const auto& mu = *S_->Get<CV_t>(viscosity_liquid_key_).ViewComponent("cell");
+  const auto& flux = *S_->Get<CV_t>(vol_flowrate_key_).ViewComponent("face", true);
+
+  double qmax, vol, factor2, factor3;
+  for (int c = 0; c < ncells_owned; ++c) {
+    const auto& faces = mesh_->getCellFaces(c);
+
+    qmax = 0.0;
+    for (int f : faces) qmax += std::fabs(flux[0][f]);
+
+    vol = mesh_->getCellVolume(c);
+    factor2 = (qmax / faces.size()) * mu[0][c] * dt_ / vol;
+    factor3 = factor2 * 1.0; // [K]
+
+    stability_c[0][c] = std::fabs(tmp1[0][c]) 
+                      + std::fabs(tmp2[0][c]) * factor2
+                      + std::fabs(tmp3[0][c]) * factor3;
+  }
 }
 
 

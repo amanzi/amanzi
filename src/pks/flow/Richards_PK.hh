@@ -62,6 +62,8 @@ class Richards_PK : public Flow_PK {
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
   virtual void FailStep(double t_old, double t_new, const Tag& tag) override;
 
+  virtual void ComputeLSchemeStability() override;
+
   virtual std::string name() override { return Keys::getKey(domain_, "richards"); }
 
   // methods required for time integration interface

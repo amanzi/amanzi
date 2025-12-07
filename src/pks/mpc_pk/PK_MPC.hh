@@ -61,6 +61,7 @@ class PK_MPC : virtual public PK {
 
   // -- sets L-scheme values for sub-PKs 
   virtual std::vector<Key> SetupLSchemeKey();
+  virtual void InitializeLSchemeStep();
   virtual void ComputeLSchemeStability();
 
   // -- set tags for integration period
@@ -273,12 +274,31 @@ PK_MPC<PK_Base>::SetupLSchemeKey()
 
 
 // -----------------------------------------------------------------------------
+// L-scheme initialization at the begging of time step
+// -----------------------------------------------------------------------------
+template<class PK_Base>
+void
+PK_MPC<PK_Base>::InitializeLSchemeStep()
+{
+  if (L_scheme_) {
+    for (int i = 0; i < sub_pks_.size(); ++i) {
+      if (!L_scheme_keys_[i].empty()) {
+        Key key_prev = L_scheme_keys_[i] + "_prev";
+        const auto& u0_c = *solution_->SubVector(i)->Data()->ViewComponent("cell");
+        *S_->GetW<CompositeVector>(key_prev, "state").ViewComponent("cell") = u0_c;
+      }
+    }
+  }
+}
+
+
+// -----------------------------------------------------------------------------
 // L-scheme stability constant is updated by PKs.
 // -----------------------------------------------------------------------------
 template<class PK_Base>
 void
 PK_MPC<PK_Base>::ComputeLSchemeStability()
-{
+{ 
   if (L_scheme_) {
     for (auto pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
       (*pk)->ComputeLSchemeStability();

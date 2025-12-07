@@ -316,7 +316,7 @@ Flow_PK::Setup_LocalFields_()
 
 
 /* ******************************************************************
-* Helper function: local fields
+* L-scheme support
 ****************************************************************** */
 std::vector<Key>
 Flow_PK::SetupLSchemeKey()
