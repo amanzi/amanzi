@@ -23,6 +23,7 @@
 #include "COM_Tortuosity.hh"
 #include "EOS_Diffusion.hh"
 #include "Key.hh"
+#include "LScheme_Helpers.hh"
 #include "MeshAlgorithms.hh"
 #include "CommonDefs.hh"
 
@@ -127,6 +128,8 @@ Richards_PK::FunctionalResidual(double t_old,
       double factor = mesh_->getCellVolume(c) / dt_;
       f_cell[0][c] += stability_c[0][c] * (u_new_c[0][c] - u_prev_c[0][c]) * factor;
     }
+    auto& data = S_->GetW<LSchemeData>(L_scheme_data_key_, "state");
+    data.last_step_delta[pressure_key_] = 1.0;
   }
 
   // calculate normalized residual

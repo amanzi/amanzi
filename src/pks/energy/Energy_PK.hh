@@ -223,7 +223,7 @@ class Energy_PK : public PK_PhysicalBDF {
   ModelAssumptions assumptions_;
 
   bool L_scheme_ = false;
-  Key L_scheme_stab_key_, L_scheme_prev_key_;
+  Key L_scheme_stab_key_, L_scheme_prev_key_, L_scheme_data_key_;
 };
 
 } // namespace Energy

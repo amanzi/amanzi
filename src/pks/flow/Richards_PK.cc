@@ -28,8 +28,9 @@
 #include "CommonDefs.hh"
 #include "dbc.hh"
 #include "exceptions.hh"
-#include "InverseFactory.hh"
+#include "LScheme_Helpers.hh"
 #include "Mesh.hh"
+#include "InverseFactory.hh"
 #include "MeshAlgorithms.hh"
 #include "OperatorDefs.hh"
 #include "PDE_DiffusionFactory.hh"
@@ -154,12 +155,16 @@ Richards_PK::Setup()
       .set<bool>("water vapor", assumptions_.vapor_diffusion);
     if (assumptions_.flow_on_manifold) elist.set<std::string>("aperture key", aperture_key_);
 
+    auto eval = Teuchos::rcp(new WaterStorage(elist));
+    S_->SetEvaluator(water_storage_key_, Tags::DEFAULT, eval);
+
     S_->RequireDerivative<CV_t, CVS_t>(
         water_storage_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, water_storage_key_)
       .SetGhosted();
 
-    auto eval = Teuchos::rcp(new WaterStorage(elist));
-    S_->SetEvaluator(water_storage_key_, Tags::DEFAULT, eval);
+    S_->RequireDerivative<CV_t, CVS_t>(
+        water_storage_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, water_storage_key_)
+      .SetGhosted();
   }
 
   // -- water storage from the previous timestep
@@ -799,6 +804,11 @@ Richards_PK::Initialize()
   Teuchos::rcp_dynamic_cast<VolumetricFlowRateEvaluator>(eval)->set_bc(op_bc_);
   Teuchos::rcp_dynamic_cast<VolumetricFlowRateEvaluator>(eval)->set_upwind(upwind_);
 
+  if (L_scheme_) {
+    auto& data = S_->GetW<LSchemeData>(L_scheme_data_key_, "state");
+    data.last_step_delta[pressure_key_] = 1.0;
+  }
+
   // Verbose output of initialization statistics.
   InitializeStatistics_();
 }
@@ -1042,20 +1052,32 @@ Richards_PK::ComputeLSchemeStability()
     water_storage_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, water_storage_key_);
   const auto& tmp1 = *dwc_dp.ViewComponent("cell");
 
+  auto tmp2(tmp1);
+  tmp2.PutScalar(0.0);
+  if (S_->GetEvaluator(water_storage_key_).IsDifferentiableWRT(*S_, temperature_key_, Tags::DEFAULT)) {
+    S_->GetEvaluator(water_storage_key_).UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
+    auto& dwc_dT = S_->GetDerivativeW<CV_t>(
+      water_storage_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, water_storage_key_);
+    tmp2 = *dwc_dT.ViewComponent("cell");
+  }
+
   // diffusion 
   auto& alpha_dp = S_->GetDerivativeW<CV_t>(
     alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_);
-  const auto& tmp2 = *alpha_dp.ViewComponent("cell");
+  const auto& tmp3 = *alpha_dp.ViewComponent("cell");
 
   S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
   auto& alpha_dT = S_->GetDerivativeW<CV_t>(
     alpha_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, alpha_key_);
-  const auto& tmp3 = *alpha_dT.ViewComponent("cell");
+  const auto& tmp4 = *alpha_dT.ViewComponent("cell");
 
   const auto& mu = *S_->Get<CV_t>(viscosity_liquid_key_).ViewComponent("cell");
   const auto& flux = *S_->Get<CV_t>(vol_flowrate_key_).ViewComponent("face", true);
 
-  double qmax, vol, factor2, factor3;
+  const auto& data = S_->Get<LSchemeData>(L_scheme_data_key_, Tags::DEFAULT);
+  double normT = data.last_step_delta.at(temperature_key_);
+
+  double qmax, vol, factor3, factor4;
   for (int c = 0; c < ncells_owned; ++c) {
     const auto& faces = mesh_->getCellFaces(c);
 
@@ -1063,12 +1085,13 @@ Richards_PK::ComputeLSchemeStability()
     for (int f : faces) qmax += std::fabs(flux[0][f]);
 
     vol = mesh_->getCellVolume(c);
-    factor2 = (qmax / faces.size()) * mu[0][c] * dt_ / vol;
-    factor3 = factor2 * 1.0; // [K]
+    factor3 = (qmax / faces.size()) * mu[0][c] * dt_ / vol;
+    factor4 = factor3 * normT; // [K]
 
     stability_c[0][c] = std::fabs(tmp1[0][c]) 
-                      + std::fabs(tmp2[0][c]) * factor2
-                      + std::fabs(tmp3[0][c]) * factor3;
+                      + std::fabs(tmp2[0][c])
+                      + std::fabs(tmp3[0][c]) * factor3
+                      + std::fabs(tmp4[0][c]) * factor4;
   }
 }
 

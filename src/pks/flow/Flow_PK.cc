@@ -19,6 +19,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "EvaluatorMultiplicativeReciprocal.hh"
+#include "LScheme_Helpers.hh"
 #include "Mesh.hh"
 #include "MeshAlgorithms.hh"
 #include "OperatorDefs.hh"
@@ -103,6 +104,8 @@ Flow_PK::Setup()
 
   mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid");
   mass_density_liquid_key_ = Keys::getKey(domain_, "mass_density_liquid");
+
+  L_scheme_data_key_ = "l_scheme_data";
 
   // constant fields
   S_->Require<double>("const_fluid_density", Tags::DEFAULT, "state");
@@ -225,6 +228,9 @@ Flow_PK::Setup()
 
   // L-scheme support
   if (L_scheme_) {
+    S_->Require<LSchemeData>(L_scheme_data_key_, Tags::DEFAULT, "state");
+    S_->GetRecordW(L_scheme_data_key_, "state").set_initialized();
+
     S_->Require<CV_t, CVS_t>(L_scheme_stab_key_, Tags::DEFAULT, "state")
       .SetMesh(mesh_)
       ->SetGhosted(true)

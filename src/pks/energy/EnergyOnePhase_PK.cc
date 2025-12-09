@@ -15,6 +15,7 @@
 */
 
 // Amanzi
+#include "LScheme_Helpers.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "PDE_AdvectionUpwindFactory.hh"
 #include "UpwindFactory.hh"
@@ -227,6 +228,11 @@ EnergyOnePhase_PK::Initialize()
   auto& temperature = S_->GetW<CV_t>(temperature_key_, passwd_);
   UpdateSourceBoundaryData(t_ini, t_ini, temperature);
 
+  if (L_scheme_) {
+    auto& data = S_->GetW<LSchemeData>(L_scheme_data_key_, "state");
+    data.last_step_delta[temperature_key_] = 1.0;
+  }
+
   // output of initialization summary
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
@@ -357,7 +363,7 @@ EnergyOnePhase_PK::ComputeLSchemeStability()
   auto& tmp_c = *dEdT.ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; ++c) {
-    stability_c[0][c] = std::fabs(tmp_c[0][c]) / 10;
+    stability_c[0][c] = std::fabs(tmp_c[0][c]) / 5;
   }
 }
 

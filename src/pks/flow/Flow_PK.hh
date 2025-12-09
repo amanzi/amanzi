@@ -381,7 +381,7 @@ class Flow_PK : public PK_PhysicalBDF {
   bool coupled_to_matrix_, coupled_to_fracture_;
   
   bool L_scheme_ = false;
-  Key L_scheme_stab_key_, L_scheme_prev_key_;
+  Key L_scheme_stab_key_, L_scheme_prev_key_, L_scheme_data_key_;
 
   // names of state fields
   Key pressure_key_;

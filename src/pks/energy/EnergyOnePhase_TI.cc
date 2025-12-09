@@ -14,6 +14,7 @@
 
 // Amanzi
 #include "Key.hh"
+#include "LScheme_Helpers.hh"
 #include "PDE_HelperDiscretization.hh"
 
 // Amanzi::Energy
@@ -96,10 +97,16 @@ EnergyOnePhase_PK::FunctionalResidual(double t_old,
     const auto& stability_c = *S_->Get<CV_t>(L_scheme_stab_key_).ViewComponent("cell");
     const auto& u_prev_c = *S_->Get<CV_t>(L_scheme_prev_key_).ViewComponent("cell");
     const auto& u_new_c = *u_new->Data()->ViewComponent("cell");
+    const auto& u_old_c = *u_old->Data()->ViewComponent("cell");
+
+    double delta(0.0);
     for (int c = 0; c < ncells_owned; ++c) {
       double factor = mesh_->getCellVolume(c) / dt_;
       g_c[0][c] += stability_c[0][c] * (u_new_c[0][c] - u_prev_c[0][c]) * factor;
+      delta = std::max(delta, std::fabs(u_new_c[0][c] - u_old_c[0][c]));
     }
+    auto& data = S_->GetW<LSchemeData>(L_scheme_data_key_, "state");
+    data.last_step_delta[temperature_key_] = delta;
   }
 }
 
