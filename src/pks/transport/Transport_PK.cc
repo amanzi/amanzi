@@ -196,12 +196,12 @@ Transport_PK::Setup()
 
   if (chem_pk_ == Teuchos::null) {
     for (int i = 0; i < 2; ++i) {
-      std::string sibling = "sibling " + std::to_string(i);
-      if (tp_list_->isParameter(sibling)) {
-        auto tmp = tp_list_->get<Teuchos::RCP<Amanzi::PK>>(sibling, Teuchos::null);
-        chem_pk_ = Teuchos::rcp_dynamic_cast<AmanziChemistry::Chemistry_PK>(tmp);
-        break;
-      }
+      // std::string sibling = "sibling " + std::to_string(i);
+      // if (tp_list_->isParameter(sibling)) {
+      auto tmp = tp_list_->get<Teuchos::RCP<Amanzi::PK>>(sibling, Teuchos::null);
+      chem_pk_ = Teuchos::rcp_dynamic_cast<AmanziChemistry::Chemistry_PK>(tmp);
+      if (chem_pk_ != Teuchos::null) break;
+      // }
     }
   }
 

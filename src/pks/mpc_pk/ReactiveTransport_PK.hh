@@ -55,8 +55,6 @@ class ReactiveTransport_PK : public PK_MPCAdditive<PK> {
   // -- dt is the minimum of the sub pks
   double get_dt() override;
   void set_dt(double dt) override;
-  bool AdvanceStep(double t_old, double t_new, bool reinit) override;
-  void CommitStep(double t_old, double t_new, const Tag& tag) override;
 
   std::string name() override { return "reactive transport"; }
 
