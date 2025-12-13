@@ -94,9 +94,6 @@ Richards_PK::FunctionalResidual(double t_old,
   // add accumulation term
   Epetra_MultiVector& f_cell = *f->Data()->ViewComponent("cell");
 
-  S_->GetEvaluator(porosity_key_).Update(*S_, "flow");
-  const auto& phi_c = *S_->Get<CV_t>(porosity_key_).ViewComponent("cell");
-
   S_->GetEvaluator(water_storage_key_).Update(*S_, "flow");
   const auto& ws_c = *S_->Get<CV_t>(water_storage_key_).ViewComponent("cell");
   const auto& ws_prev_c = *S_->Get<CV_t>(prev_water_storage_key_).ViewComponent("cell");
@@ -120,29 +117,42 @@ Richards_PK::FunctionalResidual(double t_old,
   }
 
   // add stabilization based on Lipschitz constant
+  S_->GetEvaluator(porosity_key_).Update(*S_, "flow");
+  const auto& phi_c = *S_->Get<CV_t>(porosity_key_).ViewComponent("cell");
+  const auto& dens_c = *S_->Get<CV_t>(mol_density_liquid_key_).ViewComponent("cell");
+
   if (L_scheme_) {
+    double delta(0.0), fnorm(0.0), factor, udiff;
     const auto& stability_c = *S_->Get<CV_t>(L_scheme_stab_key_).ViewComponent("cell");
     const auto& u_prev_c = *S_->Get<CV_t>(L_scheme_prev_key_).ViewComponent("cell");
     const auto& u_new_c = *u_new->Data()->ViewComponent("cell");
+
     for (int c = 0; c < ncells_owned; ++c) {
-      double factor = mesh_->getCellVolume(c) / dt_;
-      f_cell[0][c] += stability_c[0][c] * (u_new_c[0][c] - u_prev_c[0][c]) * factor;
+      udiff = u_new_c[0][c] - u_prev_c[0][c];
+      delta = std::max(delta, std::fabs(udiff) / (std::fabs(u_prev_c[0][c]) + atm_pressure_));
+
+      factor = mesh_->getCellVolume(c) / dt_;
+      fnorm = std::max(fnorm, f_cell[0][c] / (factor * dens_c[0][c] * phi_c[0][c]));
+
+      f_cell[0][c] += stability_c[0][c] * udiff * factor;
     }
+
     auto& data = S_->GetW<LSchemeData>(L_scheme_data_key_, "state");
-    data.last_step_delta[pressure_key_] = 1.0;
+    data[pressure_key_].last_step_increment = delta;
+    data[pressure_key_].last_step_residual = fnorm;
+    data[pressure_key_].ns_itrs[0]++;
   }
 
-  // calculate normalized residual
-  functional_max_norm = 0.0;
-  functional_max_cell = 0;
+  // calculate normalized true residual
+  functional_max_norm_ = 0.0;
+  functional_max_cell_ = 0;
 
   for (int c = 0; c < ncells_owned; ++c) {
-    const auto& dens_c = *S_->Get<CV_t>(mol_density_liquid_key_).ViewComponent("cell");
     double factor = mesh_->getCellVolume(c) * dens_c[0][c] * phi_c[0][c] / dt_;
     double tmp = fabs(f_cell[0][c]) / factor;
-    if (tmp > functional_max_norm) {
-      functional_max_norm = tmp;
-      functional_max_cell = c;
+    if (tmp > functional_max_norm_) {
+      functional_max_norm_ = tmp;
+      functional_max_cell_ = c;
     }
   }
 }
@@ -512,7 +522,7 @@ Richards_PK::ErrorNormSTOMP(const CompositeVector& u, const CompositeVector& du)
   }
 
   if (error_control_ & FLOW_TI_ERROR_CONTROL_RESIDUAL) {
-    error_r = functional_max_norm;
+    error_r = functional_max_norm_;
   } else {
     error_r = 0.0;
   }
@@ -527,23 +537,13 @@ Richards_PK::ErrorNormSTOMP(const CompositeVector& u, const CompositeVector& du)
   // maximum error is printed out only on one processor
   if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
     if (error == buf) {
-      int c = functional_max_cell;
-      const AmanziGeometry::Point& xp = mesh_->getCellCentroid(c);
+      *vo_->os() << "residual=" << functional_max_norm_ << " at point "
+                 << mesh_->getCellCentroid(functional_max_cell_) << std::endl;
 
-      Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "residual=" << functional_max_norm << " at point";
-      for (int i = 0; i < dim; i++) *vo_->os() << " " << xp[i];
-      *vo_->os() << std::endl;
-
-      c = cell_p;
-      const AmanziGeometry::Point& yp = mesh_->getCellCentroid(c);
-
-      *vo_->os() << "pressure err=" << error_p << " at point";
-      for (int i = 0; i < dim; i++) *vo_->os() << " " << yp[i];
-      *vo_->os() << std::endl;
-
+      int c = cell_p;
       double s = wrm_->second[(*wrm_->first)[c]]->saturation(atm_pressure_ - uc[0][c]);
-      *vo_->os() << "saturation=" << s << " pressure=" << uc[0][c] << std::endl;
+      *vo_->os() << "pressure err=" << error_p << " at point " << mesh_->getCellCentroid(c)
+                 << "  saturation=" << s << " pressure=" << uc[0][c] << std::endl;
     }
   }
 

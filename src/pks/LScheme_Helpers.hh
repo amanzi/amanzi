@@ -10,6 +10,7 @@
 #ifndef AMANZI_PK_MPC_LSCHEME_HELPERS_HH_
 #define AMANZI_PK_MPC_LSCHEME_HELPERS_HH_
 
+#include <iostream>
 #include <map>
 #include <string>
 #include <vector>
@@ -23,9 +24,31 @@
 
 namespace Amanzi {
 
-struct LSchemeData {
-  std::map<Key, double> last_step_delta;
+struct LSchemeDataPK {
+  double last_step_increment;
+  double last_step_residual;
+
+  double safety_factor;
+  int patience = 0;
+
+  double seq_error[3];
+  int ns_itrs[3];
+  int num_itrs = 0;
+
+  // reset, typically at the begging of time step
+  void reset();
+
+  void shift();
+
+  // modify safety factor
+  double update();
+
+  // i/o
+  void print(std::ostream& os) const;
 };
+ 
+typedef std::map<Key, LSchemeDataPK> LSchemeData;
+
 
 namespace Helpers {
 

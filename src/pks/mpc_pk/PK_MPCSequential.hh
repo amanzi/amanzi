@@ -22,8 +22,10 @@
 #ifndef AMANZI_PK_MPC_SEQUENTIAL_HH_
 #define AMANZI_PK_MPC_SEQUENTIAL_HH_
 
-#include "PK_MPC.hh"
 #include "PK.hh"
+#include "PK_BDF.hh"
+#include "PK_MPC.hh"
+ 
 
 namespace Amanzi {
 

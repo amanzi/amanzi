@@ -92,6 +92,10 @@ EnergyOnePhase_PK::Setup()
     S_->RequireDerivative<CV_t, CVS_t>(
         energy_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, energy_key_)
       .SetGhosted();
+
+    S_->RequireDerivative<CV_t, CVS_t>(
+        energy_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, energy_key_)
+      .SetGhosted();
   }
 
   // -- advection of enthalpy
@@ -230,7 +234,8 @@ EnergyOnePhase_PK::Initialize()
 
   if (L_scheme_) {
     auto& data = S_->GetW<LSchemeData>(L_scheme_data_key_, "state");
-    data.last_step_delta[temperature_key_] = 1.0;
+    data[temperature_key_].last_step_increment = 1.0;
+    data[temperature_key_].safety_factor = 0.1;
   }
 
   // output of initialization summary
@@ -360,10 +365,25 @@ EnergyOnePhase_PK::ComputeLSchemeStability()
   S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
   const auto& dEdT =
     S_->GetDerivative<CompositeVector>(energy_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT);
-  auto& tmp_c = *dEdT.ViewComponent("cell");
+  auto& tmp1 = *dEdT.ViewComponent("cell");
 
-  for (int c = 0; c < ncells_owned; ++c) {
-    stability_c[0][c] = std::fabs(tmp_c[0][c]) / 5;
+  auto tmp2(tmp1);
+  tmp2.PutScalar(0.0);
+  if (S_->GetEvaluator(energy_key_).IsDifferentiableWRT(*S_, pressure_key_, Tags::DEFAULT)) {
+    S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
+    auto& dEdp = S_->GetDerivativeW<CV_t>(
+      energy_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, energy_key_);
+    tmp2 = *dEdp.ViewComponent("cell");
+  }
+
+  // L-scheme additional control
+  const auto& data = S_->Get<LSchemeData>(L_scheme_data_key_, Tags::DEFAULT);
+  double normp = data.at(pressure_key_).last_step_increment;
+  double sT = data.at(temperature_key_).safety_factor;
+
+   for (int c = 0; c < ncells_owned; ++c) {
+    stability_c[0][c] = (std::fabs(tmp1[0][c])
+                       + std::fabs(tmp2[0][c]) * normp) * sT;
   }
 }
 

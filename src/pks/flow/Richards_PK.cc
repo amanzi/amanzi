@@ -806,7 +806,8 @@ Richards_PK::Initialize()
 
   if (L_scheme_) {
     auto& data = S_->GetW<LSchemeData>(L_scheme_data_key_, "state");
-    data.last_step_delta[pressure_key_] = 1.0;
+    data[pressure_key_].last_step_increment = 1.0;
+    data[pressure_key_].safety_factor = 0.1;
   }
 
   // Verbose output of initialization statistics.
@@ -1074,8 +1075,10 @@ Richards_PK::ComputeLSchemeStability()
   const auto& mu = *S_->Get<CV_t>(viscosity_liquid_key_).ViewComponent("cell");
   const auto& flux = *S_->Get<CV_t>(vol_flowrate_key_).ViewComponent("face", true);
 
+  // L-scheme additional control
   const auto& data = S_->Get<LSchemeData>(L_scheme_data_key_, Tags::DEFAULT);
-  double normT = data.last_step_delta.at(temperature_key_);
+  double normT = data.at(temperature_key_).last_step_increment;
+  double sp = data.at(pressure_key_).safety_factor;
 
   double qmax, vol, factor3, factor4;
   for (int c = 0; c < ncells_owned; ++c) {
@@ -1086,12 +1089,12 @@ Richards_PK::ComputeLSchemeStability()
 
     vol = mesh_->getCellVolume(c);
     factor3 = (qmax / faces.size()) * mu[0][c] * dt_ / vol;
-    factor4 = factor3 * normT; // [K]
+    factor4 = factor3 * normT;
 
-    stability_c[0][c] = std::fabs(tmp1[0][c]) 
-                      + std::fabs(tmp2[0][c])
-                      + std::fabs(tmp3[0][c]) * factor3
-                      + std::fabs(tmp4[0][c]) * factor4;
+    stability_c[0][c] = (std::fabs(tmp1[0][c]) 
+                       + std::fabs(tmp2[0][c])
+                       + std::fabs(tmp3[0][c]) * factor3
+                       + std::fabs(tmp4[0][c]) * factor4) * sp;
   }
 }
 

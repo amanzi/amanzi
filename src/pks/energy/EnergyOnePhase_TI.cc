@@ -92,21 +92,30 @@ EnergyOnePhase_PK::FunctionalResidual(double t_old,
   op_advection_->ComputeNegativeResidual(enthalpy, g_adv);
   g->Data()->Update(1.0, g_adv, 1.0);
 
-  // add stabilization based on Lipschitz constant
+  // add optional stabilization term
   if (L_scheme_) {
     const auto& stability_c = *S_->Get<CV_t>(L_scheme_stab_key_).ViewComponent("cell");
     const auto& u_prev_c = *S_->Get<CV_t>(L_scheme_prev_key_).ViewComponent("cell");
     const auto& u_new_c = *u_new->Data()->ViewComponent("cell");
     const auto& u_old_c = *u_old->Data()->ViewComponent("cell");
 
-    double delta(0.0);
+    double delta(0.0), gnorm(0.0), factor, udiff;
     for (int c = 0; c < ncells_owned; ++c) {
-      double factor = mesh_->getCellVolume(c) / dt_;
-      g_c[0][c] += stability_c[0][c] * (u_new_c[0][c] - u_prev_c[0][c]) * factor;
-      delta = std::max(delta, std::fabs(u_new_c[0][c] - u_old_c[0][c]));
+      udiff = u_new_c[0][c] - u_prev_c[0][c];
+      delta = std::max(delta, std::fabs(udiff) / (std::fabs(u_prev_c[0][c]) + 273.0));
+
+      factor = mesh_->getCellVolume(c) / dt_;
+      gnorm = std::max(gnorm, g_c[0][c] / (factor * e1[0][c])); // true residual
+
+      g_c[0][c] += stability_c[0][c] * udiff * factor;
+
     }
+
+    // save data
     auto& data = S_->GetW<LSchemeData>(L_scheme_data_key_, "state");
-    data.last_step_delta[temperature_key_] = delta;
+    data[temperature_key_].last_step_increment = delta;
+    data[temperature_key_].last_step_residual = gnorm;
+    data[temperature_key_].ns_itrs[0]++;
   }
 }
 

@@ -20,6 +20,7 @@
 */
 
 #include "Key.hh"
+#include "LScheme_Helpers.hh"
 
 #include "PK_MPCSequential.hh"
 
@@ -96,9 +97,9 @@ PK_MPCSequential::AdvanceStep(double t_old, double t_new, bool reinit)
   ComputeLSchemeStability();
 
   num_itrs_ = 0;
-  error_norm_ = 1.0e+20;
+  error_norm_ = 0.0;
 
-  while (error_norm_ > tol_ && num_itrs_ < max_itrs_) {
+  while (num_itrs_ < 2 || (error_norm_ > tol_ && num_itrs_ < max_itrs_)) {
     auto du = Teuchos::rcp(new TreeVector(*solution_));
 
     for (int i = 0; i < sub_pks_.size(); ++i) {
@@ -113,11 +114,8 @@ PK_MPCSequential::AdvanceStep(double t_old, double t_new, bool reinit)
     }
     CommitSequentialStep(du, solution_);
 
-    // calculate error
-    if (num_itrs_ > 0) {
-      du->Update(-1.0, *solution_, 1.0);
-      error_norm_ = ErrorNorm(solution_, du);
-    }
+    du->Update(-1.0, *solution_, 1.0);
+    error_norm_ = ErrorNorm(solution_, du);
     num_itrs_++;
 
     if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
@@ -141,11 +139,26 @@ PK_MPCSequential::AdvanceStep(double t_old, double t_new, bool reinit)
 double
 PK_MPCSequential::ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du)
 {
-  double err(0.0), err_i, unorm_i;
+  double err(0.0), err_i, unorm_i, r;
   for (int i = 0; i < u->size(); ++i) { 
     du->SubVector(i)->Norm2(&err_i);
     u->SubVector(i)->Norm2(&unorm_i);
     err = std::max(err, err_i / unorm_i);
+  }
+
+  // Redefine error norm using the true residual
+  if (L_scheme_) {
+    err = 0.0;
+    auto& data = S_->GetW<LSchemeData>("l_scheme_data", "state");
+
+    for (auto& item : data) {
+      item.second.seq_error[0] = item.second.last_step_residual;
+      r = item.second.update();
+      err = std::max(err, item.second.last_step_residual);
+
+      item.second.print(std::cout);
+      item.second.shift();
+    }
   }
   return err;
 }

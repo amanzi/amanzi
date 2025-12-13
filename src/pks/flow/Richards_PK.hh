@@ -216,8 +216,8 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> pdot_cells_prev; // time derivative of pressure
   Teuchos::RCP<Epetra_Vector> pdot_cells;
 
-  double functional_max_norm;
-  int functional_max_cell;
+  double functional_max_norm_;
+  int functional_max_cell_;
 
   // copies of state fields
   Teuchos::RCP<StateArchive> archive_;

@@ -33,6 +33,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_MpiComm.h"
 
+#include "LScheme_Helpers.hh"
 #include "State.hh"
 #include "TreeVector.hh"
 
@@ -289,6 +290,8 @@ PK_MPC<PK_Base>::InitializeLSchemeStep()
       }
     }
   }
+  auto& data = S_->GetW<LSchemeData>("l_scheme_data", "state");
+  for (auto& item : data) item.second.reset();
 }
 
 
