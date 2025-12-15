@@ -107,12 +107,15 @@ Energy_PK::Setup()
   mol_density_gas_key_ = Keys::getKey(domain_, "molar_density_gas");
   x_gas_key_ = Keys::getKey(domain_, "molar_fraction_gas");
 
+  vol_flowrate_key_ = Keys::getKey(domain_, "volumetric_flow_rate");
   mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
   porosity_key_ = Keys::getKey(domain_, "porosity");
   sat_liquid_key_ = Keys::getKey(domain_, "saturation_liquid");
   pressure_key_ = Keys::getKey(domain_, "pressure");
+  viscosity_liquid_key_ = Keys::getKey(domain_, "viscosity_liquid");
 
   L_scheme_data_key_ = "l_scheme_data";
+  beta_key_ = Keys::getKey(domain_, "l_scheme_beta");
 
   // require constant fields
   S_->Require<double>("atmospheric_pressure", Tags::DEFAULT, "state");
@@ -320,6 +323,28 @@ Energy_PK::Setup()
       ->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S_->GetRecordW(L_scheme_prev_key_, "state").set_initialized();
+
+    S_->Require<CV_t, CVS_t>(beta_key_, Tags::DEFAULT, beta_key_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+
+    std::vector<std::string> listm({ Keys::getVarName(mol_density_liquid_key_),
+                                     Keys::getVarName(enthalpy_key_) });
+    std::vector<std::string> listr({ Keys::getVarName(viscosity_liquid_key_) });
+
+    Teuchos::ParameterList elist(beta_key_);
+    elist.set<std::string>("my key", beta_key_)
+      .set<Teuchos::Array<std::string>>("multiplicative dependency key suffixes", listm)
+      .set<Teuchos::Array<std::string>>("reciprocal dependency key suffixes", listr)
+      .set<std::string>("tag", "");
+
+    S_->RequireDerivative<CV_t, CVS_t>(
+        beta_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, beta_key_)
+      .SetGhosted();
+
+    auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
+    S_->SetEvaluator(beta_key_, Tags::DEFAULT, eval);
   }
 
   // set units

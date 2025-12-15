@@ -49,11 +49,14 @@ LSchemeDataPK::update()
       safety_factor *= 0.92;
       patience = 0;
     } else if (patience == 2 || ns_itrs[0] > 10) {
-      safety_factor *= 1.3;
+      safety_factor *= 1.1;
       patience = 0;
     } 
+
+    if (num_itrs > 5) safety_factor *= 1.1;
+
     safety_factor = std::min(safety_factor, 10.0);
-    safety_factor = std::max(safety_factor, 0.05);
+    safety_factor = std::max(safety_factor, 0.01);
   }
   return r;
 }

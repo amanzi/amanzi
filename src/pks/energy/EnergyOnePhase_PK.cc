@@ -376,14 +376,32 @@ EnergyOnePhase_PK::ComputeLSchemeStability()
     tmp2 = *dEdp.ViewComponent("cell");
   }
 
+  // advection
+  auto& beta_dT = S_->GetDerivativeW<CV_t>(
+    beta_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, beta_key_);
+  const auto& tmp3 = *beta_dT.ViewComponent("cell");
+
+  const auto& mu = *S_->Get<CV_t>(viscosity_liquid_key_).ViewComponent("cell");
+  const auto& flux = *S_->Get<CV_t>(vol_flowrate_key_).ViewComponent("face", true);
+
   // L-scheme additional control
   const auto& data = S_->Get<LSchemeData>(L_scheme_data_key_, Tags::DEFAULT);
   double normp = data.at(pressure_key_).last_step_increment;
   double sT = data.at(temperature_key_).safety_factor;
 
-   for (int c = 0; c < ncells_owned; ++c) {
+  double qmax, vol, factor3;
+  for (int c = 0; c < ncells_owned; ++c) {
+    const auto& faces = mesh_->getCellFaces(c);
+
+    qmax = 0.0;
+    for (int f : faces) qmax += std::fabs(flux[0][f]);
+
+    vol = mesh_->getCellVolume(c);
+    factor3 = (qmax / faces.size()) * mu[0][c] * dt_ / vol;
+
     stability_c[0][c] = (std::fabs(tmp1[0][c])
-                       + std::fabs(tmp2[0][c]) * normp) * sT;
+                       + std::fabs(tmp2[0][c]) * normp
+                       + std::fabs(tmp3[0][c]) * factor3) * sT;
   }
 }
 

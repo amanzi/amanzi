@@ -117,10 +117,6 @@ Richards_PK::FunctionalResidual(double t_old,
   }
 
   // add stabilization based on Lipschitz constant
-  S_->GetEvaluator(porosity_key_).Update(*S_, "flow");
-  const auto& phi_c = *S_->Get<CV_t>(porosity_key_).ViewComponent("cell");
-  const auto& dens_c = *S_->Get<CV_t>(mol_density_liquid_key_).ViewComponent("cell");
-
   if (L_scheme_) {
     double delta(0.0), fnorm(0.0), factor, udiff;
     const auto& stability_c = *S_->Get<CV_t>(L_scheme_stab_key_).ViewComponent("cell");
@@ -132,7 +128,7 @@ Richards_PK::FunctionalResidual(double t_old,
       delta = std::max(delta, std::fabs(udiff) / (std::fabs(u_prev_c[0][c]) + atm_pressure_));
 
       factor = mesh_->getCellVolume(c) / dt_;
-      fnorm = std::max(fnorm, f_cell[0][c] / (factor * dens_c[0][c] * phi_c[0][c]));
+      fnorm = std::max(fnorm, f_cell[0][c] / (factor * ws_c[0][c]));
 
       f_cell[0][c] += stability_c[0][c] * udiff * factor;
     }
@@ -148,7 +144,7 @@ Richards_PK::FunctionalResidual(double t_old,
   functional_max_cell_ = 0;
 
   for (int c = 0; c < ncells_owned; ++c) {
-    double factor = mesh_->getCellVolume(c) * dens_c[0][c] * phi_c[0][c] / dt_;
+    double factor = mesh_->getCellVolume(c) * ws_c[0][c] / dt_;
     double tmp = fabs(f_cell[0][c]) / factor;
     if (tmp > functional_max_norm_) {
       functional_max_norm_ = tmp;
