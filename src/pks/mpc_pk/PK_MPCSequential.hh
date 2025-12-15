@@ -39,6 +39,7 @@ class PK_MPCSequential : public PK_MPC<PK> {
   // PK methods
   virtual double get_dt();
   virtual void set_dt(double dt);
+  virtual void Initialize();
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
 
   // New PK methods

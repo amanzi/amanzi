@@ -55,8 +55,8 @@ LSchemeDataPK::update()
 
     if (num_itrs > 5) safety_factor *= 1.1;
 
-    safety_factor = std::min(safety_factor, 10.0);
-    safety_factor = std::max(safety_factor, 0.01);
+    safety_factor = std::min(safety_factor, safety_factor_max);
+    safety_factor = std::max(safety_factor, safety_factor_min);
   }
   return r;
 }

@@ -325,7 +325,7 @@ Flow_PK::Setup_LocalFields_()
 * L-scheme support
 ****************************************************************** */
 std::vector<Key>
-Flow_PK::SetupLSchemeKey()
+Flow_PK::SetupLSchemeKey(Teuchos::ParameterList& plist)
 {
   L_scheme_ = true;
   Key key = Keys::getKey(domain_, "l_scheme_pressure");
