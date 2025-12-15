@@ -101,7 +101,7 @@ class FlowMechanics_PK : public PK_MPCSequential {
   using PK_MPC<PK>::InitializeLSchemeStep;
   using PK_MPC<PK>::ComputeLSchemeStability;
 
-  virtual std::vector<Key> SetupLSchemeKey() override;
+  virtual std::vector<Key> SetupLSchemeKey(Teuchos::ParameterList& plist) override;
   virtual void InitializeLSchemeStep() override {};
   virtual void ComputeLSchemeStability() override {};
 

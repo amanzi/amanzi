@@ -117,7 +117,7 @@ class Energy_PK : public PK_PhysicalBDF {
   virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
                                   Teuchos::RCP<TreeVector> Y) override;
 
-  virtual std::vector<Key> SetupLSchemeKey() override;
+  virtual std::vector<Key> SetupLSchemeKey(Teuchos::ParameterList& plist) override;
 
   // -- check the admissibility of a solution
   //    override with the actual admissibility check

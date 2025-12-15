@@ -651,7 +651,7 @@ Energy_PK::ModifyPredictor(double dt,
 * L-scheme support
 ****************************************************************** */
 std::vector<Key>
-Energy_PK::SetupLSchemeKey()
+Energy_PK::SetupLSchemeKey(Teuchos::ParameterList& plist)
 {
   L_scheme_ = true;
   Key key = Keys::getKey(domain_, "l_scheme_temperature");

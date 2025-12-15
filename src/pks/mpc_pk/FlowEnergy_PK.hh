@@ -123,7 +123,7 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
   std::string name() override { return "flow and energy"; }
 
   // -- L-scheme for flow equaiton
-  virtual std::vector<Key> SetupLSchemeKey() override;
+  virtual std::vector<Key> SetupLSchemeKey(Teuchos::ParameterList& plist) override;
 
  private:
   const Teuchos::RCP<Teuchos::ParameterList>& glist_;

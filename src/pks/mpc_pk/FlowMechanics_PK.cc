@@ -232,10 +232,10 @@ FlowMechanics_PK::CommitSequentialStep(Teuchos::RCP<const TreeVector> u_old,
 * L-scheme stability is applied to first (flow) PK.
 ****************************************************************** */
 std::vector<Key>
-FlowMechanics_PK::SetupLSchemeKey()
+FlowMechanics_PK::SetupLSchemeKey(Teuchos::ParameterList& plist)
 {
   if (L_scheme_) {
-    auto tmp = sub_pks_[0]->SetupLSchemeKey();
+    auto tmp = sub_pks_[0]->SetupLSchemeKey(plist);
     L_scheme_keys_.insert(L_scheme_keys_.end(), tmp.begin(), tmp.end());
   }
   return L_scheme_keys_;

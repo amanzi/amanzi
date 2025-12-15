@@ -56,12 +56,10 @@ class PK_MPC : virtual public PK {
   // -- sets up sub-PKs
   virtual void parseParameterList();
   virtual void Setup();
-
-  // -- calls all sub-PK initialize() methods
   virtual void Initialize();
 
   // -- sets L-scheme values for sub-PKs 
-  virtual std::vector<Key> SetupLSchemeKey();
+  virtual std::vector<Key> SetupLSchemeKey(Teuchos::ParameterList& plist);
   virtual void InitializeLSchemeStep();
   virtual void ComputeLSchemeStability();
 
@@ -262,11 +260,11 @@ PK_MPC<PK_Base>::getSubPKPlist_(int i)
 // -----------------------------------------------------------------------------
 template<class PK_Base>
 std::vector<Key>
-PK_MPC<PK_Base>::SetupLSchemeKey()
+PK_MPC<PK_Base>::SetupLSchemeKey(Teuchos::ParameterList& plist)
 {
   if (L_scheme_) {
     for (auto pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
-      auto tmp = (*pk)->SetupLSchemeKey();
+      auto tmp = (*pk)->SetupLSchemeKey(plist);
       L_scheme_keys_.insert(L_scheme_keys_.end(), tmp.begin(), tmp.end());
     }
   }

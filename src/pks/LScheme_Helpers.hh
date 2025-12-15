@@ -29,6 +29,8 @@ struct LSchemeDataPK {
   double last_step_residual;
 
   double safety_factor;
+  double safety_factor_min;
+  double safety_factor_max;
   int patience = 0;
 
   double seq_error[3];

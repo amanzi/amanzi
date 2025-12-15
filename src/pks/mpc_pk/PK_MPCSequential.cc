@@ -49,10 +49,11 @@ PK_MPCSequential::PK_MPCSequential(Teuchos::ParameterList& pk_tree,
   max_itrs_ = sublist->get<int>("maximum number of iterations", 100);
   tol_ = sublist->get<double>("error tolerance", 1e-6);
 
-  // pass L-scheme options to sub-pks
-  L_scheme_ = sublist->get<bool>("L-scheme stabilization", false);
+  // other parameters
+  L_scheme_ = sublist->isSublist("L-scheme");
   if (L_scheme_) {
-    L_scheme_keys_ = SetupLSchemeKey();
+    auto tmp3 = sublist->sublist("L-scheme");
+    L_scheme_keys_ = SetupLSchemeKey(tmp3);
   }
 
   vo_ = Teuchos::rcp(new VerboseObject(soln->Comm(), "MPC_Sequential", *global_list));
@@ -80,6 +81,26 @@ void
 PK_MPCSequential::set_dt(double dt)
 {
   for (auto pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) (*pk)->set_dt(dt);
+}
+
+
+// -----------------------------------------------------------------------------
+// Extend initialization with optionla L-scheme
+// -----------------------------------------------------------------------------
+void
+PK_MPCSequential::Initialize()
+{
+  if (L_scheme_) {
+    auto& plist = my_list_->sublist("time integrator").sublist("L-scheme");
+    auto& data = S_->GetW<LSchemeData>("l_scheme_data", "state");
+
+    for (auto& item : data) {
+      item.second.safety_factor_min = plist.get<double>("minimum safety factor", 0.01);
+      item.second.safety_factor_max = plist.get<double>("maximum safety factor", 10.0);
+    }
+  }
+
+  PK_MPC<PK>::Initialize();
 }
 
 
