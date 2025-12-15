@@ -324,6 +324,7 @@
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{residual}"/>
         <Parameter name="time integration method" type="string" value="BDF1"/>
+        <Parameter name="L-scheme stabilization" type="bool" value="true"/>
         <ParameterList name="BDF1">
           <Parameter name="timestep controller type" type="string" value="standard"/>
           <ParameterList name="timestep controller standard parameters">

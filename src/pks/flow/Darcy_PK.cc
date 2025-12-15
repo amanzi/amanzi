@@ -563,6 +563,13 @@ Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     op_acc_->AddAccumulationTerm(wi, "cell");
   }
 
+  // add stabilization based on Lipschiz constant
+  if (L_scheme_) {
+    const auto& stability = S_->Get<CV_t>(L_scheme_stab_key_);
+    const auto& u_prev = S_->Get<CV_t>(L_scheme_prev_key_);
+    op_acc_->AddAccumulationDelta(u_prev, stability, stability, dt_, "cell");
+  }
+
   // add diffusion matrices
   if (assumptions_.flow_on_manifold) {
     S_->GetEvaluator(permeability_eff_key_).Update(*S_, "flow");

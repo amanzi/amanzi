@@ -158,7 +158,12 @@ if (BUILD_TESTS)
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})
 
-    # Test: mpc driver for thermal richards
+    # Test: mpc driver for thermal flow
+    add_amanzi_test(mpc_thermal_darcy mpc_thermal_darcy
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_thermal_darcy.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
     add_amanzi_test(mpc_thermal_richards mpc_thermal_richards
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_thermal_richards.cc

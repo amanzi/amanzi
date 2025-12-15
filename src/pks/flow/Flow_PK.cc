@@ -19,6 +19,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "EvaluatorMultiplicativeReciprocal.hh"
+#include "LScheme_Helpers.hh"
 #include "Mesh.hh"
 #include "MeshAlgorithms.hh"
 #include "OperatorDefs.hh"
@@ -103,6 +104,8 @@ Flow_PK::Setup()
 
   mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid");
   mass_density_liquid_key_ = Keys::getKey(domain_, "mass_density_liquid");
+
+  L_scheme_data_key_ = "l_scheme_data";
 
   // constant fields
   S_->Require<double>("const_fluid_density", Tags::DEFAULT, "state");
@@ -223,6 +226,24 @@ Flow_PK::Setup()
     }
   }
 
+  // L-scheme support
+  if (L_scheme_) {
+    S_->Require<LSchemeData>(L_scheme_data_key_, Tags::DEFAULT, "state");
+    S_->GetRecordW(L_scheme_data_key_, "state").set_initialized();
+
+    S_->Require<CV_t, CVS_t>(L_scheme_stab_key_, Tags::DEFAULT, "state")
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+    S_->GetRecordW(L_scheme_stab_key_, "state").set_initialized();
+
+    S_->Require<CV_t, CVS_t>(L_scheme_prev_key_, Tags::DEFAULT, "state")
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+    S_->GetRecordW(L_scheme_prev_key_, "state").set_initialized();
+  }
+
   // set units
   if (assumptions_.flow_on_manifold) S_->GetRecordSetW(aperture_key_).set_units("m");
 }
@@ -297,6 +318,20 @@ Flow_PK::Setup_LocalFields_()
     auto eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
     S_->SetEvaluator(darcy_velocity_key_, tag, eval);
   }
+}
+
+
+/* ******************************************************************
+* L-scheme support
+****************************************************************** */
+std::vector<Key>
+Flow_PK::SetupLSchemeKey()
+{
+  L_scheme_ = true;
+  Key key = Keys::getKey(domain_, "l_scheme_pressure");
+  L_scheme_stab_key_ = key + "_stab";
+  L_scheme_prev_key_ = key + "_prev";
+  return std::vector<Key>(1, key);
 }
 
 

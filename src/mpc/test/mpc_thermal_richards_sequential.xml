@@ -4,7 +4,7 @@
     <Parameter name="verbosity level" type="string" value="high"/>
   </ParameterList>
   <!--ParameterList name="visualization data">
-    <Parameter name="file name base" type="string" value="plot"/>
+    <Parameter name="file name base" type="string" value="plot_thermal"/>
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 20, -1}"/>
   </ParameterList-->
 
@@ -86,12 +86,12 @@
       <ParameterList name="TP 0">
         <ParameterList name="PK tree">
           <ParameterList name="flow and energy">
-            <Parameter name="PK type" type="string" value="flow and energy"/>
+            <Parameter name="PK type" type="string" value="mpc sequential"/>
             <ParameterList name="flow">
               <Parameter name="PK type" type="string" value="richards"/>
             </ParameterList>
             <ParameterList name="energy">
-              <Parameter name="PK type" type="string" value="two-phase energy"/>
+              <Parameter name="PK type" type="string" value="one-phase energy"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -220,6 +220,7 @@
         <Parameter name="evaluator type" type="string" value="eos"/>
         <Parameter name="eos basis" type="string" value="molar"/>
         <Parameter name="molar density key" type="string" value="molar_density_gas"/>
+
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="vapor in gas"/>
           <ParameterList name="EOS parameters">
@@ -266,6 +267,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="permeability">
         <ParameterList name="function">
           <ParameterList name="RegionMiddle">
@@ -391,6 +393,7 @@
         <Parameter name="linear solver" type="string" value="none"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
         <Parameter name="time integration method" type="string" value="BDF1"/>
+        <Parameter name="L-scheme stabilization" type="bool" value="true"/>
         <ParameterList name="BDF1">
           <Parameter name="timestep controller type" type="string" value="standard"/>
           <ParameterList name="timestep controller standard parameters">
@@ -431,6 +434,49 @@
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
 
+      <ParameterList name="time integrator">
+        <Parameter name="error control options" type="Array(string)" value="{energy}"/>
+        <Parameter name="linear solver" type="string" value="AztecOO"/>
+        <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+        <ParameterList name="dae constraint">
+          <Parameter name="method" type="string" value="projection"/>
+          <Parameter name="inflow krel correction" type="bool" value="true"/>
+          <Parameter name="linear solver" type="string" value="AztecOO"/>
+        </ParameterList>
+        <Parameter name="time integration method" type="string" value="BDF1"/>
+        <ParameterList name="BDF1">
+          <Parameter name="timestep controller type" type="string" value="standard"/>
+          <ParameterList name="timestep controller standard parameters">
+            <Parameter name="max iterations" type="int" value="15"/>
+            <Parameter name="min iterations" type="int" value="10"/>
+            <Parameter name="timestep increase factor" type="double" value="1.2"/>
+            <Parameter name="timestep reduction factor" type="double" value="0.8"/>
+            <Parameter name="max timestep" type="double" value="4.3234e+17"/>
+            <Parameter name="min timestep" type="double" value="1.0e-6"/>
+          </ParameterList>
+          <Parameter name="solver type" type="string" value="nka"/>
+          <ParameterList name="nka parameters">
+            <Parameter name="nonlinear tolerance" type="double" value="1.0e-7"/>
+            <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+            <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
+            <Parameter name="max du growth factor" type="double" value="1000.0"/>
+            <Parameter name="max divergent iterations" type="int" value="3"/>
+            <Parameter name="max nka vectors" type="int" value="10"/>
+            <Parameter name="limit iterations" type="int" value="20"/>
+            <Parameter name="modify correction" type="bool" value="true"/>
+          </ParameterList>
+          <Parameter name="extrapolation damping factor" type="double" value="0.8"/>
+          <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
+          <Parameter name="extrapolate initial guess" type="bool" value="false"/>
+          <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
+          <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
+          <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
+          <ParameterList name="verbose object">
+            <Parameter name="verbosity level" type="string" value="high"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
       <ParameterList name="energy evaluator">
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="high"/>
@@ -445,15 +491,18 @@
       </ParameterList>
 
       <ParameterList name="thermal conductivity evaluator">
-        <ParameterList name="thermal conductivity parameters">
-          <ParameterList name="TCM_0">
-            <Parameter name="thermal conductivity type" type="string" value="two-phase Peters-Lidard"/>
-            <Parameter name="thermal conductivity of rock" type="double" value="0.2"/>
-            <Parameter name="thermal conductivity of liquid" type="double" value="0.1"/>
-            <Parameter name="thermal conductivity of gas" type="double" value="0.02"/>
-            <Parameter name="unsaturated alpha" type="double" value="1.0"/>
-            <Parameter name="epsilon" type="double" value="1e-10"/>
-            <Parameter name="regions" type="Array(string)" value="{All}"/>
+        <ParameterList name="All">
+          <Parameter name="thermal conductivity type" type="string" value="one-phase polynomial"/>
+          <Parameter name="regions" type="Array(string)" value="{All}"/>
+          <ParameterList name="solid phase">
+            <Parameter name="eos type" type="string" value="constant"/>
+            <Parameter name="reference conductivity" type="double" value="0.5"/>
+            <Parameter name="reference temperature" type="double" value="298.15"/>
+          </ParameterList>
+          <ParameterList name="liquid phase">
+            <Parameter name="eos type" type="string" value="constant"/>
+            <Parameter name="reference conductivity" type="double" value="0.598"/>
+            <Parameter name="reference temperature" type="double" value="298.15"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
@@ -497,21 +546,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-
-      <ParameterList name="time integrator">
-        <Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
-        <Parameter name="linear solver" type="string" value="none"/>
-        <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-        <ParameterList name="dae constraint">
-          <Parameter name="method" type="string" value="projection"/>
-          <Parameter name="inflow krel correction" type="bool" value="true"/>
-          <Parameter name="linear solver" type="string" value="AztecOO"/>
-        </ParameterList>
-        <Parameter name="time integration method" type="string" value="none"/>
-        <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
-        </ParameterList>
-      </ParameterList>
     </ParameterList>
 
     <ParameterList name="flow">
@@ -527,15 +561,57 @@
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
 
+      <ParameterList name="time integrator">
+        <Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
+        <Parameter name="linear solver" type="string" value="AztecOO"/>
+        <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+        <ParameterList name="dae constraint">
+          <Parameter name="method" type="string" value="projection"/>
+          <Parameter name="inflow krel correction" type="bool" value="true"/>
+          <Parameter name="linear solver" type="string" value="AztecOO"/>
+        </ParameterList>
+        <Parameter name="time integration method" type="string" value="BDF1"/>
+        <ParameterList name="BDF1">
+          <Parameter name="timestep controller type" type="string" value="standard"/>
+          <ParameterList name="timestep controller standard parameters">
+            <Parameter name="max iterations" type="int" value="15"/>
+            <Parameter name="min iterations" type="int" value="10"/>
+            <Parameter name="timestep increase factor" type="double" value="1.2"/>
+            <Parameter name="timestep reduction factor" type="double" value="0.8"/>
+            <Parameter name="max timestep" type="double" value="4.3234e+17"/>
+            <Parameter name="min timestep" type="double" value="1.0e-6"/>
+          </ParameterList>
+          <Parameter name="solver type" type="string" value="nka"/>
+          <ParameterList name="nka parameters">
+            <Parameter name="nonlinear tolerance" type="double" value="1.0e-7"/>
+            <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+            <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
+            <Parameter name="max du growth factor" type="double" value="1000.0"/>
+            <Parameter name="max divergent iterations" type="int" value="3"/>
+            <Parameter name="max nka vectors" type="int" value="10"/>
+            <Parameter name="limit iterations" type="int" value="20"/>
+            <Parameter name="modify correction" type="bool" value="true"/>
+          </ParameterList>
+          <Parameter name="extrapolation damping factor" type="double" value="0.8"/>
+          <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
+          <Parameter name="extrapolate initial guess" type="bool" value="true"/>
+          <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
+          <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
+          <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
+          <ParameterList name="verbose object">
+            <Parameter name="verbosity level" type="string" value="high"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
       <ParameterList name="water retention models">
         <ParameterList name="WRM for RegionMiddle">
           <Parameter name="water retention model" type="string" value="van Genuchten"/>
           <Parameter name="regions" type="Array(string)" value="{RegionMiddle}"/>
-          <Parameter name="van Genuchten m" type="double" value="0.229399999999999993"/>
+	  <Parameter name="van Genuchten m" type="double" value="0.51138"/>
           <Parameter name="van Genuchten l" type="double" value="0.50"/>
-          <Parameter name="van Genuchten alpha" type="double" value="0.000194670000000000005"/>
-          <Parameter name="residual saturation liquid" type="double" value="0.0"/>
-          <Parameter name="regularization interval" type="double" value="100.0"/>
+	  <Parameter name="van Genuchten alpha" type="double" value="0.000735"/>
+	  <Parameter name="residual saturation liquid" type="double" value="0.0"/>
           <Parameter name="relative permeability model" type="string" value="Mualem"/>
         </ParameterList>
         <ParameterList name="WRM for RegionBottom">
@@ -637,21 +713,6 @@
               </ParameterList>
             </ParameterList>
           </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
-      <ParameterList name="time integrator">
-        <Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
-        <Parameter name="linear solver" type="string" value="none"/>
-        <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-        <ParameterList name="dae constraint">
-          <Parameter name="method" type="string" value="projection"/>
-          <Parameter name="inflow krel correction" type="bool" value="true"/>
-          <Parameter name="linear solver" type="string" value="AztecOO"/>
-        </ParameterList>
-        <Parameter name="time integration method" type="string" value="none"/>
-        <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>

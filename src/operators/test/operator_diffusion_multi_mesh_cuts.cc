@@ -383,14 +383,14 @@ TestDiffusionMultiMesh(int d, double tol,
     printf("L2(u) =%10.7f  Inf =%9.6f  |u|=%9.6f\n", l2_err3 / unorm3, inf_err3, unorm3);
   }
 
-  // -- lemma 4.3
+  // -- lemma 3.3
   double l2_err(0.0);
   auto interface_weights = pde->get_interface_weights();
   std::vector<Teuchos::RCP<AmanziMesh::Mesh>> meshes({ mesh1, mesh2, mesh3 });
 
   for (int k = 0; k < 3; ++k) {
     int i1, i2, dir, l1, l2;
-    double sum(0.0);
+    double sum1(0.0), sum2(0.0), alpha(0.5);
     std::string cutname;
     if (k == 0) {
       i1 = 0;
@@ -440,28 +440,35 @@ TestDiffusionMultiMesh(int d, double tol,
     for (int f : block1) {
       int c = getFaceOnBoundaryInternalCell(*meshes[i1], f);
       meshes[i1]->getFaceNormal(f, c, &dir);
+      double area = (d == 3) ? meshes[i1]->getFaceArea(f) : 1.0;
    
-      double pavg(p1_f[0][f]);
+      double pavg(p1_f[0][f]), jump(p1_f[0][f]);
       for (auto data : interface_weights[l1][f]) {
         int f2 = data.first;
         pavg += data.second * p2_f[0][f2];
+        jump -= data.second * p2_f[0][f2];
       }
-      sum += pavg * flux1[0][f] * dir;
+      sum1 += pavg * flux1[0][f] * dir;
+      sum2 += jump * jump * area;
     }
 
     for (int f : block2) {
       int c = getFaceOnBoundaryInternalCell(*meshes[i2], f);
       meshes[i2]->getFaceNormal(f, c, &dir);
+      double area = (d == 3) ? meshes[i2]->getFaceArea(f) : 1.0;
 
-      double pavg(p2_f[0][f]);
+      double pavg(p2_f[0][f]), jump(p2_f[0][f]);
       for (auto data : interface_weights[l2][f]) {
         int f1 = data.first;
         pavg += data.second * p1_f[0][f1];
+        jump -= data.second * p1_f[0][f1];
       }
-      sum += pavg * flux2[0][f] * dir;
+      sum1 += pavg * flux2[0][f] * dir;
+      sum2 += jump * jump * area;
     }
-    printf("Lemma 4.3, %12.9f >= 0.0\n", sum / 2);
-    CHECK(sum >= -1e-12);
+    printf("Lemma 3.3, %12.9f >= 0.0, jump = %12.9f \n", sum1 / 2, sum2 * alpha);
+    CHECK(sum1 >= -1e-12);
+    CHECK(std::fabs(sum1 / 2 - sum2 * alpha) < 1e-12);
 
     // interface pressure error
     for (int f : block1) {

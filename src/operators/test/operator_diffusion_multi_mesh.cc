@@ -360,8 +360,8 @@ TestDiffusionMultiMesh(int d,
   printf("Total interface flux: %12.9f, err =%12.9f\n", tot_flux1, tot_flux1 + tot_flux2);
   CHECK(std::fabs(tot_flux1 + tot_flux2) < 1e-11);
 
-  // -- lemma 4.3
-  double sum(0.0);
+  // -- lemma 3.3
+  double sum1(0.0), sum2(0.0);
   auto interface_weights = pde->get_interface_weights();
 
   auto& p1_f = *sol->SubVector(0)->Data()->ViewComponent("face");
@@ -370,28 +370,35 @@ TestDiffusionMultiMesh(int d,
   for (int f : block1) {
     int c = getFaceOnBoundaryInternalCell(*mesh1, f);
     mesh1->getFaceNormal(f, c, &dir);
+    double area = (d == 3) ? mesh1->getFaceArea(f) : 1.0;
    
-    double pavg(p1_f[0][f]);
+    double pavg(p1_f[0][f]), jump(p1_f[0][f]);
     for (auto data : interface_weights[0][f]) {
       int f2 = data.first;
       pavg += data.second * p2_f[0][f2];
+      jump -= data.second * p2_f[0][f2];
     }
-    sum += pavg * flux1[0][f] * dir;
+    sum1 += pavg * flux1[0][f] * dir;
+    sum2 += jump * jump * area;
   }
 
   for (int f : block2) {
     int c = getFaceOnBoundaryInternalCell(*mesh2, f);
     mesh2->getFaceNormal(f, c, &dir);
+    double area = (d == 3) ? mesh2->getFaceArea(f) : 1.0;
 
-    double pavg(p2_f[0][f]);
+    double pavg(p2_f[0][f]), jump(p2_f[0][f]);
     for (auto data : interface_weights[1][f]) {
       int f1 = data.first;
       pavg += data.second * p1_f[0][f1];
+      jump -= data.second * p1_f[0][f1];
     }
-    sum += pavg * flux2[0][f] * dir;
+    sum1 += pavg * flux2[0][f] * dir;
+    sum2 += jump * jump * area;
   }
-  printf("Lemma 4.3, %12.9f >= 0.0\n", sum / 2);
-  CHECK(sum >= -1e-12);
+  printf("Lemma 3.3, %12.9f >= 0.0, jump = %12.9f \n", sum1 / 2, sum2);
+  CHECK(sum1 >= -1e-12);
+  CHECK(std::fabs(sum1 / 2 - sum2) < 1e-12);
 
   // interface pressure error
   double l2_err(0.0), pnorm(0.0);

@@ -14,6 +14,7 @@
 
 // Amanzi
 #include "Key.hh"
+#include "LScheme_Helpers.hh"
 #include "PDE_HelperDiscretization.hh"
 
 // Amanzi::Energy
@@ -22,6 +23,8 @@
 
 namespace Amanzi {
 namespace Energy {
+
+using CV_t = CompositeVector;
 
 /* ******************************************************************
 * Computes the non-linear functional g = g(t,u,udot)
@@ -88,6 +91,32 @@ EnergyOnePhase_PK::FunctionalResidual(double t_old,
   CompositeVector g_adv(g->Data()->Map());
   op_advection_->ComputeNegativeResidual(enthalpy, g_adv);
   g->Data()->Update(1.0, g_adv, 1.0);
+
+  // add optional stabilization term
+  if (L_scheme_) {
+    const auto& stability_c = *S_->Get<CV_t>(L_scheme_stab_key_).ViewComponent("cell");
+    const auto& u_prev_c = *S_->Get<CV_t>(L_scheme_prev_key_).ViewComponent("cell");
+    const auto& u_new_c = *u_new->Data()->ViewComponent("cell");
+    const auto& u_old_c = *u_old->Data()->ViewComponent("cell");
+
+    double delta(0.0), gnorm(0.0), factor, udiff;
+    for (int c = 0; c < ncells_owned; ++c) {
+      udiff = u_new_c[0][c] - u_prev_c[0][c];
+      delta = std::max(delta, std::fabs(udiff) / (std::fabs(u_prev_c[0][c]) + 273.0));
+
+      factor = mesh_->getCellVolume(c) / dt_;
+      gnorm = std::max(gnorm, g_c[0][c] / (factor * e1[0][c])); // true residual
+
+      g_c[0][c] += stability_c[0][c] * udiff * factor;
+
+    }
+
+    // save data
+    auto& data = S_->GetW<LSchemeData>(L_scheme_data_key_, "state");
+    data[temperature_key_].last_step_increment = delta;
+    data[temperature_key_].last_step_residual = gnorm;
+    data[temperature_key_].ns_itrs[0]++;
+  }
 }
 
 
@@ -144,6 +173,11 @@ EnergyOnePhase_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
     op_preconditioner_advection_->Setup(*flux);
     op_preconditioner_advection_->UpdateMatrices(flux.ptr(), dHdT.ptr());
     op_preconditioner_advection_->ApplyBCs(false, true, false);
+  }
+
+  if (L_scheme_) {
+    const auto& stability = S_->Get<CV_t>(L_scheme_stab_key_);
+    op_acc_->AddAccumulationTerm(stability, dt, "cell");
   }
 
   // verify and finalize preconditioner

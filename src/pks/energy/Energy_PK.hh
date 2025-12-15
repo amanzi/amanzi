@@ -117,6 +117,8 @@ class Energy_PK : public PK_PhysicalBDF {
   virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
                                   Teuchos::RCP<TreeVector> Y) override;
 
+  virtual std::vector<Key> SetupLSchemeKey() override;
+
   // -- check the admissibility of a solution
   //    override with the actual admissibility check
   bool IsAdmissible(Teuchos::RCP<const TreeVector> up) override { return true; }
@@ -188,8 +190,9 @@ class Energy_PK : public PK_PhysicalBDF {
   Key energy_key_, prev_energy_key_;
   Key enthalpy_key_, aperture_key_;
   Key ie_liquid_key_, ie_gas_key_, ie_rock_key_;
-  Key pressure_key_, mol_flowrate_key_, porosity_key_, particle_density_key_, sat_liquid_key_;
-  Key mol_density_liquid_key_, mass_density_liquid_key_;
+  Key pressure_key_, mol_flowrate_key_, vol_flowrate_key_;
+  Key porosity_key_, particle_density_key_, sat_liquid_key_;
+  Key mol_density_liquid_key_, mass_density_liquid_key_, viscosity_liquid_key_;
   Key mol_density_gas_key_, x_gas_key_;
   Key conductivity_gen_key_, conductivity_key_, conductivity_eff_key_;
 
@@ -219,6 +222,9 @@ class Energy_PK : public PK_PhysicalBDF {
 
   // physical models and assumptions
   ModelAssumptions assumptions_;
+
+  bool L_scheme_ = false;
+  Key L_scheme_stab_key_, L_scheme_prev_key_, L_scheme_data_key_, beta_key_;
 };
 
 } // namespace Energy

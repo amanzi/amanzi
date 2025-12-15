@@ -15,6 +15,7 @@
 */
 
 // Amanzi
+#include "LScheme_Helpers.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "PDE_AdvectionUpwindFactory.hh"
 #include "UpwindFactory.hh"
@@ -90,6 +91,10 @@ EnergyOnePhase_PK::Setup()
 
     S_->RequireDerivative<CV_t, CVS_t>(
         energy_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, energy_key_)
+      .SetGhosted();
+
+    S_->RequireDerivative<CV_t, CVS_t>(
+        energy_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, energy_key_)
       .SetGhosted();
   }
 
@@ -227,6 +232,12 @@ EnergyOnePhase_PK::Initialize()
   auto& temperature = S_->GetW<CV_t>(temperature_key_, passwd_);
   UpdateSourceBoundaryData(t_ini, t_ini, temperature);
 
+  if (L_scheme_) {
+    auto& data = S_->GetW<LSchemeData>(L_scheme_data_key_, "state");
+    data[temperature_key_].last_step_increment = 1.0;
+    data[temperature_key_].safety_factor = 0.1;
+  }
+
   // output of initialization summary
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
@@ -340,6 +351,58 @@ EnergyOnePhase_PK::FailStep(double t_old, double t_new, const Tag& tag)
 {
   archive_->Restore("");
   temperature_eval_->SetChanged();
+}
+
+
+/* ******************************************************************
+* Restore state to the previous step
+****************************************************************** */
+void
+EnergyOnePhase_PK::ComputeLSchemeStability()
+{ 
+  auto& stability_c = *S_->GetW<CV_t>(L_scheme_stab_key_, "state").ViewComponent("cell");
+
+  S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
+  const auto& dEdT =
+    S_->GetDerivative<CompositeVector>(energy_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT);
+  auto& tmp1 = *dEdT.ViewComponent("cell");
+
+  auto tmp2(tmp1);
+  tmp2.PutScalar(0.0);
+  if (S_->GetEvaluator(energy_key_).IsDifferentiableWRT(*S_, pressure_key_, Tags::DEFAULT)) {
+    S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
+    auto& dEdp = S_->GetDerivativeW<CV_t>(
+      energy_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, energy_key_);
+    tmp2 = *dEdp.ViewComponent("cell");
+  }
+
+  // advection
+  auto& beta_dT = S_->GetDerivativeW<CV_t>(
+    beta_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, beta_key_);
+  const auto& tmp3 = *beta_dT.ViewComponent("cell");
+
+  const auto& mu = *S_->Get<CV_t>(viscosity_liquid_key_).ViewComponent("cell");
+  const auto& flux = *S_->Get<CV_t>(vol_flowrate_key_).ViewComponent("face", true);
+
+  // L-scheme additional control
+  const auto& data = S_->Get<LSchemeData>(L_scheme_data_key_, Tags::DEFAULT);
+  double normp = data.at(pressure_key_).last_step_increment;
+  double sT = data.at(temperature_key_).safety_factor;
+
+  double qmax, vol, factor3;
+  for (int c = 0; c < ncells_owned; ++c) {
+    const auto& faces = mesh_->getCellFaces(c);
+
+    qmax = 0.0;
+    for (int f : faces) qmax += std::fabs(flux[0][f]);
+
+    vol = mesh_->getCellVolume(c);
+    factor3 = (qmax / faces.size()) * mu[0][c] * dt_ / vol;
+
+    stability_c[0][c] = (std::fabs(tmp1[0][c])
+                       + std::fabs(tmp2[0][c]) * normp
+                       + std::fabs(tmp3[0][c]) * factor3) * sT;
+  }
 }
 
 } // namespace Energy
