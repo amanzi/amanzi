@@ -68,9 +68,9 @@ run_test(const std::string& domain, const std::string& filename)
   edgelist->set<bool>("request faces", true);
   MeshFactory meshfactory(comm, gm, edgelist);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  auto mesh3D = meshfactory.create(0.0, 0.0, 0.0, 200.0, 12.0, 12.0, 50, 3, 6);
+  auto mesh3D = meshfactory.create(0.0, 0.0, 0.0, 200.0, 12.0, 12.0, 100, 1, 6);
   std::vector<std::string> names;
-  names.push_back("fracture");
+  names.push_back("fractures");
   mesh = meshfactory.create(mesh3D, names, AmanziMesh::Entity_kind::FACE);
 
   // create screen io

@@ -29,6 +29,18 @@
         <Parameter name="high coordinate" type="Array(double)" value="{200.0, 12.0, 6.0}"/>
       </ParameterList>
     </ParameterList>
+    <ParameterList name="fracture 2">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{   50.0, 0.0,0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{50.0,12.0,12.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="fractures">
+      <ParameterList name="region: logical">
+        <Parameter name="operation" type="string" value="union"/>
+        <Parameter name="regions" type="Array(string)" value="{fracture, fracture 2}"/>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
 
   <ParameterList name="mesh">
