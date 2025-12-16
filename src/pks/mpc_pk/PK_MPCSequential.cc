@@ -90,6 +90,8 @@ PK_MPCSequential::set_dt(double dt)
 void
 PK_MPCSequential::Initialize()
 {
+  PK_MPC<PK>::Initialize();
+
   if (L_scheme_) {
     auto& plist = my_list_->sublist("time integrator").sublist("L-scheme");
     auto& data = S_->GetW<LSchemeData>("l_scheme_data", "state");
@@ -99,8 +101,6 @@ PK_MPCSequential::Initialize()
       item.second.safety_factor_max = plist.get<double>("maximum safety factor", 10.0);
     }
   }
-
-  PK_MPC<PK>::Initialize();
 }
 
 

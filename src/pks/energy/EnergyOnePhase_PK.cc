@@ -235,7 +235,7 @@ EnergyOnePhase_PK::Initialize()
   if (L_scheme_) {
     auto& data = S_->GetW<LSchemeData>(L_scheme_data_key_, "state");
     data[temperature_key_].last_step_increment = 1.0;
-    data[temperature_key_].safety_factor = 0.1;
+    data[temperature_key_].safety_factor = 0.0;
   }
 
   // output of initialization summary
