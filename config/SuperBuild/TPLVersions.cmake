@@ -205,6 +205,7 @@
 #                - update superLU to 6.0.1
 #                - update superLU_dist to 8.2.1
 #                - update netcdf-c to 4.9.3
+#   0.98.14      - add EcoSIM TPL
 
 include(CMakeParseArguments)
 
@@ -257,7 +258,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 98)
-set(AMANZI_TPLS_VERSION_PATCH 13)
+set(AMANZI_TPLS_VERSION_PATCH 14)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
