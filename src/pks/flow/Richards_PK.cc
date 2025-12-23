@@ -1091,8 +1091,8 @@ Richards_PK::ComputeLSchemeStability()
     factor3 = (qmax / faces.size()) * mu[0][c] * dt_ / vol;
     factor4 = factor3 * normT;
 
-    stability_c[0][c] = (std::fabs(tmp1[0][c]) 
-                       + std::fabs(tmp2[0][c])
+    stability_c[0][c] = (std::max(0.0, -tmp1[0][c]) 
+                       + std::fabs(tmp2[0][c]) * normT
                        + std::fabs(tmp3[0][c]) * factor3
                        + std::fabs(tmp4[0][c]) * factor4) * sp;
   }

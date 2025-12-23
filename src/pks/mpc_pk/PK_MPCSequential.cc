@@ -46,8 +46,8 @@ PK_MPCSequential::PK_MPCSequential(Teuchos::ParameterList& pk_tree,
   auto tmp2 = Teuchos::sublist(tmp1, pk_name, true);
   auto sublist = Teuchos::sublist(tmp2, "time integrator", true);
 
-  max_itrs_ = sublist->get<int>("maximum number of iterations", 100);
-  tol_ = sublist->get<double>("error tolerance", 1e-6);
+  max_itrs_ = sublist->get<int>("maximum number of iterations");
+  tol_ = sublist->get<double>("error tolerance");
 
   // other parameters
   L_scheme_ = sublist->isSublist("L-scheme");
@@ -177,7 +177,10 @@ PK_MPCSequential::ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const
       r = item.second.update();
       err = std::max(err, item.second.last_step_residual);
 
-      item.second.print(std::cout);
+      if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+        Teuchos::OSTab tab = vo_->getOSTab();
+        item.second.print(*vo_->os());
+      }
       item.second.shift();
     }
   }

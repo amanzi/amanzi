@@ -102,7 +102,7 @@ EnergyOnePhase_PK::FunctionalResidual(double t_old,
     double delta(0.0), gnorm(0.0), factor, udiff;
     for (int c = 0; c < ncells_owned; ++c) {
       udiff = u_new_c[0][c] - u_prev_c[0][c];
-      delta = std::max(delta, std::fabs(udiff) / (std::fabs(u_prev_c[0][c]) + 273.0));
+      delta = std::max(delta, std::fabs(udiff));
 
       factor = mesh_->getCellVolume(c) / dt_;
       gnorm = std::max(gnorm, g_c[0][c] / (factor * e1[0][c])); // true residual

@@ -399,7 +399,7 @@ EnergyOnePhase_PK::ComputeLSchemeStability()
     vol = mesh_->getCellVolume(c);
     factor3 = (qmax / faces.size()) * mu[0][c] * dt_ / vol;
 
-    stability_c[0][c] = (std::fabs(tmp1[0][c])
+    stability_c[0][c] = (std::max(0.0, -tmp1[0][c])
                        + std::fabs(tmp2[0][c]) * normp
                        + std::fabs(tmp3[0][c]) * factor3) * sT;
   }
