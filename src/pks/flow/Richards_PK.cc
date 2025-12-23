@@ -1077,7 +1077,7 @@ Richards_PK::ComputeLSchemeStability()
 
   // L-scheme additional control
   const auto& data = S_->Get<LSchemeData>(L_scheme_data_key_, Tags::DEFAULT);
-  double normT = data.at(temperature_key_).last_step_increment;
+  double normT = (data.find(temperature_key_) == data.end()) ? 0.0 : data.at(temperature_key_).last_step_increment;
   double sp = data.at(pressure_key_).safety_factor;
 
   double qmax, vol, factor3, factor4;
