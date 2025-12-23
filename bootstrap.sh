@@ -173,6 +173,7 @@ crunchtope=${FALSE}
 pflotran=${FALSE}
 shared=${TRUE}
 silo=${FALSE}
+ecosim=${FALSE}
 
 # -- arch sets machine-specific variables
 amanzi_arch=
@@ -591,6 +592,7 @@ ATS Components:
 Amanzi TPLs:
     alquimia     = '"${alquimia}"'
     crunchtope   = '"${crunchtope}"'
+    ecosim       = '"${ecosim}"'
     mesh_mstk    = '"${mesh_mstk}"'
     mesh_moab    = '"${mesh_moab}"'
     netcdf4      = '"${netcdf4}"'
@@ -1890,6 +1892,7 @@ if [ -z "${tpl_config_file}" ]; then
       -DENABLE_ALQUIMIA:BOOL=${alquimia} \
       -DENABLE_PFLOTRAN:BOOL=${pflotran} \
       -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
+      -DENABLE_ECOSIM:BOOL=${ecosim}\
       -DENABLE_Silo:BOOL=${silo} \
       -DENABLE_CLM:BOOL=${clm} \
       -DENABLE_ELM_ATS_API:BOOL=${elm_ats_api} \
@@ -2020,6 +2023,7 @@ cmd_configure="${cmake_binary} \
     -DENABLE_ALQUIMIA:BOOL=${alquimia} \
     -DENABLE_PFLOTRAN:BOOL=${pflotran} \
     -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
+    -DENABLE_ECOSIM:BOOL=${ecosim} \
     -DENABLE_CLM:BOOL=${clm} \
     -DENABLE_ELM_ATS_API:BOOL=${elm_ats_api} \
     -DENABLE_Silo:BOOL=${silo} \
@@ -2142,4 +2146,3 @@ fi
 status_message "Bootstrap complete"
 
 exit_now 0
-

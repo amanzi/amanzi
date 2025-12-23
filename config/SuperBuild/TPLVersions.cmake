@@ -10,9 +10,9 @@
 # TPL: Amanzi Collection of TPLs
 #
 #   Define a "version number" for the collection of TPLs listed here.
-#   It's not clear this is the best way to include this information, 
+#   It's not clear this is the best way to include this information,
 #   but it's a reasonable place to start.
-#   
+#
 #   Upgrade History:
 #
 #   0.90.6       - first version reference used in installations
@@ -47,8 +47,8 @@
 #   0.92.3       - update CURL to version 7.37.0 (builds correctly on Mac OS X 10.9)
 #   0.92.4       - update NetCDF to version 4.3.2 (builds correctly on Mac OS X 10.9)
 #   0.92.5       - Patched Alquimia to build properly with GFortran 4.9.x
-#   0.92.6       - update Boost to version 1.56.0 
-#   0.92.7       - update CCSE to version 1.2.8 
+#   0.92.6       - update Boost to version 1.56.0
+#   0.92.7       - update CCSE to version 1.2.8
 #   0.92.8       - update ExodussII 5.22 -> 6.06
 #   0.92.9       - update MSTK to v 2.21 (incompatible -DWITH_MSTK_2_21rc1_OR_NEWER=TRUE)
 #   0.92.10      - update MSTK to v 2.22rc1
@@ -57,9 +57,9 @@
 #   0.92.13      - update MSTK to v2.22, includes installation of mesh utilities
 #   0.92.14      - update Hypre to v2.10.0b (and added patch for to ensure tol>0)
 #   0.92.15      - updated Alquimia to v0.2 (backward compatible)
-#   0.92.16      - update CCSE to version 1.3.0 
+#   0.92.16      - update CCSE to version 1.3.0
 #   0.92.17      - update MSTK to version 2.23 (adds element set capabilities)
-#   0.92.18      - update Boost to version 1.58.0 
+#   0.92.18      - update Boost to version 1.58.0
 #   0.92.19      - update CCSE to version 1.3.2
 #   0.92.20      - update CCSE to version 1.3.4 (fix issue with fsnapshot)
 #   0.92.21      - update Alquimia to version 0.3.1 (CrunchFlow integration)
@@ -86,8 +86,8 @@
 #   0.94.5       - restored Alquimia to version 1.0.4
 #   0.94.6       - Added CrunchTope package, hash version c31ecb9
 #   0.94.7       - update UnitTest++ to version 2.0.0
-#                - update Hypre to version 2.11.2    
-#   0.94.8       - removed ExodusII as independent TPL  
+#                - update Hypre to version 2.11.2
+#   0.94.8       - removed ExodusII as independent TPL
 #   0.94.9       - update PFloTran to version dev-c8df814cb6fa
 #                - update PETSc to xsdk-0.2.0 (native 3.7.5)
 #                - update SuperLU to 5.2.1
@@ -102,7 +102,7 @@
 #   0.94.12      - update xerces-c to 3.2.0 (CMake build)
 
 #   0.95.0       - update Trilinos 12.12.1
-#                - update Hypre 2.12.1  
+#                - update Hypre 2.12.1
 #                - note alquimia 1.0.5 == xsdk-0.3.0
 #                - pflotran release/xsdk-0.3.0
 #                - update PETSc 3.8.2
@@ -122,7 +122,7 @@
 #   0.95.10      - update OpenMPI to 3.1.4
 
 #   0.96.0       - update Trilinos to 12.14.0bf557717e-Jun17
-#   0.96.1       - update NetCDF-C to 4.7.1 
+#   0.96.1       - update NetCDF-C to 4.7.1
 #                - update MOAB to 5.1.0
 #   0.96.2       - update SuperLU_Dist to 3.4.0
 #                - update PETSc to 3.11.3
@@ -226,7 +226,7 @@ macro(amanzi_tpl_version_write)
 
   list_length(length ${LOCAL_VERSION})
 
-  if (length GREATER 0) 
+  if (length GREATER 0)
     list(GET LOCAL_VERSION 0 MAJOR)
     file(APPEND ${LOCAL_FILENAME} "#define ${LOCAL_PREFIX}_MAJOR ${MAJOR}\n")
   else()
@@ -253,7 +253,7 @@ endmacro(amanzi_tpl_version_write)
 
 
 #
-# TPLs and XSDK versions 
+# TPLs and XSDK versions
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 98)
@@ -278,7 +278,7 @@ set(XERCES_VERSION ${XERCES_VERSION_MAJOR}.${XERCES_VERSION_MINOR}.${XERCES_VERS
 set(XERCES_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(XERCES_ARCHIVE_FILE   xerces-c-${XERCES_VERSION}.tar.bz2)
 set(XERCES_SAVEAS_FILE    ${XERCES_ARCHIVE_FILE})
-set(XERCES_MD5_SUM        7b1394c32abbdd87841d94a8404c2ac6) 
+set(XERCES_MD5_SUM        7b1394c32abbdd87841d94a8404c2ac6)
 
 #
 # TPL: OpenMPI
@@ -337,7 +337,7 @@ set(CCSE_VERSION_PATCH 1)
 set(CCSE_VERSION ${CCSE_VERSION_MAJOR}.${CCSE_VERSION_MINOR}.${CCSE_VERSION_PATCH})
 set(AMANZI_DIR $ENV{AMANZI_DIR})
 set(CCSE_URL_STRING     "https://github.com/BoxLib-Codes/BoxLib/archive/")
-set(CCSE_ARCHIVE_FILE   ${CCSE_VERSION}.tar.gz) 
+set(CCSE_ARCHIVE_FILE   ${CCSE_VERSION}.tar.gz)
 set(CCSE_SAVEAS_FILE    ccse-${CCSE_VERSION}.tar.gz)
 set(CCSE_MD5_SUM        97c3e1615cc649e2748fa9a7291724fa)
 #set(CCSE_GIT_REPOSITORY "https://github.com/BoxLib-Codes/BoxLib")
@@ -354,7 +354,7 @@ set(UnitTest_VERSION ${UnitTest_VERSION_MAJOR}.${UnitTest_VERSION_MINOR}.${UnitT
 set(UnitTest_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(UnitTest_ARCHIVE_FILE   unittest-cpp-${UnitTest_VERSION}.tgz)
 set(UnitTest_SAVEAS_FILE    ${UnitTest_ARCHIVE_FILE})
-set(UnitTest_MD5_SUM        29f958e355e516e7ab016b467974728d) 
+set(UnitTest_MD5_SUM        29f958e355e516e7ab016b467974728d)
 
 #
 # TPL: HDF5
@@ -543,6 +543,19 @@ set(PFLOTRAN_SAVEAS_FILE    pflotran-${PFLOTRAN_VERSION}.tar.gz)
 set(PFLOTRAN_MD5_SUM        d44b5670223ea9e6fbb894a8842161e0)
 #set(PFLOTRAN_GIT_REPOSITORY "https://gitlab.com/pflotran/pflotran.git")
 #set(PFLOTRAN_GIT_TAG        "9e07f41")
+
+#
+# TPL: EcoSIM
+#
+set(ECOSIM_VERSION_MAJOR 0)
+set(ECOSIM_VERSION_MINOR 1)
+set(ECOSIM_VERSION_PATCH 0)
+set(ECOSIM_URL_STRING     "https://github.com/jinyun1tang/EcoSIM/tree/agraus/PrescribedPhenology")
+set(ECOSIM_ARCHIVE_FILE   ECOSIM-agraus-prephen.tar.gz)
+set(ECOSIM_SAVEAS_FILE    ECOSIM-agraus-prephen.tar.gz)
+set(ECOSIM_MD5_SUM        f10065689b6ebe7a67b95611bbb04c08)
+set(ECOSIM_GIT_REPOSITORY "https://github.com/jinyun1tang/EcoSIM")
+set(ECOSIM_GIT_TAG        "agraus/PrescribedPhenology")
 
 #
 # TPL: Alquimia
