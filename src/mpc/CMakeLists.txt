@@ -331,11 +331,17 @@ if (BUILD_TESTS)
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})
 
-    # Test: default MPCs
+    # Test: simple MPCs
     add_amanzi_test(mpc_default mpc_default
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_default.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARY})
+    # Test: sequential MPC for energy
+    add_amanzi_test(mpc_l_scheme mpc_l_scheme
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_l_scheme.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})
 
     # Test: mechanics

@@ -56,7 +56,7 @@ PK_MPCSequential::PK_MPCSequential(Teuchos::ParameterList& pk_tree,
     L_scheme_keys_ = SetupLSchemeKey(tmp3);
   }
 
-  vo_ = Teuchos::rcp(new VerboseObject(soln->Comm(), "MPC_Sequential", *global_list));
+  vo_ = Teuchos::rcp(new VerboseObject(soln->Comm(), "MPC_Sequential", *my_list_));
 }
 
 

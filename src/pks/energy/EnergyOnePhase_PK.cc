@@ -377,6 +377,7 @@ EnergyOnePhase_PK::ComputeLSchemeStability()
   }
 
   // advection
+  S_->GetEvaluator(beta_key_).UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
   auto& beta_dT = S_->GetDerivativeW<CV_t>(
     beta_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, beta_key_);
   const auto& tmp3 = *beta_dT.ViewComponent("cell");
@@ -386,7 +387,7 @@ EnergyOnePhase_PK::ComputeLSchemeStability()
 
   // L-scheme additional control
   const auto& data = S_->Get<LSchemeData>(L_scheme_data_key_, Tags::DEFAULT);
-  double normp = data.at(pressure_key_).last_step_increment;
+  double normp = (data.find(pressure_key_) == data.end()) ? 0.0 : data.at(pressure_key_).last_step_increment;
   double sT = data.at(temperature_key_).safety_factor;
 
   double qmax, vol, factor3;

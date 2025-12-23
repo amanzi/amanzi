@@ -279,7 +279,7 @@ Energy_PK::Setup()
     S_->SetEvaluator(conductivity_eff_key_, Tags::DEFAULT, eval);
   }
 
-  // if flow is missing, we need more fields
+  // if flow is missing, we need typical flow fields
   // -- saturation
   if (!S_->HasRecord(sat_liquid_key_)) {
     S_->Require<CV_t, CVS_t>(sat_liquid_key_, Tags::DEFAULT, sat_liquid_key_)
@@ -328,6 +328,21 @@ Energy_PK::Setup()
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+
+    // WIP: optionla missing flow field
+    if (!S_->HasRecord(vol_flowrate_key_)) {
+      S_->Require<CV_t, CVS_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_)
+        .SetMesh(mesh_)
+        ->SetGhosted(true)
+        ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
+    }
+
+    if (!S_->HasRecord(viscosity_liquid_key_)) {
+      S_->Require<CV_t, CVS_t>(viscosity_liquid_key_, Tags::DEFAULT, passwd_)
+        .SetMesh(mesh_)
+        ->SetGhosted(true)
+        ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+    }
 
     std::vector<std::string> listm({ Keys::getVarName(mol_density_liquid_key_),
                                      Keys::getVarName(enthalpy_key_) });
