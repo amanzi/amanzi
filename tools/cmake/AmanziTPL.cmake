@@ -1,5 +1,5 @@
 # -*- mode: cmake -*-
-#
+# 
 # Amanzi Third Party Library (TPL) Definitions
 #
 
@@ -36,12 +36,12 @@ message(STATUS "\t >>>>>  Amanzi Required Version:  ${AMANZI_TPLS_VERSION_REQUIR
 message(STATUS "\t >>>>>  Amanzi TPL Version:       ${AMANZI_TPLS_VERSION}\n")
 
 
-if (NOT ${AMANZI_TPLS_VERSION} STREQUAL ${AMANZI_TPLS_VERSION_REQUIRED})
+if (NOT ${AMANZI_TPLS_VERSION} STREQUAL ${AMANZI_TPLS_VERSION_REQUIRED}) 
   message(WARNING "TPL version does not match the required version.")
 endif()
 
-# List of directories for step 1 in CMake's search path for command find_library().
-# By default it is empty. We set it to non-standard location of MPI.
+# List of directories for step 1 in CMake's search path for command find_library(). 
+# By default it is empty. We set it to non-standard location of MPI. 
 # Probably, it would be appropriate to add also the path to TPL libraries.
 set(CMAKE_LIBRARY_PATH ${MPI_PREFIX}/lib)
 
@@ -104,19 +104,19 @@ endif()
 ##############################################################################
 if (BUILD_SHARED_LIBS)
   set(HDF5_USE_STATIC_LIBRARIES OFF)
-else()
+else()    
   set(HDF5_USE_STATIC_LIBRARIES ON)
 endif()
-
+  
 find_package(HDF5 ${HDF5_VERSION} REQUIRED COMPONENTS C HL)
 
-if (NOT HDF5_IS_PARALLEL)
+if (NOT HDF5_IS_PARALLEL) 
     message(WARNING "The HDF5 installation found in ${HDF5_DIR} is not "
                     "a parallel build. At this time, this installation "
                     "is compatible with other TPLs. Soon Amanzi will "
                     "require a parallel enabled HDF5. Please update your "
                     "HDF5 installation to include MPI I/O symbols"
-           )
+           )            
 endif(NOT HDF5_IS_PARALLEL)
 set_package_properties(HDF5 PROPERTIES
                        DESCRIPTION "I/O library that creates HDF5 formatted files"
@@ -151,7 +151,7 @@ message(STATUS "Searching for Trilinos at: ${Trilinos_INSTALL_PREFIX}")
 find_package(Trilinos ${Trilinos_MINIMUM_VERSION} REQUIRED
              PATHS ${Trilinos_INSTALL_PREFIX}
              PATH_SUFFIXES include)
-
+            
 if (Trilinos_FOUND)
   message(STATUS "Trilinos Package information")
   message(STATUS "\tTrilinos_VERSION      = ${Trilinos_VERSION}")
@@ -159,9 +159,9 @@ if (Trilinos_FOUND)
   message(STATUS "\tTrilinos_INCLUDE_DIRS = ${Trilinos_INCLUDE_DIRS}")
   message(STATUS "")
 
-  trilinos_package_enabled_tpls(Trilinos)
+  trilinos_package_enabled_tpls(Trilinos)           
 
-  if ("${Trilinos_VERSION}" VERSION_LESS ${Trilinos_MINIMUM_VERSION})
+  if ("${Trilinos_VERSION}" VERSION_LESS ${Trilinos_MINIMUM_VERSION}) 
     message(FATAL_ERROR "Trilinos version ${Trilinos_VERSION} is not sufficient."
                         " Amanzi requires at least version ${Trilinos_MINIMUM_VERSION}")
   endif()
@@ -188,7 +188,7 @@ if (Trilinos_FOUND)
   if (ENABLE_Tpetra)
     list(APPEND Trilinos_REQUIRED_PACKAGE_LIST Kokkos KokkosKernels Tpetra)
   endif()
-
+  
   if (ENABLE_Unstructured)
     if (ENABLE_Epetra)
       # NOX     - nonlinear solver
@@ -214,7 +214,7 @@ if (Trilinos_FOUND)
   if (ENABLE_MESH_MSTK)
     list(APPEND Trilinos_REQUIRED_PACKAGE_LIST Zoltan)
   endif()
-
+  
   # find each trilinos package
   foreach(tri_package ${Trilinos_REQUIRED_PACKAGE_LIST})
     find_package(${tri_package} REQUIRED
@@ -228,12 +228,12 @@ if (Trilinos_FOUND)
     print_link_libraries(${_tri_package})
     message(STATUS "")
 
-    # Update the <PACKAGE>_INCLUDE_DIRS variable
+    # Update the <PACKAGE>_INCLUDE_DIRS variable 
     foreach( _inc ${${tri_package}_TPL_INCLUDE_DIRS})
       list(APPEND ${tri_package}_INCLUDE_DIRS "${_inc}")
     endforeach()
   endforeach()
-
+       
   # Now update the Trilinos_LIBRARIES and INCLUDE_DIRS
   foreach(_inc ${Trilinos_TPL_INCLUDE_DIRS})
     list(APPEND Trilinos_INCLUDE_DIRS "${_inc}")
@@ -243,7 +243,7 @@ else()
   message(FATAL_ERROR "Can not locate Trilinos configuration file\n"
                       " Please define the location of your Trilinos installation\n"
                       "using -D Trilinos_DIR:FILEPATH=<install path>\n")
-endif()
+endif()    
 
 
 ##############################################################################
@@ -399,7 +399,7 @@ if (ENABLE_MESH_MOAB)
     message(STATUS "\tMOAB_LIBRARIES    = ${MOAB_LIBRARIES}")
     print_link_libraries(${MOAB_LIBRARY})
     message(STATUS "")
-  endif()
+  endif() 
 endif()
 
 
@@ -424,8 +424,8 @@ if (ENABLE_MESH_MSTK)
     message(STATUS "\tMSTK_LIBRARIES    = ${MSTK_LIBRARIES}")
     print_link_libraries(${MSTK_LIBRARY})
     message(STATUS "")
-  endif()
-endif()
+  endif() 
+endif() 
 
 
 ##############################################################################
@@ -447,8 +447,8 @@ if (ENABLE_Silo)
     message(STATUS "\tSilo_LIBRARY      = ${Silo_LIBRARY}")
     message(STATUS "\tSilo_LIBRARIES    = ${Silo_LIBRARIES}")
     message(STATUS "")
-  endif()
-endif()
+  endif() 
+endif() 
 
 
 ##############################################################################
@@ -470,7 +470,7 @@ if (ENABLE_ASCEMIO)
     find_package(ASCEMIO REQUIRED)
   else()
     find_package(ASCEMIO)
-  endif()
+  endif() 
 
   if (ASCEMIO_FOUND)
     message(STATUS "ASCEMIO Package information")
@@ -504,8 +504,8 @@ if (ENABLE_UnitTest)
     message(STATUS "\tUnitTest_LIBRARY      = ${UnitTest_LIBRARY}")
     message(STATUS "\tUnitTest_LIBRARIES    = ${UnitTest_LIBRARIES}")
     message(STATUS "")
-  endif()
-endif()
+  endif() 
+endif()    
 
 
 ##############################################################################
@@ -537,7 +537,7 @@ endif()
 ##############################################################################
 # ALQUIMIA, PFLOTRAN, and CrunchTope
 ##############################################################################
-if (ENABLE_ALQUIMIA)
+if (ENABLE_ALQUIMIA) 
 #  if (ENABLE_PFLOTRAN)
     find_package(PFLOTRAN)
     if (PFLOTRAN_FOUND)
@@ -594,7 +594,7 @@ if (ENABLE_Structured OR ENABLE_ALQUIMIA)
   message(STATUS "PETSc required for Structure and/or Alquimia TPLs, turning on.")
   set(ENABLE_PETSC ON)
 endif()
-
+  
 if (ENABLE_PETSC)
   find_package(PETSc)
   if (NOT PETSc_FOUND)
@@ -631,7 +631,7 @@ if (ENABLE_ECOSIM)
 endif()
 
 ##############################################################################
-# CLM LSM
+# CLM LSM 
 ##############################################################################
 option(ENABLE_CLM "Enable CLM land surface model" FALSE)
 if (ENABLE_CLM)
