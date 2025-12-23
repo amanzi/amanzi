@@ -125,7 +125,7 @@ Richards_PK::FunctionalResidual(double t_old,
 
     for (int c = 0; c < ncells_owned; ++c) {
       udiff = u_new_c[0][c] - u_prev_c[0][c];
-      delta = std::max(delta, std::fabs(udiff) / (std::fabs(u_prev_c[0][c]) + atm_pressure_));
+      delta = std::max(delta, std::fabs(udiff));
 
       factor = mesh_->getCellVolume(c) / dt_;
       fnorm = std::max(fnorm, f_cell[0][c] / (factor * ws_c[0][c]));
