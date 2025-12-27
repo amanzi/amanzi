@@ -45,7 +45,7 @@ TEST(MPC_L_SCHEME)
   // read the main parameter list
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile("test/mpc_l_scheme.xml");
 
-  std::string model("liquid water FEHM"), formula("600.0");
+  std::string model("liquid water CoolProp"), formula("700.0");
   auto& ev = plist->sublist("state").sublist("evaluators");
   ev.sublist("molar_density_liquid").sublist("EOS parameters").set<std::string>("eos type", model);
   ev.sublist("viscosity_liquid").sublist("EOS parameters").set<std::string>("eos type", model);
@@ -76,7 +76,7 @@ TEST(MPC_L_SCHEME)
 
   const auto& T_c = *S->Get<CompositeVector>("temperature").ViewComponent("cell");
   for (int c = 0; c < T_c.MyLength(); ++c) {
-    CHECK(300.0 < T_c[0][c] && T_c[0][c] < 600.0);
+    CHECK(300.0 < T_c[0][c] && T_c[0][c] < 700.0);
   }
 }
 
