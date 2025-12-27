@@ -324,6 +324,13 @@
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{residual}"/>
         <Parameter name="time integration method" type="string" value="BDF1"/>
+        <ParameterList name="L-scheme">
+          <Parameter name="L-scheme stabilization" type="bool" value="true"/>
+          <Parameter name="minimum safety factor" type="double" value="0.01"/>
+          <Parameter name="maximum safety factor" type="double" value="10.0"/>
+        </ParameterList>
+        <Parameter name="maximum number of iterations" type="int" value="200"/>
+        <Parameter name="error tolerance" type="double" value="1.0e-06"/>
         <ParameterList name="BDF1">
           <Parameter name="timestep controller type" type="string" value="standard"/>
           <ParameterList name="timestep controller standard parameters">
@@ -354,13 +361,10 @@
             <Parameter name="verbosity level" type="string" value="high"/>
           </ParameterList>
         </ParameterList>
-        <Parameter name="maximum number of iterations" type="int" value="200"/>
       </ParameterList>
-
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
-
     </ParameterList>
 
     <ParameterList name="transient:flow">

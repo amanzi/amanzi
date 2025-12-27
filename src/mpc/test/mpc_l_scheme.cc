@@ -35,8 +35,7 @@
 #include "models_flow_reg.hh"
 
 
-std::tuple<double, Amanzi::CompositeVector, Amanzi::CompositeVector>
-RunTest(const std::string& xmlFileName)
+TEST(MPC_L_SCHEME)
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -44,16 +43,25 @@ RunTest(const std::string& xmlFileName)
   auto comm = Amanzi::getDefaultComm();
 
   // read the main parameter list
-  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile("test/mpc_l_scheme.xml");
+
+  std::string model("liquid water FEHM"), formula("600.0");
+  auto& ev = plist->sublist("state").sublist("evaluators");
+  ev.sublist("molar_density_liquid").sublist("EOS parameters").set<std::string>("eos type", model);
+  ev.sublist("viscosity_liquid").sublist("EOS parameters").set<std::string>("eos type", model);
+
+  auto& ic = plist->sublist("state").sublist("initial conditions");
+  ic.sublist("temperature").sublist("function").sublist("EntireDomain").sublist("function")
+    .sublist("function-exprtk").set<std::string>("formula", formula);
 
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
-  auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(2, region_list, *comm));
+  auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, *comm));
 
   // create mesh
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 216.0, 120.0, 54, 60);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 100.0, 20.0, 20.0, 50, 4, 4);
   AMANZI_ASSERT(!mesh.is_null());
 
   // create dummy observation data object
@@ -66,40 +74,9 @@ RunTest(const std::string& xmlFileName)
   Amanzi::CycleDriver cycle_driver(plist, S, comm, obs_data);
   cycle_driver.Go();
 
-  double time = S->Get<double>("time");
-  CHECK(time > 1.7e+6);
-
-  return {time, S->Get<CompositeVector>("pressure"), S->Get<CompositeVector>("temperature")};
-}
-
-
-TEST(MPC_DRIVER_THERMAL_RICHARDS)
-{
-  auto [time1, p1, t1] = RunTest("test/mpc_thermal_richards.xml");
-  auto [time2, p2, t2] = RunTest("test/mpc_thermal_richards_sequential.xml");
-
-  double perr, terr, pnorm, tnorm;
-  p2.Update(-1.0, p1, 1.0);
-  t2.Update(-1.0, t1, 1.0);
-
-  CHECK(std::abs(time1 - time2) < 1.0e-12 * time1);
-  
-  for (auto comp = p1.begin(); comp != p1.end(); ++comp) {
-    auto& p1v = *p1.ViewComponent(*comp);
-    auto& p2v = *p2.ViewComponent(*comp);
-    p1v.Norm2(&pnorm);
-    p2v.Norm2(&perr);
-    perr /= pnorm;
-
-    auto& t1v = *t1.ViewComponent(*comp);
-    auto& t2v = *t2.ViewComponent(*comp);
-    t1v.Norm2(&tnorm);
-    t2v.Norm2(&terr);
-    terr /= tnorm;
-
-    printf("\nP-error =%10.5f  norm =%12.5g  comp=%s\n", perr, pnorm, comp->c_str());
-    printf("T-error =%10.5f  norm =%12.5g\n", terr, tnorm);
-    CHECK(perr < 0.02);
-    CHECK(terr < 0.002);
+  const auto& T_c = *S->Get<CompositeVector>("temperature").ViewComponent("cell");
+  for (int c = 0; c < T_c.MyLength(); ++c) {
+    CHECK(300.0 < T_c[0][c] && T_c[0][c] < 600.0);
   }
 }
+

@@ -10,13 +10,12 @@
 /*
   MPC PK
 
-  Field evaluator for water storage with a correction for fixed
-  stress split.
+  Field evaluator for water storage with a correction for volumetric strain.
 */
 
 
-#ifndef AMANZI_MPC_WATER_STORAGE_STRESS_SPLIT_DARCY_HH_
-#define AMANZI_MPC_WATER_STORAGE_STRESS_SPLIT_DARCY_HH_
+#ifndef AMANZI_MPC_WATER_STORAGE_DARCY_POROELASTICITY_HH_
+#define AMANZI_MPC_WATER_STORAGE_DARCY_POROELASTICITY_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -26,21 +25,11 @@
 
 namespace Amanzi {
 
-// Optimal stabilizty coefficient due to Makilic, Wheeler.
-// Convergence of iterative coupling for coupled flow and geomechanics.
-// Comput Geosci 2013.
-inline double
-FixedStressStabilityDarcy(double E, double nu, double b)
-{
-  double mu = E / (2 * (1 + nu));
-  return b * b / mu / 2;
-}
-
-class WaterStorageDarcyStressSplit
+class WaterStorageDarcyPoroelasticity
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  explicit WaterStorageDarcyStressSplit(Teuchos::ParameterList& plist);
-  WaterStorageDarcyStressSplit(const WaterStorageDarcyStressSplit& other);
+  explicit WaterStorageDarcyPoroelasticity(Teuchos::ParameterList& plist);
+  WaterStorageDarcyPoroelasticity(const WaterStorageDarcyPoroelasticity& other);
 
   // required inteface functions
   virtual Teuchos::RCP<Evaluator> Clone() const override;
@@ -54,10 +43,10 @@ class WaterStorageDarcyStressSplit
 
  private:
   Key pressure_key_, specific_storage_key_;
-  Key young_modulus_key_, poisson_ratio_key_, biot_key_, strain_key_;
+  Key biot_key_, strain_key_;
 
  private:
-  static Utils::RegisteredFactory<Evaluator, WaterStorageDarcyStressSplit> reg_;
+  static Utils::RegisteredFactory<Evaluator, WaterStorageDarcyPoroelasticity> reg_;
 };
 
 } // namespace Amanzi

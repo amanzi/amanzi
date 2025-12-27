@@ -35,8 +35,8 @@
 #include "models_flow_reg.hh"
 
 
-std::tuple<double, Amanzi::CompositeVector, Amanzi::CompositeVector>
-RunTest(const std::string& xmlFileName)
+void
+RunTest()
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -44,7 +44,8 @@ RunTest(const std::string& xmlFileName)
   auto comm = Amanzi::getDefaultComm();
 
   // read the main parameter list
-  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
+  std::string xmlInFileName = "test/mpc_thermal_darcy.xml";
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
 
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
@@ -66,40 +67,11 @@ RunTest(const std::string& xmlFileName)
   Amanzi::CycleDriver cycle_driver(plist, S, comm, obs_data);
   cycle_driver.Go();
 
-  double time = S->Get<double>("time");
-  CHECK(time > 1.7e+6);
-
-  return {time, S->Get<CompositeVector>("pressure"), S->Get<CompositeVector>("temperature")};
+  CHECK(S->Get<double>("time") > 1.7e+6);
 }
 
 
-TEST(MPC_DRIVER_THERMAL_RICHARDS)
+TEST(MPC_DRIVER_THERMAL_DARCY)
 {
-  auto [time1, p1, t1] = RunTest("test/mpc_thermal_richards.xml");
-  auto [time2, p2, t2] = RunTest("test/mpc_thermal_richards_sequential.xml");
-
-  double perr, terr, pnorm, tnorm;
-  p2.Update(-1.0, p1, 1.0);
-  t2.Update(-1.0, t1, 1.0);
-
-  CHECK(std::abs(time1 - time2) < 1.0e-12 * time1);
-  
-  for (auto comp = p1.begin(); comp != p1.end(); ++comp) {
-    auto& p1v = *p1.ViewComponent(*comp);
-    auto& p2v = *p2.ViewComponent(*comp);
-    p1v.Norm2(&pnorm);
-    p2v.Norm2(&perr);
-    perr /= pnorm;
-
-    auto& t1v = *t1.ViewComponent(*comp);
-    auto& t2v = *t2.ViewComponent(*comp);
-    t1v.Norm2(&tnorm);
-    t2v.Norm2(&terr);
-    terr /= tnorm;
-
-    printf("\nP-error =%10.5f  norm =%12.5g  comp=%s\n", perr, pnorm, comp->c_str());
-    printf("T-error =%10.5f  norm =%12.5g\n", terr, tnorm);
-    CHECK(perr < 0.02);
-    CHECK(terr < 0.002);
-  }
+  RunTest();
 }

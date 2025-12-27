@@ -201,13 +201,15 @@ TestDiffusionMultiMesh(int d,
   auto Kc1 = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   for (int c = 0; c < ncells1_owned; ++c) {
     const Point& xc = mesh1->getCellCentroid(c);
-    Kc1->push_back(ana1.TensorDiffusivity(xc, 0.0));
+    auto Kc = ana1.TensorDiffusivity(xc, 0.0);
+    Kc1->push_back(Kc);
   }
 
   auto Kc2 = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   for (int c = 0; c < ncells2_owned; ++c) {
     const Point& xc = mesh2->getCellCentroid(c);
-    Kc2->push_back(ana2.TensorDiffusivity(xc, 0.0));
+    auto Kc = ana2.TensorDiffusivity(xc, 0.0);
+    Kc2->push_back(Kc);
   }
 
   // populate boundary data
@@ -399,6 +401,44 @@ TestDiffusionMultiMesh(int d,
   printf("Lemma 3.3, %12.9f >= 0.0, jump = %12.9f \n", sum1 / 2, sum2);
   CHECK(sum1 >= -1e-12);
   CHECK(std::fabs(sum1 / 2 - sum2) < 1e-12);
+
+  // convergence theorem
+  sum1 = 0.0;
+  sum2 = 0.0;
+  for (int f : block1) {
+    int c = getFaceOnBoundaryInternalCell(*mesh1, f);
+    mesh1->getFaceNormal(f, c, &dir);
+   
+    const auto& xf1 = mesh1->getFaceCentroid(f);
+    double pavg(ana1.pressure_exact(xf1, 0.0));
+    double jump(pavg);
+    for (auto data : interface_weights[0][f]) {
+      int f2 = data.first;
+      const auto& xf2 = mesh2->getFaceCentroid(f2);
+      pavg += data.second * ana2.pressure_exact(xf2, 0.0);
+      jump -= data.second * ana2.pressure_exact(xf2, 0.0);
+    }
+    sum1 += pavg * flux1[0][f] * dir;
+    sum2 += std::fabs(jump);
+  }
+
+  for (int f : block2) {
+    int c = getFaceOnBoundaryInternalCell(*mesh2, f);
+    mesh2->getFaceNormal(f, c, &dir);
+
+    const auto& xf2 = mesh2->getFaceCentroid(f);
+    double pavg(ana2.pressure_exact(xf2, 0.0));
+    double jump(pavg);
+    for (auto data : interface_weights[1][f]) {
+      int f1 = data.first;
+      const auto& xf1 = mesh1->getFaceCentroid(f1);
+      pavg += data.second * ana1.pressure_exact(xf1, 0.0);
+      jump -= data.second * ana1.pressure_exact(xf1, 0.0);
+    }
+    sum1 += pavg * flux2[0][f] * dir;
+    sum2 += std::fabs(jump);
+  }
+  printf("Theorem, integral = %12.9f \n", sum1  / sum2);
 
   // interface pressure error
   double l2_err(0.0), pnorm(0.0);

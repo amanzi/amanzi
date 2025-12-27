@@ -3,6 +3,7 @@
   <ParameterList name="verbose object">
     <Parameter name="verbosity level" type="string" value="high"/>
   </ParameterList>
+
   <!--ParameterList name="visualization data">
     <Parameter name="file name base" type="string" value="plot"/>
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 20, -1}"/>
@@ -88,10 +89,10 @@
           <ParameterList name="flow and energy">
             <Parameter name="PK type" type="string" value="flow and energy"/>
             <ParameterList name="flow">
-              <Parameter name="PK type" type="string" value="richards"/>
+              <Parameter name="PK type" type="string" value="darcy"/>
             </ParameterList>
             <ParameterList name="energy">
-              <Parameter name="PK type" type="string" value="two-phase energy"/>
+              <Parameter name="PK type" type="string" value="one-phase energy"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -117,6 +118,34 @@
       <Parameter name="verbosity level" type="string" value="extreme"/>
     </ParameterList>
     <ParameterList name="evaluators">
+      <ParameterList name="specific_storage">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="9.81e-7"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="saturation_liquid">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
       <ParameterList name="particle_density">
         <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
@@ -195,9 +224,6 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
-        </ParameterList>
       </ParameterList>
       <ParameterList name="internal_energy_rock">
         <Parameter name="evaluator type" type="string" value="iem"/>
@@ -210,31 +236,6 @@
               <Parameter name="heat capacity" type="double" value="620.0"/>
             </ParameterList>
           </ParameterList>
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="internal_energy_gas">
-        <Parameter name="evaluator type" type="string" value="iem water vapor"/>
-        <Parameter name="internal energy key" type="string" value="internal_energy_gas"/>
-      </ParameterList>
-      <ParameterList name="molar_density_gas">
-        <Parameter name="evaluator type" type="string" value="eos"/>
-        <Parameter name="eos basis" type="string" value="molar"/>
-        <Parameter name="molar density key" type="string" value="molar_density_gas"/>
-        <ParameterList name="EOS parameters">
-          <Parameter name="eos type" type="string" value="vapor in gas"/>
-          <ParameterList name="EOS parameters">
-            <Parameter name="eos type" type="string" value="ideal gas"/>
-            <Parameter name="molar mass" type="double" value="0.0289647"/>
-            <!-- dry air -->
-            <Parameter name="density" type="double" value="1.0"/>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="molar_fraction_gas">
-        <Parameter name="evaluator type" type="string" value="molar fraction gas"/>
-        <Parameter name="molar fraction key" type="string" value="molar_fraction_gas"/>
-        <ParameterList name="vapor pressure model parameters">
-          <Parameter name="eos type" type="string" value="water vapor over water/ice"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -253,6 +254,21 @@
         <Parameter name="value" type="double" value="0.018015"/>
       </ParameterList>
 
+      <ParameterList name="pressure">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-linear">
+                <Parameter name="y0" type="double" value="101325.0"/>
+                <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
+                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, -979.35192}"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
       <ParameterList name="temperature">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -266,6 +282,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="permeability">
         <ParameterList name="function">
           <ParameterList name="RegionMiddle">
@@ -319,22 +336,6 @@
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="2.0706e-10"/>
                 </ParameterList>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
-      <ParameterList name="pressure">
-        <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="regions" type="Array(string)" value="{All}"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-linear">
-                <Parameter name="y0" type="double" value="101325.0"/>
-                <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
-                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, -979.35192}"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -445,15 +446,18 @@
       </ParameterList>
 
       <ParameterList name="thermal conductivity evaluator">
-        <ParameterList name="thermal conductivity parameters">
-          <ParameterList name="TCM_0">
-            <Parameter name="thermal conductivity type" type="string" value="two-phase Peters-Lidard"/>
-            <Parameter name="thermal conductivity of rock" type="double" value="0.2"/>
-            <Parameter name="thermal conductivity of liquid" type="double" value="0.1"/>
-            <Parameter name="thermal conductivity of gas" type="double" value="0.02"/>
-            <Parameter name="unsaturated alpha" type="double" value="1.0"/>
-            <Parameter name="epsilon" type="double" value="1e-10"/>
-            <Parameter name="regions" type="Array(string)" value="{All}"/>
+        <ParameterList name="All">
+          <Parameter name="thermal conductivity type" type="string" value="one-phase polynomial"/>
+          <Parameter name="regions" type="Array(string)" value="{All}"/>
+          <ParameterList name="solid phase">
+            <Parameter name="eos type" type="string" value="constant"/>
+            <Parameter name="reference conductivity" type="double" value="0.5"/>
+            <Parameter name="reference temperature" type="double" value="298.15"/>
+          </ParameterList>
+          <ParameterList name="liquid phase">
+            <Parameter name="eos type" type="string" value="constant"/>
+            <Parameter name="reference conductivity" type="double" value="0.598"/>
+            <Parameter name="reference temperature" type="double" value="298.15"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
@@ -519,45 +523,12 @@
         <Parameter name="upwind method" type="string" value="upwind: amanzi"/>
         <Parameter name="upwind frequency" type="string" value="every timestep"/>
         <ParameterList name="upwind parameters">
-          <Parameter name="tolerance" type="double" value="9.99999999999999980e-13"/>
+          <Parameter name="tolerance" type="double" value="1.0e-12"/>
         </ParameterList>
       </ParameterList>
 
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
-      </ParameterList>
-
-      <ParameterList name="water retention models">
-        <ParameterList name="WRM for RegionMiddle">
-          <Parameter name="water retention model" type="string" value="van Genuchten"/>
-          <Parameter name="regions" type="Array(string)" value="{RegionMiddle}"/>
-          <Parameter name="van Genuchten m" type="double" value="0.229399999999999993"/>
-          <Parameter name="van Genuchten l" type="double" value="0.50"/>
-          <Parameter name="van Genuchten alpha" type="double" value="0.000194670000000000005"/>
-          <Parameter name="residual saturation liquid" type="double" value="0.0"/>
-          <Parameter name="regularization interval" type="double" value="100.0"/>
-          <Parameter name="relative permeability model" type="string" value="Mualem"/>
-        </ParameterList>
-        <ParameterList name="WRM for RegionBottom">
-          <Parameter name="water retention model" type="string" value="van Genuchten"/>
-          <Parameter name="regions" type="Array(string)" value="{RegionBottom}"/>
-          <Parameter name="van Genuchten m" type="double" value="0.213600000000000012"/>
-          <Parameter name="van Genuchten l" type="double" value="0.50"/>
-          <Parameter name="van Genuchten alpha" type="double" value="0.00202600000000000002"/>
-          <Parameter name="residual saturation liquid" type="double" value="0.0"/>
-          <Parameter name="regularization interval" type="double" value="100.0"/>
-          <Parameter name="relative permeability model" type="string" value="Mualem"/>
-        </ParameterList>
-        <ParameterList name="WRM for RegionTop">
-          <Parameter name="water retention model" type="string" value="van Genuchten"/>
-          <Parameter name="regions" type="Array(string)" value="{RegionTop}"/>
-          <Parameter name="van Genuchten m" type="double" value="0.300599999999999978"/>
-          <Parameter name="van Genuchten l" type="double" value="0.50"/>
-          <Parameter name="van Genuchten alpha" type="double" value="0.00206740000000000005"/>
-          <Parameter name="residual saturation liquid" type="double" value="0.0"/>
-          <Parameter name="regularization interval" type="double" value="100.0"/>
-          <Parameter name="relative permeability model" type="string" value="Mualem"/>
-        </ParameterList>
       </ParameterList>
 
       <ParameterList name="operators">
@@ -576,16 +547,6 @@
             <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="gravity" type="bool" value="true"/>
             <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
-          </ParameterList>
-          <ParameterList name="vapor matrix">
-            <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
-            <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-            <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
-            <Parameter name="exclude primary terms" type="bool" value="false"/>
-            <Parameter name="scaled constraint equation" type="bool" value="false"/>
-            <Parameter name="gravity" type="bool" value="false"/>
-            <Parameter name="Newton correction" type="string" value="none"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>

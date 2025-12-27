@@ -33,6 +33,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_MpiComm.h"
 
+#include "LScheme_Helpers.hh"
 #include "State.hh"
 #include "TreeVector.hh"
 
@@ -55,9 +56,12 @@ class PK_MPC : virtual public PK {
   // -- sets up sub-PKs
   virtual void parseParameterList();
   virtual void Setup();
-
-  // -- calls all sub-PK initialize() methods
   virtual void Initialize();
+
+  // -- sets L-scheme values for sub-PKs 
+  virtual std::vector<Key> SetupLSchemeKey(Teuchos::ParameterList& plist);
+  virtual void InitializeLSchemeStep();
+  virtual void ComputeLSchemeStability();
 
   // -- set tags for integration period
   virtual void set_tags(const Tag& current, const Tag& next);
@@ -85,6 +89,10 @@ class PK_MPC : virtual public PK {
   // single solution vector for this pk only
   Teuchos::RCP<TreeVector> my_solution_;
 
+  // L-scheme data
+  bool L_scheme_ = false;
+  std::vector<Key> L_scheme_keys_;
+
   // plists
   Teuchos::RCP<Teuchos::ParameterList> global_list_;
   Teuchos::RCP<Teuchos::ParameterList> my_list_;
@@ -93,7 +101,7 @@ class PK_MPC : virtual public PK {
 
 
 // -----------------------------------------------------------------------------
-// Setup of PK hierarchy from PList
+// Costructor
 // -----------------------------------------------------------------------------
 template<class PK_Base>
 PK_MPC<PK_Base>::PK_MPC(Teuchos::ParameterList& pk_tree,
@@ -127,7 +135,6 @@ PK_MPC<PK_Base>::PK_MPC(Teuchos::ParameterList& pk_tree,
   PKFactory pk_factory;
 
   for (int i = 0; i < pk_name.size(); ++i) {
-    //const std::string& sub_name = sub->first;
     const std::string& sub_name = pk_name[i];
     if (!plist->isSublist(sub_name)) {
       Errors::Message msg;
@@ -163,7 +170,7 @@ PK_MPC<PK_Base>::PK_MPC(Teuchos::ParameterList& pk_tree,
 
 
 // -----------------------------------------------------------------------------
-// Setup of PK hierarchy from PList
+// Parse parameter list.
 // -----------------------------------------------------------------------------
 template<class PK_Base>
 void
@@ -247,6 +254,58 @@ PK_MPC<PK_Base>::getSubPKPlist_(int i)
   return Teuchos::sublist(Teuchos::sublist(global_list_, "PKs"), names[i]);
 }
 
+
+// -----------------------------------------------------------------------------
+// L-scheme stability constant is updated by PKs.
+// -----------------------------------------------------------------------------
+template<class PK_Base>
+std::vector<Key>
+PK_MPC<PK_Base>::SetupLSchemeKey(Teuchos::ParameterList& plist)
+{
+  if (L_scheme_) {
+    for (auto pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
+      auto tmp = (*pk)->SetupLSchemeKey(plist);
+      L_scheme_keys_.insert(L_scheme_keys_.end(), tmp.begin(), tmp.end());
+    }
+  }
+  return L_scheme_keys_;
+}
+
+
+// -----------------------------------------------------------------------------
+// L-scheme initialization at the begging of time step
+// -----------------------------------------------------------------------------
+template<class PK_Base>
+void
+PK_MPC<PK_Base>::InitializeLSchemeStep()
+{
+  if (L_scheme_) {
+    for (int i = 0; i < sub_pks_.size(); ++i) {
+      if (!L_scheme_keys_[i].empty()) {
+        Key key_prev = L_scheme_keys_[i] + "_prev";
+        const auto& u0_c = *solution_->SubVector(i)->Data()->ViewComponent("cell");
+        *S_->GetW<CompositeVector>(key_prev, "state").ViewComponent("cell") = u0_c;
+      }
+    }
+  }
+  auto& data = S_->GetW<LSchemeData>("l_scheme_data", "state");
+  for (auto& item : data) item.second.reset();
+}
+
+
+// -----------------------------------------------------------------------------
+// L-scheme stability constant is updated by PKs.
+// -----------------------------------------------------------------------------
+template<class PK_Base>
+void
+PK_MPC<PK_Base>::ComputeLSchemeStability()
+{ 
+  if (L_scheme_) {
+    for (auto pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
+      (*pk)->ComputeLSchemeStability();
+    }
+  }
+}
 
 } // namespace Amanzi
 

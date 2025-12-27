@@ -667,7 +667,7 @@ InputConverter::GetAttributeValueD_(DOMElement* elem,
 * Extract atribute of type int.
 ****************************************************************** */
 int
-InputConverter::GetAttributeValueL_(DOMElement* elem,
+InputConverter::GetAttributeValueI_(DOMElement* elem,
                                     const std::string& attr_name,
                                     const std::string& type,
                                     int valmin,

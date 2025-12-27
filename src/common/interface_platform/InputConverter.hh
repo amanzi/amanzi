@@ -181,7 +181,7 @@ class InputConverter {
   //    exception = if false, use default value when either element or attribute is missing.
   //                if true, throw an exception.
   //    default_val = defult value
-  int GetAttributeValueL_(xercesc::DOMElement* elem,
+  int GetAttributeValueI_(xercesc::DOMElement* elem,
                           const std::string& attr_name,
                           const std::string& type = TYPE_NUMERICAL,
                           int valmin = INT_MIN,
@@ -214,7 +214,7 @@ class InputConverter {
                                                 bool exception = true);
 
   // -- node is used more often then element
-  int GetAttributeValueL_(xercesc::DOMNode* node,
+  int GetAttributeValueI_(xercesc::DOMNode* node,
                           const std::string& attr_name,
                           const std::string& type = TYPE_NUMERICAL,
                           int valmin = INT_MIN,
@@ -223,7 +223,7 @@ class InputConverter {
                           int val = 0)
   {
     xercesc::DOMElement* element = static_cast<xercesc::DOMElement*>(node);
-    return GetAttributeValueL_(element, attr_name, type, valmin, valmax, exception, val);
+    return GetAttributeValueI_(element, attr_name, type, valmin, valmax, exception, val);
   }
   double GetAttributeValueD_( // supports units except for ppbm
     xercesc::DOMNode* node,

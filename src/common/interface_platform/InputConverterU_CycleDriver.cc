@@ -145,7 +145,7 @@ InputConverterU::TranslateCycleDriver_()
       tp_dt0[mode] = dt0;
       tp_max_dt[mode] = dt_max;
       tp_max_cycles[mode] =
-        GetAttributeValueL_(inode, "max_cycles", TYPE_NUMERICAL, -1, INT_MAX, false, -1);
+        GetAttributeValueI_(inode, "max_cycles", TYPE_NUMERICAL, -1, INT_MAX, false, -1);
       dt_cut_[mode] = ConvertUnits_(
         GetAttributeValueS_(inode, "reduction_factor", TYPE_TIME, false, dt_cut_d), unit);
       dt_inc_[mode] = ConvertUnits_(

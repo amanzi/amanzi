@@ -289,6 +289,16 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
   if (flag)
     out_list.set<double>("error tolerance", std::stod(mm.transcode(node->getTextContent())));
 
+  node = GetUniqueElementByTagsString_(controls + ", use_l_scheme", flag);
+  if (flag) {
+    flag = GetTextContentL_(node);
+    if (flag)
+      out_list.sublist("L-scheme")
+        .set<bool>("L-scheme stabilization", true)
+        .set<double>("minimum safety factor", 1e-6)
+        .set<double>("maximum safety factor", 1.0);
+  }
+
   node = GetUniqueElementByTagsString_(controls + ", preconditioner", flag);
   if (flag) {
     std::string text = GetTextContentS_(node, "hypre_amg, trilinos_ml, block_ilu");
