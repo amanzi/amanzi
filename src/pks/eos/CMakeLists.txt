@@ -22,6 +22,7 @@ include_directories(${ATK_SOURCE_DIR})
 #
 set(eos_src_files 
     COM_MillingtonQuirk.cc
+    IAPWS97.cc
     EOSDensityEvaluator.cc
     EOSViscosityEvaluator.cc
     H2O_Density.cc
@@ -58,6 +59,7 @@ endif()
 #
 set(eos_inc_files 
     COM_MillingtonQuirk.hh
+    IAPWS97.hh
     DensityTabular.hh
     EOSDensityEvaluator.hh
     EOSViscosityEvaluator.hh
@@ -107,10 +109,15 @@ if (BUILD_TESTS)
 
     set(amanzi_libs eos atk operators)
 
-    # Test: Multiscale
+    # Test: All
     add_amanzi_test(eos_evaluators eos_evaluators
                     KIND unit
                     SOURCE test/Main.cc test/eos_evaluators.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(eos_iapws97 eos_iapws97
+                    KIND unit
+                    SOURCE test/Main.cc test/eos_iapws97.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 

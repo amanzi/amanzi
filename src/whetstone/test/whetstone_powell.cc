@@ -15,6 +15,8 @@
 #include "DenseVector.hh"
 #include "PowellHybrid.hh"
 
+using namespace Amanzi::Utils;
+
 class Vector : public Amanzi::WhetStone::DenseVector {
  public:
   Vector(int n) { Reshape(n, 0.0); }

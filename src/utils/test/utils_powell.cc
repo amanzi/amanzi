@@ -14,6 +14,8 @@
 
 #include "PowellHybrid.hh"
 
+using namespace Amanzi::Utils;
+
 class Vector : public std::vector<double> {
  public:
   Vector (int n) : std::vector<double>(n) {};

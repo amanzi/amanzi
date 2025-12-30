@@ -15,6 +15,8 @@
 
 #include "dbc.hh"
 
+namespace Amanzi {
+namespace Utils {
 
 /* ******************************************************************
 * Powell hybrid method for solving a system of equtions.
@@ -27,7 +29,7 @@
 *   otherwise, *itr is the number of performed iterations.
 ****************************************************************** */
 template <class Function, class Vector>
-Vector PowellHybrid(Vector& x, const Function& f, int* itrs, double tol = 1e-10);
+Vector PowellHybrid(Vector& x, Function& f, int* itrs, double tol = 1e-10);
 
 template<class Matrix, class Vector>
 Vector DoglegStep(const Vector& b, const Matrix& J, double delta);
@@ -49,7 +51,7 @@ Matrix Transpose(const Matrix& A);
 * Powell hybrid method.
 ****************************************************************** */
 template <class Function, class Vector>
-Vector PowellHybrid(Vector& x, const Function& fun, int* itrs, double tol)
+Vector PowellHybrid(Vector& x, Function& fun, int* itrs, double tol)
 {
   using Matrix = std::vector<Vector>;
 
@@ -224,5 +226,44 @@ Matrix Transpose(const Matrix& A)
       AT[j][i] = A[i][j];
   return AT;
 }
+
+/* ******************************************************************
+* Default implementation of vector
+****************************************************************** */
+class VectorSTL : public std::vector<double> {
+ public:
+  VectorSTL (int n) : std::vector<double>(n) {};
+
+  friend VectorSTL operator*(double c, const VectorSTL& v)
+  {
+    VectorSTL r(v);
+    for (int i = 0; i < v.size(); ++i) r[i] *= c;
+    return r;
+  }
+
+  friend VectorSTL operator+(const VectorSTL& u, const VectorSTL& v)
+  {
+    VectorSTL r(u);
+    for (int i = 0; i < v.size(); ++i) r[i] += v[i];
+    return r;
+  }
+
+  friend VectorSTL operator-(const VectorSTL& u, const VectorSTL& v)
+  {
+    VectorSTL r(u);
+    for (int i = 0; i < v.size(); ++i) r[i] -= v[i];
+    return r;
+  }
+
+  friend double norm(const VectorSTL& v)
+  {
+    double sum(0.0);
+    for (int i = 0; i < v.size(); ++i) sum += v[i] * v[i];
+    return std::sqrt(sum);
+  }
+};
+
+} // namespace Utils
+} // namespace Amanzi
 
 #endif
