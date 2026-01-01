@@ -177,17 +177,7 @@ IAPWS97::ThermodynamicsPH(double p, double h)
       break;
     }
     case 4: {
-      double h1, h2, x;
-      T = SaturationLineP(p);
-      if (T <= 623.15) {
-        h1 = Region1(p, T).h;
-        h2 = Region2(p, T).h;
-      } else {
-        h1 = Region4(p, 0.0).h;
-        h2 = Region4(p, 1.0).h;
-      }
-      x = (h - h1) / (h2 - h1);
-      prop = Region4(p, x);
+      prop = Region4(p, h);
       break;
     }
     case 5: {
@@ -204,44 +194,45 @@ IAPWS97::ThermodynamicsPH(double p, double h)
     }
   }
 
-  Properties liquid, gas;
+  Properties liquid, vapor;
 
   // only liquid phase
   if (prop.x == 0.0) { 
     liquid = ExtendProperies(prop);
     liquid.sigma = SurfaceTension(prop.T);
   }
-  // only gas phase
+  // only vapor phase
   else if (prop.x == 1.0) {
-    gas = ExtendProperies(prop);
+    vapor = ExtendProperies(prop);
   }
   // two phases
   else {
     double T = prop.T;
-    Properties prop_l, prop_g;
+    Properties prop_l, prop_v;
 
     if (623.15 < T && T <= TC) {
       double rhol = 1.0 / Region3_BackwardPX(p, 0.0, T);  
       prop_l = Region3(rhol, T);
 
       double rhov = 1.0 / Region3_BackwardPX(p, 1.0, T);
-      prop_g = Region3(rhov, T);
+      prop_v = Region3(rhov, T);
     } else {
       prop_l = Region1(p, T);
-      prop_g = Region2(p, T);
+      prop_v = Region2(p, T);
     }
     prop_l.x = prop.x;
     prop_l.rgn = prop.rgn;
-    prop_g.x = prop.x;
-    prop_g.rgn = prop.rgn;
+    prop_v.x = prop.x;
+    prop_v.rgn = prop.rgn;
 
     liquid = ExtendProperies(prop_l);
-    gas = ExtendProperies(prop_g);
+    vapor = ExtendProperies(prop_v);
 
+    prop.k = (1.0 - prop.x) * liquid.k + prop.x * vapor.k;
     liquid.sigma = SurfaceTension(T);
   }
 
-  return { prop, liquid, gas };
+  return { prop, liquid, vapor };
 }
 
 
@@ -1234,22 +1225,23 @@ IAPWS97::Region3_SubregionFormulaB_T(double p, double h)
 * Region 4, (p, x) 
 ****************************************************************** */
 Properties
-IAPWS97::Region4(double p, double x)
+IAPWS97::Region4(double p, double h)
 {
-  double T, rhol, rhov;
+  double T, x, rhol, rhov;
   Properties prop, prop1, prop2;
 
   T = SaturationLineP(p);
-  if (T > 623.15) {
+  if (T <= 623.15) {
+    prop1 = Region1(p, T);
+    prop2 = Region2(p, T);
+  } else {
     rhol = 1.0 / Region3_BackwardPX(p, 0.0, T);
     prop1 = Region3(rhol, T);
 
     rhov = 1.0 / Region3_BackwardPX(p, 1.0, T);
     prop2 = Region3(rhov, T);
-  } else {
-    prop1 = Region1(p, T);
-    prop2 = Region2(p, T);
   }
+  x = (h - prop1.h) / (prop2.h - prop1.h);
 
   prop.T = T;
   prop.p = p;

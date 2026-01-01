@@ -41,7 +41,7 @@ RunTest(const std::string& model)
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
 
-  auto plist = Teuchos::getParametersFromXmlFile("test/mpc_thermal_richards_highPT.xml");
+  auto plist = Teuchos::getParametersFromXmlFile("test/mpc_compressed_liquid.xml");
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
 
   if (model == "FEHM") {
@@ -83,7 +83,7 @@ RunTest(const std::string& model)
 }
 
 
-TEST(MPC_DRIVER_THERMAL_RICHARDS_HIGH_PT)
+TEST(MPC_COMPRESSED_LIQUID_COMPARISON_IAPWS97_FEHM_PT)
 {
   auto [time1, p1, t1] = RunTest("FEHM");
   auto [time2, p2, t2] = RunTest("IAPW97");
@@ -113,3 +113,6 @@ TEST(MPC_DRIVER_THERMAL_RICHARDS_HIGH_PT)
     CHECK(terr < 0.002);
   }
 }
+
+
+

@@ -246,7 +246,7 @@
           <ParameterList name="transient:mpc1">
             <Parameter name="PK type" type="string" value="mpc sequential"/>
             <ParameterList name="transient:energy">
-              <Parameter name="PK type" type="string" value="one-phase energy"/>
+              <Parameter name="PK type" type="string" value="pt energy"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>

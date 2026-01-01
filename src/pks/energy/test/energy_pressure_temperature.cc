@@ -26,7 +26,7 @@
 
 // Amanzi
 #include "CompositeVector.hh"
-#include "EnergyOnePhase_PK.hh"
+#include "EnergyPressureTemperature_PK.hh"
 #include "IO.hh"
 #include "MeshFactory.hh"
 #include "Operator.hh"
@@ -37,7 +37,7 @@
 /* ****************************************************************
 * Runs to a steady state
 * ************************************************************** */
-TEST(ENERGY_ONE_PHASE)
+TEST(ENERGY_PRESSURE_TEMPERATURE)
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -48,10 +48,10 @@ TEST(ENERGY_ONE_PHASE)
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0) std::cout << "Test: FV scheme" << std::endl;
+  if (MyPID == 0) std::cout << "Test: steady state calculation" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/energy_one_phase_fv.xml";
+  std::string xmlFileName = "test/energy_pressure_temperature.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   auto plist = Teuchos::rcp(new Teuchos::ParameterList(xmlreader.getParameters()));
 
@@ -74,7 +74,7 @@ TEST(ENERGY_ONE_PHASE)
 
   Teuchos::ParameterList pk_tree = plist->sublist("PK tree").sublist("energy");
   auto soln = Teuchos::rcp(new TreeVector());
-  auto EPK = Teuchos::rcp(new EnergyOnePhase_PK(pk_tree, plist, S, soln));
+  auto EPK = Teuchos::rcp(new EnergyPressureTemperature_PK(pk_tree, plist, S, soln));
 
   EPK->Setup();
   S->Setup();
@@ -86,6 +86,15 @@ TEST(ENERGY_ONE_PHASE)
 
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("EnergyOnePhase", *plist));
   WriteStateStatistics(*S, *vo);
+
+  S->GetEvaluator("energy").UpdateDerivative(*S, "thermal", "temperature", Tags::DEFAULT);
+  int n0 = S->Get<CompositeVector>("energy").size("cell", false);
+  int n1 = S->Get<CompositeVector>("energy").size("cell", true);
+  int n2 = S->GetDerivativeW<CompositeVector>(
+              "energy", Tags::DEFAULT, "temperature", Tags::DEFAULT, "energy")
+             .size("cell", true);
+  if (comm->NumProc() > 1) AMANZI_ASSERT(n0 < n1);
+  AMANZI_ASSERT(n1 == n2);
 
   // constant timestepping
   std::string passwd("");

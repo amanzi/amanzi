@@ -404,9 +404,10 @@ Darcy_PK::Initialize()
     opfactory.SetVariableScalarCoefficient(kptr);
   }
 
+  auto op_bc = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state");
   op_diff_ = opfactory.Create();
   op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-  op_diff_->SetBCs(op_bc_, op_bc_);
+  op_diff_->SetBCs(op_bc, op_bc);
   op_ = op_diff_->global_operator();
 
   // -- accumulation operator
@@ -426,7 +427,7 @@ Darcy_PK::Initialize()
 
   // set up operators for evaluators
   auto eval = S_->GetEvaluatorPtr(vol_flowrate_key_, Tags::DEFAULT);
-  Teuchos::rcp_dynamic_cast<VolumetricFlowRateEvaluator>(eval)->set_bc(op_bc_);
+  Teuchos::rcp_dynamic_cast<VolumetricFlowRateEvaluator>(eval)->set_bc(op_bc);
 
   // Optional step: calculate hydrostatic solution consistent with BCs.
   // We have to do it only once per time period.

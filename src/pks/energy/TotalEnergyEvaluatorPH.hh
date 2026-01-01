@@ -10,16 +10,13 @@
 /*
   Energy
 
-  FieldEvaluator for the total internal energy. Wrapping this conserved
-  quantity as a field evaluator makes it easier to take derivatives,
-  keep updated, and the like. The equation for this is simply:
+  FieldEvaluator for the total internal energy. 
 
-    IE = phi * (s_liquid * n_liquid * u_liquid + s_gas * n_gas * u_gas)
-       + (1 - phi) * rho_rock * u_rock
+    IE = phi * h_liquid * n_liquid + (1 - phi) * rho_rock * u_rock
 */
 
-#ifndef AMANZI_ENERGY_TOTAL_ENERGY_EVALUATOR_HH_
-#define AMANZI_ENERGY_TOTAL_ENERGY_EVALUATOR_HH_
+#ifndef AMANZI_ENERGY_TOTAL_ENERGY_EVALUATOR_PH_HH_
+#define AMANZI_ENERGY_TOTAL_ENERGY_EVALUATOR_PH_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -28,11 +25,11 @@
 namespace Amanzi {
 namespace Energy {
 
-class TotalEnergyEvaluator
+class TotalEnergyEvaluatorPH
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  explicit TotalEnergyEvaluator(Teuchos::ParameterList& ee_plist);
-  TotalEnergyEvaluator(const TotalEnergyEvaluator& other);
+  explicit TotalEnergyEvaluatorPH(Teuchos::ParameterList& ee_plist);
+  TotalEnergyEvaluatorPH(const TotalEnergyEvaluatorPH& other);
 
   // required inteface functions
   virtual Teuchos::RCP<Evaluator> Clone() const override;
@@ -45,15 +42,8 @@ class TotalEnergyEvaluator
                                           const std::vector<CompositeVector*>& results) override;
 
  private:
-  bool vapor_diffusion_, include_potential_;
-  double liquid_molar_mass_;
-
-  Key particle_density_key_, porosity_key_, sat_liquid_key_;
-  Key ie_rock_key_, ie_liquid_key_, ie_gas_key_;
-  Key mol_density_liquid_key_, mol_density_gas_key_;
-
-  bool aperture_;
-  Key aperture_key_;
+  Key enthalpy_key_, ie_rock_key_, mol_density_liquid_key_;
+  Key particle_density_key_, porosity_key_;
 };
 
 } // namespace Energy

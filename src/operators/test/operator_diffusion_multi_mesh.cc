@@ -405,6 +405,7 @@ TestDiffusionMultiMesh(int d,
   // convergence theorem
   sum1 = 0.0;
   sum2 = 0.0;
+  double sum3 = 0.0;
   for (int f : block1) {
     int c = getFaceOnBoundaryInternalCell(*mesh1, f);
     mesh1->getFaceNormal(f, c, &dir);
@@ -419,7 +420,8 @@ TestDiffusionMultiMesh(int d,
       jump -= data.second * ana2.pressure_exact(xf2, 0.0);
     }
     sum1 += pavg * flux1[0][f] * dir;
-    sum2 += std::fabs(jump);
+    sum2 += jump * jump;
+    sum3 = std::max(sum3, std::fabs(jump));
   }
 
   for (int f : block2) {
@@ -436,9 +438,10 @@ TestDiffusionMultiMesh(int d,
       jump -= data.second * ana1.pressure_exact(xf1, 0.0);
     }
     sum1 += pavg * flux2[0][f] * dir;
-    sum2 += std::fabs(jump);
+    sum2 += jump * jump;
+    sum3 = std::max(sum3, std::fabs(jump));
   }
-  printf("Theorem, integral = %12.9f \n", sum1  / sum2);
+  printf("Theorem, integral = %12.9f  max jump = %12.9f\n", sum1  / std::sqrt(sum2), sum3);
 
   // interface pressure error
   double l2_err(0.0), pnorm(0.0);

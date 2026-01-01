@@ -19,7 +19,7 @@
 
 #include "CommonDefs.hh"
 
-#include "TotalEnergyEvaluator.hh"
+#include "TotalEnergyEvaluatorPT.hh"
 
 namespace Amanzi {
 namespace Energy {
@@ -27,7 +27,7 @@ namespace Energy {
 /* ******************************************************************
 * Constructor from ParameterList
 ****************************************************************** */
-TotalEnergyEvaluator::TotalEnergyEvaluator(Teuchos::ParameterList& plist)
+TotalEnergyEvaluatorPT::TotalEnergyEvaluatorPT(Teuchos::ParameterList& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist), aperture_(false)
 {
   if (my_keys_.size() == 0) {
@@ -73,7 +73,7 @@ TotalEnergyEvaluator::TotalEnergyEvaluator(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-TotalEnergyEvaluator::TotalEnergyEvaluator(const TotalEnergyEvaluator& other)
+TotalEnergyEvaluatorPT::TotalEnergyEvaluatorPT(const TotalEnergyEvaluatorPT& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
     vapor_diffusion_(other.vapor_diffusion_),
     particle_density_key_(other.particle_density_key_),
@@ -90,9 +90,9 @@ TotalEnergyEvaluator::TotalEnergyEvaluator(const TotalEnergyEvaluator& other)
 * Copy constructor.
 ****************************************************************** */
 Teuchos::RCP<Evaluator>
-TotalEnergyEvaluator::Clone() const
+TotalEnergyEvaluatorPT::Clone() const
 {
-  return Teuchos::rcp(new TotalEnergyEvaluator(*this));
+  return Teuchos::rcp(new TotalEnergyEvaluatorPT(*this));
 }
 
 
@@ -100,7 +100,7 @@ TotalEnergyEvaluator::Clone() const
 * Field evaluator.
 ****************************************************************** */
 void
-TotalEnergyEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
+TotalEnergyEvaluatorPT::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   const auto& s_l = *S.Get<CompositeVector>(sat_liquid_key_).ViewComponent("cell");
   const auto& n_l = *S.Get<CompositeVector>(mol_density_liquid_key_).ViewComponent("cell");
@@ -155,10 +155,10 @@ TotalEnergyEvaluator::Evaluate_(const State& S, const std::vector<CompositeVecto
 * Field derivative evaluator.
 ****************************************************************** */
 void
-TotalEnergyEvaluator::EvaluatePartialDerivative_(const State& S,
-                                                 const Key& wrt_key,
-                                                 const Tag& wrt_tag,
-                                                 const std::vector<CompositeVector*>& results)
+TotalEnergyEvaluatorPT::EvaluatePartialDerivative_(const State& S,
+                                                   const Key& wrt_key,
+                                                   const Tag& wrt_tag,
+                                                   const std::vector<CompositeVector*>& results)
 {
   const auto& s_l = *S.Get<CompositeVector>(sat_liquid_key_).ViewComponent("cell");
   const auto& n_l = *S.Get<CompositeVector>(mol_density_liquid_key_).ViewComponent("cell");

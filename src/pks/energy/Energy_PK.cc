@@ -445,24 +445,28 @@ Energy_PK::Initialize()
 }
 
 
-/* ******************************************************************
-* Converts scalar conductivity to a tensorial field: not used yet.
-****************************************************************** */
-bool
-Energy_PK::UpdateConductivityData(const Teuchos::Ptr<State>& S)
+/* ****************************************************************
+* This completes initialization of missed fields in the state.
+**************************************************************** */
+void
+Energy_PK::InitializeFields_()
 {
-  bool update = S->GetEvaluator(conductivity_gen_key_).Update(*S, passwd_);
-  if (update) {
-    const auto& conductivity = *S->Get<CV_t>(conductivity_gen_key_).ViewComponent("cell");
-    WhetStone::Tensor Ktmp(dim, 1);
+  Teuchos::OSTab tab = vo_->getOSTab();
 
-    K.clear();
-    for (int c = 0; c < ncells_owned; c++) {
-      Ktmp(0, 0) = conductivity[0][c];
-      K.push_back(Ktmp);
+  if (S_->HasRecord(prev_energy_key_)) {
+    if (!S_->GetRecord(prev_energy_key_).initialized()) {
+      S_->GetEvaluator(energy_key_).Update(*S_, passwd_);
+
+      const auto& e1 = S_->Get<CV_t>(energy_key_);
+      auto& e0 = S_->GetW<CV_t>(prev_energy_key_, passwd_);
+      e0 = e1;
+
+      S_->GetRecordW(prev_energy_key_, passwd_).set_initialized();
+
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+        *vo_->os() << "initialized prev_energy to previous energy" << std::endl;
     }
   }
-  return update;
 }
 
 
@@ -484,7 +488,8 @@ Energy_PK::UpdateSourceBoundaryData(double t_old, double t_new, const CompositeV
     srcs_[i]->Compute(t_old, t_new);
   }
 
-  ComputeBCs(u);
+  ComputePrimaryBCs(u);
+  ComputeSecondaryBCs();
 }
 
 
@@ -511,7 +516,7 @@ Energy_PK::AddSourceTerms(CompositeVector& rhs)
 * should be always owned.
 ****************************************************************** */
 void
-Energy_PK::ComputeBCs(const CompositeVector& u)
+Energy_PK::ComputePrimaryBCs(const CompositeVector& u)
 {
   std::vector<int>& bc_model = op_bc_->bc_model();
   std::vector<double>& bc_value = op_bc_->bc_value();
@@ -563,15 +568,25 @@ Energy_PK::ComputeBCs(const CompositeVector& u)
   int tmp = dirichlet_bc_faces_;
   mesh_->getComm()->SumAll(&tmp, &dirichlet_bc_faces_, 1);
 #endif
+}
 
-  // additional boundary conditions
-  // -- copy essential conditions to primary variable and update dependend fields
+
+/* ******************************************************************
+* Add a boundary marker to used faces for other boundary conditions
+****************************************************************** */
+void
+Energy_PK::ComputeSecondaryBCs()
+{
+  std::vector<int>& bc_model = op_bc_->bc_model();
+  std::vector<double>& bc_value = op_bc_->bc_value();
+
+  // copy essential conditions to primary variable and update dependend fields
   BoundaryDataToFaces_(*op_bc_, S_->GetW<CV_t>(temperature_key_, Tags::DEFAULT, passwd_));
 
   S_->GetEvaluator(enthalpy_key_).Update(*S_, passwd_);
   const auto& enth = *S_->Get<CV_t>(enthalpy_key_).ViewComponent("boundary_face", true);
 
-  // -- populate BCs
+  // populate BCs
   std::vector<int>& bc_model_enth_ = op_bc_enth_->bc_model();
   std::vector<double>& bc_value_enth_ = op_bc_enth_->bc_value();
 

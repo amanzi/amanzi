@@ -106,6 +106,7 @@ Flow_PK::Setup()
   mass_density_liquid_key_ = Keys::getKey(domain_, "mass_density_liquid");
 
   L_scheme_data_key_ = "l_scheme_data";
+  bcs_flow_key_ = Keys::getKey(domain_, "bcs_flow");
 
   // constant fields
   S_->Require<double>("const_fluid_density", Tags::DEFAULT, "state");
@@ -243,6 +244,13 @@ Flow_PK::Setup()
       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S_->GetRecordW(L_scheme_prev_key_, "state").set_initialized();
   }
+
+  // boundary conditions
+  S_->Require<Operators::BCs, Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state")
+    .SetMesh(mesh_)
+    ->SetKind(AmanziMesh::Entity_kind::FACE)
+    ->SetType(WhetStone::DOF_Type::SCALAR);
+  S_->GetRecordW(bcs_flow_key_, "state").set_initialized();
 
   // set units
   if (assumptions_.flow_on_manifold) S_->GetRecordSetW(aperture_key_).set_units("m");
@@ -488,10 +496,6 @@ Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
   atm_pressure_ = S_->Get<double>("atmospheric_pressure");
 
   // Create BC objects
-  // -- memory
-  op_bc_ = Teuchos::rcp(
-    new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
-
   Teuchos::RCP<FlowBoundaryFunction> bc;
   auto& bc_list = plist.sublist("boundary conditions");
 
@@ -777,9 +781,10 @@ Flow_PK::UpdateSourceBoundaryData(double t_old, double t_new, const CompositeVec
 void
 Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
 {
-  std::vector<int>& bc_model = op_bc_->bc_model();
-  std::vector<double>& bc_value = op_bc_->bc_value();
-  std::vector<double>& bc_mixed = op_bc_->bc_mixed();
+  auto op_bc = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state");
+  std::vector<int>& bc_model = op_bc->bc_model();
+  std::vector<double>& bc_value = op_bc->bc_value();
+  std::vector<double>& bc_mixed = op_bc->bc_mixed();
 
   for (int n = 0; n < bc_model.size(); n++) {
     bc_model[n] = Operators::OPERATOR_BC_NONE;

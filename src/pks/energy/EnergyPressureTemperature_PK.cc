@@ -21,12 +21,12 @@
 #include "UpwindFactory.hh"
 
 // Amanzi::Energy
-#include "EnergyOnePhase_PK.hh"
+#include "EnergyPressureTemperature_PK.hh"
 #include "EnthalpyEvaluator.hh"
 #include "IEMEvaluator.hh"
 #include "StateArchive.hh"
 #include "TCMEvaluator_OnePhase.hh"
-#include "TotalEnergyEvaluator.hh"
+#include "TotalEnergyEvaluatorPT.hh"
 
 namespace Amanzi {
 namespace Energy {
@@ -37,10 +37,11 @@ using CVS_t = CompositeVectorSpace;
 /* ******************************************************************
 * Default constructor.
 ****************************************************************** */
-EnergyOnePhase_PK::EnergyOnePhase_PK(Teuchos::ParameterList& pk_tree,
-                                     const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                                     const Teuchos::RCP<State>& S,
-                                     const Teuchos::RCP<TreeVector>& soln)
+EnergyPressureTemperature_PK::EnergyPressureTemperature_PK(
+  Teuchos::ParameterList& pk_tree,
+  const Teuchos::RCP<Teuchos::ParameterList>& glist,
+  const Teuchos::RCP<State>& S,
+  const Teuchos::RCP<TreeVector>& soln)
   : PK(pk_tree, glist, S, soln),
     Energy_PK(pk_tree, glist, S, soln),
     soln_(soln),
@@ -50,7 +51,7 @@ EnergyOnePhase_PK::EnergyOnePhase_PK(Teuchos::ParameterList& pk_tree,
   // verbose object
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = ep_list_->sublist("verbose object");
-  std::string ioname = "Energy1Phase";
+  std::string ioname = "EnergyPT";
   if (domain_ != "domain") ioname += "-" + domain_;
   vo_ = Teuchos::rcp(new VerboseObject(ioname, vlist));
 }
@@ -61,7 +62,7 @@ EnergyOnePhase_PK::EnergyOnePhase_PK(Teuchos::ParameterList& pk_tree,
 * conductivity, and any sources.
 ****************************************************************** */
 void
-EnergyOnePhase_PK::Setup()
+EnergyPressureTemperature_PK::Setup()
 {
   // basic class setup
   Energy_PK::Setup();
@@ -86,7 +87,7 @@ EnergyOnePhase_PK::Setup()
     if (assumptions_.flow_on_manifold) elist.set<std::string>("aperture key", aperture_key_);
 
     elist.setName(energy_key_);
-    auto ee = Teuchos::rcp(new TotalEnergyEvaluator(elist));
+    auto ee = Teuchos::rcp(new TotalEnergyEvaluatorPT(elist));
     S_->SetEvaluator(energy_key_, Tags::DEFAULT, ee);
 
     S_->RequireDerivative<CV_t, CVS_t>(
@@ -144,7 +145,7 @@ EnergyOnePhase_PK::Setup()
 * Initialize the needed models to plug in enthalpy.
 ****************************************************************** */
 void
-EnergyOnePhase_PK::Initialize()
+EnergyPressureTemperature_PK::Initialize()
 {
   // Call the base class initialize.
   Energy_PK::Initialize();
@@ -154,6 +155,7 @@ EnergyOnePhase_PK::Initialize()
   soln_->SetData(solution);
 
   // Create local evaluators. Initialize local fields.
+  temperature_eval_->SetChanged();
   InitializeFields_();
 
   // initialize independent operators: diffusion and advection
@@ -261,38 +263,12 @@ EnergyOnePhase_PK::Initialize()
 }
 
 
-/* ****************************************************************
-* This completes initialization of missed fields in the state.
-**************************************************************** */
-void
-EnergyOnePhase_PK::InitializeFields_()
-{
-  Teuchos::OSTab tab = vo_->getOSTab();
-
-  if (S_->HasRecord(prev_energy_key_)) {
-    if (!S_->GetRecord(prev_energy_key_).initialized()) {
-      temperature_eval_->SetChanged();
-      S_->GetEvaluator(energy_key_).Update(*S_, passwd_);
-
-      const auto& e1 = S_->Get<CV_t>(energy_key_);
-      auto& e0 = S_->GetW<CV_t>(prev_energy_key_, passwd_);
-      e0 = e1;
-
-      S_->GetRecordW(prev_energy_key_, passwd_).set_initialized();
-
-      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-        *vo_->os() << "initialized prev_energy to previous energy" << std::endl;
-    }
-  }
-}
-
-
 /* *******************************************************************
 * Performs one timestep of size dt_ either for steady-state or
 * transient sumulation.
 ******************************************************************* */
 bool
-EnergyOnePhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
+EnergyPressureTemperature_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   dt_ = t_new - t_old;
 
@@ -328,7 +304,7 @@ EnergyOnePhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 * TBW
 ****************************************************************** */
 void
-EnergyOnePhase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
+EnergyPressureTemperature_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
   // commit solution to time history
   if (bdf1_dae_.get()) bdf1_dae_->CommitSolution(t_new - t_old, soln_);
@@ -347,7 +323,7 @@ EnergyOnePhase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 * Restore state to the previous step
 ****************************************************************** */
 void
-EnergyOnePhase_PK::FailStep(double t_old, double t_new, const Tag& tag)
+EnergyPressureTemperature_PK::FailStep(double t_old, double t_new, const Tag& tag)
 {
   archive_->Restore("");
   temperature_eval_->SetChanged();
@@ -358,7 +334,7 @@ EnergyOnePhase_PK::FailStep(double t_old, double t_new, const Tag& tag)
 * Restore state to the previous step
 ****************************************************************** */
 void
-EnergyOnePhase_PK::ComputeLSchemeStability()
+EnergyPressureTemperature_PK::ComputeLSchemeStability()
 { 
   auto& stability_c = *S_->GetW<CV_t>(L_scheme_stab_key_, "state").ViewComponent("cell");
 

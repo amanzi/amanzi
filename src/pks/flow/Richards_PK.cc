@@ -575,12 +575,14 @@ Richards_PK::Initialize()
   op_preconditioner_diff_ = opfactory.Create();
   op_preconditioner_ = op_preconditioner_diff_->global_operator();
 
+  auto op_bc = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state");
+
   op_acc_ = Teuchos::rcp(
     new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, op_preconditioner_));
 
   if (assumptions_.vapor_diffusion) {
     Teuchos::ParameterList oplist_vapor = tmp_list.sublist("vapor matrix");
-    op_vapor_diff_ = opfactory.Create(oplist_vapor, mesh_, op_bc_);
+    op_vapor_diff_ = opfactory.Create(oplist_vapor, mesh_, op_bc);
     op_vapor_ = op_vapor_diff_->global_operator();
     op_preconditioner_->OpPushBack(op_vapor_diff_->local_op());
   }
@@ -649,20 +651,20 @@ Richards_PK::Initialize()
 
   // initialization of the diffusion matrix requires a few steps,
   // we simply call the functional evaluation to make these steps.
-  op_matrix_diff_->SetBCs(op_bc_, op_bc_);
+  op_matrix_diff_->SetBCs(op_bc, op_bc);
 
   auto f = Teuchos::rcp(new TreeVector(*soln_));
   FunctionalResidual(t_ini - dt_, t_ini, soln_, soln_, f);
 
   op_preconditioner_->Init();
-  op_preconditioner_diff_->SetBCs(op_bc_, op_bc_);
+  op_preconditioner_diff_->SetBCs(op_bc, op_bc);
   op_preconditioner_diff_->UpdateMatrices(mol_flowrate_copy.ptr(), solution.ptr());
   op_preconditioner_diff_->UpdateMatricesNewtonCorrection(
     mol_flowrate_copy.ptr(), solution.ptr(), 1.0);
   op_preconditioner_diff_->ApplyBCs(true, true, true);
 
   if (assumptions_.vapor_diffusion) {
-    // op_vapor_diff_->SetBCs(op_bc_);
+    // op_vapor_diff_->SetBCs(op_bc);
     op_vapor_diff_->SetScalarCoefficient(Teuchos::null, Teuchos::null);
   }
 
@@ -801,7 +803,7 @@ Richards_PK::Initialize()
 
   // set up operators for evaluators
   auto eval = S_->GetEvaluatorPtr(vol_flowrate_key_, Tags::DEFAULT);
-  Teuchos::rcp_dynamic_cast<VolumetricFlowRateEvaluator>(eval)->set_bc(op_bc_);
+  Teuchos::rcp_dynamic_cast<VolumetricFlowRateEvaluator>(eval)->set_bc(op_bc);
   Teuchos::rcp_dynamic_cast<VolumetricFlowRateEvaluator>(eval)->set_upwind(upwind_);
 
   if (L_scheme_) {
@@ -1128,8 +1130,9 @@ Richards_PK::DeriveBoundaryFaceValue(int f,
                                      const CompositeVector& u,
                                      Teuchos::RCP<const WRM> wrm_model)
 {
-  const std::vector<int>& bc_model = op_bc_->bc_model();
-  const std::vector<double>& bc_value = op_bc_->bc_value();
+  auto op_bc = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state");
+  const std::vector<int>& bc_model = op_bc->bc_model();
+  const std::vector<double>& bc_value = op_bc->bc_value();
 
   if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
     return bc_value[f];

@@ -46,7 +46,7 @@
 #include "PressureGasEvaluator.hh"
 #include "ProductEvaluator.hh"
 #include "TotalComponentStorage.hh"
-#include "TotalEnergyEvaluator.hh"
+#include "TotalEnergyEvaluatorPT.hh"
 #include "VaporPressureEvaluator.hh"
 
 namespace Amanzi {
@@ -421,7 +421,7 @@ Multiphase_PK::Setup()
         .set<std::string>("internal energy rock key", ie_rock_key_);
       elist.setName(energy_key_);
 
-      auto ee = Teuchos::rcp(new Energy::TotalEnergyEvaluator(elist));
+      auto ee = Teuchos::rcp(new Energy::TotalEnergyEvaluatorPT(elist));
       S_->SetEvaluator(energy_key_, Tags::DEFAULT, ee);
 
       S_->RequireDerivative<CV_t, CVS_t>(

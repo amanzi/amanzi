@@ -72,8 +72,8 @@ and :math:`c_r` is specific heat of rock [J/kg/K].
 
 */
 
-#ifndef AMANZI_FLOW_ENERGY_PK_HH_
-#define AMANZI_FLOW_ENERGY_PK_HH_
+#ifndef AMANZI_FLOW_ENERGY_PRESSURE_TEMPERATURE_PK_HH_
+#define AMANZI_FLOW_ENERGY_PRESSURE_TEMPERATURE_PK_HH_
 
 #include "Teuchos_RCP.hpp"
 
@@ -86,12 +86,12 @@ and :math:`c_r` is specific heat of rock [J/kg/K].
 
 namespace Amanzi {
 
-class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
+class FlowEnergyPT_PK : public PK_MPCStrong<PK_BDF> {
  public:
-  FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
-                const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                const Teuchos::RCP<State>& S,
-                const Teuchos::RCP<TreeVector>& soln);
+  FlowEnergyPT_PK(Teuchos::ParameterList& pk_tree,
+                  const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                  const Teuchos::RCP<State>& S,
+                  const Teuchos::RCP<TreeVector>& soln);
 
   // PK methods
   virtual void Setup() override;
@@ -120,7 +120,7 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
                                   Teuchos::RCP<TreeVector> Pu) override;
 
   // -- error norm for coupled system
-  std::string name() override { return "flow and energy"; }
+  std::string name() override { return "flow and energy pt"; }
 
   // -- L-scheme for flow equaiton
   virtual std::vector<Key> SetupLSchemeKey(Teuchos::ParameterList& plist) override;
@@ -141,7 +141,7 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
   Key sat_liquid_key_, ws_key_;
 
   // factory registration
-  static RegisteredPKFactory<FlowEnergy_PK> reg_;
+  static RegisteredPKFactory<FlowEnergyPT_PK> reg_;
 };
 
 } // namespace Amanzi
