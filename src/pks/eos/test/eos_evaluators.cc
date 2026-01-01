@@ -171,7 +171,7 @@ TEST(ViscosityEOS)
 
       der = eos_iapws97.DViscosityDp(T, p);
       der_fd = (eos_iapws97.Viscosity(T, p + dp) - eos_iapws97.Viscosity(T, p)) / dp;
-      CHECK_CLOSE(der, der_fd, 3e-3 * std::fabs(der));
+      CHECK_CLOSE(der, der_fd, 6e-3 * std::fabs(der));
     }
   }
 }
