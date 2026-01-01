@@ -25,7 +25,9 @@
 #include "EOS_SaturatedVaporPressure.hh"
 #include "EOSFactory.hh"
 #include "H2O_Density.hh"
+#include "H2O_DensityIAPWS97.hh"
 #include "H2O_DensityFEHM.hh"
+#include "H2O_ViscosityIAPWS97.hh"
 #include "H2O_ViscosityFEHM.hh"
 #include "LookupTable_Amanzi.hh"
 #include "LookupTable_FEHM.hh"
@@ -74,6 +76,25 @@ TEST(DensityEOS)
 
       der = eos_fehm.DDensityDp(T1, p);
       der_fd = eos_fehm.Density(T1, p + 0.5) - eos_fehm.Density(T1, p - 0.5);
+      CHECK_CLOSE(der, der_fd, 1e-3 * std::fabs(der));
+    }
+  }
+
+  // next EOS
+  H2O_DensityIAPWS97 eos_iapws97(plist);
+
+  double rho = eos_iapws97.Density(635.0, 19.1e+6);
+  CHECK_CLOSE(517.3766759, rho, 1e-7);
+
+  double dT(1e-4), dp(10.0);
+  for (int p = 5.0e+6; p < 40.0e+6; p += 2.0e+6) {
+    for (double T = 300; T < 700; T += 20.0) {
+      double der = eos_iapws97.DDensityDT(T, p);
+      double der_fd = (eos_iapws97.Density(T + dT, p) - eos_iapws97.Density(T, p)) / dT;
+      CHECK_CLOSE(der, der_fd, 1e-3 * std::fabs(der));
+
+      der = eos_iapws97.DDensityDp(T, p);
+      der_fd = (eos_iapws97.Density(T, p + dp) - eos_iapws97.Density(T, p)) / dp;
       CHECK_CLOSE(der, der_fd, 1e-3 * std::fabs(der));
     }
   }
@@ -137,6 +158,22 @@ TEST(ViscosityEOS)
   IdealGas_Viscosity eos_ideal_gas(plist);
   nu0 = eos_ideal_gas.Viscosity(290.0, 0.0);
   CHECK_CLOSE(nu0, 1.8e-5, 1e-8);
+
+  // next EOS
+  H2O_ViscosityIAPWS97 eos_iapws97(plist);
+
+  double dT(1e-4), dp(0.5);
+  for (int p = 5.0e+6; p < 40.0e+6; p += 2.0e+6) {
+    for (double T = 300; T < 700; T += 20.0) {
+      double der = eos_iapws97.DViscosityDT(T, p);
+      double der_fd = (eos_iapws97.Viscosity(T + dT, p) - eos_iapws97.Viscosity(T, p)) / dT;
+      CHECK_CLOSE(der, der_fd, 1e-3 * std::fabs(der));
+
+      der = eos_iapws97.DViscosityDp(T, p);
+      der_fd = (eos_iapws97.Viscosity(T, p + dp) - eos_iapws97.Viscosity(T, p)) / dp;
+      CHECK_CLOSE(der, der_fd, 3e-3 * std::fabs(der));
+    }
+  }
 }
 
 
@@ -220,7 +257,8 @@ TEST(FactoryEOS)
 {
   using namespace Amanzi::AmanziEOS;
 
-  std::vector<std::string> names = { "liquid water 0-30C", "liquid water FEHM", "lookup table" };
+  std::vector<std::string> names = { "liquid water 0-30C", "liquid water FEHM",
+                                     "lookup table", "liquid water IAPWS97" };
 
   for (auto& name : names) {
     Teuchos::ParameterList plist;

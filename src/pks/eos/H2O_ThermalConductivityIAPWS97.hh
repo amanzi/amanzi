@@ -10,29 +10,31 @@
 /*
   EOS
 
-  Thermal conductivity for liquid water.
+  EOS for liquid water based on the International Association for the 
+  Properties of Water and Steam (IAPWS), Industrial Formulation 1997.
+  http://www.iapws.org/relguide/ThCond.html
 */
 
-#ifndef AMANZI_EOS_H2O_THERMAL_CONDUCTIVITY_HH_
-#define AMANZI_EOS_H2O_THERMAL_CONDUCTIVITY_HH_
+#ifndef AMANZI_EOS_H2O_THERMAL_CONDUCTIVITY_IAPWS97_HH_
+#define AMANZI_EOS_H2O_THERMAL_CONDUCTIVITY_IAPWS97_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
 #include "Factory.hh"
 
-#include "EOS_ThermalConductivity.hh"
+#include "H2O_ThermalConductivity.hh"
+#include "IAPWS97.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
-// Equation of State model
-class H2O_ThermalConductivity : public EOS_ThermalConductivity {
+class H2O_ThermalConductivityIAPWS97 : public EOS_ThermalConductivity {
  public:
-  explicit H2O_ThermalConductivity(Teuchos::ParameterList& plist);
-  virtual ~H2O_ThermalConductivity() {};
+  explicit H2O_ThermalConductivityIAPWS97(Teuchos::ParameterList& plist);
+  virtual ~H2O_ThermalConductivityIAPWS97() {};
 
   virtual double ThermalConductivity(double p, double T, double phi);
-  virtual double DThermalConductivityDp(double p, double T, double phi) { return 0.0; }
+  virtual double DThermalConductivityDp(double p, double T, double phi);
   virtual double DThermalConductivityDT(double p, double T, double phi);
   virtual double DThermalConductivityDPhi(double p, double T, double phi)
   {
@@ -40,13 +42,9 @@ class H2O_ThermalConductivity : public EOS_ThermalConductivity {
     return 0.0;
   }
 
- protected:
-  // constants for water, hard-coded
-  double ka0_, ka1_, ka2_;
-  double kref_, Tref_;
-
  private:
-  static Utils::RegisteredFactory<EOS_ThermalConductivity, H2O_ThermalConductivity> reg_;
+  Teuchos::RCP<IAPWS97> eos_;
+  static Utils::RegisteredFactory<EOS_ThermalConductivity, H2O_ThermalConductivityIAPWS97> reg_;
 };
 
 } // namespace AmanziEOS

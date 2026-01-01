@@ -36,6 +36,9 @@ TCMEvaluator_OnePhase::TCMEvaluator_OnePhase(Teuchos::RCP<const AmanziMesh::Mesh
   }
   std::string domain = Keys::getDomain(my_keys_[0].first);
 
+  pressure_key_ = plist_.get<std::string>("pressure key", Keys::getKey(domain, "pressure"));
+  dependencies_.insert(std::make_pair(pressure_key_, Tags::DEFAULT));
+
   temperature_key_ =
     plist_.get<std::string>("temperature key", Keys::getKey(domain, "temperature"));
   dependencies_.insert(std::make_pair(temperature_key_, Tags::DEFAULT));
@@ -91,6 +94,7 @@ void
 TCMEvaluator_OnePhase::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   // pull out the dependencies
+  const auto& pres_c = *S.Get<CompositeVector>(pressure_key_).ViewComponent("cell");
   const auto& temp_c = *S.Get<CompositeVector>(temperature_key_).ViewComponent("cell");
   const auto& poro_c = *S.Get<CompositeVector>(porosity_key_).ViewComponent("cell");
   Epetra_MultiVector& result_c = *results[0]->ViewComponent("cell");
@@ -101,10 +105,10 @@ TCMEvaluator_OnePhase::Evaluate_(const State& S, const std::vector<CompositeVect
     int id = (*partition_)[i];
     double phi = poro_c[0][i];
 
-    double k_liq = tc_liq_[id]->ThermalConductivity(temp_c[0][i], phi);
+    double k_liq = tc_liq_[id]->ThermalConductivity(pres_c[0][i], temp_c[0][i], phi);
     ierr = std::max(ierr, tc_liq_[id]->error_code());
 
-    double k_solid = tc_solid_[id]->ThermalConductivity(temp_c[0][i], phi);
+    double k_solid = tc_solid_[id]->ThermalConductivity(pres_c[0][i], temp_c[0][i], phi);
     ierr = std::max(ierr, tc_solid_[id]->error_code());
 
     result_c[0][i] = phi * k_liq + (1.0 - phi) * k_solid;
@@ -124,6 +128,7 @@ TCMEvaluator_OnePhase::EvaluatePartialDerivative_(const State& S,
                                                   const std::vector<CompositeVector*>& results)
 {
   for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
+    const auto& pres_v = *S.Get<CompositeVector>(pressure_key_).ViewComponent(*comp);
     const auto& temp_v = *S.Get<CompositeVector>(temperature_key_).ViewComponent(*comp);
     const auto& poro_v = *S.Get<CompositeVector>(porosity_key_).ViewComponent(*comp);
     Epetra_MultiVector& result_v = *results[0]->ViewComponent(*comp);
@@ -132,25 +137,38 @@ TCMEvaluator_OnePhase::EvaluatePartialDerivative_(const State& S,
     if (wrt_key == porosity_key_) {
       for (int i = 0; i != ncells; ++i) {
         int id = (*partition_)[i];
+        double p = pres_v[0][i];
         double T = temp_v[0][i];
         double phi = poro_v[0][i];
 
-        double k_liq = tc_liq_[id]->ThermalConductivity(T, phi);
-        double k_solid = tc_solid_[id]->ThermalConductivity(T, phi);
+        double k_liq = tc_liq_[id]->ThermalConductivity(p, T, phi);
+        double k_solid = tc_solid_[id]->ThermalConductivity(p, T, phi);
         result_v[0][i] = k_liq - k_solid;
 
-        k_liq = tc_liq_[id]->DThermalConductivityDPhi(T, phi);
-        k_solid = tc_solid_[id]->DThermalConductivityDPhi(T, phi);
+        k_liq = tc_liq_[id]->DThermalConductivityDPhi(p, T, phi);
+        k_solid = tc_solid_[id]->DThermalConductivityDPhi(p, T, phi);
         result_v[0][i] += phi * k_liq + (1.0 - phi) * k_solid;
       }
     } else if (wrt_key == temperature_key_) {
       for (int i = 0; i != ncells; ++i) {
         int id = (*partition_)[i];
+        double p = pres_v[0][i];
         double T = temp_v[0][i];
         double phi = poro_v[0][i];
 
-        double k_liq = tc_liq_[id]->DThermalConductivityDT(T, phi);
-        double k_solid = tc_solid_[id]->DThermalConductivityDT(T, phi);
+        double k_liq = tc_liq_[id]->DThermalConductivityDT(p, T, phi);
+        double k_solid = tc_solid_[id]->DThermalConductivityDT(p, T, phi);
+        result_v[0][i] = phi * k_liq + (1.0 - phi) * k_solid;
+      }
+    } else if (wrt_key == pressure_key_) {
+      for (int i = 0; i != ncells; ++i) {
+        int id = (*partition_)[i];
+        double p = pres_v[0][i];
+        double T = temp_v[0][i];
+        double phi = poro_v[0][i];
+
+        double k_liq = tc_liq_[id]->DThermalConductivityDp(p, T, phi);
+        double k_solid = tc_solid_[id]->DThermalConductivityDp(p, T, phi);
         result_v[0][i] = phi * k_liq + (1.0 - phi) * k_solid;
       }
     }

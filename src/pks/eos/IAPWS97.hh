@@ -41,7 +41,7 @@ struct Properties {
   double rho = 0.0;
   double v = 0.0; // specific volume, m3/kg
   double h = 0.0; // specific enthalpy, kJ/kg
-  double u = 0.0; // specific internal energy
+  double u = 0.0; // specific internal energy, kJ/kg
   double s = 0.0; // specific entropy, kJ/kg/K
   double cp = 0.0; // specific isobaric heat capacity, kJ/kg/K
   double cv = 0.0; // specific isocoric heat capacity, kJ/kg/K

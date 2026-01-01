@@ -31,9 +31,10 @@ class NaCl_ThermalConductivity : public EOS_ThermalConductivity {
   explicit NaCl_ThermalConductivity(Teuchos::ParameterList& plist);
   virtual ~NaCl_ThermalConductivity() {};
 
-  virtual double ThermalConductivity(double T, double phi);
-  virtual double DThermalConductivityDT(double T, double phi);
-  virtual double DThermalConductivityDPhi(double T, double phi);
+  virtual double ThermalConductivity(double p, double T, double phi);
+  virtual double DThermalConductivityDp(double p, double T, double phi) { return 0.0; }
+  virtual double DThermalConductivityDT(double p, double T, double phi);
+  virtual double DThermalConductivityDPhi(double p, double T, double phi);
 
  protected:
   double kref_, Tref_;

@@ -48,7 +48,8 @@ EOSViscosityEvaluator::EOSViscosityEvaluator(Teuchos::ParameterList& plist)
 EOSViscosityEvaluator::EOSViscosityEvaluator(const EOSViscosityEvaluator& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
     visc_(other.visc_),
-    temp_key_(other.temp_key_) {};
+    temp_key_(other.temp_key_),
+    pres_key_(other.pres_key_) {};
 
 
 Teuchos::RCP<Evaluator>
@@ -64,7 +65,6 @@ EOSViscosityEvaluator::Evaluate_(const State& S, const std::vector<CompositeVect
   auto temp = S.GetPtr<CompositeVector>(temp_key_, tag_);
   auto pres = S.GetPtr<CompositeVector>(pres_key_, tag_);
 
-  // evaluate p_s / p_atm
   for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
     const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp);
     const Epetra_MultiVector& pres_v = *pres->ViewComponent(*comp);
@@ -90,7 +90,6 @@ EOSViscosityEvaluator::EvaluatePartialDerivative_(const State& S,
   auto temp = S.GetPtr<CompositeVector>(temp_key_, tag_);
   auto pres = S.GetPtr<CompositeVector>(pres_key_, tag_);
 
-  // evaluate d/dT( p_s / p_atm )
   for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
     const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp));
     const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp));

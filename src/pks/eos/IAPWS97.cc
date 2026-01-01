@@ -117,6 +117,9 @@ IAPWS97::ThermodynamicsPT(double p, double T)
   prop.rho = 1.0 / prop.v;
   prop.phase = PhaseId(p, T, prop.rgn, prop.x);
 
+  prop.mu = Viscosity(prop.rho, T);
+  prop.k = ThermalConductivity(prop.rho, T, prop);
+
   return prop;
 }
 

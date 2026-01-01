@@ -44,6 +44,7 @@ set(energy_src_files Energy_PK.cc
                      EnergyOnePhase_PK.cc EnergyOnePhase_TI.cc
                      EnergyTwoPhase_PK.cc EnergyTwoPhase_TI.cc
                      Energy_VandV.cc
+                     IEM_IAPWS97.cc
                      IEM_Linear.cc
                      IEM_WaterVapor.cc 
                      IEM_WaterVaporEvaluator.cc
@@ -73,6 +74,7 @@ set(energy_inc_files
   EnergyTwoPhase_PK.hh
   pks_energy_reg.hh
   IEM.hh
+  IEM_IAPWS97.hh
   IEM_Linear.hh
   IEM_Tabular.hh
   IEM_WaterVapor.hh

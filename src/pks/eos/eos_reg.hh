@@ -21,10 +21,13 @@
 #include "EOSViscosityEvaluator.hh"
 #include "H2O_Density.hh"
 #include "H2O_DensityFEHM.hh"
+#include "H2O_DensityIAPWS97.hh"
 #include "H2O_SaturatedVaporPressure.hh"
 #include "H2O_ThermalConductivity.hh"
+#include "H2O_ThermalConductivityIAPWS97.hh"
 #include "H2O_Viscosity.hh"
 #include "H2O_ViscosityFEHM.hh"
+#include "H2O_ViscosityIAPWS97.hh"
 #include "IdealGas_Density.hh"
 #include "IdealGas_Viscosity.hh"
 #include "IdealGas_ThermalConductivity.hh"
@@ -51,6 +54,7 @@ Utils::RegisteredFactory<Evaluator, EOSViscosityEvaluator> EOSViscosityEvaluator
 Utils::RegisteredFactory<EOS_Density, IdealGas_Density> IdealGas_Density::reg_("ideal gas");
 Utils::RegisteredFactory<EOS_Density, VaporInGas_Density> VaporInGas_Density::reg_("vapor in gas");
 Utils::RegisteredFactory<EOS_Density, H2O_Density> H2O_Density::reg_("liquid water 0-30C");
+Utils::RegisteredFactory<EOS_Density, H2O_DensityIAPWS97> H2O_DensityIAPWS97::reg_("liquid water IAPWS97");
 Utils::RegisteredFactory<EOS_Density, H2O_DensityFEHM> H2O_DensityFEHM::reg_("liquid water FEHM");
 Utils::RegisteredFactory<EOS_Density, DensityTabular> DensityTabular::reg_("lookup table");
 
@@ -60,8 +64,8 @@ Utils::RegisteredFactory<EOS_SaturatedVaporPressure, H2O_SaturatedVaporPressure>
 Utils::RegisteredFactory<EOS_Viscosity, IdealGas_Viscosity> IdealGas_Viscosity::reg_("ideal gas");
 Utils::RegisteredFactory<EOS_Viscosity, H2O_Viscosity> H2O_Viscosity::reg_("liquid water 0-30C");
 Utils::RegisteredFactory<EOS_Viscosity, ViscosityConstant> ViscosityConstant::reg_("constant");
-Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityFEHM> H2O_ViscosityFEHM::reg_(
-  "liquid water FEHM");
+Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityIAPWS97> H2O_ViscosityIAPWS97::reg_("liquid water IAPWS97");
+Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityFEHM> H2O_ViscosityFEHM::reg_("liquid water FEHM");
 Utils::RegisteredFactory<EOS_Viscosity, ViscosityTabular> ViscosityTabular::reg_("lookup table");
 
 Utils::RegisteredFactory<EOS_Diffusion, VaporInGas_Diffusion> VaporInGas_Diffusion::reg_(
@@ -74,6 +78,8 @@ Utils::RegisteredFactory<EOS_ThermalConductivity, IdealGas_ThermalConductivity>
   IdealGas_ThermalConductivity::reg_("ideal gas");
 Utils::RegisteredFactory<EOS_ThermalConductivity, H2O_ThermalConductivity>
   H2O_ThermalConductivity::reg_("liquid water");
+Utils::RegisteredFactory<EOS_ThermalConductivity, H2O_ThermalConductivityIAPWS97>
+  H2O_ThermalConductivityIAPWS97::reg_("IAPWS97");
 Utils::RegisteredFactory<EOS_ThermalConductivity, ThermalConductivityConstant>
   ThermalConductivityConstant::reg_("constant");
 Utils::RegisteredFactory<EOS_ThermalConductivity, NaCl_ThermalConductivity>

@@ -371,7 +371,7 @@ TEST(EOS_IAPWS97_TABLE_PT)
 }
 
 
-TEST(EOS_IAPWS97_CRITICAL_POINT)
+TEST(EOS_IAPWS97_CRITICAL_POINT_PT)
 {
   using namespace Amanzi::AmanziEOS;
   std::cout << "\nTEST: critical point" << std::endl;
@@ -515,7 +515,7 @@ TEST(EOS_IAPWS97_TABLE_PH)
   IAPWS97 eos(plist);
 
   int nitrs(0), mitrs(0), count(0);
-  double dp(5.0e-2), dh(15.0), p, h; 
+  double dp(5.0e-2), dh(15.0), p, h, T, Tmin(1000.0), Tmax(100.0); 
 
   for (int i = -50; i < 50; ++i) {
     for (int j = -50; j < 50; ++j) {
@@ -525,9 +525,71 @@ TEST(EOS_IAPWS97_TABLE_PH)
       nitrs += eos.get_itrs();
       mitrs = std::max(mitrs, eos.get_itrs());
       count++;
+     
+      if (prop.x == 0.0 || prop.x == 1.0) {
+        T = prop.T;
+        Tmin = std::min(Tmin, T);
+        Tmax = std::max(Tmax, T);
+      } else {
+        T = liquid.T;
+        Tmin = std::min(Tmin, T);
+        Tmax = std::max(Tmax, T);
+      }
       // std::cout << p << " " << h << " " << prop.rho << std::endl;
     }
   }
   std::cout << "mean itrs = " << double(nitrs) / count << std::endl;
   std::cout << "max itrs = " << mitrs << std::endl;
+  std::cout << "temperature variation = " << Tmin << " " << Tmax << std::endl;
 }
+
+
+TEST(EOS_IAPWS97_REGION4_CONSTANT_P)
+{
+  using namespace Amanzi::AmanziEOS;
+  std::cout << "\nTEST: region4, p=constant" << std::endl;
+
+  Teuchos::ParameterList plist;
+  IAPWS97 eos(plist);
+
+  double h, dh(10.0), p(eos.PC / 2), x0(0.0), x, T, Tmin(1000.0), Tmax(100.0);
+  for (int i = -20; i < 20; ++i) {
+    h = eos.HC + i * dh; 
+    auto [prop, liquid, gas] = eos.ThermodynamicsPH(p, h);
+
+    T = liquid.T;
+    Tmin = std::min(Tmin, T);
+    Tmax = std::max(Tmax, T);
+
+    // liquid content must grow
+    x = liquid.x;
+    CHECK(x > x0);
+    x0 = x;
+    // std::cout << "dh = " << h - eos.HC << " T = " << liquid.T << " x = " << liquid.x << std::endl;
+  }
+  CHECK_CLOSE(Tmin, Tmax, 1e-6);
+  std::cout << "temperature variation along p = constant: " << Tmin << " " << Tmax << std::endl;
+}
+
+
+TEST(EOS_IAPWS97_REGION4_CONSTANT_H)
+{
+  using namespace Amanzi::AmanziEOS;
+  std::cout << "\nTEST: region 4, h=constant" << std::endl;
+
+  Teuchos::ParameterList plist;
+  IAPWS97 eos(plist);
+
+  double h(eos.HC - 100.0), p, dp(0.2);
+  for (int i = -7; i < 3; ++i) {
+    p = eos.PC + i * dp; 
+    auto [prop, liquid, gas] = eos.ThermodynamicsPH(p, h);
+    if (liquid.T != 0.0) {
+      std::cout << "dp=" << p - eos.PC << " T=" << liquid.T << " x=" << liquid.x << " rgn=" << liquid.rgn << std::endl;
+    } else {
+      std::cout << "dp=" << p - eos.PC << " T=" << gas.T << " x=" << gas.x << " rgn=" << gas.rgn << std::endl;
+    }
+  }
+}
+
+

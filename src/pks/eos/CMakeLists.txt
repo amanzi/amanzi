@@ -27,10 +27,13 @@ set(eos_src_files
     EOSViscosityEvaluator.cc
     H2O_Density.cc
     H2O_DensityFEHM.cc
+    H2O_DensityIAPWS97.cc
     H2O_ThermalConductivity.cc
+    H2O_ThermalConductivityIAPWS97.cc
     H2O_SaturatedVaporPressure.cc
     H2O_Viscosity.cc
     H2O_ViscosityFEHM.cc
+    H2O_ViscosityIAPWS97.cc
     Henry_Solubility.cc
     IdealGas_Density.cc
     IdealGas_ThermalConductivity.cc
@@ -67,15 +70,18 @@ set(eos_inc_files
     EOS_Diffusion.hh
     EOS_SaturatedVaporPressure.hh
     H2O_ThermalConductivity.hh
+    H2O_ThermalConductivityIAPWS97.hh
     EOS_Utils.hh
     EOS_Viscosity.hh
     eos_reg.hh
     EOSFactory.hh
     H2O_Density.hh
     H2O_DensityFEHM.hh
+    H2O_DensityIAPWS97.hh
     H2O_SaturatedVaporPressure.hh
     H2O_Viscosity.hh
     H2O_ViscosityFEHM.hh
+    H2O_ViscosityIAPWS97.hh
     Henry_Solubility.hh
     IdealGas_Density.hh
     IdealGas_ThermalConductivity.hh

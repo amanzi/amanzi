@@ -178,6 +178,11 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_thermal_richards_jacobian.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+    add_amanzi_test(mpc_thermal_richards_highPT mpc_thermal_richards_highPT
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_thermal_richards_highPT.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
     # Test: mpc driver for flow and reactive transport
     add_amanzi_test(mpc_flow_reactive_transport mpc_flow_reactive_transport
                     KIND      int
