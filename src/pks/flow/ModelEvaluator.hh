@@ -100,7 +100,7 @@ ModelEvaluator<Model>::Init_()
   }
 
   for (auto key : deps_) {
-    dependencies_.insert(std::make_pair(key, Tags::DEFAULT));
+    dependencies_.emplace(key, Tags::DEFAULT);
   }
 }
 

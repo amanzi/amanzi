@@ -202,10 +202,10 @@ class AuditDirectedGraph {
   void AddEdge(const std::string& name_out, int vert_in)
   {
     int vert_out = findVertex(name_out);
-    edges_.push_back(std::make_pair(vert_out, vert_in));
+    edges_.emplace_back(vert_out, vert_in);
   }
 
-  void AddEdge(int vert_out, int vert_in) { edges_.push_back(std::make_pair(vert_out, vert_in)); }
+  void AddEdge(int vert_out, int vert_in) { edges_.emplace_back(vert_out, vert_in); }
 
   // graph operations
   int FindAnyRoot() const

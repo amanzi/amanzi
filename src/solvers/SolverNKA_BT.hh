@@ -356,7 +356,7 @@ SolverNKA_BT<Vector, VectorSpace>::NKA_ErrorControl_(double error,
                                                      double previous_error,
                                                      double l2_error)
 {
-  history_.push_back(std::make_pair(error, l2_error));
+  history_.emplace_back(error, l2_error);
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
     *vo_->os() << num_itrs_ << ": error=" << error << "  L2-error=" << l2_error << std::endl;
