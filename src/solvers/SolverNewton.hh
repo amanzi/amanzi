@@ -356,7 +356,7 @@ SolverNewton<Vector, VectorSpace>::Newton_ErrorControl_(double error,
                                                         double previous_du_norm,
                                                         double du_norm)
 {
-  history_.push_back(std::make_pair(error, l2_error));
+  history_.emplace_back(error, l2_error);
 
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << num_itrs_ << ": error=" << error << "  l2-error=" << l2_error
