@@ -110,6 +110,9 @@ class CompositeVectorSpace {
   // Update only the components from other
   CompositeVectorSpace* UpdateComponents(const CompositeVectorSpace& other);
 
+  // Update only the components from other keep the same # of dofs
+  CompositeVectorSpace* UpdateComponentsSameNumDofs(const CompositeVectorSpace& other);
+
   // component specification
 
   // Add methods append their specs to the space's spec, checking to make

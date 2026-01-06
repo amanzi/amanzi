@@ -128,6 +128,25 @@ CompositeVectorSpace::UpdateComponents(const CompositeVectorSpace& other)
   return this;
 };
 
+CompositeVectorSpace*
+CompositeVectorSpace::UpdateComponentsSameNumDofs(const CompositeVectorSpace& other)
+{
+  if (this != &other) {
+    
+    std::vector<int> num_dofs(other.names_.size());
+
+    if (num_dofs_.size()>0){
+      num_dofs.assign(other.names_.size(), num_dofs_[0]);
+    }else{
+      num_dofs.assign(other.names_.size(), 1);
+    }                                            
+      
+    AddComponents(
+      other.names_, other.locations_, other.mastermaps_, other.ghostmaps_, num_dofs);
+  }
+  return this;
+};
+  
 
 // ghosted
 CompositeVectorSpace*
