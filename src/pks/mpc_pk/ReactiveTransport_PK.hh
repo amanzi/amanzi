@@ -58,6 +58,9 @@ class ReactiveTransport_PK : public PK_MPCAdditive<PK> {
 
   std::string name() override { return "reactive transport"; }
 
+  bool AdvanceStep(double t_old, double t_new, bool reinit) override;
+  void CommitStep(double t_old, double t_new, const Tag& tag) override;
+
  protected:
   bool chem_step_succeeded;
   double dTtran_, dTchem_;
