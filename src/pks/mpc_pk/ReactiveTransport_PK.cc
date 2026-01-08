@@ -59,6 +59,8 @@ ReactiveTransport_PK::ReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
   // that transport advances from CURRENT --> "operator_split", and chemistry
   // advances from "operator_split" --> NEXT.
   getSubPKPlist_(0)->set("concentration tag next", "operator_split");
+  getSubPKPlist_(0)->set("primary variable password", "state");
+
   getSubPKPlist_(1)->set("concentration tag current", "operator_split");
   getSubPKPlist_(1)->set("primary variable password", "state");
 }
