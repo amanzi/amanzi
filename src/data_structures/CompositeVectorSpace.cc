@@ -117,7 +117,28 @@ CompositeVectorSpace::Update(const CompositeVectorSpace& other)
   return this;
 };
 
+// Update mesh and  the components from other keep the same # of dofs  
+CompositeVectorSpace*
+CompositeVectorSpace::UpdateSameNumDofs(const CompositeVectorSpace& other)
+{
+  if (this != &other) {
 
+    if (other.mesh_ != Teuchos::null) SetMesh(other.mesh_);
+    
+    std::vector<int> num_dofs(other.names_.size());
+    if (num_dofs_.size()>0){
+      num_dofs.assign(other.names_.size(), num_dofs_[0]);
+    }else{
+      num_dofs.assign(other.names_.size(), 1);
+    }                                            
+      
+    AddComponents(
+      other.names_, other.locations_, other.mastermaps_, other.ghostmaps_, num_dofs);
+  }
+  return this;
+};
+  
+// Update only the components from other
 CompositeVectorSpace*
 CompositeVectorSpace::UpdateComponents(const CompositeVectorSpace& other)
 {
@@ -128,13 +149,13 @@ CompositeVectorSpace::UpdateComponents(const CompositeVectorSpace& other)
   return this;
 };
 
+// Update only the components from other keep the same # of dofs  
 CompositeVectorSpace*
 CompositeVectorSpace::UpdateComponentsSameNumDofs(const CompositeVectorSpace& other)
 {
   if (this != &other) {
-    
+   
     std::vector<int> num_dofs(other.names_.size());
-
     if (num_dofs_.size()>0){
       num_dofs.assign(other.names_.size(), num_dofs_[0]);
     }else{

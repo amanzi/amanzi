@@ -107,6 +107,9 @@ class CompositeVectorSpace {
   // Useful for PKs to maintain default factories that apply to multiple CVs.
   CompositeVectorSpace* Update(const CompositeVectorSpace& other);
 
+  // Update mesh and  the components from other keep the same # of dofs
+  CompositeVectorSpace* UpdateSameNumDofs(const CompositeVectorSpace& other);
+
   // Update only the components from other
   CompositeVectorSpace* UpdateComponents(const CompositeVectorSpace& other);
 
