@@ -20,6 +20,7 @@ include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
 include_directories(${OPERATORS_SOURCE_DIR})
+include_directories(${PKS_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 
 # Add library
@@ -28,6 +29,7 @@ set(evaluators_src_files
     ApertureModelEvaluator.cc
     PorosityModelPartition.cc
     PorosityEvaluator.cc
+    ThermodynamicStateEvaluators.cc
     VolumetricStrainEvaluator.cc)
 
 set(evaluators_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${SEACAS_LIBRARIES})
@@ -45,6 +47,7 @@ set(evaluators_inc_files
     ApertureModelEvaluator.hh
     Porosity.hh
     PorosityModelPartition.hh
+    ThermodynamicStateEvaluators.hh
     VolumetricStrainEvaluator.hh)
 
 add_install_include_file(${evaluators_inc_files})

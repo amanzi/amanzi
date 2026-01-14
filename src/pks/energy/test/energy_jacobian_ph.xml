@@ -14,26 +14,14 @@
     </ParameterList>
     <ParameterList name="Left side">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{1.0, 0.0}"/>
+        <Parameter name="point" type="Array(double)" value="{0.0, 0.0}"/>
         <Parameter name="normal" type="Array(double)" value="{-1.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Right side">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{2.0, 0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{1.0, 0.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Bottom side">
-      <ParameterList name="region: plane">
         <Parameter name="point" type="Array(double)" value="{1.0, 0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{0.0, -1.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Top side">
-      <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{1.0, 1.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{0.0, 1.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{1.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -43,45 +31,12 @@
       <Parameter name="PK type" type="string" value="one phase"/>
     </ParameterList>
   </ParameterList>
-  <!--  FLOW  -->
-  <ParameterList name="PKs">
 
+  <ParameterList name="PKs">
     <ParameterList name="energy">
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="none"/>
       </ParameterList>
-
-      <ParameterList name="energy evaluator">
-        <Parameter name="vapor diffusion" type="bool" value="false"/>
-        <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
-        </ParameterList>
-      </ParameterList>
-
-      <ParameterList name="enthalpy evaluator">
-        <Parameter name="include work term" type="bool" value="true"/>
-        <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
-        </ParameterList>
-      </ParameterList>
-
-      <ParameterList name="thermal conductivity evaluator">
-        <ParameterList name="All">
-          <Parameter name="thermal conductivity type" type="string" value="one-phase polynomial"/>
-          <Parameter name="regions" type="Array(string)" value="{All}"/>
-          <ParameterList name="solid phase">
-            <Parameter name="eos type" type="string" value="constant"/>
-            <Parameter name="reference conductivity" type="double" value="2.0"/>
-            <Parameter name="reference temperature" type="double" value="273.15"/>
-          </ParameterList>
-          <ParameterList name="liquid phase">
-            <Parameter name="eos type" type="string" value="constant"/>
-            <Parameter name="reference conductivity" type="double" value="0.2"/>
-            <Parameter name="reference temperature" type="double" value="273.15"/>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
       <ParameterList name="operators">
         <Parameter name="include enthalpy in preconditioner" type="bool" value="true"/>
         <ParameterList name="diffusion operator">
@@ -144,10 +99,10 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="boundary conditions">
+      <!--ParameterList name="boundary conditions">
         <ParameterList name="temperature">
-          <ParameterList name="BC 1">
-            <Parameter name="regions" type="Array(string)" value="{Left side}"/>
+          <ParameterList name="BC 0">
+            <Parameter name="regions" type="Array(string)" value="{Right side}"/>
             <Parameter name="spatial distribution method" type="string" value="none"/>
             <ParameterList name="boundary temperature">
               <ParameterList name="function-exprtk">
@@ -157,13 +112,10 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-      </ParameterList>
-
+      </ParameterList-->
     </ParameterList>
-
   </ParameterList>
 
-  <!-- SOLVERS -->
   <ParameterList name="solvers">
     <ParameterList name="PCG with Hypre AMG">
       <Parameter name="iterative method" type="string" value="pcg"/>
@@ -180,7 +132,7 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-  <!-- PRECONDITIONERS -->
+
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
       <Parameter name="preconditioning method" type="string" value="boomer amg"/>
@@ -192,8 +144,7 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-  <!--  STATE: this super input desk will be used to cut-off smaller 
-  input deks for other flow tests -->
+
   <ParameterList name="state">
     <ParameterList name="evaluators">
       <ParameterList name="particle_density">
@@ -210,17 +161,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="molar_density_liquid">
-        <Parameter name="evaluator type" type="string" value="eos"/>
-        <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
-        <ParameterList name="EOS parameters">
-          <Parameter name="eos type" type="string" value="liquid water FEHM"/>
-          <Parameter name="molar mass" type="double" value="0.018015"/>
-          <Parameter name="density" type="double" value="1000.0"/>
-        </ParameterList>
-        <Parameter name="eos basis" type="string" value="both"/>
-        <Parameter name="mass density key" type="string" value="mass_density_liquid"/>
-      </ParameterList>
+
       <!-- setting it to one, removes rock conductivity from the test -->
       <ParameterList name="porosity">
         <Parameter name="evaluator type" type="string" value="independent variable"/>
@@ -250,19 +191,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="internal_energy_liquid">
-        <Parameter name="evaluator type" type="string" value="iem"/>
-        <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
-        <ParameterList name="IEM parameters">
-          <ParameterList name="EntireDomain">
-            <Parameter name="regions" type="Array(string)" value="{All}"/>
-            <ParameterList name="IEM parameters">
-              <Parameter name="iem type" type="string" value="linear"/>
-              <Parameter name="heat capacity" type="double" value="76.0"/>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
       <ParameterList name="internal_energy_rock">
         <Parameter name="evaluator type" type="string" value="iem"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_rock"/>
@@ -272,47 +200,26 @@
             <ParameterList name="IEM parameters">
               <Parameter name="iem type" type="string" value="linear"/>
               <Parameter name="heat capacity" type="double" value="1.0"/>
-              <Parameter name="reference temperature" type="double" value="1.0"/>
+              <Parameter name="reference temperature" type="double" value="273.15"/>
             </ParameterList>
           </ParameterList>
-        </ParameterList>
-        <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="molar_flow_rate">
         <Parameter name="evaluator type" type="string" value="independent variable constant"/>
       </ParameterList>
-      <ParameterList name="pressure">
-        <Parameter name="evaluator type" type="string" value="independent variable"/>
-        <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-exprtk">
-                <Parameter name="number of arguments" type="int" value="3"/>
-                <Parameter name="formula" type="string" value="201325.0 - 51000 * x * y"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
     </ParameterList>
-    <ParameterList name="initial conditions">
 
+    <ParameterList name="initial conditions">
       <ParameterList name="const_fluid_molar_mass">
         <Parameter name="value" type="double" value="0.018015"/>
       </ParameterList>
-
       <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="0.001"/>
       </ParameterList>
-
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, -9.8}"/>
       </ParameterList>
-
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="101325.0"/>
       </ParameterList>
@@ -325,7 +232,35 @@
             <ParameterList name="function">
               <ParameterList name="function-exprtk">
                 <Parameter name="number of arguments" type="int" value="3"/>
-                <Parameter name="formula" type="string" value="315 + 10 * x + 20 * y"/>
+                <Parameter name="formula" type="string" value="500 + 100 * x + 50 * y"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="pressure">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="*"/>
+            <ParameterList name="function">
+              <ParameterList name="function-exprtk">
+                <Parameter name="number of arguments" type="int" value="3"/>
+                <Parameter name="formula" type="string" value="24.0e+6 - 1.0e+6 * x * y"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="enthalpy">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="*"/>
+            <ParameterList name="function">
+              <ParameterList name="function-exprtk">
+                <Parameter name="number of arguments" type="int" value="3"/>
+                <Parameter name="formula" type="string" value="3.4228e+04 + 2.0e+3 * x * y"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -356,9 +291,9 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-
     </ParameterList>
   </ParameterList>
+
   <ParameterList name="verbose object">
     <Parameter name="verbosity level" type="string" value="high"/>
   </ParameterList>

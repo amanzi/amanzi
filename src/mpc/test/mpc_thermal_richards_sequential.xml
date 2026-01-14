@@ -91,7 +91,7 @@
               <Parameter name="PK type" type="string" value="richards"/>
             </ParameterList>
             <ParameterList name="energy">
-              <Parameter name="PK type" type="string" value="one-phase energy"/>
+              <Parameter name="PK type" type="string" value="pt energy"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>

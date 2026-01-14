@@ -19,7 +19,7 @@
 
 // Amanzi::Energy
 #include "Evaluator.hh"
-#include "EnergyOnePhase_PK.hh"
+#include "EnergyPressureTemperature_PK.hh"
 
 namespace Amanzi {
 namespace Energy {
@@ -30,11 +30,11 @@ using CV_t = CompositeVector;
 * Computes the non-linear functional g = g(t,u,udot)
 ****************************************************************** */
 void
-EnergyOnePhase_PK::FunctionalResidual(double t_old,
-                                      double t_new,
-                                      Teuchos::RCP<const TreeVector> u_old,
-                                      Teuchos::RCP<TreeVector> u_new,
-                                      Teuchos::RCP<TreeVector> g)
+EnergyPressureTemperature_PK::FunctionalResidual(double t_old,
+                                                 double t_new,
+                                                 Teuchos::RCP<const TreeVector> u_old,
+                                                 Teuchos::RCP<TreeVector> u_new,
+                                                 Teuchos::RCP<TreeVector> g)
 {
   double dt = t_new - t_old;
 
@@ -124,7 +124,9 @@ EnergyOnePhase_PK::FunctionalResidual(double t_old,
 * Update the preconditioner at time t and u = up
 ****************************************************************** */
 void
-EnergyOnePhase_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt)
+EnergyPressureTemperature_PK::UpdatePreconditioner(double t,
+                                                   Teuchos::RCP<const TreeVector> up,
+                                                   double dt)
 {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
@@ -190,7 +192,8 @@ EnergyOnePhase_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
 * TBW
 ****************************************************************** */
 double
-EnergyOnePhase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du)
+EnergyPressureTemperature_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
+                                        Teuchos::RCP<const TreeVector> du)
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 

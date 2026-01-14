@@ -25,7 +25,7 @@
 #include "IEMEvaluator.hh"
 #include "StateArchive.hh"
 #include "TCMEvaluator_TwoPhase.hh"
-#include "TotalEnergyEvaluator.hh"
+#include "TotalEnergyEvaluatorPT.hh"
 
 namespace Amanzi {
 namespace Energy {
@@ -82,7 +82,7 @@ EnergyTwoPhase_PK::Setup()
     elist.setName(energy_key_);
     if (assumptions_.flow_on_manifold) elist.set<std::string>("aperture key", aperture_key_);
 
-    auto ee = Teuchos::rcp(new TotalEnergyEvaluator(elist));
+    auto ee = Teuchos::rcp(new TotalEnergyEvaluatorPT(elist));
     S_->SetEvaluator(energy_key_, Tags::DEFAULT, ee);
 
     S_->RequireDerivative<CV_t, CVS_t>(
@@ -191,6 +191,7 @@ EnergyTwoPhase_PK::Initialize()
   soln_->SetData(solution);
 
   // Create local evaluators. Initialize local fields.
+  temperature_eval_->SetChanged();
   InitializeFields_();
 
   // Create specific evaluators (not used yet)
@@ -294,33 +295,6 @@ EnergyTwoPhase_PK::Initialize()
     *vo_->os() << "WARNING: no essential boundary conditions, solver may fail" << std::endl;
   }
 }
-
-
-/* ****************************************************************
-* This completes initialization of missed fields in the state.
-**************************************************************** */
-void
-EnergyTwoPhase_PK::InitializeFields_()
-{
-  Teuchos::OSTab tab = vo_->getOSTab();
-
-  if (S_->HasRecord(prev_energy_key_)) {
-    if (!S_->GetRecord(prev_energy_key_, Tags::DEFAULT).initialized()) {
-      temperature_eval_->SetChanged();
-      S_->GetEvaluator(energy_key_).Update(*S_, passwd_);
-
-      const auto& e1 = S_->Get<CV_t>(energy_key_);
-      auto& e0 = S_->GetW<CV_t>(prev_energy_key_, Tags::DEFAULT, passwd_);
-      e0 = e1;
-
-      S_->GetRecordW(prev_energy_key_, passwd_).set_initialized();
-
-      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-        *vo_->os() << "initialized prev_energy to previous energy" << std::endl;
-    }
-  }
-}
-
 
 /* *******************************************************************
 * Performs one timestep of size dt_ either for steady-state or

@@ -465,7 +465,6 @@ WriteStateStatistics(const State& S, const VerboseObject& vo, const Teuchos::EVe
             namedot.resize(40, '.');
             *vo.os() << std::defaultfloat << namedot << " " << c_it->second << " / "
                      << vmax[name_comp] << " / " << vavg[name_comp] << units << std::endl;
-            ;
           }
 
         } else if (r.second->ValidType<double>()) {

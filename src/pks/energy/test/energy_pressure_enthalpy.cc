@@ -1,0 +1,103 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Energy
+
+*/
+
+#include <cstdlib>
+#include <cmath>
+#include <iostream>
+#include <string>
+#include <vector>
+
+// TPLs
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ParameterXMLFileReader.hpp"
+#include "UnitTest++.h"
+
+// Amanzi
+#include "CompositeVector.hh"
+#include "EnergyPressureEnthalpy_PK.hh"
+#include "IO.hh"
+#include "MeshFactory.hh"
+#include "Operator.hh"
+#include "State.hh"
+#include "VerboseObject.hh"
+#include "WhetStoneDefs.hh"
+
+/* ****************************************************************
+* Runs to a steady state
+* ************************************************************** */
+TEST(ENERGY_PRESSURE_ENTHALPY)
+{
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::AmanziGeometry;
+  using namespace Amanzi::Operators;
+  using namespace Amanzi::Energy;
+
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
+
+  if (MyPID == 0) std::cout << "Test: transient calculation" << std::endl;
+
+  // read parameter list
+  std::string xmlFileName = "test/energy_pressure_enthalpy.xml";
+  Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
+  auto plist = Teuchos::rcp(new Teuchos::ParameterList(xmlreader.getParameters()));
+
+  // create a mesh framework
+  Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
+  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
+
+  Preference pref;
+  pref.push_back(Framework::MSTK);
+
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(pref);
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(1.0, 0.0, 2.0, 0.2, 10, 2);
+
+  // create a simple state and populate it
+  Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("state");
+  Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
+  S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
+
+  Teuchos::ParameterList pk_tree = plist->sublist("PK tree").sublist("energy");
+  auto soln = Teuchos::rcp(new TreeVector());
+  auto EPK = Teuchos::rcp(new EnergyPressureEnthalpy_PK(pk_tree, plist, S, soln));
+
+  EPK->Setup();
+  S->Setup();
+  S->InitializeFields();
+  S->InitializeEvaluators();
+
+  EPK->Initialize();
+  S->CheckAllFieldsInitialized();
+
+  auto vo = Teuchos::rcp(new Amanzi::VerboseObject("EnergyPH", *plist));
+  WriteStateStatistics(*S, *vo);
+
+  // constant timestepping
+  std::string passwd("");
+  int itrs(0);
+  double t(0.0), dt(0.5e+2), t1(200.0e+3);
+  while (t < t1) {
+    EPK->AdvanceStep(t, t + dt, false);
+    EPK->CommitStep(t, t + dt, Tags::DEFAULT);
+
+    t += dt;
+    itrs++;
+    if (itrs % 10 == 0) WriteStateStatistics(*S, *vo);
+
+    dt = std::min(dt * 1.05, 5.0e+2);
+  }
+}

@@ -41,7 +41,8 @@ include_directories(${WHETSTONE_SOURCE_DIR})
 
 # Library files
 set(energy_src_files Energy_PK.cc
-                     EnergyOnePhase_PK.cc EnergyOnePhase_TI.cc
+                     EnergyPressureTemperature_PK.cc EnergyPressureTemperature_TI.cc
+                     EnergyPressureEnthalpy_PK.cc EnergyPressureEnthalpy_TI.cc
                      EnergyTwoPhase_PK.cc EnergyTwoPhase_TI.cc
                      Energy_VandV.cc
                      IEM_IAPWS97.cc
@@ -55,7 +56,8 @@ set(energy_src_files Energy_PK.cc
                      TCMEvaluator_OnePhase.cc
                      TCMEvaluator_TwoPhase.cc
                      TCMFactory_TwoPhase.cc
-                     TotalEnergyEvaluator.cc)
+                     TotalEnergyEvaluatorPT.cc
+                     TotalEnergyEvaluatorPH.cc)
 
 set(energy_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 if (Ifpack_ENABLE_HYPRE)
@@ -70,7 +72,8 @@ add_amanzi_library(energy SOURCE ${energy_src_files}
 set(energy_inc_files 
   Energy_PK.hh
   EnergyDefs.hh
-  EnergyOnePhase_PK.hh
+  EnergyPressureTemperature_PK.hh
+  EnergyPressureEnthalpy_PK.hh
   EnergyTwoPhase_PK.hh
   pks_energy_reg.hh
   IEM.hh
@@ -82,7 +85,8 @@ set(energy_inc_files
   IEMFactory.hh
   IEMEvaluator.hh
   models_energy_reg.hh
-  TotalEnergyEvaluator.hh
+  TotalEnergyEvaluatorPT.hh
+  TotalEnergyEvaluatorPH.hh
   TCM_PetersLidard_TwoPhase.hh
   TCM_TwoPhase.hh
   TCMEvaluator_OnePhase.hh
@@ -129,21 +133,37 @@ if (BUILD_TESTS)
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
                     
     # Test: single phase
-    add_amanzi_test(energy_one_phase energy_one_phase
+    add_amanzi_test(energy_pressure_temperature energy_pressure_temperature
                     KIND int
                     NPROCS 2 
-                    SOURCE test/Main.cc test/energy_one_phase.cc
+                    SOURCE test/Main.cc test/energy_pressure_temperature.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    add_amanzi_test(energy_one_phase_fv energy_one_phase_fv
+    add_amanzi_test(energy_pressure_temperature_fv energy_pressure_temperature_fv
                     KIND int
-                    SOURCE test/Main.cc test/energy_one_phase_fv.cc
+                    SOURCE test/Main.cc test/energy_pressure_temperature_fv.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
                     
+    add_amanzi_test(energy_pressure_enthalpy energy_pressure_enthalpy
+                    KIND int
+                    SOURCE test/Main.cc test/energy_pressure_enthalpy.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
     # Test: preconditioner
     add_amanzi_test(energy_jacobian energy_jacobian
                     KIND int
                     SOURCE test/Main.cc test/energy_jacobian.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    # Test: evaluators
+    add_amanzi_test(energy_evaluators energy_evaluators
+                    KIND int
+                    SOURCE test/Main.cc test/energy_evaluators.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(energy_evaluators_tables energy_evaluators_tables
+                    KIND int
+                    SOURCE test/Main.cc test/energy_evaluators_tables.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 endif()
 

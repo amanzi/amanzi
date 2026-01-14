@@ -22,8 +22,8 @@
 namespace Amanzi {
 namespace CommonDefs {
 
-const double IDEAL_GAS_CONSTANT_R = 8.314462175;
-const double MOLAR_MASS_H2O = 0.0180153333333; // [kg/mol]
+constexpr double IDEAL_GAS_CONSTANT_R = 8.314462175;
+constexpr double MOLAR_MASS_H2O = 0.0180153333333; // [kg/mol]
 
 // constant properties (T = 293.15 K)
 const double ISOTHERMAL_VISCOSITY = 1.002e-3;

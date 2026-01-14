@@ -19,7 +19,7 @@
 #include "OperatorDefs.hh"
 #include "StateArchive.hh"
 
-#include "FlowEnergy_PK.hh"
+#include "FlowEnergyPT_PK.hh"
 #include "PK_MPCStrong.hh"
 
 namespace Amanzi {
@@ -30,10 +30,10 @@ using CVS_t = CompositeVectorSpace;
 /* *******************************************************************
 * Constructor
 ******************************************************************* */
-FlowEnergy_PK::FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
-                             const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                             const Teuchos::RCP<State>& S,
-                             const Teuchos::RCP<TreeVector>& soln)
+FlowEnergyPT_PK::FlowEnergyPT_PK(Teuchos::ParameterList& pk_tree,
+                                 const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                                 const Teuchos::RCP<State>& S,
+                                 const Teuchos::RCP<TreeVector>& soln)
   : Amanzi::PK_MPC<PK_BDF>(pk_tree, glist, S, soln),
     Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln),
     glist_(glist)
@@ -51,7 +51,7 @@ FlowEnergy_PK::FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
 * Physics-based setup of PK.
 ******************************************************************* */
 void
-FlowEnergy_PK::Setup()
+FlowEnergyPT_PK::Setup()
 {
   mesh_ = S_->GetMesh(domain_);
 
@@ -141,7 +141,7 @@ FlowEnergy_PK::Setup()
 * Initialization of copies requires fileds to exists
 ******************************************************************* */
 void
-FlowEnergy_PK::Initialize()
+FlowEnergyPT_PK::Initialize()
 {
   include_pt_coupling_ =
     my_list_->sublist("time integrator").get<bool>("include coupling terms", false);
@@ -208,7 +208,7 @@ FlowEnergy_PK::Initialize()
 * Performs one timestep.
 ******************************************************************* */
 bool
-FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
+FlowEnergyPT_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   // save a copy of conservative fields
   std::vector<std::string> fields(
@@ -230,11 +230,11 @@ FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 * Performs one timestep.
 ******************************************************************* */
 void
-FlowEnergy_PK::FunctionalResidual(double t_old,
-                                  double t_new,
-                                  Teuchos::RCP<const TreeVector> u_old,
-                                  Teuchos::RCP<TreeVector> u_new,
-                                  Teuchos::RCP<TreeVector> f)
+FlowEnergyPT_PK::FunctionalResidual(double t_old,
+                                    double t_new,
+                                    Teuchos::RCP<const TreeVector> u_old,
+                                    Teuchos::RCP<TreeVector> u_new,
+                                    Teuchos::RCP<TreeVector> f)
 {
   // flow
   auto u_old0 = u_old->SubVector(0);
@@ -265,7 +265,7 @@ FlowEnergy_PK::FunctionalResidual(double t_old,
 * Preconditioner update
 ******************************************************************* */
 void
-FlowEnergy_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt)
+FlowEnergyPT_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt)
 {
   PK_MPCStrong<PK_BDF>::UpdatePreconditioner(t, up, dt);
 
@@ -295,7 +295,7 @@ FlowEnergy_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
 * Selection of default or full preconditioner
 ******************************************************************* */
 int
-FlowEnergy_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, Teuchos::RCP<TreeVector> Y)
+FlowEnergyPT_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, Teuchos::RCP<TreeVector> Y)
 {
   if (include_pt_coupling_) {
     Y->PutScalar(0.0);
@@ -309,7 +309,7 @@ FlowEnergy_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, Teuchos::RC
 // L-scheme stability constant is updated by PKs.
 // -----------------------------------------------------------------------------
 std::vector<Key>
-FlowEnergy_PK::SetupLSchemeKey(Teuchos::ParameterList& plist)
+FlowEnergyPT_PK::SetupLSchemeKey(Teuchos::ParameterList& plist)
 {
   auto tmp = sub_pks_[0]->SetupLSchemeKey(plist);
   L_scheme_keys_.insert(L_scheme_keys_.end(), tmp.begin(), tmp.end());

@@ -212,12 +212,12 @@
       <ParameterList name="TP 0">
         <ParameterList name="PK tree">
           <ParameterList name="transient:mpc1">
-            <Parameter name="PK type" type="string" value="flow and energy"/>
+            <Parameter name="PK type" type="string" value="flow and energy pt"/>
             <ParameterList name="transient:flow">
               <Parameter name="PK type" type="string" value="richards"/>
             </ParameterList>
             <ParameterList name="transient:energy">
-              <Parameter name="PK type" type="string" value="one-phase energy"/>
+              <Parameter name="PK type" type="string" value="pt energy"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -505,7 +505,7 @@
     </ParameterList>
 
     <ParameterList name="transient:mpc1">
-      <Parameter isUsed="true" name="PK type" type="string" value="flow and energy"/>
+      <Parameter isUsed="true" name="PK type" type="string" value="flow and energy pt"/>
       <Parameter isUsed="true" name="MPC type" type="bool" value="true"/>
       <Parameter isUsed="true" name="PKs order" type="Array(string)" value="{transient:flow, transient:energy}"/>
       <Parameter name="master PK index" type="int" value="0"/>

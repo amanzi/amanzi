@@ -12,6 +12,9 @@
 
   Revised Release on the IAPWS Industrial Formulation 1997
   for the Thermodynamic Properties of Water and Steam.
+
+  NOTE: usint are standard for this formulation and differ from that
+  used in Amanzi.
 */
 
 #ifndef AMANZI_IAPWS97_HH_
@@ -36,8 +39,8 @@ enum class Phase_t : int {
 };
 
 struct Properties {
-  double p = 0.0;
-  double T = 0.0;
+  double p = 0.0; // pressure, MPa
+  double T = 0.0; // temeparture, K
   double rho = 0.0;
   double v = 0.0; // specific volume, m3/kg
   double h = 0.0; // specific enthalpy, kJ/kg
@@ -95,7 +98,7 @@ class IAPWS97 {
   Properties Region1(double p, double T);
   Properties Region2(double p, double T);
   Properties Region3(double rho, double T);
-  Properties Region4(double p, double x);
+  Properties Region4(double p, double h);
   Properties Region5(double p, double T);
 
   double Region1_BackwardPH(double p, double h);

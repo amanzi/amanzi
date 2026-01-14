@@ -14,10 +14,13 @@
   Properties of Water and Steam (IAPWS), Industrial Formulation 1997.
 */
 
+#include "CommonDefs.hh"
 #include "IEM_IAPWS97.hh"
 
 namespace Amanzi {
 namespace Energy {
+
+static constexpr double cfactor = 1000.0 * CommonDefs::MOLAR_MASS_H2O;
 
 IEM_IAPWS97::IEM_IAPWS97(Teuchos::ParameterList& plist)
 {
@@ -29,7 +32,7 @@ double
 IEM_IAPWS97::InternalEnergy(double T, double p)
 {
   double pMPa = p * 1e-6;
-  return 1000.0 * eos_->ThermodynamicsPT(pMPa, T).u;
+  return cfactor * eos_->ThermodynamicsPT(pMPa, T).u;
 }
 
 
@@ -39,9 +42,9 @@ IEM_IAPWS97::DInternalEnergyDT(double T, double p)
   double pMPa = p * 1e-6;
   auto prop = eos_->ThermodynamicsPT(pMPa, T);
   if (prop.rgn == 3)
-    return 1000.0 * (pMPa * (T * prop.ap - 1.0) - prop.cv) / pMPa / prop.bp;
+    return cfactor * (pMPa * (T * prop.ap - 1.0) - prop.cv) / pMPa / prop.bp;
   else
-    return -1000.0 * prop.v * (pMPa * prop.kt - T * prop.av);
+    return -cfactor * prop.v * (pMPa * prop.kt - T * prop.av);
 }
 
 
@@ -51,9 +54,9 @@ IEM_IAPWS97::DInternalEnergyDp(double T, double p)
   double pMPa = p * 1e-6;
   auto prop = eos_->ThermodynamicsPT(pMPa, T);
   if (prop.rgn == 3)
-    return 1000.0 * (1.0 - T * prop.ap) / prop.bp;
+    return cfactor * (1.0 - T * prop.ap) / prop.bp;
   else
-    return 1000.0 * prop.cp - pMPa * prop.v * prop.av;
+    return cfactor * prop.cp - pMPa * prop.v * prop.av;
 }
 
 } // namespace Energy

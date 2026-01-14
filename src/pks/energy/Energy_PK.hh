@@ -100,6 +100,7 @@ namespace Energy {
 
 class Energy_PK : public PK_PhysicalBDF {
  public:
+  Energy_PK() {};
   Energy_PK(Teuchos::ParameterList& pk_tree,
             const Teuchos::RCP<Teuchos::ParameterList>& glist,
             const Teuchos::RCP<State>& S,
@@ -148,9 +149,9 @@ class Energy_PK : public PK_PhysicalBDF {
   void ChangedSolution() override { temperature_eval_->SetChanged(); }
 
   // other methods
-  bool UpdateConductivityData(const Teuchos::Ptr<State>& S);
   void UpdateSourceBoundaryData(double T0, double T1, const CompositeVector& u);
-  void ComputeBCs(const CompositeVector& u);
+  void ComputePrimaryBCs(const CompositeVector& u);
+  virtual void ComputeSecondaryBCs();
   void AddSourceTerms(CompositeVector& rhs);
 
   // access
@@ -163,8 +164,10 @@ class Energy_PK : public PK_PhysicalBDF {
     return op_matrix_diff_;
   }
 
-  // -- for unit tests
-  std::vector<WhetStone::Tensor>& get_K() { return K; }
+  Teuchos::RCP<Teuchos::ParameterList> getPList() const { return ep_list_; }
+
+ protected:
+  void InitializeFields_();
 
  private:
   void BoundaryDataToFaces_(const Operators::BCs& bcs, CompositeVector& u);
@@ -195,9 +198,6 @@ class Energy_PK : public PK_PhysicalBDF {
   Key mol_density_liquid_key_, mass_density_liquid_key_, viscosity_liquid_key_;
   Key mol_density_gas_key_, x_gas_key_;
   Key conductivity_gen_key_, conductivity_key_, conductivity_eff_key_;
-
-  // conductivity tensor
-  std::vector<WhetStone::Tensor> K;
 
   // boundary conditons
   std::vector<Teuchos::RCP<PK_DomainFunction>> bc_temperature_;

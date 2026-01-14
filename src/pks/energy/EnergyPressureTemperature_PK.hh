@@ -9,13 +9,13 @@
 */
 
 /*
-  This is the energy component of the Amanzi code.
+  Energy PK
 
-  Process kernel for single phase energy equation.
+  Process kernel for energy equation in the pressure-temperature variables.
 */
 
-#ifndef AMANZI_ENERGY_ONEPHASE_PK_HH_
-#define AMANZI_ENERGY_ONEPHASE_PK_HH_
+#ifndef AMANZI_ENERGY_PRESSURE_TEMPERATURE_PK_HH_
+#define AMANZI_ENERGY_PRESSURE_TEMPERATURE_PK_HH_
 
 // Amanzi
 #include "BDF1_TI.hh"
@@ -29,13 +29,13 @@
 namespace Amanzi {
 namespace Energy {
 
-class EnergyOnePhase_PK : public Energy_PK {
+class EnergyPressureTemperature_PK : public Energy_PK {
  public:
-  EnergyOnePhase_PK(Teuchos::ParameterList& pk_tree,
-                    const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                    const Teuchos::RCP<State>& S,
-                    const Teuchos::RCP<TreeVector>& soln);
-  virtual ~EnergyOnePhase_PK() {};
+  EnergyPressureTemperature_PK(Teuchos::ParameterList& pk_tree,
+                               const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                               const Teuchos::RCP<State>& S,
+                               const Teuchos::RCP<TreeVector>& soln);
+  virtual ~EnergyPressureTemperature_PK() {};
 
   // methods required for PK intrefcae
   virtual void Setup() final;
@@ -69,9 +69,6 @@ class EnergyOnePhase_PK : public Energy_PK {
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>> bdf1_dae() { return bdf1_dae_; }
 
  private:
-  void InitializeFields_();
-
- private:
   // primary field
   const Teuchos::RCP<TreeVector> soln_;
   Teuchos::RCP<CompositeVector> solution;
@@ -84,7 +81,7 @@ class EnergyOnePhase_PK : public Energy_PK {
   Teuchos::RCP<StateArchive> archive_;
 
   // factory registration
-  static RegisteredPKFactory<EnergyOnePhase_PK> reg_;
+  static RegisteredPKFactory<EnergyPressureTemperature_PK> reg_;
 };
 
 } // namespace Energy
