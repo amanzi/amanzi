@@ -319,7 +319,7 @@ class Flow_PK : public PK_PhysicalBDF {
   virtual double BoundaryFaceValue(int f, const CompositeVector& u);
 
   // access
-  Teuchos::RCP<Operators::BCs> op_bc() { return op_bc_; }
+  //Teuchos::RCP<Operators::BCs> op_bc() { return op_bc_; }
   double seepage_mass() { return seepage_mass_; } // support of unit tests
 
  protected:
@@ -365,7 +365,7 @@ class Flow_PK : public PK_PhysicalBDF {
   std::vector<Teuchos::RCP<FlowBoundaryFunction>> bcs_;
   int nseepage_prev;
 
-  Teuchos::RCP<Operators::BCs> op_bc_;
+  //Teuchos::RCP<Operators::BCs> op_bc_;
 
   // source terms and liquid balance
   std::vector<Teuchos::RCP<FlowSourceFunction>> srcs;

@@ -20,6 +20,7 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})
+include_directories(${COOLPROP_INCLUDE_DIRS})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${EOS_SOURCE_DIR})
 include_directories(${EVALUATORS_SOURCE_DIR})
@@ -128,7 +129,7 @@ if (BUILD_TESTS)
     add_amanzi_test(flow_darcy_transient flow_darcy_transient
                     KIND int
                     SOURCE test/Main.cc test/flow_darcy_transient.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES} ${COOLPROP_LIBRARIES})
     add_amanzi_test(flow_darcy_transient_parallel flow_darcy_transient NPROCS 2 KIND unit)
  
     # Test: transient Darcy flow 

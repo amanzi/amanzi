@@ -79,6 +79,7 @@ and :math:`c_r` is specific heat of rock [J/kg/K].
 
 #include "EvaluatorIndependentFunction.hh"
 #include "EvaluatorSecondaryMonotype.hh"
+#include "Debugger.hh"
 #include "PDE_Accumulation.hh"
 #include "PK_BDF.hh"
 #include "PK_MPCStrong.hh"
@@ -86,6 +87,17 @@ and :math:`c_r` is specific heat of rock [J/kg/K].
 
 namespace Amanzi {
 
+namespace Operators {
+  class PDE_Diffusion;
+  class PDE_DiffusionWithGravity;
+  class PDE_Accumulation;
+  class Operator;
+  class UpwindTotalFlux;
+  class UpwindArithmeticMean;
+  class Upwinding;
+} // namespace Operators
+
+  
 class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
  public:
   FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
@@ -119,11 +131,29 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
   virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
                                   Teuchos::RCP<TreeVector> Pu) override;
 
+  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+  ModifyCorrection(double h,
+                   Teuchos::RCP<const TreeVector> res,
+                   Teuchos::RCP<const TreeVector> u,
+                   Teuchos::RCP<TreeVector> du) override;
+
   // -- error norm for coupled system
   std::string name() override { return "flow and energy"; }
 
+
   // -- L-scheme for flow equaiton
   virtual std::vector<Key> SetupLSchemeKey(Teuchos::ParameterList& plist) override;
+ protected:
+  enum PreconditionerType {
+    PRECON_NONE = 0,
+    PRECON_BLOCK_DIAGONAL = 1,
+    PRECON_FULL = 2,
+    PRECON_FINITEDIFF = 3
+  };
+
+  // preconditioner methods
+  PreconditionerType precon_type_;
+
 
  private:
   const Teuchos::RCP<Teuchos::ParameterList>& glist_;
@@ -133,12 +163,42 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
 
   bool include_pt_coupling_;
   Teuchos::RCP<Operators::PDE_Accumulation> op10_acc_, op01_acc_;
+  Teuchos::RCP<Debugger> db_;
 
+
+  // dWC / dT off-diagonal block
+  Teuchos::RCP<Operators::Operator> dWC_dT_block_;
+  // -- d ( div q ) / dT  terms
+  Teuchos::RCP<Operators::PDE_DiffusionWithGravity> ddivq_dT_;
+  Teuchos::RCP<Operators::Upwinding> upwinding_dkrdT_;
+  // -- d ( dWC/dt ) / dT terms
+  Teuchos::RCP<Operators::PDE_Accumulation> dWC_dT_;
+
+    // dE / dp off-diagonal block
+  Teuchos::RCP<Operators::Operator> dE_dp_block_;
+  // -- d ( div K grad T ) / dp terms
+  Teuchos::RCP<Operators::PDE_Diffusion> ddivKgT_dp_;
+  Teuchos::RCP<Operators::Upwinding> upwinding_dkappa_dp_;
+  // -- d ( div hq ) / dp terms
+  Teuchos::RCP<Operators::PDE_DiffusionWithGravity> ddivhq_dp_;
+  Teuchos::RCP<Operators::UpwindTotalFlux> upwinding_hkr_;
+  Teuchos::RCP<Operators::UpwindTotalFlux> upwinding_dhkr_dp_;
+  // -- d ( dE/dt ) / dp terms
+  Teuchos::RCP<Operators::PDE_Accumulation> dE_dp_;
+
+  // dE / dT on-diagonal block additional terms that use q info
+  // -- d ( div hq ) / dT terms
+  Teuchos::RCP<Operators::PDE_DiffusionWithGravity> ddivhq_dT_;
+  Teuchos::RCP<Operators::UpwindTotalFlux> upwinding_dhkr_dT_;
+
+
+  
   // keys
   Key pressure_key_, temperature_key_;
   Key ie_liquid_key_, energy_key_, particle_density_key_;
   Key mol_density_liquid_key_, mass_density_liquid_key_;
   Key sat_liquid_key_, ws_key_;
+  Key enth_key_, hkr_key_, kr_key_;
 
   // factory registration
   static RegisteredPKFactory<FlowEnergy_PK> reg_;

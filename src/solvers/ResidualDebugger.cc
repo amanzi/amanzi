@@ -78,8 +78,8 @@ ResidualDebugger::WriteVector<TreeVector>(int iter,
         (*it)->writeMesh(S_->Get<double>("time", tag_), iter);
         (*it)->createTimestep(S_->Get<double>("time", tag_), iter, "");
         (*it)->open_h5file();
-        (*it)->writeAttrReal(S_->Get<double>("dt", tag_), "dt");
-        (*it)->writeAttrInt(S_->Get<int>("cycle", tag_), "dt");
+        // (*it)->writeAttrReal(S_->Get<double>("dt", tag_), "dt");
+        // (*it)->writeAttrInt(S_->Get<int>("cycle", tag_), "dt");
       }
     }
 
