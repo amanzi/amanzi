@@ -21,8 +21,9 @@ Process kernel that strongly couples Flow PK with Energy PK.
 
 #include "EvaluatorIndependentFunction.hh"
 #include "EvaluatorSecondaryMonotype.hh"
-#include "PDE_Diffusion.hh"
 #include "PDE_Accumulation.hh"
+#include "PDE_Advection.hh"
+#include "PDE_Diffusion.hh"
 #include "PK_BDF.hh"
 #include "PK_MPCStrong.hh"
 #include "PK_Factory.hh"
@@ -78,14 +79,16 @@ class FlowEnergyPH_PK : public PK_MPCStrong<PK_BDF> {
 
   Teuchos::RCP<Operators::Operator> op10_, op01_;
   Teuchos::RCP<Operators::PDE_Diffusion> pde10_diff_;
+  Teuchos::RCP<Operators::PDE_Advection> pde10_adv_;
   Teuchos::RCP<Operators::PDE_Accumulation> pde10_acc_, pde01_acc_;
   bool symbolic_assembly_complete_ = false;
 
   // keys
   Key pressure_key_, enthalpy_key_, temperature_key_;
   Key energy_key_, particle_density_key_, conductivity_key_;
-  Key state_key_, viscosity_liquid_key_, mol_density_liquid_key_;
-  Key water_storage_key_, bcs_flow_key_;
+  Key state_key_, viscosity_liquid_key_, mol_density_liquid_key_, iso_compressibility_key_;
+  Key mol_flowrate_key_, water_storage_key_;
+  Key  bcs_flow_key_, bcs_enthalpy_key_;
 
   // factory registration
   static RegisteredPKFactory<FlowEnergyPH_PK> reg_;

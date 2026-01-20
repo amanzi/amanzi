@@ -119,6 +119,8 @@ EnergyPressureEnthalpy_PK::Setup()
   porosity_key_ = Keys::getKey(domain_, "porosity");
   pressure_key_ = Keys::getKey(domain_, "pressure");
   viscosity_liquid_key_ = Keys::getKey(domain_, "viscosity_liquid");
+  bcs_flow_key_ = Keys::getKey(domain_, "bcs_flow");
+  bcs_enthalpy_key_ = Keys::getKey(domain_, "bcs_enthalpy");
 
   // require primary state variables
   std::vector<std::string> names({ "cell" });
@@ -314,6 +316,35 @@ EnergyPressureEnthalpy_PK::Setup()
     S_->SetEvaluator(conductivity_key_, Tags::DEFAULT, eval);
   }
 
+  // -- viscosity
+  if (!S_->HasRecord(viscosity_liquid_key_)) {
+    S_->Require<CV_t, CVS_t>(viscosity_liquid_key_, Tags::DEFAULT, viscosity_liquid_key_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
+
+    Teuchos::ParameterList elist(viscosity_liquid_key_);
+    elist.set<std::string>("tag", "");
+    auto eval = Teuchos::rcp(new Evaluators::ViscosityEvaluator(elist));
+    S_->SetEvaluator(viscosity_liquid_key_, Tags::DEFAULT, eval);
+
+    S_->RequireDerivative<CV_t, CVS_t>(
+        viscosity_liquid_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, viscosity_liquid_key_)
+      .SetGhosted();
+
+    S_->RequireDerivative<CV_t, CVS_t>(
+        viscosity_liquid_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT, viscosity_liquid_key_)
+      .SetGhosted();
+  }
+
+  // boundary conditions
+  S_->Require<Operators::BCs, Operators::BCs>(bcs_enthalpy_key_, Tags::DEFAULT, "state")
+    .SetMesh(mesh_)
+    ->SetKind(AmanziMesh::Entity_kind::FACE)
+    ->SetType(WhetStone::DOF_Type::SCALAR);
+  S_->GetRecordW(bcs_enthalpy_key_, "state").set_initialized();
+
   // set units
   S_->GetRecordSetW(temperature_key_).set_units("K");
   S_->GetRecordSetW(mol_flowrate_key_).set_units("mol/s");
@@ -352,33 +383,46 @@ EnergyPressureEnthalpy_PK::Initialize()
   Operators::PDE_DiffusionFactory opfactory;
   Operators::PDE_AdvectionUpwindFactory opfactory_adv;
 
-  op_matrix_diff_ = opfactory.Create(oplist_matrix, mesh_, op_bc_enth_);
-  op_matrix_diff_->SetBCs(op_bc_enth_, op_bc_enth_);
+  auto op_bc_enth = S_->GetPtrW<Operators::BCs>(bcs_enthalpy_key_, Tags::DEFAULT, "state");
+  op_matrix_diff_ = opfactory.Create(oplist_matrix, mesh_, op_bc_enth);
+  op_matrix_diff_->SetBCs(op_bc_enth, op_bc_enth);
   op_matrix_ = op_matrix_diff_->global_operator();
   op_matrix_->Init();
 
-  op_matrix_diff_pres_ = opfactory.Create(oplist_matrix, mesh_, op_bc_enth_);
+  Teuchos::RCP<Operators::BCs> bc_trial;
+  if (S_->HasRecord(bcs_flow_key_)) {
+    bc_trial = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state");
+  } else {
+    bc_trial = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
+    bc_trial->bc_model();  // allocate memory 
+    bc_trial->bc_value();
+  } 
+  op_matrix_diff_pres_ = opfactory.Create(oplist_matrix, mesh_, op_bc_enth);
   op_matrix_diff_pres_->global_operator()->Init();
+  op_matrix_diff_pres_->SetBCs(bc_trial, op_bc_enth);
 
   Teuchos::ParameterList oplist_adv = ep_list_->sublist("operators").sublist("advection operator");
   op_matrix_advection_ = opfactory_adv.Create(oplist_adv, mesh_);
 
   const CompositeVector& flux = *S_->GetPtr<CV_t>(mol_flowrate_key_, Tags::DEFAULT);
   op_matrix_advection_->Setup(flux);
-  op_matrix_advection_->SetBCs(op_bc_enth_, op_bc_enth_);
+  op_matrix_advection_->SetBCs(op_bc_enth, op_bc_enth);
   op_advection_ = op_matrix_advection_->global_operator();
 
-  // initialize coupled operators: diffusion + advection + accumulation
-  op_preconditioner_diff_ = opfactory.Create(oplist_pc, mesh_, op_bc_enth_);
-  op_preconditioner_diff_->SetBCs(op_bc_enth_, op_bc_enth_);
+  // initialize operators: diffusion + advection + accumulation + newton_correction
+  op_preconditioner_diff_ = opfactory.Create(oplist_pc, mesh_, op_bc_enth);
+  op_preconditioner_diff_->SetBCs(op_bc_enth, op_bc_enth);
   op_preconditioner_ = op_preconditioner_diff_->global_operator();
   op_preconditioner_->Init();
+
+  op_preconditioner_advection_ = opfactory_adv.Create(oplist_adv, op_preconditioner_);
+  op_preconditioner_advection_->SetBCs(op_bc_enth, op_bc_enth);
 
   op_acc_ = Teuchos::rcp(
     new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, op_preconditioner_));
 
-  op_preconditioner_advection_ = opfactory_adv.Create(oplist_adv, op_preconditioner_);
-  op_preconditioner_advection_->SetBCs(op_bc_enth_, op_bc_enth_);
+  op_preconditioner_adv_enth_ = opfactory_adv.Create(oplist_adv, op_preconditioner_);
+  op_preconditioner_adv_enth_->SetBCs(op_bc_enth, op_bc_enth);
 
   // initialize preconditioner
   op_matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
@@ -546,12 +590,13 @@ void EnergyPressureEnthalpy_PK::ComputeSecondaryBCs()
   auto eos = Teuchos::rcp(new AmanziEOS::IAPWS97(plist));
 
   // populate BCs
-  std::vector<int>& bc_model_enth_ = op_bc_enth_->bc_model();
-  std::vector<double>& bc_value_enth_ = op_bc_enth_->bc_value();
+  auto op_bc_enth = S_->GetPtrW<Operators::BCs>(bcs_enthalpy_key_, Tags::DEFAULT, "state");
+  std::vector<int>& bc_model_enth = op_bc_enth->bc_model();
+  std::vector<double>& bc_value_enth = op_bc_enth->bc_value();
 
   for (int n = 0; n < bc_model.size(); ++n) {
-    bc_model_enth_[n] = Operators::OPERATOR_BC_NONE;
-    bc_value_enth_[n] = 0.0;
+    bc_model_enth[n] = Operators::OPERATOR_BC_NONE;
+    bc_value_enth[n] = 0.0;
   }
 
   int nbfaces = mesh_->getNumEntities(AmanziMesh::Entity_kind::BOUNDARY_FACE, AmanziMesh::Parallel_kind::OWNED);
@@ -562,17 +607,17 @@ void EnergyPressureEnthalpy_PK::ComputeSecondaryBCs()
       if (p_f.get()) pMPa = (*p_f)[0][f] * 1e-6;
       else pMPa = (*p_bf)[0][bf] * 1e-6;
 
-      bc_model_enth_[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_value_enth_[f] = cfactor * eos->ThermodynamicsPT(pMPa, bc_value[f]).h;
+      bc_model_enth[f] = Operators::OPERATOR_BC_DIRICHLET;
+      bc_value_enth[f] = cfactor * eos->ThermodynamicsPT(pMPa, bc_value[f]).h;
 
-      if (p_f.get()) (*h_f)[0][f] = bc_value_enth_[f];
-      else (*h_bf)[0][bf] = bc_value_enth_[f];
+      if (p_f.get()) (*h_f)[0][f] = bc_value_enth[f];
+      else (*h_bf)[0][bf] = bc_value_enth[f];
 
       T_bf[0][bf] = bc_value[f];
     }
     else if (bc_model[f] == Operators::OPERATOR_BC_TOTAL_FLUX) {
-      bc_model_enth_[f] = Operators::OPERATOR_BC_TOTAL_FLUX;
-      bc_value_enth_[f] = bc_value[f];
+      bc_model_enth[f] = Operators::OPERATOR_BC_TOTAL_FLUX;
+      bc_value_enth[f] = bc_value[f];
     }
   }
 }

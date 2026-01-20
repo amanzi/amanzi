@@ -187,6 +187,29 @@ class InternalEnergyLiquidEvaluator
 };
 
 
+class IsothermalCompressibilityEvaluator
+  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+ public:
+  explicit IsothermalCompressibilityEvaluator(Teuchos::ParameterList& plist);
+  IsothermalCompressibilityEvaluator(const IsothermalCompressibilityEvaluator& other);
+
+  // required inteface functions
+  virtual Teuchos::RCP<Evaluator> Clone() const override;
+
+  virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
+
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
+                                          const std::vector<CompositeVector*>& results) override;
+
+  virtual void EnsureCompatibility_ToDeps_(State& S) final {};
+
+ private:
+  Key pressure_key_, enthalpy_key_;
+};
+
+
 class ViscosityEvaluator
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:

@@ -108,9 +108,9 @@ ThermodynamicStateEvaluator::Evaluate_(const State& S, const std::vector<Composi
     result_v[(int)TS_t::T][c] = prop.T;
     result_v[(int)TS_t::RHO][c] = prop.rho;
     result_v[(int)TS_t::V][c] = prop.v;
-    result_v[(int)TS_t::CP][c] = prop.cp;
-    result_v[(int)TS_t::CV][c] = prop.cv;
-    result_v[(int)TS_t::KT][c] = prop.kt;
+    result_v[(int)TS_t::CP][c] = prop.cp * 1.0e+3;
+    result_v[(int)TS_t::CV][c] = prop.cv * 1.0e+3;
+    result_v[(int)TS_t::KT][c] = prop.kt * 1.0e-6;
     result_v[(int)TS_t::AV][c] = prop.av;
     result_v[(int)TS_t::AP][c] = prop.ap;
     result_v[(int)TS_t::BP][c] = prop.bp;
@@ -600,6 +600,75 @@ InternalEnergyLiquidEvaluator::EvaluatePartialDerivative_(
       result_v[0][c] = 1.0 + drhodh / rho / rho;
     }
   }
+}
+
+
+/* ******************************************************************
+* Isothermal compressibility evaluator 1/rho (drho/dp)_T 
+****************************************************************** */
+IsothermalCompressibilityEvaluator::IsothermalCompressibilityEvaluator(Teuchos::ParameterList& plist)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
+{
+  if (my_keys_.size() == 0)
+    my_keys_.push_back(std::make_pair("isothermal_compressibility", Tags::DEFAULT));
+
+  auto prefix = Keys::getDomainPrefix(my_keys_[0].first);
+  pressure_key_ = prefix + "pressure";
+  enthalpy_key_ = prefix + "enthalpy";
+
+  dependencies_.insert(std::make_pair("thermodynamic_state", Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(pressure_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(enthalpy_key_, Tags::DEFAULT));
+}
+
+
+/* ******************************************************************
+* Copy operations.
+****************************************************************** */
+IsothermalCompressibilityEvaluator::IsothermalCompressibilityEvaluator(
+    const IsothermalCompressibilityEvaluator& other)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+    pressure_key_(other.pressure_key_),
+    enthalpy_key_(other.enthalpy_key_)
+{}
+
+
+Teuchos::RCP<Evaluator>
+IsothermalCompressibilityEvaluator::Clone() const
+{
+  return Teuchos::rcp(new IsothermalCompressibilityEvaluator(*this));
+}
+
+
+/* ******************************************************************
+* Field value
+****************************************************************** */
+void
+IsothermalCompressibilityEvaluator::Evaluate_(const State& S,
+                                              const std::vector<CompositeVector*>& results)
+{
+  const auto& ts_c = *S.Get<CompositeVector>("thermodynamic_state").ViewComponent("cell");
+
+  auto& result_v = *results[0]->ViewComponent("cell");
+  int ncells = results[0]->size("cell");
+
+  for (int c = 0; c != ncells; ++c) {
+    result_v[0][c] = ts_c[(int)TS_t::KT][c];
+  }
+}
+
+
+/* ******************************************************************
+* Field derivative value
+****************************************************************** */
+void
+IsothermalCompressibilityEvaluator::EvaluatePartialDerivative_(
+    const State& S,
+    const Key& wrt_key,
+    const Tag& wrt_tag,
+    const std::vector<CompositeVector*>& results)
+{
+  AMANZI_ASSERT(false);
 }
 
 

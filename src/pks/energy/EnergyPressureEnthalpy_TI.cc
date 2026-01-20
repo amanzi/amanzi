@@ -75,6 +75,7 @@ EnergyPressureEnthalpy_PK::FunctionalResidual(double t_old,
   op_matrix_diff_pres_->global_operator()->Init();
   op_matrix_diff_pres_->SetScalarCoefficient(coef, Teuchos::null);
   op_matrix_diff_pres_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op_matrix_diff_pres_->ApplyBCs(true, true, false);
 
   op_matrix_diff_pres_->global_operator()->ComputeNegativeResidual(pres, g_adv);
   g->Data()->Update(1.0, g_adv, 1.0);
@@ -165,15 +166,35 @@ EnergyPressureEnthalpy_PK::UpdatePreconditioner(double t,
 
   // add the accumulation term derivatives, dE/dT
   S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd_, enthalpy_key_, Tags::DEFAULT);
-  const auto& dEdh = S_->GetDerivative<CompositeVector>(energy_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT);
+  const auto& dEdh = S_->GetDerivative<CV_t>(energy_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT);
   op_acc_->AddAccumulationTerm(dEdh, dt, "cell");
 
   // add matrices for advection term 
-  auto flux = S_->GetPtr<CompositeVector>(mol_flowrate_key_, Tags::DEFAULT);
+  auto flux = S_->GetPtr<CV_t>(mol_flowrate_key_, Tags::DEFAULT);
 
   op_preconditioner_advection_->Setup(*flux);
   op_preconditioner_advection_->UpdateMatrices(flux.ptr());
   op_preconditioner_advection_->ApplyBCs(false, true, false);
+
+  // add matrices for other advection terms div[q ((h/eta) deta/dh - (h/mu) dmu/dh)]
+  S_->GetEvaluator(mol_density_liquid_key_).UpdateDerivative(*S_, passwd_, enthalpy_key_, Tags::DEFAULT);
+  *coef = S_->GetDerivative<CV_t>(mol_density_liquid_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT);
+  coef->Multiply(1.0, *up->Data(), *coef, 0.0);
+
+  const auto& eta = S_->Get<CV_t>(mol_density_liquid_key_, Tags::DEFAULT);
+  coef->ReciprocalMultiply(1.0, eta, *coef, 0.0);
+
+  S_->GetEvaluator(viscosity_liquid_key_).UpdateDerivative(*S_, passwd_, enthalpy_key_, Tags::DEFAULT);
+  auto coef1 = S_->GetDerivative<CV_t>(viscosity_liquid_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT);
+  coef1.Multiply(1.0, *up->Data(), coef1, 0.0);
+
+  const auto& mu = S_->Get<CV_t>(viscosity_liquid_key_, Tags::DEFAULT);
+  coef->ReciprocalMultiply(-1.0, mu, coef1, 1.0);
+  coef->PutScalar(0.0);
+
+  op_preconditioner_adv_enth_->Setup(*flux);
+  op_preconditioner_adv_enth_->UpdateMatrices(flux.ptr(), coef.ptr());
+  op_preconditioner_adv_enth_->ApplyBCs(false, true, false);
 
   // verify and finalize preconditioner
   // op_preconditioner_->Verify();

@@ -107,11 +107,10 @@ void Run(const std::string& filename)
   factor = eps * umax;
 
   Jfd.PutScalar(0.0);
+  EPK->ChangedSolution();
   EPK->FunctionalResidual(t_old, t_new, u0, u1, f0);
 
   for (int ncol = 0; ncol < nJ; ++ncol) {
-    EPK->ChangedSolution();
-
     if (ncol < nfaces) {
       kind = "face";
       v = ncol;
@@ -122,6 +121,7 @@ void Run(const std::string& filename)
     auto& u1_v = *u1->Data()->ViewComponent(kind);
 
     u1_v[0][v] += factor;
+    EPK->ChangedSolution();
     EPK->FunctionalResidual(t_old, t_new, u0, u1, f1);
     u1_v[0][v] -= factor;
 
@@ -161,7 +161,6 @@ void Run(const std::string& filename)
 
   // std::cout << Jfd << std::endl;
   // std::cout << Jpk << std::endl;
-  std::cout << umax << " " << Jfd.NumRows() << std::endl;
   auto Jdiff = Jfd - Jpk;
   double jdiff = Jdiff.Norm2();
   double jfd = Jfd.Norm2();

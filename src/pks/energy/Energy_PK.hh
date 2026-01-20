@@ -212,7 +212,7 @@ class Energy_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Operators::PDE_Accumulation> op_acc_;
   Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_matrix_advection_, op_preconditioner_advection_;
   Teuchos::RCP<Operators::Operator> op_matrix_, op_preconditioner_, op_advection_;
-  Teuchos::RCP<Operators::BCs> op_bc_, op_bc_enth_;
+  Teuchos::RCP<Operators::BCs> op_bc_;
 
   bool prec_include_enthalpy_;
 
@@ -225,6 +225,8 @@ class Energy_PK : public PK_PhysicalBDF {
 
   bool L_scheme_ = false;
   Key L_scheme_stab_key_, L_scheme_prev_key_, L_scheme_data_key_, beta_key_;
+
+  Key bcs_enthalpy_key_;
 };
 
 } // namespace Energy

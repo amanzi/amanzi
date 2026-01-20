@@ -18,6 +18,7 @@
 #include "Energy_PK.hh"
 #include "ModelAssumptions.hh"
 #include "OperatorDefs.hh"
+#include "PDE_AdvectionUpwindFactory.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "StateArchive.hh"
 
@@ -73,10 +74,13 @@ FlowEnergyPH_PK::Setup()
   state_key_ = Keys::getKey(domain_, "thermodynamic_state");
   mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid");
   viscosity_liquid_key_ = Keys::getKey(domain_, "viscosity_liquid");
+  iso_compressibility_key_ = Keys::getKey(domain_, "isothermal_compressibility");
   conductivity_key_ = Keys::getKey(domain_, "thermal_conductivity");
 
+  mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
   water_storage_key_ = Keys::getKey(domain_, "water_storage");
   bcs_flow_key_ = Keys::getKey(domain_, "bcs_flow");
+  bcs_enthalpy_key_ = Keys::getKey(domain_, "bcs_enthalpy");
 
   // rock
   if (!S_->HasRecord(particle_density_key_)) {
@@ -136,6 +140,19 @@ FlowEnergyPH_PK::Setup()
                                        mol_density_liquid_key_).SetGhosted();
   }
 
+  // isothermal compressibility
+  if (!S_->HasRecord(iso_compressibility_key_)) {
+    S_->Require<CV_t, CVS_t>(iso_compressibility_key_, Tags::DEFAULT, iso_compressibility_key_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+
+    Teuchos::ParameterList elist(iso_compressibility_key_);
+    elist.set<std::string>("tag", "");
+    auto eval = Teuchos::rcp(new Evaluators::IsothermalCompressibilityEvaluator(elist));
+    S_->SetEvaluator(iso_compressibility_key_, Tags::DEFAULT, eval);
+  }
+
   // viscosity
   if (!S_->HasRecord(viscosity_liquid_key_)) {
     S_->Require<CV_t, CVS_t>(viscosity_liquid_key_, Tags::DEFAULT, viscosity_liquid_key_)
@@ -148,6 +165,14 @@ FlowEnergyPH_PK::Setup()
     elist.set<std::string>("tag", "");
     auto eval = Teuchos::rcp(new Evaluators::ViscosityEvaluator(elist));
     S_->SetEvaluator(viscosity_liquid_key_, Tags::DEFAULT, eval);
+
+    S_->RequireDerivative<CV_t, CVS_t>(
+        viscosity_liquid_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT, viscosity_liquid_key_)
+      .SetGhosted();
+
+    S_->RequireDerivative<CV_t, CVS_t>(
+        viscosity_liquid_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, viscosity_liquid_key_)
+      .SetGhosted();
   }
 
   // thermal conductivity
@@ -227,9 +252,14 @@ FlowEnergyPH_PK::Initialize()
   Teuchos::ParameterList oplist = Teuchos::rcp_dynamic_cast<Energy::Energy_PK>(sub_pks_[1])
     ->getPList()->sublist("operators").sublist("diffusion operator").sublist("preconditioner");
 
+  Operators::PDE_AdvectionUpwindFactory opfactory_adv;
+  Teuchos::ParameterList oplist_adv = Teuchos::rcp_dynamic_cast<Energy::Energy_PK>(sub_pks_[1])
+    ->getPList()->sublist("operators").sublist("advection operator");
+
   pde10_diff_ = opfactory.Create(oplist, mesh_);
   op10_ = pde10_diff_->global_operator();
   op_tree_pc_->set_operator_block(1, 0, op10_);
+  pde10_adv_ = opfactory_adv.Create(oplist_adv, op10_);
   pde10_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, op10_));
 
   std::string pc_name = my_list_->sublist("time integrator").get<std::string>("preconditioner");
@@ -322,11 +352,12 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   // energy-pressure block
   op10_->Init();
 
-  auto bc_test = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state");
-  auto bc_trial = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
-  bc_trial->bc_model(); // allocates memory
-  bc_trial->bc_value();
+  auto bc_test = S_->GetPtrW<Operators::BCs>(bcs_enthalpy_key_, Tags::DEFAULT, "state");
+  auto bc_trial = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state");
+  bc_test->bc_model(); // allocates memory
+  bc_test->bc_value();
 
+  // -- diffusion
   S_->GetEvaluator(conductivity_key_).Update(*S_, passwd);
   const auto& conductivity = S_->Get<CV_t>(conductivity_key_, tag);
   auto coef = Teuchos::rcp(new CompositeVector(conductivity));
@@ -337,9 +368,29 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
 
   pde10_diff_->SetScalarCoefficient(coef, Teuchos::null);
   pde10_diff_->UpdateMatrices(Teuchos::null, up->Data().ptr());
-  pde10_diff_->SetBCs(bc_trial, bc_test);
-  pde10_diff_->ApplyBCs(false, true, false);
+  pde10_diff_->SetBCs(bc_test, bc_trial);
+  pde10_diff_->ApplyBCs(true, true, false);
 
+  // -- advection div((q kt h) dp)
+  S_->GetEvaluator(iso_compressibility_key_).Update(*S_, passwd);
+  const auto& compressibility = S_->Get<CV_t>(iso_compressibility_key_, Tags::DEFAULT);
+  coef = Teuchos::rcp(new CompositeVector(compressibility));
+  coef->Multiply(1.0, *coef, *up->SubVector(1)->Data(), 0.0);
+
+  S_->GetEvaluator(viscosity_liquid_key_).UpdateDerivative(*S_, passwd, pressure_key_, Tags::DEFAULT);
+  auto coef1 = S_->GetDerivative<CV_t>(viscosity_liquid_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT);
+  coef1.Multiply(1.0, *up->SubVector(1)->Data(), coef1, 0.0);
+
+  const auto& mu = S_->Get<CV_t>(viscosity_liquid_key_, Tags::DEFAULT);
+  coef->ReciprocalMultiply(-1.0, mu, coef1, 1.0);
+
+  auto flux = S_->GetPtr<CompositeVector>(mol_flowrate_key_, Tags::DEFAULT);
+  pde10_adv_->Setup(*flux);
+  pde10_adv_->UpdateMatrices(flux.ptr(), coef.ptr());
+  pde10_adv_->SetBCs(bc_trial, bc_test);
+  pde10_adv_->ApplyBCs(false, true, false);
+
+  // -- accumulation
   S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd, pressure_key_, tag);
   const auto& dEdp = S_->GetDerivative<CV_t>(energy_key_, tag, pressure_key_, tag);
   pde10_acc_->AddAccumulationTerm(dEdp, dt, "cell");

@@ -174,9 +174,10 @@ EnergyPressureTemperature_PK::Initialize()
   Teuchos::ParameterList oplist_adv = ep_list_->sublist("operators").sublist("advection operator");
   op_matrix_advection_ = opfactory_adv.Create(oplist_adv, mesh_);
 
+  auto op_bc_enth = S_->GetPtrW<Operators::BCs>(bcs_enthalpy_key_, Tags::DEFAULT, "state");
   const CompositeVector& flux = *S_->GetPtr<CV_t>(mol_flowrate_key_, Tags::DEFAULT);
   op_matrix_advection_->Setup(flux);
-  op_matrix_advection_->SetBCs(op_bc_enth_, op_bc_enth_);
+  op_matrix_advection_->SetBCs(op_bc_enth, op_bc_enth);
   op_advection_ = op_matrix_advection_->global_operator();
 
   // initialize coupled operators: diffusion + advection + accumulation
@@ -204,7 +205,7 @@ EnergyPressureTemperature_PK::Initialize()
     new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, op_preconditioner_));
   if (prec_include_enthalpy_) {
     op_preconditioner_advection_ = opfactory_adv.Create(oplist_adv, op_preconditioner_);
-    op_preconditioner_advection_->SetBCs(op_bc_enth_, op_bc_enth_);
+    op_preconditioner_advection_->SetBCs(op_bc_enth, op_bc_enth);
   }
 
   // initialize preconditioner

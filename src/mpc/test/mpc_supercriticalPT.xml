@@ -159,8 +159,10 @@
             <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
             <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="3.1e+07"/>
+              <ParameterList name="function-linear">
+                <Parameter name="y0" type="double" value="31.15e+06"/>
+                <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
+                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, -1.0e+3}"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -320,7 +322,7 @@
             <Parameter name="limit iterations" type="int" value="20"/>
             <Parameter name="modify correction" type="bool" value="true"/>
           </ParameterList>
-          <Parameter name="extrapolation damping factor" type="double" value="0.8"/>
+          <Parameter name="extrapolation damping factor" type="double" value="1.0"/>
           <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
           <Parameter name="extrapolate initial guess" type="bool" value="true"/>
           <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
@@ -535,8 +537,8 @@
             <Parameter name="limit iterations" type="int" value="20"/>
             <Parameter name="modify correction" type="bool" value="true"/>
           </ParameterList>
-          <Parameter name="extrapolation damping factor" type="double" value="0.8"/>
-          <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
+          <Parameter name="extrapolation damping factor" type="double" value="1.0"/>
+          <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
           <Parameter name="extrapolate initial guess" type="bool" value="true"/>
           <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
           <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>

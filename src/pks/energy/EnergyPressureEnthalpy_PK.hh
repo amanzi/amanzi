@@ -74,6 +74,7 @@ class EnergyPressureEnthalpy_PK : public Energy_PK {
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
 
   Key state_key_;
+  Key bcs_flow_key_;
   std::string passwd_;
   Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>> enthalpy_eval_;
 
@@ -84,6 +85,7 @@ class EnergyPressureEnthalpy_PK : public Energy_PK {
 
   // operators and solvers
   Teuchos::RCP<Operators::PDE_Diffusion> op_matrix_diff_pres_;
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_preconditioner_adv_enth_;
 
   // timestepping
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>> bdf1_dae_;

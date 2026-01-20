@@ -116,6 +116,7 @@ Energy_PK::Setup()
 
   L_scheme_data_key_ = "l_scheme_data";
   beta_key_ = Keys::getKey(domain_, "l_scheme_beta");
+  bcs_enthalpy_key_ = Keys::getKey(domain_, "bcs_enthalpy");
 
   // require constant fields
   S_->Require<double>("atmospheric_pressure", Tags::DEFAULT, "state");
@@ -362,6 +363,13 @@ Energy_PK::Setup()
     S_->SetEvaluator(beta_key_, Tags::DEFAULT, eval);
   }
 
+  // boundary conditions
+  S_->Require<Operators::BCs, Operators::BCs>(bcs_enthalpy_key_, Tags::DEFAULT, "state")
+    .SetMesh(mesh_)
+    ->SetKind(AmanziMesh::Entity_kind::FACE)
+    ->SetType(WhetStone::DOF_Type::SCALAR);
+  S_->GetRecordW(bcs_enthalpy_key_, "state").set_initialized();
+
   // set units
   S_->GetRecordSetW(temperature_key_).set_units("K");
   S_->GetRecordSetW(mol_flowrate_key_).set_units("mol/s");
@@ -378,14 +386,8 @@ void
 Energy_PK::Initialize()
 {
   // Create BCs objects
-  // -- memory
-  op_bc_ = Teuchos::rcp(
-    new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
-  op_bc_enth_ = Teuchos::rcp(
-    new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
-
-  auto bc_list =
-    Teuchos::rcp(new Teuchos::ParameterList(ep_list_->sublist("boundary conditions", false)));
+  op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
+  auto bc_list = Teuchos::rcp(new Teuchos::ParameterList(ep_list_->sublist("boundary conditions", false)));
 
   // -- temperature
   if (bc_list->isSublist("temperature")) {
@@ -587,23 +589,24 @@ Energy_PK::ComputeSecondaryBCs()
   const auto& enth = *S_->Get<CV_t>(enthalpy_key_).ViewComponent("boundary_face", true);
 
   // populate BCs
-  std::vector<int>& bc_model_enth_ = op_bc_enth_->bc_model();
-  std::vector<double>& bc_value_enth_ = op_bc_enth_->bc_value();
+  auto op_bc_enth = S_->GetPtrW<Operators::BCs>(bcs_enthalpy_key_, Tags::DEFAULT, "state");
+  std::vector<int>& bc_model_enth = op_bc_enth->bc_model();
+  std::vector<double>& bc_value_enth = op_bc_enth->bc_value();
 
   for (int n = 0; n < bc_model.size(); ++n) {
-    bc_model_enth_[n] = Operators::OPERATOR_BC_NONE;
-    bc_value_enth_[n] = 0.0;
+    bc_model_enth[n] = Operators::OPERATOR_BC_NONE;
+    bc_value_enth[n] = 0.0;
   }
 
   int nbfaces = enth.MyLength();
   for (int bf = 0; bf < nbfaces; ++bf) {
     int f = getBoundaryFaceFace(*mesh_, bf);
     if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
-      bc_model_enth_[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_value_enth_[f] = enth[0][bf];
+      bc_model_enth[f] = Operators::OPERATOR_BC_DIRICHLET;
+      bc_value_enth[f] = enth[0][bf];
     } else if (bc_model[f] == Operators::OPERATOR_BC_TOTAL_FLUX) {
-      bc_model_enth_[f] = Operators::OPERATOR_BC_TOTAL_FLUX;
-      bc_value_enth_[f] = bc_value[f];
+      bc_model_enth[f] = Operators::OPERATOR_BC_TOTAL_FLUX;
+      bc_value_enth[f] = bc_value[f];
     }
   }
 }

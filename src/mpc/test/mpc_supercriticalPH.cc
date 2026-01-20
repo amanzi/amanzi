@@ -162,6 +162,13 @@ TEST(MPC_DRIVER_THERMAL_RICHARDS_JACOBIAN)
           Jsub(i, j) = Jpk(idx[i], jdx[j]);
         }
       }
+
+      // hack: enforce Dirichlet for finite-difference approximation
+      if (i0 == j0) {
+        for (int i = 0; i < nJ; ++i) {
+          if (Jsub(i, i) == 1.0) Jfd(i, i) = 1.0;
+        }
+      }
   
       auto Jdiff = Jfd - Jsub;
       double norm_diff = Jdiff.Norm2();
@@ -173,7 +180,8 @@ TEST(MPC_DRIVER_THERMAL_RICHARDS_JACOBIAN)
                 << ",  || Jfd || = " << norm_fd 
                 << ",  || Jpk || = " << norm_pk << std::endl;
       CHECK(norm_diff < 1e-3 * norm_pk);
-      // std::cout << Jfd.SubMatrix(95, 103, 95, 103) << std::endl;
+      // if (i0 == 1 && j0 == 1) std::cout << Jfd << std::endl;
+      // if (i0 == 1 && j0 == 1) std::cout << Jfd.SubMatrix(3, 4, 73, 78) << std::endl;
       // std::cout << Jsub.SubMatrix(95, 103, 95, 103) << std::endl;
     }
   }
