@@ -16,7 +16,9 @@ value.
 .. _evaluator-independent-variable-constant-spec:
 .. admonition:: evaluator-independent-variable-constant-spec
 
-   * `"value`" ``[double]`` The value.
+   INCLUDES:
+
+   - ``[constants-composite-vector-spec]`` A constant value.
 
 */
 
