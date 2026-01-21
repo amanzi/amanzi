@@ -190,7 +190,6 @@ EnergyPressureEnthalpy_PK::UpdatePreconditioner(double t,
 
   const auto& mu = S_->Get<CV_t>(viscosity_liquid_key_, Tags::DEFAULT);
   coef->ReciprocalMultiply(-1.0, mu, coef1, 1.0);
-  coef->PutScalar(0.0);
 
   op_preconditioner_adv_enth_->Setup(*flux);
   op_preconditioner_adv_enth_->UpdateMatrices(flux.ptr(), coef.ptr());

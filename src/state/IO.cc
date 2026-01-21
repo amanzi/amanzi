@@ -449,7 +449,7 @@ WriteStateStatistics(const State& S, const VerboseObject& vo, const Teuchos::EVe
 
       for (const auto& r : S.GetRecordSet(name)) {
         if (r.second->ValidType<CompositeVector>()) {
-          std::map<std::string, double> vmin, vmax, vavg;
+          std::map<std::string, std::vector<double>> vmin, vmax, vavg;
           r.second->Get<CompositeVector>().MinValue(vmin);
           r.second->Get<CompositeVector>().MaxValue(vmax);
           r.second->Get<CompositeVector>().MeanValue(vavg);
@@ -457,14 +457,22 @@ WriteStateStatistics(const State& S, const VerboseObject& vo, const Teuchos::EVe
           std::string units = S.GetRecordSet(name).units();
           if (units.size() > 0) units = " [" + units + "]";
 
-          for (auto c_it = vmin.begin(); c_it != vmin.end(); ++c_it) {
-            std::string namedot(Keys::getKey(display_name, r.first)), name_comp(c_it->first);
-            std::string name_abbr(name_comp);
-            replace_all(name_abbr, "boundary_face", "bnd_face");
-            if (vmin.size() != 1) namedot.append("." + name_abbr);
-            namedot.resize(40, '.');
-            *vo.os() << std::defaultfloat << namedot << " " << c_it->second << " / "
-                     << vmax[name_comp] << " / " << vavg[name_comp] << units << std::endl;
+          std::vector<std::string> all_names(1, "");
+          auto names = S.GetRecordSet(name).subfieldnames();
+          if (names) all_names = * names; 
+          for (int n = 0; n < all_names.size(); ++n) {
+            for (auto c_it = vmin.begin(); c_it != vmin.end(); ++c_it) {
+              std::string namedot(Keys::getKey(display_name, r.first)), name_comp(c_it->first);
+              replace_all(namedot, "thermodynamic_state", "thermodynamics");
+
+              std::string name_abbr(name_comp);
+              replace_all(name_abbr, "boundary_face", "bnd_face");
+              if (vmin.size() != 1) namedot.append("." + name_abbr);
+              if (all_names[n].size() > 0) namedot.append("." + all_names[n]);
+              namedot.resize(40, '.');
+              *vo.os() << std::defaultfloat << namedot << " " << c_it->second[n] << " / "
+                       << vmax[name_comp][n] << " / " << vavg[name_comp][n] << units << std::endl;
+            }
           }
 
         } else if (r.second->ValidType<double>()) {

@@ -896,11 +896,12 @@ Flow_PK::SetAbsolutePermeabilityTensor()
   AmanziGeometry::Point n1(dim), n2(dim), normal(dim), tau(dim);
   WhetStone::Tensor N(dim, 2), Ninv(dim, 2), D(dim, 2);
 
-  K.resize(ncells_owned);
+  K_ = Teuchos::rcp(new std::vector<WhetStone::Tensor>(ncells_owned));
   bool cartesian = (coordinate_system_ == "cartesian");
   bool off_diag = cv.HasComponent("offd");
 
   // most common cases of diagonal permeability
+  auto& K = *K_;
   if (cartesian && dim == 2) {
     for (int c = 0; c < ncells_owned; c++) {
       if (!off_diag && perm[0][c] == perm[1][c]) {

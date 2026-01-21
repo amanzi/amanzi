@@ -393,9 +393,9 @@ class CompositeVector {
   int MaxValue(double* value) const;
   int MeanValue(double* value) const;
 
-  void MinValue(std::map<std::string, double>& value) const;
-  void MaxValue(std::map<std::string, double>& value) const;
-  void MeanValue(std::map<std::string, double>& value) const;
+  void MinValue(std::map<std::string, std::vector<double>>& value) const;
+  void MaxValue(std::map<std::string, std::vector<double>>& value) const;
+  void MeanValue(std::map<std::string, std::vector<double>>& value) const;
 
   // -- Utilities --
 

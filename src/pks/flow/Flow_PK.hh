@@ -320,6 +320,7 @@ class Flow_PK : public PK_PhysicalBDF {
 
   // access
   double seepage_mass() { return seepage_mass_; } // support of unit tests
+  Teuchos::RCP<const std::vector<WhetStone::Tensor>> getK() { return K_; }
 
  protected:
   void Setup_FlowRates_(bool mass_to_molar, double molar_rho);
@@ -351,8 +352,8 @@ class Flow_PK : public PK_PhysicalBDF {
   std::string passwd_;
   bool peaceman_model_;
 
-  // Stationary physical quantatities
-  std::vector<WhetStone::Tensor> K;
+  // Stationary physical quantaties
+  Teuchos::RCP<std::vector<WhetStone::Tensor>> K_;
   AmanziGeometry::Point gravity_;
   double g_, rho_, molar_rho_, molar_mass_, atm_pressure_;
   double flux_units_; // scaling for flux units from kg to moles.

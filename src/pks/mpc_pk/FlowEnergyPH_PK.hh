@@ -78,7 +78,7 @@ class FlowEnergyPH_PK : public PK_MPCStrong<PK_BDF> {
   Key domain_; // computational domain
 
   Teuchos::RCP<Operators::Operator> op10_, op01_;
-  Teuchos::RCP<Operators::PDE_Diffusion> pde10_diff_;
+  Teuchos::RCP<Operators::PDE_Diffusion> pde10_diff_cond_, pde10_diff_flux_;
   Teuchos::RCP<Operators::PDE_Advection> pde10_adv_;
   Teuchos::RCP<Operators::PDE_Accumulation> pde10_acc_, pde01_acc_;
   bool symbolic_assembly_complete_ = false;

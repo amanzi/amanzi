@@ -44,9 +44,11 @@ namespace Evaluators {
 
 int constexpr TS_t_size = 18;
 const std::vector<std::string> TS_names = {
-  "rgn", "T", "rho", "v", "cp" , "cv", "kt", "av", "ap", "bp", "k", "mu",
+  "region", "temperature", "mass_density", "specific_volume", "isobaric_heat_capacity",
+  "isocoric_heat_capacity", "isothermal_compressibility", "isobaric_expansion_coef", 
+  "relative_pressure_coef", "isothermal_stress_coef", "thermal_conductivity", "viscosity",
   "drhodp", "drhodh", "dtdp", "dtdh",
-  "vv", "x"
+  "vv", "vapor_quality"
 };
 
 enum class TS_t : int {

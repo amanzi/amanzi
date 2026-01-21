@@ -391,8 +391,7 @@ Darcy_PK::Initialize()
 
   if (!assumptions_.flow_on_manifold) {
     SetAbsolutePermeabilityTensor();
-    Teuchos::RCP<std::vector<WhetStone::Tensor>> Kptr = Teuchos::rcpFromRef(K);
-    opfactory.SetVariableTensorCoefficient(Kptr);
+    opfactory.SetVariableTensorCoefficient(K_);
     opfactory.SetConstantScalarCoefficient(rho_ / mu);
   } else {
     WhetStone::Tensor Ktmp(dim, 1);

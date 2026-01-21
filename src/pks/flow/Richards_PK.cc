@@ -560,8 +560,7 @@ Richards_PK::Initialize()
 
   if (!assumptions_.flow_on_manifold) {
     SetAbsolutePermeabilityTensor();
-    Teuchos::RCP<std::vector<WhetStone::Tensor>> Kptr = Teuchos::rcpFromRef(K);
-    opfactory.SetVariableTensorCoefficient(Kptr);
+    opfactory.SetVariableTensorCoefficient(K_);
     opfactory.SetVariableScalarCoefficient(alpha_upwind_, alpha_upwind_dP_);
   } else {
     auto kptr = S_->GetPtrW<CV_t>(alpha_key_, Tags::DEFAULT, alpha_key_);
