@@ -205,6 +205,7 @@
 #                - update superLU to 6.0.1
 #                - update superLU_dist to 8.2.1
 #                - update netcdf-c to 4.9.3
+#   0.98.14      - add EcoSIM TPL
 
 include(CMakeParseArguments)
 
@@ -257,7 +258,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 98)
-set(AMANZI_TPLS_VERSION_PATCH 13)
+set(AMANZI_TPLS_VERSION_PATCH 14)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -543,6 +544,20 @@ set(PFLOTRAN_SAVEAS_FILE    pflotran-${PFLOTRAN_VERSION}.tar.gz)
 set(PFLOTRAN_MD5_SUM        d44b5670223ea9e6fbb894a8842161e0)
 #set(PFLOTRAN_GIT_REPOSITORY "https://gitlab.com/pflotran/pflotran.git")
 #set(PFLOTRAN_GIT_TAG        "9e07f41")
+
+#
+# TPL: EcoSIM
+#
+set(ECOSIM_VERSION_MAJOR 0)
+set(ECOSIM_VERSION_MINOR 1)
+set(ECOSIM_VERSION_PATCH 0)
+set(ECOSIM_VERSION ${ECOSIM_VERSION_MAJOR}.${ECOSIM_VERSION_MINOR}.${ECOSIM_VERSION_PATCH})
+set(ECOSIM_URL_STRING     "https://github.com/jinyun1tang/EcoSIM/tree/agraus/PrescribedPhenology")
+set(ECOSIM_ARCHIVE_FILE   ECOSIM-agraus-prephen.tar.gz)
+set(ECOSIM_SAVEAS_FILE    ECOSIM-agraus-prephen.tar.gz)
+set(ECOSIM_MD5_SUM        f10065689b6ebe7a67b95611bbb04c08)
+set(ECOSIM_GIT_REPOSITORY "https://github.com/jinyun1tang/EcoSIM")
+set(ECOSIM_GIT_TAG        "agraus/PrescribedPhenology")
 
 #
 # TPL: Alquimia

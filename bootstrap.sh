@@ -173,6 +173,7 @@ crunchtope=${FALSE}
 pflotran=${FALSE}
 shared=${TRUE}
 silo=${FALSE}
+ecosim=${FALSE}
 
 # -- arch sets machine-specific variables
 amanzi_arch=
@@ -386,6 +387,7 @@ Value in brackets indicates default setting.
   ats_physics             build ATS physics package (currently mutually exclusive) ['"${ats_physics}"']
   clm                     build CLM library for surface processes (currently only ATS) ['"${clm}"']
   elm_ats_api             build ATS interface for ELM
+  ecosim                  build EcoSIM library for microbial and vegetative surface processes ['"${ecosim}"']
 
   dbc                     design-by-contract.  Extra (potentially time-consuming) error-checking
                           intended for developers ['"${dbc}"']
@@ -591,6 +593,7 @@ ATS Components:
 Amanzi TPLs:
     alquimia     = '"${alquimia}"'
     crunchtope   = '"${crunchtope}"'
+    ecosim       = '"${ecosim}"'
     mesh_mstk    = '"${mesh_mstk}"'
     mesh_moab    = '"${mesh_moab}"'
     netcdf4      = '"${netcdf4}"'
@@ -1756,9 +1759,6 @@ elif [ "${amanzi_arch}" != "" ]; then
   exit_now 10
 fi
 
-
-
-
 # Print and exit if --print is set
 if [ "${print_exit}" -eq "${TRUE}" ]; then
   print_variable_values
@@ -1863,7 +1863,6 @@ if [ -z "${tpl_config_file}" ]; then
     status_message "Only building TPLs, stopping before building Amanzi itself"
   fi
 
-
   # Configure the TPL build
   cmd_configure="${cmake_binary} \
       -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
@@ -1890,9 +1889,10 @@ if [ -z "${tpl_config_file}" ]; then
       -DENABLE_ALQUIMIA:BOOL=${alquimia} \
       -DENABLE_PFLOTRAN:BOOL=${pflotran} \
       -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
-      -DENABLE_Silo:BOOL=${silo} \
-      -DENABLE_CLM:BOOL=${clm} \
       -DENABLE_ELM_ATS_API:BOOL=${elm_ats_api} \
+      -DENABLE_ECOSIM:BOOL=${ecosim} \
+      -DENABLE_CLM:BOOL=${clm} \
+      -DENABLE_Silo:BOOL=${silo} \
       -DENABLE_SPACK:BOOL=${Spack} \
       -DENABLE_Epetra:BOOL=${epetra} \
       -DENABLE_Tpetra:BOOL=${tpetra} \
