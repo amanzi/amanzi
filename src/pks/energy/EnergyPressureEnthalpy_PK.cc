@@ -28,6 +28,7 @@
 #include "EvaluatorMultiplicativeReciprocal.hh"
 #include "IEMEvaluator.hh"
 #include "StateArchive.hh"
+#include "TCMEvaluator_OnePhase.hh"
 #include "ThermodynamicStateEvaluators.hh"
 #include "TotalEnergyEvaluatorPH.hh"
 
@@ -310,11 +311,26 @@ EnergyPressureEnthalpy_PK::Setup()
       ->SetGhosted()
       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
-    Teuchos::ParameterList elist(conductivity_key_);
-    elist.set<std::string>("tag", "");
-    auto eval = Teuchos::rcp(new Evaluators::ThermalConductivityEvaluator(elist));
-    S_->SetEvaluator(conductivity_key_, Tags::DEFAULT, eval);
+    if (ep_list_->isSublist("thermal conductivity evaluator")) {
+      Teuchos::ParameterList elist = ep_list_->sublist("thermal conductivity evaluator");
+      elist.set("thermal conductivity key", conductivity_key_)
+           .setName(conductivity_key_)
+           .set<std::string>("tag", "");
+
+      auto eval = Teuchos::rcp(new TCMEvaluator_OnePhase(mesh_, elist));
+      S_->SetEvaluator(conductivity_key_, Tags::DEFAULT, eval);
+    } else {
+      Teuchos::ParameterList elist(conductivity_key_);
+      elist.set<std::string>("tag", "");
+
+      auto eval = Teuchos::rcp(new Evaluators::ThermalConductivityEvaluator(elist));
+      S_->SetEvaluator(conductivity_key_, Tags::DEFAULT, eval);
+    }
   }
+
+  // set units
+  S_->GetRecordSetW(energy_key_).set_units("J/m^3");
+  S_->GetRecordSetW(enthalpy_key_).set_units("J/mol");
 
   // -- viscosity
   if (!S_->HasRecord(viscosity_liquid_key_)) {

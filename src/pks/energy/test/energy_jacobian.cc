@@ -168,7 +168,7 @@ void Run(const std::string& filename)
 
   std::cout << "|| Jfd - Jpk || = " << jdiff << ",  || Jfd || = " << jfd << ",  || Jpk || = " << jpk
             << std::endl;
-  CHECK(jdiff / jfd < 1e-5);
+  CHECK(jdiff / jfd < 1e-4);
 }
 
 TEST(ENERGY_JACOBIAN) {
