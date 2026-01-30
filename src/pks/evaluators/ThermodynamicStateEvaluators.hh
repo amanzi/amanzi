@@ -93,6 +93,7 @@ class ThermodynamicStateEvaluator
  private:
   Key pressure_key_, enthalpy_key_;
   Teuchos::RCP<AmanziEOS::IAPWS97> eos_;
+  static Utils::RegisteredFactory<Evaluator, ThermodynamicStateEvaluator> reg_;
 };
 
 
@@ -116,6 +117,7 @@ class DensityEvaluator
 
  private:
   Key pressure_key_, enthalpy_key_;
+  static Utils::RegisteredFactory<Evaluator, DensityEvaluator> reg_;
 };
 
 
@@ -139,6 +141,7 @@ class TemperatureEvaluator
 
  private:
   Key pressure_key_, enthalpy_key_;
+  static Utils::RegisteredFactory<Evaluator, TemperatureEvaluator> reg_;
 };
 
 
@@ -209,6 +212,7 @@ class IsothermalCompressibilityEvaluator
 
  private:
   Key pressure_key_, enthalpy_key_;
+  static Utils::RegisteredFactory<Evaluator, IsothermalCompressibilityEvaluator> reg_;
 };
 
 
@@ -233,6 +237,7 @@ class ViscosityEvaluator
  private:
   Key density_key_, temperature_key_;
   Teuchos::RCP<AmanziEOS::IAPWS97> eos_;
+  static Utils::RegisteredFactory<Evaluator, ViscosityEvaluator> reg_;
 };
 
 } // namespace Evaluators

@@ -27,6 +27,7 @@
 // Amanzi
 #include "CompositeVector.hh"
 #include "EnergyPressureEnthalpy_PK.hh"
+#include "evaluators_reg.hh"
 #include "IO.hh"
 #include "MeshFactory.hh"
 #include "Operator.hh"
@@ -89,15 +90,16 @@ TEST(ENERGY_PRESSURE_ENTHALPY)
   // constant timestepping
   std::string passwd("");
   int itrs(0);
-  double t(0.0), dt(0.5e+2), t1(200.0e+3);
+  double t(0.0), dt(50.0), t1(2000.0);
   while (t < t1) {
-    EPK->AdvanceStep(t, t + dt, false);
+    bool ok = EPK->AdvanceStep(t, t + dt, false);
+    CHECK(!ok);
     EPK->CommitStep(t, t + dt, Tags::DEFAULT);
 
     t += dt;
     itrs++;
     if (itrs % 10 == 0) WriteStateStatistics(*S, *vo);
 
-    dt = std::min(dt * 1.05, 5.0e+2);
+    dt = std::min(dt * 1.05, 100.0);
   }
 }

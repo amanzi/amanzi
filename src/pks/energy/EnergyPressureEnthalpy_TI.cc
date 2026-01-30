@@ -177,7 +177,7 @@ EnergyPressureEnthalpy_PK::UpdatePreconditioner(double t,
   const auto& density = *S_->Get<CV_t>(mol_density_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; ++c) {
-    if (dEdh_c[0][c] <= 0.0) dEdh_c[0][c] = density[0][c];
+    if (dEdh_c[0][c] < 0.0) dEdh_c[0][c] = density[0][c];
   }
   op_acc_->AddAccumulationTerm(dEdh, dt, "cell");
 

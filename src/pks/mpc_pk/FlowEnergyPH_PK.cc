@@ -97,12 +97,7 @@ FlowEnergyPH_PK::Setup()
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, Evaluators::TS_t_size);
-
-    Teuchos::ParameterList elist(state_key_);
-    elist.set<std::string>("tag", "");
-
-    auto eval = Teuchos::rcp(new Evaluators::ThermodynamicStateEvaluator(elist));
-    S_->SetEvaluator(state_key_, Tags::DEFAULT, eval);
+    S_->RequireEvaluator(state_key_, Tags::DEFAULT);
   }
 
   // temperature
@@ -112,11 +107,7 @@ FlowEnergyPH_PK::Setup()
       ->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
       ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
-
-    Teuchos::ParameterList elist(temperature_key_);
-    elist.set<std::string>("tag", "");
-    auto eval = Teuchos::rcp(new Evaluators::TemperatureEvaluator(elist));
-    S_->SetEvaluator(temperature_key_, Tags::DEFAULT, eval);
+    S_->RequireEvaluator(temperature_key_, Tags::DEFAULT);
   }
 
   // densities
@@ -127,12 +118,7 @@ FlowEnergyPH_PK::Setup()
       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
       ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
 
-    Teuchos::ParameterList elist(mol_density_liquid_key_);
-    elist.set<std::string>("tag", "");
-
-    auto eval = Teuchos::rcp(new Evaluators::DensityEvaluator(elist));
-    S_->SetEvaluator(mol_density_liquid_key_, Tags::DEFAULT, eval);
-
+    S_->RequireEvaluator(mol_density_liquid_key_, Tags::DEFAULT);
     S_->RequireDerivative<CV_t, CVS_t>(mol_density_liquid_key_,
                                        Tags::DEFAULT,
                                        enthalpy_key_,
@@ -146,11 +132,7 @@ FlowEnergyPH_PK::Setup()
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-
-    Teuchos::ParameterList elist(iso_compressibility_key_);
-    elist.set<std::string>("tag", "");
-    auto eval = Teuchos::rcp(new Evaluators::IsothermalCompressibilityEvaluator(elist));
-    S_->SetEvaluator(iso_compressibility_key_, Tags::DEFAULT, eval);
+    S_->RequireEvaluator(iso_compressibility_key_, Tags::DEFAULT);
   }
 
   // viscosity
@@ -161,15 +143,10 @@ FlowEnergyPH_PK::Setup()
       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
       ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
 
-    Teuchos::ParameterList elist(viscosity_liquid_key_);
-    elist.set<std::string>("tag", "");
-    auto eval = Teuchos::rcp(new Evaluators::ViscosityEvaluator(elist));
-    S_->SetEvaluator(viscosity_liquid_key_, Tags::DEFAULT, eval);
-
+    S_->RequireEvaluator(viscosity_liquid_key_, Tags::DEFAULT);
     S_->RequireDerivative<CV_t, CVS_t>(
         viscosity_liquid_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT, viscosity_liquid_key_)
       .SetGhosted();
-
     S_->RequireDerivative<CV_t, CVS_t>(
         viscosity_liquid_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, viscosity_liquid_key_)
       .SetGhosted();

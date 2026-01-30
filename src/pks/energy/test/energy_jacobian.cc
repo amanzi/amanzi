@@ -28,6 +28,7 @@
 #include "IO.hh"
 #include "EnergyPressureEnthalpy_PK.hh"
 #include "EnergyPressureTemperature_PK.hh"
+#include "evaluators_reg.hh"
 #include "MeshFactory.hh"
 #include "Operator.hh"
 #include "PDE_Accumulation.hh"
