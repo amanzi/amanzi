@@ -27,6 +27,7 @@
 #include "CommonDefs.hh"
 #include "CompositeVector.hh"
 #include "EnergyPressureEnthalpy_PK.hh"
+#include "evaluators_reg.hh"
 #include "IAPWS97.hh"
 #include "MeshFactory.hh"
 #include "PK_Physical.hh"
@@ -140,8 +141,40 @@ TEST(EVALUATOR_DERIVATIVE_TABLES_PH)
   auto eval_p = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(S->GetEvaluatorPtr(pressure_key, tag));
   auto eval_h = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(S->GetEvaluatorPtr(enthalpy_key, tag));
   eval_p->SetChanged();
+  eval_h->SetChanged();
 
-  // compute derivative
+  // compare Maxwell relations
+  S->GetEvaluator("thermodynamic_state").Update(*S, "test");
+  auto& state_c = *S->Get<CV_t>("thermodynamic_state", tag).ViewComponent("cell");
+
+  c = 0;
+  for (int i = -n; i < n; ++i) {
+    for (int j = -n; j < n; ++j) {
+      int rgn = state_c[(int)Evaluators::TS_t::RGN][c];
+      double cp = state_c[(int)Evaluators::TS_t::CP][c];
+      if (rgn != 4) CHECK(cp > 0.0);
+      double value = (rgn != 4) ? std::log(cp) : 0.0;
+
+      double kt = state_c[(int)Evaluators::TS_t::KT][c];
+      if (rgn != 4) CHECK(kt > 0.0);
+      value = (rgn != 4) ? std::log(kt) : 0.0;
+
+      double av = state_c[(int)Evaluators::TS_t::AV][c];
+      if (rgn != 4) CHECK(av > 0.0);
+      value = (rgn != 4) ? std::log(av) : 0.0;
+
+      double T = state_c[(int)Evaluators::TS_t::T][c];
+      double rho = state_c[(int)Evaluators::TS_t::RHO][c];
+      value = cp * kt - T * av * av / rho;
+      if (rgn != 4) CHECK(value > 0.0);
+      value = (rgn != 4) ? std::log(value) : 0.0;
+
+      // std::cout << p_c[0][c] * 1e-6 << " " << h_c[0][c] / cfactor << " " << value << std::endl;
+      c++;
+    }
+  }
+
+  // compute a selective derivative
   Key field = density_key;
   Key wrt = enthalpy_key;
   S->GetEvaluator(field).UpdateDerivative(*S, "test", wrt, Tags::DEFAULT);

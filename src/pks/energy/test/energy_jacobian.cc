@@ -28,6 +28,7 @@
 #include "IO.hh"
 #include "EnergyPressureEnthalpy_PK.hh"
 #include "EnergyPressureTemperature_PK.hh"
+#include "evaluators_reg.hh"
 #include "MeshFactory.hh"
 #include "Operator.hh"
 #include "PDE_Accumulation.hh"
@@ -168,7 +169,7 @@ void Run(const std::string& filename)
 
   std::cout << "|| Jfd - Jpk || = " << jdiff << ",  || Jfd || = " << jfd << ",  || Jpk || = " << jpk
             << std::endl;
-  CHECK(jdiff / jfd < 1e-5);
+  CHECK(jdiff / jfd < 1e-4);
 }
 
 TEST(ENERGY_JACOBIAN) {

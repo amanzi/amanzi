@@ -78,11 +78,15 @@ class FlowEnergyPH_PK : public PK_MPCStrong<PK_BDF> {
   virtual std::vector<Key> SetupLSchemeKey(Teuchos::ParameterList& plist) override;
 
  private:
-  double P0_, H0_;
+
   Teuchos::RCP<TreeVector> res_scale_;
   bool compute_scaling_completed_, left_scaling_, right_scaling_;
   double left_scaling_eps_;
-  
+ 
+  void RemoveFluxContinuityEquations_(Teuchos::RCP<Operators::PDE_Diffusion>& pde);
+
+ private:
+
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<const Teuchos::ParameterList> preconditioner_list_;
 
@@ -91,7 +95,7 @@ class FlowEnergyPH_PK : public PK_MPCStrong<PK_BDF> {
 
   Teuchos::RCP<Operators::Operator> op10_, op01_;
   Teuchos::RCP<Operators::PDE_Diffusion> pde10_diff_cond_, pde10_diff_flux_;
-  Teuchos::RCP<Operators::PDE_Advection> pde10_adv_;
+  Teuchos::RCP<Operators::PDE_Advection> pde10_adv_, pde01_adv_;
   Teuchos::RCP<Operators::PDE_Accumulation> pde10_acc_, pde01_acc_;
   bool symbolic_assembly_complete_ = false;
 

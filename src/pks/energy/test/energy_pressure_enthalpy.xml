@@ -122,7 +122,7 @@
             <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
             <Parameter name="modify correction" type="bool" value="false"/>
             <ParameterList name="verbose object">
-              <Parameter name="verbosity level" type="string" value="high"/>
+              <Parameter name="verbosity level" type="string" value="medium"/>
             </ParameterList>
           </ParameterList>
           <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
@@ -178,6 +178,19 @@
 
   <ParameterList name="state">
     <ParameterList name="evaluators">
+      <ParameterList name="thermodynamic_state">
+        <Parameter name="evaluator type" type="string" value="iapws97 state"/>
+      </ParameterList>
+      <ParameterList name="temperature">
+        <Parameter name="evaluator type" type="string" value="iapws97 temperature"/>
+      </ParameterList>
+      <ParameterList name="molar_density_liquid">
+        <Parameter name="evaluator type" type="string" value="iapws97 density"/>
+      </ParameterList>
+      <ParameterList name="viscosity_liquid">
+        <Parameter name="evaluator type" type="string" value="iapws97 viscosity"/>
+      </ParameterList>
+
       <ParameterList name="particle_density">
         <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
@@ -265,7 +278,7 @@
             <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="500.0"/>
+                <Parameter name="value" type="double" value="648.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

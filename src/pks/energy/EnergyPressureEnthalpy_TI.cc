@@ -165,8 +165,20 @@ EnergyPressureEnthalpy_PK::UpdatePreconditioner(double t,
   op_preconditioner_diff_->ApplyBCs(true, true, true);
 
   // add the accumulation term derivatives, dE/dT
+  // S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd_, enthalpy_key_, Tags::DEFAULT);
+  // const auto& dEdh = S_->GetDerivative<CV_t>(energy_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT);
+  // op_acc_->AddAccumulationTerm(dEdh, dt, "cell");
+
+  // -- perform entropy-based linearization to keep derivative positive
   S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd_, enthalpy_key_, Tags::DEFAULT);
-  const auto& dEdh = S_->GetDerivative<CV_t>(energy_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT);
+  auto dEdh = S_->GetDerivative<CV_t>(energy_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT);
+  auto& dEdh_c = *dEdh.ViewComponent("cell");
+  S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, passwd_);
+  const auto& density = *S_->Get<CV_t>(mol_density_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
+
+  for (int c = 0; c < ncells_owned; ++c) {
+    if (dEdh_c[0][c] < 0.0) dEdh_c[0][c] = density[0][c];
+  }
   op_acc_->AddAccumulationTerm(dEdh, dt, "cell");
 
   // add matrices for advection term 

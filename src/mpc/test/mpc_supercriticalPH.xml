@@ -11,6 +11,10 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
+  <!--ParameterList name="visualization data">
+    <Parameter name="file name base" type="string" value="plot"/>
+    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 100, -1}"/>
+  </ParameterList-->
 
   <ParameterList name="domain">
     <Parameter name="spatial dimension" type="int" value="2"/>
@@ -45,6 +49,22 @@
 
   <ParameterList name="state">
     <ParameterList name="evaluators">
+      <ParameterList name="thermodynamic_state">
+        <Parameter name="evaluator type" type="string" value="iapws97 state"/>
+      </ParameterList>
+      <ParameterList name="molar_density_liquid">
+        <Parameter name="evaluator type" type="string" value="iapws97 density"/>
+      </ParameterList>
+      <ParameterList name="temperature">
+        <Parameter name="evaluator type" type="string" value="iapws97 temperature"/>
+      </ParameterList>
+      <ParameterList name="viscosity_liquid">
+        <Parameter name="evaluator type" type="string" value="iapws97 viscosity"/>
+      </ParameterList>
+      <ParameterList name="isothermal_compressibility">
+        <Parameter name="evaluator type" type="string" value="iapws97 isothermal compressibility"/>
+      </ParameterList>
+
       <ParameterList name="porosity">
         <ParameterList name="function">
           <ParameterList name="EntireDomain">
@@ -52,7 +72,7 @@
             <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.0"/>
+                <Parameter name="value" type="double" value="0.1"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -95,7 +115,7 @@
         <Parameter name="value" type="double" value="1.01325e+05"/>
       </ParameterList>
       <ParameterList name="gravity">
-        <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -9.80664999999999942e+00}"/>
+        <Parameter name="value" type="Array(double)" value="{0.0, -9.80664999999999942e+00}"/>
       </ParameterList>
       <ParameterList name="const_fluid_molar_mass">
         <Parameter name="value" type="double" value="1.8e-02"/>
@@ -111,12 +131,12 @@
               <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.0e-17"/>
+                  <Parameter name="value" type="double" value="1.0e-15"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.0e-17"/>
+                  <Parameter name="value" type="double" value="1.0e-15"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -130,9 +150,9 @@
             <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-linear">
-                <Parameter name="y0" type="double" value="31.15e+06"/>
+                <Parameter name="y0" type="double" value="25.00e+06"/>
                 <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
-                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, -1.0e+3}"/>
+                <Parameter name="gradient" type="Array(double)" value="{0.0, -0.0e+3, 0.0}"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -146,7 +166,7 @@
             <ParameterList name="function">
               <ParameterList name="function-exprtk">
                 <Parameter name="number of arguments" type="int" value="4"/>
-                <Parameter name="formula" type="string" value="4.662e+04 - x * (100 - x)"/>
+                <Parameter name="formula" type="string" value="4.562e+04 - 0 * x * (100 - x)"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -191,7 +211,7 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="start period time" type="double" value="0.0"/>
-        <Parameter name="end period time" type="double" value="400000.0"/>
+        <Parameter name="end period time" type="double" value="40000000.0"/>
         <Parameter name="maximum cycle number" type="int" value="30"/>
         <Parameter name="initial timestep" type="double" value="100.0"/>
         <Parameter name="maximum timestep" type="double" value="1.0e+5"/>
@@ -253,7 +273,7 @@
             <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
             <Parameter name="schema" type="Array(string)" value="{cell, face}"/>
             <Parameter name="preconditioner schema" type="Array(string)" value="{cell, face}"/>
-            <!--Parameter name="Newton correction" type="string" value="approximate Jacobian"/-->
+            <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
             <Parameter name="gravity" type="bool" value="false"/>
           </ParameterList>
         </ParameterList>
@@ -308,7 +328,7 @@
             <Parameter name="regions" type="Array(string)" value="{SurfaceInlet}"/>
             <ParameterList name="boundary pressure">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="3.115e+07"/>
+                <Parameter name="value" type="double" value="25.10e+06"/>
               </ParameterList>
             </ParameterList>
             <Parameter name="use area fractions" type="bool" value="false"/>
@@ -318,7 +338,7 @@
             <Parameter name="regions" type="Array(string)" value="{SurfaceOutlet}"/>
             <ParameterList name="boundary pressure">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="3.10e+07"/>
+                <Parameter name="value" type="double" value="25.00e+06"/>
               </ParameterList>
             </ParameterList>
             <Parameter name="use area fractions" type="bool" value="false"/>
@@ -367,9 +387,6 @@
           </ParameterList>
           <ParameterList name="liquid phase">
             <Parameter name="eos type" type="string" value="IAPWS97"/>
-            <Parameter name="reference conductivity" type="double" value="0.598"/>
-            <Parameter name="reference temperature" type="double" value="273.15"/>
-            <Parameter name="Sutherland constant" type="double" value="0.0"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
@@ -424,7 +441,16 @@
             <Parameter name="spatial distribution method" type="string" value="none"/>
             <ParameterList name="boundary temperature">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="300.0"/>
+                <Parameter name="value" type="double" value="400.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="BC 1">
+            <Parameter name="regions" type="Array(string)" value="{SurfaceOutlet}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
+            <ParameterList name="boundary temperature">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="700.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -468,12 +494,12 @@
             <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
             <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
             <Parameter name="max du growth factor" type="double" value="1000.0"/>
-            <Parameter name="max divergent iterations" type="int" value="3"/>
+            <Parameter name="max divergent iterations" type="int" value="5"/>
             <Parameter name="max nka vectors" type="int" value="10"/>
             <Parameter name="limit iterations" type="int" value="20"/>
             <Parameter name="modify correction" type="bool" value="true"/>
           </ParameterList>
-          <Parameter name="extrapolation damping factor" type="double" value="1.0"/>
+          <Parameter name="extrapolation damping factor" type="double" value="0.95"/>
           <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
           <Parameter name="extrapolate initial guess" type="bool" value="true"/>
           <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
@@ -534,8 +560,8 @@
         <Parameter name="use block indices" type="bool" value="false"/>
         <Parameter name="tolerance" type="double" value="0.0"/>
         <Parameter name="smoother sweeps" type="int" value="2"/>
-        <Parameter name="cycle applications" type="int" value="3"/>
-        <Parameter name="strong threshold" type="double" value="0.25"/>
+        <Parameter name="cycle applications" type="int" value="2"/>
+        <Parameter name="strong threshold" type="double" value="0.5"/>
         <Parameter name="cycle type" type="int" value="1"/>
         <Parameter name="restriction operator" type="int" value="0"/>
         <Parameter name="interpolation operator" type="int" value="2"/>

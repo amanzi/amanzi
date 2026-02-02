@@ -23,6 +23,7 @@
 #include "IO.hh"
 #include "CycleDriver.hh"
 #include "eos_reg.hh"
+#include "evaluators_reg.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "models_energy_reg.hh"
@@ -180,9 +181,13 @@ TEST(MPC_DRIVER_THERMAL_RICHARDS_JACOBIAN)
                 << ",  || Jfd || = " << norm_fd 
                 << ",  || Jpk || = " << norm_pk << std::endl;
       CHECK(norm_diff < 1e-3 * norm_pk);
-      // if (i0 == 1 && j0 == 1) std::cout << Jfd << std::endl;
-      // if (i0 == 1 && j0 == 1) std::cout << Jfd.SubMatrix(3, 4, 73, 78) << std::endl;
-      // std::cout << Jsub.SubMatrix(95, 103, 95, 103) << std::endl;
+      int s1(0), s2(266);
+      // if (i0 == 1 && j0 == 0) std::cout << Jfd.SubMatrix(s1, s1 + 5, s2, s2 + 8) << std::endl;
+      // if (i0 == 1 && j0 == 0) std::cout << Jsub.SubMatrix(s1, s1 + 5, s2, s2 + 8) << std::endl;
+      if (i0 == 1 && j0 == 0) {
+        // std::cout << Jfd << std::endl;
+        // std::cout << Jsub << std::endl;
+      }
     }
   }
 }
@@ -202,7 +207,7 @@ TEST(MPC_DRIVER_THERMAL_RICHARDS_HIGH_PH)
   // create mesh
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 100.0, 4.0, 100, 4);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 100.0, 4.0, 200, 2);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;
