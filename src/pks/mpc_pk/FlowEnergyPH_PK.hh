@@ -64,6 +64,13 @@ class FlowEnergyPH_PK : public PK_MPCStrong<PK_BDF> {
   virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
                                   Teuchos::RCP<TreeVector> Pu) override;
 
+  virtual
+  AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+  ModifyCorrection(double h,
+                   Teuchos::RCP<const TreeVector> res,
+                   Teuchos::RCP<const TreeVector> u,
+                   Teuchos::RCP<TreeVector> du) override;
+
   // -- error norm for coupled system
   std::string name() override { return "flow and energy ph"; }
 
@@ -71,6 +78,11 @@ class FlowEnergyPH_PK : public PK_MPCStrong<PK_BDF> {
   virtual std::vector<Key> SetupLSchemeKey(Teuchos::ParameterList& plist) override;
 
  private:
+  double P0_, H0_;
+  Teuchos::RCP<TreeVector> res_scale_;
+  bool compute_scaling_completed_, left_scaling_, right_scaling_;
+  double left_scaling_eps_;
+  
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<const Teuchos::ParameterList> preconditioner_list_;
 

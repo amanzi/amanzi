@@ -5,7 +5,7 @@
     <Parameter name="partitioner" type="string" value="metis"/>
     <ParameterList name="unstructured">
       <ParameterList name="generate mesh">
-        <Parameter name="number of cells" type="Array(int)" value="{50, 4}"/>
+        <Parameter name="number of cells" type="Array(int)" value="{10, 4}"/>
         <Parameter name="domain low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
         <Parameter name="domain high coordinate" type="Array(double)" value="{100.0, 20.0}"/>
       </ParameterList>
@@ -436,11 +436,12 @@
     </ParameterList>
 
     <ParameterList name="transient:mpc1">
-      <Parameter isUsed="true" name="PK type" type="string" value="flow and energy pt"/>
+      <Parameter isUsed="true" name="PK type" type="string" value="flow and energy ph"/>
       <Parameter isUsed="true" name="MPC type" type="bool" value="true"/>
       <Parameter isUsed="true" name="PKs order" type="Array(string)" value="{transient:flow, transient:energy}"/>
       <Parameter name="master PK index" type="int" value="0"/>
       <Parameter name="domain name" type="string" value="domain"/>
+      <Parameter name="left scaling" type="bool" value="true"/>
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{residual}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
@@ -500,7 +501,7 @@
         <Parameter name="controller training start" type="int" value="0"/>
         <Parameter name="controller training end" type="int" value="3"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="low"/>
+          <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -512,7 +513,7 @@
         <Parameter name="controller training start" type="int" value="0"/>
         <Parameter name="controller training end" type="int" value="3"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="low"/>
+          <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -552,7 +553,7 @@
         <Parameter name="cycle applications" type="int" value="3"/>
         <Parameter name="strong threshold" type="double" value="0.25"/>
         <Parameter name="cycle type" type="int" value="1"/>
-        <Parameter name="verbosity" type="int" value="0"/>
+        <Parameter name="verbosity" type="int" value="10"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

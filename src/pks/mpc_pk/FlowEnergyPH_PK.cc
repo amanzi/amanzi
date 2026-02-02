@@ -82,6 +82,13 @@ FlowEnergyPH_PK::Setup()
   bcs_flow_key_ = Keys::getKey(domain_, "bcs_flow");
   bcs_enthalpy_key_ = Keys::getKey(domain_, "bcs_enthalpy");
 
+  compute_scaling_completed_ = false;
+
+  left_scaling_ = my_list_->get<bool>("left scaling", false);
+  left_scaling_eps_ = my_list_->get<double>("left scaling eps", 1e-2);
+  right_scaling_ = my_list_->get<bool>("right scaling", false);
+  
+  
   // rock
   if (!S_->HasRecord(particle_density_key_)) {
     S_->Require<CV_t, CVS_t>(particle_density_key_, Tags::DEFAULT, particle_density_key_)
@@ -245,6 +252,8 @@ FlowEnergyPH_PK::Initialize()
   op_tree_rhs_->PushBack(CreateTVwithOneLeaf(op0->rhs()));
   op_tree_rhs_->PushBack(CreateTVwithOneLeaf(op1->rhs()));
 
+  res_scale_ = Teuchos::rcp(new TreeVector(tvs));  
+
   // cross coupling
   pde01_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, mesh_));
   op01_ = pde01_acc_->global_operator();
@@ -297,11 +306,14 @@ FlowEnergyPH_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   StateArchive archive(S_, vo_);
   archive.Add(fields, Tags::DEFAULT);
-
+  compute_scaling_completed_ = false;
+  
   // try timestep
   bool fail = PK_MPCStrong<PK_BDF>::AdvanceStep(t_old, t_new, reinit);
   if (fail) archive.Restore("");
 
+  //exit(0);
+  
   return fail;
 }
 
@@ -316,12 +328,14 @@ FlowEnergyPH_PK::FunctionalResidual(double t_old,
                                     Teuchos::RCP<TreeVector> u_new,
                                     Teuchos::RCP<TreeVector> f)
 {
+  double eps = 1.0e-2;
+  double f1_norm, f0_norm;
   // flow
   auto u_old0 = u_old->SubVector(0);
   auto u_new0 = u_new->SubVector(0);
   auto f0 = f->SubVector(0);
   sub_pks_[0]->FunctionalResidual(t_old, t_new, u_old0, u_new0, f0);
-
+  
   // update molar flux
   Key key = Keys::getKey(domain_, "molar_flow_rate");
   auto mol_flowrate = S_->GetPtrW<CV_t>(key, Tags::DEFAULT, "");
@@ -333,6 +347,56 @@ FlowEnergyPH_PK::FunctionalResidual(double t_old,
   auto u_new1 = u_new->SubVector(1);
   auto f1 = f->SubVector(1);
   sub_pks_[1]->FunctionalResidual(t_old, t_new, u_old1, u_new1, f1);
+  
+  if (!compute_scaling_completed_ && left_scaling_){
+    auto f0_cv = f0->Data();
+    auto res_scale_cv0 = res_scale_->SubVector(0)->Data();
+    for (auto it=f0_cv->Map().begin(); it!=f0_cv->Map().end(); ++it){
+      Epetra_MultiVector& f0_comp = *f0_cv->ViewComponent(*it);
+      Epetra_MultiVector& res_scale_comp = *res_scale_cv0->ViewComponent(*it);
+      for (int n=0; n<res_scale_comp.MyLength(); n++){
+        res_scale_comp[0][n] = 1./(abs(f0_comp[0][n]) + eps);
+      }
+    }
+
+    auto f1_cv = f1->Data();
+    auto res_scale_cv1 = res_scale_->SubVector(1)->Data();
+    for (auto it=f1_cv->Map().begin(); it!=f1_cv->Map().end(); ++it){
+      Epetra_MultiVector& f1_comp = *f1_cv->ViewComponent(*it);
+      Epetra_MultiVector& res_scale_comp = *res_scale_cv1->ViewComponent(*it);
+      for (int n=0; n<res_scale_comp.MyLength(); n++){
+        res_scale_comp[0][n] = 1./(abs(f1_comp[0][n]) + eps);        
+      }
+    }
+    compute_scaling_completed_ = true;
+  }
+  
+  if (compute_scaling_completed_ && left_scaling_){
+    auto f0_cv = f0->Data();
+    auto res_scale_cv0 = res_scale_->SubVector(0)->Data();
+    for (auto it=f0_cv->Map().begin(); it!=f0_cv->Map().end(); ++it){
+      Epetra_MultiVector& f0_comp = *f0_cv->ViewComponent(*it);
+      Epetra_MultiVector& res_scale_comp = *res_scale_cv0->ViewComponent(*it);
+      for (int n=0; n<res_scale_comp.MyLength(); n++){
+        f0_comp[0][n] *= res_scale_comp[0][n];
+      }      
+    }
+    f0_cv->Norm2(&f0_norm);
+
+    auto f1_cv = f1->Data();
+    auto res_scale_cv1 = res_scale_->SubVector(1)->Data();
+    for (auto it=f1_cv->Map().begin(); it!=f1_cv->Map().end(); ++it){
+      Epetra_MultiVector& f1_comp = *f1_cv->ViewComponent(*it);
+      Epetra_MultiVector& res_scale_comp = *res_scale_cv1->ViewComponent(*it);
+      for (int n=0; n<res_scale_comp.MyLength(); n++){
+        f1_comp[0][n] *= res_scale_comp[0][n];
+      }
+    }
+    f1_cv->Norm2(&f1_norm);
+  }
+
+  //  std::cout<<"f norm "<<f0_norm<<" "<<f1_norm<<"\n";
+
 }
 
 
@@ -344,6 +408,7 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
 {
   PK_MPCStrong<PK_BDF>::UpdatePreconditioner(t, up, dt);
 
+  
   // pressure-energy block
   std::string passwd("");
   Tag tag = Tags::DEFAULT;
@@ -409,10 +474,27 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   const auto& dEdp = S_->GetDerivative<CV_t>(energy_key_, tag, pressure_key_, tag);
   pde10_acc_->AddAccumulationTerm(dEdp, dt, "cell");
 
+  if (compute_scaling_completed_ && left_scaling_){
+    
+    sub_pks_[0]->my_operator(Operators::OPERATOR_PRECONDITIONER_RAW)
+                                   ->Rescale(*res_scale_->SubVector(0)->Data());
+    op01_->Rescale(*res_scale_->SubVector(0)->Data());
+    
+    sub_pks_[1]->my_operator(Operators::OPERATOR_PRECONDITIONER_RAW)
+                                   ->Rescale(*res_scale_->SubVector(1)->Data());
+    op10_->Rescale(*res_scale_->SubVector(1)->Data());
+    
+    //    exit(0);
+  }
+
+
+  
   if (!symbolic_assembly_complete_) {
     op_tree_pc_->SymbolicAssembleMatrix();
     symbolic_assembly_complete_ = true;
   }
+
+
   op_tree_pc_->AssembleMatrix();
   // std::cout << *op_tree_pc_->A() << std::endl; exit(0);
   op_tree_pc_->InitializeInverse();
@@ -428,6 +510,28 @@ FlowEnergyPH_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, Teuchos::
 {
   return op_tree_pc_->ApplyInverse(*X, *Y);
   // return PK_MPCStrong<PK_BDF>::ApplyPreconditioner(X, Y);
+}
+
+
+AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+FlowEnergyPH_PK::ModifyCorrection(double h,
+                                Teuchos::RCP<const TreeVector> res,
+                                Teuchos::RCP<const TreeVector> u,
+                                Teuchos::RCP<TreeVector> du){
+
+  AmanziSolvers::FnBaseDefs::ModifyCorrectionResult modified =
+    PK_MPCStrong<PK_BDF>::ModifyCorrection(h, res, u, du);
+
+  Teuchos::RCP<const TreeVector> flow_u = u->SubVector(0);
+  //Teuchos::RCP<const TreeVector> flow_res = res->SubVector(0);
+  Teuchos::RCP<TreeVector> flow_du = du->SubVector(0);
+
+  Teuchos::RCP<const TreeVector> ener_u = u->SubVector(1);
+  //Teuchos::RCP<const TreeVector> ener_res = res->SubVector(1);
+  Teuchos::RCP<TreeVector> ener_du = du->SubVector(1);
+  
+  return modified;
+
 }
 
 
