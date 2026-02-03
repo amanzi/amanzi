@@ -467,7 +467,8 @@
       <Parameter isUsed="true" name="PKs order" type="Array(string)" value="{transient:flow, transient:energy}"/>
       <Parameter name="master PK index" type="int" value="0"/>
       <Parameter name="domain name" type="string" value="domain"/>
-      <Parameter name="left scaling" type="bool" value="true"/>
+      <Parameter name="left scaling" type="bool" value="false"/>
+      <Parameter name="left scaling eps" type="double" value="1.0e-3"/>      
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{residual}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>

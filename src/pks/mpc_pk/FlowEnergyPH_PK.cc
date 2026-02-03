@@ -85,7 +85,7 @@ FlowEnergyPH_PK::Setup()
   compute_scaling_completed_ = false;
 
   left_scaling_ = my_list_->get<bool>("left scaling", false);
-  left_scaling_eps_ = my_list_->get<double>("left scaling eps", 1e-2);
+  left_scaling_eps_ = my_list_->get<double>("left scaling eps");
   right_scaling_ = my_list_->get<bool>("right scaling", false);
   
   
@@ -298,7 +298,7 @@ FlowEnergyPH_PK::FunctionalResidual(double t_old,
                                     Teuchos::RCP<TreeVector> f)
 {
 
-  double eps = 1.0e-2;
+  double eps = left_scaling_eps_;
   double f1_norm, f0_norm;
 
   // update molar flux
