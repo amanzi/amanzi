@@ -36,28 +36,23 @@ patch_tpl(ECOSIM
 
 
 # Set EcoSIM CMake cache arguments
-# - not sure what happens to Fortran_FLAGS as this could override our common flags
-# - explicitly set ATS_ECOSIM as this is needed in to trigger use of ATS external libraries in EcoSIM
 set(ECOSIM_CMAKE_CACHE_ARGS
       "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}/ecosim"
       "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}"
-      "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}" 
-      "-DCMAKE_Fortran_FLAGS:STRING=-fPIC -w -Wno-unused-variable -O3"
-      "-DATS_ECOSIM:BOOL=1")
+      "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}")
+    
+# --- Explicitly set ATS_ECOSIM as this is needed in EcoSIM CMake to trigger use of ATS external libraries
+list(APPEND ECOSIM_CMAKE_CACHE_ARGS "-DATS_ECOSIM:BOOL=1")
 
-# Architecture should be handled internally, maybe I can get rid of this - just don't think I need it
-if (APPLE)
-  list(APPEND ECOSIM_CMAKE_CACHE_ARGS "-DAPPLE:BOOL=1")
-elseif (WIN32)
-  list(APPEND ECOSIM_CMAKE_CACHE_ARGS "-DWIN32:BOOL=1")
-else()
-  list(APPEND ECOSIM_CMAKE_CACHE_ARGS "-DUNIX:BOOL=1")
-endif()
+# --- Define ECOSIM_FCFLAGS to augment AMANZI_COMMON_FCFLAGS
+build_whitespace_string(ECOSIM_FCFLAGS ${Amanzi_COMMON_FCFLAGS} -Wno-unused-variable)
+
 
 # --- Override minimum version
 if(CMAKE_MAJOR_VERSION VERSION_EQUAL "4")
   list(APPEND ECOSIM_CMAKE_CACHE_ARGS "-DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.5")
 endif()
+
 
 # --- Add external project build and tie to the EcoSIM build target
 ExternalProject_Add(${ECOSIM_BUILD_TARGET}
@@ -82,7 +77,7 @@ ExternalProject_Add(${ECOSIM_BUILD_TARGET}
                                   -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
                                   -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}  # Ensure uniform build
                                   -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
-                                  -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}
+                                  -DCMAKE_Fortran_FLAGS:STRING=${ECOSIM_FCFLAGS} # Not sure this customization is necessary
                                   -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
                     # -- Build
                     BINARY_DIR       ${ECOSIM_build_dir}           # Build directory 

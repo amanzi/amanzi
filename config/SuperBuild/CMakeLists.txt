@@ -812,12 +812,6 @@ endif()
 option(ENABLE_ECOSIM "Build EcoSIM package" FALSE)
 if (ENABLE_ECOSIM)
   include(${SuperBuild_BUILD_FILES_DIR}/Build_EcoSIM.cmake)
-  # Not appropriate to set this here it's an option for the ATS build
-  # set(ATS-EcoSIM TRUE CACHE BOOL "ENABLE ATS_ECOSIM")
-  # This shouldn't be necessary, also not needed by anyone else in TPL build, needs to be cached if non-standard
-  set(ECOSIM_INSTALL_PREFIX ${ECOSIM_INSTALL_PREFIX})
-  # Add debug signature to help other's identify who's the expert on this TPL/config issue
-  message(STATUS "AG: Debugging >>>> ECOSIM_INSTALL_PREFIX: " ${ECOSIM_INSTALL_PREFIX})
 endif()
 
 # Alquimia and chemical engines (PFloTran and CrunchTope)
