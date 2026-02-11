@@ -1,0 +1,31 @@
+# CMake ecosim configure file
+
+# Now run the patch script
+set(TPL_INSTALL_PREFIX @TPL_INSTALL_PREFIX@)
+
+message(STATUS "In CMake build script:")
+
+if (ATS_ECOSIM)
+  message(STATUS "ATS_ECOSIM Enabled")
+else()
+  message(STATUS "Not set in CMake Build Script, setting")
+  set(ATS_ECOSIM TRUE CACHE INTERNAL "")
+  set(ENV{ATS_ECOSIM} TRUE)
+endif()
+
+set(TPL_INSTALL_PREFIX @TPL_INSTALL_PREFIX@)
+set(command bash build_EcoSIM.sh --debug)
+
+execute_process(
+  COMMAND ${command}
+  RESULT_VARIABLE result
+  WORKING_DIRECTORY "@ECOSIM_source_dir@/"
+)
+
+if (result)
+  set(msg "ecosim build command failed")
+  foreach(arg IN LISTS command )
+    set(msg "${msg} '${arg}'")
+  endforeach()
+  message(FATAL_ERROR ${msg})
+endif()

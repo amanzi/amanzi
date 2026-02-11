@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# CMake generates this file
+# Replaces each @VAR@ with value of ${VAR}
+
+cd @ECOSIM_source_dir@
+
+rc=$?
+
+echo "copying data to install"
+
+cp -r @ECOSIM_source_dir@ @TPL_INSTALL_PREFIX@
+cd @TPL_INSTALL_PREFIX@
+
+mv ecosim--source/ ecosim/
+
+cd ecosim
+
+mkdir -p local/lib
+
+find . -name lib*.a -exec cp {} ./local/lib/ \;
+
+echo "make ecosim returned $rc"
+
+exit $?

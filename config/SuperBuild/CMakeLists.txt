@@ -808,6 +808,17 @@ if (ENABLE_CLM)
   include(${SuperBuild_BUILD_FILES_DIR}/Build_CLM.cmake)
 endif()
 
+option(ENABLE_ECOSIM "Build EcoSIM package" FALSE)
+if (ENABLE_ECOSIM)
+  set(ATS-EcoSIM TRUE CACHE BOOL "ENABLE ATS_ECOSIM")
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_EcoSIM.cmake)
+endif()
+
+message(STATUS "In Superbuild/CMakeLists: ")
+message(STATUS "ECOSIM_INSTALL_PREFIX: " ${ECOSIM_INSTALL_PREFIX})
+set(ECOSIM_INSTALL_PREFIX ${ECOSIM_INSTALL_PREFIX})
+
+
 # Alquimia and chemical engines (PFloTran and CrunchTope)
 if (NOT ENABLE_XSDK)
   
