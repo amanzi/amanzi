@@ -85,7 +85,7 @@ FlowEnergyPH_PK::Setup()
   compute_scaling_completed_ = false;
 
   left_scaling_ = my_list_->get<bool>("left scaling", false);
-  left_scaling_eps_ = my_list_->get<double>("left scaling eps");
+  left_scaling_eps_ = my_list_->get<double>("left scaling eps", 1e-4);
   right_scaling_ = my_list_->get<bool>("right scaling", false);
   
   
@@ -485,7 +485,6 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
 
 
   op_tree_pc_->AssembleMatrix();
-  // std::cout << *op_tree_pc_->A() << std::endl; exit(0);
   op_tree_pc_->InitializeInverse();
   op_tree_pc_->ComputeInverse();
 }
