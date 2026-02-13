@@ -53,6 +53,10 @@ class PK_BDF
   {
     return Teuchos::null;
   }
+
+  virtual void UpdateSolution(const Teuchos::RCP<TreeVector>& u, const Teuchos::RCP<TreeVector>& du) {
+    u->Update(1.0, *du, -1.0);
+  }
 };
 
 } // namespace Amanzi

@@ -60,6 +60,9 @@ class BDF1_SolverFnBase : public AmanziSolvers::SolverFnBase<Vector> {
   // parameter for continuation method
   virtual void UpdateContinuationParameter(double lambda);
 
+  virtual void UpdateSolution(const Teuchos::RCP<Vector>& u,
+                              const Teuchos::RCP<Vector>& du);
+  
   // bookkeeping for state
   virtual void ChangedSolution();
 
@@ -146,6 +149,16 @@ BDF1_SolverFnBase<Vector>::UpdateContinuationParameter(double lambda)
   bdf_fn_->UpdateContinuationParameter(lambda);
 }
 
+template<class Vector>
+void
+BDF1_SolverFnBase<Vector>::UpdateSolution(const Teuchos::RCP<Vector>& u,
+                                          const Teuchos::RCP<Vector>& du){
+
+  bdf_fn_->UpdateSolution(u, du);
+  
+}
+
+  
 // bookkeeping for state
 template<class Vector>
 void

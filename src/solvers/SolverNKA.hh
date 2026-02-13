@@ -431,8 +431,9 @@ SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u)
     }
 
     // Next solution iterate and error estimate: u := u - du
-    u->Update(-1.0, *du, 1.0);
-    fn_->ChangedSolution();
+    // u->Update(-1.0, *du, 1.0);
+    fn_ -> UpdateSolution(u,du);
+    fn_ -> ChangedSolution();
 
     // Increment iteration counter.
     num_itrs_++;

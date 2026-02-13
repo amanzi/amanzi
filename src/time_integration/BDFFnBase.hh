@@ -76,6 +76,8 @@ class BDFFnBase {
   // state.
   virtual void ChangedSolution() = 0;
 
+  virtual void UpdateSolution(const Teuchos::RCP<Vector>& u, const Teuchos::RCP<Vector>& du) = 0;
+
   // experimental routine -- returns the number of linear iterations.
   virtual int ReportStatistics() { return 0; }
 };

@@ -50,6 +50,14 @@ class SolverFnBase {
     return FnBaseDefs::CORRECTION_NOT_MODIFIED;
   }
 
+  // allow PK to modify a correction
+  virtual void UpdateSolution(const Teuchos::RCP<Vector>& u,
+                              const Teuchos::RCP<Vector>& du)
+  {
+    // Next solution iterate and error estimate: u := u - du
+    u->Update(-1.0, *du, 1.0);
+  }
+
   virtual void UpdateContinuationParameter(double lambda) {};
 
   // Check the admissibility of an inner iterate (ensures preconditions for

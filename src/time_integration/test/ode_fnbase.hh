@@ -98,6 +98,10 @@ class nonlinearODE : public Amanzi::BDFFnBase<Epetra_Vector> {
   }
   void ChangedSolution() {}
 
+  void UpdateSolution(const Teuchos::RCP<Epetra_Vector>& u,
+                      const Teuchos::RCP<Epetra_Vector>& du){
+    u->Update(-1.0, *du, 1.0);
+  }
 
   bool exact_jacobian_;
   double atol_, rtol_;

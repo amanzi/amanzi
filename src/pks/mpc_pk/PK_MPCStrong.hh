@@ -93,6 +93,9 @@ class PK_MPCStrong
   virtual bool ModifyPredictor(double h,
                                Teuchos::RCP<const TreeVector> u0,
                                Teuchos::RCP<TreeVector> u);
+  
+  virtual void UpdateSolution(const Teuchos::RCP<TreeVector> u,
+                              const Teuchos::RCP<TreeVector> du);
 
   // -- Modify the correction.
   virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult ModifyCorrection(
@@ -475,6 +478,16 @@ PK_MPCStrong<PK_Base>::ModifyCorrection(double h,
     modified = std::max(modified, sub_pks_[i]->ModifyCorrection(h, pk_res, pk_u, pk_du));
   }
   return modified;
+}
+
+template<class PK_Base>
+void
+PK_MPCStrong<PK_Base>::UpdateSolution(const Teuchos::RCP<TreeVector> u,
+                                      const Teuchos::RCP<TreeVector> du){
+
+  for (unsigned int i = 0; i != sub_pks_.size(); ++i) {
+    sub_pks_[i]->UpdateSolution(u, du);
+  }
 }
 
 } // namespace Amanzi

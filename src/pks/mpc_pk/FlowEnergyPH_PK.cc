@@ -87,6 +87,8 @@ FlowEnergyPH_PK::Setup()
   left_scaling_ = my_list_->get<bool>("left scaling", false);
   left_scaling_eps_ = my_list_->get<double>("left scaling eps", 1e-4);
   right_scaling_ = my_list_->get<bool>("right scaling", false);
+  P0_ = my_list_->get<double>("P0 scaling factor", 1.0);
+  H0_ = my_list_->get<double>("H0 scaling factor", 1.0);
   
   
   // rock
@@ -300,6 +302,9 @@ FlowEnergyPH_PK::FunctionalResidual(double t_old,
 
   double eps = left_scaling_eps_;
   double f1_norm, f0_norm;
+  double p_min, p_max;
+
+  
 
   // update molar flux
   auto u_new0 = u_new->SubVector(0);
@@ -309,6 +314,10 @@ FlowEnergyPH_PK::FunctionalResidual(double t_old,
 
   // flow
   auto u_old0 = u_old->SubVector(0);
+  u_new0->Data()->MaxValue(&p_max);
+  u_new0->Data()->MinValue(&p_min);
+  std::cout<<"pmin "<<p_min<<" pmax "<<p_max<<"\n";
+  
   auto f0 = f->SubVector(0);
   sub_pks_[0]->FunctionalResidual(t_old, t_new, u_old0, u_new0, f0);  
 
@@ -496,9 +505,36 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
 int
 FlowEnergyPH_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, Teuchos::RCP<TreeVector> Y)
 {
-  return op_tree_pc_->ApplyInverse(*X, *Y);
+  int ierr;
+
+  ierr = op_tree_pc_->ApplyInverse(*X, *Y);
+
+  if (right_scaling_) {
+    Teuchos::RCP<TreeVector> flow_du = Y->SubVector(0);
+    Teuchos::RCP<TreeVector> ener_du = Y->SubVector(1);
+
+    flow_du->Scale(1./P0_);
+    ener_du->Scale(1./H0_);
+  }
+  
+  return ierr;
   // return PK_MPCStrong<PK_BDF>::ApplyPreconditioner(X, Y);
 }
+
+
+void FlowEnergyPH_PK::UpdateSolution(const Teuchos::RCP<TreeVector>& u,
+                                     const Teuchos::RCP<TreeVector>& du){
+
+  if (right_scaling_){
+    u->SubVector(0)->Update(-1.0, *du->SubVector(0), P0_);
+    u->SubVector(1)->Update(-1.0, *du->SubVector(1), H0_);    
+  }else{
+    u->Update(-1.0, *du, 1.0);
+  }
+
+
+}
+
 
 
 AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
@@ -510,12 +546,7 @@ FlowEnergyPH_PK::ModifyCorrection(double h,
   AmanziSolvers::FnBaseDefs::ModifyCorrectionResult modified =
     PK_MPCStrong<PK_BDF>::ModifyCorrection(h, res, u, du);
 
-  Teuchos::RCP<const TreeVector> flow_u = u->SubVector(0);
-  //Teuchos::RCP<const TreeVector> flow_res = res->SubVector(0);
   Teuchos::RCP<TreeVector> flow_du = du->SubVector(0);
-
-  Teuchos::RCP<const TreeVector> ener_u = u->SubVector(1);
-  //Teuchos::RCP<const TreeVector> ener_res = res->SubVector(1);
   Teuchos::RCP<TreeVector> ener_du = du->SubVector(1);
   
   return modified;

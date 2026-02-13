@@ -71,6 +71,9 @@ class FlowEnergyPH_PK : public PK_MPCStrong<PK_BDF> {
                    Teuchos::RCP<const TreeVector> u,
                    Teuchos::RCP<TreeVector> du) override;
 
+  virtual void UpdateSolution(const Teuchos::RCP<TreeVector>& u,
+                              const Teuchos::RCP<TreeVector>& du) override;
+
   // -- error norm for coupled system
   std::string name() override { return "flow and energy ph"; }
 
@@ -82,6 +85,7 @@ class FlowEnergyPH_PK : public PK_MPCStrong<PK_BDF> {
   Teuchos::RCP<TreeVector> res_scale_;
   bool compute_scaling_completed_, left_scaling_, right_scaling_;
   double left_scaling_eps_;
+  double P0_, H0_;
  
   void RemoveFluxContinuityEquations_(Teuchos::RCP<Operators::PDE_Diffusion>& pde);
 
