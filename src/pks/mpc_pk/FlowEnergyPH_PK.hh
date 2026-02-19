@@ -64,10 +64,17 @@ class FlowEnergyPH_PK : public PK_MPCStrong<PK_BDF> {
   virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
                                   Teuchos::RCP<TreeVector> Pu) override;
 
+
+  AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+  ModifyCorrection(double dt,
+                   Teuchos::RCP<const TreeVector> f,
+                   Teuchos::RCP<const TreeVector> u,
+                   Teuchos::RCP<TreeVector> du) override;
+
   // -- error norm for coupled system
   std::string name() override { return "flow and energy ph"; }
 
-  // -- L-scheme for flow equaiton
+  // -- L-scheme for flow equation
   virtual std::vector<Key> SetupLSchemeKey(Teuchos::ParameterList& plist) override;
 
  private:
@@ -91,7 +98,7 @@ class FlowEnergyPH_PK : public PK_MPCStrong<PK_BDF> {
   Key energy_key_, particle_density_key_, conductivity_key_;
   Key state_key_, viscosity_liquid_key_, mol_density_liquid_key_, iso_compressibility_key_;
   Key mol_flowrate_key_, water_storage_key_;
-  Key  bcs_flow_key_, bcs_enthalpy_key_;
+  Key bcs_flow_key_, bcs_enthalpy_key_;
 
   // factory registration
   static RegisteredPKFactory<FlowEnergyPH_PK> reg_;

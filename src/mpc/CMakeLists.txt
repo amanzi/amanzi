@@ -188,6 +188,11 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_supercriticalPT.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+    add_amanzi_test(mpc_supercriticalPH_jacobian mpc_supercriticalPH_jacobian
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_supercriticalPH_jacobian.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
     add_amanzi_test(mpc_supercriticalPH mpc_supercriticalPH
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_supercriticalPH.cc

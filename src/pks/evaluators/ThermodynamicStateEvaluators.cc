@@ -39,9 +39,6 @@
 namespace Amanzi {
 namespace Evaluators {
 
-// conversion factor from kJ/kg to J/mol
-static constexpr double cfactor = 1000.0 * CommonDefs::MOLAR_MASS_H2O;
-
 /* ******************************************************************
 * Thermodynamic state
 ****************************************************************** */
@@ -95,7 +92,7 @@ ThermodynamicStateEvaluator::Evaluate_(const State& S, const std::vector<Composi
   double p, T, v, ap, av, bp, cp, cv, kt;
   for (int c = 0; c != ncells; ++c) {
     double pMPa = p_c[0][c] * 1.0e-6;
-    double hkJ = h_c[0][c] / cfactor;
+    double hkJ = h_c[0][c] / CommonDefs::ENTHALPY_FACTOR;
  
     AmanziEOS::Properties prop, liquid, vapor;
     try {
@@ -152,18 +149,18 @@ ThermodynamicStateEvaluator::Evaluate_(const State& S, const std::vector<Composi
       cp = liquid.cp * 1.0e+3;
       kt = liquid.kt * 1.0e-6;
 
-      dvdp_l = -vl * kt + v * av * T * dvdh;
+      dvdp_l = vl * (-kt + av * T * dvdh);
       dhdp_l = vl * (1 - av * T) + cp * T * dvdh;
 
       av = vapor.av;
       cp = vapor.cp * 1.0e+3;
       kt = vapor.kt * 1.0e-6;
 
-      dvdp_v = -vv * kt + v * av * T * dvdh;
+      dvdp_v = vv * (-kt + av * T * dvdh);
       dhdp_v = vv * (1 - av * T) + cp * T * dvdh;
 
       // mechanical (tmp1) and phase change (tmp2) parts
-      // this could be re-grouped and combied with identity to cancel h' terms
+      // this could be re-grouped and combined with identity to cancel h' terms
       x = prop.x;
       tmp1 = (1 - x) * dvdp_l + x * dvdp_v;
       tmp2 = ((1 - x) * dhdp_l + x * dhdp_v) * dvdh; 

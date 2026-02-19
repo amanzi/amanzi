@@ -38,8 +38,6 @@ namespace Energy {
 using CV_t = CompositeVector;
 using CVS_t = CompositeVectorSpace;
 
-static constexpr double cfactor = 1000.0 * CommonDefs::MOLAR_MASS_H2O;
-
 /* ******************************************************************
 * Default constructor.
 ****************************************************************** */
@@ -365,7 +363,6 @@ EnergyPressureEnthalpy_PK::Initialize()
   // Create local evaluators. Initialize local fields.
   enthalpy_eval_->SetChanged();
   InitializeFields_();
-  InitializeEnthalpy_();
 
   // initialize operators: diffusion and advection
   Teuchos::ParameterList tmp_list = ep_list_->sublist("operators").sublist("diffusion operator");
@@ -462,31 +459,6 @@ EnergyPressureEnthalpy_PK::Initialize()
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "WARNING: no essential boundary conditions, solver may fail" << std::endl;
   }
-}
-
-
-/* *******************************************************************
-* Initialize additional fields
-******************************************************************* */
-void 
-EnergyPressureEnthalpy_PK::InitializeEnthalpy_()
-{
-  S_->GetEvaluator(temperature_key_).Update(*S_, "energy");
-
-  const auto& T_c = *S_->Get<CV_t>(temperature_key_).ViewComponent("cell");
-  const auto& p_c = *S_->Get<CV_t>(pressure_key_).ViewComponent("cell");
-  auto& h_c = *S_->Get<CV_t>(enthalpy_key_).ViewComponent("cell");
-
-  Teuchos::ParameterList plist;
-  auto eos = Teuchos::rcp(new AmanziEOS::IAPWS97(plist));
-
-  int count = h_c.MyLength();
-  for (int i = 0; i != count; ++i) {
-    double pMPa = p_c[0][i] * 1.0e-6;
-    h_c[0][i] = cfactor * (eos->ThermodynamicsPT(pMPa, T_c[0][i])).h;
-  }
-
-  DeriveFaceValuesFromCellValues(S_->GetW<CV_t>(enthalpy_key_, Tags::DEFAULT, passwd_));
 }
 
 
@@ -600,7 +572,7 @@ void EnergyPressureEnthalpy_PK::ComputeSecondaryBCs()
       else pMPa = (*p_bf)[0][bf] * 1e-6;
 
       bc_model_enth[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_value_enth[f] = cfactor * eos->ThermodynamicsPT(pMPa, bc_value[f]).h;
+      bc_value_enth[f] = CommonDefs::ENTHALPY_FACTOR * eos->ThermodynamicsPT(pMPa, bc_value[f]).h;
 
       if (p_f.get()) (*h_f)[0][f] = bc_value_enth[f];
       else (*h_bf)[0][bf] = bc_value_enth[f];

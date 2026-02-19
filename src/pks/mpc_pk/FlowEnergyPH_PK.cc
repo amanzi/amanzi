@@ -14,8 +14,10 @@
 */
 
 #include "BCs.hh"
+#include "CommonDefs.hh"
 #include "Flow_PK.hh"
 #include "Energy_PK.hh"
+#include "EnergyPressureEnthalpy_PK.hh"
 #include "ModelAssumptions.hh"
 #include "OperatorDefs.hh"
 #include "PDE_AdvectionUpwindFactory.hh"
@@ -26,6 +28,8 @@
 #include "PK_MPCStrong.hh"
 
 namespace Amanzi {
+
+static constexpr double units = CommonDefs::ENTHALPY_FACTOR;
 
 using CV_t = CompositeVector;
 using CVS_t = CompositeVectorSpace;
@@ -312,6 +316,8 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
 {
   PK_MPCStrong<PK_BDF>::UpdatePreconditioner(t, up, dt);
 
+  auto energy_pk = Teuchos::rcp_dynamic_cast<Energy::EnergyPressureEnthalpy_PK>(sub_pks_[1]);
+
   auto bc_enth = S_->GetPtrW<Operators::BCs>(bcs_enthalpy_key_, Tags::DEFAULT, "state");
   auto bc_pres = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state");
 
@@ -325,7 +331,9 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   const auto& mu = S_->Get<CV_t>(viscosity_liquid_key_, Tags::DEFAULT);
   auto flux = S_->GetPtr<CompositeVector>(mol_flowrate_key_, Tags::DEFAULT);
 
+  // ---------------------
   // pressure-energy block
+  // ---------------------
   op01_->Init();
 
   // -- accumulation
@@ -347,7 +355,9 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   pde01_adv_->SetBCs(bc_enth, bc_pres);
   pde01_adv_->ApplyBCs(false, true, false);
 
+  // ---------------------
   // energy-pressure block
+  // ---------------------
   op10_->Init();
 
   // -- diffusion due to heat conduction
@@ -393,8 +403,9 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   pde10_adv_->ApplyBCs(false, true, false);
 
   // -- accumulation
+  //    modified Jacobian is used in region 4
   S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd, pressure_key_, tag);
-  const auto& dEdp = S_->GetDerivative<CV_t>(energy_key_, tag, pressure_key_, tag);
+  auto& dEdp = S_->GetDerivative<CV_t>(energy_key_, tag, pressure_key_, tag);
   pde10_acc_->AddAccumulationTerm(dEdp, dt, "cell");
 
   if (!symbolic_assembly_complete_) {
@@ -416,6 +427,97 @@ FlowEnergyPH_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, Teuchos::
 {
   return op_tree_pc_->ApplyInverse(*X, *Y);
   // return PK_MPCStrong<PK_BDF>::ApplyPreconditioner(X, Y);
+}
+
+
+/********************************************************************
+* Modifies nonlinear update du based on the maximum allowed change
+* of saturation.
+****************************************************************** */
+AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+FlowEnergyPH_PK::ModifyCorrection(double dt,
+                                  Teuchos::RCP<const TreeVector> f,
+                                  Teuchos::RCP<const TreeVector> u,
+                                  Teuchos::RCP<TreeVector> du)
+{
+  return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
+  const auto& state_c = *S_->Get<CV_t>(state_key_).ViewComponent("cell");
+  const auto& p_c = *u->SubVector(0)->Data()->ViewComponent("cell");
+  const auto& h_c = *u->SubVector(1)->Data()->ViewComponent("cell");
+
+  const auto& dp_c = *du->SubVector(0)->Data()->ViewComponent("cell");
+  const auto& dh_c = *du->SubVector(1)->Data()->ViewComponent("cell");
+
+  int nclipped = 0;
+  int ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL,
+                                           AmanziMesh::Parallel_kind::OWNED);
+
+  // increment clipping
+  double max_change(1.0);
+  for (int c = 0; c < ncells_owned; ++c) {
+    double tmp = std::fabs(h_c[0][c]) * max_change;
+    dh_c[0][c] = std::clamp(dh_c[0][c], -tmp, tmp);
+  }
+
+  // phase-change checks
+  double p1, h1, hf, hg, dhf, dhg, hkJ, pMPa, eps1(1e-10), eps2(1e-4);
+  double units(CommonDefs::ENTHALPY_FACTOR);
+
+  Teuchos::ParameterList plist;
+  AmanziEOS::IAPWS97 eos(plist);
+
+  for (int c = 0; c < ncells_owned; ++c) {
+    p1 = p_c[0][c] - dp_c[0][c];
+    h1 = h_c[0][c] - dh_c[0][c];
+
+    pMPa = p1 * 1.0e-6;
+    hkJ = h1 / units;
+    auto [prop1, liquid1, vapor1] = eos.ThermodynamicsPH(pMPa, hkJ);
+
+    int rgn0 = state_c[0][c];
+    int rgn1 = (int)prop1.rgn;
+
+    // leaving region 4
+    if (rgn0 == 4 && rgn1 != 4) {
+      pMPa = p_c[0][c] * 1.0e-6;
+      hkJ = h_c[0][c] / units;
+      auto [prop0, liquid0, vapor0] = eos.ThermodynamicsPH(pMPa, hkJ);
+
+      hf = liquid0.h * units;
+      hg = vapor0.h * units;
+      dhf = std::max(eps1 * hg, 10.0 * eps2 * (hg - hf));
+      dhg = std::max(eps1 * hg, 100.0 * eps2 * (hg - hf));
+
+      // far outside region 4 is fine
+      if (h1 <= hf - dhf || h1 >= hg + dhg) {
+        nclipped++;
+      } else if (rgn1 == 1 || rgn1 == 3) {
+        dh_c[0][c] = h_c[0][c] - (hf + dhf);
+      } else if (rgn1 == 2) {
+        dh_c[0][c] = h_c[0][c] - (hg - dhg);
+      } 
+
+    // entering region 4
+    } else if (rgn1 == 4 && rgn0 != 4) {
+      hf = liquid1.h * units;
+      hg = vapor1.h * units;
+      dhf = std::max(eps1 * hg, eps2 * (hg - hf));
+      dhg = dhf;
+
+      // deep inside region 4 is fine
+      // close to the saturation boundary kick back to the orginal region
+      if (hf + dhf <= h1 && h1 <= hg - dhg) {
+        nclipped++;
+      } else if (rgn0 == 1 || rgn0 == 3) {
+        dh_c[0][c] = h_c[0][c] - (hf - dhf);
+      } else if (rgn0 == 2) {
+        dh_c[0][c] = h_c[0][c] - (hg + dhg);
+      } 
+    }
+  } 
+
+  return (nclipped) > 0 ? AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED :
+                          AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
 }
 
 

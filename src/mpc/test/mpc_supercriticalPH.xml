@@ -166,7 +166,7 @@
             <ParameterList name="function">
               <ParameterList name="function-exprtk">
                 <Parameter name="number of arguments" type="int" value="4"/>
-                <Parameter name="formula" type="string" value="4.562e+04 - 0 * x * (100 - x)"/>
+                <Parameter name="formula" type="string" value="4.962e+04 - 0.05 * x * (100 - x)"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -197,6 +197,7 @@
   </ParameterList>
 
   <ParameterList name="cycle driver">
+    <Parameter name="io frequency" type="int" value="100"/>
     <ParameterList name="time periods">
       <ParameterList name="TP 0">
         <ParameterList name="PK tree">

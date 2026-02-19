@@ -57,6 +57,14 @@ class EnergyPressureEnthalpy_PK : public Energy_PK {
   virtual double 
   ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) final;
 
+  // possibly modifies the correction, after the nonlinear solver has
+  // computed it, will return true if it did change the correction
+  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+  ModifyCorrection(double dt,
+                   Teuchos::RCP<const TreeVector> res,
+                   Teuchos::RCP<const TreeVector> u,
+                   Teuchos::RCP<TreeVector> du) override;
+
   virtual void 
   UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt) override;
 
@@ -66,9 +74,6 @@ class EnergyPressureEnthalpy_PK : public Energy_PK {
 
   // additional method for the base class
   virtual void ComputeSecondaryBCs() override;
-
- private:
-  void InitializeEnthalpy_();
 
  protected:
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
@@ -93,6 +98,9 @@ class EnergyPressureEnthalpy_PK : public Energy_PK {
   double dt_, dt_next_;
 
   Teuchos::RCP<StateArchive> archive_;
+
+  // residual and clipping 
+  double residual_max_norm_;
 
   static RegisteredPKFactory<EnergyPressureEnthalpy_PK> reg_;
 };

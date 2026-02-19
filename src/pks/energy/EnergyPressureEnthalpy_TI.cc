@@ -12,6 +12,8 @@
 */
 
 // Amanzi
+#include "CommonDefs.hh"
+#include "IAPWS97.hh"
 #include "Key.hh"
 #include "LScheme_Helpers.hh"
 #include "PDE_HelperDiscretization.hh"
@@ -80,21 +82,9 @@ EnergyPressureEnthalpy_PK::FunctionalResidual(double t_old,
   op_matrix_diff_pres_->global_operator()->ComputeNegativeResidual(pres, g_adv);
   g->Data()->Update(1.0, g_adv, 1.0);
 
-  // add accumulation term
-  S_->GetEvaluator(energy_key_).Update(*S_, passwd_);
-
-  const auto& e1 = *S_->Get<CompositeVector>(energy_key_).ViewComponent("cell");
-  const auto& e0 = *S_->Get<CompositeVector>(prev_energy_key_).ViewComponent("cell");
-  Epetra_MultiVector& g_c = *g->Data()->ViewComponent("cell");
-
-  for (int c = 0; c < ncells_owned; ++c) {
-    double factor = mesh_->getCellVolume(c) / dt;
-    g_c[0][c] += factor * (e1[0][c] - e0[0][c]);
-  }
-
   // add enthalpy advection
   S_->GetEvaluator(mol_flowrate_key_).Update(*S_, passwd_);
-  auto flux = S_->GetPtr<CompositeVector>(mol_flowrate_key_, Tags::DEFAULT);
+  auto flux = S_->GetPtr<CV_t>(mol_flowrate_key_, Tags::DEFAULT);
 
   op_advection_->Init();
   op_matrix_advection_->Setup(*flux);
@@ -103,39 +93,32 @@ EnergyPressureEnthalpy_PK::FunctionalResidual(double t_old,
 
   op_advection_->ComputeNegativeResidual(*u_new->Data(), g_adv);
   g->Data()->Update(1.0, g_adv, 1.0);
-}
 
+  // add accumulation term
+  S_->GetEvaluator(energy_key_).Update(*S_, passwd_);
+  const auto& e1 = *S_->Get<CV_t>(energy_key_).ViewComponent("cell");
+  const auto& e0 = *S_->Get<CV_t>(prev_energy_key_).ViewComponent("cell");
 
-/* ******************************************************************
-* TBW
-****************************************************************** */
-double
-EnergyPressureEnthalpy_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
-                                     Teuchos::RCP<const TreeVector> du)
-{
-  double error(0.0), error_h(0.0);
-  double ref_enthalpy(18000.0);
+  auto& g_c = *g->Data()->ViewComponent("cell");
+  auto& h_c = *u_new->Data()->ViewComponent("cell");
+  const auto& p_c = *S_->Get<CV_t>(pressure_key_).ViewComponent("cell");
+  const auto& density = *S_->Get<CV_t>(mol_density_liquid_key_).ViewComponent("cell");
+  const auto& porosity = *S_->Get<CV_t>(porosity_key_).ViewComponent("cell");
+  const auto& state = *S_->Get<CV_t>(state_key_).ViewComponent("cell");
 
-  for (auto comp = u->Data()->begin(); comp != u->Data()->end(); ++comp) {
-    const auto& uc = *u->Data()->ViewComponent(*comp);
-    const auto& duc = *du->Data()->ViewComponent(*comp);
+  Teuchos::ParameterList plist;
+  AmanziEOS::IAPWS97 eos(plist);
 
-    int ncomp = uc.MyLength();
-    for (int i = 0; i < ncomp; ++i) {
-      double tmp = fabs(duc[0][i]) / (fabs(uc[0][i]) + ref_enthalpy);
-      error_h = std::max(error_h, tmp);
-    }
+  // -- use modified residual for saturated region 4 (WIP)
+  //    this is actually the scaled residual
+  double units(CommonDefs::ENTHALPY_FACTOR);
+  residual_max_norm_ = 0.0;
+  for (int c = 0; c < ncells_owned; ++c) {
+    double factor = mesh_->getCellVolume(c) / dt;
+    double acc = factor * (e1[0][c] - e0[0][c]);
+    g_c[0][c] += acc;
+    residual_max_norm_ = std::max(residual_max_norm_, fabs(g_c[0][c] / (factor * e0[0][c])));
   }
-
-  // Cell error is based upon error in energy conservation relative to
-  // a characteristic energy
-  double error_e(0.0);
-  error = std::max(error_h, error_e);
-
-  double buf = error;
-  du->Data()->Comm()->MaxAll(&buf, &error, 1);
-
-  return error;
 }
 
 
@@ -173,6 +156,7 @@ EnergyPressureEnthalpy_PK::UpdatePreconditioner(double t,
   S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd_, enthalpy_key_, Tags::DEFAULT);
   auto dEdh = S_->GetDerivative<CV_t>(energy_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT);
   auto& dEdh_c = *dEdh.ViewComponent("cell");
+
   S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, passwd_);
   const auto& density = *S_->Get<CV_t>(mol_density_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
 
@@ -188,7 +172,7 @@ EnergyPressureEnthalpy_PK::UpdatePreconditioner(double t,
   op_preconditioner_advection_->UpdateMatrices(flux.ptr());
   op_preconditioner_advection_->ApplyBCs(false, true, false);
 
-  // add matrices for other advection terms div[q ((h/eta) deta/dh - (h/mu) dmu/dh)]
+  // add matrices for other advection terms div[q ((deta/dh)/eta - (dmu/dh)/mu) dh]
   S_->GetEvaluator(mol_density_liquid_key_).UpdateDerivative(*S_, passwd_, enthalpy_key_, Tags::DEFAULT);
   *coef = S_->GetDerivative<CV_t>(mol_density_liquid_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT);
   coef->Multiply(1.0, *up->Data(), *coef, 0.0);
@@ -212,6 +196,51 @@ EnergyPressureEnthalpy_PK::UpdatePreconditioner(double t,
   op_preconditioner_->ComputeInverse();
 }
 
-} // namespace Energy
-} // namespace Amanzi
+
+/********************************************************************
+* Modifies nonlinear update du based on the maximum allowed change
+* of saturation.
+****************************************************************** */
+AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+EnergyPressureEnthalpy_PK::ModifyCorrection(double dt,
+                                            Teuchos::RCP<const TreeVector> f,
+                                            Teuchos::RCP<const TreeVector> u,
+                                            Teuchos::RCP<TreeVector> du)
+{
+  return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
+}
+
+
+/* ******************************************************************
+* TBW
+****************************************************************** */
+double
+EnergyPressureEnthalpy_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
+                                     Teuchos::RCP<const TreeVector> du)
+{
+  double error(0.0), error_h(0.0);
+  double ref_enthalpy(18000.0);
+
+  for (auto comp = u->Data()->begin(); comp != u->Data()->end(); ++comp) {
+    const auto& uc = *u->Data()->ViewComponent(*comp);
+    const auto& duc = *du->Data()->ViewComponent(*comp);
+
+    int ncomp = uc.MyLength();
+    for (int i = 0; i < ncomp; ++i) {
+      double tmp = fabs(duc[0][i]) / (fabs(uc[0][i]) + ref_enthalpy);
+      error_h = std::max(error_h, tmp);
+    }
+  }
+
+  // add normalized residual error
+  error = std::max(error_h, residual_max_norm_);
+
+  double buf = error;
+  du->Data()->Comm()->MaxAll(&buf, &error, 1);
+
+  return error;
+}
+
+}  // namespace Energy
+}  // namespace Amanzi
 

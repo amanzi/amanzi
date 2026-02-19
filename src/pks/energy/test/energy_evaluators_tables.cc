@@ -124,7 +124,6 @@ TEST(EVALUATOR_DERIVATIVE_TABLES_PH)
   int c(0);
   double scale(50.0 / n);
   double dp(5.0e-2 * scale), dh(15.0 * scale), p, h; 
-  double cfactor(1.0e+3 * CommonDefs::MOLAR_MASS_H2O);
 
   for (int i = -n; i < n; ++i) {
     for (int j = -n; j < n; ++j) {
@@ -132,7 +131,7 @@ TEST(EVALUATOR_DERIVATIVE_TABLES_PH)
       h = eos.HC + j * dh;
 
       p_c[0][c] = p * 1.0e+6;
-      h_c[0][c] = h * cfactor;
+      h_c[0][c] = h * CommonDefs::ENTHALPY_FACTOR;
       c++;
     }
   }
@@ -169,7 +168,7 @@ TEST(EVALUATOR_DERIVATIVE_TABLES_PH)
       if (rgn != 4) CHECK(value > 0.0);
       value = (rgn != 4) ? std::log(value) : 0.0;
 
-      // std::cout << p_c[0][c] * 1e-6 << " " << h_c[0][c] / cfactor << " " << value << std::endl;
+      // std::cout << p_c[0][c] * 1e-6 << " " << h_c[0][c] / ENTHALPY_FACTOR << " " << value << std::endl;
       c++;
     }
   }
@@ -184,8 +183,8 @@ TEST(EVALUATOR_DERIVATIVE_TABLES_PH)
   c = 0;
   for (int i = -n; i < n; ++i) {
     for (int j = -n; j < n; ++j) {
-      // std::cout << p_c[0][c] * 1e-6 << " " << h_c[0][c] / cfactor << " " << field_c[0][c] << std::endl;
-      // std::cout << p_c[0][c] * 1e-6 << " " << h_c[0][c] / cfactor << " " << der_c[0][c] << std::endl;
+      // std::cout << p_c[0][c] * 1e-6 << " " << h_c[0][c] / ENTHALPY_FACTOR << " " << field_c[0][c] << std::endl;
+      // std::cout << p_c[0][c] * 1e-6 << " " << h_c[0][c] / ENTHALPY_FACTOR << " " << der_c[0][c] << std::endl;
       c++;
     }
   }

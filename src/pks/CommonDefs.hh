@@ -24,6 +24,7 @@ namespace CommonDefs {
 
 constexpr double IDEAL_GAS_CONSTANT_R = 8.314462175;
 constexpr double MOLAR_MASS_H2O = 0.0180153333333; // [kg/mol]
+constexpr double ENTHALPY_FACTOR = 1000.0 * MOLAR_MASS_H2O; // conversion from kJ/kg to J/mol
 
 // constant properties (T = 293.15 K)
 const double ISOTHERMAL_VISCOSITY = 1.002e-3;

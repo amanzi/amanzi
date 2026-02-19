@@ -17,10 +17,10 @@
 #include "CommonDefs.hh"
 #include "IEM_IAPWS97.hh"
 
+static constexpr double units = Amanzi::CommonDefs::ENTHALPY_FACTOR;
+
 namespace Amanzi {
 namespace Energy {
-
-static constexpr double cfactor = 1000.0 * CommonDefs::MOLAR_MASS_H2O;
 
 IEM_IAPWS97::IEM_IAPWS97(Teuchos::ParameterList& plist)
 {
@@ -32,7 +32,7 @@ double
 IEM_IAPWS97::InternalEnergy(double T, double p)
 {
   double pMPa = p * 1e-6;
-  return cfactor * eos_->ThermodynamicsPT(pMPa, T).u;
+  return units * eos_->ThermodynamicsPT(pMPa, T).u;
 }
 
 
@@ -42,9 +42,9 @@ IEM_IAPWS97::DInternalEnergyDT(double T, double p)
   double pMPa = p * 1e-6;
   auto prop = eos_->ThermodynamicsPT(pMPa, T);
   if (prop.rgn == 3)
-    return cfactor * (pMPa * (T * prop.ap - 1.0) - prop.cv) / pMPa / prop.bp;
+    return units * (pMPa * (T * prop.ap - 1.0) - prop.cv) / pMPa / prop.bp;
   else
-    return -cfactor * prop.v * (pMPa * prop.kt - T * prop.av);
+    return -units * prop.v * (pMPa * prop.kt - T * prop.av);
 }
 
 
@@ -54,9 +54,9 @@ IEM_IAPWS97::DInternalEnergyDp(double T, double p)
   double pMPa = p * 1e-6;
   auto prop = eos_->ThermodynamicsPT(pMPa, T);
   if (prop.rgn == 3)
-    return cfactor * (1.0 - T * prop.ap) / prop.bp;
+    return units * (1.0 - T * prop.ap) / prop.bp;
   else
-    return cfactor * prop.cp - pMPa * prop.v * prop.av;
+    return units * prop.cp - pMPa * prop.v * prop.av;
 }
 
 } // namespace Energy
