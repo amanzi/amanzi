@@ -245,7 +245,7 @@ computeMeshColumnCellGeometry(const Mesh_type& mesh, const Entity_ID c)
   double height = std::abs(f0[2] - f1[2]);
   double volume = height * farea;
   auto cc = (f0 + f1) / 2.;
-  return std::make_pair(volume, cc);
+  return {volume, cc};
 }
 
 

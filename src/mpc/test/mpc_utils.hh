@@ -38,7 +38,7 @@ getObservations(const std::string& filename, int skip)
     double val1 = std::atof(word.c_str());
     ifs >> word;
     double val2 = std::atof(word.c_str());
-    data.push_back(std::make_pair(val1, val2));
+    data.emplace_back(val1, val2);
     if (ifs.eof() ) break;
   } while (true);
 

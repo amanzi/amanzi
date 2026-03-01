@@ -350,7 +350,7 @@ computeEdgeGeometry(const Mesh_type& mesh, const Entity_ID e)
   AMANZI_ASSERT(nodes.size() == 2);
   auto x0 = mesh.getNodeCoordinate(nodes[0]);
   auto x1 = mesh.getNodeCoordinate(nodes[1]);
-  return std::make_pair(x1 - x0, (x1 + x0) / 2);
+  return {x1 - x0, (x1 + x0) / 2};
 }
 
 template<class Mesh_type>

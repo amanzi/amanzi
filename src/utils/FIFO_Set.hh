@@ -37,6 +37,17 @@ class FIFO_Set {
     store_.emplace_back(entry);
   }
 
+  template<typename... Args>
+  void emplace(Args&&... args)
+  {
+    T entry(std::forward<Args>(args)...);
+    auto nentries = store_.size();
+    for (int i = 0; i != nentries; ++i) {
+      if (entry == store_[i]) return;
+    }
+    store_.emplace_back(std::move(entry));
+  }
+
   void clear() { store_.clear(); }
 
   using const_iterator = typename Container_type::const_iterator;

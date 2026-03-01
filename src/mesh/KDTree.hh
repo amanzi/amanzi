@@ -94,7 +94,7 @@ class KDTree {
     idx.resize(m);
     dist_sqr.resize(m);
 
-    return std::make_pair(idx, dist_sqr);
+    return {idx, dist_sqr};
   }
 
   // find all points in the sphere of centered to the given point p

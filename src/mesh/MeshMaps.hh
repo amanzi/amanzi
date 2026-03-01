@@ -182,9 +182,9 @@ createMapsFromMeshGIDs(const Mesh_type& mesh, const Entity_kind kind)
 {
   Entity_ID num_owned = mesh.getNumEntities(kind, Parallel_kind::OWNED);
   typename Mesh_type::cEntity_GID_View gids = mesh.getEntityGIDs(kind, true);
-  return std::make_pair(
+  return {
     Teuchos::rcp(new Epetra_Map(-1, gids.size(), gids.data(), 0, *mesh.getComm())),
-    Teuchos::rcp(new Epetra_Map(-1, num_owned, gids.data(), 0, *mesh.getComm())));
+    Teuchos::rcp(new Epetra_Map(-1, num_owned, gids.data(), 0, *mesh.getComm()))};
 }
 
 
