@@ -36,7 +36,7 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 {
   vo_ = Teuchos::rcp(new VerboseObject(name, plist));
 
-  std::vector<AmanziMesh::Entity_ID> vcells;
+  std::vector<AmanziMesh::Entity_GID> vcells;
 
   // cells to debug
   if (plist_.isParameter("debug cells")) {
@@ -60,22 +60,22 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
       }
     }
   }
-  AmanziMesh::Entity_ID_View cells;
+  AmanziMesh::Entity_GID_View cells;
   vectorToView(cells, vcells);
-  set_cells(cells);
+  setCells(cells);
 }
 
 
 void
-Debugger::set_cells(const AmanziMesh::Entity_ID_View& dc)
+Debugger::setCells(const AmanziMesh::Entity_GID_View& dc)
 {
-  dc_.clear();
   dcvo_.clear();
 
   // make sure they are unique (they may not be because of add_cells()
   // implementation decisions!
-  std::set<AmanziMesh::Entity_ID> dc_set(dc.begin(), dc.end());
+  std::set<AmanziMesh::Entity_GID> dc_set(dc.begin(), dc.end());
   Kokkos::resize(dc_gid_, dc_set.size());
+  Kokkos::resize(dc_, dc_set.size());
 
   const auto& cell_map = mesh_->getMap(AmanziMesh::Entity_kind::CELL, false);
   int my_pid = mesh_->getComm()->MyPID();
@@ -84,15 +84,16 @@ Debugger::set_cells(const AmanziMesh::Entity_ID_View& dc)
     AmanziMesh::Entity_ID lc = cell_map.LID(c);
     if (lc >= 0) {
       // include the LID
-      dc_.emplace_back(lc);
-      dc_gid_[size++] = c;
+      dc_[size] = lc;
+      dc_gid_[size] = c;
+      ++size;
 
       // make a verbose object for each case
-      Teuchos::ParameterList vo_plist;
+      Teuchos::ParameterList vo_plist(name_);
       vo_plist.sublist("verbose object");
       vo_plist.sublist("verbose object") = plist_.sublist("verbose object");
       vo_plist.sublist("verbose object").set("write on rank", my_pid);
-      vo_plist.sublist("verbose object").set("show rank", false);
+      vo_plist.sublist("verbose object").set("show rank", true);
       dcvo_.emplace_back(Teuchos::rcp(new VerboseObject(mesh_->getComm(), name_, vo_plist)));
     }
   }
@@ -100,18 +101,24 @@ Debugger::set_cells(const AmanziMesh::Entity_ID_View& dc)
 
 
 void
-Debugger::add_cells(const AmanziMesh::Entity_ID_View& dc)
+Debugger::addCells(const AmanziMesh::Entity_GID_View& dc)
 {
-  AmanziMesh::Entity_ID_View dc_new = get_cells();
+  AmanziMesh::Entity_GID_View dc_new = getCells();
   dc_new.insert(dc_new.end(), dc.begin(), dc.end());
-  set_cells(dc_new);
+  setCells(dc_new);
 }
 
 
-const AmanziMesh::Entity_ID_View&
-Debugger::get_cells() const
+const AmanziMesh::Entity_GID_View&
+Debugger::getCells() const
 {
   return dc_gid_;
+}
+
+const AmanziMesh::Entity_ID_View&
+Debugger::getLocalCells() const
+{
+  return dc_;
 }
 
 
@@ -361,14 +368,18 @@ Debugger::WriteDivider()
 
 // Reverse order... get the VerboseObject for Entity_
 Teuchos::RCP<VerboseObject>
-Debugger::GetVerboseObject(AmanziMesh::Entity_ID id, int rank)
+Debugger::getVerboseObject(AmanziMesh::Entity_ID id, int rank)
 {
-  std::vector<AmanziMesh::Entity_ID>::iterator loc = std::find(dc_.begin(), dc_.end(), id);
-  if (loc == dc_.end()) {
+  int loc = 0;
+  for (auto& c : dc_) {
+    if (c == id) break;
+    ++loc;
+  }
+
+  if (loc == dc_.size()) {
     return Teuchos::null;
   } else {
-    int index = loc - dc_.begin();
-    return dcvo_[index];
+    return dcvo_[loc];
   }
 }
 

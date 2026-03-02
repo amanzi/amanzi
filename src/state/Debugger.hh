@@ -56,9 +56,11 @@ class Debugger {
            Teuchos::ParameterList& plist,
            Teuchos::EVerbosityLevel verb_level = Teuchos::VERB_HIGH);
 
-  const AmanziMesh::Entity_ID_View& get_cells() const;
-  void set_cells(const AmanziMesh::Entity_ID_View& dc);
-  void add_cells(const AmanziMesh::Entity_ID_View& dc);
+  const AmanziMesh::Entity_GID_View& getCells() const;
+  void setCells(const AmanziMesh::Entity_GID_View& dc);
+  void addCells(const AmanziMesh::Entity_GID_View& dc);
+
+  const AmanziMesh::Entity_ID_View& getLocalCells() const;
 
   // Write cell + face info
   void WriteCellInfo(bool include_faces = false);
@@ -87,11 +89,11 @@ class Debugger {
   // write a line of ----
   void WriteDivider();
 
-  void SetPrecision(int prec) { formatter_.setPrecision(prec); }
-  void SetWidth(int width) { formatter_.setWidth(width); }
+  void setPrecision(int prec) { formatter_.setPrecision(prec); }
+  void setWidth(int width) { formatter_.setWidth(width); }
 
   // reverse order -- instead of passing in vector, do writing externally
-  Teuchos::RCP<VerboseObject> GetVerboseObject(AmanziMesh::Entity_ID, int rank);
+  Teuchos::RCP<VerboseObject> getVerboseObject(AmanziMesh::Entity_ID, int rank);
 
  protected:
   std::string Format_(double dat);
@@ -102,8 +104,8 @@ class Debugger {
   Teuchos::ParameterList plist_;
   Teuchos::RCP<VerboseObject> vo_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  std::vector<AmanziMesh::Entity_ID> dc_;
-  AmanziMesh::Entity_ID_View dc_gid_;
+  AmanziMesh::Entity_ID_View dc_;
+  AmanziMesh::Entity_GID_View dc_gid_;
   std::vector<Teuchos::RCP<VerboseObject>> dcvo_;
 
   Utils::Formatter formatter_;
