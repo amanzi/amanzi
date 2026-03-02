@@ -97,6 +97,8 @@ Debugger::setCells(const AmanziMesh::Entity_GID_View& dc)
       dcvo_.emplace_back(Teuchos::rcp(new VerboseObject(mesh_->getComm(), name_, vo_plist)));
     }
   }
+  Kokkos::resize(dc_gid_, size);
+  Kokkos::resize(dc_, size);
 }
 
 
@@ -370,13 +372,16 @@ Debugger::WriteDivider()
 Teuchos::RCP<VerboseObject>
 Debugger::getVerboseObject(AmanziMesh::Entity_ID id, int rank)
 {
+
+  if (dc_.size() == 0) return Teuchos::null;
+
   int loc = 0;
   for (auto& c : dc_) {
     if (c == id) break;
     ++loc;
   }
 
-  if (loc == dc_.size()) {
+  if (loc >= dc_.size()) {
     return Teuchos::null;
   } else {
     return dcvo_[loc];
