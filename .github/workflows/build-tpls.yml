@@ -12,8 +12,32 @@ on:
 jobs:
   build-tpl-image:
     strategy:
+      fail-fast: false
       matrix:
         os: [ ubuntu-latest, ubuntu-24.04-arm ]
+        images:
+          - base_image: ubuntu
+            ver_tag: jammy
+            mpi_distro: mpich
+            mpi_ver: "4.0.3"
+            target: tpls
+          - base_image: gcc
+            ver_tag: latest
+            mpi_distro: mpich
+            mpi_ver: "4.3.1"
+            target: tpls
+            cmake_version: "4.1.2"
+          - base_image: ubuntu
+            ver_tag: jammy
+            mpi_distro: openmpi
+            mpi_ver: "4.1.8"
+            target: tpls
+          - base_image: gcc
+            ver_tag: latest
+            mpi_distro: openmpi
+            mpi_ver: "5.0.8"
+            target: tpls
+            cmake_version: "4.1.2"
     runs-on: ${{matrix.os}}
     steps:
     - name: Check out the Amanzi repo
@@ -50,13 +74,35 @@ jobs:
         context: .
         file: ./Docker/Dockerfile-TPLs
         push: true
-        tags: ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{env.ARCH}}-mpich-ubuntu-jammy
+        tags: ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{matrix.images.mpi_distro}}-${{matrix.images.base_image}}-${{matrix.images.ver_tag}}-${{env.ARCH}}
         build-args: |
           amanzi_branch=${{env.AMANZI_BRANCH}}
-          mpi_flavor=mpich
+          base_image=${{matrix.images.base_image}}
+          ver_tag=${{matrix.images.ver_tag}}
+          mpi_flavor=${{matrix.images.mpi_distro}}
+          mpi_version=${{matrix.images.mpi_ver}}
+          trilinos_ver="15-1-0"
+          petsc_ver="3.21"
+          cmake_version=${{matrix.images.cmake_version}}
+        target: ${{matrix.images.target}}
 
   fix-manifest:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        images:
+          - base_image: ubuntu
+            ver_tag: jammy
+            mpi_distro: mpich
+          - base_image: gcc
+            ver_tag: latest
+            mpi_distro: mpich
+          - base_image: ubuntu
+            ver_tag: jammy
+            mpi_distro: openmpi
+          - base_image: gcc
+            ver_tag: latest
+            mpi_distro: openmpi
     needs: build-tpl-image
     if: success()
     steps:
@@ -74,11 +120,11 @@ jobs:
           password: ${{secrets.DOCKERHUB_PASSWORD}}
       - name: Pull images (remove with artifacts??)
         run: |
-          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-arm64-mpich-ubuntu-jammy
-          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-amd64-mpich-ubuntu-jammy
+          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{matrix.images.mpi_distro}}-${{matrix.images.base_image}}-${{matrix.images.ver_tag}}-arm64
+          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{matrix.images.mpi_distro}}-${{matrix.images.base_image}}-${{matrix.images.ver_tag}}-amd64
       - name: Edit manifest
         run: |
-          docker manifest create ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-mpich-ubuntu-jammy \
-            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-amd64-mpich-ubuntu-jammy \
-            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-arm64-mpich-ubuntu-jammy
-          docker manifest push ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-mpich-ubuntu-jammy
+          docker manifest create ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{matrix.images.mpi_distro}}-${{matrix.images.base_image}}-${{matrix.images.ver_tag}} \
+            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{matrix.images.mpi_distro}}-${{matrix.images.base_image}}-${{matrix.images.ver_tag}}-amd64 \
+            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{matrix.images.mpi_distro}}-${{matrix.images.base_image}}-${{matrix.images.ver_tag}}-arm64
+          docker manifest push ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{matrix.images.mpi_distro}}-${{matrix.images.base_image}}-${{matrix.images.ver_tag}}
