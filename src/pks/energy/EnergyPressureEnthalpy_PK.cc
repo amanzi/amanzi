@@ -16,6 +16,7 @@
 // Amanzi
 #include "CommonDefs.hh"
 #include "IAPWS97.hh"
+#include "LinearRelaxationEvaluator.hh"
 #include "LScheme_Helpers.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "PDE_AdvectionUpwindFactory.hh"
@@ -120,6 +121,7 @@ EnergyPressureEnthalpy_PK::Setup()
   viscosity_liquid_key_ = Keys::getKey(domain_, "viscosity_liquid");
   bcs_flow_key_ = Keys::getKey(domain_, "bcs_flow");
   bcs_enthalpy_key_ = Keys::getKey(domain_, "bcs_enthalpy");
+  heat_src_key_ = Keys::getKey(domain_, "heat_source");
 
   // require primary state variables
   std::vector<std::string> names({ "cell" });
@@ -305,6 +307,27 @@ EnergyPressureEnthalpy_PK::Setup()
       auto eval = Teuchos::rcp(new Evaluators::ThermalConductivityEvaluator(elist));
       S_->SetEvaluator(conductivity_key_, Tags::DEFAULT, eval);
     }
+  }
+
+  // source conditions
+  Teuchos::ParameterList src_list = ep_list_->sublist("source terms");
+  if (src_list.isSublist("linear relaxation")) {
+    heat_src_ = true;
+
+    S_->Require<CV_t, CVS_t>(heat_src_key_, Tags::DEFAULT, heat_src_key_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+
+    src_list.set<std::string>("variable key", temperature_key_)
+      .setName(heat_src_key_)
+      .set<std::string>("tag", "");
+    auto eval = Teuchos::rcp(new Evaluators::LinearRelaxationEvaluator(src_list, S_));
+    S_->SetEvaluator(heat_src_key_, Tags::DEFAULT, eval);
+
+    S_->RequireDerivative<CV_t, CVS_t>(
+        heat_src_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, heat_src_key_)
+      .SetGhosted();
   }
 
   // set units

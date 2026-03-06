@@ -499,8 +499,12 @@ FlowEnergyPH_PK::ModifyCorrection(double dt,
 
     // entering region 4
     } else if (rgn1 == 4 && rgn0 != 4) {
-      hf = liquid1.h * units;
-      hg = vapor1.h * units;
+      pMPa = p_c[0][c] * 1.0e-6;
+      hkJ = h_c[0][c] / units;
+      auto [prop0, liquid0, vapor0] = eos.ThermodynamicsPH(pMPa, hkJ);
+
+      hf = liquid0.h * units;
+      hg = vapor0.h * units;
       dhf = std::max(eps1 * hg, eps2 * (hg - hf));
       dhg = dhf;
 

@@ -195,13 +195,15 @@
       </ParameterList>
 
       <ParameterList name="source terms">
-        <ParameterList name="_SRC 0">
-          <Parameter name="regions" type="Array(string)" value="{All}"/>
-          <Parameter name="spatial distribution method" type="string" value="none"/>
-          <ParameterList name="source">
-            <ParameterList name="function-exprtk">
-              <Parameter name="number of arguments" type="int" value="2"/>
-              <Parameter name="formula" type="string" value="-8.0 + 2 * x"/>
+        <ParameterList name="others">
+          <ParameterList name="_SRC 0">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
+            <ParameterList name="source">
+              <ParameterList name="function-exprtk">
+                <Parameter name="number of arguments" type="int" value="2"/>
+                <Parameter name="formula" type="string" value="-8.0 + 2 * x"/>
+              </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>

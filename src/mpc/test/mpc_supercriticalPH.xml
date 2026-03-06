@@ -329,7 +329,7 @@
             <Parameter name="regions" type="Array(string)" value="{SurfaceInlet}"/>
             <ParameterList name="boundary pressure">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="25.10e+06"/>
+                <Parameter name="value" type="double" value="26.00e+06"/>
               </ParameterList>
             </ParameterList>
             <Parameter name="use area fractions" type="bool" value="false"/>
@@ -451,7 +451,7 @@
             <Parameter name="spatial distribution method" type="string" value="none"/>
             <ParameterList name="boundary temperature">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="700.0"/>
+                <Parameter name="value" type="double" value="691.146"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -499,9 +499,9 @@
             <Parameter name="limit iterations" type="int" value="20"/>
             <Parameter name="modify correction" type="bool" value="true"/>
           </ParameterList>
-          <Parameter name="extrapolation damping factor" type="double" value="0.95"/>
+          <Parameter name="extrapolation damping factor" type="double" value="0.8"/>
           <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
-          <Parameter name="extrapolate initial guess" type="bool" value="true"/>
+          <Parameter name="extrapolate initial guess" type="bool" value="false"/>
           <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
           <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
           <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>

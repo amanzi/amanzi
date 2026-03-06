@@ -363,7 +363,8 @@ ReadVariableFromExodusII(Teuchos::ParameterList& plist, CompositeVector& var)
     ierr = ex_get_variable_param(exoid, obj_type, &num_vars);
     if (ierr < 0) printf("Exodus file has no variables.\n");
 
-    char* var_names[num_vars];
+    char** var_names = (char**)malloc(num_vars * sizeof(char*));
+
     for (int i = 0; i < num_vars; i++) {
       var_names[i] = (char*)calloc((MAX_STR_LENGTH + 1), sizeof(char));
     }
@@ -413,9 +414,8 @@ ReadVariableFromExodusII(Teuchos::ParameterList& plist, CompositeVector& var)
       ncells = offset;
     }
 
-    for (int i = 0; i < num_vars; i++) {
-      free(var_names[i]);
-    }
+    for (int i = 0; i < num_vars; i++) free(var_names[i]);
+    free(var_names);
 
     ierr = ex_close(exoid);
     printf("Closing file: %s ncells=%d error=%d\n", file_name.c_str(), ncells, ierr);

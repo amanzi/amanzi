@@ -95,6 +95,9 @@ This list is often generated on a fly by a high-level MPC PK.
 #include "Upwind.hh"
 #include "VerboseObject.hh"
 
+// Energy
+#include "EnergySourceFunction.hh"
+
 namespace Amanzi {
 namespace Energy {
 
@@ -205,7 +208,7 @@ class Energy_PK : public PK_PhysicalBDF {
   int dirichlet_bc_faces_, missed_bc_faces_;
 
   // source terms
-  std::vector<Teuchos::RCP<PK_DomainFunction>> srcs_;
+  std::vector<Teuchos::RCP<EnergySourceFunction>> srcs_;
 
   // operators and solvers
   Teuchos::RCP<Operators::PDE_Diffusion> op_matrix_diff_, op_preconditioner_diff_;
@@ -226,7 +229,8 @@ class Energy_PK : public PK_PhysicalBDF {
   bool L_scheme_ = false;
   Key L_scheme_stab_key_, L_scheme_prev_key_, L_scheme_data_key_, beta_key_;
 
-  Key bcs_enthalpy_key_;
+  bool heat_src_ = false;
+  Key bcs_enthalpy_key_, heat_src_key_;
 };
 
 } // namespace Energy

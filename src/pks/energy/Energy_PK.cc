@@ -21,6 +21,7 @@
 #include "ApertureModelEvaluator.hh"
 #include "EvaluatorMultiplicativeReciprocal.hh"
 #include "EvaluatorPrimary.hh"
+#include "LinearRelaxationEvaluator.hh"
 #include "LScheme_Helpers.hh"
 #include "Mesh.hh"
 #include "MeshAlgorithms.hh"
@@ -31,6 +32,7 @@
 
 // Amanzi::Energy
 #include "Energy_PK.hh"
+#include "EnergySourceFunction.hh"
 #include "EnthalpyEvaluator.hh"
 
 namespace Amanzi {
@@ -117,6 +119,7 @@ Energy_PK::Setup()
   L_scheme_data_key_ = "l_scheme_data";
   beta_key_ = Keys::getKey(domain_, "l_scheme_beta");
   bcs_enthalpy_key_ = Keys::getKey(domain_, "bcs_enthalpy");
+  heat_src_key_ = Keys::getKey(domain_, "heat_source");
 
   // require constant fields
   S_->Require<double>("atmospheric_pressure", Tags::DEFAULT, "state");
@@ -370,6 +373,21 @@ Energy_PK::Setup()
     ->SetType(WhetStone::DOF_Type::SCALAR);
   S_->GetRecordW(bcs_enthalpy_key_, "state").set_initialized();
 
+  // source conditions
+  Teuchos::ParameterList src_list = ep_list_->sublist("source terms");
+  if (src_list.isSublist("linear relaxation")) {
+    heat_src_ = true;
+
+    S_->Require<CV_t, CVS_t>(heat_src_key_, Tags::DEFAULT, heat_src_key_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+
+    src_list.set<std::string>("variable key", temperature_key_);
+    auto eval = Teuchos::rcp(new Evaluators::LinearRelaxationEvaluator(src_list, S_));
+    S_->SetEvaluator(heat_src_key_, Tags::DEFAULT, eval);
+  }
+
   // set units
   S_->GetRecordSetW(temperature_key_).set_units("K");
   S_->GetRecordSetW(mol_flowrate_key_).set_units("mol/s");
@@ -427,14 +445,16 @@ Energy_PK::Initialize()
     }
   }
 
+  srcs_.clear();
+  auto& src_list = ep_list_->sublist("source terms");
 
-  if (ep_list_->isSublist("source terms")) {
-    PK_DomainFunctionFactory<PK_DomainFunction> factory(mesh_, S_);
-    auto src_list = ep_list_->sublist("source terms");
-    for (auto it = src_list.begin(); it != src_list.end(); ++it) {
+  if (src_list.isSublist("others")) {
+    PK_DomainFunctionFactory<EnergySourceFunction> factory(mesh_, S_);
+    auto tmp_list = src_list.sublist("others");
+    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
       std::string name = it->first;
-      if (src_list.isSublist(name)) {
-        Teuchos::ParameterList& spec = src_list.sublist(name);
+      if (tmp_list.isSublist(name)) {
+        Teuchos::ParameterList& spec = tmp_list.sublist(name);
         srcs_.push_back(
           factory.Create(spec, "source", AmanziMesh::Entity_kind::CELL, Teuchos::null));
       }
@@ -488,6 +508,7 @@ Energy_PK::UpdateSourceBoundaryData(double t_old, double t_new, const CompositeV
 
   for (int i = 0; i < srcs_.size(); ++i) {
     srcs_[i]->Compute(t_old, t_new);
+    srcs_[i]->ComputeSubmodel(t_old, t_new);
   }
 
   ComputePrimaryBCs(u);

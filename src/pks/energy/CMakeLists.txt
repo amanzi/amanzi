@@ -74,6 +74,7 @@ set(energy_inc_files
   EnergyDefs.hh
   EnergyPressureTemperature_PK.hh
   EnergyPressureEnthalpy_PK.hh
+  EnergySourceFunction.hh
   EnergyTwoPhase_PK.hh
   pks_energy_reg.hh
   IEM.hh

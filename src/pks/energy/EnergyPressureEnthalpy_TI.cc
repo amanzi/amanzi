@@ -94,23 +94,27 @@ EnergyPressureEnthalpy_PK::FunctionalResidual(double t_old,
   op_advection_->ComputeNegativeResidual(*u_new->Data(), g_adv);
   g->Data()->Update(1.0, g_adv, 1.0);
 
+  // -- implicit source models
+  auto& g_c = *g->Data()->ViewComponent("cell");
+  if (heat_src_) {
+    S_->GetEvaluator(heat_src_key_).Update(*S_, passwd_);
+    const auto& src_c = *S_->Get<CV_t>(heat_src_key_, Tags::DEFAULT).ViewComponent("cell");
+
+    for (int c = 0; c < ncells_owned; ++c) {
+      g_c[0][c] += src_c[0][c] * mesh_->getCellVolume(c);
+    }
+  }
+
   // add accumulation term
   S_->GetEvaluator(energy_key_).Update(*S_, passwd_);
   const auto& e1 = *S_->Get<CV_t>(energy_key_).ViewComponent("cell");
   const auto& e0 = *S_->Get<CV_t>(prev_energy_key_).ViewComponent("cell");
 
-  auto& g_c = *g->Data()->ViewComponent("cell");
-  auto& h_c = *u_new->Data()->ViewComponent("cell");
-  const auto& p_c = *S_->Get<CV_t>(pressure_key_).ViewComponent("cell");
-  const auto& density = *S_->Get<CV_t>(mol_density_liquid_key_).ViewComponent("cell");
-  const auto& porosity = *S_->Get<CV_t>(porosity_key_).ViewComponent("cell");
-  const auto& state = *S_->Get<CV_t>(state_key_).ViewComponent("cell");
-
+  // -- use modified residual for saturated region 4 (WIP)
+  //    this is actually the scaled residual
   Teuchos::ParameterList plist;
   AmanziEOS::IAPWS97 eos(plist);
 
-  // -- use modified residual for saturated region 4 (WIP)
-  //    this is actually the scaled residual
   double units(CommonDefs::ENTHALPY_FACTOR);
   residual_max_norm_ = 0.0;
   for (int c = 0; c < ncells_owned; ++c) {
@@ -164,6 +168,13 @@ EnergyPressureEnthalpy_PK::UpdatePreconditioner(double t,
     if (dEdh_c[0][c] < 0.0) dEdh_c[0][c] = density[0][c];
   }
   op_acc_->AddAccumulationTerm(dEdh, dt, "cell");
+
+  // implicit source models
+  if (heat_src_) {
+    S_->GetEvaluator(heat_src_key_).UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
+    auto dQdT = S_->GetDerivative<CV_t>(heat_src_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT);
+    op_acc_->AddAccumulationTerm(dQdT, 1.0, "cell", true);
+  }
 
   // add matrices for advection term 
   auto flux = S_->GetPtr<CV_t>(mol_flowrate_key_, Tags::DEFAULT);
@@ -221,15 +232,13 @@ EnergyPressureEnthalpy_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   double error(0.0), error_h(0.0);
   double ref_enthalpy(18000.0);
 
-  for (auto comp = u->Data()->begin(); comp != u->Data()->end(); ++comp) {
-    const auto& uc = *u->Data()->ViewComponent(*comp);
-    const auto& duc = *du->Data()->ViewComponent(*comp);
+  const auto& uc = *u->Data()->ViewComponent("cell");
+  const auto& duc = *du->Data()->ViewComponent("cell");
 
-    int ncomp = uc.MyLength();
-    for (int i = 0; i < ncomp; ++i) {
-      double tmp = fabs(duc[0][i]) / (fabs(uc[0][i]) + ref_enthalpy);
-      error_h = std::max(error_h, tmp);
-    }
+  int ncomp = uc.MyLength();
+  for (int c = 0; c < ncomp; ++c) {
+    double tmp = fabs(duc[0][c]) / (fabs(uc[0][c]) + ref_enthalpy);
+    error_h = std::max(error_h, tmp);
   }
 
   // add normalized residual error
