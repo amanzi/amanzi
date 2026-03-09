@@ -397,4 +397,19 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_biot_mcnamee_gibson.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})
+
+    add_amanzi_test(mpc_supercriticalPT_jacobian mpc_supercriticalPT_jacobian
+                    KIND      int
+                    NPROCS    3
+                    SOURCE    test/Main.cc test/mpc_supercriticalPT_jacobian.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARY})
+                                             
+    add_amanzi_test(mpc_supercriticalPT mpc_supercriticalPT
+                    KIND      int
+                    NPROCS    3
+                    SOURCE    test/Main.cc test/mpc_supercriticalPT.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARY})                                             
+
 endif()
