@@ -277,6 +277,7 @@ class Flow_PK : public PK_PhysicalBDF {
   virtual void Setup() override;
   virtual void Initialize() override;
   virtual void CalculateDiagnostics(const Tag& tag) override { UpdateLocalFields_(S_.ptr()); }
+  virtual std::vector<Key> SetupLSchemeKey(Teuchos::ParameterList& plist) override;
 
   // other members of this PK.
   // -- initialize simple fields common for both flow models.
@@ -318,8 +319,8 @@ class Flow_PK : public PK_PhysicalBDF {
   virtual double BoundaryFaceValue(int f, const CompositeVector& u);
 
   // access
-  Teuchos::RCP<Operators::BCs> op_bc() { return op_bc_; }
   double seepage_mass() { return seepage_mass_; } // support of unit tests
+  Teuchos::RCP<const std::vector<WhetStone::Tensor>> getK() { return K_; }
 
  protected:
   void Setup_FlowRates_(bool mass_to_molar, double molar_rho);
@@ -351,8 +352,8 @@ class Flow_PK : public PK_PhysicalBDF {
   std::string passwd_;
   bool peaceman_model_;
 
-  // Stationary physical quantatities
-  std::vector<WhetStone::Tensor> K;
+  // Stationary physical quantaties
+  Teuchos::RCP<std::vector<WhetStone::Tensor>> K_;
   AmanziGeometry::Point gravity_;
   double g_, rho_, molar_rho_, molar_mass_, atm_pressure_;
   double flux_units_; // scaling for flux units from kg to moles.
@@ -363,8 +364,6 @@ class Flow_PK : public PK_PhysicalBDF {
   // boundary conditions
   std::vector<Teuchos::RCP<FlowBoundaryFunction>> bcs_;
   int nseepage_prev;
-
-  Teuchos::RCP<Operators::BCs> op_bc_;
 
   // source terms and liquid balance
   std::vector<Teuchos::RCP<FlowSourceFunction>> srcs;
@@ -378,6 +377,11 @@ class Flow_PK : public PK_PhysicalBDF {
   // physical models and assumptions
   ModelAssumptions assumptions_;
   bool coupled_to_matrix_, coupled_to_fracture_;
+  
+  bool L_scheme_ = false;
+  Key L_scheme_stab_key_, L_scheme_prev_key_, L_scheme_data_key_;
+
+  Key bcs_flow_key_;
 
   // names of state fields
   Key pressure_key_;

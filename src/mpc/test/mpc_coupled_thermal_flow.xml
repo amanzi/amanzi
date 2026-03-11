@@ -111,10 +111,10 @@
             <ParameterList name="energy matrix fracture">
               <Parameter name="PK type" type="string" value="energy matrix fracture"/>
               <ParameterList name="energy matrix">
-                <Parameter name="PK type" type="string" value="one-phase energy"/>
+                <Parameter name="PK type" type="string" value="pt energy"/>
               </ParameterList>
               <ParameterList name="energy fracture">
-                <Parameter name="PK type" type="string" value="one-phase energy"/>
+                <Parameter name="PK type" type="string" value="pt energy"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

@@ -34,9 +34,10 @@ class ThermalConductivityConstant : public EOS_ThermalConductivity {
     tc_ = plist_.get<double>("reference conductivity");
   }
 
-  virtual double ThermalConductivity(double T, double phi) override { return tc_; }
-  virtual double DThermalConductivityDT(double T, double phi) override { return 0.0; }
-  virtual double DThermalConductivityDPhi(double T, double phi) override { return 0.0; }
+  virtual double ThermalConductivity(double p, double T, double phi) override { return tc_; }
+  virtual double DThermalConductivityDp(double p, double T, double phi) override { return 0.0; }
+  virtual double DThermalConductivityDT(double p, double T, double phi) override { return 0.0; }
+  virtual double DThermalConductivityDPhi(double p, double T, double phi) override { return 0.0; }
 
  protected:
   double tc_;

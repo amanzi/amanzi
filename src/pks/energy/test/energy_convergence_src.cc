@@ -35,7 +35,7 @@
 
 // Energy
 #include "Analytic00.hh"
-#include "EnergyOnePhase_PK.hh"
+#include "EnergyPressureTemperature_PK.hh"
 #include "EnthalpyEvaluator.hh"
 
 using namespace Amanzi;
@@ -137,8 +137,8 @@ TEST(ENERGY_CONVERGENCE_SRC)
 
     Teuchos::ParameterList pk_tree = plist->sublist("PKs").sublist("energy");
     Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-    Teuchos::RCP<EnergyOnePhase_PK> EPK =
-      Teuchos::rcp(new EnergyOnePhase_PK(pk_tree, plist, S, soln));
+    Teuchos::RCP<EnergyPressureTemperature_PK> EPK =
+      Teuchos::rcp(new EnergyPressureTemperature_PK(pk_tree, plist, S, soln));
 
     // overwrite enthalpy with a different model
     Teuchos::ParameterList ev_list;

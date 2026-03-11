@@ -31,14 +31,14 @@ IdealGas_ThermalConductivity::IdealGas_ThermalConductivity(Teuchos::ParameterLis
 
 
 double
-IdealGas_ThermalConductivity::ThermalConductivity(double T, double pgi)
+IdealGas_ThermalConductivity::ThermalConductivity(double p, double T, double pgi)
 {
   return factor_ * std::pow(T, 1.5) / (T + S0_);
 }
 
 
 double
-IdealGas_ThermalConductivity::DThermalConductivityDT(double T, double phi)
+IdealGas_ThermalConductivity::DThermalConductivityDT(double p, double T, double phi)
 {
   double tmp = T + S0_;
   return factor_ * std::sqrt(T) * (1.5 * tmp - T) / tmp / tmp;

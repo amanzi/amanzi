@@ -145,7 +145,7 @@ InputConverterU::TranslateCycleDriver_()
       tp_dt0[mode] = dt0;
       tp_max_dt[mode] = dt_max;
       tp_max_cycles[mode] =
-        GetAttributeValueL_(inode, "max_cycles", TYPE_NUMERICAL, -1, INT_MAX, false, -1);
+        GetAttributeValueI_(inode, "max_cycles", TYPE_NUMERICAL, -1, INT_MAX, false, -1);
       dt_cut_[mode] = ConvertUnits_(
         GetAttributeValueS_(inode, "reduction_factor", TYPE_TIME, false, dt_cut_d), unit);
       dt_inc_[mode] = ConvertUnits_(
@@ -371,6 +371,8 @@ InputConverterU::TranslateCycleDriver_()
           } else {
             params.basename = mpcs[params.pks[0]].basename + " and " + mpcs[params.pks[1]].basename;
           }
+          // FIXME
+          if (params.basename == "flow and energy") params.basename += " pt";
           Teuchos::ParameterList& aux =
             pk_tree_list.sublist(Keys::merge(mode, mpc.first, delimiter));
           aux.set<std::string>("PK type", params.basename);
@@ -697,7 +699,7 @@ InputConverterU::TranslatePKs_(Teuchos::ParameterList& glist)
         }
       }
 
-      if (pkname == "flow and energy") {
+      if (pkname == "flow and energy pt") {
         err_options = "pressure, temperature";
       }
 
@@ -710,7 +712,7 @@ InputConverterU::TranslatePKs_(Teuchos::ParameterList& glist)
                             Keys::getKey(pk_domain_["shallow water"], "ponded_depth"));
       }
 
-      if (pkname == "flow and energy") {
+      if (pkname == "flow and energy pt") {
         if (eos_model_ != "") {
           auto& tmp = glist.sublist("state").sublist("evaluators");
           AddSecondaryFieldEvaluator_(tmp,

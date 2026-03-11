@@ -35,32 +35,20 @@
 #include "models_flow_reg.hh"
 
 
-void
-RunTest(const std::string& flow)
+std::tuple<double, Amanzi::CompositeVector, Amanzi::CompositeVector>
+RunTest(const std::string& xmlFileName)
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
-  using namespace Amanzi::AmanziGeometry;
 
   auto comm = Amanzi::getDefaultComm();
 
   // read the main parameter list
-  std::string xmlInFileName = "test/mpc_thermal_richards.xml";
-  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
-
-  if (flow == "darcy") {
-    auto& tmp = plist->sublist("cycle driver")
-                  .sublist("time periods")
-                  .sublist("TP 0")
-                  .sublist("PK tree")
-                  .sublist("flow and energy");
-    tmp.sublist("flow").set<std::string>("PK type", "darcy");
-    tmp.sublist("energy").set<std::string>("PK type", "one-phase energy");
-  }
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
-  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
+  auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(2, region_list, *comm));
 
   // create mesh
   MeshFactory meshfactory(comm, gm);
@@ -78,12 +66,40 @@ RunTest(const std::string& flow)
   Amanzi::CycleDriver cycle_driver(plist, S, comm, obs_data);
   cycle_driver.Go();
 
-  CHECK(S->Get<double>("time") > 1.7e+6);
+  double time = S->Get<double>("time");
+  CHECK(time > 1.7e+6);
+
+  return {time, S->Get<CompositeVector>("pressure"), S->Get<CompositeVector>("temperature")};
 }
 
 
 TEST(MPC_DRIVER_THERMAL_RICHARDS)
 {
-  // RunTest("darcy");
-  RunTest("richards");
+  auto [time1, p1, t1] = RunTest("test/mpc_thermal_richards.xml");
+  auto [time2, p2, t2] = RunTest("test/mpc_thermal_richards_sequential.xml");
+
+  double perr, terr, pnorm, tnorm;
+  p2.Update(-1.0, p1, 1.0);
+  t2.Update(-1.0, t1, 1.0);
+
+  CHECK(std::abs(time1 - time2) < 1.0e-12 * time1);
+  
+  for (auto comp = p1.begin(); comp != p1.end(); ++comp) {
+    auto& p1v = *p1.ViewComponent(*comp);
+    auto& p2v = *p2.ViewComponent(*comp);
+    p1v.Norm2(&pnorm);
+    p2v.Norm2(&perr);
+    perr /= pnorm;
+
+    auto& t1v = *t1.ViewComponent(*comp);
+    auto& t2v = *t2.ViewComponent(*comp);
+    t1v.Norm2(&tnorm);
+    t2v.Norm2(&terr);
+    terr /= tnorm;
+
+    printf("\nP-error =%10.5f  norm =%12.5g  comp=%s\n", perr, pnorm, comp->c_str());
+    printf("T-error =%10.5f  norm =%12.5g\n", terr, tnorm);
+    CHECK(perr < 0.02);
+    CHECK(terr < 0.002);
+  }
 }

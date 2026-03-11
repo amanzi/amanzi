@@ -129,7 +129,7 @@ InputConverterU::TranslateState_()
     DOMNode* inode = children->item(i);
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
       std::string mat_name = GetAttributeValueS_(inode, "name");
-      int mat_id = GetAttributeValueL_(inode, "id", TYPE_NUMERICAL, 0, INT_MAX, false, -1);
+      int mat_id = GetAttributeValueI_(inode, "id", TYPE_NUMERICAL, 0, INT_MAX, false, -1);
 
       node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
       std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));

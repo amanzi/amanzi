@@ -58,6 +58,7 @@ InputConverterU::TranslateEnergy_(const std::string& domain, const std::string& 
   bool include_potential(false);
   std::string pc_method("linearized_operator");
   std::string root("unstructured_controls, unstr_energy_controls");
+  std::string root_ns("unstructured_controls, unstr_nonlinear_solver");
 
   node = GetUniqueElementByTagsString_(root + ", formulation", flag);
   if (flag) include_potential = (GetTextContentS_(node, "methalpy, enthalpy") == "methalpy");
@@ -70,13 +71,13 @@ InputConverterU::TranslateEnergy_(const std::string& domain, const std::string& 
   if (flag) pc_method = mm.transcode(node->getNodeName());
 
   std::string nonlinear_solver("nka");
-  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_nonlinear_solver", flag);
+  node = GetUniqueElementByTagsString_(root_ns, flag);
   element = static_cast<DOMElement*>(node);
   if (flag) nonlinear_solver = GetAttributeValueS_(element, "name", TYPE_NONE, false, "nka");
 
   bool modify_correction(false);
-  node = GetUniqueElementByTagsString_(
-    "unstructured_controls, unstr_nonlinear_solver, modify_correction", flag);
+  node = GetUniqueElementByTagsString_(root_ns + ", modify_correction", flag);
+  if (flag) modify_correction = GetTextContentL_(node);
 
   // insert operator sublist
   // -- diffusion

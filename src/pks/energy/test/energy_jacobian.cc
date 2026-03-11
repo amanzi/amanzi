@@ -26,7 +26,9 @@
 // Amanzi
 #include "CompositeVector.hh"
 #include "IO.hh"
-#include "EnergyOnePhase_PK.hh"
+#include "EnergyPressureEnthalpy_PK.hh"
+#include "EnergyPressureTemperature_PK.hh"
+#include "evaluators_reg.hh"
 #include "MeshFactory.hh"
 #include "Operator.hh"
 #include "PDE_Accumulation.hh"
@@ -40,7 +42,8 @@
 /* ****************************************************************
 * Analysis of Jacobian for the FEHM EOS.
 * ************************************************************** */
-TEST(ENERGY_JACOBIAN)
+template<class Energy>
+void Run(const std::string& filename)
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -54,8 +57,7 @@ TEST(ENERGY_JACOBIAN)
   if (MyPID == 0) std::cout << "Test: Jacobian calculation" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/energy_jacobian.xml";
-  Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
+  Teuchos::ParameterXMLFileReader xmlreader(filename);
   auto plist = Teuchos::rcp(new Teuchos::ParameterList(xmlreader.getParameters()));
 
   // create a mesh framework
@@ -64,7 +66,7 @@ TEST(ENERGY_JACOBIAN)
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 3, 3);
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 5, 5);
 
   // create a simple state and populate it
   Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("state");
@@ -73,7 +75,7 @@ TEST(ENERGY_JACOBIAN)
 
   Teuchos::ParameterList pk_tree = plist->sublist("PK tree").sublist("energy");
   auto soln = Teuchos::rcp(new TreeVector());
-  auto EPK = Teuchos::rcp(new EnergyOnePhase_PK(pk_tree, plist, S, soln));
+  auto EPK = Teuchos::rcp(new Energy(pk_tree, plist, S, soln));
 
   EPK->Setup();
   S->Setup();
@@ -83,19 +85,18 @@ TEST(ENERGY_JACOBIAN)
   EPK->Initialize();
   S->CheckAllFieldsInitialized();
 
-  auto vo = Teuchos::rcp(new Amanzi::VerboseObject("EnergyOnePhase", *plist));
+  auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Energy_PK", *plist));
   WriteStateStatistics(*S, *vo);
 
   // finite difference Jacobian
-  auto u1 = Teuchos::rcp(new TreeVector());
-  u1->SetData(S->GetPtrW<CompositeVector>("temperature", Tags::DEFAULT, ""));
+  auto u1 = soln;
 
   auto u0 = Teuchos::rcp(new TreeVector(*u1));
   auto f0 = Teuchos::rcp(new TreeVector(*u1));
   auto f1 = Teuchos::rcp(new TreeVector(*u1));
 
   int ncells, nfaces, nJ, v;
-  double umax, factor, eps(1e-6), t_old(0.0), t_new(1.0);
+  double umax, factor, eps(1e-8), t_old(0.0), t_new(10.0);
   std::string kind;
 
   ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
@@ -107,11 +108,10 @@ TEST(ENERGY_JACOBIAN)
   factor = eps * umax;
 
   Jfd.PutScalar(0.0);
+  EPK->ChangedSolution();
   EPK->FunctionalResidual(t_old, t_new, u0, u1, f0);
 
   for (int ncol = 0; ncol < nJ; ++ncol) {
-    EPK->ChangedSolution();
-
     if (ncol < nfaces) {
       kind = "face";
       v = ncol;
@@ -122,6 +122,7 @@ TEST(ENERGY_JACOBIAN)
     auto& u1_v = *u1->Data()->ViewComponent(kind);
 
     u1_v[0][v] += factor;
+    EPK->ChangedSolution();
     EPK->FunctionalResidual(t_old, t_new, u0, u1, f1);
     u1_v[0][v] -= factor;
 
@@ -161,7 +162,6 @@ TEST(ENERGY_JACOBIAN)
 
   // std::cout << Jfd << std::endl;
   // std::cout << Jpk << std::endl;
-  std::cout << umax << " " << Jfd(24, 24) << " " << Jpk(24, 24) << std::endl;
   auto Jdiff = Jfd - Jpk;
   double jdiff = Jdiff.Norm2();
   double jfd = Jfd.Norm2();
@@ -170,4 +170,9 @@ TEST(ENERGY_JACOBIAN)
   std::cout << "|| Jfd - Jpk || = " << jdiff << ",  || Jfd || = " << jfd << ",  || Jpk || = " << jpk
             << std::endl;
   CHECK(jdiff / jfd < 1e-4);
+}
+
+TEST(ENERGY_JACOBIAN) {
+  ::Run<Amanzi::Energy::EnergyPressureTemperature_PK>("test/energy_jacobian_pt.xml");
+  ::Run<Amanzi::Energy::EnergyPressureEnthalpy_PK>("test/energy_jacobian_ph.xml");
 }

@@ -15,17 +15,18 @@
 */
 
 // Amanzi
+#include "LScheme_Helpers.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "PDE_AdvectionUpwindFactory.hh"
 #include "UpwindFactory.hh"
 
 // Amanzi::Energy
-#include "EnergyOnePhase_PK.hh"
+#include "EnergyPressureTemperature_PK.hh"
 #include "EnthalpyEvaluator.hh"
 #include "IEMEvaluator.hh"
 #include "StateArchive.hh"
 #include "TCMEvaluator_OnePhase.hh"
-#include "TotalEnergyEvaluator.hh"
+#include "TotalEnergyEvaluatorPT.hh"
 
 namespace Amanzi {
 namespace Energy {
@@ -36,10 +37,11 @@ using CVS_t = CompositeVectorSpace;
 /* ******************************************************************
 * Default constructor.
 ****************************************************************** */
-EnergyOnePhase_PK::EnergyOnePhase_PK(Teuchos::ParameterList& pk_tree,
-                                     const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                                     const Teuchos::RCP<State>& S,
-                                     const Teuchos::RCP<TreeVector>& soln)
+EnergyPressureTemperature_PK::EnergyPressureTemperature_PK(
+  Teuchos::ParameterList& pk_tree,
+  const Teuchos::RCP<Teuchos::ParameterList>& glist,
+  const Teuchos::RCP<State>& S,
+  const Teuchos::RCP<TreeVector>& soln)
   : PK(pk_tree, glist, S, soln),
     Energy_PK(pk_tree, glist, S, soln),
     soln_(soln),
@@ -49,7 +51,7 @@ EnergyOnePhase_PK::EnergyOnePhase_PK(Teuchos::ParameterList& pk_tree,
   // verbose object
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = ep_list_->sublist("verbose object");
-  std::string ioname = "Energy1Phase";
+  std::string ioname = "EnergyPT";
   if (domain_ != "domain") ioname += "-" + domain_;
   vo_ = Teuchos::rcp(new VerboseObject(ioname, vlist));
 }
@@ -60,7 +62,7 @@ EnergyOnePhase_PK::EnergyOnePhase_PK(Teuchos::ParameterList& pk_tree,
 * conductivity, and any sources.
 ****************************************************************** */
 void
-EnergyOnePhase_PK::Setup()
+EnergyPressureTemperature_PK::Setup()
 {
   // basic class setup
   Energy_PK::Setup();
@@ -85,11 +87,15 @@ EnergyOnePhase_PK::Setup()
     if (assumptions_.flow_on_manifold) elist.set<std::string>("aperture key", aperture_key_);
 
     elist.setName(energy_key_);
-    auto ee = Teuchos::rcp(new TotalEnergyEvaluator(elist));
+    auto ee = Teuchos::rcp(new TotalEnergyEvaluatorPT(elist));
     S_->SetEvaluator(energy_key_, Tags::DEFAULT, ee);
 
     S_->RequireDerivative<CV_t, CVS_t>(
         energy_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, energy_key_)
+      .SetGhosted();
+
+    S_->RequireDerivative<CV_t, CVS_t>(
+        energy_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, energy_key_)
       .SetGhosted();
   }
 
@@ -139,7 +145,7 @@ EnergyOnePhase_PK::Setup()
 * Initialize the needed models to plug in enthalpy.
 ****************************************************************** */
 void
-EnergyOnePhase_PK::Initialize()
+EnergyPressureTemperature_PK::Initialize()
 {
   // Call the base class initialize.
   Energy_PK::Initialize();
@@ -149,6 +155,7 @@ EnergyOnePhase_PK::Initialize()
   soln_->SetData(solution);
 
   // Create local evaluators. Initialize local fields.
+  temperature_eval_->SetChanged();
   InitializeFields_();
 
   // initialize independent operators: diffusion and advection
@@ -167,9 +174,10 @@ EnergyOnePhase_PK::Initialize()
   Teuchos::ParameterList oplist_adv = ep_list_->sublist("operators").sublist("advection operator");
   op_matrix_advection_ = opfactory_adv.Create(oplist_adv, mesh_);
 
+  auto op_bc_enth = S_->GetPtrW<Operators::BCs>(bcs_enthalpy_key_, Tags::DEFAULT, "state");
   const CompositeVector& flux = *S_->GetPtr<CV_t>(mol_flowrate_key_, Tags::DEFAULT);
   op_matrix_advection_->Setup(flux);
-  op_matrix_advection_->SetBCs(op_bc_enth_, op_bc_enth_);
+  op_matrix_advection_->SetBCs(op_bc_enth, op_bc_enth);
   op_advection_ = op_matrix_advection_->global_operator();
 
   // initialize coupled operators: diffusion + advection + accumulation
@@ -197,7 +205,7 @@ EnergyOnePhase_PK::Initialize()
     new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, op_preconditioner_));
   if (prec_include_enthalpy_) {
     op_preconditioner_advection_ = opfactory_adv.Create(oplist_adv, op_preconditioner_);
-    op_preconditioner_advection_->SetBCs(op_bc_enth_, op_bc_enth_);
+    op_preconditioner_advection_->SetBCs(op_bc_enth, op_bc_enth);
   }
 
   // initialize preconditioner
@@ -227,6 +235,12 @@ EnergyOnePhase_PK::Initialize()
   auto& temperature = S_->GetW<CV_t>(temperature_key_, passwd_);
   UpdateSourceBoundaryData(t_ini, t_ini, temperature);
 
+  if (L_scheme_) {
+    auto& data = S_->GetW<LSchemeData>(L_scheme_data_key_, "state");
+    data[temperature_key_].last_step_increment = 1.0;
+    data[temperature_key_].safety_factor = 0.0;
+  }
+
   // output of initialization summary
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
@@ -250,38 +264,12 @@ EnergyOnePhase_PK::Initialize()
 }
 
 
-/* ****************************************************************
-* This completes initialization of missed fields in the state.
-**************************************************************** */
-void
-EnergyOnePhase_PK::InitializeFields_()
-{
-  Teuchos::OSTab tab = vo_->getOSTab();
-
-  if (S_->HasRecord(prev_energy_key_)) {
-    if (!S_->GetRecord(prev_energy_key_).initialized()) {
-      temperature_eval_->SetChanged();
-      S_->GetEvaluator(energy_key_).Update(*S_, passwd_);
-
-      const auto& e1 = S_->Get<CV_t>(energy_key_);
-      auto& e0 = S_->GetW<CV_t>(prev_energy_key_, passwd_);
-      e0 = e1;
-
-      S_->GetRecordW(prev_energy_key_, passwd_).set_initialized();
-
-      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-        *vo_->os() << "initialized prev_energy to previous energy" << std::endl;
-    }
-  }
-}
-
-
 /* *******************************************************************
 * Performs one timestep of size dt_ either for steady-state or
 * transient sumulation.
 ******************************************************************* */
 bool
-EnergyOnePhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
+EnergyPressureTemperature_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   dt_ = t_new - t_old;
 
@@ -317,7 +305,7 @@ EnergyOnePhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 * TBW
 ****************************************************************** */
 void
-EnergyOnePhase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
+EnergyPressureTemperature_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
   // commit solution to time history
   if (bdf1_dae_.get()) bdf1_dae_->CommitSolution(t_new - t_old, soln_);
@@ -336,10 +324,63 @@ EnergyOnePhase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 * Restore state to the previous step
 ****************************************************************** */
 void
-EnergyOnePhase_PK::FailStep(double t_old, double t_new, const Tag& tag)
+EnergyPressureTemperature_PK::FailStep(double t_old, double t_new, const Tag& tag)
 {
   archive_->Restore("");
   temperature_eval_->SetChanged();
+}
+
+
+/* ******************************************************************
+* Restore state to the previous step
+****************************************************************** */
+void
+EnergyPressureTemperature_PK::ComputeLSchemeStability()
+{ 
+  auto& stability_c = *S_->GetW<CV_t>(L_scheme_stab_key_, "state").ViewComponent("cell");
+
+  S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
+  const auto& dEdT =
+    S_->GetDerivative<CompositeVector>(energy_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT);
+  auto& tmp1 = *dEdT.ViewComponent("cell");
+
+  auto tmp2(tmp1);
+  tmp2.PutScalar(0.0);
+  if (S_->GetEvaluator(energy_key_).IsDifferentiableWRT(*S_, pressure_key_, Tags::DEFAULT)) {
+    S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
+    auto& dEdp = S_->GetDerivativeW<CV_t>(
+      energy_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, energy_key_);
+    tmp2 = *dEdp.ViewComponent("cell");
+  }
+
+  // advection
+  S_->GetEvaluator(beta_key_).UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
+  auto& beta_dT = S_->GetDerivativeW<CV_t>(
+    beta_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, beta_key_);
+  const auto& tmp3 = *beta_dT.ViewComponent("cell");
+
+  const auto& mu = *S_->Get<CV_t>(viscosity_liquid_key_).ViewComponent("cell");
+  const auto& flux = *S_->Get<CV_t>(vol_flowrate_key_).ViewComponent("face", true);
+
+  // L-scheme additional control
+  const auto& data = S_->Get<LSchemeData>(L_scheme_data_key_, Tags::DEFAULT);
+  double normp = (data.find(pressure_key_) == data.end()) ? 0.0 : data.at(pressure_key_).last_step_increment;
+  double sT = data.at(temperature_key_).safety_factor;
+
+  double qmax, vol, factor3;
+  for (int c = 0; c < ncells_owned; ++c) {
+    const auto& faces = mesh_->getCellFaces(c);
+
+    qmax = 0.0;
+    for (int f : faces) qmax += std::fabs(flux[0][f]);
+
+    vol = mesh_->getCellVolume(c);
+    factor3 = (qmax / faces.size()) * mu[0][c] * dt_ / vol;
+
+    stability_c[0][c] = (std::max(0.0, -tmp1[0][c])
+                       + std::fabs(tmp2[0][c]) * normp
+                       + std::fabs(tmp3[0][c]) * factor3) * sT;
+  }
 }
 
 } // namespace Energy

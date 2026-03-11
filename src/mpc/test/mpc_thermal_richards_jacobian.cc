@@ -27,7 +27,7 @@
 #include "CompositeVector.hh"
 #include "eos_reg.hh"
 #include "IO.hh"
-#include "FlowEnergy_PK.hh"
+#include "FlowEnergyPT_PK.hh"
 #include "MeshFactory.hh"
 #include "models_energy_reg.hh"
 #include "models_flow_reg.hh"
@@ -126,9 +126,9 @@ TEST(ENERGY_JACOBIAN)
   Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
   S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
-  Teuchos::ParameterList pk_tree = plist->sublist("PK tree").sublist("flow and energy");
+  Teuchos::ParameterList pk_tree = plist->sublist("PK tree").sublist("mpc1");
   auto soln = Teuchos::rcp(new TreeVector());
-  auto MPC = Teuchos::rcp(new FlowEnergy_PK(pk_tree, plist, S, soln));
+  auto MPC = Teuchos::rcp(new FlowEnergyPT_PK(pk_tree, plist, S, soln));
 
   Key ws_key("water_storage"), temperature_key("temperature");
   S->RequireDerivative<CompositeVector, CompositeVectorSpace>(

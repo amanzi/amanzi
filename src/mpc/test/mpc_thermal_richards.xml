@@ -3,15 +3,11 @@
   <ParameterList name="verbose object">
     <Parameter name="verbosity level" type="string" value="high"/>
   </ParameterList>
-  <ParameterList name="checkpoint data">
-    <Parameter name="file name base" type="string" value="chk_thermal"/>
-    <Parameter name="file name digits" type="int" value="5"/>
-    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 1000, -1}"/>
-  </ParameterList>
-  <ParameterList name="visualization data">
-    <Parameter name="file name base" type="string" value="plot_thermal"/>
+  <!--ParameterList name="visualization data">
+    <Parameter name="file name base" type="string" value="plot"/>
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 20, -1}"/>
-  </ParameterList>
+  </ParameterList-->
+
   <ParameterList name="regions">
     <ParameterList name="Bottom Surface">
       <ParameterList name="region: box">
@@ -84,12 +80,13 @@
   <ParameterList name="domain">
     <Parameter name="spatial dimension" type="int" value="2"/>
   </ParameterList>
+
   <ParameterList name="cycle driver">
     <ParameterList name="time periods">
       <ParameterList name="TP 0">
         <ParameterList name="PK tree">
           <ParameterList name="flow and energy">
-            <Parameter name="PK type" type="string" value="flow and energy"/>
+            <Parameter name="PK type" type="string" value="flow and energy pt"/>
             <ParameterList name="flow">
               <Parameter name="PK type" type="string" value="richards"/>
             </ParameterList>
@@ -114,6 +111,7 @@
       <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
   </ParameterList>
+
   <ParameterList name="state">
     <ParameterList name="verbose object">
       <Parameter name="verbosity level" type="string" value="extreme"/>
@@ -240,20 +238,17 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="initial conditions">
 
+    <ParameterList name="initial conditions">
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="101325.0"/>
       </ParameterList>
-
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, -9.80665}"/>
       </ParameterList>
-
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="998.2"/>
       </ParameterList>
-
       <ParameterList name="const_fluid_molar_mass">
         <Parameter name="value" type="double" value="0.018015"/>
       </ParameterList>
@@ -271,7 +266,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-
       <ParameterList name="permeability">
         <ParameterList name="function">
           <ParameterList name="RegionMiddle">
@@ -346,25 +340,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-
-      <ParameterList name="total_component_concentration">
-        <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="regions" type="Array(string)" value="{All}"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <Parameter name="number of dofs" type="int" value="1"/>
-              <Parameter name="function type" type="string" value="composite function"/>
-              <ParameterList name="dof 1 function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.0"/>
-                </ParameterList>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
     </ParameterList>
     <ParameterList name="mesh partitions">
       <ParameterList name="materials">
@@ -372,6 +347,7 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
+
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
       <Parameter name="preconditioning method" type="string" value="boomer amg"/>
@@ -387,19 +363,8 @@
         <Parameter name="relaxation type" type="int" value="3"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Block ILU">
-      <Parameter name="preconditioning method" type="string" value="block ilu"/>
-      <Parameter name="discretization method" type="string" value="mfd: optimized for sparsity"/>
-      <ParameterList name="block ilu parameters">
-        <Parameter name="fact: relax value" type="double" value="1.0"/>
-        <Parameter name="fact: absolute threshold" type="double" value="0.0"/>
-        <Parameter name="fact: relative threshold" type="double" value="1.0"/>
-        <Parameter name="fact: level-of-fill" type="int" value="0"/>
-        <Parameter name="overlap" type="int" value="0"/>
-        <Parameter name="schwarz: combine mode" type="string" value="Add"/>
-      </ParameterList>
-    </ParameterList>
   </ParameterList>
+
   <ParameterList name="solvers">
     <ParameterList name="AztecOO">
       <Parameter name="iterative method" type="string" value="gmres"/>
@@ -412,8 +377,8 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-  <ParameterList name="PKs">
 
+  <ParameterList name="PKs">
     <ParameterList name="flow and energy">
       <Parameter name="PKs order" type="Array(string)" value="{flow, energy}"/>
       <Parameter name="master PK index" type="int" value="0"/>
@@ -459,7 +424,6 @@
           <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
       </ParameterList>
-
     </ParameterList>
 
     <ParameterList name="energy">
@@ -548,7 +512,6 @@
           <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
-
     </ParameterList>
 
     <ParameterList name="flow">
@@ -691,8 +654,6 @@
           <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
-
     </ParameterList>
-
   </ParameterList>
 </ParameterList>

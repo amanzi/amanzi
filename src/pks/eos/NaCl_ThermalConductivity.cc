@@ -38,7 +38,7 @@ NaCl_ThermalConductivity::NaCl_ThermalConductivity(Teuchos::ParameterList& plist
 * Main functions
 ******************************************************************* */
 double
-NaCl_ThermalConductivity::ThermalConductivity(double T, double phi)
+NaCl_ThermalConductivity::ThermalConductivity(double p, double T, double phi)
 {
   double Ts = Tref_ / T;
   double coef1 = kref_ * std::pow(Ts, 1.14);
@@ -61,7 +61,7 @@ NaCl_ThermalConductivity::ThermalConductivity(double T, double phi)
 * Derivative wrt temperature
 ******************************************************************* */
 double
-NaCl_ThermalConductivity::DThermalConductivityDT(double T, double phi)
+NaCl_ThermalConductivity::DThermalConductivityDT(double p, double T, double phi)
 {
   double Ts = Tref_ / T;
   double coef1 = -kref_ * 1.14 * std::pow(Ts, 0.14) / T / T;
@@ -83,7 +83,7 @@ NaCl_ThermalConductivity::DThermalConductivityDT(double T, double phi)
 * Derivative wrt porosity
 ******************************************************************* */
 double
-NaCl_ThermalConductivity::DThermalConductivityDPhi(double T, double phi)
+NaCl_ThermalConductivity::DThermalConductivityDPhi(double p, double T, double phi)
 {
   if (include_phi_) {
     double Ts = Tref_ / T;

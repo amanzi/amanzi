@@ -65,9 +65,6 @@ class EnergyTwoPhase_PK : public Energy_PK {
   // access method for unit tests
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>> bdf1_dae() { return bdf1_dae_; }
 
- private:
-  void InitializeFields_();
-
  protected:
   // models for evaluating total energy
   Teuchos::RCP<AmanziEOS::EOS_Density> eos_liquid_;

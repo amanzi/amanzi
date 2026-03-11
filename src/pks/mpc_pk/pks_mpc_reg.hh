@@ -18,7 +18,8 @@
 #include "PK_MPCSequential.hh"
 
 #include "EnergyMatrixFracture_PK.hh"
-#include "FlowEnergy_PK.hh"
+#include "FlowEnergyPT_PK.hh"
+#include "FlowEnergyPH_PK.hh"
 #include "FlowEnergyMatrixFracture_PK.hh"
 #include "FlowMatrixFracture_PK.hh"
 #include "FlowMechanics_PK.hh"
@@ -43,7 +44,8 @@ RegisteredPKFactory<PK_MPCSubcycled> PK_MPCSubcycled::reg_("mpc subcycled");
 RegisteredPKFactory<PK_MPCWeak> PK_MPCWeak::reg_("mpc weak");
 RegisteredPKFactory<PK_MPCSequential> PK_MPCSequential::reg_("mpc sequential");
 
-RegisteredPKFactory<FlowEnergy_PK> FlowEnergy_PK::reg_("flow and energy");
+RegisteredPKFactory<FlowEnergyPT_PK> FlowEnergyPT_PK::reg_("flow and energy pt");
+RegisteredPKFactory<FlowEnergyPH_PK> FlowEnergyPH_PK::reg_("flow and energy ph");
 RegisteredPKFactory<FlowEnergyMatrixFracture_PK> FlowEnergyMatrixFracture_PK::reg_(
   "flow and energy matrix fracture");
 RegisteredPKFactory<FlowReactiveTransport_PK> FlowReactiveTransport_PK::reg_(

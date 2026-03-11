@@ -39,9 +39,10 @@ Flow_PK::SeepageFacePFloTran(const CompositeVector& u, int* nseepage, double* ar
     *S_->Get<CompositeVector>(vol_flowrate_key_, Tags::DEFAULT).ViewComponent("face", true);
   const auto& u_cell = *u.ViewComponent("cell");
 
-  std::vector<int>& bc_model = op_bc_->bc_model();
-  std::vector<double>& bc_value = op_bc_->bc_value();
-  // std::vector<double>& bc_mixed = op_bc_->bc_mixed();
+  auto op_bc = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state");
+  std::vector<int>& bc_model = op_bc->bc_model();
+  std::vector<double>& bc_value = op_bc->bc_value();
+  // std::vector<double>& bc_mixed = op_bc->bc_mixed();
 
   for (int i = 0; i < bcs_.size(); ++i) {
     if (bcs_[i]->get_bc_name() == "seepage" && bcs_[i]->seepage_model() == "PFloTran") {
@@ -98,9 +99,10 @@ Flow_PK::SeepageFacePFloTran(const CompositeVector& u, int* nseepage, double* ar
 void
 Flow_PK::SeepageFaceFACT(const CompositeVector& u, int* nseepage, double* area_seepage)
 {
-  std::vector<int>& bc_model = op_bc_->bc_model();
-  std::vector<double>& bc_value = op_bc_->bc_value();
-  std::vector<double>& bc_mixed = op_bc_->bc_mixed();
+  auto op_bc = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state");
+  std::vector<int>& bc_model = op_bc->bc_model();
+  std::vector<double>& bc_value = op_bc->bc_value();
+  std::vector<double>& bc_mixed = op_bc->bc_mixed();
 
   *nseepage = 0;
   *area_seepage = 0.0;

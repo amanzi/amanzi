@@ -61,6 +61,7 @@ InputConverterU::TranslateFlow_(const std::string& mode,
   // process expert parameters
   bool flag, use_overburden_stress(false);
   std::string prefix("unstructured_controls, unstr_flow_controls, ");
+  std::string prefix_ns("unstructured_controls, unstr_nonlinear_solver, ");
 
   node = GetUniqueElementByTagsString_(prefix + "rel_perm_method", flag);
   if (flag) rel_perm = mm.transcode(node->getTextContent());
@@ -82,8 +83,7 @@ InputConverterU::TranslateFlow_(const std::string& mode,
   node = GetUniqueElementByTagsString_(prefix + "use_overburden_stress", flag);
   if (flag) use_overburden_stress = GetTextContentL_(node);
 
-  node = GetUniqueElementByTagsString_(
-    "unstructured_controls, unstr_nonlinear_solver, max_correction_change", flag);
+  node = GetUniqueElementByTagsString_(prefix_ns + "max_correction_change", flag);
   double change(-1.0);
   if (flag) change = GetTextContentD_(node, "", true);
   out_list.sublist("clipping parameters").set<double>("maximum correction change", change);
@@ -159,14 +159,12 @@ InputConverterU::TranslateFlow_(const std::string& mode,
 
   // insert operator sublist
   std::string disc_method("mfd-optimized_for_sparsity");
-  node = GetUniqueElementByTagsString_(
-    "unstructured_controls, unstr_flow_controls, discretization_method", flag);
+  node = GetUniqueElementByTagsString_(prefix + "discretization_method", flag);
   if (flag) disc_method = mm.transcode(node->getTextContent());
 
   std::string pc_method("linearized_operator");
   if (pk_model == "darcy") pc_method = "diffusion_operator";
-  node = GetUniqueElementByTagsString_(
-    "unstructured_controls, unstr_flow_controls, preconditioning_strategy", flag);
+  node = GetUniqueElementByTagsString_(prefix + "preconditioning_strategy", flag);
   if (flag) pc_method = GetTextContentS_(node, "linearized_operator, diffusion_operator");
 
   std::string nonlinear_solver("nka");
@@ -174,8 +172,8 @@ InputConverterU::TranslateFlow_(const std::string& mode,
   if (flag) nonlinear_solver = GetAttributeValueS_(node, "name", TYPE_NONE, false, "nka");
 
   bool modify_correction(false);
-  node = GetUniqueElementByTagsString_(
-    "unstructured_controls, unstr_nonlinear_solver, modify_correction", flag);
+  node = GetUniqueElementByTagsString_(prefix_ns + "modify_correction", flag);
+  if (flag) modify_correction = GetTextContentL_(node);
 
   // Newton method requires to overwrite some parameters.
   if (nonlinear_solver == "newton") {
@@ -480,7 +478,7 @@ InputConverterU::TranslateFlowMSM_()
       if (!flag) ThrowErrorMissing_("materials", "element", "matrix", "multiscale_model");
 
       int nnodes =
-        GetAttributeValueL_(node, "number_of_nodes", TYPE_NUMERICAL, 0, INT_MAX, false, 1);
+        GetAttributeValueI_(node, "number_of_nodes", TYPE_NUMERICAL, 0, INT_MAX, false, 1);
       double depth = GetAttributeValueD_(node, "depth", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
       double perm = GetAttributeValueD_(node, "permeability", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m^2");
 

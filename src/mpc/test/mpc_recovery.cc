@@ -236,7 +236,7 @@ TEST(MPC_RECOVERY_FLOW_RICHARDS)
 
 TEST(MPC_RECOVERY_THERMAL_FLOW)
 {
-  ::Run<FlowEnergy_PK>("test/mpc_thermal_richards.xml", 2, { 1.0e+4, 1.0e+4, 1.0e+4 }, 0);
+  ::Run<FlowEnergyPT_PK>("test/mpc_thermal_richards.xml", 2, { 1.0e+4, 1.0e+4, 1.0e+4 }, 0);
 }
 
 TEST(MPC_RECOVERY_COUPLED_FLOW)

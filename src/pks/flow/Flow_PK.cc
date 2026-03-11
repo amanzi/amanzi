@@ -19,6 +19,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "EvaluatorMultiplicativeReciprocal.hh"
+#include "LScheme_Helpers.hh"
 #include "Mesh.hh"
 #include "MeshAlgorithms.hh"
 #include "OperatorDefs.hh"
@@ -103,6 +104,9 @@ Flow_PK::Setup()
 
   mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid");
   mass_density_liquid_key_ = Keys::getKey(domain_, "mass_density_liquid");
+
+  L_scheme_data_key_ = "l_scheme_data";
+  bcs_flow_key_ = Keys::getKey(domain_, "bcs_flow");
 
   // constant fields
   S_->Require<double>("const_fluid_density", Tags::DEFAULT, "state");
@@ -223,6 +227,31 @@ Flow_PK::Setup()
     }
   }
 
+  // L-scheme support
+  if (L_scheme_) {
+    S_->Require<LSchemeData>(L_scheme_data_key_, Tags::DEFAULT, "state");
+    S_->GetRecordW(L_scheme_data_key_, "state").set_initialized();
+
+    S_->Require<CV_t, CVS_t>(L_scheme_stab_key_, Tags::DEFAULT, "state")
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+    S_->GetRecordW(L_scheme_stab_key_, "state").set_initialized();
+
+    S_->Require<CV_t, CVS_t>(L_scheme_prev_key_, Tags::DEFAULT, "state")
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+    S_->GetRecordW(L_scheme_prev_key_, "state").set_initialized();
+  }
+
+  // boundary conditions
+  S_->Require<Operators::BCs, Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state")
+    .SetMesh(mesh_)
+    ->SetKind(AmanziMesh::Entity_kind::FACE)
+    ->SetType(WhetStone::DOF_Type::SCALAR);
+  S_->GetRecordW(bcs_flow_key_, "state").set_initialized();
+
   // set units
   if (assumptions_.flow_on_manifold) S_->GetRecordSetW(aperture_key_).set_units("m");
 }
@@ -297,6 +326,20 @@ Flow_PK::Setup_LocalFields_()
     auto eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
     S_->SetEvaluator(darcy_velocity_key_, tag, eval);
   }
+}
+
+
+/* ******************************************************************
+* L-scheme support
+****************************************************************** */
+std::vector<Key>
+Flow_PK::SetupLSchemeKey(Teuchos::ParameterList& plist)
+{
+  L_scheme_ = true;
+  Key key = Keys::getKey(domain_, "l_scheme_pressure");
+  L_scheme_stab_key_ = key + "_stab";
+  L_scheme_prev_key_ = key + "_prev";
+  return std::vector<Key>(1, key);
 }
 
 
@@ -453,10 +496,6 @@ Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
   atm_pressure_ = S_->Get<double>("atmospheric_pressure");
 
   // Create BC objects
-  // -- memory
-  op_bc_ = Teuchos::rcp(
-    new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
-
   Teuchos::RCP<FlowBoundaryFunction> bc;
   auto& bc_list = plist.sublist("boundary conditions");
 
@@ -742,9 +781,10 @@ Flow_PK::UpdateSourceBoundaryData(double t_old, double t_new, const CompositeVec
 void
 Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
 {
-  std::vector<int>& bc_model = op_bc_->bc_model();
-  std::vector<double>& bc_value = op_bc_->bc_value();
-  std::vector<double>& bc_mixed = op_bc_->bc_mixed();
+  auto op_bc = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state");
+  std::vector<int>& bc_model = op_bc->bc_model();
+  std::vector<double>& bc_value = op_bc->bc_value();
+  std::vector<double>& bc_mixed = op_bc->bc_mixed();
 
   for (int n = 0; n < bc_model.size(); n++) {
     bc_model[n] = Operators::OPERATOR_BC_NONE;
@@ -856,11 +896,12 @@ Flow_PK::SetAbsolutePermeabilityTensor()
   AmanziGeometry::Point n1(dim), n2(dim), normal(dim), tau(dim);
   WhetStone::Tensor N(dim, 2), Ninv(dim, 2), D(dim, 2);
 
-  K.resize(ncells_owned);
+  K_ = Teuchos::rcp(new std::vector<WhetStone::Tensor>(ncells_owned));
   bool cartesian = (coordinate_system_ == "cartesian");
   bool off_diag = cv.HasComponent("offd");
 
   // most common cases of diagonal permeability
+  auto& K = *K_;
   if (cartesian && dim == 2) {
     for (int c = 0; c < ncells_owned; c++) {
       if (!off_diag && perm[0][c] == perm[1][c]) {

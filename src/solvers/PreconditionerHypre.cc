@@ -292,8 +292,29 @@ PreconditionerHypre::InitMGR_()
   // coarse nodes for each level of the reduction. These coarse nodes are
   // indexed by their index in the block of unknowns. This is used internally
   // to tag the appropriate indexes of the linear system matrix as coarse nodes.
-  // HYPRE_MGRSetCpointsByBlock(
-  //   method_, block_size, max_num_levels, *num_block_coarse_points, **block_coarse_indexes);
+  num_block_cpoints = new HYPRE_Int[1];
+  num_block_cpoints[0] = 1;
+
+  block_cindexes = new HYPRE_Int*[1];
+  block_cindexes[0] = new HYPRE_Int[1];
+  block_cindexes[0][0] = 0;
+
+  HYPRE_MGRSetCpointsByBlock(method_, 2, 1, num_block_cpoints, block_cindexes);
+
+  HYPRE_MGRSetTol(method_, 0.0);
+  HYPRE_MGRSetNumRelaxSweeps(method_, 2);
+  HYPRE_MGRSetMaxIter(method_, 2);
+  if (plist_.isParameter("relaxation type"))
+    HYPRE_MGRSetRelaxType(method_, plist_.get<int>("relaxation type"));
+  HYPRE_MGRSetPrintLevel(method_, plist_.get<int>("verbosity", 0));
+
+  HYPRE_MGRSetRestrictType(method_, plist_.get<int>("restriction operator", 0));
+  HYPRE_MGRSetInterpType(method_, plist_.get<int>("interpolation operator", 2));
+
+  if (plist_.isParameter("mgr global smoother")) {
+    HYPRE_MGRSetGlobalSmoothType(method_, plist_.get<int>("mgr global smoother"));
+    HYPRE_MGRSetMaxGlobalSmoothIters(method_, plist_.get<int>("mgr number global sweeps", 0));
+  }
 
   // Prescribe a subset of nodes to be kept as coarse nodes until the coarsest level.
   // These nodes are transferred onto the coarsest grid of the BoomerAMG coarse grid solver.
@@ -304,12 +325,27 @@ PreconditionerHypre::InitMGR_()
   // BoomerAMG coarsening routine is used to determine the C/F splitting for intermediate levels.
   // HYPRE_MGRSetNonCpointsToFpoints(method_, nonCptToFptFlag);
 
-  // This function sets the BoomerAMG solver to be used for the solve on the coarse grid.
+  // HYPRE_MGRSetFRelaxMethod(method_, mgr_frelax_method);
+  // HYPRE_MGRSetNumInterpSweeps(method_, 2);
+
+  // These functions set the BoomerAMG solver to be used for the solve on the coarse grid.
   // The user can define their own BoomerAMG solver with their preferred options and pass
   // this to the MGR solver. Otherwise, an internal BoomerAMG solver is used as the coarse
   // grid solver instead.
-  // HYPRE_MGRSetCoarseSolver(
-  //   method_, coarse_grid_solver_solve, coarse_grid_solver_setup, coarse_grid_solver);
+  HYPRE_BoomerAMGCreate(&coarse_);
+
+  if (plist_.isParameter("interpolation type"))
+    HYPRE_BoomerAMGSetInterpType(coarse_, plist_.get<int>("interpolation type"));
+  HYPRE_BoomerAMGSetMaxIter(coarse_, plist_.get<int>("cycle applications", 5));
+  HYPRE_BoomerAMGSetTol(coarse_, 0.0);
+  HYPRE_BoomerAMGSetNumSweeps(coarse_, plist_.get<int>("smoother sweeps", 3));
+  HYPRE_BoomerAMGSetStrongThreshold(method_, plist_.get<double>("strong threshold", 0.5));
+  HYPRE_BoomerAMGSetCycleType(method_, plist_.get<int>("cycle type", 1));
+  HYPRE_BoomerAMGSetCoarsenType(method_, plist_.get<int>("coarsen type", 0));
+  // if (plist_.isParameter("relaxation type"))
+  //   HYPRE_BoomerAMGSetRelaxType(method_, plist_.get<int>("relaxation type"));
+
+  HYPRE_MGRSetCoarseSolver(method_, HYPRE_BoomerAMGSolve, HYPRE_BoomerAMGSetup, coarse_);
 
 #else
   Errors::Message msg("Hypre (MRG) is not available in this installation of Amanzi.  To use "

@@ -345,7 +345,7 @@
       <ParameterList name="TP 1">
         <ParameterList name="PK tree">
           <ParameterList name="transient:mpc">
-            <Parameter name="PK type" type="string" value="flow and energy"/>
+            <Parameter name="PK type" type="string" value="flow and energy pt"/>
             <ParameterList name="transient:flow">
               <Parameter name="PK type" type="string" value="richards"/>
             </ParameterList>
@@ -598,7 +598,7 @@
       <Parameter name="PKs order" type="Array(string)" value="{transient:flow, transient:energy}"/>
       <Parameter name="master PK index" type="int" value="0"/>
       <Parameter name="domain name" type="string" value="domain"/>
-      <Parameter name="PK type" type="string" value="flow and energy"/>
+      <Parameter name="PK type" type="string" value="flow and energy pt"/>
       <Parameter name="MPC type" type="bool" value="true"/>
 
       <ParameterList name="time integrator">

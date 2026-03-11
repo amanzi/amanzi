@@ -55,7 +55,7 @@ H2O_ThermalConductivity::H2O_ThermalConductivity(Teuchos::ParameterList& plist)
 * Main routine uses pre-computed coefficients.
 ******************************************************************* */
 double
-H2O_ThermalConductivity::ThermalConductivity(double T, double phi)
+H2O_ThermalConductivity::ThermalConductivity(double p, double T, double phi)
 {
   double Ts = T / Tref_;
   double k = ka0_ + (ka1_ + ka2_ * Ts) * Ts;
@@ -75,7 +75,7 @@ H2O_ThermalConductivity::ThermalConductivity(double T, double phi)
 * Main routine uses pre-computed coefficients.
 ******************************************************************* */
 double
-H2O_ThermalConductivity::DThermalConductivityDT(double T, double phi)
+H2O_ThermalConductivity::DThermalConductivityDT(double p, double T, double phi)
 {
   double Ts = T / Tref_;
   double dkdT = (ka1_ + 2 * ka2_ * Ts) / Tref_;

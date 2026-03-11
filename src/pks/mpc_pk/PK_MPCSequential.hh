@@ -22,8 +22,10 @@
 #ifndef AMANZI_PK_MPC_SEQUENTIAL_HH_
 #define AMANZI_PK_MPC_SEQUENTIAL_HH_
 
-#include "PK_MPC.hh"
 #include "PK.hh"
+#include "PK_BDF.hh"
+#include "PK_MPC.hh"
+ 
 
 namespace Amanzi {
 
@@ -35,17 +37,15 @@ class PK_MPCSequential : public PK_MPC<PK> {
                    const Teuchos::RCP<TreeVector>& soln);
 
   // PK methods
-  // -- dt is the minimum of the sub pks
   virtual double get_dt();
   virtual void set_dt(double dt);
-
-  // -- advance each sub pk dt.
+  virtual void Initialize();
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
 
   // New PK methods
   virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du);
   virtual void CommitSequentialStep(Teuchos::RCP<const TreeVector> u_old,
-                                    Teuchos::RCP<const TreeVector> u_new) { /* pass */ };
+                                    Teuchos::RCP<const TreeVector> u_new);
 
   // access
   int num_itrs() { return num_itrs_; }

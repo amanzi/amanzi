@@ -280,7 +280,7 @@ SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u)
     // Evaluate the nonlinear function.
     fun_calls_++;
     fn_->Residual(u, r);
-    db_->WriteVector<Vector>(db_write_iter++, *r, u.ptr(), du.ptr());
+    if (db_.get()) db_->WriteVector<Vector>(db_write_iter++, *r, u.ptr(), du.ptr());
 
     // Make sure that residual does not cause numerical overflow.
     double r_norm;
@@ -430,7 +430,7 @@ SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u)
       divergence_count = 0;
     }
 
-    // Next solution iterate and error estimate: u  = u - du
+    // Next solution iterate and error estimate: u := u - du
     u->Update(-1.0, *du, 1.0);
     fn_->ChangedSolution();
 

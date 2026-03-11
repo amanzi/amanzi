@@ -58,9 +58,9 @@ InputConverterU::TranslateTransport_(const std::string& domain)
   // process CFL number
   bool flag;
   double cfl(1.0);
+  std::string prefix("unstructured_controls, unstr_transport_controls, ");
 
-  node =
-    GetUniqueElementByTagsString_("unstructured_controls, unstr_transport_controls, cfl", flag);
+  node = GetUniqueElementByTagsString_(prefix + "cfl", flag);
   if (flag) {
     text = mm.transcode(node->getTextContent());
     cfl = strtod(text, NULL);
@@ -79,23 +79,20 @@ InputConverterU::TranslateTransport_(const std::string& domain)
   out_list.set<bool>("transport subcycling", TRANSPORT_SUBCYCLING);
 
   // overwrite data from expert parameters
-  node = GetUniqueElementByTagsString_(
-    "unstructured_controls, unstr_transport_controls, sub_cycling", flag);
+  node = GetUniqueElementByTagsString_(prefix + "sub_cycling", flag);
   if (flag) {
     text = mm.transcode(node->getTextContent());
     out_list.set<bool>("transport subcycling", (strcmp(text, "on") == 0));
   }
 
-  node = GetUniqueElementByTagsString_(
-    "unstructured_controls, unstr_transport_controls, flux_method", flag);
+  node = GetUniqueElementByTagsString_(prefix + "flux_method", flag);
   if (flag) {
     text = mm.transcode(node->getTextContent());
     out_list.set<std::string>("method", text);
   }
 
   int nspace(1), ntime(1), poly_order(0);
-  std::string tags_default("unstructured_controls, unstr_transport_controls");
-  node = GetUniqueElementByTagsString_(tags_default + ", algorithm", flag);
+  node = GetUniqueElementByTagsString_(prefix + "algorithm", flag);
   if (flag) {
     std::string order = GetTextContentS_(node,
                                          "explicit, explicit first-order, explicit second-order, "
@@ -110,10 +107,10 @@ InputConverterU::TranslateTransport_(const std::string& domain)
     } else if (order == "explicit") {
       nspace = -1;
       ntime = -1;
-      node = GetUniqueElementByTagsString_(tags_default + ", spatial_order", flag);
+      node = GetUniqueElementByTagsString_(prefix + "spatial_order", flag);
       if (flag) nspace = std::strtol(mm.transcode(node->getTextContent()), NULL, 10);
 
-      node = GetUniqueElementByTagsString_(tags_default + ", temporal_order", flag);
+      node = GetUniqueElementByTagsString_(prefix + "temporal_order", flag);
       if (flag) ntime = std::strtol(mm.transcode(node->getTextContent()), NULL, 10);
 
       if (nspace < 0 || nspace > 2 || ntime < 0 || ntime > 4) {
@@ -156,15 +153,13 @@ InputConverterU::TranslateTransport_(const std::string& domain)
     .set<std::string>("limiter stencil", "face to cells");
 
   // -- overwrite data from expert parameters
-  node =
-    GetUniqueElementByTagsString_("unstructured_controls, unstr_transport_controls, limiter", flag);
+  node = GetUniqueElementByTagsString_(prefix + "limiter", flag);
   if (flag) {
     std::string limiter = GetTextContentS_(node, "tensorial, Kuzmin, Barth-Jespersen");
     trp_lift.set<std::string>("limiter", limiter);
   }
 
-  node = GetUniqueElementByTagsString_(
-    "unstructured_controls, unstr_transport_controls, limiter_stencil", flag);
+  node = GetUniqueElementByTagsString_(prefix + "limiter_stencil", flag);
   if (flag) {
     std::string stencil = GetTextContentS_(
       node, "node-to-cells, face-to-cells, cell-to-closest-cells, cell-to-all-cells");
@@ -172,8 +167,7 @@ InputConverterU::TranslateTransport_(const std::string& domain)
     trp_lift.set<std::string>("limiter stencil", stencil);
   }
 
-  node = GetUniqueElementByTagsString_(
-    "unstructured_controls, unstr_transport_controls, reconstruction_weight", flag);
+  node = GetUniqueElementByTagsString_(prefix + "reconstruction_weight", flag);
   if (flag) {
     std::string weight = GetTextContentS_(node, "constant, inverse-distance");
     std::replace(weight.begin(), weight.end(), '-', ' ');
@@ -286,8 +280,7 @@ InputConverterU::TranslateTransport_(const std::string& domain)
   out_list.sublist("molecular diffusion") = TranslateMolecularDiffusion_();
 
   // add dispersion/diffusion operator
-  node = GetUniqueElementByTagsString_(
-    "unstructured_controls, unstr_transport_controls, dispersion_discretization_method", flag);
+  node = GetUniqueElementByTagsString_(prefix + "dispersion_discretization_method", flag);
   std::string disc_methods;
   if (flag) disc_methods = mm.transcode(node->getTextContent());
   else
@@ -298,7 +291,7 @@ InputConverterU::TranslateTransport_(const std::string& domain)
     TranslateDiffusionOperator_(disc_methods, "diffusion_operator", "", "", "", domain, false);
 
   // auxiliary fields
-  node = GetUniqueElementByTagsString_(tags_default + ", auxiliary_data", flag);
+  node = GetUniqueElementByTagsString_(prefix + "auxiliary_data", flag);
   if (flag) out_list.set<std::string>("auxiliary data", "molar_concentration");
 
   // multiscale models sublist
@@ -526,7 +519,7 @@ InputConverterU::TranslateTransportMSM_()
       if (!flag) ThrowErrorMissing_("materials", "element", "matrix", "multiscale_model");
 
       int nnodes =
-        GetAttributeValueL_(node, "number_of_nodes", TYPE_NUMERICAL, 0, INT_MAX, false, 1);
+        GetAttributeValueI_(node, "number_of_nodes", TYPE_NUMERICAL, 0, INT_MAX, false, 1);
       double depth = GetAttributeValueD_(node, "depth", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
 
       msm_slist.set<int>("number of matrix nodes", nnodes)

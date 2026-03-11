@@ -30,7 +30,8 @@ namespace Flow {
 int
 Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
 {
-  std::vector<int>& bc_model = op_bc_->bc_model();
+  auto op_bc = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state");
+  std::vector<int>& bc_model = op_bc->bc_model();
 
   // create verbosity object
   VerboseObject* vo = new VerboseObject("Amanzi::Picard", *fp_list_);

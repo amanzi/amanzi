@@ -169,5 +169,10 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/utils_brent.cc
                     LINK_LIBS atk ${UnitTest_LIBRARIES})
 
+    add_amanzi_test(utils_powell utils_powell
+                    KIND unit
+                    SOURCE test/Main.cc test/utils_powell.cc
+                    LINK_LIBS atk ${UnitTest_LIBRARIES})
+
 endif()
 

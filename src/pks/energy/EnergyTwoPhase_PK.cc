@@ -25,7 +25,7 @@
 #include "IEMEvaluator.hh"
 #include "StateArchive.hh"
 #include "TCMEvaluator_TwoPhase.hh"
-#include "TotalEnergyEvaluator.hh"
+#include "TotalEnergyEvaluatorPT.hh"
 
 namespace Amanzi {
 namespace Energy {
@@ -82,7 +82,7 @@ EnergyTwoPhase_PK::Setup()
     elist.setName(energy_key_);
     if (assumptions_.flow_on_manifold) elist.set<std::string>("aperture key", aperture_key_);
 
-    auto ee = Teuchos::rcp(new TotalEnergyEvaluator(elist));
+    auto ee = Teuchos::rcp(new TotalEnergyEvaluatorPT(elist));
     S_->SetEvaluator(energy_key_, Tags::DEFAULT, ee);
 
     S_->RequireDerivative<CV_t, CVS_t>(
@@ -191,6 +191,7 @@ EnergyTwoPhase_PK::Initialize()
   soln_->SetData(solution);
 
   // Create local evaluators. Initialize local fields.
+  temperature_eval_->SetChanged();
   InitializeFields_();
 
   // Create specific evaluators (not used yet)
@@ -223,9 +224,10 @@ EnergyTwoPhase_PK::Initialize()
   Teuchos::ParameterList oplist_adv = ep_list_->sublist("operators").sublist("advection operator");
   op_matrix_advection_ = opfactory_adv.Create(oplist_adv, mesh_);
 
+  auto op_bc_enth = S_->GetPtrW<Operators::BCs>(bcs_enthalpy_key_, Tags::DEFAULT, "state");
   const auto& flux = S_->Get<CV_t>(mol_flowrate_key_);
   op_matrix_advection_->Setup(flux);
-  op_matrix_advection_->SetBCs(op_bc_enth_, op_bc_enth_);
+  op_matrix_advection_->SetBCs(op_bc_enth, op_bc_enth);
   op_advection_ = op_matrix_advection_->global_operator();
 
   // initialize copuled operators: diffusion + advection + accumulation
@@ -252,7 +254,7 @@ EnergyTwoPhase_PK::Initialize()
   op_acc_ = Teuchos::rcp(
     new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, op_preconditioner_));
   op_preconditioner_advection_ = opfactory_adv.Create(oplist_adv, op_preconditioner_);
-  op_preconditioner_advection_->SetBCs(op_bc_enth_, op_bc_enth_);
+  op_preconditioner_advection_->SetBCs(op_bc_enth, op_bc_enth);
 
   // initialize preconditioner
   AMANZI_ASSERT(ti_list_->isParameter("preconditioner"));
@@ -294,33 +296,6 @@ EnergyTwoPhase_PK::Initialize()
     *vo_->os() << "WARNING: no essential boundary conditions, solver may fail" << std::endl;
   }
 }
-
-
-/* ****************************************************************
-* This completes initialization of missed fields in the state.
-**************************************************************** */
-void
-EnergyTwoPhase_PK::InitializeFields_()
-{
-  Teuchos::OSTab tab = vo_->getOSTab();
-
-  if (S_->HasRecord(prev_energy_key_)) {
-    if (!S_->GetRecord(prev_energy_key_, Tags::DEFAULT).initialized()) {
-      temperature_eval_->SetChanged();
-      S_->GetEvaluator(energy_key_).Update(*S_, passwd_);
-
-      const auto& e1 = S_->Get<CV_t>(energy_key_);
-      auto& e0 = S_->GetW<CV_t>(prev_energy_key_, Tags::DEFAULT, passwd_);
-      e0 = e1;
-
-      S_->GetRecordW(prev_energy_key_, passwd_).set_initialized();
-
-      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-        *vo_->os() << "initialized prev_energy to previous energy" << std::endl;
-    }
-  }
-}
-
 
 /* *******************************************************************
 * Performs one timestep of size dt_ either for steady-state or

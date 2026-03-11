@@ -99,8 +99,7 @@ WalkaboutCheckpoint::CalculateDarcyVelocity(Teuchos::RCP<State>& S,
 
     // enforce constraint: formulas follow from solution of saddle-point problem
     if (projection) {
-      const auto pk_flow = dynamic_cast<Flow::Flow_PK*>(pk_.get());
-      const auto& bc = pk_flow->op_bc();
+      auto bc = S->GetPtrW<Operators::BCs>("bcs_flow", Tags::DEFAULT, "state");
       const auto& bc_model = bc->bc_model();
       const auto& bc_value = bc->bc_value();
 

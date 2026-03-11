@@ -52,8 +52,9 @@
     <numerical_controls>
       <unstructured_controls>
         <unstr_linear_solver>
+          <method>pcg</method>
           <max_iterations>1000</max_iterations>
-          <tolerance>1.0e-16</tolerance>
+          <tolerance>1.0e-14</tolerance>
         </unstr_linear_solver>
         <unstr_transport_controls>
           <algorithm>none</algorithm>

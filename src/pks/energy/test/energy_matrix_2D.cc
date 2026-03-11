@@ -106,9 +106,6 @@ TEST(ENERGY_2D_MATRIX)
     S->GetEvaluatorPtr("temperature", Tags::DEFAULT))
     ->SetChanged();
 
-  // compute conductivity
-  EPK->UpdateConductivityData(S.ptr());
-
   // create boundary data
   int nfaces_wghost =
     mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
@@ -135,8 +132,6 @@ TEST(ENERGY_2D_MATRIX)
   op1->SetBCs(bc, bc);
 
   // populate the diffusion operator
-  Teuchos::RCP<std::vector<WhetStone::Tensor>> Kptr = Teuchos::rcpFromRef(EPK->get_K());
-  op1->Setup(Kptr, Teuchos::null, Teuchos::null);
   op1->UpdateMatrices(Teuchos::null, Teuchos::null);
   Teuchos::RCP<Operator> op = op1->global_operator();
 

@@ -981,13 +981,13 @@ InputConverterS::ParseMesh_()
   if (found) {
     bool found;
     DOMElement* number_of_cells = GetChildByName_(generate, "number_of_cells", found, true);
-    nx_ = GetAttributeValueL_(number_of_cells, "nx");
-    ny_ = GetAttributeValueL_(number_of_cells, "ny");
+    nx_ = GetAttributeValueI_(number_of_cells, "nx");
+    ny_ = GetAttributeValueI_(number_of_cells, "ny");
     vector<int> n(dim_);
     n[0] = nx_;
     n[1] = ny_;
     if (dim_ == 3) {
-      nz_ = GetAttributeValueL_(number_of_cells, "nz");
+      nz_ = GetAttributeValueI_(number_of_cells, "nz");
       n[2] = nz_;
     }
     AddToTable(table, MakePPPrefix("amr", "n_cell"), MakePPEntry(n));
@@ -1205,7 +1205,7 @@ InputConverterS::ParseRegions_()
         DOMElement* polygon = static_cast<DOMElement*>(polygons[i]);
         string region_name = GetAttributeValueS_(polygon, "name");
         region_names.push_back(region_name);
-        int num_points = GetAttributeValueL_(polygon, "num_points");
+        int num_points = GetAttributeValueI_(polygon, "num_points");
         vector<DOMNode*> points = GetChildren_(polygon, "point", found);
 
         if (!found || points.size() != num_points) {

@@ -708,7 +708,7 @@ InputConverterU::SaveXMLFile(Teuchos::ParameterList& out_list, std::string& xmlf
   if (flag) {
     DOMElement* element = static_cast<DOMElement*>(node);
     filename = GetAttributeValueS_(element, "file_name", TYPE_NONE, false, "skip");
-    precision = GetAttributeValueL_(element, "output_precision", TYPE_NONE, 0, 10, false, 0);
+    precision = GetAttributeValueI_(element, "output_precision", TYPE_NONE, 0, 10, false, 0);
   }
 
   if (filename == "") {

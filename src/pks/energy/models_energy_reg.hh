@@ -15,6 +15,7 @@
 
 #include "IEMFactory.hh"
 #include "IEMEvaluator.hh"
+#include "IEM_IAPWS97.hh"
 #include "IEM_Linear.hh"
 #include "IEM_Tabular.hh"
 #include "IEM_WaterVaporEvaluator.hh"
@@ -45,9 +46,9 @@ Utils::RegisteredFactory<Evaluator, IEMEvaluator> IEMEvaluator::reg_("iem");
 Utils::RegisteredFactory<Evaluator, IEM_WaterVaporEvaluator> IEM_WaterVaporEvaluator::reg_(
   "iem water vapor");
 
+Utils::RegisteredFactory<IEM, IEM_IAPWS97> IEM_IAPWS97::reg_("IAPWS97");
 Utils::RegisteredFactory<IEM, IEM_Linear> IEM_Linear::reg_("linear");
 Utils::RegisteredFactory<IEM, IEM_Tabular> IEM_Tabular::reg_("lookup table");
-
 
 // linear interpolant of thermal conductivity.
 Utils::RegisteredFactory<TCM_TwoPhase, TCM_PetersLidard_TwoPhase> TCM_PetersLidard_TwoPhase::reg_(

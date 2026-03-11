@@ -28,8 +28,9 @@
 #include "CommonDefs.hh"
 #include "dbc.hh"
 #include "exceptions.hh"
-#include "InverseFactory.hh"
+#include "LScheme_Helpers.hh"
 #include "Mesh.hh"
+#include "InverseFactory.hh"
 #include "MeshAlgorithms.hh"
 #include "OperatorDefs.hh"
 #include "PDE_DiffusionFactory.hh"
@@ -154,12 +155,16 @@ Richards_PK::Setup()
       .set<bool>("water vapor", assumptions_.vapor_diffusion);
     if (assumptions_.flow_on_manifold) elist.set<std::string>("aperture key", aperture_key_);
 
+    auto eval = Teuchos::rcp(new WaterStorage(elist));
+    S_->SetEvaluator(water_storage_key_, Tags::DEFAULT, eval);
+
     S_->RequireDerivative<CV_t, CVS_t>(
         water_storage_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, water_storage_key_)
       .SetGhosted();
 
-    auto eval = Teuchos::rcp(new WaterStorage(elist));
-    S_->SetEvaluator(water_storage_key_, Tags::DEFAULT, eval);
+    S_->RequireDerivative<CV_t, CVS_t>(
+        water_storage_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, water_storage_key_)
+      .SetGhosted();
   }
 
   // -- water storage from the previous timestep
@@ -308,7 +313,7 @@ Richards_PK::Setup()
     S_->SetEvaluator(relperm_key_, Tags::DEFAULT, eval);
   }
 
-  // optional porosity correction to permeability
+  // -- optional porosity correction to permeability
   if (assumptions_.use_ppm) {
     S_->Require<CV_t, CVS_t>(ppfactor_key_, Tags::DEFAULT, ppfactor_key_)
       .SetMesh(mesh_)
@@ -369,11 +374,15 @@ Richards_PK::Setup()
         alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_)
       .SetGhosted();
 
+    S_->RequireDerivative<CV_t, CVS_t>(
+        alpha_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, alpha_key_)
+      .SetGhosted();
+
     auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
     S_->SetEvaluator(alpha_key_, Tags::DEFAULT, eval);
   }
 
-  // -- aperture evalutor
+  // -- aperture evaluator
   if (assumptions_.use_overburden_stress && domain_ == "domain") {
     S_->Require<CV_t, CVS_t>("hydrostatic_stress", Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
@@ -551,8 +560,7 @@ Richards_PK::Initialize()
 
   if (!assumptions_.flow_on_manifold) {
     SetAbsolutePermeabilityTensor();
-    Teuchos::RCP<std::vector<WhetStone::Tensor>> Kptr = Teuchos::rcpFromRef(K);
-    opfactory.SetVariableTensorCoefficient(Kptr);
+    opfactory.SetVariableTensorCoefficient(K_);
     opfactory.SetVariableScalarCoefficient(alpha_upwind_, alpha_upwind_dP_);
   } else {
     auto kptr = S_->GetPtrW<CV_t>(alpha_key_, Tags::DEFAULT, alpha_key_);
@@ -566,12 +574,14 @@ Richards_PK::Initialize()
   op_preconditioner_diff_ = opfactory.Create();
   op_preconditioner_ = op_preconditioner_diff_->global_operator();
 
+  auto op_bc = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state");
+
   op_acc_ = Teuchos::rcp(
     new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, op_preconditioner_));
 
   if (assumptions_.vapor_diffusion) {
     Teuchos::ParameterList oplist_vapor = tmp_list.sublist("vapor matrix");
-    op_vapor_diff_ = opfactory.Create(oplist_vapor, mesh_, op_bc_);
+    op_vapor_diff_ = opfactory.Create(oplist_vapor, mesh_, op_bc);
     op_vapor_ = op_vapor_diff_->global_operator();
     op_preconditioner_->OpPushBack(op_vapor_diff_->local_op());
   }
@@ -640,20 +650,20 @@ Richards_PK::Initialize()
 
   // initialization of the diffusion matrix requires a few steps,
   // we simply call the functional evaluation to make these steps.
-  op_matrix_diff_->SetBCs(op_bc_, op_bc_);
+  op_matrix_diff_->SetBCs(op_bc, op_bc);
 
   auto f = Teuchos::rcp(new TreeVector(*soln_));
   FunctionalResidual(t_ini - dt_, t_ini, soln_, soln_, f);
 
   op_preconditioner_->Init();
-  op_preconditioner_diff_->SetBCs(op_bc_, op_bc_);
+  op_preconditioner_diff_->SetBCs(op_bc, op_bc);
   op_preconditioner_diff_->UpdateMatrices(mol_flowrate_copy.ptr(), solution.ptr());
   op_preconditioner_diff_->UpdateMatricesNewtonCorrection(
     mol_flowrate_copy.ptr(), solution.ptr(), 1.0);
   op_preconditioner_diff_->ApplyBCs(true, true, true);
 
   if (assumptions_.vapor_diffusion) {
-    // op_vapor_diff_->SetBCs(op_bc_);
+    // op_vapor_diff_->SetBCs(op_bc);
     op_vapor_diff_->SetScalarCoefficient(Teuchos::null, Teuchos::null);
   }
 
@@ -792,8 +802,14 @@ Richards_PK::Initialize()
 
   // set up operators for evaluators
   auto eval = S_->GetEvaluatorPtr(vol_flowrate_key_, Tags::DEFAULT);
-  Teuchos::rcp_dynamic_cast<VolumetricFlowRateEvaluator>(eval)->set_bc(op_bc_);
+  Teuchos::rcp_dynamic_cast<VolumetricFlowRateEvaluator>(eval)->set_bc(op_bc);
   Teuchos::rcp_dynamic_cast<VolumetricFlowRateEvaluator>(eval)->set_upwind(upwind_);
+
+  if (L_scheme_) {
+    auto& data = S_->GetW<LSchemeData>(L_scheme_data_key_, "state");
+    data[pressure_key_].last_step_increment = 1.0;
+    data[pressure_key_].safety_factor = 0.0;
+  }
 
   // Verbose output of initialization statistics.
   InitializeStatistics_();
@@ -1025,6 +1041,66 @@ Richards_PK::FailStep(double t_old, double t_new, const Tag& tag)
 
 
 /* ******************************************************************
+* Restore state to the previous step
+****************************************************************** */
+void
+Richards_PK::ComputeLSchemeStability()
+{ 
+  auto& stability_c = *S_->GetW<CV_t>(L_scheme_stab_key_, "state").ViewComponent("cell");
+
+  // accumulation
+  S_->GetEvaluator(water_storage_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
+  auto& dwc_dp = S_->GetDerivativeW<CV_t>(
+    water_storage_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, water_storage_key_);
+  const auto& tmp1 = *dwc_dp.ViewComponent("cell");
+
+  auto tmp2(tmp1);
+  tmp2.PutScalar(0.0);
+  if (S_->GetEvaluator(water_storage_key_).IsDifferentiableWRT(*S_, temperature_key_, Tags::DEFAULT)) {
+    S_->GetEvaluator(water_storage_key_).UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
+    auto& dwc_dT = S_->GetDerivativeW<CV_t>(
+      water_storage_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, water_storage_key_);
+    tmp2 = *dwc_dT.ViewComponent("cell");
+  }
+
+  // diffusion 
+  auto& alpha_dp = S_->GetDerivativeW<CV_t>(
+    alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_);
+  const auto& tmp3 = *alpha_dp.ViewComponent("cell");
+
+  S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
+  auto& alpha_dT = S_->GetDerivativeW<CV_t>(
+    alpha_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, alpha_key_);
+  const auto& tmp4 = *alpha_dT.ViewComponent("cell");
+
+  const auto& mu = *S_->Get<CV_t>(viscosity_liquid_key_).ViewComponent("cell");
+  const auto& flux = *S_->Get<CV_t>(vol_flowrate_key_).ViewComponent("face", true);
+
+  // L-scheme additional control
+  const auto& data = S_->Get<LSchemeData>(L_scheme_data_key_, Tags::DEFAULT);
+  double normT = (data.find(temperature_key_) == data.end()) ? 0.0 : data.at(temperature_key_).last_step_increment;
+  double sp = data.at(pressure_key_).safety_factor;
+
+  double qmax, vol, factor3, factor4;
+  for (int c = 0; c < ncells_owned; ++c) {
+    const auto& faces = mesh_->getCellFaces(c);
+
+    qmax = 0.0;
+    for (int f : faces) qmax += std::fabs(flux[0][f]);
+
+    vol = mesh_->getCellVolume(c);
+    factor3 = (qmax / faces.size()) * mu[0][c] * dt_ / vol;
+    factor4 = factor3 * normT;
+
+    stability_c[0][c] = (std::max(0.0, -tmp1[0][c]) 
+                       + std::fabs(tmp2[0][c]) * normT
+                       + std::fabs(tmp3[0][c]) * factor3
+                       + std::fabs(tmp4[0][c]) * factor4) * sp;
+  }
+}
+
+
+/* ******************************************************************
 * Returns either known pressure face value or calculates it using
 * the two-point flux approximation (FV) scheme.
 ****************************************************************** */
@@ -1053,8 +1129,9 @@ Richards_PK::DeriveBoundaryFaceValue(int f,
                                      const CompositeVector& u,
                                      Teuchos::RCP<const WRM> wrm_model)
 {
-  const std::vector<int>& bc_model = op_bc_->bc_model();
-  const std::vector<double>& bc_value = op_bc_->bc_value();
+  auto op_bc = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state");
+  const std::vector<int>& bc_model = op_bc->bc_model();
+  const std::vector<double>& bc_value = op_bc->bc_value();
 
   if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
     return bc_value[f];

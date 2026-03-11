@@ -391,8 +391,7 @@ Darcy_PK::Initialize()
 
   if (!assumptions_.flow_on_manifold) {
     SetAbsolutePermeabilityTensor();
-    Teuchos::RCP<std::vector<WhetStone::Tensor>> Kptr = Teuchos::rcpFromRef(K);
-    opfactory.SetVariableTensorCoefficient(Kptr);
+    opfactory.SetVariableTensorCoefficient(K_);
     opfactory.SetConstantScalarCoefficient(rho_ / mu);
   } else {
     WhetStone::Tensor Ktmp(dim, 1);
@@ -404,9 +403,10 @@ Darcy_PK::Initialize()
     opfactory.SetVariableScalarCoefficient(kptr);
   }
 
+  auto op_bc = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state");
   op_diff_ = opfactory.Create();
   op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-  op_diff_->SetBCs(op_bc_, op_bc_);
+  op_diff_->SetBCs(op_bc, op_bc);
   op_ = op_diff_->global_operator();
 
   // -- accumulation operator
@@ -426,7 +426,7 @@ Darcy_PK::Initialize()
 
   // set up operators for evaluators
   auto eval = S_->GetEvaluatorPtr(vol_flowrate_key_, Tags::DEFAULT);
-  Teuchos::rcp_dynamic_cast<VolumetricFlowRateEvaluator>(eval)->set_bc(op_bc_);
+  Teuchos::rcp_dynamic_cast<VolumetricFlowRateEvaluator>(eval)->set_bc(op_bc);
 
   // Optional step: calculate hydrostatic solution consistent with BCs.
   // We have to do it only once per time period.
@@ -561,6 +561,13 @@ Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   if (S_->HasRecord("well_index")) {
     const auto& wi = S_->Get<CV_t>("well_index");
     op_acc_->AddAccumulationTerm(wi, "cell");
+  }
+
+  // add stabilization based on Lipschiz constant
+  if (L_scheme_) {
+    const auto& stability = S_->Get<CV_t>(L_scheme_stab_key_);
+    const auto& u_prev = S_->Get<CV_t>(L_scheme_prev_key_);
+    op_acc_->AddAccumulationDelta(u_prev, stability, stability, dt_, "cell");
   }
 
   // add diffusion matrices

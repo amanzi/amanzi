@@ -27,9 +27,10 @@ class EOS_ThermalConductivity {
     : plist_(plist), ierr_(0) {};
   virtual ~EOS_ThermalConductivity() {};
 
-  virtual double ThermalConductivity(double T, double phi) = 0;
-  virtual double DThermalConductivityDT(double T, double phi) = 0;
-  virtual double DThermalConductivityDPhi(double T, double phi) = 0;
+  virtual double ThermalConductivity(double p, double T, double phi) = 0;
+  virtual double DThermalConductivityDp(double p, double T, double phi) = 0;
+  virtual double DThermalConductivityDT(double p, double T, double phi) = 0;
+  virtual double DThermalConductivityDPhi(double p, double T, double phi) = 0;
 
   // error messages
   int error_code() { return ierr_; }
