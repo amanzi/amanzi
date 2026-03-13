@@ -152,3 +152,7 @@ set(SuperLUDist_DIR @SuperLUDist_DIR@ CACHE PATH "SuperLUDist installation prefi
 
 # CLM
 set(CLM_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "CLM installation prefix")
+
+# EcoSIM
+set(ECOSIM_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "EcoSIM installation prefix")
+
