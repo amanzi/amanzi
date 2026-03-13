@@ -27,6 +27,7 @@ To be written.
 #include "Mesh.hh"
 #include "UniqueMeshFunction.hh"
 
+#include "PKsDefs.hh"
 #include "PK_Utils.hh"
 
 namespace Amanzi {

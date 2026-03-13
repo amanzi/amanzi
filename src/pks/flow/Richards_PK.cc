@@ -555,7 +555,6 @@ Richards_PK::Initialize()
   Operators::PDE_DiffusionFactory opfactory(oplist_matrix, mesh_);
 
   auto rho_cv = S_->GetPtr<CV_t>(mass_density_liquid_key_, Tags::DEFAULT);
-  // opfactory.SetConstantGravitationalTerm(gravity_, rho_);
   opfactory.SetVariableGravitationalTerm(gravity_, rho_cv);
 
   if (!assumptions_.flow_on_manifold) {
@@ -667,15 +666,31 @@ Richards_PK::Initialize()
     op_vapor_diff_->SetScalarCoefficient(Teuchos::null, Teuchos::null);
   }
 
-  // -- generic linear solver for most cases
-
-  // -- preconditioner or encapsulated preconditioner
+  // preconditioner or encapsulated preconditioner
+  // NOTE: this is alternatively called "linear solver" or "preconditioner
+  // enhancement".  One got stuffed into op_pc_solver_, the other gets
+  // constructed in, e.g. AdvanceToSteadyState_Picard.  Must these be separate?
+  // They can be... and so I kept them separate for now.  But this means that
+  // all of flow PK cannot have linear solver in the Operator. --etc
+  // solver_name_ = ti_list_->get<std::string>("linear solver");
+  // op_preconditioner_->set_inverse_parameters(pc_name, *preconditioner_list_,
+  //         solver_name_, *linear_operator_list_, true);
   std::string pc_name = ti_list_->get<std::string>("preconditioner");
   op_preconditioner_->set_inverse_parameters(pc_name, *preconditioner_list_);
 
-  // Optional step: calculate hydrostatic solution consistent with BCs
-  // and clip it as requested. We have to do it only once at the beginning
-  // of time period.
+  std::string tmp_solver = ti_list_->get<std::string>("preconditioner enhancement", "none");
+  if (tmp_solver != "none") {
+    AMANZI_ASSERT(linear_operator_list_->isSublist(tmp_solver));
+    Teuchos::ParameterList tmp_plist = linear_operator_list_->sublist(tmp_solver);
+    op_pc_solver_ = AmanziSolvers::createIterativeMethod(tmp_plist, op_preconditioner_);
+  } else {
+    op_pc_solver_ = op_preconditioner_;
+  }
+  op_pc_solver_->InitializeInverse();
+
+  // Improve initial guess, e.g. by calculating a hydrostatic solution 
+  // consistent with BCs and clipping it optionally. 
+  // We do it only once at the beginning of time period.
   if (ti_list_->isSublist("initialization") && initialize_with_darcy_ &&
       S_->get_position() == Amanzi::TIME_PERIOD_START) {
     initialize_with_darcy_ = false;
@@ -712,8 +727,12 @@ Richards_PK::Initialize()
         Epetra_MultiVector& lambda = *solution->ViewComponent("face", true);
         DeriveFaceValuesFromCellValues(p, lambda);
       }
+    // fixed-point method for hydrostatic solution (costant density)
     } else if (ini_method_name == "picard") {
       AdvanceToSteadyState_Picard(ti_list_->sublist("initialization"));
+    // iterative method for hydrostatic solution (rho(p,T))
+    } else if (ini_method_name == "nonlinear saturated solver") {
+      SolveHydrostaticProblem(ti_list_->sublist("initialization"), soln_);
     }
     pressure_eval_->SetChanged();
 
@@ -777,25 +796,7 @@ Richards_PK::Initialize()
     cnls_limiter_ = Teuchos::rcp(new CompositeVector(cvs1));
   }
 
-  // NOTE: this is alternatively called "linear solver" or "preconditioner
-  // enhancement".  One got stuffed into op_pc_solver_, the other gets
-  // constructed in, e.g. AdvanceToSteadyState_Picard.  Must these be separate?
-  // They can be... and so I kept them separate for now.  But this means that
-  // all of flow PK cannot have linear solver in the Operator. --etc
-  // solver_name_ = ti_list_->get<std::string>("linear solver");
-  // op_preconditioner_->set_inverse_parameters(pc_name, *preconditioner_list_,
-  //         solver_name_, *linear_operator_list_, true);
-  std::string tmp_solver = ti_list_->get<std::string>("preconditioner enhancement", "none");
-  if (tmp_solver != "none") {
-    AMANZI_ASSERT(linear_operator_list_->isSublist(tmp_solver));
-    Teuchos::ParameterList tmp_plist = linear_operator_list_->sublist(tmp_solver);
-    op_pc_solver_ = AmanziSolvers::createIterativeMethod(tmp_plist, op_preconditioner_);
-  } else {
-    op_pc_solver_ = op_preconditioner_;
-  }
-  op_pc_solver_->InitializeInverse();
-
-  // initialize previous fields
+  // initialize fields from previous time step
   InitializeCVFieldFromCVField(
     S_, *vo_, prev_saturation_liquid_key_, saturation_liquid_key_, passwd_);
   InitializeCVFieldFromCVField(S_, *vo_, prev_water_storage_key_, water_storage_key_, passwd_);

@@ -118,6 +118,7 @@ class Richards_PK : public Flow_PK {
 
   // other flow methods
   // -- initialization members
+  void SolveHydrostaticProblem(Teuchos::ParameterList& plist, const Teuchos::RCP<TreeVector>& u);
   void SolveFullySaturatedProblem(double t_old, CompositeVector& u, const std::string& solver_name);
   void EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector> u);
   void UpwindInflowBoundary(Teuchos::RCP<const CompositeVector> u);
