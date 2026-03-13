@@ -25,8 +25,53 @@ else()
   set (ECOSIM_GIT_REPOSITORY_TEMP ${ECOSIM_GIT_REPOSITORY})
 endif()
 
+# Set EcoSIM install prefix
+set(ECOSIM_INSTALL_PREFIX ${TPL_INSTALL_PREFIX}/ecosim)
+
+# determine library type
+if (BUILD_SHARED_LIBS)
+  set(ECOSIM_LIBS_TYPE "SHARED")
+else()
+  set(ECOSIM_LIBS_TYPE "STATIC")
+endif()
+
+# Set TPL library paths (HDF5, NetCDF)
+include(BuildLibraryName)
+build_library_name(netcdf ecosim_netcdf_library ${ECOSIM_LIBS_TYPE} APPEND_PATH ${NetCDF_DIR}/lib)
+build_library_name(netcdff ecosim_netcdff_library ${ECOSIM_LIBS_TYPE} APPEND_PATH ${NetCDF_DIR}/lib)
+if ( ${CMAKE_BUILD_TYPE} STREQUAL "Debug" )
+  build_library_name(hdf5_hl_debug ecosim_hdf5_hl_library ${ECOSIM_LIBS_TYPE} APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+  build_library_name(hdf5_debug ecosim_hdf5_library ${ECOSIM_LIBS_TYPE} APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+else()
+  build_library_name(hdf5_hl ecosim_hdf5_hl_library ${ECOSIM_LIBS_TYPE} APPEND_PATH ${HDF5_DIR}/lib)
+  build_library_name(hdf5 ecosim_hdf5_library ${ECOSIM_LIBS_TYPE} APPEND_PATH ${HDF5_DIR}/lib)
+endif()
+build_library_name(z ecosim_z_library ${ECOSIM_LIBS_TYPE} APPEND_PATH ${ZLIB_DIR}/lib)
+
+set(ecosim_netcdf_libraries
+       ${ecosim_netcdf_library}
+       ${ecosim_hdf5_hl_library}
+       ${ecosim_hdf5_library} -ldl
+       ${ecosim_z_library})
+
+# Set EcoSIM CMake cache arguments
+# >>> Note the HDF5 includes and libraries include the zlib, math (-lm), and dynamic link library (-ldl)
+set(ECOSIM_CMAKE_CACHE_ARGS
+      "-DCMAKE_INSTALL_PREFIX:FILEPATH=${ECOSIM_INSTALL_PREFIX}"
+      "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}"
+      "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
+      "-DTPLS_NETCDF_INCLUDE_DIRS=${NetCDF_INCLUDE_DIRS}"
+      "-DTPLS_NETCDF_LIBRARIES:STRING=${NetCDF_C_LIBRARIES}"
+      "-DTPLS_NETCDF_FORTRAN_INCLUDE_DIRS:STRING=${NetCDF_FORTRAN_INCLUDE_DIRS}"
+      "-DTPLS_NETCDF_FORTRAN_LIBRARIES:STRING=${NetCDF_FORTRAN_LIBRARIES}"
+      "-DTPLS_HDF5_INCLUDE_DIRS=${HDF5_INCLUDE_DIRS}"
+      "-DTPLS_HDF5_LIBRARIES:STRING=${HDF5_LIBRARIES}"
+)
+
 # --- Patch the original code
-set(ECOSIM_patch_file ecosim-cmake.patch)
+# set(ECOSIM_patch_file ecosim-cmake.patch)
+# New approach: Updating EcoSIM CMake directly on a fork (branch: david/cmake-updates).
+set(ECOSIM_patch_file )
 
 patch_tpl(ECOSIM
           ${ECOSIM_prefix_dir}
@@ -34,19 +79,12 @@ patch_tpl(ECOSIM
           ${ECOSIM_stamp_dir}
           ECOSIM_patch_file)
 
-
-# Set EcoSIM CMake cache arguments
-set(ECOSIM_CMAKE_CACHE_ARGS
-      "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}/ecosim"
-      "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}"
-      "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}")
     
 # --- Explicitly set ATS_ECOSIM as this is needed in EcoSIM CMake to trigger use of ATS external libraries
 list(APPEND ECOSIM_CMAKE_CACHE_ARGS "-DATS_ECOSIM:BOOL=1")
 
 # --- Define ECOSIM_FCFLAGS to augment AMANZI_COMMON_FCFLAGS
 build_whitespace_string(ECOSIM_FCFLAGS ${Amanzi_COMMON_FCFLAGS} -Wno-unused-variable)
-
 
 # --- Override minimum version
 if(CMAKE_MAJOR_VERSION VERSION_EQUAL "4")

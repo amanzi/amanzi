@@ -74,6 +74,7 @@ message(STATUS "PFLOTRAN git repository = ${PFLOTRAN_GIT_REPOSITORY_TEMP}")
 # --- Add external project build and tie to the PFLOTRAN build target
 ExternalProject_Add(${PFLOTRAN_BUILD_TARGET}
                     DEPENDS   ${PFLOTRAN_PACKAGE_DEPENDS}        # Package dependency target
+                    PREFIX    ${PFLOTRAN_prefix_dir}
                     TMP_DIR   ${PFLOTRAN_tmp_dir}                # Temporary files directory
                     STAMP_DIR ${PFLOTRAN_stamp_dir}              # Timestamp and log directory
                     # -- Download and URL definitions

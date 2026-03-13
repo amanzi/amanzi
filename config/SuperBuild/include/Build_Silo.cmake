@@ -73,6 +73,7 @@ patch_tpl(Silo
 # --- Add external project build 
 ExternalProject_Add(${Silo_BUILD_TARGET}
                     DEPENDS   ${Silo_PACKAGE_DEPENDS}      # Package dependency target
+                    PREFIX    ${Silo_prefix_dir}
                     TMP_DIR   ${Silo_tmp_dir}              # Temporary files directory
                     STAMP_DIR ${Silo_stamp_dir}            # Timestamp and log directory
                     # -- Download and URL definitions
