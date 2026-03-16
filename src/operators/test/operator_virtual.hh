@@ -394,7 +394,7 @@ createConnectivityGraph(std::vector<AmanziGeometry::Point>& face_centroids_bnd,
       for (int k = 0; k < nresults; ++k) {
         int m = idx[k];
         if (m != n) {
-          filter0.push_back(std::make_pair(m, std::sqrt(dist2[k])));
+          filter0.emplace_back(m, std::sqrt(dist2[k]));
         }
       }
       mresults = filter0.size();

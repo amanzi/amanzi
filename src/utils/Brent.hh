@@ -127,9 +127,9 @@ bracketRoot(const F& f, double start, double delta, int* itrs)
   int max_itrs(*itrs);
   *itrs = 0;
   while (*itrs < max_itrs) {
-    if (fa == 0.) return std::make_pair(a, a);
-    else if (fb == 0.) return std::make_pair(b, b);
-    else if (fa * fb < 0.) return std::make_pair(a, b);
+    if (fa == 0.) return {a, a};
+    else if (fb == 0.) return {b, b};
+    else if (fa * fb < 0.) return {a, b};
     else if (std::fabs(fa) > std::fabs(fb)) {
       // root to the right of b
       std::swap(a, b);
@@ -145,7 +145,7 @@ bracketRoot(const F& f, double start, double delta, int* itrs)
     }
     ++(*itrs);
   }
-  return std::make_pair(a, b);
+  return {a, b};
 }
 
 

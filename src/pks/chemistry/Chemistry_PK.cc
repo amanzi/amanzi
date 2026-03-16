@@ -76,9 +76,9 @@ Chemistry_PK::parseParameterList()
   tcc_tag_current_ = Tag(plist_->get<std::string>("concentration tag current", tag_current_.get()));
   tcc_tag_next_ = Tag(plist_->get<std::string>("concentration tag next", tag_next_.get()));
 
-  // a hack: check position of transport PK
-  if (plist_->isParameter("sibling 1")) tcc_tag_current_ = Tags::NEXT;
-  if (plist_->isParameter("sibling 0")) tcc_tag_current_ = Tags::COPY;
+  // // a hack: check position of transport PK
+  // if (plist_->isParameter("sibling 1")) tcc_tag_current_ = Tags::NEXT;
+  // if (plist_->isParameter("sibling 0")) tcc_tag_current_ = Tags::COPY;
 }
 
 

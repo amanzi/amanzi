@@ -99,7 +99,7 @@ class MeshLogicalAudit {
   }
 
   // edge operations
-  void AddEdge(int vert_out, int vert_in) { edges_.push_back(std::make_pair(vert_out, vert_in)); }
+  void AddEdge(int vert_out, int vert_in) { edges_.emplace_back(vert_out, vert_in); }
 
   // graph operations
   int FindAnyRoot() const
