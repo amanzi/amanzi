@@ -795,8 +795,7 @@ Richards_PK::Initialize()
   op_pc_solver_->InitializeInverse();
 
   // initialize previous fields
-  InitializeCVFieldFromCVField(
-    S_, *vo_, prev_saturation_liquid_key_, saturation_liquid_key_, passwd_);
+  InitializeCVFieldFromCVField(S_, *vo_, prev_saturation_liquid_key_, saturation_liquid_key_, passwd_);
   InitializeCVFieldFromCVField(S_, *vo_, prev_water_storage_key_, water_storage_key_, passwd_);
 
   // set up operators for evaluators

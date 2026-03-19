@@ -229,7 +229,7 @@
             <ParameterList name="function">
               <ParameterList name="function-exprtk">
                 <Parameter name="number of arguments" type="int" value="4"/>
-                <Parameter name="formula" type="string" value="300.0"/>
+                <Parameter name="formula" type="string" value="700.0"/>
               </ParameterList>
             </ParameterList>
             <Parameter name="component" type="string" value="*"/>
@@ -267,7 +267,7 @@
         <Parameter name="start period time" type="double" value="0.0"/>
         <Parameter name="end period time" type="double" value="400000.0"/>
         <Parameter name="maximum cycle number" type="int" value="3"/>
-        <Parameter name="initial timestep" type="double" value="100.0"/>
+        <Parameter name="initial timestep" type="double" value="10.0"/>
         <Parameter name="maximum timestep" type="double" value="8.640e+04"/>
       </ParameterList>
     </ParameterList>

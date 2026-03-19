@@ -81,6 +81,7 @@ and :math:`c_r` is specific heat of rock [J/kg/K].
 #include "EvaluatorSecondaryMonotype.hh"
 #include "Debugger.hh"
 #include "PDE_Accumulation.hh"
+#include "PDE_Advection.hh"
 #include "PK_BDF.hh"
 #include "PK_MPCStrong.hh"
 #include "PK_Factory.hh"
@@ -141,6 +142,17 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
   std::string name() override { return "flow and energy"; }
 
 
+  void PreconditionerBlockFD_(int idi, int idj, double t,
+                              Teuchos::RCP<const TreeVector> up,
+                              double dt,
+                              Teuchos::RCP<Operators::PDE_Diffusion> pde_block,
+                              Teuchos::RCP<Operators::PDE_Advection> pde_adv);
+
+  void PreconditionerAdvBlockFD_(int idi, int idj, double t,
+                                 Teuchos::RCP<const TreeVector> up,
+                                 double dt, Teuchos::RCP<Operators::PDE_Advection> pde_adv);
+
+  
   // -- L-scheme for flow equaiton
   virtual std::vector<Key> SetupLSchemeKey(Teuchos::ParameterList& plist) override;
  protected:
@@ -165,7 +177,16 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
   Teuchos::RCP<Operators::PDE_Accumulation> op10_acc_, op01_acc_;
   Teuchos::RCP<Debugger> db_;
 
+  // dWC / dP diagonal block
+  Teuchos::RCP<Operators::Operator> dWC_dP_block_;
+  // -- d ( div q ) / dP  terms
+  Teuchos::RCP<Operators::PDE_DiffusionWithGravity> ddivq_dP_;
 
+  // dE / dT diagonal block
+  Teuchos::RCP<Operators::Operator> dE_dT_block_;
+  // -- d ( div E ) / dT  terms
+  Teuchos::RCP<Operators::PDE_DiffusionWithGravity> ddivKgT_dT_;
+  
   // dWC / dT off-diagonal block
   Teuchos::RCP<Operators::Operator> dWC_dT_block_;
   // -- d ( div q ) / dT  terms
@@ -173,6 +194,7 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
   Teuchos::RCP<Operators::Upwinding> upwinding_dkrdT_;
   // -- d ( dWC/dt ) / dT terms
   Teuchos::RCP<Operators::PDE_Accumulation> dWC_dT_;
+  Teuchos::RCP<Operators::PDE_Advection> pde10_adv_, pde01_adv_, pde00_adv_, pde11_adv_;
 
     // dE / dp off-diagonal block
   Teuchos::RCP<Operators::Operator> dE_dp_block_;

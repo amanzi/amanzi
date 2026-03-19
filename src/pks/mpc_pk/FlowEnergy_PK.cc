@@ -20,12 +20,14 @@
 #include "TreeOperator.hh"
 #include "StateArchive.hh"
 #include "PDE_DiffusionFactory.hh"
+#include "PDE_AdvectionUpwindFactory.hh"
 #include "PDE_Advection.hh"
 #include "PDE_Accumulation.hh"
 #include "Operator.hh"
 #include "FlowEnergy_PK.hh"
 #include "PK_MPCStrong.hh"
 #include "IO.hh"
+
 
 namespace Amanzi {
 
@@ -241,10 +243,12 @@ FlowEnergy_PK::Initialize()
   op_tree_matrix_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
   op_tree_matrix_->set_operator_block(0, 0, op0);
   op_tree_matrix_->set_operator_block(1, 1, op1);
-  
+
   op_tree_pc_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
-  op_tree_pc_->set_operator_block(0, 0, pc_block00);
-  op_tree_pc_->set_operator_block(1, 1, pc_block11);
+  if (precon_type_!= PRECON_FINITEDIFF) {
+    op_tree_pc_->set_operator_block(0, 0, pc_block00);
+    op_tree_pc_->set_operator_block(1, 1, pc_block11);
+  }
 
   op_tree_rhs_ = Teuchos::rcp(new TreeVector());
   op_tree_rhs_->PushBack(CreateTVwithOneLeaf(op0->rhs()));
@@ -264,23 +268,21 @@ FlowEnergy_PK::Initialize()
     // if (is_fv_) divq_plist.set("Newton correction", "true Jacobian");
     // else divq_plist.set("Newton correction", "approximate Jacobian");
 
-    divq_plist.set("Newton correction", "true Jacobian");     
+    divq_plist.set("Newton correction", "approximate Jacobian");     
     divq_plist.set("exclude primary terms", true);
 
-    Operators::PDE_DiffusionFactory opfactory;
-    
-    //ddivq_dT_ = opfactory.CreateWithGravity(divq_plist, mesh_);
-    //dWC_dT_block_ = ddivq_dT_->global_operator();
+    Operators::PDE_DiffusionFactory opfactory;   
+    ddivq_dT_ = opfactory.CreateWithGravity(divq_plist, mesh_);
+    dWC_dT_block_ = ddivq_dT_->global_operator();
 
-    //ddivq_dT_->SetBCs(sub_pks_[0]->op_bc(), sub_pks_[1]->op_bc());
-    
-    if (dWC_dT_block_ == Teuchos::null) {
-      dWC_dT_ =
-        Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, mesh_));
-      dWC_dT_block_ = dWC_dT_->global_operator();
-    } else {
-      dWC_dT_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, dWC_dT_block_));
-    }
+    //ddivq_dT_->SetBCs(sub_pks_[0]->op_bc(), sub_pks_[1]->op_bc());    
+    // if (dWC_dT_block_ == Teuchos::null) {
+    //   dWC_dT_ =
+    //     Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, mesh_));
+    //   dWC_dT_block_ = dWC_dT_->global_operator();
+    // } else {
+    //   dWC_dT_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, dWC_dT_block_));
+    // }
 
 
     // set up the operator dE_dp_block
@@ -292,24 +294,21 @@ FlowEnergy_PK::Initialize()
 
     // if (is_fv_) ddivKgT_dp_plist.set("Newton correction", "true Jacobian");
     // else ddivKgT_dp_plist.set("Newton correction", "approximate Jacobian");
-    ddivKgT_dp_plist.set("Newton correction", "true Jacobian");
+    ddivKgT_dp_plist.set("Newton correction", "approximate Jacobian");
     ddivKgT_dp_plist.set("exclude primary terms", true);
 
 
-    // ddivKgT_dp_ = opfactory.Create(ddivKgT_dp_plist, mesh_);
-    // dE_dp_block_ = ddivKgT_dp_->global_operator();
-      
-    // ddivKgT_dp_->SetBCs(sub_pks_[1]->op_bc(), sub_pks_[0]->op_bc());
-
-
-    if (dE_dp_block_ == Teuchos::null) {
-      dE_dp_ =
-        Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, mesh_));
-      dE_dp_block_ = dE_dp_->global_operator();
-    } else {
-      dE_dp_ = Teuchos::rcp(
-                            new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, dE_dp_block_));
-    }
+    ddivKgT_dp_ = opfactory.Create(ddivKgT_dp_plist, mesh_);
+    dE_dp_block_ = ddivKgT_dp_->global_operator();     
+    //ddivKgT_dp_->SetBCs(sub_pks_[1]->op_bc(), sub_pks_[0]->op_bc());
+    // if (dE_dp_block_ == Teuchos::null) {
+    //   dE_dp_ =
+    //     Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, mesh_));
+    //   dE_dp_block_ = dE_dp_->global_operator();
+    // } else {
+    //   dE_dp_ = Teuchos::rcp(
+    //                         new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, dE_dp_block_));
+    // }
       
     Teuchos::ParameterList divhq_dp_plist(glist_->sublist("PKs").
                                           sublist(pks[1]).
@@ -319,16 +318,16 @@ FlowEnergy_PK::Initialize()
 
     // if (is_fv_) divhq_dp_plist.set("Newton correction", "true Jacobian");
     // else divhq_dp_plist.set("Newton correction", "approximate Jacobian");
-    divhq_dp_plist.set("Newton correction", "true Jacobian");
+    divhq_dp_plist.set("Newton correction", "approximate Jacobian");
     divhq_dp_plist.set("exclude primary terms", true);
 
     //Operators::PDE_DiffusionFactory opfactory;
-    // if (dE_dp_block_ == Teuchos::null) {
-    //   ddivhq_dp_ = opfactory.CreateWithGravity(divhq_dp_plist, mesh_);
-    //   dE_dp_block_ = ddivhq_dp_->global_operator();
-    // } else {
-    //   ddivhq_dp_ = opfactory.CreateWithGravity(divhq_dp_plist, dE_dp_block_);
-    // }
+    if (dE_dp_block_ == Teuchos::null) {
+      ddivhq_dp_ = opfactory.CreateWithGravity(divhq_dp_plist, mesh_);
+      dE_dp_block_ = ddivhq_dp_->global_operator();
+    } else {
+      ddivhq_dp_ = opfactory.CreateWithGravity(divhq_dp_plist, dE_dp_block_);
+    }
 
     /*--------------------*/
     // derivative with respect to temperature
@@ -352,33 +351,50 @@ FlowEnergy_PK::Initialize()
   }
   else if(precon_type_ == PRECON_FINITEDIFF){
 
-    Teuchos::ParameterList divq_plist(glist_->sublist("PKs").
+    Teuchos::ParameterList div_plist(glist_->sublist("PKs").
                                       sublist(pks[0]).
                                       sublist("operators").
                                       sublist("diffusion operator").
                                       sublist("preconditioner"));
 
-    // if (is_fv_) divq_plist.set("Newton correction", "true Jacobian");
-    // else divq_plist.set("Newton correction", "approximate Jacobian");
-
-    divq_plist.set("Newton correction", "true Jacobian");     
-    divq_plist.set("exclude primary terms", true);
-
+    div_plist.set("Newton correction", "approximate Jacobian");
+    //    div_plist.set("exclude primary terms", true);
     Operators::PDE_DiffusionFactory opfactory;
-    
-    ddivq_dT_ = opfactory.CreateWithGravity(divq_plist, mesh_);
-    dWC_dT_block_ = ddivq_dT_->global_operator();
-    //ddivq_dT_->SetBCs(sub_pks_[0]->op_bc(), sub_pks_[1]->op_bc());
 
-    //dWC_dT_block_->PrintDiagnostics();    
-    // dWC_dT_mat->PutScalar(0.0);
-    // dWC_dT_mat->FillComplete();
-    dWC_dT_block_->SymbolicAssembleMatrix();
-    dWC_dT_block_->AssembleMatrix();
-    Teuchos::RCP<Epetra_CrsMatrix> dWC_dT_mat = dWC_dT_block_->A();
-    dWC_dT_mat->PutScalar(0.0);
-        
-    op_tree_pc_->set_operator_block(0, 1, dWC_dT_block_);      
+    
+    Teuchos::ParameterList adv_plist(glist_->sublist("PKs").
+                                     sublist(pks[1]).
+                                     sublist("operators").
+                                     sublist("advection operator"));
+
+    Operators::PDE_AdvectionUpwindFactory opfactory_adv;
+
+
+    
+    ddivq_dP_ = opfactory.CreateWithGravity(div_plist, mesh_);
+    dWC_dP_block_ = ddivq_dP_->global_operator();
+    pde00_adv_ = opfactory_adv.Create(adv_plist, dWC_dP_block_);
+    //ddivq_dT_->SetBCs(sub_pks_[0]->op_bc(), sub_pks_[1]->op_bc());        
+    op_tree_pc_->set_operator_block(0, 0, dWC_dP_block_);
+    
+    ddivq_dT_ = opfactory.CreateWithGravity(div_plist, mesh_);
+    dWC_dT_block_ = ddivq_dT_->global_operator();
+    pde01_adv_ = opfactory_adv.Create(adv_plist, dWC_dT_block_);
+    
+    //ddivq_dT_->SetBCs(sub_pks_[0]->op_bc(), sub_pks_[1]->op_bc());        
+    op_tree_pc_->set_operator_block(0, 1, dWC_dT_block_);
+
+    ddivKgT_dp_ = opfactory.CreateWithGravity(div_plist, mesh_);
+    dE_dp_block_ = ddivKgT_dp_->global_operator();
+    pde10_adv_ = opfactory_adv.Create(adv_plist, dE_dp_block_);
+    //ddivq_dT_->SetBCs(sub_pks_[0]->op_bc(), sub_pks_[1]->op_bc());        
+    op_tree_pc_->set_operator_block(1, 0, dE_dp_block_);
+
+    ddivKgT_dT_ = opfactory.CreateWithGravity(div_plist, mesh_);
+    dE_dT_block_ = ddivKgT_dT_->global_operator();
+    pde11_adv_ = opfactory_adv.Create(adv_plist, dE_dT_block_);
+    //ddivq_dT_->SetBCs(sub_pks_[0]->op_bc(), sub_pks_[1]->op_bc());        
+    op_tree_pc_->set_operator_block(1, 1, dE_dT_block_);      
     
   }
 
@@ -484,8 +500,8 @@ FlowEnergy_PK::FunctionalResidual(double t_old,
   double f_norm;
 
   f0->Norm2(&f_norm);
-  f0->Scale(1. / P0);
-  f0->Norm2(&f_norm);
+  // f0->Scale(1. / P0);
+  // f0->Norm2(&f_norm);
 
   // update molar flux
   Key key = Keys::getKey(domain_, "molar_flow_rate");
@@ -502,9 +518,9 @@ FlowEnergy_PK::FunctionalResidual(double t_old,
   sub_pks_[1]->FunctionalResidual(t_old, t_new, u_old1, u_new1, f1);
 
 
-  f1->Norm2(&f_norm);
-  f1->Scale(1./T0);
-  f1->Norm2(&f_norm);
+  // f1->Norm2(&f_norm);
+  // f1->Scale(1./T0);
+  // f1->Norm2(&f_norm);
 
   
 }
@@ -518,79 +534,37 @@ FlowEnergy_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
 {
   PK_MPCStrong<PK_BDF>::UpdatePreconditioner(t, up, dt);
 
-  Teuchos::RCP<Epetra_CrsMatrix> dWC_dT_mat = dWC_dT_block_->A();
+  //Teuchos::RCP<Epetra_CrsMatrix> dWC_dT_mat = dWC_dT_block_->A();
   
   int ncells = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   if (precon_type_ == PRECON_FINITEDIFF) {
 
-    WriteStateStatistics(*S_, *vo_);
+    //WriteStateStatistics(*S_, *vo_);
     
-    auto temp = *S_->GetPtrW<CompositeVector>(temperature_key_, Tags::DEFAULT, "")->ViewComponent("cell");
-    auto pres = *S_->GetPtrW<CompositeVector>(pressure_key_, Tags::DEFAULT, "")->ViewComponent("cell");
-    auto up_temp = *up->SubVector(1)->Data()->ViewComponent("cell");
-    auto up_pres = *up->SubVector(0)->Data()->ViewComponent("cell");
+    //auto temp = *S_->GetPtrW<CompositeVector>(temperature_key_, Tags::DEFAULT, "")->ViewComponent("cell");
+    //auto pres = *S_->GetPtrW<CompositeVector>(pressure_key_, Tags::DEFAULT, "")->ViewComponent("cell");
+    //ChangedSolution();    
+    PreconditionerBlockFD_(0, 0, t, up, dt, ddivq_dP_, pde00_adv_);
+    //ChangedSolution();
+    PreconditionerAdvBlockFD_(0, 0, t, up, dt, pde00_adv_);
 
-    for (int n=0; n<ncells; n++){
-      temp[0][n] = up_temp[0][n];
-      pres[0][n] = up_pres[0][n];
-    }
-    sub_pks_[0]->ChangedSolution();
-    sub_pks_[1]->ChangedSolution();        
-    WriteStateStatistics(*S_, *vo_);
+    //ChangedSolution();
+    PreconditionerBlockFD_   (1, 0, t, up, dt, ddivKgT_dp_, pde10_adv_);
+    //ChangedSolution();    
+    PreconditionerAdvBlockFD_(1, 0, t, up, dt, pde10_adv_);
 
-    auto u0 = Teuchos::rcp(new TreeVector(*up));
-    u0->SubVector(0)->SetData(S_->GetPtrW<CompositeVector>(pressure_key_, Tags::DEFAULT, ""));
-    u0->SubVector(1)->SetData(S_->GetPtrW<CompositeVector>(temperature_key_, Tags::DEFAULT, ""));
+    //ChangedSolution();
+    PreconditionerBlockFD_   (0, 1, t, up, dt, ddivq_dT_, pde01_adv_);
+    //ChangedSolution();
+    PreconditionerAdvBlockFD_(0, 1, t, up, dt, pde01_adv_);
+
+    //ChangedSolution();
+    PreconditionerBlockFD_(1, 1, t, up, dt, ddivKgT_dT_, pde11_adv_);
+    //    ChangedSolution();
+    PreconditionerAdvBlockFD_(1, 1, t, up, dt, pde11_adv_);
     
-    auto u1 = Teuchos::rcp(new TreeVector(*u0));
-    auto f0 = Teuchos::rcp(new TreeVector(*u0));
-    auto f1 = Teuchos::rcp(new TreeVector(*u0));
-
-  
-    double tmax, factor, eps(1e-6), t_new, t_old;
-    up->SubVector(1)->NormInf(&tmax);                                                                                                                                                                        
-    factor = eps * tmax;
-    t_old = t;
-    t_new = t_old + dt;
-  
-    FunctionalResidual(t_old, t_new, up, up, f0);
-  
-    for (int n=0; n<ncells; n++){
-      sub_pks_[0]->ChangedSolution();
-      sub_pks_[1]->ChangedSolution();
-      
-      auto u1_tv = u1->SubVector(1);
-      auto u1_cv = u1_tv->Data();
-      
-      auto& u1_v = *u1_cv->ViewComponent("cell");
-      u1_v[0][n] += factor;
-      for (int i=0; i<ncells; i++){
-        std::cout<<"temp "<<u1_v[0][i]<<"\n";
-      }
-        
-      FunctionalResidual(t_old, t_new, u0, u1, f1);
-      u1_v[0][n] -= factor;
-
-      auto& f0_v = *f0->SubVector(0)->Data()->ViewComponent("cell");
-      auto& f1_v = *f1->SubVector(0)->Data()->ViewComponent("cell");
-
-
-      for (int i=0; i<ncells; i++){
-        std::cout<<"res "<<f1_v[0][i]<<" "<< f0_v[0][i]<<"\n";
-      }
-      
-      int row_min(n), row_max(n);
-      if (row_min>0) row_min--;
-      if (row_max<ncells-1) row_max++;
-      for (int r=row_min; r<=row_max; r++) {
-        double val = (f1_v[0][r] - f0_v[0][r]) / factor;
-        std::cout<< n<<" "<<r<<" "<<val<<"\n";
-        dWC_dT_mat->InsertMyValues(r, 1, &val, &n);
-      }      
-    }
   }
-  
   
   // if (include_pt_coupling_) {
   //   std::string passwd("");
@@ -614,22 +588,22 @@ FlowEnergy_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
 
   *vo_->os() << "UpdatePreconditioner." << std::endl;
 
-  std::stringstream filename_s2;
-  filename_s2 << "assembled_matrix" << 0 << ".txt";
-  EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *dWC_dT_mat);
+  // std::stringstream filename_s2;
+  // filename_s2 << "assembled_matrix" << 0 << ".txt";
+  // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *dWC_dT_mat);
 
   
-  std::vector<std::string> vnames;
-  vnames.push_back("p");
-  vnames.push_back("T");
+  // std::vector<std::string> vnames;
+  // vnames.push_back("p");
+  // vnames.push_back("T");
 
-  std::vector<Teuchos::Ptr<const CompositeVector>> vecs;
-  vecs.push_back(up->SubVector(0)->Data().ptr());
-  vecs.push_back(up->SubVector(1)->Data().ptr());
+  // std::vector<Teuchos::Ptr<const CompositeVector>> vecs;
+  // vecs.push_back(up->SubVector(0)->Data().ptr());
+  // vecs.push_back(up->SubVector(1)->Data().ptr());
 
-  db_->WriteVectors(vnames, vecs, false);
+  // db_->WriteVectors(vnames, vecs, false);
 
-  exit(0);
+  // exit(0);
 }
 
 
@@ -675,25 +649,198 @@ FlowEnergy_PK::ModifyCorrection(double h,
   AmanziSolvers::FnBaseDefs::ModifyCorrectionResult modified =
     PK_MPCStrong<PK_BDF>::ModifyCorrection(h, res, u, du);
 
-  Teuchos::RCP<const TreeVector> flow_u = u->SubVector(0);
-  Teuchos::RCP<const TreeVector> flow_res = res->SubVector(0);
-  Teuchos::RCP<TreeVector> flow_du = du->SubVector(0);
+  // Teuchos::RCP<const TreeVector> flow_u = u->SubVector(0);
+  // Teuchos::RCP<const TreeVector> flow_res = res->SubVector(0);
+  // Teuchos::RCP<TreeVector> flow_du = du->SubVector(0);
 
-  Teuchos::RCP<const TreeVector> ener_u = u->SubVector(1);
-  Teuchos::RCP<const TreeVector> ener_res = res->SubVector(1);
-  Teuchos::RCP<TreeVector> ener_du = du->SubVector(1);
+  // Teuchos::RCP<const TreeVector> ener_u = u->SubVector(1);
+  // Teuchos::RCP<const TreeVector> ener_res = res->SubVector(1);
+  // Teuchos::RCP<TreeVector> ener_du = du->SubVector(1);
 
-  double P0 = 2.10000000000000000e+07;
-  double T0 = 700.0;
+  // double P0 = 2.10000000000000000e+07;
+  // double T0 = 700.0;
 
-  flow_du -> Scale(P0);
-  ener_du -> Scale(T0);
+  // flow_du -> Scale(P0);
+  // ener_du -> Scale(T0);
   
-
   return modified;
 
 }
 
+
+
+void FlowEnergy_PK::PreconditionerBlockFD_(int idi, int idj, double t,
+                                           Teuchos::RCP<const TreeVector> up, double dt,
+                                           Teuchos::RCP<Operators::PDE_Diffusion> pde_block,
+                                           Teuchos::RCP<Operators::PDE_Advection> pde_adv){
+  
+    Teuchos::RCP<TreeVector> unew = Teuchos::rcp(new TreeVector(*up));
+    unew->SubVector(0)->SetData(S_->GetPtrW<CompositeVector>(pressure_key_, Tags::DEFAULT, ""));
+    unew->SubVector(1)->SetData(S_->GetPtrW<CompositeVector>(temperature_key_, Tags::DEFAULT, ""));
+    
+    Teuchos::RCP<TreeVector> f0 = Teuchos::rcp(new TreeVector(*unew));
+    Teuchos::RCP<TreeVector> f1 = Teuchos::rcp(new TreeVector(*unew));
+
+    int ncells = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  
+    double max, factor, eps(1e-8), t_new, t_old;
+    up->SubVector(idj)->NormInf(&max);                                                                                                                                                                        
+    factor = eps * max;
+    t_old = t;
+    t_new = t_old + dt;
+
+    auto u0_tv = unew->SubVector(idj);
+    auto u0_cv = u0_tv->Data();      
+    auto& u0_c = *u0_cv->ViewComponent("cell");
+    auto& u0_f = *u0_cv->ViewComponent("face");
+
+    sub_pks_[0]->ChangedSolution();
+    sub_pks_[1]->ChangedSolution();        
+  
+    FunctionalResidual(t_old, t_new, unew, unew, f0);
+    
+    for (int c=0; c<ncells; c++){
+      
+      const auto& faces = mesh_->getCellFaces(c);
+      int nf = faces.size();
+      WhetStone::DenseMatrix A(nf+1, nf+1);
+      A.PutScalar(0.0);
+      
+      u0_c[0][c] += factor;
+      ChangedSolution();
+
+      
+      FunctionalResidual(t_old, t_new, unew, unew, f1);
+      u0_c[0][c] -= factor;
+      ChangedSolution();
+
+      auto& f0_p_c = *f0->SubVector(idi)->Data()->ViewComponent("cell");
+      auto& f1_p_c = *f1->SubVector(idi)->Data()->ViewComponent("cell");
+      auto& f0_p_f = *f0->SubVector(idi)->Data()->ViewComponent("face");
+      auto& f1_p_f = *f1->SubVector(idi)->Data()->ViewComponent("face");
+
+      
+      A(nf,nf) = (f1_p_c[0][c] - f0_p_c[0][c]) / factor;
+      
+      for (int i=0; i<nf;i++){
+        int f = faces[i];
+        A(i,nf) = (f1_p_f[0][f] - f0_p_f[0][f]) / factor;
+      }
+
+      for (int i=0; i<nf;i++){
+        sub_pks_[1]->ChangedSolution();
+        int fi = faces[i];
+        u0_f[0][fi] += factor;
+        
+        FunctionalResidual(t_old, t_new, unew, unew, f1);
+        u0_f[0][fi] -= factor;
+
+        A(nf, i) = (f1_p_c[0][c] - f0_p_c[0][c]) / factor;
+        
+        for (int j=0; j<nf;j++){
+          int fj = faces[j];
+          A(j,i) = (f1_p_f[0][fj] - f0_p_f[0][fj]) / factor;
+          if (i==j){
+            const auto& cells = mesh_->getFaceCells(fj); 
+            if (cells.size()==2) A(j,j) *= 0.5;
+          }
+        }
+      }
+
+      //std::cout<<A<<"\n";
+
+      pde_block->SetMatrix(A, c);
+
+      // for (int i=0; i<nf; i++){
+      //   int f = faces[i];
+      //   const auto& cells = mesh_->getFaceCells(f);
+      //   if (cells.size()==2){
+      //     WhetStone::DenseMatrix A(2,2);
+      //     A.PutScalar(0.0);
+      //     auto u0_tv = unew->SubVector(idj);
+      //     auto u0_cv = u0_tv->Data();
+      
+      //     auto& u0_c = *u0_cv->ViewComponent("cell");
+      //     for (int i=0; i<2; i++){
+      //       u0_c[0][cells[i]] += factor;
+          
+      //       sub_pks_[0]->ChangedSolution();
+      //       sub_pks_[1]->ChangedSolution();
+          
+      //       FunctionalResidual(t_old, t_new, unew, unew, f1);
+      //       u0_c[0][cells[i]] -= factor;
+
+      //       sub_pks_[0]->ChangedSolution();
+      //       sub_pks_[1]->ChangedSolution();
+
+      //       auto& f0_p_c = *f0->SubVector(idi)->Data()->ViewComponent("cell");
+      //       auto& f1_p_c = *f1->SubVector(idi)->Data()->ViewComponent("cell");
+      //       A(1-i,i) = (f1_p_c[0][cells[1-i]] - f0_p_c[0][cells[1-i]]) / factor;          
+      //     }
+      //   }
+      // }
+
+    }
+
+    //    if (idi==1&&idj==1) exit(0);
+}
+
+
+void FlowEnergy_PK::PreconditionerAdvBlockFD_(int idi, int idj, double t,
+                                           Teuchos::RCP<const TreeVector> up, double dt,
+                                           Teuchos::RCP<Operators::PDE_Advection> pde_adv){
+  
+    Teuchos::RCP<TreeVector> unew = Teuchos::rcp(new TreeVector(*up));
+    unew->SubVector(0)->SetData(S_->GetPtrW<CompositeVector>(pressure_key_, Tags::DEFAULT, ""));
+    unew->SubVector(1)->SetData(S_->GetPtrW<CompositeVector>(temperature_key_, Tags::DEFAULT, ""));
+    
+    Teuchos::RCP<TreeVector> f0 = Teuchos::rcp(new TreeVector(*unew));
+    Teuchos::RCP<TreeVector> f1 = Teuchos::rcp(new TreeVector(*unew));
+
+    int nfaces = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  
+    double max, factor, eps(1e-8), t_new, t_old;
+    up->SubVector(idj)->NormInf(&max);                                                                                                                                                                        
+    factor = eps * max;
+    t_old = t;
+    t_new = t_old + dt;
+
+    sub_pks_[0]->ChangedSolution();
+    sub_pks_[1]->ChangedSolution();
+  
+    FunctionalResidual(t_old, t_new, unew, unew, f0);
+
+    for (int f=0; f<nfaces; f++){
+      const auto& cells = mesh_->getFaceCells(f);
+      if (cells.size()==2){
+        WhetStone::DenseMatrix A(2,2);
+        A.PutScalar(0.0);
+        auto u0_tv = unew->SubVector(idj);
+        auto u0_cv = u0_tv->Data();
+      
+        auto& u0_c = *u0_cv->ViewComponent("cell");
+        for (int i=0; i<2; i++){
+          u0_c[0][cells[i]] += factor;
+
+          ChangedSolution();          
+          FunctionalResidual(t_old, t_new, unew, unew, f1);
+
+          auto& f0_p_c = *f0->SubVector(idi)->Data()->ViewComponent("cell");
+          auto& f1_p_c = *f1->SubVector(idi)->Data()->ViewComponent("cell");
+          A(1-i,i) = (f1_p_c[0][cells[1-i]] - f0_p_c[0][cells[1-i]]) / factor;
+          
+          u0_c[0][cells[i]] -= factor;          
+          ChangedSolution();
+          
+        }
+        //std::cout<<"Advection "<<f<<"\n"<<A<<"\n";
+
+        pde_adv->SetMatrix(A, f);
+        
+      }      
+    }
+  
+}  
 // -----------------------------------------------------------------------------
 // L-scheme stability constant is updated by PKs.
 // -----------------------------------------------------------------------------
