@@ -23,16 +23,20 @@ include_directories(${COOLPROP_INCLUDE_DIRS})
 #
 set(eos_src_files 
     COM_MillingtonQuirk.cc
+    IAPWS97.cc
     EOSDensityEvaluator.cc
     EOSViscosityEvaluator.cc
     H2O_Density.cc
     H2O_DensityCoolProp.cc
     H2O_DensityFEHM.cc
+    H2O_DensityIAPWS97.cc
     H2O_ThermalConductivity.cc
+    H2O_ThermalConductivityIAPWS97.cc
     H2O_SaturatedVaporPressure.cc
     H2O_Viscosity.cc
     H2O_ViscosityCoolProp.cc
     H2O_ViscosityFEHM.cc
+    H2O_ViscosityIAPWS97.cc
     Henry_Solubility.cc
     IdealGas_Density.cc
     IdealGas_ThermalConductivity.cc
@@ -62,6 +66,7 @@ endif()
 #
 set(eos_inc_files 
     COM_MillingtonQuirk.hh
+    IAPWS97.hh
     DensityTabular.hh
     EOSDensityEvaluator.hh
     EOSViscosityEvaluator.hh
@@ -69,6 +74,7 @@ set(eos_inc_files
     EOS_Diffusion.hh
     EOS_SaturatedVaporPressure.hh
     H2O_ThermalConductivity.hh
+    H2O_ThermalConductivityIAPWS97.hh
     EOS_Utils.hh
     EOS_Viscosity.hh
     eos_reg.hh
@@ -76,10 +82,12 @@ set(eos_inc_files
     H2O_Density.hh
     H2O_DensityCoolProp.hh
     H2O_DensityFEHM.hh
+    H2O_DensityIAPWS97.hh
     H2O_SaturatedVaporPressure.hh
     H2O_Viscosity.hh
     H2O_ViscosityCoolProp.hh
     H2O_ViscosityFEHM.hh
+    H2O_ViscosityIAPWS97.hh
     Henry_Solubility.hh
     IdealGas_Density.hh
     IdealGas_ThermalConductivity.hh
@@ -113,10 +121,15 @@ if (BUILD_TESTS)
 
     set(amanzi_libs eos atk operators)
 
-    # Test: Multiscale
+    # Test: All
     add_amanzi_test(eos_evaluators eos_evaluators
                     KIND unit
                     SOURCE test/Main.cc test/eos_evaluators.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(eos_iapws97 eos_iapws97
+                    KIND unit
+                    SOURCE test/Main.cc test/eos_iapws97.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 

@@ -67,7 +67,8 @@ if (ENABLE_AmanziPhysicsModule)
       PK_MPCAdditive.hh
       ChemistryMatrixFracture_PK.hh    
       EnergyMatrixFracture_PK.hh
-      FlowEnergy_PK.hh
+      FlowEnergyPT_PK.hh
+      FlowEnergyPH_PK.hh
       FlowEnergyMatrixFracture_PK.hh
       FlowMatrixFracture_PK.hh
       FlowMechanics_PK.hh
@@ -90,7 +91,8 @@ if (ENABLE_AmanziPhysicsModule)
       PK_MPCSubcycled.cc 
       ChemistryMatrixFracture_PK.cc   
       EnergyMatrixFracture_PK.cc
-      FlowEnergy_PK.cc
+      FlowEnergyPT_PK.cc
+      FlowEnergyPH_PK.cc
       FlowEnergyMatrixFracture_PK.cc
       FlowMatrixFracture_PK.cc
       FlowMechanics_PK.cc
@@ -108,7 +110,7 @@ if (ENABLE_AmanziPhysicsModule)
       SurfaceSubsurface_PK.cc
       WaterStorageDarcyPoroelasticity.cc)
 
-  set(mpc_tree_link_libs pks flow transport multiphase shallow_water time_integration data_structures state)
+  set(mpc_tree_link_libs pks flow transport multiphase shallow_water evaluators time_integration data_structures state)
 
 else()
 

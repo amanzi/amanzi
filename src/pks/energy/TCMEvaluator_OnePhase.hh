@@ -120,7 +120,7 @@ class TCMEvaluator_OnePhase
   Teuchos::RCP<Functions::MeshPartition> partition_;
 
   // Keys for fields dependencies
-  Key temperature_key_, porosity_key_;
+  Key pressure_key_, temperature_key_, porosity_key_;
 };
 
 } // namespace Energy

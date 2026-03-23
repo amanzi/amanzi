@@ -59,7 +59,7 @@ TEST(MPC_DRIVER_THERMAL_RICHARDS_JACOBIAN)
 
   auto pk_tree = plist->sublist("cycle driver").sublist("time periods").sublist("TP 0").sublist("PK tree").sublist("transient:mpc1");
   auto soln = Teuchos::rcp(new TreeVector());
-  auto mpc = Teuchos::rcp(new FlowEnergy_PK(pk_tree, plist, S, soln));
+  auto mpc = Teuchos::rcp(new FlowEnergyPT_PK(pk_tree, plist, S, soln));
 
   mpc->Setup();
   S->Setup();

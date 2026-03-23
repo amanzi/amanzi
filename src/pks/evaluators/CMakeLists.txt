@@ -20,19 +20,22 @@ include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
 include_directories(${OPERATORS_SOURCE_DIR})
+include_directories(${PKS_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 
 # Add library
 set(evaluators_src_files 
     ApertureModelPartition.cc
     ApertureModelEvaluator.cc
+    LinearRelaxationEvaluator.cc
     PorosityModelPartition.cc
     PorosityEvaluator.cc
+    ThermodynamicStateEvaluators.cc
     VolumetricStrainEvaluator.cc)
 
 set(evaluators_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${SEACAS_LIBRARIES})
 add_amanzi_library(evaluators SOURCE ${evaluators_src_files}
-                   LINK_LIBS eos functions mesh_functions data_structures state operators
+                   LINK_LIBS eos functions mesh_functions data_structures state operators pks
                              ${evaluators_tpl_libs})
 
 # Install targets
@@ -43,8 +46,10 @@ set(evaluators_inc_files
     ApertureModel_ExponentialLaw.hh
     ApertureModelPartition.hh
     ApertureModelEvaluator.hh
+    LinearRelaxationEvaluator.hh
     Porosity.hh
     PorosityModelPartition.hh
+    ThermodynamicStateEvaluators.hh
     VolumetricStrainEvaluator.hh)
 
 add_install_include_file(${evaluators_inc_files})

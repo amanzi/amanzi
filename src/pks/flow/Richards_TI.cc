@@ -63,7 +63,8 @@ Richards_PK::FunctionalResidual(double t_old,
   auto& alpha = S_->GetW<CV_t>(alpha_key_, Tags::DEFAULT, alpha_key_);
 
   if (!assumptions_.flow_on_manifold) {
-    std::vector<int>& bc_model = op_bc_->bc_model();
+    auto op_bc = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state");
+    std::vector<int>& bc_model = op_bc->bc_model();
 
     *alpha_upwind_->ViewComponent("cell") = *alpha.ViewComponent("cell");
     Operators::BoundaryFacesToFaces(bc_model, alpha, *alpha_upwind_);
@@ -373,8 +374,8 @@ Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, d
   // verify that u = solution@default
   Solution_to_State(*u, Tags::DEFAULT);
 
-  std::vector<int>& bc_model = op_bc_->bc_model();
-  // std::vector<double>& bc_value = op_bc_->bc_value();
+  auto op_bc = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state");
+  std::vector<int>& bc_model = op_bc->bc_model();
 
   // update BCs and source terms
   UpdateSourceBoundaryData(t_old, tp, *u->Data());

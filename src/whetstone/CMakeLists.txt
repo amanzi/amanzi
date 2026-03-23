@@ -177,6 +177,11 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/whetstone_derham.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
+    add_amanzi_test(whetstone_powell whetstone_powell
+                    KIND unit
+                    SOURCE test/Main.cc test/whetstone_powell.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
 endif()
 
 

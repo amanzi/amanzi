@@ -19,12 +19,14 @@
 #include "OperatorDefs.hh"
 #include "TreeOperator.hh"
 #include "StateArchive.hh"
+
 #include "PDE_DiffusionFactory.hh"
 #include "PDE_AdvectionUpwindFactory.hh"
 #include "PDE_Advection.hh"
 #include "PDE_Accumulation.hh"
 #include "Operator.hh"
-#include "FlowEnergy_PK.hh"
+#include "FlowEnergyPT_PK.hh"
+
 #include "PK_MPCStrong.hh"
 #include "IO.hh"
 
@@ -37,10 +39,10 @@ using CVS_t = CompositeVectorSpace;
 /* *******************************************************************
 * Constructor
 ******************************************************************* */
-FlowEnergy_PK::FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
-                             const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                             const Teuchos::RCP<State>& S,
-                             const Teuchos::RCP<TreeVector>& soln)
+FlowEnergyPT_PK::FlowEnergyPT_PK(Teuchos::ParameterList& pk_tree,
+                                 const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                                 const Teuchos::RCP<State>& S,
+                                 const Teuchos::RCP<TreeVector>& soln)
   : Amanzi::PK_MPC<PK_BDF>(pk_tree, glist, S, soln),
     Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln),
     glist_(glist)
@@ -60,7 +62,7 @@ FlowEnergy_PK::FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
 * Physics-based setup of PK.
 ******************************************************************* */
 void
-FlowEnergy_PK::Setup()
+FlowEnergyPT_PK::Setup()
 {
   mesh_ = S_->GetMesh(domain_);
   //  auto pk_order = my_list_->get<Teuchos::Array<std::string>>("PKs order");
@@ -218,7 +220,7 @@ FlowEnergy_PK::Setup()
 * Initialization of copies requires fileds to exists
 ******************************************************************* */
 void
-FlowEnergy_PK::Initialize()
+FlowEnergyPT_PK::Initialize()
 {
 
   auto pks =
@@ -258,15 +260,13 @@ FlowEnergy_PK::Initialize()
   // full preconditioner
   if (precon_type_ == PRECON_FULL) {
 
+
     // set up the operator dWC_dT_block_
     Teuchos::ParameterList divq_plist(glist_->sublist("PKs").
                                       sublist(pks[0]).
                                       sublist("operators").
                                       sublist("diffusion operator").
                                       sublist("preconditioner"));
-
-    // if (is_fv_) divq_plist.set("Newton correction", "true Jacobian");
-    // else divq_plist.set("Newton correction", "approximate Jacobian");
 
     divq_plist.set("Newton correction", "approximate Jacobian");     
     divq_plist.set("exclude primary terms", true);
@@ -430,7 +430,7 @@ FlowEnergy_PK::Initialize()
 * Performs one timestep.
 ******************************************************************* */
 bool
-FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
+FlowEnergyPT_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   // save a copy of conservative fields
   std::vector<std::string> fields(
@@ -452,11 +452,11 @@ FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 * Performs one timestep.
 ******************************************************************* */
 void
-FlowEnergy_PK::FunctionalResidual(double t_old,
-                                  double t_new,
-                                  Teuchos::RCP<const TreeVector> u_old,
-                                  Teuchos::RCP<TreeVector> u_new,
-                                  Teuchos::RCP<TreeVector> f)
+FlowEnergyPT_PK::FunctionalResidual(double t_old,
+                                    double t_new,
+                                    Teuchos::RCP<const TreeVector> u_old,
+                                    Teuchos::RCP<TreeVector> u_new,
+                                    Teuchos::RCP<TreeVector> f)
 {
 
   double P0 = 2.10000000000000000e+07;
@@ -530,7 +530,7 @@ FlowEnergy_PK::FunctionalResidual(double t_old,
 * Preconditioner update
 ******************************************************************* */
 void
-FlowEnergy_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt)
+FlowEnergyPT_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt)
 {
   PK_MPCStrong<PK_BDF>::UpdatePreconditioner(t, up, dt);
 
@@ -611,7 +611,7 @@ FlowEnergy_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
 * Selection of default or full preconditioner
 ******************************************************************* */
 int
-FlowEnergy_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, Teuchos::RCP<TreeVector> Y)
+FlowEnergyPT_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, Teuchos::RCP<TreeVector> Y)
 {
   int ierr;
   if (include_pt_coupling_) {
@@ -641,7 +641,7 @@ FlowEnergy_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, Teuchos::RC
 
 
 AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-FlowEnergy_PK::ModifyCorrection(double h,
+FlowEnergyPT_PK::ModifyCorrection(double h,
                                 Teuchos::RCP<const TreeVector> res,
                                 Teuchos::RCP<const TreeVector> u,
                                 Teuchos::RCP<TreeVector> du){
@@ -669,7 +669,7 @@ FlowEnergy_PK::ModifyCorrection(double h,
 
 
 
-void FlowEnergy_PK::PreconditionerBlockFD_(int idi, int idj, double t,
+void FlowEnergyPT_PK::PreconditionerBlockFD_(int idi, int idj, double t,
                                            Teuchos::RCP<const TreeVector> up, double dt,
                                            Teuchos::RCP<Operators::PDE_Diffusion> pde_block,
                                            Teuchos::RCP<Operators::PDE_Advection> pde_adv){
@@ -747,7 +747,6 @@ void FlowEnergy_PK::PreconditionerBlockFD_(int idi, int idj, double t,
         }
       }
 
-      //std::cout<<A<<"\n";
 
       pde_block->SetMatrix(A, c);
 
@@ -786,7 +785,7 @@ void FlowEnergy_PK::PreconditionerBlockFD_(int idi, int idj, double t,
 }
 
 
-void FlowEnergy_PK::PreconditionerAdvBlockFD_(int idi, int idj, double t,
+void FlowEnergyPT_PK::PreconditionerAdvBlockFD_(int idi, int idj, double t,
                                            Teuchos::RCP<const TreeVector> up, double dt,
                                            Teuchos::RCP<Operators::PDE_Advection> pde_adv){
   
@@ -833,7 +832,6 @@ void FlowEnergy_PK::PreconditionerAdvBlockFD_(int idi, int idj, double t,
           ChangedSolution();
           
         }
-        //std::cout<<"Advection "<<f<<"\n"<<A<<"\n";
 
         pde_adv->SetMatrix(A, f);
         
@@ -845,7 +843,7 @@ void FlowEnergy_PK::PreconditionerAdvBlockFD_(int idi, int idj, double t,
 // L-scheme stability constant is updated by PKs.
 // -----------------------------------------------------------------------------
 std::vector<Key>
-FlowEnergy_PK::SetupLSchemeKey(Teuchos::ParameterList& plist)
+FlowEnergyPT_PK::SetupLSchemeKey(Teuchos::ParameterList& plist)
 {
   auto tmp = sub_pks_[0]->SetupLSchemeKey(plist);
   L_scheme_keys_.insert(L_scheme_keys_.end(), tmp.begin(), tmp.end());

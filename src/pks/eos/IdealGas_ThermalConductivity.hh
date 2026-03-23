@@ -44,9 +44,10 @@ class IdealGas_ThermalConductivity : public EOS_ThermalConductivity {
  public:
   explicit IdealGas_ThermalConductivity(Teuchos::ParameterList& eos_plist);
 
-  virtual double ThermalConductivity(double T, double phi);
-  virtual double DThermalConductivityDT(double T, double phi);
-  virtual double DThermalConductivityDPhi(double T, double phi) { return 0.0; }
+  virtual double ThermalConductivity(double p, double T, double phi);
+  virtual double DThermalConductivityDp(double p, double T, double phi) { return 0.0; }
+  virtual double DThermalConductivityDT(double p, double T, double phi);
+  virtual double DThermalConductivityDPhi(double p, double T, double phi) { return 0.0; }
 
  private:
   double T0_, k0_, S0_, factor_;

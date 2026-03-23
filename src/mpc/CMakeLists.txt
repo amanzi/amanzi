@@ -179,6 +179,27 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_thermal_richards_jacobian.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+    add_amanzi_test(mpc_compressed_liquid mpc_compressed_liquid
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_compressed_liquid.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(mpc_supercriticalPT mpc_supercriticalPT
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_supercriticalPT.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(mpc_supercriticalPH_jacobian mpc_supercriticalPH_jacobian
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_supercriticalPH_jacobian.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(mpc_supercriticalPH mpc_supercriticalPH
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_supercriticalPH.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    # Test: mpc driver for flow and reactive transport
     # Test: mpc driver for flow and reactive transport
     add_amanzi_test(mpc_flow_reactive_transport mpc_flow_reactive_transport
                     KIND      int
@@ -405,11 +426,11 @@ if (BUILD_TESTS)
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})
                                              
-    add_amanzi_test(mpc_supercriticalPT mpc_supercriticalPT
-                    KIND      int
-                    NPROCS    3
-                    SOURCE    test/Main.cc test/mpc_supercriticalPT.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
-                                             ${HYPRE_LIBRARY})                                             
+    # add_amanzi_test(mpc_supercriticalPT mpc_supercriticalPT
+    #                 KIND      int
+    #                 NPROCS    3
+    #                 SOURCE    test/Main.cc test/mpc_supercriticalPT.cc
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+    #                                          #{HYPRE_LIBRARY})                                             
 
 endif()

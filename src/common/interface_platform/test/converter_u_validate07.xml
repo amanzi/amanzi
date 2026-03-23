@@ -468,10 +468,10 @@
           <ParameterList name="transient:energy matrix fracture">
             <Parameter name="PK type" type="string" value="energy matrix fracture"/>
             <ParameterList name="transient:energy matrix">
-              <Parameter name="PK type" type="string" value="one-phase energy"/>
+              <Parameter name="PK type" type="string" value="pt energy"/>
             </ParameterList>
             <ParameterList name="transient:energy fracture">
-              <Parameter name="PK type" type="string" value="one-phase energy"/>
+              <Parameter name="PK type" type="string" value="pt energy"/>
             </ParameterList>
           </ParameterList>
           <ParameterList name="transient:flow matrix fracture">

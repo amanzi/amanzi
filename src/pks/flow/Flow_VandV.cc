@@ -197,7 +197,8 @@ Flow_PK::VV_ReportWaterBalance(const Teuchos::Ptr<State>& S, double dt) const
   const auto& flowrate = *S->Get<CompositeVector>(vol_flowrate_key_).ViewComponent("face", true);
   const auto& ws = *S->Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
 
-  std::vector<int>& bc_model = op_bc_->bc_model();
+  auto op_bc = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state");
+  std::vector<int>& bc_model = op_bc->bc_model();
   double mass_bc_dT = WaterVolumeChangePerSecond(bc_model, flowrate) * rho_ * dt;
 
   double mass_amanzi = 0.0;
@@ -269,8 +270,9 @@ Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S, double dt) const
 void
 Flow_PK::VV_PrintHeadExtrema(const CompositeVector& pressure) const
 {
-  std::vector<int>& bc_model = op_bc_->bc_model();
-  std::vector<double>& bc_value = op_bc_->bc_value();
+  auto op_bc = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state");
+  std::vector<int>& bc_model = op_bc->bc_model();
+  std::vector<double>& bc_value = op_bc->bc_value();
 
   int flag(0);
   double hmin(1.4e+9), hmax(-1.4e+9); // diameter of the Sun

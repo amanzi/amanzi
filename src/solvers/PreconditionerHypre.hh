@@ -161,6 +161,11 @@ class PreconditionerHypre : public AmanziSolvers::Preconditioner {
         HYPRE_IJMatrixDestroy(HypreG_);
       }
     } else if (method_type_ == MGR) {
+      delete[] block_cindexes[0];
+      delete[] block_cindexes;
+      delete[] num_block_cpoints;
+
+      HYPRE_BoomerAMGDestroy(coarse_);
       HYPRE_MGRDestroy(method_);
     }
   }
@@ -228,6 +233,11 @@ class PreconditionerHypre : public AmanziSolvers::Preconditioner {
   HyprePreconditioners method_type_ = Boomer;
 
   Teuchos::RCP<const Epetra_CrsMatrix> G_;
+
+  // MGR data
+  HYPRE_Solver coarse_;
+  HYPRE_Int **block_cindexes; 
+  HYPRE_Int *num_block_cpoints; 
 };
 
 } // namespace AmanziSolvers

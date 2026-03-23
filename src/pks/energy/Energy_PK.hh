@@ -95,11 +95,15 @@ This list is often generated on a fly by a high-level MPC PK.
 #include "Upwind.hh"
 #include "VerboseObject.hh"
 
+// Energy
+#include "EnergySourceFunction.hh"
+
 namespace Amanzi {
 namespace Energy {
 
 class Energy_PK : public PK_PhysicalBDF {
  public:
+  Energy_PK() {};
   Energy_PK(Teuchos::ParameterList& pk_tree,
             const Teuchos::RCP<Teuchos::ParameterList>& glist,
             const Teuchos::RCP<State>& S,
@@ -148,9 +152,9 @@ class Energy_PK : public PK_PhysicalBDF {
   void ChangedSolution() override { temperature_eval_->SetChanged(); }
 
   // other methods
-  bool UpdateConductivityData(const Teuchos::Ptr<State>& S);
   void UpdateSourceBoundaryData(double T0, double T1, const CompositeVector& u);
-  void ComputeBCs(const CompositeVector& u);
+  void ComputePrimaryBCs(const CompositeVector& u);
+  virtual void ComputeSecondaryBCs();
   void AddSourceTerms(CompositeVector& rhs);
 
   // access
@@ -163,8 +167,10 @@ class Energy_PK : public PK_PhysicalBDF {
     return op_matrix_diff_;
   }
 
-  // -- for unit tests
-  std::vector<WhetStone::Tensor>& get_K() { return K; }
+  Teuchos::RCP<Teuchos::ParameterList> getPList() const { return ep_list_; }
+
+ protected:
+  void InitializeFields_();
 
  private:
   void BoundaryDataToFaces_(const Operators::BCs& bcs, CompositeVector& u);
@@ -196,22 +202,20 @@ class Energy_PK : public PK_PhysicalBDF {
   Key mol_density_gas_key_, x_gas_key_;
   Key conductivity_gen_key_, conductivity_key_, conductivity_eff_key_;
 
-  // conductivity tensor
-  std::vector<WhetStone::Tensor> K;
-
   // boundary conditons
   std::vector<Teuchos::RCP<PK_DomainFunction>> bc_temperature_;
   std::vector<Teuchos::RCP<PK_DomainFunction>> bc_flux_;
   int dirichlet_bc_faces_, missed_bc_faces_;
 
   // source terms
-  std::vector<Teuchos::RCP<PK_DomainFunction>> srcs_;
+  std::vector<Teuchos::RCP<EnergySourceFunction>> srcs_;
 
   // operators and solvers
   Teuchos::RCP<Operators::PDE_Diffusion> op_matrix_diff_, op_preconditioner_diff_;
   Teuchos::RCP<Operators::PDE_Accumulation> op_acc_;
   Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_matrix_advection_, op_preconditioner_advection_;
   Teuchos::RCP<Operators::Operator> op_matrix_, op_preconditioner_, op_advection_;
+  Teuchos::RCP<Operators::BCs> op_bc_;
   Teuchos::RCP<Operators::BCs> op_bc_enth_; // op_bc_
 
   bool prec_include_enthalpy_;
@@ -225,6 +229,9 @@ class Energy_PK : public PK_PhysicalBDF {
 
   bool L_scheme_ = false;
   Key L_scheme_stab_key_, L_scheme_prev_key_, L_scheme_data_key_, beta_key_;
+
+  bool heat_src_ = false;
+  Key bcs_enthalpy_key_, heat_src_key_;
 };
 
 } // namespace Energy

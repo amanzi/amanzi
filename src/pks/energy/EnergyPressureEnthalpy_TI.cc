@@ -1,0 +1,255 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Konstantin Lipnikov
+*/
+
+/*
+  Energy PK
+*/
+
+// Amanzi
+#include "CommonDefs.hh"
+#include "IAPWS97.hh"
+#include "Key.hh"
+#include "LScheme_Helpers.hh"
+#include "PDE_HelperDiscretization.hh"
+
+// Amanzi::Energy
+#include "Evaluator.hh"
+#include "EnergyPressureEnthalpy_PK.hh"
+
+namespace Amanzi {
+namespace Energy {
+
+using CV_t = CompositeVector;
+
+/* ******************************************************************
+* Computes the non-linear functional g = g(t,u,udot)
+****************************************************************** */
+void
+EnergyPressureEnthalpy_PK::FunctionalResidual(double t_old,
+                                              double t_new,
+                                              Teuchos::RCP<const TreeVector> u_old,
+                                              Teuchos::RCP<TreeVector> u_new,
+                                              Teuchos::RCP<TreeVector> g)
+{
+  double dt = t_new - t_old;
+
+  // update BCs and  BOUNDARY_FACE component, if any
+  enthalpy_eval_->SetChanged();
+  UpdateSourceBoundaryData(t_old, t_new, *u_new->Data());
+
+  // we use the chain rule for gradient of T to avoid unphysical impact
+  // of gradient of h to the gradient of T in region 4.
+  // add residual for enthalpy diffusion operator 
+
+  S_->GetEvaluator(conductivity_key_).Update(*S_, passwd_);
+  const auto& conductivity = S_->Get<CV_t>(conductivity_key_, Tags::DEFAULT);
+  auto coef = Teuchos::rcp(new CompositeVector(conductivity));
+
+  S_->GetEvaluator(temperature_key_).UpdateDerivative(*S_, passwd_, enthalpy_key_, Tags::DEFAULT);
+  const auto& dTdh = S_->GetDerivative<CV_t>(temperature_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT);
+  coef->Multiply(1.0, *coef, dTdh, 0.0);
+
+  op_matrix_->Init();
+  op_matrix_diff_->SetScalarCoefficient(coef, Teuchos::null);
+  op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
+  op_matrix_diff_->ApplyBCs(true, true, true);
+
+  // add sources
+  CompositeVector& rhs = *op_matrix_->rhs();
+  AddSourceTerms(rhs);
+
+  op_matrix_->ComputeNegativeResidual(*u_new->Data(), *g->Data());
+
+  // add diffusion due to pressure
+  CompositeVector g_adv(g->Data()->Map());
+  const auto& pres = S_->Get<CV_t>(pressure_key_, Tags::DEFAULT);
+
+  S_->GetEvaluator(temperature_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
+  const auto& dTdp = S_->GetDerivative<CV_t>(temperature_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT);
+  coef->Multiply(1.0, conductivity, dTdp, 0.0);
+
+  op_matrix_diff_pres_->global_operator()->Init();
+  op_matrix_diff_pres_->SetScalarCoefficient(coef, Teuchos::null);
+  op_matrix_diff_pres_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op_matrix_diff_pres_->ApplyBCs(true, true, false);
+
+  op_matrix_diff_pres_->global_operator()->ComputeNegativeResidual(pres, g_adv);
+  g->Data()->Update(1.0, g_adv, 1.0);
+
+  // add enthalpy advection
+  S_->GetEvaluator(mol_flowrate_key_).Update(*S_, passwd_);
+  auto flux = S_->GetPtr<CV_t>(mol_flowrate_key_, Tags::DEFAULT);
+
+  op_advection_->Init();
+  op_matrix_advection_->Setup(*flux);
+  op_matrix_advection_->UpdateMatrices(flux.ptr());
+  op_matrix_advection_->ApplyBCs(false, true, false);
+
+  op_advection_->ComputeNegativeResidual(*u_new->Data(), g_adv);
+  g->Data()->Update(1.0, g_adv, 1.0);
+
+  // -- implicit source models
+  auto& g_c = *g->Data()->ViewComponent("cell");
+  if (heat_src_) {
+    S_->GetEvaluator(heat_src_key_).Update(*S_, passwd_);
+    const auto& src_c = *S_->Get<CV_t>(heat_src_key_, Tags::DEFAULT).ViewComponent("cell");
+
+    for (int c = 0; c < ncells_owned; ++c) {
+      g_c[0][c] += src_c[0][c] * mesh_->getCellVolume(c);
+    }
+  }
+
+  // add accumulation term
+  S_->GetEvaluator(energy_key_).Update(*S_, passwd_);
+  const auto& e1 = *S_->Get<CV_t>(energy_key_).ViewComponent("cell");
+  const auto& e0 = *S_->Get<CV_t>(prev_energy_key_).ViewComponent("cell");
+
+  // -- use modified residual for saturated region 4 (WIP)
+  //    this is actually the scaled residual
+  Teuchos::ParameterList plist;
+  AmanziEOS::IAPWS97 eos(plist);
+
+  double units(CommonDefs::ENTHALPY_FACTOR);
+  residual_max_norm_ = 0.0;
+  for (int c = 0; c < ncells_owned; ++c) {
+    double factor = mesh_->getCellVolume(c) / dt;
+    double acc = factor * (e1[0][c] - e0[0][c]);
+    g_c[0][c] += acc;
+    residual_max_norm_ = std::max(residual_max_norm_, fabs(g_c[0][c] / (factor * e0[0][c])));
+  }
+}
+
+
+/* ******************************************************************
+* Update the preconditioner at time t and u = up
+****************************************************************** */
+void
+EnergyPressureEnthalpy_PK::UpdatePreconditioner(double t,
+                                                Teuchos::RCP<const TreeVector> up,
+                                                double dt)
+{
+  // update BCs
+  UpdateSourceBoundaryData(t, t + dt, *up->Data());
+
+  // assemble matrices for diffusion operator
+  S_->GetEvaluator(conductivity_key_).Update(*S_, passwd_);
+  const auto& conductivity = S_->Get<CV_t>(conductivity_key_, Tags::DEFAULT);
+  auto coef = Teuchos::rcp(new CompositeVector(conductivity));
+
+  S_->GetEvaluator(temperature_key_).UpdateDerivative(*S_, passwd_, enthalpy_key_, Tags::DEFAULT);
+  const auto& dTdh = S_->GetDerivative<CV_t>(temperature_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT);
+  coef->Multiply(1.0, *coef, dTdh, 0.0);
+
+  op_preconditioner_->Init();
+  op_preconditioner_diff_->SetScalarCoefficient(coef, Teuchos::null);
+  op_preconditioner_diff_->UpdateMatrices(Teuchos::null, up->Data().ptr());
+  op_preconditioner_diff_->ApplyBCs(true, true, true);
+
+  // add the accumulation term derivatives, dE/dT
+  // S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd_, enthalpy_key_, Tags::DEFAULT);
+  // const auto& dEdh = S_->GetDerivative<CV_t>(energy_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT);
+  // op_acc_->AddAccumulationTerm(dEdh, dt, "cell");
+
+  // -- perform entropy-based linearization to keep derivative positive
+  S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd_, enthalpy_key_, Tags::DEFAULT);
+  auto dEdh = S_->GetDerivative<CV_t>(energy_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT);
+  auto& dEdh_c = *dEdh.ViewComponent("cell");
+
+  S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, passwd_);
+  const auto& density = *S_->Get<CV_t>(mol_density_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
+
+  for (int c = 0; c < ncells_owned; ++c) {
+    if (dEdh_c[0][c] < 0.0) dEdh_c[0][c] = density[0][c];
+  }
+  op_acc_->AddAccumulationTerm(dEdh, dt, "cell");
+
+  // implicit source models
+  if (heat_src_) {
+    S_->GetEvaluator(heat_src_key_).UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
+    auto dQdT = S_->GetDerivative<CV_t>(heat_src_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT);
+    op_acc_->AddAccumulationTerm(dQdT, 1.0, "cell", true);
+  }
+
+  // add matrices for advection term 
+  auto flux = S_->GetPtr<CV_t>(mol_flowrate_key_, Tags::DEFAULT);
+
+  op_preconditioner_advection_->Setup(*flux);
+  op_preconditioner_advection_->UpdateMatrices(flux.ptr());
+  op_preconditioner_advection_->ApplyBCs(false, true, false);
+
+  // add matrices for other advection terms div[q ((deta/dh)/eta - (dmu/dh)/mu) dh]
+  S_->GetEvaluator(mol_density_liquid_key_).UpdateDerivative(*S_, passwd_, enthalpy_key_, Tags::DEFAULT);
+  *coef = S_->GetDerivative<CV_t>(mol_density_liquid_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT);
+  coef->Multiply(1.0, *up->Data(), *coef, 0.0);
+
+  const auto& eta = S_->Get<CV_t>(mol_density_liquid_key_, Tags::DEFAULT);
+  coef->ReciprocalMultiply(1.0, eta, *coef, 0.0);
+
+  S_->GetEvaluator(viscosity_liquid_key_).UpdateDerivative(*S_, passwd_, enthalpy_key_, Tags::DEFAULT);
+  auto coef1 = S_->GetDerivative<CV_t>(viscosity_liquid_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT);
+  coef1.Multiply(1.0, *up->Data(), coef1, 0.0);
+
+  const auto& mu = S_->Get<CV_t>(viscosity_liquid_key_, Tags::DEFAULT);
+  coef->ReciprocalMultiply(-1.0, mu, coef1, 1.0);
+
+  op_preconditioner_adv_enth_->Setup(*flux);
+  op_preconditioner_adv_enth_->UpdateMatrices(flux.ptr(), coef.ptr());
+  op_preconditioner_adv_enth_->ApplyBCs(false, true, false);
+
+  // verify and finalize preconditioner
+  // op_preconditioner_->Verify();
+  op_preconditioner_->ComputeInverse();
+}
+
+
+/********************************************************************
+* Modifies nonlinear update du based on the maximum allowed change
+* of saturation.
+****************************************************************** */
+AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+EnergyPressureEnthalpy_PK::ModifyCorrection(double dt,
+                                            Teuchos::RCP<const TreeVector> f,
+                                            Teuchos::RCP<const TreeVector> u,
+                                            Teuchos::RCP<TreeVector> du)
+{
+  return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
+}
+
+
+/* ******************************************************************
+* TBW
+****************************************************************** */
+double
+EnergyPressureEnthalpy_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
+                                     Teuchos::RCP<const TreeVector> du)
+{
+  double error(0.0), error_h(0.0);
+  double ref_enthalpy(18000.0);
+
+  const auto& uc = *u->Data()->ViewComponent("cell");
+  const auto& duc = *du->Data()->ViewComponent("cell");
+
+  int ncomp = uc.MyLength();
+  for (int c = 0; c < ncomp; ++c) {
+    double tmp = fabs(duc[0][c]) / (fabs(uc[0][c]) + ref_enthalpy);
+    error_h = std::max(error_h, tmp);
+  }
+
+  // add normalized residual error
+  error = std::max(error_h, residual_max_norm_);
+
+  double buf = error;
+  du->Data()->Comm()->MaxAll(&buf, &error, 1);
+
+  return error;
+}
+
+}  // namespace Energy
+}  // namespace Amanzi
+

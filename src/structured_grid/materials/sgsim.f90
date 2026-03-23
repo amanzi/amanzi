@@ -1960,7 +1960,7 @@
                   end do
                   write(*,*) ' Building CDF from  secondary model'
 !                  call sortem(1,nxyz,lvm,1,sim,c,d,e,f,g,h)
-                  call sortem(1,nxyz,lvm,1,sim)
+                  call dsortem(1,nxyz,lvm,1,sim)
                   oldcp = 0.d0
                   cp    = 0.d0
                   do i=1,nxyz
@@ -1973,7 +1973,7 @@
                   end do
                   write(*,*) ' Restoring order of secondary model'
 !                  call sortem(1,nxyz,sim,1,lvm,c,d,e,f,g,h)
-                  call sortem(1,nxyz,sim,1,lvm)
+                  call dsortem(1,nxyz,sim,1,lvm)
  977              continue
                   write(*,*)
             end if

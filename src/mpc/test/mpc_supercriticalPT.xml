@@ -104,7 +104,6 @@
         </ParameterList>
       </ParameterList>
 
-      
       <ParameterList name="internal_energy_rock">
         <Parameter name="evaluator type" type="string" value="iem"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_rock"/>
@@ -159,9 +158,7 @@
           <Parameter name="molar mass" type="double" value="1.79999999999999986e-02"/>
           <Parameter name="density" type="double" value="9.98200000000000045e+02"/>
         </ParameterList>
-      </ParameterList>
-      
-      
+      </ParameterList>            
     </ParameterList>
 
     <ParameterList name="initial conditions">
@@ -255,12 +252,12 @@
       <ParameterList name="TP 0">
         <ParameterList name="PK tree">
           <ParameterList name="transient:mpc1">
-            <Parameter name="PK type" type="string" value="flow and energy"/>
+            <Parameter name="PK type" type="string" value="flow and energy pt"/>
             <ParameterList name="transient:flow">
               <Parameter name="PK type" type="string" value="richards"/>
             </ParameterList>
             <ParameterList name="transient:energy">
-              <Parameter name="PK type" type="string" value="one-phase energy"/>
+              <Parameter name="PK type" type="string" value="pt energy"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -281,8 +278,8 @@
     <ParameterList name="verbose object">
       <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
-
   </ParameterList>
+  
   <ParameterList name="PKs">
     <ParameterList name="transient:flow">
       <ParameterList name="clipping parameters">

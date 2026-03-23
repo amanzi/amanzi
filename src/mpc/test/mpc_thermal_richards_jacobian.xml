@@ -259,19 +259,19 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="PK tree">
-    <ParameterList name="flow and energy">
-      <Parameter name="PK type" type="string" value="flow and energy"/>
+    <ParameterList name="mpc1">
+      <Parameter name="PK type" type="string" value="flow and energy pt"/>
       <ParameterList name="flow">
         <Parameter name="PK type" type="string" value="richards"/>
       </ParameterList>
       <ParameterList name="energy">
-        <Parameter name="PK type" type="string" value="one-phase energy"/>
+        <Parameter name="PK type" type="string" value="pt energy"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
   <ParameterList name="PKs">
 
-    <ParameterList name="flow and energy">
+    <ParameterList name="mpc1">
       <Parameter name="PKs order" type="Array(string)" value="{flow, energy}"/>
       <Parameter name="master PK index" type="int" value="0"/>
       <ParameterList name="physical models and assumptions">

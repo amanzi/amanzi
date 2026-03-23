@@ -38,7 +38,7 @@
     </pk>
     <pk mode="transient">
       <flow model="richards" state="on" />
-      <energy model="one-phase energy" state="on" />
+      <energy model="pt energy" state="on" />
     </pk>
   </process_kernels>
 

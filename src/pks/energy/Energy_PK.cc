@@ -21,6 +21,7 @@
 #include "ApertureModelEvaluator.hh"
 #include "EvaluatorMultiplicativeReciprocal.hh"
 #include "EvaluatorPrimary.hh"
+#include "LinearRelaxationEvaluator.hh"
 #include "LScheme_Helpers.hh"
 #include "Mesh.hh"
 #include "MeshAlgorithms.hh"
@@ -31,6 +32,7 @@
 
 // Amanzi::Energy
 #include "Energy_PK.hh"
+#include "EnergySourceFunction.hh"
 #include "EnthalpyEvaluator.hh"
 
 namespace Amanzi {
@@ -116,6 +118,8 @@ Energy_PK::Setup()
 
   L_scheme_data_key_ = "l_scheme_data";
   beta_key_ = Keys::getKey(domain_, "l_scheme_beta");
+  bcs_enthalpy_key_ = Keys::getKey(domain_, "bcs_enthalpy");
+  heat_src_key_ = Keys::getKey(domain_, "heat_source");
 
   // require constant fields
   S_->Require<double>("atmospheric_pressure", Tags::DEFAULT, "state");
@@ -362,6 +366,28 @@ Energy_PK::Setup()
     S_->SetEvaluator(beta_key_, Tags::DEFAULT, eval);
   }
 
+  // boundary conditions
+  S_->Require<Operators::BCs, Operators::BCs>(bcs_enthalpy_key_, Tags::DEFAULT, "state")
+    .SetMesh(mesh_)
+    ->SetKind(AmanziMesh::Entity_kind::FACE)
+    ->SetType(WhetStone::DOF_Type::SCALAR);
+  S_->GetRecordW(bcs_enthalpy_key_, "state").set_initialized();
+
+  // source conditions
+  Teuchos::ParameterList src_list = ep_list_->sublist("source terms");
+  if (src_list.isSublist("linear relaxation")) {
+    heat_src_ = true;
+
+    S_->Require<CV_t, CVS_t>(heat_src_key_, Tags::DEFAULT, heat_src_key_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+
+    src_list.set<std::string>("variable key", temperature_key_);
+    auto eval = Teuchos::rcp(new Evaluators::LinearRelaxationEvaluator(src_list, S_));
+    S_->SetEvaluator(heat_src_key_, Tags::DEFAULT, eval);
+  }
+
   // set units
   S_->GetRecordSetW(temperature_key_).set_units("K");
   S_->GetRecordSetW(mol_flowrate_key_).set_units("mol/s");
@@ -378,14 +404,8 @@ void
 Energy_PK::Initialize()
 {
   // Create BCs objects
-  // -- memory
-  op_bc_ = Teuchos::rcp(
-    new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
-  op_bc_enth_ = Teuchos::rcp(
-    new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
-
-  auto bc_list =
-    Teuchos::rcp(new Teuchos::ParameterList(ep_list_->sublist("boundary conditions", false)));
+  op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
+  auto bc_list = Teuchos::rcp(new Teuchos::ParameterList(ep_list_->sublist("boundary conditions", false)));
 
   // -- temperature
   if (bc_list->isSublist("temperature")) {
@@ -425,14 +445,16 @@ Energy_PK::Initialize()
     }
   }
 
+  srcs_.clear();
+  auto& src_list = ep_list_->sublist("source terms");
 
-  if (ep_list_->isSublist("source terms")) {
-    PK_DomainFunctionFactory<PK_DomainFunction> factory(mesh_, S_);
-    auto src_list = ep_list_->sublist("source terms");
-    for (auto it = src_list.begin(); it != src_list.end(); ++it) {
+  if (src_list.isSublist("others")) {
+    PK_DomainFunctionFactory<EnergySourceFunction> factory(mesh_, S_);
+    auto tmp_list = src_list.sublist("others");
+    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
       std::string name = it->first;
-      if (src_list.isSublist(name)) {
-        Teuchos::ParameterList& spec = src_list.sublist(name);
+      if (tmp_list.isSublist(name)) {
+        Teuchos::ParameterList& spec = tmp_list.sublist(name);
         srcs_.push_back(
           factory.Create(spec, "source", AmanziMesh::Entity_kind::CELL, Teuchos::null));
       }
@@ -445,24 +467,28 @@ Energy_PK::Initialize()
 }
 
 
-/* ******************************************************************
-* Converts scalar conductivity to a tensorial field: not used yet.
-****************************************************************** */
-bool
-Energy_PK::UpdateConductivityData(const Teuchos::Ptr<State>& S)
+/* ****************************************************************
+* This completes initialization of missed fields in the state.
+**************************************************************** */
+void
+Energy_PK::InitializeFields_()
 {
-  bool update = S->GetEvaluator(conductivity_gen_key_).Update(*S, passwd_);
-  if (update) {
-    const auto& conductivity = *S->Get<CV_t>(conductivity_gen_key_).ViewComponent("cell");
-    WhetStone::Tensor Ktmp(dim, 1);
+  Teuchos::OSTab tab = vo_->getOSTab();
 
-    K.clear();
-    for (int c = 0; c < ncells_owned; c++) {
-      Ktmp(0, 0) = conductivity[0][c];
-      K.push_back(Ktmp);
+  if (S_->HasRecord(prev_energy_key_)) {
+    if (!S_->GetRecord(prev_energy_key_).initialized()) {
+      S_->GetEvaluator(energy_key_).Update(*S_, passwd_);
+
+      const auto& e1 = S_->Get<CV_t>(energy_key_);
+      auto& e0 = S_->GetW<CV_t>(prev_energy_key_, passwd_);
+      e0 = e1;
+
+      S_->GetRecordW(prev_energy_key_, passwd_).set_initialized();
+
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+        *vo_->os() << "initialized prev_energy to previous energy" << std::endl;
     }
   }
-  return update;
 }
 
 
@@ -482,9 +508,11 @@ Energy_PK::UpdateSourceBoundaryData(double t_old, double t_new, const CompositeV
 
   for (int i = 0; i < srcs_.size(); ++i) {
     srcs_[i]->Compute(t_old, t_new);
+    srcs_[i]->ComputeSubmodel(t_old, t_new);
   }
 
-  ComputeBCs(u);
+  ComputePrimaryBCs(u);
+  ComputeSecondaryBCs();
 }
 
 
@@ -511,7 +539,7 @@ Energy_PK::AddSourceTerms(CompositeVector& rhs)
 * should be always owned.
 ****************************************************************** */
 void
-Energy_PK::ComputeBCs(const CompositeVector& u)
+Energy_PK::ComputePrimaryBCs(const CompositeVector& u)
 {
   std::vector<int>& bc_model = op_bc_->bc_model();
   std::vector<double>& bc_value = op_bc_->bc_value();
@@ -563,32 +591,43 @@ Energy_PK::ComputeBCs(const CompositeVector& u)
   int tmp = dirichlet_bc_faces_;
   mesh_->getComm()->SumAll(&tmp, &dirichlet_bc_faces_, 1);
 #endif
+}
 
-  // additional boundary conditions
-  // -- copy essential conditions to primary variable and update dependend fields
+
+/* ******************************************************************
+* Add a boundary marker to used faces for other boundary conditions
+****************************************************************** */
+void
+Energy_PK::ComputeSecondaryBCs()
+{
+  std::vector<int>& bc_model = op_bc_->bc_model();
+  std::vector<double>& bc_value = op_bc_->bc_value();
+
+  // copy essential conditions to primary variable and update dependend fields
   BoundaryDataToFaces_(*op_bc_, S_->GetW<CV_t>(temperature_key_, Tags::DEFAULT, passwd_));
 
   S_->GetEvaluator(enthalpy_key_).Update(*S_, passwd_);
   const auto& enth = *S_->Get<CV_t>(enthalpy_key_).ViewComponent("boundary_face", true);
 
-  // -- populate BCs
-  std::vector<int>& bc_model_enth_ = op_bc_enth_->bc_model();
-  std::vector<double>& bc_value_enth_ = op_bc_enth_->bc_value();
+  // populate BCs
+  auto op_bc_enth = S_->GetPtrW<Operators::BCs>(bcs_enthalpy_key_, Tags::DEFAULT, "state");
+  std::vector<int>& bc_model_enth = op_bc_enth->bc_model();
+  std::vector<double>& bc_value_enth = op_bc_enth->bc_value();
 
   for (int n = 0; n < bc_model.size(); ++n) {
-    bc_model_enth_[n] = Operators::OPERATOR_BC_NONE;
-    bc_value_enth_[n] = 0.0;
+    bc_model_enth[n] = Operators::OPERATOR_BC_NONE;
+    bc_value_enth[n] = 0.0;
   }
 
   int nbfaces = enth.MyLength();
   for (int bf = 0; bf < nbfaces; ++bf) {
     int f = getBoundaryFaceFace(*mesh_, bf);
     if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
-      bc_model_enth_[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_value_enth_[f] = enth[0][bf];
+      bc_model_enth[f] = Operators::OPERATOR_BC_DIRICHLET;
+      bc_value_enth[f] = enth[0][bf];
     } else if (bc_model[f] == Operators::OPERATOR_BC_TOTAL_FLUX) {
-      bc_model_enth_[f] = Operators::OPERATOR_BC_TOTAL_FLUX;
-      bc_value_enth_[f] = bc_value[f];
+      bc_model_enth[f] = Operators::OPERATOR_BC_TOTAL_FLUX;
+      bc_value_enth[f] = bc_value[f];
     }
   }
 }

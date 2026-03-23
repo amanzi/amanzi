@@ -47,7 +47,7 @@ namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
-* Initialization of the operator, scalar coefficient.
+* Setup method for cell-centered tensor coefficient
 ****************************************************************** */
 void
 PDE_DiffusionMFD::SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor>>& K)
@@ -56,7 +56,7 @@ PDE_DiffusionMFD::SetTensorCoefficient(const Teuchos::RCP<const std::vector<Whet
 
   if (local_op_schema_ ==
       OPERATOR_SCHEMA_BASE_CELL + OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL) {
-    if (K_ != Teuchos::null && K_.get() ) AMANZI_ASSERT(K_->size() == ncells_owned);
+    if (K_ != Teuchos::null && K_.get()) AMANZI_ASSERT(K_->size() == ncells_owned);
   }
 
   // changing the tensor coefficient invalidates the mass matrices

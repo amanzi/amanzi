@@ -351,12 +351,12 @@
           <ParameterList name="transient:thermal flow and mechanics">
             <Parameter name="PK type" type="string" value="flow and mechanics"/>
             <ParameterList name="transient:flow and energy">
-              <Parameter name="PK type" type="string" value="flow and energy"/>
+              <Parameter name="PK type" type="string" value="flow and energy pt"/>
               <ParameterList name="transient:flow">
                 <Parameter name="PK type" type="string" value="richards"/>
               </ParameterList>
               <ParameterList name="transient:energy">
-                <Parameter name="PK type" type="string" value="one-phase energy"/>
+                <Parameter name="PK type" type="string" value="pt energy"/>
               </ParameterList>
             </ParameterList>
             <ParameterList name="transient:mechanics">
@@ -439,7 +439,7 @@
     </ParameterList>
 
     <ParameterList name="transient:flow and energy">
-      <Parameter isUsed="true" name="PK type" type="string" value="flow and energy"/>
+      <Parameter isUsed="true" name="PK type" type="string" value="flow and energy pt"/>
       <Parameter name="PKs order" type="Array(string)" value="{transient:flow, transient:energy}"/>
       <Parameter name="master PK index" type="int" value="0"/>
       <Parameter name="domain name" type="string" value="domain"/>

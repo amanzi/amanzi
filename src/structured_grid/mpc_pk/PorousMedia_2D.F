@@ -613,7 +613,7 @@ c :: ------------------------------------------------------------
 
             call get_dcplds(dpcdn(i,j),sat,rtmp,phi(i,j),
      &           kappa(i,j),l_sigma,ncomps,zero,l_cpl_type,l_cpl_coef)
-            call get_dld(dltmp,sat,rtmp,muval, 
+            call get_dld(dltmp,sat,rtmp,muval,ncomps,
      &           l_kr_type,l_kr_coef,l_kr_sres)
          
             dpcdn(i,j) = dpcdn(i,j)/(rhoval(1)*(one-l_cpl_sres))
