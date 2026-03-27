@@ -762,7 +762,7 @@ Alquimia_PK::copyToAlquimia(int cell, AlquimiaBeaker& beaker)
   beaker.state.porosity = (*substate_.porosity)[0][cell];
 
   if (substate_.temperature) {
-    beaker.state.temperature = (*substate_.temperature)[0][cell];
+    beaker.state.temperature = (*substate_.temperature)[0][cell] - 273.15;
   }
 
   for (unsigned int i = 0; i != number_aqueous_components_; ++i) {
