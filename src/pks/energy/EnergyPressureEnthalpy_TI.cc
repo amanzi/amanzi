@@ -173,7 +173,7 @@ EnergyPressureEnthalpy_PK::UpdatePreconditioner(double t,
   if (heat_src_) {
     S_->GetEvaluator(heat_src_key_).UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
     auto dQdT = S_->GetDerivative<CV_t>(heat_src_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT);
-    op_acc_->AddAccumulationTerm(dQdT, 1.0, "cell", true);
+    op_acc_->AddAccumulationTerm(dQdT, dTdh, 1.0, "cell", true);
   }
 
   // add matrices for advection term 

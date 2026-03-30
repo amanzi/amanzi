@@ -453,10 +453,11 @@ FlowEnergyPH_PK::ModifyCorrection(double dt,
                                            AmanziMesh::Parallel_kind::OWNED);
 
   // increment clipping
-  double max_change(1.0);
+  double max_change(0.05);
   for (int c = 0; c < ncells_owned; ++c) {
     double tmp = std::fabs(h_c[0][c]) * max_change;
     dh_c[0][c] = std::clamp(dh_c[0][c], -tmp, tmp);
+    if (std::fabs(std::fabs(dh_c[0][c]) - tmp) < 1e-8 * tmp) nclipped++;
   }
 
   // phase-change checks

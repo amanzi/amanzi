@@ -1104,7 +1104,7 @@ class IAPWS97 {
   // boundary 2/3
   static constexpr double bnd23_n3 = 0.10192970039326e-2;
   static constexpr double bnd23_n4 = 0.57254459862746e+3;
-  static constexpr double bnd23_n5 = 0.1391883977870e+2;
+  static constexpr double bnd23_n5 = 0.13918839778870e+2;
 
   // other properties
   // -- thermal conductivity

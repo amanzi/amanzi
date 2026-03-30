@@ -309,7 +309,7 @@ EnergyPressureEnthalpy_PK::Setup()
     }
   }
 
-  // source conditions
+  // source terms
   Teuchos::ParameterList src_list = ep_list_->sublist("source terms");
   if (src_list.isSublist("linear relaxation")) {
     heat_src_ = true;
@@ -341,15 +341,15 @@ EnergyPressureEnthalpy_PK::Setup()
       ->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
       ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
-
-    S_->RequireEvaluator(viscosity_liquid_key_, Tags::DEFAULT);
-    S_->RequireDerivative<CV_t, CVS_t>(
-        viscosity_liquid_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, viscosity_liquid_key_)
-      .SetGhosted();
-    S_->RequireDerivative<CV_t, CVS_t>(
-        viscosity_liquid_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT, viscosity_liquid_key_)
-      .SetGhosted();
   }
+
+  S_->RequireEvaluator(viscosity_liquid_key_, Tags::DEFAULT);
+  S_->RequireDerivative<CV_t, CVS_t>(
+      viscosity_liquid_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, viscosity_liquid_key_)
+    .SetGhosted();
+  S_->RequireDerivative<CV_t, CVS_t>(
+      viscosity_liquid_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT, viscosity_liquid_key_)
+    .SetGhosted();
 
   // boundary conditions
   S_->Require<Operators::BCs, Operators::BCs>(bcs_enthalpy_key_, Tags::DEFAULT, "state")
@@ -560,10 +560,11 @@ void EnergyPressureEnthalpy_PK::ComputeSecondaryBCs()
   std::vector<double>& bc_value = op_bc_->bc_value();
 
   Teuchos::RCP<const Epetra_MultiVector> p_f, p_bf;
-  Teuchos::RCP<Epetra_MultiVector> h_f, h_bf;
+  Teuchos::RCP<Epetra_MultiVector> h_f, h_bf, T_f, T_bf;
 
   const auto& p = S_->Get<CV_t>(pressure_key_);
   auto& h = S_->GetW<CV_t>(enthalpy_key_, Tags::DEFAULT, passwd_);
+  auto& T = S_->GetW<CV_t>(temperature_key_, Tags::DEFAULT, temperature_key_);
 
   if (p.HasComponent("face")) p_f = p.ViewComponent("face", true);
   else p_bf = p.ViewComponent("boundary_face", true);
@@ -571,7 +572,8 @@ void EnergyPressureEnthalpy_PK::ComputeSecondaryBCs()
   if (h.HasComponent("face")) h_f = h.ViewComponent("face", true);
   else h_bf = h.ViewComponent("boundary_face", true);
 
-  auto& T_bf = *S_->GetW<CV_t>(temperature_key_, Tags::DEFAULT, temperature_key_).ViewComponent("boundary_face", true);
+  if (T.HasComponent("face")) T_f = T.ViewComponent("face", true);
+  else T_bf = T.ViewComponent("boundary_face", true);
 
   Teuchos::ParameterList plist;
   auto eos = Teuchos::rcp(new AmanziEOS::IAPWS97(plist));
@@ -600,7 +602,8 @@ void EnergyPressureEnthalpy_PK::ComputeSecondaryBCs()
       if (p_f.get()) (*h_f)[0][f] = bc_value_enth[f];
       else (*h_bf)[0][bf] = bc_value_enth[f];
 
-      T_bf[0][bf] = bc_value[f];
+      if (T_f.get()) (*T_f)[0][f] = bc_value[f];
+      else (*T_bf)[0][bf] = bc_value[f];
     }
     else if (bc_model[f] == Operators::OPERATOR_BC_TOTAL_FLUX) {
       bc_model_enth[f] = Operators::OPERATOR_BC_TOTAL_FLUX;
