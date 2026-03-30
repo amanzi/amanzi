@@ -250,7 +250,11 @@ TEST(EOS_IAPWS97_PT)
   CHECK_CLOSE(1812.26279, prop.u, 1e-5);
   CHECK_CLOSE(0.405427273e+1, prop.s, 1e-8);
   CHECK_CLOSE(0.138935717e+2, prop.cp, 1e-7);
+  CHECK_CLOSE(0.319131787e+1, prop.cv, 1e-8);
   CHECK_CLOSE(0.502005554e+3, prop.w, 1e-6);
+  CHECK_CLOSE(0.345506956e-1, prop.kt, 1e-10);
+  CHECK_CLOSE(0.168653107e-1, prop.av, 1e-10);
+  CHECK_CLOSE(0.565652647e+3, prop.bp, 1e-6);
 
   prop = eos.Region3(200.0, 650.0);
   CHECK_CLOSE(0.237512401e+4, prop.h, 1e-5);

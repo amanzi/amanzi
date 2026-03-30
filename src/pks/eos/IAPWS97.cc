@@ -173,6 +173,7 @@ IAPWS97::ThermodynamicsPH(double p, double h)
       x0[0] = 1.0 / v0;
       x0[1] = T0;
       FhT::Vector sol = PowellHybrid(x0, f, &itrs_);
+      if (itrs_ < 0) Exceptions::amanzi_throw("Powell solver did not converge.");
       prop = Region3(sol[0], sol[1]);
       break;
     }
