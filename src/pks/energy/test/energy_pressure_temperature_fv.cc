@@ -30,7 +30,6 @@
 #include "EnergyPressureTemperature_PK.hh"
 
 #include "IO.hh"
-#include "EnergyOnePhase_PK.hh"
 #include "MeshFactory.hh"
 #include "Operator.hh"
 #include "State.hh"

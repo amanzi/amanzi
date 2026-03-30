@@ -86,7 +86,7 @@ TEST(DensityEOS)
   }
 
   // next EOS
-<<<<<<< HEAD
+
   H2O_DensityCoolProp eos_cool(plist);
 
   p = 101325.0;
@@ -111,7 +111,10 @@ TEST(DensityEOS)
 
       der = eos_cool.DDensityDp(T1, p);
       der_fd = eos_cool.Density(T1, p + 0.5) - eos_cool.Density(T1, p - 0.5);
-=======
+    }
+  }
+
+  
   H2O_DensityIAPWS97 eos_iapws97(plist);
 
   double rho = eos_iapws97.Density(635.0, 19.1e+6);
@@ -127,9 +130,9 @@ TEST(DensityEOS)
       der = eos_iapws97.DDensityDp(T, p);
       der_fd = (eos_iapws97.Density(T, p + dp) - eos_iapws97.Density(T, p)) / dp;
       CHECK_CLOSE(der, der_fd, 1e-3 * std::fabs(der));
->>>>>>> master
     }
   }
+  
 }
 
 
@@ -289,12 +292,9 @@ TEST(FactoryEOS)
 {
   using namespace Amanzi::AmanziEOS;
 
-<<<<<<< HEAD
-  std::vector<std::string> names = { "liquid water 0-30C", "liquid water FEHM", "lookup table", "liquid water CoolProp" };
-=======
-  std::vector<std::string> names = { "liquid water 0-30C", "liquid water FEHM",
-                                     "lookup table", "liquid water IAPWS97" };
->>>>>>> master
+
+  std::vector<std::string> names = { "liquid water 0-30C", "liquid water FEHM", "lookup table", "liquid water CoolProp", "liquid water IAPWS97" };
+
 
   for (auto& name : names) {
     Teuchos::ParameterList plist;
