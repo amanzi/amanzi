@@ -35,6 +35,16 @@ else()
   set(ECOSIM_LIBS_TYPE "STATIC")
 endif()
 
+# Override RPATH and NAME_DIR from AMANZI_CMAKE_CACHE_ARGS
+if (BUILD_SHARED_LIBS)
+   set(ecosim_install_rpath "-DCMAKE_INSTALL_RPATH:PATH=${ECOSIM_INSTALL_PREFIX}/lib"
+                            "-DCMAKE_INSTALL_NAME_DIR:PATH=${ECOSIM_INSTALL_PREFIX}/lib")
+else()
+   set(ecosim_install_rpath "-DCMAKE_INSTALL_NAME_DIR:PATH=${ECOSIM_INSTALL_PREFIX}/lib"
+                            "-DCMAKE_SKIP_INSTALL_RPATH:BOOL=ON"
+                            "-DCMAKE_SKIP_RPATH:BOOL=ON")
+endif()
+
 # Set TPL library paths (HDF5, NetCDF)
 include(BuildLibraryName)
 build_library_name(netcdf ecosim_netcdf_library ${ECOSIM_LIBS_TYPE} APPEND_PATH ${NetCDF_DIR}/lib)
@@ -67,6 +77,7 @@ set(ECOSIM_CMAKE_CACHE_ARGS
       "-DTPLS_NETCDF_FORTRAN_LIBRARIES:STRING=${NetCDF_FORTRAN_LIBRARIES}"
       "-DTPLS_HDF5_INCLUDE_DIRS=${HDF5_INCLUDE_DIRS}"
       "-DTPLS_HDF5_LIBRARIES:STRING=${HDF5_LIBRARIES}"
+      ${ecosim_install_rpath}
 )
 
 # --- Patch the original code
