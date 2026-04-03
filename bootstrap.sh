@@ -2022,6 +2022,7 @@ cmd_configure="${cmake_binary} \
     -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
     -DENABLE_CLM:BOOL=${clm} \
     -DENABLE_ELM_ATS_API:BOOL=${elm_ats_api} \
+    -DENABLE_ECOSIM:BOOL=${ecosim} \
     -DENABLE_Silo:BOOL=${silo} \
     -DENABLE_Epetra:BOOL=${epetra} \
     -DENABLE_Tpetra:BOOL=${tpetra} \
