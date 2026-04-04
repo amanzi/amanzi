@@ -258,7 +258,8 @@ TEST(FactoryEOS)
   using namespace Amanzi::AmanziEOS;
 
   std::vector<std::string> names = { "liquid water 0-30C", "liquid water FEHM",
-                                     "lookup table", "liquid water IAPWS97" };
+                                     "lookup table", "liquid water iapws97",
+                                     "liquid water iapws95" };
 
   for (auto& name : names) {
     Teuchos::ParameterList plist;

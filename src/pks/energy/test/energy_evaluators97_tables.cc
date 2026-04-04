@@ -29,10 +29,10 @@
 #include "EnergyPressureEnthalpy_PK.hh"
 #include "evaluators_reg.hh"
 #include "IAPWS97.hh"
+#include "IAPWS97_StateEvaluators.hh"
 #include "MeshFactory.hh"
 #include "PK_Physical.hh"
 #include "State.hh"
-#include "ThermodynamicStateEvaluators.hh"
 #include "VerboseObject.hh"
 
 TEST(EVALUATOR_DERIVATIVE_TABLES_PH)
@@ -94,7 +94,7 @@ TEST(EVALUATOR_DERIVATIVE_TABLES_PH)
 
   Teuchos::ParameterList elist(viscosity_key);
   elist.set<std::string>("tag", "");
-  auto eval = Teuchos::rcp(new Evaluators::ViscosityEvaluator(elist));
+  auto eval = Teuchos::rcp(new Evaluators::IAPWS97_ViscosityEvaluator(elist));
   S->SetEvaluator(viscosity_key, Tags::DEFAULT, eval);
 
   S->RequireDerivative<CV_t, CVS_t>(viscosity_key, Tags::DEFAULT, pressure_key, Tags::DEFAULT,
@@ -149,21 +149,21 @@ TEST(EVALUATOR_DERIVATIVE_TABLES_PH)
   c = 0;
   for (int i = -n; i < n; ++i) {
     for (int j = -n; j < n; ++j) {
-      int rgn = state_c[(int)Evaluators::TS_t::RGN][c];
-      double cp = state_c[(int)Evaluators::TS_t::CP][c];
+      int rgn = state_c[(int)Evaluators::TS97_t::RGN][c];
+      double cp = state_c[(int)Evaluators::TS97_t::CP][c];
       if (rgn != 4) CHECK(cp > 0.0);
       double value = (rgn != 4) ? std::log(cp) : 0.0;
 
-      double kt = state_c[(int)Evaluators::TS_t::KT][c];
+      double kt = state_c[(int)Evaluators::TS97_t::KT][c];
       if (rgn != 4) CHECK(kt > 0.0);
       value = (rgn != 4) ? std::log(kt) : 0.0;
 
-      double av = state_c[(int)Evaluators::TS_t::AV][c];
+      double av = state_c[(int)Evaluators::TS97_t::AV][c];
       if (rgn != 4) CHECK(av > 0.0);
       value = (rgn != 4) ? std::log(av) : 0.0;
 
-      double T = state_c[(int)Evaluators::TS_t::T][c];
-      double rho = state_c[(int)Evaluators::TS_t::RHO][c];
+      double T = state_c[(int)Evaluators::TS97_t::T][c];
+      double rho = state_c[(int)Evaluators::TS97_t::RHO][c];
       value = cp * kt - T * av * av / rho;
       if (rgn != 4) CHECK(value > 0.0);
       value = (rgn != 4) ? std::log(value) : 0.0;
@@ -174,8 +174,9 @@ TEST(EVALUATOR_DERIVATIVE_TABLES_PH)
   }
 
   // compute a selective derivative
-  Key field = density_key;
+  Key field = viscosity_key;
   Key wrt = enthalpy_key;
+  S->GetEvaluator(field).Update(*S, "test");
   S->GetEvaluator(field).UpdateDerivative(*S, "test", wrt, Tags::DEFAULT);
   auto& der_c = *S->GetDerivative<CV_t>(field, tag, wrt, tag).ViewComponent("cell");
   auto& field_c = *S->Get<CV_t>(field, tag).ViewComponent("cell");
@@ -183,7 +184,7 @@ TEST(EVALUATOR_DERIVATIVE_TABLES_PH)
   c = 0;
   for (int i = -n; i < n; ++i) {
     for (int j = -n; j < n; ++j) {
-      // std::cout << p_c[0][c] * 1e-6 << " " << h_c[0][c] / ENTHALPY_FACTOR << " " << field_c[0][c] << std::endl;
+      std::cout << p_c[0][c] * 1e-6 << " " << h_c[0][c] / CommonDefs::ENTHALPY_FACTOR << " " << field_c[0][c] << std::endl;
       // std::cout << p_c[0][c] * 1e-6 << " " << h_c[0][c] / ENTHALPY_FACTOR << " " << der_c[0][c] << std::endl;
       c++;
     }

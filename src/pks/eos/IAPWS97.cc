@@ -23,8 +23,8 @@ namespace AmanziEOS {
 /* ******************************************************************
 * F(rho) = F3(rho) - p = 0
 ****************************************************************** */
-struct Frho {
-  Frho(double p, double T, IAPWS97* eos) : p_(p), T_(T), eos_(eos) {};
+struct Frho97 {
+  Frho97(double p, double T, IAPWS97* eos) : p_(p), T_(T), eos_(eos) {};
   double operator()(double rho) const { return eos_->Region3(rho, T_).p - p_; }
 
   double p_, T_;
@@ -99,8 +99,16 @@ IAPWS97::ThermodynamicsPT(double p, double T)
         double tol = 1e-8;
         double rhomin = rho0 * 0.999;
         double rhomax = rho0 * 1.001;
-        Frho f(p, T, this);
+        Frho97 f(p, T, this);
         rho = Utils::findRootBrent(f, rhomin, rhomax, tol, &itrs_);
+
+        // refine soltution strategy starting with bracketing a root
+        if (itrs_ < 0) {
+          itrs_ = 10;
+          auto [rhomin, rhomax] = Utils::bracketRoot(f, rho0, rho0 * 0.002, &itrs_);
+          itrs_ = 10;
+          rho = Utils::findRootBrent(f, rhomin, rhomax, tol, &itrs_);
+        }
       }
       prop = Region3(rho, T);
       break;
@@ -1780,7 +1788,7 @@ IAPWS97::Print(Properties& prop)
     << "\nc_v = " << prop.cv
     << "\nspeed of sound = " << prop.w
     << "\nalpha_v = " << prop.av
-    << "\nappha_p = " << prop.ap
+    << "\nalpha_p = " << prop.ap
     << "\nbeta_p = " << prop.bp
     << "\n\nHelmholtz = " << prop.helmholtz
     << "\nGibbs = " << prop.gibbs

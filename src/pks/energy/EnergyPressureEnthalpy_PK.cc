@@ -30,7 +30,7 @@
 #include "IEMEvaluator.hh"
 #include "StateArchive.hh"
 #include "TCMEvaluator_OnePhase.hh"
-#include "ThermodynamicStateEvaluators.hh"
+#include "IAPWS97_StateEvaluators.hh"
 #include "TotalEnergyEvaluatorPH.hh"
 
 namespace Amanzi {
@@ -163,10 +163,10 @@ EnergyPressureEnthalpy_PK::Setup()
   // other fields
   // thermodynamics
   if (!S_->HasRecord(state_key_)) {
-    S_->Require<CV_t, CVS_t>(state_key_, Tags::DEFAULT, state_key_, Evaluators::TS_names)
+    S_->Require<CV_t, CVS_t>(state_key_, Tags::DEFAULT, state_key_, Evaluators::TS97_names)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, Evaluators::TS_t_size);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, Evaluators::TS97_t_size);
     S_->RequireEvaluator(state_key_, Tags::DEFAULT);
   }
 
@@ -304,7 +304,7 @@ EnergyPressureEnthalpy_PK::Setup()
       Teuchos::ParameterList elist(conductivity_key_);
       elist.set<std::string>("tag", "");
 
-      auto eval = Teuchos::rcp(new Evaluators::ThermalConductivityEvaluator(elist));
+      auto eval = Teuchos::rcp(new Evaluators::IAPWS97_ThermalConductivityEvaluator(elist));
       S_->SetEvaluator(conductivity_key_, Tags::DEFAULT, eval);
     }
   }
