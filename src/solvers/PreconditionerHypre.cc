@@ -303,7 +303,7 @@ PreconditionerHypre::InitMGR_()
 
   HYPRE_MGRSetTol(method_, 0.0);
   HYPRE_MGRSetNumRelaxSweeps(method_, 2);
-  HYPRE_MGRSetMaxIter(method_, plist_.get<int>("mgr cycles applications", 3));
+  HYPRE_MGRSetMaxIter(method_, plist_.get<int>("mgr cycles applications", 2));
   if (plist_.isParameter("relaxation type"))
     HYPRE_MGRSetRelaxType(method_, plist_.get<int>("relaxation type"));
   HYPRE_MGRSetPrintLevel(method_, plist_.get<int>("verbosity", 0));

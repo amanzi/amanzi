@@ -8,16 +8,16 @@
 */
 
 /*
-  Energy PK
+  Evaluators
 
   Collection of evaluators based on IAPWS97 industrial formulation.
  
-  NOTE: ThermodynamicStateEvaluator is for the auxiliary field which 
+  NOTE: IAPWS97_StateEvaluator is for the auxiliary field which 
   keeps units of the IAPWS97.
 */
 
-#ifndef AMANZI_EVALUATORS_THERMODYNAMIC_STATE_HH_
-#define AMANZI_EVALUATORS_THERMODYNAMIC_STATE_HH_
+#ifndef AMANZI_EVALUATORS_IAPWS97_STATE_HH_
+#define AMANZI_EVALUATORS_IAPWS97_STATE_HH_
 
 #include <cstdlib>
 #include <cmath>
@@ -42,8 +42,8 @@
 namespace Amanzi {
 namespace Evaluators {
 
-int constexpr TS_t_size = 18;
-const std::vector<std::string> TS_names = {
+int constexpr TS97_t_size = 18;
+const std::vector<std::string> TS97_names = {
   "region", "temperature", "mass_density", "specific_volume", "isobaric_heat_capacity",
   "isocoric_heat_capacity", "isothermal_compressibility", "isobaric_expansion_coef", 
   "relative_pressure_coef", "isothermal_stress_coef", "thermal_conductivity", "viscosity",
@@ -51,7 +51,7 @@ const std::vector<std::string> TS_names = {
   "vv", "vapor_quality"
 };
 
-enum class TS_t : int {
+enum class TS97_t : int {
   RGN = 0,
   T = 1,
   RHO = 2,
@@ -72,11 +72,11 @@ enum class TS_t : int {
   X = 17
 };
 
-class ThermodynamicStateEvaluator
+class IAPWS97_StateEvaluator
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  explicit ThermodynamicStateEvaluator(Teuchos::ParameterList& plist);
-  ThermodynamicStateEvaluator(const ThermodynamicStateEvaluator& other);
+  explicit IAPWS97_StateEvaluator(Teuchos::ParameterList& plist);
+  IAPWS97_StateEvaluator(const IAPWS97_StateEvaluator& other);
 
   // required inteface functions
   virtual Teuchos::RCP<Evaluator> Clone() const override;
@@ -93,15 +93,15 @@ class ThermodynamicStateEvaluator
  private:
   Key pressure_key_, enthalpy_key_;
   Teuchos::RCP<AmanziEOS::IAPWS97> eos_;
-  static Utils::RegisteredFactory<Evaluator, ThermodynamicStateEvaluator> reg_;
+  static Utils::RegisteredFactory<Evaluator, IAPWS97_StateEvaluator> reg_;
 };
 
 
-class DensityEvaluator
+class IAPWS97_DensityEvaluator
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  explicit DensityEvaluator(Teuchos::ParameterList& plist);
-  DensityEvaluator(const DensityEvaluator& other);
+  explicit IAPWS97_DensityEvaluator(Teuchos::ParameterList& plist);
+  IAPWS97_DensityEvaluator(const IAPWS97_DensityEvaluator& other);
 
   // required inteface functions
   virtual Teuchos::RCP<Evaluator> Clone() const override;
@@ -117,15 +117,15 @@ class DensityEvaluator
 
  private:
   Key pressure_key_, enthalpy_key_;
-  static Utils::RegisteredFactory<Evaluator, DensityEvaluator> reg_;
+  static Utils::RegisteredFactory<Evaluator, IAPWS97_DensityEvaluator> reg_;
 };
 
 
-class TemperatureEvaluator
+class IAPWS97_TemperatureEvaluator
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  explicit TemperatureEvaluator(Teuchos::ParameterList& plist);
-  TemperatureEvaluator(const TemperatureEvaluator& other);
+  explicit IAPWS97_TemperatureEvaluator(Teuchos::ParameterList& plist);
+  IAPWS97_TemperatureEvaluator(const IAPWS97_TemperatureEvaluator& other);
 
   // required inteface functions
   virtual Teuchos::RCP<Evaluator> Clone() const override;
@@ -141,15 +141,15 @@ class TemperatureEvaluator
 
  private:
   Key pressure_key_, enthalpy_key_;
-  static Utils::RegisteredFactory<Evaluator, TemperatureEvaluator> reg_;
+  static Utils::RegisteredFactory<Evaluator, IAPWS97_TemperatureEvaluator> reg_;
 };
 
 
-class ThermalConductivityEvaluator
+class IAPWS97_ThermalConductivityEvaluator
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  explicit ThermalConductivityEvaluator(Teuchos::ParameterList& plist);
-  ThermalConductivityEvaluator(const ThermalConductivityEvaluator& other);
+  explicit IAPWS97_ThermalConductivityEvaluator(Teuchos::ParameterList& plist);
+  IAPWS97_ThermalConductivityEvaluator(const IAPWS97_ThermalConductivityEvaluator& other);
 
   // required inteface functions
   virtual Teuchos::RCP<Evaluator> Clone() const override;
@@ -169,11 +169,11 @@ class ThermalConductivityEvaluator
 };
 
 
-class InternalEnergyLiquidEvaluator
+class IAPWS97_InternalEnergyEvaluator
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  explicit InternalEnergyLiquidEvaluator(Teuchos::ParameterList& plist);
-  InternalEnergyLiquidEvaluator(const InternalEnergyLiquidEvaluator& other);
+  explicit IAPWS97_InternalEnergyEvaluator(Teuchos::ParameterList& plist);
+  IAPWS97_InternalEnergyEvaluator(const IAPWS97_InternalEnergyEvaluator& other);
 
   // required inteface functions
   virtual Teuchos::RCP<Evaluator> Clone() const override;
@@ -192,11 +192,11 @@ class InternalEnergyLiquidEvaluator
 };
 
 
-class IsothermalCompressibilityEvaluator
+class IAPWS97_IsothermalCompressibilityEvaluator
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  explicit IsothermalCompressibilityEvaluator(Teuchos::ParameterList& plist);
-  IsothermalCompressibilityEvaluator(const IsothermalCompressibilityEvaluator& other);
+  explicit IAPWS97_IsothermalCompressibilityEvaluator(Teuchos::ParameterList& plist);
+  IAPWS97_IsothermalCompressibilityEvaluator(const IAPWS97_IsothermalCompressibilityEvaluator& other);
 
   // required inteface functions
   virtual Teuchos::RCP<Evaluator> Clone() const override;
@@ -212,15 +212,15 @@ class IsothermalCompressibilityEvaluator
 
  private:
   Key pressure_key_, enthalpy_key_;
-  static Utils::RegisteredFactory<Evaluator, IsothermalCompressibilityEvaluator> reg_;
+  static Utils::RegisteredFactory<Evaluator, IAPWS97_IsothermalCompressibilityEvaluator> reg_;
 };
 
 
-class ViscosityEvaluator
+class IAPWS97_ViscosityEvaluator
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  explicit ViscosityEvaluator(Teuchos::ParameterList& plist);
-  ViscosityEvaluator(const ViscosityEvaluator& other);
+  explicit IAPWS97_ViscosityEvaluator(Teuchos::ParameterList& plist);
+  IAPWS97_ViscosityEvaluator(const IAPWS97_ViscosityEvaluator& other);
 
   // required inteface functions
   virtual Teuchos::RCP<Evaluator> Clone() const override;
@@ -237,7 +237,7 @@ class ViscosityEvaluator
  private:
   Key density_key_, temperature_key_;
   Teuchos::RCP<AmanziEOS::IAPWS97> eos_;
-  static Utils::RegisteredFactory<Evaluator, ViscosityEvaluator> reg_;
+  static Utils::RegisteredFactory<Evaluator, IAPWS97_ViscosityEvaluator> reg_;
 };
 
 } // namespace Evaluators

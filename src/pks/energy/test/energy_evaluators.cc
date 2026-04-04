@@ -27,10 +27,10 @@
 #include "CompositeVector.hh"
 #include "EvaluatorSecondaryMonotype.hh"
 #include "IAPWS97.hh"
+#include "IAPWS97_StateEvaluators.hh"
 #include "MeshFactory.hh"
 #include "PK_Physical.hh"
 #include "State.hh"
-#include "ThermodynamicStateEvaluators.hh"
 #include "TotalEnergyEvaluatorPH.hh"
 #include "VerboseObject.hh"
 
@@ -73,13 +73,13 @@ TEST(EVALUATORS)
   S->Require<CV_t, CVS_t>(state_key, Tags::DEFAULT, state_key)
     .SetMesh(mesh)
     ->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, TS_t_size);
+    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, TS97_t_size);
 
   Teuchos::ParameterList elist1(state_key);
   elist1.set<std::string>("tag", "");
   elist1.sublist("verbose object").set<std::string>("verbosity level", "extreme");
 
-  auto eval1 = Teuchos::rcp(new ThermodynamicStateEvaluator(elist1));
+  auto eval1 = Teuchos::rcp(new IAPWS97_StateEvaluator(elist1));
   S->SetEvaluator(state_key, Tags::DEFAULT, eval1);
 
   // primary variables
@@ -110,10 +110,10 @@ TEST(EVALUATORS)
   elist2.set<std::string>("tag", "");
   elist2.sublist("verbose object").set<std::string>("verbosity level", "extreme");
 
-  auto eval2 = Teuchos::rcp(new DensityEvaluator(elist2));
+  auto eval2 = Teuchos::rcp(new IAPWS97_DensityEvaluator(elist2));
   S->SetEvaluator(mass_density_key, Tags::DEFAULT, eval2);
 
-  // auto eval2b = Teuchos::rcp(new DensityEvaluator(elist2));
+  // auto eval2b = Teuchos::rcp(new IAPWS97_DensityEvaluator(elist2));
   // S->SetEvaluator(molar_density_key, Tags::DEFAULT, eval2b);
 
   S->RequireDerivative<CV_t, CVS_t>(
@@ -140,7 +140,7 @@ TEST(EVALUATORS)
   elist3.set<std::string>("tag", "");
   elist3.sublist("verbose object").set<std::string>("verbosity level", "extreme");
 
-  auto eval3 = Teuchos::rcp(new TemperatureEvaluator(elist3));
+  auto eval3 = Teuchos::rcp(new IAPWS97_TemperatureEvaluator(elist3));
   S->SetEvaluator(temperature_key, Tags::DEFAULT, eval3);
 
   // thermal conductivity
@@ -160,7 +160,7 @@ TEST(EVALUATORS)
   elist4.set<std::string>("tag", "");
   elist4.sublist("verbose object").set<std::string>("verbosity level", "extreme");
 
-  auto eval4 = Teuchos::rcp(new ThermalConductivityEvaluator(elist4));
+  auto eval4 = Teuchos::rcp(new IAPWS97_ThermalConductivityEvaluator(elist4));
   S->SetEvaluator(conductivity_key, Tags::DEFAULT, eval4);
 
   S->Setup();

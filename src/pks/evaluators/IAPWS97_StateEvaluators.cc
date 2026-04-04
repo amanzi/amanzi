@@ -34,7 +34,7 @@
 #include "PK_Physical.hh"
 #include "State.hh"
 #include "VerboseObject.hh"
-#include "ThermodynamicStateEvaluators.hh"
+#include "IAPWS97_StateEvaluators.hh"
 
 namespace Amanzi {
 namespace Evaluators {
@@ -42,7 +42,7 @@ namespace Evaluators {
 /* ******************************************************************
 * Thermodynamic state
 ****************************************************************** */
-ThermodynamicStateEvaluator::ThermodynamicStateEvaluator(Teuchos::ParameterList& plist)
+IAPWS97_StateEvaluator::IAPWS97_StateEvaluator(Teuchos::ParameterList& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   if (my_keys_.size() == 0)
@@ -62,7 +62,7 @@ ThermodynamicStateEvaluator::ThermodynamicStateEvaluator(Teuchos::ParameterList&
 /* ******************************************************************
 * Copy operations.
 ****************************************************************** */
-ThermodynamicStateEvaluator::ThermodynamicStateEvaluator(const ThermodynamicStateEvaluator& other)
+IAPWS97_StateEvaluator::IAPWS97_StateEvaluator(const IAPWS97_StateEvaluator& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
     pressure_key_(other.pressure_key_),
     enthalpy_key_(other.enthalpy_key_),
@@ -71,9 +71,9 @@ ThermodynamicStateEvaluator::ThermodynamicStateEvaluator(const ThermodynamicStat
 
 
 Teuchos::RCP<Evaluator>
-ThermodynamicStateEvaluator::Clone() const
+IAPWS97_StateEvaluator::Clone() const
 {
-  return Teuchos::rcp(new ThermodynamicStateEvaluator(*this));
+  return Teuchos::rcp(new IAPWS97_StateEvaluator(*this));
 }
 
 
@@ -81,7 +81,7 @@ ThermodynamicStateEvaluator::Clone() const
 * Field value
 ****************************************************************** */
 void
-ThermodynamicStateEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
+IAPWS97_StateEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   const auto& p_c = *S.Get<CompositeVector>(pressure_key_).ViewComponent("cell");
   const auto& h_c = *S.Get<CompositeVector>(enthalpy_key_).ViewComponent("cell");
@@ -101,22 +101,22 @@ ThermodynamicStateEvaluator::Evaluate_(const State& S, const std::vector<Composi
       AMANZI_ASSERT(0);
     }
 
-    result_v[(int)TS_t::RGN][c] = prop.rgn;
-    result_v[(int)TS_t::T][c] = prop.T;
-    result_v[(int)TS_t::RHO][c] = prop.rho;
-    result_v[(int)TS_t::V][c] = prop.v;
-    result_v[(int)TS_t::CP][c] = prop.cp * 1.0e+3;
-    result_v[(int)TS_t::CV][c] = prop.cv * 1.0e+3;
-    result_v[(int)TS_t::KT][c] = prop.kt * 1.0e-6;
-    result_v[(int)TS_t::AV][c] = prop.av;
-    result_v[(int)TS_t::AP][c] = prop.ap;
-    result_v[(int)TS_t::BP][c] = prop.bp;
-    result_v[(int)TS_t::K][c] = (prop.x == 0.0) ? liquid.k : vapor.k;
-    result_v[(int)TS_t::MU][c] = (prop.x == 0.0) ? liquid.mu : vapor.mu;
+    result_v[(int)TS97_t::RGN][c] = prop.rgn;
+    result_v[(int)TS97_t::T][c] = prop.T;
+    result_v[(int)TS97_t::RHO][c] = prop.rho;
+    result_v[(int)TS97_t::V][c] = prop.v;
+    result_v[(int)TS97_t::CP][c] = prop.cp * 1.0e+3;
+    result_v[(int)TS97_t::CV][c] = prop.cv * 1.0e+3;
+    result_v[(int)TS97_t::KT][c] = prop.kt * 1.0e-6;
+    result_v[(int)TS97_t::AV][c] = prop.av;
+    result_v[(int)TS97_t::AP][c] = prop.ap;
+    result_v[(int)TS97_t::BP][c] = prop.bp;
+    result_v[(int)TS97_t::K][c] = (prop.x == 0.0) ? liquid.k : vapor.k;
+    result_v[(int)TS97_t::MU][c] = (prop.x == 0.0) ? liquid.mu : vapor.mu;
 
     // vapor extension
-    result_v[(int)TS_t::VV][c] = vapor.v;
-    result_v[(int)TS_t::X][c] = prop.x;
+    result_v[(int)TS97_t::VV][c] = vapor.v;
+    result_v[(int)TS97_t::X][c] = prop.x;
 
     p = p_c[0][c];
     T = prop.T;
@@ -127,11 +127,11 @@ ThermodynamicStateEvaluator::Evaluate_(const State& S, const std::vector<Composi
       bp = prop.bp;
       cv = prop.cv * 1.0e+3;
 
-      result_v[(int)TS_t::dRHOdP][c] = (cv + p * v * ap) / (v * v * p * (bp * cv + p * ap * ap * T));
-      result_v[(int)TS_t::dRHOdH][c] = -ap / (v * v * (cv * bp + p * T * ap * ap)) / CommonDefs::MOLAR_MASS_H2O;
+      result_v[(int)TS97_t::dRHOdP][c] = (cv + p * v * ap) / (v * v * p * (bp * cv + p * ap * ap * T));
+      result_v[(int)TS97_t::dRHOdH][c] = -ap / (v * v * (cv * bp + p * T * ap * ap)) / CommonDefs::MOLAR_MASS_H2O;
 
-      result_v[(int)TS_t::dTdP][c] = (T * ap - v * bp) / (bp * cv + p * T * ap * ap);
-      result_v[(int)TS_t::dTdH][c] = bp / (p * T * ap * ap + bp * cv) / CommonDefs::MOLAR_MASS_H2O;
+      result_v[(int)TS97_t::dTdP][c] = (T * ap - v * bp) / (bp * cv + p * T * ap * ap);
+      result_v[(int)TS97_t::dTdH][c] = bp / (p * T * ap * ap + bp * cv) / CommonDefs::MOLAR_MASS_H2O;
     }
     else if (prop.rgn == 4) {
       double dvdp_l, dvdp_v, dhdp_l, dhdp_v; // full derivatives
@@ -164,26 +164,26 @@ ThermodynamicStateEvaluator::Evaluate_(const State& S, const std::vector<Composi
       x = prop.x;
       tmp1 = (1 - x) * dvdp_l + x * dvdp_v;
       tmp2 = ((1 - x) * dhdp_l + x * dhdp_v) * dvdh; 
-      result_v[(int)TS_t::dRHOdP][c] = -(tmp1 - tmp2) / v / v;
-      result_v[(int)TS_t::dRHOdH][c] = -dvdh / v / v / CommonDefs::MOLAR_MASS_H2O;
+      result_v[(int)TS97_t::dRHOdP][c] = -(tmp1 - tmp2) / v / v;
+      result_v[(int)TS97_t::dRHOdH][c] = -dvdh / v / v / CommonDefs::MOLAR_MASS_H2O;
 
       // Clapeyron
-      result_v[(int)TS_t::dTdP][c] = T * dvdh;
-      result_v[(int)TS_t::dTdH][c] = 0.0;
+      result_v[(int)TS97_t::dTdP][c] = T * dvdh;
+      result_v[(int)TS97_t::dTdH][c] = 0.0;
  
-      result_v[(int)TS_t::K][c] = (1.0 - x) * liquid.k + x * vapor.k;
-      result_v[(int)TS_t::MU][c] = (1.0 - x) * liquid.mu + x * vapor.mu;
+      result_v[(int)TS97_t::K][c] = (1.0 - x) * liquid.k + x * vapor.k;
+      result_v[(int)TS97_t::MU][c] = (1.0 - x) * liquid.mu + x * vapor.mu;
     }
     else { // Gibbs
       av = prop.av;
       cp = prop.cp * 1.0e+3;
       kt = prop.kt * 1.0e-6;
 
-      result_v[(int)TS_t::dRHOdP][c] = kt / v + av * (1.0 - T * av) / cp;
-      result_v[(int)TS_t::dRHOdH][c] = -av / v / cp / CommonDefs::MOLAR_MASS_H2O;
+      result_v[(int)TS97_t::dRHOdP][c] = kt / v + av * (1.0 - T * av) / cp;
+      result_v[(int)TS97_t::dRHOdH][c] = -av / v / cp / CommonDefs::MOLAR_MASS_H2O;
 
-      result_v[(int)TS_t::dTdP][c] = -v * (1.0 - T * av) / cp;
-      result_v[(int)TS_t::dTdH][c] = 1.0 / cp / CommonDefs::MOLAR_MASS_H2O;
+      result_v[(int)TS97_t::dTdP][c] = -v * (1.0 - T * av) / cp;
+      result_v[(int)TS97_t::dTdH][c] = 1.0 / cp / CommonDefs::MOLAR_MASS_H2O;
     }
   }
 }
@@ -193,10 +193,10 @@ ThermodynamicStateEvaluator::Evaluate_(const State& S, const std::vector<Composi
 * Field derivative value
 ****************************************************************** */
 void 
-ThermodynamicStateEvaluator::EvaluatePartialDerivative_(const State& S,
-                                                        const Key& wrt_key,
-                                                        const Tag& wrt_tag,
-                                                        const std::vector<CompositeVector*>& results)
+IAPWS97_StateEvaluator::EvaluatePartialDerivative_(const State& S,
+                                                   const Key& wrt_key,
+                                                   const Tag& wrt_tag,
+                                                   const std::vector<CompositeVector*>& results)
 {
   auto& result_v = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell");
@@ -210,7 +210,7 @@ ThermodynamicStateEvaluator::EvaluatePartialDerivative_(const State& S,
 /* ******************************************************************
 * Mass density evaluator
 ****************************************************************** */
-DensityEvaluator::DensityEvaluator(Teuchos::ParameterList& plist)
+IAPWS97_DensityEvaluator::IAPWS97_DensityEvaluator(Teuchos::ParameterList& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   if (my_keys_.size() != 2) {
@@ -232,7 +232,7 @@ DensityEvaluator::DensityEvaluator(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Copy operations.
 ****************************************************************** */
-DensityEvaluator::DensityEvaluator(const DensityEvaluator& other)
+IAPWS97_DensityEvaluator::IAPWS97_DensityEvaluator(const IAPWS97_DensityEvaluator& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
     pressure_key_(other.pressure_key_),
     enthalpy_key_(other.enthalpy_key_)
@@ -240,9 +240,9 @@ DensityEvaluator::DensityEvaluator(const DensityEvaluator& other)
 
 
 Teuchos::RCP<Evaluator>
-DensityEvaluator::Clone() const
+IAPWS97_DensityEvaluator::Clone() const
 {
-  return Teuchos::rcp(new DensityEvaluator(*this));
+  return Teuchos::rcp(new IAPWS97_DensityEvaluator(*this));
 }
 
 
@@ -250,7 +250,7 @@ DensityEvaluator::Clone() const
 * Field value
 ****************************************************************** */
 void
-DensityEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
+IAPWS97_DensityEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   const auto& ts_c = *S.Get<CompositeVector>("thermodynamic_state").ViewComponent("cell");
 
@@ -259,7 +259,7 @@ DensityEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>&
   int ncells = results[0]->size("cell");
 
   for (int c = 0; c != ncells; ++c) {
-    result0_v[0][c] = ts_c[(int)TS_t::RHO][c];
+    result0_v[0][c] = ts_c[(int)TS97_t::RHO][c];
     result1_v[0][c] = result0_v[0][c] / CommonDefs::MOLAR_MASS_H2O;
   }
 }
@@ -269,10 +269,10 @@ DensityEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>&
 * Field derivative value
 ****************************************************************** */
 void
-DensityEvaluator::EvaluatePartialDerivative_(const State& S,
-                                             const Key& wrt_key,
-                                             const Tag& wrt_tag,
-                                             const std::vector<CompositeVector*>& results)
+IAPWS97_DensityEvaluator::EvaluatePartialDerivative_(const State& S,
+                                                     const Key& wrt_key,
+                                                     const Tag& wrt_tag,
+                                                     const std::vector<CompositeVector*>& results)
 {
   const auto& ts_c = *S.Get<CompositeVector>("thermodynamic_state").ViewComponent("cell");
   const auto& p_c = *S.Get<CompositeVector>(pressure_key_).ViewComponent("cell");
@@ -284,12 +284,12 @@ DensityEvaluator::EvaluatePartialDerivative_(const State& S,
   double v, p, T, ap, av, bp, cv, cp, kt;
   if (wrt_key == pressure_key_) {
     for (int c = 0; c != ncells; ++c) {
-      result0_v[0][c] = ts_c[(int)TS_t::dRHOdP][c];
+      result0_v[0][c] = ts_c[(int)TS97_t::dRHOdP][c];
       result1_v[0][c] = result0_v[0][c] / CommonDefs::MOLAR_MASS_H2O;
     }
   } else if (wrt_key == enthalpy_key_) {
     for (int c = 0; c != ncells; ++c) {
-      result0_v[0][c] = ts_c[(int)TS_t::dRHOdH][c];
+      result0_v[0][c] = ts_c[(int)TS97_t::dRHOdH][c];
       result1_v[0][c] = result0_v[0][c] / CommonDefs::MOLAR_MASS_H2O;
     }
   }
@@ -299,7 +299,7 @@ DensityEvaluator::EvaluatePartialDerivative_(const State& S,
 /* ******************************************************************
 * Temperature evaluator
 ****************************************************************** */
-TemperatureEvaluator::TemperatureEvaluator(Teuchos::ParameterList& plist)
+IAPWS97_TemperatureEvaluator::IAPWS97_TemperatureEvaluator(Teuchos::ParameterList& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   if (my_keys_.size() == 0)
@@ -318,7 +318,8 @@ TemperatureEvaluator::TemperatureEvaluator(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Copy operations.
 ****************************************************************** */
-TemperatureEvaluator::TemperatureEvaluator(const TemperatureEvaluator& other)
+IAPWS97_TemperatureEvaluator::IAPWS97_TemperatureEvaluator(
+  const IAPWS97_TemperatureEvaluator& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
     pressure_key_(other.pressure_key_),
     enthalpy_key_(other.enthalpy_key_)
@@ -326,9 +327,9 @@ TemperatureEvaluator::TemperatureEvaluator(const TemperatureEvaluator& other)
 
 
 Teuchos::RCP<Evaluator>
-TemperatureEvaluator::Clone() const
+IAPWS97_TemperatureEvaluator::Clone() const
 {
-  return Teuchos::rcp(new TemperatureEvaluator(*this));
+  return Teuchos::rcp(new IAPWS97_TemperatureEvaluator(*this));
 }
 
 
@@ -336,7 +337,8 @@ TemperatureEvaluator::Clone() const
 * Field value
 ****************************************************************** */
 void
-TemperatureEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
+IAPWS97_TemperatureEvaluator::Evaluate_(const State& S,
+                                        const std::vector<CompositeVector*>& results)
 {
   const auto& ts_c = *S.Get<CompositeVector>("thermodynamic_state").ViewComponent("cell");
 
@@ -344,7 +346,7 @@ TemperatureEvaluator::Evaluate_(const State& S, const std::vector<CompositeVecto
   int ncells = results[0]->size("cell");
 
   for (int c = 0; c != ncells; ++c) {
-    result_v[0][c] = ts_c[(int)TS_t::T][c];
+    result_v[0][c] = ts_c[(int)TS97_t::T][c];
   }
 }
 
@@ -353,10 +355,11 @@ TemperatureEvaluator::Evaluate_(const State& S, const std::vector<CompositeVecto
 * Field derivative value
 ****************************************************************** */
 void
-TemperatureEvaluator::EvaluatePartialDerivative_(const State& S,
-                                                 const Key& wrt_key,
-                                                 const Tag& wrt_tag,
-                                                 const std::vector<CompositeVector*>& results)
+IAPWS97_TemperatureEvaluator::EvaluatePartialDerivative_(
+    const State& S,
+    const Key& wrt_key,
+    const Tag& wrt_tag,
+    const std::vector<CompositeVector*>& results)
 {
   const auto& ts_c = *S.Get<CompositeVector>("thermodynamic_state").ViewComponent("cell");
   const auto& p_c = *S.Get<CompositeVector>(pressure_key_).ViewComponent("cell");
@@ -367,11 +370,11 @@ TemperatureEvaluator::EvaluatePartialDerivative_(const State& S,
   double v, p, T, ap, av, bp, cp, cv;
   if (wrt_key == pressure_key_) {
     for (int c = 0; c != ncells; ++c) {
-      result_v[0][c] = ts_c[(int)TS_t::dTdP][c];
+      result_v[0][c] = ts_c[(int)TS97_t::dTdP][c];
     }
   } else if (wrt_key == enthalpy_key_) {
     for (int c = 0; c != ncells; ++c) {
-      result_v[0][c] = ts_c[(int)TS_t::dTdH][c];
+      result_v[0][c] = ts_c[(int)TS97_t::dTdH][c];
     }
   }
 }
@@ -380,7 +383,7 @@ TemperatureEvaluator::EvaluatePartialDerivative_(const State& S,
 /* ******************************************************************
 * Thermal conductivity evaluator
 ****************************************************************** */
-ThermalConductivityEvaluator::ThermalConductivityEvaluator(Teuchos::ParameterList& plist)
+IAPWS97_ThermalConductivityEvaluator::IAPWS97_ThermalConductivityEvaluator(Teuchos::ParameterList& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   if (my_keys_.size() == 0)
@@ -401,8 +404,8 @@ ThermalConductivityEvaluator::ThermalConductivityEvaluator(Teuchos::ParameterLis
 /* ******************************************************************
 * Copy operations.
 ****************************************************************** */
-ThermalConductivityEvaluator::ThermalConductivityEvaluator(
-    const ThermalConductivityEvaluator& other)
+IAPWS97_ThermalConductivityEvaluator::IAPWS97_ThermalConductivityEvaluator(
+    const IAPWS97_ThermalConductivityEvaluator& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
     density_key_(other.density_key_),
     temperature_key_(other.temperature_key_)
@@ -410,9 +413,9 @@ ThermalConductivityEvaluator::ThermalConductivityEvaluator(
 
 
 Teuchos::RCP<Evaluator>
-ThermalConductivityEvaluator::Clone() const
+IAPWS97_ThermalConductivityEvaluator::Clone() const
 {
-  return Teuchos::rcp(new ThermalConductivityEvaluator(*this));
+  return Teuchos::rcp(new IAPWS97_ThermalConductivityEvaluator(*this));
 }
 
 
@@ -420,8 +423,8 @@ ThermalConductivityEvaluator::Clone() const
 * Field value
 ****************************************************************** */
 void
-ThermalConductivityEvaluator::Evaluate_(const State& S,
-                                        const std::vector<CompositeVector*>& results)
+IAPWS97_ThermalConductivityEvaluator::Evaluate_(const State& S,
+                                                const std::vector<CompositeVector*>& results)
 {
   const auto& ts_c = *S.Get<CompositeVector>("thermodynamic_state").ViewComponent("cell");
 
@@ -429,7 +432,7 @@ ThermalConductivityEvaluator::Evaluate_(const State& S,
   int ncells = results[0]->size("cell");
 
   for (int c = 0; c != ncells; ++c) {
-    result_v[0][c] = ts_c[(int)TS_t::K][c];
+    result_v[0][c] = ts_c[(int)TS97_t::K][c];
   }
 }
 
@@ -438,7 +441,7 @@ ThermalConductivityEvaluator::Evaluate_(const State& S,
 * Field derivative value
 ****************************************************************** */
 void
-ThermalConductivityEvaluator::EvaluatePartialDerivative_(
+IAPWS97_ThermalConductivityEvaluator::EvaluatePartialDerivative_(
     const State& S,
     const Key& wrt_key,
     const Tag& wrt_tag,
@@ -455,22 +458,22 @@ ThermalConductivityEvaluator::EvaluatePartialDerivative_(
 
   if (wrt_key == density_key_) {
     for (int c = 0; c != ncells; ++c) {
-      T = ts_c[(int)TS_t::T][c];
+      T = ts_c[(int)TS97_t::T][c];
 
-      if (ts_c[(int)TS_t::RGN][c] == 4.0) {
+      if (ts_c[(int)TS97_t::RGN][c] == 4.0) {
         double vl, vv, v, x, tcl, tcv;
-        v = ts_c[(int)TS_t::V][c];
-        x = ts_c[(int)TS_t::X][c];
+        v = ts_c[(int)TS97_t::V][c];
+        x = ts_c[(int)TS97_t::X][c];
 
-        vv = ts_c[(int)TS_t::VV][c];
+        vv = ts_c[(int)TS97_t::VV][c];
         vl = (v - x * vv) / (1.0 - x);
 
         tcl = eos_->ThermalConductivity(1.0 / vl, T, prop);
         tcv = eos_->ThermalConductivity(1.0 / vv, T, prop);
         result_v[0][c] = -(tcv - tcl) / (vv - vl) * v * v;
       } else {
-        tc1 = ts_c[(int)TS_t::K][c];
-        rho = ts_c[(int)TS_t::RHO][c];
+        tc1 = ts_c[(int)TS97_t::K][c];
+        rho = ts_c[(int)TS97_t::RHO][c];
 
         drho = eps * rho;
         tc2 = eos_->ThermalConductivity(rho + drho, T, prop);
@@ -480,15 +483,15 @@ ThermalConductivityEvaluator::EvaluatePartialDerivative_(
 
   } else if (wrt_key == temperature_key_) {
     for (int c = 0; c != ncells; ++c) {
-      T = ts_c[(int)TS_t::T][c];
+      T = ts_c[(int)TS97_t::T][c];
       dT = eps * T;
 
-      if (ts_c[(int)TS_t::RGN][c] == 4.0) {
+      if (ts_c[(int)TS97_t::RGN][c] == 4.0) {
         double vl, vv, v, x, tcl1, tcl2, tcv1, tcv2;
-        v = ts_c[(int)TS_t::V][c];
-        x = ts_c[(int)TS_t::X][c];
+        v = ts_c[(int)TS97_t::V][c];
+        x = ts_c[(int)TS97_t::X][c];
 
-        vv = ts_c[(int)TS_t::VV][c];
+        vv = ts_c[(int)TS97_t::VV][c];
         vl = (v - x * vv) / (1.0 - x);
 
         tcl1 = eos_->ThermalConductivity(1.0 / vl, T, prop);
@@ -499,8 +502,8 @@ ThermalConductivityEvaluator::EvaluatePartialDerivative_(
 
         result_v[0][c] = ((1.0 - x) * (tcl2 - tcl1) + x * (tcv2 - tcv1)) / dT;
       } else {
-        tc1 = ts_c[(int)TS_t::K][c];
-        rho = ts_c[(int)TS_t::RHO][c];
+        tc1 = ts_c[(int)TS97_t::K][c];
+        rho = ts_c[(int)TS97_t::RHO][c];
         tc2 = eos_->ThermalConductivity(rho, T + dT, prop);
         result_v[0][c] = (tc2 - tc1) / dT;
       }
@@ -512,11 +515,11 @@ ThermalConductivityEvaluator::EvaluatePartialDerivative_(
 /* ******************************************************************
 * Internal energy liquid evaluator
 ****************************************************************** */
-InternalEnergyLiquidEvaluator::InternalEnergyLiquidEvaluator(Teuchos::ParameterList& plist)
+IAPWS97_InternalEnergyEvaluator::IAPWS97_InternalEnergyEvaluator(Teuchos::ParameterList& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   if (my_keys_.size() == 0)
-    my_keys_.push_back(std::make_pair("temperature", Tags::DEFAULT));
+    my_keys_.push_back(std::make_pair("internal_energy", Tags::DEFAULT));
 
   auto prefix = Keys::getDomainPrefix(my_keys_[0].first);
   pressure_key_ = prefix + "pressure";
@@ -531,8 +534,8 @@ InternalEnergyLiquidEvaluator::InternalEnergyLiquidEvaluator(Teuchos::ParameterL
 /* ******************************************************************
 * Copy operations.
 ****************************************************************** */
-InternalEnergyLiquidEvaluator::InternalEnergyLiquidEvaluator(
-    const InternalEnergyLiquidEvaluator& other)
+IAPWS97_InternalEnergyEvaluator::IAPWS97_InternalEnergyEvaluator(
+    const IAPWS97_InternalEnergyEvaluator& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
     pressure_key_(other.pressure_key_),
     enthalpy_key_(other.enthalpy_key_)
@@ -540,9 +543,9 @@ InternalEnergyLiquidEvaluator::InternalEnergyLiquidEvaluator(
 
 
 Teuchos::RCP<Evaluator>
-InternalEnergyLiquidEvaluator::Clone() const
+IAPWS97_InternalEnergyEvaluator::Clone() const
 {
-  return Teuchos::rcp(new InternalEnergyLiquidEvaluator(*this));
+  return Teuchos::rcp(new IAPWS97_InternalEnergyEvaluator(*this));
 }
 
 
@@ -550,7 +553,7 @@ InternalEnergyLiquidEvaluator::Clone() const
 * Field value
 ****************************************************************** */
 void
-InternalEnergyLiquidEvaluator::Evaluate_(const State& S,
+IAPWS97_InternalEnergyEvaluator::Evaluate_(const State& S,
                                          const std::vector<CompositeVector*>& results)
 {
   const auto& ts_c = *S.Get<CompositeVector>("thermodynamic_state").ViewComponent("cell");
@@ -561,7 +564,7 @@ InternalEnergyLiquidEvaluator::Evaluate_(const State& S,
   int ncells = results[0]->size("cell");
 
   for (int c = 0; c != ncells; ++c) {
-    result_v[0][c] = h_c[0][c] - p_c[0][c] * ts_c[(int)TS_t::V][c] * CommonDefs::MOLAR_MASS_H2O;
+    result_v[0][c] = h_c[0][c] - p_c[0][c] * ts_c[(int)TS97_t::V][c] * CommonDefs::MOLAR_MASS_H2O;
   }
 }
 
@@ -570,7 +573,7 @@ InternalEnergyLiquidEvaluator::Evaluate_(const State& S,
 * Field derivative value
 ****************************************************************** */
 void
-InternalEnergyLiquidEvaluator::EvaluatePartialDerivative_(
+IAPWS97_InternalEnergyEvaluator::EvaluatePartialDerivative_(
     const State& S,
     const Key& wrt_key,
     const Tag& wrt_tag,
@@ -586,14 +589,14 @@ InternalEnergyLiquidEvaluator::EvaluatePartialDerivative_(
   double rho, drhodp, drhodh;
   if (wrt_key == pressure_key_) {
     for (int c = 0; c != ncells; ++c) {
-      rho = ts_c[(int)TS_t::RHO][c];
-      drhodp = ts_c[(int)TS_t::dRHOdP][c];
+      rho = ts_c[(int)TS97_t::RHO][c];
+      drhodp = ts_c[(int)TS97_t::dRHOdP][c];
       result_v[0][c] = -1.0 / rho + drhodp / rho / rho;
     }
   } else if (wrt_key == enthalpy_key_) {
     for (int c = 0; c != ncells; ++c) {
-      rho = ts_c[(int)TS_t::RHO][c];
-      drhodh = ts_c[(int)TS_t::dRHOdH][c];
+      rho = ts_c[(int)TS97_t::RHO][c];
+      drhodh = ts_c[(int)TS97_t::dRHOdH][c];
       result_v[0][c] = 1.0 + drhodh / rho / rho;
     }
   }
@@ -603,7 +606,7 @@ InternalEnergyLiquidEvaluator::EvaluatePartialDerivative_(
 /* ******************************************************************
 * Isothermal compressibility evaluator 1/rho (drho/dp)_T 
 ****************************************************************** */
-IsothermalCompressibilityEvaluator::IsothermalCompressibilityEvaluator(Teuchos::ParameterList& plist)
+IAPWS97_IsothermalCompressibilityEvaluator::IAPWS97_IsothermalCompressibilityEvaluator(Teuchos::ParameterList& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   if (my_keys_.size() == 0)
@@ -622,8 +625,8 @@ IsothermalCompressibilityEvaluator::IsothermalCompressibilityEvaluator(Teuchos::
 /* ******************************************************************
 * Copy operations.
 ****************************************************************** */
-IsothermalCompressibilityEvaluator::IsothermalCompressibilityEvaluator(
-    const IsothermalCompressibilityEvaluator& other)
+IAPWS97_IsothermalCompressibilityEvaluator::IAPWS97_IsothermalCompressibilityEvaluator(
+    const IAPWS97_IsothermalCompressibilityEvaluator& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
     pressure_key_(other.pressure_key_),
     enthalpy_key_(other.enthalpy_key_)
@@ -631,9 +634,9 @@ IsothermalCompressibilityEvaluator::IsothermalCompressibilityEvaluator(
 
 
 Teuchos::RCP<Evaluator>
-IsothermalCompressibilityEvaluator::Clone() const
+IAPWS97_IsothermalCompressibilityEvaluator::Clone() const
 {
-  return Teuchos::rcp(new IsothermalCompressibilityEvaluator(*this));
+  return Teuchos::rcp(new IAPWS97_IsothermalCompressibilityEvaluator(*this));
 }
 
 
@@ -641,8 +644,8 @@ IsothermalCompressibilityEvaluator::Clone() const
 * Field value
 ****************************************************************** */
 void
-IsothermalCompressibilityEvaluator::Evaluate_(const State& S,
-                                              const std::vector<CompositeVector*>& results)
+IAPWS97_IsothermalCompressibilityEvaluator::Evaluate_(const State& S,
+                                                      const std::vector<CompositeVector*>& results)
 {
   const auto& ts_c = *S.Get<CompositeVector>("thermodynamic_state").ViewComponent("cell");
 
@@ -650,7 +653,7 @@ IsothermalCompressibilityEvaluator::Evaluate_(const State& S,
   int ncells = results[0]->size("cell");
 
   for (int c = 0; c != ncells; ++c) {
-    result_v[0][c] = ts_c[(int)TS_t::KT][c];
+    result_v[0][c] = ts_c[(int)TS97_t::KT][c];
   }
 }
 
@@ -659,7 +662,7 @@ IsothermalCompressibilityEvaluator::Evaluate_(const State& S,
 * Field derivative value
 ****************************************************************** */
 void
-IsothermalCompressibilityEvaluator::EvaluatePartialDerivative_(
+IAPWS97_IsothermalCompressibilityEvaluator::EvaluatePartialDerivative_(
     const State& S,
     const Key& wrt_key,
     const Tag& wrt_tag,
@@ -672,7 +675,7 @@ IsothermalCompressibilityEvaluator::EvaluatePartialDerivative_(
 /* ******************************************************************
 * Water/steam viscosity evaluator
 ****************************************************************** */
-ViscosityEvaluator::ViscosityEvaluator(Teuchos::ParameterList& plist)
+IAPWS97_ViscosityEvaluator::IAPWS97_ViscosityEvaluator(Teuchos::ParameterList& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   if (my_keys_.size() == 0)
@@ -693,7 +696,7 @@ ViscosityEvaluator::ViscosityEvaluator(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Copy operations.
 ****************************************************************** */
-ViscosityEvaluator::ViscosityEvaluator(const ViscosityEvaluator& other)
+IAPWS97_ViscosityEvaluator::IAPWS97_ViscosityEvaluator(const IAPWS97_ViscosityEvaluator& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
     density_key_(other.density_key_),
     temperature_key_(other.temperature_key_)
@@ -701,9 +704,9 @@ ViscosityEvaluator::ViscosityEvaluator(const ViscosityEvaluator& other)
 
 
 Teuchos::RCP<Evaluator>
-ViscosityEvaluator::Clone() const
+IAPWS97_ViscosityEvaluator::Clone() const
 {
-  return Teuchos::rcp(new ViscosityEvaluator(*this));
+  return Teuchos::rcp(new IAPWS97_ViscosityEvaluator(*this));
 }
 
 
@@ -711,8 +714,8 @@ ViscosityEvaluator::Clone() const
 * Field value
 ****************************************************************** */
 void
-ViscosityEvaluator::Evaluate_(const State& S,
-                              const std::vector<CompositeVector*>& results)
+IAPWS97_ViscosityEvaluator::Evaluate_(const State& S,
+                                      const std::vector<CompositeVector*>& results)
 {
   const auto& ts_c = *S.Get<CompositeVector>("thermodynamic_state").ViewComponent("cell");
 
@@ -720,7 +723,7 @@ ViscosityEvaluator::Evaluate_(const State& S,
   int ncells = results[0]->size("cell");
 
   for (int c = 0; c != ncells; ++c) {
-    result_v[0][c] = ts_c[(int)TS_t::MU][c];
+    result_v[0][c] = ts_c[(int)TS97_t::MU][c];
   }
 }
 
@@ -729,10 +732,10 @@ ViscosityEvaluator::Evaluate_(const State& S,
 * Field derivative value
 ****************************************************************** */
 void
-ViscosityEvaluator::EvaluatePartialDerivative_(const State& S,
-                                               const Key& wrt_key,
-                                               const Tag& wrt_tag,
-                                               const std::vector<CompositeVector*>& results)
+IAPWS97_ViscosityEvaluator::EvaluatePartialDerivative_(const State& S,
+                                                       const Key& wrt_key,
+                                                       const Tag& wrt_tag,
+                                                       const std::vector<CompositeVector*>& results)
 {
   const auto& ts_c = *S.Get<CompositeVector>("thermodynamic_state").ViewComponent("cell");
 
@@ -744,22 +747,22 @@ ViscosityEvaluator::EvaluatePartialDerivative_(const State& S,
 
   if (wrt_key == density_key_) {
     for (int c = 0; c != ncells; ++c) {
-      T = ts_c[(int)TS_t::T][c];
+      T = ts_c[(int)TS97_t::T][c];
 
-      if (ts_c[(int)TS_t::RGN][c] == 4.0) {
+      if (ts_c[(int)TS97_t::RGN][c] == 4.0) {
         double vl, vv, v, x, mul, muv;
-        v = ts_c[(int)TS_t::V][c];
-        x = ts_c[(int)TS_t::X][c];
+        v = ts_c[(int)TS97_t::V][c];
+        x = ts_c[(int)TS97_t::X][c];
 
-        vv = ts_c[(int)TS_t::VV][c];
+        vv = ts_c[(int)TS97_t::VV][c];
         vl = (v - x * vv) / (1.0 - x);
 
         mul = eos_->Viscosity(1.0 / vl, T);
         muv = eos_->Viscosity(1.0 / vv, T);
         result_v[0][c] = -(muv - mul) / (vv - vl) * v * v;
       } else {
-        mu1 = ts_c[(int)TS_t::MU][c];
-        rho = ts_c[(int)TS_t::RHO][c];
+        mu1 = ts_c[(int)TS97_t::MU][c];
+        rho = ts_c[(int)TS97_t::RHO][c];
 
         drho = eps * rho;
         mu2 = eos_->Viscosity(rho + drho, T);
@@ -769,15 +772,15 @@ ViscosityEvaluator::EvaluatePartialDerivative_(const State& S,
 
   } else if (wrt_key == temperature_key_) {
     for (int c = 0; c != ncells; ++c) {
-      T = ts_c[(int)TS_t::T][c];
+      T = ts_c[(int)TS97_t::T][c];
       dT = eps * T;
 
-      if (ts_c[(int)TS_t::RGN][c] == 4.0) {
+      if (ts_c[(int)TS97_t::RGN][c] == 4.0) {
         double vl, vv, v, x, mul1, mul2, muv1, muv2;
-        v = ts_c[(int)TS_t::V][c];
-        x = ts_c[(int)TS_t::X][c];
+        v = ts_c[(int)TS97_t::V][c];
+        x = ts_c[(int)TS97_t::X][c];
 
-        vv = ts_c[(int)TS_t::VV][c];
+        vv = ts_c[(int)TS97_t::VV][c];
         vl = (v - x * vv) / (1.0 - x);
 
         mul1 = eos_->Viscosity(1.0 / vl, T);
@@ -787,8 +790,8 @@ ViscosityEvaluator::EvaluatePartialDerivative_(const State& S,
         muv2 = eos_->Viscosity(1.0 / vv, T + dT);
         result_v[0][c] = ((1.0 - x) * (mul2 - mul1) + x * (muv2 - muv1)) / dT;
       } else {
-        mu1 = ts_c[(int)TS_t::MU][c];
-        rho = ts_c[(int)TS_t::RHO][c];
+        mu1 = ts_c[(int)TS97_t::MU][c];
+        rho = ts_c[(int)TS97_t::RHO][c];
         mu2 = eos_->Viscosity(rho, T + dT);
         result_v[0][c] = (mu2 - mu1) / dT;
       }
