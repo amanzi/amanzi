@@ -387,7 +387,7 @@
             <Parameter name="reference temperature" type="double" value="2.7315e+02"/>
           </ParameterList>
           <ParameterList name="liquid phase">
-            <Parameter name="eos type" type="string" value="IAPWS97"/>
+            <Parameter name="eos type" type="string" value="iapws97"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>

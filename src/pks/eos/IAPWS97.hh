@@ -4,7 +4,7 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 /*
@@ -13,12 +13,14 @@
   Revised Release on the IAPWS Industrial Formulation 1997
   for the Thermodynamic Properties of Water and Steam.
 
-  NOTE: usint are standard for this formulation and differ from that
+  NOTE: units are standard for this formulation and differ from that
   used in Amanzi.
 */
 
 #ifndef AMANZI_IAPWS97_HH_
 #define AMANZI_IAPWS97_HH_
+
+#include <tuple>
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -144,6 +146,7 @@ class IAPWS97 {
   int itrs_;
 
   // static constants
+  // IF97 uses different value for R compared to IAPWS95 formulation
   static constexpr double PSAT_623 = 16.5291642526;  // MPa (page 6, boundary 1-3)
   static constexpr double PSAT_643_15 = 21.0433673189752319;  // MPa
   static constexpr double PMIN = 0.000611212677444;  // MPa

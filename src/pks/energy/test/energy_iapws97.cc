@@ -52,7 +52,7 @@ TEST(ENERGY_PRESSURE_ENTHALPY)
   if (MyPID == 0) std::cout << "Test: transient calculation" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/energy_pressure_enthalpy.xml";
+  std::string xmlFileName = "test/energy_iapws97.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   auto plist = Teuchos::rcp(new Teuchos::ParameterList(xmlreader.getParameters()));
 

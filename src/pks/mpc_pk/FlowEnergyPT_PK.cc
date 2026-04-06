@@ -15,6 +15,7 @@
 
 #include "Flow_PK.hh"
 #include "Energy_PK.hh"
+#include "EnergyPressureTemperature_PK.hh"
 #include "ModelAssumptions.hh"
 #include "OperatorDefs.hh"
 #include "TreeOperator.hh"
@@ -85,10 +86,15 @@ FlowEnergyPT_PK::Setup()
 
   mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid");
   mass_density_liquid_key_ = Keys::getKey(domain_, "mass_density_liquid");
+  viscosity_liquid_key_ = Keys::getKey(domain_, "viscosity_liquid");
 
+  mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
+  
   enth_key_ = Keys::getKey(domain_, "enthalpy");
   hkr_key_  = Keys::getKey(domain_, "enthalpy_times_relative_permeability");
   kr_key_   = Keys::getKey(domain_, "relative_permeability");
+  bcs_flow_key_ = Keys::getKey(domain_, "bcs_flow");
+  bcs_enthalpy_key_ = Keys::getKey(domain_, "bcs_enthalpy");
   
   // Fields for solids
   // -- rock
@@ -223,6 +229,7 @@ void
 FlowEnergyPT_PK::Initialize()
 {
 
+  auto flow_pk = Teuchos::rcp_dynamic_cast<Flow::Flow_PK>(sub_pks_[0]);
   auto pks =
     glist_->sublist("PKs").sublist(name_).get<Teuchos::Array<std::string>>("PKs order").toVector();
   
@@ -261,93 +268,33 @@ FlowEnergyPT_PK::Initialize()
   if (precon_type_ == PRECON_FULL) {
 
 
-    // set up the operator dWC_dT_block_
-    Teuchos::ParameterList divq_plist(glist_->sublist("PKs").
-                                      sublist(pks[0]).
-                                      sublist("operators").
-                                      sublist("diffusion operator").
-                                      sublist("preconditioner"));
+    // cross coupling
+    Operators::PDE_DiffusionFactory opfactory;
+    Teuchos::ParameterList oplist = Teuchos::rcp_dynamic_cast<Energy::Energy_PK>(sub_pks_[1])
+      ->getPList()->sublist("operators").sublist("diffusion operator").sublist("preconditioner");
 
-    divq_plist.set("Newton correction", "approximate Jacobian");     
-    divq_plist.set("exclude primary terms", true);
+    Operators::PDE_AdvectionUpwindFactory opfactory_adv;
+    Teuchos::ParameterList oplist_adv = Teuchos::rcp_dynamic_cast<Energy::Energy_PK>(sub_pks_[1])
+      ->getPList()->sublist("operators").sublist("advection operator");
 
-    Operators::PDE_DiffusionFactory opfactory;   
-    ddivq_dT_ = opfactory.CreateWithGravity(divq_plist, mesh_);
-    dWC_dT_block_ = ddivq_dT_->global_operator();
+    // -- pressure-temperature
+    pde01_adv_ = opfactory_adv.Create(oplist_adv, mesh_);
+    op01_ = pde01_adv_->global_operator();
+    op_tree_pc_->set_operator_block(0, 1, op01_);
+    pde01_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, op01_));
 
-    //ddivq_dT_->SetBCs(sub_pks_[0]->op_bc(), sub_pks_[1]->op_bc());    
-    // if (dWC_dT_block_ == Teuchos::null) {
-    //   dWC_dT_ =
-    //     Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, mesh_));
-    //   dWC_dT_block_ = dWC_dT_->global_operator();
-    // } else {
-    //   dWC_dT_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, dWC_dT_block_));
-    // }
+    // -- temperature-pressure
+    //pde10_diff_cond_ = opfactory.CreateWithGravity(oplist, mesh_);
 
-
-    // set up the operator dE_dp_block
-    Teuchos::ParameterList ddivKgT_dp_plist(glist_->sublist("PKs").
-                                      sublist(pks[1]).
-                                      sublist("operators").
-                                      sublist("diffusion operator").
-                                      sublist("preconditioner"));
-
-    // if (is_fv_) ddivKgT_dp_plist.set("Newton correction", "true Jacobian");
-    // else ddivKgT_dp_plist.set("Newton correction", "approximate Jacobian");
-    ddivKgT_dp_plist.set("Newton correction", "approximate Jacobian");
-    ddivKgT_dp_plist.set("exclude primary terms", true);
+    pde10_diff_flux_ = opfactory.CreateWithGravity(oplist, op10_);
+    pde10_diff_flux_->SetTensorCoefficient(flow_pk->getK());
+    op10_ = pde10_diff_cond_->global_operator();
+    op_tree_pc_->set_operator_block(1, 0, op10_);
 
 
-    ddivKgT_dp_ = opfactory.Create(ddivKgT_dp_plist, mesh_);
-    dE_dp_block_ = ddivKgT_dp_->global_operator();     
-    //ddivKgT_dp_->SetBCs(sub_pks_[1]->op_bc(), sub_pks_[0]->op_bc());
-    // if (dE_dp_block_ == Teuchos::null) {
-    //   dE_dp_ =
-    //     Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, mesh_));
-    //   dE_dp_block_ = dE_dp_->global_operator();
-    // } else {
-    //   dE_dp_ = Teuchos::rcp(
-    //                         new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, dE_dp_block_));
-    // }
-      
-    Teuchos::ParameterList divhq_dp_plist(glist_->sublist("PKs").
-                                          sublist(pks[1]).
-                                          sublist("operators").
-                                          sublist("diffusion operator").
-                                          sublist("preconditioner"));
+    pde10_adv_ = opfactory_adv.Create(oplist_adv, op10_);
+    pde10_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, op10_));
 
-    // if (is_fv_) divhq_dp_plist.set("Newton correction", "true Jacobian");
-    // else divhq_dp_plist.set("Newton correction", "approximate Jacobian");
-    divhq_dp_plist.set("Newton correction", "approximate Jacobian");
-    divhq_dp_plist.set("exclude primary terms", true);
-
-    //Operators::PDE_DiffusionFactory opfactory;
-    if (dE_dp_block_ == Teuchos::null) {
-      ddivhq_dp_ = opfactory.CreateWithGravity(divhq_dp_plist, mesh_);
-      dE_dp_block_ = ddivhq_dp_->global_operator();
-    } else {
-      ddivhq_dp_ = opfactory.CreateWithGravity(divhq_dp_plist, dE_dp_block_);
-    }
-
-    /*--------------------*/
-    // derivative with respect to temperature
-    Teuchos::ParameterList divhq_dT_plist(glist_->sublist("PKs").
-                                          sublist(pks[1]).
-                                          sublist("operators").
-                                          sublist("diffusion operator").
-                                          sublist("preconditioner"));
-
-    
-
-    // if (is_fv_) divhq_dT_plist.set("Newton correction", "true Jacobian");
-    // else divhq_dT_plist.set("Newton correction", "approximate Jacobian");
-    // divhq_dT_plist.set("Newton correction", "true Jacobian");
-    // divhq_dT_plist.set("exclude primary terms", true);
-    
-    // ddivhq_dT_ = opfactory.CreateWithGravity(divhq_dT_plist, pc_block11);
-
-    op_tree_pc_->set_operator_block(0, 1, dWC_dT_block_);      
-    op_tree_pc_->set_operator_block(1, 0, dE_dp_block_);
   }
   else if(precon_type_ == PRECON_FINITEDIFF){
 
@@ -534,6 +481,16 @@ FlowEnergyPT_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
 {
   PK_MPCStrong<PK_BDF>::UpdatePreconditioner(t, up, dt);
 
+  std::string passwd("");
+  Tag tag = Tags::DEFAULT;
+  auto energy_pk = Teuchos::rcp_dynamic_cast<Energy::EnergyPressureTemperature_PK>(sub_pks_[1]);
+
+  auto bc_enth = S_->GetPtrW<Operators::BCs>(bcs_enthalpy_key_, Tags::DEFAULT, "state");
+  auto bc_pres = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state");
+  const auto& rho = S_->Get<CV_t>(mol_density_liquid_key_, Tags::DEFAULT);
+  const auto& mu = S_->Get<CV_t>(viscosity_liquid_key_, Tags::DEFAULT);
+  auto flux = S_->GetPtr<CompositeVector>(mol_flowrate_key_, Tags::DEFAULT);
+  
   //Teuchos::RCP<Epetra_CrsMatrix> dWC_dT_mat = dWC_dT_block_->A();
   
   int ncells = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
@@ -564,23 +521,83 @@ FlowEnergyPT_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
     //    ChangedSolution();
     PreconditionerAdvBlockFD_(1, 1, t, up, dt, pde11_adv_);
     
+  }else if (precon_type_ == PRECON_FULL){
+
+    // ---------------------
+    // pressure-energy block
+    // ---------------------
+    op01_->Init();
+
+    // -- accumulation
+    S_->GetEvaluator(ws_key_).UpdateDerivative(*S_, passwd, temperature_key_, tag);
+    const auto& dwsdt = S_->GetDerivative<CV_t>(ws_key_, tag, temperature_key_, tag);
+    pde01_acc_->AddAccumulationTerm(dwsdt, dt, "cell");
+
+    // -- advection div(q kt dt)
+    auto coef = Teuchos::rcp(new CompositeVector(
+    S_->GetDerivative<CV_t>(mol_density_liquid_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT)));
+    coef->ReciprocalMultiply(1.0, rho, *coef, 0.0);
+
+    S_->GetEvaluator(viscosity_liquid_key_).UpdateDerivative(*S_, passwd, temperature_key_, Tags::DEFAULT);
+    auto coef1 = S_->GetDerivative<CV_t>(viscosity_liquid_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT);
+    coef->ReciprocalMultiply(-1.0, mu, coef1, 1.0);
+
+    pde01_adv_->Setup(*flux);
+    pde01_adv_->UpdateMatrices(flux.ptr(), coef.ptr());
+    //pde01_adv_->SetBCs(bc_temp, bc_pres);
+    pde01_adv_->ApplyBCs(false, true, false);
+
+  // ---------------------
+  // energy-pressure block
+  // ---------------------
+    op10_->Init();
+
+    // // -- diffusion due to heat conduction
+    // S_->GetEvaluator(conductivity_key_).Update(*S_, passwd);
+    // const auto& conductivity = S_->Get<CV_t>(conductivity_key_, tag);
+    // coef = Teuchos::rcp(new CompositeVector(conductivity));
+
+    // -- diffusion due to heat transport (with assumption relperm = 1)
+    S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, passwd);
+    *coef = S_->Get<CV_t>(mol_density_liquid_key_, tag);
+    coef->Multiply(1.0, *up->SubVector(1)->Data(), *coef, 0.0);
+    coef->ReciprocalMultiply(1.0, mu, *coef, 0.0);
+
+    pde10_diff_flux_->SetScalarCoefficient(coef, Teuchos::null);
+    pde10_diff_flux_->UpdateMatrices(Teuchos::null, up->Data().ptr());
+    pde10_diff_flux_->SetBCs(bc_pres, bc_enth);
+    pde10_diff_flux_->ApplyBCs(true, true, false);
+    //RemoveFluxContinuityEquations_(pde10_diff_flux_);
+
+    // -- advection div((q kt h) dp)
+    // S_->GetEvaluator(iso_compressibility_key_).Update(*S_, passwd);
+    // const auto& compressibility = S_->Get<CV_t>(iso_compressibility_key_, Tags::DEFAULT);
+    // coef = Teuchos::rcp(new CompositeVector(compressibility));
+    // coef->Multiply(1.0, *coef, *up->SubVector(1)->Data(), 0.0);
+
+    S_->GetEvaluator(enth_key_).UpdateDerivative(*S_, passwd, pressure_key_, Tags::DEFAULT);
+    //coef1 = S_->GetDerivative<CV_t>(enth_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT);
+    // coef1.Multiply(1.0, *up->SubVector(1)->Data(), coef1, 0.0);
+    // coef->ReciprocalMultiply(-1.0, mu, coef1, 1.0);
+
+    pde10_adv_->Setup(*flux);
+    //pde10_adv_->UpdateMatrices(flux.ptr(), coef1.ptr());
+    pde10_adv_->SetBCs(bc_pres, bc_enth);
+    pde10_adv_->ApplyBCs(false, true, false);
+
+    // -- accumulation
+    //    modified Jacobian is used in region 4
+    S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd, pressure_key_, tag);
+    auto& dEdp = S_->GetDerivative<CV_t>(energy_key_, tag, pressure_key_, tag);
+    pde10_acc_->AddAccumulationTerm(dEdp, dt, "cell");
+   
   }
   
-  // if (include_pt_coupling_) {
-  //   std::string passwd("");
-  //   S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd, pressure_key_, Tags::DEFAULT);
-  //   const auto& dEdP =
-  //     S_->GetDerivative<CV_t>(energy_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT);
-
-  //   S_->GetEvaluator(ws_key_).UpdateDerivative(*S_, passwd, temperature_key_, Tags::DEFAULT);
-  //   const auto& dws_dT =
-  //     S_->GetDerivative<CV_t>(ws_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT);
-
-  //   if (dt > 0.0) {
-  //     op10_acc_->AddAccumulationDelta(*up->SubVector(0)->Data(), dEdP, dEdP, dt, "cell");
-  //     op01_acc_->AddAccumulationDelta(*up->SubVector(1)->Data(), dws_dT, dws_dT, dt, "cell");
-  //   }
-  // }
+  if (!symbolic_assembly_complete_) {
+    op_tree_pc_->SymbolicAssembleMatrix();
+    symbolic_assembly_complete_ = true;
+  }    
+            
 
   op_tree_pc_->AssembleMatrix();
   op_tree_pc_->InitializeInverse();

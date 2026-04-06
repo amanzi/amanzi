@@ -60,10 +60,10 @@
             <Parameter name="reference temperature" type="double" value="275.15"/>
           </ParameterList>
           <ParameterList name="liquid phase">
-            <Parameter name="eos type" type="string" value="liquid water"/>
-            <Parameter name="reference conductivity" type="double" value="2.0"/>
+            <Parameter name="eos type" type="string" value="iapws97"/>
+            <!--Parameter name="reference conductivity" type="double" value="2.0"/>
             <Parameter name="reference temperature" type="double" value="275.15"/>
-            <Parameter name="polynomial expansion" type="Array(double)" value="{0.0, 1.0, 0.0}"/>
+            <Parameter name="polynomial expansion" type="Array(double)" value="{0.0, 1.0, 0.0}"/-->
           </ParameterList>
         </ParameterList>
       </ParameterList>

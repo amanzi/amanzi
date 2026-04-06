@@ -23,6 +23,7 @@
 // Amanzi::Energy
 #include "EnergyPressureTemperature_PK.hh"
 #include "EnthalpyEvaluator.hh"
+#include "IAPWS95_StateEvaluators.hh"
 #include "IEMEvaluator.hh"
 #include "StateArchive.hh"
 #include "TCMEvaluator_OnePhase.hh"
@@ -66,6 +67,8 @@ EnergyPressureTemperature_PK::Setup()
 {
   // basic class setup
   Energy_PK::Setup();
+
+  state_key_ = Keys::getKey(domain_, "thermodynamic_state");
 
   double molar_mass = S_->ICList().sublist("const_fluid_molar_mass").get<double>("value");
 
@@ -118,6 +121,17 @@ EnergyPressureTemperature_PK::Setup()
     S_->RequireDerivative<CV_t, CVS_t>(
         enthalpy_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, enthalpy_key_)
       .SetGhosted();
+  }
+
+  // thermodynamics
+  if (glist_->sublist("state").sublist("evaluators").isSublist(state_key_)) {
+    if (!S_->HasRecord(state_key_)) {
+      S_->Require<CV_t, CVS_t>(state_key_, Tags::DEFAULT, state_key_, Evaluators::TS95_names)
+        .SetMesh(mesh_)
+        ->SetGhosted(true)
+        ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, Evaluators::TS95_t_size);
+      S_->RequireEvaluator(state_key_, Tags::DEFAULT);
+    }
   }
 
   // -- thermal conductivity

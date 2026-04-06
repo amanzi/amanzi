@@ -21,13 +21,17 @@ Process kernel that strongly couples Flow PK with Energy PK.
 
 #include "EvaluatorIndependentFunction.hh"
 #include "EvaluatorSecondaryMonotype.hh"
+#include "IAPWS97_StateEvaluators.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_Advection.hh"
 #include "PDE_Diffusion.hh"
 #include "PK_BDF.hh"
 #include "PK_MPCStrong.hh"
 #include "PK_Factory.hh"
-#include "ThermodynamicStateEvaluators.hh"
+
+#include "Upwind.hh"
+//#include "ThermodynamicStateEvaluators.hh"
+
 
 namespace Amanzi {
 
@@ -77,9 +81,36 @@ class FlowEnergyPH_PK : public PK_MPCStrong<PK_BDF> {
   // -- L-scheme for flow equation
   virtual std::vector<Key> SetupLSchemeKey(Teuchos::ParameterList& plist) override;
 
+protected:
+  enum PreconditionerType {
+    PRECON_NONE = 0,
+    PRECON_BLOCK_DIAGONAL = 1,
+    PRECON_FULL = 2,
+    PRECON_FINITEDIFF = 3
+  };
+  
+  // preconditioner methods
+  PreconditionerType precon_type_;
+  
  private:
+
+  Teuchos::RCP<TreeVector> res_scale_;
+  bool compute_scaling_completed_, left_scaling_, right_scaling_;
+  double left_scaling_eps_;
+  double P0_, H0_;
+
+  
   void RemoveFluxContinuityEquations_(Teuchos::RCP<Operators::PDE_Diffusion>& pde);
 
+  void PreconditionerBlockFD_(int idi, int idj, double t,
+                              Teuchos::RCP<const TreeVector> up, double dt,
+                              Teuchos::RCP<Operators::PDE_Diffusion> pde_block,
+                              Teuchos::RCP<Operators::PDE_Advection> pde_adv);
+
+  void PreconditionerAdvBlockFD_(int idi, int idj, double t,
+                                 Teuchos::RCP<const TreeVector> up, double dt,
+                                 Teuchos::RCP<Operators::PDE_Advection> pde_adv);
+    
  private:
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<const Teuchos::ParameterList> preconditioner_list_;
@@ -88,9 +119,10 @@ class FlowEnergyPH_PK : public PK_MPCStrong<PK_BDF> {
   Key domain_; // computational domain
 
   Teuchos::RCP<Operators::Operator> op10_, op01_;
-  Teuchos::RCP<Operators::PDE_Diffusion> pde10_diff_cond_, pde10_diff_flux_;
+  Teuchos::RCP<Operators::PDE_Diffusion> pde10_diff_cond_, pde10_diff_flux_, pde01_diff_;
   Teuchos::RCP<Operators::PDE_Advection> pde10_adv_, pde01_adv_;
   Teuchos::RCP<Operators::PDE_Accumulation> pde10_acc_, pde01_acc_;
+  Teuchos::RCP<Operators::Upwind> upwind_;
   bool symbolic_assembly_complete_ = false;
 
   // keys

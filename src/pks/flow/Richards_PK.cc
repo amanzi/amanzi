@@ -78,6 +78,9 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& pk_tree,
   pressure_key_ = Keys::getKey(domain_, "pressure");
   mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
 
+
+  algebraic_water_storage_balance_ = false;
+  
   AddDefaultPrimaryEvaluator(S_, pressure_key_);
   AddDefaultPrimaryEvaluator(S_, mol_flowrate_key_);
 

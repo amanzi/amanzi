@@ -99,6 +99,8 @@
             <ParameterList name="IEM parameters">
               <Parameter name="iem type" type="string" value="linear"/>
               <Parameter name="heat capacity" type="double" value="7.60000000000000000e+01"/>
+              <!-- <Parameter name="iem type" type="string" value="iapws97"/> -->
+              <!-- <Parameter name="heat capacity" type="double" value="4184.0"/> -->
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -143,9 +145,15 @@
         <Parameter name="evaluator type" type="string" value="eos"/>
         <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
         <ParameterList name="EOS parameters">
+
           <Parameter name="eos type" type="string" value="liquid water CoolProp"/>
           <Parameter name="molar mass" type="double" value="1.79999999999999986e-02"/>
           <Parameter name="density" type="double" value="9.98200000000000045e+02"/>
+
+          <!-- <Parameter name="eos type" type="string" value="liquid water iapws97"/> -->
+          <!-- <Parameter name="molar mass" type="double" value="1.8e-02"/> -->
+          <!-- <Parameter name="density" type="double" value="998.2"/> -->
+
         </ParameterList>
         <Parameter name="eos basis" type="string" value="both"/>
         <Parameter name="mass density key" type="string" value="mass_density_liquid"/>
@@ -154,9 +162,15 @@
         <Parameter name="evaluator type" type="string" value="viscosity"/>
         <Parameter name="viscosity key" type="string" value="viscosity_liquid"/>
         <ParameterList name="EOS parameters">
+
           <Parameter name="eos type" type="string" value="liquid water CoolProp"/>
           <Parameter name="molar mass" type="double" value="1.79999999999999986e-02"/>
           <Parameter name="density" type="double" value="9.98200000000000045e+02"/>
+
+          <!-- <Parameter name="eos type" type="string" value="liquid water iapws97"/> -->
+          <!-- <Parameter name="molar mass" type="double" value="1.8e-02"/> -->
+          <!-- <Parameter name="density" type="double" value="998.2"/> -->
+
         </ParameterList>
       </ParameterList>            
     </ParameterList>
@@ -462,6 +476,11 @@
             <Parameter name="reference temperature" type="double" value="2.73149999999999977e+02"/>
             <Parameter name="Sutherland constant" type="double" value="0.00000000000000000e+00"/>
           </ParameterList>          
+
+          <!-- <ParameterList name="liquid phase"> -->
+          <!--   <Parameter name="eos type" type="string" value="iapws97"/> -->
+          <!-- </ParameterList> -->
+
         </ParameterList>
       </ParameterList>
       <ParameterList name="time integrator">

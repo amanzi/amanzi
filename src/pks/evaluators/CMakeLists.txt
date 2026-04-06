@@ -27,10 +27,11 @@ include_directories(${STATE_SOURCE_DIR})
 set(evaluators_src_files 
     ApertureModelPartition.cc
     ApertureModelEvaluator.cc
+    IAPWS95_StateEvaluators.cc
+    IAPWS97_StateEvaluators.cc
     LinearRelaxationEvaluator.cc
     PorosityModelPartition.cc
     PorosityEvaluator.cc
-    ThermodynamicStateEvaluators.cc
     VolumetricStrainEvaluator.cc)
 
 set(evaluators_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${SEACAS_LIBRARIES})
@@ -46,10 +47,11 @@ set(evaluators_inc_files
     ApertureModel_ExponentialLaw.hh
     ApertureModelPartition.hh
     ApertureModelEvaluator.hh
+    IAPWS95_StateEvaluators.hh
+    IAPWS97_StateEvaluators.hh
     LinearRelaxationEvaluator.hh
     Porosity.hh
     PorosityModelPartition.hh
-    ThermodynamicStateEvaluators.hh
     VolumetricStrainEvaluator.hh)
 
 add_install_include_file(${evaluators_inc_files})

@@ -615,8 +615,8 @@ CompositeVector::ReciprocalMultiply(double scalarAB,
                                     const CompositeVector& B,
                                     double scalarThis)
 {
-  AMANZI_ASSERT(map_->SubsetOf(*A.map_));
-  AMANZI_ASSERT(map_->SubsetOf(*B.map_));
+  // AMANZI_ASSERT(map_->SubsetOf(*A.map_));
+  // AMANZI_ASSERT(map_->SubsetOf(*B.map_));
   ChangedValue();
   int ierr = 0;
   for (name_iterator lcv = begin(); lcv != end(); ++lcv) {

@@ -293,7 +293,9 @@ TEST(FactoryEOS)
   using namespace Amanzi::AmanziEOS;
 
 
-  std::vector<std::string> names = { "liquid water 0-30C", "liquid water FEHM", "lookup table", "liquid water CoolProp", "liquid water IAPWS97" };
+  std::vector<std::string> names = { "liquid water 0-30C", "liquid water FEHM",
+                                     "lookup table", "liquid water iapws97",
+                                     "liquid water iapws95", "liquid water CoolProp" };
 
 
   for (auto& name : names) {
