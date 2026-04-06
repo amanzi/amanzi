@@ -51,7 +51,7 @@ TEST(EVALUATOR_DERIVATIVE_TABLES_PH)
   if (MyPID == 0) std::cout << "Test: derivative tables" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/energy_pressure_enthalpy.xml";
+  std::string xmlFileName = "test/energy_iapws97.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   auto plist = Teuchos::rcp(new Teuchos::ParameterList(xmlreader.getParameters()));
 
@@ -184,7 +184,7 @@ TEST(EVALUATOR_DERIVATIVE_TABLES_PH)
   c = 0;
   for (int i = -n; i < n; ++i) {
     for (int j = -n; j < n; ++j) {
-      std::cout << p_c[0][c] * 1e-6 << " " << h_c[0][c] / CommonDefs::ENTHALPY_FACTOR << " " << field_c[0][c] << std::endl;
+      // std::cout << p_c[0][c] * 1e-6 << " " << h_c[0][c] / CommonDefs::ENTHALPY_FACTOR << " " << field_c[0][c] << std::endl;
       // std::cout << p_c[0][c] * 1e-6 << " " << h_c[0][c] / ENTHALPY_FACTOR << " " << der_c[0][c] << std::endl;
       c++;
     }

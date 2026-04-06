@@ -316,6 +316,26 @@ PreconditionerHypre::InitMGR_()
     HYPRE_MGRSetMaxGlobalSmoothIters(method_, plist_.get<int>("mgr number global sweeps", 0));
   }
 
+
+/*
+  // keep 
+  HYPRE_MGRSetTruncateCoarseGridThreshold(method_, 0.0);
+
+  // strengthen F-relaxation
+  HYPRE_Int frelax_type[1] = {2};   // AMG on F-points, or try 1 / stronger relax type
+  HYPRE_MGRSetLevelFRelaxType(method_, frelax_type);
+
+  HYPRE_Int nsweeps[1] = {2};
+  HYPRE_MGRSetLevelNumRelaxSweeps(method_, nsweeps);
+
+  // strengthen transfer operators
+  HYPRE_Int rtype[1] = {2};  // start with diagonal scaling or stronger than injection
+  HYPRE_Int ptype[1] = {3};  // try classical modified instead of default diagonal scaling
+  HYPRE_MGRSetLevelRestrictType(method_, rtype);
+  HYPRE_MGRSetLevelInterpType(method_, ptype);
+*/
+
+
   // Prescribe a subset of nodes to be kept as coarse nodes until the coarsest level.
   // These nodes are transferred onto the coarsest grid of the BoomerAMG coarse grid solver.
   // HYPRE_MGRSetReservedCoarseNodes(method_, reserved_coarse_size, *reserved_coarse_nodes);

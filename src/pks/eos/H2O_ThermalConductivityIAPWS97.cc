@@ -34,13 +34,21 @@ H2O_ThermalConductivityIAPWS97::H2O_ThermalConductivityIAPWS97(Teuchos::Paramete
 
 
 /* *******************************************************************
-* 
+* Safe-guarded state evaluation for parallel execution.  
 ******************************************************************* */
 double
 H2O_ThermalConductivityIAPWS97::ThermalConductivity(double p, double T, double phi)
 {
-  double pMPa = p * 1e-6;
-  return eos_->ThermodynamicsPT(pMPa, T).k;
+  double k, pMPa(p * 1e-6);
+  try {
+    k = eos_->ThermodynamicsPT(pMPa, T).k;
+  } catch (...) {
+    ierr_ = 1;
+    std::stringstream ss;
+    ss << "invalid T=" << T << " conductivity=" << k;
+    error_msg_ = ss.str();
+  }
+  return k;
 }
 
 

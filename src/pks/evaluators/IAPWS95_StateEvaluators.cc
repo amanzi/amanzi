@@ -28,6 +28,7 @@
 // Amanzi
 #include "CommonDefs.hh"
 #include "CompositeVector.hh"
+#include "errors.hh"
 #include "EvaluatorSecondaryMonotype.hh"
 #include "IAPWS95.hh"
 #include "MeshFactory.hh"
@@ -99,7 +100,7 @@ IAPWS95_StateEvaluator::Evaluate_(const State& S, const std::vector<CompositeVec
     try {
       std::tie(prop, liquid, vapor) = eos_->ThermodynamicsPT(pMPa, T);
     } catch (...) {
-      AMANZI_ASSERT(0);
+      Exceptions::amanzi_throw(Errors::CutTimestep());
     }
 
     result_v[(int)TS95_t::RHO][c] = prop.rho;
@@ -129,8 +130,8 @@ IAPWS95_StateEvaluator::Evaluate_(const State& S, const std::vector<CompositeVec
     result_v[(int)TS95_t::dRHOdP][c] = 1.0 / (v * v * p * bp);
     result_v[(int)TS95_t::dRHOdT][c] = -ap / (v * v * bp);
 
-    result_v[(int)TS95_t::dUdP][c] = (1.0 - T * ap) / bp;
-    result_v[(int)TS95_t::dUdT][c] = cv + p * ap * (T * ap - 1.0) / bp;
+    result_v[(int)TS95_t::dUdP][c] = (1.0 - T * ap) / bp * CommonDefs::MOLAR_MASS_H2O;
+    result_v[(int)TS95_t::dUdT][c] = (cv + p * ap * (T * ap - 1.0) / bp) * CommonDefs::MOLAR_MASS_H2O;
   }
 }
 

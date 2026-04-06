@@ -28,6 +28,7 @@
 // Amanzi
 #include "CommonDefs.hh"
 #include "CompositeVector.hh"
+#include "errors.hh"
 #include "EvaluatorSecondaryMonotype.hh"
 #include "IAPWS97.hh"
 #include "MeshFactory.hh"
@@ -98,7 +99,7 @@ IAPWS97_StateEvaluator::Evaluate_(const State& S, const std::vector<CompositeVec
     try {
       std::tie(prop, liquid, vapor) = eos_->ThermodynamicsPH(pMPa, hkJ);
     } catch (...) {
-      AMANZI_ASSERT(0);
+      Exceptions::amanzi_throw(Errors::CutTimestep());
     }
 
     result_v[(int)TS97_t::RGN][c] = prop.rgn;
@@ -591,7 +592,7 @@ IAPWS97_InternalEnergyEvaluator::EvaluatePartialDerivative_(
     for (int c = 0; c != ncells; ++c) {
       rho = ts_c[(int)TS97_t::RHO][c];
       drhodp = ts_c[(int)TS97_t::dRHOdP][c];
-      result_v[0][c] = -1.0 / rho + drhodp / rho / rho;
+      result_v[0][c] = (-1.0 / rho + drhodp / rho / rho) * CommonDefs::MOLAR_MASS_H2O;
     }
   } else if (wrt_key == enthalpy_key_) {
     for (int c = 0; c != ncells; ++c) {

@@ -440,7 +440,7 @@ FlowEnergyPH_PK::ModifyCorrection(double dt,
                                   Teuchos::RCP<const TreeVector> u,
                                   Teuchos::RCP<TreeVector> du)
 {
-  return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
+  // return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
   const auto& state_c = *S_->Get<CV_t>(state_key_).ViewComponent("cell");
   const auto& p_c = *u->SubVector(0)->Data()->ViewComponent("cell");
   const auto& h_c = *u->SubVector(1)->Data()->ViewComponent("cell");
@@ -453,12 +453,16 @@ FlowEnergyPH_PK::ModifyCorrection(double dt,
                                            AmanziMesh::Parallel_kind::OWNED);
 
   // increment clipping
-  double max_change(0.05);
+  // -- if enthalpy is out of scope, we need to terminate  
+  double max_change(0.20);
   for (int c = 0; c < ncells_owned; ++c) {
-    double tmp = std::fabs(h_c[0][c]) * max_change;
+    double tmp = std::min(std::fabs(h_c[0][c]) * max_change, 20.0);
     dh_c[0][c] = std::clamp(dh_c[0][c], -tmp, tmp);
     if (std::fabs(std::fabs(dh_c[0][c]) - tmp) < 1e-8 * tmp) nclipped++;
   }
+
+  return (nclipped) > 0 ? AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED :
+                          AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
 
   // phase-change checks
   double p1, h1, hf, hg, dhf, dhg, hkJ, pMPa, eps1(1e-10), eps2(1e-4);
