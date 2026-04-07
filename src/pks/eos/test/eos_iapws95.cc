@@ -8,7 +8,7 @@
 */
 
 #include "UnitTest++.h"
-
+#include <array>
 #include "IAPWS95.hh"
 
 TEST(EOS_IAPWS95)
