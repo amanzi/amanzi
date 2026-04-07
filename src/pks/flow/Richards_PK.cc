@@ -78,6 +78,8 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& pk_tree,
   pressure_key_ = Keys::getKey(domain_, "pressure");
   mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
 
+  algebraic_water_storage_balance_ = false;
+  
   AddDefaultPrimaryEvaluator(S_, pressure_key_);
   AddDefaultPrimaryEvaluator(S_, mol_flowrate_key_);
 
@@ -452,6 +454,18 @@ Richards_PK::Setup()
   S_->GetRecordSetW(water_storage_key_).set_units("mol/m^3");
   S_->GetRecordSetW(hydraulic_head_key_).set_units("m");
   if (assumptions_.use_ppm) S_->GetRecordSetW(ppfactor_key_).set_units("-");
+
+  // Development: miscalleneous
+  algebraic_water_storage_balance_ = fp_list_->get<bool>("algebraic water storage balance", false);
+  if (algebraic_water_storage_balance_) {
+    CompositeVectorSpace cvs1;
+    cvs1.SetMesh(mesh_)
+      ->SetGhosted(false)
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("dpre", AmanziMesh::Entity_kind::CELL, 1);
+    cnls_limiter_ = Teuchos::rcp(new CompositeVector(cvs1));
+  }
+  
 }
 
 
@@ -785,16 +799,6 @@ Richards_PK::Initialize()
     }
   }
 
-  // Development: miscalleneous
-  algebraic_water_storage_balance_ = fp_list_->get<bool>("algebraic water storage balance", false);
-  if (algebraic_water_storage_balance_) {
-    CompositeVectorSpace cvs1;
-    cvs1.SetMesh(mesh_)
-      ->SetGhosted(false)
-      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
-      ->AddComponent("dpre", AmanziMesh::Entity_kind::CELL, 1);
-    cnls_limiter_ = Teuchos::rcp(new CompositeVector(cvs1));
-  }
 
   // initialize fields from previous time step
   InitializeCVFieldFromCVField(
