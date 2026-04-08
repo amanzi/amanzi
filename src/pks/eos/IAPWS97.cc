@@ -145,7 +145,7 @@ IAPWS97::ThermodynamicsPH(double p, double h)
   int rgn = RegionIdPH(p, h);
   prop.rgn = rgn;
 
-  double tol(1e-8), T, T0, Tmin, Tmax;
+  double tol(1e-8), tol2(1e-11), T, T0, Tmin, Tmax;
   itrs_ = 0;
 
   switch (rgn) {
@@ -180,7 +180,7 @@ IAPWS97::ThermodynamicsPH(double p, double h)
       FhT::Vector x0(2);
       x0[0] = 1.0 / v0;
       x0[1] = T0;
-      FhT::Vector sol = PowellHybrid(x0, f, &itrs_);
+      FhT::Vector sol = PowellHybrid(x0, f, &itrs_, tol2);
       if (itrs_ < 0) Exceptions::amanzi_throw("Powell solver did not converge.");
       prop = Region3(sol[0], sol[1]);
       break;

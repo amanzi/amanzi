@@ -66,7 +66,7 @@ Vector PowellHybrid(Vector& x, Function& fun, int* itrs, double tol)
     r = fun(x);
     double rnorm = norm(r);
 
-    if (rnorm < tol) {
+    if (rnorm < tol * norm(x)) {
       *itrs = k;
       return x;
     }

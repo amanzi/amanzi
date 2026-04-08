@@ -18,6 +18,7 @@
 #include "Flow_PK.hh"
 #include "Energy_PK.hh"
 #include "EnergyPressureEnthalpy_PK.hh"
+#include "InverseFactory.hh"
 #include "ModelAssumptions.hh"
 #include "OperatorDefs.hh"
 #include "PDE_AdvectionUpwindFactory.hh"
@@ -239,8 +240,13 @@ FlowEnergyPH_PK::Initialize()
   pde10_adv_ = opfactory_adv.Create(oplist_adv, op10_);
   pde10_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, op10_));
 
-  std::string pc_name = my_list_->sublist("time integrator").get<std::string>("preconditioner");
-  op_tree_pc_->set_inverse_parameters(pc_name, *preconditioner_list_);
+  auto solver_list = Teuchos::sublist(glist_, "solvers");
+  auto ti_list = Teuchos::sublist(my_list_, "time integrator", true);
+  std::string solver_name = ti_list->get<std::string>("linear solver", "none");
+  std::string pc_name = ti_list->get<std::string>("preconditioner", "");
+  auto inv_list = AmanziSolvers::mergePreconditionerSolverLists(
+    pc_name, *preconditioner_list_, solver_name, *solver_list, true);
+  op_tree_pc_->set_inverse_parameters(inv_list);
 
   // output of initialization statistics
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
