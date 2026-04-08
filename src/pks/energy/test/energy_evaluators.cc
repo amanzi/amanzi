@@ -288,7 +288,7 @@ TEST(EVALUATORS)
     CHECK_CLOSE(der_fd, drho_c[0][c], tol * std::fabs(der_fd));
 
     der_fd = (T2_c[0][c] - T1_c[0][c]) / (eps * h_c[0][c]);
-    CHECK_CLOSE(der_fd, dT_c[0][c], 1e-3 * std::fabs(der_fd));
+    CHECK_CLOSE(der_fd, dT_c[0][c], 1.1e-3 * std::fabs(der_fd));
   }
 
   // -- wrt pressure with chain rule

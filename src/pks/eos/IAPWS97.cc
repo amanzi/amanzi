@@ -145,7 +145,7 @@ IAPWS97::ThermodynamicsPH(double p, double h)
   int rgn = RegionIdPH(p, h);
   prop.rgn = rgn;
 
-  double tol(1e-8), tol2(1e-11), T, T0, Tmin, Tmax;
+  double tol(1e-8), tol2(1e-12), T, T0, Tmin, Tmax;
   itrs_ = 0;
 
   switch (rgn) {
