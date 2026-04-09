@@ -556,10 +556,10 @@ set(ECOSIM_URL_STRING     "https://github.com/jinyun1tang/EcoSIM/tree/agraus/Pre
 set(ECOSIM_ARCHIVE_FILE   ECOSIM-agraus-prephen.tar.gz)
 set(ECOSIM_SAVEAS_FILE    ECOSIM-agraus-prephen.tar.gz)
 set(ECOSIM_MD5_SUM        f10065689b6ebe7a67b95611bbb04c08)
-# set(ECOSIM_GIT_REPOSITORY "https://github.com/jinyun1tang/EcoSIM")
-# set(ECOSIM_GIT_TAG        "agraus/PrescribedPhenology")
-set(ECOSIM_GIT_REPOSITORY "https://github.com/amanzi/EcoSIM")
-set(ECOSIM_GIT_TAG        "david/cmake-updates")
+set(ECOSIM_GIT_REPOSITORY "https://github.com/jinyun1tang/EcoSIM")
+set(ECOSIM_GIT_TAG        "agraus/PrescribedPhenology")
+#set(ECOSIM_GIT_REPOSITORY "https://github.com/amanzi/EcoSIM")
+#set(ECOSIM_GIT_TAG        "david/cmake-updates")
 
 
 #
