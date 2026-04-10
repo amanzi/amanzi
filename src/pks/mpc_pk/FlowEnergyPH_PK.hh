@@ -91,7 +91,9 @@ class FlowEnergyPH_PK : public PK_MPCStrong<PK_BDF> {
   Teuchos::RCP<Operators::PDE_Diffusion> pde10_diff_cond_, pde10_diff_flux_;
   Teuchos::RCP<Operators::PDE_Advection> pde10_adv_, pde01_adv_;
   Teuchos::RCP<Operators::PDE_Accumulation> pde10_acc_, pde01_acc_;
-  bool symbolic_assembly_complete_ = false;
+
+  Teuchos::RCP<Operators::TreeOperator> op_tree_amg_, op_tree_ilu_;
+  bool use_cptr_prec_ = false;
 
   // keys
   Key pressure_key_, enthalpy_key_, temperature_key_;

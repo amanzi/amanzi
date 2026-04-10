@@ -57,6 +57,8 @@ void RunJacobian(double pMPa, double T, double hkJ, double tol10 = 1e-3)
   tmp4.sublist("function").sublist("domain").sublist("function").sublist("function-exprtk")
     .set<std::string>("formula", std::to_string(hkJ * 18.015) + " - 0.05 * x * (100 - x)");
 
+  plist->sublist("PKs").sublist("transient:mpc1").sublist("time integrator").set<bool>("use CPTR preconditioner", false);
+
   auto comm = Amanzi::getDefaultComm();
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(2, region_list, *comm));

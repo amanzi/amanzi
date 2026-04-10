@@ -214,7 +214,7 @@
         <Parameter name="start period time" type="double" value="0.0"/>
         <Parameter name="end period time" type="double" value="40000000.0"/>
         <Parameter name="maximum cycle number" type="int" value="30"/>
-        <Parameter name="initial timestep" type="double" value="100.0"/>
+        <Parameter name="initial timestep" type="double" value="10.0"/>
         <Parameter name="maximum timestep" type="double" value="1.0e+5"/>
       </ParameterList>
     </ParameterList>
@@ -281,7 +281,7 @@
       </ParameterList>
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
-        <Parameter name="linear solver" type="string" value="AztecOO"/>
+        <Parameter name="linear solver" type="string" value="none"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
         <ParameterList name="dae constraint">
           <Parameter name="method" type="string" value="projection"/>
@@ -393,7 +393,7 @@
       </ParameterList>
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{energy}"/>
-        <Parameter name="linear solver" type="string" value="AztecOO"/>
+        <Parameter name="linear solver" type="string" value="none"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
         <ParameterList name="dae constraint">
           <Parameter name="method" type="string" value="projection"/>
@@ -470,8 +470,9 @@
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{residual}"/>
-        <Parameter name="linear solver" type="string" value="AztecOO"/>
+        <Parameter name="linear solver" type="string" value="none"/>
         <Parameter name="preconditioner" type="string" value="Hypre MGR"/>
+        <Parameter name="use CPTR preconditioner" type="bool" value="true"/>
         <ParameterList name="dae constraint">
           <Parameter name="method" type="string" value="projection"/>
           <Parameter name="inflow krel correction" type="bool" value="true"/>
@@ -500,7 +501,7 @@
             <Parameter name="modify correction" type="bool" value="true"/>
           </ParameterList>
           <Parameter name="extrapolation damping factor" type="double" value="0.8"/>
-          <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
+          <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
           <Parameter name="extrapolate initial guess" type="bool" value="false"/>
           <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
           <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
@@ -549,7 +550,7 @@
     <ParameterList name="ILU">
       <Parameter name="preconditioning method" type="string" value="ILU"/>
       <ParameterList name="ILU parameters">
-        <Parameter name="ilu(k) fill level" type="int" value="20"/>
+        <Parameter name="ilu(k) fill level" type="int" value="0"/>
         <Parameter name="rescale rows" type="bool" value="true"/>
         <Parameter name="verbosity" type="int" value="0"/>
       </ParameterList>

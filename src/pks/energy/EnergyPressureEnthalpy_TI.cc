@@ -157,11 +157,20 @@ EnergyPressureEnthalpy_PK::UpdatePreconditioner(double t,
   auto dEdh = S_->GetDerivative<CV_t>(energy_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT);
   auto& dEdh_c = *dEdh.ViewComponent("cell");
 
+  S_->GetEvaluator(ie_rock_key_).UpdateDerivative(*S_, passwd_, enthalpy_key_, Tags::DEFAULT);
+  const auto& dUdh_c = *S_->GetDerivative<CV_t>(ie_rock_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT).ViewComponent("cell");
+
   S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, passwd_);
-  const auto& density = *S_->Get<CV_t>(mol_density_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
+  const auto& eta_c = *S_->Get<CV_t>(mol_density_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
+  const auto& rho_r = *S_->Get<CV_t>(particle_density_key_, Tags::DEFAULT).ViewComponent("cell");
+  const auto& phi_c = *S_->Get<CV_t>(porosity_key_, Tags::DEFAULT).ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; ++c) {
-    if (dEdh_c[0][c] < 0.0) dEdh_c[0][c] = density[0][c];
+    if (dEdh_c[0][c] < 0.0) {
+      double tmp = phi_c[0][c];
+      if (tmp == 1.0) dEdh_c[0][c] = eta_c[0][c];
+      else dEdh_c[0][c] = rho_r[0][c] * dUdh_c[0][c] * (1.0 - tmp); // + eta_c[0][c] * tmp;
+    }
   }
   op_acc_->AddAccumulationTerm(dEdh, dt, "cell");
 
