@@ -28,10 +28,10 @@
 #include "EvaluatorSecondaryMonotype.hh"
 #include "IAPWS97.hh"
 #include "IAPWS97_StateEvaluators.hh"
+#include "IEMEvaluator.hh"
 #include "MeshFactory.hh"
 #include "PK_Physical.hh"
 #include "State.hh"
-#include "TotalEnergyEvaluatorPH.hh"
 #include "VerboseObject.hh"
 
 TEST(EVALUATORS)
@@ -48,11 +48,13 @@ TEST(EVALUATORS)
 
   std::string domain("domain");
 
-  Preference pref;
-  pref.clear();
-  pref.push_back(Framework::MSTK);
+  Teuchos::ParameterList region_list;
+  region_list.sublist("All").set<std::string>("region type", "all");
+  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
+  MeshFactory meshfactory(comm, gm);
 
-  MeshFactory meshfactory(comm);
+  Preference pref;
+  pref.push_back(Framework::MSTK);
   meshfactory.set_preference(pref);
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 17, 17);
 
@@ -68,6 +70,7 @@ TEST(EVALUATORS)
   Key molar_density_key = Keys::getKey(domain, "molar_density_liquid");
   Key temperature_key = Keys::getKey(domain, "temperature");
   Key conductivity_key = Keys::getKey(domain, "thermal_conductivity");
+  Key ie_rock_key = Keys::getKey(domain, "internal_energy_rock");
 
   // thermodynamics
   S->Require<CV_t, CVS_t>(state_key, Tags::DEFAULT, state_key)
@@ -129,19 +132,19 @@ TEST(EVALUATORS)
     ->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
-  S->RequireDerivative<CV_t, CVS_t>(
-    temperature_key, Tags::DEFAULT, pressure_key, Tags::DEFAULT, temperature_key)
-    .SetGhosted();
-  S->RequireDerivative<CV_t, CVS_t>(
-    temperature_key, Tags::DEFAULT, enthalpy_key, Tags::DEFAULT, temperature_key)
-    .SetGhosted();
-
   Teuchos::ParameterList elist3(temperature_key);
   elist3.set<std::string>("tag", "");
   elist3.sublist("verbose object").set<std::string>("verbosity level", "extreme");
 
   auto eval3 = Teuchos::rcp(new IAPWS97_TemperatureEvaluator(elist3));
   S->SetEvaluator(temperature_key, Tags::DEFAULT, eval3);
+
+  S->RequireDerivative<CV_t, CVS_t>(
+    temperature_key, Tags::DEFAULT, pressure_key, Tags::DEFAULT, temperature_key)
+    .SetGhosted();
+  S->RequireDerivative<CV_t, CVS_t>(
+    temperature_key, Tags::DEFAULT, enthalpy_key, Tags::DEFAULT, temperature_key)
+    .SetGhosted();
 
   // thermal conductivity
   S->Require<CV_t, CVS_t>(conductivity_key, Tags::DEFAULT, conductivity_key)
@@ -162,6 +165,28 @@ TEST(EVALUATORS)
 
   auto eval4 = Teuchos::rcp(new IAPWS97_ThermalConductivityEvaluator(elist4));
   S->SetEvaluator(conductivity_key, Tags::DEFAULT, eval4);
+
+  // internal energy rock
+  S->Require<CV_t, CVS_t>(ie_rock_key, Tags::DEFAULT, ie_rock_key)
+    .SetMesh(mesh)
+    ->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+
+  Teuchos::ParameterList elist5(ie_rock_key);
+  elist5.set<std::string>("tag", "")
+        .set<std::string>("evaluator type", "iem")
+        .set<std::string>("internal energy key", ie_rock_key)
+        .sublist("IEM parameters").sublist("All")
+        .set<Teuchos::Array<std::string>>("regions", {"All"})
+        .sublist("IEM parameters")
+        .set<std::string>("iem type", "linear")
+        .set<double>("heat capacity", 1180.0);
+  auto eval5 = Teuchos::rcp(new IEMEvaluator(elist5));
+  S->SetEvaluator(ie_rock_key, Tags::DEFAULT, eval5);
+
+  S->RequireDerivative<CV_t, CVS_t>(
+    ie_rock_key, Tags::DEFAULT, enthalpy_key, Tags::DEFAULT, ie_rock_key)
+    .SetGhosted();
 
   S->Setup();
 
@@ -208,20 +233,20 @@ TEST(EVALUATORS)
   eval_h->SetChanged();
   S->GetEvaluator(molar_density_key).UpdateDerivative(*S, "test", enthalpy_key, Tags::DEFAULT);
 
-  std::cout << "\n========== Test 3c (variable + derivative update) ==========\n ";
+  std::cout << "\n========== Test 3c (variable + derivative update) ==========\n";
   S->GetEvaluator(temperature_key).UpdateDerivative(*S, "test", pressure_key, Tags::DEFAULT);
 
-  std::cout << "\n========== Test 3d (derivative update) ==========\n ";
+  std::cout << "\n========== Test 3d (derivative update) ==========\n";
   S->GetEvaluator(temperature_key).UpdateDerivative(*S, "test", enthalpy_key, Tags::DEFAULT);
 
   // test 4
-  std::cout << "\n========== Test 4 (state + variable + derivative update) ==========\n ";
+  std::cout << "\n========== Test 4 (state + variable + derivative update) ==========\n";
   eval_h->SetChanged();
   S->GetEvaluator(conductivity_key).UpdateDerivative(*S, "test", pressure_key, Tags::DEFAULT);
 
   // test for derivatives
   // -- wrt pressure
-  std::cout << "\n========== Test 5 (Dfield/Dpressure) ==========\n ";
+  std::cout << "\n========== Test 5a (Drho/Dpressure) ==========\n";
   eval_p->SetChanged();
   S->GetEvaluator(mass_density_key).Update(*S, "test");
   auto rho1_c = *S->Get<CV_t>(mass_density_key, tag).ViewComponent("cell");
@@ -229,6 +254,7 @@ TEST(EVALUATORS)
   S->GetEvaluator(mass_density_key).UpdateDerivative(*S, "test", pressure_key, tag);
   auto drho_c = *S->GetDerivative<CV_t>(mass_density_key, tag, pressure_key, tag).ViewComponent("cell");
 
+  std::cout << "\n========== Test 5b (DT/Dpressure) ==========\n";
   S->GetEvaluator(temperature_key).Update(*S, "test");
   auto T1_c = *S->Get<CompositeVector>(temperature_key, tag).ViewComponent("cell");
 
@@ -259,7 +285,7 @@ TEST(EVALUATORS)
   }
 
   // -- wrt enthalpy
-  std::cout << "\n========== Test 6 (Dfield/Denthalpy) ==========\n ";
+  std::cout << "\n========== Test 6a (Drho/Denthalpy) ==========\n";
   eval_p->SetChanged();
   eval_h->SetChanged();
   S->GetEvaluator(mass_density_key).Update(*S, "test");
@@ -268,11 +294,19 @@ TEST(EVALUATORS)
   S->GetEvaluator(mass_density_key).UpdateDerivative(*S, "test", enthalpy_key, tag);
   drho_c = *S->GetDerivative<CV_t>(mass_density_key, tag, enthalpy_key, tag).ViewComponent("cell");
 
+  std::cout << "\n========== Test 6b (DT/Denthalpy) ==========\n";
   S->GetEvaluator(temperature_key).Update(*S, "test");
   T1_c = *S->Get<CV_t>(temperature_key, tag).ViewComponent("cell");
 
   S->GetEvaluator(temperature_key).UpdateDerivative(*S, "test", enthalpy_key, Tags::DEFAULT);
   dT_c = *S->GetDerivative<CV_t>(temperature_key, tag, enthalpy_key, tag).ViewComponent("cell");
+
+  std::cout << "\n========== Test 6c (DUr/Denthalpy) ==========\n";
+  S->GetEvaluator(ie_rock_key).Update(*S, "test");
+  auto U1_c = *S->Get<CV_t>(ie_rock_key, tag).ViewComponent("cell");
+
+  S->GetEvaluator(ie_rock_key).UpdateDerivative(*S, "test", enthalpy_key, Tags::DEFAULT);
+  auto dU_c = *S->GetDerivative<CV_t>(ie_rock_key, tag, enthalpy_key, tag).ViewComponent("cell");
 
   for (int c = 0; c < ncells; ++c) h_c[0][c] *= (1.0 + eps);
 
@@ -283,12 +317,18 @@ TEST(EVALUATORS)
   S->GetEvaluator(temperature_key).Update(*S, "test");
   T2_c = *S->Get<CV_t>(temperature_key, tag).ViewComponent("cell");
 
+  S->GetEvaluator(ie_rock_key).Update(*S, "test");
+  auto U2_c = *S->Get<CV_t>(ie_rock_key, tag).ViewComponent("cell");
+
   for (int c = 0; c < ncells; ++c) {
     der_fd = (rho2_c[0][c] - rho1_c[0][c]) / (eps * h_c[0][c]);
     CHECK_CLOSE(der_fd, drho_c[0][c], tol * std::fabs(der_fd));
 
     der_fd = (T2_c[0][c] - T1_c[0][c]) / (eps * h_c[0][c]);
     CHECK_CLOSE(der_fd, dT_c[0][c], 2.0e-3 * std::fabs(der_fd));
+
+    der_fd = (U2_c[0][c] - U1_c[0][c]) / (eps * h_c[0][c]);
+    CHECK_CLOSE(der_fd, dU_c[0][c], 2.0e-3 * std::fabs(der_fd));
   }
 
   // -- wrt pressure with chain rule
