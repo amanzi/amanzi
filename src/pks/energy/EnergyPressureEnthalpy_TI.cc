@@ -45,8 +45,7 @@ EnergyPressureEnthalpy_PK::FunctionalResidual(double t_old,
 
   // we use the chain rule for gradient of T to avoid unphysical impact
   // of gradient of h to the gradient of T in region 4.
-  // add residual for enthalpy diffusion operator 
-
+  // add residual for enthalpy diffusion operator div(k dT/dh grad(h))
   S_->GetEvaluator(conductivity_key_).Update(*S_, passwd_);
   const auto& conductivity = S_->Get<CV_t>(conductivity_key_, Tags::DEFAULT);
   auto coef = Teuchos::rcp(new CompositeVector(conductivity));
@@ -66,7 +65,7 @@ EnergyPressureEnthalpy_PK::FunctionalResidual(double t_old,
 
   op_matrix_->ComputeNegativeResidual(*u_new->Data(), *g->Data());
 
-  // add diffusion due to pressure
+  // add diffusion due to pressure: div(k dT/dp grad(p))
   CompositeVector g_adv(g->Data()->Map());
   const auto& pres = S_->Get<CV_t>(pressure_key_, Tags::DEFAULT);
 
