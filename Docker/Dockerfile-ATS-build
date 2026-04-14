@@ -84,6 +84,7 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --disable-amanzi_physics \
    --enable-ats_physics \
    --enable-elm_ats_api \
+   --enable-ecosim \
    --ats_dev \
    --enable-reg_tests
 

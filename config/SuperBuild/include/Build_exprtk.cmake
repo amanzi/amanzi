@@ -32,6 +32,7 @@ set(EXPRTK_INSTALL_COMMAND ${CMAKE_COMMAND} -P ${EXPRTK_cmake_install})
 # --- Add external project build and tie to the EXPRTK build target
 ExternalProject_Add(${EXPRTK_BUILD_TARGET}
                     DEPENDS   ${EXPRTK_PACKAGE_DEPENDS}        # Package dependency target
+                    PREFIX    ${EXPRTK_prefix_dir}
                     TMP_DIR   ${EXPRTK_tmp_dir}                # Temporary files directory
                     STAMP_DIR ${EXPRTK_stamp_dir}              # Timestamp and log directory
                     # -- Download and URL definitions

@@ -808,6 +808,12 @@ if (ENABLE_CLM)
   include(${SuperBuild_BUILD_FILES_DIR}/Build_CLM.cmake)
 endif()
 
+# EcoSIM land surface microbial and vegative processes
+option(ENABLE_ECOSIM "Build EcoSIM package" FALSE)
+if (ENABLE_ECOSIM)
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_EcoSIM.cmake)
+endif()
+
 # Alquimia and chemical engines (PFloTran and CrunchTope)
 if (NOT ENABLE_XSDK)
   
