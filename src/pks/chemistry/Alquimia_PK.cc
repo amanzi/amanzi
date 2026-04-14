@@ -34,6 +34,7 @@
 #include "exceptions.hh"
 #include "Mesh.hh"
 #include "PK_Helpers.hh"
+#include "Units.hh"
 
 // Chemistry
 #include "Alquimia_PK.hh"
@@ -762,7 +763,9 @@ Alquimia_PK::copyToAlquimia(int cell, AlquimiaBeaker& beaker)
   beaker.state.porosity = (*substate_.porosity)[0][cell];
 
   if (substate_.temperature) {
-    beaker.state.temperature = (*substate_.temperature)[0][cell];
+    static Utils::Units units;
+    bool flag;
+    beaker.state.temperature = units.ConvertTemperature((*substate_.temperature)[0][cell], "K", "C", flag);
   }
 
   for (unsigned int i = 0; i != number_aqueous_components_; ++i) {
