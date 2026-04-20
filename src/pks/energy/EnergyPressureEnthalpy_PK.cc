@@ -189,6 +189,9 @@ EnergyPressureEnthalpy_PK::Setup()
       ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
     S_->RequireEvaluator(ie_rock_key_, Tags::DEFAULT);
   }
+  S_->RequireDerivative<CV_t, CVS_t>(
+    ie_rock_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, ie_rock_key_)
+    .SetGhosted();
 
   // -- densities
   if (!S_->HasRecord(mol_density_liquid_key_)) {

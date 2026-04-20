@@ -170,6 +170,35 @@ Units::ConvertConcentration(double val,
 
 
 /* ******************************************************************
+* Convert any input temperature to any output temperature.
+****************************************************************** */
+double
+Units::ConvertTemperature(double val,
+                          const std::string& in_unit,
+                          const std::string& out_unit,
+                          bool& flag)
+{
+  flag = true;
+  if (temperature_.find(in_unit) == temperature_.end() || temperature_.find(out_unit) == temperature_.end()) {
+    flag = false;
+    return val;
+  }
+
+  double tmp(val);
+
+  // Convert to Kelvin first
+  if (in_unit == "C") tmp += 273.15;
+  else if (in_unit == "F") tmp = (tmp + 459.67) * 5.0 / 9.0;
+
+  // Convert from Kelvin to the output unit
+  if (out_unit == "C") tmp -= 273.15;
+  else if (out_unit == "F") tmp = tmp * 1.8 - 459.67;
+
+  return tmp;
+}
+
+
+/* ******************************************************************
 * Convert any derived input unit to compatible output unit.
 * Special case, out_unit="SI", leads to conversion to SI units.
 ****************************************************************** */

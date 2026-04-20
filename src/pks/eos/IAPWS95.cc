@@ -347,7 +347,7 @@ struct Frho2 {
 std::tuple<double, double, double>
 IAPWS95::SaturationLine(double T)
 {
-  double ps, Tmin;
+  double ps, Tmin, tol(1e-11);
   Tmin = std::min(T, TC);
 
   itrs_ = 10;
@@ -355,7 +355,7 @@ IAPWS95::SaturationLine(double T)
   Frho2::Vector x0(2);
   x0[0] = DensityLiquid(T);
   x0[1] = DensityVapor(T);
-  Frho2::Vector sol = PowellHybrid(x0, f, &itrs_);
+  Frho2::Vector sol = PowellHybrid(x0, f, &itrs_, tol);
 
   if (sol[0] == sol[1]) {
     ps = PC;

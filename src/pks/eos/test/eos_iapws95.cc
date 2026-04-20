@@ -104,7 +104,7 @@ TEST(EOS_IAPWS95)
 
   std::tie(rhol, rhov, ps) = eos.SaturationLine(275.0);
   CHECK_CLOSE(0.999887406e3, rhol, 1e-6);
-  CHECK_CLOSE(0.550664919e-2, rhov, 1e-11);
+  CHECK_CLOSE(0.550664919e-2, rhov, 1e-10);
   CHECK_CLOSE(0.698451167e-3, ps, 1e-12);
 
   std::tie(rhol, rhov, ps) = eos.SaturationLine(450.0);

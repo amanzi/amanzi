@@ -45,8 +45,7 @@ EnergyPressureEnthalpy_PK::FunctionalResidual(double t_old,
 
   // we use the chain rule for gradient of T to avoid unphysical impact
   // of gradient of h to the gradient of T in region 4.
-  // add residual for enthalpy diffusion operator 
-
+  // add residual for enthalpy diffusion operator div(k dT/dh grad(h))
   S_->GetEvaluator(conductivity_key_).Update(*S_, passwd_);
   const auto& conductivity = S_->Get<CV_t>(conductivity_key_, Tags::DEFAULT);
   auto coef = Teuchos::rcp(new CompositeVector(conductivity));
@@ -66,7 +65,7 @@ EnergyPressureEnthalpy_PK::FunctionalResidual(double t_old,
 
   op_matrix_->ComputeNegativeResidual(*u_new->Data(), *g->Data());
 
-  // add diffusion due to pressure
+  // add diffusion due to pressure: div(k dT/dp grad(p))
   CompositeVector g_adv(g->Data()->Map());
   const auto& pres = S_->Get<CV_t>(pressure_key_, Tags::DEFAULT);
 
@@ -152,20 +151,25 @@ EnergyPressureEnthalpy_PK::UpdatePreconditioner(double t,
   op_preconditioner_diff_->ApplyBCs(true, true, true);
 
   // add the accumulation term derivatives, dE/dT
-  // S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd_, enthalpy_key_, Tags::DEFAULT);
-  // const auto& dEdh = S_->GetDerivative<CV_t>(energy_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT);
-  // op_acc_->AddAccumulationTerm(dEdh, dt, "cell");
-
   // -- perform entropy-based linearization to keep derivative positive
   S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd_, enthalpy_key_, Tags::DEFAULT);
   auto dEdh = S_->GetDerivative<CV_t>(energy_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT);
   auto& dEdh_c = *dEdh.ViewComponent("cell");
 
+  S_->GetEvaluator(ie_rock_key_).UpdateDerivative(*S_, passwd_, enthalpy_key_, Tags::DEFAULT);
+  const auto& dUdh_c = *S_->GetDerivative<CV_t>(ie_rock_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT).ViewComponent("cell");
+
   S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, passwd_);
-  const auto& density = *S_->Get<CV_t>(mol_density_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
+  const auto& eta_c = *S_->Get<CV_t>(mol_density_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
+  const auto& rho_r = *S_->Get<CV_t>(particle_density_key_, Tags::DEFAULT).ViewComponent("cell");
+  const auto& phi_c = *S_->Get<CV_t>(porosity_key_, Tags::DEFAULT).ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; ++c) {
-    if (dEdh_c[0][c] < 0.0) dEdh_c[0][c] = density[0][c];
+    if (dEdh_c[0][c] < 0.0) {
+      double tmp = phi_c[0][c];
+      if (tmp == 1.0) dEdh_c[0][c] = eta_c[0][c];
+      else dEdh_c[0][c] = rho_r[0][c] * dUdh_c[0][c] * (1.0 - tmp); // + eta_c[0][c] * tmp;
+    }
   }
   op_acc_->AddAccumulationTerm(dEdh, dt, "cell");
 
@@ -183,7 +187,7 @@ EnergyPressureEnthalpy_PK::UpdatePreconditioner(double t,
   op_preconditioner_advection_->UpdateMatrices(flux.ptr());
   op_preconditioner_advection_->ApplyBCs(false, true, false);
 
-  // add matrices for other advection terms div[q ((deta/dh)/eta - (dmu/dh)/mu) dh]
+  // add matrices for other advection terms div[q h ((deta/dh)/eta - (dmu/dh)/mu) dh]
   S_->GetEvaluator(mol_density_liquid_key_).UpdateDerivative(*S_, passwd_, enthalpy_key_, Tags::DEFAULT);
   *coef = S_->GetDerivative<CV_t>(mol_density_liquid_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT);
   coef->Multiply(1.0, *up->Data(), *coef, 0.0);

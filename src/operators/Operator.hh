@@ -352,6 +352,7 @@ class Operator : public Matrix<CompositeVector, CompositeVectorSpace> {
   void OpExtend(op_iterator begin, op_iterator end);
   void OpReplace(const Teuchos::RCP<Op>& op, int index) { ops_[index] = op; }
   void OpErase(op_iterator begin, op_iterator end) { ops_.erase(begin, end); }
+  void OpErase(op_iterator begin) { ops_.erase(begin); }
 
   // quality control
   void Verify() const;

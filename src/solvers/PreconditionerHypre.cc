@@ -316,7 +316,6 @@ PreconditionerHypre::InitMGR_()
     HYPRE_MGRSetMaxGlobalSmoothIters(method_, plist_.get<int>("mgr number global sweeps", 0));
   }
 
-
 /*
   // keep 
   HYPRE_MGRSetTruncateCoarseGridThreshold(method_, 0.0);
@@ -334,7 +333,6 @@ PreconditionerHypre::InitMGR_()
   HYPRE_MGRSetLevelRestrictType(method_, rtype);
   HYPRE_MGRSetLevelInterpType(method_, ptype);
 */
-
 
   // Prescribe a subset of nodes to be kept as coarse nodes until the coarsest level.
   // These nodes are transferred onto the coarsest grid of the BoomerAMG coarse grid solver.
