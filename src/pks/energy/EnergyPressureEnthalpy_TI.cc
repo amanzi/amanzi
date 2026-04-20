@@ -136,6 +136,8 @@ EnergyPressureEnthalpy_PK::UpdatePreconditioner(double t,
   // update BCs
   UpdateSourceBoundaryData(t, t + dt, *up->Data());
 
+  const auto& enthal_c = *up->Data()->ViewComponent("cell"); 
+
   // assemble matrices for diffusion operator
   S_->GetEvaluator(conductivity_key_).Update(*S_, passwd_);
   const auto& conductivity = S_->Get<CV_t>(conductivity_key_, Tags::DEFAULT);
@@ -160,17 +162,31 @@ EnergyPressureEnthalpy_PK::UpdatePreconditioner(double t,
   const auto& dUdh_c = *S_->GetDerivative<CV_t>(ie_rock_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT).ViewComponent("cell");
 
   S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, passwd_);
+
   const auto& eta_c = *S_->Get<CV_t>(mol_density_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
   const auto& rho_r = *S_->Get<CV_t>(particle_density_key_, Tags::DEFAULT).ViewComponent("cell");
   const auto& phi_c = *S_->Get<CV_t>(porosity_key_, Tags::DEFAULT).ViewComponent("cell");
 
+
+
+  bool neg = false;
+  
   for (int c = 0; c < ncells_owned; ++c) {
     if (dEdh_c[0][c] < 0.0) {
+
       double tmp = phi_c[0][c];
       if (tmp == 1.0) dEdh_c[0][c] = eta_c[0][c];
       else dEdh_c[0][c] = rho_r[0][c] * dUdh_c[0][c] * (1.0 - tmp); // + eta_c[0][c] * tmp;
+
+      // std::cout<<"cell "<<c<<" "<<" dEdh_c "<<" "<<dEdh_c[0][c]<<"\n";
+      // neg = true;
+      // dEdh_c[0][c] = density[0][c]*porosity[0][c];
+
     }
   }
+
+  if (neg) exit(0);
+  
   op_acc_->AddAccumulationTerm(dEdh, dt, "cell");
 
   // implicit source models

@@ -161,12 +161,14 @@ EvaluatorSecondary::EnsureEvaluators(State& S)
   // first make sure that we have evaluators for all of _our_ keys.  Note that
   // we may not, as not all of my_keys_ may be required.
   for (const auto& my_key_tag : my_keys_) {
+    std::cout<<"EnsureEvaluators my_keys_ "<<my_key_tag.first<<"\n";
     S.RequireEvaluator(my_key_tag.first, my_key_tag.second);
   }
 
   // next make sure that all dependencies have evaluators, and call
   // EnsureEvaluators recursively to fill out the dependency graph
   for (const auto& dep : dependencies_) {
+    std::cout<<"EnsureEvaluators dependencies_ "<<dep.first<<"\n";
     auto& dep_eval = S.RequireEvaluator(dep.first, dep.second);
     dep_eval.EnsureEvaluators(S);
   }

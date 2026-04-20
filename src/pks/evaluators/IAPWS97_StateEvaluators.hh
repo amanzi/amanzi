@@ -91,7 +91,8 @@ class IAPWS97_StateEvaluator
   virtual void EnsureCompatibility_ToDeps_(State& S) final {};
 
  private:
-  Key pressure_key_, enthalpy_key_;
+  Key domain_name_;
+  Key pressure_key_, enthalpy_key_, state_key_;
   Teuchos::RCP<AmanziEOS::IAPWS97> eos_;
   static Utils::RegisteredFactory<Evaluator, IAPWS97_StateEvaluator> reg_;
 };
@@ -116,7 +117,8 @@ class IAPWS97_DensityEvaluator
   virtual void EnsureCompatibility_ToDeps_(State& S) final {};
 
  private:
-  Key pressure_key_, enthalpy_key_;
+  Key domain_name_;
+  Key pressure_key_, enthalpy_key_, state_key_;
   static Utils::RegisteredFactory<Evaluator, IAPWS97_DensityEvaluator> reg_;
 };
 
@@ -140,7 +142,8 @@ class IAPWS97_TemperatureEvaluator
   virtual void EnsureCompatibility_ToDeps_(State& S) final {};
 
  private:
-  Key pressure_key_, enthalpy_key_;
+  Key domain_name_;
+  Key pressure_key_, enthalpy_key_, state_key_;
   static Utils::RegisteredFactory<Evaluator, IAPWS97_TemperatureEvaluator> reg_;
 };
 
@@ -164,7 +167,8 @@ class IAPWS97_ThermalConductivityEvaluator
   virtual void EnsureCompatibility_ToDeps_(State& S) final {};
 
  private:
-  Key density_key_, temperature_key_;
+  Key domain_name_;
+  Key density_key_, temperature_key_, state_key_;
   Teuchos::RCP<AmanziEOS::IAPWS97> eos_;
 };
 
@@ -188,7 +192,8 @@ class IAPWS97_InternalEnergyEvaluator
   virtual void EnsureCompatibility_ToDeps_(State& S) final {};
 
  private:
-  Key pressure_key_, enthalpy_key_;
+  Key domain_name_;
+  Key pressure_key_, enthalpy_key_, state_key_;
 };
 
 
@@ -211,7 +216,8 @@ class IAPWS97_IsothermalCompressibilityEvaluator
   virtual void EnsureCompatibility_ToDeps_(State& S) final {};
 
  private:
-  Key pressure_key_, enthalpy_key_;
+  Key domain_name_;
+  Key pressure_key_, enthalpy_key_, state_key_;
   static Utils::RegisteredFactory<Evaluator, IAPWS97_IsothermalCompressibilityEvaluator> reg_;
 };
 
@@ -235,7 +241,8 @@ class IAPWS97_ViscosityEvaluator
   virtual void EnsureCompatibility_ToDeps_(State& S) final {};
 
  private:
-  Key density_key_, temperature_key_;
+  Key domain_name_;
+  Key density_key_, temperature_key_, state_key_;
   Teuchos::RCP<AmanziEOS::IAPWS97> eos_;
   static Utils::RegisteredFactory<Evaluator, IAPWS97_ViscosityEvaluator> reg_;
 };
