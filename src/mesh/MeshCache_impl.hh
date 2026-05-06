@@ -137,6 +137,19 @@ MeshCache<MEM>::isValidSetType(const AmanziGeometry::RegionType rtype, const Ent
 
 
 template<MemSpace_kind MEM>
+std::vector<std::string>
+MeshCache<MEM>::getResolvedSetNames(const Entity_kind kind) const
+{
+  std::vector<std::string> names;
+  for (const auto& kv : sets_) {
+    if (std::get<1>(kv.first) == kind && std::get<2>(kv.first) == Parallel_kind::OWNED)
+      names.push_back(std::get<0>(kv.first));
+  }
+  return names;
+}
+
+
+template<MemSpace_kind MEM>
 int
 MeshCache<MEM>::getSetSize(const std::string& region_name,
                            const Entity_kind kind,
