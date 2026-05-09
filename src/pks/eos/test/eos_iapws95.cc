@@ -86,7 +86,7 @@ TEST(EOS_IAPWS95)
   CHECK_CLOSE(358.0, prop.rho, 3e-4); // we are close to the critical point
 
   // two-phase
-  double rhol, rhov, ps;
+  double rhol0, rhov0, rhol, rhov, ps;
   rhol = eos.DensityLiquid(273.16);
   rhov = eos.DensityVapor(273.16);
   CHECK_CLOSE(999.789, rhol, 1e-3);
@@ -102,17 +102,23 @@ TEST(EOS_IAPWS95)
   CHECK_CLOSE(322.0, rhol, 1e-8);
   CHECK_CLOSE(322.0, rhov, 1e-8);
 
-  std::tie(rhol, rhov, ps) = eos.SaturationLine(275.0);
+  rhol0 = eos.DensityLiquid(275.0);
+  rhov0 = eos.DensityVapor(275.0);
+  std::tie(rhol, rhov, ps) = eos.SaturationLine(275.0, rhol0, rhov0);
   CHECK_CLOSE(0.999887406e3, rhol, 1e-6);
   CHECK_CLOSE(0.550664919e-2, rhov, 1e-10);
   CHECK_CLOSE(0.698451167e-3, ps, 1e-12);
 
-  std::tie(rhol, rhov, ps) = eos.SaturationLine(450.0);
+  rhol0 = eos.DensityLiquid(450.0);
+  rhov0 = eos.DensityVapor(450.0);
+  std::tie(rhol, rhov, ps) = eos.SaturationLine(450.0, rhol0, rhov0);
   CHECK_CLOSE(0.890341250e3, rhol, 1e-6);
   CHECK_CLOSE(0.481200360e1, rhov, 1e-8);
   CHECK_CLOSE(0.932203564, ps, 1e-9);
 
-  std::tie(rhol, rhov, ps) = eos.SaturationLine(625.0);
+  rhol0 = eos.DensityLiquid(625.0);
+  rhov0 = eos.DensityVapor(625.0);
+  std::tie(rhol, rhov, ps) = eos.SaturationLine(625.0, rhol0, rhov0);
   CHECK_CLOSE(0.567090385e3, rhol, 1e-6);
   CHECK_CLOSE(0.118290280e3, rhov, 1e-6);
   CHECK_CLOSE(0.169082693e2, ps, 1e-7);

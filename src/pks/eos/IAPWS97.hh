@@ -136,7 +136,7 @@ class IAPWS97 {
   double SurfaceTension(double T);
   double ThermalConductivity(double rho, double T, Properties& prop);
   double Viscosity(double rho, double T);
-  Properties ExtendProperies(const Properties& prop);
+  Properties ExtendProperties(const Properties& prop);
 
   // supporting functions
   int get_itrs() { return itrs_; }

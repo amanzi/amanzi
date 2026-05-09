@@ -37,9 +37,10 @@ class IAPWS95 {
   std::array<double, 6> IdealGasPart(double rho, double T);
   std::array<double, 6> ResidualPart(double rho, double T);
 
-  Properties ExtendProperies(double rho, const Properties& prop);
+  Properties PopulateProperties(double rho, double T);
+  Properties ExtendProperties(double rho, const Properties& prop);
 
-  std::tuple<double, double, double> SaturationLine(double T);
+  std::tuple<double, double, double> SaturationLine(double T, double rhol0, double rhov0);
   double VaporPressure(double T);
   double DensityLiquid(double T);
   double DensityVapor(double T);
