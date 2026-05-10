@@ -111,6 +111,10 @@ EnergyPressureEnthalpy_PK::Setup()
   ie_rock_key_ = Keys::getKey(domain_, "internal_energy_rock");
 
   aperture_key_ = Keys::getKey(domain_, "aperture");
+  conductivity_eff_key_ = Keys::getKey(domain_, "thermal_conductivity_effective");
+  
+  conductivity_gen_key_ =
+    (!assumptions_.flow_on_manifold) ? conductivity_key_ : conductivity_eff_key_;
 
   mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid");
   mass_density_liquid_key_ = Keys::getKey(domain_, "mass_density_liquid");
@@ -276,7 +280,10 @@ EnergyPressureEnthalpy_PK::Setup()
 
     Teuchos::ParameterList elist(energy_key_);
     elist.set<std::string>("tag", "");
-    auto ee = Teuchos::rcp(new TotalEnergyEvaluatorPH(elist));
+    if (assumptions_.flow_on_manifold) elist.set<std::string>("aperture key", aperture_key_);
+    
+    auto ee = Teuchos::rcp(new TotalEnergyEvaluatorPH(elist));   
+    
     S_->SetEvaluator(energy_key_, Tags::DEFAULT, ee);
 
     S_->RequireDerivative<CV_t, CVS_t>(
@@ -306,11 +313,53 @@ EnergyPressureEnthalpy_PK::Setup()
     } else {
       Teuchos::ParameterList elist(conductivity_key_);
       elist.set<std::string>("tag", "");
+      elist.set<std::string>("domain name", domain_);
 
       auto eval = Teuchos::rcp(new Evaluators::IAPWS97_ThermalConductivityEvaluator(elist));
       S_->SetEvaluator(conductivity_key_, Tags::DEFAULT, eval);
     }
   }
+
+  if (assumptions_.flow_on_manifold) {
+    S_->Require<CV_t, CVS_t>(conductivity_eff_key_, Tags::DEFAULT, conductivity_eff_key_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+
+    if (!S_->HasRecord(aperture_key_)) {
+      S_->Require<CV_t, CVS_t>(aperture_key_, Tags::DEFAULT, aperture_key_)
+        .SetMesh(mesh_)
+        ->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+
+      if (ep_list_->isSublist("fracture aperture models")) {
+        auto fam_list = Teuchos::sublist(ep_list_, "fracture aperture models", true);
+        auto fam = Evaluators::CreateApertureModelPartition(mesh_, fam_list);
+
+        Teuchos::ParameterList elist(aperture_key_);
+        elist.set<std::string>("aperture key", aperture_key_)
+          .set<std::string>("pressure key", pressure_key_)
+          .set<bool>("use overburden stress", assumptions_.use_overburden_stress)
+          .set<std::string>("tag", "");
+
+        auto eval = Teuchos::rcp(new Evaluators::ApertureModelEvaluator(elist, fam));
+        S_->SetEvaluator(aperture_key_, Tags::DEFAULT, eval);
+      } else {
+        S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
+      }
+    }
+
+    Teuchos::ParameterList elist(conductivity_eff_key_);
+    std::vector<std::string> listm(
+      { Keys::getVarName(aperture_key_), Keys::getVarName(conductivity_key_) });
+    elist.set<std::string>("my key", conductivity_eff_key_)
+      .set<Teuchos::Array<std::string>>("multiplicative dependency key suffixes", listm)
+      .set<std::string>("tag", "");
+    auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
+    S_->SetEvaluator(conductivity_eff_key_, Tags::DEFAULT, eval);
+  }
+
+  
 
   // source terms
   Teuchos::ParameterList src_list = ep_list_->sublist("source terms");

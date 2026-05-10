@@ -221,14 +221,14 @@ IAPWS97_DensityEvaluator::IAPWS97_DensityEvaluator(Teuchos::ParameterList& plist
     
   if (my_keys_.size() != 2) {
     my_keys_.clear();
-    my_keys_.push_back(std::make_pair("mass_density_liquid", Tags::DEFAULT));
-    my_keys_.push_back(std::make_pair("molar_density_liquid", Tags::DEFAULT));
+    my_keys_.push_back(std::make_pair(Keys::getKey(domain_name_,"mass_density_liquid"), Tags::DEFAULT));
+    my_keys_.push_back(std::make_pair(Keys::getKey(domain_name_,"molar_density_liquid"), Tags::DEFAULT));
   }
 
-  auto prefix = Keys::getDomainPrefix(my_keys_[0].first);
-  state_key_ = prefix + "thermodynamic_state";
-  pressure_key_ = prefix + "pressure";
-  enthalpy_key_ = prefix + "enthalpy";
+  //  auto prefix = Keys::getDomainPrefix(my_keys_[0].first);
+  state_key_ = Keys::getKey(domain_name_,"thermodynamic_state");
+  pressure_key_ = Keys::getKey(domain_name_, "pressure");
+  enthalpy_key_ = Keys::getKey(domain_name_, "enthalpy");
 
   dependencies_.insert(std::make_pair(state_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(pressure_key_, Tags::DEFAULT));
@@ -313,12 +313,12 @@ IAPWS97_TemperatureEvaluator::IAPWS97_TemperatureEvaluator(Teuchos::ParameterLis
   domain_name_ = plist.template get<std::string>("domain name", "domain");
   
   if (my_keys_.size() == 0)
-    my_keys_.push_back(std::make_pair("temperature", Tags::DEFAULT));
+    my_keys_.push_back(std::make_pair(Keys::getKey(domain_name_, "temperature"), Tags::DEFAULT));
 
-  auto prefix = Keys::getDomainPrefix(my_keys_[0].first);
-  pressure_key_ = prefix + "pressure";
-  enthalpy_key_ = prefix + "enthalpy";
-  state_key_ = prefix + "thermodynamic_state";
+  //auto prefix = Keys::getDomainPrefix(my_keys_[0].first);
+  pressure_key_ = Keys::getKey(domain_name_, "pressure");
+  enthalpy_key_ = Keys::getKey(domain_name_, "enthalpy");
+  state_key_ = Keys::getKey(domain_name_,"thermodynamic_state");
 
   dependencies_.insert(std::make_pair(state_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(pressure_key_, Tags::DEFAULT));
@@ -333,7 +333,9 @@ IAPWS97_TemperatureEvaluator::IAPWS97_TemperatureEvaluator(
   const IAPWS97_TemperatureEvaluator& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
     pressure_key_(other.pressure_key_),
-    enthalpy_key_(other.enthalpy_key_)
+    enthalpy_key_(other.enthalpy_key_),
+    state_key_(other.state_key_),
+    domain_name_(other.domain_name_) 
 {}
 
 
@@ -399,15 +401,22 @@ IAPWS97_ThermalConductivityEvaluator::IAPWS97_ThermalConductivityEvaluator(Teuch
 {
   domain_name_ = plist.template get<std::string>("domain name", "domain");
   if (my_keys_.size() == 0)
-    my_keys_.push_back(std::make_pair("thermal_conductivity", Tags::DEFAULT));
+    my_keys_.push_back(std::make_pair(Keys::getKey(domain_name_,"thermal_conductivity"), Tags::DEFAULT));
 
-  auto prefix = Keys::getDomainPrefix(my_keys_[0].first);
-  density_key_ = prefix + "mass_density_liquid";
-  temperature_key_ = prefix + "temperature";
+  //auto prefix = Keys::getDomainPrefix(my_keys_[0].first);
+  density_key_ = Keys::getKey(domain_name_,"mass_density_liquid");
+  temperature_key_ = Keys::getKey(domain_name_,"temperature");
+  state_key_ = Keys::getKey(domain_name_,"thermodynamic_state");
 
   dependencies_.insert(std::make_pair(state_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(density_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(temperature_key_, Tags::DEFAULT));
+
+  // aperture_key_="";
+  // if (domain_name_=="fracture") {
+  //   aperture_key_ = Keys::getKey(domain_name_,"aperture");
+  //   dependencies_.insert(std::make_pair(aperture_key_, Tags::DEFAULT));
+  // }
 
   eos_ = Teuchos::rcp(new AmanziEOS::IAPWS97(plist));
 }
@@ -420,7 +429,10 @@ IAPWS97_ThermalConductivityEvaluator::IAPWS97_ThermalConductivityEvaluator(
     const IAPWS97_ThermalConductivityEvaluator& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
     density_key_(other.density_key_),
-    temperature_key_(other.temperature_key_)
+    temperature_key_(other.temperature_key_),
+    state_key_(other.state_key_),
+    aperture_key_(other.aperture_key_),
+    domain_name_(other.domain_name_)
 {}
 
 
@@ -439,6 +451,7 @@ IAPWS97_ThermalConductivityEvaluator::Evaluate_(const State& S,
                                                 const std::vector<CompositeVector*>& results)
 {
   const auto& ts_c = *S.Get<CompositeVector>(state_key_).ViewComponent("cell");
+  
 
   auto& result_v = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell");
@@ -446,6 +459,8 @@ IAPWS97_ThermalConductivityEvaluator::Evaluate_(const State& S,
   for (int c = 0; c != ncells; ++c) {
     result_v[0][c] = ts_c[(int)TS97_t::K][c];
   }
+
+    
 }
 
 
@@ -533,11 +548,12 @@ IAPWS97_InternalEnergyEvaluator::IAPWS97_InternalEnergyEvaluator(Teuchos::Parame
   domain_name_ = plist.template get<std::string>("domain name", "domain");
 
   if (my_keys_.size() == 0)
-    my_keys_.push_back(std::make_pair("internal_energy", Tags::DEFAULT));
+    my_keys_.push_back(std::make_pair(Keys::getKey(domain_name_,"internal_energy"), Tags::DEFAULT));
 
-  auto prefix = Keys::getDomainPrefix(my_keys_[0].first);
-  pressure_key_ = prefix + "pressure";
-  enthalpy_key_ = prefix + "enthalpy";
+  //auto prefix = Keys::getDomainPrefix(my_keys_[0].first);
+  pressure_key_ = Keys::getKey(domain_name_, "pressure");
+  enthalpy_key_ = Keys::getKey(domain_name_, "enthalpy");
+  state_key_ = Keys::getKey(domain_name_,"thermodynamic_state");
 
   dependencies_.insert(std::make_pair(state_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(pressure_key_, Tags::DEFAULT));
@@ -552,7 +568,9 @@ IAPWS97_InternalEnergyEvaluator::IAPWS97_InternalEnergyEvaluator(
     const IAPWS97_InternalEnergyEvaluator& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
     pressure_key_(other.pressure_key_),
-    enthalpy_key_(other.enthalpy_key_)
+    enthalpy_key_(other.enthalpy_key_),
+    state_key_(other.state_key_),
+    domain_name_(other.domain_name_)
 {}
 
 
@@ -626,11 +644,12 @@ IAPWS97_IsothermalCompressibilityEvaluator::IAPWS97_IsothermalCompressibilityEva
   domain_name_ = plist.template get<std::string>("domain name", "domain");
   
   if (my_keys_.size() == 0)
-    my_keys_.push_back(std::make_pair("isothermal_compressibility", Tags::DEFAULT));
+    my_keys_.push_back(std::make_pair(Keys::getKey(domain_name_,"isothermal_compressibility"), Tags::DEFAULT));
 
-  auto prefix = Keys::getDomainPrefix(my_keys_[0].first);
-  pressure_key_ = prefix + "pressure";
-  enthalpy_key_ = prefix + "enthalpy";
+  //auto prefix = Keys::getDomainPrefix(my_keys_[0].first);
+  pressure_key_ = Keys::getKey(domain_name_, "pressure");
+  enthalpy_key_ = Keys::getKey(domain_name_, "enthalpy");
+  state_key_ = Keys::getKey(domain_name_,"thermodynamic_state");
 
   dependencies_.insert(std::make_pair(state_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(pressure_key_, Tags::DEFAULT));
@@ -645,7 +664,9 @@ IAPWS97_IsothermalCompressibilityEvaluator::IAPWS97_IsothermalCompressibilityEva
     const IAPWS97_IsothermalCompressibilityEvaluator& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
     pressure_key_(other.pressure_key_),
-    enthalpy_key_(other.enthalpy_key_)
+    enthalpy_key_(other.enthalpy_key_),
+    state_key_(other.state_key_),
+    domain_name_(other.domain_name_)
 {}
 
 
@@ -697,11 +718,12 @@ IAPWS97_ViscosityEvaluator::IAPWS97_ViscosityEvaluator(Teuchos::ParameterList& p
   domain_name_ = plist.template get<std::string>("domain name", "domain");
   
   if (my_keys_.size() == 0)
-    my_keys_.push_back(std::make_pair("viscosity_liquid", Tags::DEFAULT));
+    my_keys_.push_back(std::make_pair(Keys::getKey(domain_name_,"viscosity_liquid"), Tags::DEFAULT));
 
-  auto prefix = Keys::getDomainPrefix(my_keys_[0].first);
-  density_key_ = prefix + "mass_density_liquid";
-  temperature_key_ = prefix + "temperature";
+  //  auto prefix = Keys::getDomainPrefix(my_keys_[0].first);
+  density_key_ = Keys::getKey(domain_name_,"mass_density_liquid");
+  temperature_key_ = Keys::getKey(domain_name_,"temperature");
+  state_key_ = Keys::getKey(domain_name_,"thermodynamic_state");
 
   dependencies_.insert(std::make_pair(state_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(density_key_, Tags::DEFAULT));
@@ -717,7 +739,9 @@ IAPWS97_ViscosityEvaluator::IAPWS97_ViscosityEvaluator(Teuchos::ParameterList& p
 IAPWS97_ViscosityEvaluator::IAPWS97_ViscosityEvaluator(const IAPWS97_ViscosityEvaluator& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
     density_key_(other.density_key_),
-    temperature_key_(other.temperature_key_)
+    temperature_key_(other.temperature_key_),
+    state_key_(other.state_key_),
+    domain_name_(other.domain_name_)
 {}
 
 

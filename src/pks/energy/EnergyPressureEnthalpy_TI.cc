@@ -46,14 +46,18 @@ EnergyPressureEnthalpy_PK::FunctionalResidual(double t_old,
   // we use the chain rule for gradient of T to avoid unphysical impact
   // of gradient of h to the gradient of T in region 4.
   // add residual for enthalpy diffusion operator div(k dT/dh grad(h))
-  S_->GetEvaluator(conductivity_key_).Update(*S_, passwd_);
-  const auto& conductivity = S_->Get<CV_t>(conductivity_key_, Tags::DEFAULT);
+  S_->GetEvaluator(conductivity_gen_key_).Update(*S_, passwd_);
+  const auto& conductivity = S_->Get<CV_t>(conductivity_gen_key_, Tags::DEFAULT);
   auto coef = Teuchos::rcp(new CompositeVector(conductivity));
 
   S_->GetEvaluator(temperature_key_).UpdateDerivative(*S_, passwd_, enthalpy_key_, Tags::DEFAULT);
   const auto& dTdh = S_->GetDerivative<CV_t>(temperature_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT);
   coef->Multiply(1.0, *coef, dTdh, 0.0);
 
+  // std::cout<<"conductivity\n"<<*conductivity.ViewComponent("cell")<<"\n";
+  // std::cout<<"dTdh\n"<<*dTdh.ViewComponent("cell")<<"\n";
+  // std::cout<<"coef\n"<<*coef->ViewComponent("cell")<<"\n";
+  
   op_matrix_->Init();
   op_matrix_diff_->SetScalarCoefficient(coef, Teuchos::null);
   op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
@@ -73,6 +77,8 @@ EnergyPressureEnthalpy_PK::FunctionalResidual(double t_old,
   const auto& dTdp = S_->GetDerivative<CV_t>(temperature_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT);
   coef->Multiply(1.0, conductivity, dTdp, 0.0);
 
+  //  std::cout<<"coef\n"<<*coef->ViewComponent("cell")<<"\n";
+  
   op_matrix_diff_pres_->global_operator()->Init();
   op_matrix_diff_pres_->SetScalarCoefficient(coef, Teuchos::null);
   op_matrix_diff_pres_->UpdateMatrices(Teuchos::null, Teuchos::null);
@@ -84,6 +90,15 @@ EnergyPressureEnthalpy_PK::FunctionalResidual(double t_old,
   // add enthalpy advection
   S_->GetEvaluator(mol_flowrate_key_).Update(*S_, passwd_);
   auto flux = S_->GetPtr<CV_t>(mol_flowrate_key_, Tags::DEFAULT);
+  const Epetra_MultiVector& flux_f = *flux->ViewComponent("face");
+
+  // for (int f=0;f<22;f++){
+  //   const AmanziGeometry::Point normal = mesh_->getFaceNormal(f); 
+  //   std::cout<<f<<": "<<normal<<" - "<< std::setprecision(12)<<flux_f[0][f]<<"\n";
+  // }
+  //exit(-1);
+  
+  
 
   op_advection_->Init();
   op_matrix_advection_->Setup(*flux);
@@ -122,6 +137,12 @@ EnergyPressureEnthalpy_PK::FunctionalResidual(double t_old,
     g_c[0][c] += acc;
     residual_max_norm_ = std::max(residual_max_norm_, fabs(g_c[0][c] / (factor * e0[0][c])));
   }
+
+  S_->GetEvaluator(temperature_key_).Update(*S_, passwd_);
+  const auto& t1 = *S_->Get<CV_t>(temperature_key_).ViewComponent("cell");
+
+  std::cout<<"temp\n"<<t1<<"\n";
+  
 }
 
 
@@ -139,8 +160,8 @@ EnergyPressureEnthalpy_PK::UpdatePreconditioner(double t,
   const auto& enthal_c = *up->Data()->ViewComponent("cell"); 
 
   // assemble matrices for diffusion operator
-  S_->GetEvaluator(conductivity_key_).Update(*S_, passwd_);
-  const auto& conductivity = S_->Get<CV_t>(conductivity_key_, Tags::DEFAULT);
+  S_->GetEvaluator(conductivity_gen_key_).Update(*S_, passwd_);
+  const auto& conductivity = S_->Get<CV_t>(conductivity_gen_key_, Tags::DEFAULT);
   auto coef = Teuchos::rcp(new CompositeVector(conductivity));
 
   S_->GetEvaluator(temperature_key_).UpdateDerivative(*S_, passwd_, enthalpy_key_, Tags::DEFAULT);
