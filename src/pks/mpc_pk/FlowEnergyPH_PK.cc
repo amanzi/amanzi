@@ -474,8 +474,8 @@ FlowEnergyPH_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, Teuchos::
     ok = op_tree_pc_->ApplyInverse(*X, *Y);
     // return PK_MPCStrong<PK_BDF>::ApplyPreconditioner(X, Y);
   } else {
-    // Operators::Impl::TreeOperator_BlockDiagonalPreconditioner gs(*op_tree_amg_);
-    Operators::Impl::TreeOperator_BlockTriangularPreconditioner gs(*op_tree_amg_);
+    Operators::Impl::TreeOperator_BlockDiagonalPreconditioner gs(*op_tree_amg_);
+    // Operators::Impl::TreeOperator_BlockTriangularPreconditioner gs(*op_tree_amg_);
     ok = gs.ApplyInverse(*X, *Y);
 
     TreeVector res(*Y), Y2(*Y);
@@ -519,6 +519,9 @@ FlowEnergyPH_PK::ModifyCorrection(double dt,
     dh_c[0][c] = std::clamp(dh_c[0][c], -tmp, tmp);
     if (std::fabs(std::fabs(dh_c[0][c]) - tmp) < 1e-8 * tmp) nclipped++;
   }
+
+  int ntmp(nclipped);
+  mesh_->getComm()->SumAll(&ntmp, &nclipped, 1);
 
   return (nclipped) > 0 ? AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED :
                           AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
@@ -583,6 +586,9 @@ FlowEnergyPH_PK::ModifyCorrection(double dt,
       } 
     }
   } 
+
+  ntmp = nclipped;
+  mesh_->getComm()->SumAll(&ntmp, &nclipped, 1);
 
   return (nclipped) > 0 ? AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED :
                           AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;

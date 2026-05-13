@@ -621,11 +621,11 @@ Richards_PK::ModifyCorrection(double dt,
   }
 
   // output statistics
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    int nsat_tmp = nsat_clipped, npre_tmp = npre_clipped;
-    mesh_->getComm()->SumAll(&nsat_tmp, &nsat_clipped, 1);
-    mesh_->getComm()->SumAll(&npre_tmp, &npre_clipped, 1);
+  int nsat_tmp = nsat_clipped, npre_tmp = npre_clipped;
+  mesh_->getComm()->SumAll(&nsat_tmp, &nsat_clipped, 1);
+  mesh_->getComm()->SumAll(&npre_tmp, &npre_clipped, 1);
 
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     if (nsat_clipped > 0 || npre_clipped > 0) {
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << vo_->color("green") << "saturation/pressure clipped in " << nsat_clipped << "/"
