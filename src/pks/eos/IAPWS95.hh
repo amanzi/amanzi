@@ -35,7 +35,7 @@ class IAPWS95 {
   std::tuple<Properties, Properties, Properties> ThermodynamicsRhoT(double rho, double T);
 
   std::array<double, 6> IdealGasPart(double rho, double T);
-  std::array<double, 6> ResidualPart(double rho, double T);
+  virtual std::array<double, 6> ResidualPart(double rho, double T);
 
   Properties PopulateProperties(double rho, double T);
   Properties ExtendProperties(double rho, const Properties& prop);

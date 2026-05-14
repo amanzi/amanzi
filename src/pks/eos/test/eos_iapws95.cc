@@ -7,9 +7,13 @@
   Authors: Konstantin Lipnikov
 */
 
-#include "UnitTest++.h"
 #include <array>
+
+#include "UnitTest++.h"
+#include "Teuchos_ParameterList.hpp"
+
 #include "IAPWS95.hh"
+#include "IAPWS95_Spline.hh"
 
 TEST(EOS_IAPWS95)
 {
@@ -122,4 +126,38 @@ TEST(EOS_IAPWS95)
   CHECK_CLOSE(0.567090385e3, rhol, 1e-6);
   CHECK_CLOSE(0.118290280e3, rhov, 1e-6);
   CHECK_CLOSE(0.169082693e2, ps, 1e-7);
+}
+
+
+TEST(EOS_IAPWS95_SPLINE)
+{
+  using namespace Amanzi::AmanziEOS;
+
+  Teuchos::ParameterList plist;
+  plist.set<std::string>("table name", "test/h2o.csv");
+  IAPWS95_Spline eos(plist);
+
+  // residual part of Helmholtz energy 
+  auto g = eos.ResidualPart(358.0, 677.0);
+  CHECK_CLOSE(-1.074846275913588, g[0], 3e-9);
+  CHECK_CLOSE(-0.6482852008214527, g[1], 1e-9);
+  CHECK_CLOSE(-2.9952800383965590, g[2], 5e-9);
+  CHECK_CLOSE(0.42800137588720510, g[3], 1e-7);
+  CHECK_CLOSE(-1.5478871112766721, g[4], 6e-9);
+  CHECK_CLOSE(-4.1344863238419940, g[5], 5e-5);
+
+  // (rho, T) - variables
+  Properties prop, liquid, vapor;
+  std::tie(prop, liquid, vapor) = eos.ThermodynamicsRhoT(371.3, 681.2);
+  CHECK_CLOSE(33.01065724886822, prop.p, 1e-7);
+  CHECK_CLOSE(3.2568688912634207, prop.cv, 2e-5);
+  CHECK_CLOSE(450.4310375365427, prop.w, 1e-3);
+  CHECK_CLOSE(4.4814490203595, prop.s, 5e-9);
+
+  // (p, T) - variables, same point
+  std::tie(prop, liquid, vapor) = eos.ThermodynamicsPT(33.01065724886822, 681.2);
+  CHECK_CLOSE(371.3, prop.rho, 3e-6);
+  CHECK_CLOSE(3.2568688912634207, prop.cv, 2e-5);
+  CHECK_CLOSE(450.4310375365427, prop.w, 1e-3);
+  CHECK_CLOSE(4.4814490203595, prop.s, 1e-8);
 }
