@@ -14,6 +14,7 @@
   Not-a-knot 1D cubic spline.
 */
 
+#include <algorithm>
 #include <iostream>
 
 #include "lapack.hh"

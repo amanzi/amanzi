@@ -14,6 +14,7 @@
   Not-a-knot 2D tensor-product cubic spline.
 */
 
+#include <algorithm>
 #include <iostream>
 
 #include "SplineCubicNotAKnot1D.hh"
