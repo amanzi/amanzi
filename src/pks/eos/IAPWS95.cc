@@ -120,6 +120,11 @@ IAPWS95::ThermodynamicsRhoT(double rho, double T)
   prop = ExtendProperties(rho, prop);
   prop.x = x;
 
+  if (!two_phase) {
+    if (x == 0.0) liquid = prop;
+    else vapor = prop;
+  }
+
   return { prop, liquid, vapor };
 }
 

@@ -104,7 +104,7 @@ IAPWS95_StateEvaluator::Evaluate_(const State& S, const std::vector<CompositeVec
     }
 
     result_v[(int)TS95_t::RHO][c] = prop.rho;
-    result_v[(int)TS95_t::H][c] = prop.h;
+    result_v[(int)TS95_t::H][c] = prop.h * 1.0e+3;
     result_v[(int)TS95_t::V][c] = prop.v;
     result_v[(int)TS95_t::CP][c] = prop.cp * 1.0e+3;
     result_v[(int)TS95_t::CV][c] = prop.cv * 1.0e+3;
@@ -201,13 +201,15 @@ IAPWS95_DensityEvaluator::Evaluate_(const State& S, const std::vector<CompositeV
 {
   const auto& ts_c = *S.Get<CompositeVector>("thermodynamic_state").ViewComponent("cell");
 
-  auto& result0_v = *results[0]->ViewComponent("cell");
-  auto& result1_v = *results[1]->ViewComponent("cell");
-  int ncells = results[0]->size("cell");
+  for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
+    auto& result0_v = *results[0]->ViewComponent(*comp);
+    auto& result1_v = *results[1]->ViewComponent(*comp);
+    int ncells = results[0]->size(*comp);
 
-  for (int c = 0; c != ncells; ++c) {
-    result0_v[0][c] = ts_c[(int)TS95_t::RHO][c];
-    result1_v[0][c] = result0_v[0][c] / CommonDefs::MOLAR_MASS_H2O;
+    for (int c = 0; c != ncells; ++c) {
+      result0_v[0][c] = ts_c[(int)TS95_t::RHO][c];
+      result1_v[0][c] = result0_v[0][c] / CommonDefs::MOLAR_MASS_H2O;
+    }
   }
 }
 
@@ -224,20 +226,22 @@ IAPWS95_DensityEvaluator::EvaluatePartialDerivative_(const State& S,
   const auto& ts_c = *S.Get<CompositeVector>("thermodynamic_state").ViewComponent("cell");
   const auto& p_c = *S.Get<CompositeVector>(pressure_key_).ViewComponent("cell");
 
-  auto& result0_v = *results[0]->ViewComponent("cell");
-  auto& result1_v = *results[1]->ViewComponent("cell");
-  int ncells = results[0]->size("cell");
+  for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
+    auto& result0_v = *results[0]->ViewComponent(*comp);
+    auto& result1_v = *results[1]->ViewComponent(*comp);
+    int ncells = results[0]->size(*comp);
 
-  double v, p, T, ap, av, bp, cv, cp, kt;
-  if (wrt_key == pressure_key_) {
-    for (int c = 0; c != ncells; ++c) {
-      result0_v[0][c] = ts_c[(int)TS95_t::dRHOdP][c];
-      result1_v[0][c] = result0_v[0][c] / CommonDefs::MOLAR_MASS_H2O;
-    }
-  } else if (wrt_key == temperature_key_) {
-    for (int c = 0; c != ncells; ++c) {
-      result0_v[0][c] = ts_c[(int)TS95_t::dRHOdT][c];
-      result1_v[0][c] = result0_v[0][c] / CommonDefs::MOLAR_MASS_H2O;
+    double v, p, T, ap, av, bp, cv, cp, kt;
+    if (wrt_key == pressure_key_) {
+      for (int c = 0; c != ncells; ++c) {
+        result0_v[0][c] = ts_c[(int)TS95_t::dRHOdP][c];
+        result1_v[0][c] = result0_v[0][c] / CommonDefs::MOLAR_MASS_H2O;
+      }
+    } else if (wrt_key == temperature_key_) {
+      for (int c = 0; c != ncells; ++c) {
+        result0_v[0][c] = ts_c[(int)TS95_t::dRHOdT][c];
+        result1_v[0][c] = result0_v[0][c] / CommonDefs::MOLAR_MASS_H2O;
+      }
     }
   }
 }
@@ -394,11 +398,13 @@ IAPWS95_InternalEnergyEvaluator::Evaluate_(const State& S,
   const auto& p_c = *S.Get<CompositeVector>(pressure_key_).ViewComponent("cell");
   const auto& T_c = *S.Get<CompositeVector>(temperature_key_).ViewComponent("cell");
 
-  auto& result_v = *results[0]->ViewComponent("cell");
-  int ncells = results[0]->size("cell");
+  for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
+    auto& result_v = *results[0]->ViewComponent(*comp);
+    int ncells = results[0]->size(*comp);
 
-  for (int c = 0; c != ncells; ++c) {
-    result_v[0][c] = (ts_c[(int)TS95_t::H][c] - p_c[0][c] * ts_c[(int)TS95_t::V][c]) * CommonDefs::MOLAR_MASS_H2O;
+    for (int c = 0; c != ncells; ++c) {
+      result_v[0][c] = (ts_c[(int)TS95_t::H][c] - p_c[0][c] * ts_c[(int)TS95_t::V][c]) * CommonDefs::MOLAR_MASS_H2O;
+    }
   }
 }
 
@@ -417,16 +423,18 @@ IAPWS95_InternalEnergyEvaluator::EvaluatePartialDerivative_(
   const auto& p_c = *S.Get<CompositeVector>(pressure_key_).ViewComponent("cell");
   const auto& T_c = *S.Get<CompositeVector>(temperature_key_).ViewComponent("cell");
 
-  auto& result_v = *results[0]->ViewComponent("cell");
-  int ncells = results[0]->size("cell");
+  for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
+    auto& result_v = *results[0]->ViewComponent(*comp);
+    int ncells = results[0]->size(*comp);
 
-  if (wrt_key == pressure_key_) {
-    for (int c = 0; c != ncells; ++c) {
-      result_v[0][c] = ts_c[(int)TS95_t::dUdP][c];
-    }
-  } else if (wrt_key == temperature_key_) {
-    for (int c = 0; c != ncells; ++c) {
-      result_v[0][c] = ts_c[(int)TS95_t::dUdT][c];
+    if (wrt_key == pressure_key_) {
+      for (int c = 0; c != ncells; ++c) {
+        result_v[0][c] = ts_c[(int)TS95_t::dUdP][c];
+      }
+    } else if (wrt_key == temperature_key_) {
+      for (int c = 0; c != ncells; ++c) {
+        result_v[0][c] = ts_c[(int)TS95_t::dUdT][c];
+      }
     }
   }
 }
