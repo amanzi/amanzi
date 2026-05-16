@@ -119,7 +119,8 @@ if (BUILD_TESTS)
     # Copy test directory files if any out of source build
     if (NOT (${EOS_SOURCE_DIR} EQUAL ${EOS_BINARY_DIR}) )
         file(GLOB DataFiles "${EOS_SOURCE_DIR}/test/*.xml"
-                            "${EOS_SOURCE_DIR}/test/*.eos")
+                            "${EOS_SOURCE_DIR}/test/*.eos"
+                            "${EOS_SOURCE_DIR}/test/*.csv")
         file(COPY ${DataFiles} DESTINATION ${EOS_BINARY_DIR}/test/)
     endif()
 
