@@ -40,7 +40,7 @@ namespace AmanziEOS {
 IAPWS95_Spline::IAPWS95_Spline(Teuchos::ParameterList& plist)
   : IAPWS95(plist)
 {
-  std::string filename = plist.get<std::string>("table name");
+  std::string filename = plist.get<std::string>("csv table name");
   ReadTable_(filename);
 
   int ok = spline_.build(delta_, tau_, values_);

@@ -79,6 +79,7 @@ set(eos_inc_files
     IAPWS97.hh
     IAPWS95.hh
     IAPWS95_Spline.hh
+    IAPWS95Factory.hh
     EOS_Utils.hh
     EOS_Viscosity.hh
     eos_reg.hh

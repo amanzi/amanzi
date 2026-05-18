@@ -80,6 +80,8 @@ and :math:`c_r` is specific heat of rock [J/kg/K].
 #include "EvaluatorIndependentFunction.hh"
 #include "EvaluatorSecondaryMonotype.hh"
 #include "PDE_Accumulation.hh"
+#include "PDE_Advection.hh"
+#include "PDE_Diffusion.hh"
 #include "PK_BDF.hh"
 #include "PK_MPCStrong.hh"
 #include "PK_Factory.hh"
@@ -132,13 +134,18 @@ class FlowEnergyPT_PK : public PK_MPCStrong<PK_BDF> {
   Key domain_; // computational domain
 
   bool include_pt_coupling_;
-  Teuchos::RCP<Operators::PDE_Accumulation> op10_acc_, op01_acc_;
+  Teuchos::RCP<Operators::Operator> op10_, op01_;
+  Teuchos::RCP<Operators::PDE_Diffusion> pde10_diff_cond_, pde10_diff_flux_;
+  Teuchos::RCP<Operators::PDE_Advection> pde10_adv_, pde01_adv_;
+  Teuchos::RCP<Operators::PDE_Accumulation> pde10_acc_, pde01_acc_;
 
   // keys
   Key pressure_key_, temperature_key_;
-  Key ie_liquid_key_, energy_key_, particle_density_key_;
+  Key ie_liquid_key_, energy_key_, enthalpy_key_, particle_density_key_;
   Key mol_density_liquid_key_, mass_density_liquid_key_;
+  Key mol_flowrate_key_,  viscosity_liquid_key_;
   Key sat_liquid_key_, ws_key_;
+  Key bcs_flow_key_, bcs_temperature_key_, bcs_enthalpy_key_;
 
   // factory registration
   static RegisteredPKFactory<FlowEnergyPT_PK> reg_;

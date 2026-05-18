@@ -50,7 +50,8 @@ EnergyPressureTemperature_PK::FunctionalResidual(double t_old,
     const auto& conductivity = S_->Get<CompositeVector>(conductivity_gen_key_);
     *upw_conductivity_->ViewComponent("cell") = *conductivity.ViewComponent("cell");
 
-    const auto& bc_model = op_bc_->bc_model();
+    auto op_bc_temp = S_->GetPtrW<Operators::BCs>(bcs_temperature_key_, Tags::DEFAULT, "state");
+    const auto& bc_model = op_bc_temp->bc_model();
     Operators::CellToBoundaryFaces(bc_model, *upw_conductivity_);
     upwind_->Compute(*flux, bc_model, *upw_conductivity_);
   }
@@ -142,8 +143,10 @@ EnergyPressureTemperature_PK::UpdatePreconditioner(double t,
     const auto& conductivity = S_->Get<CompositeVector>(conductivity_gen_key_);
     *upw_conductivity_->ViewComponent("cell") = *conductivity.ViewComponent("cell");
 
+    auto op_bc_temp = S_->GetPtrW<Operators::BCs>(bcs_temperature_key_, Tags::DEFAULT, "state");
+    const auto& bc_model = op_bc_temp->bc_model();
+
     auto flux = S_->GetPtr<CompositeVector>(mol_flowrate_key_, Tags::DEFAULT);
-    const auto& bc_model = op_bc_->bc_model();
     Operators::CellToBoundaryFaces(bc_model, *upw_conductivity_);
     upwind_->Compute(*flux, bc_model, *upw_conductivity_);
   }
@@ -156,11 +159,30 @@ EnergyPressureTemperature_PK::UpdatePreconditioner(double t,
   // update with accumulation terms
   // update the accumulation derivatives, dE/dT
   S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
-  const auto& dEdT =
-    S_->GetDerivative<CompositeVector>(energy_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT);
+  auto& dEdT = S_->GetDerivative<CompositeVector>(energy_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT);
+  auto& dEdT_c = *dEdT.ViewComponent("cell");
+
+  S_->GetEvaluator(ie_rock_key_).UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
+  const auto& dUrdT = S_->GetDerivative<CV_t>(ie_rock_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT);
+  auto& dUrdT_c = *dUrdT.ViewComponent("cell");
+
+  S_->GetEvaluator(ie_liquid_key_).UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
+  const auto& dUidT = S_->GetDerivative<CV_t>(ie_liquid_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT);
+  auto& dUidT_c = *dUrdT.ViewComponent("cell");
+
+  S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, passwd_);
+  const auto& eta_c = *S_->Get<CV_t>(mol_density_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
+  const auto& rho_r = *S_->Get<CV_t>(particle_density_key_, Tags::DEFAULT).ViewComponent("cell");
+  const auto& phi_c = *S_->Get<CV_t>(porosity_key_, Tags::DEFAULT).ViewComponent("cell");
 
   if (dt > 0.0) {
     op_acc_->AddAccumulationDelta(*up->Data().ptr(), dEdT, dEdT, dt, "cell");
+    for (int c = 0; c < ncells_owned; ++c) {
+      if (dEdT_c[0][c] < 0.0) {
+        double tmp = phi_c[0][c];
+        dEdT_c[0][c] = rho_r[0][c] * dUrdT_c[0][c] * (1.0 - tmp) + eta_c[0][c] * dUidT_c[0][c] * tmp;
+      }
+    }
   }
 
   // add advection term dHdT

@@ -134,7 +134,7 @@ TEST(EOS_IAPWS95_SPLINE)
   using namespace Amanzi::AmanziEOS;
 
   Teuchos::ParameterList plist;
-  plist.set<std::string>("table name", "test/h2o.csv");
+  plist.set<std::string>("csv table name", "test/h2o.csv");
   IAPWS95_Spline eos(plist);
 
   // residual part of Helmholtz energy 

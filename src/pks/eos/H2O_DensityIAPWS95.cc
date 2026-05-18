@@ -15,13 +15,14 @@
 */
 
 #include "H2O_DensityIAPWS95.hh"
+#include "IAPWS95Factory.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
 H2O_DensityIAPWS95::H2O_DensityIAPWS95(Teuchos::ParameterList& plist)
   : EOS_Density(plist) {
-  eos_ = Teuchos::rcp(new IAPWS95(plist));
+  eos_ = CreateIAPWS95(plist);
 };
 
 

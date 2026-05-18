@@ -119,6 +119,7 @@ Energy_PK::Setup()
   L_scheme_data_key_ = "l_scheme_data";
   beta_key_ = Keys::getKey(domain_, "l_scheme_beta");
   bcs_enthalpy_key_ = Keys::getKey(domain_, "bcs_enthalpy");
+  bcs_temperature_key_ = Keys::getKey(domain_, "bcs_temperature");
   heat_src_key_ = Keys::getKey(domain_, "heat_source");
 
   // require constant fields
@@ -373,6 +374,12 @@ Energy_PK::Setup()
     ->SetType(WhetStone::DOF_Type::SCALAR);
   S_->GetRecordW(bcs_enthalpy_key_, "state").set_initialized();
 
+  S_->Require<Operators::BCs, Operators::BCs>(bcs_temperature_key_, Tags::DEFAULT, "state")
+    .SetMesh(mesh_)
+    ->SetKind(AmanziMesh::Entity_kind::FACE)
+    ->SetType(WhetStone::DOF_Type::SCALAR);
+  S_->GetRecordW(bcs_temperature_key_, "state").set_initialized();
+
   // source conditions
   Teuchos::ParameterList src_list = ep_list_->sublist("source terms");
   if (src_list.isSublist("linear relaxation")) {
@@ -403,8 +410,6 @@ Energy_PK::Setup()
 void
 Energy_PK::Initialize()
 {
-  // Create BCs objects
-  op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   auto bc_list = Teuchos::rcp(new Teuchos::ParameterList(ep_list_->sublist("boundary conditions", false)));
 
   // -- temperature
@@ -541,6 +546,7 @@ Energy_PK::AddSourceTerms(CompositeVector& rhs)
 void
 Energy_PK::ComputePrimaryBCs(const CompositeVector& u)
 {
+  auto op_bc_ = S_->GetPtrW<Operators::BCs>(bcs_temperature_key_, Tags::DEFAULT, "state");
   std::vector<int>& bc_model = op_bc_->bc_model();
   std::vector<double>& bc_value = op_bc_->bc_value();
   std::vector<double>& bc_mixed = op_bc_->bc_mixed();
@@ -600,11 +606,12 @@ Energy_PK::ComputePrimaryBCs(const CompositeVector& u)
 void
 Energy_PK::ComputeSecondaryBCs()
 {
-  std::vector<int>& bc_model = op_bc_->bc_model();
-  std::vector<double>& bc_value = op_bc_->bc_value();
+  auto op_bc_temp = S_->GetPtrW<Operators::BCs>(bcs_temperature_key_, Tags::DEFAULT, "state");
+  std::vector<int>& bc_model = op_bc_temp->bc_model();
+  std::vector<double>& bc_value = op_bc_temp->bc_value();
 
   // copy essential conditions to primary variable and update dependend fields
-  BoundaryDataToFaces_(*op_bc_, S_->GetW<CV_t>(temperature_key_, Tags::DEFAULT, passwd_));
+  BoundaryDataToFaces_(*op_bc_temp, S_->GetW<CV_t>(temperature_key_, Tags::DEFAULT, passwd_));
 
   S_->GetEvaluator(enthalpy_key_).Update(*S_, passwd_);
   const auto& enth = *S_->Get<CV_t>(enthalpy_key_).ViewComponent("boundary_face", true);
@@ -716,7 +723,7 @@ Energy_PK::SetupLSchemeKey(Teuchos::ParameterList& plist)
 
 
 /* ******************************************************************
-* Apply Dirichlet data to a vector, oly for boundary_face component.
+* Apply Dirichlet data to a vector, only for boundary_face component.
 * NOTE: helper function applyDirichletBCs() does not work for a 
 *       fractured matrix.
 ****************************************************************** */
@@ -740,6 +747,8 @@ Energy_PK::BoundaryDataToFaces_(const Operators::BCs& bcs, CompositeVector& u)
       }
     }
   }
+
+  temperature_eval_->SetChanged();
 }
 
 

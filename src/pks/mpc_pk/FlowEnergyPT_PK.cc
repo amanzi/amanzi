@@ -17,6 +17,8 @@
 #include "Energy_PK.hh"
 #include "ModelAssumptions.hh"
 #include "OperatorDefs.hh"
+#include "PDE_DiffusionFactory.hh"
+#include "PDE_AdvectionUpwindFactory.hh"
 #include "StateArchive.hh"
 
 #include "FlowEnergyPT_PK.hh"
@@ -63,6 +65,7 @@ FlowEnergyPT_PK::Setup()
   // keys
   temperature_key_ = Keys::getKey(domain_, "temperature");
   energy_key_ = Keys::getKey(domain_, "energy");
+  enthalpy_key_ = Keys::getKey(domain_, "enthalpy");
   ie_liquid_key_ = Keys::getKey(domain_, "internal_energy_liquid");
   particle_density_key_ = Keys::getKey(domain_, "particle_density");
 
@@ -72,6 +75,12 @@ FlowEnergyPT_PK::Setup()
 
   mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid");
   mass_density_liquid_key_ = Keys::getKey(domain_, "mass_density_liquid");
+  viscosity_liquid_key_ = Keys::getKey(domain_, "viscosity_liquid");
+
+  mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
+  bcs_flow_key_ = Keys::getKey(domain_, "bcs_flow");
+  bcs_temperature_key_ = Keys::getKey(domain_, "bcs_temperature");
+  bcs_enthalpy_key_ = Keys::getKey(domain_, "bcs_enthalpy");
 
   // Fields for solids
   // -- rock
@@ -134,6 +143,10 @@ FlowEnergyPT_PK::Setup()
   S_->RequireDerivative<CV_t, CVS_t>(
       ws_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, ws_key_)
     .SetGhosted();
+
+  S_->RequireDerivative<CV_t, CVS_t>(
+      enthalpy_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, enthalpy_key_)
+    .SetGhosted();
 }
 
 
@@ -143,6 +156,8 @@ FlowEnergyPT_PK::Setup()
 void
 FlowEnergyPT_PK::Initialize()
 {
+  auto flow_pk = Teuchos::rcp_dynamic_cast<Flow::Flow_PK>(sub_pks_[0]);
+
   include_pt_coupling_ =
     my_list_->sublist("time integrator").get<bool>("include coupling terms", false);
 
@@ -173,11 +188,28 @@ FlowEnergyPT_PK::Initialize()
 
   // full preconditioner
   if (include_pt_coupling_) {
-    op10_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, mesh_));
-    op_tree_pc_->set_operator_block(1, 0, op10_acc_->global_operator());
+    Operators::PDE_DiffusionFactory opfactory;
+    Teuchos::ParameterList oplist = Teuchos::rcp_dynamic_cast<Energy::Energy_PK>(sub_pks_[1])
+      ->getPList()->sublist("operators").sublist("diffusion operator").sublist("preconditioner");
 
-    op01_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, mesh_));
-    op_tree_pc_->set_operator_block(0, 1, op01_acc_->global_operator());
+    Operators::PDE_AdvectionUpwindFactory opfactory_adv;
+    Teuchos::ParameterList oplist_adv = Teuchos::rcp_dynamic_cast<Energy::Energy_PK>(sub_pks_[1])
+      ->getPList()->sublist("operators").sublist("advection operator");
+
+    // -- pressure-temperature
+    pde01_adv_ = opfactory_adv.Create(oplist_adv, mesh_);
+    op01_ = pde01_adv_->global_operator();
+    op_tree_pc_->set_operator_block(0, 1, op01_);
+    pde01_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, op01_));
+
+    // -- temperature-pressure
+    pde10_diff_flux_ = opfactory.Create(oplist, mesh_);
+    pde10_diff_flux_->SetTensorCoefficient(flow_pk->getK());
+    op10_ = pde10_diff_flux_->global_operator();
+    op_tree_pc_->set_operator_block(1, 0, op10_);
+
+    pde10_adv_ = opfactory_adv.Create(oplist_adv, op10_);
+    pde10_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, op10_));
 
     std::string pc_name =
       Teuchos::sublist(my_list_, "time integrator", true)->get<std::string>("preconditioner");
@@ -271,19 +303,69 @@ FlowEnergyPT_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
 
   if (include_pt_coupling_) {
     std::string passwd("");
-    S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd, pressure_key_, Tags::DEFAULT);
-    const auto& dEdP =
-      S_->GetDerivative<CV_t>(energy_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT);
+    Tag tag = Tags::DEFAULT;
 
-    S_->GetEvaluator(ws_key_).UpdateDerivative(*S_, passwd, temperature_key_, Tags::DEFAULT);
-    const auto& dws_dT =
-      S_->GetDerivative<CV_t>(ws_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT);
+    const auto& rho = S_->Get<CV_t>(mol_density_liquid_key_, tag);
+    const auto& mu = S_->Get<CV_t>(viscosity_liquid_key_, tag);
+    const auto& enth = S_->Get<CV_t>(enthalpy_key_, tag);
+    auto flux = S_->GetPtr<CompositeVector>(mol_flowrate_key_, tag);
 
-    if (dt > 0.0) {
-      op10_acc_->AddAccumulationDelta(*up->SubVector(0)->Data(), dEdP, dEdP, dt, "cell");
-      op01_acc_->AddAccumulationDelta(*up->SubVector(1)->Data(), dws_dT, dws_dT, dt, "cell");
-    }
+    auto bc_pres = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, tag, "state");
+    auto bc_temp = S_->GetPtrW<Operators::BCs>(bcs_temperature_key_, tag, "state");
+    auto bc_enth = S_->GetPtrW<Operators::BCs>(bcs_enthalpy_key_, tag, "state");
 
+    S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, passwd);
+    S_->GetEvaluator(enthalpy_key_).Update(*S_, passwd);
+
+    // pressure-energy block
+    op01_->Init();
+
+    // -- accumulation
+    S_->GetEvaluator(ws_key_).UpdateDerivative(*S_, passwd, temperature_key_, tag);
+    const auto& dwsdT = S_->GetDerivative<CV_t>(ws_key_, tag, temperature_key_, tag);
+    pde01_acc_->AddAccumulationTerm(dwsdT, dt, "cell");
+
+    // -- advection div(q kt dT)
+    S_->GetEvaluator(mol_density_liquid_key_).UpdateDerivative(*S_, passwd, temperature_key_, tag);
+    auto coef = Teuchos::rcp(new CompositeVector(
+      S_->GetDerivative<CV_t>(mol_density_liquid_key_, tag, temperature_key_, tag)));
+    coef->ReciprocalMultiply(1.0, rho, *coef, 0.0);
+
+    S_->GetEvaluator(viscosity_liquid_key_).UpdateDerivative(*S_, passwd, temperature_key_, tag);
+    auto coef1 = S_->GetDerivative<CV_t>(viscosity_liquid_key_, tag, temperature_key_, tag);
+    coef->ReciprocalMultiply(-1.0, mu, coef1, 1.0);
+
+    pde01_adv_->Setup(*flux);
+    pde01_adv_->UpdateMatrices(flux.ptr(), coef.ptr());
+    pde01_adv_->SetBCs(bc_temp, bc_pres);
+    pde01_adv_->ApplyBCs(false, true, false);
+
+    // energy-pressure block
+    op10_->Init();
+
+    // -- diffusion due to heat transport (with assumption relperm = 1), div([K h eta / mu] grad dp)
+    *coef = S_->Get<CV_t>(mol_density_liquid_key_, tag);
+    coef->Multiply(1.0, enth, *coef, 0.0);
+    coef->ReciprocalMultiply(1.0, mu, *coef, 0.0);
+
+    pde10_diff_flux_->SetScalarCoefficient(coef, Teuchos::null);
+    pde10_diff_flux_->UpdateMatrices(Teuchos::null, up->Data().ptr());
+    pde10_diff_flux_->SetBCs(bc_pres, bc_temp);
+    pde10_diff_flux_->ApplyBCs(true, true, false);
+
+    // -- advection due to heat transport, div([q dH/dp] dp) FIXME we need d(qH)/dp
+    S_->GetEvaluator(enthalpy_key_).UpdateDerivative(*S_, passwd, pressure_key_, tag);
+    auto dHdp = S_->GetDerivativePtr<CV_t>(enthalpy_key_, tag, pressure_key_, tag);
+    pde10_adv_->Setup(*flux);
+    pde10_adv_->UpdateMatrices(flux.ptr(), dHdp.ptr());
+    pde10_adv_->SetBCs(bc_pres, bc_enth);
+    pde10_adv_->ApplyBCs(false, true, false);
+
+    // -- accumulation
+    S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd, pressure_key_, tag);
+    auto& dEdp = S_->GetDerivative<CV_t>(energy_key_, tag, pressure_key_, tag);
+    pde10_acc_->AddAccumulationTerm(dEdp, dt, "cell");
+   
     op_tree_pc_->AssembleMatrix();
     op_tree_pc_->InitializeInverse();
     op_tree_pc_->ComputeInverse();

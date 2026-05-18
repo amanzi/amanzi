@@ -120,6 +120,7 @@ EnergyPressureEnthalpy_PK::Setup()
   pressure_key_ = Keys::getKey(domain_, "pressure");
   viscosity_liquid_key_ = Keys::getKey(domain_, "viscosity_liquid");
   bcs_flow_key_ = Keys::getKey(domain_, "bcs_flow");
+  bcs_temperature_key_ = Keys::getKey(domain_, "bcs_temperature");
   bcs_enthalpy_key_ = Keys::getKey(domain_, "bcs_enthalpy");
   heat_src_key_ = Keys::getKey(domain_, "heat_source");
 
@@ -361,6 +362,12 @@ EnergyPressureEnthalpy_PK::Setup()
     ->SetType(WhetStone::DOF_Type::SCALAR);
   S_->GetRecordW(bcs_enthalpy_key_, "state").set_initialized();
 
+  S_->Require<Operators::BCs, Operators::BCs>(bcs_temperature_key_, Tags::DEFAULT, "state")
+    .SetMesh(mesh_)
+    ->SetKind(AmanziMesh::Entity_kind::FACE)
+    ->SetType(WhetStone::DOF_Type::SCALAR);
+  S_->GetRecordW(bcs_temperature_key_, "state").set_initialized();
+
   // set units
   S_->GetRecordSetW(temperature_key_).set_units("K");
   S_->GetRecordSetW(mol_flowrate_key_).set_units("mol/s");
@@ -559,8 +566,9 @@ EnergyPressureEnthalpy_PK::FailStep(double t_old, double t_new, const Tag& tag)
 ****************************************************************** */
 void EnergyPressureEnthalpy_PK::ComputeSecondaryBCs() 
 {
-  std::vector<int>& bc_model = op_bc_->bc_model();
-  std::vector<double>& bc_value = op_bc_->bc_value();
+  auto op_bc_temp = S_->GetPtrW<Operators::BCs>(bcs_temperature_key_, Tags::DEFAULT, "state");
+  std::vector<int>& bc_model = op_bc_temp->bc_model();
+  std::vector<double>& bc_value = op_bc_temp->bc_value();
 
   Teuchos::RCP<const Epetra_MultiVector> p_f, p_bf;
   Teuchos::RCP<Epetra_MultiVector> h_f, h_bf, T_f, T_bf;
