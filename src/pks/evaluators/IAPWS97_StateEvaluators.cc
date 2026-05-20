@@ -458,6 +458,7 @@ IAPWS97_ThermalConductivityEvaluator::Evaluate_(const State& S,
 
   for (int c = 0; c != ncells; ++c) {
     result_v[0][c] = ts_c[(int)TS97_t::K][c];
+    //    if (domain_name_=="fracture")  result_v[0][c] *= 1000.0;
   }
 
     

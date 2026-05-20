@@ -15,12 +15,12 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
                          VERSION ${ALQUIMIA_VERSION_MAJOR} ${ALQUIMIA_VERSION_MINOR} ${ALQUIMIA_VERSION_PATCH})
 
 # --- Patch the original code
-set(COOLPROP_patch_file coolprop-cmake.patch)
-patch_tpl(COOLPROP
-          ${COOLPROP_prefix_dir}
-          ${COOLPROP_source_dir}
-          ${COOLPROP_stamp_dir}
-          COOLPROP_patch_file)
+#set(COOLPROP_patch_file coolprop-cmake.patch)
+#patch_tpl(COOLPROP
+#          ${COOLPROP_prefix_dir}
+#          ${COOLPROP_source_dir}
+#          ${COOLPROP_stamp_dir}
+#          COOLPROP_patch_file)
 
 # --- Define the arguments passed to CMake.
 set(COOLPROP_INSTALL_PREFIX ${TPL_INSTALL_PREFIX}/coolprop)

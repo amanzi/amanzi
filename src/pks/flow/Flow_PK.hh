@@ -320,6 +320,7 @@ class Flow_PK : public PK_PhysicalBDF {
 
   double seepage_mass() { return seepage_mass_; } // support of unit tests
   Teuchos::RCP<const std::vector<WhetStone::Tensor>> getK() { return K_; }
+  bool IsManifold(){return assumptions_.flow_on_manifold;}
 
  protected:
   void Setup_FlowRates_(bool mass_to_molar, double molar_rho);

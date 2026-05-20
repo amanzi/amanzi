@@ -65,6 +65,9 @@ EnergyPressureEnthalpy_PK::FunctionalResidual(double t_old,
 
   op_matrix_->ComputeNegativeResidual(*u_new->Data(), *g->Data());
 
+  auto& g_c = *g->Data()->ViewComponent("cell");
+  auto& g_f = *g->Data()->ViewComponent("face");
+  
   // add diffusion due to pressure: div(k dT/dp grad(p))
   CompositeVector g_adv(g->Data()->Map());
   const auto& pres = S_->Get<CV_t>(pressure_key_, Tags::DEFAULT);
@@ -80,7 +83,7 @@ EnergyPressureEnthalpy_PK::FunctionalResidual(double t_old,
 
   op_matrix_diff_pres_->global_operator()->ComputeNegativeResidual(pres, g_adv);
   g->Data()->Update(1.0, g_adv, 1.0);
-
+  
   // add enthalpy advection
   S_->GetEvaluator(mol_flowrate_key_).Update(*S_, passwd_);
   auto flux = S_->GetPtr<CV_t>(mol_flowrate_key_, Tags::DEFAULT);
@@ -95,7 +98,7 @@ EnergyPressureEnthalpy_PK::FunctionalResidual(double t_old,
   g->Data()->Update(1.0, g_adv, 1.0);
 
   // -- implicit source models
-  auto& g_c = *g->Data()->ViewComponent("cell");
+  //auto& g_c = *g->Data()->ViewComponent("cell");
   if (heat_src_) {
     S_->GetEvaluator(heat_src_key_).Update(*S_, passwd_);
     const auto& src_c = *S_->Get<CV_t>(heat_src_key_, Tags::DEFAULT).ViewComponent("cell");
@@ -105,6 +108,7 @@ EnergyPressureEnthalpy_PK::FunctionalResidual(double t_old,
     }
   }
 
+  
   // add accumulation term
   S_->GetEvaluator(energy_key_).Update(*S_, passwd_);
   const auto& e1 = *S_->Get<CV_t>(energy_key_).ViewComponent("cell");
@@ -121,11 +125,13 @@ EnergyPressureEnthalpy_PK::FunctionalResidual(double t_old,
     double factor = mesh_->getCellVolume(c) / dt;
     double acc = factor * (e1[0][c] - e0[0][c]);
     g_c[0][c] += acc;
+    //std::cout<<"c: "<<c<<" acc "<<acc<<" g_c "<<g_c[0][c]<<"\n";
     residual_max_norm_ = std::max(residual_max_norm_, fabs(g_c[0][c] / (factor * e0[0][c])));
   }
 
   S_->GetEvaluator(temperature_key_).Update(*S_, passwd_);
   const auto& t1 = *S_->Get<CV_t>(temperature_key_).ViewComponent("cell");
+
   
 }
 
@@ -172,17 +178,23 @@ EnergyPressureEnthalpy_PK::UpdatePreconditioner(double t,
   const auto& rho_r = *S_->Get<CV_t>(particle_density_key_, Tags::DEFAULT).ViewComponent("cell");
   const auto& phi_c = *S_->Get<CV_t>(porosity_key_, Tags::DEFAULT).ViewComponent("cell");
 
+  if (assumptions_.flow_on_manifold) {
+    if (S_->HasRecord(aperture_key_)) {
+      *coef = S_->Get<CV_t>(aperture_key_, Tags::DEFAULT);
+    }
+  }
+  
   
   for (int c = 0; c < ncells_owned; ++c) {
     if (dEdh_c[0][c] < 0.0) {
-
       double tmp = phi_c[0][c];
       if (tmp == 1.0) dEdh_c[0][c] = eta_c[0][c];
       else dEdh_c[0][c] = rho_r[0][c] * dUdh_c[0][c] * (1.0 - tmp); // + eta_c[0][c] * tmp;
-
+      if (assumptions_.flow_on_manifold) {        
+        dEdh_c[0][c] *= (*coef->ViewComponent("cell"))[0][c];
+      }
     }
   }
-
   
   op_acc_->AddAccumulationTerm(dEdh, dt, "cell");
 
@@ -218,9 +230,9 @@ EnergyPressureEnthalpy_PK::UpdatePreconditioner(double t,
   op_preconditioner_adv_enth_->Setup(*flux);
   op_preconditioner_adv_enth_->UpdateMatrices(flux.ptr(), coef.ptr());
   op_preconditioner_adv_enth_->ApplyBCs(false, true, false);
-
-  // verify and finalize preconditioner
-  // op_preconditioner_->Verify();
+  
+  //verify and finalize preconditioner
+  //op_preconditioner_->Verify();
   op_preconditioner_->ComputeInverse();
 }
 
@@ -251,7 +263,8 @@ EnergyPressureEnthalpy_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 
   const auto& uc = *u->Data()->ViewComponent("cell");
   const auto& duc = *du->Data()->ViewComponent("cell");
-
+  //  const auto& duf = *du->Data()->ViewComponent("face");
+  
   int ncomp = uc.MyLength();
   for (int c = 0; c < ncomp; ++c) {
     double tmp = fabs(duc[0][c]) / (fabs(uc[0][c]) + ref_enthalpy);

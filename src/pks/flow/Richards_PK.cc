@@ -380,6 +380,8 @@ Richards_PK::Setup()
         alpha_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, alpha_key_)
       .SetGhosted();
 
+    std::cout<<"alpha list\n"<<elist<<"\n";
+    
     auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
     S_->SetEvaluator(alpha_key_, Tags::DEFAULT, eval);
   }

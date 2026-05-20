@@ -136,6 +136,7 @@ protected:
   Key state_key_, viscosity_liquid_key_, mol_density_liquid_key_, iso_compressibility_key_;
   Key mol_flowrate_key_, water_storage_key_;
   Key bcs_flow_key_, bcs_enthalpy_key_;
+  Key permeability_key_, aperture_key_;
 
   // factory registration
   static RegisteredPKFactory<FlowEnergyPH_PK> reg_;

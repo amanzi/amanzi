@@ -378,7 +378,6 @@ State::RequireEvaluator(const Key& key, const Tag& tag, bool alias_ok)
   // Create the evaluator from State's plist
   // -- Get the Field Evaluator plist
   Teuchos::ParameterList& fm_plist = state_plist_.sublist("evaluators");
-  std::cout<<fm_plist<<"\n";
   Teuchos::ParameterList fe_plist;
   bool found = false;
   if (HasEvaluatorList(Keys::getKey(key, tag, true))) {
@@ -426,7 +425,6 @@ State::RequireEvaluator(const Key& key, const Tag& tag, bool alias_ok)
     Evaluator_Factory evaluator_factory;
     fe_plist.set("tag", tag.get());
     auto evaluator = evaluator_factory.createEvaluator(fe_plist);
-    std::cout<<fe_plist<<"\n";
     SetEvaluator_(key, tag, evaluator);
     evaluator->EnsureEvaluators(*this);
     return *evaluator;

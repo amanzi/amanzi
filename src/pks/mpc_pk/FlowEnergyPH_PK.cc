@@ -78,11 +78,12 @@ FlowEnergyPH_PK::Setup()
   particle_density_key_ = Keys::getKey(domain_, "particle_density");
 
   state_key_ = Keys::getKey(domain_, "thermodynamic_state");
-  //state_key_ = "thermodynamic_state";
   mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid");
   viscosity_liquid_key_ = Keys::getKey(domain_, "viscosity_liquid");
   iso_compressibility_key_ = Keys::getKey(domain_, "isothermal_compressibility");
   conductivity_key_ = Keys::getKey(domain_, "thermal_conductivity");
+  permeability_key_ = Keys::getKey(domain_, "permeability");
+  aperture_key_ = Keys::getKey(domain_, "aperture");
 
   mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
   water_storage_key_ = Keys::getKey(domain_, "water_storage");
@@ -360,6 +361,7 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
 {
   PK_MPCStrong<PK_BDF>::UpdatePreconditioner(t, up, dt);
 
+  auto flow_pk = Teuchos::rcp_dynamic_cast<Flow::Flow_PK>(sub_pks_[0]);
   auto energy_pk = Teuchos::rcp_dynamic_cast<Energy::EnergyPressureEnthalpy_PK>(sub_pks_[1]);
 
   auto bc_enth = S_->GetPtrW<Operators::BCs>(bcs_enthalpy_key_, Tags::DEFAULT, "state");
@@ -371,90 +373,99 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, passwd);
   S_->GetEvaluator(viscosity_liquid_key_).Update(*S_, passwd);
 
-
-  const auto& rho = S_->Get<CV_t>(mol_density_liquid_key_, tag);
-  const auto& mu = S_->Get<CV_t>(viscosity_liquid_key_, tag);
-  auto flux = S_->GetPtr<CompositeVector>(mol_flowrate_key_, tag);
-
+  const auto& rho = S_->Get<CV_t>(mol_density_liquid_key_, Tags::DEFAULT);
+  const auto& mu = S_->Get<CV_t>(viscosity_liquid_key_, Tags::DEFAULT);
+  auto flux = S_->GetPtr<CompositeVector>(mol_flowrate_key_, Tags::DEFAULT);
 
   //if (precon_type_ == PRECON_FULL) {
+  // ---------------------
+  // pressure-energy block
+  // ---------------------
+  op01_->Init();
 
-    // ---------------------
-    // pressure-energy block
-    // ---------------------
-    op01_->Init();
+  // -- accumulation
+  S_->GetEvaluator(water_storage_key_).UpdateDerivative(*S_, passwd, enthalpy_key_, tag);
+  const auto& dwsdh = S_->GetDerivative<CV_t>(water_storage_key_, tag, enthalpy_key_, tag);
+  pde01_acc_->AddAccumulationTerm(dwsdh, dt, "cell");
 
-    // -- accumulation
-    S_->GetEvaluator(water_storage_key_).UpdateDerivative(*S_, passwd, enthalpy_key_, tag);
-    const auto& dwsdh = S_->GetDerivative<CV_t>(water_storage_key_, tag, enthalpy_key_, tag);
-    pde01_acc_->AddAccumulationTerm(dwsdh, dt, "cell");
+  // -- advection div(q kt dh)
+  auto coef = Teuchos::rcp(new CompositeVector(
+    S_->GetDerivative<CV_t>(mol_density_liquid_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT)));
+  coef->ReciprocalMultiply(1.0, rho, *coef, 0.0);
+  //std::cout<<*coef->ViewComponent("cell");
 
-    // -- advection div(q kt dh)
-    auto coef = Teuchos::rcp(new CompositeVector(
-                                                 S_->GetDerivative<CV_t>(mol_density_liquid_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT)));
-    coef->ReciprocalMultiply(1.0, rho, *coef, 0.0);
+  S_->GetEvaluator(viscosity_liquid_key_).UpdateDerivative(*S_, passwd, enthalpy_key_, Tags::DEFAULT);
+  auto coef1 = S_->GetDerivative<CV_t>(viscosity_liquid_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT);
+  coef->ReciprocalMultiply(-1.0, mu, coef1, 1.0);
 
-    S_->GetEvaluator(viscosity_liquid_key_).UpdateDerivative(*S_, passwd, enthalpy_key_, Tags::DEFAULT);
-    auto coef1 = S_->GetDerivative<CV_t>(viscosity_liquid_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT);
-    coef->ReciprocalMultiply(-1.0, mu, coef1, 1.0);
+  pde01_adv_->Setup(*flux);
+  pde01_adv_->UpdateMatrices(flux.ptr(), coef.ptr());
+  pde01_adv_->SetBCs(bc_enth, bc_pres);
+  pde01_adv_->ApplyBCs(false, true, false);
 
-    pde01_adv_->Setup(*flux);
-    pde01_adv_->UpdateMatrices(flux.ptr(), coef.ptr());
-    pde01_adv_->SetBCs(bc_enth, bc_pres);
-    pde01_adv_->ApplyBCs(false, true, false);
+  // ---------------------
+  // energy-pressure block
+  // ---------------------
+  op10_->Init();
 
-    // ---------------------
-    // energy-pressure block
-    // ---------------------
-    op10_->Init();
+  // -- diffusion due to heat conduction
+  S_->GetEvaluator(conductivity_key_).Update(*S_, passwd);
+  const auto& conductivity = S_->Get<CV_t>(conductivity_key_, tag);
+  coef = Teuchos::rcp(new CompositeVector(conductivity));
+  
+  S_->GetEvaluator(temperature_key_).UpdateDerivative(*S_, passwd, pressure_key_, tag);
+  const auto& dTdp = S_->GetDerivative<CV_t>(temperature_key_, tag, pressure_key_, tag);
+  coef->Multiply(1.0, *coef, dTdp, 0.0);
 
-    // -- diffusion due to heat conduction
-    S_->GetEvaluator(conductivity_key_).Update(*S_, passwd);
-    const auto& conductivity = S_->Get<CV_t>(conductivity_key_, tag);
-    coef = Teuchos::rcp(new CompositeVector(conductivity));
+  
+  pde10_diff_cond_->SetScalarCoefficient(coef, Teuchos::null);
+  pde10_diff_cond_->UpdateMatrices(Teuchos::null, up->Data().ptr());
+  pde10_diff_cond_->SetBCs(bc_pres, bc_enth);
+  pde10_diff_cond_->ApplyBCs(true, true, false);
 
-    S_->GetEvaluator(temperature_key_).UpdateDerivative(*S_, passwd, pressure_key_, tag);
-    const auto& dTdp = S_->GetDerivative<CV_t>(temperature_key_, tag, pressure_key_, tag);
-    coef->Multiply(1.0, *coef, dTdp, 0.0);
+  // -- diffusion due to heat transport div(K eta h / mu grad dp) (we assume relperm = 1)
+  S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, passwd);
+  *coef = S_->Get<CV_t>(mol_density_liquid_key_, tag);
+  coef->Multiply(1.0, *up->SubVector(1)->Data(), *coef, 0.0);
+  coef->ReciprocalMultiply(1.0, mu, *coef, 0.0);
+  if (flow_pk -> IsManifold()){
+    S_->GetEvaluator(permeability_key_).Update(*S_, passwd);
+    const auto& perm = S_->Get<CV_t>(permeability_key_, tag);
+    coef->Multiply(1.0, *coef, perm, 0.0);
+    S_->GetEvaluator(aperture_key_).Update(*S_, passwd);
+    const auto& apert = S_->Get<CV_t>(aperture_key_, tag);
+    coef->Multiply(1.0, *coef, apert, 0.0);
+  }
+  
+  
+  pde10_diff_flux_->SetScalarCoefficient(coef, Teuchos::null);
+  pde10_diff_flux_->UpdateMatrices(Teuchos::null, up->Data().ptr());
+  pde10_diff_flux_->SetBCs(bc_pres, bc_enth);
+  pde10_diff_flux_->ApplyBCs(true, true, false);
+  RemoveFluxContinuityEquations_(pde10_diff_flux_);
 
-    pde10_diff_cond_->SetScalarCoefficient(coef, Teuchos::null);
-    pde10_diff_cond_->UpdateMatrices(Teuchos::null, up->Data().ptr());
-    pde10_diff_cond_->SetBCs(bc_pres, bc_enth);
-    pde10_diff_cond_->ApplyBCs(true, true, false);
+  // -- advection div((q kt h) dp)
+  S_->GetEvaluator(iso_compressibility_key_).Update(*S_, passwd);
+  const auto& compressibility = S_->Get<CV_t>(iso_compressibility_key_, Tags::DEFAULT);
+  coef = Teuchos::rcp(new CompositeVector(compressibility));
+  coef->Multiply(1.0, *coef, *up->SubVector(1)->Data(), 0.0);
 
-    // -- diffusion due to heat transport (we assume relperm = 1)
-    S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, passwd);
-    *coef = S_->Get<CV_t>(mol_density_liquid_key_, tag);
-    coef->Multiply(1.0, *up->SubVector(1)->Data(), *coef, 0.0);
-    coef->ReciprocalMultiply(1.0, mu, *coef, 0.0);
+  S_->GetEvaluator(viscosity_liquid_key_).UpdateDerivative(*S_, passwd, pressure_key_, Tags::DEFAULT);
+  coef1 = S_->GetDerivative<CV_t>(viscosity_liquid_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT);
+  coef1.Multiply(1.0, *up->SubVector(1)->Data(), coef1, 0.0);
+  coef->ReciprocalMultiply(-1.0, mu, coef1, 1.0);
+  
+  pde10_adv_->Setup(*flux);
+  pde10_adv_->UpdateMatrices(flux.ptr(), coef.ptr());
+  pde10_adv_->SetBCs(bc_pres, bc_enth);
+  pde10_adv_->ApplyBCs(false, true, false);
 
-    pde10_diff_flux_->SetScalarCoefficient(coef, Teuchos::null);
-    pde10_diff_flux_->UpdateMatrices(Teuchos::null, up->Data().ptr());
-    pde10_diff_flux_->SetBCs(bc_pres, bc_enth);
-    pde10_diff_flux_->ApplyBCs(true, true, false);
-    RemoveFluxContinuityEquations_(pde10_diff_flux_);
 
-    // -- advection div((q kt h) dp)
-    S_->GetEvaluator(iso_compressibility_key_).Update(*S_, passwd);
-    const auto& compressibility = S_->Get<CV_t>(iso_compressibility_key_, Tags::DEFAULT);
-    coef = Teuchos::rcp(new CompositeVector(compressibility));
-    coef->Multiply(1.0, *coef, *up->SubVector(1)->Data(), 0.0);
-
-    S_->GetEvaluator(viscosity_liquid_key_).UpdateDerivative(*S_, passwd, pressure_key_, Tags::DEFAULT);
-    coef1 = S_->GetDerivative<CV_t>(viscosity_liquid_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT);
-    coef1.Multiply(1.0, *up->SubVector(1)->Data(), coef1, 0.0);
-    coef->ReciprocalMultiply(-1.0, mu, coef1, 1.0);
-
-    pde10_adv_->Setup(*flux);
-    pde10_adv_->UpdateMatrices(flux.ptr(), coef.ptr());
-    pde10_adv_->SetBCs(bc_pres, bc_enth);
-    pde10_adv_->ApplyBCs(false, true, false);
-
-    // -- accumulation
-    //    modified Jacobian is used in region 4
-    S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd, pressure_key_, tag);
-    auto& dEdp = S_->GetDerivative<CV_t>(energy_key_, tag, pressure_key_, tag);
-    pde10_acc_->AddAccumulationTerm(dEdp, dt, "cell");  
+  // -- accumulation
+  //    modified Jacobian is used in region 4
+  S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd, pressure_key_, tag);
+  auto& dEdp = S_->GetDerivative<CV_t>(energy_key_, tag, pressure_key_, tag);
+  pde10_acc_->AddAccumulationTerm(dEdp, dt, "cell");  
 
   // }else if (precon_type_ == PRECON_FINITEDIFF) {
 
@@ -510,27 +521,6 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
 int
 FlowEnergyPH_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, Teuchos::RCP<TreeVector> Y)
 {
-
-  // int ierr;
-
-  // for (int c=0;c<20; ++c) std::cout<<(*X->SubVector(1)->Data()->ViewComponent("cell"))[0][c]<<"\n";
-
-  // ierr = op_tree_pc_->ApplyInverse(*X, *Y);
-
-  // for (int c=0;c<20; ++c) std::cout<<(*Y->SubVector(1)->Data()->ViewComponent("cell"))[0][c]<<"\n";
-  
-  // if (right_scaling_) {
-  //   Teuchos::RCP<TreeVector> flow_du = Y->SubVector(0);
-  //   Teuchos::RCP<TreeVector> ener_du = Y->SubVector(1);
-
-  //   flow_du->Scale(1./P0_);
-  //   ener_du->Scale(1./H0_);
-  // }
-  
-  
-  // return ierr;
-  // // return PK_MPCStrong<PK_BDF>::ApplyPreconditioner(X, Y);
-
   int ok;
   if (!use_cptr_prec_) {
     ok = op_tree_pc_->ApplyInverse(*X, *Y);
@@ -548,8 +538,6 @@ FlowEnergyPH_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, Teuchos::
     Y->Update(1.0, Y2, 1.0);
   }
   return ok;
-
-
 }
 
 
@@ -687,178 +675,6 @@ void FlowEnergyPH_PK::RemoveFluxContinuityEquations_(Teuchos::RCP<Operators::PDE
       }
     }
   } 
-}
-
-
-void FlowEnergyPH_PK::PreconditionerBlockFD_(int idi, int idj, double t,
-                                           Teuchos::RCP<const TreeVector> up, double dt,
-                                           Teuchos::RCP<Operators::PDE_Diffusion> pde_block,
-                                           Teuchos::RCP<Operators::PDE_Advection> pde_adv){
-  
-    Teuchos::RCP<TreeVector> unew = Teuchos::rcp(new TreeVector(*up));
-    unew->SubVector(0)->SetData(S_->GetPtrW<CompositeVector>(pressure_key_, Tags::DEFAULT, ""));
-    unew->SubVector(1)->SetData(S_->GetPtrW<CompositeVector>(enthalpy_key_, Tags::DEFAULT, ""));
-    
-    Teuchos::RCP<TreeVector> f0 = Teuchos::rcp(new TreeVector(*unew));
-    Teuchos::RCP<TreeVector> f1 = Teuchos::rcp(new TreeVector(*unew));
-
-    int ncells = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
-  
-    double max, factor, eps(1e-8), t_new, t_old;
-    up->SubVector(idj)->NormInf(&max);                                                                                                                                                                        
-    factor = eps * max;
-    t_old = t;
-    t_new = t_old + dt;
-
-    auto u0_tv = unew->SubVector(idj);
-    auto u0_cv = u0_tv->Data();      
-    auto& u0_c = *u0_cv->ViewComponent("cell");
-    auto& u0_f = *u0_cv->ViewComponent("face");
-
-    sub_pks_[0]->ChangedSolution();
-    sub_pks_[1]->ChangedSolution();        
-  
-    FunctionalResidual(t_old, t_new, unew, unew, f0);
-    
-    for (int c=0; c<ncells; c++){
-      //std::cout<<"cell "<<c<<"\n";
-      const auto& faces = mesh_->getCellFaces(c);
-      int nf = faces.size();
-      WhetStone::DenseMatrix A(nf+1, nf+1);
-      A.PutScalar(0.0);
-      
-      u0_c[0][c] += factor;
-      ChangedSolution();
-      
-      FunctionalResidual(t_old, t_new, unew, unew, f1);
-      u0_c[0][c] -= factor;
-      ChangedSolution();
-
-      auto& f0_p_c = *f0->SubVector(idi)->Data()->ViewComponent("cell");
-      auto& f1_p_c = *f1->SubVector(idi)->Data()->ViewComponent("cell");
-      auto& f0_p_f = *f0->SubVector(idi)->Data()->ViewComponent("face");
-      auto& f1_p_f = *f1->SubVector(idi)->Data()->ViewComponent("face");
-
-      
-      A(nf,nf) = (f1_p_c[0][c] - f0_p_c[0][c]) / factor;
-      
-      for (int i=0; i<nf;i++){
-        int f = faces[i];
-        A(i,nf) = (f1_p_f[0][f] - f0_p_f[0][f]) / factor;
-      }
-
-      for (int i=0; i<nf;i++){
-        sub_pks_[1]->ChangedSolution();
-        int fi = faces[i];
-        u0_f[0][fi] += factor;
-        
-        FunctionalResidual(t_old, t_new, unew, unew, f1);
-        u0_f[0][fi] -= factor;
-
-        A(nf, i) = (f1_p_c[0][c] - f0_p_c[0][c]) / factor;
-        
-        for (int j=0; j<nf;j++){
-          int fj = faces[j];
-          A(j,i) = (f1_p_f[0][fj] - f0_p_f[0][fj]) / factor;
-          if (i==j){
-            const auto& cells = mesh_->getFaceCells(fj); 
-            if (cells.size()==2) A(j,j) *= 0.5;
-          }
-        }
-      }
-
-
-      pde_block->SetMatrix(A, c);
-
-      // for (int i=0; i<nf; i++){
-      //   int f = faces[i];
-      //   const auto& cells = mesh_->getFaceCells(f);
-      //   if (cells.size()==2){
-      //     WhetStone::DenseMatrix A(2,2);
-      //     A.PutScalar(0.0);
-      //     auto u0_tv = unew->SubVector(idj);
-      //     auto u0_cv = u0_tv->Data();
-      
-      //     auto& u0_c = *u0_cv->ViewComponent("cell");
-      //     for (int i=0; i<2; i++){
-      //       u0_c[0][cells[i]] += factor;
-          
-      //       sub_pks_[0]->ChangedSolution();
-      //       sub_pks_[1]->ChangedSolution();
-          
-      //       FunctionalResidual(t_old, t_new, unew, unew, f1);
-      //       u0_c[0][cells[i]] -= factor;
-
-      //       sub_pks_[0]->ChangedSolution();
-      //       sub_pks_[1]->ChangedSolution();
-
-      //       auto& f0_p_c = *f0->SubVector(idi)->Data()->ViewComponent("cell");
-      //       auto& f1_p_c = *f1->SubVector(idi)->Data()->ViewComponent("cell");
-      //       A(1-i,i) = (f1_p_c[0][cells[1-i]] - f0_p_c[0][cells[1-i]]) / factor;          
-      //     }
-      //   }
-      // }
-
-    }
-
-    //    if (idi==1&&idj==1) exit(0);
-}
-
-
-  void FlowEnergyPH_PK::PreconditionerAdvBlockFD_(int idi, int idj, double t,
-                                           Teuchos::RCP<const TreeVector> up, double dt,
-                                           Teuchos::RCP<Operators::PDE_Advection> pde_adv){
-  
-    Teuchos::RCP<TreeVector> unew = Teuchos::rcp(new TreeVector(*up));
-    unew->SubVector(0)->SetData(S_->GetPtrW<CompositeVector>(pressure_key_, Tags::DEFAULT, ""));
-    unew->SubVector(1)->SetData(S_->GetPtrW<CompositeVector>(enthalpy_key_, Tags::DEFAULT, ""));
-    
-    Teuchos::RCP<TreeVector> f0 = Teuchos::rcp(new TreeVector(*unew));
-    Teuchos::RCP<TreeVector> f1 = Teuchos::rcp(new TreeVector(*unew));
-
-    int nfaces = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
-  
-    double max, factor, eps(1e-8), t_new, t_old;
-    up->SubVector(idj)->NormInf(&max);                                                                                                                                                                        
-    factor = eps * max;
-    t_old = t;
-    t_new = t_old + dt;
-
-    sub_pks_[0]->ChangedSolution();
-    sub_pks_[1]->ChangedSolution();
-  
-    FunctionalResidual(t_old, t_new, unew, unew, f0);
-
-    for (int f=0; f<nfaces; f++){
-      const auto& cells = mesh_->getFaceCells(f);
-      if (cells.size()==2){
-        WhetStone::DenseMatrix A(2,2);
-        A.PutScalar(0.0);
-        auto u0_tv = unew->SubVector(idj);
-        auto u0_cv = u0_tv->Data();
-      
-        auto& u0_c = *u0_cv->ViewComponent("cell");
-        for (int i=0; i<2; i++){
-          u0_c[0][cells[i]] += factor;
-
-          ChangedSolution();          
-          FunctionalResidual(t_old, t_new, unew, unew, f1);
-
-          auto& f0_p_c = *f0->SubVector(idi)->Data()->ViewComponent("cell");
-          auto& f1_p_c = *f1->SubVector(idi)->Data()->ViewComponent("cell");          
-          
-          A(1-i,i) = (f1_p_c[0][cells[1-i]] - f0_p_c[0][cells[1-i]]) / factor;
-          
-          u0_c[0][cells[i]] -= factor;          
-          ChangedSolution();
-          
-        }
-        
-        pde_adv->SetMatrix(A, f);
-        
-      }      
-    }
-  
 }
 
 } // namespace Amanzi
