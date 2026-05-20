@@ -883,11 +883,6 @@ endif()
 # EXPRTK
 include(${SuperBuild_BUILD_FILES_DIR}/Build_exprtk.cmake)
 
-# CoolProp
-if (ENABLE_COOLPROP)
-  include(${SuperBuild_BUILD_FILES_DIR}/Build_CoolProp.cmake)
-endif()
-
 
 # ############################################################################ #
 #  Final steps

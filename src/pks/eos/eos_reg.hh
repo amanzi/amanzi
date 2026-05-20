@@ -20,7 +20,7 @@
 #include "EOSFactory.hh"
 #include "EOSViscosityEvaluator.hh"
 #include "H2O_Density.hh"
-#include "H2O_DensityCoolProp.hh"
+//#include "H2O_DensityCoolProp.hh"
 #include "H2O_DensityFEHM.hh"
 #include "H2O_DensityIAPWS95.hh"
 #include "H2O_DensityIAPWS97.hh"
@@ -29,7 +29,7 @@
 #include "H2O_ThermalConductivityIAPWS95.hh"
 #include "H2O_ThermalConductivityIAPWS97.hh"
 #include "H2O_Viscosity.hh"
-#include "H2O_ViscosityCoolProp.hh"
+//#include "H2O_ViscosityCoolProp.hh"
 #include "H2O_ViscosityFEHM.hh"
 #include "H2O_ViscosityIAPWS95.hh"
 #include "H2O_ViscosityIAPWS97.hh"
@@ -62,7 +62,7 @@ Utils::RegisteredFactory<EOS_Density, H2O_Density> H2O_Density::reg_("liquid wat
 Utils::RegisteredFactory<EOS_Density, H2O_DensityIAPWS95> H2O_DensityIAPWS95::reg_("liquid water iapws95");
 Utils::RegisteredFactory<EOS_Density, H2O_DensityIAPWS97> H2O_DensityIAPWS97::reg_("liquid water iapws97");
 Utils::RegisteredFactory<EOS_Density, H2O_DensityFEHM> H2O_DensityFEHM::reg_("liquid water FEHM");
-Utils::RegisteredFactory<EOS_Density, H2O_DensityCoolProp> H2O_DensityCoolProp::reg_("liquid water CoolProp");
+  //Utils::RegisteredFactory<EOS_Density, H2O_DensityCoolProp> H2O_DensityCoolProp::reg_("liquid water CoolProp");
 Utils::RegisteredFactory<EOS_Density, DensityTabular> DensityTabular::reg_("lookup table");
 
 Utils::RegisteredFactory<EOS_SaturatedVaporPressure, H2O_SaturatedVaporPressure>
@@ -75,8 +75,8 @@ Utils::RegisteredFactory<EOS_Viscosity, ViscosityConstant> ViscosityConstant::re
 Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityIAPWS95> H2O_ViscosityIAPWS95::reg_("liquid water iapws95");
 Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityIAPWS97> H2O_ViscosityIAPWS97::reg_("liquid water iapws97");
 Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityFEHM> H2O_ViscosityFEHM::reg_("liquid water FEHM");
-Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityCoolProp> H2O_ViscosityCoolProp::reg_("liquid water CoolProp");
-  //Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityIAPWS97> H2O_ViscosityIAPWS97::reg_("liquid water IAPWS97");
+//Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityCoolProp> H2O_ViscosityCoolProp::reg_("liquid water CoolProp");
+
 
 Utils::RegisteredFactory<EOS_Viscosity, ViscosityTabular> ViscosityTabular::reg_("lookup table");
 

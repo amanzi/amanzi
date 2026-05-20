@@ -26,7 +26,7 @@ set(eos_src_files
     EOSDensityEvaluator.cc
     EOSViscosityEvaluator.cc
     H2O_Density.cc
-    H2O_DensityCoolProp.cc
+#    H2O_DensityCoolProp.cc
     H2O_DensityFEHM.cc
     H2O_DensityIAPWS95.cc
     H2O_DensityIAPWS97.cc
@@ -35,7 +35,7 @@ set(eos_src_files
     H2O_ThermalConductivityIAPWS97.cc
     H2O_SaturatedVaporPressure.cc
     H2O_Viscosity.cc
-    H2O_ViscosityCoolProp.cc
+#    H2O_ViscosityCoolProp.cc
     H2O_ViscosityFEHM.cc
     H2O_ViscosityIAPWS95.cc
     H2O_ViscosityIAPWS97.cc
@@ -89,13 +89,13 @@ set(eos_inc_files
     eos_reg.hh
     EOSFactory.hh
     H2O_Density.hh
-    H2O_DensityCoolProp.hh
+#    H2O_DensityCoolProp.hh
     H2O_DensityFEHM.hh
     H2O_DensityIAPWS95.hh
     H2O_DensityIAPWS97.hh
     H2O_SaturatedVaporPressure.hh
     H2O_Viscosity.hh
-    H2O_ViscosityCoolProp.hh
+#    H2O_ViscosityCoolProp.hh
     H2O_ViscosityFEHM.hh
     H2O_ViscosityIAPWS95.hh
     H2O_ViscosityIAPWS97.hh

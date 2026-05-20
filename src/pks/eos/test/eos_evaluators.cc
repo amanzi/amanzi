@@ -28,9 +28,9 @@
 #include "H2O_DensityIAPWS97.hh"
 #include "H2O_DensityFEHM.hh"
 #include "H2O_DensityIAPWS95.hh"
-#include "H2O_DensityCoolProp.hh"
 
-#include "H2O_ViscosityCoolProp.hh"
+
+
 #include "H2O_ViscosityIAPWS95.hh"
 #include "H2O_ViscosityIAPWS97.hh"
 #include "H2O_ViscosityFEHM.hh"
@@ -264,7 +264,7 @@ TEST(FactoryEOS)
 
   std::vector<std::string> names = { "liquid water 0-30C", "liquid water FEHM",
                                      "lookup table", "liquid water iapws97",
-                                     "liquid water iapws95", "liquid water CoolProp" };
+                                     "liquid water iapws95" };
 
   for (auto& name : names) {
     Teuchos::ParameterList plist;
