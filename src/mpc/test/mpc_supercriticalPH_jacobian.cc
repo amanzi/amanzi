@@ -42,20 +42,20 @@ void RunJacobian(double pMPa, double T, double hkJ, double tol10 = 1e-3)
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
 
-  auto plist = Teuchos::getParametersFromXmlFile("test/mpc_supercriticalPH_jac.xml");
-  // auto& tmp1 = plist->sublist("PKs").sublist("transient:flow").sublist("boundary conditions").sublist("pressure");
-  // tmp1.sublist("BC 0").sublist("boundary pressure").sublist("function-constant").set<double>("value", (pMPa + 0.1) * 1e6);
-  // tmp1.sublist("BC 1").sublist("boundary pressure").sublist("function-constant").set<double>("value", pMPa * 1e6);
+  auto plist = Teuchos::getParametersFromXmlFile("test/mpc_supercriticalPH.xml");
+  auto& tmp1 = plist->sublist("PKs").sublist("transient:flow").sublist("boundary conditions").sublist("pressure");
+  tmp1.sublist("BC 0").sublist("boundary pressure").sublist("function-constant").set<double>("value", (pMPa + 0.1) * 1e6);
+  tmp1.sublist("BC 1").sublist("boundary pressure").sublist("function-constant").set<double>("value", pMPa * 1e6);
 
-  // auto& tmp2 = plist->sublist("state").sublist("initial conditions").sublist("pressure");
-  // tmp2.sublist("function").sublist("EntireDomain").sublist("function").sublist("function-linear").set<double>("y0", pMPa * 1e6);
+  auto& tmp2 = plist->sublist("state").sublist("initial conditions").sublist("pressure");
+  tmp2.sublist("function").sublist("EntireDomain").sublist("function").sublist("function-linear").set<double>("y0", pMPa * 1e6);
 
-  // auto& tmp3 = plist->sublist("PKs").sublist("transient:energy").sublist("boundary conditions").sublist("temperature");
-  // tmp3.sublist("BC 1").sublist("boundary temperature").sublist("function-constant").set<double>("value", T);
+  auto& tmp3 = plist->sublist("PKs").sublist("transient:energy").sublist("boundary conditions").sublist("temperature");
+  tmp3.sublist("BC 1").sublist("boundary temperature").sublist("function-constant").set<double>("value", T);
 
-  // auto& tmp4 = plist->sublist("state").sublist("initial conditions").sublist("enthalpy");
-  // tmp4.sublist("function").sublist("domain").sublist("function").sublist("function-exprtk")
-  //   .set<std::string>("formula", std::to_string(hkJ * 18.015) + " - 0.05 * x * (100 - x)");
+  auto& tmp4 = plist->sublist("state").sublist("initial conditions").sublist("enthalpy");
+  tmp4.sublist("function").sublist("domain").sublist("function").sublist("function-exprtk")
+    .set<std::string>("formula", std::to_string(hkJ * 18.015) + " - 0.05 * x * (100 - x)");
 
   plist->sublist("PKs").sublist("transient:mpc1").sublist("time integrator").set<bool>("use CPTR preconditioner", false);
 
@@ -66,7 +66,7 @@ void RunJacobian(double pMPa, double T, double hkJ, double tol10 = 1e-3)
   // create mesh
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 240.0, 200.0, 20, 16);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 10.0, 3.0, 10, 3);
 
   Teuchos::ParameterList state_list = plist->sublist("state");
   Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
@@ -75,30 +75,13 @@ void RunJacobian(double pMPa, double T, double hkJ, double tol10 = 1e-3)
   auto pk_tree = plist->sublist("cycle driver").sublist("time periods").sublist("TP 0").sublist("PK tree").sublist("transient:mpc1");
   auto soln = Teuchos::rcp(new TreeVector());
   auto mpc = Teuchos::rcp(new FlowEnergyPH_PK(pk_tree, plist, S, soln));
-  std::string restart_filename = "test/mpc_supercriticalPH_restart.h5";
-  // std::filesystem::path restart_from_filename_path(restart_filename);
-  // if (!std::filesystem::exists(restart_from_filename_path)) {
-  //   Errors::Message msg;
-  //   msg << "CycleDriver: restart file \"" << restart_filename_
-  //       << "\" does not exist or is not a regular file.";
-  //   Exceptions::amanzi_throw(msg);
-  // }
-
-  double restart_time = ReadCheckpointInitialTime(comm, restart_filename);     
 
   mpc->Setup();
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
-
-  ReadCheckpoint(comm, *S, restart_filename);
-  double restart_dT = S->Get<double>("dt");
-  
   mpc->Initialize();
-  S  ->set_initial_time(S->get_time());
-  mpc->set_dt(restart_dT);
 
-  
   S->CheckAllFieldsInitialized();
   S->InitializeIOFlags();
 
@@ -236,13 +219,13 @@ TEST(MPC_DRIVER_THERMAL_RICHARDS_JACOBIAN)
   RunJacobian(25.0, 732.0, 3000.0);
 
   // region 2: vapor
-  // RunJacobian(15.0, 678.0, 3000.0);
+  RunJacobian(15.0, 678.0, 3000.0);
 
-  // // region 1: compressed liquid
-  // RunJacobian(25.0, 504.0, 1000.0, 5e-2);
+  // region 1: compressed liquid
+  RunJacobian(25.0, 504.0, 1000.0, 5e-2);
 
-  // // region 3
-  // RunJacobian(30.0, 662.0, 1950.0, 3e-3);
+  // region 3
+  RunJacobian(30.0, 662.0, 1950.0, 3e-3);
 
   // region 4: two pahses
   // RunJacobian(15.0, 615.0, 2050.0, 3e-3);

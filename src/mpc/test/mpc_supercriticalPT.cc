@@ -48,7 +48,7 @@ TEST(MPC_SUPERCRITICAL_PT)
   // create mesh
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 100.0, 4.0, 10, 1);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 100.0, 4.0, 100, 4);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;

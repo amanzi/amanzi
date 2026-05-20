@@ -216,6 +216,7 @@ EnergyTwoPhase_PK::Initialize()
   Operators::PDE_DiffusionFactory opfactory;
   Operators::PDE_AdvectionUpwindFactory opfactory_adv;
 
+  auto op_bc_ = S_->GetPtrW<Operators::BCs>(bcs_temperature_key_, Tags::DEFAULT, "state");
   op_matrix_diff_ = opfactory.Create(oplist_matrix, mesh_, op_bc_);
   op_matrix_diff_->SetBCs(op_bc_, op_bc_);
   op_matrix_ = op_matrix_diff_->global_operator();

@@ -70,6 +70,73 @@ IAPWS95::ThermodynamicsPT(double p, double T)
 std::tuple<Properties, Properties, Properties>
 IAPWS95::ThermodynamicsRhoT(double rho, double T)
 {
+  Properties prop, liquid, vapor;
+  prop = PopulateProperties(rho, T);
+
+  // two-phase properties
+  bool two_phase(false);
+  double x(0.0), tol(1e-6);
+
+  if (T < TC) {
+    double rhol0, rhov0, rhol, rhov, p;
+    rhol0 = DensityLiquid(T);
+    rhov0 = DensityVapor(T);
+
+    if (rhol0 > rho && rho > rhov0) {
+      std::tie(rhol, rhov, p) = SaturationLine(T, rhol0, rhov0);
+      if (rhol * (1.0 + tol) > rho && rho > rhov * (1.0 - tol)) {
+        liquid = PopulateProperties(rhol, T);
+        vapor = PopulateProperties(rhov, T);
+
+        liquid = ExtendProperties(rhol, liquid);
+        vapor = ExtendProperties(rhov, vapor);
+
+        // mean extensive properies
+        double vl = 1.0 / rhol;
+        double vv = 1.0 / rhov;
+        x = (prop.v - vl) / (vv - vl);
+        x = std::clamp(x, 0.0, 1.0);
+
+        liquid.p = p;
+        vapor.p = p;
+        prop.p = p;
+
+        prop.u = (1.0 - x) * liquid.u + x * vapor.u;
+        prop.h = (1.0 - x) * liquid.h + x * vapor.h;
+        prop.s = (1.0 - x) * liquid.s + x * vapor.s;
+        prop.helmholtz = (1.0 - x) * liquid.helmholtz + x * vapor.helmholtz;
+
+        two_phase = true;
+      }
+    } 
+
+    if (!two_phase) {
+      x = (rhol0 > rho) ? 0.0 : 1.0;
+    }
+  } else {
+    x = 1.0;
+  }
+
+  prop = ExtendProperties(rho, prop);
+  prop.x = x;
+
+  if (!two_phase) {
+    if (x == 0.0) liquid = prop;
+    else vapor = prop;
+  }
+
+  return { prop, liquid, vapor };
+}
+
+
+/* ******************************************************************
+* Populate state from the Helmholtz free energy
+****************************************************************** */
+Properties
+IAPWS95::PopulateProperties(double rho, double T)
+{
+  Properties prop;
+
   const std::array<double, 6>& g0 = IdealGasPart(rho, T);
   const std::array<double, 6>& g = ResidualPart(rho, T);
 
@@ -78,7 +145,6 @@ IAPWS95::ThermodynamicsRhoT(double rho, double T)
 
   double A = 1.0 + delta * g[1] - delta * tau * g[4];
 
-  Properties prop, liquid, vapor;
   prop.rho = rho;
   prop.T = T;
   prop.p = (1 + delta * g[1]) * R * T * rho / 1000.0;
@@ -93,35 +159,11 @@ IAPWS95::ThermodynamicsRhoT(double rho, double T)
                                            - A * A / (tau * tau * (g0[5] + g[5]))));
 
   prop.v = 1 / rho;
-  prop.helmholtz = g[0];
+  prop.helmholtz = R * T * (g0[0] + g[0]);
+  prop.gibbs = prop.helmholtz + 1000.0 * prop.p * prop.v;
+  prop.kt = 1000.0 / (rho * R * T * (1 + 2 * delta * g[1] + delta * delta * g[3]));
 
-  double x;
-  if (T < TC) {
-    double rhol, rhov, ps, p;
-    rhol = DensityLiquid(T);
-    rhov = DensityVapor(T);
-
-    if (rhol > rho && rho > rhov) {
-      std::tie(rhol, rhov, ps) = SaturationLine(T);
-      if (rhol > rho && rho > rhov) {
-        liquid = ExtendProperies(rhol, prop);
-        vapor = ExtendProperies(rhov, prop);
-
-        x = (1.0 / rho - 1.0 / rhol) / (1.0 / rhov - 1.0 / rhol);
-        p = ps / 1000;
-
-        liquid.p = p;
-        vapor.p = p;
-      }
-    }
-  } else {
-    x = 1.0;
-  }
-
-  prop = ExtendProperies(rho, prop);
-  prop.x = x;
-
-  return { prop, liquid, vapor };
+  return prop;
 }
 
 
@@ -345,27 +387,27 @@ struct Frho2 {
 
 
 std::tuple<double, double, double>
-IAPWS95::SaturationLine(double T)
+IAPWS95::SaturationLine(double T, double rhol0, double rhov0)
 {
-  double ps, Tmin, tol(1e-11);
+  double psat, Tmin, tol(1e-11);
   Tmin = std::min(T, TC);
 
   itrs_ = 10;
   Frho2 f(T, this);
   Frho2::Vector x0(2);
-  x0[0] = DensityLiquid(T);
-  x0[1] = DensityVapor(T);
+  x0[0] = rhol0;
+  x0[1] = rhov0;
   Frho2::Vector sol = PowellHybrid(x0, f, &itrs_, tol);
 
   if (sol[0] == sol[1]) {
-    ps = PC;
+    psat = PC;
   } else {
     double gl = ResidualPart(sol[0], Tmin)[0];
     double gv = ResidualPart(sol[1], Tmin)[0];
 
-    ps = R * T * sol[0] * sol[1] / (sol[0] - sol[1]) * (gl - gv + std::log(sol[0] / sol[1])) / 1000.0;
+    psat = R * T * sol[0] * sol[1] / (sol[0] - sol[1]) * (gl - gv + std::log(sol[0] / sol[1])) / 1000.0;
   }
-  return { sol[0], sol[1], ps };
+  return { sol[0], sol[1], psat };
 }
 
 
@@ -427,16 +469,12 @@ IAPWS95::DensityVapor(double T)
 * Finalize properties
 ****************************************************************** */
 Properties
-IAPWS95::ExtendProperies(double rho, const Properties& prop_in)
+IAPWS95::ExtendProperties(double rho, const Properties& prop_in)
 {
   Properties prop;
   prop = prop_in;
 
-  double p = prop.p;
   double T = prop.T;
-
-  prop.rho = rho;
-  prop.v = 1.0 / rho;
   prop.mu = Viscosity(rho, T);
   prop.k = ThermalConductivity(rho, T, prop);
 

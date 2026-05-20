@@ -19,6 +19,7 @@
 #include "errors.hh"
 
 #include "H2O_ThermalConductivityIAPWS95.hh"
+#include "IAPWS95Factory.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
@@ -29,7 +30,7 @@ namespace AmanziEOS {
 H2O_ThermalConductivityIAPWS95::H2O_ThermalConductivityIAPWS95(Teuchos::ParameterList& plist)
   : EOS_ThermalConductivity(plist)
 {
-  eos_ = Teuchos::rcp(new IAPWS95(plist));
+  eos_ = CreateIAPWS95(plist);
 }
 
 

@@ -60,7 +60,6 @@ CreateLookupTable(Teuchos::ParameterList& plist)
   }
 }
 
-
 } // namespace AmanziEOS
 } // namespace Amanzi
 

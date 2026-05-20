@@ -61,6 +61,7 @@ add_amanzi_library(whetstone
                           MeshMapsBase.cc
                           MeshMaps_FEM.cc MeshMaps_VEM.cc
                           SplinePolynomial.cc
+                          SplineCubicNotAKnot1D.cc SplineCubicNotAKnot2D.cc
                    HEADERS DenseMatrix.hh DenseVector.hh
                            DG_Modal.hh
                            Basis.hh BasisFactory.hh
@@ -93,6 +94,7 @@ add_amanzi_library(whetstone
                            Monomial.hh Polynomial.hh PolynomialIterator.hh PolynomialBase.hh
                            SpaceTimePolynomial.hh
                            SplinePolynomial.hh
+                           SplineCubicNotAKnot1D.hh SplineCubicNotAKnot2D.hh
                            VectorObjects.hh MatrixObjects.hh PolynomialOnMesh.hh
                            Tensor.hh
                            WhetStoneDefs.hh
@@ -182,6 +184,11 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/whetstone_powell.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
+    # Test: splines
+    add_amanzi_test(whetstone_spline whetstone_spline
+                    KIND unit
+                    SOURCE test/Main.cc test/whetstone_spline.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 
 

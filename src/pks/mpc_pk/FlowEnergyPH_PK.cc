@@ -377,7 +377,7 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   auto flux = S_->GetPtr<CompositeVector>(mol_flowrate_key_, tag);
 
 
-  if (precon_type_ == PRECON_FULL) {
+  //if (precon_type_ == PRECON_FULL) {
 
     // ---------------------
     // pressure-energy block
@@ -456,41 +456,41 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
     auto& dEdp = S_->GetDerivative<CV_t>(energy_key_, tag, pressure_key_, tag);
     pde10_acc_->AddAccumulationTerm(dEdp, dt, "cell");  
 
-  }else if (precon_type_ == PRECON_FINITEDIFF) {
+  // }else if (precon_type_ == PRECON_FINITEDIFF) {
 
-    //ChangedSolution();
-    //PreconditionerBlockFD_   (0, 0, t, up, dt, ddivq_dP_, pde00_adv_);
-    //ChangedSolution();
-    //PreconditionerAdvBlockFD_(0, 0, t, up, dt, pde00_adv_);
+  //   //ChangedSolution();
+  //   //PreconditionerBlockFD_   (0, 0, t, up, dt, ddivq_dP_, pde00_adv_);
+  //   //ChangedSolution();
+  //   //PreconditionerAdvBlockFD_(0, 0, t, up, dt, pde00_adv_);
 
 
-    // ---------------------
-    // energy-pressure block
-    // ---------------------
-    //op10_->Init();
+  //   // ---------------------
+  //   // energy-pressure block
+  //   // ---------------------
+  //   //op10_->Init();
     
-    //ChangedSolution();
-    PreconditionerBlockFD_   (1, 0, t, up, dt, pde10_diff_flux_, pde10_adv_);
-    //ChangedSolution();    
-    PreconditionerAdvBlockFD_(1, 0, t, up, dt, pde10_adv_);
+  //   //ChangedSolution();
+  //   PreconditionerBlockFD_   (1, 0, t, up, dt, pde10_diff_flux_, pde10_adv_);
+  //   //ChangedSolution();    
+  //   PreconditionerAdvBlockFD_(1, 0, t, up, dt, pde10_adv_);
 
 
-    // ---------------------
-    // pressure-energy block
-    // ---------------------
-    //op01_->Init();
+  //   // ---------------------
+  //   // pressure-energy block
+  //   // ---------------------
+  //   //op01_->Init();
     
-    //ChangedSolution();
-    PreconditionerBlockFD_   (0, 1, t, up, dt, pde01_diff_, pde01_adv_);
-    //ChangedSolution();
-    PreconditionerAdvBlockFD_(0, 1, t, up, dt, pde01_adv_);
+  //   //ChangedSolution();
+  //   PreconditionerBlockFD_   (0, 1, t, up, dt, pde01_diff_, pde01_adv_);
+  //   //ChangedSolution();
+  //   PreconditionerAdvBlockFD_(0, 1, t, up, dt, pde01_adv_);
 
-    //ChangedSolution();
-    //PreconditionerBlockFD_   (1, 1, t, up, dt, ddivKgT_dT_, pde11_adv_);
-    //ChangedSolution();
-    //PreconditionerAdvBlockFD_(1, 1, t, up, dt, pde11_adv_);
+  //   //ChangedSolution();
+  //   //PreconditionerBlockFD_   (1, 1, t, up, dt, ddivKgT_dT_, pde11_adv_);
+  //   //ChangedSolution();
+  //   //PreconditionerAdvBlockFD_(1, 1, t, up, dt, pde11_adv_);
     
-  }
+  // }
 
   if (use_cptr_prec_) {
     op_tree_ilu_->AssembleMatrix();
@@ -536,8 +536,8 @@ FlowEnergyPH_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, Teuchos::
     ok = op_tree_pc_->ApplyInverse(*X, *Y);
     // return PK_MPCStrong<PK_BDF>::ApplyPreconditioner(X, Y);
   } else {
-    // Operators::Impl::TreeOperator_BlockDiagonalPreconditioner gs(*op_tree_amg_);
-    Operators::Impl::TreeOperator_BlockTriangularPreconditioner gs(*op_tree_amg_);
+    Operators::Impl::TreeOperator_BlockDiagonalPreconditioner gs(*op_tree_amg_);
+    // Operators::Impl::TreeOperator_BlockTriangularPreconditioner gs(*op_tree_amg_);
     ok = gs.ApplyInverse(*X, *Y);
 
     TreeVector res(*Y), Y2(*Y);
@@ -583,6 +583,9 @@ FlowEnergyPH_PK::ModifyCorrection(double dt,
     dh_c[0][c] = std::clamp(dh_c[0][c], -tmp, tmp);
     if (std::fabs(std::fabs(dh_c[0][c]) - tmp) < 1e-8 * tmp) nclipped++;
   }
+
+  int ntmp(nclipped);
+  mesh_->getComm()->SumAll(&ntmp, &nclipped, 1);
 
   return (nclipped) > 0 ? AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED :
                           AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
@@ -647,6 +650,9 @@ FlowEnergyPH_PK::ModifyCorrection(double dt,
       } 
     }
   } 
+
+  ntmp = nclipped;
+  mesh_->getComm()->SumAll(&ntmp, &nclipped, 1);
 
   return (nclipped) > 0 ? AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED :
                           AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;

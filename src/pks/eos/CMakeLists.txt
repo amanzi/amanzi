@@ -23,8 +23,6 @@ include_directories(${COOLPROP_INCLUDE_DIRS})
 #
 set(eos_src_files 
     COM_MillingtonQuirk.cc
-    IAPWS97.cc
-    IAPWS95.cc
     EOSDensityEvaluator.cc
     EOSViscosityEvaluator.cc
     H2O_Density.cc
@@ -42,6 +40,9 @@ set(eos_src_files
     H2O_ViscosityIAPWS95.cc
     H2O_ViscosityIAPWS97.cc
     Henry_Solubility.cc
+    IAPWS97.cc
+    IAPWS95.cc
+    IAPWS95_Spline.cc
     IdealGas_Density.cc
     IdealGas_ThermalConductivity.cc
     IdealGas_Viscosity.cc
@@ -70,8 +71,6 @@ endif()
 #
 set(eos_inc_files 
     COM_MillingtonQuirk.hh
-    IAPWS97.hh
-    IAPWS95.hh
     DensityTabular.hh
     EOSDensityEvaluator.hh
     EOSViscosityEvaluator.hh
@@ -81,6 +80,10 @@ set(eos_inc_files
     H2O_ThermalConductivity.hh
     H2O_ThermalConductivityIAPWS95.hh
     H2O_ThermalConductivityIAPWS97.hh
+    IAPWS97.hh
+    IAPWS95.hh
+    IAPWS95_Spline.hh
+    IAPWS95Factory.hh
     EOS_Utils.hh
     EOS_Viscosity.hh
     eos_reg.hh
@@ -123,7 +126,8 @@ if (BUILD_TESTS)
     # Copy test directory files if any out of source build
     if (NOT (${EOS_SOURCE_DIR} EQUAL ${EOS_BINARY_DIR}) )
         file(GLOB DataFiles "${EOS_SOURCE_DIR}/test/*.xml"
-                            "${EOS_SOURCE_DIR}/test/*.eos")
+                            "${EOS_SOURCE_DIR}/test/*.eos"
+                            "${EOS_SOURCE_DIR}/test/*.csv")
         file(COPY ${DataFiles} DESTINATION ${EOS_BINARY_DIR}/test/)
     endif()
 

@@ -207,12 +207,12 @@ IAPWS97::ThermodynamicsPH(double p, double h)
 
   // only liquid phase
   if (prop.x == 0.0) { 
-    liquid = ExtendProperies(prop);
+    liquid = ExtendProperties(prop);
     liquid.sigma = SurfaceTension(prop.T);
   }
   // only vapor phase
   else if (prop.x == 1.0) {
-    vapor = ExtendProperies(prop);
+    vapor = ExtendProperties(prop);
   }
   // two phases
   else {
@@ -234,8 +234,8 @@ IAPWS97::ThermodynamicsPH(double p, double h)
     prop_v.x = prop.x;
     prop_v.rgn = prop.rgn;
 
-    liquid = ExtendProperies(prop_l);
-    vapor = ExtendProperies(prop_v);
+    liquid = ExtendProperties(prop_l);
+    vapor = ExtendProperties(prop_v);
 
     prop.k = (1.0 - prop.x) * liquid.k + prop.x * vapor.k;
     liquid.sigma = SurfaceTension(T);
@@ -1638,7 +1638,7 @@ IAPWS97::PhaseId(double p, double T, int rgn, double x)
 * Finalize properties
 ****************************************************************** */
 Properties
-IAPWS97::ExtendProperies(const Properties& prop_in)
+IAPWS97::ExtendProperties(const Properties& prop_in)
 {
   Properties prop;
   prop = prop_in;

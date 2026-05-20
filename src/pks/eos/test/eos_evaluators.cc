@@ -25,15 +25,15 @@
 #include "EOS_SaturatedVaporPressure.hh"
 #include "EOSFactory.hh"
 #include "H2O_Density.hh"
-
-#include "H2O_DensityCoolProp.hh"
-#include "H2O_DensityFEHM.hh"
 #include "H2O_DensityIAPWS97.hh"
+#include "H2O_DensityFEHM.hh"
+#include "H2O_DensityIAPWS95.hh"
+#include "H2O_DensityCoolProp.hh"
 
 #include "H2O_ViscosityCoolProp.hh"
+#include "H2O_ViscosityIAPWS95.hh"
 #include "H2O_ViscosityIAPWS97.hh"
 #include "H2O_ViscosityFEHM.hh"
-
 #include "LookupTable_Amanzi.hh"
 #include "LookupTable_FEHM.hh"
 
@@ -86,35 +86,6 @@ TEST(DensityEOS)
   }
 
   // next EOS
-
-  H2O_DensityCoolProp eos_cool(plist);
-
-  p = 101325.0;
-  for (int loop = 0; loop < 5; loop++) {
-    p *= 2.0;
-    d0 = 1200.0;
-    for (double T = 15; T < 300; T += 1.5) {
-      // check for subcritical liquid
-      if (eos_cool.get_phase(T + T0, p) != CoolProp::phases::iphase_liquid) continue;
-
-      d1 = eos_cool.Density(T + T0, p);
-      CHECK(d1 < 1001.0 && d1 > 550.0 && d1 < d0);
-      d0 = d1;
-
-      double der = eos_cool.DDensityDT(T + T0, p);
-      CHECK(der < 0.0);
-
-      // finite difference approximation
-      double T1(T + T0), dT(0.05);
-      double der_fd = (eos_cool.Density(T1 + dT, p) - eos_cool.Density(T1 - dT, p)) / (2 * dT);
-      CHECK_CLOSE(der, der_fd, 1e-3 * std::fabs(der));
-
-      der = eos_cool.DDensityDp(T1, p);
-      der_fd = eos_cool.Density(T1, p + 0.5) - eos_cool.Density(T1, p - 0.5);
-    }
-  }
-
-  
   H2O_DensityIAPWS97 eos_iapws97(plist);
 
   double rho = eos_iapws97.Density(635.0, 19.1e+6);
@@ -132,7 +103,6 @@ TEST(DensityEOS)
       CHECK_CLOSE(der, der_fd, 1e-3 * std::fabs(der));
     }
   }
-  
 }
 
 
@@ -292,11 +262,9 @@ TEST(FactoryEOS)
 {
   using namespace Amanzi::AmanziEOS;
 
-
   std::vector<std::string> names = { "liquid water 0-30C", "liquid water FEHM",
                                      "lookup table", "liquid water iapws97",
                                      "liquid water iapws95", "liquid water CoolProp" };
-
 
   for (auto& name : names) {
     Teuchos::ParameterList plist;
@@ -335,7 +303,7 @@ TEST(Exceptions)
 {
   using namespace Amanzi::AmanziEOS;
 
-  std::vector<std::string> names = { "liquid water 0-30C", "liquid water FEHM", "liquid water CoolProp", "lookup table" };
+  std::vector<std::string> names = { "liquid water 0-30C", "liquid water FEHM", "lookup table" };
 
   std::cout << std::endl;
   for (auto& name : names) {
@@ -395,38 +363,3 @@ TEST(Exceptions)
     AMANZI_ASSERT(false);
   }
 }
-
-
-TEST(SUPERCRITICAL)
-{
-  using namespace Amanzi::AmanziEOS;
-
-  Teuchos::ParameterList plist;
-  plist.set<double>("molar mass", 18.0153e-03)
-       .set<double>("density", 997.0)
-       .set<std::string>("table name", "test/h2o_nist_mod.eos")
-       .set<std::string>("field name", "viscosity")
-       .set<std::string>("format", "FEHM");
-
-  H2O_ViscosityCoolProp eos_cool(plist);
-  H2O_ViscosityFEHM eos_fehm(plist);
-  LookupTable_FEHM eos_table(plist);
-
-  int ierr;
-  double pc(22.1e+6), Tc(647.0), dp(5.0e+4), dT(1.0), p, T;
-  pc = 11.0e+6;
-  Tc = 500.0;
-  for (int i = -50; i < 50; ++i) {
-    for (int j = -50; j < 50; ++j) {
-       p = pc + i * dp;
-       T = Tc + j * dT;
-       /*
-       std::cout << p << " " << T << " " << eos_cool.Viscosity(T, p) 
-                                  << " " << eos_fehm.Viscosity(T, p)
-                                  << " " << eos_table.Function(T, p, &ierr) 
-                                  << " " << eos_cool.get_phase(T, p) << std::endl;
-       */
-    }
-  }
-}
-

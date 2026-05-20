@@ -129,7 +129,8 @@ EnergyPressureTemperature_PK::Setup()
       S_->Require<CV_t, CVS_t>(state_key_, Tags::DEFAULT, state_key_, Evaluators::TS95_names)
         .SetMesh(mesh_)
         ->SetGhosted(true)
-        ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, Evaluators::TS95_t_size);
+        ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, Evaluators::TS95_t_size)
+        ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, Evaluators::TS95_t_size);
       S_->RequireEvaluator(state_key_, Tags::DEFAULT);
     }
   }
@@ -180,8 +181,9 @@ EnergyPressureTemperature_PK::Initialize()
   Operators::PDE_DiffusionFactory opfactory;
   Operators::PDE_AdvectionUpwindFactory opfactory_adv;
 
-  op_matrix_diff_ = opfactory.Create(oplist_matrix, mesh_, op_bc_);
-  op_matrix_diff_->SetBCs(op_bc_, op_bc_);
+  auto op_bc_temp = S_->GetPtrW<Operators::BCs>(bcs_temperature_key_, Tags::DEFAULT, "state");
+  op_matrix_diff_ = opfactory.Create(oplist_matrix, mesh_, op_bc_temp);
+  op_matrix_diff_->SetBCs(op_bc_temp, op_bc_temp);
   op_matrix_ = op_matrix_diff_->global_operator();
   op_matrix_->Init();
 
@@ -195,8 +197,8 @@ EnergyPressureTemperature_PK::Initialize()
   op_advection_ = op_matrix_advection_->global_operator();
 
   // initialize coupled operators: diffusion + advection + accumulation
-  op_preconditioner_diff_ = opfactory.Create(oplist_pc, mesh_, op_bc_);
-  op_preconditioner_diff_->SetBCs(op_bc_, op_bc_);
+  op_preconditioner_diff_ = opfactory.Create(oplist_pc, mesh_, op_bc_temp);
+  op_preconditioner_diff_->SetBCs(op_bc_temp, op_bc_temp);
   op_preconditioner_ = op_preconditioner_diff_->global_operator();
   op_preconditioner_->Init();
 

@@ -15,22 +15,14 @@
 
 #include "Flow_PK.hh"
 #include "Energy_PK.hh"
-#include "EnergyPressureTemperature_PK.hh"
 #include "ModelAssumptions.hh"
 #include "OperatorDefs.hh"
-#include "TreeOperator.hh"
-#include "StateArchive.hh"
-
 #include "PDE_DiffusionFactory.hh"
 #include "PDE_AdvectionUpwindFactory.hh"
-#include "PDE_Advection.hh"
-#include "PDE_Accumulation.hh"
-#include "Operator.hh"
+#include "StateArchive.hh"
+
 #include "FlowEnergyPT_PK.hh"
-
 #include "PK_MPCStrong.hh"
-#include "IO.hh"
-
 
 namespace Amanzi {
 
@@ -51,11 +43,9 @@ FlowEnergyPT_PK::FlowEnergyPT_PK(Teuchos::ParameterList& pk_tree,
   // we will use a few parameter lists
   auto pk_list = Teuchos::sublist(glist, "PKs", true);
   my_list_ = Teuchos::sublist(pk_list, name_, true);
-
   domain_ = my_list_->template get<std::string>("domain name", "domain");
 
   vo_ = Teuchos::rcp(new VerboseObject("FlowEnergy-" + domain_, *my_list_));
-
 }
 
 
@@ -66,9 +56,7 @@ void
 FlowEnergyPT_PK::Setup()
 {
   mesh_ = S_->GetMesh(domain_);
-  //  auto pk_order = my_list_->get<Teuchos::Array<std::string>>("PKs order");
-  db_ = Teuchos::rcp(new Debugger(mesh_, name_, *my_list_));
-  
+
   // Our decision can be affected by the list of models
   auto physical_models = Teuchos::sublist(my_list_, "physical models and assumptions");
   ModelAssumptions assumptions;
@@ -77,6 +65,7 @@ FlowEnergyPT_PK::Setup()
   // keys
   temperature_key_ = Keys::getKey(domain_, "temperature");
   energy_key_ = Keys::getKey(domain_, "energy");
+  enthalpy_key_ = Keys::getKey(domain_, "enthalpy");
   ie_liquid_key_ = Keys::getKey(domain_, "internal_energy_liquid");
   particle_density_key_ = Keys::getKey(domain_, "particle_density");
 
@@ -89,13 +78,10 @@ FlowEnergyPT_PK::Setup()
   viscosity_liquid_key_ = Keys::getKey(domain_, "viscosity_liquid");
 
   mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
-  
-  enth_key_ = Keys::getKey(domain_, "enthalpy");
-  hkr_key_  = Keys::getKey(domain_, "enthalpy_times_relative_permeability");
-  kr_key_   = Keys::getKey(domain_, "relative_permeability");
   bcs_flow_key_ = Keys::getKey(domain_, "bcs_flow");
+  bcs_temperature_key_ = Keys::getKey(domain_, "bcs_temperature");
   bcs_enthalpy_key_ = Keys::getKey(domain_, "bcs_enthalpy");
-  
+
   // Fields for solids
   // -- rock
   if (!S_->HasRecord(particle_density_key_)) {
@@ -158,67 +144,9 @@ FlowEnergyPT_PK::Setup()
       ws_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, ws_key_)
     .SetGhosted();
 
-
-  include_pt_coupling_ =
-    my_list_->sublist("time integrator").get<bool>("include coupling terms", false);
-
-  std::string precon_string = my_list_->get<std::string>("preconditioner type", "none");
-  if (precon_string == "none") {
-    precon_type_ = PRECON_NONE;
-  } else if (precon_string == "block diagonal") {
-    precon_type_ = PRECON_BLOCK_DIAGONAL;
-  } else if (precon_string == "full") {
-    precon_type_ = PRECON_FULL;
-  } else if (precon_string == "finite difference") {
-    precon_type_ = PRECON_FINITEDIFF;    
-  } else {
-    Errors::Message message(std::string("Invalid preconditioner type ") + precon_string);
-    Exceptions::amanzi_throw(message);
-  }
-
-  // full preconditioner
-  if (precon_type_ == PRECON_FULL) {
-
-    std::vector<AmanziMesh::Entity_kind> locations2(2);
-    std::vector<std::string> names2(2);
-    std::vector<int> num_dofs2(2, 1);
-    locations2[0] = AmanziMesh::Entity_kind::CELL;
-    names2[0] = "cell";
-
-    // need a field, evaluator, and upwinding for h * kr * rho/mu
-    // -- first the evaluator
-    auto& hkr_eval_list = S_->GetEvaluatorList(hkr_key_);
-    hkr_eval_list.set("evaluator name", hkr_key_);
-    Teuchos::Array<std::string> deps(2);
-    deps[0] = enth_key_;
-    deps[1] = kr_key_;
-    hkr_eval_list.set("multiplicative dependency keys", deps);
-    hkr_eval_list.set("evaluator type", "multiplicative reciprocal");
-
-
-    
-    // -- now the field
-    names2[1] = "boundary_face";
-    locations2[1] = AmanziMesh::Entity_kind::BOUNDARY_FACE;
-    S_->Require<CompositeVector, CompositeVectorSpace>(hkr_key_, Tags::DEFAULT)
-      .SetMesh(mesh_)
-      ->SetGhosted()
-      ->AddComponents(names2, locations2, num_dofs2);
-    S_->RequireEvaluator(hkr_key_, Tags::DEFAULT);
-
-    // S_->Require<CompositeVector, CompositeVectorSpace>(uw_hkr_key_, Tags::DEFAULT, name_)
-    //   .SetMesh(mesh_)
-    //   ->SetGhosted()
-    //   ->SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
-    // S_->GetRecordW(uw_hkr_key_, Tags::DEFAULT, name_).set_io_vis(false);
-
-    S_->RequireDerivative<CompositeVector, CompositeVectorSpace>(
-                       hkr_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT);
-    S_->RequireDerivative<CompositeVector, CompositeVectorSpace>(
-                       hkr_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT);     
-
-  }
-  
+  S_->RequireDerivative<CV_t, CVS_t>(
+      enthalpy_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, enthalpy_key_)
+    .SetGhosted();
 }
 
 
@@ -228,22 +156,17 @@ FlowEnergyPT_PK::Setup()
 void
 FlowEnergyPT_PK::Initialize()
 {
-
   auto flow_pk = Teuchos::rcp_dynamic_cast<Flow::Flow_PK>(sub_pks_[0]);
-  auto pks =
-    glist_->sublist("PKs").sublist(name_).get<Teuchos::Array<std::string>>("PKs order").toVector();
-  
+
+  include_pt_coupling_ =
+    my_list_->sublist("time integrator").get<bool>("include coupling terms", false);
+
   Amanzi::PK_MPCStrong<PK_BDF>::Initialize();
 
   // MPC_PKs that build on top of this may need a tree operator. Since
   // we cannot use solution_, we create a TVS from scratch
   auto op0 = sub_pks_[0]->my_operator(Operators::OPERATOR_MATRIX);
   auto op1 = sub_pks_[1]->my_operator(Operators::OPERATOR_MATRIX);
-
-  // Get the sub-blocks from the sub-PK's preconditioners.
-  Teuchos::RCP<Operators::Operator> pc_block00 = sub_pks_[0]->my_operator(Operators::OPERATOR_PRECONDITIONER_RAW);
-  Teuchos::RCP<Operators::Operator> pc_block11 = sub_pks_[1]->my_operator(Operators::OPERATOR_PRECONDITIONER_RAW);
-
 
   auto tvs = Teuchos::rcp(new TreeVectorSpace());
   tvs->PushBack(CreateTVSwithOneLeaf(op0->DomainMap()));
@@ -254,21 +177,17 @@ FlowEnergyPT_PK::Initialize()
   op_tree_matrix_->set_operator_block(1, 1, op1);
 
   op_tree_pc_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
-  if (precon_type_!= PRECON_FINITEDIFF) {
-    op_tree_pc_->set_operator_block(0, 0, pc_block00);
-    op_tree_pc_->set_operator_block(1, 1, pc_block11);
-  }
+  op_tree_pc_->set_operator_block(
+    0, 0, sub_pks_[0]->my_operator(Operators::OPERATOR_PRECONDITIONER_RAW));
+  op_tree_pc_->set_operator_block(
+    1, 1, sub_pks_[1]->my_operator(Operators::OPERATOR_PRECONDITIONER_RAW));
 
   op_tree_rhs_ = Teuchos::rcp(new TreeVector());
   op_tree_rhs_->PushBack(CreateTVwithOneLeaf(op0->rhs()));
   op_tree_rhs_->PushBack(CreateTVwithOneLeaf(op1->rhs()));
 
-  
   // full preconditioner
-  if (precon_type_ == PRECON_FULL) {
-
-
-    // cross coupling
+  if (include_pt_coupling_) {
     Operators::PDE_DiffusionFactory opfactory;
     Teuchos::ParameterList oplist = Teuchos::rcp_dynamic_cast<Energy::Energy_PK>(sub_pks_[1])
       ->getPList()->sublist("operators").sublist("diffusion operator").sublist("preconditioner");
@@ -284,75 +203,22 @@ FlowEnergyPT_PK::Initialize()
     pde01_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, op01_));
 
     // -- temperature-pressure
-    //pde10_diff_cond_ = opfactory.CreateWithGravity(oplist, mesh_);
-
-    pde10_diff_flux_ = opfactory.CreateWithGravity(oplist, op10_);
+    pde10_diff_flux_ = opfactory.Create(oplist, mesh_);
     pde10_diff_flux_->SetTensorCoefficient(flow_pk->getK());
-    op10_ = pde10_diff_cond_->global_operator();
+    op10_ = pde10_diff_flux_->global_operator();
     op_tree_pc_->set_operator_block(1, 0, op10_);
-
 
     pde10_adv_ = opfactory_adv.Create(oplist_adv, op10_);
     pde10_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, op10_));
 
-  }
-  else if(precon_type_ == PRECON_FINITEDIFF){
+    std::string pc_name =
+      Teuchos::sublist(my_list_, "time integrator", true)->get<std::string>("preconditioner");
+    auto& pc_list = Teuchos::sublist(glist_, "preconditioners", true)->sublist(pc_name);
+    op_tree_pc_->set_inverse_parameters(pc_list);
 
-    Teuchos::ParameterList div_plist(glist_->sublist("PKs").
-                                      sublist(pks[0]).
-                                      sublist("operators").
-                                      sublist("diffusion operator").
-                                      sublist("preconditioner"));
-
-    div_plist.set("Newton correction", "approximate Jacobian");
-    //    div_plist.set("exclude primary terms", true);
-    Operators::PDE_DiffusionFactory opfactory;
-
-    
-    Teuchos::ParameterList adv_plist(glist_->sublist("PKs").
-                                     sublist(pks[1]).
-                                     sublist("operators").
-                                     sublist("advection operator"));
-
-    Operators::PDE_AdvectionUpwindFactory opfactory_adv;
-
-
-    
-    ddivq_dP_ = opfactory.CreateWithGravity(div_plist, mesh_);
-    dWC_dP_block_ = ddivq_dP_->global_operator();
-    pde00_adv_ = opfactory_adv.Create(adv_plist, dWC_dP_block_);
-    //ddivq_dT_->SetBCs(sub_pks_[0]->op_bc(), sub_pks_[1]->op_bc());        
-    op_tree_pc_->set_operator_block(0, 0, dWC_dP_block_);
-    
-    ddivq_dT_ = opfactory.CreateWithGravity(div_plist, mesh_);
-    dWC_dT_block_ = ddivq_dT_->global_operator();
-    pde01_adv_ = opfactory_adv.Create(adv_plist, dWC_dT_block_);
-    
-    //ddivq_dT_->SetBCs(sub_pks_[0]->op_bc(), sub_pks_[1]->op_bc());        
-    op_tree_pc_->set_operator_block(0, 1, dWC_dT_block_);
-
-    ddivKgT_dp_ = opfactory.CreateWithGravity(div_plist, mesh_);
-    dE_dp_block_ = ddivKgT_dp_->global_operator();
-    pde10_adv_ = opfactory_adv.Create(adv_plist, dE_dp_block_);
-    //ddivq_dT_->SetBCs(sub_pks_[0]->op_bc(), sub_pks_[1]->op_bc());        
-    op_tree_pc_->set_operator_block(1, 0, dE_dp_block_);
-
-    ddivKgT_dT_ = opfactory.CreateWithGravity(div_plist, mesh_);
-    dE_dT_block_ = ddivKgT_dT_->global_operator();
-    pde11_adv_ = opfactory_adv.Create(adv_plist, dE_dT_block_);
-    //ddivq_dT_->SetBCs(sub_pks_[0]->op_bc(), sub_pks_[1]->op_bc());        
-    op_tree_pc_->set_operator_block(1, 1, dE_dT_block_);      
-    
+    op_tree_pc_->SymbolicAssembleMatrix();
   }
 
-  std::string pc_name =
-        Teuchos::sublist(my_list_, "time integrator", true)->get<std::string>("preconditioner");
-  auto& pc_list = Teuchos::sublist(glist_, "preconditioners", true)->sublist(pc_name);
-  op_tree_pc_->set_inverse_parameters(pc_list);      
-  op_tree_pc_->SymbolicAssembleMatrix();
-
-
-  
   // output of initialization statistics
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
@@ -367,9 +233,6 @@ FlowEnergyPT_PK::Initialize()
   }
 
   AMANZI_ASSERT(sub_pks_.size() == 2);
-
-  //exit(0);
-  
 }
 
 
@@ -405,50 +268,11 @@ FlowEnergyPT_PK::FunctionalResidual(double t_old,
                                     Teuchos::RCP<TreeVector> u_new,
                                     Teuchos::RCP<TreeVector> f)
 {
-
-  double P0 = 2.10000000000000000e+07;
-  double T0 = 700.0;
-
-  //*vo_->os() << "Residual" << std::endl;
-  std::vector<std::string> vnames;
-  vnames.push_back("p");
-  vnames.push_back("T");
-
-  std::vector<Teuchos::Ptr<const CompositeVector>> vecs;
-  vecs.push_back(u_new->SubVector(0)->Data().ptr());
-  vecs.push_back(u_new->SubVector(1)->Data().ptr());
-
-  db_->WriteVectors(vnames, vecs, false);
-  
   // flow
   auto u_old0 = u_old->SubVector(0);
   auto u_new0 = u_new->SubVector(0);
-
-  double p_max, p_min;
-  u_new0->Data()->MaxValue(&p_max);
-  u_new0->Data()->MinValue(&p_min);
-  //  std::cout<<"p_max="<<p_max<<" p_min="<<p_min<<"\n";
-
-// energy
-  auto u_old1 = u_old->SubVector(1);
-  auto u_new1 = u_new->SubVector(1);
-  auto f1 = f->SubVector(1);
-
-  double t_max, t_min;
-  u_new1->Data()->MaxValue(&t_max);
-  u_new1->Data()->MinValue(&t_min);
-  //u_new1->Data()->Print(*vo_->os());
-  //std::cout<<"t_max="<<t_max<<" t_min="<<t_min<<"\n";
-  
-  
   auto f0 = f->SubVector(0);
   sub_pks_[0]->FunctionalResidual(t_old, t_new, u_old0, u_new0, f0);
-
-  double f_norm;
-
-  f0->Norm2(&f_norm);
-  // f0->Scale(1. / P0);
-  // f0->Norm2(&f_norm);
 
   // update molar flux
   Key key = Keys::getKey(domain_, "molar_flow_rate");
@@ -461,15 +285,11 @@ FlowEnergyPT_PK::FunctionalResidual(double t_old,
     mol_flowrate->Scale(1.0 / molar_mass);
   }
 
-    
+  // energy
+  auto u_old1 = u_old->SubVector(1);
+  auto u_new1 = u_new->SubVector(1);
+  auto f1 = f->SubVector(1);
   sub_pks_[1]->FunctionalResidual(t_old, t_new, u_old1, u_new1, f1);
-
-
-  // f1->Norm2(&f_norm);
-  // f1->Scale(1./T0);
-  // f1->Norm2(&f_norm);
-
-  
 }
 
 
@@ -481,146 +301,75 @@ FlowEnergyPT_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
 {
   PK_MPCStrong<PK_BDF>::UpdatePreconditioner(t, up, dt);
 
-  std::string passwd("");
-  Tag tag = Tags::DEFAULT;
-  auto energy_pk = Teuchos::rcp_dynamic_cast<Energy::EnergyPressureTemperature_PK>(sub_pks_[1]);
+  if (include_pt_coupling_) {
+    std::string passwd("");
+    Tag tag = Tags::DEFAULT;
 
-  auto bc_enth = S_->GetPtrW<Operators::BCs>(bcs_enthalpy_key_, Tags::DEFAULT, "state");
-  auto bc_pres = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state");
-  const auto& rho = S_->Get<CV_t>(mol_density_liquid_key_, Tags::DEFAULT);
-  const auto& mu = S_->Get<CV_t>(viscosity_liquid_key_, Tags::DEFAULT);
-  auto flux = S_->GetPtr<CompositeVector>(mol_flowrate_key_, Tags::DEFAULT);
-  
-  //Teuchos::RCP<Epetra_CrsMatrix> dWC_dT_mat = dWC_dT_block_->A();
-  
-  int ncells = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+    const auto& rho = S_->Get<CV_t>(mol_density_liquid_key_, tag);
+    const auto& mu = S_->Get<CV_t>(viscosity_liquid_key_, tag);
+    const auto& enth = S_->Get<CV_t>(enthalpy_key_, tag);
+    auto flux = S_->GetPtr<CompositeVector>(mol_flowrate_key_, tag);
 
-  if (precon_type_ == PRECON_FINITEDIFF) {
+    auto bc_pres = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, tag, "state");
+    auto bc_temp = S_->GetPtrW<Operators::BCs>(bcs_temperature_key_, tag, "state");
+    auto bc_enth = S_->GetPtrW<Operators::BCs>(bcs_enthalpy_key_, tag, "state");
 
-    //WriteStateStatistics(*S_, *vo_);
-    
-    //auto temp = *S_->GetPtrW<CompositeVector>(temperature_key_, Tags::DEFAULT, "")->ViewComponent("cell");
-    //auto pres = *S_->GetPtrW<CompositeVector>(pressure_key_, Tags::DEFAULT, "")->ViewComponent("cell");
-    //ChangedSolution();    
-    PreconditionerBlockFD_(0, 0, t, up, dt, ddivq_dP_, pde00_adv_);
-    //ChangedSolution();
-    PreconditionerAdvBlockFD_(0, 0, t, up, dt, pde00_adv_);
+    S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, passwd);
+    S_->GetEvaluator(enthalpy_key_).Update(*S_, passwd);
 
-    //ChangedSolution();
-    PreconditionerBlockFD_   (1, 0, t, up, dt, ddivKgT_dp_, pde10_adv_);
-    //ChangedSolution();    
-    PreconditionerAdvBlockFD_(1, 0, t, up, dt, pde10_adv_);
-
-    //ChangedSolution();
-    PreconditionerBlockFD_   (0, 1, t, up, dt, ddivq_dT_, pde01_adv_);
-    //ChangedSolution();
-    PreconditionerAdvBlockFD_(0, 1, t, up, dt, pde01_adv_);
-
-    //ChangedSolution();
-    PreconditionerBlockFD_(1, 1, t, up, dt, ddivKgT_dT_, pde11_adv_);
-    //    ChangedSolution();
-    PreconditionerAdvBlockFD_(1, 1, t, up, dt, pde11_adv_);
-    
-  }else if (precon_type_ == PRECON_FULL){
-
-    // ---------------------
     // pressure-energy block
-    // ---------------------
     op01_->Init();
 
     // -- accumulation
     S_->GetEvaluator(ws_key_).UpdateDerivative(*S_, passwd, temperature_key_, tag);
-    const auto& dwsdt = S_->GetDerivative<CV_t>(ws_key_, tag, temperature_key_, tag);
-    pde01_acc_->AddAccumulationTerm(dwsdt, dt, "cell");
+    const auto& dwsdT = S_->GetDerivative<CV_t>(ws_key_, tag, temperature_key_, tag);
+    pde01_acc_->AddAccumulationTerm(dwsdT, dt, "cell");
 
-    // -- advection div(q kt dt)
+    // -- advection div(q kt dT)
+    S_->GetEvaluator(mol_density_liquid_key_).UpdateDerivative(*S_, passwd, temperature_key_, tag);
     auto coef = Teuchos::rcp(new CompositeVector(
-    S_->GetDerivative<CV_t>(mol_density_liquid_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT)));
+      S_->GetDerivative<CV_t>(mol_density_liquid_key_, tag, temperature_key_, tag)));
     coef->ReciprocalMultiply(1.0, rho, *coef, 0.0);
 
-    S_->GetEvaluator(viscosity_liquid_key_).UpdateDerivative(*S_, passwd, temperature_key_, Tags::DEFAULT);
-    auto coef1 = S_->GetDerivative<CV_t>(viscosity_liquid_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT);
+    S_->GetEvaluator(viscosity_liquid_key_).UpdateDerivative(*S_, passwd, temperature_key_, tag);
+    auto coef1 = S_->GetDerivative<CV_t>(viscosity_liquid_key_, tag, temperature_key_, tag);
     coef->ReciprocalMultiply(-1.0, mu, coef1, 1.0);
 
     pde01_adv_->Setup(*flux);
     pde01_adv_->UpdateMatrices(flux.ptr(), coef.ptr());
-    //pde01_adv_->SetBCs(bc_temp, bc_pres);
+    pde01_adv_->SetBCs(bc_temp, bc_pres);
     pde01_adv_->ApplyBCs(false, true, false);
 
-  // ---------------------
-  // energy-pressure block
-  // ---------------------
+    // energy-pressure block
     op10_->Init();
 
-    // // -- diffusion due to heat conduction
-    // S_->GetEvaluator(conductivity_key_).Update(*S_, passwd);
-    // const auto& conductivity = S_->Get<CV_t>(conductivity_key_, tag);
-    // coef = Teuchos::rcp(new CompositeVector(conductivity));
-
-    // -- diffusion due to heat transport (with assumption relperm = 1)
-    S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, passwd);
+    // -- diffusion due to heat transport (with assumption relperm = 1), div([K h eta / mu] grad dp)
     *coef = S_->Get<CV_t>(mol_density_liquid_key_, tag);
-    coef->Multiply(1.0, *up->SubVector(1)->Data(), *coef, 0.0);
+    coef->Multiply(1.0, enth, *coef, 0.0);
     coef->ReciprocalMultiply(1.0, mu, *coef, 0.0);
 
     pde10_diff_flux_->SetScalarCoefficient(coef, Teuchos::null);
     pde10_diff_flux_->UpdateMatrices(Teuchos::null, up->Data().ptr());
-    pde10_diff_flux_->SetBCs(bc_pres, bc_enth);
+    pde10_diff_flux_->SetBCs(bc_pres, bc_temp);
     pde10_diff_flux_->ApplyBCs(true, true, false);
-    //RemoveFluxContinuityEquations_(pde10_diff_flux_);
 
-    // -- advection div((q kt h) dp)
-    // S_->GetEvaluator(iso_compressibility_key_).Update(*S_, passwd);
-    // const auto& compressibility = S_->Get<CV_t>(iso_compressibility_key_, Tags::DEFAULT);
-    // coef = Teuchos::rcp(new CompositeVector(compressibility));
-    // coef->Multiply(1.0, *coef, *up->SubVector(1)->Data(), 0.0);
-
-    S_->GetEvaluator(enth_key_).UpdateDerivative(*S_, passwd, pressure_key_, Tags::DEFAULT);
-    //coef1 = S_->GetDerivative<CV_t>(enth_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT);
-    // coef1.Multiply(1.0, *up->SubVector(1)->Data(), coef1, 0.0);
-    // coef->ReciprocalMultiply(-1.0, mu, coef1, 1.0);
-
+    // -- advection due to heat transport, div([q dH/dp] dp) FIXME we need d(qH)/dp
+    S_->GetEvaluator(enthalpy_key_).UpdateDerivative(*S_, passwd, pressure_key_, tag);
+    auto dHdp = S_->GetDerivativePtr<CV_t>(enthalpy_key_, tag, pressure_key_, tag);
     pde10_adv_->Setup(*flux);
-    //pde10_adv_->UpdateMatrices(flux.ptr(), coef1.ptr());
+    pde10_adv_->UpdateMatrices(flux.ptr(), dHdp.ptr());
     pde10_adv_->SetBCs(bc_pres, bc_enth);
     pde10_adv_->ApplyBCs(false, true, false);
 
     // -- accumulation
-    //    modified Jacobian is used in region 4
     S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd, pressure_key_, tag);
     auto& dEdp = S_->GetDerivative<CV_t>(energy_key_, tag, pressure_key_, tag);
     pde10_acc_->AddAccumulationTerm(dEdp, dt, "cell");
    
+    op_tree_pc_->AssembleMatrix();
+    op_tree_pc_->InitializeInverse();
+    op_tree_pc_->ComputeInverse();
   }
-  
-  if (!symbolic_assembly_complete_) {
-    op_tree_pc_->SymbolicAssembleMatrix();
-    symbolic_assembly_complete_ = true;
-  }    
-            
-
-  op_tree_pc_->AssembleMatrix();
-  op_tree_pc_->InitializeInverse();
-  op_tree_pc_->ComputeInverse();
-
-  *vo_->os() << "UpdatePreconditioner." << std::endl;
-
-  // std::stringstream filename_s2;
-  // filename_s2 << "assembled_matrix" << 0 << ".txt";
-  // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *dWC_dT_mat);
-
-  
-  // std::vector<std::string> vnames;
-  // vnames.push_back("p");
-  // vnames.push_back("T");
-
-  // std::vector<Teuchos::Ptr<const CompositeVector>> vecs;
-  // vecs.push_back(up->SubVector(0)->Data().ptr());
-  // vecs.push_back(up->SubVector(1)->Data().ptr());
-
-  // db_->WriteVectors(vnames, vecs, false);
-
-  // exit(0);
 }
 
 
@@ -630,232 +379,14 @@ FlowEnergyPT_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
 int
 FlowEnergyPT_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, Teuchos::RCP<TreeVector> Y)
 {
-  int ierr;
   if (include_pt_coupling_) {
     Y->PutScalar(0.0);
-    ierr = op_tree_pc_->ApplyInverse(*X, *Y);    
+    return op_tree_pc_->ApplyInverse(*X, *Y);
   } else {
-    ierr = PK_MPCStrong<PK_BDF>::ApplyPreconditioner(X, Y);
+    return PK_MPCStrong<PK_BDF>::ApplyPreconditioner(X, Y);
   }
-
-  *vo_->os() << "ApplyPreconditioner." << std::endl;
-  std::vector<std::string> vnames;
-  vnames.push_back("res p");
-  vnames.push_back("PC*resp");
-  vnames.push_back("res T");
-  vnames.push_back("PC*resT");
-
-  std::vector<Teuchos::Ptr<const CompositeVector>> vecs;
-  vecs.push_back(X->SubVector(0)->Data().ptr());
-  vecs.push_back(Y->SubVector(0)->Data().ptr());
-  vecs.push_back(X->SubVector(1)->Data().ptr());
-  vecs.push_back(Y->SubVector(1)->Data().ptr());
-
-  db_->WriteVectors(vnames, vecs, false);
-
-  return ierr;
 }
 
-
-AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-FlowEnergyPT_PK::ModifyCorrection(double h,
-                                Teuchos::RCP<const TreeVector> res,
-                                Teuchos::RCP<const TreeVector> u,
-                                Teuchos::RCP<TreeVector> du){
-
-  AmanziSolvers::FnBaseDefs::ModifyCorrectionResult modified =
-    PK_MPCStrong<PK_BDF>::ModifyCorrection(h, res, u, du);
-
-  // Teuchos::RCP<const TreeVector> flow_u = u->SubVector(0);
-  // Teuchos::RCP<const TreeVector> flow_res = res->SubVector(0);
-  // Teuchos::RCP<TreeVector> flow_du = du->SubVector(0);
-
-  // Teuchos::RCP<const TreeVector> ener_u = u->SubVector(1);
-  // Teuchos::RCP<const TreeVector> ener_res = res->SubVector(1);
-  // Teuchos::RCP<TreeVector> ener_du = du->SubVector(1);
-
-  // double P0 = 2.10000000000000000e+07;
-  // double T0 = 700.0;
-
-  // flow_du -> Scale(P0);
-  // ener_du -> Scale(T0);
-  
-  return modified;
-
-}
-
-
-
-void FlowEnergyPT_PK::PreconditionerBlockFD_(int idi, int idj, double t,
-                                           Teuchos::RCP<const TreeVector> up, double dt,
-                                           Teuchos::RCP<Operators::PDE_Diffusion> pde_block,
-                                           Teuchos::RCP<Operators::PDE_Advection> pde_adv){
-  
-    Teuchos::RCP<TreeVector> unew = Teuchos::rcp(new TreeVector(*up));
-    unew->SubVector(0)->SetData(S_->GetPtrW<CompositeVector>(pressure_key_, Tags::DEFAULT, ""));
-    unew->SubVector(1)->SetData(S_->GetPtrW<CompositeVector>(temperature_key_, Tags::DEFAULT, ""));
-    
-    Teuchos::RCP<TreeVector> f0 = Teuchos::rcp(new TreeVector(*unew));
-    Teuchos::RCP<TreeVector> f1 = Teuchos::rcp(new TreeVector(*unew));
-
-    int ncells = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
-  
-    double max, factor, eps(1e-8), t_new, t_old;
-    up->SubVector(idj)->NormInf(&max);                                                                                                                                                                        
-    factor = eps * max;
-    t_old = t;
-    t_new = t_old + dt;
-
-    auto u0_tv = unew->SubVector(idj);
-    auto u0_cv = u0_tv->Data();      
-    auto& u0_c = *u0_cv->ViewComponent("cell");
-    auto& u0_f = *u0_cv->ViewComponent("face");
-
-    sub_pks_[0]->ChangedSolution();
-    sub_pks_[1]->ChangedSolution();        
-  
-    FunctionalResidual(t_old, t_new, unew, unew, f0);
-    
-    for (int c=0; c<ncells; c++){
-      
-      const auto& faces = mesh_->getCellFaces(c);
-      int nf = faces.size();
-      WhetStone::DenseMatrix A(nf+1, nf+1);
-      A.PutScalar(0.0);
-      
-      u0_c[0][c] += factor;
-      ChangedSolution();
-
-      
-      FunctionalResidual(t_old, t_new, unew, unew, f1);
-      u0_c[0][c] -= factor;
-      ChangedSolution();
-
-      auto& f0_p_c = *f0->SubVector(idi)->Data()->ViewComponent("cell");
-      auto& f1_p_c = *f1->SubVector(idi)->Data()->ViewComponent("cell");
-      auto& f0_p_f = *f0->SubVector(idi)->Data()->ViewComponent("face");
-      auto& f1_p_f = *f1->SubVector(idi)->Data()->ViewComponent("face");
-
-      
-      A(nf,nf) = (f1_p_c[0][c] - f0_p_c[0][c]) / factor;
-      
-      for (int i=0; i<nf;i++){
-        int f = faces[i];
-        A(i,nf) = (f1_p_f[0][f] - f0_p_f[0][f]) / factor;
-      }
-
-      for (int i=0; i<nf;i++){
-        sub_pks_[1]->ChangedSolution();
-        int fi = faces[i];
-        u0_f[0][fi] += factor;
-        
-        FunctionalResidual(t_old, t_new, unew, unew, f1);
-        u0_f[0][fi] -= factor;
-
-        A(nf, i) = (f1_p_c[0][c] - f0_p_c[0][c]) / factor;
-        
-        for (int j=0; j<nf;j++){
-          int fj = faces[j];
-          A(j,i) = (f1_p_f[0][fj] - f0_p_f[0][fj]) / factor;
-          if (i==j){
-            const auto& cells = mesh_->getFaceCells(fj); 
-            if (cells.size()==2) A(j,j) *= 0.5;
-          }
-        }
-      }
-
-
-      pde_block->SetMatrix(A, c);
-
-      // for (int i=0; i<nf; i++){
-      //   int f = faces[i];
-      //   const auto& cells = mesh_->getFaceCells(f);
-      //   if (cells.size()==2){
-      //     WhetStone::DenseMatrix A(2,2);
-      //     A.PutScalar(0.0);
-      //     auto u0_tv = unew->SubVector(idj);
-      //     auto u0_cv = u0_tv->Data();
-      
-      //     auto& u0_c = *u0_cv->ViewComponent("cell");
-      //     for (int i=0; i<2; i++){
-      //       u0_c[0][cells[i]] += factor;
-          
-      //       sub_pks_[0]->ChangedSolution();
-      //       sub_pks_[1]->ChangedSolution();
-          
-      //       FunctionalResidual(t_old, t_new, unew, unew, f1);
-      //       u0_c[0][cells[i]] -= factor;
-
-      //       sub_pks_[0]->ChangedSolution();
-      //       sub_pks_[1]->ChangedSolution();
-
-      //       auto& f0_p_c = *f0->SubVector(idi)->Data()->ViewComponent("cell");
-      //       auto& f1_p_c = *f1->SubVector(idi)->Data()->ViewComponent("cell");
-      //       A(1-i,i) = (f1_p_c[0][cells[1-i]] - f0_p_c[0][cells[1-i]]) / factor;          
-      //     }
-      //   }
-      // }
-
-    }
-
-    //    if (idi==1&&idj==1) exit(0);
-}
-
-
-void FlowEnergyPT_PK::PreconditionerAdvBlockFD_(int idi, int idj, double t,
-                                           Teuchos::RCP<const TreeVector> up, double dt,
-                                           Teuchos::RCP<Operators::PDE_Advection> pde_adv){
-  
-    Teuchos::RCP<TreeVector> unew = Teuchos::rcp(new TreeVector(*up));
-    unew->SubVector(0)->SetData(S_->GetPtrW<CompositeVector>(pressure_key_, Tags::DEFAULT, ""));
-    unew->SubVector(1)->SetData(S_->GetPtrW<CompositeVector>(temperature_key_, Tags::DEFAULT, ""));
-    
-    Teuchos::RCP<TreeVector> f0 = Teuchos::rcp(new TreeVector(*unew));
-    Teuchos::RCP<TreeVector> f1 = Teuchos::rcp(new TreeVector(*unew));
-
-    int nfaces = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
-  
-    double max, factor, eps(1e-8), t_new, t_old;
-    up->SubVector(idj)->NormInf(&max);                                                                                                                                                                        
-    factor = eps * max;
-    t_old = t;
-    t_new = t_old + dt;
-
-    sub_pks_[0]->ChangedSolution();
-    sub_pks_[1]->ChangedSolution();
-  
-    FunctionalResidual(t_old, t_new, unew, unew, f0);
-
-    for (int f=0; f<nfaces; f++){
-      const auto& cells = mesh_->getFaceCells(f);
-      if (cells.size()==2){
-        WhetStone::DenseMatrix A(2,2);
-        A.PutScalar(0.0);
-        auto u0_tv = unew->SubVector(idj);
-        auto u0_cv = u0_tv->Data();
-      
-        auto& u0_c = *u0_cv->ViewComponent("cell");
-        for (int i=0; i<2; i++){
-          u0_c[0][cells[i]] += factor;
-
-          ChangedSolution();          
-          FunctionalResidual(t_old, t_new, unew, unew, f1);
-
-          auto& f0_p_c = *f0->SubVector(idi)->Data()->ViewComponent("cell");
-          auto& f1_p_c = *f1->SubVector(idi)->Data()->ViewComponent("cell");
-          A(1-i,i) = (f1_p_c[0][cells[1-i]] - f0_p_c[0][cells[1-i]]) / factor;
-          
-          u0_c[0][cells[i]] -= factor;          
-          ChangedSolution();
-          
-        }
-
-        pde_adv->SetMatrix(A, f);
-        
-      }      
-    }
-  
-}  
 // -----------------------------------------------------------------------------
 // L-scheme stability constant is updated by PKs.
 // -----------------------------------------------------------------------------

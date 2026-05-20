@@ -53,10 +53,6 @@ EnergyPressureEnthalpy_PK::FunctionalResidual(double t_old,
   S_->GetEvaluator(temperature_key_).UpdateDerivative(*S_, passwd_, enthalpy_key_, Tags::DEFAULT);
   const auto& dTdh = S_->GetDerivative<CV_t>(temperature_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT);
   coef->Multiply(1.0, *coef, dTdh, 0.0);
-
-  // std::cout<<"conductivity\n"<<*conductivity.ViewComponent("cell")<<"\n";
-  // std::cout<<"dTdh\n"<<*dTdh.ViewComponent("cell")<<"\n";
-  // std::cout<<"coef\n"<<*coef->ViewComponent("cell")<<"\n";
   
   op_matrix_->Init();
   op_matrix_diff_->SetScalarCoefficient(coef, Teuchos::null);
@@ -76,8 +72,6 @@ EnergyPressureEnthalpy_PK::FunctionalResidual(double t_old,
   S_->GetEvaluator(temperature_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
   const auto& dTdp = S_->GetDerivative<CV_t>(temperature_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT);
   coef->Multiply(1.0, conductivity, dTdp, 0.0);
-
-  //  std::cout<<"coef\n"<<*coef->ViewComponent("cell")<<"\n";
   
   op_matrix_diff_pres_->global_operator()->Init();
   op_matrix_diff_pres_->SetScalarCoefficient(coef, Teuchos::null);
@@ -90,15 +84,7 @@ EnergyPressureEnthalpy_PK::FunctionalResidual(double t_old,
   // add enthalpy advection
   S_->GetEvaluator(mol_flowrate_key_).Update(*S_, passwd_);
   auto flux = S_->GetPtr<CV_t>(mol_flowrate_key_, Tags::DEFAULT);
-  const Epetra_MultiVector& flux_f = *flux->ViewComponent("face");
-
-  // for (int f=0;f<22;f++){
-  //   const AmanziGeometry::Point normal = mesh_->getFaceNormal(f); 
-  //   std::cout<<f<<": "<<normal<<" - "<< std::setprecision(12)<<flux_f[0][f]<<"\n";
-  // }
-  //exit(-1);
-  
-  
+  const Epetra_MultiVector& flux_f = *flux->ViewComponent("face");    
 
   op_advection_->Init();
   op_matrix_advection_->Setup(*flux);
@@ -140,8 +126,6 @@ EnergyPressureEnthalpy_PK::FunctionalResidual(double t_old,
 
   S_->GetEvaluator(temperature_key_).Update(*S_, passwd_);
   const auto& t1 = *S_->Get<CV_t>(temperature_key_).ViewComponent("cell");
-
-  std::cout<<"temp\n"<<t1<<"\n";
   
 }
 
@@ -188,9 +172,6 @@ EnergyPressureEnthalpy_PK::UpdatePreconditioner(double t,
   const auto& rho_r = *S_->Get<CV_t>(particle_density_key_, Tags::DEFAULT).ViewComponent("cell");
   const auto& phi_c = *S_->Get<CV_t>(porosity_key_, Tags::DEFAULT).ViewComponent("cell");
 
-
-
-  bool neg = false;
   
   for (int c = 0; c < ncells_owned; ++c) {
     if (dEdh_c[0][c] < 0.0) {
@@ -199,14 +180,9 @@ EnergyPressureEnthalpy_PK::UpdatePreconditioner(double t,
       if (tmp == 1.0) dEdh_c[0][c] = eta_c[0][c];
       else dEdh_c[0][c] = rho_r[0][c] * dUdh_c[0][c] * (1.0 - tmp); // + eta_c[0][c] * tmp;
 
-      // std::cout<<"cell "<<c<<" "<<" dEdh_c "<<" "<<dEdh_c[0][c]<<"\n";
-      // neg = true;
-      // dEdh_c[0][c] = density[0][c]*porosity[0][c];
-
     }
   }
 
-  if (neg) exit(0);
   
   op_acc_->AddAccumulationTerm(dEdh, dt, "cell");
 
