@@ -20,7 +20,7 @@ project(ENERGY)
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
-include_directories(${COOLPROP_INCLUDE_DIRS})
+
 
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})

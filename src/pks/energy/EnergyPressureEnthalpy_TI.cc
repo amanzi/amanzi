@@ -65,9 +65,6 @@ EnergyPressureEnthalpy_PK::FunctionalResidual(double t_old,
 
   op_matrix_->ComputeNegativeResidual(*u_new->Data(), *g->Data());
 
-  auto& g_c = *g->Data()->ViewComponent("cell");
-  auto& g_f = *g->Data()->ViewComponent("face");
-  
   // add diffusion due to pressure: div(k dT/dp grad(p))
   CompositeVector g_adv(g->Data()->Map());
   const auto& pres = S_->Get<CV_t>(pressure_key_, Tags::DEFAULT);
@@ -87,7 +84,6 @@ EnergyPressureEnthalpy_PK::FunctionalResidual(double t_old,
   // add enthalpy advection
   S_->GetEvaluator(mol_flowrate_key_).Update(*S_, passwd_);
   auto flux = S_->GetPtr<CV_t>(mol_flowrate_key_, Tags::DEFAULT);
-  const Epetra_MultiVector& flux_f = *flux->ViewComponent("face");    
 
   op_advection_->Init();
   op_matrix_advection_->Setup(*flux);
@@ -98,7 +94,7 @@ EnergyPressureEnthalpy_PK::FunctionalResidual(double t_old,
   g->Data()->Update(1.0, g_adv, 1.0);
 
   // -- implicit source models
-  //auto& g_c = *g->Data()->ViewComponent("cell");
+  auto& g_c = *g->Data()->ViewComponent("cell");
   if (heat_src_) {
     S_->GetEvaluator(heat_src_key_).Update(*S_, passwd_);
     const auto& src_c = *S_->Get<CV_t>(heat_src_key_, Tags::DEFAULT).ViewComponent("cell");
@@ -107,7 +103,6 @@ EnergyPressureEnthalpy_PK::FunctionalResidual(double t_old,
       g_c[0][c] += src_c[0][c] * mesh_->getCellVolume(c);
     }
   }
-
   
   // add accumulation term
   S_->GetEvaluator(energy_key_).Update(*S_, passwd_);
@@ -125,13 +120,8 @@ EnergyPressureEnthalpy_PK::FunctionalResidual(double t_old,
     double factor = mesh_->getCellVolume(c) / dt;
     double acc = factor * (e1[0][c] - e0[0][c]);
     g_c[0][c] += acc;
-    //std::cout<<"c: "<<c<<" acc "<<acc<<" g_c "<<g_c[0][c]<<"\n";
     residual_max_norm_ = std::max(residual_max_norm_, fabs(g_c[0][c] / (factor * e0[0][c])));
   }
-
-  S_->GetEvaluator(temperature_key_).Update(*S_, passwd_);
-  const auto& t1 = *S_->Get<CV_t>(temperature_key_).ViewComponent("cell");
-
   
 }
 
@@ -146,8 +136,6 @@ EnergyPressureEnthalpy_PK::UpdatePreconditioner(double t,
 {
   // update BCs
   UpdateSourceBoundaryData(t, t + dt, *up->Data());
-
-  const auto& enthal_c = *up->Data()->ViewComponent("cell"); 
 
   // assemble matrices for diffusion operator
   S_->GetEvaluator(conductivity_gen_key_).Update(*S_, passwd_);
@@ -263,7 +251,6 @@ EnergyPressureEnthalpy_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 
   const auto& uc = *u->Data()->ViewComponent("cell");
   const auto& duc = *du->Data()->ViewComponent("cell");
-  //  const auto& duf = *du->Data()->ViewComponent("face");
   
   int ncomp = uc.MyLength();
   for (int c = 0; c < ncomp; ++c) {

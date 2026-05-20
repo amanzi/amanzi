@@ -16,7 +16,6 @@ project(EOS)
 
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})
-include_directories(${COOLPROP_INCLUDE_DIRS})
 
 #
 # Library: eos

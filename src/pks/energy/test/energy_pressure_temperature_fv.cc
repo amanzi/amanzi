@@ -26,9 +26,7 @@
 
 // Amanzi
 #include "CompositeVector.hh"
-
 #include "EnergyPressureTemperature_PK.hh"
-
 #include "IO.hh"
 #include "MeshFactory.hh"
 #include "Operator.hh"

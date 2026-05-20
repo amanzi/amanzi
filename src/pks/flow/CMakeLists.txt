@@ -20,7 +20,6 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})
-include_directories(${COOLPROP_INCLUDE_DIRS})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${EOS_SOURCE_DIR})
 include_directories(${EVALUATORS_SOURCE_DIR})
