@@ -82,6 +82,8 @@ FlowEnergyPH_PK::Setup()
   viscosity_liquid_key_ = Keys::getKey(domain_, "viscosity_liquid");
   iso_compressibility_key_ = Keys::getKey(domain_, "isothermal_compressibility");
   conductivity_key_ = Keys::getKey(domain_, "thermal_conductivity");
+  permeability_key_ = Keys::getKey(domain_, "permeability");
+  aperture_key_ = Keys::getKey(domain_, "aperture");
 
   mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
   water_storage_key_ = Keys::getKey(domain_, "water_storage");
@@ -359,6 +361,7 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
 {
   PK_MPCStrong<PK_BDF>::UpdatePreconditioner(t, up, dt);
 
+  auto flow_pk = Teuchos::rcp_dynamic_cast<Flow::Flow_PK>(sub_pks_[0]);
   auto energy_pk = Teuchos::rcp_dynamic_cast<Energy::EnergyPressureEnthalpy_PK>(sub_pks_[1]);
 
   auto bc_enth = S_->GetPtrW<Operators::BCs>(bcs_enthalpy_key_, Tags::DEFAULT, "state");
@@ -374,6 +377,7 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   const auto& mu = S_->Get<CV_t>(viscosity_liquid_key_, Tags::DEFAULT);
   auto flux = S_->GetPtr<CompositeVector>(mol_flowrate_key_, Tags::DEFAULT);
 
+  //if (precon_type_ == PRECON_FULL) {
   // ---------------------
   // pressure-energy block
   // ---------------------
@@ -388,6 +392,7 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   auto coef = Teuchos::rcp(new CompositeVector(
     S_->GetDerivative<CV_t>(mol_density_liquid_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT)));
   coef->ReciprocalMultiply(1.0, rho, *coef, 0.0);
+  //std::cout<<*coef->ViewComponent("cell");
 
   S_->GetEvaluator(viscosity_liquid_key_).UpdateDerivative(*S_, passwd, enthalpy_key_, Tags::DEFAULT);
   auto coef1 = S_->GetDerivative<CV_t>(viscosity_liquid_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT);
@@ -407,11 +412,12 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   S_->GetEvaluator(conductivity_key_).Update(*S_, passwd);
   const auto& conductivity = S_->Get<CV_t>(conductivity_key_, tag);
   coef = Teuchos::rcp(new CompositeVector(conductivity));
-
+  
   S_->GetEvaluator(temperature_key_).UpdateDerivative(*S_, passwd, pressure_key_, tag);
   const auto& dTdp = S_->GetDerivative<CV_t>(temperature_key_, tag, pressure_key_, tag);
   coef->Multiply(1.0, *coef, dTdp, 0.0);
 
+  
   pde10_diff_cond_->SetScalarCoefficient(coef, Teuchos::null);
   pde10_diff_cond_->UpdateMatrices(Teuchos::null, up->Data().ptr());
   pde10_diff_cond_->SetBCs(bc_pres, bc_enth);
@@ -422,7 +428,16 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   *coef = S_->Get<CV_t>(mol_density_liquid_key_, tag);
   coef->Multiply(1.0, *up->SubVector(1)->Data(), *coef, 0.0);
   coef->ReciprocalMultiply(1.0, mu, *coef, 0.0);
-
+  if (flow_pk -> IsManifold()){
+    S_->GetEvaluator(permeability_key_).Update(*S_, passwd);
+    const auto& perm = S_->Get<CV_t>(permeability_key_, tag);
+    coef->Multiply(1.0, *coef, perm, 0.0);
+    S_->GetEvaluator(aperture_key_).Update(*S_, passwd);
+    const auto& apert = S_->Get<CV_t>(aperture_key_, tag);
+    coef->Multiply(1.0, *coef, apert, 0.0);
+  }
+  
+  
   pde10_diff_flux_->SetScalarCoefficient(coef, Teuchos::null);
   pde10_diff_flux_->UpdateMatrices(Teuchos::null, up->Data().ptr());
   pde10_diff_flux_->SetBCs(bc_pres, bc_enth);
@@ -439,17 +454,54 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   coef1 = S_->GetDerivative<CV_t>(viscosity_liquid_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT);
   coef1.Multiply(1.0, *up->SubVector(1)->Data(), coef1, 0.0);
   coef->ReciprocalMultiply(-1.0, mu, coef1, 1.0);
-
+  
   pde10_adv_->Setup(*flux);
   pde10_adv_->UpdateMatrices(flux.ptr(), coef.ptr());
   pde10_adv_->SetBCs(bc_pres, bc_enth);
   pde10_adv_->ApplyBCs(false, true, false);
 
+
   // -- accumulation
   //    modified Jacobian is used in region 4
   S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd, pressure_key_, tag);
   auto& dEdp = S_->GetDerivative<CV_t>(energy_key_, tag, pressure_key_, tag);
-  pde10_acc_->AddAccumulationTerm(dEdp, dt, "cell");
+  pde10_acc_->AddAccumulationTerm(dEdp, dt, "cell");  
+
+  // }else if (precon_type_ == PRECON_FINITEDIFF) {
+
+  //   //ChangedSolution();
+  //   //PreconditionerBlockFD_   (0, 0, t, up, dt, ddivq_dP_, pde00_adv_);
+  //   //ChangedSolution();
+  //   //PreconditionerAdvBlockFD_(0, 0, t, up, dt, pde00_adv_);
+
+
+  //   // ---------------------
+  //   // energy-pressure block
+  //   // ---------------------
+  //   //op10_->Init();
+    
+  //   //ChangedSolution();
+  //   PreconditionerBlockFD_   (1, 0, t, up, dt, pde10_diff_flux_, pde10_adv_);
+  //   //ChangedSolution();    
+  //   PreconditionerAdvBlockFD_(1, 0, t, up, dt, pde10_adv_);
+
+
+  //   // ---------------------
+  //   // pressure-energy block
+  //   // ---------------------
+  //   //op01_->Init();
+    
+  //   //ChangedSolution();
+  //   PreconditionerBlockFD_   (0, 1, t, up, dt, pde01_diff_, pde01_adv_);
+  //   //ChangedSolution();
+  //   PreconditionerAdvBlockFD_(0, 1, t, up, dt, pde01_adv_);
+
+  //   //ChangedSolution();
+  //   //PreconditionerBlockFD_   (1, 1, t, up, dt, ddivKgT_dT_, pde11_adv_);
+  //   //ChangedSolution();
+  //   //PreconditionerAdvBlockFD_(1, 1, t, up, dt, pde11_adv_);
+    
+  // }
 
   if (use_cptr_prec_) {
     op_tree_ilu_->AssembleMatrix();

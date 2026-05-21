@@ -26,7 +26,7 @@ namespace Energy {
 * Constructor from ParameterList
 ****************************************************************** */
 TotalEnergyEvaluatorPH::TotalEnergyEvaluatorPH(Teuchos::ParameterList& plist)
-  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist), aperture_(false)
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("energy key"), Tags::DEFAULT));
@@ -46,6 +46,11 @@ TotalEnergyEvaluatorPH::TotalEnergyEvaluatorPH(Teuchos::ParameterList& plist)
 
   dependencies_.insert(std::make_pair(ie_rock_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(particle_density_key_, Tags::DEFAULT));
+ 
+  if (plist_.isParameter("aperture key")) {
+    aperture_key_ = plist_.get<std::string>("aperture key");
+    aperture_ = true;
+  }
 }
 
 
@@ -89,7 +94,14 @@ TotalEnergyEvaluatorPH::Evaluate_(const State& S, const std::vector<CompositeVec
 
   for (int c = 0; c != ncells; ++c) {
     result_v[0][c] = phi[0][c] * eta[0][c] * h[0][c] +
-                     (1.0 - phi[0][c]) * u_rock[0][c] * rho_rock[0][c];
+                           (1.0 - phi[0][c]) * u_rock[0][c] * rho_rock[0][c];
+  }
+
+  if (aperture_) {
+    const auto& aperture = *S.Get<CompositeVector>(aperture_key_).ViewComponent("cell");
+    for (int c = 0; c != ncells; ++c) {
+      result_v[0][c] *= aperture[0][c];
+    }
   }
 }
 
@@ -135,6 +147,14 @@ TotalEnergyEvaluatorPH::EvaluatePartialDerivative_(const State& S,
   } else {
     AMANZI_ASSERT(0);
   }
+
+  if (aperture_) {
+    const auto& aperture = *S.Get<CompositeVector>(aperture_key_).ViewComponent("cell");
+    for (int c = 0; c != ncells; ++c) {
+      result_v[0][c] *= aperture[0][c];
+    }
+  }
+  
 }
 
 } // namespace Energy

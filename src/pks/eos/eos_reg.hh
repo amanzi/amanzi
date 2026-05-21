@@ -68,9 +68,12 @@ Utils::RegisteredFactory<EOS_SaturatedVaporPressure, H2O_SaturatedVaporPressure>
 Utils::RegisteredFactory<EOS_Viscosity, IdealGas_Viscosity> IdealGas_Viscosity::reg_("ideal gas");
 Utils::RegisteredFactory<EOS_Viscosity, H2O_Viscosity> H2O_Viscosity::reg_("liquid water 0-30C");
 Utils::RegisteredFactory<EOS_Viscosity, ViscosityConstant> ViscosityConstant::reg_("constant");
+
 Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityIAPWS95> H2O_ViscosityIAPWS95::reg_("liquid water iapws95");
 Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityIAPWS97> H2O_ViscosityIAPWS97::reg_("liquid water iapws97");
 Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityFEHM> H2O_ViscosityFEHM::reg_("liquid water FEHM");
+
+
 Utils::RegisteredFactory<EOS_Viscosity, ViscosityTabular> ViscosityTabular::reg_("lookup table");
 
 Utils::RegisteredFactory<EOS_Diffusion, VaporInGas_Diffusion> VaporInGas_Diffusion::reg_(

@@ -44,6 +44,9 @@ class TotalEnergyEvaluatorPH
  private:
   Key enthalpy_key_, ie_rock_key_, mol_density_liquid_key_;
   Key particle_density_key_, porosity_key_;
+
+  bool aperture_;
+  Key aperture_key_;
 };
 
 } // namespace Energy
