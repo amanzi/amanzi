@@ -29,6 +29,10 @@ Process kernel that strongly couples Flow PK with Energy PK.
 #include "PK_MPCStrong.hh"
 #include "PK_Factory.hh"
 
+#include "Upwind.hh"
+//#include "ThermodynamicStateEvaluators.hh"
+
+
 namespace Amanzi {
 
 class FlowEnergyPH_PK : public PK_MPCStrong<PK_BDF> {
@@ -77,9 +81,27 @@ class FlowEnergyPH_PK : public PK_MPCStrong<PK_BDF> {
   // -- L-scheme for flow equation
   virtual std::vector<Key> SetupLSchemeKey(Teuchos::ParameterList& plist) override;
 
+protected:
+  enum PreconditionerType {
+    PRECON_NONE = 0,
+    PRECON_BLOCK_DIAGONAL = 1,
+    PRECON_FULL = 2,
+    PRECON_FINITEDIFF = 3
+  };
+  
+  // preconditioner methods
+  PreconditionerType precon_type_;
+  
  private:
-  void RemoveFluxContinuityEquations_(Teuchos::RCP<Operators::PDE_Diffusion>& pde);
 
+  Teuchos::RCP<TreeVector> res_scale_;
+  bool compute_scaling_completed_, left_scaling_, right_scaling_;
+  double left_scaling_eps_;
+  double P0_, H0_;
+
+  
+  void RemoveFluxContinuityEquations_(Teuchos::RCP<Operators::PDE_Diffusion>& pde);
+    
  private:
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<const Teuchos::ParameterList> preconditioner_list_;
@@ -88,12 +110,13 @@ class FlowEnergyPH_PK : public PK_MPCStrong<PK_BDF> {
   Key domain_; // computational domain
 
   Teuchos::RCP<Operators::Operator> op10_, op01_;
-  Teuchos::RCP<Operators::PDE_Diffusion> pde10_diff_cond_, pde10_diff_flux_;
+  Teuchos::RCP<Operators::PDE_Diffusion> pde10_diff_cond_, pde10_diff_flux_, pde01_diff_;
   Teuchos::RCP<Operators::PDE_Advection> pde10_adv_, pde01_adv_;
   Teuchos::RCP<Operators::PDE_Accumulation> pde10_acc_, pde01_acc_;
 
   Teuchos::RCP<Operators::TreeOperator> op_tree_amg_, op_tree_ilu_;
   bool use_cptr_prec_ = false;
+
 
   // keys
   Key pressure_key_, enthalpy_key_, temperature_key_;
@@ -101,6 +124,7 @@ class FlowEnergyPH_PK : public PK_MPCStrong<PK_BDF> {
   Key state_key_, viscosity_liquid_key_, mol_density_liquid_key_, iso_compressibility_key_;
   Key mol_flowrate_key_, water_storage_key_;
   Key bcs_flow_key_, bcs_enthalpy_key_;
+  Key permeability_key_, aperture_key_;
 
   // factory registration
   static RegisteredPKFactory<FlowEnergyPH_PK> reg_;

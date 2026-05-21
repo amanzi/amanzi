@@ -27,6 +27,11 @@
 #include "H2O_Density.hh"
 #include "H2O_DensityIAPWS97.hh"
 #include "H2O_DensityFEHM.hh"
+#include "H2O_DensityIAPWS95.hh"
+
+
+
+#include "H2O_ViscosityIAPWS95.hh"
 #include "H2O_ViscosityIAPWS97.hh"
 #include "H2O_ViscosityFEHM.hh"
 #include "LookupTable_Amanzi.hh"

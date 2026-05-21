@@ -16,6 +16,7 @@
 #ifndef AMANZI_PK_PHYSICAL_BDF_HH_
 #define AMANZI_PK_PHYSICAL_BDF_HH_
 
+#include "BCs.hh"
 #include "PK_BDF.hh"
 #include "PK_Physical.hh"
 

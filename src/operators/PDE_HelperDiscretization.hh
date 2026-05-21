@@ -48,6 +48,11 @@ class PDE_HelperDiscretization : public PDE_HelperBCsList {
     UpdateMatrices(u, Teuchos::null);
   }
   virtual void UpdateMatrices() { UpdateMatrices(Teuchos::null, Teuchos::null); }
+
+  virtual void SetMatrix(WhetStone::DenseMatrix& A, int indx){
+    local_op_->matrices[indx] = A;
+  }
+  
   // -- modify matrix due to boundary conditions: generic implementation
   //    for PDE classes based on new schema:
   //    primary=true indicates that the operator updates both matrix and right-hand
