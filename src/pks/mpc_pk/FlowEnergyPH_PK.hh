@@ -123,9 +123,6 @@ protected:
   Teuchos::RCP<Operators::PDE_Advection> pde10_adv_, pde01_adv_;
   Teuchos::RCP<Operators::PDE_Accumulation> pde10_acc_, pde01_acc_;
 
-  Teuchos::RCP<Operators::Upwind> upwind_;
-  bool symbolic_assembly_complete_ = false;
-
   Teuchos::RCP<Operators::TreeOperator> op_tree_amg_, op_tree_ilu_;
   bool use_cptr_prec_ = false;
 

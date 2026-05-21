@@ -53,13 +53,6 @@ class PK_BDF
   {
     return Teuchos::null;
   }
-
-  // access
-  Teuchos::RCP<Operators::BCs> op_bc() { return op_bc_; }
-
-  protected:
-  Teuchos::RCP<Operators::BCs> op_bc_;
-
 };
 
 } // namespace Amanzi

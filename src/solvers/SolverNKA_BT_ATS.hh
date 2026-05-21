@@ -302,11 +302,11 @@ SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector>& u
   int nka_itr = 0;
   int total_backtrack = 0;
   int db_write_iter = 0;
- 
+
+
   // Evaluate the nonlinear function.
   fun_calls_++;
   fn_->Residual(u, res);
- 
 
   // Evaluate error
   error = fn_->ErrorNorm(u, res);
@@ -354,11 +354,8 @@ SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector>& u
     pc_calls_++;
     du_pic->PutScalar(0.);
     fn_->ApplyPreconditioner(res, du_pic);
-    double du_pic_norm = 0.0, du_pic0=0.0, du_pic1=0.0;
+    double du_pic_norm = 0;
     du_pic->NormInf(&du_pic_norm);
-    // du_pic->SubVector(0)->NormInf(&du_pic0);
-    // du_pic->SubVector(1)->NormInf(&du_pic1);
-    // *vo_->os() << "du_pic0="<<du_pic0<<" du_pic1="<<du_pic1<<"\n";
 
     if (nka_restarted) {
       // NKA was working, but failed.  Reset the iteration counter.
