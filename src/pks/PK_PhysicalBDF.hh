@@ -39,7 +39,6 @@ class PK_PhysicalBDF
 
   // Virtual destructor
   virtual ~PK_PhysicalBDF() {};
-  
 };
 
 } // namespace Amanzi

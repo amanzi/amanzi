@@ -101,15 +101,6 @@ protected:
 
   
   void RemoveFluxContinuityEquations_(Teuchos::RCP<Operators::PDE_Diffusion>& pde);
-
-  void PreconditionerBlockFD_(int idi, int idj, double t,
-                              Teuchos::RCP<const TreeVector> up, double dt,
-                              Teuchos::RCP<Operators::PDE_Diffusion> pde_block,
-                              Teuchos::RCP<Operators::PDE_Advection> pde_adv);
-
-  void PreconditionerAdvBlockFD_(int idi, int idj, double t,
-                                 Teuchos::RCP<const TreeVector> up, double dt,
-                                 Teuchos::RCP<Operators::PDE_Advection> pde_adv);
     
  private:
   const Teuchos::RCP<Teuchos::ParameterList> glist_;

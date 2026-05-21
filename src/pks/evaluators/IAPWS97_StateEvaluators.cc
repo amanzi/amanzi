@@ -412,12 +412,6 @@ IAPWS97_ThermalConductivityEvaluator::IAPWS97_ThermalConductivityEvaluator(Teuch
   dependencies_.insert(std::make_pair(density_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(temperature_key_, Tags::DEFAULT));
 
-  // aperture_key_="";
-  // if (domain_name_=="fracture") {
-  //   aperture_key_ = Keys::getKey(domain_name_,"aperture");
-  //   dependencies_.insert(std::make_pair(aperture_key_, Tags::DEFAULT));
-  // }
-
   eos_ = Teuchos::rcp(new AmanziEOS::IAPWS97(plist));
 }
 
@@ -457,8 +451,7 @@ IAPWS97_ThermalConductivityEvaluator::Evaluate_(const State& S,
   int ncells = results[0]->size("cell");
 
   for (int c = 0; c != ncells; ++c) {
-    result_v[0][c] = ts_c[(int)TS97_t::K][c];
-    //    if (domain_name_=="fracture")  result_v[0][c] *= 1000.0;
+    result_v[0][c] = ts_c[(int)TS97_t::K][c];  
   }
 
     
