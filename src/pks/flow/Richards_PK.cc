@@ -803,8 +803,8 @@ Richards_PK::Initialize()
   // initialize fields from previous time step
   InitializeCVFieldFromCVField(
     S_, *vo_, prev_saturation_liquid_key_, saturation_liquid_key_, passwd_);
-
   InitializeCVFieldFromCVField(S_, *vo_, prev_water_storage_key_, water_storage_key_, passwd_);
+
   // set up operators for evaluators
   auto eval = S_->GetEvaluatorPtr(vol_flowrate_key_, Tags::DEFAULT);
   Teuchos::rcp_dynamic_cast<VolumetricFlowRateEvaluator>(eval)->set_bc(op_bc);

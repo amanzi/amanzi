@@ -25,7 +25,6 @@ set(eos_src_files
     EOSDensityEvaluator.cc
     EOSViscosityEvaluator.cc
     H2O_Density.cc
-#    H2O_DensityCoolProp.cc
     H2O_DensityFEHM.cc
     H2O_DensityIAPWS95.cc
     H2O_DensityIAPWS97.cc
@@ -34,7 +33,6 @@ set(eos_src_files
     H2O_ThermalConductivityIAPWS97.cc
     H2O_SaturatedVaporPressure.cc
     H2O_Viscosity.cc
-#    H2O_ViscosityCoolProp.cc
     H2O_ViscosityFEHM.cc
     H2O_ViscosityIAPWS95.cc
     H2O_ViscosityIAPWS97.cc
@@ -59,8 +57,7 @@ set(eos_src_files
 
 add_amanzi_library(eos
                    SOURCE ${eos_src_files} HEADERS ${eos_inc_files}
-		   LINK_LIBS data_structures state atk 
-                             ${COOLPROP_LIBRARIES} ${Epetra_LIBRARIES})
+		   LINK_LIBS data_structures state atk ${Epetra_LIBRARIES})
 if (APPLE AND BUILD_SHARED_LIBS)
   set_target_properties(eos PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
 endif()			  
@@ -88,13 +85,11 @@ set(eos_inc_files
     eos_reg.hh
     EOSFactory.hh
     H2O_Density.hh
-#    H2O_DensityCoolProp.hh
     H2O_DensityFEHM.hh
     H2O_DensityIAPWS95.hh
     H2O_DensityIAPWS97.hh
     H2O_SaturatedVaporPressure.hh
     H2O_Viscosity.hh
-#    H2O_ViscosityCoolProp.hh
     H2O_ViscosityFEHM.hh
     H2O_ViscosityIAPWS95.hh
     H2O_ViscosityIAPWS97.hh
@@ -138,15 +133,14 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/eos_evaluators.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    # add_amanzi_test(eos_iapws95 eos_iapws95
-    #                 KIND unit
-    #                 SOURCE test/Main.cc test/eos_iapws95.cc
-    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    add_amanzi_test(eos_iapws95 eos_iapws95
+                    KIND unit
+                    SOURCE test/Main.cc test/eos_iapws95.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(eos_iapws97 eos_iapws97
                     KIND unit
                     SOURCE test/Main.cc test/eos_iapws97.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-                    
 endif()
 

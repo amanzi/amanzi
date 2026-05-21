@@ -670,7 +670,6 @@ Flow_PK::ComputeMolarFlowRate_(bool mass_to_molar)
   if (mass_to_molar) flux->Scale(1.0 / molar_mass_);
 
   mol_flowrate_eval_->SetChanged();
-
 }
 
 
