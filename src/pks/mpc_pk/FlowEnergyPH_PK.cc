@@ -377,7 +377,6 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   const auto& mu = S_->Get<CV_t>(viscosity_liquid_key_, Tags::DEFAULT);
   auto flux = S_->GetPtr<CompositeVector>(mol_flowrate_key_, Tags::DEFAULT);
 
-  //if (precon_type_ == PRECON_FULL) {
   // ---------------------
   // pressure-energy block
   // ---------------------
@@ -466,42 +465,6 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd, pressure_key_, tag);
   auto& dEdp = S_->GetDerivative<CV_t>(energy_key_, tag, pressure_key_, tag);
   pde10_acc_->AddAccumulationTerm(dEdp, dt, "cell");  
-
-  // }else if (precon_type_ == PRECON_FINITEDIFF) {
-
-  //   //ChangedSolution();
-  //   //PreconditionerBlockFD_   (0, 0, t, up, dt, ddivq_dP_, pde00_adv_);
-  //   //ChangedSolution();
-  //   //PreconditionerAdvBlockFD_(0, 0, t, up, dt, pde00_adv_);
-
-
-  //   // ---------------------
-  //   // energy-pressure block
-  //   // ---------------------
-  //   //op10_->Init();
-    
-  //   //ChangedSolution();
-  //   PreconditionerBlockFD_   (1, 0, t, up, dt, pde10_diff_flux_, pde10_adv_);
-  //   //ChangedSolution();    
-  //   PreconditionerAdvBlockFD_(1, 0, t, up, dt, pde10_adv_);
-
-
-  //   // ---------------------
-  //   // pressure-energy block
-  //   // ---------------------
-  //   //op01_->Init();
-    
-  //   //ChangedSolution();
-  //   PreconditionerBlockFD_   (0, 1, t, up, dt, pde01_diff_, pde01_adv_);
-  //   //ChangedSolution();
-  //   PreconditionerAdvBlockFD_(0, 1, t, up, dt, pde01_adv_);
-
-  //   //ChangedSolution();
-  //   //PreconditionerBlockFD_   (1, 1, t, up, dt, ddivKgT_dT_, pde11_adv_);
-  //   //ChangedSolution();
-  //   //PreconditionerAdvBlockFD_(1, 1, t, up, dt, pde11_adv_);
-    
-  // }
 
   if (use_cptr_prec_) {
     op_tree_ilu_->AssembleMatrix();
