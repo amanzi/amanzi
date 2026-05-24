@@ -266,7 +266,7 @@ EnergyPressureTemperature_PK::Initialize()
     solution->Print(*vo_->os(), false);
     *vo_->os() << "matrix: " << my_operator(Operators::OPERATOR_MATRIX)->PrintDiagnostics()
                << std::endl
-               << "preconditioner: "
+               << "precon: "
                << my_operator(Operators::OPERATOR_PRECONDITIONER_RAW)->PrintDiagnostics()
                << std::endl
                << vo_->color("green") << "Initialization of PK is complete: my dT=" << get_dt()

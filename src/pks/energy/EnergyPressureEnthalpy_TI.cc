@@ -171,8 +171,7 @@ EnergyPressureEnthalpy_PK::UpdatePreconditioner(double t,
       *coef = S_->Get<CV_t>(aperture_key_, Tags::DEFAULT);
     }
   }
-  
-  
+
   for (int c = 0; c < ncells_owned; ++c) {
     if (dEdh_c[0][c] < 0.0) {
       double tmp = phi_c[0][c];
@@ -183,7 +182,7 @@ EnergyPressureEnthalpy_PK::UpdatePreconditioner(double t,
       }
     }
   }
-  
+
   op_acc_->AddAccumulationTerm(dEdh, dt, "cell");
 
   // implicit source models

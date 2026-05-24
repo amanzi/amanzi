@@ -83,7 +83,11 @@ FlowEnergyPH_PK::Setup()
   iso_compressibility_key_ = Keys::getKey(domain_, "isothermal_compressibility");
   conductivity_key_ = Keys::getKey(domain_, "thermal_conductivity");
   permeability_key_ = Keys::getKey(domain_, "permeability");
+
   aperture_key_ = Keys::getKey(domain_, "aperture");
+  conductivity_eff_key_ = Keys::getKey(domain_, "thermal_conductivity_effective");
+  conductivity_gen_key_ =
+    (!assumptions.flow_on_manifold) ? conductivity_key_ : conductivity_eff_key_;
 
   mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
   water_storage_key_ = Keys::getKey(domain_, "water_storage");
@@ -408,15 +412,14 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   op10_->Init();
 
   // -- diffusion due to heat conduction
-  S_->GetEvaluator(conductivity_key_).Update(*S_, passwd);
-  const auto& conductivity = S_->Get<CV_t>(conductivity_key_, tag);
+  S_->GetEvaluator(conductivity_gen_key_).Update(*S_, passwd);
+  const auto& conductivity = S_->Get<CV_t>(conductivity_gen_key_, tag);
   coef = Teuchos::rcp(new CompositeVector(conductivity));
   
   S_->GetEvaluator(temperature_key_).UpdateDerivative(*S_, passwd, pressure_key_, tag);
   const auto& dTdp = S_->GetDerivative<CV_t>(temperature_key_, tag, pressure_key_, tag);
   coef->Multiply(1.0, *coef, dTdp, 0.0);
 
-  
   pde10_diff_cond_->SetScalarCoefficient(coef, Teuchos::null);
   pde10_diff_cond_->UpdateMatrices(Teuchos::null, up->Data().ptr());
   pde10_diff_cond_->SetBCs(bc_pres, bc_enth);
@@ -435,7 +438,6 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
     const auto& apert = S_->Get<CV_t>(aperture_key_, tag);
     coef->Multiply(1.0, *coef, apert, 0.0);
   }
-  
   
   pde10_diff_flux_->SetScalarCoefficient(coef, Teuchos::null);
   pde10_diff_flux_->UpdateMatrices(Teuchos::null, up->Data().ptr());
@@ -458,7 +460,6 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   pde10_adv_->UpdateMatrices(flux.ptr(), coef.ptr());
   pde10_adv_->SetBCs(bc_pres, bc_enth);
   pde10_adv_->ApplyBCs(false, true, false);
-
 
   // -- accumulation
   //    modified Jacobian is used in region 4

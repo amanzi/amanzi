@@ -93,6 +93,16 @@ EnergyPressureTemperature_PK::FunctionalResidual(double t_old,
   op_advection_->ComputeNegativeResidual(enthalpy, g_adv);
   g->Data()->Update(1.0, g_adv, 1.0);
 
+  // implicit source models
+  if (heat_src_) {
+    S_->GetEvaluator(heat_src_key_).Update(*S_, passwd_);
+    const auto& src_c = *S_->Get<CV_t>(heat_src_key_, Tags::DEFAULT).ViewComponent("cell");
+
+    for (int c = 0; c < ncells_owned; ++c) {
+      g_c[0][c] += src_c[0][c] * mesh_->getCellVolume(c);
+    }
+  }
+
   // add optional stabilization term
   if (L_scheme_) {
     const auto& stability_c = *S_->Get<CV_t>(L_scheme_stab_key_).ViewComponent("cell");
@@ -183,6 +193,13 @@ EnergyPressureTemperature_PK::UpdatePreconditioner(double t,
         dEdT_c[0][c] = rho_r[0][c] * dUrdT_c[0][c] * (1.0 - tmp) + eta_c[0][c] * dUidT_c[0][c] * tmp;
       }
     }
+  }
+
+  // implicit source models
+  if (heat_src_) {
+    S_->GetEvaluator(heat_src_key_).UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
+    auto dQdT = S_->GetDerivative<CV_t>(heat_src_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT);
+    op_acc_->AddAccumulationTerm(dQdT, 1.0, "cell", true);
   }
 
   // add advection term dHdT

@@ -390,9 +390,17 @@ Energy_PK::Setup()
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
-    src_list.set<std::string>("variable key", temperature_key_);
+    src_list.set<std::string>("variable key", temperature_key_)
+      .setName(heat_src_key_)
+      .set<std::string>("tag", "");
+
+
     auto eval = Teuchos::rcp(new Evaluators::LinearRelaxationEvaluator(src_list, S_));
     S_->SetEvaluator(heat_src_key_, Tags::DEFAULT, eval);
+
+    S_->RequireDerivative<CV_t, CVS_t>(
+        heat_src_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, heat_src_key_)
+      .SetGhosted();
   }
 
   // set units

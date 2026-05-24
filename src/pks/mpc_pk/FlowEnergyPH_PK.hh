@@ -117,14 +117,14 @@ protected:
   Teuchos::RCP<Operators::TreeOperator> op_tree_amg_, op_tree_ilu_;
   bool use_cptr_prec_ = false;
 
-
   // keys
   Key pressure_key_, enthalpy_key_, temperature_key_;
-  Key energy_key_, particle_density_key_, conductivity_key_;
+  Key energy_key_, particle_density_key_;
   Key state_key_, viscosity_liquid_key_, mol_density_liquid_key_, iso_compressibility_key_;
   Key mol_flowrate_key_, water_storage_key_;
   Key bcs_flow_key_, bcs_enthalpy_key_;
   Key permeability_key_, aperture_key_;
+  Key conductivity_key_, conductivity_eff_key_, conductivity_gen_key_;
 
   // factory registration
   static RegisteredPKFactory<FlowEnergyPH_PK> reg_;
