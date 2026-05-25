@@ -198,7 +198,8 @@ class Energy_PK : public PK_PhysicalBDF {
   Key ie_liquid_key_, ie_gas_key_, ie_rock_key_;
   Key pressure_key_, mol_flowrate_key_, vol_flowrate_key_;
   Key porosity_key_, particle_density_key_, sat_liquid_key_;
-  Key mol_density_liquid_key_, mass_density_liquid_key_, viscosity_liquid_key_;
+  Key mol_density_liquid_key_, mass_density_liquid_key_;
+  Key viscosity_liquid_key_, kin_viscosity_liquid_key_;
   Key mol_density_gas_key_, x_gas_key_;
   Key conductivity_gen_key_, conductivity_key_, conductivity_eff_key_;
 

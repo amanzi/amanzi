@@ -195,24 +195,16 @@ EnergyPressureEnthalpy_PK::UpdatePreconditioner(double t,
   // add matrices for advection term 
   auto flux = S_->GetPtr<CV_t>(mol_flowrate_key_, Tags::DEFAULT);
 
-  op_preconditioner_advection_->Setup(*flux);
-  op_preconditioner_advection_->UpdateMatrices(flux.ptr());
-  op_preconditioner_advection_->ApplyBCs(false, true, false);
+  // op_preconditioner_advection_->Setup(*flux);
+  // op_preconditioner_advection_->UpdateMatrices(flux.ptr());
+  // op_preconditioner_advection_->ApplyBCs(false, true, false);
 
   // add matrices for other advection terms div[q h ((deta/dh)/eta - (dmu/dh)/mu) dh]
-  S_->GetEvaluator(mol_density_liquid_key_).UpdateDerivative(*S_, passwd_, enthalpy_key_, Tags::DEFAULT);
-  *coef = S_->GetDerivative<CV_t>(mol_density_liquid_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT);
-  coef->Multiply(1.0, *up->Data(), *coef, 0.0);
-
-  const auto& eta = S_->Get<CV_t>(mol_density_liquid_key_, Tags::DEFAULT);
-  coef->ReciprocalMultiply(1.0, eta, *coef, 0.0);
-
-  S_->GetEvaluator(viscosity_liquid_key_).UpdateDerivative(*S_, passwd_, enthalpy_key_, Tags::DEFAULT);
-  auto coef1 = S_->GetDerivative<CV_t>(viscosity_liquid_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT);
-  coef1.Multiply(1.0, *up->Data(), coef1, 0.0);
-
-  const auto& mu = S_->Get<CV_t>(viscosity_liquid_key_, Tags::DEFAULT);
-  coef->ReciprocalMultiply(-1.0, mu, coef1, 1.0);
+  S_->GetEvaluator(kin_viscosity_liquid_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(beta_key_).UpdateDerivative(*S_, passwd_, enthalpy_key_, Tags::DEFAULT);
+  *coef = S_->GetDerivative<CV_t>(beta_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT);
+  const auto& nu = S_->Get<CV_t>(kin_viscosity_liquid_key_, Tags::DEFAULT);
+  coef->Multiply(1.0, nu, *coef, 0.0);
 
   op_preconditioner_adv_enth_->Setup(*flux);
   op_preconditioner_adv_enth_->UpdateMatrices(flux.ptr(), coef.ptr());

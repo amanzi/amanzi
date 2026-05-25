@@ -5,7 +5,6 @@
     <Parameter name="spatial dimension" type="int" value="2"/>
   </ParameterList>
 
-  <!--  REGIONS  -->
   <ParameterList name="regions">
     <ParameterList name="All">
       <ParameterList name="region: box">
@@ -44,9 +43,8 @@
       <Parameter name="PK type" type="string" value="one phase"/>
     </ParameterList>
   </ParameterList>
-  <!--  FLOW  -->
-  <ParameterList name="PKs">
 
+  <ParameterList name="PKs">
     <ParameterList name="energy">
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="none"/>
@@ -337,6 +335,20 @@
       </ParameterList>
       <ParameterList name="molar_flow_rate">
         <Parameter name="evaluator type" type="string" value="independent variable constant"/>
+      </ParameterList>
+      <ParameterList name="viscosity_liquid">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="DOMAIN">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="components" type="Array(string)" value="{*}"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.0e-3"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
 

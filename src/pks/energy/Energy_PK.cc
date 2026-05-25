@@ -115,9 +115,11 @@ Energy_PK::Setup()
   sat_liquid_key_ = Keys::getKey(domain_, "saturation_liquid");
   pressure_key_ = Keys::getKey(domain_, "pressure");
   viscosity_liquid_key_ = Keys::getKey(domain_, "viscosity_liquid");
+  kin_viscosity_liquid_key_ = Keys::getKey(domain_, "kin_viscosity_liquid");
+
+  beta_key_ = Keys::getKey(domain_, "beta_coef");
 
   L_scheme_data_key_ = "l_scheme_data";
-  beta_key_ = Keys::getKey(domain_, "l_scheme_beta");
   bcs_enthalpy_key_ = Keys::getKey(domain_, "bcs_enthalpy");
   bcs_temperature_key_ = Keys::getKey(domain_, "bcs_temperature");
   heat_src_key_ = Keys::getKey(domain_, "heat_source");
@@ -312,6 +314,67 @@ Energy_PK::Setup()
     S_->RequireEvaluator(porosity_key_, Tags::DEFAULT);
   }
 
+  // -- missing flow parameters: viscosity
+  if (!S_->HasRecord(viscosity_liquid_key_)) {
+    if (!S_->HasRecord(viscosity_liquid_key_)) {
+      S_->Require<CV_t, CVS_t>(viscosity_liquid_key_, Tags::DEFAULT, passwd_)
+        .SetMesh(mesh_)
+        ->SetGhosted(true)
+        ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+        ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
+    }
+    S_->RequireEvaluator(viscosity_liquid_key_, Tags::DEFAULT);
+  }
+
+  // -- kinematic viscosity 
+  if (!S_->HasRecord(kin_viscosity_liquid_key_)) {
+    S_->Require<CV_t, CVS_t>(kin_viscosity_liquid_key_, Tags::DEFAULT, kin_viscosity_liquid_key_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+
+    std::vector<std::string> listm({ Keys::getVarName(viscosity_liquid_key_) });
+    std::vector<std::string> listr({ Keys::getVarName(mol_density_liquid_key_) });
+
+    Teuchos::ParameterList elist(kin_viscosity_liquid_key_);
+    elist.set<std::string>("my key", kin_viscosity_liquid_key_)
+      .set<Teuchos::Array<std::string>>("multiplicative dependency key suffixes", listm)
+      .set<Teuchos::Array<std::string>>("reciprocal dependency key suffixes", listr)
+      .set<std::string>("tag", "");
+
+    S_->RequireDerivative<CV_t, CVS_t>(kin_viscosity_liquid_key_, Tags::DEFAULT, temperature_key_,
+                                       Tags::DEFAULT, kin_viscosity_liquid_key_).SetGhosted();
+
+    auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
+    S_->SetEvaluator(kin_viscosity_liquid_key_, Tags::DEFAULT, eval);
+  }
+
+  // -- effective diffusion coefficient (similar to flow equation)
+  if (!S_->HasRecord(beta_key_)) {
+    S_->Require<CV_t, CVS_t>(beta_key_, Tags::DEFAULT, beta_key_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+
+    std::vector<std::string> listm({ Keys::getVarName(mol_density_liquid_key_),
+                                     Keys::getVarName(enthalpy_key_) });
+    if (assumptions_.flow_on_manifold) listm.push_back(Keys::getVarName(aperture_key_));
+    std::vector<std::string> listr({ Keys::getVarName(viscosity_liquid_key_) });
+
+    Teuchos::ParameterList elist(beta_key_);
+    elist.set<std::string>("my key", beta_key_)
+      .set<Teuchos::Array<std::string>>("multiplicative dependency key suffixes", listm)
+      .set<Teuchos::Array<std::string>>("reciprocal dependency key suffixes", listr)
+      .set<std::string>("tag", "");
+
+    S_->RequireDerivative<CV_t, CVS_t>(
+        beta_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, beta_key_)
+      .SetGhosted();
+
+    auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
+    S_->SetEvaluator(beta_key_, Tags::DEFAULT, eval);
+  }
+
   // L-scheme support
   if (L_scheme_) {
     S_->Require<LSchemeData>(L_scheme_data_key_, Tags::DEFAULT, "state");
@@ -329,11 +392,6 @@ Energy_PK::Setup()
       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S_->GetRecordW(L_scheme_prev_key_, "state").set_initialized();
 
-    S_->Require<CV_t, CVS_t>(beta_key_, Tags::DEFAULT, beta_key_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-
     // WIP: optionla missing flow field
     if (!S_->HasRecord(vol_flowrate_key_)) {
       S_->Require<CV_t, CVS_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_)
@@ -341,30 +399,6 @@ Energy_PK::Setup()
         ->SetGhosted(true)
         ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
     }
-
-    if (!S_->HasRecord(viscosity_liquid_key_)) {
-      S_->Require<CV_t, CVS_t>(viscosity_liquid_key_, Tags::DEFAULT, passwd_)
-        .SetMesh(mesh_)
-        ->SetGhosted(true)
-        ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-    }
-
-    std::vector<std::string> listm({ Keys::getVarName(mol_density_liquid_key_),
-                                     Keys::getVarName(enthalpy_key_) });
-    std::vector<std::string> listr({ Keys::getVarName(viscosity_liquid_key_) });
-
-    Teuchos::ParameterList elist(beta_key_);
-    elist.set<std::string>("my key", beta_key_)
-      .set<Teuchos::Array<std::string>>("multiplicative dependency key suffixes", listm)
-      .set<Teuchos::Array<std::string>>("reciprocal dependency key suffixes", listr)
-      .set<std::string>("tag", "");
-
-    S_->RequireDerivative<CV_t, CVS_t>(
-        beta_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, beta_key_)
-      .SetGhosted();
-
-    auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
-    S_->SetEvaluator(beta_key_, Tags::DEFAULT, eval);
   }
 
   // boundary conditions

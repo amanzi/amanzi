@@ -144,7 +144,12 @@ if (BUILD_TESTS)
                     KIND int
                     SOURCE test/Main.cc test/energy_pressure_temperature_fv.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-                    
+ 
+    add_amanzi_test(energy_pressure_enthalpy energy_pressure_enthalpy
+                    KIND int
+                    SOURCE test/Main.cc test/energy_pressure_enthalpy.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
     add_amanzi_test(energy_iapws97 energy_iapws97
                     KIND int
                     SOURCE test/Main.cc test/energy_iapws97.cc
