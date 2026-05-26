@@ -431,18 +431,14 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   pde10_diff_cond_->SetBCs(bc_pres, bc_enth);
   pde10_diff_cond_->ApplyBCs(true, true, false);
 
-  // -- diffusion due to heat transport div(K eta h / mu grad dp) (we assume relperm = 1)
-  S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, passwd);
-  *coef = S_->Get<CV_t>(mol_density_liquid_key_, tag);
-  coef->Multiply(1.0, *up->SubVector(1)->Data(), *coef, 0.0);
-  coef->ReciprocalMultiply(1.0, mu, *coef, 0.0);
-  if (flow_pk -> IsManifold()){
+  // -- diffusion due to heat transport div(K beta grad dp)
+  //    on a manifold, K is defined by the cubic law 
+  S_->GetEvaluator(beta_key_).Update(*S_, passwd);
+  *coef = S_->Get<CV_t>(beta_key_, tag);
+  if (flow_pk->IsManifold()) {
     S_->GetEvaluator(permeability_key_).Update(*S_, passwd);
     const auto& perm = S_->Get<CV_t>(permeability_key_, tag);
     coef->Multiply(1.0, *coef, perm, 0.0);
-    S_->GetEvaluator(aperture_key_).Update(*S_, passwd);
-    const auto& apert = S_->Get<CV_t>(aperture_key_, tag);
-    coef->Multiply(1.0, *coef, apert, 0.0);
   }
   
   pde10_diff_flux_->SetScalarCoefficient(coef, Teuchos::null);
