@@ -321,7 +321,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.00000000000000000e+00"/>
+                <Parameter name="value" type="double" value="0.10000000000000000e+00"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -604,7 +604,7 @@
             <Parameter name="spatial distribution method" type="string" value="none"/>
             <ParameterList name="outward mass flux">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="-2.0e-5"/>
+                <Parameter name="value" type="double" value="-2.0e-6"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
