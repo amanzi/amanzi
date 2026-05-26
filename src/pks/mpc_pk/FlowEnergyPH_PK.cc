@@ -89,6 +89,10 @@ FlowEnergyPH_PK::Setup()
   conductivity_gen_key_ =
     (!assumptions.flow_on_manifold) ? conductivity_key_ : conductivity_eff_key_;
 
+  alpha_key_ = Keys::getKey(domain_, "alpha_coef");
+  beta_key_ = Keys::getKey(domain_, "beta_coef");
+  beta_jacobian_key_ = Keys::getKey(domain_, "beta_jacobian_coef");
+
   mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
   water_storage_key_ = Keys::getKey(domain_, "water_storage");
   bcs_flow_key_ = Keys::getKey(domain_, "bcs_flow");
@@ -180,6 +184,10 @@ FlowEnergyPH_PK::Setup()
   // extend state structure
   S_->RequireDerivative<CV_t, CVS_t>(
       water_storage_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT, water_storage_key_)
+    .SetGhosted();
+
+  S_->RequireDerivative<CV_t, CVS_t>(
+    alpha_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT, alpha_key_)
     .SetGhosted();
 }
 
@@ -392,14 +400,12 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   pde01_acc_->AddAccumulationTerm(dwsdh, dt, "cell");
 
   // -- advection div(q kt dh)
+  S_->GetEvaluator(beta_jacobian_key_).Update(*S_, passwd);
+  S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd, enthalpy_key_, Tags::DEFAULT);
   auto coef = Teuchos::rcp(new CompositeVector(
-    S_->GetDerivative<CV_t>(mol_density_liquid_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT)));
-  coef->ReciprocalMultiply(1.0, rho, *coef, 0.0);
-  //std::cout<<*coef->ViewComponent("cell");
-
-  S_->GetEvaluator(viscosity_liquid_key_).UpdateDerivative(*S_, passwd, enthalpy_key_, Tags::DEFAULT);
-  auto coef1 = S_->GetDerivative<CV_t>(viscosity_liquid_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT);
-  coef->ReciprocalMultiply(-1.0, mu, coef1, 1.0);
+    S_->GetDerivative<CV_t>(alpha_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT)));
+  const auto& nu = S_->Get<CV_t>(beta_jacobian_key_, Tags::DEFAULT);
+  coef->Multiply(1.0, nu, *coef, 0.0);
 
   pde01_adv_->Setup(*flux);
   pde01_adv_->UpdateMatrices(flux.ptr(), coef.ptr());
@@ -452,7 +458,7 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   coef->Multiply(1.0, *coef, *up->SubVector(1)->Data(), 0.0);
 
   S_->GetEvaluator(viscosity_liquid_key_).UpdateDerivative(*S_, passwd, pressure_key_, Tags::DEFAULT);
-  coef1 = S_->GetDerivative<CV_t>(viscosity_liquid_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT);
+  auto coef1 = S_->GetDerivative<CV_t>(viscosity_liquid_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT);
   coef1.Multiply(1.0, *up->SubVector(1)->Data(), coef1, 0.0);
   coef->ReciprocalMultiply(-1.0, mu, coef1, 1.0);
   

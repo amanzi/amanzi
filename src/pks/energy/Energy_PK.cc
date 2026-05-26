@@ -115,9 +115,9 @@ Energy_PK::Setup()
   sat_liquid_key_ = Keys::getKey(domain_, "saturation_liquid");
   pressure_key_ = Keys::getKey(domain_, "pressure");
   viscosity_liquid_key_ = Keys::getKey(domain_, "viscosity_liquid");
-  kin_viscosity_liquid_key_ = Keys::getKey(domain_, "kin_viscosity_liquid");
 
   beta_key_ = Keys::getKey(domain_, "beta_coef");
+  beta_jacobian_key_ = Keys::getKey(domain_, "beta_jacobian_coef");
 
   L_scheme_data_key_ = "l_scheme_data";
   bcs_enthalpy_key_ = Keys::getKey(domain_, "bcs_enthalpy");
@@ -327,26 +327,27 @@ Energy_PK::Setup()
   }
 
   // -- kinematic viscosity 
-  if (!S_->HasRecord(kin_viscosity_liquid_key_)) {
-    S_->Require<CV_t, CVS_t>(kin_viscosity_liquid_key_, Tags::DEFAULT, kin_viscosity_liquid_key_)
+  if (!S_->HasRecord(beta_jacobian_key_)) {
+    S_->Require<CV_t, CVS_t>(beta_jacobian_key_, Tags::DEFAULT, beta_jacobian_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
     std::vector<std::string> listm({ Keys::getVarName(viscosity_liquid_key_) });
     std::vector<std::string> listr({ Keys::getVarName(mol_density_liquid_key_) });
+    if (assumptions_.flow_on_manifold) listr.push_back(Keys::getVarName(aperture_key_));
 
-    Teuchos::ParameterList elist(kin_viscosity_liquid_key_);
-    elist.set<std::string>("my key", kin_viscosity_liquid_key_)
+    Teuchos::ParameterList elist(beta_jacobian_key_);
+    elist.set<std::string>("my key", beta_jacobian_key_)
       .set<Teuchos::Array<std::string>>("multiplicative dependency key suffixes", listm)
       .set<Teuchos::Array<std::string>>("reciprocal dependency key suffixes", listr)
       .set<std::string>("tag", "");
 
-    S_->RequireDerivative<CV_t, CVS_t>(kin_viscosity_liquid_key_, Tags::DEFAULT, temperature_key_,
-                                       Tags::DEFAULT, kin_viscosity_liquid_key_).SetGhosted();
+    S_->RequireDerivative<CV_t, CVS_t>(beta_jacobian_key_, Tags::DEFAULT, temperature_key_,
+                                       Tags::DEFAULT, beta_jacobian_key_).SetGhosted();
 
     auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
-    S_->SetEvaluator(kin_viscosity_liquid_key_, Tags::DEFAULT, eval);
+    S_->SetEvaluator(beta_jacobian_key_, Tags::DEFAULT, eval);
   }
 
   // -- effective diffusion coefficient (similar to flow equation)

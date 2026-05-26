@@ -199,11 +199,11 @@ EnergyPressureEnthalpy_PK::UpdatePreconditioner(double t,
   // op_preconditioner_advection_->UpdateMatrices(flux.ptr());
   // op_preconditioner_advection_->ApplyBCs(false, true, false);
 
-  // add matrices for other advection terms div[q h ((deta/dh)/eta - (dmu/dh)/mu) dh]
-  S_->GetEvaluator(kin_viscosity_liquid_key_).Update(*S_, passwd_);
+  // add matrices for other advection terms div[q (dbeta / dh * beta_jac) dh]
+  S_->GetEvaluator(beta_jacobian_key_).Update(*S_, passwd_);
   S_->GetEvaluator(beta_key_).UpdateDerivative(*S_, passwd_, enthalpy_key_, Tags::DEFAULT);
   *coef = S_->GetDerivative<CV_t>(beta_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT);
-  const auto& nu = S_->Get<CV_t>(kin_viscosity_liquid_key_, Tags::DEFAULT);
+  const auto& nu = S_->Get<CV_t>(beta_jacobian_key_, Tags::DEFAULT);
   coef->Multiply(1.0, nu, *coef, 0.0);
 
   op_preconditioner_adv_enth_->Setup(*flux);
