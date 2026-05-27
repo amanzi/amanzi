@@ -60,19 +60,20 @@
         <Parameter name="high coordinate" type="Array(double)" value="{-4.00000000000000000e+01, 2.00000000000000000e+01, 0.00000000000000000e+00}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Outlet">
+    <ParameterList name="SurfaceOutlet">
       <ParameterList name="region: plane">
         <Parameter name="point" type="Array(double)" value="{4.00000000000000000e+01, 0.00000000000000000e+00, 0.00000000000000000e+00}"/>
         <Parameter name="normal" type="Array(double)" value="{1.00000000000000000e+00, 0.00000000000000000e+00,  0.00000000000000000e+00}"/>
       </ParameterList>
     </ParameterList>
-    
-    <ParameterList name="fracture_simple">
+
+    <ParameterList name="VolumeOutlet">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{-4.00000000000000000e+01, -2.00000000000000000e+01, 0.00000000000000000e+00}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{4.00000000000000000e+01,  2.00000000000000000e+01, 0.00000000000000000e+00}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{39.0, -2.00000000000000000e+01, -8.00000000000000000e+00}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{40.0, 2.00000000000000000e+01, 0.00000000000000000e+00}"/>
       </ParameterList>
     </ParameterList>
+    
     <ParameterList name="fracture1">
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{-4.00000000000000000e+01, 0.00000000000000000e+00, -8.00000000000000000e+00}"/>
@@ -345,6 +346,7 @@
               <ParameterList name="function-exprtk">
                 <Parameter name="number of arguments" type="int" value="4"/>
                 <Parameter name="formula" type="string" value="55609.5834572"/>
+                <!--Parameter name="formula" type="string" value="17709.0"/--> <!-- 500 K -->
               </ParameterList>
             </ParameterList>
             <Parameter name="component" type="string" value="*"/>
@@ -384,7 +386,7 @@
         <Parameter name="start period time" type="double" value="0.00000000000000000e+00"/>
         <Parameter name="end period time" type="double" value="31.0e+7"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial timestep" type="double" value="10.0"/>
+        <Parameter name="initial timestep" type="double" value="1.0"/>
         <Parameter name="maximum timestep" type="double" value="1.0e+7"/>
       </ParameterList>
     </ParameterList>
@@ -485,14 +487,14 @@
             <Parameter name="regions" type="Array(string)" value="{SurfaceInlet}"/>
             <ParameterList name="boundary pressure">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="26.5e+6"/>
+                <Parameter name="value" type="double" value="25.15e+6"/>
               </ParameterList>
             </ParameterList>
             <Parameter name="use area fractions" type="bool" value="false"/>
             <Parameter name="spatial distribution method" type="string" value="none"/>
           </ParameterList>
           <ParameterList name="BC 1">
-            <Parameter name="regions" type="Array(string)" value="{Outlet}"/>
+            <Parameter name="regions" type="Array(string)" value="{SurfaceOutlet}"/>
             <ParameterList name="boundary pressure">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="25.0e+6"/>
@@ -619,8 +621,8 @@
         <Parameter name="error control options" type="Array(string)" value="{residual}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre MGR"/>
-        <Parameter name="time integration method" type="string" value="BDF1"/>
         <Parameter name="use CPTR preconditioner" type="bool" value="true"/> 
+        <Parameter name="time integration method" type="string" value="BDF1"/>
 
         <ParameterList name="dae constraint">
           <Parameter name="method" type="string" value="projection"/>
@@ -632,8 +634,8 @@
           <ParameterList name="timestep controller standard parameters">
             <Parameter name="max iterations" type="int" value="15"/>
             <Parameter name="min iterations" type="int" value="10"/>
-            <Parameter name="timestep increase factor" type="double" value="1.19999999999999996e+00"/>
-            <Parameter name="timestep reduction factor" type="double" value="8.00000000000000044e-01"/>
+            <Parameter name="timestep increase factor" type="double" value="1.2"/>
+            <Parameter name="timestep reduction factor" type="double" value="0.4"/>
             <Parameter name="max timestep" type="double" value="4.32340000000000000e+17"/>
             <Parameter name="min timestep" type="double" value="9.99999999999999955e-07"/>
           </ParameterList>
@@ -663,9 +665,7 @@
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
     </ParameterList>
-    
   </ParameterList>
-
 
   <ParameterList name="solvers">
     <ParameterList name="AztecOO">
@@ -765,18 +765,30 @@
   </ParameterList>
   <ParameterList name="analysis">
     <ParameterList name="domain">
-      <Parameter name="used boundary condition regions" type="Array(string)" value="{SurfaceInlet, Outlet}"/>
+      <Parameter name="used boundary condition regions" type="Array(string)" value="{SurfaceInlet, SurfaceOutlet}"/>
       <Parameter name="used source regions" type="Array(string)" value="{}"/>
-      <Parameter name="used observation regions" type="Array(string)" value="{}"/>
+      <Parameter name="used observation regions" type="Array(string)" value="{VolumeOutlet}"/>
     </ParameterList>
     <ParameterList name="verbose object">
       <Parameter name="verbosity level" type="string" value="extreme"/>
     </ParameterList>
   </ParameterList>
 
+  <ParameterList name="observation data">
+    <Parameter name="observation output filename" type="string" value="obs_750K.out"/>
+    <Parameter name="precision" type="int" value="10"/>
+    <ParameterList name="OBS">
+      <Parameter name="domain name" type="string" value="fracture"/>
+      <Parameter name="region" type="string" value="VolumeOutlet"/>
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="variable" type="string" value="temperature"/>
+      <Parameter name="cycles start period stop" type="Array(int)" value="{1, 1, -1}"/>
+    </ParameterList>
+  </ParameterList>
+
   <ParameterList name="visualization data fracture">
     <Parameter name="file name base" type="string" value="plot"/>
-    <Parameter name="times start period stop 0" type="Array(double)" value="{0, 1.0e+7, -1.0}"/>
+    <Parameter name="times start period stop 0" type="Array(double)" value="{0, 1.0e+6, -1.0}"/>
     <!--Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 1, -1}"/-->
   </ParameterList>
   <ParameterList name="verbose object">

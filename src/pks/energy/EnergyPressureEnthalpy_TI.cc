@@ -175,8 +175,7 @@ EnergyPressureEnthalpy_PK::UpdatePreconditioner(double t,
   for (int c = 0; c < ncells_owned; ++c) {
     if (dEdh_c[0][c] < 0.0) {
       double tmp = phi_c[0][c];
-      if (tmp == 1.0) dEdh_c[0][c] = eta_c[0][c];
-      else dEdh_c[0][c] = rho_r[0][c] * dUdh_c[0][c] * (1.0 - tmp); // + eta_c[0][c] * tmp;
+      dEdh_c[0][c] = rho_r[0][c] * dUdh_c[0][c] * (1.0 - tmp) + eta_c[0][c] * tmp;
       if (assumptions_.flow_on_manifold) {        
         dEdh_c[0][c] *= (*coef->ViewComponent("cell"))[0][c];
       }
@@ -250,7 +249,8 @@ EnergyPressureEnthalpy_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   }
 
   // add normalized residual error
-  error = std::max(error_h, residual_max_norm_);
+  // error = std::max(error_h, residual_max_norm_);
+  error = error_h;
 
   double buf = error;
   du->Data()->Comm()->MaxAll(&buf, &error, 1);
