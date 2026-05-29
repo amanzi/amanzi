@@ -105,24 +105,35 @@ EvaluatorIndependentFromFile::EnsureCompatibility(State& S)
 
   // load times, ensure file is valid
   // if there exists no times, default value is set to +infinity
-  HDF5Reader reader(filename_);
   times_.clear();
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
   if (temporally_variable_) {
-    try {
-      reader.ReadData("/time", times_);
-    } catch (...) {
-      std::stringstream messagestream;
-      messagestream << "Variable " << my_key_ << " is defined as a field changing in time.\n"
-                    << " Dataset /time is not provided in file " << filename_ << "\n";
-      Errors::Message message(messagestream.str());
-      Exceptions::amanzi_throw(message);
+    if (rank == 0) {
+      HDF5Reader reader(filename_);
+      try {
+        Teuchos::Array<double> times;
+        reader->read("/time", times);
+        times_ = times.toVector();
+      } catch (...) {
+        std::stringstream messagestream;
+        messagestream << "Variable " << my_key_ << " is defined as a field changing in time.\n"
+                      << " Dataset /time is not provided in file " << filename_ << "\n";
+        Errors::Message message(messagestream.str());
+        Exceptions::amanzi_throw(message);
+      }
     }
   } else {
     times_.push_back(1e+99);
   }
+  int ntimes = times_.size();
+  MPI_Bcast(&ntimes, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  if (rank != 0) times_.resize(ntimes);
+  MPI_Bcast(times_.data(), ntimes, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
   // check for increasing times
-  for (int j = 1; j < times_.size(); ++j) {
+  for (int j = 1; j < ntimes; ++j) {
     if (times_[j] <= times_[j - 1]) {
       Errors::Message m;
       m << "IndependentVariable from file: times values are not strictly "
@@ -239,33 +250,40 @@ EvaluatorIndependentFromFile::Update_(State& S)
 void
 EvaluatorIndependentFromFile::LoadFile_(int i)
 {
+  int rank; 
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
   // allocate data
   if (val_after_ == Teuchos::null) {
     AMANZI_ASSERT(val_before_ != Teuchos::null);
     val_after_ = Teuchos::rcp(new CompositeVector(*val_before_));
   }
 
-  // open the file
-  Teuchos::RCP<Amanzi::HDF5_MPI> file_input =
-    Teuchos::rcp(new Amanzi::HDF5_MPI(val_after_->Comm(), filename_));
-  file_input->open_h5file();
-
-  // load the data
   Epetra_MultiVector& vec = *val_after_->ViewComponent(compname_, false);
+
   for (int j = 0; j != ndofs_; ++j) {
     std::stringstream varname;
     varname << varname_ << "." << locname_ << "." << j << "//" << i;
-    bool successful = file_input->readData(*vec(j), varname.str());
-    if (!successful) {
-      Errors::Message msg;
-      msg << "EvaluatorIndependentFromFile for \"" << my_key_ << "\" cannot read variable \""
-          << varname.str() << "\" from file \"" << filename_ << "\"";
-      Exceptions::amanzi_throw(msg);
+    int n_global = vec(j)->GlobalLength();
+    std::vector<double> buf(n_global, 0.0);
+
+    // only rank 0 opens and reads the file
+    if (rank == 0) {
+      HDF5Reader reader(filename_);
+      reader.ReadData(varname.str(), buf);
+    }
+
+    // broadcast to all ranks
+    MPI_Bcast(buf.data(), n_global, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+    // each rank fills its local entries by GID
+    const Epetra_BlockMap& map = vec(j)->Map();
+    int n_local = vec(j)->MyLength();
+    for (int k = 0; k < n_local; ++k) {
+      int gid = map.GID(k);
+      (*vec(j))[k] = buf[gid];
     }
   }
-
-  // close file
-  file_input->close_h5file();
 }
 
 
