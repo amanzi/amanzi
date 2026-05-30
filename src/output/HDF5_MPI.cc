@@ -13,6 +13,7 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "HDF5_MPI.hh"
 
@@ -20,6 +21,7 @@
 //TODO(barker): check that close file is always getting called
 //TODO(barker): add error handling where appropriate
 //TODO(barker): clean up formating
+
 
 namespace Amanzi {
 
@@ -1239,9 +1241,11 @@ HDF5_MPI::writeFieldData_(const Epetra_Vector& x,
   localdims[0] = x.MyLength();
   localdims[1] = 1;
 
-  // TODO(barker): how to build path name?? probably still need iteration number
   std::stringstream h5path;
   h5path << varname;
+  if (TrackXdmf()) {
+    h5path << "/" << Iteration() << get_tag();
+  }
 
   // TODO(barker): add error handling: can't write/create
 
@@ -1251,13 +1255,13 @@ HDF5_MPI::writeFieldData_(const Epetra_Vector& x,
   //MB:   Exceptions::amanzi_throw(message);
   //MB: }
 
-  if (TrackXdmf()) {
-    h5path << "/" << Iteration() << get_tag();
-  }
-
   char* tmp;
   tmp = new char[h5path.str().size() + 1];
   strcpy(tmp, h5path.str().c_str());
+
+  // the default behavior is to remove the existing dataset
+  std::string path = h5path.str();
+  cleanFieldData_(path);
 
   parallelIO_write_dataset(
     data, type, 2, globaldims, localdims, data_file_, tmp, &IOgroup_, NONUNIFORM_CONTIGUOUS_WRITE);
@@ -1336,6 +1340,44 @@ HDF5_MPI::checkFieldData_(const std::string& varname)
 
   delete[] h5path;
 
+  return exists;
+}
+
+
+bool
+HDF5_MPI::cleanFieldData_(const std::string& varname)
+{
+  char* h5path = new char[varname.size() + 1];
+  strcpy(h5path, varname.c_str());
+  bool exists = false;
+
+  if (viz_comm_->MyPID() != 0) {
+    MPI_Bcast(&exists, 1, MPI_C_BOOL, 0, viz_comm_->Comm());
+  } else {
+    iofile_t* currfile;
+    currfile = IOgroup_.file[data_file_];
+    // exists = checkPathExists(currfile->fid, varname) > 0;
+
+    H5E_auto2_t old_func = nullptr;
+    void* old_client_data = nullptr;
+
+    // save settings and clear them
+    H5Eget_auto2(H5E_DEFAULT, &old_func, &old_client_data);
+    H5Eset_auto2(H5E_DEFAULT, nullptr, nullptr);
+
+    // check existance (zero HDF5 diagnostics) and restore settings
+    exists = H5Lexists(currfile->fid, varname.c_str(), H5P_DEFAULT) > 0;
+    H5Eset_auto2(H5E_DEFAULT, old_func, old_client_data);
+
+    if (exists) {
+      std::cout << "rewriting existing HDF5 dataset: " << varname << std::endl;
+      herr_t ierr = H5Ldelete(currfile->fid, varname.c_str(), H5P_DEFAULT);
+    }
+
+    MPI_Bcast(&exists, 1, MPI_C_BOOL, 0, viz_comm_->Comm());
+  }
+
+  delete[] h5path;
   return exists;
 }
 
