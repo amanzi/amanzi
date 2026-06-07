@@ -303,5 +303,15 @@ PDE_AdvectionUpwindDFN::IdentifyUpwindCells_(const CompositeVector& u)
   }
 }
 
+
+/* ******************************************************************
+* Initialize and re-initialzied parameters in the derived object.
+****************************************************************** */
+void
+PDE_AdvectionUpwindDFN::InitAdvection_(Teuchos::ParameterList& plist)
+{
+  local_op_->schema_string = "AdvectionDFN: FACE_CELL";
+}
+
 } // namespace Operators
 } // namespace Amanzi
