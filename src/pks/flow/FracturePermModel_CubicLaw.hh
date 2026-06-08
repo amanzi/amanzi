@@ -29,7 +29,8 @@ class FracturePermModel_CubicLaw : public FracturePermModel {
   ~FracturePermModel_CubicLaw() {};
 
   // required methods from the base class
-  inline double Permeability(double aperture) { return aperture * aperture / 12; }
+  double Permeability(double aperture) { return aperture * aperture / 12; }
+  double DpermeabilityDaperture(double aperture) { return aperture / 6; }
 };
 
 } // namespace Flow

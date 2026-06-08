@@ -36,6 +36,7 @@ FracturePermModelEvaluator::FracturePermModelEvaluator(Teuchos::ParameterList& p
   }
 
   aperture_key_ = plist.get<std::string>("aperture key");
+  AMANZI_ASSERT(aperture_key_.size() > 0); 
   dependencies_.insert(std::make_pair(aperture_key_, Tags::DEFAULT));
 }
 
@@ -81,7 +82,15 @@ FracturePermModelEvaluator::EvaluatePartialDerivative_(const State& S,
                                                        const Tag& wrt_tag,
                                                        const std::vector<CompositeVector*>& results)
 {
-  results[0]->PutScalar(0.0);
+  if (wrt_key == aperture_key_) { 
+    auto& der_c = *results[0]->ViewComponent("cell");
+    const auto& aperture_c = *S.Get<CompositeVector>(aperture_key_).ViewComponent("cell");
+
+    int ncells = der_c.MyLength();
+      for (int c = 0; c != ncells; ++c) {
+      der_c[0][c] = fpm_->second[(*fpm_->first)[c]]->DpermeabilityDaperture(aperture_c[0][c]);
+    }
+  }
 }
 
 } // namespace Flow

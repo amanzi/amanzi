@@ -363,8 +363,6 @@ EnergyPressureEnthalpy_PK::Setup()
     S_->SetEvaluator(conductivity_eff_key_, Tags::DEFAULT, eval);
   }
 
-  
-
   // source terms
   Teuchos::ParameterList src_list = ep_list_->sublist("source terms");
   if (src_list.isSublist("linear relaxation")) {
@@ -416,6 +414,7 @@ EnergyPressureEnthalpy_PK::Setup()
 
     std::vector<std::string> listm({ Keys::getVarName(viscosity_liquid_key_) });
     std::vector<std::string> listr({ Keys::getVarName(mol_density_liquid_key_) });
+    if (assumptions_.flow_on_manifold) listr.push_back(Keys::getVarName(aperture_key_));
 
     Teuchos::ParameterList elist(beta_jacobian_key_);
     elist.set<std::string>("my key", beta_jacobian_key_)

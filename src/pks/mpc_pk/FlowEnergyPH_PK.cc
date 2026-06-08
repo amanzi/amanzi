@@ -91,7 +91,6 @@ FlowEnergyPH_PK::Setup()
 
   alpha_key_ = Keys::getKey(domain_, "alpha_coef");
   beta_key_ = Keys::getKey(domain_, "beta_coef");
-  beta_jacobian_key_ = Keys::getKey(domain_, "beta_jacobian_coef");
 
   mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
   water_storage_key_ = Keys::getKey(domain_, "water_storage");
@@ -400,12 +399,11 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   pde01_acc_->AddAccumulationTerm(dwsdh, dt, "cell");
 
   // -- advection div(q kt dh)
-  S_->GetEvaluator(beta_jacobian_key_).Update(*S_, passwd);
   S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd, enthalpy_key_, Tags::DEFAULT);
   auto coef = Teuchos::rcp(new CompositeVector(
     S_->GetDerivative<CV_t>(alpha_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT)));
-  const auto& nu = S_->Get<CV_t>(beta_jacobian_key_, Tags::DEFAULT);
-  coef->Multiply(1.0, nu, *coef, 0.0);
+  const auto& alpha = S_->Get<CV_t>(alpha_key_, Tags::DEFAULT);
+  coef->ReciprocalMultiply(1.0, alpha, *coef, 0.0);
 
   pde01_adv_->Setup(*flux);
   pde01_adv_->UpdateMatrices(flux.ptr(), coef.ptr());
