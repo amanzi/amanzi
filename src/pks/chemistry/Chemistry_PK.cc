@@ -144,6 +144,7 @@ Chemistry_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // broadcast and check for global failed step
   checkForError_(convergence_failure, max_itrs, imax);
+  setChangedAuxOut_();
 
   // Compute the next global timestep.
   dt_next_ = timestep_controller_->getTimestep(dt, max_itrs, !convergence_failure);
