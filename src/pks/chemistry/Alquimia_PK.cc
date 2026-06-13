@@ -38,6 +38,7 @@
 
 // Chemistry
 #include "Alquimia_PK.hh"
+#include "EvaluatorPrimary.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -369,7 +370,28 @@ Alquimia_PK::Setup()
       .SetMesh(mesh_)
       ->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, aux_out_subfield_names_[name].size());
-    S_->GetRecordW(key, tag_next_, passwd_).set_io_checkpoint(false);
+
+    if (name == "primary_free_ion_concentration") {
+      S_->GetRecordW(key, tag_next_, passwd_).set_io_checkpoint(true);
+      requireEvaluatorAtCurrent(key, tag_current_, *S_, passwd_);
+
+      if (tcc_tag_next_ != tag_next_) {
+        if (!S_->HasEvaluator(key, tcc_tag_next_)) {
+          requireEvaluatorAtNext(key, tcc_tag_next_, *S_, true, passwd_)
+            .SetMesh(mesh_)
+            ->SetGhosted(false)
+            ->SetComponent("cell", AmanziMesh::Entity_kind::CELL,
+                           aux_out_subfield_names_[name].size());
+        }
+      }
+      if (tcc_tag_current_ != tag_current_) {
+        if (!S_->HasEvaluator(key, tcc_tag_current_)) {
+          requireEvaluatorAtCurrent(key, tcc_tag_current_, *S_, passwd_);
+        }
+      }
+    } else {
+      S_->GetRecordW(key, tag_next_, passwd_).set_io_checkpoint(false);
+    }
     S_->GetRecordSetW(key).set_subfieldnames(aux_out_subfield_names_[name]);
     ++i;
   }
@@ -963,6 +985,41 @@ Alquimia_PK::copyFields_(const Tag& tag_dest, const Tag& tag_source)
     if (!key.empty() ) assign(key, tag_dest, tag_source, *S_);
   }
 }
+
+
+void
+Alquimia_PK::CommitStep(double t_old, double t_new, const Tag& tag_next)
+{
+  Chemistry_PK::CommitStep(t_old, t_new, tag_next);
+
+  Tag tag_current = tag_next == tag_next_ ? tag_current_ : Tags::CURRENT;
+  if (!primary_ion_conc_key_.empty()) {
+    std::cout << "DEBUG CommitStep assign " << primary_ion_conc_key_ 
+              << " from " << tag_next << " to " << tag_current << std::endl;
+    assign(primary_ion_conc_key_, tag_current, tag_next, *S_);
+    if (tcc_tag_next_ != tag_next_) {
+      assign(primary_ion_conc_key_, tcc_tag_current_, tcc_tag_next_, *S_);
+    }
+  }
+}
+
+
+void
+Alquimia_PK::setChangedAuxOut_() 
+{
+  if (!primary_ion_conc_key_.empty()) {
+    auto eval = Teuchos::rcp_dynamic_cast<EvaluatorPrimaryCV>(
+      S_->GetEvaluatorPtr(primary_ion_conc_key_, tag_next_));
+    if (eval != Teuchos::null) {
+      eval->SetChanged();
+      std::cout << "DEBUG SetChanged called for " << primary_ion_conc_key_ << std::endl;
+    } else {
+      std::cout << "DEBUG eval is null for " << primary_ion_conc_key_ << std::endl;
+    }
+  }
+}
+
+
 
 
 } // namespace AmanziChemistry
