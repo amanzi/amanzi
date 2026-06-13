@@ -258,6 +258,8 @@ class Alquimia_PK : public Chemistry_PK {
   void ParseChemicalConditionRegions_(const Teuchos::ParameterList& param_list,
                                       std::map<std::string, std::string>& conditions);
 
+  void CommitStep(double t_old, double t_new, const Tag& tag) override;
+
 
  private:
   // Amanzi variable names:
