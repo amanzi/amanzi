@@ -39,6 +39,7 @@
 // Chemistry
 #include "Alquimia_PK.hh"
 #include "EvaluatorPrimary.hh"
+#include "EvaluatorAlias.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -992,34 +993,40 @@ Alquimia_PK::CommitStep(double t_old, double t_new, const Tag& tag_next)
 {
   Chemistry_PK::CommitStep(t_old, t_new, tag_next);
 
+  if (tag_next != tag_next_ && tag_next != tcc_tag_next_) return;
+
   Tag tag_current = tag_next == tag_next_ ? tag_current_ : Tags::CURRENT;
   if (!primary_ion_conc_key_.empty()) {
-    std::cout << "DEBUG CommitStep assign " << primary_ion_conc_key_ 
-              << " from " << tag_next << " to " << tag_current << std::endl;
-    assign(primary_ion_conc_key_, tag_current, tag_next, *S_);
-    if (tcc_tag_next_ != tag_next_) {
-      assign(primary_ion_conc_key_, tcc_tag_current_, tcc_tag_next_, *S_);
+    
+    const Epetra_MultiVector& src =
+      *S_->Get<CompositeVector>(primary_ion_conc_key_, tag_next)
+         .ViewComponent("cell", false);
+    Epetra_MultiVector& dst =
+      *S_->GetW<CompositeVector>(primary_ion_conc_key_, tag_current, passwd_)
+         .ViewComponent("cell", false);
+    dst = src;
+
+    if (S_->HasEvaluator(primary_ion_conc_key_, tag_current)) {
+      auto eval_ptr = S_->GetEvaluatorPtr(primary_ion_conc_key_, tag_current);
+      auto eval_primary = Teuchos::rcp_dynamic_cast<EvaluatorPrimaryCV>(eval_ptr);
+      if (eval_primary != Teuchos::null) eval_primary->SetChanged();
+    }
+
+    if (tag_current != Tags::DEFAULT && 
+        S_->HasEvaluator(primary_ion_conc_key_, Tags::DEFAULT)) {
+      Epetra_MultiVector& dst_default =
+        *S_->GetW<CompositeVector>(primary_ion_conc_key_, Tags::DEFAULT, passwd_)
+           .ViewComponent("cell", false);
+      dst_default = src;
+
+      auto eval_ptr = S_->GetEvaluatorPtr(primary_ion_conc_key_, Tags::DEFAULT);
+      auto eval_primary = Teuchos::rcp_dynamic_cast<EvaluatorPrimaryCV>(eval_ptr);
+      if (eval_primary != Teuchos::null) {
+        eval_primary->SetChanged();
+      }
     }
   }
 }
-
-
-void
-Alquimia_PK::setChangedAuxOut_() 
-{
-  if (!primary_ion_conc_key_.empty()) {
-    auto eval = Teuchos::rcp_dynamic_cast<EvaluatorPrimaryCV>(
-      S_->GetEvaluatorPtr(primary_ion_conc_key_, tag_next_));
-    if (eval != Teuchos::null) {
-      eval->SetChanged();
-      std::cout << "DEBUG SetChanged called for " << primary_ion_conc_key_ << std::endl;
-    } else {
-      std::cout << "DEBUG eval is null for " << primary_ion_conc_key_ << std::endl;
-    }
-  }
-}
-
-
 
 
 } // namespace AmanziChemistry

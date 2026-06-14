@@ -259,7 +259,6 @@ class Alquimia_PK : public Chemistry_PK {
                                       std::map<std::string, std::string>& conditions);
 
   void CommitStep(double t_old, double t_new, const Tag& tag) override;
-  virtual void setChangedAuxOut_() override;
 
 
  private:

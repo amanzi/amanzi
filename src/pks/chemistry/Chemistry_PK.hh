@@ -119,8 +119,6 @@ class Chemistry_PK : public PK_Physical_Default {
   virtual int advanceSingleCell_(int cell, double dt) = 0;
   virtual void copyFields_(const Tag& tag_dest, const Tag& tag_source) = 0;
 
-  virtual void setChangedAuxOut_() {}
-
  protected:
   int number_aqueous_components_;
   std::vector<std::string> aqueous_comp_names_;
