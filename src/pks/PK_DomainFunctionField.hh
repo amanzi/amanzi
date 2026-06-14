@@ -176,9 +176,6 @@ PK_DomainFunctionField<FunctionBase>::Compute(double t0, double t1)
   for (size_t ife = 0; ife < num_fields; ++ife) { // fe counter
     Key field_key_ = field_keys_[ife];
     Tag tag = tags_[ife];
-    std::cout << "DEBUG DomainFunctionField Compute: field=" << field_key_ 
-              << " tag=" << tag.get()
-              << " HasEvaluator=" << S_->HasEvaluator(field_key_, tag) << std::endl;
 
     if (S_->HasEvaluator(field_key_, tag)) {
       S_->GetEvaluator(field_key_, tag).Update(*S_, field_key_);
@@ -186,7 +183,6 @@ PK_DomainFunctionField<FunctionBase>::Compute(double t0, double t1)
     // reference to coressponding fe
     const Epetra_MultiVector& field_vec =
       *S_->Get<CompositeVector>(field_key_, tag).ViewComponent("cell", false);
-    std::cout << "DEBUG DomainFunctionField value[0]=" << field_vec[0][0] << std::endl;
 
     // loop through every cell to update the intermediate variables
     for (auto c : *entity_ids_) {
