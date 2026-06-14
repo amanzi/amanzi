@@ -375,21 +375,6 @@ Alquimia_PK::Setup()
     if (name == "primary_free_ion_concentration") {
       S_->GetRecordW(key, tag_next_, passwd_).set_io_checkpoint(true);
       requireEvaluatorAtCurrent(key, tag_current_, *S_, passwd_);
-
-      if (tcc_tag_next_ != tag_next_) {
-        if (!S_->HasEvaluator(key, tcc_tag_next_)) {
-          requireEvaluatorAtNext(key, tcc_tag_next_, *S_, true, passwd_)
-            .SetMesh(mesh_)
-            ->SetGhosted(false)
-            ->SetComponent("cell", AmanziMesh::Entity_kind::CELL,
-                           aux_out_subfield_names_[name].size());
-        }
-      }
-      if (tcc_tag_current_ != tag_current_) {
-        if (!S_->HasEvaluator(key, tcc_tag_current_)) {
-          requireEvaluatorAtCurrent(key, tcc_tag_current_, *S_, passwd_);
-        }
-      }
     } else {
       S_->GetRecordW(key, tag_next_, passwd_).set_io_checkpoint(false);
     }
@@ -996,8 +981,8 @@ Alquimia_PK::CommitStep(double t_old, double t_new, const Tag& tag_next)
   if (tag_next != tag_next_ && tag_next != tcc_tag_next_) return;
 
   Tag tag_current = tag_next == tag_next_ ? tag_current_ : Tags::CURRENT;
-  if (!primary_ion_conc_key_.empty()) {
-    
+
+  if (!primary_ion_conc_key_.empty()) {  
     const Epetra_MultiVector& src =
       *S_->Get<CompositeVector>(primary_ion_conc_key_, tag_next)
          .ViewComponent("cell", false);
@@ -1013,10 +998,12 @@ Alquimia_PK::CommitStep(double t_old, double t_new, const Tag& tag_next)
     }
 
     if (tag_current != Tags::DEFAULT && 
-        S_->HasEvaluator(primary_ion_conc_key_, Tags::DEFAULT)) {
-      Epetra_MultiVector& dst_default =
-        *S_->GetW<CompositeVector>(primary_ion_conc_key_, Tags::DEFAULT, passwd_)
+        S_->HasEvaluator(primary_ion_conc_key_, Tags::DEFAULT) &&
+        S_->HasRecord(primary_ion_conc_key_, Tags::DEFAULT)) {
+      const Epetra_MultiVector& dst_default_const =
+        *S_->Get<CompositeVector>(primary_ion_conc_key_, Tags::DEFAULT)
            .ViewComponent("cell", false);
+      Epetra_MultiVector& dst_default = const_cast<Epetra_MultiVector&>(dst_default_const);
       dst_default = src;
 
       auto eval_ptr = S_->GetEvaluatorPtr(primary_ion_conc_key_, Tags::DEFAULT);
