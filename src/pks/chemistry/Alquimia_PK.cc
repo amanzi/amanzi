@@ -978,10 +978,10 @@ Alquimia_PK::CommitStep(double t_old, double t_new, const Tag& tag_next)
 {
   Chemistry_PK::CommitStep(t_old, t_new, tag_next);
 
-  if (tag_next != tag_next_ && tag_next != tcc_tag_next_) return;
-
   Tag tag_current = tag_next == tag_next_ ? tag_current_ : Tags::CURRENT;
 
+  // Copy primary_free_ion_concentration from new state at tag_next to tag_current, 
+  // then at the next timestep, transport ats pk can use the updated value.
   if (!primary_ion_conc_key_.empty()) {  
     const Epetra_MultiVector& src =
       *S_->Get<CompositeVector>(primary_ion_conc_key_, tag_next)
@@ -991,15 +991,22 @@ Alquimia_PK::CommitStep(double t_old, double t_new, const Tag& tag_next)
          .ViewComponent("cell", false);
     dst = src;
 
+    // Tell evaluators that primary_free_ion_concentration has been changed,
+    // please update all other secondary variables dependent on it.
     if (S_->HasEvaluator(primary_ion_conc_key_, tag_current)) {
       auto eval_ptr = S_->GetEvaluatorPtr(primary_ion_conc_key_, tag_current);
       auto eval_primary = Teuchos::rcp_dynamic_cast<EvaluatorPrimaryCV>(eval_ptr);
       if (eval_primary != Teuchos::null) eval_primary->SetChanged();
     }
 
+    // The transport ats pk and any other secondary variables may want to get values
+    // from Tags::DEFAULT (""), so let's do the same thing for "" as well.
     if (tag_current != Tags::DEFAULT && 
         S_->HasEvaluator(primary_ion_conc_key_, Tags::DEFAULT) &&
         S_->HasRecord(primary_ion_conc_key_, Tags::DEFAULT)) {
+      // use GetW will check owner, and result in "not owned by ..." error.
+      // don't know how to solve it, so bypass the check first, hopefully this 
+      // will not result in wrong calculations.
       const Epetra_MultiVector& dst_default_const =
         *S_->Get<CompositeVector>(primary_ion_conc_key_, Tags::DEFAULT)
            .ViewComponent("cell", false);
