@@ -23,6 +23,7 @@
 // Amanzi::Energy
 #include "EnergyPressureTemperature_PK.hh"
 #include "EnthalpyEvaluator.hh"
+#include "EvaluatorMultiplicativeReciprocal.hh"
 #include "IAPWS95_StateEvaluators.hh"
 #include "IEMEvaluator.hh"
 #include "StateArchive.hh"
@@ -69,6 +70,8 @@ EnergyPressureTemperature_PK::Setup()
   Energy_PK::Setup();
 
   state_key_ = Keys::getKey(domain_, "thermodynamic_state");
+  beta_key_ = Keys::getKey(domain_, "beta_coef");
+  beta_jacobian_key_ = Keys::getKey(domain_, "beta_jacobian_coef");
 
   double molar_mass = S_->ICList().sublist("const_fluid_molar_mass").get<double>("value");
 
@@ -123,6 +126,56 @@ EnergyPressureTemperature_PK::Setup()
       .SetGhosted();
   }
 
+  if (!S_->HasRecord(beta_jacobian_key_)) {
+    S_->Require<CV_t, CVS_t>(beta_jacobian_key_, Tags::DEFAULT, beta_jacobian_key_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+
+    std::vector<std::string> listm({ Keys::getVarName(viscosity_liquid_key_) });
+    std::vector<std::string> listr({ Keys::getVarName(mol_density_liquid_key_) });
+
+    Teuchos::ParameterList elist(beta_jacobian_key_);
+    elist.set<std::string>("my key", beta_jacobian_key_)
+      .set<Teuchos::Array<std::string>>("multiplicative dependency key suffixes", listm)
+      .set<Teuchos::Array<std::string>>("reciprocal dependency key suffixes", listr)
+      .set<std::string>("tag", "");
+
+    S_->RequireDerivative<CV_t, CVS_t>(beta_jacobian_key_, Tags::DEFAULT, temperature_key_,
+                                       Tags::DEFAULT, beta_jacobian_key_).SetGhosted();
+
+    auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
+    S_->SetEvaluator(beta_jacobian_key_, Tags::DEFAULT, eval);
+  }
+
+  // -- effective diffusion coefficient (similar to flow equation)
+  if (!S_->HasRecord(beta_key_)) {
+    S_->Require<CV_t, CVS_t>(beta_key_, Tags::DEFAULT, beta_key_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+
+    std::vector<std::string> listm({ Keys::getVarName(mol_density_liquid_key_),
+                                     Keys::getVarName(enthalpy_key_) });
+    if (assumptions_.flow_on_manifold) listm.push_back(Keys::getVarName(aperture_key_));
+    std::vector<std::string> listr({ Keys::getVarName(viscosity_liquid_key_) });
+
+    Teuchos::ParameterList elist(beta_key_);
+    elist.set<std::string>("my key", beta_key_)
+      .set<Teuchos::Array<std::string>>("multiplicative dependency key suffixes", listm)
+      .set<Teuchos::Array<std::string>>("reciprocal dependency key suffixes", listr)
+      .set<std::string>("tag", "");
+
+    S_->RequireDerivative<CV_t, CVS_t>(
+        beta_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT, beta_key_)
+      .SetGhosted();
+
+    auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
+    S_->SetEvaluator(beta_key_, Tags::DEFAULT, eval);
+  }
+
+
+  
   // thermodynamics
   if (glist_->sublist("state").sublist("evaluators").isSublist(state_key_)) {
     if (!S_->HasRecord(state_key_)) {
