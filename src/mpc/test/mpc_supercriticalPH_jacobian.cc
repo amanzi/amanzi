@@ -238,8 +238,7 @@ void RunJacobian(double pMPa, double T, double hkJ, double tol10 = 1e-3,
 TEST(MPC_DRIVER_THERMAL_RICHARDS_JACOBIAN)
 {
   // fractures: region 2
-  RunJacobian(25.0, 732.0, 3000.0, 2e-3, "test/mpc_supercriticalPH_aperture.xml");
-  exit(0);
+  // RunJacobian(25.0, 732.0, 3000.0, 2e-3, "test/mpc_supercriticalPH_aperture.xml");
 
   // region 2: supercritical liquid
   RunJacobian(25.0, 732.0, 3000.0);
