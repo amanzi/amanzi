@@ -1,7 +1,13 @@
 name: Build TPL images
 
 on:
+  schedule:
+    - cron: '0 0 1 * *'
   workflow_dispatch:
+  push:
+    paths:
+      - 'config/Superbuild/**'
+      - 'tools/**'
 
 jobs:
   build-tpl-image:
