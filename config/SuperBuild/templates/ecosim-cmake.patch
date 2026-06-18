@@ -1,0 +1,139 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 7725004b..54b22668 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,6 +1,10 @@
+ # NOTE: this is the old CMake file for compiling with a UNIX Makefile
+ # Minimum CMake version, determined by hdf5.
+-cmake_minimum_required (VERSION 3.5)
++cmake_minimum_required (VERSION 3.10)
++
++# We declare the project here.
++message(STATUS "JDM: >>>>>> Initate the project, first thing it checks is compilers")
++project (ecosim)
+ 
+ # Version numbers.
+ set (ECOSIM_MAJOR_VERSION 0)
+@@ -8,7 +12,9 @@ set (ECOSIM_MINOR_VERSION 1)
+ set (ECOSIM_PATCH_VERSION 0)
+ set (ECOSIM_VERSION "${ECOSIM_MAJOR_VERSION}.${ECOSIM_MINOR_VERSION}.${ECOSIM_PATCH_VERSION}")
+ 
+-set(TPL_INSTALL_PREFIX $ENV{AMANZI_TPLS_DIR})
++# set(TPL_INSTALL_PREFIX $ENV{AMANZI_TPLS_DIR})
++set(TPL_INSTALL_PREFIX ${CMAKE_PREFIX_PATH})
++message(STATUS "JDM: >>>>>> TPL_INSTALL_PREFIX = ${TPL_INSTALL_PREFIX}")
+ 
+ # Adjust CMake's module path.
+ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+@@ -26,14 +32,14 @@ if (NOT CMAKE_INSTALL_PREFIX)
+   set(CMAKE_INSTALL_PREFIX ${PROJECT_BINARY_DIR}/local)
+ endif()
+ 
+-set(CMAKE_INSTALL_PREFIX ${PROJECT_BINARY_DIR}/local)
+-
++## JDM: Not sure why we need this at all - is it used in running tests?
+ # set the number of cores to something reasonable so we don't over
+ # subscribe a laptop or exceed hpc login node restrictions. could
+ # switch to something more sophisticated like polymec if necessary.
+ set(NUMBER_OF_CORES 4)
+ math(EXPR NUM_BUILD_THREADS "${NUMBER_OF_CORES} + 1")
+ 
++# This includes some custom macros - but does not call them
+ include(set_up_platform)
+ include(set_up_compilers)
+ 
+@@ -69,19 +75,19 @@ if (NOT CMAKE_Fortran_FLAGS)
+   set(CMAKE_Fortran_FLAGS $ENV{FCFLAGS})
+ endif()
+ 
++# Calling the platform setup macro
+ set_up_platform()
++
++# Enabling the languages for the project
+ enable_language(C)
+ enable_language(CXX)
+ enable_language(Fortran)
+ 
+-
+-# We declare the project here.
+-project (ecosim)
+-
+ message("-- C compiler is ${CMAKE_C_COMPILER} (${CMAKE_C_COMPILER_ID})")
+ message("-- CXX compiler is ${CMAKE_CXX_COMPILER} (${CMAKE_CXX_COMPILER_ID})")
+ message("-- Fortran compiler is ${CMAKE_Fortran_COMPILER} (${CMAKE_Fortran_COMPILER_ID})")
+ 
++# Calling the custom macro to setup the compilers - not clear if this overrides flags we already set
+ set_up_compilers()
+ 
+ if (BGC)
+@@ -95,6 +101,7 @@ if (ECOSIM)
+   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -DECOSIM")
+ endif()
+ 
++# JDM: Isn't this covered by the specialized macro we already called?
+ # Figure out the system type.
+ set(ECOSIM_HAVE_BOOL 1) # All reasonable C99 compilers have this now.
+ if (APPLE EQUAL 1)
+@@ -114,6 +121,7 @@ else ()
+   endif ()
+ endif ()
+ 
++# JDM: We are overriding things that are already provided, probably should wrap this?
+ # Here we make sure CMake-installed binaries use the correct runpath, and
+ # that the path is not stripped during installation.
+ set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib;${CMAKE_BINARY_DIR}/lib")
+@@ -124,6 +132,7 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+ #set(ECOSIM_LIBRARIES "")
+ #set(ECOSIM_TPLS m)
+ 
++# JDM: We should provide these for Amanzi-ATS builds, but in general, yes - it's a pain but you should find them
+ if (${NEED_LAPACK})
+   # NEED_LAPACK is set by set_up_platform()
+   include(FindBLAS)
+@@ -139,10 +148,11 @@ if (${NEED_LAPACK})
+   set(ECOSIM_LIBRARIES ${ECOSIM_LIBRARIES};${LAPACK_LIBRARIES};${BLAS_LIBRARIES})
+ endif()
+ 
+-set(ECOSIM_NEED_PFUNIT 0)
+-set(ECOSIM_NEED_PETSC 0)
+-set(ECOSIM_INCLUDE_DIRS "" CACHE LIST "Include directory of EcoSIM")
++set(ECOSIM_NEED_PFUNIT FALSE)
++set(ECOSIM_NEED_PETSC FALSE)
++set(ECOSIM_INCLUDE_DIRS "" CACHE STRING "Include directory of EcoSIM" FORCE)
+ 
++# JDM: Do we need this?
+ configure_file(
+   "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Templates/ecosim.cmake.in"
+   "${CMAKE_CURRENT_BINARY_DIR}/ecosim.cmake"
+@@ -153,15 +163,17 @@ configure_file(
+ # adding in ATS tpl support:
+ 
+ if(ATS_ECOSIM)
+-  message(STATUS "ATS_ECOSIM is set")
++  message(STATUS "AG: >>>>>> ATS_ECOSIM is set")
+   #set(ATS_ECOSIM TRUE)
+ else()
+-  message(STATUS "ATS_ECOSIM NOT set")
++  message(STATUS "AG: >>>>>> ATS_ECOSIM NOT set")
+ endif()
+ 
+ if (ATS_ECOSIM)
+-    message(STATUS "Compiling ATS:")
++    message(STATUS "AG: >>>>>> Compiling ATS:")
++    # JDM: This just overwrites the architecture specfic stuff that was done earlier?
+     set(CMAKE_FIND_LIBRARY_SUFFIXES ".so" ".a")
++    # JDM: We can use standard CMake FindPackages for this stuff
+     set(NETCDF_FFLAGS "-I${TPL_INSTALL_PREFIX}/include")
+     set(NETCDF_FLIBS "-L${TPL_INSTALL_PREFIX}/lib -lnetcdff -lnetcdf -lnetcdf -lhdf5")
+     set(Z_INCLUDE_DIR "${TPL_INSTALL_PREFIX}/include")
+@@ -239,8 +251,9 @@ link_directories("${PROJECT_BINARY_DIR}/lib")
+ #list(APPEND ECOSIM_INCLUDE_DIRS "${PROJECT_BINARY_DIR}/include")
+ #include_directories(${ECOSIM_INCLUDE_DIRS})
+ 
+-set(CMAKE_INSTALL_PREFIX ${PROJECT_BINARY_DIR}/local)
++# set(CMAKE_INSTALL_PREFIX ${PROJECT_BINARY_DIR}/local)
+ 
++# JDM: I think this could some much earlier in the file.
+ enable_testing()
+ 
+ # Source code itself.

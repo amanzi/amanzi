@@ -165,6 +165,7 @@ patch_tpl(PETSc
 # --- Add external project build 
 ExternalProject_Add(${PETSc_BUILD_TARGET}
                     DEPENDS   ${PETSc_PACKAGE_DEPENDS}     # Package dependency target
+                    PREFIX    ${PETSc_prefix_dir}
                     TMP_DIR   ${PETSc_tmp_dir}             # Temporary files directory
                     STAMP_DIR ${PETSc_stamp_dir}           # Timestamp and log directory
                     # -- Download and URL definitions

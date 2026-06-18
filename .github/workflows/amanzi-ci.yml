@@ -1,6 +1,7 @@
 name: Amanzi CI
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - '**'

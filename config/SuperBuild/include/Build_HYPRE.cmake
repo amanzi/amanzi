@@ -101,6 +101,7 @@ message(STATUS "HYPRE git repository = ${HYPRE_GIT_REPOSITORY_TEMP}")
 # --- Add external project build and tie to the ZLIB build target
 ExternalProject_Add(${HYPRE_BUILD_TARGET}
                     DEPENDS   ${HYPRE_PACKAGE_DEPENDS}         # Package dependency target
+                    PREFIX    ${HYPRE_prefix_dir}
                     TMP_DIR   ${HYPRE_tmp_dir}                 # Temporary files directory
                     STAMP_DIR ${HYPRE_stamp_dir}               # Timestamp and log directory
                     # -- Download and GIT definition
