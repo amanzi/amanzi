@@ -373,11 +373,9 @@ Alquimia_PK::Setup()
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, aux_out_subfield_names_[name].size());
 
     if (name == "primary_free_ion_concentration") {
-      S_->GetRecordW(key, tag_next_, passwd_).set_io_checkpoint(true);
       requireEvaluatorAtCurrent(key, tag_current_, *S_, passwd_);
-    } else {
-      S_->GetRecordW(key, tag_next_, passwd_).set_io_checkpoint(false);
-    }
+    } 
+    S_->GetRecordW(key, tag_next_, passwd_).set_io_checkpoint(true);
     S_->GetRecordSetW(key).set_subfieldnames(aux_out_subfield_names_[name]);
     ++i;
   }
@@ -397,12 +395,45 @@ Alquimia_PK::Initialize()
   // Read XML parameters from our input file.
   XMLParameters();
 
-  // mark aux_out data as initialized
-  for (const auto& [name, key] : aux_out_names_) {
-    S_->GetRecordW(key, tag_next_, passwd_).set_initialized();
+  bool restarted = false;
+  std::string restart_filename;
+  if (plist_->isSublist("initial conditions") && 
+    plist_->sublist("initial conditions").isParameter("restart file")) {
+    restarted = true;
+    restart_filename = plist_->sublist("initial conditions").get<std::string>("restart file");
   }
 
-  if (chem_initial_conditions_.size() > 0 && std::abs(initial_conditions_time_ - S_->get_time()) <
+  // initialized aux_data and aux_out from restart file if there is
+  for (const auto& [name, key] : aux_out_names_) {
+    Record& rec = S_->GetRecordW(key, tag_next_, passwd_);
+    if (restarted) {
+      Teuchos::ParameterList ic_plist;
+      ic_plist.set("restart file", restart_filename);
+      const std::vector<std::string>* subfieldnames = S_->GetRecordSetW(key).subfieldnames();
+      try {
+        rec.Initialize(ic_plist, subfieldnames);
+      } catch (const Errors::Message& e) {
+        rec.set_initialized();
+      }
+    } else {
+      rec.set_initialized();
+    }
+  }
+
+  if (restarted) {
+    Teuchos::ParameterList ic_plist;
+    ic_plist.set("restart file", restart_filename);
+    const std::vector<std::string>* subfieldnames = S_->GetRecordSetW(aux_data_key_).subfieldnames();
+    try {
+      S_->GetRecordW(aux_data_key_, tag_next_, passwd_).Initialize(ic_plist, subfieldnames);
+    } catch (const Errors::Message& e) {
+      S_->GetRecordW(aux_data_key_, tag_next_, passwd_).set_initialized();
+    }
+  }
+
+  if (!restarted &&
+      chem_initial_conditions_.size() > 0 &&
+      std::abs(initial_conditions_time_ - S_->get_time()) <
                                                1e-8 * (1.0 + std::abs(S_->get_time()))) {
     updateSubstate(Tags::DEFAULT);
     int ierr = 0;
