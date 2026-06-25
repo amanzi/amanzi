@@ -22,6 +22,7 @@ Process kernel that strongly couples Flow PK with Energy PK.
 #include "EvaluatorIndependentFunction.hh"
 #include "EvaluatorSecondaryMonotype.hh"
 #include "IAPWS97_StateEvaluators.hh"
+#include "OutputXDMF.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_Advection.hh"
 #include "PDE_Diffusion.hh"
@@ -125,7 +126,7 @@ protected:
   Key bcs_flow_key_, bcs_enthalpy_key_;
   Key permeability_key_, aperture_key_;
   Key conductivity_key_, conductivity_eff_key_, conductivity_gen_key_;
-  Key alpha_key_, beta_key_, beta_jacobian_key_;
+  Key alpha_key_, beta_key_;
 
   // factory registration
   static RegisteredPKFactory<FlowEnergyPH_PK> reg_;

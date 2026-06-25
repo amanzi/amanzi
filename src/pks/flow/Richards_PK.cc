@@ -562,8 +562,11 @@ Richards_PK::Initialize()
     oplist_pc.set<std::string>("nonlinear coefficient", nonlinear_coef);
   }
   if (coupled_to_matrix_ || assumptions_.flow_on_manifold) {
-    if (!oplist_matrix.isParameter("use manifold flux"))
-      oplist_matrix.set<bool>("use manifold flux", true);
+    if (!oplist_matrix.isParameter("manifolds")) oplist_matrix.set<bool>("manifolds", true);
+    if (!oplist_matrix.isParameter("use manifold flux")) oplist_matrix.set<bool>("use manifold flux", true);
+
+    if (!oplist_pc.isParameter("manifolds")) oplist_pc.set<bool>("manifolds", true);
+    if (!oplist_pc.isParameter("use manifold flux")) oplist_pc.set<bool>("use manifold flux", true);
   }
 
   Operators::PDE_DiffusionFactory opfactory(oplist_matrix, mesh_);
