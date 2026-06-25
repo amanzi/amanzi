@@ -17,7 +17,7 @@ jobs:
     runs-on: ${{matrix.os}}
     steps:
     - name: Check out the Amanzi repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
     - name: Get TPLs version
       id: version
       working-directory: Docker
@@ -61,7 +61,7 @@ jobs:
     if: success()
     steps:
       - name: Check out the Amanzi repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Get TPLs version
         id: version
         working-directory: Docker

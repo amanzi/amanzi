@@ -17,7 +17,7 @@ jobs:
     name: Build Docker container
     steps:
     - name: Check out the Amanzi repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
     - name: Extract the branch name
       id: branch
       run:
@@ -98,7 +98,7 @@ jobs:
     needs: build
     steps:
     - name: Check out the Amanzi repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
     - name: Set environment variables
       run:
         echo "AMANZI_BRANCH_TAG=$(echo $GITHUB_REF_NAME | sed -e 's/\//--/g')" >> $GITHUB_ENV
@@ -123,7 +123,7 @@ jobs:
     needs: build
     steps:
     - name: Check out the Amanzi repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
     - name: Set environment variables
       run:
         echo "AMANZI_BRANCH_TAG=$(echo $GITHUB_REF_NAME | sed -e 's/\//--/g')" >> $GITHUB_ENV
@@ -164,7 +164,7 @@ jobs:
           core.setOutput('exist_pr_to_master', prs.length > 0 ? 'true' : 'false'); 
     - name: Check out the Amanzi repo
       if: steps.pr_check.outputs.exist_pr_to_master == 'true'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
     - name: Set environment variables
       if: steps.pr_check.outputs.exist_pr_to_master == 'true'
       run:
@@ -189,7 +189,7 @@ jobs:
     if: success()
     steps:
       - name: Check out the Amanzi repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set environment variables
         run:
           echo "AMANZI_BRANCH_TAG=$(echo $GITHUB_REF_NAME | sed -e 's/\//--/g')" >> $GITHUB_ENV
