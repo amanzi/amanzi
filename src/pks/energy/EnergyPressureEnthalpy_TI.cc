@@ -116,11 +116,13 @@ EnergyPressureEnthalpy_PK::FunctionalResidual(double t_old,
 
   double units(CommonDefs::ENTHALPY_FACTOR);
   residual_max_norm_ = 0.0;
-  for (int c = 0; c < ncells_owned; ++c) {
-    double factor = mesh_->getCellVolume(c) / dt;
-    double acc = factor * (e1[0][c] - e0[0][c]);
-    g_c[0][c] += acc;
-    residual_max_norm_ = std::max(residual_max_norm_, fabs(g_c[0][c] / (factor * e0[0][c])));
+  if (dt>0) {
+    for (int c = 0; c < ncells_owned; ++c) {
+      double factor = mesh_->getCellVolume(c) / dt;
+      double acc = factor * (e1[0][c] - e0[0][c]);
+      g_c[0][c] += acc;
+      residual_max_norm_ = std::max(residual_max_norm_, fabs(g_c[0][c] / (factor * e0[0][c])));
+    }
   }
   
 }
@@ -182,7 +184,7 @@ EnergyPressureEnthalpy_PK::UpdatePreconditioner(double t,
     }
   }
 
-  op_acc_->AddAccumulationTerm(dEdh, dt, "cell");
+  if (dt>0) op_acc_->AddAccumulationTerm(dEdh, dt, "cell");
 
   // implicit source models
   if (heat_src_) {

@@ -146,7 +146,8 @@ class FlowEnergyPT_PK : public PK_MPCStrong<PK_BDF> {
   Key mol_flowrate_key_,  viscosity_liquid_key_;
   Key sat_liquid_key_, ws_key_;
   Key bcs_flow_key_, bcs_temperature_key_, bcs_enthalpy_key_;
-  Key aperture_key_, conductivity_eff_key_, conductivity_gen_key_;
+  Key aperture_key_, permeability_key_;
+  Key conductivity_key_,  conductivity_eff_key_, conductivity_gen_key_;
   Key alpha_key_, beta_key_;
 
   // factory registration
