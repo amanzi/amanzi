@@ -17,7 +17,7 @@ jobs:
     name: Build Docker container
     steps:
     - name: Check out the Amanzi repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
     - name: Extract the branch name
       id: branch
       run:
@@ -45,12 +45,12 @@ jobs:
           echo "ARCH=amd64" >> $GITHUB_ENV
         fi
     - name: Login to Docker Hub
-      uses: docker/login-action@v3
+      uses: docker/login-action@v4
       with:
         username: ${{secrets.DOCKERHUB_USERNAME}}
         password: ${{secrets.DOCKERHUB_PASSWORD}}
     - name: Check for open PR to master from this branch
-      uses: actions/github-script@v7
+      uses: actions/github-script@v9
       id: pr_check
       with:
         script: |
@@ -66,7 +66,7 @@ jobs:
           core.setOutput('exist_pr_to_master', prs.length > 0 ? 'true' : 'false');    
     - name: Build and push image - on push
       if: steps.pr_check.outputs.exist_pr_to_master != 'true'
-      uses: docker/build-push-action@v6
+      uses: docker/build-push-action@v7
       with:
         context: .
         file: ./Docker/Dockerfile-Amanzi-build
@@ -78,7 +78,7 @@ jobs:
           amanzi_tpls_ver=${{env.AMANZI_TPLS_VER}}  
     - name: Build and push image - pull requests
       if: steps.pr_check.outputs.exist_pr_to_master == 'true'
-      uses: docker/build-push-action@v6
+      uses: docker/build-push-action@v7
       with:
         context: .
         file: ./Docker/Dockerfile-Amanzi-build
@@ -98,7 +98,7 @@ jobs:
     needs: build
     steps:
     - name: Check out the Amanzi repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
     - name: Set environment variables
       run:
         echo "AMANZI_BRANCH_TAG=$(echo $GITHUB_REF_NAME | sed -e 's/\//--/g')" >> $GITHUB_ENV
@@ -123,7 +123,7 @@ jobs:
     needs: build
     steps:
     - name: Check out the Amanzi repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
     - name: Set environment variables
       run:
         echo "AMANZI_BRANCH_TAG=$(echo $GITHUB_REF_NAME | sed -e 's/\//--/g')" >> $GITHUB_ENV
@@ -148,7 +148,7 @@ jobs:
     needs: build
     steps:
     - name: Check for open PR to master from this branch
-      uses: actions/github-script@v7
+      uses: actions/github-script@v9
       id: pr_check
       with:
         script: |
@@ -164,7 +164,7 @@ jobs:
           core.setOutput('exist_pr_to_master', prs.length > 0 ? 'true' : 'false'); 
     - name: Check out the Amanzi repo
       if: steps.pr_check.outputs.exist_pr_to_master == 'true'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
     - name: Set environment variables
       if: steps.pr_check.outputs.exist_pr_to_master == 'true'
       run:
@@ -189,12 +189,12 @@ jobs:
     if: success()
     steps:
       - name: Check out the Amanzi repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set environment variables
         run:
           echo "AMANZI_BRANCH_TAG=$(echo $GITHUB_REF_NAME | sed -e 's/\//--/g')" >> $GITHUB_ENV
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{secrets.DOCKERHUB_USERNAME}}
           password: ${{secrets.DOCKERHUB_PASSWORD}}
