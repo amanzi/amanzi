@@ -42,16 +42,17 @@ void RunJacobian(double pMPa, double T, double hkJ, double tol10 = 1e-3)
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
 
-  auto plist = Teuchos::getParametersFromXmlFile("test/mpc_supercriticalPT.old.xml");
-  // auto& tmp1 = plist->sublist("PKs").sublist("transient:flow").sublist("boundary conditions").sublist("pressure");
-  // tmp1.sublist("BC 0").sublist("boundary pressure").sublist("function-constant").set<double>("value", (pMPa) * 1e6);
-  // tmp1.sublist("BC 1").sublist("boundary pressure").sublist("function-constant").set<double>("value", pMPa * 1e6);
+  auto plist = Teuchos::getParametersFromXmlFile("test/mpc_supercriticalPT.xml");
+  auto& tmp1 = plist->sublist("PKs").sublist("transient:flow").sublist("boundary conditions").sublist("pressure");
+  tmp1.sublist("BC 0").sublist("boundary pressure").sublist("function-constant").set<double>("value", (pMPa) * 1e6);
+  tmp1.sublist("BC 1").sublist("boundary pressure").sublist("function-constant").set<double>("value", pMPa * 1e6);
 
-  // auto& tmp2 = plist->sublist("state").sublist("initial conditions").sublist("pressure");
-  // tmp2.sublist("function").sublist("EntireDomain").sublist("function").sublist("function-linear").set<double>("y0", pMPa * 1e6);
+  auto& tmp2 = plist->sublist("state").sublist("initial conditions").sublist("pressure");
+  tmp2.sublist("function").sublist("EntireDomain").sublist("function").sublist("function-linear").set<double>("y0", pMPa * 1e6);
 
-  // auto& tmp3 = plist->sublist("state").sublist("initial conditions").sublist("temperature");
-  // tmp3.sublist("function").sublist("EntireDomain").sublist("function").sublist("function-constant").set<double>("value", T);
+  auto& tmp3 = plist->sublist("state").sublist("initial conditions").sublist("temperature");
+  tmp3.sublist("function").sublist("EntireDomain").sublist("function").sublist("function-constant").set<double>("value", T);
+
   
   // auto& tmp3 = plist->sublist("PKs").sublist("transient:energy").sublist("boundary conditions").sublist("temperature");
   // tmp3.sublist("BC 1").sublist("boundary temperature").sublist("function-constant").set<double>("value", T);
@@ -69,7 +70,7 @@ void RunJacobian(double pMPa, double T, double hkJ, double tol10 = 1e-3)
   // create mesh
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 10.0, 3.0, 4, 1);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 10.0, 3.0, 10, 5);
 
   Teuchos::ParameterList state_list = plist->sublist("state");
   Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
@@ -218,10 +219,10 @@ void RunJacobian(double pMPa, double T, double hkJ, double tol10 = 1e-3)
       CHECK(norm_diff < tol * norm_pk);
 
       int s1(13), s2(13);
-      std::cout<<"JFD"<<"\n";
-      if (i0 == 1 && j0 == 1) std::cout << std::scientific <<  Jfd.SubMatrix(s1, s1 + 4, s2, s2 + 4) << std::endl;
-      std::cout<<"JPK"<<"\n";
-      if (i0 == 1 && j0 == 1) std::cout << Jsub.SubMatrix(s1, s1 + 4, s2, s2 + 4) << std::endl;
+      // std::cout<<"JFD"<<"\n";
+      // if (i0 == 1 && j0 == 1) std::cout << std::scientific <<  Jfd.SubMatrix(s1, s1 + 4, s2, s2 + 4) << std::endl;
+      // std::cout<<"JPK"<<"\n";
+      // if (i0 == 1 && j0 == 1) std::cout << Jsub.SubMatrix(s1, s1 + 4, s2, s2 + 4) << std::endl;
       // if (i0 == 1 && j0 == 1) {
       //    std::cout << Jfd << std::endl;
       //    std::cout << Jsub << std::endl;
@@ -236,8 +237,8 @@ TEST(MPC_DRIVER_THERMAL_RICHARDS_PT_JACOBIAN)
   // region2: supercritical liquid
   RunJacobian(25.0, 732.0, 3000.0);
 
-  // // region 2: vapor
-  // RunJacobian(15.0, 678.0, 3000.0);
+  // region 2: vapor
+  RunJacobian(15.0, 678.0, 3000.0);
 
   // // region 1: compressed liquid
   // RunJacobian(25.0, 504.0, 1000.0, 5e-2);
