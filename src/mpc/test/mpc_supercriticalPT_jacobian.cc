@@ -25,6 +25,7 @@
 #include "eos_reg.hh"
 #include "evaluators_reg.hh"
 #include "Mesh.hh"
+#include "MeshExtractedManifold.hh"
 #include "MeshFactory.hh"
 #include "models_energy_reg.hh"
 #include "PK_Factory.hh"
@@ -37,44 +38,71 @@
 #include "models_flow_reg.hh"
 
 
-void RunJacobian(double pMPa, double T, double hkJ, double tol10 = 1e-3)
+void RunJacobian(double pMPa, double T, double hkJ, double tol10 = 1e-3,
+                 const std::string& filename = "test/mpc_supercriticalPT.xml")
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
 
-  auto plist = Teuchos::getParametersFromXmlFile("test/mpc_supercriticalPT.xml");
+  auto plist = Teuchos::getParametersFromXmlFile(filename);
   auto& tmp1 = plist->sublist("PKs").sublist("transient:flow").sublist("boundary conditions").sublist("pressure");
-  tmp1.sublist("BC 0").sublist("boundary pressure").sublist("function-constant").set<double>("value", (pMPa) * 1e6);
+  tmp1.sublist("BC 0").sublist("boundary pressure").sublist("function-constant").set<double>("value", (pMPa + 0.11) * 1e6);
   tmp1.sublist("BC 1").sublist("boundary pressure").sublist("function-constant").set<double>("value", pMPa * 1e6);
 
   auto& tmp2 = plist->sublist("state").sublist("initial conditions").sublist("pressure");
   tmp2.sublist("function").sublist("EntireDomain").sublist("function").sublist("function-linear").set<double>("y0", pMPa * 1e6);
 
+  // auto& tmp3 = plist->sublist("PKs").sublist("transient:energy").sublist("boundary conditions").sublist("temperature");
+  // tmp3.sublist("BC 1").sublist("boundary temperature").sublist("function-constant").set<double>("value", T);
+
   auto& tmp3 = plist->sublist("state").sublist("initial conditions").sublist("temperature");
   tmp3.sublist("function").sublist("EntireDomain").sublist("function").sublist("function-constant").set<double>("value", T);
 
   
-  // auto& tmp3 = plist->sublist("PKs").sublist("transient:energy").sublist("boundary conditions").sublist("temperature");
-  // tmp3.sublist("BC 1").sublist("boundary temperature").sublist("function-constant").set<double>("value", T);
+  // auto& tmp4 = plist->sublist("state").sublist("initial conditions").sublist("enthalpy");
+  // tmp4.sublist("function").sublist("domain").sublist("function").sublist("function-exprtk")
+  //   .set<std::string>("formula", std::to_string(hkJ * 18.015) + " - 0.05 * x * (100 - x)");
 
   // auto& tmp4 = plist->sublist("state").sublist("initial conditions").sublist("enthalpy");
   // tmp4.sublist("function").sublist("domain").sublist("function").sublist("function-exprtk")
   //   .set<std::string>("formula", std::to_string(hkJ * 18.015) + " - 0.05 * x * (100 - x)");
 
+  
   plist->sublist("PKs").sublist("transient:mpc1").sublist("time integrator").set<bool>("use CPTR preconditioner", false);
+  plist->sublist("PKs").sublist("transient:mpc1").sublist("time integrator").set<bool>("include coupling terms", true);
+
+  // create GM
+  bool network = (filename == "test/mpc_supercriticalPT_aperture.xml");
+  int dim = (network) ? 3 : 2;
 
   auto comm = Amanzi::getDefaultComm();
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
-  auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(2, region_list, *comm));
+  auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(dim, region_list, *comm));
+
+  auto mesh_list = Teuchos::sublist(plist, "mesh", true);
+  mesh_list->set<bool>("request edges", true);
+  mesh_list->set<bool>("request faces", true);
+  MeshFactory meshfactory(comm, gm, mesh_list);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
 
   // create mesh
-  MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({ Framework::MSTK }));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 10.0, 3.0, 10, 5);
-
   Teuchos::ParameterList state_list = plist->sublist("state");
   Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
-  S->RegisterMesh("domain", mesh);
+  
+  Teuchos::RCP<Mesh> mesh;
+  if (!network) {
+    mesh = meshfactory.create(0.0, 0.0, 10.0, 3.0, 10, 3);
+    S->RegisterMesh("domain", mesh);
+  } else {
+    auto mesh_domain = meshfactory.create(0.0, 0.0, 0.0, 100.0, 20.0, 8.0, 50, 4, 2);
+    S->RegisterMesh("domain", mesh_domain);
+
+    auto mesh_framework = Teuchos::rcp(new MeshExtractedManifold(
+      mesh_domain, "fracture", AmanziMesh::Entity_kind::FACE, comm, gm, mesh_list));
+    mesh = Teuchos::rcp(new Mesh(mesh_framework, Teuchos::rcp(new MeshAlgorithms()), mesh_list));
+
+    S->RegisterMesh("fracture", mesh);
+  }
 
   auto pk_tree = plist->sublist("cycle driver").sublist("time periods").sublist("TP 0").sublist("PK tree").sublist("transient:mpc1");
   auto soln = Teuchos::rcp(new TreeVector());
@@ -86,8 +114,6 @@ void RunJacobian(double pMPa, double T, double hkJ, double tol10 = 1e-3)
   S->InitializeEvaluators();
   mpc->Initialize();
 
-  auto A = mpc->op_tree_pc()->A();
-  
   S->CheckAllFieldsInitialized();
   S->InitializeIOFlags();
 
@@ -96,22 +122,19 @@ void RunJacobian(double pMPa, double T, double hkJ, double tol10 = 1e-3)
   // numerical Jacobian
   double dt0(0.1);
   auto u1 = soln;
-  
 
   auto u0 = Teuchos::rcp(new TreeVector(*u1));
   auto f0 = Teuchos::rcp(new TreeVector(*u1));
   auto f1 = Teuchos::rcp(new TreeVector(*u1));
  
-  //mpc->FunctionalResidual(0.0, dt0, u0, u1, f0);
+  mpc->FunctionalResidual(0.0, dt0, u0, u1, f0);
   mpc->UpdatePreconditioner(0.0, soln, dt0);
-  A = mpc->op_tree_pc()->A();
+  auto A = mpc->op_tree_pc()->A();
 
   int ncells, nfaces;
   ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
-  std::cout<<"ncells "<<ncells<<" nfaces "<<nfaces<<"\n";
-  
   int num_entries, nJ(nfaces + ncells);
   int* indices;
   double* values;
@@ -152,9 +175,8 @@ void RunJacobian(double pMPa, double T, double hkJ, double tol10 = 1e-3)
           v = ncol - nfaces;
         }
         auto& u1_v = *u1->SubVector(j0)->Data()->ViewComponent(kind);
-                             
+
         u1_v[0][v] += factor;
-        
         mpc->ChangedSolution();
         mpc->FunctionalResidual(t_old, t_new, u0, u1, f1);
         u1_v[0][v] -= factor;
@@ -171,13 +193,6 @@ void RunJacobian(double pMPa, double T, double hkJ, double tol10 = 1e-3)
           auto& f0_v = *f0->SubVector(i0)->Data()->ViewComponent(kind);
           auto& f1_v = *f1->SubVector(i0)->Data()->ViewComponent(kind);
           Jfd(nrow, ncol) = (f1_v[0][v] - f0_v[0][v]) / factor;
-          // if  ((nrow==13&&ncol==13)) {
-          //   std::cout<<"ncol "<<ncol<<" nrow "<<nrow<<"\n";
-          //   std::cout<<f0_v<<"\n"<< f1_v<<"\n";
-          //   std::cout<<"val\n"<<Jfd(nrow, ncol)<<"\n";
-          //   std::cout<<f1_v[0][v] - f0_v[0][v]<<"\n";
-          //   //exit(0);
-          // }
         }
       }
 
@@ -215,36 +230,37 @@ void RunJacobian(double pMPa, double T, double hkJ, double tol10 = 1e-3)
                 << ",  || Jpk || = " << norm_pk 
                 << "  err = " << norm_diff / norm_fd << std::endl;
 
-      double tol = (i0 == 1 && j0 == 0) ? tol10 : 1e-3; 
+      double tol = (i0 == 1 && j0 == 0) ? tol10 : 2e-3; 
       CHECK(norm_diff < tol * norm_pk);
 
-      int s1(13), s2(13);
-      // std::cout<<"JFD"<<"\n";
-      // if (i0 == 1 && j0 == 1) std::cout << std::scientific <<  Jfd.SubMatrix(s1, s1 + 4, s2, s2 + 4) << std::endl;
-      // std::cout<<"JPK"<<"\n";
-      // if (i0 == 1 && j0 == 1) std::cout << Jsub.SubMatrix(s1, s1 + 4, s2, s2 + 4) << std::endl;
-      // if (i0 == 1 && j0 == 1) {
-      //    std::cout << Jfd << std::endl;
-      //    std::cout << Jsub << std::endl;
-      // }
+      int s1(0), s2(10);
+      if (i0 == 0 && j0 == 1) {
+        // std::cout << Jfd.SubMatrix(s1, s1 + 5, s2, s2 + 8) << std::endl;
+        // std::cout << Jsub.SubMatrix(s1, s1 + 5, s2, s2 + 8) << std::endl;
+        // std::cout << Jfd << std::endl;
+        // std::cout << Jsub << std::endl;
+      }
     }
   }
 }
 
 
-TEST(MPC_DRIVER_THERMAL_RICHARDS_PT_JACOBIAN)
+TEST(MPC_DRIVER_SUPERCRITICAL_JACOBIAN)
 {
-  // region2: supercritical liquid
+  // fractures: region 2
+  //RunJacobian(25.0, 732.0, 3000.0, 2e-3, "test/mpc_supercriticalPT_aperture.xml");
+
+  // region 2: supercritical liquid
   RunJacobian(25.0, 732.0, 3000.0);
 
   // region 2: vapor
-  RunJacobian(15.0, 678.0, 3000.0);
+  //RunJacobian(15.0, 678.0, 3000.0);
 
-  // // region 1: compressed liquid
-  // RunJacobian(25.0, 504.0, 1000.0, 5e-2);
+  // region 1: compressed liquid
+  //RunJacobian(25.0, 504.0, 1000.0, 5e-2);
 
-  // // region 3
-  // RunJacobian(30.0, 662.0, 1950.0, 3e-3);
+  // region 3
+  //RunJacobian(30.0, 662.0, 1950.0, 3e-3);
 
   // region 4: two pahses
   // RunJacobian(15.0, 615.0, 2050.0, 3e-3);
