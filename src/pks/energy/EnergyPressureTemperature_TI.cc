@@ -52,6 +52,7 @@ EnergyPressureTemperature_PK::FunctionalResidual(double t_old,
 
     auto op_bc_temp = S_->GetPtrW<Operators::BCs>(bcs_temperature_key_, Tags::DEFAULT, "state");
     const auto& bc_model = op_bc_temp->bc_model();
+    
     Operators::CellToBoundaryFaces(bc_model, *upw_conductivity_);
     upwind_->Compute(*flux, bc_model, *upw_conductivity_);
   }
@@ -64,7 +65,7 @@ EnergyPressureTemperature_PK::FunctionalResidual(double t_old,
   // add sources
   CompositeVector& rhs = *op_matrix_->rhs();
   AddSourceTerms(rhs);
-
+  
   op_matrix_->ComputeNegativeResidual(*u_new->Data(), *g->Data());
 
   // add accumulation term
@@ -75,11 +76,17 @@ EnergyPressureTemperature_PK::FunctionalResidual(double t_old,
   const auto& e0 = *S_->Get<CompositeVector>(prev_energy_key_).ViewComponent("cell");
   Epetra_MultiVector& g_c = *g->Data()->ViewComponent("cell");
 
-  for (int c = 0; c < ncells_owned; ++c) {
-    double factor = mesh_->getCellVolume(c) / dt;
-    g_c[0][c] += factor * (e1[0][c] - e0[0][c]);
+  //  std::cout<<"Residual 1\n"<<g_c<<"\n";
+  
+  if (dt > 0) {
+    for (int c = 0; c < ncells_owned; ++c) {
+      double factor = mesh_->getCellVolume(c) / dt;
+      g_c[0][c] += factor * (e1[0][c] - e0[0][c]);
+    }
   }
 
+  //std::cout<<"Residual 2\n"<<g_c<<"\n";
+  
   // advect tmp = molar_density_liquid * enthalpy
   S_->GetEvaluator(enthalpy_key_).Update(*S_, passwd_);
   const auto& enthalpy = S_->Get<CompositeVector>(enthalpy_key_);
@@ -92,8 +99,9 @@ EnergyPressureTemperature_PK::FunctionalResidual(double t_old,
   CompositeVector g_adv(g->Data()->Map());
   op_advection_->ComputeNegativeResidual(enthalpy, g_adv);
   g->Data()->Update(1.0, g_adv, 1.0);
-
-  // implicit source models
+  
+    
+  //implicit source models
   if (heat_src_) {
     S_->GetEvaluator(heat_src_key_).Update(*S_, passwd_);
     const auto& src_c = *S_->Get<CV_t>(heat_src_key_, Tags::DEFAULT).ViewComponent("cell");
@@ -103,7 +111,7 @@ EnergyPressureTemperature_PK::FunctionalResidual(double t_old,
     }
   }
 
-  // add optional stabilization term
+  //add optional stabilization term
   if (L_scheme_) {
     const auto& stability_c = *S_->Get<CV_t>(L_scheme_stab_key_).ViewComponent("cell");
     const auto& u_prev_c = *S_->Get<CV_t>(L_scheme_prev_key_).ViewComponent("cell");
@@ -121,7 +129,7 @@ EnergyPressureTemperature_PK::FunctionalResidual(double t_old,
       g_c[0][c] += stability_c[0][c] * udiff * factor;
 
     }
-
+ 
     // save data
     auto& data = S_->GetW<LSchemeData>(L_scheme_data_key_, "state");
     data[temperature_key_].last_step_increment = delta;
@@ -156,9 +164,16 @@ EnergyPressureTemperature_PK::UpdatePreconditioner(double t,
     auto op_bc_temp = S_->GetPtrW<Operators::BCs>(bcs_temperature_key_, Tags::DEFAULT, "state");
     const auto& bc_model = op_bc_temp->bc_model();
 
+    //const auto& bc_model = op_bc_->bc_model();
+    // std::cout<<"bc_model"<<"\n";
+    // for (auto bc_i : bc_model) std::cout<<bc_i<<"\n";
+
     auto flux = S_->GetPtr<CompositeVector>(mol_flowrate_key_, Tags::DEFAULT);
     Operators::CellToBoundaryFaces(bc_model, *upw_conductivity_);
     upwind_->Compute(*flux, bc_model, *upw_conductivity_);
+    // std::cout<<"upw_conductivity\n";
+    // std::cout<<*upw_conductivity_->ViewComponent("cell")<<"\n";
+    // std::cout<<*upw_conductivity_->ViewComponent("face")<<"\n";
   }
 
   // assemble matrices for diffusion operator
@@ -185,6 +200,7 @@ EnergyPressureTemperature_PK::UpdatePreconditioner(double t,
   const auto& rho_r = *S_->Get<CV_t>(particle_density_key_, Tags::DEFAULT).ViewComponent("cell");
   const auto& phi_c = *S_->Get<CV_t>(porosity_key_, Tags::DEFAULT).ViewComponent("cell");
 
+  
   if (dt > 0.0) {
     op_acc_->AddAccumulationDelta(*up->Data().ptr(), dEdT, dEdT, dt, "cell");
     for (int c = 0; c < ncells_owned; ++c) {

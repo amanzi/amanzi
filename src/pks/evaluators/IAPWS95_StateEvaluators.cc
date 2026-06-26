@@ -47,12 +47,12 @@ namespace Evaluators {
 IAPWS95_StateEvaluator::IAPWS95_StateEvaluator(Teuchos::ParameterList& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
+  domain_name_ = plist.template get<std::string>("domain name", "domain");
   if (my_keys_.size() == 0)
-    my_keys_.push_back(std::make_pair("thermodynamic_state", Tags::DEFAULT));
+    my_keys_.push_back(std::make_pair(Keys::getKey(domain_name_,"thermodynamic_state"), Tags::DEFAULT));
 
-  auto prefix = Keys::getDomainPrefix(my_keys_[0].first);
-  pressure_key_ = prefix + "pressure";
-  temperature_key_ = prefix + "temperature";
+  pressure_key_ = Keys::getKey(domain_name_, "pressure");
+  temperature_key_ = Keys::getKey(domain_name_, "temperature");
 
   dependencies_.insert(std::make_pair(pressure_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(temperature_key_, Tags::DEFAULT));
@@ -162,17 +162,19 @@ IAPWS95_StateEvaluator::EvaluatePartialDerivative_(const State& S,
 IAPWS95_DensityEvaluator::IAPWS95_DensityEvaluator(Teuchos::ParameterList& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
+
+  domain_name_ = plist.template get<std::string>("domain name", "domain");
   if (my_keys_.size() != 2) {
     my_keys_.clear();
-    my_keys_.push_back(std::make_pair("mass_density_liquid", Tags::DEFAULT));
-    my_keys_.push_back(std::make_pair("molar_density_liquid", Tags::DEFAULT));
+    my_keys_.push_back(std::make_pair(Keys::getKey(domain_name_, "mass_density_liquid"), Tags::DEFAULT));
+    my_keys_.push_back(std::make_pair(Keys::getKey(domain_name_,"molar_density_liquid"), Tags::DEFAULT));
   }
 
-  auto prefix = Keys::getDomainPrefix(my_keys_[0].first);
-  pressure_key_ = prefix + "pressure";
-  temperature_key_ = prefix + "temperature";
+  state_key_ = Keys::getKey(domain_name_, "thermodynamic_state");
+  pressure_key_ = Keys::getKey(domain_name_, "pressure");
+  temperature_key_ = Keys::getKey(domain_name_, "temperature");
 
-  dependencies_.insert(std::make_pair("thermodynamic_state", Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(state_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(pressure_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(temperature_key_, Tags::DEFAULT));
 }
@@ -202,7 +204,7 @@ void
 IAPWS95_DensityEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
-    const auto& ts_v = *S.Get<CompositeVector>("thermodynamic_state").ViewComponent(*comp);
+    const auto& ts_v = *S.Get<CompositeVector>(state_key_).ViewComponent(*comp);
     auto& result0_v = *results[0]->ViewComponent(*comp);
     auto& result1_v = *results[1]->ViewComponent(*comp);
     int ncells = results[0]->size(*comp);
@@ -225,7 +227,7 @@ IAPWS95_DensityEvaluator::EvaluatePartialDerivative_(const State& S,
                                                      const std::vector<CompositeVector*>& results)
 {
   for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
-    const auto& ts_v = *S.Get<CompositeVector>("thermodynamic_state").ViewComponent(*comp);
+    const auto& ts_v = *S.Get<CompositeVector>(state_key_).ViewComponent(*comp);
     auto& result0_v = *results[0]->ViewComponent(*comp);
     auto& result1_v = *results[1]->ViewComponent(*comp);
     int ncells = results[0]->size(*comp);
@@ -252,14 +254,15 @@ IAPWS95_DensityEvaluator::EvaluatePartialDerivative_(const State& S,
 IAPWS95_ThermalConductivityEvaluator::IAPWS95_ThermalConductivityEvaluator(Teuchos::ParameterList& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
+  domain_name_ = plist.template get<std::string>("domain name", "domain");
   if (my_keys_.size() == 0)
-    my_keys_.push_back(std::make_pair("thermal_conductivity", Tags::DEFAULT));
+    my_keys_.push_back(std::make_pair(Keys::getKey(domain_name_,"thermal_conductivity"), Tags::DEFAULT));
 
-  auto prefix = Keys::getDomainPrefix(my_keys_[0].first);
-  density_key_ = prefix + "mass_density_liquid";
-  temperature_key_ = prefix + "temperature";
+  state_key_ = Keys::getKey(domain_name_, "thermodynamic_state");
+  density_key_ = Keys::getKey(domain_name_, "mass_density_liquid");
+  temperature_key_ = Keys::getKey(domain_name_, "temperature");
 
-  dependencies_.insert(std::make_pair("thermodynamic_state", Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(state_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(density_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(temperature_key_, Tags::DEFAULT));
 
@@ -292,7 +295,7 @@ void
 IAPWS95_ThermalConductivityEvaluator::Evaluate_(const State& S,
                                         const std::vector<CompositeVector*>& results)
 {
-  const auto& ts_c = *S.Get<CompositeVector>("thermodynamic_state").ViewComponent("cell");
+  const auto& ts_c = *S.Get<CompositeVector>(state_key_).ViewComponent("cell");
 
   auto& result_v = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell");
@@ -313,7 +316,7 @@ IAPWS95_ThermalConductivityEvaluator::EvaluatePartialDerivative_(
     const Tag& wrt_tag,
     const std::vector<CompositeVector*>& results)
 {
-  const auto& ts_c = *S.Get<CompositeVector>("thermodynamic_state").ViewComponent("cell");
+  const auto& ts_c = *S.Get<CompositeVector>(state_key_).ViewComponent("cell");
   const auto& T_c = *S.Get<CompositeVector>(temperature_key_).ViewComponent("cell");
 
   auto& result_v = *results[0]->ViewComponent("cell");
@@ -355,14 +358,16 @@ IAPWS95_ThermalConductivityEvaluator::EvaluatePartialDerivative_(
 IAPWS95_InternalEnergyEvaluator::IAPWS95_InternalEnergyEvaluator(Teuchos::ParameterList& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
+  domain_name_ = plist.template get<std::string>("domain name", "domain");
   if (my_keys_.size() == 0)
-    my_keys_.push_back(std::make_pair("internal_energy", Tags::DEFAULT));
+    my_keys_.push_back(std::make_pair(Keys::getKey(domain_name_,"internal_energy"), Tags::DEFAULT));
 
-  auto prefix = Keys::getDomainPrefix(my_keys_[0].first);
-  pressure_key_ = prefix + "pressure";
-  temperature_key_ = prefix + "temperature";
+  state_key_ = Keys::getKey(domain_name_, "thermodynamic_state");
+  pressure_key_ = Keys::getKey(domain_name_, "pressure");
+  temperature_key_ = Keys::getKey(domain_name_, "temperature");
 
-  dependencies_.insert(std::make_pair("thermodynamic_state", Tags::DEFAULT));
+  
+  dependencies_.insert(std::make_pair(state_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(pressure_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(temperature_key_, Tags::DEFAULT));
 }
@@ -394,7 +399,7 @@ IAPWS95_InternalEnergyEvaluator::Evaluate_(const State& S,
                                            const std::vector<CompositeVector*>& results)
 {
   for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
-    const auto& ts_v = *S.Get<CompositeVector>("thermodynamic_state").ViewComponent(*comp);
+    const auto& ts_v = *S.Get<CompositeVector>(state_key_).ViewComponent(*comp);
     const auto& p_v = *S.Get<CompositeVector>(pressure_key_).ViewComponent(*comp);
     auto& result_v = *results[0]->ViewComponent(*comp);
     int ndata = results[0]->size(*comp);
@@ -417,7 +422,7 @@ IAPWS95_InternalEnergyEvaluator::EvaluatePartialDerivative_(
     const std::vector<CompositeVector*>& results)
 {
   for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
-    const auto& ts_v = *S.Get<CompositeVector>("thermodynamic_state").ViewComponent(*comp);
+    const auto& ts_v = *S.Get<CompositeVector>(state_key_).ViewComponent(*comp);
     auto& result_v = *results[0]->ViewComponent(*comp);
     int ndata = results[0]->size(*comp);
 
@@ -440,14 +445,17 @@ IAPWS95_InternalEnergyEvaluator::EvaluatePartialDerivative_(
 IAPWS95_ViscosityEvaluator::IAPWS95_ViscosityEvaluator(Teuchos::ParameterList& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
+  domain_name_ = plist.template get<std::string>("domain name", "domain");
   if (my_keys_.size() == 0)
-    my_keys_.push_back(std::make_pair("viscosity_liquid", Tags::DEFAULT));
+    my_keys_.push_back(std::make_pair(Keys::getKey(domain_name_,"viscosity_liquid"), Tags::DEFAULT));
 
-  auto prefix = Keys::getDomainPrefix(my_keys_[0].first);
-  density_key_ = prefix + "mass_density_liquid";
-  temperature_key_ = prefix + "temperature";
+  state_key_ = Keys::getKey(domain_name_, "thermodynamic_state");
+  density_key_ = Keys::getKey(domain_name_, "mass_density_liquid");
+  temperature_key_ = Keys::getKey(domain_name_, "temperature");
 
-  dependencies_.insert(std::make_pair("thermodynamic_state", Tags::DEFAULT));
+
+  
+  dependencies_.insert(std::make_pair(state_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(density_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(temperature_key_, Tags::DEFAULT));
 
@@ -479,7 +487,7 @@ void
 IAPWS95_ViscosityEvaluator::Evaluate_(const State& S,
                                       const std::vector<CompositeVector*>& results)
 {
-  const auto& ts_c = *S.Get<CompositeVector>("thermodynamic_state").ViewComponent("cell");
+  const auto& ts_c = *S.Get<CompositeVector>(state_key_).ViewComponent("cell");
 
   auto& result_v = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell");
@@ -499,7 +507,7 @@ IAPWS95_ViscosityEvaluator::EvaluatePartialDerivative_(const State& S,
                                                        const Tag& wrt_tag,
                                                        const std::vector<CompositeVector*>& results)
 {
-  const auto& ts_c = *S.Get<CompositeVector>("thermodynamic_state").ViewComponent("cell");
+  const auto& ts_c = *S.Get<CompositeVector>(state_key_).ViewComponent("cell");
   const auto& T_c = *S.Get<CompositeVector>(temperature_key_).ViewComponent("cell");
 
   auto& result_v = *results[0]->ViewComponent("cell");
