@@ -76,8 +76,6 @@ EnergyPressureTemperature_PK::FunctionalResidual(double t_old,
   const auto& e0 = *S_->Get<CompositeVector>(prev_energy_key_).ViewComponent("cell");
   Epetra_MultiVector& g_c = *g->Data()->ViewComponent("cell");
 
-  //  std::cout<<"Residual 1\n"<<g_c<<"\n";
-  
   if (dt > 0) {
     for (int c = 0; c < ncells_owned; ++c) {
       double factor = mesh_->getCellVolume(c) / dt;
@@ -85,8 +83,6 @@ EnergyPressureTemperature_PK::FunctionalResidual(double t_old,
     }
   }
 
-  //std::cout<<"Residual 2\n"<<g_c<<"\n";
-  
   // advect tmp = molar_density_liquid * enthalpy
   S_->GetEvaluator(enthalpy_key_).Update(*S_, passwd_);
   const auto& enthalpy = S_->Get<CompositeVector>(enthalpy_key_);
@@ -164,16 +160,9 @@ EnergyPressureTemperature_PK::UpdatePreconditioner(double t,
     auto op_bc_temp = S_->GetPtrW<Operators::BCs>(bcs_temperature_key_, Tags::DEFAULT, "state");
     const auto& bc_model = op_bc_temp->bc_model();
 
-    //const auto& bc_model = op_bc_->bc_model();
-    // std::cout<<"bc_model"<<"\n";
-    // for (auto bc_i : bc_model) std::cout<<bc_i<<"\n";
-
     auto flux = S_->GetPtr<CompositeVector>(mol_flowrate_key_, Tags::DEFAULT);
     Operators::CellToBoundaryFaces(bc_model, *upw_conductivity_);
     upwind_->Compute(*flux, bc_model, *upw_conductivity_);
-    // std::cout<<"upw_conductivity\n";
-    // std::cout<<*upw_conductivity_->ViewComponent("cell")<<"\n";
-    // std::cout<<*upw_conductivity_->ViewComponent("face")<<"\n";
   }
 
   // assemble matrices for diffusion operator
