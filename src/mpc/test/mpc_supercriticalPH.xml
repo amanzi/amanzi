@@ -152,7 +152,7 @@
               <ParameterList name="function-linear">
                 <Parameter name="y0" type="double" value="25.00e+06"/>
                 <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
-                <Parameter name="gradient" type="Array(double)" value="{0.0, -0.0e+3, 0.0}"/>
+                <Parameter name="gradient" type="Array(double)" value="{0.0, -1.0e+3, 0.0}"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

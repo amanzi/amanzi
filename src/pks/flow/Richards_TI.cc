@@ -62,24 +62,25 @@ Richards_PK::FunctionalResidual(double t_old,
   S_->GetEvaluator(alpha_key_).Update(*S_, "flow");
   auto& alpha = S_->GetW<CV_t>(alpha_key_, Tags::DEFAULT, alpha_key_);
 
-  if (!assumptions_.flow_on_manifold) {
-    auto op_bc = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state");
-    std::vector<int>& bc_model = op_bc->bc_model();
+  auto op_bc = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state");
+  std::vector<int>& bc_model = op_bc->bc_model();
 
-    *alpha_upwind_->ViewComponent("cell") = *alpha.ViewComponent("cell");
-    Operators::BoundaryFacesToFaces(bc_model, alpha, *alpha_upwind_);
-    upwind_->Compute(*mol_flowrate_copy, bc_model, *alpha_upwind_);
+  *alpha_upwind_->ViewComponent("cell") = *alpha.ViewComponent("cell");
+  Operators::BoundaryFacesToFaces(bc_model, alpha, *alpha_upwind_);
+  upwind_->Compute(*mol_flowrate_copy, bc_model, *alpha_upwind_);
 
-    // modify relative permeability coefficient for influx faces
-    // UpwindInflowBoundary_New(u_new->Data());
+  // modify relative permeability coefficient for influx faces
+  // UpwindInflowBoundary_New(u_new->Data());
 
+  if (S_->GetEvaluator(alpha_key_).IsDifferentiableWRT(*S_, pressure_key_, Tags::DEFAULT)) { 
     S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
-    auto& alpha_dP =
-      S_->GetDerivativeW<CV_t>(alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_);
+    auto& alpha_dP = S_->GetDerivativeW<CV_t>(alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_);
 
     *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP.ViewComponent("cell");
     Operators::BoundaryFacesToFaces(bc_model, alpha_dP, *alpha_upwind_dP_);
     upwind_->Compute(*mol_flowrate_copy, bc_model, *alpha_upwind_dP_);
+  } else {
+    alpha_upwind_dP_->PutScalar(0.0);
   }
 
   // assemble residual for diffusion operator
@@ -391,21 +392,22 @@ Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, d
   auto& alpha = S_->GetW<CompositeVector>(alpha_key_, alpha_key_);
   S_->GetEvaluator(alpha_key_).Update(*S_, "flow");
 
-  if (!assumptions_.flow_on_manifold) {
-    *alpha_upwind_->ViewComponent("cell") = *alpha.ViewComponent("cell");
-    Operators::BoundaryFacesToFaces(bc_model, alpha, *alpha_upwind_);
-    upwind_->Compute(*mol_flowrate_copy, bc_model, *alpha_upwind_);
+  *alpha_upwind_->ViewComponent("cell") = *alpha.ViewComponent("cell");
+  Operators::BoundaryFacesToFaces(bc_model, alpha, *alpha_upwind_);
+  upwind_->Compute(*mol_flowrate_copy, bc_model, *alpha_upwind_);
 
-    // modify relative permeability coefficient for influx faces
-    // UpwindInflowBoundary_New(u->Data());
+  // modify relative permeability coefficient for influx faces
+  // UpwindInflowBoundary_New(u->Data());
 
+  if (S_->GetEvaluator(alpha_key_).IsDifferentiableWRT(*S_, pressure_key_, Tags::DEFAULT)) { 
     S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
-    auto& alpha_dP = S_->GetDerivativeW<CompositeVector>(
-      alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_);
+    auto& alpha_dP = S_->GetDerivativeW<CV_t>(alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_);
 
     *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP.ViewComponent("cell");
     Operators::BoundaryFacesToFaces(bc_model, alpha_dP, *alpha_upwind_dP_);
     upwind_->Compute(*mol_flowrate_copy, bc_model, *alpha_upwind_dP_);
+  } else {
+    alpha_upwind_dP_->PutScalar(0.0);
   }
 
   // create diffusion operators

@@ -171,7 +171,7 @@
               <ParameterList name="function-linear">
                 <Parameter name="y0" type="double" value="25.00e+06"/>
                 <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0, 0.0}"/>
-                <Parameter name="gradient" type="Array(double)" value="{0.0, 1.0e+5, 0.0, 1.0e+4}"/>
+                <Parameter name="gradient" type="Array(double)" value="{0.0, 1.0e+3, 0.0, 1.0e+3}"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -270,7 +270,7 @@
         <ParameterList name="FAM 0">
           <Parameter name="regions" type="Array(string)" value="{fracture}"/>
           <Parameter name="fracture aperture model" type="string" value="constant"/>
-          <Parameter name="value" type="double" value="1e-2"/>
+          <Parameter name="value" type="double" value="1e-5"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="relative permeability">

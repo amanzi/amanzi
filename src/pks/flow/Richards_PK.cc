@@ -465,7 +465,6 @@ Richards_PK::Setup()
       ->AddComponent("dpre", AmanziMesh::Entity_kind::CELL, 1);
     cnls_limiter_ = Teuchos::rcp(new CompositeVector(cvs1));
   }
-  
 }
 
 
@@ -573,14 +572,11 @@ Richards_PK::Initialize()
 
   auto rho_cv = S_->GetPtr<CV_t>(mass_density_liquid_key_, Tags::DEFAULT);
   opfactory.SetVariableGravitationalTerm(gravity_, rho_cv);
+  opfactory.SetVariableScalarCoefficient(alpha_upwind_, alpha_upwind_dP_);
 
   if (!assumptions_.flow_on_manifold) {
     SetAbsolutePermeabilityTensor();
     opfactory.SetVariableTensorCoefficient(K_);
-    opfactory.SetVariableScalarCoefficient(alpha_upwind_, alpha_upwind_dP_);
-  } else {
-    auto kptr = S_->GetPtrW<CV_t>(alpha_key_, Tags::DEFAULT, alpha_key_);
-    opfactory.SetVariableScalarCoefficient(kptr);
   }
 
   op_matrix_diff_ = opfactory.Create();

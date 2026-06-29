@@ -221,6 +221,10 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
                                 const Teuchos::Ptr<const CompositeVector>& u,
                                 const Teuchos::Ptr<const CompositeVector>& factor);
 
+  void AddNewtonCorrectionDFN_(const Teuchos::Ptr<const CompositeVector>& flux,
+                               const Teuchos::Ptr<const CompositeVector>& u,
+                               double scalar_factor);
+
   void ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_trial,
                        const Teuchos::Ptr<const BCs>& bc_test,
                        bool primary,
