@@ -90,7 +90,7 @@ TEST(RICHARDS_TWO_FRACTURES)
   S->CheckAllFieldsInitialized();
 
   // transient solution
-  double t_old(0.0), t_new, dt(0.5);
+  double t_old(0.0), t_new, dt(0.05);
   for (int n = 0; n < 2; n++) {
     t_new = t_old + dt;
 
@@ -103,6 +103,6 @@ TEST(RICHARDS_TWO_FRACTURES)
 
   const auto& p = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
   for (int c = 0; c < p.MyLength(); c++) {
-    CHECK(p[0][c] > -1.0 && p[0][c] < 2.0);
+    CHECK(p[0][c] > 85000.0);
   }
 }

@@ -42,6 +42,7 @@
 #include "UniqueLocalIndex.hh"
 
 #include "PDE_DiffusionMFD.hh"
+#include "PDE_AdvectionUpwindDFN.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -136,8 +137,25 @@ PDE_DiffusionMFD::UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const Compos
   // add Newton-type corrections
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
     if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
-      if (dkdp_ != Teuchos::null) dkdp_->ScatterMasterToGhosted();
-      AddNewtonCorrectionCell_(flux, u, scalar_factor);
+      if (flux == Teuchos::null || k_ == Teuchos::null || dkdp_ == Teuchos::null) {
+        Errors::Message msg("PDE_DiffusionMFD: Flux, nonlinear coefficient, and its "
+                            "derivative should be provided for Newton correction");
+        Exceptions::amanzi_throw(msg);
+      }
+
+      if (little_k_ == OPERATOR_UPWIND_NONE) {
+        Errors::Message msg("PDE_DiffusionMFD: Newton correction works for upwind methods only");
+        Exceptions::amanzi_throw(msg);
+      }
+
+      const auto& map = *flux->ComponentMap("face");
+
+      dkdp_->ScatterMasterToGhosted();
+      if (map.NumGlobalElements() < map.NumGlobalPoints()) {
+        AddNewtonCorrectionDFN_(flux, u, scalar_factor);
+      } else {
+        AddNewtonCorrectionCell_(flux, u, scalar_factor);
+      }
 
     } else {
       Errors::Message msg("PDE_DiffusionMFD: Newton correction may only be applied to schemas that "
@@ -156,7 +174,18 @@ PDE_DiffusionMFD::UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const Compos
   // add Newton-type corrections
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
     if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
-      if (dkdp_ != Teuchos::null) dkdp_->ScatterMasterToGhosted();
+      if (flux == Teuchos::null || k_ == Teuchos::null || dkdp_ == Teuchos::null) {
+        Errors::Message msg("PDE_DiffusionMFD: Flux, nonlinear coefficient, and its "
+                            "derivative should be provided for Newton correction");
+        Exceptions::amanzi_throw(msg);
+      }
+
+      if (little_k_ == OPERATOR_UPWIND_NONE) {
+        Errors::Message msg("PDE_DiffusionMFD: Newton correction works for upwind methods only");
+        Exceptions::amanzi_throw(msg);
+      }
+
+      dkdp_->ScatterMasterToGhosted();
       AddNewtonCorrectionCell_(flux, u, factor);
 
     } else {
@@ -820,15 +849,6 @@ PDE_DiffusionMFD::AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVec
                                            const Teuchos::Ptr<const CompositeVector>& u,
                                            double scalar_factor)
 {
-  // hack: ignore correction if no flux provided.
-  if (flux == Teuchos::null) return;
-
-  // Correction is zero for linear problems
-  if (k_ == Teuchos::null || dkdp_ == Teuchos::null) return;
-
-  // only works on upwinded methods
-  if (little_k_ == OPERATOR_UPWIND_NONE) return;
-
   const Epetra_MultiVector& kf = *k_->ViewComponent("face");
   const Epetra_MultiVector& dkdp_f = *dkdp_->ViewComponent("face");
   const Epetra_MultiVector& flux_f = *flux->ViewComponent("face");
@@ -871,18 +891,9 @@ PDE_DiffusionMFD::AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVec
                                            const Teuchos::Ptr<const CompositeVector>& u,
                                            const Teuchos::Ptr<const CompositeVector>& factor)
 {
-  // hack: ignore correction if no flux provided.
-  if (flux == Teuchos::null) return;
-
-  // Correction is zero for linear problems
-  if (k_ == Teuchos::null || dkdp_ == Teuchos::null) return;
-
-  // only works on upwinded methods
-  if (little_k_ == OPERATOR_UPWIND_NONE) return;
-
+  const Epetra_MultiVector& flux_f = *flux->ViewComponent("face");
   const Epetra_MultiVector& kf = *k_->ViewComponent("face");
   const Epetra_MultiVector& dkdp_f = *dkdp_->ViewComponent("face");
-  const Epetra_MultiVector& flux_f = *flux->ViewComponent("face");
   const Epetra_MultiVector& factor_cell = *factor->ViewComponent("cell");
 
   // populate the local matrices
@@ -897,9 +908,9 @@ PDE_DiffusionMFD::AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVec
     v = std::abs(kf[0][f]) > 0.0 ? flux_f[0][f] * dkdp_f[0][f] / kf[0][f] : 0.0;
     vmod = std::abs(v);
 
-    double scalar_factor = 0.;
+    double scalar_factor = 0.0;
     for (int j = 0; j < ncells; j++) scalar_factor += factor_cell[0][cells[j]];
-    scalar_factor *= 1. / ncells;
+    scalar_factor *= 1.0 / ncells;
 
     // prototype for future limiters (external or internal ?)
     vmod *= scalar_factor;
@@ -919,6 +930,43 @@ PDE_DiffusionMFD::AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVec
 
     jac_op_->matrices[f] = Aface;
   }
+}
+
+
+/* ******************************************************************
+* Add Newton crrection for a DFN
+****************************************************************** */
+void
+PDE_DiffusionMFD::AddNewtonCorrectionDFN_(const Teuchos::Ptr<const CompositeVector>& flux,
+                                          const Teuchos::Ptr<const CompositeVector>& u,
+                                          double scalar_factor)
+{
+  AMANZI_ASSERT(scalar_factor >= 0.0);
+
+  const auto& kf = *k_->ViewComponent("cell");
+  const auto& dkdp_c = *dkdp_->ViewComponent("cell");
+  
+  // create cell-centered coefficient 
+  auto cvs = Teuchos::rcp(new CompositeVectorSpace());
+  cvs->SetMesh(mesh_)->SetGhosted()->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+
+  auto coef = Teuchos::rcp(new CompositeVector(*cvs));
+  auto& coef_c = *coef->ViewComponent("cell");
+  for (int c = 0; c < ncells_owned; ++c) {
+    coef_c[0][c] *= scalar_factor * dkdp_c[0][c] / (kf[0][c] + 1.0e-14);
+  }
+
+  // create advection operator
+  Teuchos::ParameterList plist;
+  PDE_AdvectionUpwindDFN pde(plist, mesh_);
+
+  pde.Setup(*flux);
+  pde.UpdateMatrices(flux.ptr(), coef.ptr());
+  pde.SetBCs(bcs_trial_[0], bcs_test_[0]);
+  pde.ApplyBCs(true, false, false);
+
+  // copy local matrices
+  jac_op_->matrices = pde.local_op()->matrices;
 }
 
 

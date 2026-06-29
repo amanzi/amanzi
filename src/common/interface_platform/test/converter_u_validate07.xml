@@ -969,6 +969,7 @@
           <Parameter name="method" type="string" value="cell-based"/>
           <Parameter name="polynomial order" type="int" value="1"/>
           <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
+          <Parameter name="manifolds" type="bool" value="false"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="water retention models">
@@ -1119,6 +1120,7 @@
           <Parameter name="method" type="string" value="cell-based"/>
           <Parameter name="polynomial order" type="int" value="1"/>
           <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
+          <Parameter name="manifolds" type="bool" value="true"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="water retention models">

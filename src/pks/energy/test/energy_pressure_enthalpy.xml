@@ -57,13 +57,10 @@
           <ParameterList name="solid phase">
             <Parameter name="eos type" type="string" value="constant"/>
             <Parameter name="reference conductivity" type="double" value="0.2"/>
-            <Parameter name="reference temperature" type="double" value="1.0"/>
+            <Parameter name="reference temperature" type="double" value="273.15"/>
           </ParameterList>
           <ParameterList name="liquid phase">
-            <Parameter name="eos type" type="string" value="liquid water"/>
-            <Parameter name="reference conductivity" type="double" value="2.0"/>
-            <Parameter name="reference temperature" type="double" value="1.0"/>
-            <Parameter name="polynomial expansion" type="Array(double)" value="{0.0, 1.0, 0.0}"/>
+            <Parameter name="eos type" type="string" value="iapws97"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
