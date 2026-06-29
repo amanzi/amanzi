@@ -587,8 +587,6 @@ Richards_PK::ModifyCorrection(double dt,
     double du_pert_max = fabs(uc[0][c] - press_pert);
 
     if ((fabs(duc[0][c]) > du_pert_max) && (1 - sat > 1e-5)) {
-      // std::cout << "clip saturation: c=" << c << " p=" << uc[0][c]
-      //           << " dp: " << duc[0][c] << " -> " << du_pert_max << std::endl;
 
       if (duc[0][c] >= 0.0) duc[0][c] = du_pert_max;
       else duc[0][c] = -du_pert_max;
@@ -602,7 +600,6 @@ Richards_PK::ModifyCorrection(double dt,
     double tmp = duc[0][c];
 
     if ((unew > atm_pressure_) && (uc[0][c] < atm_pressure_)) {
-      // std::cout << "pressure change: " << uc[0][c] << " -> " << unew << std::endl;
       duc[0][c] = tmp * damping_factor;
       npre_clipped++;
     }

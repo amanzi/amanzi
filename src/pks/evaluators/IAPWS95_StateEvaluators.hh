@@ -86,6 +86,7 @@ class IAPWS95_StateEvaluator
   virtual void EnsureCompatibility_ToDeps_(State& S) final {};
 
  private:
+  Key domain_name_;
   Key pressure_key_, temperature_key_;
   Teuchos::RCP<AmanziEOS::IAPWS95> eos_;
   static Utils::RegisteredFactory<Evaluator, IAPWS95_StateEvaluator> reg_;
@@ -111,7 +112,8 @@ class IAPWS95_DensityEvaluator
   virtual void EnsureCompatibility_ToDeps_(State& S) final {};
 
  private:
-  Key pressure_key_, temperature_key_;
+  Key domain_name_;
+  Key pressure_key_, temperature_key_, state_key_;
   static Utils::RegisteredFactory<Evaluator, IAPWS95_DensityEvaluator> reg_;
 };
 
@@ -135,7 +137,8 @@ class IAPWS95_ThermalConductivityEvaluator
   virtual void EnsureCompatibility_ToDeps_(State& S) final {};
 
  private:
-  Key density_key_, temperature_key_;
+  Key domain_name_;
+  Key density_key_, temperature_key_, state_key_;
   Teuchos::RCP<AmanziEOS::IAPWS95> eos_;
 };
 
@@ -159,7 +162,8 @@ class IAPWS95_InternalEnergyEvaluator
   virtual void EnsureCompatibility_ToDeps_(State& S) final {};
 
  private:
-  Key pressure_key_, temperature_key_;
+  Key domain_name_;
+  Key pressure_key_, temperature_key_, state_key_;
   static Utils::RegisteredFactory<Evaluator, IAPWS95_InternalEnergyEvaluator> reg_;
 };
 
@@ -183,7 +187,8 @@ class IAPWS95_ViscosityEvaluator
   virtual void EnsureCompatibility_ToDeps_(State& S) final {};
 
  private:
-  Key density_key_, temperature_key_;
+  Key domain_name_;
+  Key density_key_, temperature_key_, state_key_;
   Teuchos::RCP<AmanziEOS::IAPWS95> eos_;
   static Utils::RegisteredFactory<Evaluator, IAPWS95_ViscosityEvaluator> reg_;
 };
