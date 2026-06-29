@@ -396,7 +396,7 @@ FlowEnergyPT_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   op_tree_pc_->AssembleMatrix();
   op_tree_pc_->InitializeInverse();
   op_tree_pc_->ComputeInverse();
-    //}
+  
 }
 
 
@@ -406,12 +406,12 @@ FlowEnergyPT_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
 int
 FlowEnergyPT_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, Teuchos::RCP<TreeVector> Y)
 {
-  //  if (include_pt_coupling_) {
+  if (include_pt_coupling_) {
     Y->PutScalar(0.0);
     return op_tree_pc_->ApplyInverse(*X, *Y);
-  // } else {
-  //   return PK_MPCStrong<PK_BDF>::ApplyPreconditioner(X, Y);
-  // }
+  } else {
+    return PK_MPCStrong<PK_BDF>::ApplyPreconditioner(X, Y);
+  }
 }
 
 // -----------------------------------------------------------------------------
