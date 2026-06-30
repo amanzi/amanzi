@@ -21,6 +21,7 @@
 // Amanzi::WhetStone
 #include "SplineCubicNotAKnot1D.hh"
 #include "SplineCubicNotAKnot2D.hh"
+#include "TensorCubicBSpline2D.hh"
 
 double f_exact(double x) {
   return 1.0 - 2.0 * x + 0.5 * x * x + 3.0 * x * x * x;
@@ -137,6 +138,53 @@ TEST(CUBIC_EXACTNESS_2D)
       for (int k = 0; k < 6; ++k) {
         double err = std::fabs(out[k] - exact[k]);
         CHECK_CLOSE(err, 0.0, tol);
+      }
+    }
+  }
+}
+
+
+TEST(CUBIC_BSPLINE_2D)
+{
+  using namespace Amanzi;
+  using namespace Amanzi::WhetStone;
+
+  std::vector<double> x = { -1.0, -0.4, 0.2, 0.9, 1.7, 2.5 };
+  std::vector<double> y = { -0.8, -0.2, 0.4, 1.1, 1.9 };
+
+  int nx = x.size();
+  int ny = y.size();
+
+  std::vector<std::vector<double>> values(ny, std::vector<double>(nx));
+
+  for (int j = 0; j < ny; ++j) {
+    for (int i = 0; i < nx; ++i) {
+       // values[j][i] = std::sin(x[i]) * std::cos(y[j]);
+       values[j][i] = g_exact(x[i], y[j]);
+    }
+  }
+
+  TensorCubicBSpline2D spline(x, y);
+  spline.build(values);
+
+  std::vector<double> test_xp = { -1.0, -0.75, -0.4, -0.1, 0.2, 0.55, 0.9, 1.3, 1.7, 2.1, 2.5 };
+  std::vector<double> test_yp = { -0.8, -0.5, -0.2, 0.1, 0.4, 0.75, 1.1, 1.5, 1.9 };
+
+  double tol = 1.0e-10;
+  for (double xp : test_xp) {
+    for (double yp : test_yp) {
+      auto out = spline.evaluate(xp, yp);
+
+      double exact[6] = { g_exact(xp, yp),
+                          gd_exact(xp, yp),
+                          gt_exact(xp, yp),
+                          gdd_exact(xp, yp),
+                          gdt_exact(xp, yp),
+                          gtt_exact(xp, yp) };
+
+      for (int k = 0; k < 6; ++k) {
+        double err = std::fabs(out[k] - exact[k]);
+        CHECK_CLOSE(0.0, err, tol);
       }
     }
   }

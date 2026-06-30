@@ -62,6 +62,7 @@ add_amanzi_library(whetstone
                           MeshMaps_FEM.cc MeshMaps_VEM.cc
                           SplinePolynomial.cc
                           SplineCubicNotAKnot1D.cc SplineCubicNotAKnot2D.cc
+                          TensorCubicBSpline2D.cc
                    HEADERS DenseMatrix.hh DenseVector.hh
                            DG_Modal.hh
                            Basis.hh BasisFactory.hh
@@ -95,6 +96,7 @@ add_amanzi_library(whetstone
                            SpaceTimePolynomial.hh
                            SplinePolynomial.hh
                            SplineCubicNotAKnot1D.hh SplineCubicNotAKnot2D.hh
+                           TensorCubicBSpline2D.hh
                            VectorObjects.hh MatrixObjects.hh PolynomialOnMesh.hh
                            Tensor.hh
                            WhetStoneDefs.hh
