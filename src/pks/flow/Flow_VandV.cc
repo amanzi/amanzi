@@ -14,6 +14,7 @@
 
 #include <set>
 
+#include "CommonDefs.hh"
 #include "errors.hh"
 #include "MeshAlgorithms.hh"
 #include "OperatorDefs.hh"
@@ -193,17 +194,23 @@ Flow_PK::VV_ValidateBCs() const
 void
 Flow_PK::VV_ReportWaterBalance(const Teuchos::Ptr<State>& S, double dt) const
 {
+  const auto& rho = *S->Get<CompositeVector>(mass_density_liquid_key_).ViewComponent("cell");
   const auto& phi = *S->Get<CompositeVector>(porosity_key_).ViewComponent("cell");
-  const auto& flowrate = *S->Get<CompositeVector>(vol_flowrate_key_).ViewComponent("face", true);
+  const auto& flowrate = *S->Get<CompositeVector>(mol_flowrate_key_).ViewComponent("face", true);
   const auto& ws = *S->Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
 
   auto op_bc = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state");
   std::vector<int>& bc_model = op_bc->bc_model();
-  double mass_bc_dT = WaterVolumeChangePerSecond(bc_model, flowrate) * rho_ * dt;
+  double mass_bc_dT = WaterVolumeChangePerSecond(bc_model, flowrate) * dt * CommonDefs::MOLAR_MASS_H2O;
+
+  Teuchos::RCP<const Epetra_MultiVector> aperture;
+  if (S->HasRecordSet(aperture_key_)) aperture = S->Get<CompositeVector>(aperture_key_).ViewComponent("cell");
 
   double mass_amanzi = 0.0;
   for (int c = 0; c < ncells_owned; c++) {
-    mass_amanzi += ws[0][c] * rho_ * phi[0][c] * mesh_->getCellVolume(c);
+    double add = ws[0][c] * rho[0][c] * phi[0][c] * mesh_->getCellVolume(c);
+    if (aperture.get()) add *= (*aperture)[0][c];
+    mass_amanzi += add;
   }
 
   double mass_amanzi_tmp = mass_amanzi, mass_bc_tmp = mass_bc_dT;
