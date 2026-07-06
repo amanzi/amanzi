@@ -88,7 +88,7 @@ class EnergyPressureEnthalpy_PK : public Energy_PK {
   const Teuchos::RCP<TreeVector> soln_;
   Teuchos::RCP<CompositeVector> solution;
 
-  // operators and solvers
+  // operators
   Teuchos::RCP<Operators::PDE_Diffusion> op_matrix_diff_pres_;
   Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_preconditioner_adv_enth_;
 

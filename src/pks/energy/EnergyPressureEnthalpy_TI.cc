@@ -124,7 +124,6 @@ EnergyPressureEnthalpy_PK::FunctionalResidual(double t_old,
       residual_max_norm_ = std::max(residual_max_norm_, fabs(g_c[0][c] / (factor * e0[0][c])));
     }
   }
-  
 }
 
 

@@ -424,9 +424,18 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   const auto& dTdp = S_->GetDerivative<CV_t>(temperature_key_, tag, pressure_key_, tag);
   coef->Multiply(1.0, *coef, dTdp, 0.0);
 
+  // We split heat conduction into two diffusion operators for enthalpy and pressure. 
+  // For Dirichlet BC for temperature, the trial test function will elliminate
+  // corresponding matrix equation. The heat flux BC does not change both operators.
+  // This implies no flux BC for the pressure operator.
+
+  auto bc_trial_pres = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
+  bc_trial_pres->bc_model();  // allocate memory
+  bc_trial_pres->bc_value();
+
   pde10_diff_cond_->SetScalarCoefficient(coef, Teuchos::null);
   pde10_diff_cond_->UpdateMatrices(Teuchos::null, up->Data().ptr());
-  pde10_diff_cond_->SetBCs(bc_pres, bc_enth);
+  pde10_diff_cond_->SetBCs(bc_trial_pres, bc_enth);
   pde10_diff_cond_->ApplyBCs(true, true, false);
 
   // -- diffusion due to heat transport div(K beta grad dp)
