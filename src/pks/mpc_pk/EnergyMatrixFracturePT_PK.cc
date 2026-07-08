@@ -22,7 +22,7 @@
 #include "StateArchive.hh"
 #include "TreeOperator.hh"
 
-#include "EnergyMatrixFracture_PK.hh"
+#include "EnergyMatrixFracturePT_PK.hh"
 #include "FractureInsertion.hh"
 #include "FractureInsertion_Helper.hh"
 #include "HeatDiffusionMatrixFracture.hh"
@@ -36,7 +36,7 @@ using CVS_t = CompositeVectorSpace;
 /* *******************************************************************
 * Constructor
 ******************************************************************* */
-EnergyMatrixFracture_PK::EnergyMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
+EnergyMatrixFracturePT_PK::EnergyMatrixFracturePT_PK(Teuchos::ParameterList& pk_tree,
                                                  const Teuchos::RCP<Teuchos::ParameterList>& glist,
                                                  const Teuchos::RCP<State>& S,
                                                  const Teuchos::RCP<TreeVector>& soln)
@@ -68,7 +68,7 @@ EnergyMatrixFracture_PK::EnergyMatrixFracture_PK(Teuchos::ParameterList& pk_tree
 * Physics-based setup of PK.
 ******************************************************************* */
 void
-EnergyMatrixFracture_PK::Setup()
+EnergyMatrixFracturePT_PK::Setup()
 {
   mesh_matrix_ = S_->GetMesh();
   mesh_fracture_ = S_->GetMesh("fracture");
@@ -137,7 +137,7 @@ EnergyMatrixFracture_PK::Setup()
 * Initialization create a tree operator to assemble global matrix
 ******************************************************************* */
 void
-EnergyMatrixFracture_PK::Initialize()
+EnergyMatrixFracturePT_PK::Initialize()
 {
   PK_MPCStrong<PK_BDF>::Initialize();
 
@@ -314,7 +314,7 @@ EnergyMatrixFracture_PK::Initialize()
 * Performs one timestep.
 ******************************************************************* */
 bool
-EnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
+EnergyMatrixFracturePT_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   // create copies of conservative fields
   std::vector<std::string> fields = { "energy", "fracture-energy" };
@@ -338,7 +338,7 @@ EnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 * Residual evaluation
 ******************************************************************* */
 void
-EnergyMatrixFracture_PK::FunctionalResidual(double t_old,
+EnergyMatrixFracturePT_PK::FunctionalResidual(double t_old,
                                             double t_new,
                                             Teuchos::RCP<const TreeVector> u_old,
                                             Teuchos::RCP<TreeVector> u_new,
@@ -346,7 +346,7 @@ EnergyMatrixFracture_PK::FunctionalResidual(double t_old,
 {
   PK_MPCStrong<PK_BDF>::FunctionalResidual(t_old, t_new, u_old, u_new, f);
 
-  UpdateEnthalpyCouplingFluxes(S_, mesh_matrix_, mesh_fracture_, adv_coupling_ops_, true);
+  UpdateEnthalpyCouplingFluxes_T(S_, mesh_matrix_, mesh_fracture_, adv_coupling_ops_, true);
 
   int ierr = op_matrix_->Apply(*u_new, *f, 1.0);
   AMANZI_ASSERT(!ierr);
@@ -357,7 +357,7 @@ EnergyMatrixFracture_PK::FunctionalResidual(double t_old,
 * Preconditioner update
 ******************************************************************* */
 void
-EnergyMatrixFracture_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u, double dt)
+EnergyMatrixFracturePT_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u, double dt)
 {
   PK_MPCStrong<PK_BDF>::UpdatePreconditioner(t, u, dt);
   op_tree_pc_->ComputeInverse();
@@ -368,7 +368,7 @@ EnergyMatrixFracture_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeV
 * Application of preconditioner
 ******************************************************************* */
 int
-EnergyMatrixFracture_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
+EnergyMatrixFracturePT_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
                                              Teuchos::RCP<TreeVector> Y)
 {
   Y->PutScalar(0.0);

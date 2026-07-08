@@ -17,10 +17,11 @@
 #include "PK_MPCSubcycled.hh"
 #include "PK_MPCSequential.hh"
 
-#include "EnergyMatrixFracture_PK.hh"
+#include "EnergyMatrixFracturePT_PK.hh"
+#include "EnergyMatrixFracturePH_PK.hh"
 #include "FlowEnergyPT_PK.hh"
 #include "FlowEnergyPH_PK.hh"
-#include "FlowEnergyMatrixFracture_PK.hh"
+#include "FlowEnergyPHMatrixFracture_PK.hh"
 #include "FlowMatrixFracture_PK.hh"
 #include "FlowMechanics_PK.hh"
 #include "FlowReactiveTransport_PK.hh"
@@ -46,8 +47,10 @@ RegisteredPKFactory<PK_MPCSequential> PK_MPCSequential::reg_("mpc sequential");
 
 RegisteredPKFactory<FlowEnergyPT_PK> FlowEnergyPT_PK::reg_("flow and energy pt");
 RegisteredPKFactory<FlowEnergyPH_PK> FlowEnergyPH_PK::reg_("flow and energy ph");
-RegisteredPKFactory<FlowEnergyMatrixFracture_PK> FlowEnergyMatrixFracture_PK::reg_(
-  "flow and energy matrix fracture");
+// RegisteredPKFactory<FlowEnergyMatrixFracture_PK> FlowEnergyMatrixFracture_PK::reg_(
+//   "flow and energy matrix fracture");
+RegisteredPKFactory<FlowEnergyPHMatrixFracture_PK> FlowEnergyPHMatrixFracture_PK::reg_(
+  "flow and energy ph matrix fracture");  
 RegisteredPKFactory<FlowReactiveTransport_PK> FlowReactiveTransport_PK::reg_(
   "flow and chemistry and transport");
 RegisteredPKFactory<FlowMatrixFracture_PK> FlowMatrixFracture_PK::reg_("flow matrix fracture");
@@ -61,8 +64,10 @@ RegisteredPKFactory<TransportMatrixFracture_PK> TransportMatrixFracture_PK::reg_
   "transport matrix fracture");
 RegisteredPKFactory<ChemistryMatrixFracture_PK> ChemistryMatrixFracture_PK::reg_(
   "chemistry matrix fracture");
-RegisteredPKFactory<EnergyMatrixFracture_PK> EnergyMatrixFracture_PK::reg_(
-  "energy matrix fracture");
+RegisteredPKFactory<EnergyMatrixFracturePT_PK> EnergyMatrixFracturePT_PK::reg_(
+  "energy matrix fracture pt");
+RegisteredPKFactory<EnergyMatrixFracturePH_PK> EnergyMatrixFracturePH_PK::reg_(
+  "energy matrix fracture ph");
 
 RegisteredPKFactory<TransportMatrixFractureImplicit_PK> TransportMatrixFractureImplicit_PK::reg_(
   "transport matrix fracture implicit");
