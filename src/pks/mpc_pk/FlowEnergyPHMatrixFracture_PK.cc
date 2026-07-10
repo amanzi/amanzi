@@ -293,10 +293,10 @@ FlowEnergyPHMatrixFracture_PK::FunctionalResidual(double t_old,
                                                 Teuchos::RCP<TreeVector> f)
 {
   // matrix
-  auto u_old0 = u_old->SubVector(0);
-  auto u_new0 = u_new->SubVector(0);
-  auto f0 = f->SubVector(0);
-  sub_pks_[0]->FunctionalResidual(t_old, t_new, u_old0, u_new0, f0);
+  // auto u_old0 = u_old->SubVector(0);
+  // auto u_new0 = u_new->SubVector(0);
+  // auto f0 = f->SubVector(0);
+  // sub_pks_[0]->FunctionalResidual(t_old, t_new, u_old0, u_new0, f0);
 
   // update molar flux
   // std::vector<Key> keys({ "molar_flow_rate", "fracture-molar_flow_rate" });
@@ -312,12 +312,14 @@ FlowEnergyPHMatrixFracture_PK::FunctionalResidual(double t_old,
   //   }
   // }
 
-  // fracure
-  auto u_old1 = u_old->SubVector(1);
-  auto u_new1 = u_new->SubVector(1);
-  auto f1 = f->SubVector(1);
-  sub_pks_[1]->FunctionalResidual(t_old, t_new, u_old1, u_new1, f1);
+  // fracture
+  // auto u_old1 = u_old->SubVector(1);
+  // auto u_new1 = u_new->SubVector(1);
+  // auto f1 = f->SubVector(1);
+  // sub_pks_[1]->FunctionalResidual(t_old, t_new, u_old1, u_new1, f1);
 
+  PK_MPCStrong<PK_BDF>::FunctionalResidual(t_old, t_new, u_old, u_new, f);  
+  
   UpdateThermoCouplingFluxes_H(S_, mesh_matrix_, mesh_fracture_, thermo_coupling_mat_ops_, true);
   
   int ierr = op_tree_matrix_->Apply(*u_new, *f, 1.0);
@@ -450,7 +452,7 @@ void FlowEnergyPHMatrixFracture_PK::InitializeFlowCoupling_(){
 
   double molar_mass = S_->Get<double>("const_fluid_molar_mass");
   double scale = (sub_pks_[0]->name() == "darcy") ? 1.0 : 1.0 / molar_mass;
-  fi.SetValues(kn_flow, scale / gravity);
+  fi.SetValues(kn_flow, 1.0);
   
   // -- operators
   Teuchos::ParameterList oplist;
