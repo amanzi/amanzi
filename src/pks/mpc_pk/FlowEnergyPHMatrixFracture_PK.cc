@@ -190,6 +190,8 @@ FlowEnergyPHMatrixFracture_PK::Initialize()
   // each with 2 sub-pks of their own (matrix, fracture).  Currently
   // TreeOperator cannot handle this, so instead we must flatten the map.
   auto tvs = Teuchos::rcp(new TreeVectorSpace(solution_->Map()));
+
+// -- tree coupling preconditioner
   op_tree_pc_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
 
   op_tree_pc_->set_block(0, 0, mpc_matrix->op_tree_pc()->Clone());
@@ -203,74 +205,25 @@ FlowEnergyPHMatrixFracture_PK::Initialize()
     }
   }
 
-  // off-diagonal blocks are coupled PDEs
-  // -- minimum composite vector spaces containing the coupling term
-  auto& mmap = solution_->SubVector(0)->SubVector(0)->Data()->ViewComponent("face", false)->Map();
-  auto& gmap = solution_->SubVector(0)->SubVector(0)->Data()->ViewComponent("face", true)->Map();
-  
-  FractureInsertion fi(mesh_matrix_, mesh_fracture_);
-  fi.InitMatrixFaceToFractureCell(Teuchos::rcpFromRef(mmap), Teuchos::rcpFromRef(gmap));
+// -- tree coupling matrix
+  op_tree_matrix_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
 
-  const auto& kn = *S_->Get<CV_t>("fracture-diffusion_to_matrix").ViewComponent("cell");
-  double gravity = norm(S_->Get<AmanziGeometry::Point>("gravity"));
-
-  double molar_mass = S_->Get<double>("const_fluid_molar_mass");
-  double scale = (sub_pks_[0]->name() == "darcy") ? 1.0 : 1.0 / molar_mass;
-  fi.SetValues(kn, scale / gravity);
-
-  // -- operators
-  Teuchos::ParameterList oplist;
-  auto op_coupling00 = Teuchos::rcp(new Operators::PDE_CouplingFlux(oplist,
-                                                                    fi.get_cvs_matrix(),
-                                                                    fi.get_cvs_matrix(),
-                                                                    fi.get_inds_matrix(),
-                                                                    fi.get_inds_matrix(),
-                                                                    Teuchos::null));
-  
-  auto op00 = op_tree_pc_->get_block(0, 0)->get_operator_block(0, 0);
-  op00->OpPushBack(op_coupling00->local_op());
-  op_coupling00->Setup(fi.get_values(), 1.0);
-  op_coupling00->UpdateMatrices(Teuchos::null, Teuchos::null);
-
-
-  auto op_coupling01 = Teuchos::rcp(new Operators::PDE_CouplingFlux(oplist,
-                                                                    fi.get_cvs_matrix(),
-                                                                    fi.get_cvs_fracture(),
-                                                                    fi.get_inds_matrix(),
-                                                                    fi.get_inds_fracture()));
-  op_coupling01->Setup(fi.get_values(), -1.0);
-  op_coupling01->UpdateMatrices(Teuchos::null, Teuchos::null);
-  op_tree_pc_->get_block(0, 1)->set_operator_block(0, 0, op_coupling01->global_operator());
-
-  auto op_coupling10 = Teuchos::rcp(new Operators::PDE_CouplingFlux(oplist,
-                                                                    fi.get_cvs_fracture(),
-                                                                    fi.get_cvs_matrix(),
-                                                                    fi.get_inds_fracture(),
-                                                                    fi.get_inds_matrix()));
-  op_coupling10->Setup(fi.get_values(), -1.0);
-  op_coupling10->UpdateMatrices(Teuchos::null, Teuchos::null);
-  op_tree_pc_->get_block(1, 0)->set_operator_block(0, 0, op_coupling01->global_operator());
-
-  auto op_coupling11 = Teuchos::rcp(new Operators::PDE_CouplingFlux(oplist,
-                                                                    fi.get_cvs_fracture(),
-                                                                    fi.get_cvs_fracture(),
-                                                                    fi.get_inds_fracture(),
-                                                                    fi.get_inds_fracture(),
-                                                                    Teuchos::null));
-
-  auto op11 = op_tree_pc_->get_block(1, 1)->get_operator_block(0, 0);
-  op11->OpPushBack(op_coupling11->local_op());
-  op_coupling11->Setup(fi.get_values(), 1.0);
-  op_coupling11->UpdateMatrices(Teuchos::null, Teuchos::null);
+  for (int i = 0; i < 2; ++i) {
+    const auto& row = solution_->SubVector(i)->get_map();
+    for (int j = 0; j < 2; ++j) {
+      const auto& col = solution_->SubVector(j)->get_map();
+      op_tree_matrix_->set_block(i, j, Teuchos::rcp(new Operators::TreeOperator(row, col)));
+    }
+  }
 
   
+  InitializeFlowCoupling_();
+  InitializeHeatCoupling_();
   // create global matrix
   op_tree_pc_->SymbolicAssembleMatrix();
   //op_tree_pc_->AssembleMatrix();
-
-  op_tree_matrix_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
-
-
+  //op_tree_matrix_->SymbolicAssembleMatrix();
+  
   
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
@@ -281,8 +234,14 @@ FlowEnergyPHMatrixFracture_PK::Initialize()
                << vo_->color("green") << "Initialization of PK is complete: my dT=" << get_dt()
                << vo_->reset() << std::endl
                << std::endl;
+    *vo_->os() << "\nmatrix:" << std::endl
+               << op_tree_matrix_->PrintDiagnostics() << std::endl
+               << vo_->reset() << std::endl
+               << std::endl;
   }
-  exit(0);
+
+
+  //exit(0);
 }
 
 
@@ -333,7 +292,7 @@ FlowEnergyPHMatrixFracture_PK::FunctionalResidual(double t_old,
                                                 Teuchos::RCP<TreeVector> u_new,
                                                 Teuchos::RCP<TreeVector> f)
 {
-  // flow
+  // matrix
   auto u_old0 = u_old->SubVector(0);
   auto u_new0 = u_new->SubVector(0);
   auto f0 = f->SubVector(0);
@@ -353,12 +312,18 @@ FlowEnergyPHMatrixFracture_PK::FunctionalResidual(double t_old,
   //   }
   // }
 
-  // energy
+  // fracure
   auto u_old1 = u_old->SubVector(1);
   auto u_new1 = u_new->SubVector(1);
   auto f1 = f->SubVector(1);
   sub_pks_[1]->FunctionalResidual(t_old, t_new, u_old1, u_new1, f1);
 
+  UpdateThermoCouplingFluxes_H(S_, mesh_matrix_, mesh_fracture_, thermo_coupling_mat_ops_, true);
+  
+  int ierr = op_tree_matrix_->Apply(*u_new, *f, 1.0);
+  AMANZI_ASSERT(!ierr);
+
+  
   // convergence control
   f->SubVector(1)->SubVector(1)->NormInf(&residual_norm_);
 }
@@ -378,6 +343,8 @@ FlowEnergyPHMatrixFracture_PK::UpdatePreconditioner(double t,
   std::string pc_name = ti_list_->get<std::string>("preconditioner");
   Teuchos::ParameterList pc_list = preconditioner_list_->sublist(pc_name);
 
+  UpdateThermoCouplingFluxes_H(S_, mesh_matrix_, mesh_fracture_, thermo_coupling_pc_ops_, false);
+  
   op_tree_pc_->AssembleMatrix();
 
   // // block indices for preconditioner are (0, 1, 0, 1)
@@ -399,10 +366,10 @@ FlowEnergyPHMatrixFracture_PK::UpdatePreconditioner(double t,
   // op_tree_pc_->set_coloring(2, block_indices);
   op_tree_pc_->set_inverse_parameters(pc_list);
 
-  auto x0 = Teuchos::rcp(new TreeVector(*solution_));
-  auto y0 = Teuchos::rcp(new TreeVector(*solution_));
+  // auto x0 = Teuchos::rcp(new TreeVector(*solution_));
+  // auto y0 = Teuchos::rcp(new TreeVector(*solution_));
 
-  op_tree_pc_->ApplyInverse(*x0, *y0);
+  // op_tree_pc_->ApplyInverse(*x0, *y0);
 
 
   // create a stronger preconditioner by wrapping one inside an iterative solver
@@ -466,6 +433,197 @@ FlowEnergyPHMatrixFracture_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 #endif
 
   return error;
+}
+
+void FlowEnergyPHMatrixFracture_PK::InitializeFlowCoupling_(){
+
+    // off-diagonal blocks are coupled PDEs
+  // -- minimum composite vector spaces containing the coupling term
+  auto& mmap = solution_->SubVector(0)->SubVector(0)->Data()->ViewComponent("face", false)->Map();
+  auto& gmap = solution_->SubVector(0)->SubVector(0)->Data()->ViewComponent("face", true)->Map();
+  
+  FractureInsertion fi(mesh_matrix_, mesh_fracture_);
+  fi.InitMatrixFaceToFractureCell(Teuchos::rcpFromRef(mmap), Teuchos::rcpFromRef(gmap));
+
+  const auto& kn_flow = *S_->Get<CV_t>("fracture-diffusion_to_matrix").ViewComponent("cell");
+  double gravity = norm(S_->Get<AmanziGeometry::Point>("gravity"));
+
+  double molar_mass = S_->Get<double>("const_fluid_molar_mass");
+  double scale = (sub_pks_[0]->name() == "darcy") ? 1.0 : 1.0 / molar_mass;
+  fi.SetValues(kn_flow, scale / gravity);
+  
+  // -- operators
+  Teuchos::ParameterList oplist;
+  auto op_coupling00 = Teuchos::rcp(new Operators::PDE_CouplingFlux(oplist,
+                                                                    fi.get_cvs_matrix(),
+                                                                    fi.get_cvs_matrix(),
+                                                                    fi.get_inds_matrix(),
+                                                                    fi.get_inds_matrix(),
+                                                                    Teuchos::null));
+  
+  auto op00 = op_tree_pc_->get_block(0, 0)->get_operator_block(0, 0);
+  op00->OpPushBack(op_coupling00->local_op());
+  op_coupling00->Setup(fi.get_values(), 1.0);
+  op_coupling00->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+
+  auto op_coupling01 = Teuchos::rcp(new Operators::PDE_CouplingFlux(oplist,
+                                                                    fi.get_cvs_matrix(),
+                                                                    fi.get_cvs_fracture(),
+                                                                    fi.get_inds_matrix(),
+                                                                    fi.get_inds_fracture()));
+  op_coupling01->Setup(fi.get_values(), -1.0);
+  op_coupling01->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op_tree_pc_->get_block(0, 1)->set_operator_block(0, 0, op_coupling01->global_operator());
+
+  auto op_coupling10 = Teuchos::rcp(new Operators::PDE_CouplingFlux(oplist,
+                                                                    fi.get_cvs_fracture(),
+                                                                    fi.get_cvs_matrix(),
+                                                                    fi.get_inds_fracture(),
+                                                                    fi.get_inds_matrix()));
+  op_coupling10->Setup(fi.get_values(), -1.0);
+  op_coupling10->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op_tree_pc_->get_block(1, 0)->set_operator_block(0, 0, op_coupling10->global_operator());
+
+  auto op_coupling11 = Teuchos::rcp(new Operators::PDE_CouplingFlux(oplist,
+                                                                    fi.get_cvs_fracture(),
+                                                                    fi.get_cvs_fracture(),
+                                                                    fi.get_inds_fracture(),
+                                                                    fi.get_inds_fracture(),
+                                                                    Teuchos::null));
+
+  auto op11 = op_tree_pc_->get_block(1, 1)->get_operator_block(0, 0);
+  op11->OpPushBack(op_coupling11->local_op());
+  op_coupling11->Setup(fi.get_values(), 1.0);
+  op_coupling11->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+
+  op_tree_matrix_->get_block(0, 0)->set_operator_block(0, 0, op_coupling00->global_operator());
+  op_tree_matrix_->get_block(0, 1)->set_operator_block(0, 0, op_coupling01->global_operator());
+  op_tree_matrix_->get_block(1, 0)->set_operator_block(0, 0, op_coupling10->global_operator());
+  op_tree_matrix_->get_block(1, 1)->set_operator_block(0, 0, op_coupling11->global_operator());
+  
+}
+
+void FlowEnergyPHMatrixFracture_PK::InitializeHeatCoupling_(){
+
+  auto& mmap = solution_->SubVector(0)->SubVector(0)->Data()->ViewComponent("face", false)->Map();
+  auto& gmap = solution_->SubVector(0)->SubVector(0)->Data()->ViewComponent("face", true)->Map();
+  
+  FractureInsertion fi(mesh_matrix_, mesh_fracture_);
+  fi.InitMatrixFaceToFractureCell(Teuchos::rcpFromRef(mmap), Teuchos::rcpFromRef(gmap));
+
+  
+  // -- indices transmissibimility coefficients for matrix-fracture flux
+  auto eval = S_->GetEvaluatorPtr(heat_diffusion_to_matrix_key_, Tags::DEFAULT);
+  auto eval_tmp = Teuchos::rcp_dynamic_cast<HeatDiffusionMatrixFracture>(eval);
+  if (eval_tmp.get() ) eval_tmp->Update(*S_, "coupled energy");
+  
+  const auto& kn_heat = *S_->Get<CV_t>("fracture-heat_diffusion_to_matrix").ViewComponent("cell");
+
+  FractureInsertion fi_heat(mesh_matrix_, mesh_fracture_);
+  fi_heat.InitMatrixFaceToFractureCell(Teuchos::rcpFromRef(mmap), Teuchos::rcpFromRef(gmap));
+  fi_heat.SetValues(kn_heat, 1.0);
+
+  // -- operators for preconditioning
+  Teuchos::ParameterList oplist;
+  auto op_coupling00_pc = Teuchos::rcp(new Operators::PDE_CouplingFlux(oplist,
+                                                                    fi_heat.get_cvs_matrix(),
+                                                                    fi_heat.get_cvs_matrix(),
+                                                                    fi_heat.get_inds_matrix(),
+                                                                    fi_heat.get_inds_matrix(),
+                                                                    Teuchos::null));
+  
+  auto op00_heat = op_tree_pc_->get_block(0, 0)->get_operator_block(1, 1); 
+  op00_heat->OpPushBack(op_coupling00_pc->local_op());
+  op_coupling00_pc->Setup(fi_heat.get_values(), 1.0);
+  op_coupling00_pc->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+  auto op_coupling01_pc = Teuchos::rcp(new Operators::PDE_CouplingFlux(oplist,
+                                                                    fi_heat.get_cvs_matrix(),
+                                                                    fi_heat.get_cvs_fracture(),
+                                                                    fi_heat.get_inds_matrix(),
+                                                                    fi_heat.get_inds_fracture()));
+  op_coupling01_pc->Setup(fi_heat.get_values(), -1.0);
+  op_coupling01_pc->UpdateMatrices(Teuchos::null, Teuchos::null);
+  auto tmp_ptr = op_coupling01_pc->global_operator();
+  op_tree_pc_->get_block(0, 1)->set_operator_block(1, 1, op_coupling01_pc->global_operator());
+
+  auto op_coupling10_pc = Teuchos::rcp(new Operators::PDE_CouplingFlux(oplist,
+                                                                    fi_heat.get_cvs_fracture(),
+                                                                    fi_heat.get_cvs_matrix(),
+                                                                    fi_heat.get_inds_fracture(),
+                                                                    fi_heat.get_inds_matrix()));
+  op_coupling10_pc->Setup(fi_heat.get_values(), -1.0);
+  op_coupling10_pc->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op_tree_pc_->get_block(1, 0)->set_operator_block(1, 1, op_coupling10_pc->global_operator());
+
+  auto op_coupling11_pc = Teuchos::rcp(new Operators::PDE_CouplingFlux(oplist,
+                                                                    fi.get_cvs_fracture(),
+                                                                    fi.get_cvs_fracture(),
+                                                                    fi.get_inds_fracture(),
+                                                                    fi.get_inds_fracture(),
+                                                                    Teuchos::null));
+
+   auto op11 = op_tree_pc_->get_block(1, 1)->get_operator_block(0, 0);
+   op11->OpPushBack(op_coupling11_pc->local_op());
+   op_coupling11_pc->Setup(fi.get_values(), 1.0);
+   op_coupling11_pc->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+   thermo_coupling_pc_ops_.push_back(op_coupling00_pc);
+   thermo_coupling_pc_ops_.push_back(op_coupling01_pc);
+   thermo_coupling_pc_ops_.push_back(op_coupling10_pc);
+   thermo_coupling_pc_ops_.push_back(op_coupling11_pc);
+
+   // -- operators for function residual
+  auto op_coupling00_mat = Teuchos::rcp(new Operators::PDE_CouplingFlux(oplist,
+                                                                    fi_heat.get_cvs_matrix(),
+                                                                    fi_heat.get_cvs_matrix(),
+                                                                    fi_heat.get_inds_matrix(),
+                                                                    fi_heat.get_inds_matrix(),
+                                                                    Teuchos::null));
+  
+  op_coupling00_mat->Setup(fi_heat.get_values(), 1.0);
+  op_coupling00_mat->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op_tree_matrix_->get_block(0, 0)->set_operator_block(1, 1, op_coupling00_mat->global_operator());
+
+  auto op_coupling01_mat = Teuchos::rcp(new Operators::PDE_CouplingFlux(oplist,
+                                                                    fi_heat.get_cvs_matrix(),
+                                                                    fi_heat.get_cvs_fracture(),
+                                                                    fi_heat.get_inds_matrix(),
+                                                                    fi_heat.get_inds_fracture()));
+  op_coupling01_mat->Setup(fi_heat.get_values(), -1.0);
+  op_coupling01_mat->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op_tree_matrix_->get_block(0, 1)->set_operator_block(1, 1, op_coupling01_mat->global_operator());
+
+  auto op_coupling10_mat = Teuchos::rcp(new Operators::PDE_CouplingFlux(oplist,
+                                                                    fi_heat.get_cvs_fracture(),
+                                                                    fi_heat.get_cvs_matrix(),
+                                                                    fi_heat.get_inds_fracture(),
+                                                                    fi_heat.get_inds_matrix()));
+  op_coupling10_mat->Setup(fi_heat.get_values(), -1.0);
+  op_coupling10_mat->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op_tree_matrix_->get_block(1, 0)->set_operator_block(1, 1, op_coupling10_mat->global_operator());
+
+  auto op_coupling11_mat = Teuchos::rcp(new Operators::PDE_CouplingFlux(oplist,
+                                                                    fi.get_cvs_fracture(),
+                                                                    fi.get_cvs_fracture(),
+                                                                    fi.get_inds_fracture(),
+                                                                    fi.get_inds_fracture(),
+                                                                    Teuchos::null));
+
+  op_coupling11_mat->Setup(fi_heat.get_values(), 1.0);
+  op_coupling11_mat->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op_tree_matrix_->get_block(1, 1)->set_operator_block(1, 1, op_coupling11_mat->global_operator());
+  
+
+   thermo_coupling_mat_ops_.push_back(op_coupling00_mat);
+   thermo_coupling_mat_ops_.push_back(op_coupling01_mat);
+   thermo_coupling_mat_ops_.push_back(op_coupling10_mat);
+   thermo_coupling_mat_ops_.push_back(op_coupling11_mat);
+
+
+   
 }
 
 } // namespace Amanzi
