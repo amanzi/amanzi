@@ -30,7 +30,6 @@ void UpdateEnthalpyCouplingFluxes_T(
   const std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux>>& adv_coupling,
   bool flag);
 
-
 // Populate advective coupling fluxes
 // flag = true for matrix, false for preconditioner
 void UpdateEnthalpyCouplingFluxes_H(
@@ -48,7 +47,6 @@ void UpdateThermoCouplingFluxes_H(
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_fracture,
   const std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux>>& thermo_coupling,
   bool flag);
-  
   
 } // namespace Amanzi
 

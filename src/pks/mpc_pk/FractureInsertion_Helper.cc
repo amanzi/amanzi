@@ -109,6 +109,7 @@ UpdateEnthalpyCouplingFluxes_T(
   adv_coupling_ops[3]->UpdateMatrices(Teuchos::null, Teuchos::null);
 }
 
+
 /* *******************************************************************
 * Populate advective coupling fluxes for H-based formulation
 ******************************************************************* */
@@ -120,35 +121,6 @@ UpdateEnthalpyCouplingFluxes_H(
   const std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux>>& adv_coupling_ops,
   bool flag)
 {
-  // Key temperature_key_m("temperature"), temperature_key_f("fracture-temperature");
-  // Key enthalpy_key_m("enthalpy"), enthalpy_key_f("fracture-enthalpy");
-
-  // S->Get<CompositeVector>(enthalpy_key_m).ScatterMasterToGhosted("cell");
-  // S->Get<CompositeVector>(temperature_key_m).ScatterMasterToGhosted("cell");
-  // S->Get<CompositeVector>("molar_flow_rate").ScatterMasterToGhosted("face");
-
-  // // extract enthalpy fields
-  // S->GetEvaluator(enthalpy_key_m).Update(*S, enthalpy_key_m);
-  // const auto& H_m = *S->Get<CompositeVector>(enthalpy_key_m).ViewComponent("cell", true);
-  // const auto& T_m = *S->Get<CompositeVector>(temperature_key_m).ViewComponent("cell", true);
-
-  // S->GetEvaluator(enthalpy_key_f).Update(*S, enthalpy_key_f);
-  // const auto& H_f = *S->Get<CompositeVector>(enthalpy_key_f).ViewComponent("cell", true);
-  // const auto& T_f = *S->Get<CompositeVector>(temperature_key_f).ViewComponent("cell", true);
-
-  // Teuchos::RCP<const Epetra_MultiVector> dHdT_m, dHdT_f;
-  // if (!flag) {
-  //   const auto& tmp1 = S->GetDerivative<CompositeVector>(
-  //     enthalpy_key_m, Tags::DEFAULT, temperature_key_m, Tags::DEFAULT);
-  //   tmp1.ScatterMasterToGhosted("cell");
-  //   dHdT_m = tmp1.ViewComponent("cell");
-
-  //   const auto& tmp2 = S->GetDerivative<CompositeVector>(
-  //     enthalpy_key_f, Tags::DEFAULT, temperature_key_f, Tags::DEFAULT);
-  //   tmp2.ScatterMasterToGhosted("cell");
-  //   dHdT_f = tmp2.ViewComponent("cell");
-  // }
-
   // update coupling terms for advection
   int ncells_owned_f =
     mesh_fracture->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
@@ -174,7 +146,7 @@ UpdateEnthalpyCouplingFluxes_H(
       // since we multiply by temperature, the model for the flux is
       // q * H for both matrix and preconditioner
       if (tmp > 0) {
-        (*values1)[np] = tmp ;
+        (*values1)[np] = tmp;
       } else {
         (*values2)[np] = -tmp;
       }
@@ -252,6 +224,7 @@ UpdateThermoCouplingFluxes_H(
   AmanziMesh::Entity_ID_List cells;
   const auto& flux = *S->Get<CompositeVector>("molar_flow_rate").ViewComponent("face", true);
   const auto& mmap = flux.Map();
+
   for (int c = 0; c < ncells_owned_f; ++c) {
     int f = mesh_fracture->getEntityParent(AmanziMesh::Entity_kind::CELL, c);
     int first = mmap.FirstPointInElement(f);
@@ -262,7 +235,6 @@ UpdateThermoCouplingFluxes_H(
     shift = Operators::UniqueIndexFaceToCells(*mesh_matrix, f, cells[0]);
 
     for (int k = 0; k < ncells; ++k) {
-
       double tmp = kn[0][c];
       double factor;
      
@@ -294,7 +266,5 @@ UpdateThermoCouplingFluxes_H(
   thermo_coupling_ops[3]->Setup(values2, 1.0);
   thermo_coupling_ops[3]->UpdateMatrices(Teuchos::null, Teuchos::null);
 }
-
-
   
 } // namespace Amanzi

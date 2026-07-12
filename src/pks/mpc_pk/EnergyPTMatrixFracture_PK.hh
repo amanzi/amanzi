@@ -30,12 +30,12 @@ The process kernel that couples heat conduction in matrix and fracture network.
 
 namespace Amanzi {
 
-class EnergyMatrixFracturePT_PK : public PK_MPCStrong<PK_BDF> {
+class EnergyPTMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
  public:
-  EnergyMatrixFracturePT_PK(Teuchos::ParameterList& pk_tree,
-                          const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                          const Teuchos::RCP<State>& S,
-                          const Teuchos::RCP<TreeVector>& soln);
+  EnergyPTMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
+                            const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                            const Teuchos::RCP<State>& S,
+                            const Teuchos::RCP<TreeVector>& soln);
 
   // PK methods
   virtual void Setup() override;
@@ -75,7 +75,7 @@ class EnergyMatrixFracturePT_PK : public PK_MPCStrong<PK_BDF> {
   std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux>> adv_coupling_ops_;
 
   // factory registration
-  static RegisteredPKFactory<EnergyMatrixFracturePT_PK> reg_;
+  static RegisteredPKFactory<EnergyPTMatrixFracture_PK> reg_;
 };
 
 } // namespace Amanzi

@@ -14,8 +14,6 @@
   Process kernel that couples flow and energy in matrix and fractures.
 */
 
-// #include "FlowMatrixFracture_PK.hh"
-// #include "EnergyMatrixFracturePH_PK.hh"
 #include "InverseFactory.hh"
 #include "PDE_CouplingFlux.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
@@ -99,7 +97,6 @@ FlowEnergyPHMatrixFracture_PK::Setup()
     AddDefaultPrimaryEvaluator(S_, "enthalpy", Tags::DEFAULT);
   }
 
-
   // -- darcy flux
   if (!S_->HasRecord("molar_flow_rate")) {
     auto mmap = cvs->Map("face", false);
@@ -120,8 +117,6 @@ FlowEnergyPHMatrixFracture_PK::Setup()
     AddDefaultPrimaryEvaluator(S_, "fracture-molar_flow_rate", Tags::DEFAULT);
   }
 
-
-  
   // additional fields and evaluators related to coupling
   diffusion_to_matrix_key_ = "fracture-diffusion_to_matrix";
   if (!S_->HasRecord(diffusion_to_matrix_key_)) {
@@ -161,9 +156,8 @@ FlowEnergyPHMatrixFracture_PK::Setup()
   // process other PKs
   PK_MPCStrong<PK_BDF>::Setup();
 
-
-  heat_diffusion_to_matrix_key_ = "fracture-heat_diffusion_to_matrix";
   // additional fields and evaluators related to matrix-fracture coupling
+  heat_diffusion_to_matrix_key_ = "fracture-heat_diffusion_to_matrix";
   if (!S_->HasRecord(heat_diffusion_to_matrix_key_)) {
     S_->Require<CV_t, CVS_t>(
         heat_diffusion_to_matrix_key_, Tags::DEFAULT, heat_diffusion_to_matrix_key_)
@@ -191,7 +185,7 @@ FlowEnergyPHMatrixFracture_PK::Initialize()
   // TreeOperator cannot handle this, so instead we must flatten the map.
   auto tvs = Teuchos::rcp(new TreeVectorSpace(solution_->Map()));
 
-// -- tree coupling preconditioner
+  // -- tree coupling preconditioner
   op_tree_pc_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
 
   op_tree_pc_->set_block(0, 0, mpc_matrix->op_tree_pc()->Clone());
@@ -205,7 +199,7 @@ FlowEnergyPHMatrixFracture_PK::Initialize()
     }
   }
 
-// -- tree coupling matrix
+  // -- tree coupling matrix
   op_tree_matrix_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
 
   for (int i = 0; i < 2; ++i) {
@@ -216,32 +210,24 @@ FlowEnergyPHMatrixFracture_PK::Initialize()
     }
   }
 
-  
   InitializeFlowCoupling_();
   InitializeHeatCoupling_();
   // create global matrix
   op_tree_pc_->SymbolicAssembleMatrix();
-  //op_tree_pc_->AssembleMatrix();
-  //op_tree_matrix_->SymbolicAssembleMatrix();
-  
+  // op_tree_pc_->AssembleMatrix();
+  // op_tree_matrix_->SymbolicAssembleMatrix();
   
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "solution vector:\n";
     solution_->Print(*vo_->os(), false);
     *vo_->os() << "\npreconditioner:" << std::endl
-               << op_tree_pc_->PrintDiagnostics() << std::endl
+               << op_tree_pc_->PrintDiagnostics() 
                << vo_->color("green") << "Initialization of PK is complete: my dT=" << get_dt()
-               << vo_->reset() << std::endl
-               << std::endl;
+               << vo_->reset() << std::endl;
     *vo_->os() << "\nmatrix:" << std::endl
-               << op_tree_matrix_->PrintDiagnostics() << std::endl
-               << vo_->reset() << std::endl
-               << std::endl;
+               << op_tree_matrix_->PrintDiagnostics() << vo_->reset() << std::endl;
   }
-
-
-  //exit(0);
 }
 
 
@@ -287,37 +273,11 @@ FlowEnergyPHMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool rein
 ******************************************************************* */
 void
 FlowEnergyPHMatrixFracture_PK::FunctionalResidual(double t_old,
-                                                double t_new,
-                                                Teuchos::RCP<const TreeVector> u_old,
-                                                Teuchos::RCP<TreeVector> u_new,
-                                                Teuchos::RCP<TreeVector> f)
+                                                  double t_new,
+                                                  Teuchos::RCP<const TreeVector> u_old,
+                                                  Teuchos::RCP<TreeVector> u_new,
+                                                  Teuchos::RCP<TreeVector> f)
 {
-  // matrix
-  // auto u_old0 = u_old->SubVector(0);
-  // auto u_new0 = u_new->SubVector(0);
-  // auto f0 = f->SubVector(0);
-  // sub_pks_[0]->FunctionalResidual(t_old, t_new, u_old0, u_new0, f0);
-
-  // update molar flux
-  // std::vector<Key> keys({ "molar_flow_rate", "fracture-molar_flow_rate" });
-  // for (int i = 0; i < 2; ++i) {
-  //   auto mol_flowrate = S_->GetPtrW<CV_t>(keys[i], Tags::DEFAULT, "");
-  //   auto mpc = Teuchos::rcp_dynamic_cast<PK_MPC<PK_BDF>>(sub_pks_[0]);
-  //   auto op0 = mpc->getSubPK(i)->my_pde(Operators::PDEType::PDE_DIFFUSION);
-  //   op0->UpdateFlux(u_new0->SubVector(i)->Data().ptr(), mol_flowrate.ptr());
-
-  //   if (Keys::getVarName(mpc->getSubPK(i)->name()) == "darcy") {
-  //     double molar_mass = S_->Get<double>("const_fluid_molar_mass");
-  //     mol_flowrate->Scale(1.0 / molar_mass);
-  //   }
-  // }
-
-  // fracture
-  // auto u_old1 = u_old->SubVector(1);
-  // auto u_new1 = u_new->SubVector(1);
-  // auto f1 = f->SubVector(1);
-  // sub_pks_[1]->FunctionalResidual(t_old, t_new, u_old1, u_new1, f1);
-
   PK_MPCStrong<PK_BDF>::FunctionalResidual(t_old, t_new, u_old, u_new, f);  
   
   UpdateThermoCouplingFluxes_H(S_, mesh_matrix_, mesh_fracture_, thermo_coupling_mat_ops_, true);
@@ -325,7 +285,6 @@ FlowEnergyPHMatrixFracture_PK::FunctionalResidual(double t_old,
   int ierr = op_tree_matrix_->Apply(*u_new, *f, 1.0);
   AMANZI_ASSERT(!ierr);
 
-  
   // convergence control
   f->SubVector(1)->SubVector(1)->NormInf(&residual_norm_);
 }
@@ -336,8 +295,8 @@ FlowEnergyPHMatrixFracture_PK::FunctionalResidual(double t_old,
 ******************************************************************* */
 void
 FlowEnergyPHMatrixFracture_PK::UpdatePreconditioner(double t,
-                                                  Teuchos::RCP<const TreeVector> up,
-                                                  double dt)
+                                                    Teuchos::RCP<const TreeVector> up,
+                                                    double dt)
 {
   // generate local matrices and apply boundary conditions
   PK_MPCStrong<PK_BDF>::UpdatePreconditioner(t, up, dt);
@@ -348,31 +307,7 @@ FlowEnergyPHMatrixFracture_PK::UpdatePreconditioner(double t,
   UpdateThermoCouplingFluxes_H(S_, mesh_matrix_, mesh_fracture_, thermo_coupling_pc_ops_, false);
   
   op_tree_pc_->AssembleMatrix();
-
-  // // block indices for preconditioner are (0, 1, 0, 1)
-  // auto smap = op_tree_pc_->get_row_supermap();
-  // // NOTE: this is freed by Hypre
-  //   auto block_indices = Teuchos::rcp(new std::vector<int>(smap->Map()->NumMyElements()));
-
-  // std::vector<std::string> comps = { "face", "cell" };
-  // for (int n = 0; n < 4; ++n) {
-  //   int id = (n == 0 || n == 2) ? 0 : 1;
-
-  //   for (int k = 0; k < 2; ++k) {
-  //     const auto& inds = smap->Indices(n, comps[k], 0);
-  //     for (int i = 0; i != inds.size() ; ++i) (*block_indices)[inds[i]] = id;
-  //   }
-  // }
-  // auto block_ids = std::make_pair(2, block_indices);
-
-  // op_tree_pc_->set_coloring(2, block_indices);
   op_tree_pc_->set_inverse_parameters(pc_list);
-
-  // auto x0 = Teuchos::rcp(new TreeVector(*solution_));
-  // auto y0 = Teuchos::rcp(new TreeVector(*solution_));
-
-  // op_tree_pc_->ApplyInverse(*x0, *y0);
-
 
   // create a stronger preconditioner by wrapping one inside an iterative solver
   if (ti_list_->isParameter("preconditioner enhancement")) {
@@ -394,7 +329,7 @@ FlowEnergyPHMatrixFracture_PK::UpdatePreconditioner(double t,
 ******************************************************************* */
 int
 FlowEnergyPHMatrixFracture_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
-                                                 Teuchos::RCP<TreeVector> Y)
+                                                   Teuchos::RCP<TreeVector> Y)
 {
   Y->PutScalar(0.0);
   return op_pc_solver_->ApplyInverse(*X, *Y);
@@ -406,7 +341,7 @@ FlowEnergyPHMatrixFracture_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector
 ****************************************************************** */
 double
 FlowEnergyPHMatrixFracture_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
-                                       Teuchos::RCP<const TreeVector> du)
+                                         Teuchos::RCP<const TreeVector> du)
 {
   double error = PK_MPCStrong<PK_BDF>::ErrorNorm(u, du);
 
@@ -437,9 +372,14 @@ FlowEnergyPHMatrixFracture_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   return error;
 }
 
-void FlowEnergyPHMatrixFracture_PK::InitializeFlowCoupling_(){
 
-    // off-diagonal blocks are coupled PDEs
+/* ******************************************************************
+*
+****************************************************************** */
+void
+FlowEnergyPHMatrixFracture_PK::InitializeFlowCoupling_()
+{
+  // off-diagonal blocks are coupled PDEs
   // -- minimum composite vector spaces containing the coupling term
   auto& mmap = solution_->SubVector(0)->SubVector(0)->Data()->ViewComponent("face", false)->Map();
   auto& gmap = solution_->SubVector(0)->SubVector(0)->Data()->ViewComponent("face", true)->Map();
@@ -467,7 +407,6 @@ void FlowEnergyPHMatrixFracture_PK::InitializeFlowCoupling_(){
   op00->OpPushBack(op_coupling00->local_op());
   op_coupling00->Setup(fi.get_values(), 1.0);
   op_coupling00->UpdateMatrices(Teuchos::null, Teuchos::null);
-
 
   auto op_coupling01 = Teuchos::rcp(new Operators::PDE_CouplingFlux(oplist,
                                                                     fi.get_cvs_matrix(),
@@ -499,7 +438,6 @@ void FlowEnergyPHMatrixFracture_PK::InitializeFlowCoupling_(){
   op_coupling11->Setup(fi.get_values(), 1.0);
   op_coupling11->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-
   op_tree_matrix_->get_block(0, 0)->set_operator_block(0, 0, op_coupling00->global_operator());
   op_tree_matrix_->get_block(0, 1)->set_operator_block(0, 0, op_coupling01->global_operator());
   op_tree_matrix_->get_block(1, 0)->set_operator_block(0, 0, op_coupling10->global_operator());
@@ -507,8 +445,13 @@ void FlowEnergyPHMatrixFracture_PK::InitializeFlowCoupling_(){
   
 }
 
-void FlowEnergyPHMatrixFracture_PK::InitializeHeatCoupling_(){
 
+/* ******************************************************************
+*
+****************************************************************** */
+void
+FlowEnergyPHMatrixFracture_PK::InitializeHeatCoupling_()
+{
   auto& mmap = solution_->SubVector(0)->SubVector(0)->Data()->ViewComponent("face", false)->Map();
   auto& gmap = solution_->SubVector(0)->SubVector(0)->Data()->ViewComponent("face", true)->Map();
   
@@ -623,9 +566,6 @@ void FlowEnergyPHMatrixFracture_PK::InitializeHeatCoupling_(){
    thermo_coupling_mat_ops_.push_back(op_coupling01_mat);
    thermo_coupling_mat_ops_.push_back(op_coupling10_mat);
    thermo_coupling_mat_ops_.push_back(op_coupling11_mat);
-
-
-   
 }
 
 } // namespace Amanzi

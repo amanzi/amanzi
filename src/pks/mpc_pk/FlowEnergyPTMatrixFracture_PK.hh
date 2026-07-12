@@ -29,10 +29,10 @@
 
 namespace Amanzi {
 
-class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
+class FlowEnergyPTMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
  public:
-  FlowEnergyMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
-                              const Teuchos::RCP<Teuchos::ParameterList>& glist,
+  FlowEnergyPTMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
+                                const Teuchos::RCP<Teuchos::ParameterList>& glist,
                               const Teuchos::RCP<State>& S,
                               const Teuchos::RCP<TreeVector>& soln);
 
@@ -82,7 +82,7 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   double residual_norm_;
 
   // factory registration
-  static RegisteredPKFactory<FlowEnergyMatrixFracture_PK> reg_;
+  static RegisteredPKFactory<FlowEnergyPTMatrixFracture_PK> reg_;
 };
 
 } // namespace Amanzi

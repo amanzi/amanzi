@@ -15,7 +15,7 @@
 */
 
 #include "FlowMatrixFracture_PK.hh"
-#include "EnergyMatrixFracture_PK.hh"
+#include "EnergyPTMatrixFracture_PK.hh"
 #include "InverseFactory.hh"
 #include "PDE_CouplingFlux.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
@@ -24,7 +24,7 @@
 #include "SuperMap.hh"
 #include "UniqueLocalIndex.hh"
 
-#include "FlowEnergyMatrixFracture_PK.hh"
+#include "FlowEnergyPTMatrixFracture_PK.hh"
 #include "FractureInsertion.hh"
 #include "FractureInsertion_Helper.hh"
 #include "HeatDiffusionMatrixFracture.hh"
@@ -39,7 +39,7 @@ using CVS_t = CompositeVectorSpace;
 /* *******************************************************************
 * Constructor
 ******************************************************************* */
-FlowEnergyMatrixFracture_PK::FlowEnergyMatrixFracture_PK(
+FlowEnergyPTMatrixFracture_PK::FlowEnergyPTMatrixFracture_PK(
   Teuchos::ParameterList& pk_tree,
   const Teuchos::RCP<Teuchos::ParameterList>& glist,
   const Teuchos::RCP<State>& S,
@@ -72,7 +72,7 @@ FlowEnergyMatrixFracture_PK::FlowEnergyMatrixFracture_PK(
 * Physics-based setup of PK.
 ******************************************************************* */
 void
-FlowEnergyMatrixFracture_PK::Setup()
+FlowEnergyPTMatrixFracture_PK::Setup()
 {
   mesh_domain_ = S_->GetMesh();
   mesh_fracture_ = S_->GetMesh("fracture");
@@ -131,12 +131,12 @@ FlowEnergyMatrixFracture_PK::Setup()
 * Initialization create a tree operator to assemble global matrix
 ******************************************************************* */
 void
-FlowEnergyMatrixFracture_PK::Initialize()
+FlowEnergyPTMatrixFracture_PK::Initialize()
 {
   PK_MPCStrong<PK_BDF>::Initialize();
 
   auto mpc_flow = Teuchos::rcp_dynamic_cast<FlowMatrixFracture_PK>(sub_pks_[0]);
-  auto mpc_energy = Teuchos::rcp_dynamic_cast<EnergyMatrixFracture_PK>(sub_pks_[1]);
+  auto mpc_energy = Teuchos::rcp_dynamic_cast<EnergyPTMatrixFracture_PK>(sub_pks_[1]);
 
   // NOTE: In this PK, the solution is 2-deep, with 2 sub-PKs (flow, energy)
   // each with 2 sub-pks of their own (matrix, fracture).  Currently
@@ -176,7 +176,7 @@ FlowEnergyMatrixFracture_PK::Initialize()
 * Performs one timestep.
 ******************************************************************* */
 bool
-FlowEnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
+FlowEnergyPTMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   auto counter = Teuchos::TimeMonitor::getNewCounter("Flow-Energy MPC PK");
   Teuchos::TimeMonitor tm(*counter);
@@ -213,11 +213,11 @@ FlowEnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit
 * Residual evaluation
 ******************************************************************* */
 void
-FlowEnergyMatrixFracture_PK::FunctionalResidual(double t_old,
-                                                double t_new,
-                                                Teuchos::RCP<const TreeVector> u_old,
-                                                Teuchos::RCP<TreeVector> u_new,
-                                                Teuchos::RCP<TreeVector> f)
+FlowEnergyPTMatrixFracture_PK::FunctionalResidual(double t_old,
+                                                  double t_new,
+                                                  Teuchos::RCP<const TreeVector> u_old,
+                                                  Teuchos::RCP<TreeVector> u_new,
+                                                  Teuchos::RCP<TreeVector> f)
 {
   // flow
   auto u_old0 = u_old->SubVector(0);
@@ -254,9 +254,9 @@ FlowEnergyMatrixFracture_PK::FunctionalResidual(double t_old,
 * Preconditioner update
 ******************************************************************* */
 void
-FlowEnergyMatrixFracture_PK::UpdatePreconditioner(double t,
-                                                  Teuchos::RCP<const TreeVector> up,
-                                                  double dt)
+FlowEnergyPTMatrixFracture_PK::UpdatePreconditioner(double t,
+                                                    Teuchos::RCP<const TreeVector> up,
+                                                    double dt)
 {
   // generate local matrices and apply boundary conditions
   PK_MPCStrong<PK_BDF>::UpdatePreconditioner(t, up, dt);
@@ -304,8 +304,8 @@ FlowEnergyMatrixFracture_PK::UpdatePreconditioner(double t,
 * Application of preconditioner
 ******************************************************************* */
 int
-FlowEnergyMatrixFracture_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
-                                                 Teuchos::RCP<TreeVector> Y)
+FlowEnergyPTMatrixFracture_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
+                                                   Teuchos::RCP<TreeVector> Y)
 {
   Y->PutScalar(0.0);
   return op_pc_solver_->ApplyInverse(*X, *Y);
@@ -316,8 +316,8 @@ FlowEnergyMatrixFracture_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> 
 * Check solution and fields for convergence
 ****************************************************************** */
 double
-FlowEnergyMatrixFracture_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
-                                       Teuchos::RCP<const TreeVector> du)
+FlowEnergyPTMatrixFracture_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
+                                         Teuchos::RCP<const TreeVector> du)
 {
   double error = PK_MPCStrong<PK_BDF>::ErrorNorm(u, du);
 
