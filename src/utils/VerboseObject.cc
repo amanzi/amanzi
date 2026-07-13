@@ -17,7 +17,6 @@
 */
 
 #include <ctime>
-#include <fstream>
 
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
@@ -31,7 +30,6 @@ namespace Amanzi {
 * Create parameter list with the given verbosity.
 ****************************************************************** */
 VerboseObject::VerboseObject(const std::string& name, const std::string& verbosity)
-  : logfile_(global_logfile)
 {
   setDefaultVerbLevel(global_default_level);
   set_name(name);
@@ -49,7 +47,6 @@ VerboseObject::VerboseObject(const std::string& name, const std::string& verbosi
 * Read verbosity from a parameter list
 ****************************************************************** */
 VerboseObject::VerboseObject(const std::string& name, Teuchos::ParameterList plist)
-  : logfile_(global_logfile)
 {
   // Options from ParameterList
   // Set up the default level.
@@ -66,23 +63,14 @@ VerboseObject::VerboseObject(const std::string& name, Teuchos::ParameterList pli
   bool no_pre =
     plist.sublist("verbose object").get<bool>("hide line prefix", global_hide_line_prefix);
 
-  // Override from ParameterList.
+  // Override verbosity level from ParameterList.
   Teuchos::ParameterList plist_out;
   if (plist.sublist("verbose object").isParameter("verbosity level")) {
     plist_out.sublist("VerboseObject")
       .set("Verbosity Level", plist.sublist("verbose object").get<std::string>("verbosity level"));
   }
 
-  if (plist.sublist("verbose object").isParameter("output filename")) {
-    logfile_ = plist.sublist("verbose object").get<std::string>("output filename");
-  }
-
-  if (logfile_ != "") {
-    plist_out.sublist("VerboseObject").set("Output File", logfile_);
-  }
-
   Teuchos::readVerboseObjectSublist(&plist_out, this);
-
 
   // out, tab
   getOStream()->setShowLinePrefix(!no_pre);
@@ -92,23 +80,9 @@ VerboseObject::VerboseObject(const std::string& name, Teuchos::ParameterList pli
 VerboseObject::VerboseObject(const Comm_ptr_type& comm,
                              const std::string& name,
                              Teuchos::ParameterList outer_plist)
-  : comm_(comm),
-    logfile_(global_logfile)
+  : comm_(comm)
 {
   Teuchos::ParameterList& plist = outer_plist.sublist("verbose object");
-
-  // Make sure we have a unique OStream to work with in this VO
-  if (plist.isParameter("output filename")) {
-    logfile_ = plist.get<std::string>("output filename");
-  }
-
-  if (logfile_ == "") {
-    auto ostream = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    setOverridingOStream(ostream);
-  } else {
-    auto ostream = Teuchos::fancyOStream(Teuchos::rcp(new std::ofstream(logfile_)));
-    setOverridingOStream(ostream);
-  }
 
   // First options that act on this
   // Options from ParameterList

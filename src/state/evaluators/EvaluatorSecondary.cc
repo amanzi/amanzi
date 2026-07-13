@@ -167,6 +167,8 @@ EvaluatorSecondary::EnsureEvaluators(State& S)
   // next make sure that all dependencies have evaluators, and call
   // EnsureEvaluators recursively to fill out the dependency graph
   for (const auto& dep : dependencies_) {
+    // self-dependency
+    AMANZI_ASSERT(std::find(my_keys_.begin(), my_keys_.end(), dep) == my_keys_.end());
     auto& dep_eval = S.RequireEvaluator(dep.first, dep.second);
     dep_eval.EnsureEvaluators(S);
   }
@@ -408,5 +410,16 @@ EvaluatorSecondary::EnsureCompatibility_Flags_(State& S)
     S.GetRecordW(keytag.first, keytag.second, keytag.first).set_io_checkpoint(checkpoint_my_key);
   }
 }
+
+
+void
+EvaluatorSecondary::EnsureCompatibility_DepEnsureCompatibility_(State& S)
+{
+  for (auto& dep : dependencies_) {
+    S.GetEvaluator(dep.first, dep.second).EnsureCompatibility(S);
+  }
+}
+
+
 
 } // namespace Amanzi
