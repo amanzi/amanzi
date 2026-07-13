@@ -9,33 +9,39 @@
 
 /*!
 
-This list contains data collected by the input parser of a higher-level spec.
+Diagnostics that print entity counts and geometric measures (area/volume) for
+mesh regions.  Placed under ``mesh`` -> ``MESHNAME`` -> ``region analysis``.
 
-.. admonition:: input_analysis-spec
+The following parameters specify explicit region lists.  Use ``{*}`` as the
+sole entry to print all regions that have already been resolved on that entity
+kind (i.e. all regions actually used by PKs after Setup()).
 
-  * `"used boundary condition regions`" ``[Array(string)]`` provides list of boundary regions
-    for analysis. The simulator will print number of faces and total area of these regions
-    if verbosity level is equal to or above *high*.
+.. admonition:: region-analysis-spec
 
-  * `"used source and sink regions`" ``[Array(string)]`` provides list of source and sink regions
-    for analysis. The simulator will print number of cells and the total volume of these regions
-    if verbosity level is equal to or above *high*.
+  * `"cell regions`" ``[Array(string)]`` Regions to analyse on cells (count + volume).
+    Use ``{*}`` for all resolved cell regions.
 
-  * `"used observation regions`" ``[Array(string)]`` provides list of observation regions
-    for analysis. The simulator will print number of faces(or cells) and the total area
-    (or volume) of these regions if verbosity level is equal to or above *high*.
+  * `"face regions`" ``[Array(string)]`` Regions to analyse on faces (count + area).
+    Use ``{*}`` for all resolved face regions.
+
+  * `"node regions`" ``[Array(string)]`` Regions to analyse on nodes (count only).
+    Use ``{*}`` for all resolved node regions.
+
+  The following parameters are also accepted (used primarily by Amanzi input translators):
+
+  * `"used source regions`" ``[Array(string)]`` Analysed on cells.
+  * `"used boundary condition regions`" ``[Array(string)]`` Analysed on faces.
+  * `"used observation regions`" ``[Array(string)]`` Analysed on cells, falling back to faces.
 
 .. code-block:: xml
 
-  <ParameterList>  <!-- parent list -->
-  <ParameterList name="analysis">
-    <Parameter name="used boundary condition regions" type="Array(string)" value="{_REG1,_REG2}"/>
-    <Parameter name="used source and sink regions" type="Array(string)" value="{_REG3,_REG4}"/>
-    <Parameter name="used observation regions" type="Array(string)" value="{_REG5}"/>
-    <ParameterList name="verbose object">
-      <Parameter name="verbosity level" type="string" value="high"/>
+  <ParameterList name="mesh">
+    <ParameterList name="domain">
+      <ParameterList name="region analysis">
+        <Parameter name="cell regions" type="Array(string)" value="{*}"/>
+        <Parameter name="face regions" type="Array(string)" value="{_bottom_face,_top_face}"/>
+      </ParameterList>
     </ParameterList>
-  </ParameterList>
   </ParameterList>
 
 */
