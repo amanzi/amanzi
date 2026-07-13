@@ -8,19 +8,20 @@
            Daniil Svyatskiy
 */
 
-/*
-  MPC PK
+/*!
 
-  Process kernel that couples flow and energy in matrix and fractures.
+The process kernel that couples heat conduction in matrix and fracture network.
+
 */
 
-#ifndef AMANZI_FLOW_ENERGY_MATRIX_FRACTURE_PK_HH_
-#define AMANZI_FLOW_ENERGY_MATRIX_FRACTURE_PK_HH_
+#ifndef AMANZI_ENERGY_MATRIX_FRACTUREPT_PK_HH_
+#define AMANZI_ENERGY_MATRIX_FRACTUREPT_PK_HH_
 
 #include "Teuchos_RCP.hpp"
 
 #include "EvaluatorIndependentFunction.hh"
 #include "EvaluatorSecondary.hh"
+#include "Key.hh"
 #include "PDE_CouplingFlux.hh"
 #include "PK_BDF.hh"
 #include "PK_MPCStrong.hh"
@@ -29,20 +30,16 @@
 
 namespace Amanzi {
 
-class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
+class EnergyPTMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
  public:
-  FlowEnergyMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
-                              const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                              const Teuchos::RCP<State>& S,
-                              const Teuchos::RCP<TreeVector>& soln);
+  EnergyPTMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
+                            const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                            const Teuchos::RCP<State>& S,
+                            const Teuchos::RCP<TreeVector>& soln);
 
   // PK methods
   virtual void Setup() override;
   virtual void Initialize() override;
-
-  // -- dt is the minimum of the sub pks
-  // virtual double get_dt();
-  // virtual void set_dt(double dt);
 
   // -- advance each sub pk from t_old to t_new.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
@@ -53,21 +50,15 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
                                   Teuchos::RCP<TreeVector> u_new,
                                   Teuchos::RCP<TreeVector> f) override;
 
-  // -- preconditioner
-  virtual void UpdatePreconditioner(double t,
-                                    Teuchos::RCP<const TreeVector> up,
-                                    double dt) override;
+  // updates the preconditioner
+  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u, double dt) override;
 
+  // // preconditioner application
   virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
                                   Teuchos::RCP<TreeVector> Pu) override;
 
-  // -- error norm for coupled system
-  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
-                           Teuchos::RCP<const TreeVector> du) override;
+  std::string name() override { return "energy matrix-fracture"; }
 
-  std::string name() override { return "flow and energy matrix fracture"; }
-
- public:
   // virtual void CalculateDiagnostics() {};
   Teuchos::RCP<const Teuchos::ParameterList> linear_operator_list_;
   Teuchos::RCP<const Teuchos::ParameterList> preconditioner_list_;
@@ -75,15 +66,18 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
 
  private:
   const Teuchos::RCP<Teuchos::ParameterList>& glist_;
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain_, mesh_fracture_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_matrix_, mesh_fracture_;
 
-  Teuchos::RCP<Matrix<TreeVector, TreeVectorSpace>> op_pc_solver_;
+  Teuchos::RCP<Operators::TreeOperator> op_matrix_, op_preconditioner_;
 
-  double residual_norm_;
+  Key heat_diffusion_to_matrix_key_;
+
+  std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux>> adv_coupling_ops_;
 
   // factory registration
-  static RegisteredPKFactory<FlowEnergyMatrixFracture_PK> reg_;
+  static RegisteredPKFactory<EnergyPTMatrixFracture_PK> reg_;
 };
 
 } // namespace Amanzi
+
 #endif

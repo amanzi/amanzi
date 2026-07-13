@@ -110,7 +110,7 @@
       <ParameterList name="TP 1">
         <ParameterList name="PK tree">
           <ParameterList name="coupled thermal flow">
-            <Parameter name="PK type" type="string" value="flow and energy matrix fracture"/>
+            <Parameter name="PK type" type="string" value="flow and energy pt matrix fracture"/>
             <ParameterList name="flow matrix fracture">
               <Parameter name="PK type" type="string" value="flow matrix fracture"/>
               <ParameterList name="flow matrix">
@@ -121,12 +121,12 @@
               </ParameterList>
             </ParameterList>
             <ParameterList name="energy matrix fracture">
-              <Parameter name="PK type" type="string" value="energy matrix fracture"/>
+              <Parameter name="PK type" type="string" value="energy pt matrix fracture"/>
               <ParameterList name="energy matrix">
-                <Parameter name="PK type" type="string" value="pt energy"/>
+                <Parameter name="PK type" type="string" value="energy pt"/>
               </ParameterList>
               <ParameterList name="energy fracture">
-                <Parameter name="PK type" type="string" value="pt energy"/>
+                <Parameter name="PK type" type="string" value="energy pt"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

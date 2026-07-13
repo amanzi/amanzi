@@ -142,5 +142,10 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/eos_iapws97.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    #add_amanzi_test(eos_iapws95_spline eos_iapws95_spline
+    #                KIND unit
+    #                SOURCE test/Main.cc test/eos_iapws95_spline.cc
+    #                LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 

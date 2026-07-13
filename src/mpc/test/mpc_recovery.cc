@@ -223,7 +223,7 @@ TEST(MPC_RECOVERY_COUPLED_THERMAL_FLOW)
 {
   CreateApertureFile(144, 300.0);
 
-  ::Run<FlowEnergyMatrixFracture_PK>(
+  ::Run<FlowEnergyPTMatrixFracture_PK>(
     "test/mpc_coupled_thermal_flow_richards.xml", 3, { 10.0, 10.0, 10.0 }, 1);
   // round-off errors are observed between two states/two runs
   // "test/mpc_coupled_thermal_flow_richards.xml", 3, { 0.1, 0.1, 0.1 }, 1);

@@ -40,7 +40,7 @@
 
   <ParameterList name="PK tree">
     <ParameterList name="energy">
-      <Parameter name="PK type" type="string" value="pt energy"/>
+      <Parameter name="PK type" type="string" value="energy pt"/>
     </ParameterList>
   </ParameterList>
 
