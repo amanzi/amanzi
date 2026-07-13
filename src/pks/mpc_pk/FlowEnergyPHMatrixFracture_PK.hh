@@ -74,7 +74,6 @@ class FlowEnergyPHMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   Teuchos::RCP<Teuchos::ParameterList> ti_list_;
 
  private:
-
   void InitializeFlowCoupling_();
   void InitializeHeatCoupling_();
   
@@ -86,6 +85,9 @@ class FlowEnergyPHMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux>> thermo_coupling_pc_ops_;
   std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux>> thermo_coupling_mat_ops_;
   
+  Teuchos::RCP<Operators::TreeOperator> op_tree_amg_, op_tree_ilu_;
+  bool use_cptr_prec_ = false;
+
   Key heat_diffusion_to_matrix_key_;
   Key diffusion_to_matrix_key_;
   

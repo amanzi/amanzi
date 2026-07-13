@@ -166,8 +166,7 @@ FlowEnergyPTMatrixFracture_PK::Initialize()
     *vo_->os() << "\npreconditioner:" << std::endl
                << op_tree_pc_->PrintDiagnostics() << std::endl
                << vo_->color("green") << "Initialization of PK is complete: my dT=" << get_dt()
-               << vo_->reset() << std::endl
-               << std::endl;
+               << vo_->reset() << std::endl;
   }
 }
 
