@@ -74,6 +74,9 @@ Note this always monitors the residual, and the correction is always modified.
       the behavior.  If true, the solver declares failure.  If false, it takes
       the bad step anyway and hopes to recover in later iterates.
 
+    * `"make one iteration`" ``[bool]`` **false** If true, forces the
+      nonlinear solver to never accept the initial guess.
+
     IF
 
     * `"Anderson mixing`" ``[bool]`` **false** If true, use Anderson mixing instead of NKA.
@@ -166,6 +169,7 @@ class SolverNKA_BT_ATS : public Solver<Vector, VectorSpace> {
   int pc_lag_, pc_updates_;
   int nka_lag_iterations_;
   double nka_overflow_;
+  bool make_one_iteration_;
 
   bool fail_on_failed_backtrack_;
   double max_backtrack_;
@@ -222,6 +226,7 @@ SolverNKA_BT_ATS<Vector, VectorSpace>::Init_()
   tol_ = plist_.get<double>("nonlinear tolerance", 1.e-6);
   overflow_tol_ = plist_.get<double>("diverged tolerance", 1.0e10);
   max_itrs_ = plist_.get<int>("limit iterations", 20);
+  make_one_iteration_ = plist_.get<bool>("make one iteration", false);
 
   nka_lag_iterations_ = plist_.get<int>("nka lag iterations", 0);
   nka_dim_ = plist_.get<int>("nka max vectors", 10);
@@ -330,7 +335,7 @@ SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector>& u
   }
 
   // Check converged
-  if (error < tol_) {
+  if (!make_one_iteration_ && error < tol_) {
     if (vo_->os_OK(Teuchos::VERB_LOW)) {
       *vo_->os() << "Solve succeeded: " << num_itrs_ << " iterations, error = " << error
                  << std::endl;
