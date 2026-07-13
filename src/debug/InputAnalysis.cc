@@ -25,12 +25,7 @@ void
 InputAnalysis::Init(Teuchos::ParameterList& plist)
 {
   plist_ = &plist;
-
-  Teuchos::ParameterList vo_list;
-  if (plist.isSublist("analysis")) {
-    vo_list = plist.sublist("analysis");
-  }
-  vo_ = new VerboseObject("InputAnalysis:" + domain_, vo_list);
+  vo_ = new VerboseObject("InputAnalysis:" + domain_, plist);
 }
 
 
@@ -40,209 +35,161 @@ InputAnalysis::Init(Teuchos::ParameterList& plist)
 void
 InputAnalysis::RegionAnalysis()
 {
-  if (!plist_->isSublist("analysis") ) return;
-  Teuchos::ParameterList alist = plist_->sublist("analysis").sublist(domain_);
+  if (vo_->getVerbLevel() < Teuchos::VERB_MEDIUM) return;
 
-  Errors::Message msg;
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  if (alist.isParameter("used source regions")) {
-    std::vector<std::string> regions =
-      alist.get<Teuchos::Array<std::string>>("used source regions").toVector();
-    regions.erase(SelectUniqueEntries(regions.begin(), regions.end()), regions.end());
-
-    for (int i = 0; i < regions.size(); i++) {
-      int nblock(0), nblock_tmp, nvofs;
-      double volume(0.0), frac;
-      AmanziMesh::cEntity_ID_View block;
-      AmanziMesh::cDouble_View vofs;
-
-      try {
-        Kokkos::tie(block, vofs) = mesh_->getSetEntitiesAndVolumeFractions(
-          regions[i], AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
-        nblock = block.size();
-        nvofs = vofs.size();
-
-        for (int n = 0; n < nblock; n++) {
-          frac = (nvofs == 0) ? 1.0 : vofs[n];
-          volume += mesh_->getCellVolume(block[n]) * frac;
-        }
-      } catch (...) {
-        nblock = -1;
-      }
-
-      // identify if we failed on some cores
-      mesh_->getComm()->MinAll(&nblock, &nblock_tmp, 1);
-      if (nblock_tmp < 0) {
-        Kokkos::tie(block, vofs) = mesh_->getSetEntitiesAndVolumeFractions(
-          regions[i], AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
-        nblock = block.size();
-        nvofs = vofs.size();
-
-        volume = 0.0;
-        for (int n = 0; n < nblock; n++) {
-          frac = (nvofs == 0) ? 1.0 : vofs[n];
-          volume += mesh_->getFaceArea(block[n]) * frac;
-        }
-      }
-
-      double vofs_min(1.0), vofs_max(0.0);
-      for (int n = 0; n < nvofs; ++n) {
-        vofs_min = std::min(vofs_min, vofs[n]);
-        vofs_max = std::max(vofs_max, vofs[n]);
-      }
-      if (nvofs == 0) vofs_max = 1.0;
-
-      nblock_tmp = nblock;
-      int nvofs_tmp(nvofs);
-      double volume_tmp(volume), vofs_min_tmp(vofs_min), vofs_max_tmp(vofs_max);
-
-      mesh_->getComm()->SumAll(&nblock_tmp, &nblock, 1);
-      mesh_->getComm()->SumAll(&nvofs_tmp, &nvofs, 1);
-      mesh_->getComm()->SumAll(&volume_tmp, &volume, 1);
-      mesh_->getComm()->MinAll(&vofs_min_tmp, &vofs_min, 1);
-      mesh_->getComm()->MaxAll(&vofs_max_tmp, &vofs_max, 1);
-
-      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-        std::string name(regions[i]);
-        name.resize(std::min(40, (int)name.size()));
-        *vo_->os() << "src: \"" << name << "\" has " << nblock << " cells"
-                   << " of " << volume << " [m^3]";
-        if (nvofs > 0) *vo_->os() << ", vol.fractions: " << vofs_min << "/" << vofs_max;
-        *vo_->os() << std::endl;
-      }
-
-      if (nblock == 0) {
-        msg << "Used source region is empty.";
-        Exceptions::amanzi_throw(msg);
-      }
-    }
-  }
-
-  if (alist.isParameter("used boundary condition regions")) {
-    std::vector<std::string> regions =
-      alist.get<Teuchos::Array<std::string>>("used boundary condition regions").toVector();
-    regions.erase(SelectUniqueEntries(regions.begin(), regions.end()), regions.end());
+  // Helper: print cell-region stats (count + volume)
+  auto analyzeCellRegion = [&](const std::string& region) {
+    int nblock(0), nblock_tmp, nvofs(0);
+    double volume(0.0), frac;
     AmanziMesh::cEntity_ID_View block;
     AmanziMesh::cDouble_View vofs;
 
-    for (int i = 0; i < regions.size(); i++) {
+    try {
       Kokkos::tie(block, vofs) = mesh_->getSetEntitiesAndVolumeFractions(
-        regions[i], AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
-      int nblock = block.size();
-      int nvofs = vofs.size();
-
-      double frac, area(0.0);
+        region, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+      nblock = block.size();
+      nvofs = vofs.size();
       for (int n = 0; n < nblock; n++) {
         frac = (nvofs == 0) ? 1.0 : vofs[n];
-        area += mesh_->getFaceArea(block[n]) * frac;
+        volume += mesh_->getCellVolume(block[n]) * frac;
       }
-
-      double vofs_min(1.0), vofs_max(0.0);
-      for (int n = 0; n < nvofs; ++n) {
-        vofs_min = std::min(vofs_min, vofs[n]);
-        vofs_max = std::max(vofs_max, vofs[n]);
-      }
-
-      // verify that all faces are boundary faces
-      int bc_flag(1);
-
-      for (int n = 0; n < nblock; ++n) {
-        auto cells = mesh_->getFaceCells(block[n]);
-        if (cells.size() != 1) bc_flag = 0;
-      }
-
-#ifdef HAVE_MPI
-      int nblock_tmp(nblock), nvofs_tmp(nvofs), bc_flag_tmp(bc_flag);
-      double area_tmp(area), vofs_min_tmp(vofs_min), vofs_max_tmp(vofs_max);
-
-      mesh_->getComm()->SumAll(&nblock_tmp, &nblock, 1);
-      mesh_->getComm()->SumAll(&nvofs_tmp, &nvofs, 1);
-      mesh_->getComm()->SumAll(&area_tmp, &area, 1);
-      mesh_->getComm()->MinAll(&vofs_min_tmp, &vofs_min, 1);
-      mesh_->getComm()->MaxAll(&vofs_max_tmp, &vofs_max, 1);
-      mesh_->getComm()->MinAll(&bc_flag_tmp, &bc_flag, 1);
-#endif
-      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-        std::string name(regions[i]);
-        name.resize(std::min(40, (int)name.size()));
-        *vo_->os() << "bc: \"" << name << "\" has " << nblock << " faces"
-                   << " of " << area << " [m^2]";
-        if (nvofs > 0) *vo_->os() << ", vol.fractions: " << vofs_min << "/" << vofs_max;
-        *vo_->os() << std::endl;
-      }
-
-      // if (nblock == 0) {
-      //   msg << "Used boundary region is empty.";
-      //   Exceptions::amanzi_throw(msg);
-      // }
-      // if (bc_flag == 0) {
-      //   msg << "Used boundary region has non-boundary entries.";
-      //   Exceptions::amanzi_throw(msg);
-      // }
+    } catch (...) {
+      nblock = -1;
     }
+
+    double vofs_min(1.0), vofs_max(0.0);
+    for (int n = 0; n < nvofs; ++n) {
+      vofs_min = std::min(vofs_min, vofs[n]);
+      vofs_max = std::max(vofs_max, vofs[n]);
+    }
+    if (nvofs == 0) vofs_max = 1.0;
+
+    int nvofs_tmp(nvofs);
+    double volume_tmp(volume), vofs_min_tmp(vofs_min), vofs_max_tmp(vofs_max);
+    mesh_->getComm()->MinAll(&nblock, &nblock_tmp, 1);
+    if (nblock_tmp < 0) { nblock = 0; nvofs = 0; volume = 0.0; }
+    else { mesh_->getComm()->SumAll(&nblock, &nblock_tmp, 1);  nblock = nblock_tmp; }
+    mesh_->getComm()->SumAll(&nvofs_tmp, &nvofs, 1);
+    mesh_->getComm()->SumAll(&volume_tmp, &volume, 1);
+    mesh_->getComm()->MinAll(&vofs_min_tmp, &vofs_min, 1);
+    mesh_->getComm()->MaxAll(&vofs_max_tmp, &vofs_max, 1);
+
+    std::string name(region);
+    name.resize(std::min(40, (int)name.size()));
+    *vo_->os() << "cell: \"" << name << "\" has " << nblock << " cells, vol: " << volume << " [m^3]";
+    if (nvofs > 0) *vo_->os() << ", vol.fractions: " << vofs_min << "/" << vofs_max;
+    *vo_->os() << std::endl;
+  };
+
+  // Helper: print face-region stats (count + area)
+  auto analyzeFaceRegion = [&](const std::string& region) {
+    AmanziMesh::cEntity_ID_View block;
+    AmanziMesh::cDouble_View vofs;
+    Kokkos::tie(block, vofs) = mesh_->getSetEntitiesAndVolumeFractions(
+      region, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+    int nblock = block.size();
+    int nvofs = vofs.size();
+
+    double frac, area(0.0);
+    for (int n = 0; n < nblock; n++) {
+      frac = (nvofs == 0) ? 1.0 : vofs[n];
+      area += mesh_->getFaceArea(block[n]) * frac;
+    }
+
+    double vofs_min(1.0), vofs_max(0.0);
+    for (int n = 0; n < nvofs; ++n) {
+      vofs_min = std::min(vofs_min, vofs[n]);
+      vofs_max = std::max(vofs_max, vofs[n]);
+    }
+
+    int nblock_tmp(nblock), nvofs_tmp(nvofs);
+    double area_tmp(area), vofs_min_tmp(vofs_min), vofs_max_tmp(vofs_max);
+    mesh_->getComm()->SumAll(&nblock_tmp, &nblock, 1);
+    mesh_->getComm()->SumAll(&nvofs_tmp, &nvofs, 1);
+    mesh_->getComm()->SumAll(&area_tmp, &area, 1);
+    mesh_->getComm()->MinAll(&vofs_min_tmp, &vofs_min, 1);
+    mesh_->getComm()->MaxAll(&vofs_max_tmp, &vofs_max, 1);
+
+    std::string name(region);
+    name.resize(std::min(40, (int)name.size()));
+    *vo_->os() << "face: \"" << name << "\" has " << nblock << " faces, area: " << area << " [m^2]";
+    if (nvofs > 0) *vo_->os() << ", vol.fractions: " << vofs_min << "/" << vofs_max;
+    *vo_->os() << std::endl;
+  };
+
+  // Helper: print node-region stats (count only)
+  auto analyzeNodeRegion = [&](const std::string& region) {
+    AmanziMesh::cEntity_ID_View block;
+    AmanziMesh::cDouble_View vofs;
+    Kokkos::tie(block, vofs) = mesh_->getSetEntitiesAndVolumeFractions(
+      region, AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
+    int nblock = block.size(), nblock_tmp;
+    mesh_->getComm()->SumAll(&nblock, &nblock_tmp, 1);  nblock = nblock_tmp;
+
+    std::string name(region);
+    name.resize(std::min(40, (int)name.size()));
+    *vo_->os() << "node: \"" << name << "\" has " << nblock << " nodes" << std::endl;
+  };
+
+  // cell regions
+  if (plist_->isParameter("cell regions")) {
+    std::vector<std::string> regions =
+      plist_->get<Teuchos::Array<std::string>>("cell regions").toVector();
+    regions.erase(SelectUniqueEntries(regions.begin(), regions.end()), regions.end());
+    if (regions.size() == 1 && regions[0] == "{*}")
+      regions = mesh_->getResolvedSetNames(AmanziMesh::Entity_kind::CELL);
+    for (const auto& r : regions) analyzeCellRegion(r);
   }
 
-  if (alist.isParameter("used observation regions")) {
+  // face regions
+  if (plist_->isParameter("face regions")) {
     std::vector<std::string> regions =
-      alist.get<Teuchos::Array<std::string>>("used observation regions").toVector();
+      plist_->get<Teuchos::Array<std::string>>("face regions").toVector();
+    regions.erase(SelectUniqueEntries(regions.begin(), regions.end()), regions.end());
+    if (regions.size() == 1 && regions[0] == "{*}")
+      regions = mesh_->getResolvedSetNames(AmanziMesh::Entity_kind::FACE);
+    for (const auto& r : regions) analyzeFaceRegion(r);
+  }
 
-    int nblock(0), nblock_tmp, nblock_max;
-    for (int i = 0; i < regions.size(); i++) {
-      double volume(0.0), volume_tmp;
-      std::string type;
-      AmanziMesh::cEntity_ID_View block;
-      AmanziMesh::cDouble_View vofs;
+  // node regions
+  if (plist_->isParameter("node regions")) {
+    std::vector<std::string> regions =
+      plist_->get<Teuchos::Array<std::string>>("node regions").toVector();
+    regions.erase(SelectUniqueEntries(regions.begin(), regions.end()), regions.end());
+    if (regions.size() == 1 && regions[0] == "{*}")
+      regions = mesh_->getResolvedSetNames(AmanziMesh::Entity_kind::NODE);
+    for (const auto& r : regions) analyzeNodeRegion(r);
+  }
 
-      // observation region may use either cells of faces
-      if (!mesh_->isValidSetName(regions[i], AmanziMesh::Entity_kind::CELL) &&
-          !mesh_->isValidSetName(regions[i], AmanziMesh::Entity_kind::FACE)) {
-        std::string name(regions[i]);
-        name.resize(std::min(40, (int)name.size()));
-        *vo_->os() << "Observation region: \"" << name << "\" has unknown type." << std::endl;
-      }
+  // "used source regions" -> cell analysis
+  if (plist_->isParameter("used source regions")) {
+    std::vector<std::string> regions =
+      plist_->get<Teuchos::Array<std::string>>("used source regions").toVector();
+    regions.erase(SelectUniqueEntries(regions.begin(), regions.end()), regions.end());
+    for (const auto& r : regions) analyzeCellRegion(r);
+  }
 
-      try {
-        Kokkos::tie(block, vofs) = mesh_->getSetEntitiesAndVolumeFractions(
-          regions[i], AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
-        nblock_tmp = nblock = block.size();
-        type = "cells";
-        for (int n = 0; n < nblock; n++) volume += mesh_->getCellVolume(block[n]);
+  // "used boundary condition regions" -> face analysis
+  if (plist_->isParameter("used boundary condition regions")) {
+    std::vector<std::string> regions =
+      plist_->get<Teuchos::Array<std::string>>("used boundary condition regions").toVector();
+    regions.erase(SelectUniqueEntries(regions.begin(), regions.end()), regions.end());
+    for (const auto& r : regions) analyzeFaceRegion(r);
+  }
 
-        volume_tmp = volume;
-        mesh_->getComm()->SumAll(&nblock_tmp, &nblock, 1);
-        mesh_->getComm()->SumAll(&volume_tmp, &volume, 1);
-      } catch (...) {
-        nblock = -1;
-      }
-
-      // identify if we failed on some cores or region is empty
-      mesh_->getComm()->MinAll(&nblock, &nblock_tmp, 1);
-      mesh_->getComm()->MaxAll(&nblock, &nblock_max, 1);
-
-      if (nblock_tmp < 0 || nblock_max == 0) {
-        Kokkos::tie(block, vofs) = mesh_->getSetEntitiesAndVolumeFractions(
-          regions[i], AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
-        nblock_tmp = nblock = block.size();
-        type = "faces";
-        for (int n = 0; n < nblock; n++) volume += mesh_->getFaceArea(block[n]);
-
-        volume_tmp = volume;
-        mesh_->getComm()->SumAll(&nblock_tmp, &nblock, 1);
-        mesh_->getComm()->SumAll(&volume_tmp, &volume, 1);
-      }
-
-      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-        std::string name(regions[i]);
-        name.resize(std::min(40, (int)name.size()));
-        *vo_->os() << "obs: \"" << name << "\" has " << nblock << " " << type
-                   << ", size: " << volume << std::endl;
-      }
-
-      if (nblock == 0) {
-        msg << "Used observation region is empty.";
-        Exceptions::amanzi_throw(msg);
-      }
+  // "used observation regions" -> cell-then-face analysis
+  if (plist_->isParameter("used observation regions")) {
+    std::vector<std::string> regions =
+      plist_->get<Teuchos::Array<std::string>>("used observation regions").toVector();
+    for (const auto& r : regions) {
+      if (mesh_->isValidSetName(r, AmanziMesh::Entity_kind::CELL))
+        analyzeCellRegion(r);
+      else if (mesh_->isValidSetName(r, AmanziMesh::Entity_kind::FACE))
+        analyzeFaceRegion(r);
+      else
+        *vo_->os() << "obs: \"" << r << "\" has unknown type." << std::endl;
     }
   }
 }
@@ -254,7 +201,6 @@ InputAnalysis::RegionAnalysis()
 void
 InputAnalysis::OutputBCs()
 {
-  if (!plist_->isSublist("analysis") ) return;
   if (vo_->getVerbLevel() < Teuchos::VERB_EXTREME) return;
 
   int bc_counter = 0;

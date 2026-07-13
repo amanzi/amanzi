@@ -554,6 +554,10 @@ struct MeshCache : public MeshCacheBase {
     const Entity_kind kind,
     const Parallel_kind ptype) const;
 
+  // Returns the names of all sets that have already been resolved for the
+  // given entity kind.  Does not trigger lazy construction of any new sets.
+  std::vector<std::string> getResolvedSetNames(const Entity_kind kind) const;
+
   // ----------------
   // Entity meta-data
   // ----------------
