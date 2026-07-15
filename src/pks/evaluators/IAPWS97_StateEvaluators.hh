@@ -168,7 +168,7 @@ class IAPWS97_ThermalConductivityEvaluator
 
  private:
   Key domain_name_;
-  Key density_key_, temperature_key_, state_key_, aperture_key_;
+  Key density_key_, temperature_key_, state_key_;
   Teuchos::RCP<AmanziEOS::IAPWS97> eos_;
 };
 

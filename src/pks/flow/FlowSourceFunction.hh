@@ -119,6 +119,7 @@ Again, constant functions can be replaced by any of the available functions.
 #include "Teuchos_RCP.hpp"
 
 #include "CompositeVector.hh"
+#include "errors.hh"
 #include "PK_DomainFunction.hh"
 #include "State.hh"
 
@@ -127,18 +128,24 @@ namespace Flow {
 
 class FlowSourceFunction : public PK_DomainFunction {
  public:
-  FlowSourceFunction() {};
-  FlowSourceFunction(const Teuchos::ParameterList& plist) {};
+  FlowSourceFunction() : scale_by_aperture_(false) {};
+  FlowSourceFunction(const Teuchos::ParameterList& plist) {
+    scale_by_aperture_ = false;
+    if (plist.isParameter("scale by aperture")) scale_by_aperture_ = plist.get<bool>("scale by aperture");
+  };
 
   void ComputeSubmodel(const Key& key, const State& S)
   {
-    if (getName() != "volume" && S.HasRecord(key, Tags::DEFAULT)) {
+    if (scale_by_aperture_ && S.HasRecord(key, Tags::DEFAULT)) {
       auto aperture = *S.Get<CompositeVector>(key, Tags::DEFAULT).ViewComponent("cell", true);
       for (auto it = begin(); it != end(); ++it) {
         it->second[0] *= aperture[0][it->first];
       }
     }
   }
+
+ private:
+  bool scale_by_aperture_;
 };
 
 } // namespace Flow

@@ -425,7 +425,6 @@ IAPWS97_ThermalConductivityEvaluator::IAPWS97_ThermalConductivityEvaluator(
     density_key_(other.density_key_),
     temperature_key_(other.temperature_key_),
     state_key_(other.state_key_),
-    aperture_key_(other.aperture_key_),
     domain_name_(other.domain_name_)
 {}
 
