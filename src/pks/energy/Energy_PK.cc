@@ -429,7 +429,6 @@ Energy_PK::Setup()
       .setName(heat_src_key_)
       .set<std::string>("tag", "");
 
-
     auto eval = Teuchos::rcp(new Evaluators::LinearRelaxationEvaluator(src_list, S_));
     S_->SetEvaluator(heat_src_key_, Tags::DEFAULT, eval);
 

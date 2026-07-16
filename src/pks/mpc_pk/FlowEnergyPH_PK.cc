@@ -89,6 +89,7 @@ FlowEnergyPH_PK::Setup()
   conductivity_gen_key_ =
     (!assumptions.flow_on_manifold) ? conductivity_key_ : conductivity_eff_key_;
 
+  heat_src_key_ = Keys::getKey(domain_, "heat_source");
   alpha_key_ = Keys::getKey(domain_, "alpha_coef");
   beta_key_ = Keys::getKey(domain_, "beta_coef");
 
@@ -475,6 +476,13 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd, pressure_key_, tag);
   auto& dEdp = S_->GetDerivative<CV_t>(energy_key_, tag, pressure_key_, tag);
   pde10_acc_->AddAccumulationTerm(dEdp, dt, "cell");  
+
+  // -- implicit source models
+  if (S_->HasRecord(heat_src_key_)) {
+    S_->GetEvaluator(heat_src_key_).UpdateDerivative(*S_, passwd, temperature_key_, Tags::DEFAULT);
+    auto dQdT = S_->GetDerivative<CV_t>(heat_src_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT);
+    pde10_acc_->AddAccumulationTerm(dQdT, dTdp, 1.0, "cell", true);
+  }
 
   if (use_cptr_prec_) {
     op_tree_ilu_->AssembleMatrix();

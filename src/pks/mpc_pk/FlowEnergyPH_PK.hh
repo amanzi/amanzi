@@ -126,7 +126,7 @@ protected:
   Key bcs_flow_key_, bcs_enthalpy_key_;
   Key permeability_key_, aperture_key_;
   Key conductivity_key_, conductivity_eff_key_, conductivity_gen_key_;
-  Key alpha_key_, beta_key_;
+  Key heat_src_key_, alpha_key_, beta_key_;
 
   // factory registration
   static RegisteredPKFactory<FlowEnergyPH_PK> reg_;
