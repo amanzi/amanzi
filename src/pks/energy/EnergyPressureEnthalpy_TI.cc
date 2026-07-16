@@ -157,9 +157,6 @@ EnergyPressureEnthalpy_PK::UpdatePreconditioner(double t,
   auto dEdh = S_->GetDerivative<CV_t>(energy_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT);
   auto& dEdh_c = *dEdh.ViewComponent("cell");
 
-  S_->GetEvaluator(ie_rock_key_).UpdateDerivative(*S_, passwd_, enthalpy_key_, Tags::DEFAULT);
-  const auto& dUdh_c = *S_->GetDerivative<CV_t>(ie_rock_key_, Tags::DEFAULT, enthalpy_key_, Tags::DEFAULT).ViewComponent("cell");
-
   S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, passwd_);
 
   const auto& eta_c = *S_->Get<CV_t>(mol_density_liquid_key_, Tags::DEFAULT).ViewComponent("cell");

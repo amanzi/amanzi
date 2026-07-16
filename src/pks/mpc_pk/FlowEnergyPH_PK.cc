@@ -24,7 +24,6 @@
 #include "PDE_AdvectionUpwindFactory.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "StateArchive.hh"
-#include "TreeOperator.hh"
 
 #include "FlowEnergyPH_PK.hh"
 #include "PK_MPCStrong.hh"
@@ -253,57 +252,21 @@ FlowEnergyPH_PK::Initialize()
 
   pde10_adv_ = opfactory_adv.Create(oplist_adv, op10_);
   pde10_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, op10_));
- 
-  // solver parameters
+
   auto solver_list = Teuchos::sublist(glist_, "solvers");
   auto ti_list = Teuchos::sublist(my_list_, "time integrator", true);
-
-  std::string solver_name, pc_name;
-  use_cptr_prec_ = ti_list->get<bool>("use CPTR preconditioner", false);
-
-  solver_name = ti_list->get<std::string>("linear solver", "none");
-  pc_name = ti_list->get<std::string>("preconditioner", "");
-
+  std::string solver_name = ti_list->get<std::string>("linear solver", "none");
+  std::string pc_name = ti_list->get<std::string>("preconditioner", "");
   auto inv_list = AmanziSolvers::mergePreconditionerSolverLists(
     pc_name, *preconditioner_list_, solver_name, *solver_list, true);
   op_tree_pc_->set_inverse_parameters(inv_list);
 
-  if (use_cptr_prec_) {
-    op_tree_amg_ = op_tree_pc_->Clone();
-    op_tree_ilu_ = op_tree_pc_->Clone();
-
-    pc_name = "ILU";
-    inv_list = AmanziSolvers::mergePreconditionerSolverLists(
-      pc_name, *preconditioner_list_, solver_name, *solver_list, true);
-    op_tree_ilu_->set_inverse_parameters(inv_list);
-
-    pc_name = "Hypre AMG";
-    inv_list = AmanziSolvers::mergePreconditionerSolverLists(
-      pc_name, *preconditioner_list_, solver_name, *solver_list, true);
-    op_tree_amg_->set_inverse_parameters(inv_list);
- 
-    op_tree_amg_->set_block(0, 1, Teuchos::null);
-    auto block = op_tree_amg_->get_operator_block(1, 1);
-    /*
-    for (int loop = 0; loop < 2; ++loop) {
-      auto pos = block->FindMatrixOp(
-        Operators::OPERATOR_SCHEMA_BASE_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL,
-        Operators::OPERATOR_SCHEMA_RULE_EXACT,
-        false);
-      if (pos != block->end()) block->OpErase(pos);
-    }
-    */
-  }
-
   // output of initialization statistics
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    if (use_cptr_prec_) {
-      *vo_->os() << std::endl
-                 << "CPTR preconditioner:" << std::endl
-                 << op_tree_amg_->PrintDiagnostics();
-    }
     *vo_->os() << std::endl
+               << "matrix:" << std::endl
+               << op_tree_matrix_->PrintDiagnostics() << std::endl
                << "preconditioner:" << std::endl
                << op_tree_pc_->PrintDiagnostics() << std::endl
                << vo_->color("green") << "Initialization of PK is complete: my dT=" << get_dt()
@@ -467,15 +430,14 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   auto& dEdp = S_->GetDerivative<CV_t>(energy_key_, tag, pressure_key_, tag);
   pde10_acc_->AddAccumulationTerm(dEdp, dt, "cell");  
 
-  if (use_cptr_prec_) {
-    op_tree_ilu_->AssembleMatrix();
-    op_tree_ilu_->InitializeInverse();
-    op_tree_ilu_->ComputeInverse();  // FIXME shoud be called automatically by ApplyInverse()
-  } else {
-    op_tree_pc_->AssembleMatrix();
-    op_tree_pc_->InitializeInverse();
-    op_tree_pc_->ComputeInverse();
+  if (!symbolic_assembly_complete_) {
+    op_tree_pc_->SymbolicAssembleMatrix();
+    symbolic_assembly_complete_ = true;
   }
+  op_tree_pc_->AssembleMatrix();
+  // std::cout << *op_tree_pc_->A() << std::endl; exit(0);
+  op_tree_pc_->InitializeInverse();
+  op_tree_pc_->ComputeInverse();
 }
 
 

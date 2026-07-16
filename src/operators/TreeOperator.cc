@@ -49,8 +49,7 @@ TreeOperator::TreeOperator()
     inverse_pars_set_(false),
     initialize_complete_(false),
     compute_complete_(false),
-    assembly_complete_(false),
-    symbolic_assembly_complete_(false)
+    assembly_complete_(false)
 {
   vo_ = Teuchos::rcp(new VerboseObject("TreeOperator", Teuchos::ParameterList()));
 }
@@ -112,7 +111,6 @@ TreeOperator::TreeOperator(const TreeOperator& other)
   shift_min_ = other.shift_min_;
   vo_ = other.vo_;
   inv_plist_ = other.inv_plist_;
-  inverse_pars_set_ = other.inverse_pars_set_;
 
   for (int i = 0; i != row_size_; ++i) {
     for (int j = 0; j != col_size_; ++j) {
@@ -415,8 +413,6 @@ TreeOperator::SymbolicAssembleMatrix()
   // create the matrix
   Amat_ = Teuchos::rcp(new MatrixFE(graph));
   A_ = Amat_->Matrix();
-
-  symbolic_assembly_complete_ = true;
 }
 
 
@@ -426,8 +422,6 @@ TreeOperator::SymbolicAssembleMatrix()
 void
 TreeOperator::AssembleMatrix()
 {
-  if (!symbolic_assembly_complete_) SymbolicAssembleMatrix();
-
   AMANZI_ASSERT(leaves_.size() != 0);
   Amat_->PutScalar(0.);
 
@@ -468,7 +462,6 @@ TreeOperator::AssembleMatrix()
 void
 TreeOperator::Init()
 {
-  symbolic_assembly_complete_ = false;
   assembly_complete_ = false;
   compute_complete_ = false;
   for (int i = 0; i != row_size_; ++i) {
@@ -486,7 +479,6 @@ TreeOperator::Init()
 void
 TreeOperator::InitOffdiagonals()
 {
-  symbolic_assembly_complete_ = false;
   assembly_complete_ = false;
   compute_complete_ = false;
   for (int i = 0; i != row_size_; ++i) {
