@@ -421,6 +421,7 @@ Alquimia_PK::Initialize()
   }
 
   if (restarted) {
+    updateSubstate(Tags::DEFAULT);
     Teuchos::ParameterList ic_plist;
     ic_plist.set("restart file", restart_filename);
     const std::vector<std::string>* subfieldnames = S_->GetRecordSetW(aux_data_key_).subfieldnames();
