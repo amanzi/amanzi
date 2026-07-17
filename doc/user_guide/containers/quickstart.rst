@@ -23,9 +23,11 @@ The Amanzi-ATS Docker images are organized as a three-image stack:
 #. ``metsi/amanzi`` -- a compiled version of Amanzi, built on the base image.
 #. ``metsi/ats`` -- a compiled version of ATS, built on the base image.
 
-Images 2 and 3 are rebuilt automatically by GitHub Actions CI on each push and
-pull request in the ``amanzi/amanzi`` and ``amanzi/ats`` repositories, and are
-pushed to Docker Hub.  See :ref:`Container-Image-Tags` for the tagging scheme.
+Images 2 and 3 are rebuilt automatically by GitHub Actions CI and pushed to
+Docker Hub.  The ``metsi/amanzi`` image is built by the CI in the
+``amanzi/amanzi`` repository, while the ``metsi/ats`` image is built by the CI
+in the ``amanzi/ats`` repository.  See :ref:`Container-Image-Tags` for the
+tagging scheme.
 
 Pulling an Image
 ----------------
@@ -81,7 +83,9 @@ workflow.
 
 .. note::
 
-   The images on Docker Hub are currently built for the ``amd64``/``x86_64``
-   architecture.  On Apple computers with M-series (``arm64``) chips they run
-   through emulation and can be very slow.  See :ref:`Container-Multiarch` for
-   building native ``arm64`` images.
+   The ``metsi/amanzi`` images on Docker Hub are multi-architecture: the
+   ``metsi/amanzi:master-latest`` tag is a manifest covering both ``amd64``
+   (``x86_64``) and ``arm64`` builds.  Docker automatically selects the build
+   matching your machine, so on Apple computers with M-series (``arm64``) chips
+   the native ``arm64`` image is pulled and runs without emulation.  See
+   :ref:`Container-Multiarch` for more on the multi-architecture build process.

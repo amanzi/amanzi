@@ -44,14 +44,17 @@ it:
    cd amanzi/Docker
    ./deploy-tpls-docker.sh
 
-If you are not pushing the image to the ``metsi/amanzi-tpls`` Docker Hub
-repository, this is as far as you need to go.  To publish it, tag it with a
-version number and push (this requires access to the repository):
+The script tags the resulting image
+``metsi/amanzi-tpls:<version>-<mpi>-<base>-<ver_tag>`` (for example
+``metsi/amanzi-tpls:0.98.9-mpich-ubuntu-jammy``), where ``<version>`` is read
+from ``config/SuperBuild/TPLVersions.cmake``.  If you are not pushing the image
+to the ``metsi/amanzi-tpls`` Docker Hub repository, this is as far as you need
+to go.  To publish it (this requires access to the repository), re-run the
+script with ``--push``:
 
 .. code-block:: console
 
-   docker tag metsi/amanzi-tpls:latest metsi/amanzi-tpls:<version>
-   docker push metsi/amanzi-tpls
+   ./deploy-tpls-docker.sh --push
 
 .. warning::
 
@@ -61,44 +64,43 @@ version number and push (this requires access to the repository):
 Building the Amanzi Image
 -------------------------
 
-``Dockerfile-Amanzi`` pulls whatever ``metsi/amanzi-tpls`` image is tagged
-``latest`` and builds Amanzi on top of it.  To build against an older TPLs
-version, change the tag on the first line of ``Dockerfile-Amanzi`` from
-``latest`` to the desired version number (and reset it to ``latest`` before
-merging to ``master``).
-
-If a local image tagged ``metsi/amanzi-tpls:latest`` already exists, the build
-uses it instead of downloading from Docker Hub.  This is convenient for
-testing an Amanzi build against TPLs built on a non-``master`` branch.
-
-Build the image:
+``Dockerfile-Amanzi`` builds Amanzi on top of a ``metsi/amanzi-tpls`` image.  It
+selects its base image from the ``amanzi_tpls_ver`` and ``mpi_flavor`` build
+arguments as ``metsi/amanzi-tpls:${amanzi_tpls_ver}-${mpi_flavor}`` (for example
+``metsi/amanzi-tpls:0.98.9-mpich``).  Rather than invoking ``docker build``
+directly, use the helper script, which fills in these arguments and tags the
+result for you:
 
 .. code-block:: console
 
    cd amanzi/Docker
-   docker build -f Dockerfile-Amanzi -t metsi/amanzi:latest .
+   ./deploy-amanzi-docker.sh
 
-The flags are:
+The script derives the Amanzi version from the most recent ``amanzi-*`` git tag
+and the current commit hash, and tags the resulting image both
+``metsi/amanzi:<version>`` and ``metsi/amanzi:latest``.  It uses the ``mpich``
+TPLs image by default; pass ``--mpi_flavor`` to change this, and
+``--amanzi_tpls_ver`` to build against a different TPLs version.  If a matching
+local ``metsi/amanzi-tpls`` image already exists, the build uses it instead of
+downloading from Docker Hub, which is convenient for testing an Amanzi build
+against TPLs built on a non-``master`` branch.
 
-* ``-f`` -- the Dockerfile containing the build instructions.
-* ``-t`` -- the tag for the resulting image (otherwise it is named by hash).
+If your system is behind a proxy, export the ``http_proxy`` and ``https_proxy``
+environment variables and pass the script's ``--use_proxy`` option to forward
+them to the build.
 
-If your system uses a proxy, pass it as build arguments:
+To publish (requires repository access), add ``--push``:
 
 .. code-block:: console
 
-   docker build --build-arg http_proxy=<proxy:port> \
-       --build-arg https_proxy=<proxy:port> \
-       -f Dockerfile-Amanzi -t metsi/amanzi:latest .
+   ./deploy-amanzi-docker.sh --push
 
-To publish (requires repository access):
-
-.. code-block:: console
-
-   docker tag metsi/amanzi:latest metsi/amanzi:<version>
-   docker push metsi/amanzi
-
-The ATS image is built the same way, using ``Dockerfile-ATS-build``.
+The ATS image is built in a similar way with ``Dockerfile-ATS-build`` (or the
+``deploy-ats-docker.sh`` helper).  Note that, unlike ``Dockerfile-Amanzi`` --
+which bases on the two-part ``<version>-<mpi>`` TPLs tag --
+``Dockerfile-ATS-build`` bases on the full four-part
+``<version>-<mpi>-<base>-<ver_tag>`` TPLs tag (for example
+``metsi/amanzi-tpls:0.98.9-mpich-ubuntu-jammy``).
 
 Building Amanzi Interactively for Debugging
 -------------------------------------------
@@ -116,9 +118,13 @@ You start in ``/home/amanzi_user/amanzi``.  Build using the same
 .. code-block:: console
 
    ./bootstrap.sh \
-       --prefix=/home/amanzi_user/local \
+       --prefix=/home/amanzi_user/install \
        --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/amanzi \
-       --tpl-config-file=/home/amanzi_user/local/tpls/share/cmake/amanzi-tpl-config.cmake \
+       --tpl-config-file=/home/amanzi_user/install/tpls/share/cmake/amanzi-tpl-config.cmake \
+       --parallel=4 --opt \
+       --enable-structured \
+       --disable-build_user_guide \
+       --enable-alquimia --enable-pflotran --enable-crunchtope \
        --with-mpi=/usr \
        --enable-shared
 

@@ -27,7 +27,7 @@ start it with a port mapping:
        --mount type=bind,source=$HOST_MNT,target=$CONT_MNT -w $CONT_MNT \
        -p 8899:8899 \
        <user>/amanzi:ats-jupyter \
-       /bin/bash -c 'conda activate base; jupyter lab --port 8899'
+       /bin/bash -c 'source /home/amanzi_user/anaconda/Anaconda3-2023.07-2/etc/profile.d/conda.sh; conda activate base; jupyter lab --port 8899'
 
 The additional flags are:
 
@@ -81,8 +81,10 @@ connections (and, if needed, running as root):
 
 .. code-block:: python
 
-   c.ServerApp.allow_root = True
-   c.ServerApp.allow_remote_access = True
+   c.NotebookApp.allow_root = True
+   c.NotebookApp.allow_remote_access = True
+   c.NotebookApp.ip = '*'
+   c.NotebookApp.token = u''
 
 The ``container-anaconda.sh`` and ``container-jupyter-setup.sh`` scripts in the
 ``Docker`` directory automate these installation and configuration steps.

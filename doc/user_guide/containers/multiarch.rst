@@ -21,8 +21,13 @@ Emulation on a Single System
 This is the easiest approach, but can be slow.  It uses ``buildx``, a
 BuildKit-based tool, to build multi-architecture images through emulation.
 
-In practice, replace ``build`` with ``buildx build --platform=<platforms>`` in
-the deploy scripts, for example ``--platform=linux/amd64,linux/arm64``.
+In practice, pass the ``--multiarch`` flag to the deploy scripts
+(``deploy-tpls-docker.sh``, ``deploy-amanzi-docker.sh``, and
+``deploy-ats-docker.sh``).  This flag switches the scripts from a plain
+``docker build`` for the local architecture to
+``docker buildx build --platform=linux/amd64,linux/arm64``, building both
+architectures in one step.  It assumes Docker is already configured to build
+multi-architecture images.
 
 .. note::
 
@@ -47,22 +52,22 @@ Build and push each architecture:
 .. code-block:: console
 
    # On an amd64 machine
-   docker build -t metsi/amanzi-tpls:mpich-<version>-amd64 .
-   docker push metsi/amanzi-tpls:mpich-<version>-amd64
+   docker build -f Dockerfile-TPLs -t metsi/amanzi-tpls:<version>-amd64-mpich-ubuntu-jammy .
+   docker push metsi/amanzi-tpls:<version>-amd64-mpich-ubuntu-jammy
 
    # On an arm64 machine
-   docker build -t metsi/amanzi-tpls:mpich-<version>-arm64 .
-   docker push metsi/amanzi-tpls:mpich-<version>-arm64
+   docker build -f Dockerfile-TPLs -t metsi/amanzi-tpls:<version>-arm64-mpich-ubuntu-jammy .
+   docker push metsi/amanzi-tpls:<version>-arm64-mpich-ubuntu-jammy
 
 With both images on Docker Hub, combine them under a common tag:
 
 .. code-block:: console
 
    docker manifest create \
-       metsi/amanzi-tpls:mpich-<version> \
-       --amend metsi/amanzi-tpls:mpich-<version>-amd64 \
-       --amend metsi/amanzi-tpls:mpich-<version>-arm64 \
-   && docker manifest push metsi/amanzi-tpls:mpich-<version>
+       metsi/amanzi-tpls:<version>-mpich-ubuntu-jammy \
+       --amend metsi/amanzi-tpls:<version>-amd64-mpich-ubuntu-jammy \
+       --amend metsi/amanzi-tpls:<version>-arm64-mpich-ubuntu-jammy \
+   && docker manifest push metsi/amanzi-tpls:<version>-mpich-ubuntu-jammy
 
-Clients then pull ``metsi/amanzi-tpls:mpich-<version>`` and automatically
-receive the image matching their architecture.
+Clients then pull ``metsi/amanzi-tpls:<version>-mpich-ubuntu-jammy`` and
+automatically receive the image matching their architecture.

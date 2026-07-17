@@ -32,6 +32,10 @@ image built from the most recent commit on that branch.  For example:
 * ``metsi/amanzi:<branch>-latest`` -- most recent build of a feature or
   release branch.
 
+Branch names containing a ``/`` are sanitized when forming the tag: each ``/``
+is replaced with ``--``.  For example, a branch named ``user/feat`` produces
+the tag ``user--feat-latest``.
+
 Only the ``latest`` tag is currently retained for each branch.  The TPLs image
 is additionally tagged with a version number when a new set of libraries is
 released (see :ref:`Container-Build-Images`).
@@ -39,12 +43,22 @@ released (see :ref:`Container-Build-Images`).
 Architectures
 -------------
 
-The images on Docker Hub are currently built only for the ``amd64``/``x86_64``
-architecture, which is used by Intel/AMD chipsets and most HPC centers.
+The ``metsi/amanzi`` image is published as a multi-architecture manifest that
+covers both the ``amd64``/``x86_64`` architecture (used by Intel/AMD chipsets
+and most HPC centers) and the ``arm64`` architecture (used by Apple computers
+with M-series chips).  CI builds each architecture natively on its own runner
+and then combines them into a single manifest.
 
-On Apple computers with M-series chips (``arm64`` architecture), these images
-run through emulation and can be very slow, because the code must be
-translated at runtime.  Users with M-series chips who need better performance
-may want to build native ``arm64`` images locally.  See
-:ref:`Container-Multiarch` for the available approaches to multi-architecture
-builds.
+Pulling the branch tag, for example ``metsi/amanzi:master-latest`` or
+``metsi/amanzi:<branch>-latest``, automatically selects the image matching the
+host architecture.  On Apple Silicon this means you get a native ``arm64``
+image and run without emulation.
+
+Per-architecture tags are also published if you need to pull a specific
+architecture explicitly:
+
+* ``metsi/amanzi:<branch>-amd64-latest`` -- the ``amd64`` build.
+* ``metsi/amanzi:<branch>-arm64-latest`` -- the ``arm64`` build.
+
+See :ref:`Container-Multiarch` for the available approaches to
+multi-architecture builds.
