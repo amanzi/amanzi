@@ -439,7 +439,7 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   pde10_diff_cond_->SetBCs(bc_trial_pres, bc_enth);
   pde10_diff_cond_->ApplyBCs(true, true, false);
 
-  // -- diffusion due to heat transport div(K beta grad dp)
+  // -- diffusion due to heat transport div(K beta [grad dp])
   //    on a manifold, K is defined by the cubic law 
   S_->GetEvaluator(beta_key_).Update(*S_, passwd);
   *coef = S_->Get<CV_t>(beta_key_, tag);

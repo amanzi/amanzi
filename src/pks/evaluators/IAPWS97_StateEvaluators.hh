@@ -194,6 +194,7 @@ class IAPWS97_InternalEnergyEvaluator
  private:
   Key domain_name_;
   Key pressure_key_, enthalpy_key_, state_key_;
+  static Utils::RegisteredFactory<Evaluator, IAPWS97_InternalEnergyEvaluator> reg_;
 };
 
 

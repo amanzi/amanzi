@@ -138,7 +138,7 @@ IAPWS97_StateEvaluator::Evaluate_(const State& S, const std::vector<CompositeVec
     }
     else if (prop.rgn == 4) {
       double dvdp_l, dvdp_v, dhdp_l, dhdp_v; // full derivatives
-      double x, vl, vv, hl, hv, tmp1, tmp2, dvdh;
+      double x, v, vl, vv, hl, hv, tmp1, tmp2, tmp3, dvdh;
 
       vl = liquid.v;
       hl = liquid.h * 1.0e+3;
@@ -166,13 +166,17 @@ IAPWS97_StateEvaluator::Evaluate_(const State& S, const std::vector<CompositeVec
       // this could be re-grouped and combined with identity to cancel h' terms
       x = prop.x;
       tmp1 = (1 - x) * dvdp_l + x * dvdp_v;
-      tmp2 = ((1 - x) * dhdp_l + x * dhdp_v) * dvdh; 
+      tmp3 = (1 - x) * dhdp_l + x * dhdp_v; 
+      tmp2 = tmp3 * dvdh; 
       result_v[(int)TS97_t::dRHOdP][c] = -(tmp1 - tmp2) / v / v;
       result_v[(int)TS97_t::dRHOdH][c] = -dvdh / v / v / CommonDefs::MOLAR_MASS_H2O;
 
       // Clapeyron
       result_v[(int)TS97_t::dTdP][c] = T * dvdh;
       result_v[(int)TS97_t::dTdH][c] = 0.0;
+
+      v = (1 - x) * vl + x * vv;
+      result_v[(int)TS97_t::CV][c] = (tmp3 - v - tmp1 / dvdh) / T / dvdh;
  
       result_v[(int)TS97_t::K][c] = (1.0 - x) * liquid.k + x * vapor.k;
       result_v[(int)TS97_t::MU][c] = (1.0 - x) * liquid.mu + x * vapor.mu;

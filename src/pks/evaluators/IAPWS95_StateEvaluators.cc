@@ -453,8 +453,6 @@ IAPWS95_ViscosityEvaluator::IAPWS95_ViscosityEvaluator(Teuchos::ParameterList& p
   density_key_ = Keys::getKey(domain_name_, "mass_density_liquid");
   temperature_key_ = Keys::getKey(domain_name_, "temperature");
 
-
-  
   dependencies_.insert(std::make_pair(state_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(density_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(temperature_key_, Tags::DEFAULT));

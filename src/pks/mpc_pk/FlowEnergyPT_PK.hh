@@ -79,6 +79,7 @@ and :math:`c_r` is specific heat of rock [J/kg/K].
 
 #include "EvaluatorIndependentFunction.hh"
 #include "EvaluatorSecondaryMonotype.hh"
+#include "ModelAssumptions.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_Advection.hh"
 #include "PDE_Diffusion.hh"
@@ -128,7 +129,11 @@ class FlowEnergyPT_PK : public PK_MPCStrong<PK_BDF> {
   virtual std::vector<Key> SetupLSchemeKey(Teuchos::ParameterList& plist) override;
 
  private:
+  void RemoveFluxContinuityEquations_(Teuchos::RCP<Operators::PDE_Diffusion>& pde);
+
+ private:
   const Teuchos::RCP<Teuchos::ParameterList>& glist_;
+  Teuchos::RCP<const Teuchos::ParameterList> preconditioner_list_;
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Key domain_; // computational domain
@@ -139,6 +144,11 @@ class FlowEnergyPT_PK : public PK_MPCStrong<PK_BDF> {
   Teuchos::RCP<Operators::PDE_Advection> pde10_adv_, pde01_adv_;
   Teuchos::RCP<Operators::PDE_Accumulation> pde10_acc_, pde01_acc_;
 
+  Teuchos::RCP<Operators::TreeOperator> op_tree_amg_, op_tree_ilu_;
+  bool use_cptr_prec_ = false;
+
+  ModelAssumptions assumptions_;
+
   // keys
   Key pressure_key_, temperature_key_;
   Key ie_liquid_key_, energy_key_, enthalpy_key_, particle_density_key_;
@@ -148,7 +158,7 @@ class FlowEnergyPT_PK : public PK_MPCStrong<PK_BDF> {
   Key bcs_flow_key_, bcs_temperature_key_, bcs_enthalpy_key_;
   Key aperture_key_, permeability_key_;
   Key conductivity_key_,  conductivity_eff_key_, conductivity_gen_key_;
-  Key alpha_key_, beta_key_;
+  Key alpha_key_, beta_key_, beta_jacobian_key_;
 
   // factory registration
   static RegisteredPKFactory<FlowEnergyPT_PK> reg_;

@@ -16,6 +16,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <chrono>
 
 // TPLs
 #include "Teuchos_RCP.hpp"
@@ -29,13 +30,14 @@
 #include "EnergyPressureTemperature_PK.hh"
 #include "evaluators_reg.hh"
 #include "IAPWS95.hh"
+#include "IAPWS95_Spline.hh"
 #include "MeshFactory.hh"
 #include "PK_Physical.hh"
 #include "State.hh"
 #include "IAPWS95_StateEvaluators.hh"
 #include "VerboseObject.hh"
 
-TEST(EVALUATOR_DERIVATIVE95_TABLES_PT)
+double RunTest(bool spline)
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -48,12 +50,22 @@ TEST(EVALUATOR_DERIVATIVE95_TABLES_PT)
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0) std::cout << "Test: derivative tables" << std::endl;
+  if (MyPID == 0) std::cout << "Test: derivative tables: spline=" << spline << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/energy_iapws95.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   auto plist = Teuchos::rcp(new Teuchos::ParameterList(xmlreader.getParameters()));
+
+  if (spline) {
+    plist->sublist("PKs").sublist("energy").sublist("thermal conductivity evaluator")
+      .sublist("All").sublist("liquid phase").set<std::string>("csv table name", "test/h2o.csv");
+
+    plist->sublist("state").sublist("evaluators").sublist("thermodynamic_state")
+      .set<std::string>("csv table name", "test/h2o.csv");
+    plist->sublist("state").sublist("evaluators").sublist("viscosity_liquid")
+      .set<std::string>("csv table name", "test/h2o.csv");
+  }
 
   // create a mesh framework
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
@@ -112,19 +124,56 @@ TEST(EVALUATOR_DERIVATIVE95_TABLES_PT)
   AmanziEOS::IAPWS95 eos(*plist);
 
   int c(0);
-  double scale(50.0 / n);
-  double dp(5.0e-2 * scale), dT(1.0 * scale), p, T; 
+  if (spline) { 
+    {
+      std::ofstream ofile("test/h2o.csv2");
+      ofile << "tau,delta,alpha_r\n";
 
-  for (int i = -n; i < n; ++i) {
-    for (int j = -n; j < n; ++j) {
-      p = eos.PC + i * dp; // Mpa
-      T = eos.TC + j * dT + 0.11;
+      int m(44);
+      double drho(50.0 / m), dT(50.0 / m), rho, T; 
 
-      p_c[0][c] = p * 1.0e+6;
-      T_c[0][c] = T;
-      c++;
+      for (int i = 0; i < m; ++i) {
+        for (int j = 0; j < m; ++j) {
+          rho = 590.0 + j * drho;
+          T = 620 + i * dT;
+          const auto g = eos.ResidualPart(rho, T);
+          ofile << eos.TC / T << "," << rho / eos.RHOC << "," << g[0] << "\n";
+        }
+      }
+      ofile.close();
+    }
+
+    int m(200);
+    double drho(50.0 / m), dT(50.0 / m), rho, T; 
+
+    for (int i = 0; i < m; ++i) {
+      for (int j = 0; j < m; ++j) {
+        rho = 590.0 + i * drho;
+        T = 620 + j * dT;
+        auto [prop, liquid, vapor] = eos.ThermodynamicsRhoT(rho, T);
+
+        p_c[0][c] = prop.p * 1e+6;
+        T_c[0][c] = T;
+        c++;
+      }
+    }
+  } else {
+    double scale(50.0 / n);
+    double dp(5.0e-2 * scale), dT(1.0 * scale), p, T; 
+
+    for (int i = -n; i < n; ++i) {
+      for (int j = -n; j < n; ++j) {
+        p = eos.PC + i * dp; // Mpa
+        T = eos.TC + j * dT + 0.11;
+
+        p_c[0][c] = p * 1.0e+6;
+        T_c[0][c] = T;
+        c++;
+      }
     }
   }
+
+  auto start = std::chrono::steady_clock::now();
 
   Tag tag = Tags::DEFAULT;
   auto eval_p = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(S->GetEvaluatorPtr(pressure_key, tag));
@@ -133,19 +182,33 @@ TEST(EVALUATOR_DERIVATIVE95_TABLES_PT)
   eval_T->SetChanged();
 
   // compute a selective derivative
-  Key field = viscosity_key;
+  Key field = density_key;
   Key wrt = pressure_key;
   S->GetEvaluator(field).UpdateDerivative(*S, "test", wrt, Tags::DEFAULT);
   auto& der_c = *S->GetDerivative<CV_t>(field, tag, wrt, tag).ViewComponent("cell");
   auto& field_c = *S->Get<CV_t>(field, tag).ViewComponent("cell");
 
+  auto end = std::chrono::steady_clock::now();
+  auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+  std::cout << "Elapsed time: " << elapsed.count() << " ms\n";
+
+  /*
   c = 0;
   for (int i = -n; i < n; ++i) {
     for (int j = -n; j < n; ++j) {
-      // std::cout << p_c[0][c] * 1e-6 << " " << T_c[0][c] << " " << field_c[0][c] << std::endl;
-      // std::cout << p_c[0][c] * 1e-6 << " " << T_c[0][c] << " " << der_c[0][c] << std::endl;
+      std::cout << p_c[0][c] * 1e-6 << " " << T_c[0][c] << " " << field_c[0][c] << std::endl;
+      std::cout << p_c[0][c] * 1e-6 << " " << T_c[0][c] << " " << der_c[0][c] << std::endl;
       c++;
     }
   }
+  */
+
+  return elapsed.count();
 }
 
+TEST(EVALUATOR_DERIVATIVE95_TABLES_PT)
+{
+  double t0 = RunTest(false);
+  double t1 = RunTest(true);
+  CHECK(t0 > 1.5 * t1);
+}

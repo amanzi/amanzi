@@ -82,10 +82,19 @@ TEST(EVALUATOR_DERIVATIVE_TABLES_PH)
   std::string passwd("");
   Key pressure_key = Keys::getKey("", "pressure");
   Key enthalpy_key = Keys::getKey("", "enthalpy");
+  Key ie_key = Keys::getKey("", "internal_energy");
   Key density_key = Keys::getKey("", "mass_density_liquid");
   Key temperature_key = Keys::getKey("", "temperature");
   Key viscosity_key = Keys::getKey("", "viscosity_liquid");
   Key conductivity_key = Keys::getKey("", "thermal_conductivity");
+
+  S->Require<CV_t, CVS_t>(ie_key, Tags::DEFAULT, ie_key)
+    .SetMesh(mesh)->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+  S->RequireEvaluator(ie_key, Tags::DEFAULT);
+
+  S->RequireDerivative<CV_t, CVS_t>(ie_key, Tags::DEFAULT, enthalpy_key, Tags::DEFAULT,
+                                    ie_key).SetGhosted();
 
   S->Require<CV_t, CVS_t>(viscosity_key, Tags::DEFAULT, viscosity_key)
     .SetMesh(mesh)->SetGhosted(true)
@@ -174,7 +183,7 @@ TEST(EVALUATOR_DERIVATIVE_TABLES_PH)
   }
 
   // compute a selective derivative
-  Key field = viscosity_key;
+  Key field = temperature_key;
   Key wrt = enthalpy_key;
   S->GetEvaluator(field).Update(*S, "test");
   S->GetEvaluator(field).UpdateDerivative(*S, "test", wrt, Tags::DEFAULT);
