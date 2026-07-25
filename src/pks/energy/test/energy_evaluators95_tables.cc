@@ -126,7 +126,7 @@ double RunTest(bool spline)
   int c(0);
   if (spline) { 
     {
-      std::ofstream ofile("test/h2o.csv2");
+      std::ofstream ofile("test/h2o.csv");
       ofile << "tau,delta,alpha_r\n";
 
       int m(44);
