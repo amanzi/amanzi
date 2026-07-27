@@ -46,21 +46,26 @@ struct Frho95 {
 std::tuple<Properties, Properties, Properties>
 IAPWS95::ThermodynamicsPT(double p, double T)
 {
+  // initial guess and estimates of root brackets
   itrs_ = 20;
   double tol = 1e-9;
-  double rho0 = eos97_.ThermodynamicsPT(p, T).rho;
-  double rhomin = rho0 * 0.905;
+  double rho0 = eos97_.ThermodynamicsPT(p, T).rho; 
+  double rhomin = rho0 * 0.995;
   double rhomax = rho0 * 1.005;
 
   Frho95 f(p, T, this);
   double rho = Utils::findRootBrent(f, rhomin, rhomax, tol, &itrs_);
 
-  // refine soltution strategy starting with bracketing a root
+  // refine soltution strategy by bracketing a root starting with a twice 
+  // bigger bracket than before
   if (itrs_ < 0) {
     itrs_ = 20;
-    auto [rhomin, rhomax] = Utils::bracketRoot(f, rho0, rho0 * 0.01, &itrs_);
+    auto [rhomin, rhomax] = Utils::bracketRootSymmetric(f, rho0, rho0 * 0.01, &itrs_);
+    AMANZI_ASSERT(itrs_ >= 0);
+
     itrs_ = 20;
     rho = Utils::findRootBrent(f, rhomin, rhomax, tol, &itrs_);
+    AMANZI_ASSERT(itrs_ > 0);
   }
 
   return ThermodynamicsRhoT(rho, T);
@@ -366,8 +371,8 @@ struct Frho2 {
 
   Frho2(double T, IAPWS95* eos) : T_(T), eos_(eos) {};
   Vector operator()(Vector& x) {
-    const auto& gl = eos_->ResidualPart(x[0], T_);
-    const auto& gv = eos_->ResidualPart(x[1], T_);
+    const auto& gl = eos_->IAPWS95::ResidualPart(x[0], T_);
+    const auto& gv = eos_->IAPWS95::ResidualPart(x[1], T_);
 
     double delta_l = x[0] / eos_->RHOC;
     double delta_v = x[1] / eos_->RHOC;

@@ -57,6 +57,10 @@ double RunTest(bool spline)
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   auto plist = Teuchos::rcp(new Teuchos::ParameterList(xmlreader.getParameters()));
 
+  plist->sublist("state").sublist("initial conditions").sublist("pressure")
+    .sublist("function").sublist("domain").sublist("function")
+    .sublist("function-constant").set<double>("value", 39.0e+6);
+
   AmanziEOS::IAPWS95 eos(*plist);
 
   if (spline) {
@@ -80,6 +84,7 @@ double RunTest(bool spline)
         rho = 590.0 + j * drho;
         T = 620 + i * dT;
         const auto g = eos.ResidualPart(rho, T);
+        auto [prop, liquid, vapor] = eos.ThermodynamicsRhoT(rho, T);
         ofile << eos.TC / T << "," << rho / eos.RHOC << "," << g[0] << "\n";
       }
     }
@@ -140,23 +145,23 @@ double RunTest(bool spline)
   auto& p_c = *S->GetW<CompositeVector>(pressure_key, pressure_key).ViewComponent("cell");
   auto& T_c = *S->GetW<CompositeVector>(temperature_key, passwd).ViewComponent("cell");
 
-  int c(0);
-  if (spline) { 
-    int m(200);
-    double drho(50.0 / m), dT(50.0 / m), rho, T; 
+  int c(0), m(200);
+  double drho(30.0 / m), dT(30.0 / m), rho, T; 
 
-    for (int i = 0; i < m; ++i) {
-      for (int j = 0; j < m; ++j) {
-        rho = 590.0 + i * drho;
-        T = 620 + j * dT;
-        auto [prop, liquid, vapor] = eos.ThermodynamicsRhoT(rho, T);
+  for (int i = 0; i < m; ++i) {
+    for (int j = 0; j < m; ++j) {
+      rho = 600.0 + i * drho;
+      T = 630 + j * dT;
+      auto [prop, liquid, vapor] = eos.ThermodynamicsRhoT(rho, T);
 
-        p_c[0][c] = prop.p * 1e+6;
-        T_c[0][c] = T;
-        c++;
-      }
+      p_c[0][c] = prop.p * 1e+6;
+      T_c[0][c] = T;
+      c++;
     }
-  } else {
+  }
+
+  // reserved for future: initial P/T data are around the critical point
+  /*
     double scale(50.0 / n);
     double dp(5.0e-2 * scale), dT(1.0 * scale), p, T; 
 
@@ -171,6 +176,7 @@ double RunTest(bool spline)
       }
     }
   }
+  */
 
   auto start = std::chrono::steady_clock::now();
 

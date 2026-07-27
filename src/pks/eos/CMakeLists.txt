@@ -40,6 +40,7 @@ set(eos_src_files
     IAPWS97.cc
     IAPWS95.cc
     IAPWS95_Spline.cc
+    IAPWS95_RaggedSpline.cc
     IdealGas_Density.cc
     IdealGas_ThermalConductivity.cc
     IdealGas_Viscosity.cc
@@ -143,9 +144,9 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/eos_iapws97.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    #add_amanzi_test(eos_iapws95_spline eos_iapws95_spline
-    #                KIND unit
-    #                SOURCE test/Main.cc test/eos_iapws95_spline.cc
-    #                LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    add_amanzi_test(eos_iapws95_spline eos_iapws95_spline
+                    KIND unit
+                    SOURCE test/Main.cc test/eos_iapws95_spline.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 

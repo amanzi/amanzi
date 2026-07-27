@@ -37,6 +37,7 @@ namespace WhetStone {
 #define DGTSV_F77 F77_LAPACK_MANGLE(dgtsv, DGTSV)
 #define DPOTRF_F77 F77_LAPACK_MANGLE(dpotrf, DPOTRF)
 #define DPOTRI_F77 F77_LAPACK_MANGLE(dpotri, DPOTRI)
+#define DPBSV_F77 F77_LAPACK_MANGLE(dpbsv, DPBSV)
 
 #ifdef __cplusplus
 extern "C"
@@ -150,6 +151,16 @@ extern "C"
   void PREFIX DPOTRF_F77(const char* uplo, int* n, double* a, int* lda, int* info);
 
   void PREFIX DPOTRI_F77(const char* uplo, int* n, double* a, int* lda, int* info);
+
+  void PREFIX DPBSV_F77(const char* uplo,
+                        int* n,
+                        int* kd,
+                        int* nrhs,
+                        double* ab,
+                        int* ldab,
+                        double* b,
+                        int* ldb,
+                        int* info);
 
 #ifdef __cplusplus
 }
