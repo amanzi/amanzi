@@ -12,6 +12,7 @@
 #include "UnitTest++.h"
 #include "Teuchos_ParameterList.hpp"
 
+#include "exceptions.hh"
 #include "IAPWS95.hh"
 #include "IAPWS95_Spline.hh"
 
@@ -89,7 +90,7 @@ TEST(EOS_IAPWS95)
   std::tie(prop, liquid, vapor) = eos.ThermodynamicsPT(22.0384756, 647.0);
   CHECK_CLOSE(358.0, prop.rho, 3e-4); // we are close to the critical point
 
-  // two-phase
+  // two-phase line
   double rhol0, rhov0, rhol, rhov, ps;
   rhol = eos.DensityLiquid(273.16);
   rhov = eos.DensityVapor(273.16);
@@ -108,24 +109,40 @@ TEST(EOS_IAPWS95)
 
   rhol0 = eos.DensityLiquid(275.0);
   rhov0 = eos.DensityVapor(275.0);
-  std::tie(rhol, rhov, ps) = eos.SaturationLine(275.0, rhol0, rhov0);
+  std::tie(rhol, rhov, ps) = eos.SaturationLineT(275.0, rhol0, rhov0);
   CHECK_CLOSE(0.999887406e3, rhol, 1e-6);
   CHECK_CLOSE(0.550664919e-2, rhov, 1e-10);
   CHECK_CLOSE(0.698451167e-3, ps, 1e-12);
 
   rhol0 = eos.DensityLiquid(450.0);
   rhov0 = eos.DensityVapor(450.0);
-  std::tie(rhol, rhov, ps) = eos.SaturationLine(450.0, rhol0, rhov0);
+  std::tie(rhol, rhov, ps) = eos.SaturationLineT(450.0, rhol0, rhov0);
   CHECK_CLOSE(0.890341250e3, rhol, 1e-6);
   CHECK_CLOSE(0.481200360e1, rhov, 1e-8);
   CHECK_CLOSE(0.932203564, ps, 1e-9);
 
   rhol0 = eos.DensityLiquid(625.0);
   rhov0 = eos.DensityVapor(625.0);
-  std::tie(rhol, rhov, ps) = eos.SaturationLine(625.0, rhol0, rhov0);
+  std::tie(rhol, rhov, ps) = eos.SaturationLineT(625.0, rhol0, rhov0);
   CHECK_CLOSE(0.567090385e3, rhol, 1e-6);
   CHECK_CLOSE(0.118290280e3, rhov, 1e-6);
   CHECK_CLOSE(0.169082693e2, ps, 1e-7);
+
+  // two-phase dome in (p,h) variables
+  std::tie(prop, liquid, vapor) = eos.ThermodynamicsPH(0.932203564, 1761.7861825);
+  CHECK_CLOSE(0.104468404109307, prop.v, 1e-9);
+  CHECK_CLOSE(0.5, prop.x, 1e-9);
+  CHECK_CLOSE(4.35893533, prop.s, 1e-9);
+  CHECK_CLOSE(-199.7347161, prop.gibbs, 1e-7);
+
+  std::tie(prop, liquid, vapor) = eos.ThermodynamicsPH(0.932203564, 1356.7363435);
+  CHECK_CLOSE(6.313030840715450e-02, prop.v, 1e-9);
+  CHECK_CLOSE(0.3, prop.x, 1e-9);
+  CHECK_CLOSE(-199.7347161, prop.gibbs, 1e-7);
+
+  std::tie(prop, liquid, vapor) = eos.ThermodynamicsPH(16.9082693, 2204.937654000000);
+  CHECK_CLOSE(0.6, prop.x, 1e-8);
+  CHECK_CLOSE(5.777622915561523e-03, prop.v, 1e-10);
 }
 
 
@@ -160,4 +177,6 @@ TEST(EOS_IAPWS95_SPLINE)
   CHECK_CLOSE(3.2568688912634207, prop.cv, 2e-5);
   CHECK_CLOSE(450.4310375365427, prop.w, 1e-3);
   CHECK_CLOSE(4.4814490203595, prop.s, 1e-8);
+
+  CHECK_THROW(eos.ThermodynamicsPT(20.0000690, 900.0), Exceptions::Amanzi_exception);
 }

@@ -41,7 +41,7 @@ struct Frho95 {
 
 
 /* ******************************************************************
-* Calculate all properties
+* Calculate all properties for (p,T) input data
 ****************************************************************** */
 std::tuple<Properties, Properties, Properties>
 IAPWS95::ThermodynamicsPT(double p, double T)
@@ -72,6 +72,9 @@ IAPWS95::ThermodynamicsPT(double p, double T)
 }
 
 
+/* ******************************************************************
+* Calculate all properties for (rho,T) input data
+****************************************************************** */
 std::tuple<Properties, Properties, Properties>
 IAPWS95::ThermodynamicsRhoT(double rho, double T)
 {
@@ -88,7 +91,7 @@ IAPWS95::ThermodynamicsRhoT(double rho, double T)
     rhov0 = DensityVapor(T);
 
     if (rhol0 > rho && rho > rhov0) {
-      std::tie(rhol, rhov, p) = SaturationLine(T, rhol0, rhov0);
+      std::tie(rhol, rhov, p) = SaturationLineT(T, rhol0, rhov0);
       if (rhol * (1.0 + tol) > rho && rho > rhov * (1.0 - tol)) {
         liquid = PopulateProperties(rhol, T);
         vapor = PopulateProperties(rhov, T);
@@ -135,6 +138,67 @@ IAPWS95::ThermodynamicsRhoT(double rho, double T)
 
 
 /* ******************************************************************
+* Calculate all properties for (p, h) input data
+****************************************************************** */
+std::tuple<Properties, Properties, Properties>
+IAPWS95::ThermodynamicsPH(double p, double h)
+{
+  Properties prop, liquid, vapor;
+
+  int phase = 1;
+  if (p < PC) {
+    const SaturationState& sat = SaturationLineP(p);
+
+    if (h < sat.hl) {
+      prop = PopulatePropertiesFromEntropy1(p, h);
+      liquid = prop;
+    } else if (h > sat.hv) {
+      prop = PopulatePropertiesFromEntropy1(p, h);
+      vapor = prop;
+    } else {
+      prop = PopulatePropertiesFromEntropy2(p, h, sat);
+      liquid = prop;
+      liquid.rho = sat.rhol;
+      liquid.v = sat.vl;
+
+      vapor = prop;
+      vapor.rho = sat.rhov;
+      vapor.v = sat.vv;
+      phase = 2;
+    }
+  } else {
+    prop = PopulatePropertiesFromEntropy1(p, h);
+  }
+
+  // extend state with kinematic properties 
+  // for a homogeneous model, a default is logarithmic interpolation in volume fraction
+  double T = prop.T;
+  if (phase == 1) {
+    double rho = prop.rho;
+    prop.mu = Viscosity(rho, T);
+    prop.k = ThermalConductivity(rho, T, prop);
+  } else {
+    double rhol = liquid.rho;
+    double rhov = vapor.rho;
+    double x = prop.x;
+    double alpha = x / rhol / ((1 - x) / rhol + x / rhov);
+
+    liquid.mu = Viscosity(rhol, T);
+    vapor.mu = Viscosity(rhov, T);
+    prop.mu = std::pow(liquid.mu, 1.0 - alpha) * std::pow(vapor.mu, alpha);
+
+    liquid.k = ThermalConductivity(rhol, T, liquid);
+    vapor.k = ThermalConductivity(rhov, T, vapor);
+    prop.k = std::pow(liquid.k, 1.0 - alpha) * std::pow(vapor.k, alpha);
+
+    prop.kt = std::pow(liquid.kt, 1.0 - alpha) * std::pow(vapor.kt, alpha);
+  }
+
+  return { prop, liquid, vapor };
+}
+
+
+/* ******************************************************************
 * Populate state from the Helmholtz free energy
 ****************************************************************** */
 Properties
@@ -167,6 +231,106 @@ IAPWS95::PopulateProperties(double rho, double T)
   prop.helmholtz = R * T * (g0[0] + g[0]);
   prop.gibbs = prop.helmholtz + 1000.0 * prop.p * prop.v;
   prop.kt = 1000.0 / (rho * R * T * (1 + 2 * delta * g[1] + delta * delta * g[3]));
+
+  return prop;
+}
+
+
+/* ******************************************************************
+* Populate state from entropy at its derivatives
+****************************************************************** */
+Properties
+IAPWS95::PopulatePropertiesFromEntropy1(double p, double h)
+{
+  Properties prop;
+
+  std::array<double, 6> a = EntropyDerivatives(p, h); 
+  double s   = a[0];
+  double sp  = a[1];
+  double sh  = a[2];
+  double spp = a[3];
+  double sph = a[4];
+  double shh = a[5];
+
+  double T = 1.0 / sh;
+  double Tp = -sph / (sh * sh);
+  double Th = -shh / (sh * sh);
+
+  double v = -sp / sh;
+  double vp = -(spp * sh - sp * sph) / (sh * sh);
+  double vh = -(sph * sh - sp * shh) / (sh * sh);
+
+  double rhop = -vp / (v * v);
+  double rhoh = -vh / (v * v);
+
+  double drho_dp_s = rhop + v * rhoh;
+  prop.cp = Th > 0.0 ? 1.0 / Th : std::numeric_limits<double>::infinity();
+  prop.w = drho_dp_s > 0.0 ? std::sqrt(1.0 / drho_dp_s) : std::numeric_limits<double>::quiet_NaN();
+
+  prop.p = p;
+  prop.T = T;
+  prop.u = h - p * v * 1000;
+  prop.h = h;
+
+  prop.rho = 1.0 / v;
+}
+
+
+/* ******************************************************************
+* Populate state from entropy at its derivatives
+****************************************************************** */
+Properties
+IAPWS95::PopulatePropertiesFromEntropy2(double p, double h, const SaturationState& sat)
+{
+  Properties prop;
+
+  double dh = sat.hv - sat.hl;
+  double dv = sat.vv - sat.vl;
+
+  double x = (h - sat.hl) / dh;
+  x = std::clamp(x, 0.0, 1.0);
+
+  double dh_dp = sat.hv_p - sat.hl_p;
+  double dv_dp = sat.vv_p - sat.vl_p;
+
+  double xh = 1.0 / dh;
+  double xp = -(sat.hl_p + x * dh_dp) / dh;
+
+  double T = sat.Tsat;
+  double Tp = sat.Tsat_p;
+  double Th = 0.0;
+
+  // volume and its derivatives
+  double v = sat.vl + x * dv;
+  double vp = sat.vl_p + x * dv_dp + xp * dv;
+  double vh = xh * dv;
+
+  double rhop = -vp / (v * v);
+  double rhoh = -vh / (v * v);
+
+  double s = sat.sl + x * (sat.sv - sat.sl);
+  double sh = 1.0 / T;
+  double sp = -v / T;
+
+  double shh = 0.0;
+  double sph = -Tp / (T * T);
+  double spp = -vp / T + v * Tp / (T * T);
+
+  prop.p = p;
+  prop.T = T;
+  prop.h = h;
+
+  double drho_dp_s = rhop + v * rhoh;
+  prop.w = drho_dp_s > 0.0 ? std::sqrt(1.0 / drho_dp_s) : 0.0;
+
+  prop.rho = 1.0 / v;
+  prop.v = v;
+  prop.u = h - p * v * 1000;
+  prop.s = s;
+  prop.x = x;
+
+  prop.helmholtz = prop.u - T * s;
+  prop.gibbs = h - T * s;
 
   return prop;
 }
@@ -364,6 +528,60 @@ IAPWS95::ResidualPart(double rho, double T)
 
 
 /* ******************************************************************
+* Derivatives are computed outside the saturation dome and maybe
+* inside the metastable extension.
+****************************************************************** */
+struct FrhoT {
+  typedef Utils::VectorSTL Vector;
+
+  FrhoT(double p, double h, IAPWS95* eos) : p_(p), h_(h), eos_(eos) {};
+  Vector operator()(Vector& x) {
+    const auto& g0 = eos_->IAPWS95::IdealGasPart(x[0], x[1]);
+    const auto& gr = eos_->IAPWS95::ResidualPart(x[0], x[1]);
+
+    double delta = x[0] / eos_->RHOC;
+    double tau = eos_->TC / x[1];
+
+    Vector r(x.size());
+    r[0] = x[0] * eos_->R * x[1] * (1 + delta * gr[1]) / 1000 - p_;
+    r[1] = eos_->R * x[1] * (1 + tau * (g0[2] + gr[2]) + delta * gr[1]) - h_;
+    return r;
+  }
+  double p_, h_;
+  IAPWS95* eos_;
+};
+
+
+std::array<double, 6>
+IAPWS95::EntropyDerivatives(double p, double h)
+{
+  auto [prop, liquid, vapor] = eos97_.ThermodynamicsPH(p, h); 
+  double rho0 = prop.rho;
+  double T0 = prop.T;
+
+  // refine initial quess
+  itrs_ = 10;
+  double tol(1e-11);
+  FrhoT f(p, h, this);
+  FrhoT::Vector x0(2);
+  x0[0] = rho0;
+  x0[1] = T0;
+  FrhoT::Vector sol = PowellHybrid(x0, f, &itrs_, tol);
+  AMANZI_ASSERT(itrs_ >= 0);
+
+  double rho = sol[0];
+  double T = sol[1];
+
+  // compute entropy and its derivarives
+  auto [prop1, liquid1, vapor1] = ThermodynamicsRhoT(rho, T); 
+  double s = prop1.s;
+  double sp = -1.0 / rho / T;
+  double sh = 1.0 / T;
+  return std::array<double, 6>{s, sp, sh, 0.0, 0.0, 0.0};
+}
+
+
+/* ******************************************************************
 * Saturation calculation for two phase search FIXME
 ****************************************************************** */
 struct Frho2 {
@@ -392,7 +610,7 @@ struct Frho2 {
 
 
 std::tuple<double, double, double>
-IAPWS95::SaturationLine(double T, double rhol0, double rhov0)
+IAPWS95::SaturationLineT(double T, double rhol0, double rhov0)
 {
   double psat, Tmin, tol(1e-11);
   Tmin = std::min(T, TC);
@@ -413,6 +631,75 @@ IAPWS95::SaturationLine(double T, double rhol0, double rhov0)
     psat = R * T * sol[0] * sol[1] / (sol[0] - sol[1]) * (gl - gv + std::log(sol[0] / sol[1])) / 1000.0;
   }
   return { sol[0], sol[1], psat };
+}
+
+
+/* ******************************************************************
+* Extended saturation calculation for two phase search
+****************************************************************** */
+struct Frho3 {
+  typedef Utils::VectorSTL Vector;
+
+  Frho3(double p, IAPWS95* eos) : p_(p), eos_(eos) {};
+  Vector operator()(Vector& x) {
+    const auto& gl = eos_->IAPWS95::ResidualPart(x[0], x[2]);
+    const auto& gv = eos_->IAPWS95::ResidualPart(x[1], x[2]);
+
+    double delta_l = x[0] / eos_->RHOC;
+    double delta_v = x[1] / eos_->RHOC;
+
+    Vector r(x.size());
+    r[0] = x[0] * eos_->R * x[2] * (1 + delta_l * gl[1]) / 1000 - p_;
+    r[1] = x[1] * eos_->R * x[2] * (1 + delta_v * gv[1]) / 1000 - p_;
+    r[2] = std::log(delta_l) + gl[0] + delta_l * gl[1] - (std::log(delta_v) + gv[0] + delta_v * gv[1]);
+    return r;
+  }
+  double p_;
+  IAPWS95* eos_;
+};
+
+
+SaturationState
+IAPWS95::SaturationLineP(double p)
+{
+  SaturationState sat;
+
+  if (p < PC) {
+    double T0, T, rhol0, rhov0;
+    T0 = eos97_.SaturationLineP(p);
+    rhol0 = DensityLiquid(T0);
+    rhov0 = DensityVapor(T0);
+
+    itrs_ = 10;
+    double tol(1e-11);
+    Frho3 f(p, this);
+    Frho3::Vector x0(3);
+    x0[0] = rhol0;
+    x0[1] = rhov0;
+    x0[2] = T0;
+    Frho3::Vector sol = PowellHybrid(x0, f, &itrs_, tol);
+    AMANZI_ASSERT(itrs_ >= 0);
+
+    sat.rhol = sol[0];
+    sat.rhov = sol[1];
+    T = sol[2];
+
+    auto [prop1, liquid1, vapor1] = ThermodynamicsRhoT(sat.rhol, T);
+    sat.hl = prop1.h;
+    sat.sl = prop1.s;
+
+    auto [prop2, liquid2, vapor2] = ThermodynamicsRhoT(sat.rhov, T);
+    sat.hv = prop2.h;
+    sat.sv = prop2.s;
+
+    sat.vl = 1.0 / sat.rhol;
+    sat.vv = 1.0 / sat.rhov;
+
+    sat.p = p;
+    sat.Tsat = T;
+  }
+
+  return sat;
 }
 
 
@@ -494,6 +781,7 @@ void
 IAPWS95::Print(Properties& prop)
 {
   std::cout << std::setprecision(12)
+    << "============================" 
     << "\np = " << prop.p
     << "\nT = " << prop.T
     << "\nrho = " << prop.rho 
@@ -512,7 +800,8 @@ IAPWS95::Print(Properties& prop)
     << "\n\nmu = " << prop.mu
     << "\nk = " << prop.k
     << "\nsigma = " << prop.sigma
-    << "\nx = " << prop.x << "\n\n";
+    << "\nx = " << prop.x 
+    << "\n=============================\n\n";
 }
 } // namespace AmanziEOS
 } // namespace Amanzi

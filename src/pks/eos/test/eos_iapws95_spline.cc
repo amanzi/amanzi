@@ -12,12 +12,13 @@
 
 #include "dbc.hh"
 #include "IAPWS95.hh"
-#include "IAPWS95_RaggedSpline.hh"
+#include "IAPWS95_RaggedSplineRhoT.hh"
+#include "IAPWS95_RaggedSplinePH.hh"
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziEOS;
 
-void WriteHelmholtzPlotData(IAPWS95_RaggedSpline& spline,
+void WriteHelmholtzPlotData(IAPWS95_RaggedSplineRhoT& spline,
                             IAPWS95& eos95,
                             double rho_min,
                             double rho_max,
@@ -63,24 +64,29 @@ void WriteHelmholtzPlotData(IAPWS95_RaggedSpline& spline,
 }
 
 
-TEST(EOS_IAPWS95_SPLINE)
+TEST(EOS_IAPWS95_SPLINE_RHO_T)
 {
-  IAPWS95_RaggedSpline::Options opt;
-  opt.T_min = 300.0;
+  IAPWS95_RaggedSplineRhoT::Options opt;
+  opt.T_min = 280.0;
   opt.T_max = 900.0;
-  opt.rho_min = 10.0;
+  opt.rho_min = 8.0;
   opt.rho_max = 1100.0;
   opt.initial_rho_intervals = 48;
   opt.initial_T_intervals = 48;
+  opt.max_rho_intervals = 120;
+  opt.max_T_intervals = 130;
   opt.extension_cells = 4.0;
   opt.extension_weight = 0.1;
+  opt.metastable_scan_step_K = 0.5;
+  opt.critical_cap_extension_K = 5.0;
 
   Teuchos::ParameterList plist;
-  IAPWS95_RaggedSpline spline(plist, opt);
+  IAPWS95_RaggedSplineRhoT spline(plist, opt);
   IAPWS95 eos95(plist);
 
   spline.CreateRaggedMesh();
-  spline.BuildSplineCoefficients();
+  const auto samples = spline.BuildSamples();
+  spline.BuildSplineCoefficients(samples);
 
   // double rho(400.0), T(700.0);
   double rho(596.976), T(631.221);
@@ -99,10 +105,10 @@ TEST(EOS_IAPWS95_SPLINE)
 
   WriteHelmholtzPlotData(spline,
                          eos95,
-                         mesh.rho_lines.front(),
-                         mesh.rho_lines.back(),
-                         mesh.T_lines.front(),
-                         mesh.T_lines.back(),
+                         mesh.x_lines.front(),
+                         mesh.x_lines.back(),
+                         mesh.y_lines.front(),
+                         mesh.y_lines.back(),
                          301,
                          301,
                          "eos_iapws95_spline.dat");

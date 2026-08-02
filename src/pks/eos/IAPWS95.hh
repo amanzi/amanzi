@@ -26,21 +26,40 @@
 namespace Amanzi {
 namespace AmanziEOS {
 
+struct SaturationState {
+  double p;
+  double Tsat, Tsat_p;
+
+  double hl, hv, hl_p, hv_p;
+  double sl, sv;
+
+  double vl, vv, vl_p, vv_p;
+  double rhol, rhov;
+};
+
 class IAPWS95 {
  public:
   IAPWS95(Teuchos::ParameterList& plist) : eos97_(plist) {};
   ~IAPWS95() {};
 
-  std::tuple<Properties, Properties, Properties> ThermodynamicsPT(double p, double T);
   std::tuple<Properties, Properties, Properties> ThermodynamicsRhoT(double rho, double T);
+  std::tuple<Properties, Properties, Properties> ThermodynamicsPT(double p, double T);
+  std::tuple<Properties, Properties, Properties> ThermodynamicsPH(double p, double h);
 
   std::array<double, 6> IdealGasPart(double rho, double T);
   virtual std::array<double, 6> ResidualPart(double rho, double T);
 
+  virtual std::array<double, 6> EntropyDerivatives(double p, double h);
+
   Properties PopulateProperties(double rho, double T);
   Properties ExtendProperties(double rho, const Properties& prop);
 
-  std::tuple<double, double, double> SaturationLine(double T, double rhol0, double rhov0);
+  Properties PopulatePropertiesFromEntropy1(double p, double h);
+  Properties PopulatePropertiesFromEntropy2(double p, double h, const SaturationState& sat);
+
+  std::tuple<double, double, double> SaturationLineT(double T, double rhol0, double rhov0);
+  SaturationState SaturationLineP(double p);
+
   double VaporPressure(double T);
   double DensityLiquid(double T);
   double DensityVapor(double T);
@@ -64,6 +83,7 @@ class IAPWS95 {
   static constexpr double TC = 647.096;    // critical temperature, K
   static constexpr double TT = 273.16;
   static constexpr double RHOC = 322.0;    // critical density, kg/m3
+  static constexpr double HC = 2084.0;     // critical enthalpy, kJ/kg
   static constexpr double R = 0.46151805;  // specific gas constant, kJ/kg/K
 
   // deal-gas part of Helmholtz free energy
@@ -156,7 +176,7 @@ class IAPWS95 {
      2.0, 4.0, 8.0, 18.0, 37.0, 71.0
   };
 
- private:
+ protected:
   IAPWS97 eos97_;
 };
 

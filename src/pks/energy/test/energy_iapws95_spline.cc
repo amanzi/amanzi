@@ -112,7 +112,7 @@ TEST(GIBBS_ENERGY_IAPWS95_TWO_PHASES)
     T = eos.TC - (i + 0.5) * dT;
     rhol0 = eos.DensityLiquid(T);
     rhov0 = eos.DensityVapor(T);
-    std::tie(rhol, rhov, p) = eos.SaturationLine(T, rhol0, rhov0);
+    std::tie(rhol, rhov, p) = eos.SaturationLineT(T, rhol0, rhov0);
 
     rho = (rhol + rhov) / 2;
     auto [prop, liquid, vapor] = eos.ThermodynamicsRhoT(rho, T);

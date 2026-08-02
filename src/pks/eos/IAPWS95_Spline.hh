@@ -49,6 +49,9 @@ class IAPWS95_Spline : public IAPWS95 {
   std::vector<double> delta_;
   std::vector<std::vector<double>> values_;
 
+  double tau_min_, tau_max_;
+  double delta_min_, delta_max_;
+
   WhetStone::SplineCubicNotAKnot2D spline_;
   int nx_, ny_;
 };

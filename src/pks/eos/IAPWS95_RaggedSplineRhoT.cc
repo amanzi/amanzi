@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -6,26 +15,16 @@
 
 #include "Brent.hh"
 #include "lapack.hh"
-#include "dbc.hh"
 
-#include "IAPWS95_RaggedSpline.hh"
+#include "IAPWS95_RaggedSplineRhoT.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
-int LowerCell(const std::vector<double>& x, double value)
-{
-  AMANZI_ASSERT(x.size() >= 2); // Coordinate line has fewer than two points.
-  if (value <= x.front()) return 0;
-  if (value >= x.back()) return x.size() - 2;
-  return std::distance(x.begin(), std::upper_bound(x.begin(), x.end(), value)) - 1;
-}
-
-
 /* ******************************************************************
 * Constructor
 ****************************************************************** */
-IAPWS95_RaggedSpline::IAPWS95_RaggedSpline(Teuchos::ParameterList& plist, Options options)
+IAPWS95_RaggedSplineRhoT::IAPWS95_RaggedSplineRhoT(Teuchos::ParameterList& plist, Options options)
   : IAPWS95(plist),
     options_(std::move(options))
 {
@@ -38,17 +37,19 @@ IAPWS95_RaggedSpline::IAPWS95_RaggedSpline(Teuchos::ParameterList& plist, Option
 * Residual part of the Helmholtz free energy
 ****************************************************************** */
 std::array<double, 6>
-IAPWS95_RaggedSpline::ResidualPart(double rho, double T)
+IAPWS95_RaggedSplineRhoT::ResidualPart(double rho, double T)
 { 
+  AMANZI_ASSERT(built_);
+
   // check for spline domain
   AMANZI_ASSERT(rho >= options_.rho_min && rho <= options_.rho_max);
   AMANZI_ASSERT(T >= options_.T_min && T <= options_.T_max);
 
   double bndT = BoundaryTemperature(rho);
-  double extT = options_.extension_cells * LocalTemperatureSpacing(bndT);
+  double extT = options_.extension_cells * MinTemperatureSpacing();
   AMANZI_ASSERT(T >= bndT - extT);
 
-  return ResidualPartDimensionless_(rho / RHOC, TC / T);
+  return Evaluate(mesh_, coefficients_, rho / RHOC, TC / T);
 }
 
 
@@ -56,7 +57,7 @@ IAPWS95_RaggedSpline::ResidualPart(double rho, double T)
 * Create a ragged mesh
 ****************************************************************** */
 void
-IAPWS95_RaggedSpline::CreateRaggedMesh()
+IAPWS95_RaggedSplineRhoT::CreateRaggedMesh()
 {
   mesh_ = Mesh{};
   coefficients_.clear();
@@ -66,17 +67,17 @@ IAPWS95_RaggedSpline::CreateRaggedMesh()
 
   // March along T. The first call uses zero guesses; subsequent calls reuse
   // the previous converged densities for fast and branch-consistent solves.
-  mesh_.saturation.reserve(mesh_.T_lines.size());
-  for (double T : mesh_.T_lines) {
+  saturation_.reserve(mesh_.y_lines.size());
+  for (double T : mesh_.y_lines) {
     if (T >= TC) break;
 
     double rhol0 = eos95_->DensityLiquid(T);
     double rhov0 = eos95_->DensityVapor(T);
 
-    auto [rhol, rhov, p_sat] = eos95_->SaturationLine(T, rhol0, rhov0);
-    AMANZI_ASSERT(rhol > rhov && rhov > 0.0 && p_sat > 0.0);
+    auto [rhol, rhov, psat] = eos95_->SaturationLineT(T, rhol0, rhov0);
+    AMANZI_ASSERT(rhol > rhov && rhov > 0.0 && psat > 0.0);
 
-    mesh_.saturation.push_back({T, rhol, rhov, p_sat});
+    saturation_.push_back({T, rhol, rhov, psat});
   }
 
   BuildRaggedColumns_();
@@ -90,18 +91,17 @@ IAPWS95_RaggedSpline::CreateRaggedMesh()
 * cubic tensor-product basis functions and solve for all spline coefficients.
 ****************************************************************** */
 void
-IAPWS95_RaggedSpline::BuildSplineCoefficients()
+IAPWS95_RaggedSplineRhoT::BuildSplineCoefficients(const std::vector<Sample>& samples)
 {
   // CreateRaggedMesh() must be called before fitting
-  AMANZI_ASSERT(mesh_.delta_knots.size() > 0 && mesh_.tau_knots.size() > 0);
+  AMANZI_ASSERT(mesh_.x_knots.size() > 0 && mesh_.y_knots.size() > 0);
 
-  const auto samples = BuildSamples_();
-  int n = n_delta_basis_ * n_tau_basis_;
+  int n = mesh_.nx_basis_ * mesh_.ny_basis_;
   AMANZI_ASSERT(n != 0);  // The spline has no coefficients
 
-  // With coefficient(i,j) = i * n_tau_basis + j, two overlapping cubic
+  // With coefficient(i,j) = i * ny_basis + j, two overlapping cubic
   // tensor-product basis functions differ by at most 3 in each index.
-  int kd = 3 * n_tau_basis_ + 3;
+  int kd = 3 * mesh_.ny_basis_ + 3;
   int ldab = kd + 1;
 
   // Upper-band LAPACK storage for G = A^T A and rhs = A^T b.
@@ -122,17 +122,17 @@ IAPWS95_RaggedSpline::BuildSplineCoefficients()
   for (const Sample& sample : samples) {
     double delta = sample.rho / RHOC;
     double tau = TC / sample.T;
-    const BasisData Bd = EvaluateCubicBasis_(mesh_.delta_knots, delta);
-    const BasisData Bt = EvaluateCubicBasis_(mesh_.tau_knots, tau);
+    const BasisData Bd = EvaluateCubicBasis(mesh_.x_knots, delta);
+    const BasisData Bt = EvaluateCubicBasis(mesh_.y_knots, tau);
     const std::array<double, 6> target = eos95_->ResidualPart(sample.rho, sample.T);
 
-    int id = LowerCell(mesh_.rho_lines, sample.rho);
-    int it = LowerCell(mesh_.T_lines, sample.T);
+    int id = LowerCell(mesh_.x_lines, sample.rho);
+    int it = LowerCell(mesh_.y_lines, sample.T);
 
-    double tau0 = TC / mesh_.T_lines[it];
-    double tau1 = TC / mesh_.T_lines[it + 1];
+    double tau0 = TC / mesh_.y_lines[it];
+    double tau1 = TC / mesh_.y_lines[it + 1];
 
-    const double h_delta = (mesh_.rho_lines[id + 1] - mesh_.rho_lines[id]) / RHOC;
+    const double h_delta = (mesh_.x_lines[id + 1] - mesh_.x_lines[id]) / RHOC;
     const double h_tau = std::fabs(tau1 - tau0);
 
     const std::array<double, 6> derivative_scale = { 1.0,
@@ -158,9 +158,9 @@ IAPWS95_RaggedSpline::BuildSplineCoefficients()
             (component == 0 || component == 1 || component == 3) ? Bt.value[b] :
             (component == 2 || component == 4) ? Bt.d1[b] : Bt.d2[b];
 
-          index[q] = CoefficientIndex(Bd.index[a], Bt.index[b]);
+          index[q] = mesh_.CoefficientIndex(Bd.index[a], Bt.index[b]);
           row_value[q] = xd * xt;
-          ++q;
+          q++;
         }
       }
 
@@ -179,8 +179,7 @@ IAPWS95_RaggedSpline::BuildSplineCoefficients()
   for (int j = 0; j < n; ++j) {
      diagonal_sum += std::abs(ab[kd + j * ldab]);
   }
-  double diagonal_mean = diagonal_sum / static_cast<double>(n);
-  double regularization = 1.0e-12 * std::max(1.0, diagonal_mean);
+  double regularization = 1.0e-12 * std::max(1.0, diagonal_sum / n);
   for (int j = 0; j < n; ++j) {
     ab[kd + j * ldab] += regularization;
   }
@@ -200,24 +199,24 @@ IAPWS95_RaggedSpline::BuildSplineCoefficients()
 * Build initial mesh
 ****************************************************************** */
 void
-IAPWS95_RaggedSpline::BuildInitialCoordinateLines_()
+IAPWS95_RaggedSplineRhoT::BuildInitialCoordinateLines_()
 {
-  mesh_.rho_lines.resize(options_.initial_rho_intervals + 1);
-  mesh_.T_lines.resize(options_.initial_T_intervals + 1);
+  mesh_.x_lines.resize(options_.initial_rho_intervals + 1);
+  mesh_.y_lines.resize(options_.initial_T_intervals + 1);
 
   // Logarithmic density distribution handles the dilute-vapor scale while
   // remaining monotone and simple. We can replace by another distribution
   // if the liquid region requires stronger clustering.
   double log_min = std::log(options_.rho_min);
   double log_max = std::log(options_.rho_max);
-  for (int i = 0; i < mesh_.rho_lines.size(); ++i) {
-    double s = (double)i / (mesh_.rho_lines.size() - 1);
-    mesh_.rho_lines[i] = std::exp((1.0 - s) * log_min + s * log_max);
+  for (int i = 0; i < mesh_.x_lines.size(); ++i) {
+    double s = (double)i / (mesh_.x_lines.size() - 1);
+    mesh_.x_lines[i] = std::exp((1.0 - s) * log_min + s * log_max);
   }
 
-  for (int j = 0; j < mesh_.T_lines.size(); ++j) {
-    double s = (double)j / (mesh_.T_lines.size() - 1);
-    mesh_.T_lines[j] = (1.0 - s) * options_.T_min + s * options_.T_max;
+  for (int j = 0; j < mesh_.y_lines.size(); ++j) {
+    double s = (double)j / (mesh_.y_lines.size() - 1);
+    mesh_.y_lines[j] = (1.0 - s) * options_.T_min + s * options_.T_max;
   }
 }
 
@@ -227,25 +226,26 @@ IAPWS95_RaggedSpline::BuildInitialCoordinateLines_()
 * during adaptive refinement.
 ****************************************************************** */
 void
-IAPWS95_RaggedSpline::BuildRaggedColumns_()
+IAPWS95_RaggedSplineRhoT::BuildRaggedColumns_()
 {
-  mesh_.columns.clear();
-  mesh_.columns.reserve(mesh_.rho_lines.size());
+  columns_.clear();
+  columns_.reserve(mesh_.x_lines.size());
 
-  for (double rho : mesh_.rho_lines) {
+  for (double rho : mesh_.x_lines) {
     double bndT = BoundaryTemperature(rho);
 
     RaggedColumn c;
     c.rho = rho;
     c.boundary_T = bndT;
-    double extT = bndT - options_.extension_cells * LocalTemperatureSpacing(rho);
+    double extT = FindMetastableMarginTemperature(rho, bndT);
+    c.extension_T = bndT;
 
     c.first_physical_T = static_cast<int>(
-      std::lower_bound(mesh_.T_lines.begin(), mesh_.T_lines.end(), bndT) - mesh_.T_lines.begin());
+      std::lower_bound(mesh_.y_lines.begin(), mesh_.y_lines.end(), bndT) - mesh_.y_lines.begin());
     c.first_extended_T = static_cast<int>(
-      std::lower_bound(mesh_.T_lines.begin(), mesh_.T_lines.end(), extT) - mesh_.T_lines.begin());
+      std::lower_bound(mesh_.y_lines.begin(), mesh_.y_lines.end(), extT) - mesh_.y_lines.begin());
 
-    mesh_.columns.push_back(c);
+    columns_.push_back(c);
   }
 }
 
@@ -253,7 +253,7 @@ IAPWS95_RaggedSpline::BuildRaggedColumns_()
 /* ******************************************************************
 * Validate options
 ****************************************************************** */
-void IAPWS95_RaggedSpline::ValidateOptions_() const
+void IAPWS95_RaggedSplineRhoT::ValidateOptions_() const
 {
   AMANZI_ASSERT(options_.rho_min > 0.0 && options_.rho_max > options_.rho_min);
   AMANZI_ASSERT(options_.T_max > options_.T_min && options_.T_min > 0.0);
@@ -270,19 +270,18 @@ void IAPWS95_RaggedSpline::ValidateOptions_() const
 *
 ****************************************************************** */
 double
-IAPWS95_RaggedSpline::BoundaryTemperature(double rho) const
+IAPWS95_RaggedSplineRhoT::BoundaryTemperature(double rho) const
 {
   // The saturation arrays parameterize two branches rho_v(T) and rho_l(T).
   // For a density between the vapor and liquid branches, return the highest
-  // sampled saturation temperature whose dome interval contains rho.
-  // This provides a piecewise-linear approximation to the lower exclusion
-  // boundary. A prescribed parabola F(rho) can replace this routine directly.
+  // sampled saturation temperature whose dome interval contains rho. This 
+  // provides a piecewise-linear approximation to the lower exclusion boundary. 
   double result = options_.T_min;
   bool found = false;
 
-  for (int k = 0; k + 1 < mesh_.saturation.size(); ++k) {
-    const auto& a = mesh_.saturation[k];
-    const auto& b = mesh_.saturation[k + 1];
+  for (int k = 0; k + 1 < saturation_.size(); ++k) {
+    const auto& a = saturation_[k];
+    const auto& b = saturation_[k + 1];
 
     auto branch_intersection = [&](double r0, double r1) {
       double rlo = std::min(r0, r1);
@@ -310,15 +309,128 @@ IAPWS95_RaggedSpline::BoundaryTemperature(double rho) const
 
 
 /* ******************************************************************
+*
+****************************************************************** */
+double
+IAPWS95_RaggedSplineRhoT::ExtensionTemperature(double rho) const
+{
+  if (columns_.empty()) {
+    return BoundaryTemperature(rho);
+  }
+
+  if (rho <= columns_.front().rho) {
+    return columns_.front().extension_T;
+  }
+
+  if (rho >= columns_.back().rho) {
+    return columns_.back().extension_T;
+  }
+
+  const auto it = std::upper_bound(columns_.begin(),
+                                   columns_.end(),
+                                   rho,
+                                   [](double value, const RaggedColumn& column) {
+                                     return value < column.rho;
+                                   });
+
+  int i1 = static_cast<int>(std::distance(columns_.begin(), it));
+  int i0 = i1 - 1;
+
+  const RaggedColumn& c0 = columns_[i0];
+  const RaggedColumn& c1 = columns_[i1];
+
+  double s = (rho - c0.rho) / (c1.rho - c0.rho);
+
+  return (1.0 - s) * c0.extension_T + s * c1.extension_T;
+}
+
+
+/* ******************************************************************
+* Metastable-margin function searches downward from two-phase boundary
+****************************************************************** */
+double
+IAPWS95_RaggedSplineRhoT::FindMetastableMarginTemperature(double rho, double boundary_T)
+{
+  if (std::fabs(boundary_T - options_.critical_cutoff_temperature_K) < options_.critical_cap_tolerance_K) {
+    return boundary_T - options_.critical_cap_extension_K;
+  }
+
+  double fraction = options_.metastable_stability_fraction;
+  double D_boundary = StabilityFactor(rho, boundary_T);
+
+  if (!std::isfinite(D_boundary) || !(D_boundary > 0.0)) return boundary_T;
+
+  double target = fraction * D_boundary;
+  double lower_limit = std::max(options_.minimum_extension_temperature_K,
+                                boundary_T - options_.max_metastable_extension_K);
+
+  double T_high = boundary_T;
+  double D_high = D_boundary;
+
+  double T_low = boundary_T;
+  double D_low = D_boundary;
+
+  bool found = false;
+  while (T_low > lower_limit) {
+    double next_T = std::max(lower_limit, T_low - options_.metastable_scan_step_K);
+    double next_D = StabilityFactor(rho, next_T);
+
+    if (!std::isfinite(next_D) || next_D <= target) {
+      T_high = T_low;
+      D_high = D_low;
+
+      T_low = next_T;
+      D_low = next_D;
+
+      found = true;
+      break;
+    }
+
+    T_low = next_T;
+    D_low = next_D;
+
+    if (T_low == lower_limit) break;
+  }
+
+  if (!found) return lower_limit;
+
+  for (unsigned itr = 0; itr < options_.metastable_bisection_iterations; ++itr) {
+    double T_mid = (T_low + T_high) / 2;
+    double D_mid = StabilityFactor(rho, T_mid);
+
+    if (!std::isfinite(D_mid) || D_mid <= target) {
+      T_low = T_mid;
+    } else {
+      T_high = T_mid;
+    }
+  }
+
+  return T_high;
+}
+
+
+/* ******************************************************************
+* Evaluates factor propotional to (dp/drho)_T
+****************************************************************** */
+double
+IAPWS95_RaggedSplineRhoT::StabilityFactor(double rho, double T)
+{
+  const auto& exact = IAPWS95::ResidualPart(rho, T);
+
+  double delta = rho / RHOC;
+  return 1.0 + 2.0 * delta * exact[1] + delta * delta * exact[3];
+}
+
+
+/* ******************************************************************
 * Minimum dT
 ****************************************************************** */
 double
-IAPWS95_RaggedSpline::LocalTemperatureSpacing(double /*rho*/) const
+IAPWS95_RaggedSplineRhoT::MinTemperatureSpacing() const
 {
-  if (mesh_.T_lines.size() < 2) return 0.0;
   double h = std::numeric_limits<double>::max();
-  for (int j = 0; j + 1 < mesh_.T_lines.size(); ++j) {
-    h = std::min(h, mesh_.T_lines[j + 1] - mesh_.T_lines[j]);
+  for (int j = 0; j + 1 < mesh_.y_lines.size(); ++j) {
+    h = std::min(h, mesh_.y_lines[j + 1] - mesh_.y_lines[j]);
   }
   return h;
 }
@@ -328,7 +440,7 @@ IAPWS95_RaggedSpline::LocalTemperatureSpacing(double /*rho*/) const
 * Mesh adaptation
 ****************************************************************** */
 void
-IAPWS95_RaggedSpline::AdaptiveRefineCoordinateLines_()
+IAPWS95_RaggedSplineRhoT::AdaptiveRefineCoordinateLines_()
 {
   // A complete production version can perform solve-estimate-refine cycles.
   // Here we implement geometry-driven refinement before the first solve:
@@ -339,27 +451,27 @@ IAPWS95_RaggedSpline::AdaptiveRefineCoordinateLines_()
     std::vector<double> add_rho;
     std::vector<double> add_T;
 
-    if (mesh_.rho_lines.size() - 1 < options_.max_rho_intervals) {
-      for (int i = 0; i + 1 < mesh_.rho_lines.size(); ++i) {
-        double r0 = mesh_.rho_lines[i];
-        double r1 = mesh_.rho_lines[i + 1];
+    if (mesh_.x_lines.size() - 1 < options_.max_rho_intervals) {
+      for (int i = 0; i + 1 < mesh_.x_lines.size(); ++i) {
+        double r0 = mesh_.x_lines[i];
+        double r1 = mesh_.x_lines[i + 1];
         double rm = std::sqrt(r0 * r1);
         double curvature = std::fabs(BoundaryTemperature(r0)
                                - 2 * BoundaryTemperature(rm)
                                    + BoundaryTemperature(r1));
-        double hT = LocalTemperatureSpacing(rm);
+        double hT = MinTemperatureSpacing();
         if (curvature > 0.25 * hT) add_rho.push_back(rm);
       }
     }
 
-    if (mesh_.T_lines.size() - 1 < options_.max_T_intervals) {
-      for (int j = 0; j + 1 < mesh_.T_lines.size(); ++j) {
-        double T0 = mesh_.T_lines[j];
-        double T1 = mesh_.T_lines[j + 1];
-        double Tm = 0.5 * (T0 + T1);
+    if (mesh_.y_lines.size() - 1 < options_.max_T_intervals) {
+      for (int j = 0; j + 1 < mesh_.y_lines.size(); ++j) {
+        double T0 = mesh_.y_lines[j];
+        double T1 = mesh_.y_lines[j + 1];
+        double Tm = (T0 + T1) / 2;
 
-        bool crossed = false;
-        for (double rho : mesh_.rho_lines) {
+        bool crossed(false);
+        for (double rho : mesh_.x_lines) {
           double F = BoundaryTemperature(rho);
           if (F > T0 && F < T1) {
             crossed = true;
@@ -385,8 +497,8 @@ IAPWS95_RaggedSpline::AdaptiveRefineCoordinateLines_()
       }
     };
 
-    insert_unique(mesh_.rho_lines, add_rho, options_.max_rho_intervals);
-    insert_unique(mesh_.T_lines, add_T, options_.max_T_intervals);
+    insert_unique(mesh_.x_lines, add_rho, options_.max_rho_intervals);
+    insert_unique(mesh_.y_lines, add_T, options_.max_T_intervals);
     if (!changed) break;
 
     BuildRaggedColumns_();
@@ -398,62 +510,45 @@ IAPWS95_RaggedSpline::AdaptiveRefineCoordinateLines_()
 *
 ****************************************************************** */
 void
-IAPWS95_RaggedSpline::BuildKnotVectors_()
+IAPWS95_RaggedSplineRhoT::BuildKnotVectors_()
 {
-  std::vector<double> delta_lines(mesh_.rho_lines.size());
-  std::transform(mesh_.rho_lines.begin(), mesh_.rho_lines.end(),
+  std::vector<double> delta_lines(mesh_.x_lines.size());
+  std::transform(mesh_.x_lines.begin(), mesh_.x_lines.end(),
                  delta_lines.begin(),
                  [&](double rho) { return rho / RHOC; });
 
   // tau decreases as T increases. Build an increasing tau line array.
-  std::vector<double> tau_lines(mesh_.T_lines.size());
-  std::transform(mesh_.T_lines.begin(), mesh_.T_lines.end(),
+  std::vector<double> tau_lines(mesh_.y_lines.size());
+  std::transform(mesh_.y_lines.begin(), mesh_.y_lines.end(),
                  tau_lines.begin(),
                  [&](double T) { return TC / T; });
   std::reverse(tau_lines.begin(), tau_lines.end());
 
-  mesh_.delta_knots = MakeClampedCubicKnots_(delta_lines);
-  mesh_.tau_knots = MakeClampedCubicKnots_(tau_lines);
-  n_delta_basis_ = mesh_.delta_knots.size() - degree_ - 1;
-  n_tau_basis_ = mesh_.tau_knots.size() - degree_ - 1;
-}
+  mesh_.x_knots = MakeClampedCubicKnots(delta_lines);
+  mesh_.y_knots = MakeClampedCubicKnots(tau_lines);
 
-
-/* ******************************************************************
-* Constructs knot vector for a cubic B-spline from the coordinate lines.
-* For cubic splines, the degree is p=3. A clamped knot vector repeats 
-* the first and last knot p+1=4 times. This makes the spline interpolate 
-* the endpoint behavior in the usual open-knot-vector sense and ensures 
-* that the basis spans the full interval.
-****************************************************************** */
-std::vector<double>
-IAPWS95_RaggedSpline::MakeClampedCubicKnots_(const std::vector<double>& lines)
-{
-  std::vector<double> knots;
-  knots.reserve(lines.size() + 6);
-  for (int k = 0; k < 4; ++k) knots.push_back(lines.front());
-  for (int i = 1; i + 1 < lines.size(); ++i) knots.push_back(lines[i]);
-  for (int k = 0; k < 4; ++k) knots.push_back(lines.back());
-  return knots;
+  static constexpr int degree_ = 3;
+  mesh_.nx_basis_ = mesh_.x_knots.size() - degree_ - 1;
+  mesh_.ny_basis_ = mesh_.y_knots.size() - degree_ - 1;
 }
 
 
 /* ******************************************************************
 * Creates the set of (rho, T) points used to fit spline coefficients
 ****************************************************************** */
-std::vector<IAPWS95_RaggedSpline::Sample>
-IAPWS95_RaggedSpline::BuildSamples_() const
+std::vector<IAPWS95_RaggedSplineRhoT::Sample>
+IAPWS95_RaggedSplineRhoT::BuildSamples()
 {
   std::vector<Sample> samples;
   const unsigned q = options_.samples_per_cell_direction;
 
   // interior cell samples
-  for (int i = 0; i + 1 < mesh_.rho_lines.size(); ++i) {
-    double r0 = mesh_.rho_lines[i];
-    double r1 = mesh_.rho_lines[i + 1];
-    for (int j = 0; j + 1 < mesh_.T_lines.size(); ++j) {
-      double T0 = mesh_.T_lines[j];
-      double T1 = mesh_.T_lines[j + 1];
+  for (int i = 0; i + 1 < mesh_.x_lines.size(); ++i) {
+    double r0 = mesh_.x_lines[i];
+    double r1 = mesh_.x_lines[i + 1];
+    for (int j = 0; j + 1 < mesh_.y_lines.size(); ++j) {
+      double T0 = mesh_.y_lines[j];
+      double T1 = mesh_.y_lines[j + 1];
 
       for (unsigned ir = 0; ir < q; ++ir) {
         double sr = (ir + 0.5) / q;
@@ -472,11 +567,25 @@ IAPWS95_RaggedSpline::BuildSamples_() const
 
   // Add all background-grid vertices. This directly constrains clamped
   // endpoint coefficients, especially corners such as (rho_max, T_min).
-  for (double rho : mesh_.rho_lines) {
-    for (double T : mesh_.T_lines) {
+  for (double rho : mesh_.x_lines) {
+    for (double T : mesh_.y_lines) {
       if (!IsExtended_(rho, T)) continue;
       double weight = IsPhysical_(rho, T) ? 2.0 : options_.extension_weight;
       samples.push_back({rho, T, weight});
+    }
+  }
+
+  // Additional smaples only under the flat critical cutoff.
+  for (double rho : mesh_.x_lines) {
+    double Tb = BoundaryTemperature(rho);
+    if (Tb < options_.critical_cutoff_temperature_K) continue;
+
+    double Te = Tb - options_.critical_cap_extension_K;
+
+    for (int i = 0; i < options_.extension_samples; ++i) {
+      double s = (i + 0.5) / options_.extension_samples;
+      double T = Te + s * (Tb - Te);
+      samples.push_back({rho, T, options_.extension_weight});
     }
   }
 
@@ -487,131 +596,12 @@ IAPWS95_RaggedSpline::BuildSamples_() const
 /* ******************************************************************
 *
 ****************************************************************** */
-IAPWS95_RaggedSpline::BasisData
-IAPWS95_RaggedSpline::EvaluateCubicBasis_(const std::vector<double>& U, double x) const
-{
-  const int p = 3;
-  const int n = static_cast<int>(U.size()) - p - 2;
-  // Invalid cubic knot vector.
-  AMANZI_ASSERT(n >= p);
-
-  x = std::clamp(x, U[p], U[n + 1]);
-  int span;
-  if (x >= U[n + 1]) {
-    span = n;
-  } else {
-    int low = p, high = n + 1;
-    span = (low + high) / 2;
-    while (x < U[span] || x >= U[span + 1]) {
-        if (x < U[span]) high = span;
-        else low = span;
-        span = (low + high) / 2;
-    }
-  }
-
-  // Algorithm A2.3 from The NURBS Book: derivatives of nonzero basis functions.
-  double ndu[4][4] = {};
-  double left[4] = {}, right[4] = {};
-  ndu[0][0] = 1.0;
-  for (int j = 1; j <= p; ++j) {
-    left[j] = x - U[span + 1 - j];
-    right[j] = U[span + j] - x;
-    double saved = 0.0;
-    for (int r = 0; r < j; ++r) {
-      ndu[j][r] = right[r + 1] + left[j - r];
-      const double temp = ndu[r][j - 1] / ndu[j][r];
-      ndu[r][j] = saved + right[r + 1] * temp;
-      saved = left[j - r] * temp;
-    }
-    ndu[j][j] = saved;
-  }
-
-  double ders[3][4] = {};
-  for (int j = 0; j <= p; ++j) ders[0][j] = ndu[j][p];
-
-  double a[2][4] = {};
-  for (int r = 0; r <= p; ++r) {
-    int s1 = 0, s2 = 1;
-    a[0][0] = 1.0;
-    for (int k = 1; k <= 2; ++k) {
-      double d = 0.0;
-      const int rk = r - k;
-      const int pk = p - k;
-      if (r >= k) {
-        a[s2][0] = a[s1][0] / ndu[pk + 1][rk];
-        d = a[s2][0] * ndu[rk][pk];
-      }
-      const int j1 = (rk >= -1) ? 1 : -rk;
-      const int j2 = (r - 1 <= pk) ? k - 1 : p - r;
-      for (int j = j1; j <= j2; ++j) {
-        a[s2][j] = (a[s1][j] - a[s1][j - 1]) / ndu[pk + 1][rk + j];
-        d += a[s2][j] * ndu[rk + j][pk];
-      }
-      if (r <= pk) {
-        a[s2][k] = -a[s1][k - 1] / ndu[pk + 1][r];
-        d += a[s2][k] * ndu[r][pk];
-      }
-      ders[k][r] = d;
-      std::swap(s1, s2);
-    }
-  }
-
-  int factor = p;
-  for (int k = 1; k <= 2; ++k) {
-    for (int j = 0; j <= p; ++j) ders[k][j] *= factor;
-    factor *= (p - k);
-  }
-
-  BasisData out;
-  for (int j = 0; j < 4; ++j) {
-    out.index[j] = span - p + j;
-    out.value[j] = ders[0][j];
-    out.d1[j] = ders[1][j];
-    out.d2[j] = ders[2][j];
-  }
-  return out;
-}
-
-
-/* ******************************************************************
-* Evaluate residual part uing demensionless input
-****************************************************************** */
-std::array<double, 6>
-IAPWS95_RaggedSpline::ResidualPartDimensionless_(double delta, double tau) const
-{
-  // Check that spline coefficients have been built
-  AMANZI_ASSERT(built_);
-
-  const BasisData Bd = EvaluateCubicBasis_(mesh_.delta_knots, delta);
-  const BasisData Bt = EvaluateCubicBasis_(mesh_.tau_knots, tau);
-  std::array<double, 6> out{};
-
-  for (int a = 0; a < 4; ++a) {
-    int i = Bd.index[a];
-    for (int c = 0; c < 4; ++c) {
-      int j = Bt.index[c];
-      double z = coefficients_[CoefficientIndex(i, j)];
-      out[0] += z * Bd.value[a] * Bt.value[c];
-      out[1] += z * Bd.d1[a] * Bt.value[c];
-      out[2] += z * Bd.value[a] * Bt.d1[c];
-      out[3] += z * Bd.d2[a] * Bt.value[c];
-      out[4] += z * Bd.d1[a] * Bt.d1[c];
-      out[5] += z * Bd.value[a] * Bt.d2[c];
-    }
-  }
-  return out;
-}
-
-
-/* ******************************************************************
-*
-****************************************************************** */
 bool
-IAPWS95_RaggedSpline::IsExtended_(double rho, double T) const
+IAPWS95_RaggedSplineRhoT::IsExtended_(double rho, double T)
 {
-  double F = BoundaryTemperature(rho);
-  double width = options_.extension_cells * LocalTemperatureSpacing(rho);
-  return T >= F - width;
+  double Tb = BoundaryTemperature(rho);
+  double Te = FindMetastableMarginTemperature(rho, Tb);
+  return T >= Te;
 }
 
 } // namespace AmanziEOS

@@ -26,6 +26,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 
+#include "dbc.hh"
 #include "errors.hh"
 #include "SplineCubicNotAKnot2D.hh"
 
@@ -55,6 +56,13 @@ IAPWS95_Spline::ResidualPart(double rho, double T)
 {
   double tau = TC / T;
   double delta = rho / RHOC;
+  if (tau < tau_min_ || tau > tau_max_ ||
+      delta < delta_min_ || delta > delta_max_) {
+    Errors::Message msg;
+    msg << "rho/T is out of bounds\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
   return spline_.evaluate(delta, tau); 
 }
 
@@ -138,6 +146,21 @@ IAPWS95_Spline::ReadTable_(const std::string& filename)
   if (!ok1 || !ok2) {
     msg << "\nGrid coordinate must be strictly increasing.";
     Exceptions::amanzi_throw(msg);
+  }
+
+  // compute extrema
+  tau_min_ = 100.0;
+  tau_max_ = 0.0;
+  for (double value : tau_) {
+    tau_min_ = std::min(tau_min_, value);
+    tau_max_ = std::max(tau_max_, value);
+  }
+
+  delta_min_ = 100.0;
+  delta_max_ = 0.0;
+  for (double value : delta_) {
+    delta_min_ = std::min(delta_min_, value);
+    delta_max_ = std::max(delta_max_, value);
   }
 }
 
