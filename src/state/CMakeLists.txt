@@ -70,6 +70,7 @@ set(state_inc_files
   evaluators/EvaluatorIndependentFunction.hh
   evaluators/EvaluatorIndependentConstant.hh
   evaluators/EvaluatorIndependentTensorFunction.hh
+  evaluators/EvaluatorIndependentTensorFromFile.hh
   evaluators/EvaluatorMultiplicativeReciprocal.hh
   evaluators/EvaluatorPrimary.hh
   evaluators/EvaluatorSecondary.hh
@@ -102,6 +103,7 @@ add_amanzi_library(state
                           evaluators/EvaluatorIndependentFunction.cc
                           evaluators/EvaluatorIndependentConstant.cc
                           evaluators/EvaluatorIndependentTensorFunction.cc
+                          evaluators/EvaluatorIndependentTensorFromFile.cc
                           evaluators/EvaluatorMultiplicativeReciprocal.cc
                           evaluators/EvaluatorPrimary.cc
                           evaluators/EvaluatorSecondary.cc
