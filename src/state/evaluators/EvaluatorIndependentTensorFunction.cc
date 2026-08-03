@@ -176,6 +176,18 @@ CopyVectorToTensorVector(const Epetra_MultiVector& v, int j, TensorVector& tv)
           tv[i + j](0, 2) = tv[i + j](2, 0) = v[4][i]; // xz & zx
           tv[i + j](1, 2) = tv[i + j](2, 1) = v[5][i]; // yz & zy
         }
+      } else if (ndofs == 9) { // 3D full tensor
+        for (unsigned int i = 0; i != ni; ++i) {
+          tv[i + j](0, 0) = v[0][i];
+          tv[i + j](0, 1) = v[1][i];
+          tv[i + j](0, 2) = v[2][i];
+          tv[i + j](1, 0) = v[3][i];
+          tv[i + j](1, 1) = v[4][i];
+          tv[i + j](1, 2) = v[5][i];
+          tv[i + j](2, 0) = v[6][i];
+          tv[i + j](2, 1) = v[7][i];
+          tv[i + j](2, 2) = v[8][i];
+        }
       } else {
         AMANZI_ASSERT(0);
       }
