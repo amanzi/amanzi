@@ -81,6 +81,7 @@ storing the values for all mesh entities (e.g., cells).
 #include "EvaluatorIndependent.hh"
 #include "Evaluator_Factory.hh"
 #include "TensorVector.hh"
+#include "EvaluatorFromFile_Helpers.hh"
 
 namespace Amanzi {
 
@@ -110,9 +111,11 @@ class EvaluatorIndependentTensorFromFile
   // ---------------------------------------------------------------------------
   virtual void Update_(State& S) override;
 
-  // implementation
-  void LoadFile_(int i);
-  void Interpolate_(double time, CompositeVector& v);
+  template<typename EvaluatorType>
+  friend void EvaluatorFromFile_Helpers::LoadFile(int, EvaluatorType&);
+
+  template<typename EvaluatorType>
+  friend void EvaluatorFromFile_Helpers::UpdateTimeInterpolation(double, EvaluatorType&, CompositeVector&);
 
  protected:
   double t_before_, t_after_;
@@ -126,6 +129,7 @@ class EvaluatorIndependentTensorFromFile
   std::string varname_;
   AmanziMesh::Entity_kind locname_;
   int num_funcs_;
+  int ndofs_;
   int dimension_;
   std::string tensor_type_;
   int rank_;

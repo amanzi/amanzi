@@ -20,6 +20,7 @@
 
 #include "CompositeVectorFunctionFactory.hh"
 #include "EvaluatorIndependentTensorFunction.hh"
+#include "EvaluatorFromFile_Helpers.hh"
 
 namespace Amanzi {
 
@@ -127,78 +128,10 @@ EvaluatorIndependentTensorFunction::Update_(State& S)
   int j = 0;
   for (auto name : fac.map()) {
     Epetra_MultiVector& vec = *cv->ViewComponent(name, tv.ghosted);
-    Impl::CopyVectorToTensorVector(vec, j, tv);
+    EvaluatorFromFile_Helpers::CopyVectorToTensorVector(vec, j, tv);
     j += vec.MyLength();
   }
 }
 
 
-namespace Impl {
-
-void
-CopyVectorToTensorVector(const Epetra_MultiVector& v, int j, TensorVector& tv)
-{
-  AMANZI_ASSERT(v.MyLength() == tv.size());
-
-  unsigned int ni = v.MyLength();
-  unsigned int ndofs = v.NumVectors();
-  unsigned int space_dim = tv.dim;
-
-  if (ndofs == 1) { // isotropic
-    for (unsigned int i = 0; i != ni; ++i) tv[i + j](0, 0) = v[0][i];
-
-  } else if (ndofs == 2 && space_dim == 3) {
-    // horizontal and vertical perms
-    for (int i = 0; i != ni; ++i) {
-      tv[i + j](0, 0) = v[0][i];
-      tv[i + j](1, 1) = v[0][i];
-      tv[i + j](2, 2) = v[1][i];
-    }
-
-  } else if (ndofs >= space_dim) {
-    // diagonal tensor
-    for (unsigned int dim = 0; dim != space_dim; ++dim) {
-      for (unsigned int i = 0; i != ni; ++i) {
-        tv[i + j](dim, dim) = v[dim][i];
-      }
-    }
-
-    if (ndofs > space_dim) {
-      // full tensor
-      if (ndofs == 3) { // 2D
-        for (unsigned int i = 0; i != ni; ++i) {
-          tv[i + j](0, 1) = tv[i + j](1, 0) = v[2][i];
-        }
-
-      } else if (ndofs == 6) { // 3D
-        for (unsigned int i = 0; i != ni; ++i) {
-          tv[i + j](0, 1) = tv[i + j](1, 0) = v[3][i]; // xy & yx
-          tv[i + j](0, 2) = tv[i + j](2, 0) = v[4][i]; // xz & zx
-          tv[i + j](1, 2) = tv[i + j](2, 1) = v[5][i]; // yz & zy
-        }
-      } else if (ndofs == 9) { // 3D full tensor
-        for (unsigned int i = 0; i != ni; ++i) {
-          tv[i + j](0, 0) = v[0][i];
-          tv[i + j](0, 1) = v[1][i];
-          tv[i + j](0, 2) = v[2][i];
-          tv[i + j](1, 0) = v[3][i];
-          tv[i + j](1, 1) = v[4][i];
-          tv[i + j](1, 2) = v[5][i];
-          tv[i + j](2, 0) = v[6][i];
-          tv[i + j](2, 1) = v[7][i];
-          tv[i + j](2, 2) = v[8][i];
-        }
-      } else {
-        AMANZI_ASSERT(0);
-      }
-    }
-
-  } else {
-    // ERROR -- unknown perm type
-    AMANZI_ASSERT(0);
-  }
-}
-
-
-} // namespace Impl
 } // namespace Amanzi
