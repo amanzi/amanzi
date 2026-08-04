@@ -162,7 +162,7 @@ EvaluatorIndependentTensorFromFile::EnsureCompatibility(State& S)
         Exceptions::amanzi_throw(message);
       }
     } else {
-      times_.push_back(1e+99);
+      times_.push_back(std::numeric_limits<double>::max());
     }
  
     // Check for increasing times
@@ -175,7 +175,7 @@ EvaluatorIndependentTensorFromFile::EnsureCompatibility(State& S)
     }
  
     current_interval_ = -1;
-    t_before_ = -1.0e+99;
+    t_before_ = std::numeric_limits<double>::lowest();
     t_after_ = times_[0];
   }
 }
@@ -203,7 +203,7 @@ EvaluatorIndependentTensorFromFile::Update_(State& S)
  
   // Check if we are before the current interval
   if (t < t_before_) {
-    t_before_ = -1.0e+99;
+    t_before_ = std::numeric_limits<double>::lowest();
     t_after_ = times_[0];
     current_interval_ = -1;
     EvaluatorFromFile_Helpers::LoadFile(0, *this);
