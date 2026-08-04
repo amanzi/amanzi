@@ -76,6 +76,7 @@ interpolated between three time intervals.
 
 #include "EvaluatorIndependent.hh"
 #include "Evaluator_Factory.hh"
+#include "EvaluatorFromFile_Helpers.hh"
 
 namespace Amanzi {
 
@@ -105,9 +106,11 @@ class EvaluatorIndependentFromFile
   // ---------------------------------------------------------------------------
   virtual void Update_(State& S) override;
 
-  // implementation
-  void LoadFile_(int i);
-  void Interpolate_(double time, CompositeVector& v);
+  template<typename EvaluatorType>
+  friend void EvaluatorFromFile_Helpers::LoadFile(int, EvaluatorType&);
+
+  template<typename EvaluatorType>
+  friend void EvaluatorFromFile_Helpers::UpdateTimeInterpolation(double, EvaluatorType&, CompositeVector&);
 
  protected:
   double t_before_, t_after_;

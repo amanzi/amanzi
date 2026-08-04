@@ -71,6 +71,7 @@ set(state_inc_files
   evaluators/EvaluatorIndependentConstant.hh
   evaluators/EvaluatorIndependentTensorFunction.hh
   evaluators/EvaluatorIndependentTensorFromFile.hh
+  evaluators/EvaluatorFromFile_Helpers.hh
   evaluators/EvaluatorMultiplicativeReciprocal.hh
   evaluators/EvaluatorPrimary.hh
   evaluators/EvaluatorSecondary.hh

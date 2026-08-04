@@ -15,7 +15,7 @@
 #include "Reader.hh"
 
 #include "EvaluatorIndependentTensorFromFile.hh"
-#include "EvaluatorIndependentTensorFunction.hh"
+#include "EvaluatorFromFile_Helpers.hh"
 #include "Function.hh"
 #include "FunctionFactory.hh"
 
@@ -107,18 +107,23 @@ EvaluatorIndependentTensorFromFile::EnsureCompatibility(State& S)
     if (tensor_type_ == "scalar") {
       rank_ = 1;
       num_funcs_ = 1;
+      ndofs_ = num_funcs_;
     } else if (tensor_type_ == "horizontal and vertical") {
       rank_ = 2;
       num_funcs_ = 2;
+      ndofs_ = num_funcs_;
     } else if (tensor_type_ == "diagonal") {
       rank_ = 2;
       num_funcs_ = dimension_;
+      ndofs_ = num_funcs_;
     } else if (tensor_type_ == "full symmetric") {
       rank_ = 2;
       num_funcs_ = dimension_ == 2 ? 3 : 6;
+      ndofs_ = num_funcs_;
     } else if (tensor_type_ == "full") {
       rank_ = 2;
       num_funcs_ = dimension_ * dimension_;
+      ndofs_ = num_funcs_;
     } else {
       Errors::Message msg;
       msg << "EvaluatorIndependentTensorFromFile: invalid parameter, \"tensor type\" = \""
@@ -187,7 +192,7 @@ EvaluatorIndependentTensorFromFile::Update_(State& S)
  
   if (!computed_once_) {
     val_after_ = Teuchos::rcp(new CompositeVector(fac.map()));
-    LoadFile_(0);
+    EvaluatorFromFile_Helpers::LoadFile(0, *this);
   }
  
   double t = S.get_time(my_tag_);
@@ -201,70 +206,12 @@ EvaluatorIndependentTensorFromFile::Update_(State& S)
     t_before_ = -1.0e+99;
     t_after_ = times_[0];
     current_interval_ = -1;
-    LoadFile_(0);
+    EvaluatorFromFile_Helpers::LoadFile(0, *this);
   }
  
   // Determine where we are relative to the currently stored interval
   CompositeVector cv_interp(*val_after_);
- 
-  if (t < t_before_) {
-    // should never be possible thanks to the previous check
-    AMANZI_ASSERT(0);
-  } else if (t == t_before_) {
-    // at the start of the interval
-    AMANZI_ASSERT(val_before_ != Teuchos::null);
-    cv_interp = *val_before_;
-
-  } else if (t < t_after_) {
-    if (t_before_ == -1.0e+99) {
-      // to the left of the first point
-      AMANZI_ASSERT(val_after_ != Teuchos::null);
-      cv_interp = *val_after_;
-    } else if (val_after_ == Teuchos::null) {
-      // to the right of the last point
-      AMANZI_ASSERT(val_before_ != Teuchos::null);
-      cv_interp = *val_before_;
-    } else {
-      // in the interval, interpolate
-      Interpolate_(t, cv_interp);
-    }
-  } else if (t == t_after_) {
-    // at the end of the interval
-    AMANZI_ASSERT(val_after_ != Teuchos::null);
-    cv_interp = *val_after_;
-
-  } else {
-    // to the right of the interval -- advance the interval
-    while (t > t_after_) {
-      current_interval_++;
-      t_before_ = t_after_;
-      if (current_interval_ + 1 == times_.size()) {
-        // at the end of data
-        t_after_ = 1.0e99;
-        val_before_ = val_after_;
-        val_after_ = Teuchos::null;
-
-        // copy the value
-        cv_interp = *val_before_;
-
-      } else {
-        t_after_ = times_[current_interval_ + 1];
-
-        // swap the pointers
-        std::swap(val_before_, val_after_);
-
-        // load the new data
-        LoadFile_(current_interval_ + 1);
- 
-        // now we are in the interval, interpolate
-        if (t == t_after_) {
-          cv_interp = *val_after_;
-        } else if (t < t_after_) {
-          Interpolate_(t, cv_interp);
-        }
-      }
-    }
-  }
+  EvaluatorFromFile_Helpers::UpdateTimeInterpolation(t, *this, cv_interp);
 
   if (rescaling_ != 1.0) cv_interp.Scale(rescaling_);
   if (tv.ghosted) cv_interp.ScatterMasterToGhosted();
@@ -273,62 +220,10 @@ EvaluatorIndependentTensorFromFile::Update_(State& S)
   int j = 0;
   for (auto name : fac.map()) {
     Epetra_MultiVector& vec = *cv_interp.ViewComponent(name, tv.ghosted);
-    Impl::CopyVectorToTensorVector(vec, j, tv);
+    EvaluatorFromFile_Helpers::CopyVectorToTensorVector(vec, j, tv);
     j += vec.MyLength();
   }
 }
  
- 
-// ---------------------------------------------------------------------------
-// Load data from HDF5 file
-// ---------------------------------------------------------------------------
-void
-EvaluatorIndependentTensorFromFile::LoadFile_(int i)
-{
-  // allocate data
-  if (val_after_ == Teuchos::null) {
-    AMANZI_ASSERT(val_before_ != Teuchos::null);
-    val_after_ = Teuchos::rcp(new CompositeVector(*val_before_));
-  }
- 
-  // open the file
-  Teuchos::RCP<Amanzi::HDF5_MPI> file_input =
-    Teuchos::rcp(new Amanzi::HDF5_MPI(val_after_->Comm(), filename_));
-  file_input->open_h5file();
- 
-  // load the data
-  Epetra_MultiVector& vec = *val_after_->ViewComponent(compname_, false);
-  for (int j = 0; j != num_funcs_; ++j) {
-    std::stringstream varname;
-    varname << varname_ << "." << compname_ << "." << j;
-    if (!checkpoint_file_) {
-      varname << "//" << i;
-    }
-    file_input->readData(*vec(j), varname.str());
-  }
- 
-  // close file
-  file_input->close_h5file();
-}
- 
- 
-// ---------------------------------------------------------------------------
-// Interpolate between two time steps
-// ---------------------------------------------------------------------------
-void
-EvaluatorIndependentTensorFromFile::Interpolate_(double time, CompositeVector& v)
-{
-  AMANZI_ASSERT(t_before_ >= 0.0);
-  AMANZI_ASSERT(t_after_ >= 0.0);
-  AMANZI_ASSERT(t_after_ >= time);
-  AMANZI_ASSERT(time >= t_before_);
-  AMANZI_ASSERT(t_after_ > t_before_);
-  AMANZI_ASSERT(val_before_ != Teuchos::null);
-  AMANZI_ASSERT(val_after_ != Teuchos::null);
- 
-  double coef = (time - t_before_) / (t_after_ - t_before_);
-  v = *val_before_;
-  v.Update(coef, *val_after_, 1 - coef);
-}
 
 } // namespace Amanzi
