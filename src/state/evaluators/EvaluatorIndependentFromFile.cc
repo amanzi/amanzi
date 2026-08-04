@@ -115,7 +115,7 @@ EvaluatorIndependentFromFile::EnsureCompatibility(State& S)
       Exceptions::amanzi_throw(message);
     }
   } else {
-    times_.push_back(1e+99);
+    times_.push_back(std::numeric_limits<double>::max());
   }
 
   // check for increasing times
@@ -129,7 +129,7 @@ EvaluatorIndependentFromFile::EnsureCompatibility(State& S)
   }
 
   current_interval_ = -1;
-  t_before_ = -1.0e+99;
+  t_before_ = std::numeric_limits<double>::lowest();
   t_after_ = times_[0];
 }
 
@@ -159,7 +159,7 @@ EvaluatorIndependentFromFile::Update_(State& S)
     // with a time function that is not monotonic, i.e. doing a cyclic steady
     // state to repeat a year, and we have gone past the cycle.  Restart the
     // interval.
-    t_before_ = -1.0e+99;
+    t_before_ = std::numeric_limits<double>::lowest();
     t_after_ = times_[0];
     current_interval_ = -1;
     EvaluatorFromFile_Helpers::LoadFile(0, *this);

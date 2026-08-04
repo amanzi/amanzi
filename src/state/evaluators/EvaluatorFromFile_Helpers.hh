@@ -88,7 +88,7 @@ void UpdateTimeInterpolation(double t, EvaluatorType& eval, CompositeVector& cv)
     cv = *eval.val_before_;
 
   } else if (t < eval.t_after_) {
-    if (eval.t_before_ == -1.0e+99) {
+    if (eval.t_before_ == std::numeric_limits<double>::lowest()) {
       // to the left of the first point
       AMANZI_ASSERT(eval.val_after_ != Teuchos::null);
       cv = *eval.val_after_;
