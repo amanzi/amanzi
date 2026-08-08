@@ -7,6 +7,8 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
+#include <algorithm>
+
 #include "dbc.hh"
 
 #include "IAPWS95_RaggedSplineHelper.hh"
