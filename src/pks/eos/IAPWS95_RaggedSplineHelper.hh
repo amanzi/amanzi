@@ -10,6 +10,7 @@
 #ifndef AMANZI_IAPWS95_RAGGED_SPLINE_HELPER_HH_
 #define AMANZI_IAPWS95_RAGGED_SPLINE_HELPER_HH_
 
+#include <array> 
 #include <vector> 
 
 namespace Amanzi {
