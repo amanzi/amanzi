@@ -244,7 +244,7 @@ IAPWS95::PopulatePropertiesFromEntropy1(double p, double h)
 {
   Properties prop;
 
-  std::array<double, 6> a = EntropyDerivatives(p, h); 
+  std::array<double, 6> a = EntropyDerivativesPH(p, h); 
   double s   = a[0];
   double sp  = a[1];
   double sh  = a[2];
@@ -531,29 +531,24 @@ IAPWS95::ResidualPart(double rho, double T)
 * Derivatives are computed outside the saturation dome and maybe
 * inside the metastable extension.
 ****************************************************************** */
-struct FrhoT {
-  typedef Utils::VectorSTL Vector;
+FrhoT::Vector
+FrhoT::operator()(FrhoT::Vector& x)
+{
+  const auto& g0 = eos_->IAPWS95::IdealGasPart(x[0], x[1]);
+  const auto& gr = eos_->IAPWS95::ResidualPart(x[0], x[1]);
 
-  FrhoT(double p, double h, IAPWS95* eos) : p_(p), h_(h), eos_(eos) {};
-  Vector operator()(Vector& x) {
-    const auto& g0 = eos_->IAPWS95::IdealGasPart(x[0], x[1]);
-    const auto& gr = eos_->IAPWS95::ResidualPart(x[0], x[1]);
+  double delta = x[0] / eos_->RHOC;
+  double tau = eos_->TC / x[1];
 
-    double delta = x[0] / eos_->RHOC;
-    double tau = eos_->TC / x[1];
-
-    Vector r(x.size());
-    r[0] = x[0] * eos_->R * x[1] * (1 + delta * gr[1]) / 1000 - p_;
-    r[1] = eos_->R * x[1] * (1 + tau * (g0[2] + gr[2]) + delta * gr[1]) - h_;
-    return r;
-  }
-  double p_, h_;
-  IAPWS95* eos_;
-};
+  Vector r(x.size());
+  r[0] = x[0] * eos_->R * x[1] * (1 + delta * gr[1]) / 1000 - p_;
+  r[1] = eos_->R * x[1] * (1 + tau * (g0[2] + gr[2]) + delta * gr[1]) - h_;
+  return r;
+}
 
 
 std::array<double, 6>
-IAPWS95::EntropyDerivatives(double p, double h)
+IAPWS95::EntropyDerivativesPH(double p, double h)
 {
   auto [prop, liquid, vapor] = eos97_.ThermodynamicsPH(p, h); 
   double rho0 = prop.rho;
@@ -571,8 +566,13 @@ IAPWS95::EntropyDerivatives(double p, double h)
 
   double rho = sol[0];
   double T = sol[1];
+  return EntropyDerivativesRhoT(rho, T);
+}
 
-  // compute entropy and its derivarives
+
+std::array<double, 6>
+IAPWS95::EntropyDerivativesRhoT(double rho, double T)
+{
   auto [prop1, liquid1, vapor1] = ThermodynamicsRhoT(rho, T); 
   double s = prop1.s;
   double sp = -1.0 / rho / T;

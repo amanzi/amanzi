@@ -21,6 +21,8 @@
 
 #include "Teuchos_ParameterList.hpp"
 
+#include "PowellHybrid.hh"
+
 #include "IAPWS97.hh"
 
 namespace Amanzi {
@@ -37,6 +39,7 @@ struct SaturationState {
   double rhol, rhov;
 };
 
+
 class IAPWS95 {
  public:
   IAPWS95(Teuchos::ParameterList& plist) : eos97_(plist) {};
@@ -49,13 +52,14 @@ class IAPWS95 {
   std::array<double, 6> IdealGasPart(double rho, double T);
   virtual std::array<double, 6> ResidualPart(double rho, double T);
 
-  virtual std::array<double, 6> EntropyDerivatives(double p, double h);
-
   Properties PopulateProperties(double rho, double T);
   Properties ExtendProperties(double rho, const Properties& prop);
 
   Properties PopulatePropertiesFromEntropy1(double p, double h);
   Properties PopulatePropertiesFromEntropy2(double p, double h, const SaturationState& sat);
+
+  virtual std::array<double, 6> EntropyDerivativesPH(double p, double h);
+  std::array<double, 6> EntropyDerivativesRhoT(double rho, double T);
 
   std::tuple<double, double, double> SaturationLineT(double T, double rhol0, double rhov0);
   SaturationState SaturationLineP(double p);
@@ -179,6 +183,17 @@ class IAPWS95 {
  protected:
   IAPWS97 eos97_;
 };
+
+
+struct FrhoT {
+  typedef Utils::VectorSTL Vector;
+  FrhoT(double p, double h, IAPWS95* eos) : p_(p), h_(h), eos_(eos) {};
+  Vector operator()(Vector& x);
+
+  double p_, h_;
+  IAPWS95* eos_;
+};
+
 
 } // namespace AmanziEOS
 } // namespace Amanzi

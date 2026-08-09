@@ -527,9 +527,9 @@ IAPWS95_RaggedSplineRhoT::BuildKnotVectors_()
   mesh_.x_knots = MakeClampedCubicKnots(delta_lines);
   mesh_.y_knots = MakeClampedCubicKnots(tau_lines);
 
-  static constexpr int degree_ = 3;
-  mesh_.nx_basis_ = mesh_.x_knots.size() - degree_ - 1;
-  mesh_.ny_basis_ = mesh_.y_knots.size() - degree_ - 1;
+  static constexpr int degree = 3;
+  mesh_.nx_basis_ = mesh_.x_knots.size() - degree - 1;
+  mesh_.ny_basis_ = mesh_.y_knots.size() - degree - 1;
 }
 
 
