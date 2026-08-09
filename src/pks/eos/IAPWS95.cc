@@ -678,6 +678,7 @@ IAPWS95::SaturationLineP(double p)
     x0[1] = rhov0;
     x0[2] = T0;
     Frho3::Vector sol = PowellHybrid(x0, f, &itrs_, tol);
+    if (itrs_ < 0) std::cout << norm(f(sol)) << std::endl;
     AMANZI_ASSERT(itrs_ >= 0);
 
     sat.rhol = sol[0];
