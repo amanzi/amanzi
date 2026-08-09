@@ -13,7 +13,6 @@
 #include "dbc.hh"
 #include "IAPWS95.hh"
 #include "IAPWS95_RaggedSplineRhoT.hh"
-#include "IAPWS95_RaggedSplinePH.hh"
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziEOS;
