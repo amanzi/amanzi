@@ -670,7 +670,7 @@ IAPWS95::SaturationLineP(double p)
     rhol0 = DensityLiquid(T0);
     rhov0 = DensityVapor(T0);
 
-    itrs_ = 10;
+    itrs_ = 15;
     double tol(1e-11);
     Frho3 f(p, this);
     Frho3::Vector x0(3);
