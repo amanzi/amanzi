@@ -625,8 +625,8 @@ IAPWS95::SaturationLineT(double T, double rhol0, double rhov0)
   if (sol[0] == sol[1]) {
     psat = PC;
   } else {
-    double gl = ResidualPart(sol[0], Tmin)[0];
-    double gv = ResidualPart(sol[1], Tmin)[0];
+    double gl = IAPWS95::ResidualPart(sol[0], Tmin)[0];
+    double gv = IAPWS95::ResidualPart(sol[1], Tmin)[0];
 
     psat = R * T * sol[0] * sol[1] / (sol[0] - sol[1]) * (gl - gv + std::log(sol[0] / sol[1])) / 1000.0;
   }

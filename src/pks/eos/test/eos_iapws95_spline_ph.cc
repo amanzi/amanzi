@@ -65,7 +65,7 @@ void WriteHelmholtzPlotData(IAPWS95_RaggedSplinePH& spline,
 TEST(EOS_IAPWS95_SPLINE_P_H)
 {
   IAPWS95_RaggedSplinePH::Options opt;
-  opt.P_min = 1.00;
+  opt.P_min = 0.50;
   opt.P_max = 50.0;
   opt.H_min = 500.0;
   opt.H_max = 3600.0;

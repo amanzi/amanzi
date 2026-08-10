@@ -29,6 +29,7 @@
 #include "EnergyPressureTemperature_PK.hh"
 #include "evaluators_reg.hh"
 #include "IAPWS95.hh"
+#include "IAPWS95_RaggedSplineRhoT.hh"
 #include "MeshFactory.hh"
 #include "PK_Physical.hh"
 #include "State.hh"
@@ -145,19 +146,67 @@ TEST(HELMHOLTZ_ENERGY_IAPWS95_SINGLE_PHASE)
       Tr = T * (1.0 + eps);
 
       auto [prop, liquid, vapor] = eos.ThermodynamicsRhoT(rho, T);
-
       auto [prop3, liquid3, vapor3] = eos.ThermodynamicsRhoT(rho, Tr);
       auto [prop4, liquid4, vapor4] = eos.ThermodynamicsRhoT(rho, Tl);
 
       // Helmholtz energy is concave in T
       der = (prop4.helmholtz - 2 * prop.helmholtz + prop3.helmholtz) / (eps * eps * T * T);
       CHECK(der < 0.0);
+
+      // Alternative check: d2H/dT2 = -cv / T
+      CHECK(prop.cv > 0.0);
     }
   }
 }
 
 
-// TEST(HELMHOLTZ_IAPWS95_SPLINE)
-// {
-// }
+TEST(HELMHOLTZ_IAPWS95_SPLINE)
+{
+  using namespace Amanzi;
+  std::cout << "Test: Helmholtz energy spline properties" << std::endl;
+
+  AmanziEOS::IAPWS95_RaggedSplineRhoT::Options opt;
+  opt.T_min = 280.0;
+  opt.T_max = 900.0;
+  opt.rho_min = 8.0;
+  opt.rho_max = 1100.0;
+  opt.initial_rho_intervals = 48;
+  opt.initial_T_intervals = 48;
+  opt.max_rho_intervals = 120;
+  opt.max_T_intervals = 130;
+  opt.extension_cells = 4.0;
+  opt.extension_weight = 0.1;
+  opt.metastable_scan_step_K = 0.5;
+  opt.critical_cap_extension_K = 5.0;
+
+  Teuchos::ParameterList plist;
+  AmanziEOS::IAPWS95 eos95(plist);
+  AmanziEOS::IAPWS95_RaggedSplineRhoT eos_spline(plist, opt);
+
+  eos_spline.CreateRaggedMesh();
+  const auto samples = eos_spline.BuildSamples();
+  eos_spline.BuildSplineCoefficients(samples);
+
+  int n = 100;
+  double eps(2e-6);
+  double drho(2.2), dT(2.2), Tl, Tr, der;
+
+  for (double rho = opt.rho_min + drho; rho < opt.rho_max - drho; rho += drho) {
+    for (double T = opt.T_min + dT; T < opt.T_max - dT; T += dT) {
+      auto [prop0, liquid0, vapor0] = eos95.ThermodynamicsRhoT(rho, T);
+      if (prop0.x == 0.0 || prop0.x == 1.0) {
+        Tl = T * (1.0 - eps);
+        Tr = T * (1.0 + eps);
+
+        auto [prop1, liquid1, vapor1] = eos_spline.ThermodynamicsRhoT(rho, T);
+        auto [prop3, liquid3, vapor3] = eos_spline.ThermodynamicsRhoT(rho, Tr);
+        auto [prop4, liquid4, vapor4] = eos_spline.ThermodynamicsRhoT(rho, Tl);
+
+        // Helmholtz energy is concave in T
+        der = (prop4.helmholtz - 2 * prop1.helmholtz + prop3.helmholtz) / (eps * eps * T * T);
+        CHECK(der < 0.0);
+      }
+    }
+  }
+}
 

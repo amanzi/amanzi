@@ -551,14 +551,14 @@ IAPWS95_RaggedSplinePH::BuildSamples()
       double h = sample.h;
       const SaturationState& sat = eos95_->SaturationLineP(p); 
 
-      int itrs(30);
+      int itrs(100);
       double tol(1e-10);
       FrhoT f(p, h, eos95_.get());
       FrhoT::Vector x0(2);
       x0[0] = (h <= HC) ? sat.rhol : sat.rhov;
       x0[1] = sat.Tsat;
       FrhoT::Vector sol = PowellHybrid(x0, f, &itrs, tol);
-      // AMANZI_ASSERT(itrs >= 0); // FIXME
+      AMANZI_ASSERT(itrs >= 0);
 
       sample.rho = sol[0];
       sample.T = sol[1];
