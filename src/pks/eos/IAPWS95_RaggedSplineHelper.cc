@@ -8,6 +8,7 @@
 */
 
 #include <algorithm>
+#include <limits>
 
 #include "dbc.hh"
 
