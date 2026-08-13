@@ -15,7 +15,8 @@
 
   Internal coordinates are: delta = rho / RHOC, tau = TC / T.
  
-  ResidualPart(rho,T) returns, in this order,
+  ResidualPart(rho,T) returns Helmholtz energy (ar) and its redivatives, 
+  in this order:
     ar, 
     d(ar)/d(delta), d(ar)/d(tau), 
     d2(ar)/d(delta)^2, d2(ar)/(d(delta)d(tau)), d2(ar)/d(tau)^2.
@@ -170,6 +171,9 @@ class IAPWS95_RaggedSplineRhoT : public IAPWS95,
   // Creates the set of (rho, T) points/samples used to fit spline coefficients.
   std::vector<Sample> BuildSamples();
 
+  // point classification
+  bool IsPhysical(double rho, double T) const { return T >= BoundaryTemperature(rho); }
+
   // access
   const Mesh& GetMesh() const noexcept { return mesh_; }
 
@@ -180,12 +184,10 @@ class IAPWS95_RaggedSplineRhoT : public IAPWS95,
   void AdaptiveRefineCoordinateLines_();
   void BuildKnotVectors_();
 
-  bool IsPhysical_(double rho, double T) const { return T >= BoundaryTemperature(rho); }
   bool IsExtended_(double rho, double T);
 
   double BoundaryTemperature(double rho) const;
   double ExtensionTemperature(double rho) const;
-  double MinTemperatureSpacing() const;
 
   double FindMetastableMarginTemperature(double rho, double boundary_T);
   double StabilityFactor(double rho, double T);
@@ -195,6 +197,7 @@ class IAPWS95_RaggedSplineRhoT : public IAPWS95,
 
   Options options_;
   Mesh mesh_;
+  double min_T_spacing_;
 
   std::vector<SaturationPoint> saturation_;
   std::vector<RaggedColumn> columns_;

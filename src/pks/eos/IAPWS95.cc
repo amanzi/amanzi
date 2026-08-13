@@ -528,8 +528,9 @@ IAPWS95::ResidualPart(double rho, double T)
 
 
 /* ******************************************************************
-* Derivatives are computed outside the saturation dome and maybe
-* inside the metastable extension.
+* Derivatives are computed outside the saturation dome and inside 
+* the metastable extension which requires direct call for computing 
+* the ideal gas and residual parts of energy.
 ****************************************************************** */
 FrhoT::Vector
 FrhoT::operator()(FrhoT::Vector& x)
@@ -582,7 +583,7 @@ IAPWS95::EntropyDerivativesRhoT(double rho, double T)
 
 
 /* ******************************************************************
-* Saturation calculation for two phase search FIXME
+* Calculation of the two phase liquid and vapor boundaries.
 ****************************************************************** */
 struct Frho2 {
   typedef Utils::VectorSTL Vector;
@@ -635,7 +636,8 @@ IAPWS95::SaturationLineT(double T, double rhol0, double rhov0)
 
 
 /* ******************************************************************
-* Extended saturation calculation for two phase search
+* Calculation of the two phase liquid and vapor boundaries which
+* returns more data.
 ****************************************************************** */
 struct Frho3 {
   typedef Utils::VectorSTL Vector;

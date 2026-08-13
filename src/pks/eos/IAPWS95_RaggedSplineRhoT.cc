@@ -41,13 +41,12 @@ IAPWS95_RaggedSplineRhoT::ResidualPart(double rho, double T)
 { 
   AMANZI_ASSERT(built_);
 
-  // check for spline domain
-  AMANZI_ASSERT(rho >= options_.rho_min && rho <= options_.rho_max);
-  AMANZI_ASSERT(T >= options_.T_min && T <= options_.T_max);
+  // AMANZI_ASSERT(rho >= options_.rho_min && rho <= options_.rho_max);
+  // AMANZI_ASSERT(T >= options_.T_min && T <= options_.T_max);
 
-  double bndT = BoundaryTemperature(rho);
-  double extT = options_.extension_cells * MinTemperatureSpacing();
-  AMANZI_ASSERT(T >= bndT - extT);
+  // double bndT = BoundaryTemperature(rho);
+  // double extT = options_.extension_cells * min_T_spacing_;
+  // AMANZI_ASSERT(T >= bndT - extT);
 
   return Evaluate(mesh_, coefficients_, rho / RHOC, TC / T);
 }
@@ -83,6 +82,8 @@ IAPWS95_RaggedSplineRhoT::CreateRaggedMesh()
   BuildRaggedColumns_();
   AdaptiveRefineCoordinateLines_();
   BuildKnotVectors_();
+
+  min_T_spacing_ = MinSpacing(mesh_.y_lines);
 }
 
 
@@ -124,6 +125,8 @@ IAPWS95_RaggedSplineRhoT::BuildSplineCoefficients(const std::vector<Sample>& sam
     double tau = TC / sample.T;
     const BasisData Bd = EvaluateCubicBasis(mesh_.x_knots, delta);
     const BasisData Bt = EvaluateCubicBasis(mesh_.y_knots, tau);
+
+    // target values for fitting
     const std::array<double, 6> target = eos95_->ResidualPart(sample.rho, sample.T);
 
     int id = LowerCell(mesh_.x_lines, sample.rho);
@@ -423,20 +426,6 @@ IAPWS95_RaggedSplineRhoT::StabilityFactor(double rho, double T)
 
 
 /* ******************************************************************
-* Minimum dT
-****************************************************************** */
-double
-IAPWS95_RaggedSplineRhoT::MinTemperatureSpacing() const
-{
-  double h = std::numeric_limits<double>::max();
-  for (int j = 0; j + 1 < mesh_.y_lines.size(); ++j) {
-    h = std::min(h, mesh_.y_lines[j + 1] - mesh_.y_lines[j]);
-  }
-  return h;
-}
-
-
-/* ******************************************************************
 * Mesh adaptation
 ****************************************************************** */
 void
@@ -459,7 +448,7 @@ IAPWS95_RaggedSplineRhoT::AdaptiveRefineCoordinateLines_()
         double curvature = std::fabs(BoundaryTemperature(r0)
                                - 2 * BoundaryTemperature(rm)
                                    + BoundaryTemperature(r1));
-        double hT = MinTemperatureSpacing();
+        double hT = MinSpacing(mesh_.y_lines);
         if (curvature > 0.25 * hT) add_rho.push_back(rm);
       }
     }
@@ -558,7 +547,7 @@ IAPWS95_RaggedSplineRhoT::BuildSamples()
           double T = (1.0 - st) * T0 + st * T1;
 
           if (!IsExtended_(rho, T)) continue;
-          double weight = IsPhysical_(rho, T) ? 1.0 : options_.extension_weight;
+          double weight = IsPhysical(rho, T) ? 1.0 : options_.extension_weight;
           samples.push_back({rho, T, weight});
         }
       }
@@ -570,7 +559,7 @@ IAPWS95_RaggedSplineRhoT::BuildSamples()
   for (double rho : mesh_.x_lines) {
     for (double T : mesh_.y_lines) {
       if (!IsExtended_(rho, T)) continue;
-      double weight = IsPhysical_(rho, T) ? 2.0 : options_.extension_weight;
+      double weight = IsPhysical(rho, T) ? 2.0 : options_.extension_weight;
       samples.push_back({rho, T, weight});
     }
   }

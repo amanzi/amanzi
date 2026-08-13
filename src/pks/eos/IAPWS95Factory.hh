@@ -32,14 +32,19 @@ CreateIAPWS95(Teuchos::ParameterList& plist)
     return Teuchos::rcp(new IAPWS95_Spline(plist));
   } else if (plist.isParameter("use ragged spline")) {
     IAPWS95_RaggedSplineRhoT::Options opt;
-    opt.rho_min = 10.0;
-    opt.rho_max = 1100.0;
-    opt.T_min = 300.0;
+
+    opt.T_min = 280.0;
     opt.T_max = 900.0;
-    opt.initial_rho_intervals = 48;
-    opt.initial_T_intervals = 48;
+    opt.rho_min = 8.0;
+    opt.rho_max = 1100.0;
+    opt.initial_rho_intervals = 50;
+    opt.initial_T_intervals = 70;
+    opt.max_rho_intervals = 120;
+    opt.max_T_intervals = 180;
     opt.extension_cells = 4.0;
     opt.extension_weight = 0.1;
+    opt.metastable_scan_step_K = 0.5;
+    opt.critical_cap_extension_K = 5.0;
 
     auto eos = Teuchos::rcp(new IAPWS95_RaggedSplineRhoT(plist, opt));
     eos->CreateRaggedMesh();

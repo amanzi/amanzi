@@ -41,14 +41,13 @@ void WriteHelmholtzPlotData(IAPWS95_RaggedSplineRhoT& spline,
     for (int i = 0; i < nrho; ++i) {
       double rho = rho_min + (rho_max - rho_min) * (double)i / (nrho - 1);
 
-      try {
+      if (spline.IsPhysical(rho, T)) {
         const auto& spline_value = spline.ResidualPart(rho, T);
         const auto& exact_value = eos95.ResidualPart(rho, T);
         double error = spline_value[0] - exact_value[0];
 
         out << rho << " " << T << " " << spline_value[0] << " " << exact_value[0] << " " << error << "\n";
-      }
-      catch (const std::exception&) {
+      } else {
         // Point is outside the ragged physical domain.
         // NaN preserves the rectangular plotting structure.
         const double nan = std::numeric_limits<double>::quiet_NaN();
@@ -70,10 +69,10 @@ TEST(EOS_IAPWS95_SPLINE_RHO_T)
   opt.T_max = 900.0;
   opt.rho_min = 8.0;
   opt.rho_max = 1100.0;
-  opt.initial_rho_intervals = 48;
-  opt.initial_T_intervals = 48;
+  opt.initial_rho_intervals = 50;
+  opt.initial_T_intervals = 70;
   opt.max_rho_intervals = 120;
-  opt.max_T_intervals = 130;
+  opt.max_T_intervals = 180;
   opt.extension_cells = 4.0;
   opt.extension_weight = 0.1;
   opt.metastable_scan_step_K = 0.5;
@@ -86,6 +85,7 @@ TEST(EOS_IAPWS95_SPLINE_RHO_T)
   spline.CreateRaggedMesh();
   const auto samples = spline.BuildSamples();
   spline.BuildSplineCoefficients(samples);
+  std::cout << "Mesh resolutons: " << spline.GetMesh().x_lines.size() << " " << spline.GetMesh().y_lines.size() << std::endl;
 
   // double rho(400.0), T(700.0);
   double rho(596.976), T(631.221);
@@ -97,11 +97,25 @@ TEST(EOS_IAPWS95_SPLINE_RHO_T)
     CHECK_CLOSE(exact[k], approx[k], 0.05);
   }
 
-  // auto [prop, liquid, vapor] = eos95.ThermodynamicsRhoT(596.976, 631.221);
-  // eos95.Print(prop); exit(0);
+  // (dp/drho)_T = RT (1 + D) / 1000
+  T = 646.846;
+  for (double rho = 340.0; rho <= 400.0; rho += 1.0) {
+    double delta = rho / eos95.RHOC;
+ 
+    const auto& exact = eos95.ResidualPart(rho, T);
+    const auto& approx = spline.ResidualPart(rho, T);
+
+    double p = rho * eos95.R * T * (1 + delta * exact[1]) / 1000; // MPa
+    double papprox = rho * eos95.R * T * (1 + delta * approx[1]) / 1000;
+
+    double D = 1.0 + 2 * delta * exact[1] + delta * delta * exact[3];
+    double Dapprox = 1.0 + 2 * delta * approx[1] + delta * delta * approx[3];
+
+    // Check monotonicity of D
+    // std::cout << rho << " " << p << " " << papprox << "  " << D << " " << Dapprox << std::endl;
+  }
 
   const auto& mesh = spline.GetMesh();
-
   WriteHelmholtzPlotData(spline,
                          eos95,
                          mesh.x_lines.front(),

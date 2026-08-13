@@ -31,13 +31,14 @@
 #include "evaluators_reg.hh"
 #include "IAPWS95.hh"
 #include "IAPWS95_Spline.hh"
+#include "IAPWS95_RaggedSplineRhoT.hh"
 #include "MeshFactory.hh"
 #include "PK_Physical.hh"
 #include "State.hh"
 #include "IAPWS95_StateEvaluators.hh"
 #include "VerboseObject.hh"
 
-double RunTest(bool spline)
+double RunTest(int icase)
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -50,7 +51,7 @@ double RunTest(bool spline)
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0) std::cout << "Test: derivative tables: spline=" << spline << std::endl;
+  if (MyPID == 0) std::cout << "Test: derivative tables: spline=" << (icase > 0) << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/energy_iapws95.xml";
@@ -63,7 +64,7 @@ double RunTest(bool spline)
 
   AmanziEOS::IAPWS95 eos(*plist);
 
-  if (spline) {
+  if (icase == 1) {
     plist->sublist("PKs").sublist("energy").sublist("thermal conductivity evaluator")
       .sublist("All").sublist("liquid phase").set<std::string>("csv table name", "test/h2o.csv");
 
@@ -89,6 +90,15 @@ double RunTest(bool spline)
       }
     }
     ofile.close();
+  }
+  else if (icase == 2) {
+    plist->sublist("PKs").sublist("energy").sublist("thermal conductivity evaluator")
+      .sublist("All").sublist("liquid phase").set<bool>("use ragged spline", true);
+
+    plist->sublist("state").sublist("evaluators").sublist("thermodynamic_state")
+      .set<bool>("use ragged spline", true);
+    plist->sublist("state").sublist("evaluators").sublist("viscosity_liquid")
+      .set<bool>("use ragged spline", true);
   }
 
   // create a mesh framework
@@ -146,29 +156,29 @@ double RunTest(bool spline)
   auto& T_c = *S->GetW<CompositeVector>(temperature_key, passwd).ViewComponent("cell");
 
   int c(0), m(200);
-  double drho(30.0 / m), dT(30.0 / m), rho, T; 
+  if (icase != 2) {
+    double drho(30.0 / m), dT(30.0 / m), rho, T; 
 
-  for (int i = 0; i < m; ++i) {
-    for (int j = 0; j < m; ++j) {
-      rho = 600.0 + i * drho;
-      T = 630 + j * dT;
-      auto [prop, liquid, vapor] = eos.ThermodynamicsRhoT(rho, T);
+    for (int i = 0; i < m; ++i) {
+      for (int j = 0; j < m; ++j) {
+        rho = 600.0 + i * drho;
+        T = 630 + j * dT;
+        auto [prop, liquid, vapor] = eos.ThermodynamicsRhoT(rho, T);
 
-      p_c[0][c] = prop.p * 1e+6;
-      T_c[0][c] = T;
-      c++;
+        p_c[0][c] = prop.p * 1e+6;
+        T_c[0][c] = T;
+        c++;
+      }
     }
-  }
-
-  // reserved for future: initial P/T data are around the critical point
-  /*
+  } else {
+    // reserved for future: initial P/T data are around the critical point
     double scale(50.0 / n);
     double dp(5.0e-2 * scale), dT(1.0 * scale), p, T; 
 
     for (int i = -n; i < n; ++i) {
       for (int j = -n; j < n; ++j) {
-        p = eos.PC + i * dp; // Mpa
-        T = eos.TC + j * dT + 0.11;
+        p = eos.PC + (i + 0.5) * dp; // Mpa
+        T = eos.TC + (j +0.5) * dT;
 
         p_c[0][c] = p * 1.0e+6;
         T_c[0][c] = T;
@@ -176,7 +186,6 @@ double RunTest(bool spline)
       }
     }
   }
-  */
 
   auto start = std::chrono::steady_clock::now();
 
@@ -197,23 +206,22 @@ double RunTest(bool spline)
   auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
   std::cout << "Elapsed time: " << elapsed.count() << " ms\n";
 
-  /*
   c = 0;
   for (int i = -n; i < n; ++i) {
     for (int j = -n; j < n; ++j) {
-      std::cout << p_c[0][c] * 1e-6 << " " << T_c[0][c] << " " << field_c[0][c] << std::endl;
-      std::cout << p_c[0][c] * 1e-6 << " " << T_c[0][c] << " " << der_c[0][c] << std::endl;
+      // std::cout << p_c[0][c] * 1e-6 << " " << T_c[0][c] << " " << field_c[0][c] << std::endl;
+      // std::cout << p_c[0][c] * 1e-6 << " " << T_c[0][c] << " " << der_c[0][c] << std::endl;
       c++;
     }
   }
-  */
 
   return elapsed.count();
 }
 
 TEST(EVALUATOR_DERIVATIVE95_TABLES_PT)
 {
-  double t0 = RunTest(false);
-  double t1 = RunTest(true);
+  double t0 = RunTest(0);
+  double t1 = RunTest(1);
   CHECK(t0 > 1.3 * t1);
+  double t2 = RunTest(2);
 }

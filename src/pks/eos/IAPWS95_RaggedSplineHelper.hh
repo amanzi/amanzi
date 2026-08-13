@@ -46,6 +46,7 @@ class IAPWS95_RaggedSplineHelper {
                                  const std::vector<double>& coefficients,
                                  double x, double y) const;
 
+  double MinSpacing(const std::vector<double>& x) const;
   int LowerCell(const std::vector<double>& x, double value);
 };
 

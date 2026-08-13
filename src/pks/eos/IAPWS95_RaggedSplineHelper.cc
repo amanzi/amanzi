@@ -154,6 +154,20 @@ IAPWS95_RaggedSplineHelper::Evaluate(const Mesh& mesh,
 
 
 /* ******************************************************************
+* Minimum dT
+****************************************************************** */
+double
+IAPWS95_RaggedSplineHelper::MinSpacing(const std::vector<double>& x) const
+{
+  double h = std::numeric_limits<double>::max();
+  for (int i = 0; i + 1 < x.size(); ++i) {
+    h = std::min(h, x[i + 1] - x[i]);
+  }
+  return h;
+}
+
+
+/* ******************************************************************
 *
 ****************************************************************** */
 int
