@@ -63,23 +63,9 @@ IAPWS95_RaggedSplineRhoT::CreateRaggedMesh()
   built_ = false;
 
   BuildInitialCoordinateLines_();
-
-  // March along T. The first call uses zero guesses; subsequent calls reuse
-  // the previous converged densities for fast and branch-consistent solves.
-  saturation_.reserve(mesh_.y_lines.size());
-  for (double T : mesh_.y_lines) {
-    if (T >= TC) break;
-
-    double rhol0 = eos95_->DensityLiquid(T);
-    double rhov0 = eos95_->DensityVapor(T);
-
-    auto [rhol, rhov, psat] = eos95_->SaturationLineT(T, rhol0, rhov0);
-    AMANZI_ASSERT(rhol > rhov && rhov > 0.0 && psat > 0.0);
-
-    saturation_.push_back({T, rhol, rhov, psat});
-  }
-
+  BuildSaturationData_();
   BuildRaggedColumns_();
+
   AdaptiveRefineCoordinateLines_();
   BuildKnotVectors_();
 
@@ -426,6 +412,27 @@ IAPWS95_RaggedSplineRhoT::StabilityFactor(double rho, double T)
 
 
 /* ******************************************************************
+* Approximation of the saturation dome.
+****************************************************************** */
+void
+IAPWS95_RaggedSplineRhoT::BuildSaturationData_()
+{
+  saturation_.reserve(mesh_.y_lines.size());
+  for (double T : mesh_.y_lines) {
+    if (T >= TC) break;
+
+    double rhol0 = eos95_->DensityLiquid(T);
+    double rhov0 = eos95_->DensityVapor(T);
+
+    auto [rhol, rhov, psat] = eos95_->SaturationLineT(T, rhol0, rhov0);
+    AMANZI_ASSERT(rhol > rhov && rhov > 0.0 && psat > 0.0);
+
+    saturation_.push_back({T, rhol, rhov, psat});
+  }
+}
+
+
+/* ******************************************************************
 * Mesh adaptation
 ****************************************************************** */
 void
@@ -490,8 +497,24 @@ IAPWS95_RaggedSplineRhoT::AdaptiveRefineCoordinateLines_()
     insert_unique(mesh_.y_lines, add_T, options_.max_T_intervals);
     if (!changed) break;
 
+    BuildSaturationData_();
     BuildRaggedColumns_();
   }
+
+  // additional lines
+  auto insert_unique = [&](std::vector<double>& lines,
+                           const std::vector<double>& additions) {
+    for (double x : additions) {
+      const auto it = std::lower_bound(lines.begin(), lines.end(), x);
+      if (it == lines.begin() || it == lines.end()) continue;
+      if (std::abs(*it - x) > 1e-14 * std::max(1.0, std::abs(x))) lines.insert(it, x);
+    }
+  };
+
+  insert_unique(mesh_.x_lines, { 1075.0 });
+  insert_unique(mesh_.y_lines, { 283, 286, 645.0, 646.0, 647.0, 648.5, 650.5 });
+  BuildSaturationData_();
+  BuildRaggedColumns_();
 }
 
 
@@ -548,6 +571,8 @@ IAPWS95_RaggedSplineRhoT::BuildSamples()
 
           if (!IsExtended_(rho, T)) continue;
           double weight = IsPhysical(rho, T) ? 1.0 : options_.extension_weight;
+          // double D = StabilityFactor(rho, T);
+          // if (D >= 0.0) samples.push_back({rho, T, weight});
           samples.push_back({rho, T, weight});
         }
       }
@@ -560,6 +585,8 @@ IAPWS95_RaggedSplineRhoT::BuildSamples()
     for (double T : mesh_.y_lines) {
       if (!IsExtended_(rho, T)) continue;
       double weight = IsPhysical(rho, T) ? 2.0 : options_.extension_weight;
+      // double D = StabilityFactor(rho, T);
+      // if (D >= 0.0) samples.push_back({rho, T, weight});
       samples.push_back({rho, T, weight});
     }
   }
@@ -574,6 +601,8 @@ IAPWS95_RaggedSplineRhoT::BuildSamples()
     for (int i = 0; i < options_.extension_samples; ++i) {
       double s = (i + 0.5) / options_.extension_samples;
       double T = Te + s * (Tb - Te);
+      // double D = StabilityFactor(rho, T);
+      // if (D >= 0.0) samples.push_back({rho, T, options_.extension_weight});
       samples.push_back({rho, T, options_.extension_weight});
     }
   }
@@ -583,7 +612,7 @@ IAPWS95_RaggedSplineRhoT::BuildSamples()
 
 
 /* ******************************************************************
-*
+* Returns true when point is inside the metastable extension.
 ****************************************************************** */
 bool
 IAPWS95_RaggedSplineRhoT::IsExtended_(double rho, double T)

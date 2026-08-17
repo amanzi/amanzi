@@ -44,6 +44,7 @@ double RunTest(int icase)
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Energy;
+  using namespace Amanzi::Evaluators;
 
   using CV_t = CompositeVector;
   using CVS_t = CompositeVectorSpace;
@@ -173,12 +174,12 @@ double RunTest(int icase)
   } else {
     // reserved for future: initial P/T data are around the critical point
     double scale(50.0 / n);
-    double dp(5.0e-2 * scale), dT(1.0 * scale), p, T; 
+    double dp(5.0e-2 * scale), drho(1.6 * scale), dT(1.0 * scale), p, rho, T; 
 
     for (int i = -n; i < n; ++i) {
       for (int j = -n; j < n; ++j) {
         p = eos.PC + (i + 0.5) * dp; // Mpa
-        T = eos.TC + (j +0.5) * dT;
+        T = eos.TC + (j + 0.5) * dT;
 
         p_c[0][c] = p * 1.0e+6;
         T_c[0][c] = T;
@@ -201,6 +202,7 @@ double RunTest(int icase)
   S->GetEvaluator(field).UpdateDerivative(*S, "test", wrt, Tags::DEFAULT);
   auto& der_c = *S->GetDerivative<CV_t>(field, tag, wrt, tag).ViewComponent("cell");
   auto& field_c = *S->Get<CV_t>(field, tag).ViewComponent("cell");
+  auto& state_c = *S->Get<CV_t>(state_key, tag).ViewComponent("cell");
 
   auto end = std::chrono::steady_clock::now();
   auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
@@ -210,7 +212,8 @@ double RunTest(int icase)
   for (int i = -n; i < n; ++i) {
     for (int j = -n; j < n; ++j) {
       // std::cout << p_c[0][c] * 1e-6 << " " << T_c[0][c] << " " << field_c[0][c] << std::endl;
-      // std::cout << p_c[0][c] * 1e-6 << " " << T_c[0][c] << " " << der_c[0][c] << std::endl;
+      // std::cout << p_c[0][c] << " " << T_c[0][c] << " " << der_c[0][c] << std::endl;
+      // std::cout << p_c[0][c] * 1e-6 << " " << T_c[0][c] << " " << state_c[(int)TS95_t::CP][c] << std::endl;
       c++;
     }
   }

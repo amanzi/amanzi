@@ -180,6 +180,7 @@ class IAPWS95_RaggedSplineRhoT : public IAPWS95,
  private:
   void ValidateOptions_() const;
   void BuildInitialCoordinateLines_();
+  void BuildSaturationData_();
   void BuildRaggedColumns_();
   void AdaptiveRefineCoordinateLines_();
   void BuildKnotVectors_();
