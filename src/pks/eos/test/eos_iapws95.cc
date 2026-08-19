@@ -74,6 +74,7 @@ TEST(EOS_IAPWS95)
   CHECK_CLOSE(0.724027147e3, prop.w, 1e-6);
   CHECK_CLOSE(0.916653194e1, prop.s, 1e-8);
 
+  // (p, T) - variables, same point
   // (p, T) - variables
   std::tie(prop, liquid, vapor) = eos.ThermodynamicsPT(0.992418352e-1, 300.0);
   CHECK_CLOSE(0.9965560e3, prop.rho, 1e-6);
@@ -171,7 +172,6 @@ TEST(EOS_IAPWS95_SPLINE)
   CHECK_CLOSE(450.4310375365427, prop.w, 1e-3);
   CHECK_CLOSE(4.4814490203595, prop.s, 5e-9);
 
-  // (p, T) - variables, same point
   std::tie(prop, liquid, vapor) = eos.ThermodynamicsPT(33.01065724886822, 681.2);
   CHECK_CLOSE(371.3, prop.rho, 3e-6);
   CHECK_CLOSE(3.2568688912634207, prop.cv, 2e-5);

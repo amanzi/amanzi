@@ -66,7 +66,7 @@ TEST(EOS_IAPWS95_SPLINE_RHO_T)
 {
   IAPWS95_RaggedSplineRhoT::Options opt;
   opt.T_min = 280.0;
-  opt.T_max = 900.0;
+  opt.T_max = 950.0;
   opt.rho_min = 8.0;
   opt.rho_max = 1100.0;
   opt.initial_rho_intervals = 50;
@@ -98,24 +98,30 @@ TEST(EOS_IAPWS95_SPLINE_RHO_T)
   }
 
   // (dp/drho)_T = RT (1 + D) / 1000
-  T = 646.846;
-  for (double rho = 340.0; rho <= 400.0; rho += 1.0) {
-    double delta = rho / eos95.RHOC;
- 
-    const auto& exact = eos95.ResidualPart(rho, T);
-    const auto& approx = spline.ResidualPart(rho, T);
+  const auto& mesh = spline.GetMesh();
+  double rho_min = mesh.x_lines.front();
+  double rho_max = mesh.x_lines.back();
+  double T_min = mesh.y_lines.front();
+  double T_max = mesh.y_lines.back();
 
-    double p = rho * eos95.R * T * (1 + delta * exact[1]) / 1000; // MPa
-    double papprox = rho * eos95.R * T * (1 + delta * approx[1]) / 1000;
+  int nT(301), nrho(301);
+  for (int j = 0; j < nT; ++j) {
+    for (int i = 0; i < nrho; ++i) {
+      double T = T_min + (T_max - T_min) * (double)j / (nT - 1);
+      double rho = rho_min + (rho_max - rho_min) * (double)i / (nrho - 1);
 
-    double D = 1.0 + 2 * delta * exact[1] + delta * delta * exact[3];
-    double Dapprox = 1.0 + 2 * delta * approx[1] + delta * delta * approx[3];
-
-    // Check monotonicity of D
-    // std::cout << rho << " " << p << " " << papprox << "  " << D << " " << Dapprox << std::endl;
+      if (spline.IsPhysical(rho, T)) {
+        double delta = rho / eos95.RHOC;
+        const auto& exact = eos95.ResidualPart(rho, T);
+        const auto& approx = spline.ResidualPart(rho, T);
+        double Dex = 1.0 + 2 * delta * exact[1] + delta * delta * exact[3];
+        double Dap = 1.0 + 2 * delta * approx[1] + delta * delta * approx[3];
+        // CHECK(D > 0.0);
+        if (Dap < 0.0 || Dex < 0.0) std::cout << "rho=" << rho << "  T=" << T << "  D=" << Dex << " " << Dap << std::endl;
+      }
+    }
   }
 
-  const auto& mesh = spline.GetMesh();
   WriteHelmholtzPlotData(spline,
                          eos95,
                          mesh.x_lines.front(),

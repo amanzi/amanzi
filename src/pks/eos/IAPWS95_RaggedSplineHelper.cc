@@ -8,6 +8,7 @@
 */
 
 #include <algorithm>
+#include <iostream>
 #include <limits>
 
 #include "dbc.hh"
@@ -44,8 +45,6 @@ IAPWS95_RaggedSplineHelper::EvaluateCubicBasis(const std::vector<double>& U, dou
 {
   const int p = 3;
   const int n = static_cast<int>(U.size()) - p - 2;
-  // Invalid cubic knot vector.
-  AMANZI_ASSERT(n >= p);
 
   x = std::clamp(x, U[p], U[n + 1]);
   int span;
@@ -126,6 +125,59 @@ IAPWS95_RaggedSplineHelper::EvaluateCubicBasis(const std::vector<double>& U, dou
 
 
 /* ******************************************************************
+*
+****************************************************************** */
+IAPWS95_RaggedSplineHelper::BasisData
+IAPWS95_RaggedSplineHelper::EvaluateCachedCubicBasis(const std::vector<double>& U,
+                                                     const std::vector<CubicSpanData>& cache,
+                                                     double x) const
+{
+  constexpr int p = 3;
+  const int n = static_cast<int>(U.size()) - p - 2;
+
+  x = std::clamp(x, U[p], U[n + 1]);
+
+  int span;
+  if (x >= U[n + 1]) {
+    span = n;
+  } else {
+    int low = p;
+    int high = n + 1;
+    span = (low + high) / 2;
+
+    while (x < U[span] || x >= U[span + 1]) {
+      if (x < U[span]) high = span;
+      else low = span;
+      span = (low + high) / 2;
+    }
+  }
+
+  const CubicSpanData& S = cache[span];
+
+  const double xi = (x - S.x0) * S.inv_h;
+  double inv_h2 = S.inv_h * S.inv_h;
+
+  BasisData out;
+
+  for (int r = 0; r < 4; ++r) {
+    const double a0 = S.poly[r][0];
+    const double a1 = S.poly[r][1];
+    const double a2 = S.poly[r][2];
+    const double a3 = S.poly[r][3];
+
+    out.index[r] = S.first_basis + r;
+
+    // Horner evaluation
+    out.value[r] = ((a3 * xi + a2) * xi + a1) * xi + a0;
+    out.d1[r] = ((3 * a3 * xi + 2 * a2) * xi + a1) * S.inv_h;
+    out.d2[r] = (6 * a3 * xi + 2 * a2) * inv_h2;
+  }
+
+  return out;
+}
+
+
+/* ******************************************************************
 * Evaluate residual part uing demensionless input
 ****************************************************************** */
 std::array<double, 6>
@@ -133,8 +185,8 @@ IAPWS95_RaggedSplineHelper::Evaluate(const Mesh& mesh,
                                      const std::vector<double>& coefficients,
                                      double delta, double tau) const
 {
-  const BasisData Bd = EvaluateCubicBasis(mesh.x_knots, delta);
-  const BasisData Bt = EvaluateCubicBasis(mesh.y_knots, tau);
+  const BasisData Bd = EvaluateCachedCubicBasis(mesh.x_knots, mesh.x_span_data, delta);
+  const BasisData Bt = EvaluateCachedCubicBasis(mesh.y_knots, mesh.y_span_data, tau);
   std::array<double, 6> out{};
 
   for (int a = 0; a < 4; ++a) {
@@ -151,6 +203,58 @@ IAPWS95_RaggedSplineHelper::Evaluate(const Mesh& mesh,
     }
   }
   return out;
+}
+
+
+/* ******************************************************************
+* Compute cache data for all spans
+****************************************************************** */
+std::vector<IAPWS95_RaggedSplineHelper::CubicSpanData>
+IAPWS95_RaggedSplineHelper::BuildCubicSpanCache(const std::vector<double>& U)
+{
+  constexpr int p = 3;
+  const int n = static_cast<int>(U.size()) - p - 2;
+  // Invalid cubic knot vector.
+  AMANZI_ASSERT(n >= p);
+
+  std::vector<CubicSpanData> cache(n + 1);
+
+  constexpr double xa = 0.25;
+  constexpr double xb = 0.75;
+
+  for (int span = p; span <= n; ++span) {
+    double x0 = U[span];
+    double x1 = U[span + 1];
+    // Repeated knots have zero-width spans.
+    if (!(x1 > x0)) continue;
+
+    double h = x1 - x0;
+    CubicSpanData& S = cache[span];
+
+    S.first_basis = span - p;
+    S.x0 = x0;
+    S.inv_h = 1.0 / h;
+
+    // Evaluate the existing reference implementation at xi = 1/4 and xi = 3/4.
+    const BasisData Ba = EvaluateCubicBasis(U, x0 + xa * h);
+    const BasisData Bb = EvaluateCubicBasis(U, x0 + xb * h);
+
+    for (int r = 0; r < 4; ++r) {
+      double fa = Ba.value[r];
+      double fb = Bb.value[r];
+
+      // convert derivatives wrt to x into derivatives wrt to xi.
+      double da = h * Ba.d1[r];
+      double db = h * Bb.d1[r];
+
+      S.poly[r][0] = fb - (9.0 / 16.0) * da - (3.0 / 16.0) * db;
+      S.poly[r][1] = 9.0 * (fa - fb) + (15.0 / 4.0) * da + (7.0 / 4.0) * db;
+      S.poly[r][2] = 24.0 * (fb - fa) - 7.0 * da - 5.0 * db;
+      S.poly[r][3] = 16.0 * (fa - fb) + 4.0 * (da + db);
+    }
+  }
+
+  return cache;
 }
 
 

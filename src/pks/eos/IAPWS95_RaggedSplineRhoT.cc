@@ -542,6 +542,9 @@ IAPWS95_RaggedSplineRhoT::BuildKnotVectors_()
   static constexpr int degree = 3;
   mesh_.nx_basis_ = mesh_.x_knots.size() - degree - 1;
   mesh_.ny_basis_ = mesh_.y_knots.size() - degree - 1;
+
+  mesh_.x_span_data = BuildCubicSpanCache(mesh_.x_knots);
+  mesh_.y_span_data = BuildCubicSpanCache(mesh_.y_knots);
 }
 
 
