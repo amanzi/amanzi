@@ -418,6 +418,7 @@ void
 IAPWS95_RaggedSplineRhoT::BuildSaturationData_()
 {
   saturation_.reserve(mesh_.y_lines.size());
+  saturation_.clear();
   for (double T : mesh_.y_lines) {
     if (T >= TC) break;
 
@@ -511,7 +512,7 @@ IAPWS95_RaggedSplineRhoT::AdaptiveRefineCoordinateLines_()
     }
   };
 
-  insert_unique(mesh_.x_lines, { 1075.0 });
+  insert_unique(mesh_.x_lines, { 320.0, 324.0, 1075.0 });
   insert_unique(mesh_.y_lines, { 283, 286, 645.0, 646.0, 647.0, 648.5, 650.5 });
   BuildSaturationData_();
   BuildRaggedColumns_();
