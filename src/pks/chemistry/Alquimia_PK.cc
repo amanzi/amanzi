@@ -403,6 +403,8 @@ Alquimia_PK::Initialize()
     restart_filename = plist_->sublist("initial conditions").get<std::string>("restart file");
   }
 
+  updateSubstate(Tags::DEFAULT);
+
   // initialized aux_data and aux_out from restart file if there is
   for (const auto& [name, key] : aux_out_names_) {
     Record& rec = S_->GetRecordW(key, tag_next_, passwd_);
@@ -421,7 +423,6 @@ Alquimia_PK::Initialize()
   }
 
   if (restarted) {
-    updateSubstate(Tags::DEFAULT);
     Teuchos::ParameterList ic_plist;
     ic_plist.set("restart file", restart_filename);
     const std::vector<std::string>* subfieldnames = S_->GetRecordSetW(aux_data_key_).subfieldnames();
@@ -434,9 +435,7 @@ Alquimia_PK::Initialize()
 
   if (!restarted &&
       chem_initial_conditions_.size() > 0 &&
-      std::abs(initial_conditions_time_ - S_->get_time()) <
-                                               1e-8 * (1.0 + std::abs(S_->get_time()))) {
-    updateSubstate(Tags::DEFAULT);
+      std::abs(initial_conditions_time_ - S_->get_time()) < 1e-8 * (1.0 + std::abs(S_->get_time()))) {
     int ierr = 0;
 
     for (const auto& [region, condition] : chem_initial_conditions_) {
@@ -1015,13 +1014,7 @@ Alquimia_PK::CommitStep(double t_old, double t_new, const Tag& tag_next)
   // Copy primary_free_ion_concentration from new state at tag_next to tag_current, 
   // then at the next timestep, transport ats pk can use the updated value.
   if (!primary_ion_conc_key_.empty()) {  
-    const Epetra_MultiVector& src =
-      *S_->Get<CompositeVector>(primary_ion_conc_key_, tag_next)
-         .ViewComponent("cell", false);
-    Epetra_MultiVector& dst =
-      *S_->GetW<CompositeVector>(primary_ion_conc_key_, tag_current, passwd_)
-         .ViewComponent("cell", false);
-    dst = src;
+    assign(primary_ion_conc_key_, tag_current, tag_next, *S_);
 
     // Tell evaluators that primary_free_ion_concentration has been changed,
     // please update all other secondary variables dependent on it.
@@ -1036,14 +1029,7 @@ Alquimia_PK::CommitStep(double t_old, double t_new, const Tag& tag_next)
     if (tag_current != Tags::DEFAULT && 
         S_->HasEvaluator(primary_ion_conc_key_, Tags::DEFAULT) &&
         S_->HasRecord(primary_ion_conc_key_, Tags::DEFAULT)) {
-      // use GetW will check owner, and result in "not owned by ..." error.
-      // don't know how to solve it, so bypass the check first, hopefully this 
-      // will not result in wrong calculations.
-      const Epetra_MultiVector& dst_default_const =
-        *S_->Get<CompositeVector>(primary_ion_conc_key_, Tags::DEFAULT)
-           .ViewComponent("cell", false);
-      Epetra_MultiVector& dst_default = const_cast<Epetra_MultiVector&>(dst_default_const);
-      dst_default = src;
+      assign(primary_ion_conc_key_, Tags::DEFAULT, tag_next, *S_);
 
       auto eval_ptr = S_->GetEvaluatorPtr(primary_ion_conc_key_, Tags::DEFAULT);
       auto eval_primary = Teuchos::rcp_dynamic_cast<EvaluatorPrimaryCV>(eval_ptr);
