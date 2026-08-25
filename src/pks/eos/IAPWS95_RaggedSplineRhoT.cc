@@ -13,7 +13,6 @@
 #include <numeric>
 #include <sstream>
 
-#include "Brent.hh"
 #include "lapack.hh"
 
 #include "IAPWS95_RaggedSplineRhoT.hh"
@@ -49,6 +48,22 @@ IAPWS95_RaggedSplineRhoT::ResidualPart(double rho, double T)
   // AMANZI_ASSERT(T >= bndT - extT);
 
   return Evaluate(mesh_, coefficients_, rho / RHOC, TC / T);
+}
+
+
+/* ******************************************************************
+* Wrapper for initialization of shared data
+****************************************************************** */
+void
+IAPWS95_RaggedSplineRhoT::InitializeSharedData()
+{
+  CreateRaggedMesh();
+  auto samples = BuildSamples();
+  BuildSplineCoefficients(samples);
+
+  AnisotropicRefinement();
+  samples = BuildSamples();
+  BuildSplineCoefficients(samples);
 }
 
 
@@ -138,15 +153,36 @@ IAPWS95_RaggedSplineRhoT::BuildSplineCoefficients(const std::vector<Sample>& sam
 
       int q = 0;
       for (int a = 0; a < 4; ++a) {
-        const double xd =
-          (component == 0 || component == 2 || component == 5) ? Bd.value[a] :
-          (component == 1 || component == 4) ? Bd.d1[a] : Bd.d2[a];
-
         for (int b = 0; b < 4; ++b) {
-          const double xt =
-            (component == 0 || component == 1 || component == 3) ? Bt.value[b] :
-            (component == 2 || component == 4) ? Bt.d1[b] : Bt.d2[b];
-
+          double xd, xt;
+          switch (component) {
+            case 0:
+              xd = Bd.value[a];
+              xt = Bt.value[b];
+              break;
+            case 1:
+              xd = Bd.d1[a];
+              xt = Bt.value[b];
+              break;
+            case 2:
+              xd = Bd.value[a];
+              xt = Bt.d1[b];
+              break;
+            case 3:
+              xd = Bd.d2[a];
+              xt = Bt.value[b];
+              break;
+            case 4:
+              xd = Bd.d1[a];
+              xt = Bt.d1[b];
+              break;
+            case 5:
+              xd = Bd.value[a];
+              xt = Bt.d2[b];
+              break;
+            default:
+              ;  // pass
+          }
           index[q] = mesh_.CoefficientIndex(Bd.index[a], Bt.index[b]);
           row_value[q] = xd * xt;
           q++;
@@ -453,11 +489,13 @@ IAPWS95_RaggedSplineRhoT::AdaptiveRefineCoordinateLines_()
         double r0 = mesh_.x_lines[i];
         double r1 = mesh_.x_lines[i + 1];
         double rm = std::sqrt(r0 * r1);
-        double curvature = std::fabs(BoundaryTemperature(r0)
-                               - 2 * BoundaryTemperature(rm)
-                                   + BoundaryTemperature(r1));
-        double hT = MinSpacing(mesh_.y_lines);
-        if (curvature > 0.25 * hT) add_rho.push_back(rm);
+
+        double T0 = BoundaryTemperature(r0);
+        double T1 = BoundaryTemperature(r1);
+        double curvature = std::fabs(T0 - 2 * BoundaryTemperature(rm) + T1);
+        // double hT = MinSpacing(mesh_.y_lines);
+        double hT = std::fabs(T1 - T0);
+        if (hT > 1e-12 && curvature > 0.04 * hT) add_rho.push_back(rm);
       }
     }
 
@@ -516,6 +554,128 @@ IAPWS95_RaggedSplineRhoT::AdaptiveRefineCoordinateLines_()
   insert_unique(mesh_.y_lines, { 283, 286, 645.0, 646.0, 647.0, 648.5, 650.5 });
   BuildSaturationData_();
   BuildRaggedColumns_();
+}
+
+
+/* ******************************************************************
+* Refine based on error
+****************************************************************** */
+void
+IAPWS95_RaggedSplineRhoT::AnisotropicRefinement()
+{
+  std::vector<CellError> cells;
+
+  auto Error = [&](double rho, double T) {
+    const auto& exact  = eos95_->ResidualPart(rho, T);
+    const auto& spline = this->ResidualPart(rho, T);
+
+    int id = LowerCell(mesh_.x_lines, rho);
+    int it = LowerCell(mesh_.y_lines, T);
+
+    double tau0 = TC / mesh_.y_lines[it];
+    double tau1 = TC / mesh_.y_lines[it + 1];
+
+    const double h_delta = (mesh_.x_lines[id + 1] - mesh_.x_lines[id]) / RHOC;
+    const double h_tau = std::fabs(tau1 - tau0);
+    const std::array<double, 6> derivative_scale = { 1.0,
+                                                     h_delta,
+                                                     h_tau,
+                                                     h_delta * h_delta,
+                                                     h_delta * h_tau,
+                                                     h_tau * h_tau };
+
+    double e = 0.0;
+    for (int k = 0; k < 6; ++k) {
+      double ek = std::sqrt(options_.fit_weights[k]) * derivative_scale[k] * std::fabs(spline[k] - exact[k]);
+      e = std::max(e, ek);
+    }
+    return e;
+  };
+
+  for (int i = 0; i + 1 < mesh_.x_lines.size(); ++i) {
+    double rho0 = mesh_.x_lines[i];
+    double rho1 = mesh_.x_lines[i + 1];
+    double rhom = std::sqrt(rho0 * rho1);
+
+    // Quarter points in log(rho).
+    double rhoL = std::sqrt(rho0 * rhom);
+    double rhoR = std::sqrt(rhom * rho1);
+
+    for (int j = 0; j + 1 < mesh_.y_lines.size(); ++j) {
+      double T0 = mesh_.y_lines[j];
+      double T1 = mesh_.y_lines[j + 1];
+      double Tm = 0.5 * (T0 + T1);
+      if (!IsExtended_(rhom, Tm)) continue;
+
+      // Quarter points in T.
+      double TL = 0.5 * (T0 + Tm);
+      double TR = 0.5 * (Tm + T1);
+
+      double error_rho = Error(rhom, Tm);
+      double error_T = error_rho;
+
+      if (IsExtended_(rhoL, Tm)) error_rho = std::max(error_rho, Error(rhoL, Tm));
+      if (IsExtended_(rhoR, Tm)) error_rho = std::max(error_rho, Error(rhoR, Tm));
+
+      if (IsExtended_(rhom, TL)) error_T = std::max(error_T, Error(rhom, TL));
+      if (IsExtended_(rhom, TR)) error_T = std::max(error_T, Error(rhom, TR));
+
+      cells.push_back({std::max(error_rho, error_T), error_rho, error_T, rhom, Tm});
+    }
+  }
+
+  if (cells.empty()) return;
+
+  // extract cells with the largest error
+  std::vector<double> add_rho;
+  std::vector<double> add_T;
+
+  std::sort(cells.begin(),
+            cells.end(),
+            [](const CellError& a, const CellError& b) { return a.error > b.error; });
+
+  int nbase = std::min(mesh_.x_lines.size(), mesh_.y_lines.size());
+  int nrefine = std::max(1, (int)std::ceil(options_.refinement_fraction * nbase));
+
+  double anisotropy_factor = 1.25;
+
+  for (int n = 0; n < nrefine; ++n) {
+    const CellError& cell = cells[n];
+
+    if (cell.error_rho > anisotropy_factor * cell.error_T) {
+      add_rho.push_back(cell.rho_mid);
+    } else if (cell.error_T > anisotropy_factor * cell.error_rho) {
+      add_T.push_back(cell.T_mid);
+    } else {
+      add_rho.push_back(cell.rho_mid);
+      add_T.push_back(cell.T_mid);
+    }
+  }
+
+  // remove duplicates
+  std::sort(add_rho.begin(), add_rho.end());
+  add_rho.erase(std::unique(add_rho.begin(), add_rho.end()), add_rho.end());
+
+  std::sort(add_T.begin(), add_T.end());
+  add_T.erase(std::unique(add_T.begin(), add_T.end()), add_T.end());
+
+  // add to the mesh
+  auto insert_unique = [&](std::vector<double>& lines,
+                           const std::vector<double>& additions) {
+    for (double x : additions) {
+      const auto it = std::lower_bound(lines.begin(), lines.end(), x);
+      if (it == lines.begin() || it == lines.end()) continue;
+      if (std::abs(*it - x) > 1e-14 * std::max(1.0, std::abs(x))) lines.insert(it, x);
+    }
+  };
+
+  insert_unique(mesh_.x_lines, add_rho);
+  insert_unique(mesh_.y_lines, add_T);
+  BuildSaturationData_();
+  BuildRaggedColumns_();
+
+  BuildKnotVectors_();
+  min_T_spacing_ = MinSpacing(mesh_.y_lines);
 }
 
 
@@ -589,8 +749,6 @@ IAPWS95_RaggedSplineRhoT::BuildSamples()
     for (double T : mesh_.y_lines) {
       if (!IsExtended_(rho, T)) continue;
       double weight = IsPhysical(rho, T) ? 2.0 : options_.extension_weight;
-      // double D = StabilityFactor(rho, T);
-      // if (D >= 0.0) samples.push_back({rho, T, weight});
       samples.push_back({rho, T, weight});
     }
   }
@@ -605,8 +763,6 @@ IAPWS95_RaggedSplineRhoT::BuildSamples()
     for (int i = 0; i < options_.extension_samples; ++i) {
       double s = (i + 0.5) / options_.extension_samples;
       double T = Te + s * (Tb - Te);
-      // double D = StabilityFactor(rho, T);
-      // if (D >= 0.0) samples.push_back({rho, T, options_.extension_weight});
       samples.push_back({rho, T, options_.extension_weight});
     }
   }

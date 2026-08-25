@@ -10,6 +10,7 @@
 #include "UnitTest++.h"
 #include "Teuchos_ParameterList.hpp"
 
+#include "Brent.hh"
 #include "dbc.hh"
 #include "IAPWS95.hh"
 #include "IAPWS95_RaggedSplineRhoT.hh"
@@ -17,6 +18,9 @@
 using namespace Amanzi;
 using namespace Amanzi::AmanziEOS;
 
+/* ******************************************************************
+* Graphics support
+****************************************************************** */
 void WriteHelmholtzPlotData(IAPWS95_RaggedSplineRhoT& spline,
                             IAPWS95& eos95,
                             double rho_min,
@@ -35,7 +39,7 @@ void WriteHelmholtzPlotData(IAPWS95_RaggedSplineRhoT& spline,
   // Header
   out << "# rho T spline_phi exact_phi error\n";
 
-  std::array<double, 6> err_abs{}, err_rel{};
+  std::array<double, 6> err_abs{}, err_rel{}, err;
   for (int j = 0; j < nT; ++j) {
     double T = T_min + (T_max - T_min) * (double)j / (nT - 1);
 
@@ -45,15 +49,15 @@ void WriteHelmholtzPlotData(IAPWS95_RaggedSplineRhoT& spline,
       if (spline.IsPhysical(rho, T)) {
         const auto& spline_value = spline.ResidualPart(rho, T);
         const auto& exact_value = eos95.ResidualPart(rho, T);
-        double error = spline_value[0] - exact_value[0];
+        std::array<double, 6> error;
 
         for (int k = 0; k < 6; ++k) {
-          double error = spline_value[k] - exact_value[k];
-          err_abs[k] = std::max(err_abs[k], std::fabs(error));
-          err_rel[k] = std::max(err_rel[k], std::fabs(error / std::max(1e-14, std::fabs(exact_value[k]))));
+          err[k] = spline_value[k] - exact_value[k];
+          err_abs[k] = std::max(err_abs[k], std::fabs(err[k]));
+          err_rel[k] = std::max(err_rel[k], std::fabs(err[k] / std::max(1e-14, std::fabs(exact_value[k]))));
         }
 
-        out << rho << " " << T << " " << spline_value[0] << " " << exact_value[0] << " " << error << "\n";
+        out << rho << " " << T << " " << spline_value[0] << " " << exact_value[0] << " " << err[0] << "\n";
       } else {
         // Point is outside the ragged physical domain.
         // NaN preserves the rectangular plotting structure.
@@ -65,6 +69,8 @@ void WriteHelmholtzPlotData(IAPWS95_RaggedSplineRhoT& spline,
 
     out << "\n";
   }
+  out.close();
+
   std::cout << "\nWrote plotting data to " << filename << '\n';
   std::cout << "Spline resolutons: " << spline.GetMesh().x_lines.size() << " " << spline.GetMesh().y_lines.size() << std::endl;
   std::cout << "Error:  absolute     relative\n";
@@ -72,25 +78,141 @@ void WriteHelmholtzPlotData(IAPWS95_RaggedSplineRhoT& spline,
 }
 
 
+/* ******************************************************************
+* Graphics support
+****************************************************************** */
+void WriteSaturationPlotData(IAPWS95_RaggedSplineRhoT& spline, const std::string& filename)
+{
+  std::ofstream out(filename);
+  out << std::setprecision(17);
+
+  const auto& saturation = spline.GetSaturation();
+  for (int n = 0; n < saturation.size(); ++n) {
+    out << saturation[n].rho_l << " " << saturation[n].T << std::endl;
+  }
+  for (int n = saturation.size() - 1; n >=0; --n) {
+    out << saturation[n].rho_v << " " << saturation[n].T << std::endl;
+  }
+  out.close();
+}
+
+
+/* ******************************************************************
+* Graphics support
+****************************************************************** */
+void WriteSpinodalPlotData(IAPWS95_RaggedSplineRhoT& spline, const std::string& filename)
+{
+  std::ofstream out(filename);
+  out << std::setprecision(17);
+
+  const auto& saturation = spline.GetSaturation();
+  for (int n = 0; n < saturation.size(); ++n) {
+    double T = saturation[n].T;
+    double rho_hi = saturation[n].rho_l;
+    double D_hi = spline.StabilityFactor(rho_hi, T);
+
+    double rho_lo = rho_hi;
+    double rho_min = saturation[n].rho_v;
+
+    while (rho_lo > rho_min) {
+      rho_lo *= 0.99;
+      double D_lo = spline.StabilityFactor(rho_lo, T);
+
+      if (D_lo <= 0.0) {
+        int itrs = 20;
+        double rho = Utils::findRootBrent([&](double rho) {
+                                            return spline.StabilityFactor(rho, T);
+                                          },
+                                          rho_lo,
+                                          rho_hi,
+                                          1e-10,
+                                          &itrs);
+        AMANZI_ASSERT(itrs >= 0);
+        out << rho << " " << saturation[n].T << std::endl;
+        break;
+      }
+
+      rho_hi = rho_lo;
+      D_hi = D_lo;
+    }
+  }
+
+  for (int n = saturation.size() - 1; n >=0; --n) {
+    double T = saturation[n].T;
+    double rho_lo = saturation[n].rho_v;
+    double D_lo = spline.StabilityFactor(rho_lo, T);
+
+    double rho_hi = rho_lo;
+    double rho_max = saturation[n].rho_l;
+
+    while (rho_hi < rho_max) {
+      rho_hi *= 1.01;
+      double D_hi = spline.StabilityFactor(rho_hi, T);
+
+      if (D_hi <= 0.0) {
+        int itrs = 20;
+        double rho = Utils::findRootBrent([&](double rho) {
+                                            return spline.StabilityFactor(rho, T);
+                                          },
+                                          rho_lo,
+                                          rho_hi,
+                                          1e-10,
+                                          &itrs);
+        AMANZI_ASSERT(itrs >= 0);
+        out << rho << " " << saturation[n].T << std::endl;
+        break;
+      }
+
+      rho_lo = rho_hi;
+      D_lo = D_hi;
+    }
+  }
+  out.close();
+}
+
+
+/* ******************************************************************
+* 
+****************************************************************** */
+void WriteSamplesData(const std::vector<IAPWS95_RaggedSplineRhoT::Sample>& samples,
+                      const std::string& filename)
+{
+  std::ofstream out(filename);
+  out << std::setprecision(17);
+  for (int n = 0; n < samples.size(); ++n) {
+    out << samples[n].rho << " " << samples[n].T << std::endl;
+  }
+  out.close();
+}
+
+
+/* ******************************************************************
+* 
+****************************************************************** */
 TEST(EOS_IAPWS95_SPLINE_RHO_T)
 {
   IAPWS95_RaggedSplineRhoT::Options opt;
   opt.T_min = 280.0;
   opt.T_max = 950.0;
-  opt.rho_min = 1.0;
+  opt.rho_min = 0.5;
   opt.rho_max = 1100.0;
   opt.initial_rho_intervals = 60;
   opt.initial_T_intervals = 70;
   opt.max_rho_intervals = 130;
   opt.max_T_intervals = 180;
   opt.extension_cells = 4.0;
+  opt.refinement_fraction = 0.25;
 
   Teuchos::ParameterList plist;
   IAPWS95_RaggedSplineRhoT spline(plist, opt);
   IAPWS95 eos95(plist);
 
   spline.CreateRaggedMesh();
-  const auto samples = spline.BuildSamples();
+  auto samples = spline.BuildSamples();
+  spline.BuildSplineCoefficients(samples);
+
+  spline.AnisotropicRefinement();
+  samples = spline.BuildSamples();
   spline.BuildSplineCoefficients(samples);
 
   // double rho(400.0), T(700.0);
@@ -132,7 +254,7 @@ TEST(EOS_IAPWS95_SPLINE_RHO_T)
         double Dap = 1.0 + 2 * delta * approx[1] + delta * delta * approx[3];
         CHECK(Dap > 0.0);
         if (Dap < 0.0 || Dex < 0.0) std::cout << "rho=" << rho << "  T=" << T << "  D=" << Dex << " " << Dap << std::endl;
-        // out << rho << " " << T << " " << Dap << " " << std::fabs(Dex - Dap) / std::max(Dex, Dap)<< "\n";
+        out << rho << " " << T << " " << Dap << " " << std::fabs(Dex - Dap) / std::max(Dex, Dap)<< "\n";
 
         double Nex = 1.0 + delta * exactr[1] - delta * tau * exactr[4];
         double Nap = 1.0 + delta * approx[1] - delta * tau * approx[4];
@@ -140,7 +262,7 @@ TEST(EOS_IAPWS95_SPLINE_RHO_T)
 
         double CPex = (-tau * tau * eos95.R * (exact0[5] + exactr[5]) + eos95.R * Nex * Nex / Dex) * 1000.0;
         double CPap = (-tau * tau * eos95.R * (exact0[5] + approx[5]) + eos95.R * Nap * Nap / Dap) * 1000.0;
-        out << rho << " " << T << " " << CPap << " " << std::fabs(CPex - CPap) / std::max(CPex, CPap)<< "\n";
+        // out << rho << " " << T << " " << CPap << " " << std::fabs(CPex - CPap) / std::max(CPex, CPap)<< "\n";
       }
       else {
         out << rho << " " << T << " " << nan << " " << nan << "\n";
@@ -158,5 +280,9 @@ TEST(EOS_IAPWS95_SPLINE_RHO_T)
                          301,
                          301,
                          "eos_iapws95_spline.dat");
+
+  WriteSaturationPlotData(spline, "phase_boundary.dat");
+  WriteSpinodalPlotData(spline, "spinodal_boundary.dat");
+  WriteSamplesData(samples, "samples.dat");
 }
 

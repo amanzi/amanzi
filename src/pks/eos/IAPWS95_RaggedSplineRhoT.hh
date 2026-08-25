@@ -125,6 +125,9 @@ class IAPWS95_RaggedSplineRhoT : public IAPWS95,
     double critical_cutoff_temperature_K = 637.5;
     double critical_cap_extension_K = 4.0;
     double critical_cap_tolerance_K = 1.0e-8;
+
+    // adaptive refinemtn
+    double refinement_fraction = 0.20;
   };
 
   struct SaturationPoint {
@@ -148,11 +151,23 @@ class IAPWS95_RaggedSplineRhoT : public IAPWS95,
     double weight = 1.0;
   };
 
+  struct CellError {
+    double error;
+    double error_rho;
+    double error_T;
+
+    double rho_mid;
+    double T_mid;
+  };
+
   IAPWS95_RaggedSplineRhoT(Teuchos::ParameterList& plist,
                            Options options = IAPWS95_RaggedSplineRhoT::Options());
   ~IAPWS95_RaggedSplineRhoT() {};
 
   virtual std::array<double, 6> ResidualPart(double rho, double T) override;
+
+  // initialize shared data 
+  void InitializeSharedData();
 
   // Construct saturation data bounded by parabola-like function F(rho), the
   // rectangular background grid, and the ragged column offsets.
@@ -174,8 +189,15 @@ class IAPWS95_RaggedSplineRhoT : public IAPWS95,
   // point classification
   bool IsPhysical(double rho, double T) const { return T >= BoundaryTemperature(rho); }
 
+  // spinodal calculation
+  double StabilityFactor(double rho, double T);
+
+  // mesh refinement
+  void AnisotropicRefinement();
+
   // access
   const Mesh& GetMesh() const noexcept { return mesh_; }
+  const std::vector<SaturationPoint>& GetSaturation() const { return saturation_; }
 
  private:
   void ValidateOptions_() const;
@@ -191,7 +213,6 @@ class IAPWS95_RaggedSplineRhoT : public IAPWS95,
   double ExtensionTemperature(double rho) const;
 
   double FindMetastableMarginTemperature(double rho, double boundary_T);
-  double StabilityFactor(double rho, double T);
 
  private:
   std::shared_ptr<IAPWS95> eos95_;
