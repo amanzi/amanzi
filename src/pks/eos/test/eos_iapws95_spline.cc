@@ -204,6 +204,18 @@ TEST(EOS_IAPWS95_SPLINE_RHO_T)
   opt.refinement_fraction = 0.25;
 
   Teuchos::ParameterList plist;
+  {
+    /*
+    IAPWS95_RaggedSplineRhoT spline1(plist, opt);
+    IAPWS95_RaggedSplineRhoT spline2(plist, opt);
+
+    spline1.InitializeSharedData();
+    spline2.InitializeSharedData();
+    CHECK(std::addressof(spline1.GetMesh()) == std::addressof(spline2.GetMesh()));
+    return; 
+    */
+  }
+
   IAPWS95_RaggedSplineRhoT spline(plist, opt);
   IAPWS95 eos95(plist);
 

@@ -218,16 +218,15 @@ class IAPWS95_RaggedSplineRhoT : public IAPWS95,
   std::shared_ptr<IAPWS95> eos95_;
 
   Options options_;
-  Mesh mesh_;
   double min_T_spacing_;
 
   std::vector<SaturationPoint> saturation_;
   std::vector<RaggedColumn> columns_;
 
-  // Coefficients are stored with tau basis index changing fastest:
-  // coefficient(i_delta, j_tau) = coefficients_[i_delta * ny_basis + j_tau].
-  std::vector<double> coefficients_;
-  bool built_ = false;
+  // shared data
+  inline static Mesh mesh_;
+  inline static std::vector<double> coefficients_;
+  inline static std::once_flag init_shared_;
 };
 
 } // namespace AmanziEOS

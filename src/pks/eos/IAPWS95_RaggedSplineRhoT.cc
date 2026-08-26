@@ -38,15 +38,6 @@ IAPWS95_RaggedSplineRhoT::IAPWS95_RaggedSplineRhoT(Teuchos::ParameterList& plist
 std::array<double, 6>
 IAPWS95_RaggedSplineRhoT::ResidualPart(double rho, double T)
 { 
-  AMANZI_ASSERT(built_);
-
-  // AMANZI_ASSERT(rho >= options_.rho_min && rho <= options_.rho_max);
-  // AMANZI_ASSERT(T >= options_.T_min && T <= options_.T_max);
-
-  // double bndT = BoundaryTemperature(rho);
-  // double extT = options_.extension_cells * min_T_spacing_;
-  // AMANZI_ASSERT(T >= bndT - extT);
-
   return Evaluate(mesh_, coefficients_, rho / RHOC, TC / T);
 }
 
@@ -57,13 +48,15 @@ IAPWS95_RaggedSplineRhoT::ResidualPart(double rho, double T)
 void
 IAPWS95_RaggedSplineRhoT::InitializeSharedData()
 {
-  CreateRaggedMesh();
-  auto samples = BuildSamples();
-  BuildSplineCoefficients(samples);
+  std::call_once(init_shared_, [this]() {
+    CreateRaggedMesh();
+    auto samples = BuildSamples();
+    BuildSplineCoefficients(samples);
 
-  AnisotropicRefinement();
-  samples = BuildSamples();
-  BuildSplineCoefficients(samples);
+    AnisotropicRefinement();
+    samples = BuildSamples();
+    BuildSplineCoefficients(samples);
+  });
 }
 
 
@@ -75,7 +68,6 @@ IAPWS95_RaggedSplineRhoT::CreateRaggedMesh()
 {
   mesh_ = Mesh{};
   coefficients_.clear();
-  built_ = false;
 
   BuildInitialCoordinateLines_();
   BuildSaturationData_();
@@ -216,7 +208,6 @@ IAPWS95_RaggedSplineRhoT::BuildSplineCoefficients(const std::vector<Sample>& sam
   // info > 0 : normal matrix is not positive definite at pivot info
 
   coefficients_ = std::move(rhs);
-  built_ = true;
 }
 
 
