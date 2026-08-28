@@ -130,6 +130,7 @@ IAPWS95_RaggedSplineHelper::EvaluateCubicBasis(const std::vector<double>& U, dou
 IAPWS95_RaggedSplineHelper::BasisData
 IAPWS95_RaggedSplineHelper::EvaluateCachedCubicBasis(const std::vector<double>& U,
                                                      const std::vector<CubicSpanData>& cache,
+                                                     const SpanLookup& lookup,
                                                      double x) const
 {
   constexpr int p = 3;
@@ -137,21 +138,7 @@ IAPWS95_RaggedSplineHelper::EvaluateCachedCubicBasis(const std::vector<double>& 
 
   x = std::clamp(x, U[p], U[n + 1]);
 
-  int span;
-  if (x >= U[n + 1]) {
-    span = n;
-  } else {
-    int low = p;
-    int high = n + 1;
-    span = (low + high) / 2;
-
-    while (x < U[span] || x >= U[span + 1]) {
-      if (x < U[span]) high = span;
-      else low = span;
-      span = (low + high) / 2;
-    }
-  }
-
+  int span = FindSpanFast(U, lookup, x);
   const CubicSpanData& S = cache[span];
 
   const double xi = (x - S.x0) * S.inv_h;
@@ -185,8 +172,14 @@ IAPWS95_RaggedSplineHelper::Evaluate(const Mesh& mesh,
                                      const std::vector<double>& coefficients,
                                      double delta, double tau) const
 {
-  const BasisData Bd = EvaluateCachedCubicBasis(mesh.x_knots, mesh.x_span_data, delta);
-  const BasisData Bt = EvaluateCachedCubicBasis(mesh.y_knots, mesh.y_span_data, tau);
+  const BasisData& Bd = EvaluateCachedCubicBasis(mesh.x_knots,
+                                                 mesh.x_span_data,
+                                                 mesh.x_lookup,
+                                                 delta);
+  const BasisData& Bt = EvaluateCachedCubicBasis(mesh.y_knots,
+                                                 mesh.y_span_data,
+                                                 mesh.y_lookup,
+                                                 tau);
   std::array<double, 6> out{};
 
   for (int a = 0; a < 4; ++a) {
@@ -214,8 +207,7 @@ IAPWS95_RaggedSplineHelper::BuildCubicSpanCache(const std::vector<double>& U)
 {
   constexpr int p = 3;
   const int n = static_cast<int>(U.size()) - p - 2;
-  // Invalid cubic knot vector.
-  AMANZI_ASSERT(n >= p);
+  AMANZI_ASSERT(n >= p);  // Invalid cubic knot vector.
 
   std::vector<CubicSpanData> cache(n + 1);
 
@@ -282,6 +274,73 @@ IAPWS95_RaggedSplineHelper::LowerCell(const std::vector<double>& x, double value
   if (value <= x.front()) return 0;
   if (value >= x.back()) return x.size() - 2;
   return std::distance(x.begin(), std::upper_bound(x.begin(), x.end(), value)) - 1;
+}
+
+
+/* ******************************************************************
+* Build a uniform auxiliary lookup table for a non-uniform coordinate
+* mesh x[0] < x[1] < ... < x[n].
+*
+* The entry lookup.cell[b] contains the mesh cell containing the
+* LEFT EDGE of bin b.
+*
+* Therefore, for any point inside bin b, the stored cell can only be
+* equal to or to the left of the actual cell.
+****************************************************************** */
+IAPWS95_RaggedSplineHelper::SpanLookup
+IAPWS95_RaggedSplineHelper::MakeSpanLookupLeft(const std::vector<double>& U, int nbins)
+{
+  constexpr int p = 3;
+  const int n = static_cast<int>(U.size()) - p - 2;
+
+  SpanLookup lookup;
+
+  lookup.xmin = U[p];
+  lookup.xmax = U[n + 1];
+  lookup.nbins = nbins;
+  lookup.scale = static_cast<double>(nbins) / (lookup.xmax - lookup.xmin);
+
+  lookup.span.resize(nbins);
+
+  int span = p;
+  for (int b = 0; b < nbins; ++b) {
+    // Left edge of auxiliary bin.
+    double xb = lookup.xmin + static_cast<double>(b) / lookup.scale;
+
+    // Find spline span satisfying  U[span] <= xb < U[span+1].
+    // Span starts at p, so the repeated knots U[0],...,U[p] do not enter the search.
+    while (span < n && xb >= U[span + 1]) span++;
+    lookup.span[b] = span;
+  }
+
+  return lookup;
+}
+
+
+/* ******************************************************************
+* Fast lookup of mesh cell containing value: x[i] <= value < x[i+1].
+* At the right endpoint return the last cell.
+* Since lookup.cell[b] corresponds to the LEFT edge of the bin,
+* correction is required only in the increasing direction.
+****************************************************************** */
+int
+IAPWS95_RaggedSplineHelper::FindSpanFast(const std::vector<double>& U,
+                                         const SpanLookup& lookup,
+                                         double x) const
+{
+  constexpr int p = 3;
+  const int n = static_cast<int>(U.size()) - p - 2;
+
+  if (x <= lookup.xmin) return p;
+  if (x >= lookup.xmax) return n;
+
+  int b = static_cast<int>((x - lookup.xmin) * lookup.scale);
+  int span = lookup.span[b];
+
+  // Because the table is based on the LEFT bin edge,
+  // its span cannot be to the right of the true span.
+  while (span < n && x >= U[span + 1]) span++;
+  return span;
 }
 
 }  // namespace AmanziEOS

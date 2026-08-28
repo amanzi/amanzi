@@ -118,14 +118,13 @@ class IAPWS95_RaggedSplineRhoT : public IAPWS95,
     std::array<double, 6> fit_weights = {1.0, 0.25, 0.25, 0.05, 0.05, 0.05};
 
     // minimum permitted temperature, [K]
-    double minimum_extension_temperature_K = 273.16;
+    double min_extension_temperature_K = 273.16;
 
     // Number of bisection iterations after bracketing the margin.
     int metastable_bisection_iterations = 50;
 
     double critical_cutoff_temperature_K = 637.5;
     double critical_cap_extension_K = 4.0;
-    double critical_cap_tolerance_K = 1.0e-8;
 
     // adaptive refinemtn
     double refinement_fraction = 0.20;
@@ -168,14 +167,15 @@ class IAPWS95_RaggedSplineRhoT : public IAPWS95,
   virtual std::array<double, 6> ResidualPart(double rho, double T) override;
 
   // initialize shared data 
-  void InitializeSharedData();
+  std::vector<Sample> InitializeSharedData();
 
   // Construct saturation data bounded by parabola-like function F(rho), the
   // rectangular background grid, and the ragged column offsets.
-  //
   // The default boundary construction interpolates the sampled saturation
   // branches and produces a smooth exclusion boundary above the dome. 
   void CreateRaggedMesh();
+
+  void AdaptiveRefineCoordinateLines_();
 
   // Assemble a global overdetermined least-squares system for the active
   // cubic tensor-product basis functions and solve for all spline coefficients.
@@ -205,7 +205,6 @@ class IAPWS95_RaggedSplineRhoT : public IAPWS95,
   void BuildInitialCoordinateLines_();
   void BuildSaturationData_();
   void BuildRaggedColumns_();
-  void AdaptiveRefineCoordinateLines_();
   void BuildKnotVectors_();
 
   bool IsExtended_(double rho, double T);
@@ -213,7 +212,7 @@ class IAPWS95_RaggedSplineRhoT : public IAPWS95,
   double BoundaryTemperature(double rho) const;
   double ExtensionTemperature(double rho) const;
 
-  double FindMetastableMarginTemperature(double rho, double boundary_T);
+  double FindMetastableMarginTemperature_(double rho, double boundary_T);
 
  private:
   std::shared_ptr<IAPWS95> eos95_;

@@ -45,18 +45,29 @@ IAPWS95_RaggedSplineRhoT::ResidualPart(double rho, double T)
 /* ******************************************************************
 * Wrapper for initialization of shared data
 ****************************************************************** */
-void
+std::vector<IAPWS95_RaggedSplineRhoT::Sample>
 IAPWS95_RaggedSplineRhoT::InitializeSharedData()
 {
-  std::call_once(init_shared_, [this]() {
+  std::vector<Sample> samples;
+
+  std::call_once(init_shared_, [this, &samples]() {
     CreateRaggedMesh();
-    auto samples = BuildSamples();
+    samples = BuildSamples();
     BuildSplineCoefficients(samples);
+
+    constexpr int lookup_bins = 512;
+    mesh_.x_lookup = MakeSpanLookupLeft(mesh_.x_knots, lookup_bins);
+    mesh_.y_lookup = MakeSpanLookupLeft(mesh_.y_knots, lookup_bins);
 
     AnisotropicRefinement();
     samples = BuildSamples();
     BuildSplineCoefficients(samples);
+
+    mesh_.x_lookup = MakeSpanLookupLeft(mesh_.x_knots, lookup_bins);
+    mesh_.y_lookup = MakeSpanLookupLeft(mesh_.y_knots, lookup_bins);
   });
+
+  return samples;
 }
 
 
@@ -87,7 +98,7 @@ IAPWS95_RaggedSplineRhoT::CreateRaggedMesh()
 void
 IAPWS95_RaggedSplineRhoT::BuildSplineCoefficients(const std::vector<Sample>& samples)
 {
-  // CreateRaggedMesh() must be called before fitting
+  // ragged mesh must be created before fitting
   AMANZI_ASSERT(mesh_.x_knots.size() > 0 && mesh_.y_knots.size() > 0);
 
   int n = mesh_.nx_basis_ * mesh_.ny_basis_;
@@ -253,7 +264,7 @@ IAPWS95_RaggedSplineRhoT::BuildRaggedColumns_()
     RaggedColumn c;
     c.rho = rho;
     c.boundary_T = bndT;
-    double extT = FindMetastableMarginTemperature(rho, bndT);
+    double extT = FindMetastableMarginTemperature_(rho, bndT);
     c.extension_T = bndT;
 
     c.first_physical_T = static_cast<int>(
@@ -365,19 +376,15 @@ IAPWS95_RaggedSplineRhoT::ExtensionTemperature(double rho) const
 * Metastable-margin function searches downward from two-phase boundary
 ****************************************************************** */
 double
-IAPWS95_RaggedSplineRhoT::FindMetastableMarginTemperature(double rho, double boundary_T)
+IAPWS95_RaggedSplineRhoT::FindMetastableMarginTemperature_(double rho, double boundary_T)
 {
-  if (std::fabs(boundary_T - options_.critical_cutoff_temperature_K) < options_.critical_cap_tolerance_K) {
-    return boundary_T - options_.critical_cap_extension_K;
-  }
-
   double fraction = options_.metastable_stability_fraction;
   double D_boundary = StabilityFactor(rho, boundary_T);
 
   if (!std::isfinite(D_boundary) || !(D_boundary > 0.0)) return boundary_T;
 
   double target = fraction * D_boundary;
-  double lower_limit = std::max(options_.minimum_extension_temperature_K,
+  double lower_limit = std::max(options_.min_extension_temperature_K,
                                 boundary_T - options_.max_metastable_extension_K);
 
   double T_high = boundary_T;
@@ -466,7 +473,6 @@ IAPWS95_RaggedSplineRhoT::BuildSaturationData_()
 void
 IAPWS95_RaggedSplineRhoT::AdaptiveRefineCoordinateLines_()
 {
-  // A complete production version can perform solve-estimate-refine cycles.
   // Here we implement geometry-driven refinement before the first solve:
   // refine cells crossed by the saturation boundary and cells whose endpoint
   // exact derivatives vary more than the configured normalized tolerance.
@@ -769,7 +775,7 @@ bool
 IAPWS95_RaggedSplineRhoT::IsExtended_(double rho, double T)
 {
   double Tb = BoundaryTemperature(rho);
-  double Te = FindMetastableMarginTemperature(rho, Tb);
+  double Te = FindMetastableMarginTemperature_(rho, Tb);
   return T >= Te;
 }
 

@@ -167,25 +167,21 @@ TEST(HELMHOLTZ_IAPWS95_SPLINE)
 
   AmanziEOS::IAPWS95_RaggedSplineRhoT::Options opt;
   opt.T_min = 280.0;
-  opt.T_max = 900.0;
-  opt.rho_min = 8.0;
+  opt.T_max = 950.0;
+  opt.rho_min = 0.5;
   opt.rho_max = 1100.0;
-  opt.initial_rho_intervals = 48;
-  opt.initial_T_intervals = 48;
-  opt.max_rho_intervals = 120;
-  opt.max_T_intervals = 130;
+  opt.initial_rho_intervals = 60;
+  opt.initial_T_intervals = 70;
+  opt.max_rho_intervals = 130;
+  opt.max_T_intervals = 180;
   opt.extension_cells = 4.0;
-  opt.extension_weight = 0.1;
-  opt.metastable_scan_step_K = 0.5;
-  opt.critical_cap_extension_K = 5.0;
+  opt.refinement_fraction = 0.25;
 
   Teuchos::ParameterList plist;
   AmanziEOS::IAPWS95 eos95(plist);
   AmanziEOS::IAPWS95_RaggedSplineRhoT eos_spline(plist, opt);
 
-  eos_spline.CreateRaggedMesh();
-  const auto samples = eos_spline.BuildSamples();
-  eos_spline.BuildSplineCoefficients(samples);
+  eos_spline.InitializeSharedData();
 
   int n = 100;
   double eps(2e-6);

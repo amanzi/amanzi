@@ -219,13 +219,7 @@ TEST(EOS_IAPWS95_SPLINE_RHO_T)
   IAPWS95_RaggedSplineRhoT spline(plist, opt);
   IAPWS95 eos95(plist);
 
-  spline.CreateRaggedMesh();
-  auto samples = spline.BuildSamples();
-  spline.BuildSplineCoefficients(samples);
-
-  spline.AnisotropicRefinement();
-  samples = spline.BuildSamples();
-  spline.BuildSplineCoefficients(samples);
+  const auto samples = spline.InitializeSharedData();
 
   // double rho(400.0), T(700.0);
   double rho(596.976), T(631.221);

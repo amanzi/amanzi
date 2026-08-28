@@ -35,6 +35,17 @@ class IAPWS95_RaggedSplineHelper {
     double poly[4][4];
   };
 
+  struct SpanLookup {
+    double xmin = 0.0;
+    double xmax = 0.0;
+    double scale = 0.0;
+
+    int nbins = 0;
+
+    // span[b] is the knot span containing the LEFT edge
+    std::vector<int> span;
+  };
+
   struct Mesh {
     // Physical coordinate lines used to describe and sample the domain
     std::vector<double> x_lines;  // rho or p
@@ -49,15 +60,20 @@ class IAPWS95_RaggedSplineHelper {
 
     int CoefficientIndex(int i, int j) const noexcept { return i * ny_basis_ + j; }
 
-    // cache to avoid repeated calcualtions
+    // cache to avoid repeated calculations
     std::vector<CubicSpanData> x_span_data;
     std::vector<CubicSpanData> y_span_data;
+
+    // bins to accelerate search
+    SpanLookup x_lookup;
+    SpanLookup y_lookup;
   };
 
   std::vector<double> MakeClampedCubicKnots(const std::vector<double>& coordinate_lines);
   BasisData EvaluateCubicBasis(const std::vector<double>& knots, double x) const;
   BasisData EvaluateCachedCubicBasis(const std::vector<double>& U,
                                      const std::vector<CubicSpanData>& cache,
+                                     const SpanLookup& lookup,
                                      double x) const;
 
   std::array<double, 6> Evaluate(const Mesh& mesh,
@@ -66,6 +82,10 @@ class IAPWS95_RaggedSplineHelper {
 
   double MinSpacing(const std::vector<double>& x) const;
   int LowerCell(const std::vector<double>& x, double value);
+
+  // support of bins for O(1) search of spline cell
+  SpanLookup MakeSpanLookupLeft(const std::vector<double>& x, int nbins);
+  int FindSpanFast(const std::vector<double>& x, const SpanLookup& lookup, double value) const;
 
  protected:
   std::vector<CubicSpanData> BuildCubicSpanCache(const std::vector<double>& U);
