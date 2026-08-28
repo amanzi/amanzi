@@ -38,6 +38,7 @@ IAPWS95_RaggedSplineRhoT::IAPWS95_RaggedSplineRhoT(Teuchos::ParameterList& plist
 std::array<double, 6>
 IAPWS95_RaggedSplineRhoT::ResidualPart(double rho, double T)
 { 
+  residual_calls++;
   return Evaluate(mesh_, coefficients_, rho / RHOC, TC / T);
 }
 
@@ -632,7 +633,7 @@ IAPWS95_RaggedSplineRhoT::AnisotropicRefinement()
             [](const CellError& a, const CellError& b) { return a.error > b.error; });
 
   int nbase = std::min(mesh_.x_lines.size(), mesh_.y_lines.size());
-  int nrefine = std::max(1, (int)std::ceil(options_.refinement_fraction * nbase));
+  int nrefine = std::max(1, (int)std::ceil(options_.anisotropic_refinement_fraction * nbase));
 
   double anisotropy_factor = 1.25;
 

@@ -92,10 +92,10 @@ class IAPWS95_RaggedSplineRhoT : public IAPWS95,
 
     // The initial and maximum numbers of intervals.
     int initial_rho_intervals = 40;
-    int initial_T_intervals   = 40;
+    int initial_T_intervals = 40;
 
     int max_rho_intervals = 120;
-    int max_T_intervals   = 120;
+    int max_T_intervals = 120;
 
     unsigned max_adaptive_passes = 8;
 
@@ -122,12 +122,11 @@ class IAPWS95_RaggedSplineRhoT : public IAPWS95,
 
     // Number of bisection iterations after bracketing the margin.
     int metastable_bisection_iterations = 50;
-
     double critical_cutoff_temperature_K = 637.5;
     double critical_cap_extension_K = 4.0;
 
-    // adaptive refinemtn
-    double refinement_fraction = 0.20;
+    // adaptive refinement
+    double anisotropic_refinement_fraction = 0.20;
   };
 
   struct SaturationPoint {
@@ -199,6 +198,7 @@ class IAPWS95_RaggedSplineRhoT : public IAPWS95,
   // access
   const Mesh& GetMesh() const noexcept { return mesh_; }
   const std::vector<SaturationPoint>& GetSaturation() const { return saturation_; }
+  const Options& GetOptions() const { return options_; }
 
  private:
   void ValidateOptions_() const;
@@ -213,6 +213,9 @@ class IAPWS95_RaggedSplineRhoT : public IAPWS95,
   double ExtensionTemperature(double rho) const;
 
   double FindMetastableMarginTemperature_(double rho, double boundary_T);
+
+ public:
+  std::uint64_t residual_calls = 0;  // statistics 
 
  private:
   std::shared_ptr<IAPWS95> eos95_;

@@ -26,17 +26,18 @@ namespace AmanziEOS {
 * F(rho) = F3(rho) - p = 0
 ****************************************************************** */
 struct Frho95 {
-  Frho95(double p, double T, IAPWS95* eos) : p_(p), T_(T), eos_(eos) {};
+  Frho95(double p, double T, IAPWS95* eos) : p_(p), T_(T), eos_(eos), RT_(eos_->R * T_ / 1000.0) {};
   double operator()(double rho) const {
     double delta = rho / eos_->RHOC;
 
     double gd = eos_->ResidualPart(rho, T_)[1];
-    double po = (1.0 + delta * gd) * eos_->R * T_ * rho / 1000.0;
+    double po = RT_ * (1.0 + delta * gd) * rho;
     return po - p_;
   }
 
   double p_, T_;
   IAPWS95* eos_;
+  const double RT_;
 };
 
 
@@ -55,6 +56,7 @@ IAPWS95::ThermodynamicsPT(double p, double T)
 
   Frho95 f(p, T, this);
   double rho = Utils::findRootBrent(f, rhomin, rhomax, tol, &itrs_);
+  brent_root_itrs += itrs_;
 
   // refine soltution strategy by bracketing a root starting with a twice 
   // bigger bracket than before
@@ -62,10 +64,12 @@ IAPWS95::ThermodynamicsPT(double p, double T)
     itrs_ = 20;
     auto [rhomin, rhomax] = Utils::bracketRootSymmetric(f, rho0, rho0 * 0.01, &itrs_);
     AMANZI_ASSERT(itrs_ >= 0);
+    brent_bracket_itrs += itrs_;
 
     itrs_ = 20;
     rho = Utils::findRootBrent(f, rhomin, rhomax, tol, &itrs_);
     AMANZI_ASSERT(itrs_ > 0);
+    brent_root_itrs += itrs_;
   }
 
   return ThermodynamicsRhoT(rho, T);
@@ -212,25 +216,45 @@ IAPWS95::PopulateProperties(double rho, double T)
   double delta = rho / RHOC;
   double tau = TC / T;
 
-  double A = 1.0 + delta * g[1] - delta * tau * g[4];
+  double delta2 = delta * delta;
+  double tau2 = tau * tau;
+  double RT = R * T;
+
+  double dg1 = delta * g[1];
+  double dg3 = delta2 * g[3];
+  double delta_tau_g4 = delta * tau * g[4];
+
+  const double Z = 1.0 + dg1;
+  const double D = 1.0 + 2.0 * dg1 + dg3;
+  const double A = Z - delta_tau_g4;
+
+  double g02 = g0[2] + g[2];
+  double g05 = g0[5] + g[5];
+  double tau_g02 = tau * g02;
+  double tau2_g05 = tau2 * g05;
 
   prop.rho = rho;
   prop.T = T;
-  prop.p = (1 + delta * g[1]) * R * T * rho / 1000.0;
-  prop.h = R * T * (1 + tau * (g0[2] + g[2]) + delta * g[1]);
-  prop.u = R * T * tau * (g0[2] + g[2]);
-  prop.s = R * (tau * (g0[2] + g[2]) - g0[0] - g[0]);
-  prop.cv = -R * tau * tau * (g0[5] + g[5]);
-  prop.cp = -R * tau * tau * (g0[5] + g[5]) + A * A / (1.0 + 2 * delta * g[1] + delta * delta * g[3]);
-  prop.ap = (1 - delta * tau * g[4] / (1 + delta * g[1])) / T;
-  prop.bp = rho * (1 + (delta * g[1] + delta * delta * g[3]) / (1 + delta * g[1]));
-  prop.w = std::sqrt(R * T * 1000.0 * (1.0 + 2 * delta * g[1] + delta * delta * g[3]
-                                           - A * A / (tau * tau * (g0[5] + g[5]))));
 
-  prop.v = 1 / rho;
-  prop.helmholtz = R * T * (g0[0] + g[0]);
+  prop.p = Z * RT * rho / 1000.0;
+  prop.h = RT * (1.0 + tau_g02 + dg1);
+  prop.u = RT * tau_g02;
+  prop.s = R * (tau_g02 - g0[0] - g[0]);
+
+  prop.cv = -R * tau2_g05;
+  prop.cp = prop.cv + A * A / D;
+
+  prop.ap = (1.0 - delta_tau_g4 / Z) / T;
+  prop.bp = rho * (1.0 + (dg1 + dg3) / Z);
+
+  prop.w = std::sqrt(1000.0 * RT * (D - A * A / tau2_g05));
+
+  prop.v = 1.0 / rho;
+
+  prop.helmholtz = RT * (g0[0] + g[0]);
   prop.gibbs = prop.helmholtz + 1000.0 * prop.p * prop.v;
-  prop.kt = 1000.0 / (rho * R * T * (1 + 2 * delta * g[1] + delta * delta * g[3]));
+
+  prop.kt = 1000.0 / (rho * RT * D);
 
   return prop;
 }
@@ -523,6 +547,7 @@ IAPWS95::ResidualPart(double rho, double T)
                     (tmp5 * deld * delt + tmp4 * deldt) * delta * psi);
   }
 
+  residual_calls++;
   return { g, gd, gt, gdd, gdt, gtt };
 }
 

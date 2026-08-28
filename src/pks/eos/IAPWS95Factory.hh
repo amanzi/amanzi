@@ -41,7 +41,7 @@ CreateIAPWS95(Teuchos::ParameterList& plist)
     opt.max_rho_intervals = 130;
     opt.max_T_intervals = 180;
     opt.extension_cells = 4.0;
-    opt.refinement_fraction = 0.25;
+    opt.anisotropic_refinement_fraction = 0.25;
 
     Teuchos::ParameterList plist;
     auto spline = Teuchos::rcp(new IAPWS95_RaggedSplineRhoT(plist, opt));
