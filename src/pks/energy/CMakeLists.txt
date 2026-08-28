@@ -155,6 +155,16 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/energy_iapws97.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+    add_amanzi_test(energy_iapws95 energy_iapws95
+                    KIND int
+                    SOURCE test/Main.cc test/energy_iapws95.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(energy_iapws95_spline energy_iapws95_spline
+                    KIND int
+                    SOURCE test/Main.cc test/energy_iapws95_spline.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
     # Test: preconditioner
     add_amanzi_test(energy_jacobian energy_jacobian
                     KIND int
@@ -170,11 +180,6 @@ if (BUILD_TESTS)
     add_amanzi_test(energy_evaluators95_tables energy_evaluators95_tables
                     KIND int
                     SOURCE test/Main.cc test/energy_evaluators95_tables.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
-    add_amanzi_test(energy_iapws95_spline energy_iapws95_spline
-                    KIND int
-                    SOURCE test/Main.cc test/energy_iapws95_spline.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(energy_evaluators97_tables energy_evaluators97_tables
