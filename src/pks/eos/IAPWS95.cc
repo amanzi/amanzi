@@ -245,6 +245,7 @@ IAPWS95::PopulateProperties(double rho, double T)
   prop.cp = prop.cv + A * A / D;
 
   prop.ap = (1.0 - delta_tau_g4 / Z) / T;
+  prop.av = (Z - delta_tau_g4) / (T * D);
   prop.bp = rho * (1.0 + (dg1 + dg3) / Z);
 
   prop.w = std::sqrt(1000.0 * RT * (D - A * A / tau2_g05));
@@ -592,18 +593,30 @@ IAPWS95::EntropyDerivativesPH(double p, double h)
 
   double rho = sol[0];
   double T = sol[1];
-  return EntropyDerivativesRhoT(rho, T);
+  return EntropyDerivativesPHbase(rho, T);
 }
 
 
 std::array<double, 6>
-IAPWS95::EntropyDerivativesRhoT(double rho, double T)
+IAPWS95::EntropyDerivativesPHbase(double rho, double T)
 {
-  auto [prop1, liquid1, vapor1] = ThermodynamicsRhoT(rho, T); 
-  double s = prop1.s;
-  double sp = -1.0 / rho / T;
+  auto [prop, liquid, vapor] = ThermodynamicsRhoT(rho, T); 
+  double s = prop.s;
+  double cp = prop.cp;
+  double alpha = prop.av;
+
+  double sp = -1000.0 / (rho * T);  // p in MPa, h in kJ/kg
   double sh = 1.0 / T;
-  return std::array<double, 6>{s, sp, sh, 0.0, 0.0, 0.0};
+
+  double T2 = T * T;
+  double rho2 = rho * rho;
+  double Tp = 1000.0 * (alpha * T - 1.0) / (rho * cp);
+  double rhop_h = rho2 / (prop.p * prop.bp) - rho * alpha * Tp;
+
+  double shh = -1.0 / (T2 * cp);
+  double sph = -Tp / T2;
+  double spp = 1000.0 * (rhop_h / (rho2 * T) + Tp / (rho * T2));
+  return {s, sp, sh, spp, sph, shh};
 }
 
 

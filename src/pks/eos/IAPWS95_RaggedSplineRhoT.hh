@@ -221,7 +221,6 @@ class IAPWS95_RaggedSplineRhoT : public IAPWS95,
   std::shared_ptr<IAPWS95> eos95_;
 
   Options options_;
-  double min_T_spacing_;
 
   std::vector<SaturationPoint> saturation_;
   std::vector<RaggedColumn> columns_;

@@ -107,7 +107,7 @@ class IAPWS95_RaggedSplinePH : public IAPWS95,
     double extension_weight = 0.15;
 
     // Relative fitting weights for value and delta/tau derivatives
-    std::array<double, 3> fit_weights = {1.0, 0.25, 0.25};
+    std::array<double, 6> fit_weights = {1.0, 0.25, 0.25, 0.05, 0.05, 0.05};
 
     unsigned max_adaptive_passes = 8;
 
@@ -158,6 +158,9 @@ class IAPWS95_RaggedSplinePH : public IAPWS95,
 
   virtual std::array<double, 6> EntropyDerivativesPH(double p, double h) override;
 
+  // initialize shared data 
+  std::vector<Sample> InitializeSharedData();
+
   // Construct rectangular background grid and active column intervals.
   void CreateRaggedMesh();
 
@@ -171,6 +174,11 @@ class IAPWS95_RaggedSplinePH : public IAPWS95,
   // Creates the set of (rho, T) points used to fit spline coefficients
   std::vector<Sample> BuildSamples();
 
+  double FindLiquidMetastableMargin(double p, const SaturationState& sat);
+  double FindVaporMetastableMargin(double p, const SaturationState& sat);
+
+  double StabilityFactor(double rho, double T);
+
   // access
   const Mesh& GetMesh() const noexcept { return mesh_; }
 
@@ -181,28 +189,24 @@ class IAPWS95_RaggedSplinePH : public IAPWS95,
   void AdaptiveRefineCoordinateLines_();
   void BuildKnotVectors_();
 
-  double FindLiquidMetastableMargin_(double p, const SaturationState& sat);
-  double FindVaporMetastableMargin_(double p, const SaturationState& sat);
-
   bool IsPhysical_(double p, double h, const SaturationState& sat);
   bool IsExtended_(double p, double h, const SaturationState& sat);
 
   std::pair<double, double> BoundaryEnthalpies(double p) const;
-  double MinEnthalpySpacing(double p) const;
-
-  double StabilityFactor(double rho, double T);
 
  private:
   std::shared_ptr<IAPWS95> eos95_;
 
   Options options_;
-  Mesh mesh_;
-
   std::vector<RaggedColumn> columns_;
 
   // Coefficients are stored with theta basis index changing fastest.
-  std::vector<double> coefficients_;
   bool built_ = false;
+
+  // shared data
+  inline static Mesh mesh_;
+  inline static std::vector<double> coefficients_;
+  inline static std::once_flag init_shared_;
 };
 
 } // namespace AmanziEOS

@@ -48,7 +48,30 @@ IAPWS95_RaggedSplinePH::EntropyDerivativesPH(double p, double h)
   const SaturationState& sat = eos95_->SaturationLineP(p);
   AMANZI_ASSERT(IsPhysical_(p, h, sat));
 
-  return Evaluate(mesh_, coefficients_, p / PC, h / HC);
+  auto d = Evaluate(mesh_, coefficients_, p / PC, h / HC);
+  return { d[0], d[1] / PC, d[2] / HC, d[3] / (PC * PC), d[4] / (PC * HC), d[5] / (HC * HC) };
+}
+
+
+/* ******************************************************************
+* Wrapper for initialization of shared data
+****************************************************************** */
+std::vector<IAPWS95_RaggedSplinePH::Sample>
+IAPWS95_RaggedSplinePH::InitializeSharedData()
+{
+  std::vector<Sample> samples;
+
+  std::call_once(init_shared_, [this, &samples]() {
+    CreateRaggedMesh();
+    samples = BuildSamples();
+    BuildSplineCoefficients(samples);
+
+    constexpr int lookup_bins = 512;
+    mesh_.x_lookup = MakeSpanLookupLeft(mesh_.x_knots, lookup_bins);
+    mesh_.y_lookup = MakeSpanLookupLeft(mesh_.y_knots, lookup_bins);
+  });
+
+  return samples;
 }
 
 
@@ -107,7 +130,10 @@ IAPWS95_RaggedSplinePH::BuildSplineCoefficients(const std::vector<Sample>& sampl
     double theta = sample.h / HC;
     const BasisData Bp = EvaluateCubicBasis(mesh_.x_knots, pi);
     const BasisData Bt = EvaluateCubicBasis(mesh_.y_knots, theta);
-    const std::array<double, 6> target = eos95_->EntropyDerivativesRhoT(sample.rho, sample.T);
+
+    const auto& der = eos95_->EntropyDerivativesPHbase(sample.rho, sample.T);
+    const std::array<double, 6> target = { der[0], PC * der[1], HC * der[2],
+                                           PC * PC * der[3], PC * HC * der[4], HC * HC * der[5] };
 
     int id = LowerCell(mesh_.x_lines, sample.p);
     int it = LowerCell(mesh_.y_lines, sample.h);
@@ -115,21 +141,50 @@ IAPWS95_RaggedSplinePH::BuildSplineCoefficients(const std::vector<Sample>& sampl
     const double h_pi = (mesh_.x_lines[id + 1] - mesh_.x_lines[id]) / PC;
     const double h_theta = (mesh_.y_lines[it + 1] - mesh_.y_lines[it]) / HC;
 
-    const std::array<double, 3> derivative_scale = { 1.0, h_pi, h_theta };
+    const std::array<double, 6> derivative_scale = { 1.0,
+                                                     h_pi,
+                                                     h_theta,
+                                                     h_pi * h_pi,
+                                                     h_pi * h_theta,
+                                                     h_theta * h_theta };
 
-    for (int component = 0; component < 3; ++component) {
+    for (int component = 0; component < 6; ++component) {
       double s = derivative_scale[component];
       double weight = sample.weight * options_.fit_weights[component] * s * s;
       if (!(weight > 0.0)) continue;
 
       int q = 0;
       for (int a = 0; a < 4; ++a) {
-        const double xd = (component == 0 || component == 2) ? 
-                          Bp.value[a] : (component == 1) ? Bp.d1[a] : Bp.d2[a];
-
         for (int b = 0; b < 4; ++b) {
-          const double xt = (component == 0 || component == 1) ? 
-                            Bt.value[b] : (component == 2) ? Bt.d1[b] : Bt.d2[b];
+          double xd, xt;
+          switch (component) {
+            case 0:
+              xd = Bp.value[a];
+              xt = Bt.value[b];
+              break;
+            case 1:
+              xd = Bp.d1[a];
+              xt = Bt.value[b];
+              break;
+            case 2:
+              xd = Bp.value[a];
+              xt = Bt.d1[b];
+              break;
+            case 3:
+              xd = Bp.d2[a];
+              xt = Bt.value[b];
+              break;
+            case 4:
+              xd = Bp.d1[a];
+              xt = Bt.d1[b];
+              break;
+            case 5:
+              xd = Bp.value[a];
+              xt = Bt.d2[b];
+              break;
+            default:
+              ;  // pass
+          }
 
           index[q] = mesh_.CoefficientIndex(Bp.index[a], Bt.index[b]);
           row_value[q] = xd * xt;
@@ -166,6 +221,10 @@ IAPWS95_RaggedSplinePH::BuildSplineCoefficients(const std::vector<Sample>& sampl
 
   coefficients_ = std::move(rhs);
   built_ = true;
+
+  constexpr int lookup_bins = 512;
+  mesh_.x_lookup = MakeSpanLookupLeft(mesh_.x_knots, lookup_bins);
+  mesh_.y_lookup = MakeSpanLookupLeft(mesh_.y_knots, lookup_bins);
 }
 
 
@@ -215,8 +274,8 @@ IAPWS95_RaggedSplinePH::BuildRaggedColumns_()
       auto liquid = PopulateProperties(sat.rhol, sat.Tsat);
       auto vapor = PopulateProperties(sat.rhov, sat.Tsat);
 
-      double ext_hl = FindLiquidMetastableMargin_(p, sat);
-      double ext_hv = FindVaporMetastableMargin_(p, sat);
+      double ext_hl = FindLiquidMetastableMargin(p, sat);
+      double ext_hv = FindVaporMetastableMargin(p, sat);
 
       c.physical_intervals = { {options_.H_min, liquid.h, 1.0},
                                {vapor.h, options_.H_max, 1.0} };
@@ -280,8 +339,8 @@ struct Frho95s {
 
 
 double
-IAPWS95_RaggedSplinePH::FindLiquidMetastableMargin_(double p,
-                                                    const SaturationState& sat)
+IAPWS95_RaggedSplinePH::FindLiquidMetastableMargin(double p,
+                                                   const SaturationState& sat)
 {
   double T0 = sat.Tsat;
   double rho0 = sat.rhol;
@@ -318,8 +377,8 @@ IAPWS95_RaggedSplinePH::FindLiquidMetastableMargin_(double p,
 
 
 double
-IAPWS95_RaggedSplinePH::FindVaporMetastableMargin_(double p,
-                                                   const SaturationState& sat)
+IAPWS95_RaggedSplinePH::FindVaporMetastableMargin(double p,
+                                                  const SaturationState& sat)
 {
   double T0 = sat.Tsat;
   double rho0 = sat.rhov;
@@ -369,20 +428,6 @@ IAPWS95_RaggedSplinePH::StabilityFactor(double rho, double T)
 
 
 /* ******************************************************************
-* Minimum dT
-****************************************************************** */
-double
-IAPWS95_RaggedSplinePH::MinEnthalpySpacing(double p) const
-{
-  double h = std::numeric_limits<double>::max();
-  for (int j = 0; j + 1 < mesh_.y_lines.size(); ++j) {
-    h = std::min(h, mesh_.y_lines[j + 1] - mesh_.y_lines[j]);
-  }
-  return h;
-}
-
-
-/* ******************************************************************
 * Mesh adaptation
 ****************************************************************** */
 void
@@ -397,6 +442,8 @@ IAPWS95_RaggedSplinePH::AdaptiveRefineCoordinateLines_()
     std::vector<double> add_p;
     std::vector<double> add_h;
 
+    double min_h_spacing = MinSpacing(mesh_.y_lines);
+
     if (mesh_.x_lines.size() - 1 < options_.max_p_intervals) {
       for (int i = 0; i + 1 < mesh_.x_lines.size(); ++i) {
         double p0 = mesh_.x_lines[i];
@@ -409,8 +456,11 @@ IAPWS95_RaggedSplinePH::AdaptiveRefineCoordinateLines_()
 
         double curvature_l = std::fabs(b0.first - 2 * bm.first + b1.first);
         double curvature_v = std::fabs(b0.second - 2 * bm.second + b1.second);
-        double hh = MinEnthalpySpacing(pm);
-        if (std::max(curvature_l, curvature_v) > 0.25 * hh) add_p.push_back(pm);
+        // if (std::max(curvature_l, curvature_v) > 0.25 * min_h_spacing) add_p.push_back(pm);
+        double hb1 = std::fabs(b1.first - b0.first);
+        double hb2 = std::fabs(b1.second - b0.second);
+        if (hb1 > 1e-12 && curvature_l > 0.2 * hb1 ||
+            hb2 > 1e-12 && curvature_v > 0.2 * hb2) add_p.push_back(pm);
       }
     }
 
@@ -457,6 +507,20 @@ IAPWS95_RaggedSplinePH::AdaptiveRefineCoordinateLines_()
 
     BuildRaggedColumns_();
   }
+
+  // additional lines
+  auto insert_unique = [&](std::vector<double>& lines,
+                           const std::vector<double>& additions) {
+    for (double x : additions) {
+      const auto it = std::lower_bound(lines.begin(), lines.end(), x);
+      if (it == lines.begin() || it == lines.end()) continue;
+      if (std::abs(*it - x) > 1e-14 * std::max(1.0, std::abs(x))) lines.insert(it, x);
+    }
+  };
+
+  insert_unique(mesh_.x_lines, { 20.4, 20.8, 21.2 });
+  insert_unique(mesh_.y_lines, { 505.0 });
+  BuildRaggedColumns_();
 }
 
 
@@ -592,8 +656,8 @@ IAPWS95_RaggedSplinePH::IsExtended_(double p, double h, const SaturationState& s
   if (p >= eos95_->PC) return true;
   if (h <= sat.hl || h >= sat.hv) return true;
 
-  double ext_hl = FindLiquidMetastableMargin_(p, sat);
-  double ext_hv = FindVaporMetastableMargin_(p, sat);
+  double ext_hl = FindLiquidMetastableMargin(p, sat);
+  double ext_hv = FindVaporMetastableMargin(p, sat);
   return h <= ext_hl || h >= ext_hv;
 }
 

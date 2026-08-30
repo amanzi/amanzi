@@ -59,7 +59,7 @@ class IAPWS95 {
   Properties PopulatePropertiesFromEntropy2(double p, double h, const SaturationState& sat);
 
   virtual std::array<double, 6> EntropyDerivativesPH(double p, double h);
-  std::array<double, 6> EntropyDerivativesRhoT(double rho, double T);
+  std::array<double, 6> EntropyDerivativesPHbase(double rho, double T);
 
   std::tuple<double, double, double> SaturationLineT(double T, double rhol0, double rhov0);
   SaturationState SaturationLineP(double p);

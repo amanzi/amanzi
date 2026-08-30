@@ -87,8 +87,6 @@ IAPWS95_RaggedSplineRhoT::CreateRaggedMesh()
 
   AdaptiveRefineCoordinateLines_();
   BuildKnotVectors_();
-
-  min_T_spacing_ = MinSpacing(mesh_.y_lines);
 }
 
 
@@ -491,7 +489,6 @@ IAPWS95_RaggedSplineRhoT::AdaptiveRefineCoordinateLines_()
         double T0 = BoundaryTemperature(r0);
         double T1 = BoundaryTemperature(r1);
         double curvature = std::fabs(T0 - 2 * BoundaryTemperature(rm) + T1);
-        // double hT = MinSpacing(mesh_.y_lines);
         double hT = std::fabs(T1 - T0);
         if (hT > 1e-12 && curvature > 0.04 * hT) add_rho.push_back(rm);
       }
@@ -673,7 +670,6 @@ IAPWS95_RaggedSplineRhoT::AnisotropicRefinement()
   BuildRaggedColumns_();
 
   BuildKnotVectors_();
-  min_T_spacing_ = MinSpacing(mesh_.y_lines);
 }
 
 

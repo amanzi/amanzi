@@ -39,7 +39,7 @@ void WriteHelmholtzPlotData(IAPWS95_RaggedSplineRhoT& spline,
   // Header
   out << "# rho T spline_phi exact_phi error\n";
 
-  std::array<double, 6> err_abs{}, err_rel{}, err;
+  std::array<double, 6> err_l2{}, err_abs{}, err_rel{}, err{};
   for (int j = 0; j < nT; ++j) {
     double T = T_min + (T_max - T_min) * (double)j / (nT - 1);
 
@@ -53,6 +53,7 @@ void WriteHelmholtzPlotData(IAPWS95_RaggedSplineRhoT& spline,
 
         for (int k = 0; k < 6; ++k) {
           err[k] = spline_value[k] - exact_value[k];
+          err_l2[k] += err[k] * err[k];
           err_abs[k] = std::max(err_abs[k], std::fabs(err[k]));
           err_rel[k] = std::max(err_rel[k], std::fabs(err[k] / std::max(1e-14, std::fabs(exact_value[k]))));
         }
@@ -72,9 +73,12 @@ void WriteHelmholtzPlotData(IAPWS95_RaggedSplineRhoT& spline,
   out.close();
 
   std::cout << "\nWrote plotting data to " << filename << '\n';
-  std::cout << "Spline resolutons: " << spline.GetMesh().x_lines.size() << " " << spline.GetMesh().y_lines.size() << std::endl;
-  std::cout << "Error:  absolute     relative\n";
-  for (int k = 0; k < 6; ++k) printf("%3d %12.8f %12.8f\n", k, err_abs[k], err_rel[k]); 
+  std::cout << "Spline resolutions: " << spline.GetMesh().x_lines.size() << " " << spline.GetMesh().y_lines.size() << std::endl;
+  std::cout << "Error:  mean       absolute     relative\n";
+  for (int k = 0; k < 6; ++k) {
+    err_l2[k] = std::sqrt(err_l2[k] / nrho / nT);
+    printf("%3d %12.8f %12.8f %12.8f\n", k, err_l2[k], err_abs[k], err_rel[k]); 
+  }
 }
 
 
