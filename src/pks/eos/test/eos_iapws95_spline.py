@@ -34,7 +34,7 @@ fig = go.Figure(
             hovertemplate=(
                 "rho = %{x:.6g} kg/m^3<br>"
                 "T = %{y:.6g} K<br>"
-                "phi_r = %{z:.8e}<extra></extra>"
+                "error = %{z:.8e}<extra></extra>"
             ),
         )
     ]
@@ -43,15 +43,15 @@ fig = go.Figure(
 fig.update_layout(
     title="Splined residual Helmholtz energy",
     scene={
-        "xaxis_title": "Density rho [kg/m^3]",
-        "yaxis_title": "Temperature T [K]",
-        "zaxis_title": "phi_r",
+        "xaxis_title": "density rho [kg/m^3]",
+        "yaxis_title": "temperature T [K]",
+        "zaxis_title": "",
         "aspectmode": "auto",
         "camera": {
             "eye": {
-                "x": 1.5,
-                "y": 1.5,
-                "z": 1.0,
+                "x": -1.5,
+                "y": -1.5,
+                "z": 0.9,
             }
         },
     },
