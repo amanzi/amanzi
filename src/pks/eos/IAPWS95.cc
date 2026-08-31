@@ -298,6 +298,7 @@ IAPWS95::PopulatePropertiesFromEntropy1(double p, double h)
   prop.h = h;
 
   prop.rho = 1.0 / v;
+  return prop;
 }
 
 
