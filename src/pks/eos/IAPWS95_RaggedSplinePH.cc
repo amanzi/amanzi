@@ -39,15 +39,7 @@ IAPWS95_RaggedSplinePH::IAPWS95_RaggedSplinePH(Teuchos::ParameterList& plist, Op
 std::array<double, 6>
 IAPWS95_RaggedSplinePH::EntropyDerivativesPH(double p, double h)
 { 
-  AMANZI_ASSERT(built_);
-
-  // check for spline domain
-  AMANZI_ASSERT(p >= options_.P_min && p <= options_.P_max);
-  AMANZI_ASSERT(h >= options_.H_min && h <= options_.H_max);
-
-  const SaturationState& sat = eos95_->SaturationLineP(p);
-  AMANZI_ASSERT(IsPhysical_(p, h, sat));
-
+  residual_calls++;
   auto d = Evaluate(mesh_, coefficients_, p / PC, h / HC);
   return { d[0], d[1] / PC, d[2] / HC, d[3] / (PC * PC), d[4] / (PC * HC), d[5] / (HC * HC) };
 }
@@ -83,7 +75,6 @@ IAPWS95_RaggedSplinePH::CreateRaggedMesh()
 {
   mesh_ = Mesh{};
   coefficients_.clear();
-  built_ = false;
 
   BuildInitialCoordinateLines_();
   BuildRaggedColumns_();
@@ -220,7 +211,6 @@ IAPWS95_RaggedSplinePH::BuildSplineCoefficients(const std::vector<Sample>& sampl
   // info > 0 : normal matrix is not positive definite at pivot info
 
   coefficients_ = std::move(rhs);
-  built_ = true;
 
   constexpr int lookup_bins = 512;
   mesh_.x_lookup = MakeSpanLookupLeft(mesh_.x_knots, lookup_bins);
@@ -240,8 +230,8 @@ IAPWS95_RaggedSplinePH::BuildInitialCoordinateLines_()
   // Logarithmic density distribution handles the dilute-vapor scale while
   // remaining monotone and simple. We can replace by another distribution
   // if the liquid region requires stronger clustering.
-  double log_min = std::log(options_.P_min);
-  double log_max = std::log(options_.P_max);
+  double log_min = std::log(options_.p_min);
+  double log_max = std::log(options_.p_max);
   for (int i = 0; i < mesh_.x_lines.size(); ++i) {
     double s = (double)i / (mesh_.x_lines.size() - 1);
     mesh_.x_lines[i] = std::exp((1.0 - s) * log_min + s * log_max);
@@ -249,7 +239,7 @@ IAPWS95_RaggedSplinePH::BuildInitialCoordinateLines_()
 
   for (int j = 0; j < mesh_.y_lines.size(); ++j) {
     double s = (double)j / (mesh_.y_lines.size() - 1);
-    mesh_.y_lines[j] = (1.0 - s) * options_.H_min + s * options_.H_max;
+    mesh_.y_lines[j] = (1.0 - s) * options_.h_min + s * options_.h_max;
   }
 }
 
@@ -277,13 +267,13 @@ IAPWS95_RaggedSplinePH::BuildRaggedColumns_()
       double ext_hl = FindLiquidMetastableMargin(p, sat);
       double ext_hv = FindVaporMetastableMargin(p, sat);
 
-      c.physical_intervals = { {options_.H_min, liquid.h, 1.0},
-                               {vapor.h, options_.H_max, 1.0} };
+      c.physical_intervals = { {options_.h_min, liquid.h, 1.0},
+                               {vapor.h, options_.h_max, 1.0} };
       c.extension_intervals = { {liquid.h, ext_hl, options_.extension_weight},
                                 {ext_hv, vapor.h, options_.extension_weight} };
     } else {
-      c.physical_intervals = { {options_.H_min, options_.H_max, 1.0} };
-      c.extension_intervals = { {options_.H_min, options_.H_max, 1.0} };
+      c.physical_intervals = { {options_.h_min, options_.h_max, 1.0} };
+      c.extension_intervals = { {options_.h_min, options_.h_max, 1.0} };
     }
 
     columns_.push_back(c);
@@ -296,8 +286,8 @@ IAPWS95_RaggedSplinePH::BuildRaggedColumns_()
 ****************************************************************** */
 void IAPWS95_RaggedSplinePH::ValidateOptions_() const
 {
-  AMANZI_ASSERT(options_.P_min > 0.0 && options_.P_max > options_.P_min);
-  AMANZI_ASSERT(options_.H_max > options_.H_min && options_.H_min > 0.0);
+  AMANZI_ASSERT(options_.p_min > 0.0 && options_.p_max > options_.p_min);
+  AMANZI_ASSERT(options_.h_max > options_.h_min && options_.h_min > 0.0);
 
   // At least four intervals per direction are required.
   AMANZI_ASSERT(options_.initial_p_intervals >= 4 && options_.initial_h_intervals >= 4);
@@ -313,7 +303,7 @@ void IAPWS95_RaggedSplinePH::ValidateOptions_() const
 std::pair<double, double>
 IAPWS95_RaggedSplinePH::BoundaryEnthalpies(double p) const
 {
-  if (p > PC) return { options_.H_min, options_.H_min };
+  if (p > PC) return { options_.h_min, options_.h_min };
 
   const auto& sat = eos95_->SaturationLineP(p);
   return { sat.hl, sat.hv };
@@ -388,7 +378,7 @@ IAPWS95_RaggedSplinePH::FindVaporMetastableMargin(double p,
   double target = options_.metastable_stability_fraction * D0;
 
   for (;;) {
-    double rho1 = rho0 + options_.metastable_density_fraction_step * rho0;
+    double rho1 = rho0 + 2 * options_.metastable_density_fraction_step * rho0;
 
     itrs_ = 20;
     double tol = 1e-8;
@@ -579,7 +569,7 @@ IAPWS95_RaggedSplinePH::BuildSamples()
           const SaturationState& sat = eos95_->SaturationLineP(p);
           if (!IsExtended_(p, h, sat)) continue;
 
-          bool flag = IsPhysical_(p, h, sat);
+          bool flag = IsPhysical(p, h, sat);
           double weight = flag ? 1.0 : options_.extension_weight;
           samples.push_back({p, h, 0.0, 0.0, weight, flag});
         }
@@ -594,7 +584,7 @@ IAPWS95_RaggedSplinePH::BuildSamples()
       const SaturationState& sat = eos95_->SaturationLineP(p);
       if (!IsExtended_(p, h, sat)) continue;
 
-      bool flag = IsPhysical_(p, h, sat);
+      bool flag = IsPhysical(p, h, sat);
       double weight = flag ? 2.0 : options_.extension_weight;
       samples.push_back({p, h, 0.0, 0.0, weight, flag});
     }
@@ -603,7 +593,7 @@ IAPWS95_RaggedSplinePH::BuildSamples()
   // Additional samples only under the flat critical cutoff.
   // ... pass
 
-  // Recursive build of sample rho/T data
+  // pass samples in physical region, populate rho/T data
   for (Sample& sample : samples) {
     if (sample.is_physical) {
       auto [prop, liquid, vapor] = eos97_.ThermodynamicsPH(sample.p, sample.h); 
@@ -612,27 +602,162 @@ IAPWS95_RaggedSplinePH::BuildSamples()
     }
   }
 
-  for (Sample& sample : samples) {
-    if (!sample.is_physical) {
-      double p = sample.p;
-      double h = sample.h;
-      const SaturationState& sat = eos95_->SaturationLineP(p); 
+  // pass samples in metastable region
+  std::vector<MetastableWork> liquid_work;
+  std::vector<MetastableWork> vapor_work;
 
-      int itrs(100);
-      double tol(1e-10);
-      FrhoT f(p, h, eos95_.get());
-      FrhoT::Vector x0(2);
-      x0[0] = (h <= HC) ? sat.rhol : sat.rhov;
-      x0[1] = sat.Tsat;
-      FrhoT::Vector sol = PowellHybrid(x0, f, &itrs, tol);
-      AMANZI_ASSERT(itrs >= 0);
+  BuildMetastableWorkLists_(samples, liquid_work, vapor_work);
 
-      sample.rho = sol[0];
-      sample.T = sol[1];
+  PopulateMetastableSamples_(samples, liquid_work);
+  PopulateMetastableSamples_(samples, vapor_work);
+
+  return samples;
+}
+
+
+/* ******************************************************************
+* Construct liquid and vapor metastable work lists in one pass.
+****************************************************************** */
+void
+IAPWS95_RaggedSplinePH::BuildMetastableWorkLists_(const std::vector<Sample>& samples,
+                                                  std::vector<MetastableWork>& liquid,
+                                                  std::vector<MetastableWork>& vapor)
+{
+  liquid.clear();
+  vapor.clear();
+
+  liquid.reserve(samples.size());
+  vapor.reserve(samples.size());
+
+  for (int k = 0; k < static_cast<int>(samples.size()); ++k) {
+    const Sample& sample = samples[k];
+    if (sample.is_physical) continue;
+
+    const SaturationState& sat = eos95_->SaturationLineP(sample.p);
+
+    double dl = sample.h - sat.hl;
+    double dv = sat.hv - sample.h;
+    double latent_h = sat.hv - sat.hl;
+
+    if (dl <= dv) {
+      liquid.push_back({k, dl / latent_h, sat.rhol, sat.Tsat});
+    } else {
+      vapor.push_back({k, dv / latent_h, sat.rhov, sat.Tsat});
     }
   }
 
-  return samples;
+  // Solve closest-to-saturation samples first.
+  auto compare = [](const MetastableWork& a, const MetastableWork& b) { return a.depth < b.depth; };
+
+  std::sort(liquid.begin(), liquid.end(), compare);
+  std::sort(vapor.begin(), vapor.end(), compare);
+}
+
+
+/* ******************************************************************
+* Populate one metastable branch.
+* The work list already contains the branch-specific saturation state.
+****************************************************************** */
+void
+IAPWS95_RaggedSplinePH::PopulateMetastableSamples_(std::vector<Sample>& samples,
+                                                   const std::vector<MetastableWork>& work)
+{
+  std::vector<Sample> solved;
+  solved.reserve(work.size());
+
+  for (const MetastableWork& w : work) {
+    Sample& sample = samples[w.index];
+    bool success = SolveMetastableSample_(sample, solved, w.rho_sat, w.T_sat);
+    AMANZI_ASSERT(success);
+
+    solved.push_back({sample.p, sample.h, sample.rho, sample.T, 1.0, false});
+  }
+}
+
+
+/* ******************************************************************
+* Solve one metastable (p,h) state. First use the nearest previously 
+* converged state on this branch. If fails, restart from the 
+* saturation state at the current pressure.
+****************************************************************** */
+bool
+IAPWS95_RaggedSplinePH::SolveMetastableSample_(Sample& sample,
+                                               const std::vector<Sample>& solved,
+                                               double rho_sat,
+                                               double T_sat)
+{
+  double p = sample.p;
+  double h = sample.h;
+
+  constexpr double tol = 1.0e-10;
+  FrhoT f(p, h, eos95_.get());
+  FrhoT::Vector sol(2), x0(2);
+
+  // Attempt 1: nearest previously converged metastable state.
+  int nearest = FindNearestSolvedState_(solved, p, h);
+
+  if (nearest >= 0) {
+    x0[0] = solved[nearest].rho;
+    x0[1] = solved[nearest].T;
+
+    int itrs = 100;
+
+    sol = PowellHybrid(x0, f, &itrs, tol);
+    if (itrs >= 0) {
+      double D = StabilityFactor(sol[0], sol[1]);
+      if (D > 0.0) {
+        sample.rho = sol[0];
+        sample.T = sol[1];
+        return true;
+      }
+    }
+  }
+
+  // Attempt 2: saturation state at the current pressure.
+  x0[0] = rho_sat;
+  x0[1] = T_sat;
+
+  int itrs = 100;
+
+  sol = PowellHybrid(x0, f, &itrs, tol);
+  if (itrs >= 0) {
+    double D = StabilityFactor(sol[0], sol[1]);
+    if (D > 0.0) {
+      sample.rho = sol[0];
+      sample.T = sol[1];
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
+/* ******************************************************************
+* Find the nearest previously converged state on the same branch.
+****************************************************************** */
+int
+IAPWS95_RaggedSplinePH::FindNearestSolvedState_(const std::vector<Sample>& solved,
+                                                double p,
+                                                double h) const
+{
+  int nearest = -1;
+  double dist_min = std::numeric_limits<double>::max();
+
+  for (int k = 0; k < solved.size(); ++k) {
+    // Logarithmic pressure distance is more appropriate over the
+    // large pressure range of the table.
+    double dp = std::log(p / solved[k].p);
+    double dh = (h - solved[k].h) / HC;
+
+    double dist = dp * dp + dh * dh;
+    if (dist < dist_min) {
+      dist_min = dist;
+      nearest = k;
+    }
+  }
+
+  return nearest;
 }
 
 
@@ -640,7 +765,7 @@ IAPWS95_RaggedSplinePH::BuildSamples()
 *
 ****************************************************************** */
 bool
-IAPWS95_RaggedSplinePH::IsPhysical_(double p, double h, const SaturationState& sat)
+IAPWS95_RaggedSplinePH::IsPhysical(double p, double h, const SaturationState& sat)
 { 
   if (p >= eos95_->PC) return true;
   return h <= sat.hl || h >= sat.hv;

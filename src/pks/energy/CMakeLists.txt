@@ -165,6 +165,11 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/energy_iapws95_spline.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+    add_amanzi_test(energy_iapws95_spline_ph energy_iapws95_spline_ph
+                    KIND int
+                    SOURCE test/Main.cc test/energy_iapws95_spline_ph.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
     # Test: preconditioner
     add_amanzi_test(energy_jacobian energy_jacobian
                     KIND int

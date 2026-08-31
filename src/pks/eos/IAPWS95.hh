@@ -81,8 +81,9 @@ class IAPWS95 {
  public:
   int itrs_;
   std::uint64_t residual_calls = 0;  // statistics 
-  std::uint64_t brent_root_itrs = 0;;
-  std::uint64_t brent_bracket_itrs = 0;;
+  std::uint64_t brent_root_itrs = 0;
+  std::uint64_t brent_bracket_itrs = 0;
+  std::uint64_t powell_root_itrs = 0;
 
   // static constants
   // IF97 uses different value for R compared to IAPWS95 formulation

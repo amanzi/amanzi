@@ -44,7 +44,8 @@ void WriteEntropyPlotData(IAPWS95_RaggedSplinePH& spline,
     for (int i = 0; i < nh; ++i) {
       double h = h_min + (h_max - h_min) * (double)i / (nh - 1);
 
-      try {
+      const auto& sat = eos95.SaturationLineP(p);
+      if (spline.IsPhysical(p, h, sat)) {
         const auto& spline_value = spline.EntropyDerivativesPH(p, h);
         const auto& exact_value = eos95.EntropyDerivativesPH(p, h);
 
@@ -55,9 +56,9 @@ void WriteEntropyPlotData(IAPWS95_RaggedSplinePH& spline,
           err_rel[k] = std::max(err_rel[k], std::fabs(err[k] / std::max(1e-14, std::fabs(exact_value[k]))));
         }
 
-        out << p << " " << h << " " << spline_value[3] << " " << exact_value[3] << " " << err[3] << "\n";
+        out << p << " " << h << " " << spline_value[1] << " " << exact_value[1] << " " << err[1] << "\n";
       }
-      catch (const std::exception&) {
+      else {
         // Point is outside the ragged physical domain.
         // NaN preserves the rectangular plotting structure.
         const double nan = std::numeric_limits<double>::quiet_NaN();
@@ -74,6 +75,7 @@ void WriteEntropyPlotData(IAPWS95_RaggedSplinePH& spline,
   for (int k = 0; k < 6; ++k) {
     err_l2[k] = std::sqrt(err_l2[k] / np / nh);
     printf("%3d %12.8f %12.8f %12.8f\n", k, err_l2[k], err_abs[k], err_rel[k]); 
+    if (k != 3) CHECK(err_l2[k] < 0.01);
   }
 }
 
@@ -381,10 +383,10 @@ void WriteSamplesData(const std::vector<IAPWS95_RaggedSplinePH::Sample>& samples
 TEST(EOS_IAPWS95_SPLINE_P_H)
 {
   IAPWS95_RaggedSplinePH::Options opt;
-  opt.P_min = 0.50;
-  opt.P_max = 50.0;
-  opt.H_min = 500.0;
-  opt.H_max = 3600.0;
+  opt.p_min = 0.2;
+  opt.p_max = 50.0;
+  opt.h_min = 500.0;
+  opt.h_max = 3600.0;
   opt.initial_p_intervals = 50;
   opt.initial_h_intervals = 50;
   opt.max_p_intervals = 130;

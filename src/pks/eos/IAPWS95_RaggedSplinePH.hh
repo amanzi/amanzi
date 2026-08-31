@@ -82,12 +82,12 @@ class IAPWS95_RaggedSplinePH : public IAPWS95,
     Options() {};
 
     // background density range, rho_min must be positive
-    double P_min = 0.10;
-    double P_max = 50.0;
+    double p_min = 0.10;
+    double p_max = 50.0;
 
     // temperature range used to construct the ragged domain
-    double H_min = 150.0;
-    double H_max = 3800.0;
+    double h_min = 150.0;
+    double h_max = 3800.0;
 
     // Initial numbers of intervals. Adaptive refinement can add more.
     int initial_p_intervals = 40;
@@ -118,7 +118,7 @@ class IAPWS95_RaggedSplinePH : public IAPWS95,
     double max_metastable_extension_K = 40.0;
 
     // initial density decrement used to locate the stability margin
-    double metastable_density_fraction_step = 0.002;
+    double metastable_density_fraction_step = 0.005;
 
     // minimum permitted temperature, [K]
     double minimum_extension_temperature_K = 273.16;
@@ -174,6 +174,9 @@ class IAPWS95_RaggedSplinePH : public IAPWS95,
   // Creates the set of (rho, T) points used to fit spline coefficients
   std::vector<Sample> BuildSamples();
 
+  // point classification
+  bool IsPhysical(double p, double h, const SaturationState& sat);
+
   double FindLiquidMetastableMargin(double p, const SaturationState& sat);
   double FindVaporMetastableMargin(double p, const SaturationState& sat);
 
@@ -181,6 +184,7 @@ class IAPWS95_RaggedSplinePH : public IAPWS95,
 
   // access
   const Mesh& GetMesh() const noexcept { return mesh_; }
+  const Options& GetOptions() const { return options_; }
 
  private:
   void ValidateOptions_() const;
@@ -189,19 +193,45 @@ class IAPWS95_RaggedSplinePH : public IAPWS95,
   void AdaptiveRefineCoordinateLines_();
   void BuildKnotVectors_();
 
-  bool IsPhysical_(double p, double h, const SaturationState& sat);
+  // boundaries
   bool IsExtended_(double p, double h, const SaturationState& sat);
-
   std::pair<double, double> BoundaryEnthalpies(double p) const;
+
+  // support of samples
+  struct MetastableWork {
+    int index;
+
+    // Normalized distance from the appropriate saturation boundary.
+    // Used only to order continuation from saturation into metastability.
+    double depth;
+
+    // Saturation state on the appropriate homogeneous branch at sample.p.
+    double rho_sat;
+    double T_sat;
+  };
+
+  void
+  BuildMetastableWorkLists_(const std::vector<Sample>& samples,
+                            std::vector<MetastableWork>& liquid,
+                            std::vector<MetastableWork>& vapor);
+  void
+  PopulateMetastableSamples_(std::vector<Sample>& samples,
+                             const std::vector<MetastableWork>& work);
+  bool
+  SolveMetastableSample_(Sample& sample,
+                         const std::vector<Sample>& solved,
+                         double rho_sat,
+                         double T_sat);
+  int FindNearestSolvedState_(const std::vector<Sample>& solved, double p, double h) const;
+
+ public:
+  std::uint64_t residual_calls = 0;  // statistics 
 
  private:
   std::shared_ptr<IAPWS95> eos95_;
 
   Options options_;
   std::vector<RaggedColumn> columns_;
-
-  // Coefficients are stored with theta basis index changing fastest.
-  bool built_ = false;
 
   // shared data
   inline static Mesh mesh_;
