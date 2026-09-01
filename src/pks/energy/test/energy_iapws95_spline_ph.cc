@@ -36,9 +36,21 @@ TEST(ENTROPY_IAPWS95_SPLINE_DERIVATIVES)
   using namespace Amanzi;
   std::cout << "Test: Entropy spline properties" << std::endl;
 
+  AmanziEOS::IAPWS95_RaggedSplinePH::Options opt{};
+  opt.p_min = 0.2;
+  opt.p_max = 50.0;
+  opt.h_min = 500.0;
+  opt.h_max = 3600.0;
+  opt.initial_p_intervals = 50;
+  opt.initial_h_intervals = 50;
+  opt.max_p_intervals = 130;
+  opt.max_h_intervals = 180;
+  opt.extension_cells = 4.0;
+  opt.extension_weight = 0.1;
   Teuchos::ParameterList plist;
+
   AmanziEOS::IAPWS95 eos95(plist);
-  AmanziEOS::IAPWS95_RaggedSplinePH spline(plist);
+  AmanziEOS::IAPWS95_RaggedSplinePH spline(plist, opt);
 
   spline.InitializeSharedData();
 
@@ -47,7 +59,6 @@ TEST(ENTROPY_IAPWS95_SPLINE_DERIVATIVES)
   double dp(0.2), dh(5.0), hl, hr, der;
 
   spline.residual_calls = 0;
-  const auto& opt = spline.GetOptions();
   for (double p = opt.p_min + dp; p < opt.p_max - dp; p += dp) {
     for (double h = opt.h_min + dh; h < opt.h_max - dh; h += dh) {
       const AmanziEOS::SaturationState& sat = eos95.SaturationLineP(p);

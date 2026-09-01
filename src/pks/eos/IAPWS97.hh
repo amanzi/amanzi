@@ -139,12 +139,9 @@ class IAPWS97 {
   Properties ExtendProperties(const Properties& prop);
 
   // supporting functions
-  int get_itrs() { return itrs_; }
   void Print(Properties& prop);
 
  public:
-  int itrs_;
-
   // static constants
   // IF97 uses different value for R compared to IAPWS95 formulation
   static constexpr double PSAT_623 = 16.5291642526;  // MPa (page 6, boundary 1-3)
@@ -1146,6 +1143,10 @@ class IAPWS97 {
    -0.489837,    -0.257040,     0.161913,    0.257399, -0.325372e-1, 0.698452e-1,
     0.872102e-2, -0.435673e-2, -0.593264e-3
   };
+
+  std::uint64_t brent_root_itrs = 0;  // statistics
+  std::uint64_t brent_bracket_itrs = 0;
+  std::uint64_t powell_root_itrs = 0;
 };
 
 

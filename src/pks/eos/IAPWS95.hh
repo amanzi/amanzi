@@ -75,11 +75,9 @@ class IAPWS95 {
   double Viscosity(double rho, double T) { return eos97_.Viscosity(rho, T); }
 
   // supporting functions
-  int get_itrs() const { return itrs_; }
   void Print(Properties& prop);
 
  public:
-  int itrs_;
   std::uint64_t residual_calls = 0;  // statistics 
   std::uint64_t brent_root_itrs = 0;
   std::uint64_t brent_bracket_itrs = 0;

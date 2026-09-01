@@ -331,20 +331,23 @@ TEST(EOS_IAPWS97_PT)
   CHECK_CLOSE(0.103505092e+2, prop.cp, 1e-8);
   CHECK_EQUAL(prop.rgn, 2);
 
+  eos.brent_root_itrs = 0;
   prop = eos.ThermodynamicsPT(25.5837018, 650.0);
   CHECK_CLOSE(0.502005554e+3, prop.w, 1e-6);
   CHECK_EQUAL(prop.rgn, 3);
-  CHECK(eos.get_itrs() < 3);
+  CHECK(eos.brent_root_itrs < 3);
 
+  eos.brent_root_itrs = 0;
   prop = eos.ThermodynamicsPT(22.29305999995, 650.0);
   CHECK_CLOSE(44.65762757698, prop.cp, 1e-9);
   CHECK_EQUAL(prop.rgn, 3);
-  CHECK(eos.get_itrs() < 3);
+  CHECK(eos.brent_root_itrs < 3);
 
+  eos.brent_root_itrs = 0;
   prop = eos.ThermodynamicsPT(78.30956391692, 750.0);
   CHECK_CLOSE(7.606960408824e+02, prop.w, 1e-6);
   CHECK_EQUAL(prop.rgn, 3);
-  CHECK(eos.get_itrs() < 3);
+  CHECK(eos.brent_root_itrs < 3);
 }
 
 
@@ -356,22 +359,23 @@ TEST(EOS_IAPWS97_TABLE_PT)
   Teuchos::ParameterList plist;
   IAPWS97 eos(plist);
 
-  int nitrs(0), mitrs(0), count(0);
+  int mitrs(0), count(0);
   double dp(5.0e-2), dT(1.0), p, T, rho; 
 
   for (int i = -50; i < 50; ++i) {
     for (int j = -50; j < 50; ++j) {
       p = eos.PC + i * dp; // Mpa
       T = eos.TC + j * dT;
+
+      auto nitrs = eos.brent_root_itrs;
       rho = (eos.ThermodynamicsPT(p, T)).rho;
-      nitrs += eos.get_itrs();
-      mitrs = std::max(mitrs, eos.get_itrs());
+      mitrs = std::max(mitrs, int(eos.brent_root_itrs - nitrs));
       count++;
       // std::cout << p << " " << T << " " << rho << std::endl;
     }
   }
-  std::cout << "mean itrs = " << double(nitrs) / count << std::endl;
-  std::cout << "max itrs = " << mitrs << std::endl;
+  std::cout << "mean Brent root itrs = " << double(eos.brent_root_itrs) / count << std::endl;
+  std::cout << "max Brent root itrs = " << mitrs << std::endl;
 }
 
 
@@ -518,16 +522,17 @@ TEST(EOS_IAPWS97_TABLE_PH)
   Teuchos::ParameterList plist;
   IAPWS97 eos(plist);
 
-  int nitrs(0), mitrs(0), count(0);
+  int mitrs(0), count(0);
   double dp(5.0e-2), dh(15.0), p, h, T, Tmin(1000.0), Tmax(100.0); 
 
   for (int i = -50; i < 50; ++i) {
     for (int j = -50; j < 50; ++j) {
       p = eos.PC + i * dp; // Mpa
       h = eos.HC + j * dh;
+
+      auto nitrs = eos.brent_root_itrs;
       auto [prop, liquid, gas] = eos.ThermodynamicsPH(p, h);
-      nitrs += eos.get_itrs();
-      mitrs = std::max(mitrs, eos.get_itrs());
+      mitrs = std::max(mitrs, int(eos.brent_root_itrs - nitrs));
       count++;
      
       if (prop.x == 0.0 || prop.x == 1.0) {
@@ -542,7 +547,7 @@ TEST(EOS_IAPWS97_TABLE_PH)
       // std::cout << p << " " << h << " " << prop.rho << std::endl;
     }
   }
-  std::cout << "mean itrs = " << double(nitrs) / count << std::endl;
+  std::cout << "mean Brent root itrs = " << double(eos.brent_root_itrs) / count << std::endl;
   std::cout << "max itrs = " << mitrs << std::endl;
   std::cout << "temperature variation = " << Tmin << " " << Tmax << std::endl;
 }

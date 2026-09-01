@@ -62,6 +62,7 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <mutex>
@@ -130,6 +131,9 @@ class IAPWS95_RaggedSplinePH : public IAPWS95,
     double critical_cutoff_temperature_K = 637.5;
     double critical_cap_extension_K = 4.0;
     double critical_cap_tolerance_K = 1.0e-8;
+
+    // adaptive refinement
+    double anisotropic_refinement_fraction = 0.20;
   };
 
   struct ActiveInterval {
@@ -151,6 +155,15 @@ class IAPWS95_RaggedSplinePH : public IAPWS95,
     double T = 0.0;
     double weight = 1.0;
     bool is_physical = false;
+  };
+
+  struct CellError {
+    double error;
+    double error_p;
+    double error_h;
+
+    double p_mid;
+    double h_mid;
   };
 
   IAPWS95_RaggedSplinePH(Teuchos::ParameterList& plist,
@@ -182,6 +195,9 @@ class IAPWS95_RaggedSplinePH : public IAPWS95,
   double FindVaporMetastableMargin(double p, const SaturationState& sat);
 
   double StabilityFactor(double rho, double T);
+
+  // mesh refinement
+  void AnisotropicRefinement();
 
   // access
   const Mesh& GetMesh() const noexcept { return mesh_; }

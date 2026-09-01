@@ -61,6 +61,15 @@ IAPWS95_RaggedSplinePH::InitializeSharedData()
     constexpr int lookup_bins = 512;
     mesh_.x_lookup = MakeSpanLookupLeft(mesh_.x_knots, lookup_bins);
     mesh_.y_lookup = MakeSpanLookupLeft(mesh_.y_knots, lookup_bins);
+
+    /*
+    AnisotropicRefinement();
+    samples = BuildSamples();
+    BuildSplineCoefficients(samples);
+
+    mesh_.x_lookup = MakeSpanLookupLeft(mesh_.x_knots, lookup_bins);
+    mesh_.y_lookup = MakeSpanLookupLeft(mesh_.y_knots, lookup_bins);
+    */
   });
 
   return samples;
@@ -316,10 +325,10 @@ IAPWS95_RaggedSplinePH::BoundaryEnthalpies(double p) const
 struct Frho95s {
   Frho95s(double p, double rho, IAPWS95* eos) : p_(p), rho_(rho), eos_(eos) {};
   double operator()(double T) const {
-    double delta = rho_ / eos_->RHOC;
+    double delta = rho_ / IAPWS95::RHOC;
 
     double gd = eos_->ResidualPart(rho_, T)[1];
-    double po = (1.0 + delta * gd) * eos_->R * T * rho_ / 1000.0;
+    double po = (1.0 + delta * gd) * IAPWS95::R * T * rho_ / 1000.0;
     return po - p_;
   }
 
@@ -342,15 +351,17 @@ IAPWS95_RaggedSplinePH::FindLiquidMetastableMargin(double p,
   for (;;) {
     double rho1 = rho0 - options_.metastable_density_fraction_step * rho0;
 
-    itrs_ = 20;
+    int itrs = 20;
     double tol = 1e-8;
     Frho95s f(p, rho1, eos95_.get());
-    auto [Tmin, Tmax] = Utils::bracketRootSymmetric(f, T0, T0 * 0.01, &itrs_);
-    if (itrs_ < 0) return sat.hl;
+    auto [Tmin, Tmax] = Utils::bracketRootSymmetric(f, T0, T0 * 0.01, &itrs);
+    brent_bracket_itrs += itrs;
+    if (itrs < 0) return sat.hl;
 
-    itrs_ = 20;
-    double T1 = Utils::findRootBrent(f, Tmin, Tmax, tol, &itrs_);
-    AMANZI_ASSERT(itrs_ >= 0);
+    itrs = 20;
+    double T1 = Utils::findRootBrent(f, Tmin, Tmax, tol, &itrs);
+    AMANZI_ASSERT(itrs >= 0);
+    brent_root_itrs += itrs;
 
     double D1 = StabilityFactor(rho1, T1);
     if (D1 <= target || rho1 < rho_mid) {
@@ -380,15 +391,17 @@ IAPWS95_RaggedSplinePH::FindVaporMetastableMargin(double p,
   for (;;) {
     double rho1 = rho0 + 2 * options_.metastable_density_fraction_step * rho0;
 
-    itrs_ = 20;
+    int itrs = 20;
     double tol = 1e-8;
     Frho95s f(p, rho1, eos95_.get());
-    auto [Tmin, Tmax] = Utils::bracketRootSymmetric(f, T0, T0 * 0.01, &itrs_);
-    if (itrs_ < 0) return sat.hv;
+    auto [Tmin, Tmax] = Utils::bracketRootSymmetric(f, T0, T0 * 0.01, &itrs);
+    brent_bracket_itrs += itrs;
+    if (itrs < 0) return sat.hv;
 
-    itrs_ = 20;
-    double T1 = Utils::findRootBrent(f, Tmin, Tmax, tol, &itrs_);
-    AMANZI_ASSERT(itrs_ >= 0);
+    itrs = 20;
+    double T1 = Utils::findRootBrent(f, Tmin, Tmax, tol, &itrs);
+    AMANZI_ASSERT(itrs >= 0);
+    brent_root_itrs += itrs;
 
     double D1 = StabilityFactor(rho1, T1);
     if (D1 <= target || rho1 > rho_mid) {
@@ -511,6 +524,127 @@ IAPWS95_RaggedSplinePH::AdaptiveRefineCoordinateLines_()
   insert_unique(mesh_.x_lines, { 20.4, 20.8, 21.2 });
   insert_unique(mesh_.y_lines, { 505.0 });
   BuildRaggedColumns_();
+}
+
+
+/* ******************************************************************
+* Refine based on error
+****************************************************************** */
+void
+IAPWS95_RaggedSplinePH::AnisotropicRefinement()
+{
+  std::vector<CellError> cells;
+
+  auto Error = [&](double p, double h) {
+    const auto& exact  = eos95_->EntropyDerivativesPH(p, h);
+    const auto& spline = this->EntropyDerivativesPH(p, h);
+
+    int id = LowerCell(mesh_.x_lines, p);
+    int it = LowerCell(mesh_.y_lines, h);
+
+    const double h_pi = (mesh_.x_lines[id + 1] - mesh_.x_lines[id]) / PC;
+    const double h_theta = (mesh_.y_lines[id + 1] - mesh_.y_lines[it]) / HC;
+    const std::array<double, 6> derivative_scale = { 1.0,
+                                                     h_pi,
+                                                     h_theta,
+                                                     h_pi * h_pi,
+                                                     h_pi * h_theta,
+                                                     h_theta * h_theta };
+
+    double e = 0.0;
+    for (int k = 0; k < 6; ++k) {
+      double ek = std::sqrt(options_.fit_weights[k]) * derivative_scale[k] * std::fabs(spline[k] - exact[k]);
+      e = std::max(e, ek);
+    }
+    return e;
+  };
+
+  for (int i = 0; i + 1 < mesh_.x_lines.size(); ++i) {
+    double p0 = mesh_.x_lines[i];
+    double p1 = mesh_.x_lines[i + 1];
+    double pm = std::sqrt(p0 * p1);
+
+    // Quarter points in log(p).
+    double pL = std::sqrt(p0 * pm);
+    double pR = std::sqrt(pm * p1);
+
+    for (int j = 0; j + 1 < mesh_.y_lines.size(); ++j) {
+      double h0 = mesh_.y_lines[j];
+      double h1 = mesh_.y_lines[j + 1];
+      double hm = 0.5 * (h0 + h1);
+
+      const SaturationState& sat = eos95_->SaturationLineP(pm);
+      if (!IsExtended_(pm, hm, sat)) continue;
+
+      // Quarter points in h
+      double hL = 0.5 * (h0 + hm);
+      double hR = 0.5 * (hm + h1);
+
+      double error_p = Error(pm, hm);
+      double error_h = error_p;
+
+      const SaturationState& satL = eos95_->SaturationLineP(pL);
+      const SaturationState& satR = eos95_->SaturationLineP(pR);
+      if (IsExtended_(pL, hm, satL)) error_p = std::max(error_p, Error(pL, hm));
+      if (IsExtended_(pR, hm, satR)) error_p = std::max(error_p, Error(pR, hm));
+
+      if (IsExtended_(pm, hL, sat)) error_h = std::max(error_h, Error(pm, hL));
+      if (IsExtended_(pm, hR, sat)) error_h = std::max(error_h, Error(pm, hR));
+
+      cells.push_back({std::max(error_p, error_h), error_p, error_h, pm, hm});
+    }
+  }
+
+  if (cells.empty()) return;
+
+  // extract cells with the largest error
+  std::vector<double> add_p;
+  std::vector<double> add_h;
+
+  std::sort(cells.begin(),
+            cells.end(),
+            [](const CellError& a, const CellError& b) { return a.error > b.error; });
+
+  int nbase = std::min(mesh_.x_lines.size(), mesh_.y_lines.size());
+  int nrefine = std::max(1, (int)std::ceil(options_.anisotropic_refinement_fraction * nbase));
+
+  double anisotropy_factor = 1.25;
+
+  for (int n = 0; n < nrefine; ++n) {
+    const CellError& cell = cells[n];
+
+    if (cell.error_p > anisotropy_factor * cell.error_h) {
+      add_p.push_back(cell.p_mid);
+    } else if (cell.error_h > anisotropy_factor * cell.error_p) {
+      add_h.push_back(cell.h_mid);
+    } else {
+      add_p.push_back(cell.p_mid);
+      add_h.push_back(cell.h_mid);
+    }
+  }
+
+  // remove duplicates
+  std::sort(add_p.begin(), add_p.end());
+  add_p.erase(std::unique(add_p.begin(), add_p.end()), add_p.end());
+
+  std::sort(add_h.begin(), add_h.end());
+  add_h.erase(std::unique(add_h.begin(), add_h.end()), add_h.end());
+
+  // add to the mesh
+  auto insert_unique = [&](std::vector<double>& lines,
+                           const std::vector<double>& additions) {
+    for (double x : additions) {
+      const auto it = std::lower_bound(lines.begin(), lines.end(), x);
+      if (it == lines.begin() || it == lines.end()) continue;
+      if (std::abs(*it - x) > 1e-14 * std::max(1.0, std::abs(x))) lines.insert(it, x);
+    }
+  };
+
+  insert_unique(mesh_.x_lines, add_p);
+  insert_unique(mesh_.y_lines, add_h);
+
+  BuildRaggedColumns_();
+  BuildKnotVectors_();
 }
 
 

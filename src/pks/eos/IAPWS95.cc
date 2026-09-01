@@ -26,9 +26,9 @@ namespace AmanziEOS {
 * F(rho) = F3(rho) - p = 0
 ****************************************************************** */
 struct Frho95 {
-  Frho95(double p, double T, IAPWS95* eos) : p_(p), T_(T), eos_(eos), RT_(eos_->R * T_ / 1000.0) {};
+  Frho95(double p, double T, IAPWS95* eos) : p_(p), T_(T), eos_(eos), RT_(IAPWS95::R * T_ / 1000.0) {};
   double operator()(double rho) const {
-    double delta = rho / eos_->RHOC;
+    double delta = rho / IAPWS95::RHOC;
 
     double gd = eos_->ResidualPart(rho, T_)[1];
     double po = RT_ * (1.0 + delta * gd) * rho;
@@ -48,28 +48,28 @@ std::tuple<Properties, Properties, Properties>
 IAPWS95::ThermodynamicsPT(double p, double T)
 {
   // initial guess and estimates of root brackets
-  itrs_ = 20;
+  int itrs = 20;
   double tol = 1e-9;
   double rho0 = eos97_.ThermodynamicsPT(p, T).rho; 
   double rhomin = rho0 * 0.995;
   double rhomax = rho0 * 1.005;
 
   Frho95 f(p, T, this);
-  double rho = Utils::findRootBrent(f, rhomin, rhomax, tol, &itrs_);
-  brent_root_itrs += itrs_;
+  double rho = Utils::findRootBrent(f, rhomin, rhomax, tol, &itrs);
+  brent_root_itrs += itrs;
 
   // refine soltution strategy by bracketing a root starting with a twice 
   // bigger bracket than before
-  if (itrs_ < 0) {
-    itrs_ = 20;
-    auto [rhomin, rhomax] = Utils::bracketRootSymmetric(f, rho0, rho0 * 0.01, &itrs_);
-    AMANZI_ASSERT(itrs_ >= 0);
-    brent_bracket_itrs += itrs_;
+  if (itrs < 0) {
+    itrs = 20;
+    auto [rhomin, rhomax] = Utils::bracketRootSymmetric(f, rho0, rho0 * 0.01, &itrs);
+    AMANZI_ASSERT(itrs >= 0);
+    brent_bracket_itrs += itrs;
 
-    itrs_ = 20;
-    rho = Utils::findRootBrent(f, rhomin, rhomax, tol, &itrs_);
-    AMANZI_ASSERT(itrs_ > 0);
-    brent_root_itrs += itrs_;
+    itrs = 20;
+    rho = Utils::findRootBrent(f, rhomin, rhomax, tol, &itrs);
+    AMANZI_ASSERT(itrs > 0);
+    brent_root_itrs += itrs;
   }
 
   return ThermodynamicsRhoT(rho, T);
@@ -566,11 +566,12 @@ FrhoT::operator()(FrhoT::Vector& x)
   const auto& gr = eos_->IAPWS95::ResidualPart(x[0], x[1]);
 
   double delta = x[0] / eos_->RHOC;
-  double tau = eos_->TC / x[1];
+  double tau = IAPWS95::TC / x[1];
 
   Vector r(x.size());
   r[0] = x[0] * eos_->R * x[1] * (1 + delta * gr[1]) / 1000 - p_;
   r[1] = eos_->R * x[1] * (1 + tau * (g0[2] + gr[2]) + delta * gr[1]) - h_;
+std::cout << "  " << norm(r) << " " << x[0] << " " << x[1] << std::endl;
   return r;
 }
 
@@ -579,19 +580,36 @@ std::array<double, 6>
 IAPWS95::EntropyDerivativesPH(double p, double h)
 {
   auto [prop, liquid, vapor] = eos97_.ThermodynamicsPH(p, h); 
-  double rho0 = prop.rho;
-  double T0 = prop.T;
+  double rho0, T0;
+  if (prop.rgn == 4) {
+    double dhl = std::fabs(h - liquid.h);
+    double dhv = std::fabs(h - vapor.h);
+    if (dhl < dhv) {
+      rho0 = liquid.rho;
+      T0 = liquid.T;
+    } else {
+      rho0 = vapor.rho;
+      T0 = vapor.T;
+    }
+  } else {
+    rho0 = prop.rho;
+    T0 = prop.T;
+  }
 
   // refine initial quess
-  itrs_ = 10;
+  int itrs = 10;
   double tol(1e-11);
   FrhoT f(p, h, this);
   FrhoT::Vector x0(2);
   x0[0] = rho0;
   x0[1] = T0;
-  FrhoT::Vector sol = PowellHybrid(x0, f, &itrs_, tol);
-  AMANZI_ASSERT(itrs_ >= 0);
-  powell_root_itrs += itrs_;
+const SaturationState& sat = SaturationLineP(p);
+std::cout << "p/h=" << p << " " << h << "  rho/T=" << rho0 << " " << T0 
+          << "  hh: " << sat.hl << " " << sat.hv 
+          << "  rr: " << sat.rhol << " " << sat.rhov << std::endl;
+  FrhoT::Vector sol = PowellHybrid(x0, f, &itrs, tol);
+  AMANZI_ASSERT(itrs >= 0);
+  powell_root_itrs += itrs;
 
   double rho = sol[0];
   double T = sol[1];
@@ -653,16 +671,17 @@ struct Frho2 {
 std::tuple<double, double, double>
 IAPWS95::SaturationLineT(double T, double rhol0, double rhov0)
 {
+  int itrs = 10;
   double psat, Tmin, tol(1e-11);
   Tmin = std::min(T, TC);
 
-  itrs_ = 10;
   Frho2 f(T, this);
   Frho2::Vector x0(2);
   x0[0] = rhol0;
   x0[1] = rhov0;
-  Frho2::Vector sol = PowellHybrid(x0, f, &itrs_, tol);
-  powell_root_itrs += itrs_;
+  Frho2::Vector sol = PowellHybrid(x0, f, &itrs, tol);
+  AMANZI_ASSERT(itrs >= 0);
+  powell_root_itrs += itrs;
 
   if (sol[0] == sol[1]) {
     psat = PC;
@@ -713,16 +732,16 @@ IAPWS95::SaturationLineP(double p)
     rhol0 = DensityLiquid(T0);
     rhov0 = DensityVapor(T0);
 
-    itrs_ = 15;
+    int itrs = 15;
     double tol(1e-11);
     Frho3 f(p, this);
     Frho3::Vector x0(3);
     x0[0] = rhol0;
     x0[1] = rhov0;
     x0[2] = T0;
-    Frho3::Vector sol = PowellHybrid(x0, f, &itrs_, tol);
-    AMANZI_ASSERT(itrs_ >= 0);
-    powell_root_itrs += itrs_;
+    Frho3::Vector sol = PowellHybrid(x0, f, &itrs, tol);
+    AMANZI_ASSERT(itrs >= 0);
+    powell_root_itrs += itrs;
 
     sat.rhol = sol[0];
     sat.rhov = sol[1];

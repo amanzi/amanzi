@@ -76,7 +76,6 @@ IAPWS97::ThermodynamicsPT(double p, double T)
   prop.T = T;
 
   int rgn = RegionIdPT(p, T);
-  itrs_ = 0;
 
   switch (rgn) {
     case 1: {
@@ -95,19 +94,25 @@ IAPWS97::ThermodynamicsPT(double p, double T)
         double v = Region3_BackwardPT(p, T);
         double rho0 = 1.0 / v;
 
-        itrs_ = 10;
+        int itrs = 10;
         double tol = 1e-8;
         double rhomin = rho0 * 0.999;
         double rhomax = rho0 * 1.001;
         Frho97 f(p, T, this);
-        rho = Utils::findRootBrent(f, rhomin, rhomax, tol, &itrs_);
+        rho = Utils::findRootBrent(f, rhomin, rhomax, tol, &itrs);
+        brent_root_itrs += itrs;
 
         // refine soltution strategy starting with bracketing a root
-        if (itrs_ < 0) {
-          itrs_ = 10;
-          auto [rhomin, rhomax] = Utils::bracketRoot(f, rho0, rho0 * 0.002, &itrs_);
-          itrs_ = 10;
-          rho = Utils::findRootBrent(f, rhomin, rhomax, tol, &itrs_);
+        if (itrs < 0) {
+          itrs = 10;
+          auto [rhomin, rhomax] = Utils::bracketRoot(f, rho0, rho0 * 0.002, &itrs);
+          AMANZI_ASSERT(itrs >= 0);
+          brent_bracket_itrs += itrs;
+
+          itrs = 10;
+          rho = Utils::findRootBrent(f, rhomin, rhomax, tol, &itrs);
+          AMANZI_ASSERT(itrs >= 0);
+          brent_root_itrs += itrs;
         }
       }
       prop = Region3(rho, T);
@@ -146,28 +151,33 @@ IAPWS97::ThermodynamicsPH(double p, double h)
   prop.rgn = rgn;
 
   double tol(1e-8), tol2(1e-12), T, T0, Tmin, Tmax;
-  itrs_ = 0;
 
   switch (rgn) {
     case 1: {
       T0 = Region1_BackwardPH(p, h);
 
-      itrs_ = 10;
+      int itrs = 10;
       Tmin = T0 * 0.999;
       Tmax = T0 * 1.001;
       Fh f(p, h, 1, this);
-      T = Utils::findRootBrent(f, Tmin, Tmax, tol, &itrs_);
+      T = Utils::findRootBrent(f, Tmin, Tmax, tol, &itrs);
+      AMANZI_ASSERT(itrs >= 0);
+      brent_root_itrs += itrs;
+
       prop = Region1(p, T);
       break;
     }
     case 2: {
       T0 = Region2_BackwardPH(p, h);
 
-      itrs_ = 10;
+      int itrs = 10;
       Tmin = T0 * 0.999;
       Tmax = T0 * 1.001;
       Fh f(p, h, 2, this);
-      T = Utils::findRootBrent(f, Tmin, Tmax, tol, &itrs_);
+      T = Utils::findRootBrent(f, Tmin, Tmax, tol, &itrs);
+      AMANZI_ASSERT(itrs >= 0);
+      brent_root_itrs += itrs;
+
       prop = Region2(p, T);
       break;
     }
@@ -175,13 +185,15 @@ IAPWS97::ThermodynamicsPH(double p, double h)
       double v0 = Region3_BackwardPH_v(p, h);
       double T0 = Region3_BackwardPH_T(p, h);
 
-      itrs_ = 10;
+      int itrs = 10;
       FhT f(p, h, this);
       FhT::Vector x0(2);
       x0[0] = 1.0 / v0;
       x0[1] = T0;
-      FhT::Vector sol = PowellHybrid(x0, f, &itrs_, tol2);
-      if (itrs_ < 0) Exceptions::amanzi_throw("Powell solver did not converge.");
+      FhT::Vector sol = PowellHybrid(x0, f, &itrs, tol2);
+      if (itrs < 0) Exceptions::amanzi_throw("Powell solver did not converge.");
+      powell_root_itrs += itrs;
+
       prop = Region3(sol[0], sol[1]);
       break;
     }
@@ -190,11 +202,14 @@ IAPWS97::ThermodynamicsPH(double p, double h)
       break;
     }
     case 5: {
-      itrs_ = 10;
+      int itrs = 10;
       Tmin = 1500.0;
       Tmax = 2273.15;
       Fh f(p, h, 5, this);
-      T = Utils::findRootBrent(f, Tmin, Tmax, tol, &itrs_);
+      T = Utils::findRootBrent(f, Tmin, Tmax, tol, &itrs);
+      AMANZI_ASSERT(itrs >= 0);
+      brent_root_itrs += itrs;
+
       prop = Region5(p, T);
       break;
     }
@@ -1541,14 +1556,14 @@ IAPWS97::RegionIdPH(double p, double h)
 {
   int rgn(0);
 
-  double hmin = (Region1(p, 273.15)).h;
-  double hmax = (Region5(p, 2273.15)).h;
+  double hmin = Region1(p, 273.15).h;
+  double hmax = Region5(p, 2273.15).h;
 
   if (PMIN <= p && p <= PSAT_623) {
     double Tsat = SaturationLineP(p);
-    double h14 = (Region1(p, Tsat)).h;
-    double h24 = (Region2(p, Tsat)).h;
-    double h25 = (Region2(p, 1073.15)).h;
+    double h14 = Region1(p, Tsat).h;
+    double h24 = Region2(p, Tsat).h;
+    double h25 = Region2(p, 1073.15).h;
     if (hmin <= h && h <= h14) {
       rgn = 1;
     } else if (h14 < h && h < h24) {
@@ -1559,15 +1574,15 @@ IAPWS97::RegionIdPH(double p, double h)
       rgn = 5;
     }
   } else if (PSAT_623 < p && p < PC) {
-    double h13 = (Region1(p, 623.15)).h;
-    double h32 = (Region2(p, BoundaryLine23(p))).h;
-    double h25 = (Region2(p, 1073.15)).h;
+    double h13 = Region1(p, 623.15).h;
+    double h32 = Region2(p, BoundaryLine23(p)).h;
+    double h25 = Region2(p, 1073.15).h;
     if (hmin <= h && h <= h13) {
       rgn = 1;
     } else if (h13 < h && h < h32) {
       double p34;
-      double hmin3 = (Region1(PSAT_623, 623.15)).h;
-      double hmax3 = (Region2(PSAT_623, 623.15)).h;
+      double hmin3 = Region1(PSAT_623, 623.15).h;
+      double hmax3 = Region2(PSAT_623, 623.15).h;
       if (hmin3 <= h && h <= hmax3) {
         p34 = SaturationLineH(h);
       } else {
@@ -1584,9 +1599,9 @@ IAPWS97::RegionIdPH(double p, double h)
       rgn = 5;
     }
   } else if (PC <= p && p <= 100.0) {
-    double h13 = (Region1(p, 623.15)).h;
-    double h32 = (Region2(p, BoundaryLine23(p))).h;
-    double h25 = (Region2(p, 1073.15)).h;
+    double h13 = Region1(p, 623.15).h;
+    double h32 = Region2(p, BoundaryLine23(p)).h;
+    double h25 = Region2(p, 1073.15).h;
     if (hmin <= h && h <= h13) {
       rgn = 1;
     } else if (h13 < h && h < h32) {
