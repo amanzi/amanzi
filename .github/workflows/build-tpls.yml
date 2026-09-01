@@ -6,38 +6,18 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'config/Superbuild/**'
+      - 'config/SuperBuild/**'
       - 'tools/**'
 
 jobs:
+  setup:
+    uses: ./.github/workflows/image-matrix.yml
+
   build-tpl-image:
+    needs: [setup]
     strategy:
       fail-fast: false
-      matrix:
-        os: [ ubuntu-latest, ubuntu-24.04-arm ]
-        images:
-          - base_image: ubuntu
-            ver_tag: jammy
-            mpi_distro: mpich
-            mpi_ver: "4.0.3"
-            target: tpls
-          - base_image: gcc
-            ver_tag: latest
-            mpi_distro: mpich
-            mpi_ver: "4.3.1"
-            target: tpls
-            cmake_version: "4.1.2"
-          - base_image: ubuntu
-            ver_tag: jammy
-            mpi_distro: openmpi
-            mpi_ver: "4.1.8"
-            target: tpls
-          - base_image: gcc
-            ver_tag: latest
-            mpi_distro: openmpi
-            mpi_ver: "5.0.8"
-            target: tpls
-            cmake_version: "4.1.2"
+      matrix: ${{ fromJSON(needs.setup.outputs.matrix) }}
     runs-on: ${{matrix.os}}
     steps:
     - name: Check out the Amanzi repo
@@ -90,20 +70,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        images:
-          - base_image: ubuntu
-            ver_tag: jammy
-            mpi_distro: mpich
-          - base_image: gcc
-            ver_tag: latest
-            mpi_distro: mpich
-          - base_image: ubuntu
-            ver_tag: jammy
-            mpi_distro: openmpi
-          - base_image: gcc
-            ver_tag: latest
-            mpi_distro: openmpi
-    needs: build-tpl-image
+        images: ${{ fromJSON(needs.setup.outputs.images) }}
+    needs: [build-tpl-image, setup]
     if: success()
     steps:
       - name: Check out the Amanzi repo
