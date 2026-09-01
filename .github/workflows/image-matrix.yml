@@ -1,0 +1,161 @@
+# =============================================================================
+# image-matrix.yml
+#
+# SINGLE SOURCE OF TRUTH for the CI Docker image build matrix.
+#
+# This is a REUSABLE workflow (triggered via `workflow_call`). Other workflows
+# call it and consume its two JSON outputs:
+#
+#   * matrix  - a JSON object {"os":[...],"images":[...]} suitable for direct
+#               use as `strategy: matrix: ${{ fromJSON(needs.<job>.outputs.matrix) }}`.
+#               GitHub Actions expands it as the os x images cross product.
+#   * images  - a JSON ARRAY of just the 4 image objects (no os axis). Used by
+#               architecture-independent jobs (e.g. multi-arch manifest fixup).
+#
+# Each image object has EXACTLY these keys (consumers depend on the names):
+#   base_image, ver_tag, mpi_distro, mpi_ver, cmake_version, target
+# Use "" (empty string) where a field does not apply.
+#
+# The 4 image variants are defined ONCE, below, in the "Assemble matrix" step.
+# To add a 5th variant, add one more object to the `jq` array in that step.
+#
+# Variants 3 & 4 use "latest" tool versions that are resolved at RUN TIME from
+# the upstream GitHub releases APIs, each with a pinned fallback default.
+# =============================================================================
+name: Resolve image build matrix
+
+on:
+  workflow_call:
+    outputs:
+      matrix:
+        description: 'JSON object {"os":[...],"images":[...]} for use as a job strategy matrix.'
+        value: ${{ jobs.matrix.outputs.matrix }}
+      images:
+        description: "JSON array of the 4 image objects (no os axis)."
+        value: ${{ jobs.matrix.outputs.images }}
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    # Map the job-level outputs to the outputs of the id'd step below.
+    outputs:
+      matrix: ${{ steps.set.outputs.matrix }}
+      images: ${{ steps.set.outputs.images }}
+    steps:
+      - name: Resolve latest tool versions
+        id: versions
+        # gh is pre-installed on ubuntu runners and authenticates via GITHUB_TOKEN.
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+
+          # resolve <repo> <fallback-default>
+          #   Query the upstream "latest" release tag, strip a leading "v",
+          #   and fall back to the pinned default if the API errors or is empty.
+          resolve() {
+            local repo="$1" fallback="$2" tag=""
+            tag="$(gh api "repos/${repo}/releases/latest" --jq .tag_name 2>/dev/null || true)"
+            tag="${tag#v}"          # strip a leading "v" (e.g. v4.3.1 -> 4.3.1)
+            if [ -z "${tag}" ]; then
+              tag="${fallback}"
+            fi
+            echo "${tag}"
+          }
+
+          MPICH_VER="$(resolve pmodels/mpich 4.3.1)"
+          OPENMPI_VER="$(resolve open-mpi/ompi 5.0.8)"
+          CMAKE_VER="$(resolve Kitware/CMake 4.1.2)"
+
+          # Echo resolved versions so they are visible in the run log.
+          echo "Resolved latest mpich   version: ${MPICH_VER}"
+          echo "Resolved latest openmpi version: ${OPENMPI_VER}"
+          echo "Resolved latest cmake   version: ${CMAKE_VER}"
+
+          # Hand off to the assembly step via env.
+          {
+            echo "MPICH_VER=${MPICH_VER}"
+            echo "OPENMPI_VER=${OPENMPI_VER}"
+            echo "CMAKE_VER=${CMAKE_VER}"
+          } >> "$GITHUB_ENV"
+
+      - name: Assemble matrix
+        id: set
+        env:
+          # Consumed by the jq program below.
+          MPICH_VER: ${{ env.MPICH_VER }}
+          OPENMPI_VER: ${{ env.OPENMPI_VER }}
+          CMAKE_VER: ${{ env.CMAKE_VER }}
+        run: |
+          set -euo pipefail
+
+          # -------------------------------------------------------------------
+          # Define the 4 image variants HERE (single source of truth).
+          # Each object MUST carry all of: base_image, ver_tag, mpi_distro,
+          # mpi_ver, cmake_version, target. Use "" where not applicable.
+          #
+          #   1. ubuntu-bundled + mpich   (pinned, source-built)
+          #   2. ubuntu-bundled + openmpi (pinned, source-built)
+          #   3. latest gcc + mpich       (mpi_ver & cmake_version resolved)
+          #   4. latest gcc + openmpi     (mpi_ver & cmake_version resolved)
+          # -------------------------------------------------------------------
+          images="$(jq -c -n \
+            --arg mpich   "$MPICH_VER" \
+            --arg openmpi "$OPENMPI_VER" \
+            --arg cmake   "$CMAKE_VER" \
+            '[
+              {
+                base_image:    "ubuntu",
+                ver_tag:       "jammy",
+                mpi_distro:    "mpich",
+                mpi_ver:       "4.0.3",
+                cmake_version: "",
+                target:        "tpls"
+              },
+              {
+                base_image:    "ubuntu",
+                ver_tag:       "jammy",
+                mpi_distro:    "openmpi",
+                mpi_ver:       "4.1.8",
+                cmake_version: "",
+                target:        "tpls"
+              },
+              {
+                base_image:    "gcc",
+                ver_tag:       "latest",
+                mpi_distro:    "mpich",
+                mpi_ver:       $mpich,
+                cmake_version: $cmake,
+                target:        "tpls"
+              },
+              {
+                base_image:    "gcc",
+                ver_tag:       "latest",
+                mpi_distro:    "openmpi",
+                mpi_ver:       $openmpi,
+                cmake_version: $cmake,
+                target:        "tpls"
+              }
+            ]')"
+
+          # The runner OS axis for the cross-product matrix.
+          os='["ubuntu-latest","ubuntu-24.04-arm"]'
+
+          # matrix = {"os":[...],"images":[...]}
+          matrix="$(jq -c -n \
+            --argjson os "$os" \
+            --argjson images "$images" \
+            '{os: $os, images: $images}')"
+
+          echo "images JSON: ${images}"
+          echo "matrix JSON: ${matrix}"
+
+          # Emit both outputs as heredoc-delimited blocks (safe for JSON).
+          {
+            echo "images<<EOF"
+            echo "${images}"
+            echo "EOF"
+            echo "matrix<<EOF"
+            echo "${matrix}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
