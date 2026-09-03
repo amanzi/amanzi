@@ -127,7 +127,7 @@ class IAPWS95_RaggedSplineRhoT : public IAPWS95,
     double critical_cap_extension_K = 4.0;
 
     // adaptive refinement
-    double anisotropic_refinement_fraction = 0.20;
+    double anisotropic_refinement_fraction = 0.05;
   };
 
   struct SaturationPoint {

@@ -40,7 +40,6 @@ CreateIAPWS95(Teuchos::ParameterList& plist)
     opt.initial_T_intervals = 70;
     opt.max_rho_intervals = 130;
     opt.max_T_intervals = 180;
-    opt.extension_cells = 4.0;
     opt.anisotropic_refinement_fraction = 0.25;
 
     Teuchos::ParameterList plist;

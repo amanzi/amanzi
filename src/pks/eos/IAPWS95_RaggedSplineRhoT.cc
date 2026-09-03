@@ -629,8 +629,7 @@ IAPWS95_RaggedSplineRhoT::AnisotropicRefinement()
             cells.end(),
             [](const CellError& a, const CellError& b) { return a.error > b.error; });
 
-  int nbase = std::min(mesh_.x_lines.size(), mesh_.y_lines.size());
-  int nrefine = std::max(1, (int)std::ceil(options_.anisotropic_refinement_fraction * nbase));
+  int nrefine = std::max(1, int(options_.anisotropic_refinement_fraction * cells.size()));
 
   double anisotropy_factor = 1.25;
 

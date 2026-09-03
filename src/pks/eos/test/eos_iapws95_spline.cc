@@ -205,7 +205,7 @@ TEST(EOS_IAPWS95_SPLINE_RHO_T)
   opt.max_rho_intervals = 130;
   opt.max_T_intervals = 180;
   opt.extension_cells = 4.0;
-  opt.anisotropic_refinement_fraction = 0.25;
+  opt.anisotropic_refinement_fraction = 0.01;
 
   Teuchos::ParameterList plist;
   {

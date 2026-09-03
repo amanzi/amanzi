@@ -26,7 +26,7 @@ namespace AmanziEOS {
 * F(rho) = F3(rho) - p = 0
 ****************************************************************** */
 struct Frho95 {
-  Frho95(double p, double T, IAPWS95* eos) : p_(p), T_(T), eos_(eos), RT_(IAPWS95::R * T_ / 1000.0) {};
+  Frho95(double p, double T, IAPWS95* eos) : p_(p), T_(T), eos_(eos), RT_(IAPWS95::R * T / 1000.0) {};
   double operator()(double rho) const {
     double delta = rho / IAPWS95::RHOC;
 
@@ -565,13 +565,12 @@ FrhoT::operator()(FrhoT::Vector& x)
   const auto& g0 = eos_->IAPWS95::IdealGasPart(x[0], x[1]);
   const auto& gr = eos_->IAPWS95::ResidualPart(x[0], x[1]);
 
-  double delta = x[0] / eos_->RHOC;
+  double delta = x[0] / IAPWS95::RHOC;
   double tau = IAPWS95::TC / x[1];
 
   Vector r(x.size());
-  r[0] = x[0] * eos_->R * x[1] * (1 + delta * gr[1]) / 1000 - p_;
-  r[1] = eos_->R * x[1] * (1 + tau * (g0[2] + gr[2]) + delta * gr[1]) - h_;
-std::cout << "  " << norm(r) << " " << x[0] << " " << x[1] << std::endl;
+  r[0] = x[0] * IAPWS95::R * x[1] * (1 + delta * gr[1]) / 1000 - p_;
+  r[1] = IAPWS95::R * x[1] * (1 + tau * (g0[2] + gr[2]) + delta * gr[1]) - h_;
   return r;
 }
 
@@ -597,16 +596,12 @@ IAPWS95::EntropyDerivativesPH(double p, double h)
   }
 
   // refine initial quess
-  int itrs = 10;
+  int itrs = 20;
   double tol(1e-11);
   FrhoT f(p, h, this);
   FrhoT::Vector x0(2);
   x0[0] = rho0;
   x0[1] = T0;
-const SaturationState& sat = SaturationLineP(p);
-std::cout << "p/h=" << p << " " << h << "  rho/T=" << rho0 << " " << T0 
-          << "  hh: " << sat.hl << " " << sat.hv 
-          << "  rr: " << sat.rhol << " " << sat.rhov << std::endl;
   FrhoT::Vector sol = PowellHybrid(x0, f, &itrs, tol);
   AMANZI_ASSERT(itrs >= 0);
   powell_root_itrs += itrs;
@@ -620,7 +615,8 @@ std::cout << "p/h=" << p << " " << h << "  rho/T=" << rho0 << " " << T0
 std::array<double, 6>
 IAPWS95::EntropyDerivativesPHbase(double rho, double T)
 {
-  auto [prop, liquid, vapor] = ThermodynamicsRhoT(rho, T); 
+  // use the homogeneous IAPWS95 state
+  auto prop = PopulateProperties(rho, T);
   double s = prop.s;
   double cp = prop.cp;
   double alpha = prop.av;
@@ -651,8 +647,8 @@ struct Frho2 {
     const auto& gl = eos_->IAPWS95::ResidualPart(x[0], T_);
     const auto& gv = eos_->IAPWS95::ResidualPart(x[1], T_);
 
-    double delta_l = x[0] / eos_->RHOC;
-    double delta_v = x[1] / eos_->RHOC;
+    double delta_l = x[0] / IAPWS95::RHOC;
+    double delta_v = x[1] / IAPWS95::RHOC;
     double jl = delta_l * (1.0 + delta_l * gl[1]);
     double jv = delta_v * (1.0 + delta_v * gv[1]);
     double kl = delta_l * gl[1] + gl[0] + std::log(delta_l);
@@ -707,12 +703,12 @@ struct Frho3 {
     const auto& gl = eos_->IAPWS95::ResidualPart(x[0], x[2]);
     const auto& gv = eos_->IAPWS95::ResidualPart(x[1], x[2]);
 
-    double delta_l = x[0] / eos_->RHOC;
-    double delta_v = x[1] / eos_->RHOC;
+    double delta_l = x[0] / IAPWS95::RHOC;
+    double delta_v = x[1] / IAPWS95::RHOC;
 
     Vector r(x.size());
-    r[0] = x[0] * eos_->R * x[2] * (1 + delta_l * gl[1]) / 1000 - p_;
-    r[1] = x[1] * eos_->R * x[2] * (1 + delta_v * gv[1]) / 1000 - p_;
+    r[0] = x[0] * IAPWS95::R * x[2] * (1 + delta_l * gl[1]) / 1000 - p_;
+    r[1] = x[1] * IAPWS95::R * x[2] * (1 + delta_v * gv[1]) / 1000 - p_;
     r[2] = std::log(delta_l) + gl[0] + delta_l * gl[1] - (std::log(delta_v) + gv[0] + delta_v * gv[1]);
     return r;
   }

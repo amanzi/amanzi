@@ -45,10 +45,9 @@ TEST(ENTROPY_IAPWS95_SPLINE_DERIVATIVES)
   opt.initial_h_intervals = 50;
   opt.max_p_intervals = 130;
   opt.max_h_intervals = 180;
-  opt.extension_cells = 4.0;
   opt.extension_weight = 0.1;
-  Teuchos::ParameterList plist;
 
+  Teuchos::ParameterList plist;
   AmanziEOS::IAPWS95 eos95(plist);
   AmanziEOS::IAPWS95_RaggedSplinePH spline(plist, opt);
 

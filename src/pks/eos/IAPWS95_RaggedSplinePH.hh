@@ -190,6 +190,10 @@ class IAPWS95_RaggedSplinePH : public IAPWS95,
 
   // point classification
   bool IsPhysical(double p, double h, const SaturationState& sat);
+  bool IsPhysical(double p, double h) {
+    const auto& sat = eos95_->SaturationLineP(p);
+    return IsPhysical(p, h, sat);
+  }
 
   double FindLiquidMetastableMargin(double p, const SaturationState& sat);
   double FindVaporMetastableMargin(double p, const SaturationState& sat);

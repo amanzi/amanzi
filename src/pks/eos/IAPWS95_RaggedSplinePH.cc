@@ -40,8 +40,19 @@ std::array<double, 6>
 IAPWS95_RaggedSplinePH::EntropyDerivativesPH(double p, double h)
 { 
   residual_calls++;
-  auto d = Evaluate(mesh_, coefficients_, p / PC, h / HC);
-  return { d[0], d[1] / PC, d[2] / HC, d[3] / (PC * PC), d[4] / (PC * HC), d[5] / (HC * HC) };
+
+  double x = std::log(p / PC);
+  double theta = h / HC;
+  auto d = Evaluate(mesh_, coefficients_, x, theta);
+
+  double sp = d[1] / p;
+  double sh = d[2] / HC;
+
+  double spp = (d[3] - d[1]) / (p * p);
+  double sph = d[4] / (p * HC);
+  double shh = d[5] / (HC * HC);
+
+  return { d[0], sp, sh, spp, sph, shh };
 }
 
 
@@ -62,14 +73,12 @@ IAPWS95_RaggedSplinePH::InitializeSharedData()
     mesh_.x_lookup = MakeSpanLookupLeft(mesh_.x_knots, lookup_bins);
     mesh_.y_lookup = MakeSpanLookupLeft(mesh_.y_knots, lookup_bins);
 
-    /*
     AnisotropicRefinement();
     samples = BuildSamples();
     BuildSplineCoefficients(samples);
 
     mesh_.x_lookup = MakeSpanLookupLeft(mesh_.x_knots, lookup_bins);
     mesh_.y_lookup = MakeSpanLookupLeft(mesh_.y_knots, lookup_bins);
-    */
   });
 
   return samples;
@@ -126,26 +135,31 @@ IAPWS95_RaggedSplinePH::BuildSplineCoefficients(const std::vector<Sample>& sampl
   std::array<double, 16> row_value{};
 
   for (const Sample& sample : samples) {
-    double pi = sample.p / PC;
+    double x = std::log(sample.p / PC);
     double theta = sample.h / HC;
-    const BasisData Bp = EvaluateCubicBasis(mesh_.x_knots, pi);
+    const BasisData Bp = EvaluateCubicBasis(mesh_.x_knots, x);
     const BasisData Bt = EvaluateCubicBasis(mesh_.y_knots, theta);
 
+    const double p = sample.p;
     const auto& der = eos95_->EntropyDerivativesPHbase(sample.rho, sample.T);
-    const std::array<double, 6> target = { der[0], PC * der[1], HC * der[2],
-                                           PC * PC * der[3], PC * HC * der[4], HC * HC * der[5] };
+    const std::array<double, 6> target = { der[0],
+                                           p * der[1],
+                                           HC * der[2],
+                                           p * der[1] + p * p * der[3],
+                                           p * HC * der[4],
+                                           HC * HC * der[5] };
 
     int id = LowerCell(mesh_.x_lines, sample.p);
     int it = LowerCell(mesh_.y_lines, sample.h);
 
-    const double h_pi = (mesh_.x_lines[id + 1] - mesh_.x_lines[id]) / PC;
+    const double h_x = std::log(mesh_.x_lines[id + 1] / mesh_.x_lines[id]);
     const double h_theta = (mesh_.y_lines[it + 1] - mesh_.y_lines[it]) / HC;
 
     const std::array<double, 6> derivative_scale = { 1.0,
-                                                     h_pi,
+                                                     h_x,
                                                      h_theta,
-                                                     h_pi * h_pi,
-                                                     h_pi * h_theta,
+                                                     h_x * h_x,
+                                                     h_x * h_theta,
                                                      h_theta * h_theta };
 
     for (int component = 0; component < 6; ++component) {
@@ -236,9 +250,8 @@ IAPWS95_RaggedSplinePH::BuildInitialCoordinateLines_()
   mesh_.x_lines.resize(options_.initial_p_intervals + 1);
   mesh_.y_lines.resize(options_.initial_h_intervals + 1);
 
-  // Logarithmic density distribution handles the dilute-vapor scale while
-  // remaining monotone and simple. We can replace by another distribution
-  // if the liquid region requires stronger clustering.
+  // Uniform initial spacing in the spline coordinate x = log(p / PC).
+  // x_lines themselves remain stored as physical pressures.
   double log_min = std::log(options_.p_min);
   double log_max = std::log(options_.p_max);
   for (int i = 0; i < mesh_.x_lines.size(); ++i) {
@@ -323,16 +336,17 @@ IAPWS95_RaggedSplinePH::BoundaryEnthalpies(double p) const
 * Metastable-margin function searches downward from two-phase boundary
 ****************************************************************** */
 struct Frho95s {
-  Frho95s(double p, double rho, IAPWS95* eos) : p_(p), rho_(rho), eos_(eos) {};
+  Frho95s(double p, double rho, IAPWS95* eos) 
+    : p_(p), rho_(rho), Rrho_(IAPWS95::R * rho_ / 1000.0), eos_(eos) {};
   double operator()(double T) const {
     double delta = rho_ / IAPWS95::RHOC;
 
     double gd = eos_->ResidualPart(rho_, T)[1];
-    double po = (1.0 + delta * gd) * IAPWS95::R * T * rho_ / 1000.0;
+    double po = (1.0 + delta * gd) * Rrho_ * T;
     return po - p_;
   }
 
-  double p_, rho_;
+  double p_, rho_, Rrho_;
   IAPWS95* eos_;
 };
 
@@ -347,9 +361,10 @@ IAPWS95_RaggedSplinePH::FindLiquidMetastableMargin(double p,
 
   double D0 = StabilityFactor(rho0, T0);
   double target = options_.metastable_stability_fraction * D0;
+  double fraction_step = options_.metastable_density_fraction_step;
 
   for (;;) {
-    double rho1 = rho0 - options_.metastable_density_fraction_step * rho0;
+    double rho1 = rho0 * (1.0 - fraction_step);
 
     int itrs = 20;
     double tol = 1e-8;
@@ -364,13 +379,15 @@ IAPWS95_RaggedSplinePH::FindLiquidMetastableMargin(double p,
     brent_root_itrs += itrs;
 
     double D1 = StabilityFactor(rho1, T1);
-    if (D1 <= target || rho1 < rho_mid) {
+    if (D1 <= 0.0) {
+      fraction_step *= 0.5;
+    } else if (D1 <= target || rho1 < rho_mid) {
       auto prop = eos95_->PopulateProperties(rho1, T1);
       return prop.h;
+    } else {
+      T0 = T1;
+      rho0 = rho1;
     }
-
-    T0 = T1;
-    rho0 = rho1;
   }
 
   return sat.hl;
@@ -387,9 +404,10 @@ IAPWS95_RaggedSplinePH::FindVaporMetastableMargin(double p,
 
   double D0 = StabilityFactor(rho0, T0);
   double target = options_.metastable_stability_fraction * D0;
+  double fraction_step = 2 * options_.metastable_density_fraction_step;
 
   for (;;) {
-    double rho1 = rho0 + 2 * options_.metastable_density_fraction_step * rho0;
+    double rho1 = rho0 * (1.0 + fraction_step);
 
     int itrs = 20;
     double tol = 1e-8;
@@ -404,13 +422,15 @@ IAPWS95_RaggedSplinePH::FindVaporMetastableMargin(double p,
     brent_root_itrs += itrs;
 
     double D1 = StabilityFactor(rho1, T1);
-    if (D1 <= target || rho1 > rho_mid) {
+    if (D1 < 0.0) {
+      fraction_step *= 0.5;
+    } else if (D1 <= target || rho1 > rho_mid) {
       auto prop = eos95_->PopulateProperties(rho1, T1);
       return prop.h;
+    } else {
+      T0 = T1;
+      rho0 = rho1;
     }
-
-    T0 = T1;
-    rho0 = rho1;
   }
 
   return sat.hv;
@@ -459,7 +479,6 @@ IAPWS95_RaggedSplinePH::AdaptiveRefineCoordinateLines_()
 
         double curvature_l = std::fabs(b0.first - 2 * bm.first + b1.first);
         double curvature_v = std::fabs(b0.second - 2 * bm.second + b1.second);
-        // if (std::max(curvature_l, curvature_v) > 0.25 * min_h_spacing) add_p.push_back(pm);
         double hb1 = std::fabs(b1.first - b0.first);
         double hb2 = std::fabs(b1.second - b0.second);
         if (hb1 > 1e-12 && curvature_l > 0.2 * hb1 ||
@@ -522,7 +541,8 @@ IAPWS95_RaggedSplinePH::AdaptiveRefineCoordinateLines_()
   };
 
   insert_unique(mesh_.x_lines, { 20.4, 20.8, 21.2 });
-  insert_unique(mesh_.y_lines, { 505.0 });
+  insert_unique(mesh_.y_lines, { 505.0, 2092.0 });
+  // insert_unique(mesh_.y_lines, { 505.0 });
   BuildRaggedColumns_();
 }
 
@@ -535,20 +555,33 @@ IAPWS95_RaggedSplinePH::AnisotropicRefinement()
 {
   std::vector<CellError> cells;
 
+  auto Transform = [&](const std::array<double, 6>& d, double p) {
+    return std::array<double, 6>{ d[0],
+                                  p * d[1],
+                                  HC * d[2],
+                                  p * d[1] + p * p * d[3],
+                                  p * HC * d[4],
+                                  HC * HC * d[5] };
+  };
+
   auto Error = [&](double p, double h) {
-    const auto& exact  = eos95_->EntropyDerivativesPH(p, h);
-    const auto& spline = this->EntropyDerivativesPH(p, h);
+    const auto exact_ph = eos95_->EntropyDerivativesPH(p, h);
+    const auto spline_ph = this->EntropyDerivativesPH(p, h);
+
+    const auto exact = Transform(exact_ph, p);
+    const auto spline = Transform(spline_ph, p);
 
     int id = LowerCell(mesh_.x_lines, p);
     int it = LowerCell(mesh_.y_lines, h);
 
-    const double h_pi = (mesh_.x_lines[id + 1] - mesh_.x_lines[id]) / PC;
-    const double h_theta = (mesh_.y_lines[id + 1] - mesh_.y_lines[it]) / HC;
+    const double h_x = std::log(mesh_.x_lines[id + 1] / mesh_.x_lines[id]);
+    const double h_theta = (mesh_.y_lines[it + 1] - mesh_.y_lines[it]) / HC;
+
     const std::array<double, 6> derivative_scale = { 1.0,
-                                                     h_pi,
+                                                     h_x,
                                                      h_theta,
-                                                     h_pi * h_pi,
-                                                     h_pi * h_theta,
+                                                     h_x * h_x,
+                                                     h_x * h_theta,
                                                      h_theta * h_theta };
 
     double e = 0.0;
@@ -556,6 +589,7 @@ IAPWS95_RaggedSplinePH::AnisotropicRefinement()
       double ek = std::sqrt(options_.fit_weights[k]) * derivative_scale[k] * std::fabs(spline[k] - exact[k]);
       e = std::max(e, ek);
     }
+
     return e;
   };
 
@@ -574,7 +608,7 @@ IAPWS95_RaggedSplinePH::AnisotropicRefinement()
       double hm = 0.5 * (h0 + h1);
 
       const SaturationState& sat = eos95_->SaturationLineP(pm);
-      if (!IsExtended_(pm, hm, sat)) continue;
+      if (!IsPhysical(pm, hm, sat)) continue;
 
       // Quarter points in h
       double hL = 0.5 * (h0 + hm);
@@ -585,11 +619,11 @@ IAPWS95_RaggedSplinePH::AnisotropicRefinement()
 
       const SaturationState& satL = eos95_->SaturationLineP(pL);
       const SaturationState& satR = eos95_->SaturationLineP(pR);
-      if (IsExtended_(pL, hm, satL)) error_p = std::max(error_p, Error(pL, hm));
-      if (IsExtended_(pR, hm, satR)) error_p = std::max(error_p, Error(pR, hm));
+      if (IsPhysical(pL, hm, satL)) error_p = std::max(error_p, Error(pL, hm));
+      if (IsPhysical(pR, hm, satR)) error_p = std::max(error_p, Error(pR, hm));
 
-      if (IsExtended_(pm, hL, sat)) error_h = std::max(error_h, Error(pm, hL));
-      if (IsExtended_(pm, hR, sat)) error_h = std::max(error_h, Error(pm, hR));
+      if (IsPhysical(pm, hL, sat)) error_h = std::max(error_h, Error(pm, hL));
+      if (IsPhysical(pm, hR, sat)) error_h = std::max(error_h, Error(pm, hR));
 
       cells.push_back({std::max(error_p, error_h), error_p, error_h, pm, hm});
     }
@@ -605,8 +639,7 @@ IAPWS95_RaggedSplinePH::AnisotropicRefinement()
             cells.end(),
             [](const CellError& a, const CellError& b) { return a.error > b.error; });
 
-  int nbase = std::min(mesh_.x_lines.size(), mesh_.y_lines.size());
-  int nrefine = std::max(1, (int)std::ceil(options_.anisotropic_refinement_fraction * nbase));
+  int nrefine = std::max(1, (int)std::ceil(options_.anisotropic_refinement_fraction * cells.size()));
 
   double anisotropy_factor = 1.25;
 
@@ -654,17 +687,17 @@ IAPWS95_RaggedSplinePH::AnisotropicRefinement()
 void
 IAPWS95_RaggedSplinePH::BuildKnotVectors_()
 {
-  std::vector<double> pi_lines(mesh_.x_lines.size());
+  std::vector<double> x_lines(mesh_.x_lines.size());
   std::transform(mesh_.x_lines.begin(), mesh_.x_lines.end(),
-                 pi_lines.begin(),
-                 [&](double p) { return p / PC; });
+                 x_lines.begin(),
+                 [&](double p) { return std::log(p / PC); });
 
   std::vector<double> theta_lines(mesh_.y_lines.size());
   std::transform(mesh_.y_lines.begin(), mesh_.y_lines.end(),
                  theta_lines.begin(),
                  [&](double h) { return h / HC; });
 
-  mesh_.x_knots = MakeClampedCubicKnots(pi_lines);
+  mesh_.x_knots = MakeClampedCubicKnots(x_lines);
   mesh_.y_knots = MakeClampedCubicKnots(theta_lines);
 
   static constexpr int degree = 3;
@@ -695,7 +728,7 @@ IAPWS95_RaggedSplinePH::BuildSamples()
 
       for (unsigned ir = 0; ir < q; ++ir) {
         double sr = (ir + 0.5) / q;
-        double p = (1.0 - sr) * p0 + sr * p1;
+        double p = p0 * std::pow(p1 / p0, sr);
         for (unsigned jt = 0; jt < q; ++jt) {
           double st = (jt + 0.5) / q;
           double h = (1.0 - st) * h0 + st * h1;

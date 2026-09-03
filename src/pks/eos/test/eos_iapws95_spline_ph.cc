@@ -18,6 +18,15 @@
 using namespace Amanzi;
 using namespace Amanzi::AmanziEOS;
 
+double Dfun(const std::array<double, 6>& der, double R) {
+  double sp = der[1];
+  double spp = der[3];
+  double sph = der[4];
+  double shh = der[5];
+  return sp * sp / (IAPWS95::R * (spp - sph * sph / shh));
+}
+
+
 /* ******************************************************************
 * 
 ****************************************************************** */
@@ -37,6 +46,7 @@ void WriteEntropyPlotData(IAPWS95_RaggedSplinePH& spline,
   // Header
   out << "# p h spline_s exact_s error\n";
 
+  int count(0);
   std::array<double, 6> err_l2{}, err_abs{}, err_rel{}, err{};
   for (int j = 0; j < np; ++j) {
     double p = p_min + (p_max - p_min) * (double)j / (np - 1);
@@ -49,6 +59,16 @@ void WriteEntropyPlotData(IAPWS95_RaggedSplinePH& spline,
         const auto& spline_value = spline.EntropyDerivativesPH(p, h);
         const auto& exact_value = eos95.EntropyDerivativesPH(p, h);
 
+        double Dex = Dfun(exact_value, IAPWS95::R);
+        double Dap = Dfun(spline_value, IAPWS95::R);
+        // CHECK(Dap > 0.0);
+        if (Dap < 0.0 || Dex < 0.0) {
+          // std::cout << "p=" << p << "  h=" << h << "  D=" << Dex << " " << Dap << std::endl;
+          // for (int k = 0; k < 6; ++k) std::cout << k << " " << spline_value[k] << " " << exact_value[k] << std::endl;
+          count++;
+        }
+        out << p << " " << h << " " << Dap << " " << Dex << " " << Dap - Dex << "\n";
+
         for (int k = 0; k < 6; ++k) {
           err[k] = spline_value[k] - exact_value[k];
           err_l2[k] += err[k] * err[k];
@@ -56,13 +76,12 @@ void WriteEntropyPlotData(IAPWS95_RaggedSplinePH& spline,
           err_rel[k] = std::max(err_rel[k], std::fabs(err[k] / std::max(1e-14, std::fabs(exact_value[k]))));
         }
 
-        out << p << " " << h << " " << spline_value[1] << " " << exact_value[1] << " " << err[1] << "\n";
+        // out << p << " " << h << " " << spline_value[3] << " " << exact_value[3] << " " << err[3] << "\n";
       }
       else {
         // Point is outside the ragged physical domain.
         // NaN preserves the rectangular plotting structure.
         const double nan = std::numeric_limits<double>::quiet_NaN();
-
         out << p << " " << h << " " << nan << " " << nan << " " << nan << "\n";
       }
     }
@@ -71,6 +90,7 @@ void WriteEntropyPlotData(IAPWS95_RaggedSplinePH& spline,
   }
   std::cout << "Wrote plotting data to " << filename << '\n';
   std::cout << "Spline resolutions: " << spline.GetMesh().x_lines.size() << " " << spline.GetMesh().y_lines.size() << std::endl;
+  std::cout << "Number of negative D: " << count << std::endl;
   std::cout << "Error:  mean       absolute     relative\n";
   for (int k = 0; k < 6; ++k) {
     err_l2[k] = std::sqrt(err_l2[k] / np / nh);
@@ -382,7 +402,7 @@ void WriteSamplesData(const std::vector<IAPWS95_RaggedSplinePH::Sample>& samples
 ****************************************************************** */
 TEST(EOS_IAPWS95_SPLINE_P_H)
 {
-  IAPWS95_RaggedSplinePH::Options opt;
+  IAPWS95_RaggedSplinePH::Options opt{};
   opt.p_min = 0.2;
   opt.p_max = 50.0;
   opt.h_min = 500.0;
@@ -391,14 +411,38 @@ TEST(EOS_IAPWS95_SPLINE_P_H)
   opt.initial_h_intervals = 50;
   opt.max_p_intervals = 130;
   opt.max_h_intervals = 180;
-  opt.extension_cells = 4.0;
-  opt.extension_weight = 0.1;
+  opt.metastable_stability_fraction = 0.5;
 
   Teuchos::ParameterList plist;
   IAPWS95_RaggedSplinePH spline(plist, opt);
   IAPWS95 eos95(plist);
 
   const auto& samples = spline.InitializeSharedData();
+
+  std::ofstream out("field.dat");
+  out << std::setprecision(17);
+
+  int np(301), nh(301);
+  const double nan = std::numeric_limits<double>::quiet_NaN();
+
+  for (int j = 0; j < np; ++j) {
+    for (int i = 0; i < nh; ++i) {
+      double p = opt.p_min + (opt.p_max - opt.p_min) * (double)j / (np - 1);
+      double h = opt.h_min + (opt.h_max - opt.h_min) * (double)i / (nh - 1);
+
+      if (spline.IsPhysical(p, h)) {
+        const auto& [prop0, liquid0, vapor0] = eos95.ThermodynamicsPH(p, h);
+        const auto& [prop1, liquid1, vapor1] = spline.ThermodynamicsPH(p, h);
+        out << p << " " << h << " " << prop0.cp << " " << prop1.cp << "\n";
+      }
+      else {
+        out << p << " " << h << " " << nan << " " << nan << "\n";
+      }
+    }
+  }
+  out.close();
+
+
 
   const auto& mesh = spline.GetMesh();
   WriteEntropyPlotData(spline,
