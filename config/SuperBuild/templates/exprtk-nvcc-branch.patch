@@ -1,0 +1,44 @@
+Fix exprtk for nvcc.
+
+unary_vector_node pulls in expression_node<T>::branch via a using-declaration.
+That method is declared 'branch(const std::size_t& index = 0)'.  nvcc does not
+apply the default argument to a name introduced by a using-declaration, so every
+bare branch() call is rejected with 'too few arguments in function call'.  Host
+compilers accept it, which is why only the CUDA build hits this.
+
+Spelling the argument explicitly is equivalent for all compilers.
+
+--- a/exprtk.hpp	2026-09-06 15:54:51.436000651 -0700
++++ b/exprtk.hpp	2026-09-06 15:54:51.440000607 -0700
+@@ -11778,15 +11778,15 @@
+          {
+             bool vec0_is_ivec = false;
+ 
+-            if (is_vector_node(branch()))
++            if (is_vector_node(branch(0)))
+             {
+-               vec0_node_ptr_ = static_cast<vector_node_ptr>(branch());
++               vec0_node_ptr_ = static_cast<vector_node_ptr>(branch(0));
+             }
+-            else if (is_ivector_node(branch()))
++            else if (is_ivector_node(branch(0)))
+             {
+                vector_interface<T>* vi = reinterpret_cast<vector_interface<T>*>(0);
+ 
+-               if (0 != (vi = dynamic_cast<vector_interface<T>*>(branch())))
++               if (0 != (vi = dynamic_cast<vector_interface<T>*>(branch(0))))
+                {
+                   vec0_node_ptr_ = vi->vec();
+                   vec0_is_ivec   = true;
+@@ -11813,9 +11813,9 @@
+ 
+          inline T value() const exprtk_override
+          {
+-            assert(branch());
++            assert(branch(0));
+ 
+-            branch()->value();
++            branch(0)->value();
+ 
+             if (vec0_node_ptr_)
+             {

@@ -15,6 +15,24 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   PREFIX EXPRTK
   VERSION ${EXPRTK_VERSION_MAJOR} ${EXPRTK_VERSION_MINOR} ${EXPRTK_VERSION_PATCH})
   
+# --- Define the patch command
+# nvcc rejects exprtk's bare branch() calls (default argument on a name brought in
+# by a using-declaration).  See templates/exprtk-nvcc-branch.patch.
+set(EXPRTK_patch_file exprtk-nvcc-branch.patch)
+set(EXPRTK_sh_patch ${EXPRTK_prefix_dir}/exprtk-patch-step.sh)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/exprtk-patch-step.sh.in
+               ${EXPRTK_sh_patch}
+               @ONLY)
+
+# configure the CMake patch step
+set(EXPRTK_cmake_patch ${EXPRTK_prefix_dir}/exprtk-patch-step.cmake)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/exprtk-patch-step.cmake.in
+               ${EXPRTK_cmake_patch}
+               @ONLY)
+
+# set the patch command
+set(EXPRTK_PATCH_COMMAND ${CMAKE_COMMAND} -P ${EXPRTK_cmake_patch})
+
 # --- Define the install command
 # Build the install script
 set(EXPRTK_sh_install ${EXPRTK_prefix_dir}/exprtk-install-step.sh)
@@ -38,8 +56,8 @@ ExternalProject_Add(${EXPRTK_BUILD_TARGET}
                     DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}
                     URL          ${EXPRTK_URL}                 # URL may be a web site OR a local file
                     URL_MD5      ${EXPRTK_MD5_SUM}             # md5sum of the archive file
-                    # -- Patch 
-                    # PATCH_COMMAND ${EXPRTK_PATCH_COMMAND}
+                    # -- Patch
+                    PATCH_COMMAND ${EXPRTK_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR    ${EXPRTK_source_dir}         # Source directory
                     CONFIGURE_COMMAND ""

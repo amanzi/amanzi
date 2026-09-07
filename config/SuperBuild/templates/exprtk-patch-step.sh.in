@@ -1,0 +1,25 @@
+#!/bin/sh
+
+# CMake generates this file
+# Replaces each @VAR@ with value of ${VAR}
+
+# Source and build locations
+exprtk_src_dir=@EXPRTK_source_dir@
+
+patch_file=@SuperBuild_SOURCE_DIR@/templates/@EXPRTK_patch_file@
+
+if [ ! -e "${patch_file}" ] ; then
+  echo "Patch file ${patch_file} does not exist"
+  exit 10
+fi
+
+cd ${exprtk_src_dir}
+
+# idempotent: ExternalProject may re-run the patch step without re-extracting
+if patch -p1 --dry-run --reverse --force < ${patch_file} > /dev/null 2>&1 ; then
+  echo "exprtk patch already applied, skipping"
+  exit 0
+fi
+
+patch -p1 < ${patch_file}
+exit $?

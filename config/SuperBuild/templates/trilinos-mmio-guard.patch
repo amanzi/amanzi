@@ -1,0 +1,25 @@
+Give Tpetra's Matrix Market I/O header its own include guard.
+
+hypre's _hypre_utilities.h uses the same guard macro, MM_IO_H, but declares its
+functions with a hypre_ prefix (hypre_mm_read_banner, hypre_mm_is_valid, ...).
+Any translation unit that includes a hypre header before MatrixMarket_Tpetra.hpp
+therefore has MM_IO_H already defined, so mmio_Tpetra.h is skipped entirely and
+Tpetra's unprefixed mm_* declarations never appear.  MatrixMarket_TpetraNew.hpp
+then fails with 'identifier "mm_read_banner" is undefined'.
+
+The two headers define MM_typecode and the MM_MAX_* macros identically, so both
+being processed is harmless.
+
+--- a/packages/tpetra/core/inout/mmio_Tpetra.h	2026-09-06 16:06:25.664516148 -0700
++++ b/packages/tpetra/core/inout/mmio_Tpetra.h	2026-09-06 16:06:25.668516105 -0700
+@@ -15,8 +15,8 @@
+ *
+ */
+ 
+-#ifndef MM_IO_H
+-#define MM_IO_H
++#ifndef MM_IO_TPETRA_H
++#define MM_IO_TPETRA_H
+ 
+ #define MM_MAX_LINE_LENGTH 1025
+ #define MatrixMarketBanner "%%MatrixMarket"

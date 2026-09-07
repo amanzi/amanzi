@@ -189,6 +189,7 @@
 #                - update Trilinos to 15.1.0
 #                - update Silo to 4.11.1
 #                - remove Boost and Trilinos dependency on Boost
+#		 - update Trilinos to 16.1.0
 
 include(CMakeParseArguments)
 
@@ -431,15 +432,15 @@ set(MOAB_MD5_SUM        935d18f8edf7dc3df625d9426a2d59e1)
 # TPL: HYPRE
 #
 set(HYPRE_VERSION_MAJOR  2)
-set(HYPRE_VERSION_MINOR  29)
+set(HYPRE_VERSION_MINOR  33)
 set(HYPRE_VERSION_PATCH  0)
 set(HYPRE_VERSION  ${HYPRE_VERSION_MAJOR}.${HYPRE_VERSION_MINOR}.${HYPRE_VERSION_PATCH})
 set(HYPRE_URL_STRING     "https://github.com/hypre-space/hypre/archive/")
 set(HYPRE_ARCHIVE_FILE   v${HYPRE_VERSION}.tar.gz)
 set(HYPRE_SAVEAS_FILE    hypre-${HYPRE_VERSION}.tar.gz)
-set(HYPRE_MD5_SUM        0b3abc221b216db97175709aa0bf94d7)
+set(HYPRE_MD5_SUM        6fe2c8ef054836d88bb8fad9794c4db5)
 set(HYPRE_GIT_REPOSITORY "https://github.com/hypre-space/hypre")
-set(HYPRE_GIT_TAG        "8f6bdc6ab8c9d01961fa0b3024a1969c6cb7877f")
+set(HYPRE_GIT_TAG        "d3243638e7dee5208cb4ea643610fa9bdb74123b")
 
 #
 # TPL: ParMetis
@@ -505,14 +506,14 @@ set(PETSc_MD5_SUM        1f17155e2077cb027f0838a27d02ef3c)
 #
 # TPL: Trilinos
 #
-set(Trilinos_VERSION_MAJOR 15)
+set(Trilinos_VERSION_MAJOR 16)
 set(Trilinos_VERSION_MINOR 1)
 set(Trilinos_VERSION_PATCH 0)
 set(Trilinos_VERSION ${Trilinos_VERSION_MAJOR}-${Trilinos_VERSION_MINOR}-${Trilinos_VERSION_PATCH})
 set(Trilinos_URL_STRING     "https://github.com/trilinos/Trilinos/archive")
 set(Trilinos_ARCHIVE_FILE   trilinos-release-${Trilinos_VERSION}.tar.gz)
 set(Trilinos_SAVEAS_FILE    ${Trilinos_ARCHIVE_FILE})
-set(Trilinos_MD5_SUM       79237697af4fc42eaaf70f23104a8e12)
+set(Trilinos_MD5_SUM       d58ba4bcbcde701ee3a3e2e7cc27b6ca)
 #set(Trilinos_GIT_REPOSITORY "https://github.com/trilinos/Trilinos")
 
 

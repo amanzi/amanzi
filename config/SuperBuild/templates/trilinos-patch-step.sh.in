@@ -21,7 +21,14 @@ for i in ${patch_files}; do
   exit 10
  fi
 
- (cd ${trilinos_src_dir}; patch -p1 < ${patch_file})
+ # idempotent: ExternalProject may re-run the patch step without re-extracting
+ # the source, and a second forward apply would fail and break the build.
+ if (cd ${trilinos_src_dir}; patch -p1 --dry-run --reverse --force < ${patch_file}) > /dev/null 2>&1 ; then
+  echo "  already applied, skipping"
+  continue
+ fi
+
+ (cd ${trilinos_src_dir}; patch -p1 < ${patch_file}) || exit 11
 
 done
 
