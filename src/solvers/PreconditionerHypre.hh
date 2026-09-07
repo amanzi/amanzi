@@ -132,21 +132,11 @@ class PreconditionerHypre : public Preconditioner {
   using RowMatrix_type = Tpetra::RowMatrix<double_type, LO, GO>;
 
  public:
-  ~PreconditionerHypre()
-  {
-    HYPRE_IJVectorDestroy(XHypre_);
-    HYPRE_IJVectorDestroy(YHypre_);
-    HYPRE_IJMatrixDestroy(HypreA_);
-    if (PrecondType == Boomer) {
-      HYPRE_BoomerAMGDestroy(HyprePrecond_);
-    } else if (PrecondType == ILU) {
-      HYPRE_ILUDestroy(HyprePrecond_);
-    }
-  }
+  ~PreconditionerHypre() { destroyHypreObjects_(); }
 
   static void init()
   {
-    nvtxRangePush("HP: init");
+    //nvtxRangePush("HP: init");
     if (!inited) {
       HYPRE_Init();
       HYPRE_SetMemoryLocation(HYPRE_MEMORY_DEVICE);
@@ -166,14 +156,17 @@ class PreconditionerHypre : public Preconditioner {
       //}
       inited = true;
     }
-    nvtxRangePop();
+    //nvtxRangePop();
   }
 
   PreconditionerHypre()
     : Preconditioner(),
       num_blocks_(0),
       block_indices_(Teuchos::null),
-      HyprePrecond_(),
+      HyprePrecond_(nullptr),
+      HypreA_(nullptr),
+      XHypre_(nullptr),
+      YHypre_(nullptr),
       returned_code_(0)
   {
     init();
@@ -192,6 +185,42 @@ class PreconditionerHypre : public Preconditioner {
 
 
  private:
+  // safe to call repeatedly
+  void destroyHypreObjects_()
+  {
+    destroyMatrix_();
+    if (XHypre_) {
+      HYPRE_IJVectorDestroy(XHypre_);
+      XHypre_ = nullptr;
+      ParX_ = nullptr;
+      XVec_ = Teuchos::null;
+    }
+    if (YHypre_) {
+      HYPRE_IJVectorDestroy(YHypre_);
+      YHypre_ = nullptr;
+      ParY_ = nullptr;
+      YVec_ = Teuchos::null;
+    }
+    if (HyprePrecond_) {
+      if (PrecondType == Boomer) {
+        HYPRE_BoomerAMGDestroy(HyprePrecond_);
+      } else if (PrecondType == ILU) {
+        HYPRE_ILUDestroy(HyprePrecond_);
+      }
+      HyprePrecond_ = nullptr;
+    }
+  }
+
+  // rebuilt on every computeInverse(); avoid leaking the old one
+  void destroyMatrix_()
+  {
+    if (HypreA_) {
+      HYPRE_IJMatrixDestroy(HypreA_);
+      HypreA_ = nullptr;
+      ParMatrix_ = nullptr;
+    }
+  }
+
   void Init_() {};
   void InitBoomer_();
   void InitILU_();

@@ -88,6 +88,12 @@ SUITE(SOLVERS)
         .set<int>("relaxation order", 0) /* must be false */
         .set<int>("relaxation type", 6);
     }
+    if(name == "ifpack2: FAST_ILU"){
+      //tmp.set<int>("triangular solve iterations", 4) //relaxation) // default 1
+      //  .set<int>("sweeps", 7); //interpolation) // default 5
+    }
+    if(name == "ifpack2: FROCSH"){
+    }
 #else
     if (name == "hypre: boomer amg") {
       tmp.set<int>("verbosity", 1)
@@ -106,7 +112,7 @@ SUITE(SOLVERS)
   };
 
   inline Teuchos::RCP<
-    IterativeMethodPCG<Matrix_type, Amanzi::AmanziSolvers::Preconditioner, Vector_type, Map_type>>
+    IterativeMethodGMRES<Matrix_type, Amanzi::AmanziSolvers::Preconditioner, Vector_type, Map_type>>
   get_solver(const std::string& name, const Teuchos::RCP<Matrix_type>& m)
   {
     auto pc = preconditioner(name, m);
@@ -114,7 +120,7 @@ SUITE(SOLVERS)
     Teuchos::ParameterList plist;
     plist.set("error tolerance", 1.e-12);
     plist.set("maximum number of iterations", 200);
-    auto inv = Teuchos::rcp(new IterativeMethodPCG<Matrix_type,
+    auto inv = Teuchos::rcp(new IterativeMethodGMRES<Matrix_type,
                                                    Amanzi::AmanziSolvers::Preconditioner,
                                                    Vector_type,
                                                    Map_type>());
@@ -145,9 +151,10 @@ SUITE(SOLVERS)
     static std::vector<std::string> prec_name = {
       "identity", "diagonal", "hypre: boomer amg",
       //"ifpack2: SCHWARZ",
-      //"ifpack2: ILUT",
-      //"ifpack2: RILUK",
-      //"ifpack2: FAST_ILU"
+      "ifpack2: ILUT",
+      "ifpack2: RILUK",
+      "ifpack2: FAST_ILU",
+      "ifpack2: FROCSH"
     };
 #else
     static std::vector<std::string> prec_name = { "identity",      "diagonal",

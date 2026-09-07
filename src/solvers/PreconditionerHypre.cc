@@ -28,7 +28,7 @@ bool PreconditionerHypre::inited = false;
 void
 PreconditionerHypre::copy_matrix_()
 {
-  nvtxRangePush("HP: copy");
+  //nvtxRangePush("HP: copy");
 
   Teuchos::RCP<const Matrix_type> Matrix = Teuchos::rcp_dynamic_cast<const Matrix_type>(h_row);
   if (Matrix.is_null())
@@ -60,7 +60,7 @@ PreconditionerHypre::copy_matrix_()
   HYPRE_IJMatrixSetValues(HypreA_, nrows, colsperrow.data(), rid.data(), nci.data(), values.data());
   HYPRE_IJMatrixAssemble(HypreA_);
   HYPRE_IJMatrixGetObject(HypreA_, (void**)&ParMatrix_);
-  nvtxRangePop();
+  //nvtxRangePop();
 }
 
 /* ******************************************************************
@@ -69,7 +69,7 @@ PreconditionerHypre::copy_matrix_()
 int
 PreconditionerHypre::applyInverse(const Vector_type& v, Vector_type& hv) const
 {
-  nvtxRangePush("HP: apply");
+  //nvtxRangePush("HP: apply");
   assert(v.getNumVectors() == 1);
   assert(hv.getNumVectors() == 1);
   assert(&v != &hv);
@@ -96,7 +96,7 @@ PreconditionerHypre::applyInverse(const Vector_type& v, Vector_type& hv) const
 
   XLocal_->data = XTemp;
   YLocal_->data = YTemp;
-  nvtxRangePop();
+  //nvtxRangePop();
   return 0;
 }
 
@@ -116,7 +116,7 @@ PreconditionerHypre::set_inverse_parameters(Teuchos::ParameterList& list)
 void
 PreconditionerHypre::InitBoomer_()
 {
-  nvtxRangePush("HP: initBoomer");
+  //nvtxRangePush("HP: initBoomer");
 #ifdef HAVE_IFPACK2_HYPRE
 
   // check for old input spec and error
@@ -268,7 +268,7 @@ PreconditionerHypre::InitBoomer_()
                       "of Amanzi.  To use Hypre, please reconfigure.");
   Exceptions::amanzi_throw(msg);
 #endif
-  nvtxRangePop();
+  //nvtxRangePop();
 }
 
 
@@ -287,6 +287,20 @@ PreconditionerHypre::InitILU_()
     HYPRE_ILUSetLevelOfFill(HyprePrecond_, plist_.get<int>("ilu(k) fill level"));
   HYPRE_ILUSetTol(HyprePrecond_, 0.0);
 
+  // hypre default is 20 (standalone solver); 1 for preconditioner use
+  HYPRE_ILUSetMaxIter(HyprePrecond_, plist_.get<int>("max iterations", 1));
+
+  // type 0 (the default) is block-Jacobi ILU(k), the variant with device support.
+  HYPRE_ILUSetType(HyprePrecond_, plist_.get<int>("ilu type", 0));
+
+  // 1 = direct triangular solve (default), 0 = iterative Jacobi sweeps (better on GPU)
+  if (plist_.isParameter("triangular solve type"))
+    HYPRE_ILUSetTriSolve(HyprePrecond_, plist_.get<int>("triangular solve type"));
+  if (plist_.isParameter("lower jacobi iterations"))
+    HYPRE_ILUSetLowerJacobiIters(HyprePrecond_, plist_.get<int>("lower jacobi iterations"));
+  if (plist_.isParameter("upper jacobi iterations"))
+    HYPRE_ILUSetUpperJacobiIters(HyprePrecond_, plist_.get<int>("upper jacobi iterations"));
+
 #else
   Errors::Message msg("Hypre (ILU) is not available in this installation of Amanzi.  To use "
                       "Hypre, please reconfigure.");
@@ -297,8 +311,11 @@ PreconditionerHypre::InitILU_()
 void
 PreconditionerHypre::initializeInverse()
 {
-  nvtxRangePush("HP: initInverse");
+  //nvtxRangePush("HP: initInverse");
   int count = 0;
+
+  // may be called again on a live object
+  destroyHypreObjects_();
 
   // must be row matrix
   h_row = h_;
@@ -348,6 +365,7 @@ PreconditionerHypre::initializeInverse()
     msg << "PreconditionerHypre: unknown method name \"" << method_name << "\"";
     Exceptions::amanzi_throw(msg);
   }
+  //nvtxRangePop();
 }
 
 Teuchos::RCP<const Map_type>
@@ -369,7 +387,7 @@ PreconditionerHypre::make_contiguous_(Teuchos::RCP<const RowMatrix_type>& Matrix
   } else {
     assert(false);
   }
-  nvtxRangePop();
+  //nvtxRangePop();
   return ColumnMap;
 }
 
@@ -379,13 +397,15 @@ PreconditionerHypre::make_contiguous_(Teuchos::RCP<const RowMatrix_type>& Matrix
 void
 PreconditionerHypre::computeInverse()
 {
-  nvtxRangePush("HP: compute");
+  //nvtxRangePush("HP: compute");
 #ifdef HAVE_IFPACK2_HYPRE
   MPI_Comm comm =
     *(Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int>>(h_row->getRowMap()->getComm())
         ->getRawMpiComm());
   GO ilower = GloballyContiguousRowMap_->getMinGlobalIndex();
   GO iupper = GloballyContiguousRowMap_->getMaxGlobalIndex();
+  // IJ matrix cannot be refilled in place on device; rebuild it each call
+  destroyMatrix_();
   HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, &HypreA_);
   HYPRE_IJMatrixSetObjectType(HypreA_, HYPRE_PARCSR);
   HYPRE_IJMatrixInitialize(HypreA_);
@@ -397,7 +417,7 @@ PreconditionerHypre::computeInverse()
     HYPRE_ILUSetup(HyprePrecond_, ParMatrix_, ParX_, ParY_);
   }
 #endif
-  nvtxRangePop();
+  //nvtxRangePop();
 }
 
 } // namespace AmanziSolvers

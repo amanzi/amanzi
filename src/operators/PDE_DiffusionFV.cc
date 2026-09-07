@@ -435,23 +435,11 @@ PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
           Aface(1, 1) = -Aface(0, 1);
 
         } else if (mcells == 1) {
+          // Dirichlet face: derivative from the interior cell, no upwinding (as master)
           Aface(0, 0) = 0.0;
           if (bc_model(f) == OPERATOR_BC_DIRICHLET) {
             double dpres = pres[0] - bc_value(f);
-
-            if (little_k_type == OPERATOR_LITTLE_K_UPWIND) {
-              double flux0to1 = trans_face(f,0) * dpres;
-              if (flux0to1 > OPERATOR_UPWIND_RELATIVE_TOLERANCE) {
-                Aface(0, 0) = trans_face(f, 0) * dpres * dkdp_cells[0];
-              } else if (flux0to1 < -OPERATOR_UPWIND_RELATIVE_TOLERANCE) {
-                Aface(0, 0) = 0.;
-              } else {
-                Aface(0, 0) = 0.5 * trans_face(f, 0) * dpres * dkdp_cells[0];
-              }
-            } else if (little_k_type == OPERATOR_UPWIND_ARITHMETIC_AVERAGE) {
-              // arithmetic average takes full value from interior cell
-              Aface(0, 0) = trans_face(f, 0) * dpres * dkdp_cells[0];
-            }
+            Aface(0, 0) = trans_face(f, 0) * dpres * dkdp_cells[0];
           }
         }
       });

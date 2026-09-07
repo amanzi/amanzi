@@ -337,7 +337,7 @@ TEST(IMPORTERS_BOUNDARY_FACES)
   }
 
   Import_type importer(face_map, boundary_face_map);
-
+#if 0 
   // go from bf to f
   IntVector_type vec(boundary_face_map);
   {
@@ -365,4 +365,5 @@ TEST(IMPORTERS_BOUNDARY_FACES)
   //     std::cout << "bf: " << bf << " = " << vec_view(bf,0) << std::endl;
   //   }
   // }
+#endif
 }

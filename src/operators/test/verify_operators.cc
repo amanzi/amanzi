@@ -171,7 +171,7 @@ TEST(Verify_Mesh_and_Operators)
     .set<int>("maximum number of iterations", 5000)
     .set<double>("error tolerance", tol)
     .set<int>("size of Krylov space", 20)
-    .set<bool>("release Krylov vectors", "false")
+    .set<bool>("release Krylov vectors", false)
     .sublist("verbose object")
     .set<std::string>("verbosity level", "medium");
 

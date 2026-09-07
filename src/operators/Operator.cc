@@ -221,7 +221,7 @@ Operator::AssembleMatrix()
 
   compute_complete_ = false;
 
-  // std::cout << "writing matrix with " << size() << " local ops" << std::endl
+  //std::cout << "writing matrix with " << size() << " local ops" << std::endl
   //           << "  with sparsity structures:" << std::endl;
   // for (auto& it : *this) {
   //   std::cout << "  " << it->schema_string << std::endl;

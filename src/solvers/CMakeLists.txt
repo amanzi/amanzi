@@ -99,9 +99,9 @@ add_amanzi_library(solvers
 if (BUILD_TESTS)
     set(solvers_test_link_libs solvers ${solvers_link_libs})
 
-    if(ENABLE_CUDA OR ENABLE_UVM)
-      set(solvers_test_link_libs ${solvers_test_link_libs} "-lnvToolsExt")
-    endif()
+    #if(ENABLE_CUDA OR ENABLE_UVM)
+    #  set(solvers_test_link_libs ${solvers_test_link_libs} "-lnvToolsExt")
+    #endif()
 
 
     # Add UnitTest include directoy

@@ -98,8 +98,13 @@ if (BUILD_TESTS)
     include_directories(${SOLVERS_SOURCE_DIR})
     include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 
+    # CUDA >= 12.9 no longer ships libnvToolsExt: NVTX3 is header-only there.
     if(ENABLE_CUDA OR ENABLE_UVM)
-      set(time_integration_test_link_libs ${time_integration_test_link_libs} nvToolsExt)
+      find_library(AMANZI_NVTOOLSEXT_LIBRARY nvToolsExt
+                   HINTS ${CUDAToolkit_LIBRARY_DIR} ${CUDA_TOOLKIT_ROOT_DIR}/lib64)
+      if(AMANZI_NVTOOLSEXT_LIBRARY)
+        set(time_integration_test_link_libs ${time_integration_test_link_libs} ${AMANZI_NVTOOLSEXT_LIBRARY})
+      endif()
     endif()
 
     add_amanzi_test(time_integration_solution_history time_integration_solution_history

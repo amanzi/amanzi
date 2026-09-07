@@ -105,8 +105,13 @@ set(operators_link_libs
 )
 
 
+# CUDA >= 12.9 no longer ships libnvToolsExt: NVTX3 is header-only there.
 if(ENABLE_CUDA OR ENABLE_UVM)
-  set(operators_link_libs ${operators_link_libs} nvToolsExt)
+  find_library(AMANZI_NVTOOLSEXT_LIBRARY nvToolsExt
+               HINTS ${CUDAToolkit_LIBRARY_DIR} ${CUDA_TOOLKIT_ROOT_DIR}/lib64)
+  if(AMANZI_NVTOOLSEXT_LIBRARY)
+    set(operators_link_libs ${operators_link_libs} ${AMANZI_NVTOOLSEXT_LIBRARY})
+  endif()
 endif()
 
 

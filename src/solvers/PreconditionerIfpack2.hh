@@ -30,19 +30,21 @@ using Ifpack2_PC_type = Ifpack2::Preconditioner<Matrix_type::scalar_type,
 
 class PreconditionerIfpack2 : public Preconditioner {
  public:
-  PreconditionerIfpack2() : Preconditioner(), initialized_(false){};
+  PreconditionerIfpack2() : Preconditioner(), initialized_(false), returned_code_(0){};
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override
   {
     plist_ = plist;
-    std::string vo_name = this->name() + " (" + plist_.get<std::string>("method") + ")";
+    method_name_ = plist_.get<std::string>("method"); 
+    std::string vo_name = this->name() + " (" + method_name_ + ")";
     vo_ = Teuchos::rcp(new VerboseObject(vo_name, plist_));
     initialized_ = true;
   }
 
   virtual void initializeInverse() override
   {
-    nvtxRangePush("init-inv");
+    string n = "IP2: init-inv" + method_name_; 
+    nvtxRangePush(n.c_str());
     Ifpack2::Factory factory;
     A_ = h_;
     std::string method = plist_.get<std::string>("method");
@@ -55,7 +57,9 @@ class PreconditionerIfpack2 : public Preconditioner {
 
   virtual void computeInverse() override
   {
-    nvtxRangePush("comp-inv");
+
+    string n = "IP2: comp-inv" + method_name_; 
+    nvtxRangePush(n.c_str());
     pc_->compute();
     if (vo_->os_OK(Teuchos::VERB_HIGH)) pc_->describe(*vo_->os(), vo_->getVerbLevel());
     nvtxRangePop();
@@ -65,8 +69,8 @@ class PreconditionerIfpack2 : public Preconditioner {
 
   virtual int applyInverse(const Vector_type& v, Vector_type& hv) const override
   {
-    nvtxRangePush("app-inv");
-
+    string n = "IP2: app-inv" + method_name_;
+    nvtxRangePush(n.c_str());
     pc_->apply(v, hv);
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) pc_->describe(*vo_->os(), vo_->getVerbLevel());
     nvtxRangePop();
@@ -103,7 +107,7 @@ class PreconditionerIfpack2 : public Preconditioner {
 
   Teuchos::RCP<const Matrix_type> A_;
 
-
+  std::string method_name_; 
   bool initialized_;
   mutable int returned_code_;
 };
