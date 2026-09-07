@@ -62,11 +62,7 @@ void WriteEntropyPlotData(IAPWS95_RaggedSplinePH& spline,
         double Dex = Dfun(exact_value, IAPWS95::R);
         double Dap = Dfun(spline_value, IAPWS95::R);
         // CHECK(Dap > 0.0);
-        if (Dap < 0.0 || Dex < 0.0) {
-          // std::cout << "p=" << p << "  h=" << h << "  D=" << Dex << " " << Dap << std::endl;
-          // for (int k = 0; k < 6; ++k) std::cout << k << " " << spline_value[k] << " " << exact_value[k] << std::endl;
-          count++;
-        }
+        if (Dap < 0.0 || Dex < 0.0) count++;
         out << p << " " << h << " " << Dap << " " << Dex << " " << Dap - Dex << "\n";
 
         for (int k = 0; k < 6; ++k) {
@@ -75,7 +71,6 @@ void WriteEntropyPlotData(IAPWS95_RaggedSplinePH& spline,
           err_abs[k] = std::max(err_abs[k], std::fabs(err[k]));
           err_rel[k] = std::max(err_rel[k], std::fabs(err[k] / std::max(1e-14, std::fabs(exact_value[k]))));
         }
-
         // out << p << " " << h << " " << spline_value[3] << " " << exact_value[3] << " " << err[3] << "\n";
       }
       else {
@@ -407,9 +402,9 @@ TEST(EOS_IAPWS95_SPLINE_P_H)
   opt.p_max = 50.0;
   opt.h_min = 500.0;
   opt.h_max = 3600.0;
-  opt.initial_p_intervals = 50;
-  opt.initial_h_intervals = 50;
-  opt.max_p_intervals = 130;
+  opt.initial_p_intervals = 60;
+  opt.initial_h_intervals = 70;
+  opt.max_p_intervals = 150;
   opt.max_h_intervals = 180;
   opt.metastable_stability_fraction = 0.5;
 

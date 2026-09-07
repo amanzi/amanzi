@@ -156,11 +156,11 @@ EnergyPressureTemperature_PK::Setup()
   // thermodynamics
   if (glist_->sublist("state").sublist("evaluators").isSublist(state_key_)) {
     if (!S_->HasRecord(state_key_)) {
-      S_->Require<CV_t, CVS_t>(state_key_, Tags::DEFAULT, state_key_, Evaluators::TS95_names)
+      S_->Require<CV_t, CVS_t>(state_key_, Tags::DEFAULT, state_key_, Evaluators::TSPT_names)
         .SetMesh(mesh_)
         ->SetGhosted(true)
-        ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, Evaluators::TS95_t_size)
-        ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, Evaluators::TS95_t_size);
+        ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, Evaluators::TSPT_t_size)
+        ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, Evaluators::TSPT_t_size);
       S_->RequireEvaluator(state_key_, Tags::DEFAULT);
     }
   }

@@ -10,11 +10,12 @@
 /*
   Evaluators
 
-  Collection of evaluators based on IAPWS95 formulation.
+  Collection of evaluators based on IAPWS95 formulation for
+  pressure/enthalpy primary variables.
 */
 
-#ifndef AMANZI_EVALUATORS_IAPWS95_STATE_HH_
-#define AMANZI_EVALUATORS_IAPWS95_STATE_HH_
+#ifndef AMANZI_EVALUATORS_IAPWS95_STATE_PH_HH_
+#define AMANZI_EVALUATORS_IAPWS95_STATE_PH_HH_
 
 #include <cstdlib>
 #include <cmath>
@@ -40,11 +41,11 @@
 namespace Amanzi {
 namespace Evaluators {
 
-class IAPWS95_StateEvaluator
+class IAPWS95_StateEvaluatorPH
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  explicit IAPWS95_StateEvaluator(Teuchos::ParameterList& plist);
-  IAPWS95_StateEvaluator(const IAPWS95_StateEvaluator& other);
+  explicit IAPWS95_StateEvaluatorPH(Teuchos::ParameterList& plist);
+  IAPWS95_StateEvaluatorPH(const IAPWS95_StateEvaluatorPH& other);
 
   // required inteface functions
   virtual Teuchos::RCP<Evaluator> Clone() const override;
@@ -60,17 +61,17 @@ class IAPWS95_StateEvaluator
 
  private:
   Key domain_name_;
-  Key pressure_key_, temperature_key_;
+  Key pressure_key_, enthalpy_key_;
   Teuchos::RCP<AmanziEOS::IAPWS95> eos_;
-  static Utils::RegisteredFactory<Evaluator, IAPWS95_StateEvaluator> reg_;
+  static Utils::RegisteredFactory<Evaluator, IAPWS95_StateEvaluatorPH> reg_;
 };
 
 
-class IAPWS95_DensityEvaluator
+class IAPWS95_DensityEvaluatorPH
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  explicit IAPWS95_DensityEvaluator(Teuchos::ParameterList& plist);
-  IAPWS95_DensityEvaluator(const IAPWS95_DensityEvaluator& other);
+  explicit IAPWS95_DensityEvaluatorPH(Teuchos::ParameterList& plist);
+  IAPWS95_DensityEvaluatorPH(const IAPWS95_DensityEvaluatorPH& other);
 
   // required inteface functions
   virtual Teuchos::RCP<Evaluator> Clone() const override;
@@ -86,16 +87,16 @@ class IAPWS95_DensityEvaluator
 
  private:
   Key domain_name_;
-  Key pressure_key_, temperature_key_, state_key_;
-  static Utils::RegisteredFactory<Evaluator, IAPWS95_DensityEvaluator> reg_;
+  Key pressure_key_, enthalpy_key_, state_key_;
+  static Utils::RegisteredFactory<Evaluator, IAPWS95_DensityEvaluatorPH> reg_;
 };
 
 
-class IAPWS95_ThermalConductivityEvaluator
+class IAPWS95_TemperatureEvaluatorPH
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  explicit IAPWS95_ThermalConductivityEvaluator(Teuchos::ParameterList& plist);
-  IAPWS95_ThermalConductivityEvaluator(const IAPWS95_ThermalConductivityEvaluator& other);
+  explicit IAPWS95_TemperatureEvaluatorPH(Teuchos::ParameterList& plist);
+  IAPWS95_TemperatureEvaluatorPH(const IAPWS95_TemperatureEvaluatorPH& other);
 
   // required inteface functions
   virtual Teuchos::RCP<Evaluator> Clone() const override;
@@ -111,41 +112,16 @@ class IAPWS95_ThermalConductivityEvaluator
 
  private:
   Key domain_name_;
-  Key density_key_, temperature_key_, state_key_;
-  Teuchos::RCP<AmanziEOS::IAPWS> eos_;
+  Key pressure_key_, enthalpy_key_, state_key_;
+  static Utils::RegisteredFactory<Evaluator, IAPWS95_TemperatureEvaluatorPH> reg_;
 };
 
 
-class IAPWS95_InternalEnergyEvaluator
+class IAPWS95_ThermalConductivityEvaluatorPH
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  explicit IAPWS95_InternalEnergyEvaluator(Teuchos::ParameterList& plist);
-  IAPWS95_InternalEnergyEvaluator(const IAPWS95_InternalEnergyEvaluator& other);
-
-  // required inteface functions
-  virtual Teuchos::RCP<Evaluator> Clone() const override;
-
-  virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
-
-  virtual void EvaluatePartialDerivative_(const State& S,
-                                          const Key& wrt_key,
-                                          const Tag& wrt_tag,
-                                          const std::vector<CompositeVector*>& results) override;
-
-  virtual void EnsureCompatibility_ToDeps_(State& S) final {};
-
- private:
-  Key domain_name_;
-  Key pressure_key_, temperature_key_, state_key_;
-  static Utils::RegisteredFactory<Evaluator, IAPWS95_InternalEnergyEvaluator> reg_;
-};
-
-
-class IAPWS95_ViscosityEvaluator
-  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
- public:
-  explicit IAPWS95_ViscosityEvaluator(Teuchos::ParameterList& plist);
-  IAPWS95_ViscosityEvaluator(const IAPWS95_ViscosityEvaluator& other);
+  explicit IAPWS95_ThermalConductivityEvaluatorPH(Teuchos::ParameterList& plist);
+  IAPWS95_ThermalConductivityEvaluatorPH(const IAPWS95_ThermalConductivityEvaluatorPH& other);
 
   // required inteface functions
   virtual Teuchos::RCP<Evaluator> Clone() const override;
@@ -162,8 +138,58 @@ class IAPWS95_ViscosityEvaluator
  private:
   Key domain_name_;
   Key density_key_, temperature_key_, state_key_;
-  Teuchos::RCP<AmanziEOS::IAPWS> eos_;
-  static Utils::RegisteredFactory<Evaluator, IAPWS95_ViscosityEvaluator> reg_;
+  Teuchos::RCP<AmanziEOS::IAPWS95> eos_;
+};
+
+
+class IAPWS95_InternalEnergyEvaluatorPH
+  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+ public:
+  explicit IAPWS95_InternalEnergyEvaluatorPH(Teuchos::ParameterList& plist);
+  IAPWS95_InternalEnergyEvaluatorPH(const IAPWS95_InternalEnergyEvaluatorPH& other);
+
+  // required inteface functions
+  virtual Teuchos::RCP<Evaluator> Clone() const override;
+
+  virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
+
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
+                                          const std::vector<CompositeVector*>& results) override;
+
+  virtual void EnsureCompatibility_ToDeps_(State& S) final {};
+
+ private:
+  Key domain_name_;
+  Key pressure_key_, enthalpy_key_, state_key_;
+  static Utils::RegisteredFactory<Evaluator, IAPWS95_InternalEnergyEvaluatorPH> reg_;
+};
+
+
+class IAPWS95_ViscosityEvaluatorPH
+  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+ public:
+  explicit IAPWS95_ViscosityEvaluatorPH(Teuchos::ParameterList& plist);
+  IAPWS95_ViscosityEvaluatorPH(const IAPWS95_ViscosityEvaluatorPH& other);
+
+  // required inteface functions
+  virtual Teuchos::RCP<Evaluator> Clone() const override;
+
+  virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
+
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
+                                          const std::vector<CompositeVector*>& results) override;
+
+  virtual void EnsureCompatibility_ToDeps_(State& S) final {};
+
+ private:
+  Key domain_name_;
+  Key density_key_, temperature_key_, state_key_;
+  Teuchos::RCP<AmanziEOS::IAPWS95> eos_;
+  static Utils::RegisteredFactory<Evaluator, IAPWS95_ViscosityEvaluatorPH> reg_;
 };
 
 } // namespace Evaluators

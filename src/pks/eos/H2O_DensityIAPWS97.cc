@@ -29,7 +29,7 @@ double
 H2O_DensityIAPWS97::Density(double T, double p)
 {
   double pMPa = p * 1e-6;
-  return (eos_->ThermodynamicsPT(pMPa, T)).rho;
+  return std::get<0>(eos_->ThermodynamicsPT(pMPa, T)).rho;
 }
 
 
@@ -37,7 +37,7 @@ double
 H2O_DensityIAPWS97::DDensityDT(double T, double p)
 {
   double pMPa = p * 1e-6;
-  auto prop = eos_->ThermodynamicsPT(pMPa, T);
+  auto prop = std::get<0>(eos_->ThermodynamicsPT(pMPa, T));
   if (prop.rgn == 3)
     return -prop.ap / (prop.v * prop.v * prop.bp);  // Helmholtz
   else
@@ -49,7 +49,7 @@ double
 H2O_DensityIAPWS97::DDensityDp(double T, double p)
 {
   double pMPa = p * 1e-6;
-  auto prop = eos_->ThermodynamicsPT(pMPa, T);
+  auto prop = std::get<0>(eos_->ThermodynamicsPT(pMPa, T));
   if (prop.rgn == 3)
     return 1.0e-6 / (prop.v * prop.v * pMPa * prop.bp);
   else

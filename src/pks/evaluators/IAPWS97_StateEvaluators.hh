@@ -34,6 +34,7 @@
 // Amanzi
 #include "CompositeVector.hh"
 #include "EvaluatorSecondaryMonotype.hh"
+#include "IAPWS_Helper.hh"
 #include "IAPWS97.hh"
 #include "PK_Physical.hh"
 #include "State.hh"
@@ -41,36 +42,6 @@
 
 namespace Amanzi {
 namespace Evaluators {
-
-int constexpr TS97_t_size = 18;
-const std::vector<std::string> TS97_names = {
-  "region", "temperature", "mass_density", "specific_volume", "isobaric_heat_capacity",
-  "isocoric_heat_capacity", "isothermal_compressibility", "isobaric_expansion_coef", 
-  "relative_pressure_coef", "isothermal_stress_coef", "thermal_conductivity", "viscosity",
-  "drhodp", "drhodh", "dtdp", "dtdh",
-  "vv", "vapor_quality"
-};
-
-enum class TS97_t : int {
-  RGN = 0,
-  T = 1,
-  RHO = 2,
-  V = 3,
-  CP = 4,
-  CV = 5,
-  KT = 6,
-  AV = 7,
-  AP = 8,
-  BP = 9,
-  K = 10,
-  MU = 11,
-  dRHOdP = 12, // derivatives
-  dRHOdH = 13,
-  dTdP = 14,
-  dTdH = 15,
-  VV = 16, // two-phase
-  X = 17
-};
 
 class IAPWS97_StateEvaluator
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
@@ -93,7 +64,7 @@ class IAPWS97_StateEvaluator
  private:
   Key domain_name_;
   Key pressure_key_, enthalpy_key_, state_key_;
-  Teuchos::RCP<AmanziEOS::IAPWS97> eos_;
+  Teuchos::RCP<AmanziEOS::IAPWS> eos_;
   static Utils::RegisteredFactory<Evaluator, IAPWS97_StateEvaluator> reg_;
 };
 
@@ -169,7 +140,7 @@ class IAPWS97_ThermalConductivityEvaluator
  private:
   Key domain_name_;
   Key density_key_, temperature_key_, state_key_;
-  Teuchos::RCP<AmanziEOS::IAPWS97> eos_;
+  Teuchos::RCP<AmanziEOS::IAPWS> eos_;
 };
 
 

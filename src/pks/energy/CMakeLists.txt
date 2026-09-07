@@ -182,9 +182,14 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/energy_evaluators.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    add_amanzi_test(energy_evaluators95_tables energy_evaluators95_tables
+    add_amanzi_test(energy_evaluators95_tables_pt energy_evaluators95_tables_pt
                     KIND int
-                    SOURCE test/Main.cc test/energy_evaluators95_tables.cc
+                    SOURCE test/Main.cc test/energy_evaluators95_tables_pt.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(energy_evaluators95_tables_ph energy_evaluators95_tables_ph
+                    KIND int
+                    SOURCE test/Main.cc test/energy_evaluators95_tables_ph.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(energy_evaluators97_tables energy_evaluators97_tables

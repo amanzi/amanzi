@@ -50,7 +50,7 @@ IAPWS95::ThermodynamicsPT(double p, double T)
   // initial guess and estimates of root brackets
   int itrs = 20;
   double tol = 1e-9;
-  double rho0 = eos97_.ThermodynamicsPT(p, T).rho; 
+  double rho0 = std::get<0>(eos97_.ThermodynamicsPT(p, T)).rho; 
   double rhomin = rho0 * 0.995;
   double rhomax = rho0 * 1.005;
 
@@ -155,12 +155,15 @@ IAPWS95::ThermodynamicsPH(double p, double h)
 
     if (h < sat.hl) {
       prop = PopulatePropertiesFromEntropy1(p, h);
+      prop.rgn = (int)Phase_t::CompressibleLiquid;
       liquid = prop;
     } else if (h > sat.hv) {
       prop = PopulatePropertiesFromEntropy1(p, h);
+      prop.rgn = (int)Phase_t::Gas;
       vapor = prop;
     } else {
       prop = PopulatePropertiesFromEntropy2(p, h, sat);
+      prop.rgn = (int)Phase_t::TwoPhases;
       liquid = prop;
       liquid.rho = sat.rhol;
       liquid.v = sat.vl;
@@ -281,23 +284,35 @@ IAPWS95::PopulatePropertiesFromEntropy1(double p, double h)
   double Tp = -sph / (sh * sh);
   double Th = -shh / (sh * sh);
 
-  double v = -sp / sh;
-  double vp = -(spp * sh - sp * sph) / (sh * sh);
-  double vh = -(sph * sh - sp * shh) / (sh * sh);
+  // dh = T ds + 1000 v dp, because p is in MPa and h is in kJ/kg.
+  double v = -sp / (1000.0 * sh);
+  double vp = -(spp * sh - sp * sph) / (1000.0 * sh * sh);
+  double vh = -(sph * sh - sp * shh) / (1000.0 * sh * sh);
 
+  double rho = 1.0 / v;
   double rhop = -vp / (v * v);
   double rhoh = -vh / (v * v);
 
-  double drho_dp_s = rhop + v * rhoh;
+  double K = spp - sph * sph / shh;
+  double rhop_T = 1000.0 * sh * K / (sp * sp);
+
+  // Along isentrope ds = sp dp + sh dh = 0
+  // hence (dh/dp)_s = -sp / sh = 1000 v
+  double drho_dp_s = rhop + 1000.0 * v * rhoh;
   prop.cp = Th > 0.0 ? 1.0 / Th : std::numeric_limits<double>::infinity();
-  prop.w = drho_dp_s > 0.0 ? std::sqrt(1.0 / drho_dp_s) : std::numeric_limits<double>::quiet_NaN();
+  prop.w = drho_dp_s > 0.0 ? std::sqrt(1.0e6 / drho_dp_s) : std::numeric_limits<double>::quiet_NaN();
 
   prop.p = p;
   prop.T = T;
-  prop.u = h - p * v * 1000;
+  prop.u = h - p * v * 1000.0;
   prop.h = h;
+  prop.s = s;
 
-  prop.rho = 1.0 / v;
+  prop.av = vh / (v * Th);
+  prop.bp = rho * rho / (p * rhop_T);
+
+  prop.v = v;
+  prop.rho = rho;
   return prop;
 }
 
@@ -336,22 +351,22 @@ IAPWS95::PopulatePropertiesFromEntropy2(double p, double h, const SaturationStat
 
   double s = sat.sl + x * (sat.sv - sat.sl);
   double sh = 1.0 / T;
-  double sp = -v / T;
+  double sp = -1000.0 * v / T;
 
   double shh = 0.0;
   double sph = -Tp / (T * T);
-  double spp = -vp / T + v * Tp / (T * T);
+  double spp = 1000.0 * (-vp / T + v * Tp / (T * T));
 
   prop.p = p;
   prop.T = T;
   prop.h = h;
 
-  double drho_dp_s = rhop + v * rhoh;
-  prop.w = drho_dp_s > 0.0 ? std::sqrt(1.0 / drho_dp_s) : 0.0;
+  double drho_dp_s = rhop + 1000.0 * v * rhoh;
+  prop.w = drho_dp_s > 0.0 ? std::sqrt(1.0e6 / drho_dp_s) : 0.0;
 
   prop.rho = 1.0 / v;
   prop.v = v;
-  prop.u = h - p * v * 1000;
+  prop.u = h - p * v * 1000.0;
   prop.s = s;
   prop.x = x;
 

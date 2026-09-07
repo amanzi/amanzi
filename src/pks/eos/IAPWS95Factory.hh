@@ -10,7 +10,7 @@
 /*
   EOS
 
-  Factory for IAPWS95 and derived models.
+  Factory for IAPWS95 and derived spline-based models.
 */
 
 #ifndef AMANZI_IAPWS95_FACTORY_HH_
@@ -20,6 +20,7 @@
 
 #include "IAPWS95.hh"
 #include "IAPWS95_Spline.hh"
+#include "IAPWS95_RaggedSplinePH.hh"
 #include "IAPWS95_RaggedSplineRhoT.hh"
 
 namespace Amanzi {
@@ -28,9 +29,9 @@ namespace AmanziEOS {
 inline Teuchos::RCP<IAPWS95>
 CreateIAPWS95(Teuchos::ParameterList& plist)
 {
-  if (plist.isParameter("csv table name")) {
+  if (plist.isParameter("csv table name")) {  // DEPRECATED
     return Teuchos::rcp(new IAPWS95_Spline(plist));
-  } else if (plist.isParameter("use ragged spline")) {
+  } else if (plist.isParameter("use iapws95 spline rho/T")) {
     IAPWS95_RaggedSplineRhoT::Options opt;
     opt.T_min = 280.0;
     opt.T_max = 950.0;
@@ -47,9 +48,26 @@ CreateIAPWS95(Teuchos::ParameterList& plist)
     spline->InitializeSharedData();
 
     return spline;
-  } else {
-    return Teuchos::rcp(new IAPWS95(plist));
+  } else if (plist.isParameter("use iapws95 spline p/h")) {
+    IAPWS95_RaggedSplinePH::Options opt{};
+    opt.p_min = 0.2;
+    opt.p_max = 50.0;
+    opt.h_min = 500.0;
+    opt.h_max = 3600.0;
+    opt.initial_p_intervals = 60;
+    opt.initial_h_intervals = 70;
+    opt.max_p_intervals = 150;
+    opt.max_h_intervals = 180;
+    opt.metastable_stability_fraction = 0.5;
+
+    Teuchos::ParameterList plist;
+    auto spline = Teuchos::rcp(new IAPWS95_RaggedSplinePH(plist, opt));
+    spline->InitializeSharedData();
+
+    return spline;
   }
+
+  return Teuchos::rcp(new IAPWS95(plist));
 }
 
 } // namespace AmanziEOS

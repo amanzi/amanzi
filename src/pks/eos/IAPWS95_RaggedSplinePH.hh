@@ -104,7 +104,6 @@ class IAPWS95_RaggedSplinePH : public IAPWS95,
     unsigned samples_per_cell_direction = 2;
 
     // Extension width below F(rho), measured in local T-cell widths.
-    double extension_cells = 4.0;  // must be obsolete
     int extension_samples = 4;
     double extension_weight = 0.15;
 
@@ -125,12 +124,9 @@ class IAPWS95_RaggedSplinePH : public IAPWS95,
     // minimum permitted temperature, [K]
     double minimum_extension_temperature_K = 273.16;
 
-    // Number of bisection iterations after bracketing the margin.
-    int metastable_bisection_iterations = 50;
-
-    double critical_cutoff_temperature_K = 637.5;
-    double critical_cap_extension_K = 4.0;
-    double critical_cap_tolerance_K = 1.0e-8;
+    // box around the critical point
+    double critical_cutoff_pressure = 1.0;  // MPa
+    double critical_cutoff_enthalpy = 150.0;  // kJ/kg
 
     // adaptive refinement
     double anisotropic_refinement_fraction = 0.20;

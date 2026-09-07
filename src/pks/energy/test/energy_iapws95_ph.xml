@@ -40,7 +40,7 @@
 
   <ParameterList name="PK tree">
     <ParameterList name="energy">
-      <Parameter name="PK type" type="string" value="energy pt"/>
+      <Parameter name="PK type" type="string" value="energy ph"/>
     </ParameterList>
   </ParameterList>
 
@@ -57,11 +57,13 @@
           <ParameterList name="solid phase">
             <Parameter name="eos type" type="string" value="constant"/>
             <Parameter name="reference conductivity" type="double" value="0.2"/>
-            <Parameter name="reference temperature" type="double" value="273.15"/>
+            <Parameter name="reference temperature" type="double" value="275.15"/>
           </ParameterList>
           <ParameterList name="liquid phase">
-            <Parameter name="eos type" type="string" value="iapws97"/>
-            <Parameter name="use iapws97" type="bool" value="true"/>
+            <Parameter name="eos type" type="string" value="iapws95"/>
+            <!--Parameter name="reference conductivity" type="double" value="2.0"/>
+            <Parameter name="reference temperature" type="double" value="275.15"/>
+            <Parameter name="polynomial expansion" type="Array(double)" value="{0.0, 1.0, 0.0}"/-->
           </ParameterList>
         </ParameterList>
       </ParameterList>
@@ -120,14 +122,11 @@
             <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
             <Parameter name="modify correction" type="bool" value="false"/>
             <ParameterList name="verbose object">
-              <Parameter name="verbosity level" type="string" value="high"/>
+              <Parameter name="verbosity level" type="string" value="medium"/>
             </ParameterList>
           </ParameterList>
           <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
           <Parameter name="extrapolate initial guess" type="bool" value="false"/>
-        </ParameterList>
-        <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
 
@@ -138,7 +137,7 @@
             <Parameter name="spatial distribution method" type="string" value="none"/>
             <ParameterList name="boundary temperature">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="350.0"/>
+                <Parameter name="value" type="double" value="300.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -164,7 +163,6 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
@@ -179,26 +177,21 @@
   </ParameterList>
 
   <ParameterList name="state">
-    <ParameterList name="verbose object">
-      <Parameter name="verbosity level" type="string" value="extreme"/>
-    </ParameterList>
     <ParameterList name="evaluators">
       <ParameterList name="thermodynamic_state">
-        <Parameter name="evaluator type" type="string" value="iapws97 state"/>
-        <Parameter name="use iapws97" type="bool" value="true"/>
-      </ParameterList>
-      <ParameterList name="molar_density_liquid">
-        <Parameter name="evaluator type" type="string" value="iapws97 density"/>
-      </ParameterList>
-      <ParameterList name="viscosity_liquid">
-        <Parameter name="evaluator type" type="string" value="iapws97 viscosity"/>
-        <Parameter name="use iapws97" type="bool" value="true"/>
+        <Parameter name="evaluator type" type="string" value="iapws95 ph state"/>
       </ParameterList>
       <ParameterList name="temperature">
-        <Parameter name="evaluator type" type="string" value="iapws97 temperature"/>
+        <Parameter name="evaluator type" type="string" value="iapws95 ph temperature"/>
       </ParameterList>
-      <ParameterList name="internal_energy_liquid">
-        <Parameter name="evaluator type" type="string" value="iapws97 internal energy"/>
+      <ParameterList name="molar_density_liquid">
+        <Parameter name="evaluator type" type="string" value="iapws95 ph density"/>
+      </ParameterList>
+      <ParameterList name="viscosity_liquid">
+        <Parameter name="evaluator type" type="string" value="iapws95 ph viscosity"/>
+      </ParameterList>
+      <ParameterList name="internal_energy">
+        <Parameter name="evaluator type" type="string" value="iapws95 ph internal energy"/>
       </ParameterList>
 
       <ParameterList name="particle_density">
@@ -215,6 +208,8 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
+      <!-- setting it to one, removes rock conductivity from the test -->
       <ParameterList name="porosity">
         <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
@@ -243,20 +238,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="pressure">
-        <Parameter name="evaluator type" type="string" value="independent variable"/>
-        <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="*"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="31.0e+6"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
       <ParameterList name="internal_energy_rock">
         <Parameter name="evaluator type" type="string" value="iem"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_rock"/>
@@ -265,8 +246,8 @@
             <Parameter name="regions" type="Array(string)" value="{All}"/>
             <ParameterList name="IEM parameters">
               <Parameter name="iem type" type="string" value="linear"/>
-              <Parameter name="heat capacity" type="double" value="1.0"/>
-              <Parameter name="reference temperature" type="double" value="1.0"/>
+              <Parameter name="heat capacity" type="double" value="1180.0"/>
+              <Parameter name="reference temperature" type="double" value="273.15"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -293,6 +274,19 @@
         <Parameter name="value" type="double" value="101325.0"/>
       </ParameterList>
 
+      <ParameterList name="temperature">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="*"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="648.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
       <ParameterList name="pressure">
         <ParameterList name="function">
           <ParameterList name="domain">
@@ -300,7 +294,7 @@
             <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="31.0e+6"/>
+                <Parameter name="value" type="double" value="23.0e+6"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -313,7 +307,7 @@
             <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="40000.0"/>
+                <Parameter name="value" type="double" value="3.4228e+04"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -331,7 +325,7 @@
               <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.0"/>
+                  <Parameter name="value" type="double" value="1.0e-4"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 2 function">
@@ -355,7 +349,7 @@
               <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.0"/>
+                  <Parameter name="value" type="double" value="2.0e-9"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 2 function">
@@ -367,10 +361,13 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-
     </ParameterList>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="extreme"/>
+      </ParameterList>
   </ParameterList>
+
   <ParameterList name="verbose object">
-    <Parameter name="verbosity level" type="string" value="high"/>
+    <Parameter name="verbosity level" type="string" value="extreme"/>
   </ParameterList>
 </ParameterList>

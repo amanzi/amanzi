@@ -111,9 +111,6 @@ EnergyPressureEnthalpy_PK::FunctionalResidual(double t_old,
 
   // -- use modified residual for saturated region 4 (WIP)
   //    this is actually the scaled residual
-  Teuchos::ParameterList plist;
-  AmanziEOS::IAPWS97 eos(plist);
-
   double units(CommonDefs::ENTHALPY_FACTOR);
   residual_max_norm_ = 0.0;
   if (dt>0) {

@@ -68,7 +68,7 @@ struct FhT {
 /* ******************************************************************
 * Calculate all properties
 ****************************************************************** */
-Properties
+std::tuple<Properties, Properties, Properties>
 IAPWS97::ThermodynamicsPT(double p, double T)
 {
   Properties prop;
@@ -133,7 +133,7 @@ IAPWS97::ThermodynamicsPT(double p, double T)
   prop.mu = Viscosity(prop.rho, T);
   prop.k = ThermalConductivity(prop.rho, T, prop);
 
-  return prop;
+  return { prop, prop, prop };
 }
 
 

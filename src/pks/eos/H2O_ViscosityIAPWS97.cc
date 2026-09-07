@@ -31,7 +31,7 @@ double
 H2O_ViscosityIAPWS97::Viscosity(double T, double p)
 {
   double pMPa = p * 1e-6;
-  return eos_->ThermodynamicsPT(pMPa, T).mu;
+  return std::get<0>(eos_->ThermodynamicsPT(pMPa, T)).mu;
 }
 
 
@@ -39,11 +39,11 @@ double
 H2O_ViscosityIAPWS97::DViscosityDT(double T, double p)
 {
   double pMPa = p * 1e-6;
-  double mu1 = eos_->ThermodynamicsPT(pMPa, T).mu;
+  double mu1 = std::get<0>(eos_->ThermodynamicsPT(pMPa, T)).mu;
 
   const double eps = std::sqrt(std::numeric_limits<double>::epsilon());
   double dT = eps * T;
-  double mu2 = eos_->ThermodynamicsPT(pMPa, T + dT).mu;
+  double mu2 = std::get<0>(eos_->ThermodynamicsPT(pMPa, T + dT)).mu;
 
   return (mu2 - mu1) / dT;
 };
@@ -53,11 +53,11 @@ double
 H2O_ViscosityIAPWS97::DViscosityDp(double T, double p)
 {
   double pMPa = p * 1e-6;
-  double mu1 = eos_->ThermodynamicsPT(pMPa, T).mu;
+  double mu1 = std::get<0>(eos_->ThermodynamicsPT(pMPa, T)).mu;
 
   const double eps = std::sqrt(std::numeric_limits<double>::epsilon());
   double dp = eps * pMPa;
-  double mu2 = eos_->ThermodynamicsPT(pMPa + dp, T).mu;
+  double mu2 = std::get<0>(eos_->ThermodynamicsPT(pMPa + dp, T)).mu;
 
   return (mu2 - mu1) / dp * 1e-6;
 };

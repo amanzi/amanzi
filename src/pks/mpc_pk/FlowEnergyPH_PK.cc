@@ -109,10 +109,10 @@ FlowEnergyPH_PK::Setup()
 
   // thermodynamics (need a few evaluators here to enforce IAPWS97 formulation)
   if (!S_->HasRecord(state_key_)) {
-    S_->Require<CV_t, CVS_t>(state_key_, Tags::DEFAULT, state_key_, Evaluators::TS97_names)
+    S_->Require<CV_t, CVS_t>(state_key_, Tags::DEFAULT, state_key_, Evaluators::TSPH_names)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, Evaluators::TS97_t_size);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, Evaluators::TSPH_t_size);
     S_->RequireEvaluator(state_key_, Tags::DEFAULT);
   }
 

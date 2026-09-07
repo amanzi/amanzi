@@ -540,8 +540,7 @@ IAPWS95_RaggedSplinePH::AdaptiveRefineCoordinateLines_()
     }
   };
 
-  insert_unique(mesh_.x_lines, { 20.4, 20.8, 21.2 });
-  insert_unique(mesh_.y_lines, { 505.0, 2092.0 });
+  // insert_unique(mesh_.x_lines, { 20.4, 20.8, 21.2 });
   // insert_unique(mesh_.y_lines, { 505.0 });
   BuildRaggedColumns_();
 }
@@ -757,8 +756,42 @@ IAPWS95_RaggedSplinePH::BuildSamples()
     }
   }
 
-  // Additional samples only under the flat critical cutoff.
-  // ... pass
+  // Additional samples in cells near the critical point.
+  for (int i = 0; i + 1 < mesh_.x_lines.size(); ++i) {
+    double p0 = mesh_.x_lines[i];
+    double p1 = mesh_.x_lines[i + 1];
+    double pm = std::sqrt(p0 * p1);
+    if (pm > PC || std::abs(pm - PC) > options_.critical_cutoff_pressure) continue;
+
+    for (int j = 0; j + 1 < mesh_.y_lines.size(); ++j) {
+      double h0 = mesh_.y_lines[j];
+      double h1 = mesh_.y_lines[j + 1];
+      double hm = 0.5 * (h0 + h1);
+      if (std::abs(hm - HC) > options_.critical_cutoff_enthalpy) continue;
+
+      // Add a denser 3 x 3 set of interior samples.
+      constexpr int qc = 3;
+
+      for (int ip = 0; ip < qc; ++ip) {
+        double sp = (ip + 0.5) / qc;
+
+        // Uniform in spline coordinate x = log(p / PC).
+        double p = p0 * std::pow(p1 / p0, sp);
+        const SaturationState& sat = eos95_->SaturationLineP(p);
+
+        for (int ih = 0; ih < qc; ++ih) {
+          double sh = (ih + 0.5) / qc;
+          double h = (1.0 - sh) * h0 + sh * h1;
+
+          if (!IsExtended_(p, h, sat)) continue;
+
+          bool physical = IsPhysical(p, h, sat);
+          double weight = physical ? 1.0 : options_.extension_weight;
+          samples.push_back({ p, h, 0.0, 0.0, weight, physical });
+        }
+      }
+    }
+  }
 
   // pass samples in physical region, populate rho/T data
   for (Sample& sample : samples) {

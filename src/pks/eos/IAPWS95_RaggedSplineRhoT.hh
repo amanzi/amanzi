@@ -105,7 +105,6 @@ class IAPWS95_RaggedSplineRhoT : public IAPWS95,
     unsigned samples_per_cell_direction = 2;
 
     // Extension inside the metastable region.
-    double extension_cells = 4.0;  // must be obsolete
     int extension_samples = 4;
     double extension_weight = 0.15;
 

@@ -319,32 +319,32 @@ TEST(EOS_IAPWS97_PT)
   CHECK_CLOSE(0.000508830641, prop.av, 1e-10);
 
   // full thermodynamics: PT formulation
-  prop = eos.ThermodynamicsPT(3.0, 500.0);
+  prop = std::get<0>(eos.ThermodynamicsPT(3.0, 500.0));
   CHECK_CLOSE(0.258041912e+1, prop.s, 1e-8);
   CHECK_EQUAL(prop.rgn, 1);
 
-  prop = eos.ThermodynamicsPT(0.0006112127, 323.15);
+  prop = std::get<0>(eos.ThermodynamicsPT(0.0006112127, 323.15));
   CHECK_CLOSE(2594.66, prop.h, 0.2);
   CHECK_EQUAL(prop.rgn, 2);
 
-  prop = eos.ThermodynamicsPT(30.0, 700.0);
+  prop = std::get<0>(eos.ThermodynamicsPT(30.0, 700.0));
   CHECK_CLOSE(0.103505092e+2, prop.cp, 1e-8);
   CHECK_EQUAL(prop.rgn, 2);
 
   eos.brent_root_itrs = 0;
-  prop = eos.ThermodynamicsPT(25.5837018, 650.0);
+  prop = std::get<0>(eos.ThermodynamicsPT(25.5837018, 650.0));
   CHECK_CLOSE(0.502005554e+3, prop.w, 1e-6);
   CHECK_EQUAL(prop.rgn, 3);
   CHECK(eos.brent_root_itrs < 3);
 
   eos.brent_root_itrs = 0;
-  prop = eos.ThermodynamicsPT(22.29305999995, 650.0);
+  prop = std::get<0>(eos.ThermodynamicsPT(22.29305999995, 650.0));
   CHECK_CLOSE(44.65762757698, prop.cp, 1e-9);
   CHECK_EQUAL(prop.rgn, 3);
   CHECK(eos.brent_root_itrs < 3);
 
   eos.brent_root_itrs = 0;
-  prop = eos.ThermodynamicsPT(78.30956391692, 750.0);
+  prop = std::get<0>(eos.ThermodynamicsPT(78.30956391692, 750.0));
   CHECK_CLOSE(7.606960408824e+02, prop.w, 1e-6);
   CHECK_EQUAL(prop.rgn, 3);
   CHECK(eos.brent_root_itrs < 3);
@@ -368,7 +368,7 @@ TEST(EOS_IAPWS97_TABLE_PT)
       T = eos.TC + j * dT;
 
       auto nitrs = eos.brent_root_itrs;
-      rho = (eos.ThermodynamicsPT(p, T)).rho;
+      rho = std::get<0>(eos.ThermodynamicsPT(p, T)).rho;
       mitrs = std::max(mitrs, int(eos.brent_root_itrs - nitrs));
       count++;
       // std::cout << p << " " << T << " " << rho << std::endl;
@@ -390,7 +390,7 @@ TEST(EOS_IAPWS97_CRITICAL_POINT_PT)
   double dp(0.01), p;
   for (int i = -6; i < -2; ++i) {
     p = eos.PC + i * dp; 
-    auto prop = eos.ThermodynamicsPT(p, eos.TC);;
+    const auto& prop = std::get<0>(eos.ThermodynamicsPT(p, eos.TC));
     std::cout << "dp = " << p - eos.PC << " cp = " << prop.cp << " cv = " << prop.cv << std::endl;
   }
 }

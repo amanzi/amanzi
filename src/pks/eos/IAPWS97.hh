@@ -24,54 +24,13 @@
 
 #include "Teuchos_ParameterList.hpp"
 
+#include "IAPWS.hh"
+
 namespace Amanzi {
 namespace AmanziEOS {
 
-enum class Phase_t : int {
-  None = 0,
-  CompressibleLiquid = 1,
-  Gas = 2,
-  CriticalPoint = 3,
-  SaturatedVapor = 4,
-  SaturatedLiquid = 5,
-  TwoPhases = 6,
-  SupercriticalLiquid = 7,
-  Vapor = 8,
-  Liquid = 9
-};
-
-struct Properties {
-  double p = 0.0; // pressure, MPa
-  double T = 0.0; // temeparture, K
-  double rho = 0.0;
-  double v = 0.0; // specific volume, m3/kg
-  double h = 0.0; // specific enthalpy, kJ/kg
-  double u = 0.0; // specific internal energy, kJ/kg
-  double s = 0.0; // specific entropy, kJ/kg/K
-  double cp = 0.0; // specific isobaric heat capacity, kJ/kg/K
-  double cv = 0.0; // specific isocoric heat capacity, kJ/kg/K
-  double w = 0.0; // speed of sound, m/s
-  double kt = 0.0; // isothermal compressibility, 1/MPa
-  double av = 0.0; // isobaric cubic expansion coefficient, 1/K
-  double ap = 0.0; // relative pressure coefficient, 1/K
-  double bp = 0.0; // isothermal stress coefficient, kg/m3
-
-  double helmholtz = 0.0; // specific Helmholtz free energy, kJ/kg
-  double gibbs = 0.0; // specific Gibbs free energy, kJ/kg
-
-  double mu = 0.0; // dynamic viscosity, Pa s
-  double k = 0.0; // thermal conductivity, W/m/K
-
-  double sigma = 0.0; // surface tension, N/m
-
-  Phase_t phase = Phase_t::None; // phase id
-  double x = 0.0; // vapor quality
-
-  int rgn = 0; // region id
-};
-
 // Equation of State model
-class IAPWS97 {
+class IAPWS97 : public IAPWS {
  public:
   IAPWS97(Teuchos::ParameterList& plist) {};
   ~IAPWS97() {};
@@ -84,8 +43,11 @@ class IAPWS97 {
     v = 21, w = 22, x = 23, y = 24, z = 25
   };
 
-  Properties ThermodynamicsPT(double p, double T);
-  std::tuple<Properties, Properties, Properties> ThermodynamicsPH(double p, double h);
+  virtual std::tuple<Properties, Properties, Properties> ThermodynamicsPT(double p, double T);
+  virtual std::tuple<Properties, Properties, Properties> ThermodynamicsPH(double p, double h);
+
+  virtual double ThermalConductivity(double rho, double T, Properties& prop);
+  virtual double Viscosity(double rho, double T);
 
   double SaturationLineP(double p);
   double SaturationLineT(double T);
@@ -134,8 +96,6 @@ class IAPWS97 {
 
   // other properties
   double SurfaceTension(double T);
-  double ThermalConductivity(double rho, double T, Properties& prop);
-  double Viscosity(double rho, double T);
   Properties ExtendProperties(const Properties& prop);
 
   // supporting functions

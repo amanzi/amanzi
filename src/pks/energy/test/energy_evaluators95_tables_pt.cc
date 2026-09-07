@@ -38,7 +38,7 @@
 #include "IAPWS95_StateEvaluators.hh"
 #include "VerboseObject.hh"
 
-double RunTest(int icase)
+double RunTest(int icase, const std::string& iapws95_model)
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -92,14 +92,14 @@ double RunTest(int icase)
     }
     ofile.close();
   }
-  else if (icase == 2) {
+  else {
     plist->sublist("PKs").sublist("energy").sublist("thermal conductivity evaluator")
-      .sublist("All").sublist("liquid phase").set<bool>("use ragged spline", true);
-
+      .sublist("All").sublist("liquid phase")
+      .set<bool>(iapws95_model, true);
     plist->sublist("state").sublist("evaluators").sublist("thermodynamic_state")
-      .set<bool>("use ragged spline", true);
+      .set<bool>(iapws95_model, true);
     plist->sublist("state").sublist("evaluators").sublist("viscosity_liquid")
-      .set<bool>("use ragged spline", true);
+      .set<bool>(iapws95_model, true);
   }
 
   // create a mesh framework
@@ -223,8 +223,8 @@ double RunTest(int icase)
 
 TEST(EVALUATOR_DERIVATIVE95_TABLES_PT)
 {
-  double t0 = RunTest(0);
-  double t1 = RunTest(1);
+  double t0 = RunTest(0, "use iapws95");
+  double t1 = RunTest(1, "cvs table name");
   CHECK(t0 > 1.3 * t1);
-  double t2 = RunTest(2);
+  double t2 = RunTest(2, "use iapws95 spline rho/T");
 }

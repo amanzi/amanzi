@@ -28,8 +28,8 @@
 #include "CompositeVector.hh"
 #include "EnergyPressureEnthalpy_PK.hh"
 #include "evaluators_reg.hh"
-#include "IAPWS97.hh"
-#include "IAPWS97_StateEvaluators.hh"
+#include "IAPWS95.hh"
+#include "IAPWS95_StateEvaluatorsPH.hh"
 #include "MeshFactory.hh"
 #include "PK_Physical.hh"
 #include "State.hh"
@@ -39,7 +39,7 @@ TEST(EVALUATOR_DERIVATIVE_TABLES_PH)
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
-  using namespace Amanzi::AmanziGeometry;
+  using namespace Amanzi::Evaluators;
   using namespace Amanzi::Energy;
 
   using CV_t = CompositeVector;
@@ -48,12 +48,20 @@ TEST(EVALUATOR_DERIVATIVE_TABLES_PH)
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0) std::cout << "Test: derivative tables" << std::endl;
+  if (MyPID == 0) std::cout << "Test: derivative tables: spline p/h" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/energy_iapws97.xml";
+  std::string xmlFileName = "test/energy_iapws95_ph.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   auto plist = Teuchos::rcp(new Teuchos::ParameterList(xmlreader.getParameters()));
+
+  plist->sublist("PKs").sublist("energy").sublist("thermal conductivity evaluator")
+    .sublist("All").sublist("liquid phase")
+    .set<bool>("use iapws95 spline p/h", true);
+  plist->sublist("state").sublist("evaluators").sublist("thermodynamic_state")
+    .set<bool>("use iapws95 spline p/h", true);
+  plist->sublist("state").sublist("evaluators").sublist("viscosity_liquid")
+    .set<bool>("use iapws95 spline p/h", true);
 
   // create a mesh framework
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
@@ -65,7 +73,7 @@ TEST(EVALUATOR_DERIVATIVE_TABLES_PH)
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   int n = 100;
-  Teuchos::RCP<const Mesh> mesh = meshfactory.create(1.0, 0.0, 2.0, 0.2, 2 * n, 2 * n);
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, n, n);
 
   // create a simple state and populate it
   Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("state");
@@ -80,6 +88,7 @@ TEST(EVALUATOR_DERIVATIVE_TABLES_PH)
 
   // add viscosity to state
   std::string passwd("");
+  Key state_key = Keys::getKey("", "thermodynamic_state");
   Key pressure_key = Keys::getKey("", "pressure");
   Key enthalpy_key = Keys::getKey("", "enthalpy");
   Key ie_key = Keys::getKey("", "internal_energy");
@@ -119,31 +128,28 @@ TEST(EVALUATOR_DERIVATIVE_TABLES_PH)
 
   S->Setup();
   S->InitializeFields();
-  S->InitializeEvaluators();
-
-  EPK->Initialize();
-  S->CheckAllFieldsInitialized();
 
   // populate (p,h) table
+  double p_min = 0.2;
+  double p_max = 50.0;
+  double h_min = 500.0;
+  double h_max = 3600.0;
+
   auto& p_c = *S->GetW<CompositeVector>(pressure_key, pressure_key).ViewComponent("cell");
   auto& h_c = *S->GetW<CompositeVector>(enthalpy_key, passwd).ViewComponent("cell");
 
-  AmanziEOS::IAPWS97 eos(*plist);
-
-  int c(0);
-  double scale(50.0 / n);
-  double dp(5.0e-2 * scale), dh(15.0 * scale), p, h; 
-
-  for (int i = -n; i < n; ++i) {
-    for (int j = -n; j < n; ++j) {
-      p = eos.PC + i * dp; // Mpa
-      h = eos.HC + j * dh;
-
-      p_c[0][c] = p * 1.0e+6;
-      h_c[0][c] = h * CommonDefs::ENTHALPY_FACTOR;
+  int c = 0;
+  for (double i = 0; i < n; i++) {
+    for (double j = 0; j < n; j++) {
+      p_c[0][c] = (p_min + (p_max - p_min) * i / double(n)) * 1e+6;
+      h_c[0][c] = (h_min + (h_max - h_min) * j / double(n)) * 1000.0 * CommonDefs::MOLAR_MASS_H2O;
       c++;
     }
   }
+
+  S->InitializeEvaluators();
+  EPK->Initialize();
+  S->CheckAllFieldsInitialized();
 
   Tag tag = Tags::DEFAULT;
   auto eval_p = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(S->GetEvaluatorPtr(pressure_key, tag));
@@ -151,52 +157,22 @@ TEST(EVALUATOR_DERIVATIVE_TABLES_PH)
   eval_p->SetChanged();
   eval_h->SetChanged();
 
-  // compare Maxwell relations
-  S->GetEvaluator("thermodynamic_state").Update(*S, "test");
-  auto& state_c = *S->Get<CV_t>("thermodynamic_state", tag).ViewComponent("cell");
-
-  c = 0;
-  for (int i = -n; i < n; ++i) {
-    for (int j = -n; j < n; ++j) {
-      int rgn = state_c[(int)Evaluators::TSPH_t::RGN][c];
-      double cp = state_c[(int)Evaluators::TSPH_t::CP][c];
-      if (rgn != 4) CHECK(cp > 0.0);
-      double value = (rgn != 4) ? std::log(cp) : 0.0;
-
-      double kt = state_c[(int)Evaluators::TSPH_t::KT][c];
-      if (rgn != 4) CHECK(kt > 0.0);
-      value = (rgn != 4) ? std::log(kt) : 0.0;
-
-      double av = state_c[(int)Evaluators::TSPH_t::AV][c];
-      if (rgn != 4) CHECK(av > 0.0);
-      value = (rgn != 4) ? std::log(av) : 0.0;
-
-      double T = state_c[(int)Evaluators::TSPH_t::T][c];
-      double rho = state_c[(int)Evaluators::TSPH_t::RHO][c];
-      value = cp * kt - T * av * av / rho;
-      if (rgn != 4) CHECK(value > 0.0);
-      value = (rgn != 4) ? std::log(value) : 0.0;
-
-      // std::cout << p_c[0][c] * 1e-6 << " " << h_c[0][c] / ENTHALPY_FACTOR << " " << value << std::endl;
-      c++;
-    }
-  }
-
   // compute a selective derivative
-  Key field = temperature_key;
-  Key wrt = enthalpy_key;
-  S->GetEvaluator(field).Update(*S, "test");
+  Key field = density_key;
+  Key wrt = pressure_key;
   S->GetEvaluator(field).UpdateDerivative(*S, "test", wrt, Tags::DEFAULT);
   auto& der_c = *S->GetDerivative<CV_t>(field, tag, wrt, tag).ViewComponent("cell");
   auto& field_c = *S->Get<CV_t>(field, tag).ViewComponent("cell");
+  auto& state_c = *S->Get<CV_t>(state_key, tag).ViewComponent("cell");
 
   c = 0;
-  for (int i = -n; i < n; ++i) {
-    for (int j = -n; j < n; ++j) {
-      // std::cout << p_c[0][c] * 1e-6 << " " << h_c[0][c] / CommonDefs::ENTHALPY_FACTOR << " " << field_c[0][c] << std::endl;
-      // std::cout << p_c[0][c] * 1e-6 << " " << h_c[0][c] / ENTHALPY_FACTOR << " " << der_c[0][c] << std::endl;
+  std::ofstream out("field.dat");
+  for (int i = 0; i < n; ++i) {
+    for (int j = 0; j < n; ++j) {
+      out << p_c[0][c] * 1e-6 << " " << h_c[0][c] << " " << state_c[(int)TSPH_t::T][c] << std::endl;
       c++;
     }
   }
+  out.close();
 }
 

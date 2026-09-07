@@ -41,7 +41,7 @@ H2O_ThermalConductivityIAPWS97::ThermalConductivity(double p, double T, double p
 {
   double k, pMPa(p * 1e-6);
   try {
-    k = eos_->ThermodynamicsPT(pMPa, T).k;
+    k = std::get<0>(eos_->ThermodynamicsPT(pMPa, T)).k;
   } catch (...) {
     ierr_ = 1;
     std::stringstream ss;
@@ -59,11 +59,11 @@ double
 H2O_ThermalConductivityIAPWS97::DThermalConductivityDp(double p, double T, double phi)
 {
   double pMPa = p * 1e-6;
-  double k1 = eos_->ThermodynamicsPT(pMPa, T).k;
+  double k1 = std::get<0>(eos_->ThermodynamicsPT(pMPa, T)).k;
 
   const double eps = std::sqrt(std::numeric_limits<double>::epsilon());
   double dp = eps * pMPa;
-  double k2 = eos_->ThermodynamicsPT(pMPa + dp, T).k;
+  double k2 = std::get<0>(eos_->ThermodynamicsPT(pMPa + dp, T)).k;
 
   return (k2 - k1) / dp * 1e-6;
 }
@@ -76,11 +76,11 @@ double
 H2O_ThermalConductivityIAPWS97::DThermalConductivityDT(double p, double T, double phi)
 {
   double pMPa = p * 1e-6;
-  double k1 = eos_->ThermodynamicsPT(pMPa, T).k;
+  double k1 = std::get<0>(eos_->ThermodynamicsPT(pMPa, T)).k;
 
   const double eps = std::sqrt(std::numeric_limits<double>::epsilon());
   double dT = eps * T;
-  double k2 = eos_->ThermodynamicsPT(pMPa, T + dT).k;
+  double k2 = std::get<0>(eos_->ThermodynamicsPT(pMPa, T + dT)).k;
 
   return (k2 - k1) / dT;
 }
