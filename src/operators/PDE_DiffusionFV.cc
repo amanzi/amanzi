@@ -229,7 +229,6 @@ PDE_DiffusionFV::UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const Composi
                                                 const Teuchos::Ptr<const CompositeVector>& u,
                                                 const Teuchos::Ptr<const CompositeVector>& factor)
 {
-  assert(false);
 #if 0
   // Add derivatives to the matrix (Jacobian in this case)
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_TRUE && u.get()) {
@@ -244,6 +243,9 @@ PDE_DiffusionFV::UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const Composi
 
     AnalyticJacobian_(*u);
   }
+#else
+  Errors::Message msg("PDE_DiffusionFV::UpdateMatricesNewtonCorrection with factor not implemented");
+  Exceptions::amanzi_throw(msg);
 #endif
 }
 
