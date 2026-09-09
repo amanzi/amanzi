@@ -735,7 +735,25 @@ struct Frho3 {
 SaturationState
 IAPWS95::SaturationLineP(double p)
 {
-  SaturationState sat;
+  SaturationState sat{};
+
+  sat.p = p;
+
+  if (p >= PC) {
+    sat.Tsat = TC;
+    sat.rhol = RHOC;
+    sat.rhov = RHOC;
+    sat.vl = 1.0 / RHOC;
+    sat.vv = 1.0 / RHOC;
+    sat.hl = HC;
+    sat.hv = HC;
+
+    auto prop = PopulateProperties(RHOC, TC);
+    sat.sl = prop.s;
+    sat.sv = prop.s;
+
+    return sat;
+  }
 
   if (p < PC) {
     double T0, T, rhol0, rhov0;

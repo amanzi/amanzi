@@ -132,18 +132,6 @@ class IAPWS95_RaggedSplinePH : public IAPWS95,
     double anisotropic_refinement_fraction = 0.20;
   };
 
-  struct ActiveInterval {
-    double lower = 0.0;
-    double upper = 0.0;
-    double weight = 1.0;
-  };
-
-  struct RaggedColumn {
-    double p = 0.0;
-    std::vector<ActiveInterval> physical_intervals;
-    std::vector<ActiveInterval> extension_intervals;
-  };
-
   struct Sample {
     double p = 0.0;
     double h = 0.0;
@@ -206,7 +194,6 @@ class IAPWS95_RaggedSplinePH : public IAPWS95,
  private:
   void ValidateOptions_() const;
   void BuildInitialCoordinateLines_();
-  void BuildRaggedColumns_();
   void AdaptiveRefineCoordinateLines_();
   void BuildKnotVectors_();
 
@@ -246,9 +233,7 @@ class IAPWS95_RaggedSplinePH : public IAPWS95,
 
  private:
   std::shared_ptr<IAPWS95> eos95_;
-
   Options options_;
-  std::vector<RaggedColumn> columns_;
 
   // shared data
   inline static Mesh mesh_;

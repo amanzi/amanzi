@@ -17,6 +17,7 @@
 #ifndef AMANZI_IAPWS95_HH_
 #define AMANZI_IAPWS95_HH_
 
+#include <cstdint>
 #include <tuple>
 
 #include "Teuchos_ParameterList.hpp"

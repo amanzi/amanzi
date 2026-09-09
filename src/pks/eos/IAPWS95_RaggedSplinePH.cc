@@ -95,7 +95,6 @@ IAPWS95_RaggedSplinePH::CreateRaggedMesh()
   coefficients_.clear();
 
   BuildInitialCoordinateLines_();
-  BuildRaggedColumns_();
   AdaptiveRefineCoordinateLines_();
   BuildKnotVectors_();
 }
@@ -152,8 +151,11 @@ IAPWS95_RaggedSplinePH::BuildSplineCoefficients(const std::vector<Sample>& sampl
     int id = LowerCell(mesh_.x_lines, sample.p);
     int it = LowerCell(mesh_.y_lines, sample.h);
 
-    const double h_x = std::log(mesh_.x_lines[id + 1] / mesh_.x_lines[id]);
-    const double h_theta = (mesh_.y_lines[it + 1] - mesh_.y_lines[it]) / HC;
+    double h_x = std::log(mesh_.x_lines[id + 1] / mesh_.x_lines[id]);
+    double h_theta = (mesh_.y_lines[it + 1] - mesh_.y_lines[it]) / HC;
+
+    h_x = std::max(h_x, 0.01);  // experimental scaling
+    h_theta = std::max(h_theta, 0.01);
 
     const std::array<double, 6> derivative_scale = { 1.0,
                                                      h_x,
@@ -267,43 +269,6 @@ IAPWS95_RaggedSplinePH::BuildInitialCoordinateLines_()
 
 
 /* ******************************************************************
-* Should be called every time the coordinate lines change, e.g.
-* during adaptive refinement. Will be used for boundary interpolation.
-****************************************************************** */
-void
-IAPWS95_RaggedSplinePH::BuildRaggedColumns_()
-{
-  columns_.clear();
-  columns_.reserve(mesh_.x_lines.size());
-
-  for (double p : mesh_.x_lines) {
-    RaggedColumn c;
-    c.p = p;
-
-    if (p < PC) {
-      auto sat = eos95_->SaturationLineP(p);
-
-      auto liquid = PopulateProperties(sat.rhol, sat.Tsat);
-      auto vapor = PopulateProperties(sat.rhov, sat.Tsat);
-
-      double ext_hl = FindLiquidMetastableMargin(p, sat);
-      double ext_hv = FindVaporMetastableMargin(p, sat);
-
-      c.physical_intervals = { {options_.h_min, liquid.h, 1.0},
-                               {vapor.h, options_.h_max, 1.0} };
-      c.extension_intervals = { {liquid.h, ext_hl, options_.extension_weight},
-                                {ext_hv, vapor.h, options_.extension_weight} };
-    } else {
-      c.physical_intervals = { {options_.h_min, options_.h_max, 1.0} };
-      c.extension_intervals = { {options_.h_min, options_.h_max, 1.0} };
-    }
-
-    columns_.push_back(c);
-  }
-}
-
-
-/* ******************************************************************
 * Validate options
 ****************************************************************** */
 void IAPWS95_RaggedSplinePH::ValidateOptions_() const
@@ -325,7 +290,7 @@ void IAPWS95_RaggedSplinePH::ValidateOptions_() const
 std::pair<double, double>
 IAPWS95_RaggedSplinePH::BoundaryEnthalpies(double p) const
 {
-  if (p > PC) return { options_.h_min, options_.h_min };
+  if (p >= PC) return { HC, HC };
 
   const auto& sat = eos95_->SaturationLineP(p);
   return { sat.hl, sat.hv };
@@ -526,8 +491,6 @@ IAPWS95_RaggedSplinePH::AdaptiveRefineCoordinateLines_()
     insert_unique(mesh_.x_lines, add_p, options_.max_p_intervals);
     insert_unique(mesh_.y_lines, add_h, options_.max_h_intervals);
     if (!changed) break;
-
-    BuildRaggedColumns_();
   }
 
   // additional lines
@@ -542,7 +505,6 @@ IAPWS95_RaggedSplinePH::AdaptiveRefineCoordinateLines_()
 
   // insert_unique(mesh_.x_lines, { 20.4, 20.8, 21.2 });
   // insert_unique(mesh_.y_lines, { 505.0 });
-  BuildRaggedColumns_();
 }
 
 
@@ -573,8 +535,11 @@ IAPWS95_RaggedSplinePH::AnisotropicRefinement()
     int id = LowerCell(mesh_.x_lines, p);
     int it = LowerCell(mesh_.y_lines, h);
 
-    const double h_x = std::log(mesh_.x_lines[id + 1] / mesh_.x_lines[id]);
-    const double h_theta = (mesh_.y_lines[it + 1] - mesh_.y_lines[it]) / HC;
+    double h_x = std::log(mesh_.x_lines[id + 1] / mesh_.x_lines[id]);
+    double h_theta = (mesh_.y_lines[it + 1] - mesh_.y_lines[it]) / HC;
+
+    h_x = std::max(h_x, 0.01);  // experimental scaling
+    h_theta = std::max(h_theta, 0.01);
 
     const std::array<double, 6> derivative_scale = { 1.0,
                                                      h_x,
@@ -675,7 +640,6 @@ IAPWS95_RaggedSplinePH::AnisotropicRefinement()
   insert_unique(mesh_.x_lines, add_p);
   insert_unique(mesh_.y_lines, add_h);
 
-  BuildRaggedColumns_();
   BuildKnotVectors_();
 }
 
@@ -761,7 +725,7 @@ IAPWS95_RaggedSplinePH::BuildSamples()
     double p0 = mesh_.x_lines[i];
     double p1 = mesh_.x_lines[i + 1];
     double pm = std::sqrt(p0 * p1);
-    if (pm > PC || std::abs(pm - PC) > options_.critical_cutoff_pressure) continue;
+    if (std::abs(pm - PC) > options_.critical_cutoff_pressure) continue;
 
     for (int j = 0; j + 1 < mesh_.y_lines.size(); ++j) {
       double h0 = mesh_.y_lines[j];
