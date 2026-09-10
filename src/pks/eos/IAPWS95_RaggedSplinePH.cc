@@ -151,11 +151,8 @@ IAPWS95_RaggedSplinePH::BuildSplineCoefficients(const std::vector<Sample>& sampl
     int id = LowerCell(mesh_.x_lines, sample.p);
     int it = LowerCell(mesh_.y_lines, sample.h);
 
-    double h_x = std::log(mesh_.x_lines[id + 1] / mesh_.x_lines[id]);
-    double h_theta = (mesh_.y_lines[it + 1] - mesh_.y_lines[it]) / HC;
-
-    h_x = std::max(h_x, 0.01);  // experimental scaling
-    h_theta = std::max(h_theta, 0.01);
+    const double h_x = std::log(mesh_.x_lines[id + 1] / mesh_.x_lines[id]);
+    const double h_theta = (mesh_.y_lines[it + 1] - mesh_.y_lines[it]) / HC;
 
     const std::array<double, 6> derivative_scale = { 1.0,
                                                      h_x,
@@ -214,6 +211,34 @@ IAPWS95_RaggedSplinePH::BuildSplineCoefficients(const std::vector<Sample>& sampl
           add_upper(index[a], index[b], weight * row_value[a] * row_value[b]);
         }
       }
+
+      /*
+      // Thermodynamic consistency equation:
+      //     rho * S_p + 1000 * S_h = 0
+      // In spline coordinates x = log(p/PC), theta = h/HC:
+      //     S_x + gamma * S_theta = 0, gamma = 1000 * p / (rho * HC).
+      double gamma = 1000.0 * sample.p / (sample.rho * HC);
+
+      q = 0;
+      for (int a = 0; a < 4; ++a) {
+        for (int b = 0; b < 4; ++b) {
+          index[q] = mesh_.CoefficientIndex(Bp.index[a], Bt.index[b]);
+          row_value[q] = Bp.d1[a] * Bt.value[b] + gamma * Bp.value[a] * Bt.d1[b];
+          ++q;
+        }
+      }
+
+      // Target is zero, so there is no contribution to rhs.
+     
+      double rho_constraint_weight = 1.0;
+      s = h_x;
+      weight = sample.weight * rho_constraint_weight * s * s;
+      for (int a = 0; a < 16; ++a) {
+        for (int b = a; b < 16; ++b) {
+          add_upper(index[a], index[b], weight * row_value[a] * row_value[b]);
+        }
+      }
+      */
     }
   }
 
@@ -446,8 +471,8 @@ IAPWS95_RaggedSplinePH::AdaptiveRefineCoordinateLines_()
         double curvature_v = std::fabs(b0.second - 2 * bm.second + b1.second);
         double hb1 = std::fabs(b1.first - b0.first);
         double hb2 = std::fabs(b1.second - b0.second);
-        if (hb1 > 1e-12 && curvature_l > 0.2 * hb1 ||
-            hb2 > 1e-12 && curvature_v > 0.2 * hb2) add_p.push_back(pm);
+        if (hb1 > 1e-12 && curvature_l > 0.1 * hb1 ||
+            hb2 > 1e-12 && curvature_v > 0.1 * hb2) add_p.push_back(pm);
       }
     }
 
@@ -503,7 +528,7 @@ IAPWS95_RaggedSplinePH::AdaptiveRefineCoordinateLines_()
     }
   };
 
-  // insert_unique(mesh_.x_lines, { 20.4, 20.8, 21.2 });
+  // insert_unique(mesh_.x_lines, { 0.25, 0.3 });
   // insert_unique(mesh_.y_lines, { 505.0 });
 }
 
@@ -535,11 +560,8 @@ IAPWS95_RaggedSplinePH::AnisotropicRefinement()
     int id = LowerCell(mesh_.x_lines, p);
     int it = LowerCell(mesh_.y_lines, h);
 
-    double h_x = std::log(mesh_.x_lines[id + 1] / mesh_.x_lines[id]);
-    double h_theta = (mesh_.y_lines[it + 1] - mesh_.y_lines[it]) / HC;
-
-    h_x = std::max(h_x, 0.01);  // experimental scaling
-    h_theta = std::max(h_theta, 0.01);
+    const double h_x = std::log(mesh_.x_lines[id + 1] / mesh_.x_lines[id]);
+    const double h_theta = (mesh_.y_lines[it + 1] - mesh_.y_lines[it]) / HC;
 
     const std::array<double, 6> derivative_scale = { 1.0,
                                                      h_x,
@@ -761,8 +783,18 @@ IAPWS95_RaggedSplinePH::BuildSamples()
   for (Sample& sample : samples) {
     if (sample.is_physical) {
       auto [prop, liquid, vapor] = eos97_.ThermodynamicsPH(sample.p, sample.h); 
-      sample.rho = prop.rho;
-      sample.T = prop.T;
+
+      FrhoT f(sample.p, sample.h, eos95_.get());
+      FrhoT::Vector x0(2), sol(2);
+      x0[0] = prop.rho;
+      x0[1] = prop.T;
+
+      int itrs = 20;
+      sol = PowellHybrid(x0, f, &itrs, 1.0e-10);
+      AMANZI_ASSERT(itrs >= 0);
+
+      sample.rho = sol[0];
+      sample.T = sol[1];
     }
   }
 
@@ -833,7 +865,7 @@ IAPWS95_RaggedSplinePH::PopulateMetastableSamples_(std::vector<Sample>& samples,
     Sample& sample = samples[w.index];
     bool success = SolveMetastableSample_(sample, solved, w.rho_sat, w.T_sat);
     AMANZI_ASSERT(success);
-
+ 
     solved.push_back({sample.p, sample.h, sample.rho, sample.T, 1.0, false});
   }
 }

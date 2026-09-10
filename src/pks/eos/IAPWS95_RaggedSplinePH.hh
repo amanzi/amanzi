@@ -113,7 +113,7 @@ class IAPWS95_RaggedSplinePH : public IAPWS95,
     unsigned max_adaptive_passes = 8;
 
     // metastable extension fraction, must lie in (0,1)
-    double metastable_stability_fraction = 0.25;
+    double metastable_stability_fraction = 0.5;
 
     // largest allowed extension below two-phase boundary, [K]
     double max_metastable_extension_K = 40.0;
@@ -125,7 +125,7 @@ class IAPWS95_RaggedSplinePH : public IAPWS95,
     double minimum_extension_temperature_K = 273.16;
 
     // box around the critical point
-    double critical_cutoff_pressure = 1.0;  // MPa
+    double critical_cutoff_pressure = 0.25;  // MPa
     double critical_cutoff_enthalpy = 150.0;  // kJ/kg
 
     // adaptive refinement

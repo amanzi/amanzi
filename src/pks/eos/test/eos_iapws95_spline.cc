@@ -261,20 +261,25 @@ TEST(EOS_IAPWS95_SPLINE_RHO_T)
 
         double Dex = 1.0 + 2 * delta * exactr[1] + delta * delta * exactr[3];
         double Dap = 1.0 + 2 * delta * approx[1] + delta * delta * approx[3];
-        CHECK(Dap > 0.0);
-        if (Dap < 0.0 || Dex < 0.0) std::cout << "rho=" << rho << "  T=" << T << "  D=" << Dex << " " << Dap << std::endl;
-        out << rho << " " << T << " " << Dap << " " << std::fabs(Dex - Dap) / std::max(Dex, Dap)<< "\n";
+        CHECK(Dap * Dex > 0.0);
+        if (Dap < 0.0 && Dex > 0.0) {
+          auto [prop, liquid, vapor] = eos95.ThermodynamicsRhoT(rho, T);
+          std::cout << "rho=" << rho << " T=" << T 
+                    << "\n  Dex=" << Dex << " Dap=" << Dap 
+                    << "\n  x=" << prop.x << std::endl;
+        }
+        out << rho << " " << T << " " << Dap << " " << Dex << " " << std::fabs(Dex - Dap) / std::max(Dex, Dap)<< "\n";
 
         double Nex = 1.0 + delta * exactr[1] - delta * tau * exactr[4];
         double Nap = 1.0 + delta * approx[1] - delta * tau * approx[4];
-        // out << rho << " " << T << " " << Nap << " " << std::fabs(Nex - Nap) / std::max(Nex, Nap)<< "\n";
+        // out << rho << " " << T << " " << Nap << " " << Nex << " " << std::fabs(Nex - Nap) / std::max(Nex, Nap)<< "\n";
 
         double CPex = (-tau * tau * eos95.R * (exact0[5] + exactr[5]) + eos95.R * Nex * Nex / Dex) * 1000.0;
         double CPap = (-tau * tau * eos95.R * (exact0[5] + approx[5]) + eos95.R * Nap * Nap / Dap) * 1000.0;
-        // out << rho << " " << T << " " << CPap << " " << std::fabs(CPex - CPap) / std::max(CPex, CPap)<< "\n";
+        // out << rho << " " << T << " " << CPap << " " << CPex << " " << std::fabs(CPex - CPap) / std::max(CPex, CPap)<< "\n";
       }
       else {
-        out << rho << " " << T << " " << nan << " " << nan << "\n";
+        out << rho << " " << T << " " << nan << " " << nan << " " << nan << "\n";
       }
     }
   }

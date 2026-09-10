@@ -245,7 +245,7 @@ IAPWS95::PopulateProperties(double rho, double T)
   prop.s = R * (tau_g02 - g0[0] - g[0]);
 
   prop.cv = -R * tau2_g05;
-  prop.cp = prop.cv + A * A / D;
+  prop.cp = prop.cv + R * A * A / D;
 
   prop.ap = (1.0 - delta_tau_g4 / Z) / T;
   prop.av = (Z - delta_tau_g4) / (T * D);

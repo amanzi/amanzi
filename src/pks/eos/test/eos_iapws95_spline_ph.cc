@@ -48,6 +48,8 @@ void WriteEntropyPlotData(IAPWS95_RaggedSplinePH& spline,
 
   int count(0);
   std::array<double, 6> err_l2{}, err_abs{}, err_rel{}, err{};
+  std::array<double, 6> err_p_max{}, err_h_max{};
+
   for (int j = 0; j < np; ++j) {
     double p = p_min + (p_max - p_min) * (double)j / (np - 1);
 
@@ -66,7 +68,12 @@ void WriteEntropyPlotData(IAPWS95_RaggedSplinePH& spline,
         out << p << " " << h << " " << Dap << " " << Dex << " " << Dap - Dex << "\n";
 
         for (int k = 0; k < 6; ++k) {
-          err[k] = spline_value[k] - exact_value[k];
+          double tmp = spline_value[k] - exact_value[k];
+          if (std::fabs(tmp) > err_abs[k]) {
+            err_p_max[k] = p;
+            err_h_max[k] = h;
+          }
+          err[k] = tmp;
           err_l2[k] += err[k] * err[k];
           err_abs[k] = std::max(err_abs[k], std::fabs(err[k]));
           err_rel[k] = std::max(err_rel[k], std::fabs(err[k] / std::max(1e-14, std::fabs(exact_value[k]))));
@@ -83,13 +90,15 @@ void WriteEntropyPlotData(IAPWS95_RaggedSplinePH& spline,
 
     out << "\n";
   }
+
   std::cout << "Wrote plotting data to " << filename << '\n';
   std::cout << "Spline resolutions: " << spline.GetMesh().x_lines.size() << " " << spline.GetMesh().y_lines.size() << std::endl;
   std::cout << "Number of negative D: " << count << std::endl;
-  std::cout << "Error:  mean       absolute     relative\n";
+  CHECK(count == 0);
+  std::cout << "Error:  mean       max        relative_max   p_max      h_max\n";
   for (int k = 0; k < 6; ++k) {
     err_l2[k] = std::sqrt(err_l2[k] / np / nh);
-    printf("%3d %12.8f %12.8f %12.8f\n", k, err_l2[k], err_abs[k], err_rel[k]); 
+    printf("%3d %12.8f %12.8f %12.8f %12.8f %12.8f\n", k, err_l2[k], err_abs[k], err_rel[k], err_p_max[k], err_h_max[k]); 
     if (k != 3) CHECK(err_l2[k] < 0.01);
   }
 }
@@ -163,7 +172,6 @@ double FindLiquidMetastableBoundary(IAPWS95_RaggedSplinePH& spline,
 
   for (int k = 0; k < 1000; ++k) {
     double rho1 = rho_hi * 0.995;
-    if (!(rho1 > 0.0)) break;
 
     // 1. Solve p(rho1, T1) = p staying on the continuation branch by centering
     //    the temperature bracket at the previous value T_hi.
@@ -386,7 +394,7 @@ void WriteSamplesData(const std::vector<IAPWS95_RaggedSplinePH::Sample>& samples
   std::ofstream out(filename);
   out << std::setprecision(17);
   for (int n = 0; n < samples.size(); ++n) {
-    out << samples[n].p << " " << samples[n].h << std::endl;
+    out << samples[n].p << " " << samples[n].h << " " << samples[n].rho << std::endl;
   }
   out.close();
 }
@@ -428,7 +436,7 @@ TEST(EOS_IAPWS95_SPLINE_P_H)
       if (spline.IsPhysical(p, h)) {
         const auto& [prop0, liquid0, vapor0] = eos95.ThermodynamicsPH(p, h);
         const auto& [prop1, liquid1, vapor1] = spline.ThermodynamicsPH(p, h);
-        out << p << " " << h << " " << prop0.cp << " " << prop1.cp << "\n";
+        out << p << " " << h << " " << prop0.w << " " << prop1.w << "\n";
       }
       else {
         out << p << " " << h << " " << nan << " " << nan << "\n";
@@ -436,7 +444,6 @@ TEST(EOS_IAPWS95_SPLINE_P_H)
     }
   }
   out.close();
-
 
 
   const auto& mesh = spline.GetMesh();
