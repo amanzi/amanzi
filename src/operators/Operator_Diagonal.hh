@@ -31,7 +31,7 @@ class Operator_Diagonal : public Operator {
   // The input CVSs define the domain and range of the operator.
   Operator_Diagonal(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
                     const Teuchos::RCP<const CompositeVectorSpace>& cvs_col,
-                    Teuchos::ParameterList& plist,
+                    const Teuchos::RCP<Teuchos::ParameterList>& plist,
                     int schema)
     : Operator(cvs_row, cvs_col, plist, Schema(schema), Schema(schema))
   {

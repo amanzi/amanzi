@@ -88,8 +88,8 @@ PDE_Abstract::Init_(Teuchos::ParameterList& plist)
     Teuchos::RCP<CompositeVectorSpace> cvs_col =
       Teuchos::rcp(new CompositeVectorSpace(cvsFromSchema(global_schema_col_, mesh_, true)));
 
-    global_op_ = Teuchos::rcp(
-      new Operator_Schema(cvs_row, cvs_col, plist, global_schema_row_, global_schema_col_));
+    global_op_ = Teuchos::rcp(new Operator_Schema(
+      cvs_row, cvs_col, Teuchos::rcpFromRef(plist), global_schema_row_, global_schema_col_));
 
   } else {
     // constructor was given an Operator

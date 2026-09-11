@@ -34,7 +34,7 @@ namespace Operators {
 /* ******************************************************************
 * Constructor
 ****************************************************************** */
-Operator_MultiMesh::Operator_MultiMesh(Teuchos::ParameterList& plist,
+Operator_MultiMesh::Operator_MultiMesh(const Teuchos::RCP<Teuchos::ParameterList>& plist,
                                        Teuchos::RCP<Operator> global_op,
                                        Teuchos::RCP<Op> local_op,
                                        std::vector<int>& interface_block,

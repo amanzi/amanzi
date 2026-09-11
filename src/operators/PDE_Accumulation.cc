@@ -382,7 +382,7 @@ PDE_Accumulation::Init_(const Schema& schema, bool surf)
 
       if (kind == AmanziMesh::Entity_kind::CELL) {
         int old_schema = OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL;
-        global_op_ = Teuchos::rcp(new Operator_Cell(cvs, plist_, old_schema));
+        global_op_ = Teuchos::rcp(new Operator_Cell(cvs, Teuchos::rcpFromRef(plist_), old_schema));
         std::string name("CELL_CELL");
         if (surf) {
           op = Teuchos::rcp(new Op_SurfaceCell_SurfaceCell(name, mesh_));
@@ -391,12 +391,12 @@ PDE_Accumulation::Init_(const Schema& schema, bool surf)
         }
 
       } else if (kind == AmanziMesh::Entity_kind::EDGE) {
-        global_op_ = Teuchos::rcp(new Operator_Edge(cvs, plist_));
+        global_op_ = Teuchos::rcp(new Operator_Edge(cvs, Teuchos::rcpFromRef(plist_)));
         std::string name("EDGE_EDGE");
         op = Teuchos::rcp(new Op_Edge_Edge(name, mesh_));
 
       } else if (kind == AmanziMesh::Entity_kind::NODE) {
-        global_op_ = Teuchos::rcp(new Operator_Node(cvs, plist_));
+        global_op_ = Teuchos::rcp(new Operator_Node(cvs, Teuchos::rcpFromRef(plist_)));
         std::string name("NODE_NODE");
         op = Teuchos::rcp(new Op_Node_Node(name, mesh_, num));
 

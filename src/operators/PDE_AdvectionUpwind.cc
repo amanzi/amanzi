@@ -42,7 +42,8 @@ PDE_AdvectionUpwind::InitAdvection_(Teuchos::ParameterList& plist)
 
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-    global_op_ = Teuchos::rcp(new Operator_Cell(cvs, plist, global_schema_row_.OldSchema()));
+    global_op_ =
+      Teuchos::rcp(new Operator_Cell(cvs, Teuchos::rcpFromRef(plist), global_schema_row_.OldSchema()));
 
   } else {
     // constructor was given an Operator

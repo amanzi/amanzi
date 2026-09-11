@@ -1450,8 +1450,8 @@ PDE_DiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
     Teuchos::RCP<CompositeVectorSpace> cface_cvs = Teuchos::rcp(new CompositeVectorSpace());
     cface_cvs->SetMesh(mesh_)->SetGhosted()->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
 
-    consistent_face_op_ =
-      Teuchos::rcp(new Operator_ConsistentFace(cface_cvs, plist_.sublist("consistent faces")));
+    consistent_face_op_ = Teuchos::rcp(new Operator_ConsistentFace(
+      cface_cvs, Teuchos::rcpFromRef(plist_.sublist("consistent faces"))));
     consistent_face_op_->OpPushBack(local_op_);
     Teuchos::ParameterList lin_solver =
       plist_.sublist("consistent faces").sublist("preconditioner");

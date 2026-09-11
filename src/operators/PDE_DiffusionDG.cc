@@ -67,7 +67,7 @@ PDE_DiffusionDG::Init_(Teuchos::ParameterList& plist)
     cvs->SetMesh(mesh_)->SetGhosted(true);
     cvs->AddComponent("cell", AmanziMesh::Entity_kind::CELL, nk);
 
-    global_op_ = Teuchos::rcp(new Operator_Schema(cvs, plist, my_schema));
+    global_op_ = Teuchos::rcp(new Operator_Schema(cvs, Teuchos::rcpFromRef(plist), my_schema));
 
   } else {
     // constructor was given an Operator

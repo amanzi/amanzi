@@ -67,7 +67,7 @@ PDE_ElasticityFracturedMatrix::Init(Teuchos::ParameterList& plist)
 
   // create global and local operators
   cvs_ = CreateFracturedMatrixCVS(mesh_, fracture_, names[0], my_schema.get_items());
-  global_op_ = Teuchos::rcp(new Operator_Schema(cvs_, plist, my_schema));
+  global_op_ = Teuchos::rcp(new Operator_Schema(cvs_, Teuchos::rcpFromRef(plist), my_schema));
 
   local_op_ = Teuchos::rcp(new Op_Cell_Schema(my_schema, my_schema, mesh_));
   global_op_->OpPushBack(local_op_);

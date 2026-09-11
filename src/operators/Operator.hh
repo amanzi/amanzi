@@ -211,21 +211,31 @@ class Operator : public Matrix<CompositeVector, CompositeVectorSpace> {
 
   // deprecated but yet supported
   Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
-           Teuchos::ParameterList& plist,
+           const Teuchos::RCP<Teuchos::ParameterList>& plist,
            int schema);
 
   // general operator (domain may differ from range)
   Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
            const Teuchos::RCP<const CompositeVectorSpace>& cvs_col,
-           Teuchos::ParameterList& plist,
+           const Teuchos::RCP<Teuchos::ParameterList>& plist,
            const Schema& schema_row,
            const Schema& schema_col);
 
   // bijective operator (domain = range)
   Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
-           Teuchos::ParameterList& plist,
+           const Teuchos::RCP<Teuchos::ParameterList>& plist,
            const Schema& schema)
     : Operator(cvs, cvs, plist, schema, schema) {};
+
+  // Copy constructor delegates to the general constructor, sharing plist_
+  // (same RCP) and shallow-copying ops_ with the original -- so the clone's
+  // Ops keep seeing the same underlying data as the original -- while all
+  // assembly/lock state (Amat_, smap_, A_, structure_locked_, staging flags)
+  // is reset fresh by the delegated-to constructor. Subclasses must
+  // implement Clone() by delegating to their own copy constructor rather
+  // than relying on the compiler-generated one, which would instead
+  // shallow-copy assembly state too.
+  Operator(const Operator& other);
 
   virtual ~Operator() = default;
 
@@ -645,7 +655,7 @@ class Operator : public Matrix<CompositeVector, CompositeVectorSpace> {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<const CompositeVectorSpace> cvs_row_;
   Teuchos::RCP<const CompositeVectorSpace> cvs_col_;
-  Teuchos::ParameterList plist_;
+  Teuchos::RCP<Teuchos::ParameterList> plist_;
 
   std::vector<Teuchos::RCP<Op>> ops_;
   Teuchos::RCP<CompositeVector> rhs_, rhs_checkpoint_;
@@ -680,7 +690,6 @@ class Operator : public Matrix<CompositeVector, CompositeVectorSpace> {
   mutable int apply_calls_;
 
  private:
-  // Operator(const Operator& op);
   Operator& operator=(const Operator& op);
 };
 

@@ -29,7 +29,8 @@ namespace Operators {
 class Operator_Edge : public Operator {
  public:
   // The input CVS is the domain and range of the operator.
-  Operator_Edge(const Teuchos::RCP<const CompositeVectorSpace>& cvs, Teuchos::ParameterList& plist)
+  Operator_Edge(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
+               const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : Operator(cvs, plist, OPERATOR_SCHEMA_DOFS_EDGE)
   {
     set_schema_string("EDGE");

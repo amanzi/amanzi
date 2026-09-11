@@ -100,7 +100,8 @@ PDE_Geometry::PDE_Geometry(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
   cvs->SetMesh(mesh_)->SetGhosted(true);
   cvs->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  global_op_ = Teuchos::rcp(new Operators::Operator_Cell(cvs, plist, global_op_schema_));
+  global_op_ =
+    Teuchos::rcp(new Operators::Operator_Cell(cvs, Teuchos::rcpFromRef(plist), global_op_schema_));
 
   // local operator is face based
   std::string name = "Diffusion: FACE_CELL";
