@@ -41,15 +41,15 @@ IAPWS95_RaggedSplinePH::EntropyDerivativesPH(double p, double h)
 { 
   residual_calls++;
 
-  double x = std::log(p / PC);
+  double x = p / PC;
   double theta = h / HC;
   auto d = Evaluate(mesh_, coefficients_, x, theta);
 
-  double sp = d[1] / p;
+  double sp = d[1] / PC;
   double sh = d[2] / HC;
 
-  double spp = (d[3] - d[1]) / (p * p);
-  double sph = d[4] / (p * HC);
+  double spp = d[3] / (PC * PC);
+  double sph = d[4] / (PC * HC);
   double shh = d[5] / (HC * HC);
 
   return { d[0], sp, sh, spp, sph, shh };
@@ -134,7 +134,7 @@ IAPWS95_RaggedSplinePH::BuildSplineCoefficients(const std::vector<Sample>& sampl
   std::array<double, 16> row_value{};
 
   for (const Sample& sample : samples) {
-    double x = std::log(sample.p / PC);
+    double x = sample.p / PC;
     double theta = sample.h / HC;
     const BasisData Bp = EvaluateCubicBasis(mesh_.x_knots, x);
     const BasisData Bt = EvaluateCubicBasis(mesh_.y_knots, theta);
@@ -142,16 +142,16 @@ IAPWS95_RaggedSplinePH::BuildSplineCoefficients(const std::vector<Sample>& sampl
     const double p = sample.p;
     const auto& der = eos95_->EntropyDerivativesPHbase(sample.rho, sample.T);
     const std::array<double, 6> target = { der[0],
-                                           p * der[1],
+                                           PC * der[1],
                                            HC * der[2],
-                                           p * der[1] + p * p * der[3],
-                                           p * HC * der[4],
+                                           PC * PC * der[3],
+                                           PC * HC * der[4],
                                            HC * HC * der[5] };
 
     int id = LowerCell(mesh_.x_lines, sample.p);
     int it = LowerCell(mesh_.y_lines, sample.h);
 
-    const double h_x = std::log(mesh_.x_lines[id + 1] / mesh_.x_lines[id]);
+    const double h_x = (mesh_.x_lines[id + 1] - mesh_.x_lines[id]) / PC;
     const double h_theta = (mesh_.y_lines[it + 1] - mesh_.y_lines[it]) / HC;
 
     const std::array<double, 6> derivative_scale = { 1.0,
@@ -541,12 +541,12 @@ IAPWS95_RaggedSplinePH::AnisotropicRefinement()
 {
   std::vector<CellError> cells;
 
-  auto Transform = [&](const std::array<double, 6>& d, double p) {
+  auto Transform = [&](const std::array<double, 6>& d) {
     return std::array<double, 6>{ d[0],
-                                  p * d[1],
+                                  PC * d[1],
                                   HC * d[2],
-                                  p * d[1] + p * p * d[3],
-                                  p * HC * d[4],
+                                  PC * PC * d[3],
+                                  PC * HC * d[4],
                                   HC * HC * d[5] };
   };
 
@@ -554,13 +554,13 @@ IAPWS95_RaggedSplinePH::AnisotropicRefinement()
     const auto exact_ph = eos95_->EntropyDerivativesPH(p, h);
     const auto spline_ph = this->EntropyDerivativesPH(p, h);
 
-    const auto exact = Transform(exact_ph, p);
-    const auto spline = Transform(spline_ph, p);
+    const auto exact = Transform(exact_ph);
+    const auto spline = Transform(spline_ph);
 
     int id = LowerCell(mesh_.x_lines, p);
     int it = LowerCell(mesh_.y_lines, h);
 
-    const double h_x = std::log(mesh_.x_lines[id + 1] / mesh_.x_lines[id]);
+    const double h_x = (mesh_.x_lines[id + 1] - mesh_.x_lines[id]) / PC;
     const double h_theta = (mesh_.y_lines[it + 1] - mesh_.y_lines[it]) / HC;
 
     const std::array<double, 6> derivative_scale = { 1.0,
@@ -675,7 +675,7 @@ IAPWS95_RaggedSplinePH::BuildKnotVectors_()
   std::vector<double> x_lines(mesh_.x_lines.size());
   std::transform(mesh_.x_lines.begin(), mesh_.x_lines.end(),
                  x_lines.begin(),
-                 [&](double p) { return std::log(p / PC); });
+                 [&](double p) { return p / PC; });
 
   std::vector<double> theta_lines(mesh_.y_lines.size());
   std::transform(mesh_.y_lines.begin(), mesh_.y_lines.end(),

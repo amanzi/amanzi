@@ -5,7 +5,7 @@ data = np.loadtxt("eos_iapws95_spline_ph.dat")
 
 pressure = data[:, 0]
 enthalpy = data[:, 1]
-spline_s = data[:, 2]
+spline_s = data[:, 4] # 3 - spline
 
 p_unique = np.unique(pressure)
 h_unique = np.unique(enthalpy)

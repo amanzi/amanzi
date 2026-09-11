@@ -58,7 +58,7 @@ void WriteHelmholtzPlotData(IAPWS95_RaggedSplineRhoT& spline,
           err_rel[k] = std::max(err_rel[k], std::fabs(err[k] / std::max(1e-14, std::fabs(exact_value[k]))));
         }
 
-        out << rho << " " << T << " " << spline_value[0] << " " << exact_value[0] << " " << err[0] << "\n";
+        out << rho << " " << T << " " << exact_value[0] << " " << spline_value[0] << " " << err[0] << "\n";
       } else {
         // Point is outside the ragged physical domain.
         // NaN preserves the rectangular plotting structure.
@@ -268,15 +268,15 @@ TEST(EOS_IAPWS95_SPLINE_RHO_T)
                     << "\n  Dex=" << Dex << " Dap=" << Dap 
                     << "\n  x=" << prop.x << std::endl;
         }
-        out << rho << " " << T << " " << Dap << " " << Dex << " " << std::fabs(Dex - Dap) / std::max(Dex, Dap)<< "\n";
+        out << rho << " " << T << " " << Dex << " " << Dap << " " << std::fabs(Dex - Dap) / std::max(Dex, Dap)<< "\n";
 
         double Nex = 1.0 + delta * exactr[1] - delta * tau * exactr[4];
         double Nap = 1.0 + delta * approx[1] - delta * tau * approx[4];
-        // out << rho << " " << T << " " << Nap << " " << Nex << " " << std::fabs(Nex - Nap) / std::max(Nex, Nap)<< "\n";
+        // out << rho << " " << T << " " << Nex << " " << Nap << " " << std::fabs(Nex - Nap) / std::max(Nex, Nap)<< "\n";
 
         double CPex = (-tau * tau * eos95.R * (exact0[5] + exactr[5]) + eos95.R * Nex * Nex / Dex) * 1000.0;
         double CPap = (-tau * tau * eos95.R * (exact0[5] + approx[5]) + eos95.R * Nap * Nap / Dap) * 1000.0;
-        // out << rho << " " << T << " " << CPap << " " << CPex << " " << std::fabs(CPex - CPap) / std::max(CPex, CPap)<< "\n";
+        // out << rho << " " << T << " " << CPex << " " << CPap << " " << std::fabs(CPex - CPap) / std::max(CPex, CPap)<< "\n";
       }
       else {
         out << rho << " " << T << " " << nan << " " << nan << " " << nan << "\n";

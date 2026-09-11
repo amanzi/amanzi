@@ -65,7 +65,7 @@ void WriteEntropyPlotData(IAPWS95_RaggedSplinePH& spline,
         double Dap = Dfun(spline_value, IAPWS95::R);
         // CHECK(Dap > 0.0);
         if (Dap < 0.0 || Dex < 0.0) count++;
-        out << p << " " << h << " " << Dap << " " << Dex << " " << Dap - Dex << "\n";
+        out << p << " " << h << " " << Dex << " " << Dap << " " << Dap - Dex << "\n";
 
         for (int k = 0; k < 6; ++k) {
           double tmp = spline_value[k] - exact_value[k];
@@ -78,7 +78,7 @@ void WriteEntropyPlotData(IAPWS95_RaggedSplinePH& spline,
           err_abs[k] = std::max(err_abs[k], std::fabs(err[k]));
           err_rel[k] = std::max(err_rel[k], std::fabs(err[k] / std::max(1e-14, std::fabs(exact_value[k]))));
         }
-        // out << p << " " << h << " " << spline_value[3] << " " << exact_value[3] << " " << err[3] << "\n";
+        // out << p << " " << h << " " << exact_value[3] << " " << spline_value[3] << " " << err[3] << "\n";
       }
       else {
         // Point is outside the ragged physical domain.
@@ -436,7 +436,7 @@ TEST(EOS_IAPWS95_SPLINE_P_H)
       if (spline.IsPhysical(p, h)) {
         const auto& [prop0, liquid0, vapor0] = eos95.ThermodynamicsPH(p, h);
         const auto& [prop1, liquid1, vapor1] = spline.ThermodynamicsPH(p, h);
-        out << p << " " << h << " " << prop0.w << " " << prop1.w << "\n";
+        out << p << " " << h << " " << prop0.cp << " " << prop1.cp << "\n";
       }
       else {
         out << p << " " << h << " " << nan << " " << nan << "\n";

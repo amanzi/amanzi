@@ -5,7 +5,7 @@ data = np.loadtxt("eos_iapws95_spline.dat")
 
 rho = data[:, 0]
 temperature = data[:, 1]
-spline_phi = data[:, 2]
+spline_phi = data[:, 3] # 3 - spline
 
 rho_unique = np.unique(rho)
 temperature_unique = np.unique(temperature)
