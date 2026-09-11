@@ -192,6 +192,32 @@ class IAPWS95_ViscosityEvaluatorPH
   static Utils::RegisteredFactory<Evaluator, IAPWS95_ViscosityEvaluatorPH> reg_;
 };
 
+
+class IAPWS95_IsothermalCompressibilityEvaluatorPH
+  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+ public:
+  explicit IAPWS95_IsothermalCompressibilityEvaluatorPH(Teuchos::ParameterList& plist);
+  IAPWS95_IsothermalCompressibilityEvaluatorPH(const IAPWS95_IsothermalCompressibilityEvaluatorPH& other);
+
+  // required inteface functions
+  virtual Teuchos::RCP<Evaluator> Clone() const override;
+
+  virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
+
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
+                                          const std::vector<CompositeVector*>& results) override;
+
+  virtual void EnsureCompatibility_ToDeps_(State& S) final {};
+
+ private:
+  Key domain_name_;
+  Key pressure_key_, enthalpy_key_, state_key_;
+  static Utils::RegisteredFactory<Evaluator, IAPWS95_IsothermalCompressibilityEvaluatorPH> reg_;
+};
+
+
 } // namespace Evaluators
 } // namespace Amanzi
 

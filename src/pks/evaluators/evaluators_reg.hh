@@ -31,6 +31,8 @@ Utils::RegisteredFactory<Evaluator, IAPWS95_DensityEvaluatorPH> IAPWS95_DensityE
 Utils::RegisteredFactory<Evaluator, IAPWS95_ViscosityEvaluatorPH> IAPWS95_ViscosityEvaluatorPH::reg_("iapws95 ph viscosity");
 Utils::RegisteredFactory<Evaluator, IAPWS95_TemperatureEvaluatorPH> IAPWS95_TemperatureEvaluatorPH::reg_("iapws95 ph temperature");
 Utils::RegisteredFactory<Evaluator, IAPWS95_InternalEnergyEvaluatorPH> IAPWS95_InternalEnergyEvaluatorPH::reg_("iapws95 ph internal energy");
+Utils::RegisteredFactory<Evaluator, IAPWS95_IsothermalCompressibilityEvaluatorPH>
+   IAPWS95_IsothermalCompressibilityEvaluatorPH::reg_("iapws95 ph isothermal compressibility");
 
 Utils::RegisteredFactory<Evaluator, IAPWS95_StateEvaluator> IAPWS95_StateEvaluator::reg_("iapws95 state");
 Utils::RegisteredFactory<Evaluator, IAPWS95_DensityEvaluator> IAPWS95_DensityEvaluator::reg_("iapws95 density");
