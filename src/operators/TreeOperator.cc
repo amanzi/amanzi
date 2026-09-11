@@ -50,7 +50,7 @@ TreeOperator::TreeOperator()
     initialize_complete_(false),
     compute_complete_(false),
     assembly_complete_(false),
-    symbolic_assembly_complete_(false)
+    structure_locked_(false)
 {
   vo_ = Teuchos::rcp(new VerboseObject("TreeOperator", Teuchos::ParameterList()));
 }
@@ -130,10 +130,44 @@ TreeOperator::TreeOperator(const TreeOperator& other)
 
 /* ******************************************************************
 * block setters
+*
+* NOTE: these change the structure of the TreeOperator (which
+* sub-operator occupies a block) and so are only valid prior to the
+* first SymbolicAssembleMatrix() call, which fixes the matrix
+* structure (including the flattened leaves_ array).
 ****************************************************************** */
+void
+TreeOperator::AssertStructureNotLocked_() const
+{
+  if (structure_locked_) {
+    Errors::Message msg("TreeOperator: cannot change the structure of the operator (set_block, "
+                        "set_operator) after SymbolicAssembleMatrix() has been called.");
+    Exceptions::amanzi_throw(msg);
+  }
+}
+
+
+/* ******************************************************************
+* Locks the structure of this TreeOperator and, recursively, every
+* sub-TreeOperator block and leaf Operator beneath it.
+****************************************************************** */
+void
+TreeOperator::lockStructure()
+{
+  structure_locked_ = true;
+  for (int i = 0; i != row_size_; ++i) {
+    for (int j = 0; j != col_size_; ++j) {
+      if (blocks_[i][j] != Teuchos::null) blocks_[i][j]->lockStructure();
+    }
+  }
+  if (data_ != Teuchos::null) data_->lockStructure();
+}
+
+
 void
 TreeOperator::set_block(std::size_t i, std::size_t j, const Teuchos::RCP<TreeOperator>& op)
 {
+  AssertStructureNotLocked_();
   blocks_[i][j] = op;
   initialize_complete_ = false;
 }
@@ -142,6 +176,7 @@ TreeOperator::set_block(std::size_t i, std::size_t j, const Teuchos::RCP<TreeOpe
 void
 TreeOperator::set_operator(const Teuchos::RCP<Operator>& op)
 {
+  AssertStructureNotLocked_();
   data_ = op;
   initialize_complete_ = false;
 }
@@ -415,8 +450,10 @@ TreeOperator::SymbolicAssembleMatrix()
   // create the matrix
   Amat_ = Teuchos::rcp(new MatrixFE(graph));
   A_ = Amat_->Matrix();
+  lockStructure();
 
-  symbolic_assembly_complete_ = true;
+  assembly_complete_ = false;
+  compute_complete_ = false;
 }
 
 
@@ -426,9 +463,7 @@ TreeOperator::SymbolicAssembleMatrix()
 void
 TreeOperator::AssembleMatrix()
 {
-  if (!symbolic_assembly_complete_) SymbolicAssembleMatrix();
-
-  AMANZI_ASSERT(leaves_.size() != 0);
+  if (!structure_locked_) SymbolicAssembleMatrix();
   Amat_->PutScalar(0.);
 
   // check that each row has at least one non-null operator block
@@ -468,15 +503,15 @@ TreeOperator::AssembleMatrix()
 void
 TreeOperator::Init()
 {
-  symbolic_assembly_complete_ = false;
-  assembly_complete_ = false;
-  compute_complete_ = false;
   for (int i = 0; i != row_size_; ++i) {
     for (int j = 0; j != col_size_; ++j) {
       if (get_block(i, j) != Teuchos::null) get_block(i, j)->Init();
     }
   }
   if (data_ != Teuchos::null) data_->Init();
+
+  assembly_complete_ = false;
+  compute_complete_ = false;
 }
 
 
@@ -486,14 +521,14 @@ TreeOperator::Init()
 void
 TreeOperator::InitOffdiagonals()
 {
-  symbolic_assembly_complete_ = false;
-  assembly_complete_ = false;
-  compute_complete_ = false;
   for (int i = 0; i != row_size_; ++i) {
     for (int j = 0; j != col_size_; ++j) {
       if (i != j && get_block(i, j) != Teuchos::null) get_block(i, j)->Init();
     }
   }
+
+  assembly_complete_ = false;
+  compute_complete_ = false;
 }
 
 
@@ -523,6 +558,8 @@ TreeOperator::InitializeInverse()
   // if this is a leaf, just initialize the Operator
   if (get_operator() != Teuchos::null) {
     get_operator()->InitializeInverse();
+    initialize_complete_ = true;
+    compute_complete_ = false;
     return;
   }
 

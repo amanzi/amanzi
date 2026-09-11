@@ -184,7 +184,10 @@ Operator_FaceCellSff::SymbolicAssembleMatrix()
   // create global matrix
   Amat_ = Teuchos::rcp(new MatrixFE(graph));
   A_ = Amat_->Matrix();
+  lockStructure();
+
   assembly_complete_ = false;
+  compute_complete_ = false;
 }
 
 
