@@ -300,6 +300,7 @@ IAPWS95::PopulatePropertiesFromEntropy1(double p, double h)
   // hence (dh/dp)_s = -sp / sh = 1000 v
   double drho_dp_s = rhop + 1000.0 * v * rhoh;
   prop.cp = Th > 0.0 ? 1.0 / Th : std::numeric_limits<double>::infinity();
+  prop.cv = -(sh * sh * spp - 2.0 * sp * sh * sph + sp * sp * shh) / (K * shh);
   prop.w = drho_dp_s > 0.0 ? std::sqrt(1.0e6 / drho_dp_s) : std::numeric_limits<double>::quiet_NaN();
 
   prop.p = p;
@@ -310,6 +311,7 @@ IAPWS95::PopulatePropertiesFromEntropy1(double p, double h)
 
   prop.av = vh / (v * Th);
   prop.bp = rho * rho / (p * rhop_T);
+  prop.kt = rhop_T / rho;
 
   prop.v = v;
   prop.rho = rho;

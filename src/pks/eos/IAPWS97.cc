@@ -331,6 +331,7 @@ IAPWS97::Region1(double p, double T)
 
   // derived properties
   prop.rho = 1.0 / prop.v;
+  prop.bp = prop.rho / (prop.p * prop.kt);
 
   return prop;
 }
@@ -466,6 +467,7 @@ IAPWS97::Region2(double p, double T)
 
   // derived properties
   prop.rho = 1.0 / prop.v;
+  prop.bp = prop.rho / (prop.p * prop.kt);
 
   return prop;
 }
@@ -683,7 +685,6 @@ IAPWS97::Region3(double rho, double T)
   prop.kt = 1 / (2 * rhor * gd + rhor * rhor * gdd) / rho / R / T * 1000;
   prop.av = (gd - Tr * gdt) / (2 * gd + rhor * gdd) / T;
   prop.ap = (1 - Tr * gdt / gd) / T;
-  prop.bp = rho * (2 + rhor * gdd / gd);
 
   prop.rgn = 3;
   prop.x = 1.0;
@@ -694,6 +695,7 @@ IAPWS97::Region3(double rho, double T)
 
   // derived properties
   prop.rho = 1.0 / prop.v;
+  prop.bp = prop.rho / (prop.p * prop.kt);
 
   return prop;
 }
@@ -1368,6 +1370,7 @@ IAPWS97::Region5(double p, double T)
 
   // derived properties
   prop.rho = 1.0 / prop.v;
+  prop.bp = prop.rho / (prop.p * prop.kt);
 
   return prop;
 }
