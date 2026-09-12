@@ -30,7 +30,6 @@
 #include "EnergyPressureTemperature_PK.hh"
 #include "evaluators_reg.hh"
 #include "IAPWS95.hh"
-#include "IAPWS95_Spline.hh"
 #include "IAPWS95_RaggedSplineRhoT.hh"
 #include "MeshFactory.hh"
 #include "PK_Physical.hh"
@@ -65,42 +64,13 @@ double RunTest(int icase, const std::string& iapws95_model)
 
   AmanziEOS::IAPWS95 eos(*plist);
 
-  if (icase == 1) {
-    plist->sublist("PKs").sublist("energy").sublist("thermal conductivity evaluator")
-      .sublist("All").sublist("liquid phase").set<std::string>("csv table name", "test/h2o.csv");
-
-    plist->sublist("state").sublist("evaluators").sublist("thermodynamic_state")
-      .set<std::string>("csv table name", "test/h2o.csv");
-    plist->sublist("state").sublist("evaluators").sublist("viscosity_liquid")
-      .set<std::string>("csv table name", "test/h2o.csv");
-
-    // create input file
-    std::ofstream ofile("test/h2o.csv");
-    ofile << "tau,delta,alpha_r\n";
-
-    int m(44);
-    double drho(50.0 / m), dT(50.0 / m), rho, T; 
-
-    for (int i = 0; i < m; ++i) {
-      for (int j = 0; j < m; ++j) {
-        rho = 590.0 + j * drho;
-        T = 620 + i * dT;
-        const auto g = eos.ResidualPart(rho, T);
-        auto [prop, liquid, vapor] = eos.ThermodynamicsRhoT(rho, T);
-        ofile << eos.TC / T << "," << rho / eos.RHOC << "," << g[0] << "\n";
-      }
-    }
-    ofile.close();
-  }
-  else {
-    plist->sublist("PKs").sublist("energy").sublist("thermal conductivity evaluator")
-      .sublist("All").sublist("liquid phase")
-      .set<bool>(iapws95_model, true);
-    plist->sublist("state").sublist("evaluators").sublist("thermodynamic_state")
-      .set<bool>(iapws95_model, true);
-    plist->sublist("state").sublist("evaluators").sublist("viscosity_liquid")
-      .set<bool>(iapws95_model, true);
-  }
+  plist->sublist("PKs").sublist("energy").sublist("thermal conductivity evaluator")
+    .sublist("All").sublist("liquid phase")
+    .set<bool>(iapws95_model, true);
+  plist->sublist("state").sublist("evaluators").sublist("thermodynamic_state")
+    .set<bool>(iapws95_model, true);
+  plist->sublist("state").sublist("evaluators").sublist("viscosity_liquid")
+    .set<bool>(iapws95_model, true);
 
   // create a mesh framework
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
@@ -157,34 +127,18 @@ double RunTest(int icase, const std::string& iapws95_model)
   auto& T_c = *S->GetW<CompositeVector>(temperature_key, passwd).ViewComponent("cell");
 
   int c(0), m(200);
-  if (icase != 2) {
-    double drho(30.0 / m), dT(30.0 / m), rho, T; 
+  // reserved for future: initial P/T data are around the critical point
+  double scale(50.0 / n);
+  double dp(5.0e-2 * scale), drho(1.6 * scale), dT(1.0 * scale), p, rho, T; 
 
-    for (int i = 0; i < m; ++i) {
-      for (int j = 0; j < m; ++j) {
-        rho = 600.0 + i * drho;
-        T = 630 + j * dT;
-        auto [prop, liquid, vapor] = eos.ThermodynamicsRhoT(rho, T);
+  for (int i = -n; i < n; ++i) {
+   for (int j = -n; j < n; ++j) {
+      p = eos.PC + (i + 0.5) * dp; // Mpa
+      T = eos.TC + (j + 0.5) * dT;
 
-        p_c[0][c] = prop.p * 1e+6;
-        T_c[0][c] = T;
-        c++;
-      }
-    }
-  } else {
-    // reserved for future: initial P/T data are around the critical point
-    double scale(50.0 / n);
-    double dp(5.0e-2 * scale), drho(1.6 * scale), dT(1.0 * scale), p, rho, T; 
-
-    for (int i = -n; i < n; ++i) {
-      for (int j = -n; j < n; ++j) {
-        p = eos.PC + (i + 0.5) * dp; // Mpa
-        T = eos.TC + (j + 0.5) * dT;
-
-        p_c[0][c] = p * 1.0e+6;
-        T_c[0][c] = T;
-        c++;
-      }
+      p_c[0][c] = p * 1.0e+6;
+      T_c[0][c] = T;
+      c++;
     }
   }
 
@@ -224,7 +178,5 @@ double RunTest(int icase, const std::string& iapws95_model)
 TEST(EVALUATOR_DERIVATIVE95_TABLES_PT)
 {
   double t0 = RunTest(0, "use iapws95");
-  double t1 = RunTest(1, "cvs table name");
-  CHECK(t0 > 1.3 * t1);
   double t2 = RunTest(2, "use iapws95 spline rho/T");
 }

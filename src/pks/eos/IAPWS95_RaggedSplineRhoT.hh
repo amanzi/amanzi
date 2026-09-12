@@ -164,6 +164,7 @@ class IAPWS95_RaggedSplineRhoT : public IAPWS95,
   ~IAPWS95_RaggedSplineRhoT() {};
 
   virtual std::array<double, 6> ResidualPart(double rho, double T) override;
+  virtual std::array<double, 3> ResidualPartFirst(double rho, double T) override;
 
   // initialize shared data 
   std::vector<Sample> InitializeSharedData();

@@ -19,7 +19,6 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "IAPWS95.hh"
-#include "IAPWS95_Spline.hh"
 #include "IAPWS95_RaggedSplinePH.hh"
 #include "IAPWS95_RaggedSplineRhoT.hh"
 
@@ -29,9 +28,7 @@ namespace AmanziEOS {
 inline Teuchos::RCP<IAPWS95>
 CreateIAPWS95(Teuchos::ParameterList& plist)
 {
-  if (plist.isParameter("csv table name")) {  // DEPRECATED
-    return Teuchos::rcp(new IAPWS95_Spline(plist));
-  } else if (plist.isParameter("use iapws95 spline rho/T")) {
+  if (plist.isParameter("use iapws95 spline rho/T")) {
     IAPWS95_RaggedSplineRhoT::Options opt;
     opt.T_min = 280.0;
     opt.T_max = 950.0;

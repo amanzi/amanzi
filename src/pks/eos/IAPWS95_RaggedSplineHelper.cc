@@ -165,7 +165,7 @@ IAPWS95_RaggedSplineHelper::EvaluateCachedCubicBasis(const std::vector<double>& 
 
 
 /* ******************************************************************
-* Evaluate residual part uing demensionless input
+* Evaluate residual part using dimensionless input
 ****************************************************************** */
 std::array<double, 6>
 IAPWS95_RaggedSplineHelper::Evaluate(const Mesh& mesh,
@@ -193,6 +193,35 @@ IAPWS95_RaggedSplineHelper::Evaluate(const Mesh& mesh,
       out[3] += z * Bd.d2[a] * Bt.value[c];
       out[4] += z * Bd.d1[a] * Bt.d1[c];
       out[5] += z * Bd.value[a] * Bt.d2[c];
+    }
+  }
+  return out;
+}
+
+
+std::array<double, 3>
+IAPWS95_RaggedSplineHelper::EvaluateFirst(const Mesh& mesh,
+                                          const std::vector<double>& coefficients,
+                                          double delta, double tau) const
+{
+  const BasisData& Bd = EvaluateCachedCubicBasis(mesh.x_knots,
+                                                 mesh.x_span_data,
+                                                 mesh.x_lookup,
+                                                 delta);
+  const BasisData& Bt = EvaluateCachedCubicBasis(mesh.y_knots,
+                                                 mesh.y_span_data,
+                                                 mesh.y_lookup,
+                                                 tau);
+  std::array<double, 3> out{};
+
+  for (int a = 0; a < 4; ++a) {
+    int i = Bd.index[a];
+    for (int c = 0; c < 4; ++c) {
+      int j = Bt.index[c];
+      double z = coefficients[mesh.CoefficientIndex(i, j)];
+      out[0] += z * Bd.value[a] * Bt.value[c];
+      out[1] += z * Bd.d1[a] * Bt.value[c];
+      out[2] += z * Bd.value[a] * Bt.d1[c];
     }
   }
   return out;

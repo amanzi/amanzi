@@ -43,7 +43,7 @@ IAPWS95_RaggedSplinePH::EntropyDerivativesPH(double p, double h)
 
   double x = p / PC;
   double theta = h / HC;
-  auto d = Evaluate(mesh_, coefficients_, x, theta);
+  const auto& d = Evaluate(mesh_, coefficients_, x, theta);
 
   double sp = d[1] / PC;
   double sh = d[2] / HC;
@@ -211,34 +211,6 @@ IAPWS95_RaggedSplinePH::BuildSplineCoefficients(const std::vector<Sample>& sampl
           add_upper(index[a], index[b], weight * row_value[a] * row_value[b]);
         }
       }
-
-      /*
-      // Thermodynamic consistency equation:
-      //     rho * S_p + 1000 * S_h = 0
-      // In spline coordinates x = log(p/PC), theta = h/HC:
-      //     S_x + gamma * S_theta = 0, gamma = 1000 * p / (rho * HC).
-      double gamma = 1000.0 * sample.p / (sample.rho * HC);
-
-      q = 0;
-      for (int a = 0; a < 4; ++a) {
-        for (int b = 0; b < 4; ++b) {
-          index[q] = mesh_.CoefficientIndex(Bp.index[a], Bt.index[b]);
-          row_value[q] = Bp.d1[a] * Bt.value[b] + gamma * Bp.value[a] * Bt.d1[b];
-          ++q;
-        }
-      }
-
-      // Target is zero, so there is no contribution to rhs.
-     
-      double rho_constraint_weight = 1.0;
-      s = h_x;
-      weight = sample.weight * rho_constraint_weight * s * s;
-      for (int a = 0; a < 16; ++a) {
-        for (int b = a; b < 16; ++b) {
-          add_upper(index[a], index[b], weight * row_value[a] * row_value[b]);
-        }
-      }
-      */
     }
   }
 
@@ -248,7 +220,7 @@ IAPWS95_RaggedSplinePH::BuildSplineCoefficients(const std::vector<Sample>& sampl
   for (int j = 0; j < n; ++j) {
      diagonal_sum += std::abs(ab[kd + j * ldab]);
   }
-  double diagonal_mean = diagonal_sum / static_cast<double>(n);
+  double diagonal_mean = diagonal_sum / n;
   double regularization = 1.0e-12 * std::max(1.0, diagonal_mean);
   for (int j = 0; j < n; ++j) {
     ab[kd + j * ldab] += regularization;
@@ -331,7 +303,7 @@ struct Frho95s {
   double operator()(double T) const {
     double delta = rho_ / IAPWS95::RHOC;
 
-    double gd = eos_->ResidualPart(rho_, T)[1];
+    double gd = eos_->ResidualPartFirst(rho_, T)[1];
     double po = (1.0 + delta * gd) * Rrho_ * T;
     return po - p_;
   }
@@ -551,8 +523,8 @@ IAPWS95_RaggedSplinePH::AnisotropicRefinement()
   };
 
   auto Error = [&](double p, double h) {
-    const auto exact_ph = eos95_->EntropyDerivativesPH(p, h);
-    const auto spline_ph = this->EntropyDerivativesPH(p, h);
+    const auto& exact_ph = eos95_->EntropyDerivativesPH(p, h);
+    const auto& spline_ph = this->EntropyDerivativesPH(p, h);
 
     const auto exact = Transform(exact_ph);
     const auto spline = Transform(spline_ph);

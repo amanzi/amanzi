@@ -58,6 +58,7 @@ class IAPWS95 : public IAPWS {
 
   std::array<double, 6> IdealGasPart(double rho, double T);
   virtual std::array<double, 6> ResidualPart(double rho, double T);
+  virtual std::array<double, 3> ResidualPartFirst(double rho, double T);
 
   Properties PopulateProperties(double rho, double T);
   Properties ExtendProperties(double rho, const Properties& prop);
@@ -77,6 +78,10 @@ class IAPWS95 : public IAPWS {
 
   // supporting functions
   void Print(Properties& prop);
+
+ private:
+  // compute either only 1st-order or 1st-order and 2nd-order derivatiovs
+  template<bool SecondOrder> auto ResidualPartImpl_(double rho, double T);
 
  public:
   std::uint64_t residual_calls = 0;  // statistics 
@@ -199,6 +204,9 @@ struct FrhoT {
 
 } // namespace AmanziEOS
 } // namespace Amanzi
+
+
+#include "IAPWS95_impl.hh"
 
 #endif
 

@@ -43,6 +43,14 @@ IAPWS95_RaggedSplineRhoT::ResidualPart(double rho, double T)
 }
 
 
+std::array<double, 3>
+IAPWS95_RaggedSplineRhoT::ResidualPartFirst(double rho, double T)
+{ 
+  residual_calls++;
+  return EvaluateFirst(mesh_, coefficients_, rho / RHOC, TC / T);
+}
+
+
 /* ******************************************************************
 * Wrapper for initialization of shared data
 ****************************************************************** */

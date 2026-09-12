@@ -39,7 +39,6 @@ set(eos_src_files
     Henry_Solubility.cc
     IAPWS97.cc
     IAPWS95.cc
-    IAPWS95_Spline.cc
     IAPWS95_RaggedSplineRhoT.cc
     IAPWS95_RaggedSplinePH.cc
     IAPWS95_RaggedSplineHelper.cc
@@ -81,7 +80,6 @@ set(eos_inc_files
     H2O_ThermalConductivityIAPWS97.hh
     IAPWS97.hh
     IAPWS95.hh
-    IAPWS95_Spline.hh
     IAPWS95Factory.hh
     EOS_Utils.hh
     EOS_Viscosity.hh
