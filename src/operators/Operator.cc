@@ -192,18 +192,6 @@ Operator::Operator(const Operator& other)
 
 
 /* ******************************************************************
-* Copy constructor duplicates plist_ and shares Ops with the original
-* (shallow copy); assembly/lock state is reset fresh by delegating to
-* the general constructor.
-****************************************************************** */
-Operator::Operator(const Operator& other)
-  : Operator(other.cvs_row_, other.cvs_col_, *Teuchos::rcp(new Teuchos::ParameterList(other.plist_)), other.schema_row_, other.schema_col_)
-{
-  ops_ = other.ops_;
-}
-
-
-/* ******************************************************************
 * Init owned local operators.
 ****************************************************************** */
 void
