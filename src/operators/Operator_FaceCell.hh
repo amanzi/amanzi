@@ -33,7 +33,7 @@ class Operator_FaceCell : public Operator_Cell {
   // main constructor
   // The input CVS is the domain and range of the operator.
   Operator_FaceCell(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
-                    const Teuchos::RCP<Teuchos::ParameterList>& plist)
+                    Teuchos::ParameterList& plist)
     : Operator_Cell(cvs, plist, OPERATOR_SCHEMA_DOFS_FACE | OPERATOR_SCHEMA_DOFS_CELL)
   {
     set_schema_string("FACE+CELL");

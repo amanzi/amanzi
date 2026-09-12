@@ -161,7 +161,7 @@ SUITE(SURFACE_SUBSURFACE)
     auto gop_subsurf_surf =
       Teuchos::rcp(new Operators::Operator_Schema(diff_subsurf.global_operator()->get_row_map(),
                                                   diff_surf.global_operator()->get_col_map(),
-                                                  Teuchos::rcpFromRef(subsurf_surf_list),
+                                                  subsurf_surf_list,
                                                   diff_subsurf.global_operator()->schema_row(),
                                                   diff_surf.global_operator()->schema_col()));
 
@@ -194,7 +194,7 @@ SUITE(SURFACE_SUBSURFACE)
     auto gop_surf_subsurf =
       Teuchos::rcp(new Operators::Operator_Schema(diff_surf.global_operator()->get_row_map(),
                                                   diff_subsurf.global_operator()->get_col_map(),
-                                                  Teuchos::rcpFromRef(subsurf_surf_list),
+                                                  subsurf_surf_list,
                                                   diff_surf.global_operator()->schema_row(),
                                                   diff_subsurf.global_operator()->schema_col()));
 
@@ -315,7 +315,7 @@ SUITE(SURFACE_SUBSURFACE)
     auto gop_subsurf_surf_flow =
       Teuchos::rcp(new Operators::Operator_Schema(diff1_subsurf.global_operator()->get_row_map(),
                                                   diff1_surf.global_operator()->get_col_map(),
-                                                  Teuchos::rcpFromRef(subsurf_surf_list),
+                                                  subsurf_surf_list,
                                                   diff1_subsurf.global_operator()->schema_row(),
                                                   diff1_surf.global_operator()->schema_col()));
 
@@ -358,7 +358,7 @@ SUITE(SURFACE_SUBSURFACE)
     auto gop_surf_subsurf_flow =
       Teuchos::rcp(new Operators::Operator_Schema(diff1_surf.global_operator()->get_row_map(),
                                                   diff1_subsurf.global_operator()->get_col_map(),
-                                                  Teuchos::rcpFromRef(subsurf_surf_list),
+                                                  subsurf_surf_list,
                                                   diff1_surf.global_operator()->schema_row(),
                                                   diff1_subsurf.global_operator()->schema_col()));
 

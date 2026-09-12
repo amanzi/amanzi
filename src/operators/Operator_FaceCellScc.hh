@@ -28,21 +28,11 @@ class Operator_FaceCellScc : public Operator_Cell {
  public:
   // The input CVS is the domain and range of the operator
   Operator_FaceCellScc(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
-                       const Teuchos::RCP<Teuchos::ParameterList>& plist)
+                       Teuchos::ParameterList& plist)
     : Operator_Cell(cvs, plist, OPERATOR_SCHEMA_DOFS_CELL)
   {
     set_schema_string("FACE+CELL Schur to CELL");
   }
-
-  // Copy constructor: diag_ops_ and schur_ops_ are per-instance derived
-  // scratch state, lazily rebuilt from ops_ on AssembleMatrix, so they
-  // should not be shared with a clone -- left at their default (empty)
-  // state by not being copied here. The base subobject is copied by
-  // delegating to Operator_Cell's (implicit) copy constructor, which
-  // chains up to Operator's.
-  Operator_FaceCellScc(const Operator_FaceCellScc& other)
-    : Operator_Cell(other)
-  {}
 
   virtual Teuchos::RCP<Operator> Clone() const override;
 

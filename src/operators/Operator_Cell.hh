@@ -32,7 +32,7 @@ class Operator_Cell : public Operator {
   // main constructor
   //   The CVS is the domain and range of the operator
   Operator_Cell(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
-                const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                Teuchos::ParameterList& plist,
                 int schema)
     : Operator(cvs, plist, schema)
   {

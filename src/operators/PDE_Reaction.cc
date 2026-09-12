@@ -58,8 +58,8 @@ PDE_Reaction::InitReaction_(Teuchos::ParameterList& plist)
       cvs->AddComponent(name, kind, maps.first, maps.second, num);
     }
 
-    global_op_ = Teuchos::rcp(new Operator_Schema(
-      cvs, cvs, Teuchos::rcpFromRef(plist), global_schema_row_, global_schema_col_));
+    global_op_ =
+      Teuchos::rcp(new Operator_Schema(cvs, cvs, plist, global_schema_row_, global_schema_col_));
 
   } else {
     // constructor was given an Operator

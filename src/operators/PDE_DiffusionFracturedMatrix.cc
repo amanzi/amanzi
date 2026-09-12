@@ -46,7 +46,7 @@ PDE_DiffusionFracturedMatrix::Init(Teuchos::ParameterList& plist)
   // create global operator
   cvs_ = CreateFracturedMatrixCVS(mesh_, fracture);
 
-  global_op_ = Teuchos::rcp(new Operator_FaceCell(cvs_, Teuchos::rcpFromRef(plist)));
+  global_op_ = Teuchos::rcp(new Operator_FaceCell(cvs_, plist));
 
   std::string name("DiffusionFracturedMatrix: CELL_FACE+CELL");
   local_op_ = Teuchos::rcp(new Op_Cell_FaceCell(name, mesh_));

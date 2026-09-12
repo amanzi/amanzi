@@ -37,7 +37,7 @@ class Operator_Schema : public Operator {
   // general rectangular operator
   Operator_Schema(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
                   const Teuchos::RCP<const CompositeVectorSpace>& cvs_col,
-                  const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                  Teuchos::ParameterList& plist,
                   const Schema& schema_row,
                   const Schema& schema_col)
     : Operator(cvs_row, cvs_col, plist, schema_row, schema_col)
@@ -47,7 +47,7 @@ class Operator_Schema : public Operator {
 
   // bijective (square) operator
   Operator_Schema(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
-                  const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                  Teuchos::ParameterList& plist,
                   const Schema& schema)
     : Operator(cvs, cvs, plist, schema, schema)
   {

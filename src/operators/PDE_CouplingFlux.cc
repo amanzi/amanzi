@@ -40,8 +40,8 @@ PDE_CouplingFlux::Init_(Teuchos::ParameterList& plist,
   AMANZI_ASSERT(cvs_col->size() == 1);
 
   if (global_op_ == Teuchos::null) {
-    global_op_ = Teuchos::rcp(
-      new Operator_Diagonal(cvs_row, cvs_col, Teuchos::rcpFromRef(plist), OPERATOR_SCHEMA_INDICES));
+    global_op_ =
+      Teuchos::rcp(new Operator_Diagonal(cvs_row, cvs_col, plist, OPERATOR_SCHEMA_INDICES));
   }
 
   // register the advection Op

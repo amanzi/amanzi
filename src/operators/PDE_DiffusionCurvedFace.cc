@@ -375,7 +375,7 @@ PDE_DiffusionCurvedFace::Init_(Teuchos::ParameterList& plist)
   cvs->SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, d);
 
   Schema schema(AmanziMesh::CELL, d);
-  Operator_Schema global_op(cvs, cvs, Teuchos::rcpFromRef(tmp), schema, schema);
+  Operator_Schema global_op(cvs, cvs, tmp, schema, schema);
 
   auto op = Teuchos::rcp(new Op_Face_Schema(schema, schema, mesh_));
   global_op.OpPushBack(op);

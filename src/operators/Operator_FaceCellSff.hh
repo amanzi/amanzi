@@ -30,7 +30,7 @@ class Operator_FaceCellSff : public Operator_FaceCell {
   // main constructor
   //   The CVS is the domain and range of the operator
   Operator_FaceCellSff(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
-                       const Teuchos::RCP<Teuchos::ParameterList>& plist)
+                       Teuchos::ParameterList& plist)
     : Operator_FaceCell(cvs, plist)
   {
     // changing schema for the Schur complement
@@ -39,18 +39,6 @@ class Operator_FaceCellSff : public Operator_FaceCell {
     schema_row_.Init(schema);
     set_schema_string("FACE+CELL Schur to FACE");
   }
-
-  // Copy constructor: schur_ops_ and schur_inv_ are per-instance derived
-  // scratch state (schur_ops_ is lazily rebuilt from ops_ on AssembleMatrix;
-  // schur_inv_ captures a back-reference to this specific instance via
-  // set_matrix(Teuchos::rcpFromRef(*this)) in InitializeInverse()), so
-  // neither should be shared with a clone -- both are left at their default
-  // (empty / null) state by not being copied here. The base subobject is
-  // copied by delegating to Operator_FaceCell's (implicit) copy
-  // constructor, which chains up to Operator's.
-  Operator_FaceCellSff(const Operator_FaceCellSff& other)
-    : Operator_FaceCell(other)
-  {}
 
   virtual void InitializeInverse() override;
   virtual Teuchos::RCP<Operator> Clone() const override;

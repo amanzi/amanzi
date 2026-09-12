@@ -115,8 +115,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE)
 
   // create the global op
   Teuchos::ParameterList plist1;
-  Teuchos::RCP<Operator> global_op =
-    Teuchos::rcp(new Operator_FaceCell(cvs, Teuchos::rcpFromRef(plist1)));
+  Teuchos::RCP<Operator> global_op = Teuchos::rcp(new Operator_FaceCell(cvs, plist1));
 
   // create advection operator
   Teuchos::ParameterList alist;
@@ -141,8 +140,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE)
 
   // make reverse assembling: diffusion + advection
   Teuchos::ParameterList plist2;
-  Teuchos::RCP<Operator> global_op2 =
-    Teuchos::rcp(new Operator_FaceCell(cvs, Teuchos::rcpFromRef(plist2)));
+  Teuchos::RCP<Operator> global_op2 = Teuchos::rcp(new Operator_FaceCell(cvs, plist2));
 
   Teuchos::ParameterList olist2 = plist.sublist("PK operator").sublist("diffusion operator mfd");
   auto op3 = Teuchos::rcp(new PDE_DiffusionMFD(olist2, global_op2));
@@ -250,7 +248,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV)
   // create the global op
   Teuchos::ParameterList plist1;
   Teuchos::RCP<Operator> global_op =
-    Teuchos::rcp(new Operator_Cell(cvs, Teuchos::rcpFromRef(plist1), OPERATOR_SCHEMA_DOFS_CELL));
+    Teuchos::rcp(new Operator_Cell(cvs, plist1, OPERATOR_SCHEMA_DOFS_CELL));
 
   // create advection operator
   Teuchos::ParameterList alist;
@@ -275,7 +273,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV)
   // make reverse assembling: diffusion + advection
   Teuchos::ParameterList plist2;
   Teuchos::RCP<Operator> global_op2 =
-    Teuchos::rcp(new Operator_Cell(cvs, Teuchos::rcpFromRef(plist2), OPERATOR_SCHEMA_DOFS_CELL));
+    Teuchos::rcp(new Operator_Cell(cvs, plist2, OPERATOR_SCHEMA_DOFS_CELL));
 
   Teuchos::ParameterList olist2 = plist.sublist("PK operator").sublist("diffusion operator fv");
   Teuchos::RCP<PDE_Diffusion> op3 = Teuchos::rcp(new PDE_DiffusionFV(olist2, global_op2));

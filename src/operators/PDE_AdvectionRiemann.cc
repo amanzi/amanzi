@@ -85,8 +85,8 @@ PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
       cvs_col->AddComponent(name, kind, num);
     }
 
-    global_op_ = Teuchos::rcp(new Operator_Schema(
-      cvs_row, cvs_col, Teuchos::rcpFromRef(plist), global_schema_row_, global_schema_col_));
+    global_op_ = Teuchos::rcp(
+      new Operator_Schema(cvs_row, cvs_col, plist, global_schema_row_, global_schema_col_));
 
     // constructor was given an Operator
   } else {

@@ -63,7 +63,7 @@ namespace Operators {
 * Deprecated constructor: still supported for compatability
 ****************************************************************** */
 Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
-                   const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                   Teuchos::ParameterList& plist,
                    int schema)
   : cvs_row_(cvs),
     cvs_col_(cvs),
@@ -107,14 +107,14 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
     nedges_wghost = 0;
   }
 
-  vo_ = Teuchos::rcp(new VerboseObject("Operator", *plist));
-  shift_ = plist->get<double>("diagonal shift", 0.0);
-  shift_min_ = plist->get<double>("diagonal shift minimum", 0.0);
+  vo_ = Teuchos::rcp(new VerboseObject("Operator", plist));
+  shift_ = plist.get<double>("diagonal shift", 0.0);
+  shift_min_ = plist.get<double>("diagonal shift minimum", 0.0);
 
   apply_calls_ = 0;
 
-  if (plist_->isSublist("inverse")) {
-    auto& inv_list = plist_->sublist("inverse");
+  if (plist_.isSublist("inverse")) {
+    auto& inv_list = plist_.sublist("inverse");
     AmanziSolvers::setMakeOneIterationCriteria(inv_list);
     set_inverse_parameters(inv_list);
   }
@@ -127,7 +127,7 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
 ****************************************************************** */
 Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
                    const Teuchos::RCP<const CompositeVectorSpace>& cvs_col,
-                   const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                   Teuchos::ParameterList& plist,
                    const Schema& schema_row,
                    const Schema& schema_col)
   : cvs_row_(cvs_row),
@@ -172,22 +172,10 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
     nedges_wghost = 0;
   }
 
-  vo_ = Teuchos::rcp(new VerboseObject("Operator", *plist));
-  shift_ = plist->get<double>("diagonal shift", 0.0);
-  shift_min_ = plist->get<double>("diagonal shift minimum", 0.0);
+  vo_ = Teuchos::rcp(new VerboseObject("Operator", plist));
+  shift_ = plist.get<double>("diagonal shift", 0.0);
+  shift_min_ = plist.get<double>("diagonal shift minimum", 0.0);
   apply_calls_ = 0;
-}
-
-
-/* ******************************************************************
-* Copy constructor shares plist_ (same RCP) and shallow-copies ops_
-* with the original; assembly/lock state is reset fresh by delegating
-* to the general constructor.
-****************************************************************** */
-Operator::Operator(const Operator& other)
-  : Operator(other.cvs_row_, other.cvs_col_, other.plist_, other.schema_row_, other.schema_col_)
-{
-  ops_ = other.ops_;
 }
 
 

@@ -31,7 +31,7 @@ class Operator_CellBndFace : public Operator_Cell {
   // main constructor
   //   The CVS is the domain and range of the operator
   Operator_CellBndFace(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
-                       const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                       Teuchos::ParameterList& plist,
                        int schema)
     : Operator_Cell(cvs, plist, schema)
   {

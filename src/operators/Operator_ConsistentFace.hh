@@ -30,7 +30,7 @@ class Operator_ConsistentFace : public Operator {
  public:
   // The CVS is the domain and range of the operator
   Operator_ConsistentFace(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
-                          const Teuchos::RCP<Teuchos::ParameterList>& plist)
+                          Teuchos::ParameterList& plist)
     : Operator(cvs, plist, OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_FACE)
   {
     cell_max_faces_ = mesh_->getCellMaxFaces();

@@ -47,7 +47,7 @@ Operator_Factory::Create()
       cvs->SetMesh(mesh_)->SetGhosted(true);
       cvs->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
-      return Teuchos::rcp(new Operator_Cell(cvs, plist_, OPERATOR_SCHEMA_DOFS_CELL));
+      return Teuchos::rcp(new Operator_Cell(cvs, *plist_, OPERATOR_SCHEMA_DOFS_CELL));
 
     } else {
       Errors::Message msg;
@@ -59,10 +59,10 @@ Operator_Factory::Create()
     if (cvs_row_.HasComponent("cell")) {
       if (cvs_row_.HasComponent("face")) {
         auto cvs_row = Teuchos::rcp(new CompositeVectorSpace(cvs_row_));
-        return Teuchos::rcp(new Operator_FaceCell(cvs_row, plist_));
+        return Teuchos::rcp(new Operator_FaceCell(cvs_row, *plist_));
       } else {
         auto cvs_row = Teuchos::rcp(new CompositeVectorSpace(cvs_row_));
-        return Teuchos::rcp(new Operator_Cell(cvs_row, plist_, OPERATOR_SCHEMA_DOFS_CELL));
+        return Teuchos::rcp(new Operator_Cell(cvs_row, *plist_, OPERATOR_SCHEMA_DOFS_CELL));
       }
     } else {
       Errors::Message msg;
@@ -98,14 +98,14 @@ Operator_Factory::CreateFromSchema()
     auto entity = std::get<0>(schema_row_[0]);
 
     if (entity == AmanziMesh::Entity_kind::CELL) {
-      return Teuchos::rcp(new Operator_Cell(cvs1, plist_, old_schema));
+      return Teuchos::rcp(new Operator_Cell(cvs1, *plist_, old_schema));
     } else if (entity == AmanziMesh::Entity_kind::FACE) {
       cvs1->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-      return Teuchos::rcp(new Operator_FaceCellSff(cvs1, plist_));
+      return Teuchos::rcp(new Operator_FaceCellSff(cvs1, *plist_));
     } else if (entity == AmanziMesh::Entity_kind::EDGE) {
-      return Teuchos::rcp(new Operator_Edge(cvs1, plist_));
+      return Teuchos::rcp(new Operator_Edge(cvs1, *plist_));
     } else if (entity == AmanziMesh::Entity_kind::NODE) {
-      return Teuchos::rcp(new Operator_Node(cvs1, plist_));
+      return Teuchos::rcp(new Operator_Node(cvs1, *plist_));
     }
   }
 
@@ -118,7 +118,7 @@ Operator_Factory::CreateFromSchema()
     if (num1 == num2 && num1 == 1) {
       if ((ent1 == AmanziMesh::Entity_kind::CELL && ent2 == AmanziMesh::Entity_kind::FACE) ||
           (ent2 == AmanziMesh::Entity_kind::CELL && ent1 == AmanziMesh::Entity_kind::FACE))
-        return Teuchos::rcp(new Operator_FaceCell(cvs1, plist_));
+        return Teuchos::rcp(new Operator_FaceCell(cvs1, *plist_));
     }
   }
 
@@ -130,7 +130,7 @@ Operator_Factory::CreateFromSchema()
 
   if (num1 > 1) {
     auto cvs2 = Teuchos::rcp(new CompositeVectorSpace(cvsFromSchema(schema_col_, mesh_, true)));
-    return Teuchos::rcp(new Operator_Schema(cvs1, cvs2, plist_, schema_row_, schema_col_));
+    return Teuchos::rcp(new Operator_Schema(cvs1, cvs2, *plist_, schema_row_, schema_col_));
   }
 
   std::stringstream ss;

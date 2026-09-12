@@ -152,7 +152,7 @@ PDE_DiffusionMultiMesh::Init(const Teuchos::RCP<State>& S)
       }
     }
 
-    auto op = Teuchos::rcp(new Operator_MultiMesh(Teuchos::rcpFromRef(plist_),
+    auto op = Teuchos::rcp(new Operator_MultiMesh(plist_,
                                                   pdes_[i0]->global_operator(),
                                                   pdes_[i0]->local_op(),
                                                   boundary_block_[i0],
