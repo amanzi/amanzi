@@ -211,21 +211,34 @@ class Operator : public Matrix<CompositeVector, CompositeVectorSpace> {
 
   // deprecated but yet supported
   Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
-           Teuchos::ParameterList& plist,
+           Teuchos::ParameterList plist,
            int schema);
 
   // general operator (domain may differ from range)
   Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
            const Teuchos::RCP<const CompositeVectorSpace>& cvs_col,
-           Teuchos::ParameterList& plist,
+           Teuchos::ParameterList plist,
            const Schema& schema_row,
            const Schema& schema_col);
 
   // bijective operator (domain = range)
   Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
-           Teuchos::ParameterList& plist,
+           Teuchos::ParameterList plist,
            const Schema& schema)
-    : Operator(cvs, cvs, plist, schema, schema) {};
+    : Operator(cvs, cvs, std::move(plist), schema, schema) {};
+
+  // Copy constructor shares (shallow-copies) the Ops with the original,
+  // matching the pre-existing Clone() semantics: the clone's Ops still see
+  // the same underlying data as the original, so updates to the original's
+  // Ops are reflected in the clone. plist_ is duplicated (deep copy), since
+  // Operator owns its plist_ by value. What is NOT copied is the assembled
+  // matrix/graph/supermap or the staging flags -- these are reset to their
+  // pre-assembly state by delegating to the general constructor, so the
+  // resulting Operator starts unlocked and may be extended with more Ops.
+  // Subclasses must implement Clone() by delegating to their own copy
+  // constructor rather than relying on the compiler-generated one (which
+  // would instead shallow-copy Amat_/smap_/structure_locked_ too).
+  Operator(const Operator& other);
 
   virtual ~Operator() = default;
 
@@ -680,7 +693,6 @@ class Operator : public Matrix<CompositeVector, CompositeVectorSpace> {
   mutable int apply_calls_;
 
  private:
-  // Operator(const Operator& op);
   Operator& operator=(const Operator& op);
 };
 
