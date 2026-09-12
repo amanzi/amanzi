@@ -74,11 +74,12 @@ EvaluatorAggregateBCs::Update_(State& S)
 
     // set the default, 0 Neumann
     if (model->hasComponent("face")) {
-      MultiVector_type_<int> model_bf(
-        model->getMesh()->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false), 1);
-      model_bf.putScalar(Operators::OPERATOR_BC_NEUMANN);
+      if (model_bf_ == Teuchos::null)
+        model_bf_ = Teuchos::rcp(new MultiVector_type_<int>(
+          model->getMesh()->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false), 1));
+      model_bf_->putScalar(Operators::OPERATOR_BC_NEUMANN);
       model->getComponent("face", true)
-        ->doExport(model_bf, model->getMesh()->getBoundaryFaceImporter(), Tpetra::INSERT);
+        ->doExport(*model_bf_, model->getMesh()->getBoundaryFaceImporter(), Tpetra::INSERT);
     }
 
     // loop over dependencies and accumulate them

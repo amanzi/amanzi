@@ -103,6 +103,7 @@ instead of NKA.
 #include "SolverDefs.hh"
 #include "NKA_Base.hh"
 #include "AA_Base.hh"
+#include "FencedTimer.hh"
 
 namespace Amanzi {
 namespace AmanziSolvers {
@@ -367,7 +368,10 @@ SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector>& u
       if (use_aa_)
         aa_->Correction(*du_pic, *du_nka, u.ptr());
       else
-        nka_->Correction(*du_pic, *du_nka);
+        {
+          AMANZI_TIMER("1 TI: nka correction");
+          nka_->Correction(*du_pic, *du_nka);
+        }
       nka_applied = true;
       nka_itr++;
 

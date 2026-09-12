@@ -18,6 +18,7 @@
 #include "PreconditionerHypre.hh"
 
 #include "cuda_decl.h"
+#include "FencedTimer.hh"
 
 namespace Amanzi {
 
@@ -69,6 +70,7 @@ PreconditionerHypre::copy_matrix_()
 int
 PreconditionerHypre::applyInverse(const Vector_type& v, Vector_type& hv) const
 {
+  AMANZI_TIMER("6 Hypre: apply");
   //nvtxRangePush("HP: apply");
   assert(v.getNumVectors() == 1);
   assert(hv.getNumVectors() == 1);
@@ -397,6 +399,7 @@ PreconditionerHypre::make_contiguous_(Teuchos::RCP<const RowMatrix_type>& Matrix
 void
 PreconditionerHypre::computeInverse()
 {
+  AMANZI_TIMER("6 Hypre: compute");
   //nvtxRangePush("HP: compute");
 #ifdef HAVE_IFPACK2_HYPRE
   MPI_Comm comm =

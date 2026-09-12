@@ -152,6 +152,7 @@ Debugger::WriteCellInfo(bool include_faces)
 void
 Debugger::WriteVector(const std::string& vname, const CompositeVector& vec, bool include_faces)
 {
+  if (dc_.empty()) return;
   int n_vecs = 0;
   CompositeVector::cHostView_type vec_c;
   if (vec.hasComponent("cell")) {
@@ -215,6 +216,7 @@ Debugger::WriteVector(const std::string& vname, const CompositeVector& vec, bool
 void
 Debugger::WriteCellVector(const std::string& name, const MultiVector_type& vec)
 {
+  if (dc_.empty()) return;
   auto vec_v = vec.getLocalViewHost(Tpetra::Access::ReadOnly);
   int n_vecs = vec.getNumVectors();
   for (int i = 0; i != dc_.size(); ++i) {
@@ -302,6 +304,7 @@ Debugger::WriteVectors(const std::vector<std::string>& names,
 void
 Debugger::WriteBoundaryConditions(const CompositeVector_<int>& flags, const CompositeVector& values)
 {
+  if (dc_.empty()) return;
   // bcs use 3 extra characters
   int width = formatter_.getWidth();
   int precision = formatter_.getPrecision();

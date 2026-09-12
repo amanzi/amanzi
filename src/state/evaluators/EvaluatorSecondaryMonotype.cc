@@ -118,16 +118,19 @@ EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::UpdateDerivat
   for (auto& dep : dependencies_) {
     if (wrt_key == dep.first && wrt_tag == dep.second) {
       // partial F / partial x
-      std::vector<Teuchos::RCP<CompositeVector>> tmp_data(my_keys_.size(), Teuchos::null);
-      for (int i = 0; i != my_keys_.size(); ++i)
-        tmp_data[i] = Teuchos::rcp(new CompositeVector(results[i]->getMap()));
+      if (dtmp_.size() != my_keys_.size()) {
+        dtmp_.resize(my_keys_.size());
+        for (int i = 0; i != my_keys_.size(); ++i)
+          dtmp_[i] = Teuchos::rcp(new CompositeVector(results[i]->getMap()));
+      }
+      for (int i = 0; i != my_keys_.size(); ++i) dtmp_[i]->putScalarMasterAndGhosted(0.0);
 
       {
         std::vector<CompositeVector*> tmp(my_keys_.size(), nullptr);
-        for (int i = 0; i != my_keys_.size(); ++i) tmp[i] = tmp_data[i].get();
+        for (int i = 0; i != my_keys_.size(); ++i) tmp[i] = dtmp_[i].get();
         EvaluatePartialDerivative_(S, wrt_key, wrt_tag, tmp);
       }
-      for (int i = 0; i != my_keys_.size(); ++i) results[i]->update(1., *tmp_data[i], 1.);
+      for (int i = 0; i != my_keys_.size(); ++i) results[i]->update(1., *dtmp_[i], 1.);
 
     } else if (!S.GetEvaluator(dep.first, dep.second).ProvidesKey(wrt_key, wrt_tag) &&
                S.GetEvaluator(dep.first, dep.second).IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
@@ -139,19 +142,22 @@ EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::UpdateDerivat
       const auto& ddep = S.GetDerivative<CompositeVector>(dep.first, dep.second, wrt_key, wrt_tag);
 
       // -- partial F / partial dep
-      std::vector<Teuchos::RCP<CompositeVector>> tmp_data(my_keys_.size(), Teuchos::null);
-      for (int i = 0; i != my_keys_.size(); ++i)
-        tmp_data[i] = Teuchos::rcp(new CompositeVector(results[i]->getMap()));
+      if (dtmp_.size() != my_keys_.size()) {
+        dtmp_.resize(my_keys_.size());
+        for (int i = 0; i != my_keys_.size(); ++i)
+          dtmp_[i] = Teuchos::rcp(new CompositeVector(results[i]->getMap()));
+      }
+      for (int i = 0; i != my_keys_.size(); ++i) dtmp_[i]->putScalarMasterAndGhosted(0.0);
 
       {
         std::vector<CompositeVector*> tmp(my_keys_.size(), nullptr);
-        for (int i = 0; i != my_keys_.size(); ++i) tmp[i] = tmp_data[i].get();
+        for (int i = 0; i != my_keys_.size(); ++i) tmp[i] = dtmp_[i].get();
         EvaluatePartialDerivative_(S, dep.first, dep.second, tmp);
       }
 
       // sum
       for (int i = 0; i != my_keys_.size(); ++i) {
-        results[i]->elementWiseMultiply(1., ddep, *tmp_data[i], 1.);
+        results[i]->elementWiseMultiply(1., ddep, *dtmp_[i], 1.);
         assert(!Kokkos::isnan(results[i]->normInf()));
       }
     }

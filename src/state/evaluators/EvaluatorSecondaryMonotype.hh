@@ -140,6 +140,7 @@ class EvaluatorSecondaryMonotype : public EvaluatorSecondary {
  protected:
   Teuchos::RCP<Debugger> db_;
   Teuchos::RCP<const AmanziMesh::Mesh> db_mesh_;
+  std::vector<Teuchos::RCP<Data_t>> dtmp_;
 };
 
 

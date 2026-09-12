@@ -94,6 +94,7 @@ space, see Rollin et al.
 #include "DenseMatrix.hh"
 #include "InverseIterativeMethod.hh"
 #include "InverseDefs.hh"
+#include "FencedTimer.hh"
 
 namespace Amanzi {
 namespace AmanziSolvers {
@@ -152,6 +153,7 @@ class IterativeMethodGMRES
   using InvIt::rnorm0_;
 
   mutable std::vector<Teuchos::RCP<Vector>> v_;
+  mutable Teuchos::RCP<Vector> w_, r_, p_;
   mutable WhetStone::DenseMatrix<> Hu_; // upper Hessenberg matrix
 
   mutable double fnorm_;
@@ -235,9 +237,18 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::GMRES_(const 
                                                                           int max_itrs,
                                                                           int criteria) const
 {
-  Vector w(f, Teuchos::Copy);
-  Vector r(f, Teuchos::Copy);
-  Vector p(f, Teuchos::Copy);
+  if (w_ == Teuchos::null) {
+    w_ = Teuchos::rcp(new Vector(f, Teuchos::Copy));
+    r_ = Teuchos::rcp(new Vector(f, Teuchos::Copy));
+    p_ = Teuchos::rcp(new Vector(f, Teuchos::Copy));
+  } else {
+    w_->update(1.0, f, 0.0);
+    r_->update(1.0, f, 0.0);
+    p_->update(1.0, f, 0.0);
+  }
+  Vector& w = *w_;
+  Vector& r = *r_;
+  Vector& p = *p_;
 
   double s[krylov_dim_ + 1], cs[krylov_dim_ + 1], sn[krylov_dim_ + 1];
   WhetStone::DenseMatrix<> T(krylov_dim_ + 1, krylov_dim_);
@@ -252,11 +263,13 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::GMRES_(const 
   // initial residual is r = f - M x for the right preconditioner
   // and r = H (f - M x)  for the left preconditioner
   if (left_pc_) {
+    AMANZI_TIMER("5 GMRES: initial residual");
     m_->apply(x, p);
     p.update(1.0, f, -1.0);
     h_->applyInverse(p, r);
 
   } else {
+    AMANZI_TIMER("5 GMRES: initial residual");
     m_->apply(x, r);
     r.update(1.0, f, -1.0);
   }
@@ -277,8 +290,11 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::GMRES_(const 
     if (ierr != 0) return ierr;
   }
 
-  v_[0] = Teuchos::rcp(new Vector(r, Teuchos::DataAccess::Copy));
-  v_[0]->update(0.0, r, 1.0 / rnorm0);
+  {
+    AMANZI_TIMER("5 GMRES: new krylov vector");
+    if (v_[0] == Teuchos::null) v_[0] = Teuchos::rcp(new Vector(r, Teuchos::DataAccess::Copy));
+    v_[0]->update(1.0 / rnorm0, r, 0.0);
+  }
 
   s[0] = rnorm0;
 
@@ -288,20 +304,35 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::GMRES_(const 
     // std::cout << "GMRES: v" << i << " = " << Debug::get0(*(v_[i])) <<
     // std::endl;
     if (left_pc_) {
-      m_->apply(*(v_[i]), p);
-      h_->applyInverse(p, w);
+      {
+        AMANZI_TIMER("5 GMRES: matvec");
+        m_->apply(*(v_[i]), p);
+      }
+      {
+        AMANZI_TIMER("5 GMRES: precon apply");
+        h_->applyInverse(p, w);
+      }
     } else {
-      h_->applyInverse(*(v_[i]), p);
-      m_->apply(p, w);
+      {
+        AMANZI_TIMER("5 GMRES: precon apply");
+        h_->applyInverse(*(v_[i]), p);
+      }
+      {
+        AMANZI_TIMER("5 GMRES: matvec");
+        m_->apply(p, w);
+      }
     }
 
     double tmp(0.0);
-    for (int k = 0; k <= i; k++) { // Arnoldi algorithm
-      tmp = w.dot(*(v_[k]));
-      w.update(-tmp, *(v_[k]), 1.0);
-      T(k, i) = tmp;
+    {
+      AMANZI_TIMER("5 GMRES: arnoldi dots");
+      for (int k = 0; k <= i; k++) { // Arnoldi algorithm
+        tmp = w.dot(*(v_[k]));
+        w.update(-tmp, *(v_[k]), 1.0);
+        T(k, i) = tmp;
+      }
+      tmp = w.norm2();
     }
-    tmp = w.norm2();
     T(i + 1, i) = tmp;
     s[i + 1] = 0.0;
 
@@ -360,9 +391,13 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::GMRES_(const 
       // } else {
       //   v_[i + 1]->assign(w);
       // }
-      v_[i + 1] = Teuchos::rcp(new Vector(w, Teuchos::DataAccess::Copy));
+      AMANZI_TIMER("5 GMRES: new krylov vector");
+      if (v_[i + 1] == Teuchos::null)
+        v_[i + 1] = Teuchos::rcp(new Vector(w, Teuchos::DataAccess::Copy));
       if (tmp != 0.0) { // zero occurs in exact arithmetic
-        v_[i + 1]->update(0.0, r, 1.0 / tmp);
+        v_[i + 1]->update(1.0 / tmp, w, 0.0);
+      } else {
+        v_[i + 1]->update(1.0, w, 0.0);
       }
     }
   }

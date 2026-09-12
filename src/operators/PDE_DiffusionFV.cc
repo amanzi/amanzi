@@ -328,7 +328,12 @@ PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solution,
   const Amanzi::AmanziMesh::MeshCache& m = mesh_->getCache();
   int lnfaces_owned(nfaces_owned);
 
-  Kokkos::View<int*> flag("flags", nfaces_wghost); // initialized to 0 by default
+  if (flux_flag_.extent(0) != nfaces_wghost) {
+    flux_flag_ = Kokkos::View<int*>("flags", nfaces_wghost);
+  } else {
+    Kokkos::deep_copy(flux_flag_, 0);
+  }
+  auto flag = flux_flag_;
   Kokkos::parallel_for(
     "PDE_DiffusionFV::UpdateFlux outer loop", ncells_owned, KOKKOS_LAMBDA(const int c) {
       auto [faces, dirs] = m.getCellFacesAndDirections(c);

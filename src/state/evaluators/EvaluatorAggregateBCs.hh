@@ -47,6 +47,7 @@ class EvaluatorAggregateBCs : public EvaluatorSecondary {
 
  protected:
   bool inited_;
+  Teuchos::RCP<MultiVector_type_<int>> model_bf_;
 
  private:
   static Utils::RegisteredFactory<Evaluator, EvaluatorAggregateBCs> reg_;

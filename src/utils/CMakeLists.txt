@@ -42,6 +42,7 @@ add_amanzi_library(atk
                            Brent.hh
                            ExprTK.hh
                            Factory.hh
+                           FencedTimer.hh
                            FIFO_Set.hh
                            Formatter.hh
                            HDF5Reader.hh

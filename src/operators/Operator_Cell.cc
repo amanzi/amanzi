@@ -205,7 +205,9 @@ Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
 {
   AMANZI_ASSERT(op.A.size() == nfaces_owned);
 
+#if 0
   op.A.update_entries_host();
+#endif
 
   const auto cell_row_inds = map.viewGhostIndices<>(my_block_row, "cell", 0);
   const auto cell_col_inds = map.viewGhostIndices<>(my_block_col, "cell", 0);

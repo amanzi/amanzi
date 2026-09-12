@@ -19,6 +19,7 @@
 #include "Preconditioner.hh"
 
 #include "cuda_decl.h"
+#include "FencedTimer.hh"
 
 namespace Amanzi {
 namespace AmanziSolvers {
@@ -60,6 +61,7 @@ class PreconditionerIfpack2 : public Preconditioner {
 
     string n = "IP2: comp-inv" + method_name_; 
     nvtxRangePush(n.c_str());
+    AMANZI_TIMER("6 Ifpack2: compute");
     pc_->compute();
     if (vo_->os_OK(Teuchos::VERB_HIGH)) pc_->describe(*vo_->os(), vo_->getVerbLevel());
     nvtxRangePop();
@@ -71,6 +73,7 @@ class PreconditionerIfpack2 : public Preconditioner {
   {
     string n = "IP2: app-inv" + method_name_;
     nvtxRangePush(n.c_str());
+    AMANZI_TIMER("6 Ifpack2: apply");
     pc_->apply(v, hv);
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) pc_->describe(*vo_->os(), vo_->getVerbLevel());
     nvtxRangePop();

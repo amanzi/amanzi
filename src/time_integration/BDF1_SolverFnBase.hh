@@ -15,6 +15,7 @@
 
 #include "SolverFnBase.hh"
 #include "BDFFnBase.hh"
+#include "FencedTimer.hh"
 
 
 namespace Amanzi {
@@ -85,6 +86,7 @@ template <class Vector>
 void
 BDF1_SolverFnBase<Vector>::Residual(const Teuchos::RCP<Vector>& u, const Teuchos::RCP<Vector>& r)
 {
+  AMANZI_TIMER("1 TI: residual");
   bdf_fn_->FunctionalResidual(t_old_, t_new_, u_old_, u, r);
 }
 
@@ -94,6 +96,7 @@ int
 BDF1_SolverFnBase<Vector>::ApplyPreconditioner(const Teuchos::RCP<const Vector>& r,
                                                const Teuchos::RCP<Vector>& Pr)
 {
+  AMANZI_TIMER("1 TI: precon apply");
   return bdf_fn_->ApplyPreconditioner(r, Pr);
 }
 
@@ -102,6 +105,7 @@ template <class Vector>
 void
 BDF1_SolverFnBase<Vector>::UpdatePreconditioner(const Teuchos::RCP<const Vector>& u)
 {
+  AMANZI_TIMER("1 TI: precon update");
   bdf_fn_->UpdatePreconditioner(t_new_, u, h_);
 }
 
@@ -111,6 +115,7 @@ double
 BDF1_SolverFnBase<Vector>::ErrorNorm(const Teuchos::RCP<const Vector>& u,
                                      const Teuchos::RCP<const Vector>& du)
 {
+  AMANZI_TIMER("1 TI: error norm");
   return bdf_fn_->ErrorNorm(u, du);
 }
 
@@ -121,6 +126,7 @@ template <class Vector>
 bool
 BDF1_SolverFnBase<Vector>::IsAdmissible(const Teuchos::RCP<const Vector>& up)
 {
+  AMANZI_TIMER("1 TI: is admissible");
   return bdf_fn_->IsAdmissible(up);
 }
 
@@ -131,6 +137,7 @@ BDF1_SolverFnBase<Vector>::ModifyCorrection(const Teuchos::RCP<const Vector>& re
                                             const Teuchos::RCP<const Vector>& u,
                                             const Teuchos::RCP<Vector>& du)
 {
+  AMANZI_TIMER("1 TI: modify correction");
   return bdf_fn_->ModifyCorrection(h_, res, u, du);
 }
 

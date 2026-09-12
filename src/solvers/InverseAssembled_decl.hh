@@ -36,6 +36,8 @@ class InverseAssembled : public Inverse<Operator, Assembler, Vector, VectorSpace
     : method_name_(method_name),
       updated_(false),
       computed_once_(false),
+      lag_(0),
+      ncompute_(0),
       Inverse<Operator, Assembler, Vector, VectorSpace>()
   {}
 
@@ -60,6 +62,7 @@ class InverseAssembled : public Inverse<Operator, Assembler, Vector, VectorSpace
 
  protected:
   bool updated_, computed_once_;
+  int lag_, ncompute_;
   std::string method_name_;
 
   using Inverse<Operator, Assembler, Vector, VectorSpace>::m_;

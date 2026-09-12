@@ -15,6 +15,7 @@
 #include "InverseHelpers.hh"
 #include "Inverse.hh"
 #include "InverseFactory.hh"
+#include "FencedTimer.hh"
 
 namespace Amanzi {
 namespace AmanziSolvers {
@@ -148,6 +149,7 @@ InverseAssembled<Operator, Preconditioner, Vector, VectorSpace>::set_inverse_par
   Teuchos::ParameterList& plist)
 {
   solver_ = createAssembledMethod<>(method_name_, plist);
+  lag_ = plist.get<int>("preconditioner lag", 0);
 }
 
 
@@ -180,8 +182,15 @@ InverseAssembled<Operator, Preconditioner, Vector, VectorSpace>::computeInverse(
 {
   AMANZI_ASSERT(updated_); // note, we could call Update here, but would prefer
                            // that developers to the right thing.
-  Impl::assembleMatrix(h_);
-  solver_->computeInverse();
+  {
+    AMANZI_TIMER("4 Inv: assemble matrix");
+    Impl::assembleMatrix(h_);
+  }
+  if (!computed_once_ || lag_ == 0 || (ncompute_ % (lag_ + 1)) == 0) {
+    AMANZI_TIMER("4 Inv: compute (factor/setup)");
+    solver_->computeInverse();
+  }
+  ++ncompute_;
   computed_once_ = true;
 }
 
@@ -196,9 +205,19 @@ InverseAssembled<Operator, Preconditioner, Vector, VectorSpace>::applyInverse(co
                                  // would prefer that developers do the right thing,
                                  // especially since they might change values
                                  // between calls and forget to call compute.
-  Impl::copyToSuperVector(smap_, X, X_);
-  int returned_code = solver_->applyInverse(*X_, *Y_);
-  Impl::copyFromSuperVector(smap_, *Y_, Y);
+  int returned_code;
+  {
+    AMANZI_TIMER("4 Inv: copy to super vector");
+    Impl::copyToSuperVector(smap_, X, X_);
+  }
+  {
+    AMANZI_TIMER("4 Inv: apply (linear solve)");
+    returned_code = solver_->applyInverse(*X_, *Y_);
+  }
+  {
+    AMANZI_TIMER("4 Inv: copy from super vector");
+    Impl::copyFromSuperVector(smap_, *Y_, Y);
+  }
   return returned_code;
 }
 

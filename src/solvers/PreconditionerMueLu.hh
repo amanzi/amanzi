@@ -19,6 +19,7 @@
 
 #include "exceptions.hh"
 #include "Preconditioner.hh"
+#include "FencedTimer.hh"
 
 namespace Amanzi {
 namespace AmanziSolvers {
@@ -48,12 +49,14 @@ class PreconditionerMueLu : public Preconditioner {
 
   virtual void computeInverse() override final
   {
+    AMANZI_TIMER("6 MueLu: compute");
     Teuchos::RCP<TpetraOperator_type> t_op = h_;
     pc_ = MueLu::CreateTpetraPreconditioner(t_op, plist_);
   }
 
   virtual int applyInverse(const Vector_type& v, Vector_type& hv) const override final
   {
+    AMANZI_TIMER("6 MueLu: apply");
     pc_->apply(v, hv);
     returned_code_ = 0;
     return returned_code_;

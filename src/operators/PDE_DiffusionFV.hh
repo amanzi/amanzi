@@ -122,6 +122,7 @@ class PDE_DiffusionFV : public virtual PDE_Diffusion {
  protected:
   Teuchos::RCP<CompositeVector> transmissibility_;
   bool transmissibility_initialized_;
+  mutable Kokkos::View<int*> flux_flag_;
   bool bcs_applied_;
 };
 
