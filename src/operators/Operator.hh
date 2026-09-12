@@ -211,21 +211,34 @@ class Operator : public Matrix<CompositeVector, CompositeVectorSpace> {
 
   // deprecated but yet supported
   Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
-           Teuchos::ParameterList& plist,
+           Teuchos::ParameterList plist,
            int schema);
 
   // general operator (domain may differ from range)
   Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
            const Teuchos::RCP<const CompositeVectorSpace>& cvs_col,
-           Teuchos::ParameterList& plist,
+           Teuchos::ParameterList plist,
            const Schema& schema_row,
            const Schema& schema_col);
 
   // bijective operator (domain = range)
   Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
-           Teuchos::ParameterList& plist,
+           Teuchos::ParameterList plist,
            const Schema& schema)
-    : Operator(cvs, cvs, plist, schema, schema) {};
+    : Operator(cvs, cvs, std::move(plist), schema, schema) {};
+
+  // Copy constructor shares (shallow-copies) the Ops with the original,
+  // matching the pre-existing Clone() semantics: the clone's Ops still see
+  // the same underlying data as the original, so updates to the original's
+  // Ops are reflected in the clone. plist_ is duplicated (deep copy), since
+  // Operator owns its plist_ by value. What is NOT copied is the assembled
+  // matrix/graph/supermap or the staging flags -- these are reset to their
+  // pre-assembly state by delegating to the general constructor, so the
+  // resulting Operator starts unlocked and may be extended with more Ops.
+  // Subclasses must implement Clone() by delegating to their own copy
+  // constructor rather than relying on the compiler-generated one (which
+  // would instead shallow-copy Amat_/smap_/structure_locked_ too).
+  Operator(const Operator& other);
 
   virtual ~Operator() = default;
 
@@ -348,11 +361,20 @@ class Operator : public Matrix<CompositeVector, CompositeVectorSpace> {
   op_iterator FindMatrixOp(int schema_dofs, int matching_rule, bool action);
 
   // block mutate
-  void OpPushBack(const Teuchos::RCP<Op>& op) { ops_.push_back(op); }
+  //
+  // NOTE: these change the structure of the operator (the set of Ops it
+  // owns) and so must only be called during construction/setup, before the
+  // first SymbolicAssembleMatrix() call fixes the matrix structure.
+  void OpPushBack(const Teuchos::RCP<Op>& op);
   void OpExtend(op_iterator begin, op_iterator end);
-  void OpReplace(const Teuchos::RCP<Op>& op, int index) { ops_[index] = op; }
-  void OpErase(op_iterator begin, op_iterator end) { ops_.erase(begin, end); }
-  void OpErase(op_iterator begin) { ops_.erase(begin); }
+  void OpReplace(const Teuchos::RCP<Op>& op, int index);
+  void OpErase(op_iterator begin, op_iterator end);
+  void OpErase(op_iterator begin);
+
+  // Locks the structure of the operator (the set of Ops it owns), preventing
+  // any further structural changes. Called automatically by
+  // SymbolicAssembleMatrix(), but may also be called directly.
+  void lockStructure() { structure_locked_ = true; }
 
   // quality control
   void Verify() const;
@@ -630,6 +652,7 @@ class Operator : public Matrix<CompositeVector, CompositeVectorSpace> {
 
  protected:
   int SchemaMismatch_(const std::string& schema1, const std::string& schema2) const;
+  void AssertStructureNotLocked_() const;
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -637,7 +660,7 @@ class Operator : public Matrix<CompositeVector, CompositeVectorSpace> {
   Teuchos::RCP<const CompositeVectorSpace> cvs_col_;
   Teuchos::ParameterList plist_;
 
-  mutable std::vector<Teuchos::RCP<Op>> ops_;
+  std::vector<Teuchos::RCP<Op>> ops_;
   Teuchos::RCP<CompositeVector> rhs_, rhs_checkpoint_;
 
   int ncells_owned, nfaces_owned, nnodes_owned, nedges_owned;
@@ -646,10 +669,13 @@ class Operator : public Matrix<CompositeVector, CompositeVectorSpace> {
   int num_colors_;
   Teuchos::RCP<std::vector<int>> coloring_;
   Teuchos::ParameterList inv_plist_;
+
+  // lazy staging
   bool inverse_pars_set_;
   bool initialize_complete_;
   bool compute_complete_;
-  mutable bool assembly_complete_;
+  bool assembly_complete_;
+  bool structure_locked_;
 
   Teuchos::RCP<Epetra_CrsMatrix> A_;
   Teuchos::RCP<Matrix<CompositeVector>> preconditioner_;
@@ -667,7 +693,6 @@ class Operator : public Matrix<CompositeVector, CompositeVectorSpace> {
   mutable int apply_calls_;
 
  private:
-  // Operator(const Operator& op);
   Operator& operator=(const Operator& op);
 };
 

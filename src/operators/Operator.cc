@@ -63,17 +63,18 @@ namespace Operators {
 * Deprecated constructor: still supported for compatability
 ****************************************************************** */
 Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
-                   Teuchos::ParameterList& plist,
+                   Teuchos::ParameterList plist,
                    int schema)
   : cvs_row_(cvs),
     cvs_col_(cvs),
-    plist_(plist),
+    plist_(std::move(plist)),
     num_colors_(0),
     coloring_(Teuchos::null),
     inverse_pars_set_(false),
     initialize_complete_(false),
     compute_complete_(false),
     assembly_complete_(false),
+    structure_locked_(false),
     schema_row_(schema),
     schema_col_(schema),
     shift_(0.0),
@@ -106,9 +107,9 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
     nedges_wghost = 0;
   }
 
-  vo_ = Teuchos::rcp(new VerboseObject("Operator", plist));
-  shift_ = plist.get<double>("diagonal shift", 0.0);
-  shift_min_ = plist.get<double>("diagonal shift minimum", 0.0);
+  vo_ = Teuchos::rcp(new VerboseObject("Operator", plist_));
+  shift_ = plist_.get<double>("diagonal shift", 0.0);
+  shift_min_ = plist_.get<double>("diagonal shift minimum", 0.0);
 
   apply_calls_ = 0;
 
@@ -126,18 +127,19 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
 ****************************************************************** */
 Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
                    const Teuchos::RCP<const CompositeVectorSpace>& cvs_col,
-                   Teuchos::ParameterList& plist,
+                   Teuchos::ParameterList plist,
                    const Schema& schema_row,
                    const Schema& schema_col)
   : cvs_row_(cvs_row),
     cvs_col_(cvs_col),
-    plist_(plist),
+    plist_(std::move(plist)),
     num_colors_(0),
     coloring_(Teuchos::null),
     inverse_pars_set_(false),
     initialize_complete_(false),
     compute_complete_(false),
     assembly_complete_(false),
+    structure_locked_(false),
     schema_row_(schema_row),
     schema_col_(schema_col),
     shift_(0.0),
@@ -170,10 +172,22 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
     nedges_wghost = 0;
   }
 
-  vo_ = Teuchos::rcp(new VerboseObject("Operator", plist));
-  shift_ = plist.get<double>("diagonal shift", 0.0);
-  shift_min_ = plist.get<double>("diagonal shift minimum", 0.0);
+  vo_ = Teuchos::rcp(new VerboseObject("Operator", plist_));
+  shift_ = plist_.get<double>("diagonal shift", 0.0);
+  shift_min_ = plist_.get<double>("diagonal shift minimum", 0.0);
   apply_calls_ = 0;
+}
+
+
+/* ******************************************************************
+* Copy constructor duplicates plist_ (Operator owns it by value) and
+* shares Ops with the original (shallow copy); assembly/lock state is
+* reset fresh by delegating to the general constructor.
+****************************************************************** */
+Operator::Operator(const Operator& other)
+  : Operator(other.cvs_row_, other.cvs_col_, other.plist_, other.schema_row_, other.schema_col_)
+{
+  ops_ = other.ops_;
 }
 
 
@@ -216,7 +230,11 @@ Operator::SymbolicAssembleMatrix()
   // create global matrix
   Amat_ = Teuchos::rcp(new MatrixFE(graph));
   A_ = Amat_->Matrix();
+  lockStructure();
+
+  // invalidate later steps
   assembly_complete_ = false;
+  compute_complete_ = false;
 }
 
 
@@ -285,14 +303,7 @@ Operator::SymbolicAssembleMatrixOp(const Op_Diagonal& op,
 void
 Operator::AssembleMatrix()
 {
-  if (Amat_ == Teuchos::null) {
-    Errors::Message msg("Symbolic assembling was not performed.");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  // note, this is called prior to AssembleMatrix() because Schur complements
-  // override this because ApplyAssembled is not valid for them.
-  assembly_complete_ = true;
+  if (!structure_locked_) SymbolicAssembleMatrix();
 
   Amat_->PutScalar(0.);
   AssembleMatrix(*smap_, *Amat_, 0, 0);
@@ -304,6 +315,8 @@ Operator::AssembleMatrix()
     Amat_->DiagonalShiftMin(shift_min_);
   }
 
+  // set flags
+  assembly_complete_ = true;
   compute_complete_ = false;
 
   // std::stringstream filename_s2;
@@ -629,7 +642,7 @@ Operator::ComputeInverse()
   }
   // assembly must be possible now
   AMANZI_ASSERT(preconditioner_.get());
-  preconditioner_->ComputeInverse(); // NOTE: calls this->AssembleMatrix()
+  preconditioner_->ComputeInverse(); // NOTE: calls this->AssembleMatrix() if needed
   compute_complete_ = true;
 }
 
@@ -782,16 +795,57 @@ Operator::FindMatrixOp(int schema_dofs, int matching_rule, bool action)
 
 
 /* ******************************************************************
-* Add more operators to the existing list.
+* Block mutate: these change the operator's structure (the set of Ops
+* it owns) and so are only valid prior to the first
+* SymbolicAssembleMatrix() call, which fixes the matrix structure.
 ****************************************************************** */
+void
+Operator::AssertStructureNotLocked_() const
+{
+  if (structure_locked_) {
+    Errors::Message msg("Operator: cannot change the structure of the operator (add/replace/erase "
+                        "Ops) after SymbolicAssembleMatrix() has been called.");
+    Exceptions::amanzi_throw(msg);
+  }
+}
+
+void
+Operator::OpPushBack(const Teuchos::RCP<Op>& op)
+{
+  AssertStructureNotLocked_();
+  ops_.push_back(op);
+}
+
 void
 Operator::OpExtend(op_iterator begin, op_iterator end)
 {
+  AssertStructureNotLocked_();
   int nops = ops_.size();
   int nnew = nops + std::distance(begin, end);
 
   ops_.reserve(nnew);
   ops_.insert(ops_.end(), begin, end);
+}
+
+void
+Operator::OpReplace(const Teuchos::RCP<Op>& op, int index)
+{
+  AssertStructureNotLocked_();
+  ops_[index] = op;
+}
+
+void
+Operator::OpErase(op_iterator begin, op_iterator end)
+{
+  AssertStructureNotLocked_();
+  ops_.erase(begin, end);
+}
+
+void
+Operator::OpErase(op_iterator begin)
+{
+  AssertStructureNotLocked_();
+  ops_.erase(begin);
 }
 
 
