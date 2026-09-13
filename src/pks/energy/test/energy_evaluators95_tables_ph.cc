@@ -176,7 +176,7 @@ TEST(EVALUATOR_DERIVATIVE_TABLES_PH)
     for (int j = 0; j < n; ++j) {
       CHECK(drhodp[0][c] > 0);
       CHECK(drhodh[0][c] < 0);
-      // CHECK(dudh[0][c] > 0);
+      CHECK(dudh[0][c] > 0);
       out << p_c[0][c] * 1e-6 << " " << h_c[0][c] / factor << " " << state_c[(int)TSPH_t::dRHOdH][c] << std::endl;
       // out << p_c[0][c] * 1e-6 << " " << h_c[0][c] / factor << " " << drhodp[0][c] << std::endl;
       c++;

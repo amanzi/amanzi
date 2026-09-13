@@ -34,15 +34,11 @@ struct SaturationState {
   double p;
   double Tsat, Tsat_p;
 
-  double hl, hv, hl_p, hv_p;
-  double sl, sv;
+  double hl_p, hv_p;
+  double vl_p, vv_p;
 
-  double vl, vv, vl_p, vv_p;
-  double rhol, rhov;
-
-  double cpl, cpv;
-  double avl, avv;
-  double ktl, ktv;
+  Properties liquid;
+  Properties vapor;
 };
 
 

@@ -104,6 +104,7 @@ IAPWS95_StateEvaluatorPH::Evaluate_(const State& S, const std::vector<CompositeV
       Exceptions::amanzi_throw(Errors::CutTimestep());
     }
 
+    result_c[(int)TSPH_t::RGN][c] = prop.rgn;
     result_c[(int)TSPH_t::RHO][c] = prop.rho;
     result_c[(int)TSPH_t::T][c] = prop.T;
     result_c[(int)TSPH_t::V][c] = prop.v;
@@ -159,7 +160,18 @@ IAPWS95_StateEvaluatorPH::Evaluate_(const State& S, const std::vector<CompositeV
 
       result_c[(int)TSPH_t::dRHOdP][c] = -(tmp1 - tmp2) / v / v;
       result_c[(int)TSPH_t::dRHOdH][c] = -dvdh / v / v / CommonDefs::MOLAR_MASS_H2O;
-    } else {
+
+      // Clapeyron
+      result_c[(int)TSPH_t::dTdP][c] = T * dvdh;
+      result_c[(int)TSPH_t::dTdH][c] = 0.0;
+
+      vlv = (1 - x) * vl + x * vv;
+      result_c[(int)TSPH_t::CV][c] = (tmp3 - vlv - tmp1 / dvdh) / T / dvdh;
+ 
+      result_c[(int)TSPH_t::K][c] = (1.0 - x) * liquid.k + x * vapor.k;
+      result_c[(int)TSPH_t::MU][c] = (1.0 - x) * liquid.mu + x * vapor.mu;
+    } 
+    else {
       av = prop.av;
       bp = prop.bp;
       cp = prop.cp * 1.0e+3;
@@ -556,7 +568,7 @@ IAPWS95_InternalEnergyEvaluatorPH::EvaluatePartialDerivative_(
     for (int c = 0; c != ncells; ++c) {
       double rho = ts_c[(int)TSPH_t::RHO][c];
       double drhodh = ts_c[(int)TSPH_t::dRHOdH][c];
-      result_c[0][c] = 1.0 + 1000.0 * p_c[0][c] * drhodh / (rho * rho);
+      result_c[0][c] = 1.0 + p_c[0][c] * drhodh / (rho * rho) * CommonDefs::MOLAR_MASS_H2O;
     }
   }
 }

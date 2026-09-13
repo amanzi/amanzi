@@ -625,7 +625,7 @@ IAPWS97_InternalEnergyEvaluator::EvaluatePartialDerivative_(
     for (int c = 0; c != ncells; ++c) {
       rho = ts_c[(int)TSPH_t::RHO][c];
       drhodh = ts_c[(int)TSPH_t::dRHOdH][c];
-      result_v[0][c] = 1.0 + 1000.0 * p_c[0][c] * drhodh / rho / rho;
+      result_v[0][c] = 1.0 + p_c[0][c] * drhodh / rho / rho * CommonDefs::MOLAR_MASS_H2O;
     }
   }
 }

@@ -152,37 +152,27 @@ IAPWS95::ThermodynamicsPH(double p, double h)
   int phase = 1;
   if (p < PC) {
     const SaturationState& sat = SaturationLineP(p);
+    double hl = sat.liquid.h;
+    double hv = sat.vapor.h;
 
-    if (h < sat.hl) {
+    if (h < hl) {
       prop = PopulatePropertiesFromEntropy1(p, h);
-      prop.rgn = (int)Phase_t::CompressibleLiquid;
+      prop.rgn = (int)Phase_t::Liquid;
       liquid = prop;
-    } else if (h > sat.hv) {
+    } else if (h > hv) {
       prop = PopulatePropertiesFromEntropy1(p, h);
       prop.rgn = (int)Phase_t::Gas;
       vapor = prop;
     } else {
       prop = PopulatePropertiesFromEntropy2(p, h, sat);
       prop.rgn = (int)Phase_t::TwoPhases;
-      liquid = prop;
-      liquid.rho = sat.rhol;
-      liquid.v = sat.vl;
-      liquid.h = sat.hl;
-      liquid.cp = sat.cpl;
-      liquid.av = sat.avl;
-      liquid.kt = sat.ktl;
-
-      vapor = prop;
-      vapor.rho = sat.rhov;
-      vapor.v = sat.vv;
-      vapor.h = sat.hv;
-      vapor.cp = sat.cpv;
-      vapor.av = sat.avv;
-      vapor.kt = sat.ktv;
+      liquid = sat.liquid;
+      vapor = sat.vapor;
       phase = 2;
     }
   } else {
     prop = PopulatePropertiesFromEntropy1(p, h);
+    prop.rgn = (h < HC) ? (int)Phase_t::CompressibleLiquid : (int)Phase_t::SupercriticalLiquid;
   }
 
   // extend state with kinematic properties 
@@ -337,10 +327,18 @@ IAPWS95::PopulatePropertiesFromEntropy2(double p, double h, const SaturationStat
 {
   Properties prop;
 
-  double dh = sat.hv - sat.hl;
-  double dv = sat.vv - sat.vl;
+  double hl = sat.liquid.h;
+  double sl = sat.liquid.s;
+  double vl = sat.liquid.v;
 
-  double x = (h - sat.hl) / dh;
+  double hv = sat.vapor.h;
+  double sv = sat.vapor.s;
+  double vv = sat.vapor.v;
+
+  double dh = hv - hl;
+  double dv = vv - vl;
+
+  double x = (h - hl) / dh;
   x = std::clamp(x, 0.0, 1.0);
 
   double dh_dp = sat.hv_p - sat.hl_p;
@@ -354,14 +352,14 @@ IAPWS95::PopulatePropertiesFromEntropy2(double p, double h, const SaturationStat
   double Th = 0.0;
 
   // volume and its derivatives
-  double v = sat.vl + x * dv;
+  double v = vl + x * dv;
   double vp = sat.vl_p + x * dv_dp + xp * dv;
   double vh = xh * dv;
 
   double rhop = -vp / (v * v);
   double rhoh = -vh / (v * v);
 
-  double s = sat.sl + x * (sat.sv - sat.sl);
+  double s = sl + x * (sv - sl);
   double sh = 1.0 / T;
   double sp = -1000.0 * v / T;
 
@@ -591,17 +589,6 @@ IAPWS95::SaturationLineP(double p)
 
   if (p >= PC) {
     sat.Tsat = TC;
-    sat.rhol = RHOC;
-    sat.rhov = RHOC;
-    sat.vl = 1.0 / RHOC;
-    sat.vv = 1.0 / RHOC;
-    sat.hl = HC;
-    sat.hv = HC;
-
-    auto prop = PopulateProperties(RHOC, TC);
-    sat.sl = prop.s;
-    sat.sv = prop.s;
-
     return sat;
   }
 
@@ -622,26 +609,15 @@ IAPWS95::SaturationLineP(double p)
     AMANZI_ASSERT(itrs >= 0);
     powell_root_itrs += itrs;
 
-    sat.rhol = sol[0];
-    sat.rhov = sol[1];
+    double rhol = sol[0];
+    double rhov = sol[1];
     T = sol[2];
 
-    auto [prop1, liquid1, vapor1] = ThermodynamicsRhoT(sat.rhol, T);
-    sat.hl = prop1.h;
-    sat.sl = prop1.s;
-    sat.cpl = prop1.cp;
-    sat.avl = prop1.av;
-    sat.ktl = prop1.kt;
+    const auto& liquid1 = PopulateProperties(rhol, T);
+    sat.liquid = ExtendProperties(rhol, liquid1);
 
-    auto [prop2, liquid2, vapor2] = ThermodynamicsRhoT(sat.rhov, T);
-    sat.hv = prop2.h;
-    sat.sv = prop2.s;
-    sat.cpv = prop2.cp;
-    sat.avv = prop2.av;
-    sat.ktv = prop2.kt;
-
-    sat.vl = 1.0 / sat.rhol;
-    sat.vv = 1.0 / sat.rhov;
+    const auto& vapor2 = PopulateProperties(rhov, T);
+    sat.vapor = ExtendProperties(rhov, vapor2);
 
     sat.p = p;
     sat.Tsat = T;

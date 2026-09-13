@@ -290,7 +290,7 @@ IAPWS95_RaggedSplinePH::BoundaryEnthalpies(double p) const
   if (p >= PC) return { HC, HC };
 
   const auto& sat = eos95_->SaturationLineP(p);
-  return { sat.hl, sat.hv };
+  return { sat.liquid.h, sat.vapor.h };
 }
 
 
@@ -318,8 +318,8 @@ IAPWS95_RaggedSplinePH::FindLiquidMetastableMargin(double p,
                                                    const SaturationState& sat)
 {
   double T0 = sat.Tsat;
-  double rho0 = sat.rhol;
-  double rho_mid = (rho0 + sat.rhov) / 2; 
+  double rho0 = sat.liquid.rho;
+  double rho_mid = (rho0 + sat.vapor.rho) / 2; 
 
   double D0 = StabilityFactor(rho0, T0);
   double target = options_.metastable_stability_fraction * D0;
@@ -333,7 +333,7 @@ IAPWS95_RaggedSplinePH::FindLiquidMetastableMargin(double p,
     Frho95s f(p, rho1, eos95_.get());
     auto [Tmin, Tmax] = Utils::bracketRootSymmetric(f, T0, T0 * 0.01, &itrs);
     brent_bracket_itrs += itrs;
-    if (itrs < 0) return sat.hl;
+    if (itrs < 0) return sat.liquid.h;
 
     itrs = 20;
     double T1 = Utils::findRootBrent(f, Tmin, Tmax, tol, &itrs);
@@ -352,7 +352,7 @@ IAPWS95_RaggedSplinePH::FindLiquidMetastableMargin(double p,
     }
   }
 
-  return sat.hl;
+  return sat.liquid.h;
 }
 
 
@@ -361,8 +361,8 @@ IAPWS95_RaggedSplinePH::FindVaporMetastableMargin(double p,
                                                   const SaturationState& sat)
 {
   double T0 = sat.Tsat;
-  double rho0 = sat.rhov;
-  double rho_mid = (rho0 + sat.rhol) / 2; 
+  double rho0 = sat.vapor.rho;
+  double rho_mid = (rho0 + sat.liquid.rho) / 2; 
 
   double D0 = StabilityFactor(rho0, T0);
   double target = options_.metastable_stability_fraction * D0;
@@ -376,7 +376,7 @@ IAPWS95_RaggedSplinePH::FindVaporMetastableMargin(double p,
     Frho95s f(p, rho1, eos95_.get());
     auto [Tmin, Tmax] = Utils::bracketRootSymmetric(f, T0, T0 * 0.01, &itrs);
     brent_bracket_itrs += itrs;
-    if (itrs < 0) return sat.hv;
+    if (itrs < 0) return sat.vapor.h;
 
     itrs = 20;
     double T1 = Utils::findRootBrent(f, Tmin, Tmax, tol, &itrs);
@@ -395,7 +395,7 @@ IAPWS95_RaggedSplinePH::FindVaporMetastableMargin(double p,
     }
   }
 
-  return sat.hv;
+  return sat.vapor.h;
 }
 
 
@@ -802,15 +802,17 @@ IAPWS95_RaggedSplinePH::BuildMetastableWorkLists_(const std::vector<Sample>& sam
     if (sample.is_physical) continue;
 
     const SaturationState& sat = eos95_->SaturationLineP(sample.p);
+    double hl = sat.liquid.h;
+    double hv = sat.vapor.h;
 
-    double dl = sample.h - sat.hl;
-    double dv = sat.hv - sample.h;
-    double latent_h = sat.hv - sat.hl;
+    double dl = sample.h - hl;
+    double dv = hv - sample.h;
+    double latent_h = hv - hl;
 
     if (dl <= dv) {
-      liquid.push_back({k, dl / latent_h, sat.rhol, sat.Tsat});
+      liquid.push_back({k, dl / latent_h, sat.liquid.rho, sat.Tsat});
     } else {
-      vapor.push_back({k, dv / latent_h, sat.rhov, sat.Tsat});
+      vapor.push_back({k, dv / latent_h, sat.vapor.rho, sat.Tsat});
     }
   }
 
@@ -936,7 +938,7 @@ bool
 IAPWS95_RaggedSplinePH::IsPhysical(double p, double h, const SaturationState& sat)
 { 
   if (p >= eos95_->PC) return true;
-  return h <= sat.hl || h >= sat.hv;
+  return h <= sat.liquid.h || h >= sat.vapor.h;
 }
 
 
@@ -947,7 +949,7 @@ bool
 IAPWS95_RaggedSplinePH::IsExtended_(double p, double h, const SaturationState& sat)
 {
   if (p >= eos95_->PC) return true;
-  if (h <= sat.hl || h >= sat.hv) return true;
+  if (h <= sat.liquid.h || h >= sat.vapor.h) return true;
 
   double ext_hl = FindLiquidMetastableMargin(p, sat);
   double ext_hv = FindVaporMetastableMargin(p, sat);

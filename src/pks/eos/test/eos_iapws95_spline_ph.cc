@@ -120,14 +120,14 @@ void WriteSaturationPlotData(IAPWS95_RaggedSplinePH& spline,
     double p = lines[n];
     if (p <= eos95.PC) {
       const auto& sat = eos95.SaturationLineP(p);
-      out << p << " " << sat.hl << std::endl;
+      out << p << " " << sat.liquid.h << std::endl;
     }
   }
   for (int n = lines.size() - 1; n >=0; --n) {
     double p = lines[n];
     if (p <= eos95.PC) {
       const auto& sat = eos95.SaturationLineP(p);
-      out << p << " " << sat.hv << std::endl;
+      out << p << " " << sat.vapor.h << std::endl;
     }
   }
   out.close();
@@ -157,11 +157,11 @@ double FindLiquidMetastableBoundary(IAPWS95_RaggedSplinePH& spline,
                                     double p,
                                     const SaturationState& sat)
 {
-  double rho_hi = sat.rhol;
+  double rho_hi = sat.liquid.rho;
   double T_hi = sat.Tsat;
   double D_hi = spline.StabilityFactor(rho_hi, T_hi);
 
-  if (!(D_hi > 0.0)) return sat.hl;
+  if (!(D_hi > 0.0)) return sat.liquid.h;
 
   // Follow the constant-pressure branch until D = (dp/drho)_T changes sign.
   double rho_lo = rho_hi;
@@ -204,11 +204,11 @@ double FindLiquidMetastableBoundary(IAPWS95_RaggedSplinePH& spline,
     D_hi = D1;
   }
 
-  if (!bracketed) return sat.hl;
+  if (!bracketed) return sat.liquid.h;
 
   // 2. Refine the spinodal: p(rho,T) = p, D(rho,T) = 0 by bisecting in rho.
   //    For every rho, T is obtained from the constant-pressure equation.
-  double rho_tol = 1.0e-10 * std::max(1.0, sat.rhol);
+  double rho_tol = 1.0e-10 * std::max(1.0, sat.liquid.rho);
   double D_scale = std::max(std::abs(D_hi), 1.0);
   double D_tol = 1.0e-10 * D_scale;
 
@@ -227,14 +227,14 @@ double FindLiquidMetastableBoundary(IAPWS95_RaggedSplinePH& spline,
     Frho95t f(p, rho_spin, eos95);
 
     auto [Tmin, Tmax] = Utils::bracketRootSymmetric(f, Tguess, std::max(0.1, 0.002 * Tguess), &itrs);
-    if (itrs < 0) return sat.hl;
+    if (itrs < 0) return sat.liquid.h;
 
     itrs = 50;
     T_spin = Utils::findRootBrent(f, Tmin, Tmax, 1.0e-11, &itrs);
-    if (itrs < 0) return sat.hl;
+    if (itrs < 0) return sat.liquid.h;
 
     double D_spin = spline.StabilityFactor(rho_spin, T_spin);
-    if (!std::isfinite(D_spin)) return sat.hl;
+    if (!std::isfinite(D_spin)) return sat.liquid.h;
 
     if (std::abs(D_spin) <= D_tol || rho_hi - rho_lo <= rho_tol) {
       auto prop = eos95->PopulateProperties(rho_spin, T_spin);
@@ -264,11 +264,11 @@ double FindVaporMetastableBoundary(IAPWS95_RaggedSplinePH& spline,
                                    double p,
                                    const SaturationState& sat)
 {
-  double rho_lo = sat.rhov;
+  double rho_lo = sat.vapor.rho;
   double T_lo = sat.Tsat;
   double D_lo = spline.StabilityFactor(rho_lo, T_lo);
 
-  if (!(D_lo > 0.0)) return sat.hv;
+  if (!(D_lo > 0.0)) return sat.vapor.h;
 
   double rho_hi = rho_lo;
   double T_hi = T_lo;
@@ -306,9 +306,9 @@ double FindVaporMetastableBoundary(IAPWS95_RaggedSplinePH& spline,
     D_lo = D1;
   }
 
-  if (!bracketed) return sat.hv;
+  if (!bracketed) return sat.vapor.h;
 
-  double rho_tol = 1.0e-10 * std::max(1.0, sat.rhov);
+  double rho_tol = 1.0e-10 * std::max(1.0, sat.vapor.rho);
   double D_scale = std::max(std::abs(D_lo), 1.0);
   double D_tol = 1.0e-10 * D_scale;
 
@@ -324,14 +324,14 @@ double FindVaporMetastableBoundary(IAPWS95_RaggedSplinePH& spline,
     Frho95t f(p, rho_spin, eos95);
 
     auto [Tmin, Tmax] = Utils::bracketRootSymmetric(f, Tguess, std::max(0.1, 0.002 * Tguess), &itrs);
-    if (itrs < 0) return sat.hv;
+    if (itrs < 0) return sat.vapor.h;
 
     itrs = 50;
     T_spin = Utils::findRootBrent(f, Tmin, Tmax, 1.0e-11, &itrs);
-    if (itrs < 0) return sat.hv;
+    if (itrs < 0) return sat.vapor.h;
 
     double D_spin = spline.StabilityFactor(rho_spin, T_spin);
-    if (!std::isfinite(D_spin)) return sat.hv;
+    if (!std::isfinite(D_spin)) return sat.vapor.h;
 
     if (std::abs(D_spin) <= D_tol || rho_hi - rho_lo <= rho_tol) {
       auto prop = eos95->PopulateProperties(rho_spin, T_spin);
