@@ -655,6 +655,10 @@ class State {
 
   // parameter list
   Teuchos::RCP<Teuchos::ParameterList> state_plist_;
+  Teuchos::Array<Key> debug_evals_;
+  bool debug_evals_set_ = false;
+  Teuchos::Array<Key> debug_data_;
+  bool debug_data_set_ = false;
 };
 
 

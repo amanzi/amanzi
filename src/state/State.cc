@@ -1007,9 +1007,12 @@ State::CheckIsDebugEval(const Key& key, const Tag& tag, const std::string& msg)
   // check for debugging.  This provides a line for setting breakpoints for
   // debugging PK and Evaluator dependencies.
 #ifdef ENABLE_DBC
-  Teuchos::Array<Key> debug_evals = state_plist_->sublist("debug").get<Teuchos::Array<std::string>>(
-    "evaluators", Teuchos::Array<Key>());
-  if (std::find(debug_evals.begin(), debug_evals.end(), key) != debug_evals.end()) {
+  if (!debug_evals_set_) {
+    debug_evals_ = state_plist_->sublist("debug").get<Teuchos::Array<std::string>>(
+      "evaluators", Teuchos::Array<Key>());
+    debug_evals_set_ = true;
+  }
+  if (std::find(debug_evals_.begin(), debug_evals_.end(), key) != debug_evals_.end()) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
       std::string lmsg = msg.empty() ? "required" : msg;
       *vo_->os() << "State: Evaluator for debug field \"" << key << "@" << tag << "\" was " << lmsg
@@ -1028,9 +1031,12 @@ State::CheckIsDebugData(const Key& key, const Tag& tag, const std::string& msg)
   // check for debugging.  This provides a line for setting breakpoints for
   // debugging PK and Evaluator dependencies.
 #ifdef ENABLE_DBC
-  Teuchos::Array<Key> debug_evals =
-    state_plist_->sublist("debug").get<Teuchos::Array<std::string>>("data", Teuchos::Array<Key>());
-  if (std::find(debug_evals.begin(), debug_evals.end(), key) != debug_evals.end()) {
+  if (!debug_data_set_) {
+    debug_data_ = state_plist_->sublist("debug").get<Teuchos::Array<std::string>>(
+      "data", Teuchos::Array<Key>());
+    debug_data_set_ = true;
+  }
+  if (std::find(debug_data_.begin(), debug_data_.end(), key) != debug_data_.end()) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
       std::string lmsg = msg.empty() ? "required" : msg;
       *vo_->os() << "State: data for debug field \"" << key << "@" << tag << "\" was " << lmsg

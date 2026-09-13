@@ -75,6 +75,10 @@ class BlockVector {
 
   std::size_t getNumVectors(const std::string& name) const { return getMap()->getNumVectors(name); }
 
+  // -- ghost values are stale after any change to master values
+  void changed(const std::string& name) const { ghosts_current_[name] = false; }
+  void changed() const { for (auto& kv : ghosts_current_) kv.second = false; }
+
   // -- Access a component vector
   Teuchos::RCP<const MultiVector_type_<Scalar>>
   getComponent(const std::string& name, bool ghosted = false) const;
@@ -238,6 +242,7 @@ class BlockVector {
  protected:
   Teuchos::RCP<const BlockSpace> map_;
   std::map<std::string, Teuchos::RCP<MultiVector_type_<Scalar>>> master_data_, ghost_data_;
+  mutable std::map<std::string, bool> ghosts_current_;
 };
 
 } // namespace Amanzi

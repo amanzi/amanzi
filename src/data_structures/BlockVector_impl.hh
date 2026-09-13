@@ -28,6 +28,7 @@
 
 #include "AmanziMap.hh"
 #include "AmanziVector.hh"
+#include "FencedTimer.hh"
 
 
 namespace Amanzi {
@@ -154,6 +155,7 @@ BlockVector<Scalar>::getComponent(const std::string& name, bool ghosted)
     Errors::Message message("BlockVector: Requested component (" + name + ") does not exist.");
     throw(message);
   }
+  changed(name);
   return getComponent_(name, ghosted);
 };
 
@@ -201,6 +203,7 @@ template<MemSpace_kind MEM>
 auto
 BlockVector<Scalar>::viewComponent(const std::string& name, bool ghosted)
 {
+  changed(name);
   if constexpr(MEM == MemSpace_kind::HOST) {
     return getComponent_(name, ghosted)
       ->template getLocalView<typename HostView_type::memory_space>(Tpetra::Access::ReadWrite);
@@ -253,12 +256,15 @@ template <typename Scalar>
 void
 BlockVector<Scalar>::scatterMasterToGhosted(const std::string& name, Tpetra::CombineMode mode) const
 {
+  if (ghosts_current_[name]) return;
+  AMANZI_TIMER("7 scatter master to ghosted");
   auto import = getMap()->getImporter(name);
   if (import == Teuchos::null) return;
   auto g_comp = ghost_data_.at(name); // note cannot use getComponent_() here, need non-const
   if (g_comp == Teuchos::null) return;
   auto m_comp = getComponent_(name, false);
   g_comp->doImport(*m_comp, *import, mode);
+  ghosts_current_[name] = true;
 };
 
 
@@ -277,12 +283,14 @@ template <typename Scalar>
 void
 BlockVector<Scalar>::gatherGhostedToMaster(const std::string& name, Tpetra::CombineMode mode)
 {
+  AMANZI_TIMER("7 gather ghosted to master");
   auto import = getMap()->getImporter(name);
   if (import == Teuchos::null) return;
   // communicate
   auto g_comp = getComponent(name, true);
   auto m_comp = getComponent(name, false);
   m_comp->doExport(*g_comp, *import, mode);
+  changed(name);
 };
 
 
@@ -292,6 +300,7 @@ template <typename Scalar>
 void
 BlockVector<Scalar>::putScalar(Scalar scalar)
 {
+  changed();
   for (const auto& name : *this) { getComponent_(name)->putScalar(scalar); }
 };
 
@@ -301,6 +310,7 @@ template <typename Scalar>
 void
 BlockVector<Scalar>::putScalar(const std::string& name, Scalar scalar)
 {
+  changed(name);
   getComponent(name)->putScalar(scalar);
 };
 
@@ -310,6 +320,7 @@ template <typename Scalar>
 void
 BlockVector<Scalar>::putScalar(const std::string& name, const std::vector<Scalar>& scalar)
 {
+  changed(name);
   if (scalar.size() != getNumVectors(name)) {
     Errors::Message message("BlockVector: requested putScalar(" + name +
                             ") with incorrectly sized vector of scalars.");
@@ -328,7 +339,10 @@ template <typename Scalar>
 void
 BlockVector<Scalar>::putScalarMasterAndGhosted(Scalar scalar)
 {
-  for (const auto& name : *this) { getComponent_(name, true)->putScalar(scalar); }
+  for (const auto& name : *this) {
+    getComponent_(name, true)->putScalar(scalar);
+    ghosts_current_[name] = true;
+  }
 };
 
 
@@ -355,6 +369,7 @@ template <typename Scalar>
 void
 BlockVector<Scalar>::abs(const BlockVector<Scalar>& other)
 {
+  changed();
   for (const auto& name : *this) { getComponent_(name)->abs(*other.getComponent_(name)); }
 }
 
@@ -364,6 +379,7 @@ template <typename Scalar>
 void
 BlockVector<Scalar>::scale(Scalar value)
 {
+  changed();
   for (const auto& name : *this) { getComponent_(name)->scale(value); }
 };
 
@@ -373,6 +389,7 @@ template <typename Scalar>
 void
 BlockVector<Scalar>::scale(const std::string& name, Scalar value)
 {
+  changed(name);
   getComponent_(name)->scale(value);
 };
 
@@ -382,6 +399,7 @@ template <typename Scalar>
 void
 BlockVector<Scalar>::reciprocal(const BlockVector<Scalar>& other)
 {
+  changed();
   for (const auto& name : *this) { getComponent_(name)->reciprocal(*other.getComponent_(name)); }
 }
 
@@ -406,6 +424,7 @@ template <typename Scalar>
 void
 BlockVector<Scalar>::update(Scalar scalarA, const BlockVector<Scalar>& A, Scalar scalarThis)
 {
+  changed();
   for (const auto& name : *this) {
     if (A.hasComponent(name)) {
       getComponent_(name)->update(scalarA, *A.getComponent_(name), scalarThis);
@@ -423,6 +442,7 @@ BlockVector<Scalar>::update(Scalar scalarA,
                             const BlockVector<Scalar>& B,
                             Scalar scalarThis)
 {
+  changed();
   for (const auto& name : *this) {
     if (A.hasComponent(name) && B.hasComponent(name)) {
       getComponent_(name)->update(
@@ -440,6 +460,7 @@ BlockVector<Scalar>::elementWiseMultiply(Scalar scalarAB,
                                          const BlockVector<Scalar>& B,
                                          Scalar scalarThis)
 {
+  changed();
   for (const auto& name : *this) {
     // There is a nasty gotcha here -- if this is A, when we call getVector we
     // clobber data and break things without erroring.  But this being B is ok.
@@ -554,6 +575,7 @@ template <typename Scalar>
 void
 BlockVector<Scalar>::randomize()
 {
+  changed();
   for (const auto& name : *this) { getComponent_(name)->randomize(); }
 };
 
