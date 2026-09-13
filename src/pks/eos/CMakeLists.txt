@@ -122,7 +122,7 @@ if (BUILD_TESTS)
     if (NOT (${EOS_SOURCE_DIR} EQUAL ${EOS_BINARY_DIR}) )
         file(GLOB DataFiles "${EOS_SOURCE_DIR}/test/*.xml"
                             "${EOS_SOURCE_DIR}/test/*.eos"
-                            "${EOS_SOURCE_DIR}/test/*.csv")
+                            "${EOS_SOURCE_DIR}/test/*.py")
         file(COPY ${DataFiles} DESTINATION ${EOS_BINARY_DIR}/test/)
     endif()
 

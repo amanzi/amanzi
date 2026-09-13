@@ -122,19 +122,55 @@ IAPWS95_StateEvaluatorPH::Evaluate_(const State& S, const std::vector<CompositeV
 
     p = p_c[0][c];
     v = prop.v;
-
     T = prop.T;
-    rho = prop.rho;
-    av = prop.av;
-    bp = prop.bp;
-    cv = prop.cv * 1.0e+3;
-    cp = prop.cp * 1.0e+3;
 
-    result_c[(int)TSPH_t::dRHOdP][c] = 1.0 / (v * v * p * bp) + av * (1.0 - T * av) / cp;
-    result_c[(int)TSPH_t::dRHOdH][c] = -rho * av / (cp * CommonDefs::MOLAR_MASS_H2O);
+    if (prop.rgn == (int)AmanziEOS::Phase_t::TwoPhases) {
+      double dvdp_l, dvdp_v, dhdp_l, dhdp_v; // full derivatives
+      double x, vlv, vl, vv, hl, hv, tmp1, tmp2, tmp3, dvdh;
 
-    result_c[(int)TSPH_t::dTdP][c] = (av * T - 1.0) / (rho * cp);
-    result_c[(int)TSPH_t::dTdH][c] = 1.0 / (cp * CommonDefs::MOLAR_MASS_H2O);
+      vl = liquid.v;
+      hl = liquid.h * 1.0e+3;
+
+      vv = vapor.v;
+      hv = vapor.h * 1.0e+3;
+
+      dvdh = (vv - vl) / (hv - hl);
+
+      av = liquid.av;
+      cp = liquid.cp * 1.0e+3;
+      kt = liquid.kt * 1.0e-6;
+
+      dvdp_l = vl * (-kt + av * T * dvdh);
+      dhdp_l = vl * (1 - av * T) + cp * T * dvdh;
+
+      av = vapor.av;
+      cp = vapor.cp * 1.0e+3;
+      kt = vapor.kt * 1.0e-6;
+
+      dvdp_v = vv * (-kt + av * T * dvdh);
+      dhdp_v = vv * (1 - av * T) + cp * T * dvdh;
+
+      // mechanical (tmp1) and phase change (tmp2) parts
+      // this could be re-grouped and combined with identity to cancel h' terms
+      x = prop.x;
+      tmp1 = (1 - x) * dvdp_l + x * dvdp_v;
+      tmp3 = (1 - x) * dhdp_l + x * dhdp_v;
+      tmp2 = tmp3 * dvdh;
+
+      result_c[(int)TSPH_t::dRHOdP][c] = -(tmp1 - tmp2) / v / v;
+      result_c[(int)TSPH_t::dRHOdH][c] = -dvdh / v / v / CommonDefs::MOLAR_MASS_H2O;
+    } else {
+      av = prop.av;
+      bp = prop.bp;
+      cp = prop.cp * 1.0e+3;
+      rho = prop.rho;
+
+      result_c[(int)TSPH_t::dRHOdP][c] = 1.0 / (v * v * p * bp) + av * (1.0 - T * av) / cp;
+      result_c[(int)TSPH_t::dRHOdH][c] = -rho * av / (cp * CommonDefs::MOLAR_MASS_H2O);
+
+      result_c[(int)TSPH_t::dTdP][c] = (av * T - 1.0) / (rho * cp);
+      result_c[(int)TSPH_t::dTdH][c] = 1.0 / (cp * CommonDefs::MOLAR_MASS_H2O);
+    }
   }
 }
 

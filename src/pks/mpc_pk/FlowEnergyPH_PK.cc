@@ -331,7 +331,6 @@ FlowEnergyPH_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // try timestep
   bool fail = PK_MPCStrong<PK_BDF>::AdvanceStep(t_old, t_new, reinit);
   if (fail) archive.Restore("");
-
   return fail;
 }
 
@@ -545,8 +544,16 @@ FlowEnergyPH_PK::ModifyCorrection(double dt,
                                            AmanziMesh::Parallel_kind::OWNED);
 
   // increment clipping
-  // -- if enthalpy is out of scope, we need to terminate  
+  // -- limit pressure change
   double max_change(0.20);
+  for (int c = 0; c < ncells_owned; ++c) {
+    double tmp = std::fabs(p_c[0][c]) * max_change;
+    dp_c[0][c] = std::clamp(dp_c[0][c], -tmp, tmp);
+    if (std::fabs(std::fabs(dp_c[0][c]) - tmp) < 1e-8 * tmp) nclipped++;
+  }
+
+  // -- limit enthalpy change
+  max_change = 0.20;
   for (int c = 0; c < ncells_owned; ++c) {
     double tmp = std::min(std::fabs(h_c[0][c]) * max_change, 20.0);
     dh_c[0][c] = std::clamp(dh_c[0][c], -tmp, tmp);

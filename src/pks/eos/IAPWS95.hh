@@ -39,6 +39,10 @@ struct SaturationState {
 
   double vl, vv, vl_p, vv_p;
   double rhol, rhov;
+
+  double cpl, cpv;
+  double avl, avv;
+  double ktl, ktv;
 };
 
 

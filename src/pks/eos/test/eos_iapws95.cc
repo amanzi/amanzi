@@ -143,5 +143,22 @@ TEST(EOS_IAPWS95)
   std::tie(prop, liquid, vapor) = eos.ThermodynamicsPH(16.9082693, 2204.937654000000);
   CHECK_CLOSE(0.6, prop.x, 1e-8);
   CHECK_CLOSE(5.777622915561523e-03, prop.v, 1e-10);
+
+  // cross verification
+  Properties prop1;
+  std::tie(prop, liquid, vapor) = eos.ThermodynamicsRhoT(200.0, 700.0);
+  std::tie(prop1, liquid, vapor) = eos.ThermodynamicsPH(30.9900579486, 2588.32735407);
+  CHECK_CLOSE(prop.p, prop1.p, 1e-10 * prop.p);
+  CHECK_CLOSE(prop.rho, prop1.rho, 1e-10 * prop.rho);
+  CHECK_CLOSE(prop.h, prop1.h, 1e-10 * prop.h);
+
+  // entropy derivatives
+  double p(30.9900579486), h(2588.32735407);
+  auto d = eos.EntropyDerivativesPH(p, h);
+  std::tie(prop, liquid, vapor) = eos.ThermodynamicsPH(p, h);
+
+  double ap = d[2] * (d[4] * d[2] - d[1] * d[5]) / (p * (d[3] * d[5] - d[4] * d[4]));
+  CHECK_CLOSE(prop.ap, ap, 1e-10 * ap);
+
 }
 

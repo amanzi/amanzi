@@ -167,10 +167,18 @@ IAPWS95::ThermodynamicsPH(double p, double h)
       liquid = prop;
       liquid.rho = sat.rhol;
       liquid.v = sat.vl;
+      liquid.h = sat.hl;
+      liquid.cp = sat.cpl;
+      liquid.av = sat.avl;
+      liquid.kt = sat.ktl;
 
       vapor = prop;
       vapor.rho = sat.rhov;
       vapor.v = sat.vv;
+      vapor.h = sat.hv;
+      vapor.cp = sat.cpv;
+      vapor.av = sat.avv;
+      vapor.kt = sat.ktv;
       phase = 2;
     }
   } else {
@@ -312,9 +320,11 @@ IAPWS95::PopulatePropertiesFromEntropy1(double p, double h)
   prop.av = vh / (v * Th);
   prop.bp = rho * rho / (p * rhop_T);
   prop.kt = rhop_T / rho;
+  prop.ap = prop.av * prop.bp / rho;
 
   prop.v = v;
   prop.rho = rho;
+
   return prop;
 }
 
@@ -619,10 +629,16 @@ IAPWS95::SaturationLineP(double p)
     auto [prop1, liquid1, vapor1] = ThermodynamicsRhoT(sat.rhol, T);
     sat.hl = prop1.h;
     sat.sl = prop1.s;
+    sat.cpl = prop1.cp;
+    sat.avl = prop1.av;
+    sat.ktl = prop1.kt;
 
     auto [prop2, liquid2, vapor2] = ThermodynamicsRhoT(sat.rhov, T);
     sat.hv = prop2.h;
     sat.sv = prop2.s;
+    sat.cpv = prop2.cp;
+    sat.avv = prop2.av;
+    sat.ktv = prop2.kt;
 
     sat.vl = 1.0 / sat.rhol;
     sat.vv = 1.0 / sat.rhov;

@@ -138,11 +138,12 @@ TEST(EVALUATOR_DERIVATIVE_TABLES_PH)
   auto& p_c = *S->GetW<CompositeVector>(pressure_key, pressure_key).ViewComponent("cell");
   auto& h_c = *S->GetW<CompositeVector>(enthalpy_key, passwd).ViewComponent("cell");
 
+  double factor = 1000.0 * CommonDefs::MOLAR_MASS_H2O;
   int c = 0;
   for (double i = 0; i < n; i++) {
     for (double j = 0; j < n; j++) {
       p_c[0][c] = (p_min + (p_max - p_min) * i / double(n)) * 1e+6;
-      h_c[0][c] = (h_min + (h_max - h_min) * j / double(n)) * 1000.0 * CommonDefs::MOLAR_MASS_H2O;
+      h_c[0][c] = (h_min + (h_max - h_min) * j / double(n)) * factor;
       c++;
     }
   }
@@ -157,19 +158,27 @@ TEST(EVALUATOR_DERIVATIVE_TABLES_PH)
   eval_p->SetChanged();
   eval_h->SetChanged();
 
-  // compute a selective derivative
-  Key field = density_key;
-  Key wrt = pressure_key;
-  S->GetEvaluator(field).UpdateDerivative(*S, "test", wrt, Tags::DEFAULT);
-  auto& der_c = *S->GetDerivative<CV_t>(field, tag, wrt, tag).ViewComponent("cell");
-  auto& field_c = *S->Get<CV_t>(field, tag).ViewComponent("cell");
+  // compute selective derivative
+  S->GetEvaluator(density_key).UpdateDerivative(*S, "test", pressure_key, Tags::DEFAULT);
+  auto& drhodp = *S->GetDerivative<CV_t>(density_key, tag, pressure_key, tag).ViewComponent("cell");
+
+  S->GetEvaluator(density_key).UpdateDerivative(*S, "test", enthalpy_key, Tags::DEFAULT);
+  auto& drhodh = *S->GetDerivative<CV_t>(density_key, tag, enthalpy_key, tag).ViewComponent("cell");
+
+  S->GetEvaluator(ie_key).UpdateDerivative(*S, "test", enthalpy_key, Tags::DEFAULT);
+  auto& dudh = *S->GetDerivative<CV_t>(ie_key, tag, enthalpy_key, tag).ViewComponent("cell");
+
   auto& state_c = *S->Get<CV_t>(state_key, tag).ViewComponent("cell");
 
   c = 0;
   std::ofstream out("field.dat");
   for (int i = 0; i < n; ++i) {
     for (int j = 0; j < n; ++j) {
-      out << p_c[0][c] * 1e-6 << " " << h_c[0][c] << " " << state_c[(int)TSPH_t::T][c] << std::endl;
+      CHECK(drhodp[0][c] > 0);
+      CHECK(drhodh[0][c] < 0);
+      // CHECK(dudh[0][c] > 0);
+      out << p_c[0][c] * 1e-6 << " " << h_c[0][c] / factor << " " << state_c[(int)TSPH_t::dRHOdH][c] << std::endl;
+      // out << p_c[0][c] * 1e-6 << " " << h_c[0][c] / factor << " " << drhodp[0][c] << std::endl;
       c++;
     }
   }
