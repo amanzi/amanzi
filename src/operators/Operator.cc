@@ -181,13 +181,18 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
 
 /* ******************************************************************
 * Copy constructor duplicates plist_ (Operator owns it by value) and
-* shares Ops with the original (shallow copy); assembly/lock state is
-* reset fresh by delegating to the general constructor.
+* shares Ops and rhs_ with the original (shallow copy) -- callers may
+* have already populated rhs_ (e.g. via AddAccumulationDelta/ApplyBCs)
+* before cloning, and expect that data to carry over, just as they
+* expect the Ops themselves to. Assembly/lock state (Amat_, smap_, A_,
+* structure_locked_) is reset fresh by delegating to the general
+* constructor.
 ****************************************************************** */
 Operator::Operator(const Operator& other)
   : Operator(other.cvs_row_, other.cvs_col_, other.plist_, other.schema_row_, other.schema_col_)
 {
   ops_ = other.ops_;
+  rhs_ = other.rhs_;
 }
 
 
