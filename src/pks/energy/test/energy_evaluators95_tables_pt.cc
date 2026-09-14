@@ -82,7 +82,7 @@ double RunTest(int icase, const std::string& iapws95_model)
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   int n = 100;
-  Teuchos::RCP<const Mesh> mesh = meshfactory.create(1.0, 0.0, 2.0, 0.2, 2 * n, 2 * n);
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(1.0, 0.0, 2.0, 0.2, n, n);
 
   // create a simple state and populate it
   Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("state");
@@ -98,6 +98,7 @@ double RunTest(int icase, const std::string& iapws95_model)
   std::string passwd("");
   Key pressure_key = Keys::getKey("", "pressure");
   Key temperature_key = Keys::getKey("", "temperature");
+  Key enthalpy_key = Keys::getKey("", "enthalpy");
   Key state_key = Keys::getKey("", "thermodynamic_state");
   Key density_key = Keys::getKey("", "mass_density_liquid");
   Key viscosity_key = Keys::getKey("", "viscosity_liquid");
@@ -123,21 +124,19 @@ double RunTest(int icase, const std::string& iapws95_model)
   S->CheckAllFieldsInitialized();
 
   // populate (p,T) table
+  double p_min = 0.2;
+  double p_max = 50.0;
+  double T_min = 280.0;
+  double T_max = 950.0;
+
   auto& p_c = *S->GetW<CompositeVector>(pressure_key, pressure_key).ViewComponent("cell");
   auto& T_c = *S->GetW<CompositeVector>(temperature_key, passwd).ViewComponent("cell");
 
-  int c(0), m(200);
-  // reserved for future: initial P/T data are around the critical point
-  double scale(50.0 / n);
-  double dp(5.0e-2 * scale), drho(1.6 * scale), dT(1.0 * scale), p, rho, T; 
-
-  for (int i = -n; i < n; ++i) {
-   for (int j = -n; j < n; ++j) {
-      p = eos.PC + (i + 0.5) * dp; // Mpa
-      T = eos.TC + (j + 0.5) * dT;
-
-      p_c[0][c] = p * 1.0e+6;
-      T_c[0][c] = T;
+  int c = 0;
+  for (double i = 0; i < n; i++) {
+    for (double j = 0; j < n; j++) {
+      p_c[0][c] = (p_min + (p_max - p_min) * i / double(n)) * 1e+6;
+      T_c[0][c] = (T_min + (T_max - T_min) * j / double(n));
       c++;
     }
   }
@@ -151,11 +150,15 @@ double RunTest(int icase, const std::string& iapws95_model)
   eval_T->SetChanged();
 
   // compute a selective derivative
-  Key field = density_key;
-  Key wrt = pressure_key;
-  S->GetEvaluator(field).UpdateDerivative(*S, "test", wrt, Tags::DEFAULT);
-  auto& der_c = *S->GetDerivative<CV_t>(field, tag, wrt, tag).ViewComponent("cell");
-  auto& field_c = *S->Get<CV_t>(field, tag).ViewComponent("cell");
+  S->GetEvaluator(density_key).UpdateDerivative(*S, "test", pressure_key, Tags::DEFAULT);
+  auto& drhodp = *S->GetDerivative<CV_t>(density_key, tag, pressure_key, tag).ViewComponent("cell");
+
+  S->GetEvaluator(density_key).UpdateDerivative(*S, "test", temperature_key, Tags::DEFAULT);
+  auto& drhodT = *S->GetDerivative<CV_t>(density_key, tag, temperature_key, tag).ViewComponent("cell");
+
+  S->GetEvaluator(enthalpy_key).UpdateDerivative(*S, "test", temperature_key, Tags::DEFAULT);
+  auto& dhdT = *S->GetDerivative<CV_t>(enthalpy_key, tag, temperature_key, tag).ViewComponent("cell");
+
   auto& state_c = *S->Get<CV_t>(state_key, tag).ViewComponent("cell");
 
   auto end = std::chrono::steady_clock::now();
@@ -163,14 +166,18 @@ double RunTest(int icase, const std::string& iapws95_model)
   std::cout << "Elapsed time: " << elapsed.count() << " ms\n";
 
   c = 0;
-  for (int i = -n; i < n; ++i) {
-    for (int j = -n; j < n; ++j) {
-      // std::cout << p_c[0][c] * 1e-6 << " " << T_c[0][c] << " " << field_c[0][c] << std::endl;
-      // std::cout << p_c[0][c] << " " << T_c[0][c] << " " << der_c[0][c] << std::endl;
-      // std::cout << p_c[0][c] * 1e-6 << " " << T_c[0][c] << " " << state_c[(int)TS95_t::CP][c] << std::endl;
+  std::ofstream out("field.dat");
+  for (int i = 0; i < n; ++i) {
+    for (int j = 0; j < n; ++j) {
+      CHECK(drhodp[0][c] > 0.0);
+      CHECK(drhodT[0][c] < 0.0);
+      CHECK(dhdT[0][c] > 0.0);
+      out << T_c[0][c] << " " << p_c[0][c] * 1e-6 << " " << drhodT[0][c] << std::endl;
+      // out << T_c[0][c] << " " << p_c[0][c] * 1e-6 << " " << state_c[(int)TSPH_t::RHO][c] << std::endl;
       c++;
     }
   }
+  out.close();
 
   return elapsed.count();
 }
@@ -179,4 +186,5 @@ TEST(EVALUATOR_DERIVATIVE95_TABLES_PT)
 {
   double t0 = RunTest(0, "use iapws95");
   double t2 = RunTest(2, "use iapws95 spline rho/T");
+  CHECK(t0 > 2 * t2);
 }

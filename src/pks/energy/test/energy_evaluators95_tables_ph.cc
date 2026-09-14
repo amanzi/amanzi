@@ -142,6 +142,9 @@ TEST(EVALUATOR_DERIVATIVE_TABLES_PH)
   int c = 0;
   for (double i = 0; i < n; i++) {
     for (double j = 0; j < n; j++) {
+      // double log_min = std::log(p_min);
+      // double log_max = std::log(p_max);
+      // p_c[0][c] = std::exp(log_min + (log_max - log_min) * i / double(n)) * 1e+6;
       p_c[0][c] = (p_min + (p_max - p_min) * i / double(n)) * 1e+6;
       h_c[0][c] = (h_min + (h_max - h_min) * j / double(n)) * factor;
       c++;
@@ -177,7 +180,7 @@ TEST(EVALUATOR_DERIVATIVE_TABLES_PH)
       CHECK(drhodp[0][c] > 0);
       CHECK(drhodh[0][c] < 0);
       CHECK(dudh[0][c] > 0);
-      out << p_c[0][c] * 1e-6 << " " << h_c[0][c] / factor << " " << state_c[(int)TSPH_t::dRHOdH][c] << std::endl;
+      out << p_c[0][c] * 1e-6 << " " << h_c[0][c] / factor << " " << state_c[(int)TSPH_t::dTdP][c] << std::endl;
       // out << p_c[0][c] * 1e-6 << " " << h_c[0][c] / factor << " " << drhodp[0][c] << std::endl;
       c++;
     }

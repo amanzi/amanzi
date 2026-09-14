@@ -182,7 +182,7 @@ EnergyPressureTemperature_PK::UpdatePreconditioner(double t,
 
   S_->GetEvaluator(ie_liquid_key_).UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
   const auto& dUidT = S_->GetDerivative<CV_t>(ie_liquid_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT);
-  auto& dUidT_c = *dUrdT.ViewComponent("cell");
+  auto& dUidT_c = *dUidT.ViewComponent("cell");
 
   S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, passwd_);
   const auto& eta_c = *S_->Get<CV_t>(mol_density_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
