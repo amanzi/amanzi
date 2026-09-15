@@ -193,6 +193,8 @@ Operator::Operator(const Operator& other)
 {
   ops_ = other.ops_;
   rhs_ = other.rhs_;
+  inv_plist_ = other.inv_plist_;
+  inverse_pars_set_ = other.inverse_pars_set_;
 }
 
 
