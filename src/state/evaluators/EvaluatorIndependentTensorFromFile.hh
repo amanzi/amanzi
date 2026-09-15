@@ -4,14 +4,13 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon
+  Authors: Ethan Coon, Bo Gao
 */
 /*!
 
-This evaluator is typically used for providing data that are functions of space
-and time.  Data is provided, discretely (e.g. with one data point per
-cell/face/node), at a series of time slices.  The time slices are interpolated
-linearly in time to provide the value.
+This evaluator is typically used for providing tensor type data that are functions of space 
+and time. Data is provided, discretely (e.g. with one data point per cell/face/node), at a 
+series of time slices. The time slices are interpolated linearly in time to provide the value.
 
 Within the file, data is expected to meet the following (HDF5) layout::
 
@@ -24,11 +23,18 @@ Within the file, data is expected to meet the following (HDF5) layout::
       /NTIMES-1 : 1D array at time /time[NTIMES-1]
 
 
-`"evaluator type`" == `"independent variable from file`"
+`"evaluator type`" == `"independent variable tensor from file`"
 
-.. _evaluator-independent-variable-from-file-spec:
-.. admonition:: evaluator-independent-variable-from-file-spec
+.. _evaluator-independent-variable-tensor-from-file-spec:
+.. admonition:: evaluator-independent-variable-tensor-from-file-spec
 
+   * `"tensor type`" ``[string]`` One of:
+     - `"scalar`" A single scalar, isotropic (1 DoF)
+     - `"horizontal and vertical`" Diagonal with identical x-y entries and
+       different z entries. (2 DoF)
+     - `"diagonal`" Diagonal (3 DoF for 3D, 2 for 2D)
+     - `"full symmetric`" Full (symmetric) tensor, (6 DoF for 3D, 3 for 2D)
+     - `"full`" Full (nonsymmetric) tensor, (9 DoF for 3D, 6 for 2D)
    * `"filename`" ``[string]`` Path to the file.
    * `"variable name`" ``[string]`` Name of the dataset to read from the file.
    * `"domain name`" ``[string]`` **domain** Name of the domain on which the
@@ -37,8 +43,7 @@ Within the file, data is expected to meet the following (HDF5) layout::
      field to populate.
    * `"mesh entity`" ``[string]`` **cell** Name of the entity on which the
      component is defined.
-   * `"number of dofs`" ``[int]`` **1** Number of degrees of freedom to read.
-   * `"constant in time`" ``[bool]`` **false** Is the value constant throughout all time?
+   * `"constant in time`" ``[bool]`` **true** Is the value constant throughout all time?
    * `"checkpoint file`" ``[bool]`` **false** If this is true, then it is
      expected that `"filename`" is a checkpoint-file-like object, where
      /variable_name.ENTITY.DOF is itself a vector, and not a group.  Note this
@@ -50,53 +55,53 @@ Within the file, data is expected to meet the following (HDF5) layout::
 
 .. code-block:: xml
 
-   <ParameterList name="porosity">
-     <Parameter name="evaluator type" type="string" value="independent variable from file"/>
+   <ParameterList name="permeability">
+     <Parameter name="evaluator type" type="string" value="independent variable tensor from file"/>
+     <Parameter name="tensor type" type="string" value="full"/>
+     <Parameter name="constant in time" type="bool" value="true"/>
      <Parameter name="filename" type="string" value="_DATA_FILE.h5"/>
      <Parameter name="domain name" type="string" value="domain"/>
-     <Parameter name="variable name" type="string" value="porosity"/>
+     <Parameter name="variable name" type="string" value="permeability"/>
      <Parameter name="component name" type="string" value="cell"/>
      <Parameter name="mesh entity" type="string" value="cell"/>
-     <Parameter name="number of dofs" type="int" value="1"/>
-
-     <ParameterList name="time function">
-       <Parameter name="times" type="Array(double)" value="{1.0, 2.0, 3.0}"/>
-     </ParameterList>
    </ParameterList>
 
-The field *porosity* is defined as a cell-based variable and
-interpolated between three time intervals.
+The field *permeability* is defined as a cell-based constant-in-time variable with 9 DoF.
+The file *_DATA_FILE.h5* should include a time dataset and one data group for each tensor 
+DoF (9 data groups for a full 3D tensor). Each DoF group contains a single 1D dataset 
+storing the values for all mesh entities (e.g., cells).
 
 */
 
-//   TODO: This needs a test! --etc
+//
 
-#ifndef AMANZI_STATE_INDEPENDENT_FIELD_EVALUATOR_FROMFILE_
-#define AMANZI_STATE_INDEPENDENT_FIELD_EVALUATOR_FROMFILE_
+
+#pragma once
 
 #include "EvaluatorIndependent.hh"
 #include "Evaluator_Factory.hh"
+#include "TensorVector.hh"
 #include "EvaluatorFromFile_Helpers.hh"
 
 namespace Amanzi {
 
 class Function;
 
-class EvaluatorIndependentFromFile
-  : public EvaluatorIndependent<CompositeVector, CompositeVectorSpace> {
+class EvaluatorIndependentTensorFromFile
+  : public EvaluatorIndependent<TensorVector, TensorVector_Factory> {
  public:
   // ---------------------------------------------------------------------------
   // Constructors
   // ---------------------------------------------------------------------------
-  explicit EvaluatorIndependentFromFile(Teuchos::ParameterList& plist);
+  explicit EvaluatorIndependentTensorFromFile(Teuchos::ParameterList& plist);
 
-  EvaluatorIndependentFromFile(const EvaluatorIndependentFromFile& other) = default;
+  EvaluatorIndependentTensorFromFile(const EvaluatorIndependentTensorFromFile& other) = default;
 
   virtual Teuchos::RCP<Evaluator> Clone() const override;
 
   virtual Evaluator& operator=(const Evaluator& other) override;
 
-  EvaluatorIndependentFromFile& operator=(const EvaluatorIndependentFromFile& other);
+  EvaluatorIndependentTensorFromFile& operator=(const EvaluatorIndependentTensorFromFile& other);
 
   virtual void EnsureCompatibility(State& S) override;
 
@@ -123,15 +128,18 @@ class EvaluatorIndependentFromFile
   std::string compname_;
   std::string varname_;
   AmanziMesh::Entity_kind locname_;
+  int num_funcs_;
   int ndofs_;
+  int dimension_;
+  std::string tensor_type_;
+  int rank_;
+  double rescaling_;
 
   bool checkpoint_file_;
   Teuchos::RCP<Function> time_func_;
 
  private:
-  static Utils::RegisteredFactory<Evaluator, EvaluatorIndependentFromFile> fac_;
+  static Utils::RegisteredFactory<Evaluator, EvaluatorIndependentTensorFromFile> fac_;
 };
 
 } // namespace Amanzi
-
-#endif

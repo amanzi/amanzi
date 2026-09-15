@@ -86,9 +86,4 @@ class EvaluatorIndependentTensorFunction
 };
 
 
-namespace Impl {
-void CopyVectorToTensorVector(const Epetra_MultiVector& v, int j, TensorVector& tv);
-}
-
-
 } // namespace Amanzi
