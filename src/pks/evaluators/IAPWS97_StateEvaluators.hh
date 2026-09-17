@@ -34,6 +34,7 @@
 // Amanzi
 #include "CompositeVector.hh"
 #include "EvaluatorSecondaryMonotype.hh"
+#include "EvaluatorSecondaryMonotypeDetached.hh"
 #include "IAPWS_Helper.hh"
 #include "IAPWS97.hh"
 #include "PK_Physical.hh"
@@ -69,8 +70,7 @@ class IAPWS97_StateEvaluator
 };
 
 
-class IAPWS97_DensityEvaluator
-  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class IAPWS97_DensityEvaluator : public EvaluatorSecondaryMonotypeDetached {
  public:
   explicit IAPWS97_DensityEvaluator(Teuchos::ParameterList& plist);
   IAPWS97_DensityEvaluator(const IAPWS97_DensityEvaluator& other);
@@ -94,8 +94,7 @@ class IAPWS97_DensityEvaluator
 };
 
 
-class IAPWS97_TemperatureEvaluator
-  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class IAPWS97_TemperatureEvaluator : public EvaluatorSecondaryMonotypeDetached {
  public:
   explicit IAPWS97_TemperatureEvaluator(Teuchos::ParameterList& plist);
   IAPWS97_TemperatureEvaluator(const IAPWS97_TemperatureEvaluator& other);
@@ -119,8 +118,7 @@ class IAPWS97_TemperatureEvaluator
 };
 
 
-class IAPWS97_ThermalConductivityEvaluator
-  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class IAPWS97_ThermalConductivityEvaluator : public EvaluatorSecondaryMonotypeDetached {
  public:
   explicit IAPWS97_ThermalConductivityEvaluator(Teuchos::ParameterList& plist);
   IAPWS97_ThermalConductivityEvaluator(const IAPWS97_ThermalConductivityEvaluator& other);
@@ -144,8 +142,7 @@ class IAPWS97_ThermalConductivityEvaluator
 };
 
 
-class IAPWS97_InternalEnergyEvaluator
-  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class IAPWS97_InternalEnergyEvaluator : public EvaluatorSecondaryMonotypeDetached {
  public:
   explicit IAPWS97_InternalEnergyEvaluator(Teuchos::ParameterList& plist);
   IAPWS97_InternalEnergyEvaluator(const IAPWS97_InternalEnergyEvaluator& other);
@@ -169,8 +166,7 @@ class IAPWS97_InternalEnergyEvaluator
 };
 
 
-class IAPWS97_IsothermalCompressibilityEvaluator
-  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class IAPWS97_IsothermalCompressibilityEvaluator : public EvaluatorSecondaryMonotypeDetached {
  public:
   explicit IAPWS97_IsothermalCompressibilityEvaluator(Teuchos::ParameterList& plist);
   IAPWS97_IsothermalCompressibilityEvaluator(const IAPWS97_IsothermalCompressibilityEvaluator& other);
@@ -194,8 +190,7 @@ class IAPWS97_IsothermalCompressibilityEvaluator
 };
 
 
-class IAPWS97_ViscosityEvaluator
-  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class IAPWS97_ViscosityEvaluator : public EvaluatorSecondaryMonotypeDetached {
  public:
   explicit IAPWS97_ViscosityEvaluator(Teuchos::ParameterList& plist);
   IAPWS97_ViscosityEvaluator(const IAPWS97_ViscosityEvaluator& other);

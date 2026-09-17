@@ -27,6 +27,7 @@ include_directories(${STATE_SOURCE_DIR})
 set(evaluators_src_files 
     ApertureModelPartition.cc
     ApertureModelEvaluator.cc
+    EvaluatorSecondaryMonotypeDetached.cc
     IAPWS95_StateEvaluators.cc
     IAPWS95_StateEvaluatorsPH.cc
     IAPWS97_StateEvaluators.cc

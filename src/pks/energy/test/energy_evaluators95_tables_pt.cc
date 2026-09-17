@@ -81,7 +81,7 @@ double RunTest(int icase, const std::string& iapws95_model)
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
-  int n = 100;
+  int n = 200;
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(1.0, 0.0, 2.0, 0.2, n, n);
 
   // create a simple state and populate it
@@ -99,6 +99,7 @@ double RunTest(int icase, const std::string& iapws95_model)
   Key pressure_key = Keys::getKey("", "pressure");
   Key temperature_key = Keys::getKey("", "temperature");
   Key enthalpy_key = Keys::getKey("", "enthalpy");
+  Key ie_key = Keys::getKey("", "internal_energy_liquid");
   Key state_key = Keys::getKey("", "thermodynamic_state");
   Key density_key = Keys::getKey("", "mass_density_liquid");
   Key viscosity_key = Keys::getKey("", "viscosity_liquid");
@@ -111,10 +112,20 @@ double RunTest(int icase, const std::string& iapws95_model)
     ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
   S->RequireEvaluator(viscosity_key, Tags::DEFAULT);
 
+  S->Require<CV_t, CVS_t>(ie_key, Tags::DEFAULT, ie_key)
+    .SetMesh(mesh)->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+    ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
+  S->RequireEvaluator(ie_key, Tags::DEFAULT);
+
   S->RequireDerivative<CV_t, CVS_t>(viscosity_key, Tags::DEFAULT, pressure_key, Tags::DEFAULT,
                                     viscosity_key).SetGhosted();
   S->RequireDerivative<CV_t, CVS_t>(conductivity_key, Tags::DEFAULT, pressure_key, Tags::DEFAULT,
                                     conductivity_key).SetGhosted();
+  S->RequireDerivative<CV_t, CVS_t>(enthalpy_key, Tags::DEFAULT, pressure_key, Tags::DEFAULT,
+                                    enthalpy_key).SetGhosted();
+  S->RequireDerivative<CV_t, CVS_t>(ie_key, Tags::DEFAULT, pressure_key, Tags::DEFAULT,
+                                    ie_key).SetGhosted();
 
   S->Setup();
   S->InitializeFields();
@@ -156,8 +167,14 @@ double RunTest(int icase, const std::string& iapws95_model)
   S->GetEvaluator(density_key).UpdateDerivative(*S, "test", temperature_key, Tags::DEFAULT);
   auto& drhodT = *S->GetDerivative<CV_t>(density_key, tag, temperature_key, tag).ViewComponent("cell");
 
+  S->GetEvaluator(enthalpy_key).UpdateDerivative(*S, "test", pressure_key, Tags::DEFAULT);
+  auto& dhdp = *S->GetDerivative<CV_t>(enthalpy_key, tag, pressure_key, tag).ViewComponent("cell");
+
   S->GetEvaluator(enthalpy_key).UpdateDerivative(*S, "test", temperature_key, Tags::DEFAULT);
   auto& dhdT = *S->GetDerivative<CV_t>(enthalpy_key, tag, temperature_key, tag).ViewComponent("cell");
+
+  S->GetEvaluator(ie_key).UpdateDerivative(*S, "test", temperature_key, Tags::DEFAULT);
+  auto& dudT = *S->GetDerivative<CV_t>(ie_key, tag, temperature_key, tag).ViewComponent("cell");
 
   auto& state_c = *S->Get<CV_t>(state_key, tag).ViewComponent("cell");
 
@@ -172,7 +189,8 @@ double RunTest(int icase, const std::string& iapws95_model)
       CHECK(drhodp[0][c] > 0.0);
       CHECK(drhodT[0][c] < 0.0);
       CHECK(dhdT[0][c] > 0.0);
-      out << T_c[0][c] << " " << p_c[0][c] * 1e-6 << " " << drhodT[0][c] << std::endl;
+      CHECK(dudT[0][c] > 0.0);
+      out << T_c[0][c] << " " << p_c[0][c] * 1e-6 << " " << dhdT[0][c] << std::endl;
       // out << T_c[0][c] << " " << p_c[0][c] * 1e-6 << " " << state_c[(int)TSPH_t::RHO][c] << std::endl;
       c++;
     }

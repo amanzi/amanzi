@@ -31,6 +31,7 @@
 // Amanzi
 #include "CompositeVector.hh"
 #include "EvaluatorSecondaryMonotype.hh"
+#include "EvaluatorSecondaryMonotypeDetached.hh"
 #include "IAPWS_Helper.hh"
 #include "IAPWS95.hh"
 #include "PK_Physical.hh"
@@ -66,8 +67,7 @@ class IAPWS95_StateEvaluator
 };
 
 
-class IAPWS95_DensityEvaluator
-  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class IAPWS95_DensityEvaluator : public EvaluatorSecondaryMonotypeDetached {
  public:
   explicit IAPWS95_DensityEvaluator(Teuchos::ParameterList& plist);
   IAPWS95_DensityEvaluator(const IAPWS95_DensityEvaluator& other);
@@ -91,8 +91,7 @@ class IAPWS95_DensityEvaluator
 };
 
 
-class IAPWS95_ThermalConductivityEvaluator
-  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class IAPWS95_ThermalConductivityEvaluator : public EvaluatorSecondaryMonotypeDetached {
  public:
   explicit IAPWS95_ThermalConductivityEvaluator(Teuchos::ParameterList& plist);
   IAPWS95_ThermalConductivityEvaluator(const IAPWS95_ThermalConductivityEvaluator& other);
@@ -116,8 +115,7 @@ class IAPWS95_ThermalConductivityEvaluator
 };
 
 
-class IAPWS95_InternalEnergyEvaluator
-  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class IAPWS95_InternalEnergyEvaluator : public EvaluatorSecondaryMonotypeDetached {
  public:
   explicit IAPWS95_InternalEnergyEvaluator(Teuchos::ParameterList& plist);
   IAPWS95_InternalEnergyEvaluator(const IAPWS95_InternalEnergyEvaluator& other);
@@ -141,8 +139,7 @@ class IAPWS95_InternalEnergyEvaluator
 };
 
 
-class IAPWS95_ViscosityEvaluator
-  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class IAPWS95_ViscosityEvaluator : public EvaluatorSecondaryMonotypeDetached {
  public:
   explicit IAPWS95_ViscosityEvaluator(Teuchos::ParameterList& plist);
   IAPWS95_ViscosityEvaluator(const IAPWS95_ViscosityEvaluator& other);

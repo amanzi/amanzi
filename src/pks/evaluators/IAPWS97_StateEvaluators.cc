@@ -220,7 +220,7 @@ IAPWS97_StateEvaluator::EvaluatePartialDerivative_(const State& S,
 * Mass density evaluator
 ****************************************************************** */
 IAPWS97_DensityEvaluator::IAPWS97_DensityEvaluator(Teuchos::ParameterList& plist)
-  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
+  : EvaluatorSecondaryMonotypeDetached(plist)
 {
 
   domain_name_ = plist.template get<std::string>("domain name", "domain");
@@ -239,6 +239,8 @@ IAPWS97_DensityEvaluator::IAPWS97_DensityEvaluator(Teuchos::ParameterList& plist
   dependencies_.insert(std::make_pair(state_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(pressure_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(enthalpy_key_, Tags::DEFAULT));
+
+  detached_dependencies_.insert(std::make_pair(state_key_, Tags::DEFAULT));
 }
 
 
@@ -246,7 +248,7 @@ IAPWS97_DensityEvaluator::IAPWS97_DensityEvaluator(Teuchos::ParameterList& plist
 * Copy operations.
 ****************************************************************** */
 IAPWS97_DensityEvaluator::IAPWS97_DensityEvaluator(const IAPWS97_DensityEvaluator& other)
-  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+  : EvaluatorSecondaryMonotypeDetached(other),
     pressure_key_(other.pressure_key_),
     enthalpy_key_(other.enthalpy_key_),
     state_key_(other.state_key_)
@@ -314,7 +316,7 @@ IAPWS97_DensityEvaluator::EvaluatePartialDerivative_(const State& S,
 * Temperature evaluator
 ****************************************************************** */
 IAPWS97_TemperatureEvaluator::IAPWS97_TemperatureEvaluator(Teuchos::ParameterList& plist)
-  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
+  : EvaluatorSecondaryMonotypeDetached(plist)
 {
   domain_name_ = plist.template get<std::string>("domain name", "domain");
   
@@ -329,6 +331,8 @@ IAPWS97_TemperatureEvaluator::IAPWS97_TemperatureEvaluator(Teuchos::ParameterLis
   dependencies_.insert(std::make_pair(state_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(pressure_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(enthalpy_key_, Tags::DEFAULT));
+
+  detached_dependencies_.insert(std::make_pair(state_key_, Tags::DEFAULT));
 }
 
 
@@ -337,7 +341,7 @@ IAPWS97_TemperatureEvaluator::IAPWS97_TemperatureEvaluator(Teuchos::ParameterLis
 ****************************************************************** */
 IAPWS97_TemperatureEvaluator::IAPWS97_TemperatureEvaluator(
   const IAPWS97_TemperatureEvaluator& other)
-  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+  : EvaluatorSecondaryMonotypeDetached(other),
     pressure_key_(other.pressure_key_),
     enthalpy_key_(other.enthalpy_key_),
     state_key_(other.state_key_),
@@ -403,7 +407,7 @@ IAPWS97_TemperatureEvaluator::EvaluatePartialDerivative_(
 * Thermal conductivity evaluator
 ****************************************************************** */
 IAPWS97_ThermalConductivityEvaluator::IAPWS97_ThermalConductivityEvaluator(Teuchos::ParameterList& plist)
-  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
+  : EvaluatorSecondaryMonotypeDetached(plist)
 {
   domain_name_ = plist.template get<std::string>("domain name", "domain");
   if (my_keys_.size() == 0)
@@ -418,6 +422,8 @@ IAPWS97_ThermalConductivityEvaluator::IAPWS97_ThermalConductivityEvaluator(Teuch
   dependencies_.insert(std::make_pair(density_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(temperature_key_, Tags::DEFAULT));
 
+  detached_dependencies_.insert(std::make_pair(state_key_, Tags::DEFAULT));
+
   eos_ = Teuchos::rcp(new AmanziEOS::IAPWS97(plist));
 }
 
@@ -427,7 +433,7 @@ IAPWS97_ThermalConductivityEvaluator::IAPWS97_ThermalConductivityEvaluator(Teuch
 ****************************************************************** */
 IAPWS97_ThermalConductivityEvaluator::IAPWS97_ThermalConductivityEvaluator(
     const IAPWS97_ThermalConductivityEvaluator& other)
-  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+  : EvaluatorSecondaryMonotypeDetached(other),
     density_key_(other.density_key_),
     temperature_key_(other.temperature_key_),
     state_key_(other.state_key_),
@@ -539,7 +545,7 @@ IAPWS97_ThermalConductivityEvaluator::EvaluatePartialDerivative_(
 * Internal energy liquid evaluator
 ****************************************************************** */
 IAPWS97_InternalEnergyEvaluator::IAPWS97_InternalEnergyEvaluator(Teuchos::ParameterList& plist)
-  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
+  : EvaluatorSecondaryMonotypeDetached(plist)
 {
   domain_name_ = plist.template get<std::string>("domain name", "domain");
 
@@ -554,6 +560,8 @@ IAPWS97_InternalEnergyEvaluator::IAPWS97_InternalEnergyEvaluator(Teuchos::Parame
   dependencies_.insert(std::make_pair(state_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(pressure_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(enthalpy_key_, Tags::DEFAULT));
+
+  detached_dependencies_.insert(std::make_pair(state_key_, Tags::DEFAULT));
 }
 
 
@@ -562,7 +570,7 @@ IAPWS97_InternalEnergyEvaluator::IAPWS97_InternalEnergyEvaluator(Teuchos::Parame
 ****************************************************************** */
 IAPWS97_InternalEnergyEvaluator::IAPWS97_InternalEnergyEvaluator(
     const IAPWS97_InternalEnergyEvaluator& other)
-  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+  : EvaluatorSecondaryMonotypeDetached(other),
     pressure_key_(other.pressure_key_),
     enthalpy_key_(other.enthalpy_key_),
     state_key_(other.state_key_),
@@ -635,7 +643,7 @@ IAPWS97_InternalEnergyEvaluator::EvaluatePartialDerivative_(
 * Isothermal compressibility evaluator 1/rho (drho/dp)_T 
 ****************************************************************** */
 IAPWS97_IsothermalCompressibilityEvaluator::IAPWS97_IsothermalCompressibilityEvaluator(Teuchos::ParameterList& plist)
-  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
+  : EvaluatorSecondaryMonotypeDetached(plist)
 {
   domain_name_ = plist.template get<std::string>("domain name", "domain");
   
@@ -650,6 +658,8 @@ IAPWS97_IsothermalCompressibilityEvaluator::IAPWS97_IsothermalCompressibilityEva
   dependencies_.insert(std::make_pair(state_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(pressure_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(enthalpy_key_, Tags::DEFAULT));
+
+  detached_dependencies_.insert(std::make_pair(state_key_, Tags::DEFAULT));
 }
 
 
@@ -658,7 +668,7 @@ IAPWS97_IsothermalCompressibilityEvaluator::IAPWS97_IsothermalCompressibilityEva
 ****************************************************************** */
 IAPWS97_IsothermalCompressibilityEvaluator::IAPWS97_IsothermalCompressibilityEvaluator(
     const IAPWS97_IsothermalCompressibilityEvaluator& other)
-  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+  : EvaluatorSecondaryMonotypeDetached(other),
     pressure_key_(other.pressure_key_),
     enthalpy_key_(other.enthalpy_key_),
     state_key_(other.state_key_),
@@ -709,7 +719,7 @@ IAPWS97_IsothermalCompressibilityEvaluator::EvaluatePartialDerivative_(
 * Water/steam viscosity evaluator
 ****************************************************************** */
 IAPWS97_ViscosityEvaluator::IAPWS97_ViscosityEvaluator(Teuchos::ParameterList& plist)
-  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
+  : EvaluatorSecondaryMonotypeDetached(plist)
 {
   domain_name_ = plist.template get<std::string>("domain name", "domain");
   
@@ -725,6 +735,8 @@ IAPWS97_ViscosityEvaluator::IAPWS97_ViscosityEvaluator(Teuchos::ParameterList& p
   dependencies_.insert(std::make_pair(density_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(temperature_key_, Tags::DEFAULT));
 
+  detached_dependencies_.insert(std::make_pair(state_key_, Tags::DEFAULT));
+
   eos_ = Teuchos::rcp(new AmanziEOS::IAPWS97(plist));
 }
 
@@ -733,7 +745,7 @@ IAPWS97_ViscosityEvaluator::IAPWS97_ViscosityEvaluator(Teuchos::ParameterList& p
 * Copy operations.
 ****************************************************************** */
 IAPWS97_ViscosityEvaluator::IAPWS97_ViscosityEvaluator(const IAPWS97_ViscosityEvaluator& other)
-  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+  : EvaluatorSecondaryMonotypeDetached(other),
     density_key_(other.density_key_),
     temperature_key_(other.temperature_key_),
     state_key_(other.state_key_),

@@ -151,8 +151,6 @@ EnergyPressureTemperature_PK::Setup()
     S_->SetEvaluator(beta_key_, Tags::DEFAULT, eval);
   }
 
-
-  
   // thermodynamics
   if (glist_->sublist("state").sublist("evaluators").isSublist(state_key_)) {
     if (!S_->HasRecord(state_key_)) {
