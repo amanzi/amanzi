@@ -29,6 +29,8 @@ struct is_assembled {
 
 //
 // is_assembled::value == true if Operator has method FillComplete()
+// This is only for Epetra_Matrix objects used mostly (only?) in testing
+// where the matrix comes pre-assembled.
 //
 template<typename Operator>
 struct is_assembled<
