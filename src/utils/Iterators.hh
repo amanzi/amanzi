@@ -124,6 +124,11 @@ struct View_iter {
     return *this;
   }
 
+  KOKKOS_FUNCTION reference operator[](difference_type n) const 
+  {   
+    return *(*this + n); 
+  }
+
  private:
   View_type v_;
   int i_;
