@@ -500,8 +500,8 @@ IAPWS95_RaggedSplinePH::AdaptiveRefineCoordinateLines_()
     }
   };
 
-  // insert_unique(mesh_.x_lines, { 0.25, 0.3 });
-  // insert_unique(mesh_.y_lines, { 505.0 });
+  // insert_unique(mesh_.x_lines, { 22.2 });
+  insert_unique(mesh_.y_lines, { 502.5, 582.0, 650.0, 694.0, 705.0, 2020.0, 2030.0, 2040.0, 2060.0 });
 }
 
 

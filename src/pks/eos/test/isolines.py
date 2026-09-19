@@ -8,7 +8,7 @@ def read_grid(filename):
 
     x_data = data[:, 0]
     y_data = data[:, 1]
-    f_data = data[:, 3] # 3 - spline
+    f_data = data[:, 2] # 3 - spline
 
     x = np.unique(x_data)
     y = np.unique(y_data)
@@ -17,7 +17,9 @@ def read_grid(filename):
     ny = len(y)
 
     if nx * ny != len(data):
-        raise ValueError("Input data do not form a complete rectangular grid.")
+        raise ValueError(
+            "Input data do not form a complete rectangular grid."
+        )
 
     z = np.full((ny, nx), np.nan)
 
@@ -81,22 +83,27 @@ def filtered_levels_exp(zmin, zmax, n_candidates=50, min_fraction=0.06):
 
 def plot_isolines(filename):
     X, Y, Z = read_grid(filename)
+    zmin = Z.min()
+    zmax = Z.max()
+    print(zmin, zmax)
+
     Z = abs(Z);
+    print("Protting absolute value of the field...")
 
     Z_masked = np.ma.masked_invalid(Z)
 
     zmin = Z_masked.min()
     zmax = Z_masked.max()
-    print(zmin, zmax)
 
     # levels = np.geomspace(zmin, zmax, 40)
-    levels = filtered_levels(zmin, zmax, n_candidates=100, min_fraction=0.01, power=4)
+    levels = filtered_levels(zmin, zmax, n_candidates=100, min_fraction=0.02, power=4)
     # levels = filtered_levels_exp(zmin, zmax, n_candidates=100, min_fraction=0.02)
 
     fig, ax = plt.subplots(figsize=(6, 7))
 
     # Choose contour levels.
-    # Passing an integer asks Matplotlib to choose approximately this many useful levels.
+    # Passing an integer asks Matplotlib to choose approximately
+    # this many useful levels.
     contours = ax.contour(X, Y, Z_masked,
                           levels=levels,
                           linewidths=0.8, linestyles="solid", colors="black")
@@ -124,8 +131,10 @@ def plot_isolines(filename):
 
     ax.set_xlabel("pressure")
     ax.set_ylabel("enthalpy")
-    # ax.set_xlabel("density")
-    # ax.set_ylabel("temperature")
+    #ax.set_xlabel("density")
+    #ax.set_ylabel("temperature")
+    # ax.set_title("Isolines of f(x, y)")
+    ax.grid(alpha=0.2)
 
     fig.tight_layout()
     plt.show()

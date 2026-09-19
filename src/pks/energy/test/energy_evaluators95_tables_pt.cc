@@ -190,8 +190,17 @@ double RunTest(int icase, const std::string& iapws95_model)
       CHECK(drhodT[0][c] < 0.0);
       CHECK(dhdT[0][c] > 0.0);
       CHECK(dudT[0][c] > 0.0);
+
+      // For a thermodynamic system to be stable, its characteristic thermodynamic 
+      // potential, like the Gibbs free energy, must be at a local extremum. This 
+      // implies that the determinant of the Hessian matrix of that potential must 
+      // be positive.
+      double rho = state_c[(int)TSPT_t::RHO][c];
+      double cp = state_c[(int)TSPT_t::CP][c];
+      double kt = state_c[(int)TSPT_t::KT][c];
+      CHECK(rho * rho * rho * cp * kt > T_c[0][c] * drhodT[0][c] * drhodT[0][c]);
       out << T_c[0][c] << " " << p_c[0][c] * 1e-6 << " " << dhdT[0][c] << std::endl;
-      // out << T_c[0][c] << " " << p_c[0][c] * 1e-6 << " " << state_c[(int)TSPH_t::RHO][c] << std::endl;
+      // out << T_c[0][c] << " " << p_c[0][c] * 1e-6 << " " << state_c[(int)TSPT_t::RHO][c] << std::endl;
       c++;
     }
   }

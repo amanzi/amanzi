@@ -125,6 +125,8 @@ TEST(EVALUATOR_DERIVATIVE_TABLES_PH)
                                     conductivity_key).SetGhosted();
   S->RequireDerivative<CV_t, CVS_t>(conductivity_key, Tags::DEFAULT, enthalpy_key, Tags::DEFAULT,
                                     conductivity_key).SetGhosted();
+  S->RequireDerivative<CV_t, CVS_t>(conductivity_key, Tags::DEFAULT, temperature_key, Tags::DEFAULT,
+                                    conductivity_key).SetGhosted();
 
   S->Setup();
   S->InitializeFields();
@@ -171,6 +173,9 @@ TEST(EVALUATOR_DERIVATIVE_TABLES_PH)
   S->GetEvaluator(ie_key).UpdateDerivative(*S, "test", enthalpy_key, Tags::DEFAULT);
   auto& dudh = *S->GetDerivative<CV_t>(ie_key, tag, enthalpy_key, tag).ViewComponent("cell");
 
+  S->GetEvaluator(conductivity_key).UpdateDerivative(*S, "test", temperature_key, Tags::DEFAULT);
+  auto& dkdT = *S->GetDerivative<CV_t>(conductivity_key, tag, temperature_key, tag).ViewComponent("cell");
+
   auto& state_c = *S->Get<CV_t>(state_key, tag).ViewComponent("cell");
 
   c = 0;
@@ -180,8 +185,9 @@ TEST(EVALUATOR_DERIVATIVE_TABLES_PH)
       CHECK(drhodp[0][c] > 0);
       CHECK(drhodh[0][c] < 0);
       CHECK(dudh[0][c] > 0);
-      out << p_c[0][c] * 1e-6 << " " << h_c[0][c] / factor << " " << state_c[(int)TSPH_t::dTdP][c] << std::endl;
-      // out << p_c[0][c] * 1e-6 << " " << h_c[0][c] / factor << " " << drhodp[0][c] << std::endl;
+      CHECK(state_c[(int)TSPH_t::KT][c] > 0);
+      // out << p_c[0][c] * 1e-6 << " " << h_c[0][c] / factor << " " << state_c[(int)TSPH_t::K][c] << std::endl;
+      out << p_c[0][c] * 1e-6 << " " << h_c[0][c] / factor << " " << dkdT[0][c] << std::endl;
       c++;
     }
   }

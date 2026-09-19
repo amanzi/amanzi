@@ -69,7 +69,9 @@ void WriteEntropyPlotData(IAPWS95_RaggedSplinePH& spline,
 
         for (int k = 0; k < 6; ++k) {
           double tmp = spline_value[k] - exact_value[k];
-          if (std::fabs(tmp) > err_abs[k]) {
+          double tmp2 = std::fabs(tmp / std::max(1e-14, std::fabs(exact_value[k])));
+          // if (std::fabs(tmp) > err_abs[k]) {
+          if (std::fabs(tmp2) > err_rel[k]) {
             err_p_max[k] = p;
             err_h_max[k] = h;
           }
@@ -95,7 +97,7 @@ void WriteEntropyPlotData(IAPWS95_RaggedSplinePH& spline,
   std::cout << "Spline resolutions: " << spline.GetMesh().x_lines.size() << " " << spline.GetMesh().y_lines.size() << std::endl;
   std::cout << "Number of negative D: " << count << std::endl;
   CHECK(count == 0);
-  std::cout << "Error:  mean       max        relative_max   p_max      h_max\n";
+  std::cout << "Error:  mean       max        relative_max   p_rel_max  h_rel_max\n";
   for (int k = 0; k < 6; ++k) {
     err_l2[k] = std::sqrt(err_l2[k] / np / nh);
     printf("%3d %12.8f %12.8f %12.8f %12.8f %12.8f\n", k, err_l2[k], err_abs[k], err_rel[k], err_p_max[k], err_h_max[k]); 
