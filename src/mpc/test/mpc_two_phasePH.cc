@@ -109,9 +109,9 @@ TEST(MPC_TWO_PHASE)
       dt /= 2.0;
     } else {
       mpc->CommitStep(t, t + dt, Tags::DEFAULT);
-      dt = std::min(10.0, dt * 1.01); 
+      dt = std::min(20.0, dt * 1.01); 
       // std::cout << "PT: " << t + dt << " " << p[0][0] << " " << T[0][0] << " " << state[(int)TSPH_t::RGN][0] 
-      //                            << "    " << p[0][1] << " " << T[0][1] << " " << state[(int)TSPH_t::RGN][1] << std::endl;
+      //                               << "    " << p[0][1] << " " << T[0][1] << " " << state[(int)TSPH_t::RGN][1] << std::endl;
 
       if (itrs % 20 == 0) WriteStateStatistics(*S);
     }

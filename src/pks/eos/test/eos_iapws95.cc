@@ -14,6 +14,7 @@
 
 #include "exceptions.hh"
 #include "IAPWS95.hh"
+#include "IAPWS97.hh"
 
 TEST(EOS_IAPWS95)
 {
@@ -21,6 +22,10 @@ TEST(EOS_IAPWS95)
 
   Teuchos::ParameterList plist;
   IAPWS95 eos(plist);
+
+  plist.set<bool>("viscosity enhancement", true);
+  IAPWS95 eos_mu(plist);
+  IAPWS97 eos97(plist);
 
   // ideal gas part
   const auto& g0 = eos.IdealGasPart(838.025, 500.0);
@@ -73,7 +78,22 @@ TEST(EOS_IAPWS95)
   CHECK_CLOSE(0.724027147e3, prop.w, 1e-6);
   CHECK_CLOSE(0.916653194e1, prop.s, 1e-8);
 
-  // (p, T) - variables, same point
+  // viscosity
+  std::tie(prop, liquid, vapor) = eos_mu.ThermodynamicsRhoT(122.0, 647.35); // Table 5
+  double mu2 = eos97.ViscosityCriticalEnhancement(prop);
+  CHECK_CLOSE(1.00000289, mu2, 1e-8);
+  CHECK_CLOSE(25.520677e-6, prop.mu, 5e-13);
+
+  std::tie(prop, liquid, vapor) = eos_mu.ThermodynamicsRhoT(222.0, 647.35);
+  mu2 = eos97.ViscosityCriticalEnhancement(prop);
+  CHECK_CLOSE(1.00375120, mu2, 5e-8);
+  CHECK_CLOSE(31.337589e-6, prop.mu, 1e-11);
+
+  std::tie(prop, liquid, vapor) = eos_mu.ThermodynamicsRhoT(322.0, 647.35);
+  mu2 = eos97.ViscosityCriticalEnhancement(prop);
+  CHECK_CLOSE(1.09190440, mu2, 1e-8);
+  CHECK_CLOSE(42.961579e-6, prop.mu, 1e-11);
+
   // (p, T) - variables
   std::tie(prop, liquid, vapor) = eos.ThermodynamicsPT(0.992418352e-1, 300.0);
   CHECK_CLOSE(0.9965560e3, prop.rho, 1e-6);
@@ -159,6 +179,5 @@ TEST(EOS_IAPWS95)
 
   double ap = d[2] * (d[4] * d[2] - d[1] * d[5]) / (p * (d[3] * d[5] - d[4] * d[4]));
   CHECK_CLOSE(prop.ap, ap, 1e-10 * ap);
-
 }
 

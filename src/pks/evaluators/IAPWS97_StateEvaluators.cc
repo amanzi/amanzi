@@ -792,12 +792,9 @@ IAPWS97_ViscosityEvaluator::EvaluatePartialDerivative_(const State& S,
   auto& result_v = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell");
 
-  double rho, drho, T, dT, mu1, mu2;
-  const double eps = std::sqrt(std::numeric_limits<double>::epsilon());
-
   if (wrt_key == density_key_) {
     for (int c = 0; c != ncells; ++c) {
-      T = ts_c[(int)TSPH_t::T][c];
+      double T = ts_c[(int)TSPH_t::T][c];
 
       if (ts_c[(int)TSPH_t::RGN][c] == 4.0) {
         double vl, vv, v, x, mul, muv;
@@ -807,43 +804,33 @@ IAPWS97_ViscosityEvaluator::EvaluatePartialDerivative_(const State& S,
         vv = ts_c[(int)TSPH_t::VV][c];
         vl = (v - x * vv) / (1.0 - x);
 
-        mul = eos_->Viscosity(1.0 / vl, T);
-        muv = eos_->Viscosity(1.0 / vv, T);
+        mul = eos_->ViscosityBase(1.0 / vl, T);
+        muv = eos_->ViscosityBase(1.0 / vv, T);
         result_v[0][c] = -(muv - mul) / (vv - vl) * v * v;
       } else {
-        mu1 = ts_c[(int)TSPH_t::MU][c];
-        rho = ts_c[(int)TSPH_t::RHO][c];
-
-        drho = eps * rho;
-        mu2 = eos_->Viscosity(rho + drho, T);
-        result_v[0][c] = (mu2 - mu1) / drho;
+        double rho = ts_c[(int)TSPH_t::RHO][c];
+        result_v[0][c] = eos_->ViscosityBaseDerivativeRho(rho, T);
       }
     }
 
   } else if (wrt_key == temperature_key_) {
     for (int c = 0; c != ncells; ++c) {
-      T = ts_c[(int)TSPH_t::T][c];
-      dT = eps * T;
+      double T = ts_c[(int)TSPH_t::T][c];
 
       if (ts_c[(int)TSPH_t::RGN][c] == 4.0) {
-        double vl, vv, v, x, mul1, mul2, muv1, muv2;
+        double vl, vv, v, x, dmul_dT, dmuv_dT;
         v = ts_c[(int)TSPH_t::V][c];
         x = ts_c[(int)TSPH_t::X][c];
 
         vv = ts_c[(int)TSPH_t::VV][c];
         vl = (v - x * vv) / (1.0 - x);
 
-        mul1 = eos_->Viscosity(1.0 / vl, T);
-        mul2 = eos_->Viscosity(1.0 / vl, T + dT);
-
-        muv1 = eos_->Viscosity(1.0 / vv, T);
-        muv2 = eos_->Viscosity(1.0 / vv, T + dT);
-        result_v[0][c] = ((1.0 - x) * (mul2 - mul1) + x * (muv2 - muv1)) / dT;
+        dmul_dT = eos_->ViscosityBaseDerivativeT(1.0 / vl, T);
+        dmuv_dT = eos_->ViscosityBaseDerivativeT(1.0 / vv, T);
+        result_v[0][c] = (1.0 - x) * dmul_dT + x * dmuv_dT;
       } else {
-        mu1 = ts_c[(int)TSPH_t::MU][c];
-        rho = ts_c[(int)TSPH_t::RHO][c];
-        mu2 = eos_->Viscosity(rho, T + dT);
-        result_v[0][c] = (mu2 - mu1) / dT;
+        double rho = ts_c[(int)TSPH_t::RHO][c];
+        result_v[0][c] = eos_->ViscosityBaseDerivativeT(rho, T);
       }
     }
   }

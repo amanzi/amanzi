@@ -656,30 +656,19 @@ IAPWS95_ViscosityEvaluatorPH::EvaluatePartialDerivative_(const State& S,
   auto& result_c = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell");
 
-  double rho, drho, T, dT, mu1, mu2;
-  const double eps = std::sqrt(std::numeric_limits<double>::epsilon());
-
+  double rho, T;
   if (wrt_key == density_key_) {
     for (int c = 0; c != ncells; ++c) {
       T = T_c[0][c];
-
-      mu1 = ts_c[(int)TSPH_t::MU][c];
       rho = ts_c[(int)TSPH_t::RHO][c];
-
-      drho = eps * rho;
-      mu2 = eos_->Viscosity(rho + drho, T);
-      result_c[0][c] = (mu2 - mu1) / drho;
+      result_c[0][c] = eos_->ViscosityBaseDerivativeRho(rho, T);
     }
 
   } else if (wrt_key == temperature_key_) {
     for (int c = 0; c != ncells; ++c) {
       T = T_c[0][c];
-      dT = eps * T;
-
-      mu1 = ts_c[(int)TSPH_t::MU][c];
       rho = ts_c[(int)TSPH_t::RHO][c];
-      mu2 = eos_->Viscosity(rho, T + dT);
-      result_c[0][c] = (mu2 - mu1) / dT;
+      result_c[0][c] = eos_->ViscosityBaseDerivativeT(rho, T);
     }
   }
 }

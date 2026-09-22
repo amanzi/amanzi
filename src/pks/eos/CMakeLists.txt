@@ -37,6 +37,7 @@ set(eos_src_files
     H2O_ViscosityIAPWS95.cc
     H2O_ViscosityIAPWS97.cc
     Henry_Solubility.cc
+    IAPWS.cc
     IAPWS97.cc
     IAPWS95.cc
     IAPWS95_RaggedSplineRhoT.cc

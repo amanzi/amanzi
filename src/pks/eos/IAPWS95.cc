@@ -180,7 +180,7 @@ IAPWS95::ThermodynamicsPH(double p, double h)
   double T = prop.T;
   if (phase == 1) {
     double rho = prop.rho;
-    prop.mu = Viscosity(rho, T);
+    prop.mu = Viscosity(rho, T, prop);
     prop.k = ThermalConductivity(rho, T, prop);
   } else {
     double rhol = liquid.rho;
@@ -188,8 +188,8 @@ IAPWS95::ThermodynamicsPH(double p, double h)
     double x = prop.x;
     double alpha = x / rhol / ((1 - x) / rhol + x / rhov);
 
-    liquid.mu = Viscosity(rhol, T);
-    vapor.mu = Viscosity(rhov, T);
+    liquid.mu = Viscosity(rhol, T, liquid);
+    vapor.mu = Viscosity(rhov, T, vapor);
     prop.mu = std::pow(liquid.mu, 1.0 - alpha) * std::pow(vapor.mu, alpha);
 
     liquid.k = ThermalConductivity(rhol, T, liquid);
@@ -691,7 +691,7 @@ IAPWS95::ExtendProperties(double rho, const Properties& prop_in)
   prop = prop_in;
 
   double T = prop.T;
-  prop.mu = Viscosity(rho, T);
+  prop.mu = Viscosity(rho, T, prop);
   prop.k = ThermalConductivity(rho, T, prop);
 
   return prop;

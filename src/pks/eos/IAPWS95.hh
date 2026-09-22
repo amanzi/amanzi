@@ -44,17 +44,12 @@ struct SaturationState {
 
 class IAPWS95 : public IAPWS {
  public:
-  IAPWS95(Teuchos::ParameterList& plist) : eos97_(plist) {};
+  IAPWS95(Teuchos::ParameterList& plist) : IAPWS(plist), eos97_(plist) {};
   ~IAPWS95() {};
 
   std::tuple<Properties, Properties, Properties> ThermodynamicsRhoT(double rho, double T);
   virtual std::tuple<Properties, Properties, Properties> ThermodynamicsPT(double p, double T);
   virtual std::tuple<Properties, Properties, Properties> ThermodynamicsPH(double p, double h);
-
-  virtual double ThermalConductivity(double rho, double T, Properties& prop) {
-    return eos97_.ThermalConductivity(rho, T, prop);
-  }
-  virtual double Viscosity(double rho, double T) { return eos97_.Viscosity(rho, T); }
 
   std::array<double, 6> IdealGasPart(double rho, double T);
   virtual std::array<double, 6> ResidualPart(double rho, double T);
@@ -91,10 +86,8 @@ class IAPWS95 : public IAPWS {
 
   // static constants
   // IF97 uses different value for R compared to IAPWS95 formulation
-  static constexpr double PC = 22.064;     // critical pressure, MPa
-  static constexpr double TC = 647.096;    // critical temperature, K
   static constexpr double TT = 273.16;
-  static constexpr double RHOC = 322.0;    // critical density, kg/m3
+
   static constexpr double HC = 2084.256263;  // critical enthalpy, kJ/kg
   static constexpr double R = 0.46151805;  // specific gas constant, kJ/kg/K
 

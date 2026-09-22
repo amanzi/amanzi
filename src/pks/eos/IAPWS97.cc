@@ -12,6 +12,9 @@
   for the Thermodynamic Properties of Water and Steam.
 */
 
+#include <algorithm>
+#include <cmath>
+
 #include "Brent.hh"
 #include "PowellHybrid.hh"
 
@@ -130,7 +133,7 @@ IAPWS97::ThermodynamicsPT(double p, double T)
   prop.rho = 1.0 / prop.v;
   prop.phase = PhaseId(p, T, prop.rgn, prop.x);
 
-  prop.mu = Viscosity(prop.rho, T);
+  prop.mu = Viscosity(prop.rho, T, prop);
   prop.k = ThermalConductivity(prop.rho, T, prop);
 
   return { prop, prop, prop };
@@ -1666,124 +1669,10 @@ IAPWS97::ExtendProperties(const Properties& prop_in)
   prop.helmholtz = prop.u - T * prop.s;
   prop.gibbs = prop.h - T * prop.s;
 
-  prop.mu = Viscosity(prop.rho, T);
+  prop.mu = Viscosity(prop.rho, T, prop);
   prop.k = ThermalConductivity(prop.rho, T, prop);
 
   return prop;
-}
-
-
-/* ******************************************************************
-* Thermal conductivity
-* http://www.iapws.org/relguide/ThCond.html, formulas (15)-(17)
-****************************************************************** */
-double
-IAPWS97::ThermalConductivity(double rho, double T, Properties& prop)
-{
-  double rhor, Tr;
-  rhor = rho / RHOC;
-  Tr = T / TC;
-
-  // first factor
-  const auto& n0 = thermal_cond_n0;
-
-  double tmp(1.0), inva(1.0 / Tr);
-  double k0(0.0), k1(0.0);
-  for (int i = 0; i < N0_ThCond; ++i) {
-    k0 += n0[i] * tmp;
-    tmp *= inva;
-  } 
-  k0 = std::sqrt(Tr) / k0;
- 
-  // second factor
-  double a(inva - 1.0), b(rhor - 1.0); 
-  double apow[N0_ThCond];
-  double bpow[N1_ThCond];
-
-  apow[0] = 1.0;
-  for (int i = 1; i < N0_ThCond; ++i)
-    apow[i] = apow[i - 1] * a;
-
-  bpow[0] = 1.0;
-  for (int i = 1; i < N1_ThCond; ++i)
-    bpow[i] = bpow[i - 1] * b;
-
-  const auto& n1 = thermal_cond_n1;
-
-  for (int i = 0; i < N0_ThCond; ++i) {
-    for (int j = 0; j < N1_ThCond; ++j) {
-      k1 += n1[i][j] * apow[i] * bpow[j];
-    }
-  }
-  k1 = std::exp(rhor * k1);
-
-  // critical enhancement (k2) is not implemented yet FIXME
-  return 1e-3 * k0 * k1;
-}
-
-
-/* ******************************************************************
-* Surface tension
-* http://www.iapws.org/relguide/Surf-H2O.html
-* Validity range 248.15 <= T <= TC
-****************************************************************** */
-double
-IAPWS97::SurfaceTension(double T)
-{
-  if (248.15 <= T && T <= TC) {
-    double tau = 1.0 - T / TC;
-    return 235.8e-3 * std::pow(tau, 1.256) * (1.0 - 0.625 * tau);
-  }
-  return -1.0;
-}
-
-
-/* ******************************************************************
-* Dynamic viscosity
-* http://www.iapws.org/relguide/viscosity.html, formulas (10)-(12)
-****************************************************************** */
-double
-IAPWS97::Viscosity(double rho, double T)
-{
-  double rhor = rho / RHOC;
-  double Tr = T / TC;
-
-  // first factor
-  const auto& n0 = viscosity_n0;
-
-  double tmp(1.0), inva(1.0 / Tr);
-  double mu0(0.0), mu1(0.0);
-  for (int i = 0; i < N0_Visc; ++i) {
-    mu0 += n0[i] * tmp;
-    tmp *= inva;
-  } 
-  mu0 = 100.0 * std::sqrt(Tr) / mu0;
- 
-  // second factor
-  const auto& k = viscosity_k1;
-  const auto& l = viscosity_l1;
-  const auto& n1 = viscosity_n1;
-
-  double a(inva - 1.0), b(rhor - 1.0); 
-  double apow[N1_Visc_kmax];
-  double bpow[N1_Visc_lmax];
-
-  apow[0] = 1.0;
-  for (int i = 1; i < N1_Visc_kmax; ++i)
-    apow[i] = apow[i - 1] * a;
-
-  bpow[0] = 1.0;
-  for (int i = 1; i < N1_Visc_lmax; ++i)
-    bpow[i] = bpow[i - 1] * b;
-
-  for (int i = 0; i < N1_Visc; ++i) {
-    mu1 += n1[i] * apow[k[i]] * bpow[l[i]];
-  }
-  mu1 = std::exp(rhor * mu1);
-
-  // third factor (critical enhancement) is not implemeneted yet FIXME
-
-  return 1e-6 * mu0 * mu1;
 }
 
 
