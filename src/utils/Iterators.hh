@@ -118,13 +118,8 @@ struct View_iter {
     this->i_ -= decr;
     return *this;
   }
-  KOKKOS_INLINE_FUNCTION View_iter operator-(const int& decr)
-  {
-    this->i_ -= decr;
-    return *this;
-  }
 
-  KOKKOS_FUNCTION reference operator[](difference_type n) const 
+  KOKKOS_INLINE_FUNCTION reference operator[](difference_type n) const 
   {   
     return *(*this + n); 
   }
