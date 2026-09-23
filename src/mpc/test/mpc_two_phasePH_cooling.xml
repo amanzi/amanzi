@@ -450,7 +450,7 @@
             <Parameter name="spatial distribution method" type="string" value="none"/>
             <ParameterList name="boundary temperature">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="691.146"/>
+                <Parameter name="value" type="double" value="589.153"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

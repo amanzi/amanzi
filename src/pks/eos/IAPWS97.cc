@@ -329,6 +329,7 @@ IAPWS97::Region1(double p, double T)
   prop.w = std::sqrt(R * T * 1000 * gp * gp / (A / (Tr * Tr * gtt) - gpp));
   prop.kt = -(pr / p) * gpp / gp;
   prop.av = (1 - Tr * gpt / gp) / T;
+  prop.ap = prop.av / (p * prop.kt);
   prop.x = 0.0;
   prop.rgn = 1;
 

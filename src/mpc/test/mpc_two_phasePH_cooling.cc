@@ -59,7 +59,7 @@ TEST(MPC_TWO_PHASE)
   if (MyPID == 0) std::cout << "Test: flow-energy cooling problem" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/mpc_two_phasePH.xml";
+  std::string xmlFileName = "test/mpc_two_phasePH_cooling.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   auto plist = Teuchos::rcp(new Teuchos::ParameterList(xmlreader.getParameters()));
 
@@ -96,6 +96,7 @@ TEST(MPC_TWO_PHASE)
   const auto& p = *S->Get<CompositeVector>("pressure", Tags::DEFAULT).ViewComponent("cell");
   const auto& T = *S->Get<CompositeVector>("temperature", Tags::DEFAULT).ViewComponent("cell");
   const auto& rho = *S->Get<CompositeVector>("mass_density_liquid", Tags::DEFAULT).ViewComponent("cell");
+  const auto& mu = *S->Get<CompositeVector>("viscosity_liquid", Tags::DEFAULT).ViewComponent("cell");
   const auto& state = *S->Get<CompositeVector>("thermodynamic_state", Tags::DEFAULT).ViewComponent("cell");
 
   CHECK(state[(int)TSPH_t::RGN][0] == 2);
@@ -110,8 +111,8 @@ TEST(MPC_TWO_PHASE)
     } else {
       mpc->CommitStep(t, t + dt, Tags::DEFAULT);
       dt = std::min(20.0, dt * 1.01); 
-      // std::cout << "PT: " << t + dt << " " << p[0][0] << " " << T[0][0] << " " << state[(int)TSPH_t::RGN][0] 
-      //                               << "    " << p[0][1] << " " << T[0][1] << " " << state[(int)TSPH_t::RGN][1] << std::endl;
+      // std::cout << "PT: " << t + dt << " " << p[0][0] << " " << state[(int)TSPH_t::X][0] << " " << state[(int)TSPH_t::RGN][0] 
+      //                               << " " << p[0][1] << " " << state[(int)TSPH_t::X][1] << " " << state[(int)TSPH_t::RGN][1] << std::endl;
 
       if (itrs % 20 == 0) WriteStateStatistics(*S);
     }
