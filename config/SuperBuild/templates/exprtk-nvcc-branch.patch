@@ -6,39 +6,18 @@ apply the default argument to a name introduced by a using-declaration, so every
 bare branch() call is rejected with 'too few arguments in function call'.  Host
 compilers accept it, which is why only the CUDA build hits this.
 
-Spelling the argument explicitly is equivalent for all compilers.
+Spelling the argument explicitly is equivalent for all compilers.  Upstream
+already writes branch(0) everywhere else in this class; this is the one call
+that was missed.
 
---- a/exprtk.hpp	2026-09-06 15:54:51.436000651 -0700
-+++ b/exprtk.hpp	2026-09-06 15:54:51.440000607 -0700
-@@ -11778,15 +11778,15 @@
-          {
-             bool vec0_is_ivec = false;
- 
--            if (is_vector_node(branch()))
-+            if (is_vector_node(branch(0)))
-             {
--               vec0_node_ptr_ = static_cast<vector_node_ptr>(branch());
-+               vec0_node_ptr_ = static_cast<vector_node_ptr>(branch(0));
-             }
--            else if (is_ivector_node(branch()))
-+            else if (is_ivector_node(branch(0)))
-             {
-                vector_interface<T>* vi = reinterpret_cast<vector_interface<T>*>(0);
- 
--               if (0 != (vi = dynamic_cast<vector_interface<T>*>(branch())))
-+               if (0 != (vi = dynamic_cast<vector_interface<T>*>(branch(0))))
-                {
-                   vec0_node_ptr_ = vi->vec();
-                   vec0_is_ivec   = true;
-@@ -11813,9 +11813,9 @@
- 
+--- a/exprtk.hpp
++++ b/exprtk.hpp
+@@ -14122,7 +14122,7 @@
+
           inline T value() const exprtk_override
           {
--            assert(branch());
-+            assert(branch(0));
- 
 -            branch()->value();
 +            branch(0)->value();
- 
-             if (vec0_node_ptr_)
-             {
+
+             const T* vec0 = vec0_node_ptr_->vds().data();
+                   T* vec1 = vds().data();

@@ -1,0 +1,61 @@
+diff -ruNbB mstk-3.3.6-source/src/par/MESH_Get_Partitioning.c mstk-3.3.6-source-prepartitioning/src/par/MESH_Get_Partitioning.c
+--- mstk-3.3.6-source/src/par/MESH_Get_Partitioning.c	2025-10-01 09:15:35
++++ mstk-3.3.6-source-prepartitioning/src/par/MESH_Get_Partitioning.c	2025-10-02 15:27:43
+@@ -29,6 +29,9 @@
+ 
+ int MESH_Get_Partitioning(Mesh_ptr mesh, int method, int **part, MSTK_Comm comm) {
+   int i, ok = 1, nf, nr, ncells=0;
++  double tmp = 0.;
++  int min_rank, max_rank;
++  MEntity_ptr ment;
+   int noptions;
+   char **options = (char **) malloc(10*sizeof(char *));
+   for (i = 0; i < 10; i++) options[i] = (char *) malloc(64*sizeof(char));
+@@ -109,6 +112,47 @@
+ #else
+     MSTK_Report("MESH_Partition","Zoltan not enabled",MSTK_FATAL);
+ #endif
++
++    break;
++  }
++  case 3: {
++    if (rank == 0) {
++      /* This relies on a user-provided attribute in the mesh file */
++      MAttrib_ptr att = MESH_AttribByName(mesh, "partition");
++      if (!att) {
++        MSTK_Report("MESH_GetPartition","No such attribute \"partition\"",MSTK_FATAL);
++      }
++      if (MAttrib_Get_EntDim(att) != MREGION) {
++        MSTK_Report("MESH_GetPartition","\"partition\" attribute is not of dim MREGION",MSTK_FATAL);
++      }
++      if (MAttrib_Get_Type(att) != DOUBLE) {
++        MSTK_Report("MESH_GetPartition","\"partition\" attribute is not of type DOUBLE",MSTK_FATAL);
++      }
++      if (MAttrib_Get_NumComps(att) != 1) {
++        MSTK_Report("MESH_GetPartition","\"partition\" attribute is not a scalar.",MSTK_FATAL);
++      }
++
++      /* allocate memory for the partition */
++      *part = (int *) malloc(ncells*sizeof(int));
++
++      /* get the partition info from the attribute */
++      for(i = 0; i < ncells; i++) {
++        ment = MESH_Region(mesh,i);
++        MEnt_Get_AttVal(ment,att,NULL,&tmp,NULL);
++        (*part)[i] = (int)tmp;
++      }
++
++      /* check that the partition is a valid coloring */
++      max_rank = -1;
++      min_rank = 1e7;
++      for (i = 0; i < ncells; i++) {
++        if ((*part)[i] > max_rank) max_rank = (*part)[i];
++        if ((*part)[i] < min_rank) min_rank = (*part)[i];
++      }
++      if (min_rank != 0 || max_rank != (num - 1)) {
++        MSTK_Report("MESH_GetPartition","\"partition\" values are not all in [0, num_proc).",MSTK_FATAL);
++      }
++    }
+ 
+     break;
+   }

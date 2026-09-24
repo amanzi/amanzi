@@ -1,0 +1,15 @@
+diff -rupN trilinos-15-1-0-source/packages/kokkos-kernels/sparse/src/KokkosSparse_spadd_handle.hpp trilinos-15-1-0-source-patch/packages/kokkos-kernels/sparse/src/KokkosSparse_spadd_handle.hpp
+--- trilinos-15-1-0-source/packages/kokkos-kernels/sparse/src/KokkosSparse_spadd_handle.hpp	2024-02-29 10:55:54
++++ trilinos-15-1-0-source-patch/packages/kokkos-kernels/sparse/src/KokkosSparse_spadd_handle.hpp	2025-04-30 10:47:42
+@@ -72,9 +72,9 @@
+    */
+   size_type get_c_nnz() { return this->result_nnz_size; }
+ 
+-  void set_sort_option(int option) { this->sort_option = option; }
++  //void set_sort_option(int option) { this->sort_option = option; }
+ 
+-  int get_sort_option() { return this->sort_option; }
++  //int get_sort_option() { return this->sort_option; }
+ 
+   /**
+    * \brief Default constructor.

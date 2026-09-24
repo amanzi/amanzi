@@ -1,16 +1,14 @@
---- netcdf-4.7.0-source/CMakeLists.txt	2017-12-15 10:55:57.935680000 -0800
-+++ netcdf-4.7.0-new/CMakeLists.txt	2017-12-15 12:33:35.334342840 -0800
-@@ -299,8 +299,12 @@
-     SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
-   ENDIF("${isSystemDir}" STREQUAL "-1")
+diff --color -ruN netcdf-c-4.9.3-orig/CMakeLists.txt netcdf-c-4.9.3/CMakeLists.txt
+--- netcdf-c-4.9.3-orig/CMakeLists.txt	2025-09-19 15:26:36
++++ netcdf-c-4.9.3/CMakeLists.txt	2025-09-19 15:35:49
+@@ -346,6 +346,10 @@
+     set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+   endif("${isSystemDir}" STREQUAL "-1")
  
--ENDIF()
-+ELSE()
- 
-+  SET(CMAKE_SKIP_INSTALL_RPATH ON CACHE BOOL "Turn off for static install." FORCE)
-+  SET(CMAKE_SKIP_RPATH ON CACHE BOOL "Turn off for static install." FORCE)
++else()
++  set(CMAKE_SKIP_INSTALL_RPATH ON CACHE BOOL "Turn off for static install." FORCE)
++  set(CMAKE_SKIP_RPATH ON CACHE BOOL "Turn off for static install." FORCE)
 +
-+ENDIF()
- ##
- # End configuration for post-install RPath
+ endif()
+ 
  ##

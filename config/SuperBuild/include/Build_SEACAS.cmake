@@ -10,7 +10,7 @@
 if (NOT ENABLE_XSDK)
     define_external_project_args(SEACAS
                                  TARGET seacas
-                                 DEPENDS HDF5 NetCDF)
+                                 DEPENDS HDF5 NetCDF FMT)
 else()
     define_external_project_args(SEACAS
                                  TARGET seacas
@@ -75,24 +75,23 @@ else()
 endif()
 
 #
-# --- Define the SEACAS patch step - mainly for nem_slice to be able
-# --- to handle columns
+# --- Define the SEACAS patch step
 #
-set(ENABLE_SEACAS_Patch OFF)
-if (ENABLE_SEACAS_Patch)
-  set(SEACAS_patch_file
-    seacas-nemslice.patch
-    seacas-exoduspy.patch
-    )
-  configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/seacas-patch-step.sh.in
-                 ${SEACAS_prefix_dir}/seacas-patch-step.sh
-                 @ONLY)
-  set(SEACAS_PATCH_COMMAND bash ${SEACAS_prefix_dir}/seacas-patch-step.sh)
-  message(STATUS "Applying SEACAS patches")
-else (ENABLE_SEACAS_Patch)
-  set(SEACAS_PATCH_COMMAND)
-  message(STATUS "Patch NOT APPLIED for SEACAS")
-endif (ENABLE_SEACAS_Patch)
+
+# patches exodus3.py with element sets, needed for columnar meshes and subdomains
+set(SEACAS_patch_file seacas-exoduspy.patch)
+
+# patches for nem_slice to be able handle columns
+set(ENABLE_SEACAS_NEMSLICE_Patch OFF)
+if (ENABLE_SEACAS_NEMSLICE_Patch)
+  list(APPEND SEACAS_patch_file seacas-nemslice.patch)
+endif()
+
+patch_tpl(SEACAS
+          ${SEACAS_prefix_dir}
+          ${SEACAS_source_dir}
+          ${SEACAS_stamp_dir}
+          SEACAS_patch_file)
 
 # --- Configure the package
 set(SEACAS_CMAKE_CACHE_ARGS
@@ -100,20 +99,20 @@ set(SEACAS_CMAKE_CACHE_ARGS
                     -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
                     -DCMAKE_EXE_LINKER_FLAGS:STRING=${seacas_lflags}
                     -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
-                    -DSEACASProj_ENABLE_ALL_PACKAGES:BOOL=FALSE
-                    -DSEACASProj_ENABLE_SEACASExodus:BOOL=TRUE
-                    -DSEACASProj_ENABLE_SEACASExodus_for:BOOL=TRUE
-                    -DSEACASProj_ENABLE_SEACASNemslice:BOOL=TRUE
-                    -DSEACASProj_ENABLE_SEACASNemspread:BOOL=TRUE
-                    -DSEACASProj_ENABLE_SEACASExodiff:BOOL=TRUE
-                    -DSEACASProj_ENABLE_SEACASExotxt:BOOL=TRUE
-                    -DSEACASProj_ENABLE_SEACASExoformat:BOOL=TRUE
-                    -DSEACASProj_ENABLE_SEACASDecomp:BOOL=TRUE
-                    -DSEACASProj_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=FALSE
-                    -DSEACASProj_ENABLE_SECONDARY_TESTED_CODE:BOOL=FALSE
-                    -DSEACASProj_ENABLE_TESTS:BOOL=FALSE
-                    -DSEACASProj_SKIP_FORTRANCINTERFACE_VERIFY_TEST:BOOL=ON 
-                    -DSEACASProj_HIDE_DEPRECATED_CODE:STRING="NO"
+                    -DSeacas_ENABLE_ALL_PACKAGES:BOOL=FALSE
+                    -DSeacas_ENABLE_SEACASExodus:BOOL=TRUE
+                    -DSeacas_ENABLE_SEACASExodus_for:BOOL=TRUE
+                    -DSeacas_ENABLE_SEACASNemslice:BOOL=TRUE
+                    -DSeacas_ENABLE_SEACASNemspread:BOOL=TRUE
+                    -DSeacas_ENABLE_SEACASExodiff:BOOL=TRUE
+                    -DSeacas_ENABLE_SEACASExotxt:BOOL=TRUE
+                    -DSeacas_ENABLE_SEACASExoformat:BOOL=TRUE
+                    -DSeacas_ENABLE_SEACASDecomp:BOOL=TRUE
+                    -DSeacas_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=FALSE
+                    -DSeacas_ENABLE_SECONDARY_TESTED_CODE:BOOL=FALSE
+                    -DSeacas_ENABLE_TESTS:BOOL=FALSE
+                    -DSeacas_SKIP_FORTRANCINTERFACE_VERIFY_TEST:BOOL=ON 
+                    -DSeacas_HIDE_DEPRECATED_CODE:STRING="NO"
                     -DTPL_ENABLE_Netcdf:BOOL=TRUE
                     -DTPL_Netcdf_LIBRARIES:STRING=${seacas_netcdf_libraries}
                     -DTPL_Netcdf_INCLUDE_DIRS:STRING=${NetCDF_INCLUDE_DIRS}
@@ -124,6 +123,7 @@ set(SEACAS_CMAKE_CACHE_ARGS
                     -DTPL_ENABLE_MPI:BOOL=ON
                     -DTPL_ENABLE_Pamgen:BOOL=FALSE
                     -DTPL_ENABLE_Pthread:BOOL=FALSE
+                    -DTPL_ENABLE_fmt:BOOL=TRUE
                     -DSEACASExodus_ENABLE_THREADSAFE:BOOL=OFF
                     -DSEACASIoss_ENABLE_THREADSAFE:BOOL=OFF
                     -DPYTHON_EXECUTABLE:STRING=${PYTHON_EXECUTABLE}
@@ -135,9 +135,10 @@ ExternalProject_Add(${SEACAS_BUILD_TARGET}
                     TMP_DIR   ${SEACAS_tmp_dir}                     # Temporary files directory
                     STAMP_DIR ${SEACAS_stamp_dir}                   # Timestamp and log directory
                     # -- Download and URL definitions
-                    DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}                # Download directory
-                    URL          ${SEACAS_URL}                      # URL may be a web site OR a local file
-                    URL_MD5      ${SEACAS_MD5_SUM}                  # md5sum of the archive file
+                    DOWNLOAD_DIR  ${TPL_DOWNLOAD_DIR}               # Download directory
+                    URL           ${SEACAS_URL}                     # URL may be a web site OR a local file
+                    URL_MD5       ${SEACAS_MD5_SUM}                 # md5sum of the archive file
+                    DOWNLOAD_NAME ${SEACAS_SAVEAS_FILE}   # file name to store (if not end of URL)
                     # -- Patch
                     PATCH_COMMAND ${SEACAS_PATCH_COMMAND}
                     # -- Configure

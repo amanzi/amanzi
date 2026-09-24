@@ -15,6 +15,15 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 
 set(ParMetis_GKLIB_DIR ${METIS_source_dir}/GKlib)
 set(ParMetis_METIS_DIR ${METIS_source_dir})
+
+# --- Set the name of the patch
+set(ParMetis_patch_file parmetis-realtype.patch)
+patch_tpl(ParMetis
+          ${ParMetis_prefix_dir}
+          ${ParMetis_source_dir}
+          ${ParMetis_stamp_dir}
+          ParMetis_patch_file)
+
 # --- Define the CMake configure parameters
 # Note:
 #      CMAKE_CACHE_ARGS requires -DVAR:<TYPE>=VALUE syntax
@@ -27,6 +36,12 @@ set(ParMetis_CMAKE_CACHE_ARGS
                   -DGKLIB_PATH:PATH=${ParMetis_GKLIB_DIR}
                   -DMETIS_PATH:PATH=${ParMetis_METIS_DIR})
 
+# --- Override minimum version
+# --- Cache Args may need the type to be float? 
+if(CMAKE_MAJOR_VERSION VERSION_EQUAL "4")
+  list(APPEND ParMetis_CMAKE_CACHE_ARGS "-DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.5")
+endif()
+                
 # --- Add external project build and tie to the ParMetis build target
 ExternalProject_Add(${ParMetis_BUILD_TARGET}
                     DEPENDS   ${ParMetis_PACKAGE_DEPENDS}             # Package dependency target
@@ -36,6 +51,8 @@ ExternalProject_Add(${ParMetis_BUILD_TARGET}
                     DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR} 
                     URL          ${ParMetis_URL}                      # URL may be a web site OR a local file
                     URL_MD5      ${ParMetis_MD5_SUM}                  # md5sum of the archive file
+                    # -- Patch 
+                    PATCH_COMMAND  ${ParMetis_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR       ${ParMetis_source_dir}           # Source directory
                     CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}       # Ensure uniform build

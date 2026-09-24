@@ -1,0 +1,12 @@
+diff --color -ruNbB metis-5.1.0-old/include/metis.h metis-5.1.0-source/include/metis.h
+--- metis-5.1.0-old/include/metis.h	2013-03-30 10:24:45
++++ metis-5.1.0-source/include/metis.h	2025-02-12 13:07:55
+@@ -40,7 +40,7 @@
+    32 : single precission floating point (float)
+    64 : double precission floating point (double)
+ --------------------------------------------------------------------------*/
+-#define REALTYPEWIDTH 32
++#define REALTYPEWIDTH 64
+ 
+ 
+ 

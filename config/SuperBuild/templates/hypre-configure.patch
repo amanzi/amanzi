@@ -1,0 +1,12 @@
+diff --color -ruNbB hypre-2.29.0/src/configure hypre-2.29.0-source/src/configure
+--- hypre-2.29.0/src/configure	2023-11-17 22:42:33
++++ hypre-2.29.0-source/src/configure	2023-11-17 22:36:17
+@@ -10140,7 +10140,7 @@
+                           LINK_CXX='${CXX} -brtl' ;;
+       DARWIN* | darwin* | Darwin*) SHARED_BUILD_FLAG="-dynamiclib -undefined dynamic_lookup"
+                                    HYPRE_LIBSUFFIX=".dylib"
+-                                   SHARED_SET_SONAME="-install_name @rpath/"
++                                   SHARED_SET_SONAME="-install_name ${prefix}/lib/"
+                                    SHARED_OPTIONS="-undefined error" ;;
+                        *) SHARED_BUILD_FLAG="-shared" ;;
+    esac
