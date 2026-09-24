@@ -50,6 +50,57 @@ testMeshAuditDevice(const Teuchos::RCP<const Mesh>& mesh)
 
 
 //
+// Runs the host <Mesh, Mesh*> MeshAudit across several distinct caching
+// states, since Mesh::getXxx() falls through a different code path
+// (cache hit, recompute, or ask the framework) depending on what has been
+// cached and whether the framework is still alive.  Each state is run and
+// CHECK_EQUAL'd independently so a failure is attributable to the specific
+// state that produced it, rather than being collapsed into a single result.
+//
+// States covered, in order:
+//   1. uncached -- every accessor falls through to the framework.
+//   2. cacheDefault() -- partial cache (faces/edges/nodes and geometry, but
+//      NOT cell-nodes/cell-edges/node-cells); accessors for the latter
+//      still fall through to the framework.
+//   3. cacheAll() -- fully cached; framework present but unnecessary.
+//   4. cacheAll() + destroyFramework() -- fully cached, framework gone.
+//      Per Mesh's own design (see the discussion at the top of
+//      Mesh_decl.hh), this is the only state its author considered safe to
+//      detach the framework in.
+//
+// Not covered: cacheDefault() + destroyFramework(). That combination is
+// adversarial -- it leaves some accessors (e.g. cell-nodes) with neither a
+// cache entry nor a framework to fall back on. Impl::Getter/RaggedGetter
+// (MeshUtils.hh) handle that case with assert(false, "No access to
+// cache/framework/compute available..."), not an exception, since this
+// code is KOKKOS_INLINE_FUNCTION and shared with DEVICE specializations,
+// where exceptions cannot be used. In a debug build this aborts the
+// process; in a release build the assert compiles out and the call
+// silently returns a default-constructed value. There is no public API on
+// Mesh to query "is X cached" that would let a test avoid triggering this,
+// so this state is intentionally left untested here.
+template <class MeshAudit_type>
+bool
+testMeshAuditHostCacheStates(const Teuchos::RCP<Mesh>& mesh)
+{
+  bool status = false;
+
+  status |= testMeshAuditHost<MeshAudit_type, Mesh>(mesh);
+
+  mesh->cacheDefault();
+  status |= testMeshAuditHost<MeshAudit_type, Mesh>(mesh);
+
+  mesh->cacheAll();
+  status |= testMeshAuditHost<MeshAudit_type, Mesh>(mesh);
+
+  mesh->destroyFramework();
+  status |= testMeshAuditHost<MeshAudit_type, Mesh>(mesh);
+
+  return status;
+}
+
+
+//
 // Sums a scalar over all processes and compares the result to exp
 //
 // Used to check that partial counts add up to global count in parallel tests.

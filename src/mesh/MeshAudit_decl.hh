@@ -51,6 +51,39 @@ get(const T& t) {
   else return t;
 }
 
+// Runs functor(i) for i in [range.begin(), range.end()) either as a real
+// Kokkos::parallel_for (when MeshOrCache_type is a value type, e.g.
+// MeshCache -- safe on device, its accessors only read pre-built views and
+// never allocate) or as a plain sequential host loop (when MeshOrCache_type
+// is a pointer, e.g. MeshFramework* or Mesh* -- whose accessors may
+// allocate a Kokkos::View per call, which would deadlock if run from
+// inside an active Kokkos::parallel_for; see Kokkos::Serial::ParallelFor
+// ::execute(), which holds the same instance mutex that fence() re-locks
+// during that allocation).
+//
+// `m` is unused inside this function; it exists only so MeshOrCache_type
+// can be deduced from the caller's mc_/m object rather than spelled out
+// explicitly at each call site.
+//
+// Note: Kokkos itself provides no backend-level way to make an allocating
+// call safe from inside a kernel -- every backend's ParallelFor uses the
+// same real dispatch machinery. This helper works only because, for the
+// host/pointer case, the "parallel" dispatch was never needed in the
+// first place -- a plain sequential loop is always correct there.
+template <class MeshOrCache_type, class Range_type, class Functor>
+void
+auditParallelFor(const std::string& label,
+                  const MeshOrCache_type& /*m*/,
+                  const Range_type& range,
+                  const Functor& functor)
+{
+  if constexpr (std::is_pointer<MeshOrCache_type>::value) {
+    for (auto i = range.begin(); i != range.end(); ++i) functor(i);
+  } else {
+    Kokkos::parallel_for(label, range, functor);
+  }
+}
+
 // helpers for doing the testing
 template<class View_type>
 KOKKOS_INLINE_FUNCTION bool areDistinctValues(const View_type& list);
