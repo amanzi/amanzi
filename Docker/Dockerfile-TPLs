@@ -155,7 +155,11 @@ FROM base AS tpls
 # the source, objects, etc. after installation to save space.
 # Consider adding ...
 #  --enable-mesh_moab 
-RUN if [ ${base_image} = "gcc" ] || [ ${mpi_flavor} = "openmpi" ]; then \
+RUN \
+  # CMake 3.23.0's bundled cmCurl.cxx fails to compile against newer libcurl
+  # headers (CURL_NETRC_OPTION enum) on newer GCC; downgrade to a warning.
+  export CXXFLAGS="-fpermissive" \
+  && if [ ${base_image} = "gcc" ] || [ ${mpi_flavor} = "openmpi" ]; then \
   # need to set LD_LIBRARY_PATH just for build stage to link libpetsc.so to
   # correct compiler libraries.
   export LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/lib:$LD_LIBRARY_PATH \
