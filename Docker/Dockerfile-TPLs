@@ -1,5 +1,5 @@
 ARG base_image=ubuntu
-ARG ver_tag=jammy
+ARG ver_tag=resolute
 FROM ${base_image}:${ver_tag} AS base
 
 LABEL Description="This image contains all of the third-party libraries needed by Amanzi (based on the specified branch, default branch is master)."
@@ -41,7 +41,6 @@ RUN apt-get -q update -y && apt-get install -y tzdata && \
   openssl \
   pkg-config \
   python3 \
-  python3-distutils \
   python3-pip \
   python-is-python3 \
   rsync \

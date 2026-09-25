@@ -50,7 +50,7 @@ jobs:
         context: .
         file: ./Docker/Dockerfile-TPLs
         push: true
-        tags: ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{env.ARCH}}-mpich-ubuntu-jammy
+        tags: ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{env.ARCH}}-mpich-ubuntu-resolute
         build-args: |
           amanzi_branch=${{env.AMANZI_BRANCH}}
           mpi_flavor=mpich
@@ -74,11 +74,11 @@ jobs:
           password: ${{secrets.DOCKERHUB_PASSWORD}}
       - name: Pull images (remove with artifacts??)
         run: |
-          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-arm64-mpich-ubuntu-jammy
-          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-amd64-mpich-ubuntu-jammy
+          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-arm64-mpich-ubuntu-resolute
+          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-amd64-mpich-ubuntu-resolute
       - name: Edit manifest
         run: |
-          docker manifest create ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-mpich-ubuntu-jammy \
-            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-amd64-mpich-ubuntu-jammy \
-            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-arm64-mpich-ubuntu-jammy
-          docker manifest push ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-mpich-ubuntu-jammy
+          docker manifest create ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-mpich-ubuntu-resolute \
+            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-amd64-mpich-ubuntu-resolute \
+            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-arm64-mpich-ubuntu-resolute
+          docker manifest push ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-mpich-ubuntu-resolute
