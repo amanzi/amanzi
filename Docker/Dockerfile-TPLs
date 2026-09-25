@@ -73,7 +73,7 @@ RUN if [ "$build_mpi" = "True" ]; then \
   && tar xvf openmpi-${mpi_version}.tar.gz \
   && cd openmpi-${mpi_version} \
   && export LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/lib:$LD_LIBRARY_PATH \
-  && FFLAGS="-fallow-argument-mismatch" FCFLAGS="-fallow-argument-mismatch" ./configure --enable-shared --prefix=/usr/local \
+  && FFLAGS="-fallow-argument-mismatch" FCFLAGS="-fallow-argument-mismatch" ./configure --enable-shared --enable-mca-no-build=part-persist --prefix=/usr/local \
   && make -j4 \
   && make install \
   && cd ../ \
