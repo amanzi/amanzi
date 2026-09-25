@@ -19,8 +19,12 @@
 # The 4 image variants are defined ONCE, below, in the "Assemble matrix" step.
 # To add a 5th variant, add one more object to the `jq` array in that step.
 #
-# Variants 3 & 4 use "latest" tool versions that are resolved at RUN TIME from
-# the upstream GitHub releases APIs, each with a pinned fallback default.
+# Variants 3 & 4 use gcc:latest as the base image, but PINNED mpi_ver/
+# cmake_version values below. These are bumped periodically by
+# .github/workflows/bump-tool-versions.yml (which opens a PR when upstream
+# cuts a new mpich/openmpi/cmake release) rather than resolved at run time,
+# so that this workflow and the TPL images actually published by
+# build-tpls.yml never drift out of sync.
 # =============================================================================
 name: Resolve image build matrix
 
@@ -42,50 +46,8 @@ jobs:
       matrix: ${{ steps.set.outputs.matrix }}
       images: ${{ steps.set.outputs.images }}
     steps:
-      - name: Resolve latest tool versions
-        id: versions
-        # gh is pre-installed on ubuntu runners and authenticates via GITHUB_TOKEN.
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          set -uo pipefail
-
-          # resolve <repo> <fallback-default>
-          #   Query the upstream "latest" release tag, strip a leading "v",
-          #   and fall back to the pinned default if the API errors or is empty.
-          resolve() {
-            local repo="$1" fallback="$2" tag=""
-            tag="$(gh api "repos/${repo}/releases/latest" --jq .tag_name 2>/dev/null || true)"
-            tag="${tag#v}"          # strip a leading "v" (e.g. v4.3.1 -> 4.3.1)
-            if [ -z "${tag}" ]; then
-              tag="${fallback}"
-            fi
-            echo "${tag}"
-          }
-
-          MPICH_VER="$(resolve pmodels/mpich 4.3.1)"
-          OPENMPI_VER="$(resolve open-mpi/ompi 5.0.8)"
-          CMAKE_VER="$(resolve Kitware/CMake 4.1.2)"
-
-          # Echo resolved versions so they are visible in the run log.
-          echo "Resolved latest mpich   version: ${MPICH_VER}"
-          echo "Resolved latest openmpi version: ${OPENMPI_VER}"
-          echo "Resolved latest cmake   version: ${CMAKE_VER}"
-
-          # Hand off to the assembly step via env.
-          {
-            echo "MPICH_VER=${MPICH_VER}"
-            echo "OPENMPI_VER=${OPENMPI_VER}"
-            echo "CMAKE_VER=${CMAKE_VER}"
-          } >> "$GITHUB_ENV"
-
       - name: Assemble matrix
         id: set
-        env:
-          # Consumed by the jq program below.
-          MPICH_VER: ${{ env.MPICH_VER }}
-          OPENMPI_VER: ${{ env.OPENMPI_VER }}
-          CMAKE_VER: ${{ env.CMAKE_VER }}
         run: |
           set -euo pipefail
 
@@ -96,13 +58,12 @@ jobs:
           #
           #   1. ubuntu-bundled + mpich   (pinned, source-built)
           #   2. ubuntu-bundled + openmpi (pinned, source-built)
-          #   3. latest gcc + mpich       (mpi_ver & cmake_version resolved)
-          #   4. latest gcc + openmpi     (mpi_ver & cmake_version resolved)
+          #   3. latest gcc + mpich       (mpi_ver & cmake_version pinned;
+          #                                bumped via bump-tool-versions.yml)
+          #   4. latest gcc + openmpi     (mpi_ver & cmake_version pinned;
+          #                                bumped via bump-tool-versions.yml)
           # -------------------------------------------------------------------
           images="$(jq -c -n \
-            --arg mpich   "$MPICH_VER" \
-            --arg openmpi "$OPENMPI_VER" \
-            --arg cmake   "$CMAKE_VER" \
             '[
               {
                 base_image:    "ubuntu",
@@ -124,16 +85,16 @@ jobs:
                 base_image:    "gcc",
                 ver_tag:       "latest",
                 mpi_distro:    "mpich",
-                mpi_ver:       $mpich,
-                cmake_version: $cmake,
+                mpi_ver:       "4.3.1",
+                cmake_version: "4.1.2",
                 target:        "tpls"
               },
               {
                 base_image:    "gcc",
                 ver_tag:       "latest",
                 mpi_distro:    "openmpi",
-                mpi_ver:       $openmpi,
-                cmake_version: $cmake,
+                mpi_ver:       "5.0.8",
+                cmake_version: "4.1.2",
                 target:        "tpls"
               }
             ]')"

@@ -100,6 +100,7 @@ jobs:
           mpi_distro=${{matrix.images.mpi_distro}}
           mpi_ver=${{matrix.images.mpi_ver}}
           ARCH=linux/${{env.ARCH}}
+          additional_bootstrap_args=--enable-reg_tests
 
   serial-tests:
     strategy:

@@ -8,6 +8,7 @@ on:
     paths:
       - 'config/SuperBuild/**'
       - 'tools/**'
+      - '.github/workflows/image-matrix.yml'
 
 jobs:
   setup:
@@ -61,8 +62,8 @@ jobs:
           ver_tag=${{matrix.images.ver_tag}}
           mpi_flavor=${{matrix.images.mpi_distro}}
           mpi_version=${{matrix.images.mpi_ver}}
-          trilinos_ver="15-1-0"
-          petsc_ver="3.21"
+          trilinos_ver=15-1-0
+          petsc_ver=3.21
           cmake_version=${{matrix.images.cmake_version}}
         target: ${{matrix.images.target}}
 
