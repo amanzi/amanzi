@@ -177,6 +177,7 @@ RUN \
       --with-mpi=/usr/local \
       --with-python=/usr/bin/python ; \
   else \
+    python3 -m venv /home/amanzi_user/pyenv \
     ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
       --parallel=4 --${build_type} \
       --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/amanzi \
@@ -187,7 +188,7 @@ RUN \
       --enable-alquimia --enable-pflotran --enable-crunchtope \
       --enable-pf_clm --enable-ecosim --enable-mesh_moab \
       --with-mpi=/usr/local \
-      --with-python=/usr/bin/python ; \
+      --with-python=/home/amanzi_user/pyenv/bin/python ; \
   fi \
   && git checkout master \
   && rm -r /home/amanzi_user/amanzi_builddir \
@@ -210,11 +211,11 @@ RUN echo $PATH
 # ubuntu:resolute's python3-pip is externally-managed (PEP 668) and refuses
 # system-wide installs, so build h5py in a dedicated venv instead.
 RUN if [ "$base_image" = "ubuntu" ]; then \
-      python3 -m venv /home/amanzi_user/pyenv \
       && /home/amanzi_user/pyenv/bin/pip install --no-cache-dir --upgrade pip \
       && /home/amanzi_user/pyenv/bin/pip install --no-cache-dir --no-binary=h5py h5py; fi
 
 ENV PATH=/home/amanzi_user/pyenv/bin:${PATH}
+ENV PYTHONPATH=/home/amanzi_user/pyenv/lib/python3.14/site-packages
 
 
 
