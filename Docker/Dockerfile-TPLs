@@ -211,7 +211,7 @@ RUN echo $PATH
 # ubuntu:resolute's python3-pip is externally-managed (PEP 668) and refuses
 # system-wide installs, so build h5py in a dedicated venv instead.
 RUN if [ "$base_image" = "ubuntu" ]; then \
-      && /home/amanzi_user/pyenv/bin/pip install --no-cache-dir --upgrade pip \
+      /home/amanzi_user/pyenv/bin/pip install --no-cache-dir --upgrade pip \
       && /home/amanzi_user/pyenv/bin/pip install --no-cache-dir --no-binary=h5py h5py; fi
 
 ENV PATH=/home/amanzi_user/pyenv/bin:${PATH}
