@@ -10,6 +10,8 @@
 #ifndef AMANZI_IAPWS95_IMPL_HH_
 #define AMANZI_IAPWS95_IMPL_HH_
 
+#include <array>
+
 namespace Amanzi {
 namespace AmanziEOS {
 

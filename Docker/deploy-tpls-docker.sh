@@ -7,7 +7,7 @@ Help()
     echo "Options:"
     echo "  -h, --help          Display this help message"
     echo "  --base_image        Set the base image used to build container (default: ubuntu, can also use gcc)"
-    echo "  --ver_tag           Set the version for the base image used (default: jammy)"
+    echo "  --ver_tag           Set the version for the base image used (default: resolute)"
     echo "  --no_cache          Ignore docker layers in Docker build cache and build from scratch"
     echo "  --build_mpi         Build MPI implementation (either MPICH or OpenMPI) instead"
     echo "                      of using precompiled binaries in Ubuntu package repository (Default: True)"
@@ -126,7 +126,7 @@ done
 
 # set defaults, if not given on CLI
 base_image="${base_image:-ubuntu}"
-ver_tag="${ver_tag:-jammy}"
+ver_tag="${ver_tag:-resolute}"
 build_mpi="${build_mpi:-True}"
 mpi_distro="${mpi_distro:-mpich}"
 mpi_version="${mpi_version:-4.0.3}"

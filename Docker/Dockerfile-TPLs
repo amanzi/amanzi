@@ -1,5 +1,5 @@
 ARG base_image=ubuntu
-ARG ver_tag=jammy
+ARG ver_tag=resolute
 FROM ${base_image}:${ver_tag} AS base
 
 LABEL Description="This image contains all of the third-party libraries needed by Amanzi (based on the specified branch, default branch is master)."
@@ -41,8 +41,9 @@ RUN apt-get -q update -y && apt-get install -y tzdata && \
   openssl \
   pkg-config \
   python3 \
-  python3-distutils \
+  python3-dev \
   python3-pip \
+  python3-venv \
   python-is-python3 \
   rsync \
   wget \
@@ -156,7 +157,11 @@ FROM base AS tpls
 # the source, objects, etc. after installation to save space.
 # Consider adding ...
 #  --enable-mesh_moab 
-RUN if [ ${base_image} = "gcc" ] || [ ${mpi_flavor} = "openmpi" ]; then \
+RUN \
+  # CMake 3.23.0's bundled cmCurl.cxx fails to compile against newer libcurl
+  # headers (CURL_NETRC_OPTION enum) on newer GCC; downgrade to a warning.
+  export CXXFLAGS="-fpermissive" \
+  && if [ ${base_image} = "gcc" ] || [ ${mpi_flavor} = "openmpi" ]; then \
   # need to set LD_LIBRARY_PATH just for build stage to link libpetsc.so to
   # correct compiler libraries.
   export LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/lib:$LD_LIBRARY_PATH \
@@ -172,7 +177,8 @@ RUN if [ ${base_image} = "gcc" ] || [ ${mpi_flavor} = "openmpi" ]; then \
       --with-mpi=/usr/local \
       --with-python=/usr/bin/python ; \
   else \
-    ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
+    python3 -m venv /home/amanzi_user/pyenv \
+    && ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
       --parallel=4 --${build_type} \
       --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/amanzi \
       --tpl-build-dir=/home/amanzi_user/amanzi_builddir/tpls \
@@ -182,7 +188,7 @@ RUN if [ ${base_image} = "gcc" ] || [ ${mpi_flavor} = "openmpi" ]; then \
       --enable-alquimia --enable-pflotran --enable-crunchtope \
       --enable-pf_clm --enable-ecosim --enable-mesh_moab \
       --with-mpi=/usr/local \
-      --with-python=/usr/bin/python ; \
+      --with-python=/home/amanzi_user/pyenv/bin/python ; \
   fi \
   && git checkout master \
   && rm -r /home/amanzi_user/amanzi_builddir \
@@ -202,9 +208,14 @@ ENV PATH=/home/amanzi_user/amanzi/install/tools/bin:${PATH}
 RUN echo $PATH
 
 # Note this installs numpy as well
+# ubuntu:resolute's python3-pip is externally-managed (PEP 668) and refuses
+# system-wide installs, so build h5py in a dedicated venv instead.
 RUN if [ "$base_image" = "ubuntu" ]; then \
-      pip3 install --no-cache-dir --upgrade pip \
-      && pip3 install --no-cache-dir --no-binary=h5py h5py; fi
+      /home/amanzi_user/pyenv/bin/pip install --no-cache-dir --upgrade pip \
+      && /home/amanzi_user/pyenv/bin/pip install --no-cache-dir --no-binary=h5py h5py; fi
+
+ENV PATH=/home/amanzi_user/pyenv/bin:${PATH}
+ENV PYTHONPATH=/home/amanzi_user/pyenv/lib/python3.14/site-packages
 
 
 
