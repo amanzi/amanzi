@@ -372,7 +372,6 @@ IAPWS95_TemperatureEvaluatorPH::EvaluatePartialDerivative_(
   auto& result_v = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell");
 
-  double v, p, T, ap, av, bp, cp, cv;
   if (wrt_key == pressure_key_) {
     for (int c = 0; c != ncells; ++c) {
       result_v[0][c] = ts_c[(int)TSPH_t::dTdP][c];

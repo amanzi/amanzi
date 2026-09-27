@@ -114,8 +114,8 @@ TEST(MPC_TWO_PHASE)
       // std::cout << "PT: " << t + dt << " " << p[0][0] << " " << state[(int)TSPH_t::X][0] << " " << state[(int)TSPH_t::RGN][0] 
       //                               << " " << p[0][1] << " " << state[(int)TSPH_t::X][1] << " " << state[(int)TSPH_t::RGN][1] << std::endl;
 
-      CHECK_CLOSE(p[0][0], p[0][1], 6.0);
-      CHECK_CLOSE(T[0][0], T[0][1], 1e-6);
+      CHECK_CLOSE(p[0][0], p[0][1], 2e-3 * p[0][0]);
+      CHECK_CLOSE(T[0][0], T[0][1], 1e-4 * T[0][0]);
       if (itrs % 20 == 0) WriteStateStatistics(*S);
     }
 

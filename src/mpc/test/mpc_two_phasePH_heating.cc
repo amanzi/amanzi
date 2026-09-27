@@ -94,8 +94,10 @@ TEST(MPC_TWO_PHASE)
 
   // variable timestepping
   const auto& p = *S->Get<CompositeVector>("pressure", Tags::DEFAULT).ViewComponent("cell");
+  const auto& h = *S->Get<CompositeVector>("enthalpy", Tags::DEFAULT).ViewComponent("cell");
   const auto& T = *S->Get<CompositeVector>("temperature", Tags::DEFAULT).ViewComponent("cell");
   const auto& rho = *S->Get<CompositeVector>("mass_density_liquid", Tags::DEFAULT).ViewComponent("cell");
+  const auto& eta = *S->Get<CompositeVector>("molar_density_liquid", Tags::DEFAULT).ViewComponent("cell");
   const auto& mu = *S->Get<CompositeVector>("viscosity_liquid", Tags::DEFAULT).ViewComponent("cell");
   const auto& state = *S->Get<CompositeVector>("thermodynamic_state", Tags::DEFAULT).ViewComponent("cell");
 
@@ -104,16 +106,16 @@ TEST(MPC_TWO_PHASE)
 
   int itrs(0);
   double t(0.0), dt(5.0), t1(50.0e+3);
+
   while (t < t1) {
     bool fail = mpc->AdvanceStep(t, t + dt, false);
     if (fail) {
       dt /= 2.0;
     } else {
       mpc->CommitStep(t, t + dt, Tags::DEFAULT);
-      dt = std::min(50.0, dt * 1.01); 
-      // std::cout << "PT: " << t + dt << " " << p[0][0] << " " << state[(int)TSPH_t::X][0] << " " << state[(int)TSPH_t::RGN][0] 
-      //                               << " " << p[0][1] << " " << state[(int)TSPH_t::X][1] << " " << state[(int)TSPH_t::RGN][1] << std::endl;
-
+      dt = std::min(10.0, dt * 1.03); 
+      // std::cout << "PT: " << t + dt << " " << p[0][10] << " " << state[(int)TSPH_t::X][10] << " " << state[(int)TSPH_t::RGN][10] 
+      //                               << " " << p[0][20] << " " << state[(int)TSPH_t::X][20] << " " << state[(int)TSPH_t::RGN][20] << std::endl;
       if (itrs % 20 == 0) WriteStateStatistics(*S);
     }
 
