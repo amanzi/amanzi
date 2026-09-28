@@ -171,7 +171,7 @@ RUN \
       --with-mpi=/usr/local \
       --with-python=/usr/bin/python ; \
   else \
-    && ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
+    ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
       --parallel=4 --${build_type} \
       --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/amanzi \
       --tpl-build-dir=/home/amanzi_user/amanzi_builddir/tpls \
