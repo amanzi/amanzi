@@ -24,7 +24,7 @@ RUN apt-get -q update -y && apt-get install -y tzdata && \
       g++ \
       gfortran; \
   fi && \
-  apt-get -q install -y \
+  apt-get -q install --no-install-recommends -y \
   apt-utils \
   curl \
   libcurl4-openssl-dev \
@@ -42,17 +42,11 @@ RUN apt-get -q update -y && apt-get install -y tzdata && \
   pkg-config \
   python3 \
   python3-dev \
-  python3-pip \
-  python3-venv \
   python-is-python3 \
   rsync \
   wget \
   vim \
   zlib1g-dev && \
-  if [ "$base_image" = "gcc" ]; then \
-    echo  "Installing h5py in debian image..." \
-    && apt-get -q install -y \
-	      python3-h5py; \
   fi && \
   apt-get clean \
   && rm -rf /var/lib/apt/lists/*
@@ -128,7 +122,6 @@ RUN if [ "$amanzi_branch" != "master" ]; then \
   echo "Amanzi branch = $amanzi_branch"; \
   git branch --list
 
-
 # Check to see if we've requested a newer cmake than what bootstrap requires
 USER root
 RUN export cmake_minimum_version=$(grep '^cmake_version=' bootstrap.sh | cut -d= -f2) \
@@ -143,10 +136,11 @@ RUN export cmake_minimum_version=$(grep '^cmake_version=' bootstrap.sh | cut -d=
       && cd cmake-${cmake_version} \
       && ./bootstrap \ 
       && make -j4 \
-      && make install; fi
+      && make install \
+      && cd ../ \
+      && rm -rf cmake-${cmake-version}; fi
 
 USER amanzi_user
-
 
 #===========================================================================
 # here and above can be run with --target base in the docker build command
@@ -177,7 +171,6 @@ RUN \
       --with-mpi=/usr/local \
       --with-python=/usr/bin/python ; \
   else \
-    python3 -m venv /home/amanzi_user/pyenv \
     && ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
       --parallel=4 --${build_type} \
       --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/amanzi \
@@ -188,7 +181,7 @@ RUN \
       --enable-alquimia --enable-pflotran --enable-crunchtope \
       --enable-pf_clm --enable-ecosim --enable-mesh_moab \
       --with-mpi=/usr/local \
-      --with-python=/home/amanzi_user/pyenv/bin/python ; \
+      --with-python=/usr/bin/python ; \
   fi \
   && git checkout master \
   && rm -r /home/amanzi_user/amanzi_builddir \
@@ -210,14 +203,9 @@ RUN echo $PATH
 # Note this installs numpy as well
 # ubuntu:resolute's python3-pip is externally-managed (PEP 668) and refuses
 # system-wide installs, so build h5py in a dedicated venv instead.
-RUN if [ "$base_image" = "ubuntu" ]; then \
-      /home/amanzi_user/pyenv/bin/pip install --no-cache-dir --upgrade pip \
-      && /home/amanzi_user/pyenv/bin/pip install --no-cache-dir --no-binary=h5py h5py; fi
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
+RUN \
+  /home/amanzi_user/pyenv/bin/pip install --no-cache-dir --upgrade pip \
+  && /home/amanzi_user/pyenv/bin/pip install --no-cache-dir --no-binary=h5py h5py; fi
 
 ENV PATH=/home/amanzi_user/pyenv/bin:${PATH}
-ENV PYTHONPATH=/home/amanzi_user/pyenv/lib/python3.14/site-packages
-
-
-
-
-
