@@ -26,6 +26,7 @@ RUN apt-get -q update -y && apt-get install -y tzdata && \
   fi && \
   apt-get -q install --no-install-recommends -y \
   apt-utils \
+  ca-certificates \
   curl \
   libcurl4-openssl-dev \
   emacs \
