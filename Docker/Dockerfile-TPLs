@@ -47,7 +47,6 @@ RUN apt-get -q update -y && apt-get install -y tzdata && \
   wget \
   vim \
   zlib1g-dev && \
-  fi && \
   apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
