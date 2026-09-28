@@ -6,8 +6,11 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'config/Superbuild/**'
+      - 'config/SuperBuild/**'
       - 'tools/**'
+      - 'Docker/Dockerfile-TPLs'
+      - '.github/workflows/build-tpls.yml'
+
 
 jobs:
   build-tpl-image:
@@ -21,11 +24,10 @@ jobs:
     - name: Get TPLs version
       id: version
       working-directory: Docker
-      run:
-        echo "AMANZI_TPLS_VER=$(./get_tpls_version.sh)" >> $GITHUB_ENV
-    - name: Output the TPLs version
-      run:
-        echo "TPLs version = ${{env.AMANZI_TPLS_VER}}"
+      run: |
+        AMANZI_TPLS_VER=$(./get_tpls_version.sh)
+        echo "AMANZI_TPLS_VER=$AMANZI_TPLS_VER" >> $GITHUB_ENV
+        echo "TPLs version = $AMANZI_TPLS_VER"
     - name: Get runner architecture
       run: |
         if [[ ${{matrix.os}} == "ubuntu-24.04-arm" ]]; then
