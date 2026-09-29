@@ -16,11 +16,10 @@
 
 */
 
-#include "HDF5Reader.hh"
 #include "Function.hh"
 #include "FunctionFactory.hh"
 #include "DataStructuresHelpers.hh"
-#include "FileHDF5.hh"
+#include "EvaluatorFromFile_Helpers.hh"
 
 #include "EvaluatorIndependentFromFile.hh"
 
@@ -36,13 +35,16 @@ EvaluatorIndependentFromFile::EvaluatorIndependentFromFile(
   : EvaluatorIndependent<CompositeVector, CompositeVectorSpace>(plist),
     filename_(plist->get<std::string>("filename")),
     meshname_(plist->get<std::string>("domain name", "domain")),
-    varname_(plist->get<std::string>("variable name")),
     compname_(plist->get<std::string>("component name", "cell")),
+    varname_(plist->get<std::string>("variable name")),
     locname_(plist->get<std::string>("mesh entity", "cell")),
     ndofs_(plist->get<int>("number of DoFs", 1)),
-    current_interval_(0)
+    page_size_(plist->get<int>("page size", 2)),
+    checkpoint_file_(plist->get<bool>("checkpoint file", false))
 {
-  if (plist->isSublist("time function")) {
+  if (checkpoint_file_) temporally_variable_ = false;
+
+  if (temporally_variable_ && plist->isSublist("time function")) {
     FunctionFactory fac;
     time_func_ = Teuchos::rcp(fac.Create(plist->sublist("time function")));
   }
@@ -53,9 +55,7 @@ EvaluatorIndependentFromFile::EvaluatorIndependentFromFile(
 // ---------------------------------------------------------------------------
 Teuchos::RCP<Evaluator>
 EvaluatorIndependentFromFile::Clone() const
-{
-  return Teuchos::rcp(new EvaluatorIndependentFromFile(*this));
-}
+{ return Teuchos::rcp(new EvaluatorIndependentFromFile(*this)); }
 
 // ---------------------------------------------------------------------------
 // Operator=
@@ -90,46 +90,29 @@ EvaluatorIndependentFromFile::EnsureCompatibility(State& S)
 {
   EvaluatorIndependent::EnsureCompatibility(S);
 
-  if (current_interval_ == 0) {
+  if (interpolator_ == Teuchos::null) {
     auto mesh = S.GetMesh(meshname_);
 
     // requirements on vector data
+    AmanziMesh::Entity_kind location;
     if (locname_ == "cell") {
-      S.Require<CompositeVector, CompositeVectorSpace>(my_key_, my_tag_, my_key_)
-        .SetMesh(mesh)
-        ->AddComponent(compname_, AmanziMesh::Entity_kind::CELL, ndofs_);
+      location = AmanziMesh::Entity_kind::CELL;
     } else if (locname_ == "face") {
-      S.Require<CompositeVector, CompositeVectorSpace>(my_key_, my_tag_, my_key_)
-        .SetMesh(mesh)
-        ->AddComponent(compname_, AmanziMesh::Entity_kind::FACE, ndofs_);
+      location = AmanziMesh::Entity_kind::FACE;
     } else if (locname_ == "boundary_face") {
-      S.Require<CompositeVector, CompositeVectorSpace>(my_key_, my_tag_, my_key_)
-        .SetMesh(mesh)
-        ->AddComponent(compname_, AmanziMesh::Entity_kind::BOUNDARY_FACE, ndofs_);
+      location = AmanziMesh::Entity_kind::BOUNDARY_FACE;
     } else {
       Errors::Message m;
       m << "IndependentVariableFromFile: invalid location name: \"" << locname_ << "\"";
       throw(m);
     }
 
-    // load times, ensure file is valid.
-    // NOTE: all read this.  Could do on rank 0 and broadcast (maybe should!)
-    HDF5Reader reader(filename_);
-    reader.ReadData("/time", times_);
+    auto& space = S.Require<CompositeVector, CompositeVectorSpace>(my_key_, my_tag_, my_key_);
+    space.SetMesh(mesh)->AddComponent(compname_, location, ndofs_);
 
-    // check for increasing times
-    for (int j = 1; j < times_.size(); ++j) {
-      if (times_[j] <= times_[j - 1]) {
-        Errors::Message m;
-        m << "IndependentVariable from file: times values are not strictly "
-             "increasing";
-        throw(m);
-      }
-    }
-
-    current_interval_ = -1;
-    t_before_ = -1;
-    t_after_ = times_[0];
+    interpolator_ = Teuchos::rcp(new EvaluatorFromFile_Helpers::FileTimeInterpolator(
+      filename_, varname_, compname_, locname_, ndofs_, checkpoint_file_, page_size_));
+    interpolator_->setup(space.CreateSpace(), temporally_variable_);
   }
 }
 
@@ -140,135 +123,18 @@ void
 EvaluatorIndependentFromFile::Update_(State& S)
 {
   CompositeVector& cv = S.GetW<CompositeVector>(my_key_, my_tag_, my_key_);
-  AMANZI_ASSERT(2 == cv.getLocalLength());
 
-  if (!computed_once_) {
-    val_after_ = Teuchos::rcp(new CompositeVector(cv.getMap()));
-    AMANZI_ASSERT(2 == val_after_->getLocalLength());
-    LoadFile_(0);
-    computed_once_ = true;
-  }
-
-  double t = S.get_time();
+  double t = S.get_time(my_tag_);
   if (time_func_ != Teuchos::null) {
     Kokkos::View<double**, Kokkos::HostSpace> point("time", 1, 1);
-    point(0,0) = t;
+    point(0, 0) = t;
     t = (*time_func_)(point);
   }
 
-  // check if we are before the current interval
-  if (t < t_before_) {
-    // this should only be the case if we are somehow composing this function
-    // with a time function that is not monotonic, i.e. doing a cyclic steady
-    // state to repeat a year, and we have gone past the cycle.  Restart the
-    // interval.
-    t_before_ = -1;
-    t_after_ = times_[0];
-    current_interval_ = -1;
-    LoadFile_(0);
-  }
-
-  // determine where we are relative to the currently stored interval
-  if (t < t_before_) {
-    // should never be possible thanks to the previous check
-    AMANZI_ASSERT(0);
-  } else if (t == t_before_) {
-    // at the start of the interval
-    AMANZI_ASSERT(val_before_ != Teuchos::null);
-    cv.assign(*val_before_);
-
-  } else if (t < t_after_) {
-    if (t_before_ == -1) {
-      // to the left of the first point
-      AMANZI_ASSERT(val_after_ != Teuchos::null);
-      cv.assign(*val_after_);
-    } else if (val_after_ == Teuchos::null) {
-      // to the right of the last point
-      AMANZI_ASSERT(val_before_ != Teuchos::null);
-      cv.assign(*val_before_);
-    } else {
-      // in the interval, interpolate
-      Interpolate_(t, cv);
-    }
-  } else if (t == t_after_) {
-    // at the end of the interval
-    AMANZI_ASSERT(val_after_ != Teuchos::null);
-    cv.assign(*val_after_);
-
-  } else {
-    // to the right of the interval -- advance the interval
-    while (t > t_after_) {
-      current_interval_++;
-      t_before_ = t_after_;
-      if (current_interval_ + 1 == times_.size()) {
-        // at the end of data
-        t_after_ = 1.e99;
-        val_before_ = val_after_;
-        val_after_ = Teuchos::null;
-
-        // copy the value
-        cv.assign(*val_before_);
-
-      } else {
-        t_after_ = times_[current_interval_ + 1];
-
-        // swap the pointers
-        std::swap(val_before_, val_after_);
-
-        // load the new data
-        LoadFile_(current_interval_ + 1);
-
-        // now we are in the interval, interpolate
-        if (t == t_after_) {
-          cv.assign(*val_after_);
-        } else if (t < t_after_) {
-          Interpolate_(t, cv);
-        }
-      }
-    }
-  }
+  cv.assign(interpolator_->interpolate(t));
 
   if (locname_ == "cell" && (cv.hasComponent("boundary_face") || cv.hasComponent("face")))
     DeriveFaceValuesFromCellValues(cv);
-}
-
-void
-EvaluatorIndependentFromFile::LoadFile_(int i)
-{
-  // allocate data
-  if (val_after_ == Teuchos::null) {
-    AMANZI_ASSERT(val_before_ != Teuchos::null);
-    val_after_ = Teuchos::rcp(new CompositeVector(val_before_->getMap()));
-  }
-
-  // open the file
-  FileHDF5 file_input(val_after_->getComm(), filename_, FILE_READONLY);
-
-  // load the data
-  MultiVector_type& vec = *val_after_->getComponent(compname_, false);
-
-  // historically these files are written by component
-  for (int j = 0; j != ndofs_; ++j) {
-    std::string name =
-      varname_ + "/" + "." + locname_ + "." + std::to_string(j) + "/" + std::to_string(i);
-    file_input.readVector(name, *vec.getVectorNonConst(i));
-  }
-}
-
-void
-EvaluatorIndependentFromFile::Interpolate_(double time, CompositeVector& v)
-{
-  AMANZI_ASSERT(t_before_ >= 0.);
-  AMANZI_ASSERT(t_after_ >= 0.);
-  AMANZI_ASSERT(t_after_ >= time);
-  AMANZI_ASSERT(time >= t_before_);
-  AMANZI_ASSERT(t_after_ > t_before_);
-  AMANZI_ASSERT(val_before_ != Teuchos::null);
-  AMANZI_ASSERT(val_after_ != Teuchos::null);
-
-  double coef = (time - t_before_) / (t_after_ - t_before_);
-  v.assign(*val_before_);
-  v.update(coef, *val_after_, 1 - coef);
 }
 
 } // namespace Amanzi

@@ -74,6 +74,9 @@ set(state_inc_files
   evaluators/EvaluatorIndependentFunction.hh
   evaluators/EvaluatorIndependentConstant.hh
   evaluators/EvaluatorIndependentTensorFunction.hh
+  evaluators/EvaluatorFromFile_Helpers.hh
+  evaluators/EvaluatorTensorFromFile_Helpers.hh
+  evaluators/EvaluatorIndependentTensorFromFile.hh
   evaluators/EvaluatorIndependentPatchFunction.hh
   evaluators/EvaluatorPrimary.hh
   evaluators/EvaluatorPrimaryStaticMesh.hh
@@ -112,6 +115,7 @@ set(state_src_files
   evaluators/EvaluatorIndependentFunction.cc
   evaluators/EvaluatorIndependentConstant.cc
   evaluators/EvaluatorIndependentTensorFunction.cc
+  evaluators/EvaluatorIndependentTensorFromFile.cc
   evaluators/EvaluatorIndependentPatchFunction.cc
   evaluators/EvaluatorPrimary.cc
   evaluators/EvaluatorSecondary.cc
