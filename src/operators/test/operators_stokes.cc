@@ -23,7 +23,6 @@
 
 // Amanzi
 #include "MeshFactory.hh"
-#include "GMVMesh.hh"
 #include "LinearOperatorGMRES.hh"
 #include "Tensor.hh"
 
@@ -266,14 +265,5 @@ TEST(OPERATOR_STOKES_EXACTNESS)
     CHECK(ul2_err < 0.01);
     CHECK(pl2_err < 0.05);
     CHECK(solver.num_itrs() < 60);
-  }
-
-  if (MyPID == 0) {
-    const Epetra_MultiVector& u = *solution.SubVector(0)->Data()->viewComponent("node");
-    GMV::open_data_file(*mesh, (std::string) "operators.gmv");
-    GMV::start_data();
-    GMV::write_node_data(u, 0, "velocity_x");
-    GMV::write_node_data(u, 1, "velocity_y");
-    GMV::close_data_file();
   }
 }

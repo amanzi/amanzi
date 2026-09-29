@@ -22,7 +22,6 @@
 #include "UnitTest++.h"
 
 // Amanzi
-#include "GMVMesh.hh"
 #include "LinearOperatorGMRES.hh"
 #include "MeshFactory.hh"
 #include "Tensor.hh"
@@ -222,13 +221,6 @@ AdvectionDiffusion2D(int nx, double* error)
   if (MyPID == 0) {
     std::cout << "pressure solver (gmres): ||r||=" << solver.residual()
               << " itr=" << solver.num_itrs() << " code=" << solver.returned_code() << std::endl;
-
-    // visualization
-    const Epetra_MultiVector& p = *solution.viewComponent("cell");
-    GMV::open_data_file(*mesh, (std::string) "operators.gmv");
-    GMV::start_data();
-    GMV::write_cell_data(p, 0, "solution");
-    GMV::close_data_file();
   }
 }
 

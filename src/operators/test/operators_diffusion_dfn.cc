@@ -22,7 +22,6 @@
 #include "UnitTest++.h"
 
 // Amanzi
-#include "GMVMesh.hh"
 #include "LinearOperatorPCG.hh"
 #include "MeshExtractedManifold.hh"
 #include "MeshFactory.hh"
@@ -212,13 +211,6 @@ RunTest(int icase, double gravity)
       const Point& xc = surfmesh->getCellCentroid(c);
       p[0][c] -= rho * g[2] * xc[2];
     }
-  }
-
-  if (MyPID == 0) {
-    GMV::open_data_file(*surfmesh, (std::string) "operators.gmv");
-    GMV::start_data();
-    GMV::write_cell_data(p, 0, "solution");
-    GMV::close_data_file();
   }
 }
 
