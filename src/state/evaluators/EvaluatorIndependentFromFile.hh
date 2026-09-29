@@ -106,18 +106,8 @@ class EvaluatorIndependentFromFile
   // ---------------------------------------------------------------------------
   virtual void Update_(State& S) override;
 
-  template<typename EvaluatorType>
-  friend void EvaluatorFromFile_Helpers::LoadFile(int, EvaluatorType&);
-
-  template<typename EvaluatorType>
-  friend void EvaluatorFromFile_Helpers::UpdateTimeInterpolation(double, EvaluatorType&, CompositeVector&);
-
  protected:
-  double t_before_, t_after_;
-  Teuchos::RCP<CompositeVector> val_before_, val_after_;
   std::string filename_;
-  std::vector<double> times_;
-  int current_interval_;
 
   std::string meshname_;
   std::string compname_;
@@ -127,6 +117,8 @@ class EvaluatorIndependentFromFile
 
   bool checkpoint_file_;
   Teuchos::RCP<Function> time_func_;
+
+  Teuchos::RCP<EvaluatorFromFile_Helpers::FileTimeInterpolator> interpolator_;
 
  private:
   static Utils::RegisteredFactory<Evaluator, EvaluatorIndependentFromFile> fac_;

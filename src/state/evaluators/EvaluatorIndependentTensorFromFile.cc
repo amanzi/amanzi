@@ -12,15 +12,13 @@
 
 */
 
-#include "Reader.hh"
-
 #include "EvaluatorIndependentTensorFromFile.hh"
 #include "EvaluatorFromFile_Helpers.hh"
 #include "Function.hh"
 #include "FunctionFactory.hh"
 
 namespace Amanzi {
- 
+
 // ---------------------------------------------------------------------------
 // Constructor
 // ---------------------------------------------------------------------------
@@ -39,20 +37,20 @@ EvaluatorIndependentTensorFromFile::EvaluatorIndependentTensorFromFile(
 {
   temporally_variable_ = !plist.get<bool>("constant in time", true);
   if (checkpoint_file_) temporally_variable_ = false;
- 
+
   if (plist.isParameter("mesh entity")) {
     locname_ = AmanziMesh::createEntityKind(plist.get<std::string>("mesh entity"));
   } else {
     locname_ = AmanziMesh::createEntityKind(compname_);
   }
- 
+
   if (temporally_variable_ && plist.isSublist("time function")) {
     FunctionFactory fac;
     time_func_ = Teuchos::rcp(fac.Create(plist.sublist("time function")));
   }
 }
- 
- 
+
+
 // ---------------------------------------------------------------------------
 // Virtual Copy constructor
 // ---------------------------------------------------------------------------
@@ -61,8 +59,8 @@ EvaluatorIndependentTensorFromFile::Clone() const
 {
   return Teuchos::rcp(new EvaluatorIndependentTensorFromFile(*this));
 }
- 
- 
+
+
 // ---------------------------------------------------------------------------
 // Operator=
 // ---------------------------------------------------------------------------
@@ -77,11 +75,10 @@ EvaluatorIndependentTensorFromFile::operator=(const Evaluator& other)
   }
   return *this;
 }
- 
- 
+
+
 EvaluatorIndependentTensorFromFile&
-EvaluatorIndependentTensorFromFile::operator=(
-  const EvaluatorIndependentTensorFromFile& other)
+EvaluatorIndependentTensorFromFile::operator=(const EvaluatorIndependentTensorFromFile& other)
 {
   if (this != &other) {
     AMANZI_ASSERT(my_key_ == other.my_key_);
@@ -89,8 +86,8 @@ EvaluatorIndependentTensorFromFile::operator=(
   }
   return *this;
 }
- 
- 
+
+
 // ---------------------------------------------------------------------------
 // Ensures that the function can provide for the vector's requirements
 // ---------------------------------------------------------------------------
@@ -98,11 +95,11 @@ void
 EvaluatorIndependentTensorFromFile::EnsureCompatibility(State& S)
 {
   auto& f = S.Require<TensorVector, TensorVector_Factory>(my_key_, my_tag_, my_key_);
- 
+
   if (rank_ == -1 && f.map().Mesh().get()) {
     dimension_ = f.dimension();
     AMANZI_ASSERT(dimension_ > 0);
- 
+
     tensor_type_ = plist_.get<std::string>("tensor type");
     if (tensor_type_ == "scalar") {
       rank_ = 1;
@@ -132,55 +129,26 @@ EvaluatorIndependentTensorFromFile::EnsureCompatibility(State& S)
              "\"full symmetric\", or \"full\"";
       Exceptions::amanzi_throw(msg);
     }
- 
+
     f.set_rank(rank_);
- 
+
     // the map needs to be updated with the correct number of values
     CompositeVectorSpace map_new;
     auto& map_old = f.map();
     map_new.SetMesh(map_old.Mesh());
- 
+
     for (auto& name : map_old) {
       map_new.AddComponent(name, map_old.Location(name), num_funcs_);
     }
     f.set_map(map_new);
- 
-    // Load times, ensure file is valid
-    // if there exists no times, default value is set to +infinity
-    auto reader = createReader(filename_);
-    times_.clear();
-    if (temporally_variable_) {
-      try {
-        Teuchos::Array<double> times;
-        reader->read("/time", times);
-        times_ = times.toVector();
-      } catch (...) {
-        std::stringstream messagestream;
-        messagestream << "Variable " << my_key_ << " is defined as a field changing in time.\n"
-                      << " Dataset /time is not provided in file " << filename_ << "\n";
-        Errors::Message message(messagestream.str());
-        Exceptions::amanzi_throw(message);
-      }
-    } else {
-      times_.push_back(std::numeric_limits<double>::max());
-    }
- 
-    // Check for increasing times
-    for (int j = 1; j < times_.size(); ++j) {
-      if (times_[j] <= times_[j - 1]) {
-        Errors::Message m;
-        m << "EvaluatorIndependentTensorFromFile: time values are not strictly increasing";
-        throw(m);
-      }
-    }
- 
-    current_interval_ = -1;
-    t_before_ = std::numeric_limits<double>::lowest();
-    t_after_ = times_[0];
+
+    interpolator_ = Teuchos::rcp(new EvaluatorFromFile_Helpers::FileTimeInterpolator(
+      filename_, varname_, compname_, ndofs_, checkpoint_file_));
+    interpolator_->setup(map_new, temporally_variable_);
   }
 }
- 
- 
+
+
 // ---------------------------------------------------------------------------
 // Update the value in the state
 // ---------------------------------------------------------------------------
@@ -189,33 +157,18 @@ EvaluatorIndependentTensorFromFile::Update_(State& S)
 {
   const auto& fac = S.GetRecordSetW(my_key_).GetFactory<TensorVector, TensorVector_Factory>();
   auto& tv = S.GetW<TensorVector>(my_key_, my_tag_, my_key_);
- 
-  if (!computed_once_) {
-    val_after_ = Teuchos::rcp(new CompositeVector(fac.map()));
-    EvaluatorFromFile_Helpers::LoadFile(0, *this);
-  }
- 
+
   double t = S.get_time(my_tag_);
   if (time_func_ != Teuchos::null) {
     std::vector<double> point(1, t);
     t = (*time_func_)(point);
   }
- 
-  // Check if we are before the current interval
-  if (t < t_before_) {
-    t_before_ = std::numeric_limits<double>::lowest();
-    t_after_ = times_[0];
-    current_interval_ = -1;
-    EvaluatorFromFile_Helpers::LoadFile(0, *this);
-  }
- 
-  // Determine where we are relative to the currently stored interval
-  CompositeVector cv_interp(*val_after_);
-  EvaluatorFromFile_Helpers::UpdateTimeInterpolation(t, *this, cv_interp);
+
+  CompositeVector cv_interp(interpolator_->interpolate(t));
 
   if (rescaling_ != 1.0) cv_interp.Scale(rescaling_);
   if (tv.ghosted) cv_interp.ScatterMasterToGhosted();
- 
+
   // move data into tensor vector
   int j = 0;
   for (auto name : fac.map()) {
@@ -224,6 +177,6 @@ EvaluatorIndependentTensorFromFile::Update_(State& S)
     j += vec.MyLength();
   }
 }
- 
+
 
 } // namespace Amanzi
