@@ -23,7 +23,6 @@
 
 // Amanzi
 #include "MeshFactory.hh"
-#include "GMVMesh.hh"
 #include "LinearOperatorPCG.hh"
 #include "Tensor.hh"
 
@@ -164,13 +163,6 @@ TEST(OPERATOR_DIFFUSION_NODAL)
   if (MyPID == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual()
               << " itr=" << solver.num_itrs() << " code=" << solver.returned_code() << std::endl;
-
-    // visualization
-    const Epetra_MultiVector& p = *solution.viewComponent("node");
-    GMV::open_data_file(*mesh, (std::string) "operators.gmv");
-    GMV::start_data();
-    GMV::write_node_data(p, 0, "solution");
-    GMV::close_data_file();
   }
 
   CHECK(solver.num_itrs() < 10);

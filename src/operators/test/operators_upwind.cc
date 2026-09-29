@@ -21,7 +21,6 @@
 #include "UnitTest++.h"
 
 // Amanzi
-#include "GMVMesh.hh"
 #include "MeshFactory.hh"
 #include "VerboseObject.hh"
 

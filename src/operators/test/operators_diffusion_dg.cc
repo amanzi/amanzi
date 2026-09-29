@@ -22,7 +22,6 @@
 #include "UnitTest++.h"
 
 // Amanzi
-#include "GMVMesh.hh"
 #include "CompositeVector.hh"
 #include "LinearOperatorFactory.hh"
 #include "MeshFactory.hh"
@@ -242,15 +241,6 @@ OperatorDiffusionDG(std::string solver_name,
     std::cout << "pressure solver (pcg): ||r||=" << solver->residual()
               << " itr=" << solver->num_itrs() << " code=" << solver->returned_code()
               << " dofs=" << global_op->A()->NumGlobalRows() << std::endl;
-
-    // visualization
-    const Epetra_MultiVector& p = *solution.viewComponent("cell");
-    GMV::open_data_file(*mesh, (std::string) "operators.gmv");
-    GMV::start_data();
-    GMV::write_cell_data(p, 0, "solution");
-    GMV::write_cell_data(p, 1, "gradx");
-    GMV::write_cell_data(p, 2, "grady");
-    GMV::close_data_file();
   }
 
   CHECK(solver->num_itrs() < 200);

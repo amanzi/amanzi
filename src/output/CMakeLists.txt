@@ -64,8 +64,6 @@ set(output_inc_files OutputUtils.hh
                      OutputDomainSet.hh
                      OutputFactory.hh
                      InputFactory.hh
-                     gmvwrite.h
-                     GMVMesh.hh
                      )
 
 set(output_source_files OutputUtils.cc
@@ -76,8 +74,6 @@ set(output_source_files OutputUtils.cc
                         OutputDomainSet.cc
                         OutputFactory.cc
                         InputFactory.cc
-                        gmvwrite.c
-                        GMVMesh.cc
                         )
 
 set(output_link_libs data_structures mesh geometry error_handling ${output_tpl_list})
@@ -140,12 +136,6 @@ if (BUILD_TESTS)
       file(GLOB DataFiles3 "${OUTPUT_SOURCE_DIR}/test/*.h5")
       file(COPY ${DataFiles} ${DataFiles2} ${DataFiles3} DESTINATION ${OUTPUT_BINARY_DIR}/test/)
   endif()
-
-  # Test: gmv_output
-  add_amanzi_test(output_gmv output_gmv
-                  SOURCE     test/Main.cc test/output_gmv.cc
-                  LINK_LIBS  ${output_test_link_libs} ${UnitTest_LIBRARIES}
-                  KIND unit)
 
   # Test: file_hdf5
   add_amanzi_test(output_file_hdf5 output_file_hdf5
