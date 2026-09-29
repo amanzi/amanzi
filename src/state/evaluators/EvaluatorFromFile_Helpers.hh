@@ -215,23 +215,26 @@ class FileTimeInterpolator {
   // fully reloading the page as needed.
   void ensureWindow_(double t)
   {
-    if (t < times_[page_start_]) {
-      // restart: reload the page from the beginning
+    if (t < times_[page_start_] && page_start_ != 0) {
+      // backward jump: restart by reloading the page from the beginning
       page_start_ = 0;
       n_resident_ = std::min(page_size_, (int)times_.size());
       loadRange_(0, n_resident_, 0);
       return;
     }
 
-    // advance while t is beyond the last *resident* time and there is more
-    // data to page in
+    // t is within [times_[page_start_], times_[page_start_ + n_resident_ -
+    // 1]] (the page's resident bracket) -- no I/O needed, the interpolation
+    // in interpolate() will find the bracketing pair among resident slots.
     while (t > times_[page_start_ + n_resident_ - 1] &&
            page_start_ + n_resident_ < (int)times_.size()) {
-      // how far are we jumping? if the jump spans past the whole current
-      // page, there is nothing reusable -- reload fresh starting near t.
-      // (single-step advance -- one interval at a time -- is the common
-      // case and is handled below without any re-reading of resident data.)
-      if (t > times_[std::min((int)times_.size() - 1, page_start_ + page_size_)]) {
+      // how far are we jumping? if the jump spans past what a single
+      // page-forward step can reach, there is nothing reusable -- reload
+      // fresh starting near t. (page-forward by page_size_-1 slices at a
+      // time is the common case and is handled below, reusing the last
+      // resident slice and amortizing I/O across up to page_size_-1
+      // advances.)
+      if (t > times_[std::min((int)times_.size() - 1, page_start_ + 2 * (page_size_ - 1))]) {
         int new_start = page_start_;
         while (new_start + 1 < (int)times_.size() && times_[new_start + 1] <= t) ++new_start;
         page_start_ = new_start;
@@ -240,25 +243,25 @@ class FileTimeInterpolator {
         return;
       }
 
-      // single-step advance: reuse resident columns, load only the new one
+      // page-forward: reuse the last resident slice as the new slot 0, then
+      // load the next page_size_-1 slices in one range read.
       if (n_resident_ == page_size_) {
-        // shift blocks [1, page_size_) down to [0, page_size_-1) -- pointer
-        // data only, no file I/O.
         for (const auto& name : *page_) {
           Epetra_MultiVector& pvec = *page_->ViewComponent(name, false);
-          for (int block = 1; block != page_size_; ++block) {
-            for (int j = 0; j != ndofs_; ++j) {
-              *pvec((block - 1) * ndofs_ + j) = *pvec(block * ndofs_ + j);
-            }
+          for (int j = 0; j != ndofs_; ++j) {
+            *pvec(j) = *pvec((page_size_ - 1) * ndofs_ + j);
           }
         }
-        page_start_ += 1;
-        loadRange_(page_start_ + page_size_ - 1, 1, page_size_ - 1);
+        page_start_ += page_size_ - 1;
+        int count = std::min(page_size_ - 1, (int)times_.size() - page_start_ - 1);
+        loadRange_(page_start_ + 1, count, 1);
+        n_resident_ = count + 1;
       } else {
         // page not yet full (near the start of a short file) -- just load
-        // the next slice into the next free block.
-        loadRange_(page_start_ + n_resident_, 1, n_resident_);
-        n_resident_ += 1;
+        // the remaining slices in one range read.
+        int count = (int)times_.size() - page_start_ - n_resident_;
+        loadRange_(page_start_ + n_resident_, count, n_resident_);
+        n_resident_ += count;
       }
     }
   }

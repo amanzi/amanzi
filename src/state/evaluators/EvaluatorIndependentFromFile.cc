@@ -29,6 +29,7 @@ EvaluatorIndependentFromFile::EvaluatorIndependentFromFile(Teuchos::ParameterLis
     compname_(plist.get<std::string>("component name", "cell")),
     varname_(plist.get<std::string>("variable name")),
     ndofs_(plist.get<int>("number of dofs", 1)),
+    page_size_(plist.get<int>("page size", 2)),
     checkpoint_file_(plist.get<bool>("checkpoint file", false))
 {
   if (checkpoint_file_) temporally_variable_ = false;
@@ -96,7 +97,7 @@ EvaluatorIndependentFromFile::EnsureCompatibility(State& S)
   space.SetMesh(S.GetMesh(meshname_))->AddComponent(compname_, locname_, ndofs_);
 
   interpolator_ = Teuchos::rcp(new EvaluatorFromFile_Helpers::FileTimeInterpolator(
-    filename_, varname_, compname_, ndofs_, checkpoint_file_));
+    filename_, varname_, compname_, ndofs_, checkpoint_file_, page_size_));
   interpolator_->setup(space, temporally_variable_);
 }
 

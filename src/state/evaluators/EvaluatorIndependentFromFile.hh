@@ -39,6 +39,9 @@ Within the file, data is expected to meet the following (HDF5) layout::
      component is defined.
    * `"number of dofs`" ``[int]`` **1** Number of degrees of freedom to read.
    * `"constant in time`" ``[bool]`` **false** Is the value constant throughout all time?
+   * `"page size`" ``[int]`` **2** Number of consecutive time slices to keep
+     resident in memory at once.  Larger values amortize file reads across
+     more timesteps at the cost of more memory; must be at least 2.
    * `"checkpoint file`" ``[bool]`` **false** If this is true, then it is
      expected that `"filename`" is a checkpoint-file-like object, where
      /variable_name.ENTITY.DOF is itself a vector, and not a group.  Note this
@@ -114,6 +117,7 @@ class EvaluatorIndependentFromFile
   std::string varname_;
   AmanziMesh::Entity_kind locname_;
   int ndofs_;
+  int page_size_;
 
   bool checkpoint_file_;
   Teuchos::RCP<Function> time_func_;

@@ -29,6 +29,7 @@ EvaluatorIndependentTensorFromFile::EvaluatorIndependentTensorFromFile(
     meshname_(plist.get<std::string>("domain name", "domain")),
     compname_(plist.get<std::string>("component name", "cell")),
     varname_(plist.get<std::string>("variable name")),
+    page_size_(plist.get<int>("page size", 2)),
     checkpoint_file_(plist.get<bool>("checkpoint file", false)),
     dimension_(-1),
     rank_(-1),
@@ -118,7 +119,7 @@ EvaluatorIndependentTensorFromFile::EnsureCompatibility(State& S)
     f.set_map(map_new);
 
     interpolator_ = Teuchos::rcp(new EvaluatorFromFile_Helpers::FileTimeInterpolator(
-      filename_, varname_, compname_, ndofs_, checkpoint_file_));
+      filename_, varname_, compname_, ndofs_, checkpoint_file_, page_size_));
     interpolator_->setup(map_new, temporally_variable_);
   }
 }

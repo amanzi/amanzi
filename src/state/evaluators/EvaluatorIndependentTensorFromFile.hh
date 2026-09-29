@@ -44,6 +44,9 @@ Within the file, data is expected to meet the following (HDF5) layout::
    * `"mesh entity`" ``[string]`` **cell** Name of the entity on which the
      component is defined.
    * `"constant in time`" ``[bool]`` **true** Is the value constant throughout all time?
+   * `"page size`" ``[int]`` **2** Number of consecutive time slices to keep
+     resident in memory at once.  Larger values amortize file reads across
+     more timesteps at the cost of more memory; must be at least 2.
    * `"checkpoint file`" ``[bool]`` **false** If this is true, then it is
      expected that `"filename`" is a checkpoint-file-like object, where
      /variable_name.ENTITY.DOF is itself a vector, and not a group.  Note this
@@ -120,6 +123,7 @@ class EvaluatorIndependentTensorFromFile
   AmanziMesh::Entity_kind locname_;
   int num_funcs_;
   int ndofs_;
+  int page_size_;
   int dimension_;
   std::string tensor_type_;
   int rank_;
