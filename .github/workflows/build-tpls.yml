@@ -16,7 +16,7 @@ jobs:
   build-tpl-image:
     strategy:
       matrix:
-        os: [ ubuntu-latest, ubuntu-24.04-arm ]
+        os: [ ubuntu-24.04, ubuntu-24.04-arm ]
     runs-on: ${{matrix.os}}
     steps:
     - name: Check out the Amanzi repo
@@ -60,7 +60,7 @@ jobs:
           mpi_flavor=mpich
 
   fix-manifest:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: build-tpl-image
     if: success()
     steps:
