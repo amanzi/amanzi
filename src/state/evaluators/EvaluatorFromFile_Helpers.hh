@@ -9,13 +9,15 @@
 
 /*
   Shared machinery for CompositeVector and TensorVector-based "from file"
-  evaluators:
+  and "from function" evaluators:
 
   - FileTimeInterpolator: owns reading a series of time slices of a variable
     from an HDF5 file and interpolating between them in time.  Keeps a
     resident "page" of several consecutive time slices in memory to avoid
     reloading from file on every interval advance.
-  - CopyVectorToTensorVector: stateless conversion of a CompositeVector's
+  - parseTensorType: maps a "tensor type" string and spatial dimension to a
+    tensor rank and the number of degrees of freedom (columns) needed.
+  - copyVectorToTensorVector: stateless conversion of a CompositeVector's
     per-dof layout into a TensorVector.
 */
 
@@ -275,8 +277,53 @@ class FileTimeInterpolator {
 };
 
 
+// Maps a "tensor type" string and spatial dimension to a tensor rank and the
+// number of degrees of freedom (columns) needed to represent it:
+//
+//   "scalar"                 -> rank 1, isotropic                (1 dof)
+//   "horizontal and vertical" -> rank 2, diagonal, x=y != z       (2 dof)
+//   "diagonal"                -> rank 2, diagonal                 (dimension dof)
+//   "full symmetric"          -> rank 2, symmetric                (3 dof in 2D, 6 in 3D)
+//   "full"                    -> rank 2, general                  (dimension^2 dof)
+//
+// error_prefix is used to prefix the exception message on an invalid
+// tensor_type (typically the name of the calling evaluator class).
 inline void
-CopyVectorToTensorVector(const Epetra_MultiVector& v, int j, TensorVector& tv)
+parseTensorType(const std::string& tensor_type,
+                int dimension,
+                const std::string& error_prefix,
+                int& rank,
+                int& num_funcs)
+{
+  AMANZI_ASSERT(dimension > 0);
+
+  if (tensor_type == "scalar") {
+    rank = 1;
+    num_funcs = 1;
+  } else if (tensor_type == "horizontal and vertical") {
+    rank = 2;
+    num_funcs = 2;
+  } else if (tensor_type == "diagonal") {
+    rank = 2;
+    num_funcs = dimension;
+  } else if (tensor_type == "full symmetric") {
+    rank = 2;
+    num_funcs = dimension == 2 ? 3 : 6;
+  } else if (tensor_type == "full") {
+    rank = 2;
+    num_funcs = dimension * dimension;
+  } else {
+    Errors::Message msg;
+    msg << error_prefix << ": invalid parameter, \"tensor type\" = \"" << tensor_type
+        << "\", must be one of: \"scalar\", \"horizontal and vertical\", \"diagonal\", "
+           "\"full symmetric\", or \"full\"";
+    Exceptions::amanzi_throw(msg);
+  }
+}
+
+
+inline void
+copyVectorToTensorVector(const Epetra_MultiVector& v, int j, TensorVector& tv)
 {
   AMANZI_ASSERT(v.MyLength() == tv.size());
 
