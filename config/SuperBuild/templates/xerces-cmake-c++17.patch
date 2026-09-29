@@ -1,0 +1,12 @@
+diff -Naru xerces-c-3.2.0/CMakeLists.txt xerces-c-3.2.0-new/CMakeLists.txt
+--- xerces-c-3.2.0/CMakeLists.txt	2017-07-17 19:12:02
++++ xerces-c-3.2.0-new/CMakeLists.txt	2025-05-01 22:26:01
+@@ -34,7 +34,7 @@
+ 
+ # Try C++14, then fall back to C++11 and C++98.  Used for feature tests
+ # for optional features.
+-set(CMAKE_CXX_STANDARD 14)
++set(CMAKE_CXX_STANDARD 17)
+ 
+ # Use folders (for IDE project grouping)
+ set_property(GLOBAL PROPERTY USE_FOLDERS ON)

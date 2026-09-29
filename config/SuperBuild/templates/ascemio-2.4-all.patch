@@ -1,0 +1,377 @@
+diff --color -crB ascemio-2.4-source/src/parallelIO.c ascemio-2.4-source-patched/src/parallelIO.c
+*** ascemio-2.4-source/src/parallelIO.c	2024-08-16 14:56:58.026751127 -0600
+--- ascemio-2.4-source-patched/src/parallelIO.c	2024-08-16 13:25:00.414969994 -0600
+***************
+*** 51,56 ****
+--- 51,61 ----
+  			myIOgroup->mpi_type = MPI_LONG;
+  			myIOgroup->hdf_type = H5T_NATIVE_LONG;
+  			break;
++     case PIO_STRING:
++       myIOgroup->hdf_type = H5T_C_S1;
++ 			myIOgroup->mpi_type = MPI_CHAR;
++       myIOgroup->datatype_size = sizeof(char);
++       break;
+  		case PIO_CHAR: 
+  			myIOgroup->datatype_size = sizeof(char);
+  			myIOgroup->mpi_type = MPI_CHAR;
+***************
+*** 104,115 ****
+--- 109,122 ----
+  			/* if ( myIOgroupConf->preferredGroupSize == 0) */
+  				/* fprintf(stderr, "ASCEMIO_Info: Preferred group size is not set\n"); */
+  
++                         /*
+  			if ( myIOgroup->globalsize % myIOgroupConf->numIOgroups != 0)
+  			{
+  				fprintf(stderr, "ASCEMIO_Info: nprocs is not exactly divisible by numIOgroups\n");
+  				fprintf(stderr, "ASCEMIO_Info: numIOgroups will be one more than requested, the last group containing the remaining processes. \n");
+  			}
+  			fprintf(stderr, "ASCEMIO_Info: Preferred group size is set to nprocs/numIOgroups (%d/%d) \n", myIOgroup->globalsize, myIOgroupConf->numIOgroups);
++                         */
+  
+  		}
+  
+***************
+*** 127,137 ****
+--- 134,146 ----
+  
+  	if ( myIOgroupConf->preferredGroupSize <= 0 || myIOgroupConf->preferredGroupSize > myIOgroup->globalsize)
+  	{
++                 /*
+  		if (myIOgroup->globalrank == 0 )
+  		{
+  			fprintf(stderr, "ASCEMIO_Error: Preferred group size should be > 0 and < number of processors. Given size = %d\n",myIOgroupConf->preferredGroupSize);
+  			fprintf(stderr, "ASCEMIO_Info: Setting Preferred group size to total number of procs to continue execution \n");
+  		}
++                 */
+  
+  		/* Set group size to total number of processes */
+  		/* Manually set preferredGroupSize in configuration struct too for subsequent calculations */
+***************
+*** 171,180 ****
+--- 180,191 ----
+  	PRINT_MSG(( ASCEMIO_INFO, "numIOgroups: %d, iogroupSize: %d, iogroupRank: %d", myIOgroup->numIOgroups, myIOgroup->iogroupSize, myIOgroup->iogroupRank));
+  
+  
++         /*
+  	if (myIOgroup->globalrank == 0 )
+  	{	
+  		fprintf(stderr, "ASCEMIO_Info: Preferred group size is set to %d \n",myIOgroup->preferredGroupSize);
+  	}
++         */
+  
+  
+  	ierr = MPI_Comm_split(myIOgroup->globalcomm, myIOgroup->iogroupRank, myIOgroup->globalrank, &myIOgroup->localcomm); 
+diff --color -crB ascemio-2.4-source/src/parallelIO.h ascemio-2.4-source-patched/src/parallelIO.h
+*** ascemio-2.4-source/src/parallelIO.h	2024-08-16 14:56:58.026751127 -0600
+--- ascemio-2.4-source-patched/src/parallelIO.h	2024-08-15 15:25:20.985777287 -0600
+***************
+*** 343,349 ****
+  	 *
+  	 * @return error code
+  	 */
+! 	int parallelIO_read_attr(const char *attr_name, void **pattr_data, datatype_t mytype, int *pndims, int **padims, int fhandle,const char *primary_obj_name,  iogroup_t *myIOgroup);
+  
+  	/**
+  	 * @brief Writes a simple attribute by its name, including atomic data types like int, double or even a string.
+--- 343,354 ----
+  	 *
+  	 * @return error code
+  	 */
+!   int parallelIO_read_attr(const char *attr_name, void **pattr_data, datatype_t mytype, int *pndims, int **padims, int fhandle,const char *primary_obj_name,  iogroup_t *myIOgroup);
+! 
+!   /**
+!    * @brief Actually reads from file, only called on rank 0
+!    */
+! 	int parallelIO_read_attr_fromfile(const char *attr_name, void **attr_data, int *ndims, int **adims, size_t *size, int fhandle, const char *primary_obj_name,  iogroup_t *myIOgroup);
+  
+  	/**
+  	 * @brief Writes a simple attribute by its name, including atomic data types like int, double or even a string.
+diff --color -crB ascemio-2.4-source/src/parallelIOread.c ascemio-2.4-source-patched/src/parallelIOread.c
+*** ascemio-2.4-source/src/parallelIOread.c	2024-08-16 14:56:58.026751127 -0600
+--- ascemio-2.4-source-patched/src/parallelIOread.c	2024-08-16 14:17:22.082831246 -0600
+***************
+*** 946,1033 ****
+  	return parallelIO_read_attr(attr_name, pattr_data, mytype, &ndims, &dummydims, fhandle, primary_obj_name, myIOgroup);
+  }
+  
+  int parallelIO_read_attr(const char *attr_name, void **pattr_data, datatype_t mytype, int *pndims, int **padims, int fhandle, const char *primary_obj_name,  iogroup_t *myIOgroup)
+  {
+- 	int i;
+  	void *attr_data;
+  	int ndims;
+  	int *adims = NULL;
+! 	size_t size, strsize;
+  
+  	initialize_datatype(mytype, myIOgroup);
+! 	if ( myIOgroup->globalrank == 0)
+  	{
+! 		/* only do this on root process - rank 0 */
+! 		iofile_t *currfile;
+  
+! 		herr_t status;
+! 		hid_t aspace_id, attr_id, loc_id;
+! 		hid_t space_type;
+! 
+! 		hsize_t *dims = NULL;
+! 
+! 		currfile = myIOgroup->file[fhandle];
+! 
+! 		loc_id = H5Oopen(currfile->fid, primary_obj_name, H5P_DEFAULT);
+! 
+! 		attr_id = H5Aopen(loc_id, attr_name, H5P_DEFAULT);
+! 		myIOgroup->hdf_type = H5Aget_type(attr_id);
+! 		aspace_id = H5Aget_space(attr_id);
+! 
+! 		space_type = H5Sget_simple_extent_type(aspace_id);
+! 
+! 		if ( space_type == H5S_SCALAR)
+! 		{
+! 			ndims = 0;
+! 			adims = NULL;
+! 		}
+! 		else if ( space_type == H5S_SIMPLE) 
+! 		{
+! 			ndims = H5Sget_simple_extent_ndims(aspace_id);
+! 			dims = (hsize_t *) calloc(ndims, sizeof(hsize_t));
+! 			/* adims is outgoing to calling function  */
+! 			adims = (int *) calloc(ndims, sizeof(int) );
+! 
+! 			H5Sget_simple_extent_dims(aspace_id, dims, NULL);
+! 
+! 			/* Copy to outgoing dims */
+! 			for (i=0;i<ndims;i++) 
+! 				adims[i] = dims[i];
+! 
+! 			free(dims);
+! 			/* The other items allocated will be freed up by the caller once they are done */
+! 		}
+! 
+! 		size = H5Aget_storage_size(attr_id);
+! 		attr_data = malloc(size);
+! 
+! 		if (H5T_STRING == H5Tget_class(myIOgroup->hdf_type))
+! 			strsize = H5Tget_size(myIOgroup->hdf_type);
+! 
+! 		status = H5Aread(attr_id, myIOgroup->hdf_type, attr_data);
+! 		status = H5Sclose (aspace_id);
+! 		status = H5Aclose(attr_id);
+! 		status = H5Oclose(loc_id);
+! 
+! 		MPI_Bcast(&ndims, 1, MPI_INT, 0, myIOgroup->globalcomm);
+! 		MPI_Bcast(adims, ndims, MPI_INT, 0, myIOgroup->globalcomm);
+! 		MPI_Bcast(&size, sizeof(size), MPI_BYTE, 0, myIOgroup->globalcomm);
+! 		MPI_Bcast(attr_data, size, MPI_BYTE, 0, myIOgroup->globalcomm);
+  	}
+  	else
+  	{
+! 		MPI_Bcast(&ndims, 1, MPI_INT, 0, myIOgroup->globalcomm);
+! 		adims = (int *) calloc(ndims, sizeof(int) );
+! 
+! 		MPI_Bcast(adims, ndims, MPI_INT, 0, myIOgroup->globalcomm);
+! 		MPI_Bcast(&size, sizeof(size), MPI_BYTE, 0, myIOgroup->globalcomm);
+! 		attr_data = malloc(size);
+! 		MPI_Bcast(attr_data, size, MPI_BYTE, 0, myIOgroup->globalcomm);
+  	}
+  
+! 	*pattr_data = attr_data;
+! 	*pndims = ndims;
+! 	*padims = adims;
+! 
+! 	return 0;
+  }
+--- 946,1083 ----
+  	return parallelIO_read_attr(attr_name, pattr_data, mytype, &ndims, &dummydims, fhandle, primary_obj_name, myIOgroup);
+  }
+  
++ int parallelIO_read_attr_fromfile(const char *attr_name, void **attr_data, int *ndims, int **adims, size_t *size, int fhandle, const char *primary_obj_name,  iogroup_t *myIOgroup)
++ {
++   /* only do this on root process - rank 0 */
++   iofile_t *currfile;
++ 
++   herr_t status;
++   int ierr;
++   hid_t aspace_id, attr_id, loc_id;
++   hid_t space_type, data_type;
++   int i;
++   size_t strsize;
++   hsize_t *dims = NULL;
++ 
++   currfile = myIOgroup->file[fhandle];
++ 
++   loc_id = H5Oopen(currfile->fid, primary_obj_name, H5P_DEFAULT);
++   if (loc_id < 0)
++   {
++     status = H5Oclose(loc_id);
++     return -1;
++   }
++ 
++   attr_id = H5Aopen(loc_id, attr_name, H5P_DEFAULT);
++   if (attr_id < 0)
++   {
++     status = H5Aclose(attr_id);
++     status = H5Oclose(loc_id);
++     return -5;
++   }
++ 
++   aspace_id = H5Aget_space(attr_id);
++   space_type = H5Sget_simple_extent_type(aspace_id);
++ 
++   if (space_type == H5S_SCALAR)
++   {
++     *ndims = 0;
++     *adims = NULL;
++   }
++   else if (space_type == H5S_SIMPLE)
++   {
++     *ndims = H5Sget_simple_extent_ndims(aspace_id);
++     dims = (hsize_t *) calloc(*ndims, sizeof(hsize_t));
++     /* adims is outgoing to calling function  */
++     *adims = (int *) calloc(*ndims, sizeof(int) );
++ 
++     H5Sget_simple_extent_dims(aspace_id, dims, NULL);
++ 
++     /* Copy to outgoing dims */
++     for (i=0;i<(*ndims);i++)
++       (*adims)[i] = dims[i];
++ 
++     free(dims);
++     /* The other items allocated will be freed up by the caller once they are done */
++   }
++ 
++   data_type = H5Aget_type(attr_id);
++   if (H5T_STRING == H5Tget_class(myIOgroup->hdf_type)) {
++     if (H5T_STRING == H5Tget_class(data_type)) {
++       // reset the hdf_type -- data type has length info
++       myIOgroup->hdf_type = data_type;
++     } else {
++       // PIO_STRING but not H5_STRING in file
++       status = H5Sclose(aspace_id);
++       status = H5Aclose(attr_id);
++       status = H5Oclose(loc_id);
++       return -2;
++     }
++   } else if (H5Tequal(myIOgroup->hdf_type, data_type) <= 0) {
++     // PIO_type doesn't match H5_type
++     status = H5Sclose(aspace_id);
++     status = H5Aclose(attr_id);
++     status = H5Oclose(loc_id);
++     return -2;
++   };
++ 
++   *size = H5Aget_storage_size(attr_id);
++   *attr_data = malloc(*size);
++ 
++   status = H5Aread(attr_id, myIOgroup->hdf_type, *attr_data);
++   status |= H5Sclose(aspace_id);
++   status |= H5Aclose(attr_id);
++   status |= H5Oclose(loc_id);
++   if (status) {
++     return -5;
++   } else {
++     return 0;
++   }
++ }
++ 
++ 
+  int parallelIO_read_attr(const char *attr_name, void **pattr_data, datatype_t mytype, int *pndims, int **padims, int fhandle, const char *primary_obj_name,  iogroup_t *myIOgroup)
+  {
+  	void *attr_data;
+  	int ndims;
+  	int *adims = NULL;
+! 	size_t size;
+!   int ierr;
+  
+  	initialize_datatype(mytype, myIOgroup);
+! 	if (myIOgroup->globalrank == 0)
+  	{
+!     ierr = parallelIO_read_attr_fromfile(attr_name, &attr_data, &ndims, &adims, &size, fhandle, primary_obj_name, myIOgroup);
+  
+!     MPI_Bcast(&ierr, 1, MPI_INT, 0, myIOgroup->globalcomm);
+!     if (!ierr)
+!     {
+!       MPI_Bcast(&ndims, 1, MPI_INT, 0, myIOgroup->globalcomm);
+!       MPI_Bcast(adims, ndims, MPI_INT, 0, myIOgroup->globalcomm);
+!       MPI_Bcast(&size, sizeof(size), MPI_BYTE, 0, myIOgroup->globalcomm);
+!       MPI_Bcast(attr_data, size, MPI_BYTE, 0, myIOgroup->globalcomm);
+!     }
+  	}
+  	else
+  	{
+!     MPI_Bcast(&ierr, 1, MPI_INT, 0, myIOgroup->globalcomm);
+!     if (!ierr)
+!     {
+!       MPI_Bcast(&ndims, 1, MPI_INT, 0, myIOgroup->globalcomm);
+!       adims = (int *) calloc(ndims, sizeof(int) );
+! 
+!       MPI_Bcast(adims, ndims, MPI_INT, 0, myIOgroup->globalcomm);
+!       MPI_Bcast(&size, sizeof(size), MPI_BYTE, 0, myIOgroup->globalcomm);
+!       attr_data = malloc(size);
+!       MPI_Bcast(attr_data, size, MPI_BYTE, 0, myIOgroup->globalcomm);
+!     }
+  	}
+  
+!   if (!ierr)
+!   {
+!     *pattr_data = attr_data;
+!     *pndims = ndims;
+!     *padims = adims;
+!   }
+! 	return ierr;
+  }
+diff --color -crB ascemio-2.4-source/src/parallelIOwrite.c ascemio-2.4-source-patched/src/parallelIOwrite.c
+*** ascemio-2.4-source/src/parallelIOwrite.c	2024-08-16 14:56:58.026751127 -0600
+--- ascemio-2.4-source-patched/src/parallelIOwrite.c	2024-08-16 11:01:29.296326568 -0600
+***************
+*** 778,785 ****
+  
+  		dims = (hsize_t *) calloc(ndims, sizeof(hsize_t) );
+  		/* Copy incoming dims */
+! 		for (i=0;i<ndims;i++) 
+! 			dims[i] = adims[i];
+  
+  		currfile = myIOgroup->file[fhandle];
+  
+--- 778,784 ----
+  
+  		dims = (hsize_t *) calloc(ndims, sizeof(hsize_t) );
+  		/* Copy incoming dims */
+! 		for (i=0;i<ndims;i++) dims[i] = adims[i];
+  
+  		currfile = myIOgroup->file[fhandle];
+  
+***************
+*** 787,793 ****
+  
+  		if ( mytype == PIO_STRING)
+  		{
+! 			myIOgroup->hdf_type = H5Tcopy (H5T_C_S1);
+  			size = strlen(attr_data)+1;
+  			status = H5Tset_size(myIOgroup->hdf_type, size);
+  		}
+--- 786,792 ----
+  
+  		if ( mytype == PIO_STRING)
+  		{
+! 			myIOgroup->hdf_type = H5Tcopy(H5T_C_S1);
+  			size = strlen(attr_data)+1;
+  			status = H5Tset_size(myIOgroup->hdf_type, size);
+  		}
+***************
+*** 797,803 ****
+  		else
+  			aspace_id = H5Screate_simple(ndims, dims, NULL); 
+  
+! 		attr_id = H5Acreate (loc_id, attr_name, myIOgroup->hdf_type, aspace_id, H5P_DEFAULT, H5P_DEFAULT);
+  		status = H5Awrite(attr_id, myIOgroup->hdf_type, attr_data);
+  
+  		status = H5Aclose(attr_id);
+--- 796,802 ----
+  		else
+  			aspace_id = H5Screate_simple(ndims, dims, NULL); 
+  
+! 		attr_id = H5Acreate(loc_id, attr_name, myIOgroup->hdf_type, aspace_id, H5P_DEFAULT, H5P_DEFAULT);
+  		status = H5Awrite(attr_id, myIOgroup->hdf_type, attr_data);
+  
+  		status = H5Aclose(attr_id);

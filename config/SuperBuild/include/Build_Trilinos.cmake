@@ -55,7 +55,7 @@ if (ENABLE_Unstructured)
     # MueLu   - multilevel preconditioner
     # Ifpack2 - wrappers to external solvers (Hypre) and also block
     #           solvers (block ILU, additive Schwarz, etc)
-    list(APPEND Trilinos_REQUIRED_PACKAGE_LIST Ifpack2 Amesos2 Basker MueLu)
+    list(APPEND Trilinos_REQUIRED_PACKAGE_LIST Ifpack2 Amesos2 Basker MueLu ShyLU ShyLU_Node ShyLU_NodeFastILU)
     # Xpetra?
   endif()
 endif()
@@ -119,9 +119,8 @@ if (ENABLE_Tpetra)
     list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_CUDA:BOOL=ON")
     list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DAmesos2_ENABLE_CUSPARSE:BOOL=ON")
     list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_CUDA:BOOL=ON")
-    # This needs to be handled better, maybe a user option?
+    # Requires an MPI built with CUDA support; see ENABLE_CUDA docs.
     list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_ASSUME_CUDA_AWARE_MPI:BOOL=ON")
-
   else()
     list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_CUDA:BOOL=OFF")
     list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTPL_ENABLE_CUDA:BOOL=OFF")
@@ -132,6 +131,12 @@ if (ENABLE_Tpetra)
   message(STATUS "Kokkos Serial enabled")
   list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_SERIAL:BOOL=ON")
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_SERIAL:BOOL=ON")
+
+  # NOTE: this should probably get turned off if anything BUT serial is turned on...
+  if (NOT (ENABLE_CUDA OR ENABLE_OpenMP))
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_ATOMICS_BYPASS=ON")
+  endif()
+
     
 else() 
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DMueLu_ENABLE_Tpetra:BOOL=OFF")
@@ -266,54 +271,57 @@ set(Trilinos_CXX_COMPILER ${CMAKE_CXX_COMPILER})
 if (ENABLE_CUDA)
   if(NOT DEFINED ENV{CUDA_LAUNCH_BLOCKING}) 
     message(FATAL_ERROR "Environment variable CUDA_LAUNCH_BLOCKING has to be set to 1 to continue") 
-  endif()
-
+  endif() 
+  set(NVCC_WRAPPER_DEFAULT_COMPILER "${CMAKE_CXX_COMPILER}")
   set(NVCC_WRAPPER_PATH "${Trilinos_source_dir}/packages/kokkos/bin/nvcc_wrapper")
-  set(Trilinos_CXX_COMPILER ${NVCC_WRAPPER_PATH})
-
+  message(STATUS "NVCC_WRAPPER_DEFAULT_COMPILER ${NVCC_WRAPPER_DEFAULT_COMPILER}")
   set(Trilinos_CMAKE_CXX_FLAGS "${Trilinos_CMAKE_CXX_FLAGS} \
   -Wno-deprecated-declarations -lineinfo \
   -Xcudafe --diag_suppress=conversion_function_not_usable \
   -Xcudafe --diag_suppress=cc_clobber_ignored \
   -Xcudafe --diag_suppress=code_is_unreachable")
-
-  list(APPEND "${Trilinos_CMAKE_ARCH_ARGS} \
-    -DMPI_USE_COMPILER_WRAPPERS=ON \
-    -DKokkos_ENABLE_CUDA_UVM:BOOL=ON \
-    -DKokkos_ENABLE_CUDA_LAMBDA:BOOL=ON")
-
+  list(APPEND Trilinos_CMAKE_ARCH_ARGS
+    "-DMPI_USE_COMPILER_WRAPPERS:BOOL=ON"
+    "-DKokkos_ENABLE_CUDA_UVM:BOOL=ON"
+    "-DKokkos_ENABLE_CUDA_LAMBDA:BOOL=ON")
+  # Change the default compiler for Trilinos to use nvcc_wrapper
+  set(Trilinos_CXX_COMPILER ${NVCC_WRAPPER_PATH})
 endif()
 
 # Set ARCH-specific options
 if ( "${AMANZI_ARCH}" STREQUAL "Summit" )
-  if (ENABLE_CUDA) 
+  if (ENABLE_CUDA)
     list(APPEND Trilinos_CMAKE_ARCH_ARGS
-      "-DKOKKOS_ARCH:STRING=Power9;Volta70") 
+      "-DKOKKOS_ARCH:STRING=Power9;Volta70")
   endif()
-elseif( NOT "${CUDA_ARCH}" STREQUAL "" )
-  list(APPEND Trilinos_CMAKE_ARCH_ARGS
-    "-DKokkos_ARCH_AMPERE80=ON") 
- # set(sm_30 "Kepler30")
- # set(sm_32 "Kepler32")
- # set(sm_35 "Kepler35")
- # set(sm_37 "Kepler37")
- # set(sm_50 "Maxwell50")
- # set(sm_52 "Maxwell52")
- # set(sm_53 "Maxwell53")
- # set(sm_60 "Pascal60")
- # set(sm_61 "Pascal61")
- # set(sm_70 "Volta70")
- # set(sm_72 "Volta72")
- # set(sm_75 "Turing75")
- # set(sm_80 "Ampere80")
- # set(sm_86 "Ampere86")
- # set(sm_89 "Ada89")
- # set(sm_90 "Hopper90")
- # set(KOKKOS_ARCH "${sm_${CUDA_ARCH}}")
- # message(STATUS "KOKKOS_ARCH ${KOKKOS_ARCH}")
+elseif (ENABLE_CUDA AND CUDA_ARCH)
+  # Map an sm_XX compute capability (given as -DCUDA_ARCH=80) onto the
+  # Kokkos_ARCH_* option Trilinos expects.
+  set(sm_30 KEPLER30)
+  set(sm_32 KEPLER32)
+  set(sm_35 KEPLER35)
+  set(sm_37 KEPLER37)
+  set(sm_50 MAXWELL50)
+  set(sm_52 MAXWELL52)
+  set(sm_53 MAXWELL53)
+  set(sm_60 PASCAL60)
+  set(sm_61 PASCAL61)
+  set(sm_70 VOLTA70)
+  set(sm_72 VOLTA72)
+  set(sm_75 TURING75)
+  set(sm_80 AMPERE80)
+  set(sm_86 AMPERE86)
+  set(sm_89 ADA89)
+  set(sm_90 HOPPER90)
 
- # list(APPEND Trilinos_CMAKE_ARCH_ARGS
- #     "-DKOKKOS_ARCH:STRING=${KOKKOS_ARCH}")
+  if (DEFINED sm_${CUDA_ARCH})
+    message(STATUS "Kokkos arch for CUDA_ARCH=${CUDA_ARCH}: Kokkos_ARCH_${sm_${CUDA_ARCH}}")
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS
+      "-DKokkos_ARCH_${sm_${CUDA_ARCH}}:BOOL=ON")
+  else()
+    message(FATAL_ERROR "Unknown CUDA_ARCH '${CUDA_ARCH}'."
+                        " Expected a compute capability such as 70, 80, or 90.")
+  endif()
 endif()
 
 message(STATUS "Trilinos_CXX_COMPILER ${Trilinos_CXX_COMPILER}")
@@ -331,22 +339,17 @@ set(Trilinos_CMAKE_ARGS
 #
 
 # Trilinos patches
-set(ENABLE_Trilinos_Patch ON)
-if (ENABLE_Trilinos_Patch)
-  set(Trilinos_patch_file
+set(Trilinos_patch_file
     trilinos-duplicate-parameters.patch
     trilinos-ifpack.patch
+    trilinos-metis-real_t.patch
     trilinos-mmio-guard.patch
     )
-  configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/trilinos-patch-step.sh.in
-                 ${Trilinos_prefix_dir}/trilinos-patch-step.sh
-                 @ONLY)
-  set(Trilinos_PATCH_COMMAND bash ${Trilinos_prefix_dir}/trilinos-patch-step.sh)
-  message(STATUS "Applying trilinos patches")
-else()
-  set(Trilinos_PATCH_COMMAND)
-  message(STATUS "Patch NOT APPLIED for trilinos")
-endif()
+patch_tpl(Trilinos
+          ${Trilinos_prefix_dir}
+          ${Trilinos_source_dir}
+          ${Trilinos_stamp_dir}
+          Trilinos_patch_file)
 
 # --- Define the Trilinos location
 set(Trilinos_install_dir ${TPL_INSTALL_PREFIX}/${Trilinos_BUILD_TARGET}-${Trilinos_VERSION})
@@ -406,4 +409,3 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
 # --- Useful variables for packages that depends on Trilinos
 global_set(Trilinos_INSTALL_PREFIX "${Trilinos_install_dir}")
 global_set(Zoltan_INSTALL_PREFIX "${Trilinos_install_dir}")
-

@@ -15,8 +15,6 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   VERSION ${HYPRE_VERSION_MAJOR} ${HYPRE_VERSION_MINOR} ${HYPRE_VERSION_PATCH})
 
 
-set(HYPRE_NVCC_HOST_COMPILER "/usr/bin/g++-12")
-
 # --- Define configure parameters
 
 # Disable OpenMP with HYPRE for now
@@ -25,7 +23,10 @@ set(HYPRE_NVCC_HOST_COMPILER "/usr/bin/g++-12")
 #   find_package(OpenMP)
 
 if (ENABLE_OpenMP)
-  set(hypre_openmp_opt "--with-openmp" "--with-LDFLAGS=-fopenmp")
+  # OpenMP_C_LIBRARIES is only set by find_package(OpenMP); without it the
+  # --with-LDFLAGS argument below expands to nothing and the link fails.
+  find_package(OpenMP REQUIRED COMPONENTS C)
+  set(hypre_openmp_opt "--with-openmp" "--with-LDFLAGS=${OpenMP_C_FLAGS}")
 else()
   set(hypre_openmp_opt)
 endif()
@@ -54,24 +55,17 @@ endif()
 if (ENABLE_CUDA)
   set(CUDA_HOME ${CUDA_TOOLKIT_ROOT_DIR})
   message(STATUS "CUDA_HOME: ${CUDA_HOME}")
-  message(STATUS "CUDA_ARCH: sm_${CUDA_ARCH}")
-  set(Hypre_CUDA_SM ${CUDA_ARCH})
+  if (CUDA_ARCH)
+    set(Hypre_CUDA_SM ${CUDA_ARCH})
+  else()
+    set(Hypre_CUDA_SM 70)
+  endif()
+  message(STATUS "HYPRE_CUDA_SM: ${Hypre_CUDA_SM}")
   set(hypre_kokkos_cuda "--with-cuda" "--enable-cusparse" "--enable-unified-memory")
 else()
   set(CUDA_HOME)
   set(Hypre_CUDA_SM)
   set(hypre_kokkos_cuda)
-endif()
-
-set(AMANZI_HOST_C_COMPILER   ${CMAKE_C_COMPILER})
-set(AMANZI_HOST_CXX_COMPILER ${CMAKE_CXX_COMPILER})
-set(AMANZI_HOST_FC_COMPILER  ${CMAKE_Fortran_COMPILER})
-
-if (ENABLE_CUDA)
-  set(NVCC_WRAPPER_DEFAULT_COMPILER ${AMANZI_HOST_CXX_COMPILER})
-  set(TRILINOS_NVCC_WRAPPER ${Trilinos_INSTALL_PREFIX}/bin/nvcc_wrapper)
-else()
-  set(NVCC_WRAPPER_DEFAULT_COMPILER "")
 endif()
 
 # set(hypre_fortran_opt -"--disable-fortran)
@@ -95,22 +89,13 @@ else()
   set(hypre_shared_opt "--disable-shared")
 endif()
 
-# --- Set the name of the patch
-# set(HYPRE_patch_file hypre-superlu.patch)
-set(HYPRE_patch_file )
-
-# --- Configure the bash patch script
-set(HYPRE_sh_patch ${HYPRE_prefix_dir}/hypre-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/hypre-patch-step.sh.in
-               ${HYPRE_sh_patch}
-               @ONLY)
-# --- Configure the CMake patch step
-set(HYPRE_cmake_patch ${HYPRE_prefix_dir}/hypre-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/hypre-patch-step.cmake.in
-               ${HYPRE_cmake_patch}
-               @ONLY)
-# --- Set the patch command
-set(HYPRE_PATCH_COMMAND ${CMAKE_COMMAND} -P ${HYPRE_cmake_patch})     
+# --- Patch the original source
+set(HYPRE_patch_file hypre-configure.patch)
+patch_tpl(HYPRE
+          ${HYPRE_prefix_dir}
+          ${HYPRE_source_dir}
+          ${HYPRE_stamp_dir}
+          HYPRE_patch_file)
 
 # --- If downloads are disabled point to local repository
 if ( DISABLE_EXTERNAL_DOWNLOAD )
@@ -121,70 +106,48 @@ else()
 endif()
 message(STATUS "HYPRE git repository = ${HYPRE_GIT_REPOSITORY_TEMP}")
 
-set(HYPRE_NVCC_HOST_COMPILER "/usr/bin/g++-12")
-
+# --- Add external project build and tie to the ZLIB build target
 ExternalProject_Add(${HYPRE_BUILD_TARGET}
-  DEPENDS   ${HYPRE_PACKAGE_DEPENDS}
-  TMP_DIR   ${HYPRE_tmp_dir}
-  STAMP_DIR ${HYPRE_stamp_dir}
+                    DEPENDS   ${HYPRE_PACKAGE_DEPENDS}         # Package dependency target
+                    PREFIX    ${HYPRE_prefix_dir}
+                    TMP_DIR   ${HYPRE_tmp_dir}                 # Temporary files directory
+                    STAMP_DIR ${HYPRE_stamp_dir}               # Timestamp and log directory
+                    # -- Download and GIT definition
+                    GIT_REPOSITORY ${HYPRE_GIT_REPOSITORY_TEMP}              
+                    GIT_TAG        ${HYPRE_GIT_TAG}   
+                    # -- Update (one way to skip this step is use null command)
+                    UPDATE_COMMAND ""
+                    # -- Patch 
+                    PATCH_COMMAND  ${HYPRE_PATCH_COMMAND}
+                    # -- Configure
+                    SOURCE_DIR    ${HYPRE_source_dir}
+                    SOURCE_SUBDIR src                          # cmake 3.7+ feature 
+                    CONFIGURE_COMMAND
+                       ${HYPRE_source_dir}/src/configure
+                         --prefix=${TPL_INSTALL_PREFIX}
+                         --with-MPI
+                         ${hypre_shared_opt}
+                         ${hypre_openmp_opt}
+                         ${hypre_lapack_opt}
+                         ${hypre_blas_opt}
+                         ${hypre_superlu_opt}
+                         ${hypre_kokkos_cuda}
+                         CC=${CMAKE_C_COMPILER}
+                         CFLAGS=${Hypre_CC_FLAGS}
+                         CXX=${CMAKE_CXX_COMPILER}
+                         CXXFLAGS=${Hypre_CXX_FLAGS}
+                         LDFLAGS=${Hypre_LINK_FLAGS}
+                         CUDA_HOME=${CUDA_HOME}
+                         HYPRE_CUDA_SM=${Hypre_CUDA_SM}               
+                    # -- Build
+                    BINARY_DIR       ${HYPRE_source_dir}/src        # Build directory 
+                    BUILD_COMMAND    $(MAKE)  
+                    # -- Install
+                    INSTALL_DIR      ${TPL_INSTALL_PREFIX}     # Install directory
+                    INSTALL_COMMAND  $(MAKE) install
+                    # -- Output control
+                    ${HYPRE_logging_args})
 
-  GIT_REPOSITORY ${HYPRE_GIT_REPOSITORY_TEMP}
-  GIT_TAG        ${HYPRE_GIT_TAG}
-  UPDATE_COMMAND ""
-  PATCH_COMMAND  ${HYPRE_PATCH_COMMAND}
-
-  SOURCE_DIR  ${HYPRE_source_dir}
-  BINARY_DIR  ${HYPRE_source_dir}/src
-  INSTALL_DIR ${TPL_INSTALL_PREFIX}
-
-  CONFIGURE_COMMAND
-    ${CMAKE_COMMAND} -E chdir ${HYPRE_source_dir}/src
-    ${CMAKE_COMMAND} -E env
-      CC=${AMANZI_HOST_C_COMPILER}
-      CXX=${AMANZI_HOST_CXX_COMPILER}
-      FC=${AMANZI_HOST_FC_COMPILER}
-      CFLAGS=${Hypre_CC_FLAGS}
-      CXXFLAGS=${Hypre_CXX_FLAGS}
-      LDFLAGS=${Hypre_LINK_FLAGS}
-      CUDA_HOME=${CUDA_HOME}
-      HYPRE_CUDA_SM=${Hypre_CUDA_SM}
-      NVCC_CCBIN=${HYPRE_NVCC_HOST_COMPILER}
-      CUDAHOSTCXX=${HYPRE_NVCC_HOST_COMPILER}
-      ./configure
-        --prefix=${TPL_INSTALL_PREFIX}
-        --with-MPI
-        ${hypre_shared_opt}
-        ${hypre_openmp_opt}
-        ${hypre_lapack_opt}
-        ${hypre_blas_opt}
-        ${hypre_superlu_opt}
-        ${hypre_kokkos_cuda}
-
-  BUILD_COMMAND
-    ${CMAKE_COMMAND} -E env
-      CC=${AMANZI_HOST_C_COMPILER}
-      CXX=${AMANZI_HOST_CXX_COMPILER}
-      FC=${AMANZI_HOST_FC_COMPILER}
-      CFLAGS=${Hypre_CC_FLAGS}
-      CXXFLAGS=${Hypre_CXX_FLAGS}
-      LDFLAGS=${Hypre_LINK_FLAGS}
-      CUDA_HOME=${CUDA_HOME}
-      HYPRE_CUDA_SM=${Hypre_CUDA_SM}
-      NVCC_CCBIN=${HYPRE_NVCC_HOST_COMPILER}
-      CUDAHOSTCXX=${HYPRE_NVCC_HOST_COMPILER}
-      ${CMAKE_MAKE_PROGRAM} -C ${HYPRE_source_dir}/src VERBOSE=1
-
-  INSTALL_COMMAND
-    ${CMAKE_COMMAND} -E env
-      CC=${AMANZI_HOST_C_COMPILER}
-      CXX=${AMANZI_HOST_CXX_COMPILER}
-      FC=${AMANZI_HOST_FC_COMPILER}
-      NVCC_CCBIN=${HYPRE_NVCC_HOST_COMPILER}
-      CUDAHOSTCXX=${HYPRE_NVCC_HOST_COMPILER}
-      ${CMAKE_MAKE_PROGRAM} -C ${HYPRE_source_dir}/src install
-
-  ${HYPRE_logging_args}
-)
 
 # --- Useful variables that depend on HYPRE
 include(BuildLibraryName)

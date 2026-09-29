@@ -404,12 +404,12 @@ bool
 MeshAudit_Topology<Mesh_type, MeshOrCache_type>::checkCellToNodes() const
 {
   Entity_ID_View bad_cells("bad cells", ncells_all_);
+  int nnodes_all = nnodes_all_;
   const MeshOrCache_type& m = mc_;
 
-  int nnodes_all = nnodes_all_;
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
-  Kokkos::parallel_for(
-    "MeshAudit::checkCellToNodes", Range_type(0, ncells_all_), KOKKOS_LAMBDA(const LO c) {
+  auditParallelFor(
+    "MeshAudit::checkCellToNodes", m, Range_type(0, ncells_all_), KOKKOS_LAMBDA(const LO c) {
       auto cnode = get(m).getCellNodes(c);
       for (auto& n : cnode) {
         if (n >= nnodes_all) bad_cells(c) = 1;
@@ -433,8 +433,9 @@ MeshAudit_Topology<Mesh_type, MeshOrCache_type>::checkNodeRefsByCells() const
 
   const MeshOrCache_type& m = mc_;
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
-  Kokkos::parallel_for(
+  auditParallelFor(
     "MeshAudit::checkNodeRefsByCells",
+    m,
     Range_type(0, ncells_all_),
     KOKKOS_LAMBDA(const Entity_ID c) {
       auto cnode = get(m).getCellNodes(c);
@@ -458,8 +459,8 @@ MeshAudit_Topology<Mesh_type, MeshOrCache_type>::checkCellToFaces() const
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
   const MeshOrCache_type& m = mc_;
   int nfaces_all = nfaces_all_;
-  Kokkos::parallel_for(
-    "MeshAudit::checkCellToFaces", Range_type(0, ncells_all_), KOKKOS_LAMBDA(const Entity_ID c) {
+  auditParallelFor(
+    "MeshAudit::checkCellToFaces", m, Range_type(0, ncells_all_), KOKKOS_LAMBDA(const Entity_ID c) {
       auto cface = get(m).getCellFaces(c);
       for (auto& f : cface) {
         if (f >= nfaces_all) bad_cells(c) = 1;
@@ -484,8 +485,9 @@ MeshAudit_Topology<Mesh_type, MeshOrCache_type>::checkFaceRefsByCells() const
 
   const MeshOrCache_type& m = mc_;
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
-  Kokkos::parallel_for(
+  auditParallelFor(
     "MeshAudit::checkNodeRefsByCells",
+    m,
     Range_type(0, ncells_all_),
     KOKKOS_LAMBDA(const Entity_ID c) {
       auto cface = get(m).getCellFaces(c);
@@ -523,8 +525,8 @@ MeshAudit_Topology<Mesh_type, MeshOrCache_type>::checkFaceToNodes() const
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
   const MeshOrCache_type& m = mc_;
   int nnodes_all = nnodes_all_;
-  Kokkos::parallel_for(
-    "MeshAudit::checkFaceToNodes", Range_type(0, nfaces_all_), KOKKOS_LAMBDA(const LO c) {
+  auditParallelFor(
+    "MeshAudit::checkFaceToNodes", m, Range_type(0, nfaces_all_), KOKKOS_LAMBDA(const LO c) {
       auto cnode = get(m).getFaceNodes(c);
       for (auto& n : cnode) {
         if (n >= nnodes_all) bad_faces(c) = 1;
@@ -548,8 +550,9 @@ MeshAudit_Topology<Mesh_type, MeshOrCache_type>::checkNodeRefsByFaces() const
 
   const MeshOrCache_type& m = mc_;
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
-  Kokkos::parallel_for(
+  auditParallelFor(
     "MeshAudit::checkNodeRefsByFaces",
+    m,
     Range_type(0, nfaces_all_),
     KOKKOS_LAMBDA(const Entity_ID c) {
       cEntity_ID_View cnode = get(m).getFaceNodes(c);
@@ -571,8 +574,8 @@ MeshAudit_Topology<Mesh_type, MeshOrCache_type>::checkCellToFaceDirs() const
 
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
   const MeshOrCache_type& m = mc_;
-  Kokkos::parallel_for(
-    "MeshAudit::checkCellToFaces", Range_type(0, ncells_all_), KOKKOS_LAMBDA(const Entity_ID c) {
+  auditParallelFor(
+    "MeshAudit::checkCellToFaces", m, Range_type(0, ncells_all_), KOKKOS_LAMBDA(const Entity_ID c) {
       auto [cface, fdirs] = get(m).getCellFacesAndDirections(c);
       for (auto& fd : fdirs) {
         if (fd != 1 && fd != -1) bad_cells(c) = 1;
@@ -598,8 +601,9 @@ MeshAudit_Topology<Mesh_type, MeshOrCache_type>::checkCellDegeneracy() const
 
   const MeshOrCache_type& m = mc_;
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
-  Kokkos::parallel_for(
+  auditParallelFor(
     "MeshAudit::checkCellDegeneracy",
+    m,
     Range_type(0, ncells_all_),
     KOKKOS_LAMBDA(const Entity_ID c) {
       auto cnodes = get(m).getCellNodes(c); // should not fail
@@ -622,8 +626,13 @@ template <class Mesh_type, class MeshOrCache_type>
 bool
 MeshAudit_Topology<Mesh_type, MeshOrCache_type>::checkCellToFacesToNodes() const
 {
-  // This can't be done on device unless we move Topology onto device...
-  if constexpr (std::is_same_v<Mesh_type, AmanziMesh::Mesh>) {
+  // This algorithm calls mesh_->getCellType(), which exists only on
+  // MeshFramework (not on Mesh or MeshCache), so it can only run for the
+  // <MeshFramework, MeshFramework*> instantiation. It also allocates an
+  // Entity_ID_View per cell, which would be unsafe inside a parallel
+  // region even if MeshCache had an equivalent, so this isn't a candidate
+  // for a device port without further work either way.
+  if constexpr (!std::is_same_v<Mesh_type, MeshFramework>) {
     return false;
   } else {
     // unordered meshes cannot pass this test.
@@ -707,8 +716,8 @@ MeshAudit_Topology<Mesh_type, MeshOrCache_type>::checkNodeToCoordinates() const
 
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
   const MeshOrCache_type& m = mc_;
-  Kokkos::parallel_for(
-    "MeshAudit::checkNodeToCoordinates", Range_type(0, nnodes_all_),
+  auditParallelFor(
+    "MeshAudit::checkNodeToCoordinates", m, Range_type(0, nnodes_all_),
     KOKKOS_LAMBDA(const LO n) {
       auto x0 = get(m).getNodeCoordinate(n); // this may fail
       if (x0.dim() != spdim) bad_nodes(n) = 1;
@@ -733,8 +742,8 @@ MeshAudit_Topology<Mesh_type, MeshOrCache_type>::checkCellToCoordinates() const
 
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
   const MeshOrCache_type& m = mc_;
-  Kokkos::parallel_for(
-    "MeshAudit::checkNodeToCoordinates", Range_type(0, ncells_all_), KOKKOS_LAMBDA(const LO c) {
+  auditParallelFor(
+    "MeshAudit::checkNodeToCoordinates", m, Range_type(0, ncells_all_), KOKKOS_LAMBDA(const LO c) {
       auto x0 = get(m).getCellCoordinates(c); // this may fail
       auto cnode = get(m).getCellNodes(c); // this should not fail
       for (int k = 0; k < cnode.size(); ++k) {
@@ -769,8 +778,8 @@ MeshAudit_Topology<Mesh_type, MeshOrCache_type>::checkFaceToCoordinates() const
 
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
   const MeshOrCache_type& m = mc_;
-  Kokkos::parallel_for(
-    "MeshAudit::checkNodeToCoordinates", Range_type(0, nfaces_all_), KOKKOS_LAMBDA(const LO c) {
+  auditParallelFor(
+    "MeshAudit::checkNodeToCoordinates", m, Range_type(0, nfaces_all_), KOKKOS_LAMBDA(const LO c) {
       auto x0 = get(m).getFaceCoordinates(c); // this may fail
       cEntity_ID_View cnode = get(m).getFaceNodes(c); // this should not fail
       for (int k = 0; k < cnode.size(); ++k) {
@@ -804,8 +813,9 @@ MeshAudit_Topology<Mesh_type, MeshOrCache_type>::checkFaceCellAdjacencyConsisten
 
   const MeshOrCache_type& m = mc_;
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
-  Kokkos::parallel_for(
+  auditParallelFor(
     "MeshAudit::checkFaceCellAdjacencyConsistency",
+    m,
     Range_type(0, nfaces_all_),
     KOKKOS_LAMBDA(const LO f) {
       auto fcells = get(m).getFaceCells(f);
@@ -859,8 +869,9 @@ MeshAudit_Geometry<Mesh_type, MeshOrCache_type>::checkFaceNormalReltoCell() cons
 
   const MeshOrCache_type& m = mc_;
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
-  Kokkos::parallel_for(
+  auditParallelFor(
     "MeshAudit::checkFaceNormalReltoCell",
+    m,
     Range_type(0, nfaces_all_),
     KOKKOS_LAMBDA(const LO f) {
       auto fc = get(m).getFaceCentroid(f);
@@ -895,8 +906,8 @@ MeshAudit_Geometry<Mesh_type, MeshOrCache_type>::checkFaceNormalOrientation() co
 
   const MeshOrCache_type& m = mc_;
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
-  Kokkos::parallel_for(
-    "MeshAudit::checkFaceNormalOrientation", Range_type(0, nfaces_all_), KOKKOS_LAMBDA(const LO f) {
+  auditParallelFor(
+    "MeshAudit::checkFaceNormalOrientation", m, Range_type(0, nfaces_all_), KOKKOS_LAMBDA(const LO f) {
       AmanziGeometry::Point fnormal = get(m).getFaceNormal(f);
 
       auto fcells = get(m).getFaceCells(f);
@@ -929,8 +940,8 @@ MeshAudit_Geometry<Mesh_type, MeshOrCache_type>::checkCellGeometry() const
 
   const MeshOrCache_type& m = mc_;
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
-  Kokkos::parallel_for(
-    "MeshAudit::checkCellGeometry", Range_type(0, ncells_all_), KOKKOS_LAMBDA(const LO c) {
+  auditParallelFor(
+    "MeshAudit::checkCellGeometry", m, Range_type(0, ncells_all_), KOKKOS_LAMBDA(const LO c) {
       double hvol = get(m).getCellVolume(c);
       if (hvol <= 0.0) bad_cells[c] = 1;
     });
@@ -1087,7 +1098,11 @@ MeshAudit_Maps<Mesh_type, MeshOrCache_type>::checkNodeToCoordinatesGhostData() c
 
   MultiVector_type coord_use(node_map_use, spdim);
   auto coord_own = coord_use.offsetViewNonConst(node_map_own, 0);
-  if constexpr (std::is_same_v<Mesh_type, Mesh>) {
+  // MeshOrCache_type distinguishes the device (MeshCache, a value type,
+  // whose getNodeCoordinate() only reads pre-built views -- safe inside
+  // parallel_for) case from the host (MeshFramework*/Mesh*, pointer,
+  // may allocate per call -- unsafe inside parallel_for) cases.
+  if constexpr (!std::is_pointer<MeshOrCache_type>::value) {
     auto coord_own_view = coord_own->getLocalViewDevice(Tpetra::Access::ReadWrite);
     const MeshOrCache_type& m = mc_;
     Kokkos::parallel_for(
@@ -1107,7 +1122,7 @@ MeshAudit_Maps<Mesh_type, MeshOrCache_type>::checkNodeToCoordinatesGhostData() c
   coord_use.doImport(*coord_own, importer, Tpetra::INSERT);
 
   Entity_ID_View bad_nodes("bad nodes", nnode_use - nnode_own);
-  if constexpr (std::is_same_v<Mesh_type, Mesh>) {
+  if constexpr (!std::is_pointer<MeshOrCache_type>::value) {
     auto coord_use_view = coord_use.getLocalViewDevice(Tpetra::Access::ReadOnly);
     const MeshOrCache_type& m = mc_;
     Kokkos::parallel_for(
@@ -1768,8 +1783,8 @@ MeshAudit_Maps<Mesh_type, MeshOrCache_type>::checkFacePartition() const
 
   const MeshOrCache_type& m = mc_;
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
-  Kokkos::parallel_for(
-    "MeshAudit::checkFacePartition", Range_type(0, ncells_owned_), KOKKOS_LAMBDA(const LO c) {
+  auditParallelFor(
+    "MeshAudit::checkFacePartition", m, Range_type(0, ncells_owned_), KOKKOS_LAMBDA(const LO c) {
       auto cface = get(m).getCellFaces(c);
       for (auto& f : cface) Kokkos::atomic_store(&all_faces(f), 0);
     });
@@ -1790,8 +1805,8 @@ MeshAudit_Maps<Mesh_type, MeshOrCache_type>::checkNodePartition() const
 
   const MeshOrCache_type& m = mc_;
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
-  Kokkos::parallel_for(
-    "MeshAudit::checkNodePartition", Range_type(0, ncells_owned_), KOKKOS_LAMBDA(const LO c) {
+  auditParallelFor(
+    "MeshAudit::checkNodePartition", m, Range_type(0, ncells_owned_), KOKKOS_LAMBDA(const LO c) {
       auto cnode = get(m).getCellNodes(c);
       for (auto& f : cnode) Kokkos::atomic_store(&all_nodes(f), 0);
     });

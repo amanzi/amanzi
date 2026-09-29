@@ -1,0 +1,11 @@
+diff --color -ruN moab-5.3.1-orig/CMakeLists.txt moab-5.3.1/CMakeLists.txt
+--- moab-5.3.1-orig/CMakeLists.txt	2025-09-21 09:23:25
++++ moab-5.3.1/CMakeLists.txt	2025-09-21 09:23:59
+@@ -298,7 +298,6 @@
+     set ( MOAB_DEFINES "${MOAB_DEFINES} -DUSE_MPI" )
+     set(CMAKE_CXX_COMPILE_FLAGS "${CMAKE_CXX_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS}")
+     set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS}")
+-    include_directories(${MPI_INCLUDE_PATH})
+     set( MOAB_HAVE_MPI ON )
+     message(STATUS "MPI libraries and includes found..")
+     foreach (var C_COMPILER CXX_COMPILER BINDIR ROOTDIR INCLUDE_PATH LIBRARY)

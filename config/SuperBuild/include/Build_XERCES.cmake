@@ -12,19 +12,12 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   VERSION ${XERCES_VERSION_MAJOR} ${XERCES_VERSION_MINOR} ${XERCES_VERSION_PATCH})
 
 # --- Patch original code
-set(XERCES_patch_file xerces-libicu.patch xerces-static-lib-install.patch)
-set(XERCES_sh_patch ${XERCES_prefix_dir}/xerces-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/xerces-patch-step.sh.in
-               ${XERCES_sh_patch}
-               @ONLY)
-
-# configure the CMake patch step
-set(XERCES_cmake_patch ${XERCES_prefix_dir}/xerces-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/xerces-patch-step.cmake.in
-               ${XERCES_cmake_patch}
-               @ONLY)
-
-set(XERCES_PATCH_COMMAND ${CMAKE_COMMAND} -P ${XERCES_cmake_patch})
+set(XERCES_patch_file xerces-libicu.patch xerces-static-lib-install.patch xerces-cmake-c++17.patch)
+patch_tpl(XERCES
+          ${XERCES_prefix_dir}
+          ${XERCES_source_dir}
+          ${XERCES_stamp_dir}
+          XERCES_patch_file)
 
 # -- Set Xerces configuration options
 set(XERCES_CMAKE_ARGS "-DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}")
@@ -33,6 +26,12 @@ list(APPEND XERCES_CMAKE_ARGS "-DCMAKE_INSTALL_LIBDIR:PATH=${TPL_INSTALL_PREFIX}
 list(APPEND XERCES_CMAKE_ARGS "-DCMAKE_INSTALL_DOCDIR:PATH=${TPL_INSTALL_PREFIX}/doc/xerces")
 list(APPEND XERCES_CMAKE_ARGS "-DCMAKE_INSTALL_INCLUDEDIR:PATH=${TPL_INSTALL_PREFIX}/include")
 list(APPEND XERCES_CMAKE_ARGS "-Dnetwork:BOOL=FALSE")
+
+# --- Override minimum version
+if(CMAKE_MAJOR_VERSION VERSION_EQUAL "4")
+  list(APPEND XERCES_CMAKE_ARGS "-DCMAKE_POLICY_VERSION_MINIMUM=3.5")
+endif()
+
 # Force OSX to use its CoreServices Framework
 if (APPLE)
   list(APPEND XERCES_CMAKE_ARGS "-DCMAKE_HOST_APPLE:BOOL=TRUE")

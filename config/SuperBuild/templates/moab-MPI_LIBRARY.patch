@@ -1,0 +1,18 @@
+diff -Naur moab-5.3.1-old/CMakeLists.txt moab-5.3.1-new/CMakeLists.txt
+--- moab-5.3.1-old/CMakeLists.txt	2021-11-11 23:17:17.000000000 -0700
++++ moab-5.3.1-new/CMakeLists.txt	2025-07-14 18:42:03.527156605 -0600
+@@ -335,12 +335,14 @@
+     set(HDF5_PREFER_PARALLEL TRUE)
+   endif()
+ 
++  set (SAVED_MPI_LIBRARY ${MPI_LIBRARY})
+   #TODO: test on all architectures with CMake-native FindHDF5 module instead of a custom one
+   IF(WIN32)
+     find_package( HDF5 REQUIRED )
+   ELSE(WIN32)
+     find_package( HDF5_MOAB REQUIRED )
+   ENDIF(WIN32)
++  set (MPI_LIBRARY ${SAVED_MPI_LIBRARY})
+ 
+   set (MOAB_HAVE_HDF5 ON)
+   # if ( HDF5_IS_PARALLEL AND MOAB_HAVE_MPI )
