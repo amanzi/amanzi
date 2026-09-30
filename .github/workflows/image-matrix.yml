@@ -1,0 +1,122 @@
+# =============================================================================
+# image-matrix.yml
+#
+# SINGLE SOURCE OF TRUTH for the CI Docker image build matrix.
+#
+# This is a REUSABLE workflow (triggered via `workflow_call`). Other workflows
+# call it and consume its two JSON outputs:
+#
+#   * matrix  - a JSON object {"os":[...],"images":[...]} suitable for direct
+#               use as `strategy: matrix: ${{ fromJSON(needs.<job>.outputs.matrix) }}`.
+#               GitHub Actions expands it as the os x images cross product.
+#   * images  - a JSON ARRAY of just the 4 image objects (no os axis). Used by
+#               architecture-independent jobs (e.g. multi-arch manifest fixup).
+#
+# Each image object has EXACTLY these keys (consumers depend on the names):
+#   base_image, ver_tag, mpi_distro, mpi_ver, cmake_version, target
+# Use "" (empty string) where a field does not apply.
+#
+# The 4 image variants are defined ONCE, below, in the "Assemble matrix" step.
+# To add a 5th variant, add one more object to the `jq` array in that step.
+#
+# Variants 3 & 4 use gcc:latest as the base image, but PINNED mpi_ver/
+# cmake_version values below. These are bumped periodically by
+# .github/workflows/bump-tool-versions.yml (which opens a PR when upstream
+# cuts a new mpich/openmpi/cmake release) rather than resolved at run time,
+# so that this workflow and the TPL images actually published by
+# build-tpls.yml never drift out of sync.
+# =============================================================================
+name: Resolve image build matrix
+
+on:
+  workflow_call:
+    outputs:
+      matrix:
+        description: 'JSON object {"os":[...],"images":[...]} for use as a job strategy matrix.'
+        value: ${{ jobs.matrix.outputs.matrix }}
+      images:
+        description: "JSON array of the 4 image objects (no os axis)."
+        value: ${{ jobs.matrix.outputs.images }}
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    # Map the job-level outputs to the outputs of the id'd step below.
+    outputs:
+      matrix: ${{ steps.set.outputs.matrix }}
+      images: ${{ steps.set.outputs.images }}
+    steps:
+      - name: Assemble matrix
+        id: set
+        run: |
+          set -euo pipefail
+
+          # -------------------------------------------------------------------
+          # Define the 4 image variants HERE (single source of truth).
+          # Each object MUST carry all of: base_image, ver_tag, mpi_distro,
+          # mpi_ver, cmake_version, target. Use "" where not applicable.
+          #
+          #   1. ubuntu-bundled + mpich   (pinned, source-built)
+          #   2. ubuntu-bundled + openmpi (pinned, source-built)
+          #   3. latest gcc + mpich       (mpi_ver & cmake_version pinned;
+          #                                bumped via bump-tool-versions.yml)
+          #   4. latest gcc + openmpi     (mpi_ver & cmake_version pinned;
+          #                                bumped via bump-tool-versions.yml)
+          # -------------------------------------------------------------------
+          images="$(jq -c -n \
+            '[
+              {
+                base_image:    "ubuntu",
+                ver_tag:       "jammy",
+                mpi_distro:    "mpich",
+                mpi_ver:       "4.0.3",
+                cmake_version: "",
+                target:        "tpls"
+              },
+              {
+                base_image:    "ubuntu",
+                ver_tag:       "jammy",
+                mpi_distro:    "openmpi",
+                mpi_ver:       "4.1.8",
+                cmake_version: "",
+                target:        "tpls"
+              },
+              {
+                base_image:    "gcc",
+                ver_tag:       "latest",
+                mpi_distro:    "mpich",
+                mpi_ver:       "4.3.1",
+                cmake_version: "4.1.2",
+                target:        "tpls"
+              },
+              {
+                base_image:    "gcc",
+                ver_tag:       "latest",
+                mpi_distro:    "openmpi",
+                mpi_ver:       "5.0.8",
+                cmake_version: "4.1.2",
+                target:        "tpls"
+              }
+            ]')"
+
+          # The runner OS axis for the cross-product matrix.
+          os='["ubuntu-latest","ubuntu-24.04-arm"]'
+
+          # matrix = {"os":[...],"images":[...]}
+          matrix="$(jq -c -n \
+            --argjson os "$os" \
+            --argjson images "$images" \
+            '{os: $os, images: $images}')"
+
+          echo "images JSON: ${images}"
+          echo "matrix JSON: ${matrix}"
+
+          # Emit both outputs as heredoc-delimited blocks (safe for JSON).
+          {
+            echo "images<<EOF"
+            echo "${images}"
+            echo "EOF"
+            echo "matrix<<EOF"
+            echo "${matrix}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
