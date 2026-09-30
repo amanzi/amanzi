@@ -100,7 +100,8 @@ PK_Physical_Default::Initialize()
 
     // -- Calculate the IC.
     Teuchos::ParameterList ic_plist = plist_->sublist("initial conditions");
-    record.Initialize(ic_plist);
+    const std::vector<std::string>* subfieldnames = S_->GetRecordSetW(key_).subfieldnames();
+    record.Initialize(ic_plist, subfieldnames);
 
     // communicate just to make sure values are initialized for valgrind's sake
     if (record.Get<CompositeVector>().Ghosted())
