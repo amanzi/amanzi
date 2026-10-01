@@ -12,6 +12,14 @@ on:
       - '.github/workflows/build-tpls.yml'
 
 
+# Pushes to a feature branch publish throwaway "-test" tags, so workflow changes
+# can be exercised without clobbering the images consumed by downstream
+# workflows. Scheduled runs, manual dispatch, and pushes to master (i.e. merges)
+# keep the plain "-resolute" tag.
+env:
+  TAG_SUFFIX: ${{ (github.event_name == 'push' && github.ref_name != 'master') && '-test' || '' }}
+
+
 jobs:
   build-tpl-image:
     strategy:
@@ -54,7 +62,7 @@ jobs:
         context: .
         file: ./Docker/Dockerfile-TPLs
         push: true
-        tags: ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{env.ARCH}}-mpich-ubuntu-resolute
+        tags: ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{env.ARCH}}-mpich-ubuntu-resolute${{env.TAG_SUFFIX}}
         build-args: |
           amanzi_branch=${{env.AMANZI_BRANCH}}
           mpi_flavor=mpich
@@ -78,11 +86,11 @@ jobs:
           password: ${{secrets.DOCKERHUB_PASSWORD}}
       - name: Pull images (remove with artifacts??)
         run: |
-          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-arm64-mpich-ubuntu-resolute
-          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-amd64-mpich-ubuntu-resolute
+          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-arm64-mpich-ubuntu-resolute${{env.TAG_SUFFIX}}
+          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-amd64-mpich-ubuntu-resolute${{env.TAG_SUFFIX}}
       - name: Edit manifest
         run: |
-          docker manifest create ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-mpich-ubuntu-resolute \
-            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-amd64-mpich-ubuntu-resolute \
-            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-arm64-mpich-ubuntu-resolute
-          docker manifest push ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-mpich-ubuntu-resolute
+          docker manifest create ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-mpich-ubuntu-resolute${{env.TAG_SUFFIX}} \
+            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-amd64-mpich-ubuntu-resolute${{env.TAG_SUFFIX}} \
+            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-arm64-mpich-ubuntu-resolute${{env.TAG_SUFFIX}}
+          docker manifest push ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-mpich-ubuntu-resolute${{env.TAG_SUFFIX}}
