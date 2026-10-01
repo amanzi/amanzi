@@ -55,8 +55,8 @@ curl_binary=`which curl`
 # CMake
 cmake_binary=`which cmake`
 ctest_binary=`which ctest`
-cmake_version=3.23.0
-cmake_url=https://cmake.org/files/v3.23
+cmake_version=3.29.8
+cmake_url=https://cmake.org/files/v3.29
 cmake_archive_file=cmake-${cmake_version}.tar.gz
 
 # Build configuration
