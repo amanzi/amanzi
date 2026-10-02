@@ -1,6 +1,6 @@
 ARG amanzi_tpls_ver=latest
 ARG base_image=ubuntu
-ARG ver_tag=jammy
+ARG ver_tag=resolute
 ARG mpi_distro=mpich
 ARG mpi_version=4.0.3
 FROM metsi/amanzi-tpls:${amanzi_tpls_ver}-${mpi_distro}-${base_image}-${ver_tag}

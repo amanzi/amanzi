@@ -1,5 +1,5 @@
 ARG base_image=ubuntu
-ARG ver_tag=jammy
+ARG ver_tag=resolute
 FROM ${base_image}:${ver_tag} AS base
 
 LABEL Description="This image contains all of the third-party libraries needed by Amanzi (based on the specified branch, default branch is master)."
@@ -24,8 +24,9 @@ RUN apt-get -q update -y && apt-get install -y tzdata && \
       g++ \
       gfortran; \
   fi && \
-  apt-get -q install -y \
+  apt-get -q install --no-install-recommends -y \
   apt-utils \
+  ca-certificates \
   curl \
   libcurl4-openssl-dev \
   emacs \
@@ -39,20 +40,15 @@ RUN apt-get -q update -y && apt-get install -y tzdata && \
   m4 \
   make \
   openssl \
+  patch \
   pkg-config \
   python3 \
-  python3-distutils \
+  python3-dev \
   python3-pip \
   python-is-python3 \
   rsync \
   wget \
-  vim \
-  zlib1g-dev && \
-  if [ "$base_image" = "gcc" ]; then \
-    echo  "Installing h5py in debian image..." \
-    && apt-get -q install -y \
-	      python3-h5py; \
-  fi && \
+  vim && \
   apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
@@ -127,7 +123,6 @@ RUN if [ "$amanzi_branch" != "master" ]; then \
   echo "Amanzi branch = $amanzi_branch"; \
   git branch --list
 
-
 # Check to see if we've requested a newer cmake than what bootstrap requires
 USER root
 RUN export cmake_minimum_version=$(grep '^cmake_version=' bootstrap.sh | cut -d= -f2) \
@@ -142,10 +137,11 @@ RUN export cmake_minimum_version=$(grep '^cmake_version=' bootstrap.sh | cut -d=
       && cd cmake-${cmake_version} \
       && ./bootstrap \ 
       && make -j4 \
-      && make install; fi
+      && make install \
+      && cd ../ \
+      && rm -rf cmake-${cmake-version}; fi
 
 USER amanzi_user
-
 
 #===========================================================================
 # here and above can be run with --target base in the docker build command
@@ -202,11 +198,10 @@ ENV PATH=/home/amanzi_user/amanzi/install/tools/bin:${PATH}
 RUN echo $PATH
 
 # Note this installs numpy as well
-RUN if [ "$base_image" = "ubuntu" ]; then \
-      pip3 install --no-cache-dir --upgrade pip \
-      && pip3 install --no-cache-dir --no-binary=h5py h5py; fi
-
-
-
-
+# ubuntu:resolute's python3-pip is externally-managed (PEP 668) and refuses
+# system-wide installs, so build h5py in a dedicated venv instead.
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
+RUN \
+  /usr/bin/pip install --no-cache-dir --upgrade pip \
+  && /usr/bin/pip install --no-cache-dir --no-binary=h5py h5py
 
