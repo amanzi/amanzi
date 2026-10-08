@@ -217,9 +217,8 @@ Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
     }
 
     ierr |= mat.SumIntoMyValues(lid_r.data(), lid_c.data(), op.matrices[f]);
-    AMANZI_ASSERT(ierr >= 0);
   }
-  AMANZI_ASSERT(ierr >= 0);
+  AMANZI_ASSERT(!ierr);
 }
 
 

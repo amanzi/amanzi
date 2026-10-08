@@ -111,9 +111,6 @@ EnergyPressureEnthalpy_PK::FunctionalResidual(double t_old,
 
   // -- use modified residual for saturated region 4 (WIP)
   //    this is actually the scaled residual
-  Teuchos::ParameterList plist;
-  AmanziEOS::IAPWS97 eos(plist);
-
   double units(CommonDefs::ENTHALPY_FACTOR);
   residual_max_norm_ = 0.0;
   if (dt>0) {
@@ -173,17 +170,18 @@ EnergyPressureEnthalpy_PK::UpdatePreconditioner(double t,
     }
   }
 
-  for (int c = 0; c < ncells_owned; ++c) {
-    if (dEdh_c[0][c] < 0.0) {
-      double tmp = phi_c[0][c];
-      dEdh_c[0][c] = rho_r[0][c] * dUdh_c[0][c] * (1.0 - tmp) + eta_c[0][c] * tmp;
-      if (assumptions_.flow_on_manifold) {        
-        dEdh_c[0][c] *= (*coef->ViewComponent("cell"))[0][c];
+  if (dt > 0.0) {
+    for (int c = 0; c < ncells_owned; ++c) {
+      if (dEdh_c[0][c] < 0.0) {
+        double tmp = phi_c[0][c];
+        dEdh_c[0][c] = rho_r[0][c] * dUdh_c[0][c] * (1.0 - tmp) + eta_c[0][c] * tmp;
+        if (assumptions_.flow_on_manifold) {        
+          dEdh_c[0][c] *= (*coef->ViewComponent("cell"))[0][c];
+        }
       }
     }
+    op_acc_->AddAccumulationTerm(dEdh, dt, "cell");
   }
-
-  if (dt>0) op_acc_->AddAccumulationTerm(dEdh, dt, "cell");
 
   // implicit source models
   if (heat_src_) {

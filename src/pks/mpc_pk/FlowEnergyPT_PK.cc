@@ -15,6 +15,7 @@
 
 #include "Flow_PK.hh"
 #include "Energy_PK.hh"
+#include "InverseFactory.hh"
 #include "ModelAssumptions.hh"
 #include "OperatorDefs.hh"
 #include "PDE_DiffusionFactory.hh"
@@ -43,6 +44,7 @@ FlowEnergyPT_PK::FlowEnergyPT_PK(Teuchos::ParameterList& pk_tree,
   // we will use a few parameter lists
   auto pk_list = Teuchos::sublist(glist, "PKs", true);
   my_list_ = Teuchos::sublist(pk_list, name_, true);
+  preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
   domain_ = my_list_->template get<std::string>("domain name", "domain");
 
   vo_ = Teuchos::rcp(new VerboseObject("FlowEnergy-" + domain_, *my_list_));
@@ -59,8 +61,7 @@ FlowEnergyPT_PK::Setup()
 
   // Our decision can be affected by the list of models
   auto physical_models = Teuchos::sublist(my_list_, "physical models and assumptions");
-  ModelAssumptions assumptions;
-  assumptions.Init(*physical_models, *mesh_);
+  assumptions_.Init(*physical_models, *mesh_);
 
   // keys
   temperature_key_ = Keys::getKey(domain_, "temperature");
@@ -83,7 +84,7 @@ FlowEnergyPT_PK::Setup()
   aperture_key_ = Keys::getKey(domain_, "aperture");
   conductivity_eff_key_ = Keys::getKey(domain_, "thermal_conductivity_effective");
   conductivity_gen_key_ =
-    (!assumptions.flow_on_manifold) ? conductivity_key_ : conductivity_eff_key_;
+    (!assumptions_.flow_on_manifold) ? conductivity_key_ : conductivity_eff_key_;
 
   
   mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
@@ -93,6 +94,7 @@ FlowEnergyPT_PK::Setup()
 
   alpha_key_ = Keys::getKey(domain_, "alpha_coef");
   beta_key_ = Keys::getKey(domain_, "beta_coef");
+  beta_jacobian_key_ = Keys::getKey(domain_, "beta_jacobian_coef");
   
   // Fields for solids
   // -- rock
@@ -131,18 +133,18 @@ FlowEnergyPT_PK::Setup()
   // -- flow
   auto pks =
     glist_->sublist("PKs").sublist(name_).get<Teuchos::Array<std::string>>("PKs order").toVector();
-  std::string model = (assumptions.vapor_diffusion) ? "two-phase" : "one-phase";
+  std::string model = (assumptions_.vapor_diffusion) ? "two-phase" : "one-phase";
   Teuchos::ParameterList& flow =
     glist_->sublist("PKs").sublist(pks[0]).sublist("physical models and assumptions");
-  flow.set<bool>("vapor diffusion", assumptions.vapor_diffusion)
-    .set<bool>("thermoelasticity", assumptions.thermoelasticity)
-    .set<bool>("biot scheme: undrained split", assumptions.undrained_split)
-    .set<bool>("biot scheme: fixed stress split", assumptions.fixed_stress_split);
+  flow.set<bool>("vapor diffusion", assumptions_.vapor_diffusion)
+    .set<bool>("thermoelasticity", assumptions_.thermoelasticity)
+    .set<bool>("biot scheme: undrained split", assumptions_.undrained_split)
+    .set<bool>("biot scheme: fixed stress split", assumptions_.fixed_stress_split);
 
   // -- energy
   Teuchos::ParameterList& energy =
     glist_->sublist("PKs").sublist(pks[1]).sublist("physical models and assumptions");
-  energy.set<bool>("vapor diffusion", assumptions.vapor_diffusion);
+  energy.set<bool>("vapor diffusion", assumptions_.vapor_diffusion);
 
   // process other PKs
   PK_MPCStrong<PK_BDF>::Setup();
@@ -227,20 +229,58 @@ FlowEnergyPT_PK::Initialize()
 
     pde10_adv_ = opfactory_adv.Create(oplist_adv, op10_);
     pde10_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, op10_));
-
   }
 
-  std::string pc_name =
-      Teuchos::sublist(my_list_, "time integrator", true)->get<std::string>("preconditioner");
-    auto& pc_list = Teuchos::sublist(glist_, "preconditioners", true)->sublist(pc_name);
-    op_tree_pc_->set_inverse_parameters(pc_list);
+  // solver parameters
+  auto solver_list = Teuchos::sublist(glist_, "solvers");
+  auto ti_list = Teuchos::sublist(my_list_, "time integrator", true);
 
-    op_tree_pc_->SymbolicAssembleMatrix();
-  
+  std::string solver_name, pc_name;
+  use_cptr_prec_ = ti_list->get<bool>("use CPTR preconditioner", false);
+
+  solver_name = ti_list->get<std::string>("linear solver", "none");
+  pc_name = ti_list->get<std::string>("preconditioner", "");
+
+  auto inv_list = AmanziSolvers::mergePreconditionerSolverLists(
+    pc_name, *preconditioner_list_, solver_name, *solver_list, true);
+  op_tree_pc_->set_inverse_parameters(inv_list);
+
+  if (use_cptr_prec_) {
+    op_tree_amg_ = op_tree_pc_->Clone();
+    op_tree_ilu_ = op_tree_pc_->Clone();
+
+    pc_name = "ILU";
+    inv_list = AmanziSolvers::mergePreconditionerSolverLists(
+      pc_name, *preconditioner_list_, solver_name, *solver_list, true);
+    op_tree_ilu_->set_inverse_parameters(inv_list);
+
+    pc_name = "Hypre AMG";
+    inv_list = AmanziSolvers::mergePreconditionerSolverLists(
+      pc_name, *preconditioner_list_, solver_name, *solver_list, true);
+    op_tree_amg_->set_inverse_parameters(inv_list);
+ 
+    op_tree_amg_->set_block(0, 1, Teuchos::null);
+    /*
+    auto block = op_tree_amg_->get_operator_block(1, 1);
+    for (int loop = 0; loop < 2; ++loop) {
+      auto pos = block->FindMatrixOp(
+        Operators::OPERATOR_SCHEMA_BASE_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL,
+        Operators::OPERATOR_SCHEMA_RULE_EXACT,
+        false);
+      if (pos != block->end()) block->OpErase(pos);
+    }
+    */
+  }
 
   // output of initialization statistics
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "full 2x2 preconditioner: " << include_pt_coupling_ << std::endl;
+    if (use_cptr_prec_) {
+      *vo_->os() << std::endl
+                 << "CPTR preconditioner (AMG part):" << std::endl
+                 << op_tree_amg_->PrintDiagnostics();
+    }
     *vo_->os() << std::endl
                << "matrix:" << std::endl
                << op_tree_matrix_->PrintDiagnostics() << std::endl
@@ -320,7 +360,6 @@ FlowEnergyPT_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
 {
   PK_MPCStrong<PK_BDF>::UpdatePreconditioner(t, up, dt);
 
-
   std::string passwd("");
   Tag tag = Tags::DEFAULT;
 
@@ -333,7 +372,6 @@ FlowEnergyPT_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
     auto bc_pres = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, tag, "state");
     auto bc_temp = S_->GetPtrW<Operators::BCs>(bcs_temperature_key_, tag, "state");
 
-  
     S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, passwd);
     S_->GetEvaluator(enthalpy_key_).Update(*S_, passwd);
 
@@ -347,8 +385,7 @@ FlowEnergyPT_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
 
     // -- advection div(q kt dT)
     S_->GetEvaluator(mol_density_liquid_key_).UpdateDerivative(*S_, passwd, temperature_key_, tag);
-    auto coef = Teuchos::rcp(new CompositeVector(
-                                                 S_->GetDerivative<CV_t>(mol_density_liquid_key_, tag, temperature_key_, tag)));
+    auto coef = Teuchos::rcp(new CompositeVector(S_->GetDerivative<CV_t>(mol_density_liquid_key_, tag, temperature_key_, tag)));
     coef->ReciprocalMultiply(1.0, rho, *coef, 0.0);
 
     S_->GetEvaluator(viscosity_liquid_key_).UpdateDerivative(*S_, passwd, temperature_key_, tag);
@@ -364,23 +401,27 @@ FlowEnergyPT_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
     op10_->Init();
 
     // -- diffusion due to heat transport (with assumption relperm = 1), div([K beta] grad dp)    
-    // coef->Multiply(1.0, enth, *coef, 0.0);
-    // coef->ReciprocalMultiply(1.0, mu, *coef, 0.0);
     S_->GetEvaluator(beta_key_).Update(*S_, passwd);
-    Teuchos::RCP<CompositeVector> coef2 = Teuchos::rcp(new CompositeVector(S_->Get<CV_t>(beta_key_, tag)));    
+    auto coef2 = Teuchos::rcp(new CompositeVector(S_->Get<CV_t>(beta_key_, tag)));    
+
+    if (assumptions_.flow_on_manifold) {
+      const auto& perm = S_->Get<CV_t>(permeability_key_, tag);
+      coef2->Multiply(1.0, perm, *coef2, 0.0);
+    }
 
     pde10_diff_flux_->SetScalarCoefficient(coef2, Teuchos::null);
     pde10_diff_flux_->UpdateMatrices(Teuchos::null, up->Data().ptr());
     pde10_diff_flux_->SetBCs(bc_pres, bc_temp);
     pde10_diff_flux_->ApplyBCs(true, true, false);
+    RemoveFluxContinuityEquations_(pde10_diff_flux_);
     
-
-    // // -- advection due to heat transport, div([q dH/dp] dp) FIXME we need d(qH)/dp
+    // -- advection due to heat transport, div([d(qH)/dp] dp)
     S_->GetEvaluator(beta_key_).UpdateDerivative(*S_, passwd, pressure_key_, tag);
-    Teuchos::RCP<CompositeVector> coef3 = Teuchos::rcp(new CompositeVector(S_->GetDerivative<CV_t>(beta_key_, tag, pressure_key_, tag)));
+    auto coef3 = Teuchos::rcp(new CompositeVector(S_->GetDerivative<CV_t>(beta_key_, tag, pressure_key_, tag)));
 
-    coef3->Multiply(1.0, mu, *coef3, 0.0);
-    coef3->ReciprocalMultiply(1.0, rho, *coef3, 0.0);            
+    S_->GetEvaluator(beta_jacobian_key_).Update(*S_, passwd);
+    const auto& coef4 = S_->Get<CV_t>(beta_jacobian_key_, tag);    
+    coef3->Multiply(1.0, *coef3, coef4, 0.0);
     
     pde10_adv_->Setup(*flux);
     pde10_adv_->UpdateMatrices(flux.ptr(), coef3.ptr());
@@ -393,10 +434,15 @@ FlowEnergyPT_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
     pde10_acc_->AddAccumulationTerm(dEdp, dt, "cell");
   }
   
-  op_tree_pc_->AssembleMatrix();
-  op_tree_pc_->InitializeInverse();
-  op_tree_pc_->ComputeInverse();
-  
+  if (use_cptr_prec_) {
+    op_tree_ilu_->AssembleMatrix();
+    op_tree_ilu_->InitializeInverse();
+    op_tree_ilu_->ComputeInverse();  // FIXME shoud be called automatically by ApplyInverse()
+  } else {
+    op_tree_pc_->AssembleMatrix();
+    op_tree_pc_->InitializeInverse();
+    op_tree_pc_->ComputeInverse();
+  }
 }
 
 
@@ -406,13 +452,29 @@ FlowEnergyPT_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
 int
 FlowEnergyPT_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, Teuchos::RCP<TreeVector> Y)
 {
-  if (include_pt_coupling_) {
-    Y->PutScalar(0.0);
-    return op_tree_pc_->ApplyInverse(*X, *Y);
+  int ok;
+  if (!use_cptr_prec_) {
+    if (include_pt_coupling_) {
+      Y->PutScalar(0.0);
+      ok = op_tree_pc_->ApplyInverse(*X, *Y);
+    } else {
+      ok = PK_MPCStrong<PK_BDF>::ApplyPreconditioner(X, Y);
+    }
   } else {
-    return PK_MPCStrong<PK_BDF>::ApplyPreconditioner(X, Y);
+    Operators::Impl::TreeOperator_BlockDiagonalPreconditioner gs(*op_tree_amg_);
+    // Operators::Impl::TreeOperator_BlockTriangularPreconditioner gs(*op_tree_amg_);
+    ok = gs.ApplyInverse(*X, *Y);
+
+    TreeVector res(*Y), Y2(*Y);
+    op_tree_ilu_->Apply(*Y, res);
+    res.Update(1.0, *X, -1.0);  // r = x - J * inv(J_ell) x
+
+    ok = op_tree_ilu_->ApplyInverse(res, Y2);
+    Y->Update(1.0, Y2, 1.0);
   }
+  return ok;
 }
+
 
 // -----------------------------------------------------------------------------
 // L-scheme stability constant is updated by PKs.
@@ -423,6 +485,26 @@ FlowEnergyPT_PK::SetupLSchemeKey(Teuchos::ParameterList& plist)
   auto tmp = sub_pks_[0]->SetupLSchemeKey(plist);
   L_scheme_keys_.insert(L_scheme_keys_.end(), tmp.begin(), tmp.end());
   return L_scheme_keys_;
+}
+
+
+// -----------------------------------------------------------------------------
+// Selection of default or full preconditioner
+// -----------------------------------------------------------------------------
+void
+FlowEnergyPT_PK::RemoveFluxContinuityEquations_(Teuchos::RCP<Operators::PDE_Diffusion>& pde)
+{
+  int ncells = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  for (int c = 0; c < ncells; ++c) {
+    WhetStone::DenseMatrix& Acell = pde->local_op()->matrices[c];
+
+    int nfaces = mesh_->getCellNumFaces(c);
+    for (int m = 0; m < nfaces; ++m) {
+      for (int n = 0; n < nfaces + 1; ++n) {
+        Acell(m, n) = 0.0;
+      }
+    }
+  } 
 }
 
 } // namespace Amanzi

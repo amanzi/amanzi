@@ -37,9 +37,12 @@ set(eos_src_files
     H2O_ViscosityIAPWS95.cc
     H2O_ViscosityIAPWS97.cc
     Henry_Solubility.cc
+    IAPWS.cc
     IAPWS97.cc
     IAPWS95.cc
-    IAPWS95_Spline.cc
+    IAPWS95_RaggedSplineRhoT.cc
+    IAPWS95_RaggedSplinePH.cc
+    IAPWS95_RaggedSplineHelper.cc
     IdealGas_Density.cc
     IdealGas_ThermalConductivity.cc
     IdealGas_Viscosity.cc
@@ -78,7 +81,6 @@ set(eos_inc_files
     H2O_ThermalConductivityIAPWS97.hh
     IAPWS97.hh
     IAPWS95.hh
-    IAPWS95_Spline.hh
     IAPWS95Factory.hh
     EOS_Utils.hh
     EOS_Viscosity.hh
@@ -121,7 +123,7 @@ if (BUILD_TESTS)
     if (NOT (${EOS_SOURCE_DIR} EQUAL ${EOS_BINARY_DIR}) )
         file(GLOB DataFiles "${EOS_SOURCE_DIR}/test/*.xml"
                             "${EOS_SOURCE_DIR}/test/*.eos"
-                            "${EOS_SOURCE_DIR}/test/*.csv")
+                            "${EOS_SOURCE_DIR}/test/*.py")
         file(COPY ${DataFiles} DESTINATION ${EOS_BINARY_DIR}/test/)
     endif()
 
@@ -143,9 +145,14 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/eos_iapws97.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    #add_amanzi_test(eos_iapws95_spline eos_iapws95_spline
-    #                KIND unit
-    #                SOURCE test/Main.cc test/eos_iapws95_spline.cc
-    #                LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    add_amanzi_test(eos_iapws95_spline eos_iapws95_spline
+                    KIND unit
+                    SOURCE test/Main.cc test/eos_iapws95_spline.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(eos_iapws95_spline_ph eos_iapws95_spline_ph
+                    KIND unit
+                    SOURCE test/Main.cc test/eos_iapws95_spline_ph.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 

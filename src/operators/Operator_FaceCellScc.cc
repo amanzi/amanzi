@@ -45,6 +45,8 @@ namespace Operators {
 int
 Operator_FaceCellScc::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 {
+  if (!compute_complete_) const_cast<Operator_FaceCellScc*>(this)->ComputeInverse();
+
   int ierr(0);
   Y.PutScalarGhosted(0.0);
 
@@ -355,6 +357,10 @@ Operator_FaceCellScc::SymbolicAssembleMatrix()
   // create global matrix
   Amat_ = Teuchos::rcp(new MatrixFE(graph));
   A_ = Amat_->Matrix();
+  lockStructure();
+
+  assembly_complete_ = false;
+  compute_complete_ = false;
 }
 
 

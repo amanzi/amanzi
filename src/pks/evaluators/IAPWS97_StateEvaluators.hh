@@ -34,6 +34,8 @@
 // Amanzi
 #include "CompositeVector.hh"
 #include "EvaluatorSecondaryMonotype.hh"
+#include "EvaluatorSecondaryMonotypeDetached.hh"
+#include "IAPWS_Helper.hh"
 #include "IAPWS97.hh"
 #include "PK_Physical.hh"
 #include "State.hh"
@@ -41,36 +43,6 @@
 
 namespace Amanzi {
 namespace Evaluators {
-
-int constexpr TS97_t_size = 18;
-const std::vector<std::string> TS97_names = {
-  "region", "temperature", "mass_density", "specific_volume", "isobaric_heat_capacity",
-  "isocoric_heat_capacity", "isothermal_compressibility", "isobaric_expansion_coef", 
-  "relative_pressure_coef", "isothermal_stress_coef", "thermal_conductivity", "viscosity",
-  "drhodp", "drhodh", "dtdp", "dtdh",
-  "vv", "vapor_quality"
-};
-
-enum class TS97_t : int {
-  RGN = 0,
-  T = 1,
-  RHO = 2,
-  V = 3,
-  CP = 4,
-  CV = 5,
-  KT = 6,
-  AV = 7,
-  AP = 8,
-  BP = 9,
-  K = 10,
-  MU = 11,
-  dRHOdP = 12, // derivatives
-  dRHOdH = 13,
-  dTdP = 14,
-  dTdH = 15,
-  VV = 16, // two-phase
-  X = 17
-};
 
 class IAPWS97_StateEvaluator
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
@@ -93,13 +65,12 @@ class IAPWS97_StateEvaluator
  private:
   Key domain_name_;
   Key pressure_key_, enthalpy_key_, state_key_;
-  Teuchos::RCP<AmanziEOS::IAPWS97> eos_;
+  Teuchos::RCP<AmanziEOS::IAPWS> eos_;
   static Utils::RegisteredFactory<Evaluator, IAPWS97_StateEvaluator> reg_;
 };
 
 
-class IAPWS97_DensityEvaluator
-  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class IAPWS97_DensityEvaluator : public EvaluatorSecondaryMonotypeDetached {
  public:
   explicit IAPWS97_DensityEvaluator(Teuchos::ParameterList& plist);
   IAPWS97_DensityEvaluator(const IAPWS97_DensityEvaluator& other);
@@ -123,8 +94,7 @@ class IAPWS97_DensityEvaluator
 };
 
 
-class IAPWS97_TemperatureEvaluator
-  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class IAPWS97_TemperatureEvaluator : public EvaluatorSecondaryMonotypeDetached {
  public:
   explicit IAPWS97_TemperatureEvaluator(Teuchos::ParameterList& plist);
   IAPWS97_TemperatureEvaluator(const IAPWS97_TemperatureEvaluator& other);
@@ -148,8 +118,7 @@ class IAPWS97_TemperatureEvaluator
 };
 
 
-class IAPWS97_ThermalConductivityEvaluator
-  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class IAPWS97_ThermalConductivityEvaluator : public EvaluatorSecondaryMonotypeDetached {
  public:
   explicit IAPWS97_ThermalConductivityEvaluator(Teuchos::ParameterList& plist);
   IAPWS97_ThermalConductivityEvaluator(const IAPWS97_ThermalConductivityEvaluator& other);
@@ -169,12 +138,11 @@ class IAPWS97_ThermalConductivityEvaluator
  private:
   Key domain_name_;
   Key density_key_, temperature_key_, state_key_;
-  Teuchos::RCP<AmanziEOS::IAPWS97> eos_;
+  Teuchos::RCP<AmanziEOS::IAPWS> eos_;
 };
 
 
-class IAPWS97_InternalEnergyEvaluator
-  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class IAPWS97_InternalEnergyEvaluator : public EvaluatorSecondaryMonotypeDetached {
  public:
   explicit IAPWS97_InternalEnergyEvaluator(Teuchos::ParameterList& plist);
   IAPWS97_InternalEnergyEvaluator(const IAPWS97_InternalEnergyEvaluator& other);
@@ -194,11 +162,11 @@ class IAPWS97_InternalEnergyEvaluator
  private:
   Key domain_name_;
   Key pressure_key_, enthalpy_key_, state_key_;
+  static Utils::RegisteredFactory<Evaluator, IAPWS97_InternalEnergyEvaluator> reg_;
 };
 
 
-class IAPWS97_IsothermalCompressibilityEvaluator
-  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class IAPWS97_IsothermalCompressibilityEvaluator : public EvaluatorSecondaryMonotypeDetached {
  public:
   explicit IAPWS97_IsothermalCompressibilityEvaluator(Teuchos::ParameterList& plist);
   IAPWS97_IsothermalCompressibilityEvaluator(const IAPWS97_IsothermalCompressibilityEvaluator& other);
@@ -222,8 +190,7 @@ class IAPWS97_IsothermalCompressibilityEvaluator
 };
 
 
-class IAPWS97_ViscosityEvaluator
-  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class IAPWS97_ViscosityEvaluator : public EvaluatorSecondaryMonotypeDetached {
  public:
   explicit IAPWS97_ViscosityEvaluator(Teuchos::ParameterList& plist);
   IAPWS97_ViscosityEvaluator(const IAPWS97_ViscosityEvaluator& other);

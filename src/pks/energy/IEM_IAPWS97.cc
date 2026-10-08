@@ -32,7 +32,7 @@ double
 IEM_IAPWS97::InternalEnergy(double T, double p)
 {
   double pMPa = p * 1e-6;
-  return units * eos_->ThermodynamicsPT(pMPa, T).u;
+  return units * std::get<0>(eos_->ThermodynamicsPT(pMPa, T)).u;
 }
 
 
@@ -40,7 +40,7 @@ double
 IEM_IAPWS97::DInternalEnergyDT(double T, double p)
 {
   double pMPa = p * 1e-6;
-  auto prop = eos_->ThermodynamicsPT(pMPa, T);
+  const auto& prop = std::get<0>(eos_->ThermodynamicsPT(pMPa, T));
   if (prop.rgn == 3)
     return units * (pMPa * (T * prop.ap - 1.0) - prop.cv) / pMPa / prop.bp;
   else
@@ -52,7 +52,7 @@ double
 IEM_IAPWS97::DInternalEnergyDp(double T, double p)
 {
   double pMPa = p * 1e-6;
-  auto prop = eos_->ThermodynamicsPT(pMPa, T);
+  const auto& prop = std::get<0>(eos_->ThermodynamicsPT(pMPa, T));
   if (prop.rgn == 3)
     return units * (1.0 - T * prop.ap) / prop.bp;
   else

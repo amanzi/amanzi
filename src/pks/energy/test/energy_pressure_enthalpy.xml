@@ -61,6 +61,7 @@
           </ParameterList>
           <ParameterList name="liquid phase">
             <Parameter name="eos type" type="string" value="iapws97"/>
+            <Parameter name="use iapws97" type="bool" value="true"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
@@ -184,12 +185,14 @@
     <ParameterList name="evaluators">
       <ParameterList name="thermodynamic_state">
         <Parameter name="evaluator type" type="string" value="iapws97 state"/>
+        <Parameter name="use iapws97" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="molar_density_liquid">
         <Parameter name="evaluator type" type="string" value="iapws97 density"/>
       </ParameterList>
       <ParameterList name="viscosity_liquid">
         <Parameter name="evaluator type" type="string" value="iapws97 viscosity"/>
+        <Parameter name="use iapws97" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="temperature">
         <Parameter name="evaluator type" type="string" value="iapws97 temperature"/>

@@ -14,8 +14,9 @@
 */
 
 #include "IAPWS95_StateEvaluators.hh"
-#include "PorosityEvaluator.hh"
+#include "IAPWS95_StateEvaluatorsPH.hh"
 #include "IAPWS97_StateEvaluators.hh"
+#include "PorosityEvaluator.hh"
 #include "VolumetricStrainEvaluator.hh"
 
 namespace Amanzi {
@@ -24,6 +25,14 @@ namespace Evaluators {
 Utils::RegisteredFactory<Evaluator, PorosityEvaluator> PorosityEvaluator::reg_("porosity");
 Utils::RegisteredFactory<Evaluator, VolumetricStrainEvaluator> VolumetricStrainEvaluator::reg_(
   "volumetric strain");
+
+Utils::RegisteredFactory<Evaluator, IAPWS95_StateEvaluatorPH> IAPWS95_StateEvaluatorPH::reg_("iapws95 ph state");
+Utils::RegisteredFactory<Evaluator, IAPWS95_DensityEvaluatorPH> IAPWS95_DensityEvaluatorPH::reg_("iapws95 ph density");
+Utils::RegisteredFactory<Evaluator, IAPWS95_ViscosityEvaluatorPH> IAPWS95_ViscosityEvaluatorPH::reg_("iapws95 ph viscosity");
+Utils::RegisteredFactory<Evaluator, IAPWS95_TemperatureEvaluatorPH> IAPWS95_TemperatureEvaluatorPH::reg_("iapws95 ph temperature");
+Utils::RegisteredFactory<Evaluator, IAPWS95_InternalEnergyEvaluatorPH> IAPWS95_InternalEnergyEvaluatorPH::reg_("iapws95 ph internal energy");
+Utils::RegisteredFactory<Evaluator, IAPWS95_IsothermalCompressibilityEvaluatorPH>
+   IAPWS95_IsothermalCompressibilityEvaluatorPH::reg_("iapws95 ph isothermal compressibility");
 
 Utils::RegisteredFactory<Evaluator, IAPWS95_StateEvaluator> IAPWS95_StateEvaluator::reg_("iapws95 state");
 Utils::RegisteredFactory<Evaluator, IAPWS95_DensityEvaluator> IAPWS95_DensityEvaluator::reg_("iapws95 density");
@@ -34,6 +43,7 @@ Utils::RegisteredFactory<Evaluator, IAPWS97_StateEvaluator> IAPWS97_StateEvaluat
 Utils::RegisteredFactory<Evaluator, IAPWS97_DensityEvaluator> IAPWS97_DensityEvaluator::reg_("iapws97 density");
 Utils::RegisteredFactory<Evaluator, IAPWS97_TemperatureEvaluator> IAPWS97_TemperatureEvaluator::reg_("iapws97 temperature");
 Utils::RegisteredFactory<Evaluator, IAPWS97_ViscosityEvaluator> IAPWS97_ViscosityEvaluator::reg_("iapws97 viscosity");
+Utils::RegisteredFactory<Evaluator, IAPWS97_InternalEnergyEvaluator> IAPWS97_InternalEnergyEvaluator::reg_("iapws97 internal energy");
 Utils::RegisteredFactory<Evaluator, IAPWS97_IsothermalCompressibilityEvaluator>
    IAPWS97_IsothermalCompressibilityEvaluator::reg_("iapws97 isothermal compressibility");
 

@@ -17,53 +17,78 @@
 #ifndef AMANZI_IAPWS95_HH_
 #define AMANZI_IAPWS95_HH_
 
+#include <cstdint>
 #include <tuple>
 
 #include "Teuchos_ParameterList.hpp"
 
+#include "PowellHybrid.hh"
+
+#include "IAPWS.hh"
 #include "IAPWS97.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
-class IAPWS95 {
+struct SaturationState {
+  double p;
+  double Tsat, Tsat_p;
+
+  double hl_p, hv_p;
+  double vl_p, vv_p;
+
+  Properties liquid;
+  Properties vapor;
+};
+
+
+class IAPWS95 : public IAPWS {
  public:
-  IAPWS95(Teuchos::ParameterList& plist) : eos97_(plist) {};
+  IAPWS95(Teuchos::ParameterList& plist) : IAPWS(plist), eos97_(plist) {};
   ~IAPWS95() {};
 
-  std::tuple<Properties, Properties, Properties> ThermodynamicsPT(double p, double T);
   std::tuple<Properties, Properties, Properties> ThermodynamicsRhoT(double rho, double T);
+  virtual std::tuple<Properties, Properties, Properties> ThermodynamicsPT(double p, double T);
+  virtual std::tuple<Properties, Properties, Properties> ThermodynamicsPH(double p, double h);
 
   std::array<double, 6> IdealGasPart(double rho, double T);
   virtual std::array<double, 6> ResidualPart(double rho, double T);
+  virtual std::array<double, 3> ResidualPartFirst(double rho, double T);
 
   Properties PopulateProperties(double rho, double T);
   Properties ExtendProperties(double rho, const Properties& prop);
 
-  std::tuple<double, double, double> SaturationLine(double T, double rhol0, double rhov0);
+  Properties PopulatePropertiesFromEntropy1(double p, double h);
+  Properties PopulatePropertiesFromEntropy2(double p, double h, const SaturationState& sat);
+
+  virtual std::array<double, 6> EntropyDerivativesPH(double p, double h);
+  std::array<double, 6> EntropyDerivativesPHbase(double rho, double T);
+
+  std::tuple<double, double, double> SaturationLineT(double T, double rhol0, double rhov0);
+  SaturationState SaturationLineP(double p);
+
   double VaporPressure(double T);
   double DensityLiquid(double T);
   double DensityVapor(double T);
 
-  // other properties
-  double ThermalConductivity(double rho, double T, Properties& prop) {
-    return eos97_.ThermalConductivity(rho, T, prop);
-  }
-  double Viscosity(double rho, double T) { return eos97_.Viscosity(rho, T); }
-
   // supporting functions
-  int get_itrs() { return itrs_; }
   void Print(Properties& prop);
 
+ private:
+  // compute either only 1st-order or 1st-order and 2nd-order derivatiovs
+  template<bool SecondOrder> auto ResidualPartImpl_(double rho, double T);
+
  public:
-  int itrs_;
+  std::uint64_t residual_calls = 0;  // statistics 
+  std::uint64_t brent_root_itrs = 0;
+  std::uint64_t brent_bracket_itrs = 0;
+  std::uint64_t powell_root_itrs = 0;
 
   // static constants
   // IF97 uses different value for R compared to IAPWS95 formulation
-  static constexpr double PC = 22.064;     // critical pressure, MPa
-  static constexpr double TC = 647.096;    // critical temperature, K
   static constexpr double TT = 273.16;
-  static constexpr double RHOC = 322.0;    // critical density, kg/m3
+
+  static constexpr double HC = 2084.256263;  // critical enthalpy, kJ/kg
   static constexpr double R = 0.46151805;  // specific gas constant, kJ/kg/K
 
   // deal-gas part of Helmholtz free energy
@@ -156,12 +181,25 @@ class IAPWS95 {
      2.0, 4.0, 8.0, 18.0, 37.0, 71.0
   };
 
- private:
+ protected:
   IAPWS97 eos97_;
+};
+
+
+struct FrhoT {
+  typedef Utils::VectorSTL Vector;
+  FrhoT(double p, double h, IAPWS95* eos) : p_(p), h_(h), eos_(eos) {};
+  Vector operator()(Vector& x);
+
+  double p_, h_;
+  IAPWS95* eos_;
 };
 
 } // namespace AmanziEOS
 } // namespace Amanzi
+
+
+#include "IAPWS95_impl.hh"
 
 #endif
 

@@ -272,7 +272,8 @@ TEST(FactoryEOS)
       .set<std::string>("field name", "density")
       .set<std::string>("eos type", name)
       .set<double>("molar mass", 18.0153e-03)
-      .set<double>("density", 997.0);
+      .set<double>("density", 997.0)
+      .set<bool>("use iapws95", true);
 
     EOSFactory<EOS_Density> factory;
     auto eos = factory.Create(plist);
@@ -288,7 +289,8 @@ TEST(FactoryEOS)
     plist.set<std::string>("table name", "test/h2o.eos")
       .set<std::string>("field name", "viscosity")
       .set<std::string>("eos type", name)
-      .set<std::string>("format", "Amanzi");
+      .set<std::string>("format", "Amanzi")
+      .set<bool>("use iapws95", true);
 
     EOSFactory<EOS_Viscosity> factory;
     auto eos = factory.Create(plist);

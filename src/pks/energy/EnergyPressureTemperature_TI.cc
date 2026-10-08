@@ -182,23 +182,31 @@ EnergyPressureTemperature_PK::UpdatePreconditioner(double t,
 
   S_->GetEvaluator(ie_liquid_key_).UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
   const auto& dUidT = S_->GetDerivative<CV_t>(ie_liquid_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT);
-  auto& dUidT_c = *dUrdT.ViewComponent("cell");
+  auto& dUidT_c = *dUidT.ViewComponent("cell");
 
   S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, passwd_);
   const auto& eta_c = *S_->Get<CV_t>(mol_density_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
   const auto& rho_r = *S_->Get<CV_t>(particle_density_key_, Tags::DEFAULT).ViewComponent("cell");
   const auto& phi_c = *S_->Get<CV_t>(porosity_key_, Tags::DEFAULT).ViewComponent("cell");
 
+  Teuchos::RCP<const Epetra_MultiVector> coef_c;
+  if (assumptions_.flow_on_manifold) {
+    if (S_->HasRecord(aperture_key_)) {
+      coef_c = S_->Get<CV_t>(aperture_key_, Tags::DEFAULT).ViewComponent("cell");
+    }
+  }
   
   if (dt > 0.0) {
-    op_acc_->AddAccumulationDelta(*up->Data().ptr(), dEdT, dEdT, dt, "cell");
     for (int c = 0; c < ncells_owned; ++c) {
       if (dEdT_c[0][c] < 0.0) {
         double tmp = phi_c[0][c];
         dEdT_c[0][c] = rho_r[0][c] * dUrdT_c[0][c] * (1.0 - tmp) + eta_c[0][c] * dUidT_c[0][c] * tmp;
+        if (assumptions_.flow_on_manifold) dEdT_c[0][c] *= (*coef_c)[0][c];
       }
     }
+    op_acc_->AddAccumulationTerm(dEdT, dt, "cell");
   }
+
 
   // implicit source models
   if (heat_src_) {

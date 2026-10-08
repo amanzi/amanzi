@@ -1,0 +1,196 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Energy PK
+*/
+
+#include <cstdlib>
+#include <cmath>
+#include <iostream>
+#include <string>
+#include <vector>
+
+// TPLs
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ParameterXMLFileReader.hpp"
+#include "UnitTest++.h"
+
+// Amanzi
+#include "CommonDefs.hh"
+#include "CompositeVector.hh"
+#include "EnergyPressureEnthalpy_PK.hh"
+#include "evaluators_reg.hh"
+#include "IAPWS95.hh"
+#include "IAPWS95_StateEvaluatorsPH.hh"
+#include "MeshFactory.hh"
+#include "PK_Physical.hh"
+#include "State.hh"
+#include "VerboseObject.hh"
+
+TEST(EVALUATOR_DERIVATIVE_TABLES_PH)
+{
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::Evaluators;
+  using namespace Amanzi::Energy;
+
+  using CV_t = CompositeVector;
+  using CVS_t = CompositeVectorSpace;
+
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
+
+  if (MyPID == 0) std::cout << "Test: derivative tables: spline p/h" << std::endl;
+
+  // read parameter list
+  std::string xmlFileName = "test/energy_iapws95_ph.xml";
+  Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
+  auto plist = Teuchos::rcp(new Teuchos::ParameterList(xmlreader.getParameters()));
+
+  plist->sublist("PKs").sublist("energy").sublist("thermal conductivity evaluator")
+    .sublist("All").sublist("liquid phase")
+    .set<bool>("use iapws95 spline p/h", true);
+  plist->sublist("state").sublist("evaluators").sublist("thermodynamic_state")
+    .set<bool>("use iapws95 spline p/h", true);
+  plist->sublist("state").sublist("evaluators").sublist("viscosity_liquid")
+    .set<bool>("use iapws95 spline p/h", true);
+
+  // create a mesh framework
+  Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
+  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
+
+  Preference pref;
+  pref.push_back(Framework::MSTK);
+
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(pref);
+  int n = 100;
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, n, n);
+
+  // create a simple state and populate it
+  Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("state");
+  Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
+  S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
+
+  Teuchos::ParameterList pk_tree = plist->sublist("PK tree").sublist("energy");
+  auto soln = Teuchos::rcp(new TreeVector());
+  auto EPK = Teuchos::rcp(new EnergyPressureEnthalpy_PK(pk_tree, plist, S, soln));
+
+  EPK->Setup();
+
+  // add viscosity to state
+  std::string passwd("");
+  Key state_key = Keys::getKey("", "thermodynamic_state");
+  Key pressure_key = Keys::getKey("", "pressure");
+  Key enthalpy_key = Keys::getKey("", "enthalpy");
+  Key ie_key = Keys::getKey("", "internal_energy");
+  Key density_key = Keys::getKey("", "mass_density_liquid");
+  Key temperature_key = Keys::getKey("", "temperature");
+  Key viscosity_key = Keys::getKey("", "viscosity_liquid");
+  Key conductivity_key = Keys::getKey("", "thermal_conductivity");
+
+  S->Require<CV_t, CVS_t>(ie_key, Tags::DEFAULT, ie_key)
+    .SetMesh(mesh)->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+  S->RequireEvaluator(ie_key, Tags::DEFAULT);
+
+  S->RequireDerivative<CV_t, CVS_t>(ie_key, Tags::DEFAULT, enthalpy_key, Tags::DEFAULT,
+                                    ie_key).SetGhosted();
+
+  S->Require<CV_t, CVS_t>(viscosity_key, Tags::DEFAULT, viscosity_key)
+    .SetMesh(mesh)->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+    ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
+
+  Teuchos::ParameterList elist(viscosity_key);
+  elist.set<std::string>("tag", "");
+  auto eval = Teuchos::rcp(new Evaluators::IAPWS97_ViscosityEvaluator(elist));
+  S->SetEvaluator(viscosity_key, Tags::DEFAULT, eval);
+
+  S->RequireDerivative<CV_t, CVS_t>(viscosity_key, Tags::DEFAULT, pressure_key, Tags::DEFAULT,
+                                    viscosity_key).SetGhosted();
+  S->RequireDerivative<CV_t, CVS_t>(viscosity_key, Tags::DEFAULT, enthalpy_key, Tags::DEFAULT,
+                                    viscosity_key).SetGhosted();
+
+  // add derivative of thermal conductivity to state
+  S->RequireDerivative<CV_t, CVS_t>(conductivity_key, Tags::DEFAULT, pressure_key, Tags::DEFAULT,
+                                    conductivity_key).SetGhosted();
+  S->RequireDerivative<CV_t, CVS_t>(conductivity_key, Tags::DEFAULT, enthalpy_key, Tags::DEFAULT,
+                                    conductivity_key).SetGhosted();
+  S->RequireDerivative<CV_t, CVS_t>(conductivity_key, Tags::DEFAULT, temperature_key, Tags::DEFAULT,
+                                    conductivity_key).SetGhosted();
+
+  S->Setup();
+  S->InitializeFields();
+
+  // populate (p,h) table
+  double p_min = 0.2;
+  double p_max = 50.0;
+  double h_min = 500.0;
+  double h_max = 3600.0;
+
+  auto& p_c = *S->GetW<CompositeVector>(pressure_key, pressure_key).ViewComponent("cell");
+  auto& h_c = *S->GetW<CompositeVector>(enthalpy_key, passwd).ViewComponent("cell");
+
+  double factor = 1000.0 * CommonDefs::MOLAR_MASS_H2O;
+  int c = 0;
+  for (double i = 0; i < n; i++) {
+    for (double j = 0; j < n; j++) {
+      // double log_min = std::log(p_min);
+      // double log_max = std::log(p_max);
+      // p_c[0][c] = std::exp(log_min + (log_max - log_min) * i / double(n)) * 1e+6;
+      p_c[0][c] = (p_min + (p_max - p_min) * i / double(n)) * 1e+6;
+      h_c[0][c] = (h_min + (h_max - h_min) * j / double(n)) * factor;
+      c++;
+    }
+  }
+
+  S->InitializeEvaluators();
+  EPK->Initialize();
+  S->CheckAllFieldsInitialized();
+
+  Tag tag = Tags::DEFAULT;
+  auto eval_p = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(S->GetEvaluatorPtr(pressure_key, tag));
+  auto eval_h = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(S->GetEvaluatorPtr(enthalpy_key, tag));
+  eval_p->SetChanged();
+  eval_h->SetChanged();
+
+  // compute selective derivative
+  S->GetEvaluator(density_key).UpdateDerivative(*S, "test", pressure_key, Tags::DEFAULT);
+  auto& drhodp = *S->GetDerivative<CV_t>(density_key, tag, pressure_key, tag).ViewComponent("cell");
+
+  S->GetEvaluator(density_key).UpdateDerivative(*S, "test", enthalpy_key, Tags::DEFAULT);
+  auto& drhodh = *S->GetDerivative<CV_t>(density_key, tag, enthalpy_key, tag).ViewComponent("cell");
+
+  S->GetEvaluator(ie_key).UpdateDerivative(*S, "test", enthalpy_key, Tags::DEFAULT);
+  auto& dudh = *S->GetDerivative<CV_t>(ie_key, tag, enthalpy_key, tag).ViewComponent("cell");
+
+  S->GetEvaluator(conductivity_key).UpdateDerivative(*S, "test", temperature_key, Tags::DEFAULT);
+  auto& dkdT = *S->GetDerivative<CV_t>(conductivity_key, tag, temperature_key, tag).ViewComponent("cell");
+
+  auto& state_c = *S->Get<CV_t>(state_key, tag).ViewComponent("cell");
+
+  c = 0;
+  std::ofstream out("field.dat");
+  for (int i = 0; i < n; ++i) {
+    for (int j = 0; j < n; ++j) {
+      CHECK(drhodp[0][c] > 0);
+      CHECK(drhodh[0][c] < 0);
+      CHECK(dudh[0][c] > 0);
+      CHECK(state_c[(int)TSPH_t::KT][c] > 0);
+      // out << p_c[0][c] * 1e-6 << " " << h_c[0][c] / factor << " " << state_c[(int)TSPH_t::K][c] << std::endl;
+      out << p_c[0][c] * 1e-6 << " " << h_c[0][c] / factor << " " << dkdT[0][c] << std::endl;
+      c++;
+    }
+  }
+  out.close();
+}
+

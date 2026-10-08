@@ -109,10 +109,10 @@ FlowEnergyPH_PK::Setup()
 
   // thermodynamics (need a few evaluators here to enforce IAPWS97 formulation)
   if (!S_->HasRecord(state_key_)) {
-    S_->Require<CV_t, CVS_t>(state_key_, Tags::DEFAULT, state_key_, Evaluators::TS97_names)
+    S_->Require<CV_t, CVS_t>(state_key_, Tags::DEFAULT, state_key_, Evaluators::TSPH_names)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, Evaluators::TS97_t_size);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, Evaluators::TSPH_t_size);
     S_->RequireEvaluator(state_key_, Tags::DEFAULT);
   }
 
@@ -331,7 +331,6 @@ FlowEnergyPH_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // try timestep
   bool fail = PK_MPCStrong<PK_BDF>::AdvanceStep(t_old, t_new, reinit);
   if (fail) archive.Restore("");
-
   return fail;
 }
 
@@ -439,7 +438,7 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   pde10_diff_cond_->SetBCs(bc_trial_pres, bc_enth);
   pde10_diff_cond_->ApplyBCs(true, true, false);
 
-  // -- diffusion due to heat transport div(K beta grad dp)
+  // -- diffusion due to heat transport div(K beta [grad dp])
   //    on a manifold, K is defined by the cubic law 
   S_->GetEvaluator(beta_key_).Update(*S_, passwd);
   *coef = S_->Get<CV_t>(beta_key_, tag);
@@ -544,15 +543,49 @@ FlowEnergyPH_PK::ModifyCorrection(double dt,
   int ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL,
                                            AmanziMesh::Parallel_kind::OWNED);
 
-  // increment clipping
-  // -- if enthalpy is out of scope, we need to terminate  
+  // correction clipping (cells)
+  // -- limit pressure change
   double max_change(0.20);
   for (int c = 0; c < ncells_owned; ++c) {
-    double tmp = std::min(std::fabs(h_c[0][c]) * max_change, 20.0);
+    double tmp = std::fabs(p_c[0][c]) * max_change;
+    dp_c[0][c] = std::clamp(dp_c[0][c], -tmp, tmp);
+    if (std::fabs(std::fabs(dp_c[0][c]) - tmp) < 1e-8 * tmp) nclipped++;
+  }
+
+  // -- limit enthalpy change
+  max_change = 0.20;
+  constexpr double dTmax = 1.0;
+  constexpr double dHmax = 180.0 * dTmax;
+  for (int c = 0; c < ncells_owned; ++c) {
+    double tmp = std::min(std::fabs(h_c[0][c]) * max_change, dHmax);
     dh_c[0][c] = std::clamp(dh_c[0][c], -tmp, tmp);
     if (std::fabs(std::fabs(dh_c[0][c]) - tmp) < 1e-8 * tmp) nclipped++;
   }
 
+  // correction clipping (faces)
+  // potentiall, we may use different strategy
+  const auto& p_f = *u->SubVector(0)->Data()->ViewComponent("face");
+  const auto& h_f = *u->SubVector(1)->Data()->ViewComponent("face");
+
+  const auto& dp_f = *du->SubVector(0)->Data()->ViewComponent("face");
+  const auto& dh_f = *du->SubVector(1)->Data()->ViewComponent("face");
+
+  int nfaces_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE,
+                                           AmanziMesh::Parallel_kind::OWNED);
+
+  for (int f = 0; f < nfaces_owned; ++f) {
+    double tmp = std::fabs(p_f[0][f]) * max_change;
+    dp_f[0][f] = std::clamp(dp_f[0][f], -tmp, tmp);
+    if (std::fabs(std::fabs(dp_f[0][f]) - tmp) < 1e-8 * tmp) nclipped++;
+  }
+
+  for (int f = 0; f < nfaces_owned; ++f) {
+    double tmp = std::min(std::fabs(h_f[0][f]) * max_change, dHmax);
+    dh_f[0][f] = std::clamp(dh_f[0][f], -tmp, tmp);
+    if (std::fabs(std::fabs(dh_f[0][f]) - tmp) < 1e-8 * tmp) nclipped++;
+  }
+
+  // report if correction was modifed
   int ntmp(nclipped);
   mesh_->getComm()->SumAll(&ntmp, &nclipped, 1);
 

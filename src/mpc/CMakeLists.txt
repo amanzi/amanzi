@@ -204,7 +204,21 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_supercriticalPH.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # Test: mpc driver for flow and reactive transport
+    add_amanzi_test(mpc_two_phasePH_cooling mpc_two_phasePH_cooling
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_two_phasePH_cooling.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(mpc_two_phasePH_heating mpc_two_phasePH_heating
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_two_phasePH_heating.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(mpc_two_phasePH_sink mpc_two_phasePH_sink
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_two_phasePH_sink.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
     # Test: mpc driver for flow and reactive transport
     add_amanzi_test(mpc_flow_reactive_transport mpc_flow_reactive_transport
                     KIND      int

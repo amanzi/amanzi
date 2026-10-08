@@ -171,10 +171,10 @@ EnergyPressureEnthalpy_PK::Setup()
   // other fields
   // thermodynamics
   if (!S_->HasRecord(state_key_)) {
-    S_->Require<CV_t, CVS_t>(state_key_, Tags::DEFAULT, state_key_, Evaluators::TS97_names)
+    S_->Require<CV_t, CVS_t>(state_key_, Tags::DEFAULT, state_key_, Evaluators::TSPH_names)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, Evaluators::TS97_t_size);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, Evaluators::TSPH_t_size);
     S_->RequireEvaluator(state_key_, Tags::DEFAULT);
   }
 
@@ -711,7 +711,7 @@ void EnergyPressureEnthalpy_PK::ComputeSecondaryBCs()
       else pMPa = (*p_bf)[0][bf] * 1e-6;
 
       bc_model_enth[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_value_enth[f] = CommonDefs::ENTHALPY_FACTOR * eos->ThermodynamicsPT(pMPa, bc_value[f]).h;
+      bc_value_enth[f] = CommonDefs::ENTHALPY_FACTOR * std::get<0>(eos->ThermodynamicsPT(pMPa, bc_value[f])).h;
 
       if (p_f.get()) (*h_f)[0][f] = bc_value_enth[f];
       else (*h_bf)[0][bf] = bc_value_enth[f];

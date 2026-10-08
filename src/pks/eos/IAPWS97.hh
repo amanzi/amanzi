@@ -20,60 +20,20 @@
 #ifndef AMANZI_IAPWS97_HH_
 #define AMANZI_IAPWS97_HH_
 
+#include <cstdint>
 #include <tuple>
 
 #include "Teuchos_ParameterList.hpp"
 
+#include "IAPWS.hh"
+
 namespace Amanzi {
 namespace AmanziEOS {
 
-enum class Phase_t : int {
-  None = 0,
-  CompressibleLiquid = 1,
-  Gas = 2,
-  CriticalPoint = 3,
-  SaturatedVapor = 4,
-  SaturatedLiquid = 5,
-  TwoPhases = 6,
-  SupercriticalLiquid = 7,
-  Vapor = 8,
-  Liquid = 9
-};
-
-struct Properties {
-  double p = 0.0; // pressure, MPa
-  double T = 0.0; // temeparture, K
-  double rho = 0.0;
-  double v = 0.0; // specific volume, m3/kg
-  double h = 0.0; // specific enthalpy, kJ/kg
-  double u = 0.0; // specific internal energy, kJ/kg
-  double s = 0.0; // specific entropy, kJ/kg/K
-  double cp = 0.0; // specific isobaric heat capacity, kJ/kg/K
-  double cv = 0.0; // specific isocoric heat capacity, kJ/kg/K
-  double w = 0.0; // speed of sound, m/s
-  double kt = 0.0; // isothermal compressibility, 1/MPa
-  double av = 0.0; // isobaric cubic expansion coefficient, 1/K
-  double ap = 0.0; // relative pressure coefficient, 1/K
-  double bp = 0.0; // isothermal stress coefficient, kg/m3
-
-  double helmholtz = 0.0; // specific Helmholtz free energy, kJ/kg
-  double gibbs = 0.0; // specific Gibbs free energy, kJ/kg
-
-  double mu = 0.0; // dynamic viscosity, Pa s
-  double k = 0.0; // thermal conductivity, W/m/K
-
-  double sigma = 0.0; // surface tension, N/m
-
-  Phase_t phase = Phase_t::None; // phase id
-  double x = 0.0; // vapor quality
-
-  int rgn = 0; // region id
-};
-
 // Equation of State model
-class IAPWS97 {
+class IAPWS97 : public IAPWS {
  public:
-  IAPWS97(Teuchos::ParameterList& plist) {};
+  IAPWS97(Teuchos::ParameterList& plist) : IAPWS(plist) {};
   ~IAPWS97() {};
 
   // model id for subregions of region 3
@@ -84,8 +44,8 @@ class IAPWS97 {
     v = 21, w = 22, x = 23, y = 24, z = 25
   };
 
-  Properties ThermodynamicsPT(double p, double T);
-  std::tuple<Properties, Properties, Properties> ThermodynamicsPH(double p, double h);
+  virtual std::tuple<Properties, Properties, Properties> ThermodynamicsPT(double p, double T);
+  virtual std::tuple<Properties, Properties, Properties> ThermodynamicsPH(double p, double h);
 
   double SaturationLineP(double p);
   double SaturationLineT(double T);
@@ -133,28 +93,19 @@ class IAPWS97 {
   Phase_t PhaseId(double p, double T, int rgn, double x);
 
   // other properties
-  double SurfaceTension(double T);
-  double ThermalConductivity(double rho, double T, Properties& prop);
-  double Viscosity(double rho, double T);
   Properties ExtendProperties(const Properties& prop);
 
   // supporting functions
-  int get_itrs() { return itrs_; }
   void Print(Properties& prop);
 
  public:
-  int itrs_;
-
   // static constants
   // IF97 uses different value for R compared to IAPWS95 formulation
   static constexpr double PSAT_623 = 16.5291642526;  // MPa (page 6, boundary 1-3)
   static constexpr double PSAT_643_15 = 21.0433673189752319;  // MPa
   static constexpr double PMIN = 0.000611212677444;  // MPa
 
-  static constexpr double TC = 647.096;  // critical temperature, K
-  static constexpr double PC = 22.064;   // critical pressure, MPa
   static constexpr double HC = 2086.3;   // critical enthalpy, kJ/kg
-  static constexpr double RHOC = 322.0;  // critical density, kg/m3
   static constexpr double R = 0.461526;  // specific gas constant, kJ/kg/K
 
   // static data for region 1
@@ -1109,43 +1060,10 @@ class IAPWS97 {
   static constexpr double bnd23_n4 = 0.57254459862746e+3;
   static constexpr double bnd23_n5 = 0.13918839778870e+2;
 
-  // other properties
-  // -- thermal conductivity
-  static constexpr int N0_ThCond = 5;
-  static constexpr double thermal_cond_n0[N0_ThCond] = {
-    2.443221e-3, 1.323095e-2, 6.770357e-3, -3.454586e-3, 4.096266e-4
-  };
-
-  static constexpr int N1_ThCond = 6;
-  static constexpr double thermal_cond_n1[N0_ThCond][N1_ThCond] = {
-    { 1.60397357, -0.646013523, 0.111443906, 0.102997357, -0.0504123634,  0.00609859258 },
-    { 2.33771842, -2.78843778,  1.53616167, -0.463045512,  0.0832827019, -0.00719201245 },
-    { 2.19650529, -4.54580785,  3.55777244, -1.40944978,   0.275418278,  -0.0205938816 },
-    {-1.21051378,  1.60812989, -0.621178141, 0.0716373224, 0.0,           0.0 },
-    {-2.7203370,   4.57586331, -3.18369245,  1.1168348,   -0.19268305,    0.012913842 }
-  };
-
-  // -- dynamic viscosity 
-  static constexpr int N0_Visc = 4;
-  static constexpr double viscosity_n0[N0_Visc] = {
-    1.67752, 2.20462, 0.6366564, -0.241605
-  };
-
-  static constexpr int N1_Visc = 21;
-  static constexpr int viscosity_k1[N1_Visc] = {
-    0, 1, 2, 3, 0, 1, 2, 3, 5, 0, 1, 2, 3, 4, 0, 1, 0, 3, 4, 3, 5
-  };
-  static constexpr int N1_Visc_kmax = 6;
-  static constexpr int viscosity_l1[N1_Visc] = {
-    0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 4, 4, 5, 6, 6
-  };
-  static constexpr int N1_Visc_lmax = 7;
-  static constexpr double viscosity_n1[N1_Visc] = {
-    0.520094,     0.850895e-1, -0.108374e1, -0.289555,  0.222531,    0.999115,
-    0.188797e1,   0.126613e1,   0.120573,   -0.281378, -0.906851,   -0.772479,
-   -0.489837,    -0.257040,     0.161913,    0.257399, -0.325372e-1, 0.698452e-1,
-    0.872102e-2, -0.435673e-2, -0.593264e-3
-  };
+  // other data
+  std::uint64_t brent_root_itrs = 0;  // statistics
+  std::uint64_t brent_bracket_itrs = 0;
+  std::uint64_t powell_root_itrs = 0;
 };
 
 
