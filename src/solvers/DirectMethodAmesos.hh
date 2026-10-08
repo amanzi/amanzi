@@ -16,12 +16,14 @@ List `"amesos parameters`" contains parameters that understood by this library.
 These parameters may violate the camel-case convention employed by this spec.
 Additional parameters are:
 
-* `"solver name`" [string] declares name of one of the supported direct solvers.
-  Available options are `"klu`", `"superludist`", `"basker`", etc, see Amesos and
-  Amesos2 manuals for details. The default value is serial solver `"klu`".
+.. admonition:: solvers_amesos-spec
 
-* `"amesos version`" [int] specifies version of Amesos. Available options are 1 and 2.
-  The default value is 1.
+  * `"solver name`" [string] declares name of one of the supported direct solvers.
+    Available options are `"klu`", `"superludist`", `"basker`", etc, see Amesos and
+    Amesos2 manuals for details. The default value is serial solver `"klu`".
+
+  * `"amesos version`" [int] specifies version of Amesos. Available options are 1 and 2.
+    The default value is 1.
 
 .. code-block:: xml
 
@@ -66,7 +68,8 @@ class DirectMethodAmesos
   using Inv = Inverse<Epetra_CrsMatrix, Epetra_CrsMatrix, Epetra_Vector, Epetra_Map>;
 
  public:
-  DirectMethodAmesos() : Inv(), inited_(false), updated_(false), computed_(false){};
+  DirectMethodAmesos()
+    : Inv(), inited_(false), updated_(false), computed_(false) {};
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override;
   virtual void InitializeInverse() override;
@@ -77,8 +80,8 @@ class DirectMethodAmesos
   virtual std::string returned_code_string() const override;
 
  protected:
-  using Inv::m_;
   using Inv::h_;
+  using Inv::m_;
 
   mutable Teuchos::ParameterList plist_;
   Teuchos::RCP<VerboseObject> vo_;

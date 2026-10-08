@@ -37,10 +37,10 @@ class DarcyVelocityEvaluator
   virtual void EvaluatePartialDerivative_(const State& S,
                                           const Key& wrt_key,
                                           const Tag& wrt_tag,
-                                          const std::vector<CompositeVector*>& results) override{};
+                                          const std::vector<CompositeVector*>& results) override {};
 
   // since cell requires face, the default behavior is not applicable
-  virtual void EnsureCompatibility_ToDeps_(State& S) override{
+  virtual void EnsureCompatibility_ToDeps_(State& S) override {
     // if this were implemented, it should call something like:
     // S.Require<CompositeVector,CompositeVectorSpace>(vol_flowrate_key, tag)
     //  .SetMesh(... the mesh ...)

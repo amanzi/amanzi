@@ -13,6 +13,16 @@
 
 #include "VaporLiquid_Tabular.hh"
 
+static double kB1 = 1.99274064;
+static double kB2 = 1.09965342;
+static double kB3 = -0.510839303;
+static double kB4 = -1.75493479;
+static double kB5 = -45.5170352;
+static double kB6 = -6.74694450e+5;
+
+static double kq = -0.023767;
+static double kTc = 647.096;
+
 namespace Amanzi {
 namespace AmanziEOS {
 

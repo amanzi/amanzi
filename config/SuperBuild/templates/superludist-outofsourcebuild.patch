@@ -1,0 +1,12 @@
+diff --color -ruN superlu_dist-8.2.1-orig/FORTRAN/CMakeLists.txt superlu_dist-8.2.1/FORTRAN/CMakeLists.txt
+--- superlu_dist-8.2.1-orig/FORTRAN/CMakeLists.txt	2025-10-09 15:45:04
++++ superlu_dist-8.2.1/FORTRAN/CMakeLists.txt	2025-10-09 18:36:35
+@@ -117,7 +117,7 @@
+ add_custom_command(
+   OUTPUT superlu_dist_config.fh
+   COMMAND sed;'/^\\//;d';<;superlu_dist_config.h;>;superlu_dist_config.fh
+-  COMMAND cp;superlu_dist_config.fh;${SuperLU_DIST_SOURCE_DIR}/FORTRAN/.
++  COMMAND cp;superlu_dist_config.fh;${CMAKE_BINARY_DIR}/FORTRAN/.
+   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/FORTRAN
+ )
+ add_custom_target(config_f DEPENDS superlu_dist_config.fh)

@@ -79,10 +79,11 @@ method is Newton.  If it applies an appoximation, it is inexact Newton.
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 class SolverNewton : public Solver<Vector, VectorSpace> {
  public:
-  SolverNewton(Teuchos::ParameterList& plist) : plist_(plist){};
+  SolverNewton(Teuchos::ParameterList& plist)
+    : plist_(plist) {};
 
   SolverNewton(Teuchos::ParameterList& plist,
                const Teuchos::RCP<SolverFnBase<Vector>>& fn,
@@ -102,7 +103,7 @@ class SolverNewton : public Solver<Vector, VectorSpace> {
 
   // mutators
   void set_tolerance(double tol) { tol_ = tol; }
-  void set_pc_lag(int pc_lag){}; // Newton does not need it
+  void set_pc_lag(int pc_lag) {}; // Newton does not need it
 
   // access
   double tolerance() { return tol_; }
@@ -151,7 +152,7 @@ class SolverNewton : public Solver<Vector, VectorSpace> {
 /* ******************************************************************
 * Public Init method.
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 void
 SolverNewton<Vector, VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn,
                                         const VectorSpace& map)
@@ -164,7 +165,7 @@ SolverNewton<Vector, VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector>>
 /* ******************************************************************
 * Initialization of the Newton solver
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 void
 SolverNewton<Vector, VectorSpace>::Init_()
 {
@@ -194,7 +195,7 @@ SolverNewton<Vector, VectorSpace>::Init_()
 /* ******************************************************************
 * Base Newton solver
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 int
 SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u)
 {
@@ -227,13 +228,13 @@ SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u)
     }
 
     // Evaluate the nonlinear function.
-    if (vo_->os_OK(Teuchos::VERB_EXTREME)) *vo_->os() << "Calling residual function" << std::endl;
+    if (vo_->os_OK(Teuchos::VERB_EXTREME) ) *vo_->os() << "Calling residual function" << std::endl;
     fun_calls_++;
     fn_->Residual(u, r);
 
     // If monitoring the residual, check for convergence.
     if (monitor_ == SOLVER_MONITOR_RESIDUAL) {
-      if (vo_->os_OK(Teuchos::VERB_EXTREME)) *vo_->os() << "Monitoring residual" << std::endl;
+      if (vo_->os_OK(Teuchos::VERB_EXTREME) ) *vo_->os() << "Monitoring residual" << std::endl;
       previous_error = error;
       error = fn_->ErrorNorm(u, r);
       residual_ = error;
@@ -265,7 +266,7 @@ SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u)
     }
 
     // Update the preconditioner.
-    if (vo_->os_OK(Teuchos::VERB_EXTREME)) *vo_->os() << "Updating preconditioner" << std::endl;
+    if (vo_->os_OK(Teuchos::VERB_EXTREME) ) *vo_->os() << "Updating preconditioner" << std::endl;
     fn_->UpdatePreconditioner(u);
 
     // Apply the preconditioner to the nonlinear residual.
@@ -273,7 +274,7 @@ SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u)
     r->Norm2(&res_l2);
     r->NormInf(&res_inf);
 
-    if (vo_->os_OK(Teuchos::VERB_EXTREME)) *vo_->os() << "Applying preconditioner" << std::endl;
+    if (vo_->os_OK(Teuchos::VERB_EXTREME) ) *vo_->os() << "Applying preconditioner" << std::endl;
     int pc_error = fn_->ApplyPreconditioner(r, du);
     if (pc_error < 0) return SOLVER_LINEAR_SOLVER_ERROR;
 
@@ -282,7 +283,7 @@ SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u)
 
     // Hack the correction
     if (modify_correction_) {
-      if (vo_->os_OK(Teuchos::VERB_EXTREME)) *vo_->os() << "Modifying correction" << std::endl;
+      if (vo_->os_OK(Teuchos::VERB_EXTREME) ) *vo_->os() << "Modifying correction" << std::endl;
       fn_->ModifyCorrection(r, u, du);
     }
 
@@ -329,7 +330,7 @@ SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u)
 
     // If we monitor the update...
     if (monitor_ == SOLVER_MONITOR_UPDATE) {
-      if (vo_->os_OK(Teuchos::VERB_EXTREME)) *vo_->os() << "Monitoring Update" << std::endl;
+      if (vo_->os_OK(Teuchos::VERB_EXTREME) ) *vo_->os() << "Monitoring Update" << std::endl;
       previous_error = error;
       error = fn_->ErrorNorm(u, du);
       residual_ = error;
@@ -347,7 +348,7 @@ SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u)
 /* ******************************************************************
 * Internal error control
 ****************************************************************** */
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 int
 SolverNewton<Vector, VectorSpace>::Newton_ErrorControl_(double error,
                                                         double previous_error,

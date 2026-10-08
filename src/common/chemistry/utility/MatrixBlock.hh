@@ -66,7 +66,7 @@ class MatrixBlock {
   void ScaleColumn(int irow, double scale);
   void Scale(double scale);
 
-  void Zero();
+  void PutScalar(double val);
   void SetDiagonal(double d);
 
   // non trivilar routines
@@ -90,8 +90,7 @@ class MatrixBlock {
 };
 
 // non-member functions
-void
-Multiply(const MatrixBlock& A, const MatrixBlock& B, MatrixBlock& AB);
+void Multiply(const MatrixBlock& A, const MatrixBlock& B, MatrixBlock& AB);
 
 } // namespace AmanziChemistry
 } // namespace Amanzi

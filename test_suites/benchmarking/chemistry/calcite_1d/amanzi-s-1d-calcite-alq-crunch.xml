@@ -30,6 +30,13 @@
     <chemistry state="on" engine="crunchflow" input_filename="1d-calcite-crunch.in" database="calcite.dbs"/>
   </process_kernels>
 
+  <execution_controls>
+    <verbosity level="high"/>
+    <execution_control_defaults init_dt="1.5768e+5" max_dt="3.154e+7" reduction_factor="0.8" increase_factor="1.25" mode="transient" method="bdf1"/>
+    <execution_control start="0.0 y" end="0.0 y" init_dt= "1.5768e+5" max_dt="3.154e+7" reduction_factor="0.8" increase_factor="1.25" mode="steady" method="bdf1"/>
+    <execution_control start="0.0 y" end="1.5778463e9" mode="transient"/>
+  </execution_controls>
+
   <phases>
     <liquid_phase name="water">
       <eos>False</eos>
@@ -62,14 +69,6 @@
       </gases>
     </gas_phase>
   </phases>
-
-  <execution_controls>
-      <comments> </comments>
-      <verbosity level="high"/>
-      <execution_control_defaults init_dt= "1.5768e+5"   max_dt="3.154e+7"  reduction_factor="0.8"  increase_factor="1.25" mode="transient" method="bdf1"/>
-      <execution_control  start="0.0 y" end="0.0 y" init_dt= "1.5768e+5" max_dt="3.154e+7"  reduction_factor="0.8"  increase_factor="1.25" mode="steady" method="bdf1"/>
-      <execution_control  start="0.0 y" end="1.5778463e9" mode = "transient" />
-  </execution_controls>
 
   <numerical_controls>
     <structured_controls>

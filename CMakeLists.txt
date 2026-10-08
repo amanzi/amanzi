@@ -82,11 +82,6 @@ include(AmanziOptions)
 
 # Find required Amanzi TPL
 include(AmanziTPL)
-# The following line allows us to link third-party libraries not explicitly 
-# found by the logic in AmanziTPL.cmake.
-#
-# ETC: this is wrong, should point to TPLs, but not necessarily installed here, meaning that lots of ld warnings show up.
-#link_directories(${CMAKE_INSTALL_PREFIX}/tpls/lib)
 
 # shared libraries tweaks: enforcing absolute path
 if (BUILD_SHARED_LIBS)

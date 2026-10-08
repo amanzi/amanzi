@@ -16,6 +16,7 @@
 #include <fstream>
 #include <string>
 
+#include "dbc.hh"
 #include "errors.hh"
 #include "LookupTable_Amanzi.hh"
 
@@ -25,7 +26,8 @@ namespace AmanziEOS {
 /* ******************************************************************
 * Populate internal structures
 ****************************************************************** */
-LookupTable_Amanzi::LookupTable_Amanzi(Teuchos::ParameterList& plist) : LookupTable(plist)
+LookupTable_Amanzi::LookupTable_Amanzi(Teuchos::ParameterList& plist)
+  : LookupTable(plist)
 {
   int nT, nP, ndata;
   std::string filename = plist.get<std::string>("table name");
@@ -36,7 +38,10 @@ LookupTable_Amanzi::LookupTable_Amanzi(Teuchos::ParameterList& plist) : LookupTa
 
   Errors::Message msg;
   msg << "\nFailed to open/read data from file: " << filename;
-  if (ifs.fail()) Exceptions::amanzi_throw(msg);
+  if (ifs.fail() ) Exceptions::amanzi_throw(msg);
+
+  char line[100];
+  ifs.getline(line, 100);
 
   // primary variables are T and p
   ReadMetaData_(ifs, "temperature", &nT, &scaleT_, &shiftT_);
@@ -65,6 +70,8 @@ LookupTable_Amanzi::LookupTable_Amanzi(Teuchos::ParameterList& plist) : LookupTa
   } else if (field == "viscosity") {
     scaleF_ = scaleV;
     shiftF_ = shiftV;
+  } else {
+    AMANZI_ASSERT(false);
   }
 
   // data blocks
@@ -86,16 +93,16 @@ LookupTable_Amanzi::ReadMetaData_(std::ifstream& ifs,
   msg << "\nFailed to read meta data for label: " << label;
 
   ifs >> *n;
-  if (ifs.fail()) Exceptions::amanzi_throw(msg);
+  if (ifs.fail() ) Exceptions::amanzi_throw(msg);
 
   ifs >> *scale;
-  if (ifs.fail()) Exceptions::amanzi_throw(msg);
+  if (ifs.fail() ) Exceptions::amanzi_throw(msg);
   ifs >> *shift;
-  if (ifs.fail()) Exceptions::amanzi_throw(msg);
+  if (ifs.fail() ) Exceptions::amanzi_throw(msg);
 
   std::string tmp;
   ifs >> tmp;
-  if (ifs.fail()) Exceptions::amanzi_throw(msg);
+  if (ifs.fail() ) Exceptions::amanzi_throw(msg);
   if (tmp != label) Exceptions::amanzi_throw(msg);
 }
 
@@ -127,21 +134,18 @@ LookupTable_Amanzi::ReadBlock_(std::ifstream& ifs,
     for (int j = 0; j < nT; ++j) {
       for (int k = 0; k < 9; ++k) {
         ifs >> values[k];
-        if (ifs.fail()) Exceptions::amanzi_throw(msg);
+        if (ifs.fail() ) Exceptions::amanzi_throw(msg);
       }
 
       ifs >> tmp;
-      if (ifs.fail()) Exceptions::amanzi_throw(msg);
+      if (ifs.fail() ) Exceptions::amanzi_throw(msg);
 
       axisP_[i] = shiftP_ + scaleP_ * values[1];
       axisT_[j] = shiftT_ + scaleT_ * values[0];
 
-      if (field == "density")
-        F_[i][j] = shift + scale * values[2];
-      else if (field == "internal_energy")
-        F_[i][j] = shift + scale * values[3];
-      else if (field == "viscosity")
-        F_[i][j] = shift + scale * values[7];
+      if (field == "density") F_[i][j] = shift + scale * values[2];
+      else if (field == "internal_energy") F_[i][j] = shift + scale * values[3];
+      else if (field == "viscosity") F_[i][j] = shift + scale * values[7];
     }
   }
 }

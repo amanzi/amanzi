@@ -45,7 +45,7 @@ class SingleFaceMesh : public AmanziMesh::Mesh {
     is_sfm_ = true;
   }
 
-  ~SingleFaceMesh(){};
+  ~SingleFaceMesh() {};
 
   void cacheSFM(const Teuchos::RCP<const AmanziMesh::Mesh>& mc,
                 int f,
@@ -84,7 +84,7 @@ class SingleFaceMesh : public AmanziMesh::Mesh {
 
 
     // single surface cell
-    Kokkos::resize(fedges, nnodes_owned);
+    Kokkos::realloc(fedges, nnodes_owned);
     for (int i = 0; i < nnodes_owned; ++i) fedges[i] = i;
 
     data_.cell_faces.resize(1, nnodes_owned);

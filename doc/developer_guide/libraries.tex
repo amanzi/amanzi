@@ -159,13 +159,13 @@ A few comments are below, see the code for the complete description of these int
       and miscalleneous structures for discrete PDE operators, time integrators, 
       boundary conditions, source terms, etc.
 
-\item Function {\it AdvanceStep()} is used to advance PK from time one time step to another.
+\item Function {\it AdvanceStep()} is used to advance PK from time one timestep to another.
       For an implicit time discretization, it calls an implicit solver.
       For an explicit time discretization, it calls a Runge-Kutta solver or any other ODE
       integrator.
 
 \item Function {\it CommitStep()} is used to update any needed secondary variables at 
-      the next time slice under assumption that the time step was sucessful. 
+      the next time slice under assumption that the timestep was sucessful. 
 
 \item Function {\it FunctionalResidual()} is a part of the implict solver interface.
       It computes the non-linear functional at the given solution approximation.

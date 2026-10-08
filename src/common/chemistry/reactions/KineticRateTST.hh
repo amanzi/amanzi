@@ -45,15 +45,15 @@ class MatrixBlock;
 class KineticRateTST : public KineticRate {
  public:
   KineticRateTST();
-  virtual ~KineticRateTST(){};
+  virtual ~KineticRateTST() {};
 
   void Setup(const Mineral& reaction,
              double rate,
              const std::string& modifiers,
              const SpeciesArray& primary_species);
 
-  virtual void
-  Update(const SpeciesArray& primary_species, const std::vector<Mineral>& minerals) override;
+  virtual void Update(const SpeciesArray& primary_species,
+                      const std::vector<Mineral>& minerals) override;
 
   virtual void AddContributionToResidual(const std::vector<Mineral>& minerals,
                                          double bulk_volume,

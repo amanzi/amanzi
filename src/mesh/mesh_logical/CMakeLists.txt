@@ -34,6 +34,7 @@ set(mesh_logical_src MeshLogical.cc
 		     MeshLogicalFactory.cc
                      MeshLogicalAudit.cc
 		     MeshEmbeddedLogical.cc
+                     MeshVirtual.cc
                      )
 
 add_amanzi_library(mesh_logical SOURCE ${mesh_logical_src}
@@ -49,7 +50,6 @@ add_install_include_file(${mesh_logical_inc_files})
 if (BUILD_TESTS)
   # tests require MSTK
   if (ENABLE_MESH_MSTK)
-    add_definitions("-DMSTK_HAVE_MPI")
     if (WITH_MSTK_2_20rc1_OR_NEWER)
       add_definitions("-DMSTK_2_20rc1_OR_NEWER")
     endif ()
@@ -78,12 +78,14 @@ if (BUILD_TESTS)
     # Test link libraries
     set(mesh_logical_test_link_libs mesh_logical mesh mesh_mstk geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # Test: init
-    set(mesh_logical_test_src_files test/Main.cc test/demo_mesh.cc test/mesh_logical_geometry.cc)
-
     add_amanzi_test(mesh_logical_geometry mesh_logical_geometry
       KIND unit
-      SOURCE ${mesh_logical_test_src_files}
+      SOURCE test/Main.cc test/mesh_logical_geometry.cc
+      LINK_LIBS ${mesh_logical_test_link_libs})
+
+    add_amanzi_test(mesh_virtual_geometry mesh_virtual_geometry
+      KIND unit
+      SOURCE test/Main.cc test/mesh_virtual_geometry.cc
       LINK_LIBS ${mesh_logical_test_link_libs})
   endif()
 endif()

@@ -32,11 +32,11 @@ namespace Operators {
 
 class PDE_HelperDiscretization : public PDE_HelperBCsList {
  public:
-  PDE_HelperDiscretization(){};
+  PDE_HelperDiscretization() {};
   PDE_HelperDiscretization(const Teuchos::RCP<Operator>& global_op);
   PDE_HelperDiscretization(const Teuchos::RCP<AmanziMesh::Mesh>& mesh);
   PDE_HelperDiscretization(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
-  virtual ~PDE_HelperDiscretization(){};
+  virtual ~PDE_HelperDiscretization() {};
 
   // generate linearized operator
   // -- generate matrix. We can use parameter to define coefficeints
@@ -48,6 +48,11 @@ class PDE_HelperDiscretization : public PDE_HelperBCsList {
     UpdateMatrices(u, Teuchos::null);
   }
   virtual void UpdateMatrices() { UpdateMatrices(Teuchos::null, Teuchos::null); }
+
+  virtual void SetMatrix(WhetStone::DenseMatrix& A, int indx){
+    local_op_->matrices[indx] = A;
+  }
+  
   // -- modify matrix due to boundary conditions: generic implementation
   //    for PDE classes based on new schema:
   //    primary=true indicates that the operator updates both matrix and right-hand
@@ -128,26 +133,33 @@ class PDE_HelperDiscretization : public PDE_HelperBCsList {
 
 
 // non-member functions
-Teuchos::RCP<CompositeVectorSpace>
-CreateFracturedMatrixCVS(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                         const Teuchos::RCP<const AmanziMesh::Mesh>& fracture);
+Teuchos::RCP<CompositeVectorSpace> CreateFracturedMatrixCVS(
+  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+  const Teuchos::RCP<const AmanziMesh::Mesh>& fracture);
 
-Teuchos::RCP<CompositeVectorSpace>
-CreateManifoldCVS(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+Teuchos::RCP<CompositeVectorSpace> CreateFracturedMatrixCVS_Node(
+  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+  const Teuchos::RCP<const AmanziMesh::Mesh>& fracture,
+  const std::string& region);
 
-void
-CellToBoundaryFaces(const std::vector<int>& bc_model, CompositeVector& field);
+Teuchos::RCP<CompositeVectorSpace> CreateFracturedMatrixCVS(
+  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+  const Teuchos::RCP<const AmanziMesh::Mesh>& fracture,
+  const std::string& region,
+  const std::vector<WhetStone::SchemaItem>& items);
 
-void
-CellToBoundaryFaces(CompositeVector& field);
+Teuchos::RCP<CompositeVectorSpace> CreateManifoldCVS(
+  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
-void
-BoundaryFacesToFaces(const std::vector<int>& bc_model,
-                     const CompositeVector& input,
-                     CompositeVector& output);
+void CellToBoundaryFaces(const std::vector<int>& bc_model, CompositeVector& field);
 
-void
-BoundaryDataToFaces(const Teuchos::RCP<Operators::BCs>& op_bc, CompositeVector& field);
+void CellToBoundaryFaces(CompositeVector& field);
+
+void BoundaryFacesToFaces(const std::vector<int>& bc_model,
+                          const CompositeVector& input,
+                          CompositeVector& output);
+
+void BoundaryDataToFaces(const Teuchos::RCP<Operators::BCs>& op_bc, CompositeVector& field);
 
 } // namespace Operators
 } // namespace Amanzi

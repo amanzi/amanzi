@@ -36,26 +36,30 @@
 
 namespace Amanzi {
 
-template <class FunctionBase>
-class PK_DomainFunctionVolumeFraction : public FunctionBase,
-                                        public Functions::MaterialMeshFunction {
+template<class FunctionBase>
+class PK_DomainFunctionVolumeFraction
+  : public FunctionBase
+  , public Functions::MaterialMeshFunction {
  public:
   PK_DomainFunctionVolumeFraction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                   AmanziMesh::Entity_kind kind)
-    : MaterialMeshFunction(mesh), kind_(kind){};
-  ~PK_DomainFunctionVolumeFraction(){};
+    : MaterialMeshFunction(mesh), kind_(kind) {};
+  ~PK_DomainFunctionVolumeFraction() {};
 
   // member functions
   void Init(const Teuchos::ParameterList& plist, const std::string& keyword);
 
   // required member functions
-  virtual void Compute(double t0, double t1);
-  virtual std::string name() const { return "volume fraction"; }
+  virtual void Compute(double t0, double t1) override;
+  virtual DomainFunction_kind getType() const override
+  {
+    return DomainFunction_kind::VOLUME_FRACTION;
+  }
 
  protected:
-  using FunctionBase::value_;
   using FunctionBase::domain_volume_;
   using FunctionBase::keyword_;
+  using FunctionBase::value_;
 
  private:
   std::string model_, submodel_;
@@ -66,7 +70,7 @@ class PK_DomainFunctionVolumeFraction : public FunctionBase,
 /* ******************************************************************
 * Initialization adds a single function to the list of specs.
 ****************************************************************** */
-template <class FunctionBase>
+template<class FunctionBase>
 void
 PK_DomainFunctionVolumeFraction<FunctionBase>::Init(const Teuchos::ParameterList& plist,
                                                     const std::string& keyword)
@@ -76,7 +80,7 @@ PK_DomainFunctionVolumeFraction<FunctionBase>::Init(const Teuchos::ParameterList
   model_ = plist.get<std::string>("spatial distribution method");
 
   submodel_ = "rate";
-  if (plist.isParameter("submodel")) submodel_ = plist.get<std::string>("submodel");
+  if (plist.isParameter("submodel") ) submodel_ = plist.get<std::string>("submodel");
 
   std::vector<std::string> regions = plist.get<Teuchos::Array<std::string>>("regions").toVector();
 
@@ -99,7 +103,7 @@ PK_DomainFunctionVolumeFraction<FunctionBase>::Init(const Teuchos::ParameterList
 /* ******************************************************************
 * Compute and distribute the result by volume.
 ****************************************************************** */
-template <class FunctionBase>
+template<class FunctionBase>
 void
 PK_DomainFunctionVolumeFraction<FunctionBase>::Compute(double t0, double t1)
 {
@@ -110,7 +114,7 @@ PK_DomainFunctionVolumeFraction<FunctionBase>::Compute(double t0, double t1)
   int ncells_owned =
     mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
-  for (MaterialSpecList::const_iterator mspec = material_specs_.at(kind_)->begin();
+  for (MaterialSpecList::const_iterator mspec = material_specs_.at(kind_) ->begin();
        mspec != material_specs_.at(kind_)->end();
        ++mspec) {
     Teuchos::RCP<MaterialMesh> ids = (*mspec)->second;

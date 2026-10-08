@@ -28,7 +28,8 @@ Checkpointing for state.
 
 namespace Amanzi {
 
-Checkpoint::Checkpoint(bool single_file) : single_file_(single_file)
+Checkpoint::Checkpoint(bool single_file)
+  : single_file_(single_file)
 {
   output_["domain"] = Teuchos::rcp(new HDF5_MPI(Amanzi::getDefaultComm()));
   output_["domain"]->setTrackXdmf(false);
@@ -90,7 +91,8 @@ Checkpoint::Checkpoint(Teuchos::ParameterList& plist, const State& S)
 
 
 // Constructor for reading
-Checkpoint::Checkpoint(const std::string& file_or_dirname, const State& S) : IOEvent()
+Checkpoint::Checkpoint(const std::string& file_or_dirname, const State& S)
+  : IOEvent()
 {
   // if provided a directory, use new style
   if (std::filesystem::is_directory(file_or_dirname)) {
@@ -129,6 +131,9 @@ Checkpoint::Checkpoint(const std::string& filename,
                        const std::string& domain)
   : IOEvent()
 {
+  int num_procs(-1);
+  bool is_num_procs(false);
+
   // if provided a directory, use new style
   if (std::filesystem::is_directory(filename)) {
     Key domain_name = Keys::replace_all(domain, ":", "-");
@@ -137,10 +142,25 @@ Checkpoint::Checkpoint(const std::string& filename,
     output_[domain] = Teuchos::rcp(new HDF5_MPI(comm, chkp_file.string()));
     output_[domain]->open_h5file(true);
 
+    if (domain == "domain") {
+      try {
+        Read("mpi_num_procs", num_procs);
+      } catch (const std::out_of_range& e) {
+        Read("mpi_comm_world_rank", num_procs); // old, deprecated name
+      }
+      is_num_procs = true;
+    }
+
   } else if (std::filesystem::is_regular_file(filename)) {
     single_file_ = true;
     output_["domain"] = Teuchos::rcp(new HDF5_MPI(comm, filename));
     output_["domain"]->open_h5file(true);
+    try {
+      Read("mpi_num_procs", num_procs);
+    } catch (const std::out_of_range& e) {
+      Read("mpi_comm_world_rank", num_procs); // old, deprecated name
+    }
+    is_num_procs = true;
   } else {
     Errors::Message message;
     message << "Checkpoint::Read: location \"" << filename << "\" does not exist.";
@@ -148,14 +168,7 @@ Checkpoint::Checkpoint(const std::string& filename,
   }
 
   // check the comm_size for consistency
-  int num_procs(-1);
-  Read("mpi_num_procs", num_procs);
-  if (num_procs == 0) {
-    // checkpoint file has no attribute of that name
-    Read("mpi_comm_world_rank", num_procs); // old, deprecated name
-  }
-
-  if (comm->NumProc() != num_procs) {
+  if (is_num_procs && comm->NumProc() != num_procs) {
     Errors::Message msg;
     msg << "Requested checkpoint file " << filename << " was created on " << num_procs
         << " processes, making it incompatible with this run on " << comm->NumProc()
@@ -217,12 +230,13 @@ Checkpoint::CreateFinalFile(const int cycle)
   if (single_file_) {
     std::string ch_file = oss.str() + ".h5";
     std::string ch_final = filebasename_ + "_final.h5";
-    if (std::filesystem::is_regular_file(ch_final.data())) std::filesystem::remove(ch_final.data());
+    if (std::filesystem::is_regular_file(ch_final.data()
+      )) std::filesystem::remove(ch_final.data());
     std::filesystem::create_hard_link(ch_file.data(), ch_final.data());
   } else {
     std::string ch_dir = oss.str();
     std::string ch_final = filebasename_ + "_final";
-    if (std::filesystem::is_directory(ch_final.data())) std::filesystem::remove(ch_final.data());
+    if (std::filesystem::is_directory(ch_final.data() )) std::filesystem::remove(ch_final.data());
     std::filesystem::create_symlink(ch_dir.data(), ch_final.data());
   }
 }
@@ -240,7 +254,9 @@ Checkpoint::ReadAttributes(State& S)
 void
 Checkpoint::Finalize()
 {
-  for (const auto& file_out : output_) { file_out.second->close_h5file(); }
+  for (const auto& file_out : output_) {
+    file_out.second->close_h5file();
+  }
 }
 
 
@@ -277,12 +293,14 @@ Checkpoint::WriteVector(const Epetra_MultiVector& vec, const std::vector<std::st
 
   if (single_file_) {
     const auto& output = output_.at("domain");
-    for (int i = 0; i != vec.NumVectors(); ++i) { output->writeCellDataReal(*vec(i), names[i]); }
+    for (int i = 0; i != vec.NumVectors(); ++i) {
+      output->writeCellDataReal(*vec(i), names[i]);
+    }
   } else {
     // double check that the comms are consistent and that the user is
     // following naming best practices
     Key domain_name = Keys::getDomain(names[0]);
-    if (!output_.count(domain_name)) domain_name = "domain";
+    if (!output_.count(domain_name) ) domain_name = "domain";
     const auto& output = output_.at(domain_name);
 
     if (!sameComm(*output->Comm(), vec.Comm())) {
@@ -292,12 +310,14 @@ Checkpoint::WriteVector(const Epetra_MultiVector& vec, const std::vector<std::st
       Exceptions::amanzi_throw(msg);
     }
 
-    for (int i = 0; i != vec.NumVectors(); ++i) { output->writeCellDataReal(*vec(i), names[i]); }
+    for (int i = 0; i != vec.NumVectors(); ++i) {
+      output->writeCellDataReal(*vec(i), names[i]);
+    }
   }
 }
 
 
-template <>
+template<>
 void
 Checkpoint::Write(const std::string& name, const Epetra_Vector& vec) const
 {
@@ -308,7 +328,7 @@ Checkpoint::Write(const std::string& name, const Epetra_Vector& vec) const
     // double check that the comms are consistent and that the user is
     // following naming best practices
     Key domain_name = Keys::getDomain(name);
-    if (!output_.count(domain_name)) domain_name = "domain";
+    if (!output_.count(domain_name) ) domain_name = "domain";
     const auto& output = output_.at(domain_name);
 
     if (!sameComm(*output->Comm(), vec.Comm())) {

@@ -26,10 +26,11 @@ namespace Flow {
 class FracturePermModel_Linear : public FracturePermModel {
  public:
   explicit FracturePermModel_Linear(Teuchos::ParameterList& plist) {}
-  ~FracturePermModel_Linear(){};
+  ~FracturePermModel_Linear() {};
 
   // required methods from the base class
   inline double Permeability(double aperture) { return aperture / 12; }
+  inline double DpermeabilityDaperture(double aperture) { return 1.0 / 12; }
 };
 
 } // namespace Flow

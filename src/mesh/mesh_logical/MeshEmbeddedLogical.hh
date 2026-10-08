@@ -37,11 +37,11 @@ struct MeshEmbeddedLogicalAlgorithms : public MeshLogicalAlgorithms {
                                             MeshHost::cPoint_View* const bisectors) const override;
 
   virtual double computeCellVolume(const MeshHost& mesh, const Entity_ID c) const override;
-  virtual AmanziGeometry::Point
-  computeCellCentroid(const MeshHost& mesh, const Entity_ID c) const override;
+  virtual AmanziGeometry::Point computeCellCentroid(const MeshHost& mesh,
+                                                    const Entity_ID c) const override;
   virtual double computeFaceArea(const MeshHost& mesh, const Entity_ID f) const override;
-  virtual AmanziGeometry::Point
-  computeFaceCentroid(const MeshHost& mesh, const Entity_ID f) const override;
+  virtual AmanziGeometry::Point computeFaceCentroid(const MeshHost& mesh,
+                                                    const Entity_ID f) const override;
   virtual AmanziGeometry::Point computeFaceNormal(const MeshHost& mesh,
                                                   const Entity_ID f,
                                                   const Entity_ID c,
@@ -97,8 +97,8 @@ class MeshEmbeddedLogical : public MeshFramework {
   //
   // Number of entities of any kind (cell, face, node) and in a
   // particular category (OWNED, GHOST, ALL)
-  virtual std::size_t
-  getNumEntities(const Entity_kind kind, const Parallel_kind ptype) const override;
+  virtual std::size_t getNumEntities(const Entity_kind kind,
+                                     const Parallel_kind ptype) const override;
 
 
   // Global ID of any entity
@@ -134,8 +134,9 @@ class MeshEmbeddedLogical : public MeshFramework {
   virtual void getFaceCells(const Entity_ID f, cEntity_ID_View& cells) const override;
   double getFaceArea(const Entity_ID f) const;
   AmanziGeometry::Point getFaceCentroid(const Entity_ID f) const;
-  AmanziGeometry::Point
-  getFaceNormal(const Entity_ID f, const Entity_ID c, int* const orientation = nullptr) const;
+  AmanziGeometry::Point getFaceNormal(const Entity_ID f,
+                                      const Entity_ID c,
+                                      int* const orientation = nullptr) const;
 
  protected:
   RaggedArray_DualView<Entity_ID> extra_face_cell_ids_;

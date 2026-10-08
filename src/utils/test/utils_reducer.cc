@@ -55,10 +55,8 @@ SUITE(STRING_REDUCER)
     if (size > 1) {
       // first and last are diff
       std::vector<std::string> in;
-      if (rank == 1)
-        in = { "apples", "bananas", "canteloupes", "dates", "elderberries" };
-      else
-        in = { "bananas", "dates" };
+      if (rank == 1) in = { "apples", "bananas", "canteloupes", "dates", "elderberries" };
+      else in = { "bananas", "dates" };
 
       auto out = red.intersectAll(in);
       CHECK_EQUAL(2, out.size());
@@ -78,10 +76,8 @@ SUITE(STRING_REDUCER)
     if (size > 1) {
       // first and last are diff
       std::vector<std::string> in;
-      if (rank == 1)
-        in = { "apples", "bananas", "dates" };
-      else
-        in = { "apples", "canteloupes", "dates" };
+      if (rank == 1) in = { "apples", "bananas", "dates" };
+      else in = { "apples", "canteloupes", "dates" };
 
       auto out = red.intersectAll(in);
       CHECK_EQUAL(2, out.size());

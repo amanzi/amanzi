@@ -28,9 +28,9 @@ typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, FracturePermModelList>
   FracturePermModelPartition;
 
 // Non-member factory
-Teuchos::RCP<FracturePermModelPartition>
-CreateFracturePermModelPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                                 Teuchos::RCP<Teuchos::ParameterList> plist);
+Teuchos::RCP<FracturePermModelPartition> CreateFracturePermModelPartition(
+  Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+  Teuchos::RCP<Teuchos::ParameterList> plist);
 
 } // namespace Flow
 } // namespace Amanzi

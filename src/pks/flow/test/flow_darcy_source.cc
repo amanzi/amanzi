@@ -68,8 +68,9 @@ RunTestDarcySource(const std::string& xmlFileName)
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
+  Teuchos::ParameterList pk_tree("flow");
   auto soln = Teuchos::rcp(new TreeVector());
-  auto DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
+  auto DPK = Teuchos::rcp(new Darcy_PK(pk_tree, plist, S, soln));
   DPK->Setup();
   S->Setup();
   S->InitializeFields();
@@ -81,7 +82,7 @@ RunTestDarcySource(const std::string& xmlFileName)
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
 
   if (!S->GetRecord("permeability").initialized()) {
-    for (int c = 0; c < K.MyLength(); c++) K[0][c] = 1.0;
+    for (int c = 0; c < K.MyLength() ; c++) K[0][c] = 1.0;
     S->GetRecordW("permeability", "permeability").set_initialized();
   }
 

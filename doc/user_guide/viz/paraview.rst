@@ -32,7 +32,7 @@ Click the file icon or select File->Open from the menu bar. Select your data fil
 
    After selecting file to open, click the Apply button in the Properties Window.
 
-ParaView no longer treats sequentially named xmf files as single database. To view multiple time steps or create animations, open the <basename>.VisIt.xmf file. The collection file `*`.VisIt.xmf links to all of the individual timestep files `*`.h5.#.xmf.  The # indicates the sequential ordering of the timestep files. The individual timestep files are snippets of Xdmf rather than complete Xdmf files; therefore, ParaView does not automatically identify the file format.  When opening an individual timestep file, the user will be presented with a list of file formats, select Xdmf and ParaView will continue with reading the file.
+ParaView no longer treats sequentially named xmf files as single database. To view multiple timesteps or create animations, open the <basename>.VisIt.xmf file. The collection file `*`.VisIt.xmf links to all of the individual timestep files `*`.h5.#.xmf.  The # indicates the sequential ordering of the timestep files. The individual timestep files are snippets of Xdmf rather than complete Xdmf files; therefore, ParaView does not automatically identify the file format.  When opening an individual timestep file, the user will be presented with a list of file formats, select Xdmf and ParaView will continue with reading the file.
 
 Close file
 ++++++++++
@@ -79,6 +79,6 @@ Animation
 
 VCR Control icons are shown in the upper right by default along with the time value and step id. These can be used to advance through a given series.
 
-To create a coherent movie, it is often useful to scale the color contours for the entire time range.  To do this select "Edit Color Map" either from the top toolbar or the Color panel of the Display window.  The Color Scale Editor contains the option "Rescale to Temporal Range".  This will determine the data range for each time step and determine a scale ranging from the minimum to the maximum found.
+To create a coherent movie, it is often useful to scale the color contours for the entire time range.  To do this select "Edit Color Map" either from the top toolbar or the Color panel of the Display window.  The Color Scale Editor contains the option "Rescale to Temporal Range".  This will determine the data range for each timestep and determine a scale ranging from the minimum to the maximum found.
 
 To save the animation, select "Save Animation" from the File Menu.  Select options on the Animation Settings Dialog and click Save Animation.  Next, select the location to save the animation.  It will be saved as a series of individual files.  The individual images can be assembled into a movie using another application, such as iMovie on Mac or Gifsicle on linux.

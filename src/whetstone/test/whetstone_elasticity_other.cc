@@ -98,15 +98,9 @@ TEST(STIFFNESS_STOKES_2D)
     ay(2 * nnodes + i) = xf[1] * normal[1] / area;
   }
 
-  double vxx(0.0), vxy(0.0);
   double volume = mesh->getCellVolume(cell);
-
-  for (int i = 0; i < nrows; i++) {
-    for (int j = 0; j < nrows; j++) {
-      vxx += A(i, j) * ax(i) * ax(j);
-      vxy += A(i, j) * ay(i) * ax(j);
-    }
-  }
+  double vxx = VectorMatrixVector(ax, A, ax);
+  double vxy = VectorMatrixVector(ay, A, ax);
   CHECK_CLOSE(vxx, volume, 1e-10);
   CHECK_CLOSE(vxy, 0.0, 1e-10);
 }
@@ -130,10 +124,8 @@ runStiffness3D(const std::string& filename)
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<Mesh> mesh;
-  if (filename == "")
-    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3);
-  else
-    mesh = meshfactory.create(filename);
+  if (filename == "") mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3);
+  else mesh = meshfactory.create(filename);
 
   Teuchos::ParameterList plist;
   MFD3D_BernardiRaugel mfd(plist, mesh);
@@ -187,16 +179,10 @@ runStiffness3D(const std::string& filename)
     az(3 * nnodes + i) = xf[2] * normal[2] / area;
   }
 
-  double vxx(0.0), vxy(0.0), vzz(0.0);
   double volume = mesh->getCellVolume(c);
-
-  for (int i = 0; i < nrows; i++) {
-    for (int j = 0; j < nrows; j++) {
-      vxx += A(i, j) * ax(i) * ax(j);
-      vxy += A(i, j) * ay(i) * ax(j);
-      vzz += A(i, j) * az(i) * az(j);
-    }
-  }
+  double vxx = VectorMatrixVector(ax, A, ax);
+  double vxy = VectorMatrixVector(ay, A, ax);
+  double vzz = VectorMatrixVector(az, A, az);
   CHECK_CLOSE(vxx, volume, 1e-10);
   CHECK_CLOSE(vxy, 0.0, 1e-10);
   CHECK_CLOSE(vzz, volume, 1e-10);
@@ -245,7 +231,9 @@ TEST(ADVECTION_NAVIER_STOKES_2D)
 
   // setup velocity
   AmanziMesh::Point_List u(nnodes);
-  for (int i = 0; i < nnodes; ++i) { u[i] = AmanziGeometry::Point(1.0, 2.0); }
+  for (int i = 0; i < nnodes; ++i) {
+    u[i] = AmanziGeometry::Point(1.0, 2.0);
+  }
 
   // calculate advection matrix
   DenseMatrix A;

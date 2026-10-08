@@ -68,7 +68,9 @@ SUITE(COMPOSITE_VECTOR)
     if (true) {
       Teuchos::TimeMonitor timer(*cvtime);
       for (int i = 0; i != 10000000; ++i) {
-        for (int j = 0; j != ncells; ++j) { val = (*x)("cell", j); }
+        for (int j = 0; j != ncells; ++j) {
+          val = (*x)("cell", j);
+        }
       }
     }
     std::cout << val;
@@ -78,7 +80,9 @@ SUITE(COMPOSITE_VECTOR)
       Teuchos::TimeMonitor timer(*mvtime);
       for (int i = 0; i != 10000000; ++i) {
         val = 0.0;
-        for (int j = 0; j != ncells; ++j) { val = (*mv)[0][j]; }
+        for (int j = 0; j != ncells; ++j) {
+          val = (*mv)[0][j];
+        }
       }
     }
     std::cout << val;

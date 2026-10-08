@@ -8,8 +8,22 @@
            Ethan Coon (ecoon@lanl.gov)
 */
 
-/*
-  Collection of Regions which decompose the domain into subdomains.
+/*!
+
+It is not always possible to extract space dimension from provided data.
+Therefore, we require the user to provide simple list *domain* with only
+one parameter *spatial dimension*.
+
+.. admonition:: geometric_model-spec
+
+  * `"spatial dimension`" ``[int]`` defined space dimension. The available
+    values are 2 or 3.
+
+.. code-block:: xml
+
+  <ParameterList name="domain">
+    <Parameter name="spatial dimension" type="int" value="2"/>
+  </ParameterList>
 
 */
 
@@ -51,14 +65,14 @@ class GeometricModel {
   // Get a region by its ID
   Teuchos::RCP<const Region> FindRegion(const int id) const
   {
-    if (regions_id_.count(id)) return regions_id_.at(id);
+    if (regions_id_.count(id) ) return regions_id_.at(id);
     return Teuchos::null;
   }
 
   // Get a region by its name
   Teuchos::RCP<const Region> FindRegion(const std::string& name) const
   {
-    if (regions_name_.count(name)) return regions_name_.at(name);
+    if (regions_name_.count(name) ) return regions_name_.at(name);
     return Teuchos::null;
   }
 

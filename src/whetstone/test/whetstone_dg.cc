@@ -69,7 +69,9 @@ TEST(DG2D_MASS_MATRIX)
     }
 
     double area = mesh->getCellVolume(0);
-    for (int i = 0; i < nk; ++i) { CHECK_CLOSE(M(i, i), area, 1e-12); }
+    for (int i = 0; i < nk; ++i) {
+      CHECK_CLOSE(M(i, i), area, 1e-12);
+    }
   }
 }
 
@@ -126,17 +128,15 @@ TEST(DG3D_MASS_MATRIX)
 
     // accuracy test
     if (k > 0) {
-      DenseVector v1(nk), v2(nk), v3(nk);
+      DenseVector v1(nk);
       const AmanziGeometry::Point& xc = mesh->getCellCentroid(0);
       v1.PutScalar(0.0);
       v1(0) = xc[0] + 2 * xc[1] + 3 * xc[2];
       v1(1) = 0.5;
       v1(2) = 1.0;
       v1(3) = 1.5;
-      v2 = v1;
 
-      M0.Multiply(v1, v3, false);
-      double integral(v2 * v3);
+      double integral = VectorMatrixVector(v1, M0, v1);
       printf("  inner product = %10.6f\n", integral);
       CHECK_CLOSE(integral, 61.0 / 96.0, 1e-12);
     }
@@ -153,7 +153,9 @@ TEST(DG3D_MASS_MATRIX)
       printf("\n");
     }
 
-    for (int i = 1; i < nk; ++i) { CHECK_CLOSE(M0(i, 0), 0.0, 1e-12); }
+    for (int i = 1; i < nk; ++i) {
+      CHECK_CLOSE(M0(i, 0), 0.0, 1e-12);
+    }
   }
 }
 
@@ -261,7 +263,9 @@ TEST(DG2D_STIFFNESS_MATRIX)
 
     if (k > 1) {
       double area = mesh->getCellVolume(0);
-      for (int i = 1; i < 2; ++i) { CHECK_CLOSE(M1(i, i), area * 4, 1e-12); }
+      for (int i = 1; i < 2; ++i) {
+        CHECK_CLOSE(M1(i, i), area * 4, 1e-12);
+      }
     }
 
     M1 -= M2;
@@ -514,7 +518,7 @@ TEST(DG2D_ADVECTION_MATRIX_CELL)
     }
 
     // accuracy test for functions 1+x and 1+x
-    DenseVector v1(nk), v2(nk), v3(nk);
+    DenseVector v1(nk);
     if (k > 0) {
       const AmanziGeometry::Point& xc = mesh->getCellCentroid(0);
       double scale = std::pow(mesh->getCellVolume(0), 0.5);
@@ -523,10 +527,8 @@ TEST(DG2D_ADVECTION_MATRIX_CELL)
       v1(0) = 2 + xc[0] + 3 * xc[1];
       v1(1) = 1.0 * scale;
       v1(2) = 3.0 * scale;
-      v2 = v1;
 
-      A0.Multiply(v1, v3, false);
-      double integral(v2 * v3);
+      double integral = VectorMatrixVector(v1, A0, v1);
       printf("  inner product = %10.6f\n", integral);
       printf("  centroid = %10.6f %10.6f\n", xc[0], xc[1]);
 
@@ -545,8 +547,7 @@ TEST(DG2D_ADVECTION_MATRIX_CELL)
     }
 
     if (k > 0) {
-      A0.Multiply(v1, v3, false);
-      double integral(v2 * v3);
+      double integral = VectorMatrixVector(v1, A0, v1);
       printf("  inner product = %10.6f\n", integral);
     }
   }
@@ -612,7 +613,7 @@ TEST(DG3D_ADVECTION_MATRIX_CELL)
     }
 
     // accuracy test for functions 1+x and 1+x
-    DenseVector v1(nk), v2(nk), v3(nk);
+    DenseVector v1(nk);
     if (k > 0) {
       const AmanziGeometry::Point& xc = mesh->getCellCentroid(0);
       double scale = std::pow(mesh->getCellVolume(0), 1.0 / 3);
@@ -621,10 +622,8 @@ TEST(DG3D_ADVECTION_MATRIX_CELL)
       v1(0) = 2 + xc[0] + 3 * xc[1];
       v1(1) = 1.0 * scale;
       v1(2) = 3.0 * scale;
-      v2 = v1;
 
-      A0.Multiply(v1, v3, false);
-      double integral(v2 * v3);
+      double integral = VectorMatrixVector(v1, A0, v1);
       printf("  inner product = %10.6f\n", integral);
       printf("  centroid = %10.6f %10.6f\n", xc[0], xc[1]);
 
@@ -680,7 +679,9 @@ TEST(DG_LEAST_SQUARE_MAP_CELL)
   // test linear map
   AmanziMesh::Point_List x2(x1);
   AmanziGeometry::Point shift(0.1, 0.2);
-  for (int i = 0; i < nodes.size(); ++i) { x2[i] += shift; }
+  for (int i = 0; i < nodes.size(); ++i) {
+    x2[i] += shift;
+  }
 
   maps.LeastSquareFit(1, x1, x2, u);
   for (int i = 0; i < 2; ++i) {
@@ -737,7 +738,9 @@ TEST(DG_LEAST_SQUARE_MAP_CELL)
 
   // -- check vertex-to-vertex map
   for (int n = 0; n < 7; ++n) {
-    for (int i = 0; i < 2; ++i) { CHECK_CLOSE(x2[n][i], u[i].Value(x1[n]), 1e-12); }
+    for (int i = 0; i < 2; ++i) {
+      CHECK_CLOSE(x2[n][i], u[i].Value(x1[n]), 1e-12);
+    }
   }
 
   // -- check that it is bilinear map

@@ -26,7 +26,7 @@ namespace Amanzi {
 void
 PK_Physical::State_to_Solution(const Tag& tag, TreeVector& solution)
 {
-  solution.SetData(S_->GetPtrW<CompositeVector>(key_, tag, name()));
+  solution.SetData(S_->GetPtrW<CompositeVector>(key_, tag, passwd_));
 }
 
 
@@ -116,7 +116,7 @@ InitializeCVFieldFromCVField(const Teuchos::RCP<State>& S,
 {
   if (S->HasRecord(field0, tag)) {
     if (!S->GetRecord(field0, tag).initialized()) {
-      if (S->HasEvaluator(field1, tag)) S->GetEvaluator(field1, tag).Update(*S, passwd);
+      if (S->HasEvaluator(field1, tag) ) S->GetEvaluator(field1, tag).Update(*S, passwd);
 
       const auto& f1 = S->Get<CompositeVector>(field1);
       auto& f0 = S->GetW<CompositeVector>(field0, tag, passwd);

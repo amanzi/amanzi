@@ -88,7 +88,7 @@ VisIt consists of two windows.  First is the Main window where menus and options
 Open Visualization File
 +++++++++++++++++++++++
 
-Select File->Open or click the Open icon in the Sources Panel in the Main window.  Maneuver to the directory containing the simulation output you wish to visualize.  Select the file <basename>.VisIt.xmf to visualize the full time series of output.  Individual time steps are written to files named <basename>.h5.#.xmf, where # indicates the sequential ordering of the files.  When opening a source, the sequentially names series of files are grouped as a single database.  To open an individual time step file, toggle File Grouping to Off and then select the file.  Selecting the grouped files will open the entire series.
+Select File->Open or click the Open icon in the Sources Panel in the Main window.  Maneuver to the directory containing the simulation output you wish to visualize.  Select the file <basename>.VisIt.xmf to visualize the full time series of output.  Individual timesteps are written to files named <basename>.h5.#.xmf, where # indicates the sequential ordering of the files.  When opening a source, the sequentially names series of files are grouped as a single database.  To open an individual timestep file, toggle File Grouping to Off and then select the file.  Selecting the grouped files will open the entire series.
 
 The Active source bar contains a list of open sources.  It also displays the currently active source file.  If a sequentially named series of files exist, the entire series will be opened as a single database. 
 
@@ -129,7 +129,7 @@ To add a plot to the visualization window for a field, click the Add icon in the
 Animation
 +++++++++
 
-The main window contains a Time panel.  If multiple time steps exist the user can step through the time steps using the play buttons.  The sequential step numbers are displayed next to the slider.  The time value is displayed in the upper left corner of the visualization window.
+The main window contains a Time panel.  If multiple timesteps exist the user can step through the timesteps using the play buttons.  The sequential step numbers are displayed next to the slider.  The time value is displayed in the upper left corner of the visualization window.
 
 Closing Sources
 +++++++++++++++

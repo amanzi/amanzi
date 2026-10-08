@@ -8,8 +8,7 @@
 */
 
 /*
-  WhetStone, Version 2.2
-  Release name: naka-to.
+  Geometry
 
   Useful tools for local surface coordinate system.
 */
@@ -32,7 +31,7 @@ class SurfaceCoordinateSystem {
   {
     Init();
   }
-  ~SurfaceCoordinateSystem(){};
+  ~SurfaceCoordinateSystem() {};
 
   // calculate orthogonal vectors of the surface coordinate system
   void Init();

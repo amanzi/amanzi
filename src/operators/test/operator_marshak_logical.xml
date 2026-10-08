@@ -1,18 +1,17 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-
   <!--  REGIONS  -->
   <ParameterList name="regions">
     <ParameterList name="Left side">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{-1.0,0.0}"/>
+        <Parameter name="point" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{-1.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Right side">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{3.0,0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{1.0,0.0}"/>
+        <Parameter name="point" type="Array(double)" value="{3.0, 0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{1.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -20,13 +19,11 @@
   <!--  OPERATORS  -->
   <ParameterList name="PK operator">
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-
     <ParameterList name="diffusion operator">
       <Parameter name="discretization primary" type="string" value="fv: default"/>
       <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
       <Parameter name="scaled constraint equation" type="bool" value="true"/>
     </ParameterList>
-    
     <ParameterList name="upwind">
       <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
       <ParameterList name="upwind parameters">
@@ -34,7 +31,6 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <!-- SOLVERS -->
   <ParameterList name="solvers">
     <ParameterList name="AztecOO CG">
@@ -58,7 +54,6 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
@@ -77,4 +72,3 @@
     </ParameterList>
   </ParameterList>
 </ParameterList>
-

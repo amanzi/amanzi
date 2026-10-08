@@ -58,7 +58,8 @@ class ActivityModelTest {
 };
 
 
-ActivityModelTest::ActivityModelTest() : amf_(), tolerance_(1.0e-5), activity_model_name_("")
+ActivityModelTest::ActivityModelTest()
+  : amf_(), tolerance_(1.0e-5), activity_model_name_("")
 {
   Teuchos::ParameterList plist;
   plist.set<int>("charge", 1)
@@ -115,7 +116,9 @@ ActivityModelTest::RunTest(const std::string& name, double* gamma)
 {
   int index = -1;
   for (auto it = species_.begin(); it != species_.end(); ++it) {
-    if (it->name() == name) { index = it->identifier(); }
+    if (it->name() == name) {
+      index = it->identifier();
+    }
   }
   *gamma = -1.0; // final value should always be > 0
 

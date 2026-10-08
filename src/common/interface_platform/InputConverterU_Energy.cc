@@ -55,71 +55,105 @@ InputConverterU::TranslateEnergy_(const std::string& domain, const std::string& 
   out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
 
   // expert parameters
-  bool include_work(true), include_potential(false);
+  bool include_potential(false);
   std::string pc_method("linearized_operator");
   std::string root("unstructured_controls, unstr_energy_controls");
+  std::string root_ns("unstructured_controls, unstr_nonlinear_solver");
 
   node = GetUniqueElementByTagsString_(root + ", formulation", flag);
   if (flag) include_potential = (GetTextContentS_(node, "methalpy, enthalpy") == "methalpy");
 
   std::string disc_method("mfd-optimized_for_sparsity");
   node = GetUniqueElementByTagsString_(root + ", discretization_method", flag);
-  if (flag) disc_method = mm.transcode(node->getNodeName());
+  if (flag) disc_method = mm.transcode(node->getTextContent());
 
   node = GetUniqueElementByTagsString_(root + ", preconditioning_strategy", flag);
   if (flag) pc_method = mm.transcode(node->getNodeName());
 
   std::string nonlinear_solver("nka");
-  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_nonlinear_solver", flag);
+  node = GetUniqueElementByTagsString_(root_ns, flag);
   element = static_cast<DOMElement*>(node);
   if (flag) nonlinear_solver = GetAttributeValueS_(element, "name", TYPE_NONE, false, "nka");
 
   bool modify_correction(false);
-  node = GetUniqueElementByTagsString_(
-    "unstructured_controls, unstr_nonlinear_solver, modify_correction", flag);
+  node = GetUniqueElementByTagsString_(root_ns + ", modify_correction", flag);
+  if (flag) modify_correction = GetTextContentL_(node);
 
   // insert operator sublist
+  // -- diffusion
   out_list.sublist("operators") = TranslateDiffusionOperator_(
     disc_method, pc_method, nonlinear_solver, "standard-cell", "", domain, false, "energy");
 
+  if (disc_method == "fv-default") {
+    out_list.sublist("operators").sublist("diffusion operator").sublist("conductivity")
+      .set<std::string>("upwind method", "upwind: darcy velocity")
+      .set<std::string>("upwind frequency", "every timestep")
+      .sublist("upwind parameters")
+      .set<double>("tolerance", 1e-12)
+      .set<std::string>("method", "cell-based")
+      .set<int>("polynomial order", 1)
+      .set<std::string>("limiter", "Barth-Jespersen");
+  }
+
+  // -- advection
   auto& adv_list = out_list.sublist("operators").sublist("advection operator");
   if (fracture_network_ && domain != "fracture")
     adv_list.set<Teuchos::Array<std::string>>("fracture", fracture_regions_);
+  if (!fracture_network_) adv_list.set<bool>("single domain", true);
 
   // insert thermal conductivity evaluator with the default values (no 2.2 support yet)
-  Teuchos::ParameterList& thermal =
-    out_list.sublist("thermal conductivity evaluator").sublist("thermal conductivity parameters");
-  if (pk_model == "two-phase energy") {
-    thermal.set<std::string>("thermal conductivity type", "two-phase Peters-Lidard");
-    thermal.set<double>("thermal conductivity of gas", 0.02);
-    thermal.set<double>("unsaturated alpha", 1.0);
-    thermal.set<double>("epsilon", 1.0e-10);
-  } else {
-    thermal.set<std::string>("thermal conductivity type", "one-phase polynomial");
-  }
+  Teuchos::ParameterList& thermal = out_list.sublist("thermal conductivity evaluator");
 
-  double cv_f(0.0), cv_r(0.0);
+  double cv_l(0.0), cv_s(0.0);
   std::string prefix = (domain == "fracture") ? "fracture_network," : "";
   node = GetUniqueElementByTagsString_(prefix + "materials", flag);
   std::vector<DOMNode*> materials = GetChildren_(node, "material", flag);
 
-  std::string model;
-  node = GetUniqueElementByTagsString_(materials[0], "thermal_properties", flag);
-  if (flag) { model = GetAttributeValueS_(node, "model", "constant, liquid water"); }
+  for (int i = 0; i < materials.size(); ++i) {
+    std::string model_l, model_s;
+    node =
+      GetUniqueElementByTagsString_(materials[i], "thermal_properties, liquid_conductivity", flag);
+    if (flag) {
+      model_l = GetAttributeValueS_(node, "model", "constant, liquid water, ideal gas");
+      cv_l = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "W/m/K");
+    }
 
-  node =
-    GetUniqueElementByTagsString_(materials[0], "thermal_properties, liquid_conductivity", flag);
-  if (flag) cv_f = GetTextContentD_(node, "W/m/K", true);
+    node =
+      GetUniqueElementByTagsString_(materials[i], "thermal_properties, solid_conductivity", flag);
+    if (flag) {
+      model_s = GetAttributeValueS_(node, "model", "constant, salt");
+      cv_s = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "W/m/K");
+    }
 
-  node = GetUniqueElementByTagsString_(materials[0], "thermal_properties, rock_conductivity", flag);
-  if (flag) cv_r = GetTextContentD_(node, "W/m/K", true);
+    node = GetUniqueElementByTagsString_(materials[i], "assigned_regions", flag);
+    std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
 
-  thermal.set<double>("thermal conductivity of liquid", cv_f);
-  thermal.set<double>("thermal conductivity of rock", cv_r);
-  thermal.set<double>("reference temperature", 298.15);
-  thermal.set<std::string>("eos type", model);
+    Teuchos::ParameterList& tmp = thermal.sublist("TCM_" + std::to_string(i));
+    tmp.set<Teuchos::Array<std::string>>("regions", regions);
 
-  if (model == "constant") { thermal.set<double>("thermal conductivity", cv_f + cv_r); }
+    if (pk_model == "two-phase energy") {
+      tmp.set<std::string>("thermal conductivity type", "two-phase Peters-Lidard");
+      tmp.set<double>("thermal conductivity of gas", 0.02)
+        .set<double>("thermal conductivity of liquid", cv_l)
+        .set<double>("thermal conductivity of rock", cv_s)
+        .set<double>("reference temperature", 273.15)
+        .set<double>("unsaturated alpha", 1.0)
+        .set<double>("epsilon", 1.0e-10);
+    } else {
+      tmp.set<std::string>("thermal conductivity type", "one-phase polynomial");
+      tmp.sublist("solid phase")
+        .set<std::string>("eos type", model_s)
+        .set<double>("reference conductivity", cv_s)
+        .set<double>("reference temperature", 273.15);
+      tmp.sublist("liquid phase")
+        .set<std::string>("eos type", model_l)
+        .set<double>("reference conductivity", cv_l)
+        .set<double>("reference temperature", 273.15)
+        .set<double>("Sutherland constant", ref_sutherland_);
+    }
+  }
+
+  out_list.sublist("fracture aperture models") = TranslateFAM_(domain);
 
   // insert time integrator
   std::string err_options("energy"),
@@ -137,7 +171,7 @@ InputConverterU::TranslateEnergy_(const std::string& domain, const std::string& 
 
   // insert boundary conditions and source terms
   out_list.sublist("boundary conditions") = TranslateEnergyBCs_(domain);
-  out_list.sublist("source terms") = TranslateSources_(domain, "energy");
+  out_list.sublist("source terms") = TranslateSources_(domain, "energy", "");
 
   // insert internal evaluators
   out_list.sublist("energy evaluator").set<bool>("include potential term", include_potential);
@@ -177,10 +211,9 @@ InputConverterU::TranslateEnergyBCs_(const std::string& domain)
 
   // correct list of boundary conditions for given domain
   bool flag;
-  if (domain == "matrix")
-    node = GetUniqueElementByTagsString_("boundary_conditions", flag);
-  else
+  if (domain == "fracture")
     node = GetUniqueElementByTagsString_("fracture_network, boundary_conditions", flag);
+  else node = GetUniqueElementByTagsString_("boundary_conditions", flag);
   if (!flag) return out_list;
 
   int ibc(0);
@@ -209,7 +242,11 @@ InputConverterU::TranslateEnergyBCs_(const std::string& domain)
     if (bcs.type == "uniform_temperature") {
       bcs.type = "temperature";
       bcname = "boundary temperature";
+    } else if (bcs.type == "outward_energy_flux") {
+      bcs.type = "energy flux";
+      bcname = "outward energy flux";
     }
+
     std::stringstream ss;
     ss << "BC " << ibc++;
 

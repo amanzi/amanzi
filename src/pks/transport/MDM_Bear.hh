@@ -6,11 +6,36 @@
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+/*!
 
-/*
-  Transport PK
+An anisotropic mechanical dispersion model by Bear that splits longitudinal
+from transverse.
 
-  Anisotropic mechanical dispersion model.
+`"mechanical dispersion type`" = `"Bear`"
+
+.. _mdm-bear-spec
+.. admonition:: mdm-bear-spec
+
+   ONE OF
+
+   * `"alpha_l`" ``[double]`` Longitudinal dispersivity.
+
+   OR
+
+   * `"longitudinal dispersivity [m]`" ``[double]``
+
+   END
+
+   ONE OF
+
+   * `"alpha_t`" ``[double]`` Transverse dispersivity.
+
+   OR
+
+   * `"transverse dispersivity [m]`" ``[double]``
+
+   END
+
 */
 
 #ifndef AMANZI_MDM_BEAR_HH_
@@ -33,7 +58,7 @@ namespace Transport {
 class MDM_Bear : public MDM {
  public:
   explicit MDM_Bear(Teuchos::ParameterList& plist);
-  ~MDM_Bear(){};
+  ~MDM_Bear() {};
 
   // Required methods from the base class
   // -- dispersion tensor of rank 2.

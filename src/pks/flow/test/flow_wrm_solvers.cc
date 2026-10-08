@@ -19,13 +19,15 @@ using namespace Amanzi;
 using namespace Flow;
 
 struct Tol {
-  Tol(double eps) : eps_(eps){};
+  Tol(double eps)
+    : eps_(eps) {};
   bool operator()(double a, double b) const { return std::abs(a - b) <= eps_; }
   double eps_;
 };
 
 struct F {
-  F(double s) : s_(s)
+  F(double s)
+    : s_(s)
   {
     double m = 0.22;
     double l = 0.5;

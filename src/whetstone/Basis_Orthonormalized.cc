@@ -54,7 +54,7 @@ Basis_Orthonormalized::Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
   for (auto it = monomial_scales_.begin(); it < monomial_scales_.end(); ++it) {
     int k = it.MonomialSetPosition();
     const int* multi_index = it.multi_index();
-    int index[d];
+    int index[3];
 
     int m(0);
     for (int i = 0; i < d; ++i) {
@@ -95,12 +95,16 @@ Basis_Orthonormalized::BilinearFormNaturalToMy(DenseMatrix& A) const
 
   // calculate A * R
   for (int k = 1; k < nrows; ++k) {
-    for (int i = 0; i < nrows; ++i) { A(i, k) = A(i, k) * a[k] + A(i, 0) * b[k]; }
+    for (int i = 0; i < nrows; ++i) {
+      A(i, k) = A(i, k) * a[k] + A(i, 0) * b[k];
+    }
   }
 
   // calculate R^T * A * R
   for (int k = 1; k < nrows; ++k) {
-    for (int i = 0; i < nrows; ++i) { A(k, i) = A(k, i) * a[k] + A(0, i) * b[k]; }
+    for (int i = 0; i < nrows; ++i) {
+      A(k, i) = A(k, i) * a[k] + A(0, i) * b[k];
+    }
   }
 }
 
@@ -183,7 +187,9 @@ Basis_Orthonormalized::LinearFormNaturalToMy(DenseVector& f) const
   }
 
   // calculate R^T * f
-  for (int k = 1; k < nrows; ++k) { f(k) = f(k) * a[k] + f(0) * b[k]; }
+  for (int k = 1; k < nrows; ++k) {
+    f(k) = f(k) * a[k] + f(0) * b[k];
+  }
 }
 
 

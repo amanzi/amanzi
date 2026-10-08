@@ -59,7 +59,7 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
   out_list.set<Teuchos::Array<std::string>>("error control options", tmp);
 
   // linear solver
-  bool flag;
+  bool flag, flag2;
   std::string prec(TI_PRECONDITIONER);
   node = GetUniqueElementByTagsString_(controls + ", preconditioner", flag);
   if (flag) prec = mm.transcode(node->getTextContent());
@@ -68,15 +68,18 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
   out_list.set<std::string>("preconditioner", prec);
   // out_list.set<std::string>("preconditioner enhancement", "none");
 
-  // pressure-lambda constraints
-  if (!fracture_network_) {
-    Teuchos::ParameterList& plamb = out_list.sublist("pressure-lambda constraints");
+  // DAE constraints
+  node = GetUniqueElementByTagsString_(controls + ", enforce_dae_constraint", flag);
+  flag2 = (flag) ? GetTextContentL_(node) : true;
+
+  if (!fracture_network_ && flag2) {
+    Teuchos::ParameterList& plamb = out_list.sublist("dae constraint");
     plamb.set<std::string>("method", "projection");
     plamb.set<bool>("inflow krel correction", true);
     plamb.set<std::string>("linear solver", TI_PLAMBDA_SOLVER);
   }
 
-  // time stepping method for high-level PK only
+  // timestepping method for high-level PK only
   out_list.set<std::string>("time integration method", "BDF1");
   Teuchos::ParameterList& bdf1 = out_list.sublist("BDF1");
 
@@ -89,14 +92,22 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
   Teuchos::ParameterList& controller = bdf1.sublist("timestep controller " + name + " parameters");
   controller.set<int>("max iterations", TI_MAX_ITERATIONS)
     .set<int>("min iterations", TI_MIN_ITERATIONS)
-    .set<double>("time step increase factor", dt_inc_default)
-    .set<double>("time step reduction factor", dt_cut_default)
-    .set<double>("max time step", MAXIMUM_TIMESTEP)
-    .set<double>("min time step", MINIMUM_TIMESTEP);
+    .set<double>("timestep increase factor", dt_inc_default)
+    .set<double>("timestep reduction factor", dt_cut_default)
+    .set<double>("max timestep", MAXIMUM_TIMESTEP)
+    .set<double>("min timestep", MINIMUM_TIMESTEP);
   if (name == "adaptive")
     controller.set<double>("relative tolerance", 1e-4).set<double>("absolute tolerance", 10.0);
 
   // nonlinear solver
+  int max_divergent_itrs(MAX_DIVERG_ITERATIONS), max_total_itrs(NKA_LIMIT_ITERATIONS);
+  std::string options("numerical_controls, unstructured_controls, unstr_nonlinear_solver");
+  node = GetUniqueElementByTagsString_(options + ", max_divergent_iterations", flag);
+  if (flag) max_divergent_itrs = std::atoi(mm.transcode(node->getTextContent()));
+
+  node = GetUniqueElementByTagsString_(options + ", max_total_iterations", flag);
+  if (flag) max_total_itrs = std::atoi(mm.transcode(node->getTextContent()));
+
   Teuchos::ParameterList* solver;
 
   if (nonlinear_solver == std::string("newton") ||
@@ -107,8 +118,8 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
     solver->set<double>("nonlinear tolerance", NONLINEAR_TOLERANCE);
     solver->set<double>("diverged tolerance", NKA_DIVERG_TOL);
     solver->set<double>("max du growth factor", INC_DIVERG_FACTOR);
-    solver->set<int>("max divergent iterations", MAX_DIVERG_ITERATIONS);
-    solver->set<int>("limit iterations", NKA_LIMIT_ITERATIONS);
+    solver->set<int>("max divergent iterations", max_divergent_itrs);
+    solver->set<int>("limit iterations", max_total_itrs);
     solver->set<bool>("modify correction", modify_correction);
     solver->set<std::string>("monitor", "monitor update");
   } else if (nonlinear_solver == "nka") {
@@ -119,9 +130,9 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
     solver->set<double>("diverged tolerance", NKA_DIVERG_TOL);
     solver->set<double>("diverged l2 tolerance", NKA_DIVERG_TOL);
     solver->set<double>("max du growth factor", INC_DIVERG_FACTOR);
-    solver->set<int>("max divergent iterations", MAX_DIVERG_ITERATIONS);
+    solver->set<int>("max divergent iterations", max_divergent_itrs);
     solver->set<int>("max nka vectors", NKA_NUM_VECTORS);
-    solver->set<int>("limit iterations", NKA_LIMIT_ITERATIONS);
+    solver->set<int>("limit iterations", max_total_itrs);
     solver->set<bool>("modify correction", modify_correction);
   } else if (nonlinear_solver == std::string("jfnk")) {
     bdf1.set<std::string>("solver type", "JFNK");
@@ -134,9 +145,9 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
     Teuchos::ParameterList& newton = list_tmp.sublist("Newton parameters");
     newton.set<double>("diverged tolerance", NKA_DIVERG_TOL);
     newton.set<double>("max du growth factor", INC_DIVERG_FACTOR);
-    newton.set<int>("max divergent iterations", MAX_DIVERG_ITERATIONS);
+    newton.set<int>("max divergent iterations", max_divergent_itrs);
     newton.set<int>("max nka vectors", NKA_NUM_VECTORS);
-    newton.set<int>("limit iterations", NKA_LIMIT_ITERATIONS);
+    newton.set<int>("limit iterations", max_total_itrs);
 
     Teuchos::ParameterList& jfmat = solver->sublist("JF matrix parameters");
     jfmat.set<double>("finite difference epsilon", 1.0e-8);
@@ -159,6 +170,13 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
   }
 
   // remaining BDF1 parameters
+  std::string prefix("numerical_controls, unstructured_controls, unstr_transient_controls, ");
+  node = GetUniqueElementByTagsString_(prefix + "extrapolation_damping_factor", flag);
+  if (flag) {
+    double factor = GetTextContentD_(node, "", false, 1.0);
+    bdf1.set<double>("extrapolation damping factor", factor);
+  }
+
   bdf1.set<int>("max preconditioner lag iterations", TI_MAX_PC_LAG);
   bdf1.set<bool>("extrapolate initial guess", true);
   bdf1.set<double>("restart tolerance relaxation factor", TI_TOL_RELAX_FACTOR);
@@ -223,6 +241,11 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
   node = GetUniqueElementByTagsString_(controls + ", monitor", flag);
   if (flag) solver->set<std::string>("monitor", mm.transcode(node->getTextContent()));
 
+  node = GetUniqueElementByTagsString_(controls + ", make_one_iteration", flag);
+  if (flag)
+    solver->set<bool>("make one iteration",
+                      strncmp(mm.transcode(node->getTextContent()), "true", 5) == 0);
+
 
   // bdf1 options
   {
@@ -261,6 +284,20 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
   if (flag)
     out_list.set<int>("maximum number of iterations",
                       std::stoi(mm.transcode(node->getTextContent())));
+
+  node = GetUniqueElementByTagsString_(controls + ", sequential_tolerance", flag);
+  if (flag)
+    out_list.set<double>("error tolerance", std::stod(mm.transcode(node->getTextContent())));
+
+  node = GetUniqueElementByTagsString_(controls + ", use_l_scheme", flag);
+  if (flag) {
+    flag = GetTextContentL_(node);
+    if (flag)
+      out_list.sublist("L-scheme")
+        .set<bool>("L-scheme stabilization", true)
+        .set<double>("minimum safety factor", 1e-6)
+        .set<double>("maximum safety factor", 1.0);
+  }
 
   node = GetUniqueElementByTagsString_(controls + ", preconditioner", flag);
   if (flag) {
@@ -345,6 +382,8 @@ InputConverterU::TranslateInitialization_(const std::string& unstr_controls)
   if (flag) {
     std::string text = mm.transcode(node->getTextContent());
     if (text == "aztec00" || text == "aztecoo") text = "AztecOO";
+    if (text == "pcg") text = "PCG with Hypre AMG";
+    if (text == "gmres") text = "GMRES with Hypre AMG";
     out_list.set<std::string>("linear solver", text);
   }
 
@@ -399,6 +438,7 @@ InputConverterU::TranslateDiffusionOperator_(const std::string& disc_methods,
     if (tmp == "mfd: two point flux approximation") tmp = "mfd: two-point flux approximation";
     methods[i] = tmp;
   }
+  if (methods.size() == 1 && methods[0] == "fv: default") methods.push_back(methods[0]);
   if (methods.size() == 1) methods.push_back("mfd: optimized for sparsity");
 
   tmp_list.set<std::string>("discretization primary", methods[0]);
@@ -411,14 +451,15 @@ InputConverterU::TranslateDiffusionOperator_(const std::string& disc_methods,
   Amanzi::replace_all(nonlinear_coef_out, "-", ": ");
   std::replace(nonlinear_coef_out.begin(), nonlinear_coef_out.end(), '_', ' ');
 
-  if (nonlinear_coef == "upwind-darcy_velocity")
-    nonlinear_coef_out = "upwind: face";
+  if (nonlinear_coef == "upwind-darcy_velocity") nonlinear_coef_out = "upwind: face";
   else if (nonlinear_coef == "upwind-amanzi" || nonlinear_coef == "upwind-amanzi_new")
     nonlinear_coef_out = "divk: cell-face";
 
   // -- limitations
   if (fracture_network_ && domain == "fracture" && pk != "multiphase")
     nonlinear_coef_out = "standard: cell";
+
+  if (methods[0] == "fv: default" && pk == "energy") nonlinear_coef_out.clear();
 
   if (nonlinear_coef_out != "") tmp_list.set("nonlinear coefficient", nonlinear_coef_out);
 
@@ -463,20 +504,20 @@ InputConverterU::TranslateDiffusionOperator_(const std::string& disc_methods,
   }
 
   // fixing miscalleneous scenarious
-  if (pc_method == "linearized_operator" && pk == "flow") {
-    out_list.sublist("diffusion operator")
-      .sublist("preconditioner")
-      .set<std::string>("Newton correction", "approximate Jacobian");
+  std::string nc("");
+  if (nonlinear_solver == "newton") {
+    nc = "true Jacobian";
+  } else if (methods[0] == "fv: default" && pk != "multiphase") {
+    nc = "true Jacobian";
+  } else if (pc_method == "linearized_operator" && pk == "flow") {
+    nc = "approximate Jacobian";
+  } else if (nonlinear_solver == "newton-picard") {
+    nc = "approximate Jacobian";
   }
 
-  if (nonlinear_solver == "newton") {
-    Teuchos::ParameterList& pc_list =
-      out_list.sublist("diffusion operator").sublist("preconditioner");
-    pc_list.set<std::string>("Newton correction", "true Jacobian");
-  } else if (nonlinear_solver == "newton-picard") {
-    Teuchos::ParameterList& pc_list =
-      out_list.sublist("diffusion operator").sublist("preconditioner");
-    pc_list.set<std::string>("Newton correction", "approximate Jacobian");
+  if (nc != "") {
+    out_list.sublist("diffusion operator").sublist("preconditioner")
+      .set<std::string>("Newton correction", nc);
   }
 
   return out_list;

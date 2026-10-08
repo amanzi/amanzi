@@ -35,8 +35,7 @@ void
 PDE_DiffusionFracturedMatrix::Init(Teuchos::ParameterList& plist)
 {
   // extract mesh in fractures
-  auto gm =
-    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(*mesh_->getGeometricModel().get()));
+  auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(*mesh_->getGeometricModel().get()));
   AmanziMesh::MeshFactory meshfactory(mesh_->getComm(), gm);
   meshfactory.set_preference(AmanziMesh::Preference({ AmanziMesh::Framework::MSTK }));
 
@@ -94,6 +93,9 @@ PDE_DiffusionFracturedMatrix::UpdateMatrices(const Teuchos::Ptr<const CompositeV
   Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
   if (k_.get() && k_->HasComponent("cell")) k_cell = k_->ViewComponent("cell");
 
+  const Epetra_MultiVector* rho_c = NULL;
+  if (!is_scalar_ && gravity_) rho_c = &*rho_cv_->ViewComponent("cell", false);
+
   const auto& fmap = *cvs_->Map("face", true);
 
   int dim = mesh_->getSpaceDimension();
@@ -132,7 +134,9 @@ PDE_DiffusionFracturedMatrix::UpdateMatrices(const Teuchos::Ptr<const CompositeV
       Anew.PutScalar(0.0);
 
       for (int i = 0; i < nfaces + 1; ++i) {
-        for (int j = 0; j < nfaces + 1; ++j) { Anew(map[i], map[j]) = Acell(i, j); }
+        for (int j = 0; j < nfaces + 1; ++j) {
+          Anew(map[i], map[j]) = Acell(i, j);
+        }
       }
 
       local_op_->matrices[c] = Anew;
@@ -144,8 +148,9 @@ PDE_DiffusionFracturedMatrix::UpdateMatrices(const Teuchos::Ptr<const CompositeV
       WhetStone::DenseMatrix& Wff = Wff_cells_[c];
       WhetStone::DenseVector v(nfaces), av(nfaces);
 
-      double factor = rho_ * norm(g_);
-      if (k_cell.get()) factor *= (*k_cell)[0][c];
+      double rho = rho_c ? (*rho_c)[0][c] : rho_;
+      double factor = rho * norm(g_);
+      if (k_cell.get() ) factor *= (*k_cell)[0][c];
 
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
@@ -297,7 +302,10 @@ PDE_DiffusionFracturedMatrix::UpdateFlux(const Teuchos::Ptr<const CompositeVecto
   Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
   if (k_.get() && k_->HasComponent("cell")) k_cell = k_->ViewComponent("cell");
 
-  // Initialize intensity in ghost faces.
+  const Epetra_MultiVector* rho_c = NULL;
+  if (!is_scalar_ && gravity_) rho_c = &*rho_cv_->ViewComponent("cell", false);
+
+  // initialize intensity in ghost faces.
   flux->PutScalarMasterAndGhosted(0.0);
   u->ScatterMasterToGhosted("face");
 
@@ -354,8 +362,9 @@ PDE_DiffusionFracturedMatrix::UpdateFlux(const Teuchos::Ptr<const CompositeVecto
     }
 
     if (gravity_) {
-      double factor = rho_ * norm(g_);
-      if (k_cell.get()) factor *= (*k_cell)[0][c];
+      double rho = rho_c ? (*rho_c)[0][c] : rho_;
+      double factor = rho * norm(g_);
+      if (k_cell.get() ) factor *= (*k_cell)[0][c];
 
       WhetStone::DenseVector w(nfaces), aw(nfaces);
       for (int n = 0; n < nfaces; n++) {
@@ -367,7 +376,9 @@ PDE_DiffusionFracturedMatrix::UpdateFlux(const Teuchos::Ptr<const CompositeVecto
       WhetStone::DenseMatrix& Wff = Wff_cells_[c];
       Wff.Multiply(w, aw, false);
 
-      for (int n = 0; n < nfaces; n++) { av(map[n]) -= aw(n); }
+      for (int n = 0; n < nfaces; n++) {
+        av(map[n]) -= aw(n);
+      }
     }
 
     // points of the master/slave interface require special logic
@@ -381,7 +392,9 @@ PDE_DiffusionFracturedMatrix::UpdateFlux(const Teuchos::Ptr<const CompositeVecto
     }
   }
 
-  for (int g = 0; g != ndofs_owned; ++g) { flux_data[0][g] /= hits[g]; }
+  for (int g = 0; g != ndofs_owned; ++g) {
+    flux_data[0][g] /= hits[g];
+  }
 
   flux->GatherGhostedToMaster();
 }

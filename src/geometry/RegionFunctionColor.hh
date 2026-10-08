@@ -7,36 +7,38 @@
   Authors: Rao Garimella
 */
 
-//! RegionFunctionColor: A region defined by the value of an indicator function in a file.
+//! A region defined by the value of an indicator function in a file.
 /*!
 
-The list *region: color function* defines a region based a specified integer
-color, *value*, in a structured color function file, *file*.  The format of
-the color function file is given below in the "Tabulated function file format"
-section. As shown in the file, the color values may be specified at the nodes
-or cells of the color function grid. A computational cell is assigned the
-'color' of the data grid cell containing its cell centroid (cell-based colors)
-or the data grid nearest its cell-centroid (node-based colors). Computational
-cells sets are then built from all cells with the specified color *Value*.
+The color function region is based on a specified integer color in a structured
+color function file.  The format of the color function file is given below in
+the `tabulated function file format`_ section. As shown in the file, the color
+values may be specified at the nodes or cells of the color function grid. A
+computational cell is assigned the 'color' of the data grid cell containing its
+cell centroid (cell-based colors) or the data grid nearest its cell-centroid
+(node-based colors). Computational cells sets are then built from all cells
+with the specified color *Value*.
 
 In order to avoid, gaps and overlaps in specifying materials, it is strongly
 recommended that regions be defined using a single color function file.
 
+`"region type`" = `"color function`"
+
 .. _region-color-function-spec:
 .. admonition:: region-color-function-spec
 
-    * `"file`" ``[string]`` File name containing color function.
-    * `"value`" ``[int]`` Color that defines the set in the tabulated function file.
+   * `"file`" ``[string]`` File name containing color function.
+   * `"value`" ``[int]`` Color that defines the set in the tabulated function
+     file.
 
 Example:
 
 .. code-block:: xml
 
    <ParameterList name="SOIL_TOP">
-     <ParameterList name="region: color function">
-       <Parameter name="file" type="string" value="geology_resamp_2D.tf3"/>
-       <Parameter name="value" type="int" value="1"/>
-     </ParameterList>
+     <Parameter name="region type" type="string" value="color function"/>
+     <Parameter name="file" type="string" value="geology_resamp_2D.tf3"/>
+     <Parameter name="value" type="int" value="1"/>
    </ParameterList>
 
 */

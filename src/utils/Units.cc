@@ -170,6 +170,35 @@ Units::ConvertConcentration(double val,
 
 
 /* ******************************************************************
+* Convert any input temperature to any output temperature.
+****************************************************************** */
+double
+Units::ConvertTemperature(double val,
+                          const std::string& in_unit,
+                          const std::string& out_unit,
+                          bool& flag)
+{
+  flag = true;
+  if (temperature_.find(in_unit) == temperature_.end() || temperature_.find(out_unit) == temperature_.end()) {
+    flag = false;
+    return val;
+  }
+
+  double tmp(val);
+
+  // Convert to Kelvin first
+  if (in_unit == "C") tmp += 273.15;
+  else if (in_unit == "F") tmp = (tmp + 459.67) * 5.0 / 9.0;
+
+  // Convert from Kelvin to the output unit
+  if (out_unit == "C") tmp -= 273.15;
+  else if (out_unit == "F") tmp = tmp * 1.8 - 459.67;
+
+  return tmp;
+}
+
+
+/* ******************************************************************
 * Convert any derived input unit to compatible output unit.
 * Special case, out_unit="SI", leads to conversion to SI units.
 ****************************************************************** */
@@ -183,7 +212,7 @@ Units::ConvertUnitD(double val,
   // replace known complex/derived units
   AtomicUnitForm auf = StringToAtomicUnitForm_(in_unit, &flag);
 
-  for (std::map<std::string, AtomicUnitForm>::iterator it = derived_.begin(); it != derived_.end();
+  for (std::map<std::string, AtomicUnitForm>::iterator it = derived_.begin() ; it != derived_.end();
        ++it) {
     auf.replace(it->first, it->second);
   }
@@ -290,7 +319,7 @@ Units::ConvertUnitS(const std::string& in_unit, const UnitsSystem& system)
   bool flag;
   AtomicUnitForm auf = StringToAtomicUnitForm_(in_unit, &flag);
 
-  for (std::map<std::string, AtomicUnitForm>::iterator it = derived_.begin(); it != derived_.end();
+  for (std::map<std::string, AtomicUnitForm>::iterator it = derived_.begin() ; it != derived_.end();
        ++it) {
     auf.replace(it->first, it->second);
   }
@@ -326,7 +355,9 @@ Units::ConvertUnitS(const std::string& in_unit, const UnitsSystem& system)
     ss << separator << it->first;
 
     int i = it->second;
-    if (i != 1) { ss << "^" << i; }
+    if (i != 1) {
+      ss << "^" << i;
+    }
     separator = "*";
   }
 
@@ -377,7 +408,7 @@ Units::DivideUnits(const std::string& unit1, const std::string& unit2)
   if (unit1 == "-") {
     AtomicUnitForm auf(auf2);
     UnitData& data = auf.data();
-    for (auto it = data.begin(); it != data.end(); ++it) data[it->first] *= -1;
+    for (auto it = data.begin() ; it != data.end(); ++it) data[it->first] *= -1;
     return AtomicUnitFormToString_(auf);
   }
   AtomicUnitForm auf1 = StringToAtomicUnitForm_(unit1, &flag1);
@@ -403,7 +434,7 @@ Units::CompareUnits(const std::string& unit1, const std::string& unit2)
   AtomicUnitForm auf1 = StringToAtomicUnitForm_(unit1, &flag1);
   AtomicUnitForm auf2 = StringToAtomicUnitForm_(unit2, &flag2);
 
-  for (std::map<std::string, AtomicUnitForm>::iterator it = derived_.begin(); it != derived_.end();
+  for (std::map<std::string, AtomicUnitForm>::iterator it = derived_.begin() ; it != derived_.end();
        ++it) {
     auf1.replace(it->first, it->second);
     auf2.replace(it->first, it->second);
@@ -430,7 +461,9 @@ Units::AtomicUnitFormToString_(const AtomicUnitForm& auf)
     ss << separator << it->first;
 
     int i = it->second;
-    if (i != 1) { ss << "^" << i; }
+    if (i != 1) {
+      ss << "^" << i;
+    }
     separator = "*";
   }
 

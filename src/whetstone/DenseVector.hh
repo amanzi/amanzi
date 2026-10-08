@@ -31,7 +31,8 @@ namespace WhetStone {
 
 class DenseVector {
  public:
-  DenseVector() : m_(0), mem_(0), data_(NULL){};
+  DenseVector()
+    : m_(0), mem_(0), data_(NULL) {};
   explicit DenseVector(int mrow);
   DenseVector(int mrow, double* data);
   DenseVector(const DenseVector& B);
@@ -39,7 +40,9 @@ class DenseVector {
 
   ~DenseVector()
   {
-    if (data_ != NULL) { delete[] data_; }
+    if (data_ != NULL) {
+      delete[] data_;
+    }
   }
 
   // primary members
@@ -77,7 +80,7 @@ class DenseVector {
   friend double operator*(const DenseVector& A, const DenseVector& B)
   {
     double s = 0.0;
-    for (int i = 0; i < A.NumRows(); i++) s += A(i) * B(i);
+    for (int i = 0; i < A.NumRows() ; i++) s += A(i) * B(i);
     return s;
   }
 
@@ -144,12 +147,17 @@ class DenseVector {
   }
 
   // -- for nonlinear solvers: this = sa * A + sb * B + sthis * this
-  DenseVector&
-  Update(double sa, const DenseVector& A, double sb, const DenseVector& B, double sthis)
+  DenseVector& Update(double sa,
+                      const DenseVector& A,
+                      double sb,
+                      const DenseVector& B,
+                      double sthis)
   {
     const double* dataA = A.Values();
     const double* dataB = B.Values();
-    for (int i = 0; i < m_; ++i) { data_[i] = sa * dataA[i] + sb * dataB[i] + sthis * data_[i]; }
+    for (int i = 0; i < m_; ++i) {
+      data_[i] = sa * dataA[i] + sb * dataB[i] + sthis * data_[i];
+    }
     return *this;
   }
 
@@ -185,7 +193,9 @@ class DenseVector {
   void NormInf(double* result) const
   {
     *result = 0.0;
-    for (int i = 0; i < m_; ++i) { *result = std::max(*result, std::fabs(data_[i])); }
+    for (int i = 0; i < m_; ++i) {
+      *result = std::max(*result, std::fabs(data_[i]));
+    }
   }
 
   void SwapRows(int m1, int m2)

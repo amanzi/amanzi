@@ -116,7 +116,7 @@ MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
   const auto& [faces, fdirs] = mesh_->getCellFacesAndDirections(c);
   int num_faces = faces.size();
 
-  AmanziMesh::Entity_ID_View corner_faces;
+  AmanziMesh::Entity_ID_View corner_faces, corner_nodes;
   auto nodes = mesh_->getCellNodes(c);
   int nnodes = nodes.size();
 
@@ -131,7 +131,7 @@ MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
 
   for (int n = 0; n < nnodes; n++) {
     int v = nodes[n];
-    node_get_cell_faces(*mesh_, v, c, Parallel_kind::ALL, &corner_faces);
+    getNodeCellFaces(*mesh_, v, c, Parallel_kind::ALL, &corner_faces);
     int nfaces = corner_faces.size();
     if (nfaces < d_) {
       Errors::Message msg;
@@ -143,7 +143,7 @@ MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
       int f = corner_faces[i];
       N.SetColumn(i, mesh_->getFaceNormal(f));
     }
-    double cwgt_tmp = fabs(N.Det());
+    double cwgt_tmp = std::fabs(N.Det());
 
     N.Inverse();
     NK = N * Kinv;
@@ -152,10 +152,15 @@ MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
     auto Mv_tmp = NK * N;
     Mv.push_back(Mv_tmp);
 
-    for (int i = 0; i < d_; i++) {
-      int f = corner_faces[i];
-      cwgt_tmp /= mesh_->getFaceArea(f);
+    if (d_ == 3) {
+      getNodeCellNodes(*mesh_, v, c, Parallel_kind::ALL, &corner_nodes);
+      const auto& xv = mesh_->getNodeCoordinate(v);
+      const auto& x1 = mesh_->getNodeCoordinate(corner_nodes[0]);
+      const auto& x2 = mesh_->getNodeCoordinate(corner_nodes[1]);
+      const auto& x3 = mesh_->getNodeCoordinate(corner_nodes[2]);
+      cwgt_tmp = std::fabs((x1 - xv) * ((x2 - xv) ^ (x3 - xv)));
     }
+    
     cwgt.push_back(cwgt_tmp);
   }
 
@@ -171,7 +176,7 @@ MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
   W.PutScalar(0.0);
   for (int n = 0; n < nnodes; n++) {
     int v = nodes[n];
-    node_get_cell_faces(*mesh_, v, c, Parallel_kind::ALL, &corner_faces);
+    getNodeCellFaces(*mesh_, v, c, Parallel_kind::ALL, &corner_faces);
 
     Tensor& Mv_tmp = Mv[n];
     for (int i = 0; i < d_; i++) {

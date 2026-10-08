@@ -49,16 +49,18 @@ TreeOperator::TreeOperator()
     inverse_pars_set_(false),
     initialize_complete_(false),
     compute_complete_(false),
-    assembly_complete_(false)
+    assembly_complete_(false),
+    symbolic_assembly_complete_(false)
 {
   vo_ = Teuchos::rcp(new VerboseObject("TreeOperator", Teuchos::ParameterList()));
 }
 
 
-TreeOperator::TreeOperator(Teuchos::ParameterList& plist) : TreeOperator()
+TreeOperator::TreeOperator(Teuchos::ParameterList& plist)
+  : TreeOperator()
 {
   vo_ = Teuchos::rcp(new VerboseObject("TreeOperator", plist));
-  if (plist.isSublist("inverse")) set_inverse_parameters(plist.sublist("inverse"));
+  if (plist.isSublist("inverse") ) set_inverse_parameters(plist.sublist("inverse"));
   shift_ = plist.get<double>("diagonal shift", 0.0);
   shift_min_ = plist.get<double>("diagonal shift minimum", 0.0);
 }
@@ -95,27 +97,34 @@ TreeOperator::TreeOperator(const Teuchos::RCP<const TreeVectorSpace>& tvs,
   : TreeOperator(tvs, tvs, plist)
 {}
 
-TreeOperator::TreeOperator(const Teuchos::RCP<const TreeVectorSpace>& tvs) : TreeOperator(tvs, tvs)
+TreeOperator::TreeOperator(const Teuchos::RCP<const TreeVectorSpace>& tvs)
+  : TreeOperator(tvs, tvs)
 {}
 
 
 /* ******************************************************************
 * Copy constructor does a deep copy.
 ****************************************************************** */
-TreeOperator::TreeOperator(const TreeOperator& other) : TreeOperator(other.row_map_, other.col_map_)
+TreeOperator::TreeOperator(const TreeOperator& other)
+  : TreeOperator(other.row_map_, other.col_map_)
 {
   shift_ = other.shift_;
   shift_min_ = other.shift_min_;
   vo_ = other.vo_;
   inv_plist_ = other.inv_plist_;
+  inverse_pars_set_ = other.inverse_pars_set_;
 
   for (int i = 0; i != row_size_; ++i) {
     for (int j = 0; j != col_size_; ++j) {
-      if (other.blocks_[i][j] != Teuchos::null) { blocks_[i][j] = other.blocks_[i][j]->Clone(); }
+      if (other.blocks_[i][j] != Teuchos::null) {
+        blocks_[i][j] = other.blocks_[i][j]->Clone();
+      }
     }
   }
 
-  if (other.data_ != Teuchos::null) { data_ = other.data_->Clone(); }
+  if (other.data_ != Teuchos::null) {
+    data_ = other.data_->Clone();
+  }
 }
 
 
@@ -341,8 +350,8 @@ void
 TreeOperator::SymbolicAssembleMatrix()
 {
   // create the supermaps
-  if (!row_supermap_.get()) row_supermap_ = createSuperMap(*get_row_map());
-  if (!col_supermap_.get()) col_supermap_ = createSuperMap(*get_col_map());
+  if (!row_supermap_.get() ) row_supermap_ = createSuperMap(*get_row_map());
+  if (!col_supermap_.get() ) col_supermap_ = createSuperMap(*get_col_map());
 
   // NOTE: this can be an overshoot, as we do this once, then FillComplete()
   // and clean up extra space.  From then on it is a static graph.  So there
@@ -406,6 +415,8 @@ TreeOperator::SymbolicAssembleMatrix()
   // create the matrix
   Amat_ = Teuchos::rcp(new MatrixFE(graph));
   A_ = Amat_->Matrix();
+
+  symbolic_assembly_complete_ = true;
 }
 
 
@@ -415,8 +426,10 @@ TreeOperator::SymbolicAssembleMatrix()
 void
 TreeOperator::AssembleMatrix()
 {
+  if (!symbolic_assembly_complete_) SymbolicAssembleMatrix();
+
   AMANZI_ASSERT(leaves_.size() != 0);
-  Amat_->Zero();
+  Amat_->PutScalar(0.);
 
   // check that each row has at least one non-null operator block
   std::size_t n_row_leaves = leaves_.size();
@@ -455,6 +468,7 @@ TreeOperator::AssembleMatrix()
 void
 TreeOperator::Init()
 {
+  symbolic_assembly_complete_ = false;
   assembly_complete_ = false;
   compute_complete_ = false;
   for (int i = 0; i != row_size_; ++i) {
@@ -465,12 +479,14 @@ TreeOperator::Init()
   if (data_ != Teuchos::null) data_->Init();
 }
 
+
 /* ******************************************************************
 * Zero off-diagonal operators
 ****************************************************************** */
 void
 TreeOperator::InitOffdiagonals()
 {
+  symbolic_assembly_complete_ = false;
   assembly_complete_ = false;
   compute_complete_ = false;
   for (int i = 0; i != row_size_; ++i) {
@@ -532,7 +548,7 @@ TreeOperator::InitializeInverse()
     // indices, which need structure.  Since not guaranteed structure until Initialize,
     // is called, we cannot set block indicies until now.
     // provide block ids for block strategies.
-    if (!row_supermap_.get()) row_supermap_ = createSuperMap(*get_row_map());
+    if (!row_supermap_.get() ) row_supermap_ = createSuperMap(*get_row_map());
 
     if (coloring_ == Teuchos::null || num_colors_ == 0) {
       auto block_ids = get_row_supermap()->BlockIndices();
@@ -602,7 +618,9 @@ TreeOperator::ComputeInverse()
     if (preconditioner_.get()) {
       preconditioner_->ComputeInverse(); // calls SymbolicAssemble if needed
     } else if (block_diagonal_) {
-      for (std::size_t n = 0; n != get_row_map()->size(); ++n) { blocks_[n][n]->ComputeInverse(); }
+      for (std::size_t n = 0; n != get_row_map()->size(); ++n) {
+        blocks_[n][n]->ComputeInverse();
+      }
     }
   }
   compute_complete_ = true;

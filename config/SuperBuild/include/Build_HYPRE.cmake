@@ -81,20 +81,13 @@ else()
   set(hypre_shared_opt "--disable-shared")
 endif()
 
-# --- Set the name of the patch
-set(HYPRE_patch_file hypre-superlu.patch)
-# --- Configure the bash patch script
-set(HYPRE_sh_patch ${HYPRE_prefix_dir}/hypre-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/hypre-patch-step.sh.in
-               ${HYPRE_sh_patch}
-               @ONLY)
-# --- Configure the CMake patch step
-set(HYPRE_cmake_patch ${HYPRE_prefix_dir}/hypre-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/hypre-patch-step.cmake.in
-               ${HYPRE_cmake_patch}
-               @ONLY)
-# --- Set the patch command
-set(HYPRE_PATCH_COMMAND ${CMAKE_COMMAND} -P ${HYPRE_cmake_patch})     
+# --- Patch the original source
+set(HYPRE_patch_file hypre-configure.patch)
+patch_tpl(HYPRE
+          ${HYPRE_prefix_dir}
+          ${HYPRE_source_dir}
+          ${HYPRE_stamp_dir}
+          HYPRE_patch_file)
 
 # --- If downloads are disabled point to local repository
 if ( DISABLE_EXTERNAL_DOWNLOAD )
@@ -108,6 +101,7 @@ message(STATUS "HYPRE git repository = ${HYPRE_GIT_REPOSITORY_TEMP}")
 # --- Add external project build and tie to the ZLIB build target
 ExternalProject_Add(${HYPRE_BUILD_TARGET}
                     DEPENDS   ${HYPRE_PACKAGE_DEPENDS}         # Package dependency target
+                    PREFIX    ${HYPRE_prefix_dir}
                     TMP_DIR   ${HYPRE_tmp_dir}                 # Temporary files directory
                     STAMP_DIR ${HYPRE_stamp_dir}               # Timestamp and log directory
                     # -- Download and GIT definition

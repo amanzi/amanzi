@@ -30,8 +30,8 @@ class Analytic01 : public AnalyticBase {
  public:
   Analytic01(Teuchos::RCP<const Amanzi::CompositeVector> temp,
              Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
-    : AnalyticBase(mesh), temp_(temp){};
-  ~Analytic01(){};
+    : AnalyticBase(mesh), temp_(temp) {};
+  ~Analytic01() {};
 
   // Conductivity is m T^{m-1}
   Amanzi::WhetStone::Tensor Conductivity(int c, const Amanzi::AmanziGeometry::Point& p, double t)
@@ -45,8 +45,9 @@ class Analytic01 : public AnalyticBase {
   }
 
   // Fluid velocity is n T^{n-1}
-  Amanzi::AmanziGeometry::Point
-  FluidVelocity(int c, const Amanzi::AmanziGeometry::Point& p, double t)
+  Amanzi::AmanziGeometry::Point FluidVelocity(int c,
+                                              const Amanzi::AmanziGeometry::Point& p,
+                                              double t)
   {
     int d = mesh_->getSpaceDimension();
     Amanzi::AmanziGeometry::Point v(d);

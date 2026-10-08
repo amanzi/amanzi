@@ -46,7 +46,7 @@ class HeatConduction : public AmanziSolvers::SolverFnBase<CompositeVector> {
  public:
   HeatConduction() { op_name_ = "diffusion operator Newton-Picard"; }
   HeatConduction(std::string& op_name) { op_name_ = "diffusion operator " + op_name; }
-  ~HeatConduction(){};
+  ~HeatConduction() {};
 
   // EOS
   double Conduction(int c, double T) const;
@@ -67,7 +67,7 @@ class HeatConduction : public AmanziSolvers::SolverFnBase<CompositeVector> {
   double ErrorNorm(const Teuchos::RCP<const CompositeVector>& u,
                    const Teuchos::RCP<const CompositeVector>& du);
 
-  void ChangedSolution(){};
+  void ChangedSolution() {};
 
   // supporting members
   void UpdateValues(const CompositeVector& u);

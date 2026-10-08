@@ -55,7 +55,9 @@ MFD3D_Electromagnetics::L2consistencyBoundary(int f,
 
   v3 = normal / area;
   for (int i = 0; i < d_; i++) {
-    for (int j = 0; j < d_; j++) { P(i, j) = v3[i] * v3[j]; }
+    for (int j = 0; j < d_; j++) {
+      P(i, j) = v3[i] * v3[j];
+    }
   }
   P(0, 1) -= v3[2];
   P(0, 2) += v3[1];

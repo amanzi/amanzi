@@ -15,17 +15,13 @@
 
 #include "HeatDiffusionMatrixFracture.hh"
 #include "SoluteDiffusionMatrixFracture.hh"
-#include "WaterStorageStressSplit.hh"
 
 namespace Amanzi {
 
 Utils::RegisteredFactory<Evaluator, SoluteDiffusionMatrixFracture>
   SoluteDiffusionMatrixFracture::reg_("solute diffusion to matrix");
 
-Utils::RegisteredFactory<Evaluator, HeatDiffusionMatrixFracture>
-  HeatDiffusionMatrixFracture::reg_("heat diffusion to matrix");
-
-Utils::RegisteredFactory<Evaluator, WaterStorageStressSplit>
-  WaterStorageStressSplit::reg_("water storage stress split");
+Utils::RegisteredFactory<Evaluator, HeatDiffusionMatrixFracture> HeatDiffusionMatrixFracture::reg_(
+  "heat diffusion to matrix");
 
 } // namespace Amanzi

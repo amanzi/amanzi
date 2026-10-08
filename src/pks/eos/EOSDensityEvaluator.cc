@@ -107,7 +107,6 @@ EOSDensityEvaluator::Clone() const
 void
 EOSDensityEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
-  double p_atm = S.Get<double>("atmospheric_pressure");
   auto temp = S.GetPtr<CompositeVector>(temp_key_, tag_);
   auto pres = S.GetPtr<CompositeVector>(pres_key_, tag_);
 
@@ -132,8 +131,7 @@ EOSDensityEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector
       int ierr(0);
       int count = dens_v.MyLength();
       for (int i = 0; i != count; ++i) {
-        double tmp = std::max<double>(pres_v[0][i], p_atm);
-        dens_v[0][i] = eos_->MolarDensity(temp_v[0][i], tmp);
+        dens_v[0][i] = eos_->MolarDensity(temp_v[0][i], pres_v[0][i]);
         ierr = std::max(ierr, eos_->error_code());
       }
 
@@ -150,8 +148,7 @@ EOSDensityEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector
       int ierr(0);
       int count = dens_v.MyLength();
       for (int i = 0; i != count; ++i) {
-        double tmp = std::max<double>(pres_v[0][i], p_atm);
-        dens_v[0][i] = eos_->Density(temp_v[0][i], tmp);
+        dens_v[0][i] = eos_->Density(temp_v[0][i], pres_v[0][i]);
         ierr = std::max(ierr, eos_->error_code());
       }
 
@@ -170,7 +167,6 @@ EOSDensityEvaluator::EvaluatePartialDerivative_(const State& S,
                                                 const Tag& wrt_tag,
                                                 const std::vector<CompositeVector*>& results)
 {
-  double p_atm = S.Get<double>("atmospheric_pressure");
   auto temp = S.GetPtr<CompositeVector>(temp_key_, tag_);
   auto pres = S.GetPtr<CompositeVector>(pres_key_, tag_);
 
@@ -195,8 +191,7 @@ EOSDensityEvaluator::EvaluatePartialDerivative_(const State& S,
 
         int count = dens_v.MyLength();
         for (int i = 0; i != count; ++i) {
-          dens_v[0][i] =
-            (pres_v[0][i] > p_atm) ? eos_->DMolarDensityDp(temp_v[0][i], pres_v[0][i]) : 0.0;
+          dens_v[0][i] = eos_->DMolarDensityDp(temp_v[0][i], pres_v[0][i]);
         }
       }
     }
@@ -209,9 +204,7 @@ EOSDensityEvaluator::EvaluatePartialDerivative_(const State& S,
 
         int count = dens_v.MyLength();
         for (int i = 0; i != count; ++i) {
-          dens_v[0][i] = (pres_v[0][i] > p_atm) ?
-                           dens_v[0][i] = eos_->DDensityDp(temp_v[0][i], pres_v[0][i]) :
-                           0.0;
+          dens_v[0][i] = eos_->DDensityDp(temp_v[0][i], pres_v[0][i]);
         }
       }
     }

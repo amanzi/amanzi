@@ -29,7 +29,7 @@ namespace Multiphase {
 class WRMmp_BrooksCorey : public WRMmp {
  public:
   WRMmp_BrooksCorey(Teuchos::ParameterList& plist);
-  ~WRMmp_BrooksCorey(){};
+  ~WRMmp_BrooksCorey() {};
 
   // required methods from the base class
   virtual double k_relative(double Sw, int phase);

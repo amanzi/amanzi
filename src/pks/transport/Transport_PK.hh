@@ -20,10 +20,10 @@ Single-phase transport
 The conceptual PDE model for the transport in partially saturated media is
 
 .. math::
-  \frac{\partial (\phi s_l C_l)}{\partial t}
+  \frac{\partial (\phi s_l C)}{\partial t}
   =
-  - \boldsymbol{\nabla} \cdot (\boldsymbol{q}_l C_l)
-  + \boldsymbol{\nabla} \cdot (\phi_e s_l\, (\boldsymbol{D}_l + \tau \boldsymbol{M}_l) \boldsymbol{\nabla} C_l) + Q,
+  - \boldsymbol{\nabla} \cdot (\boldsymbol{q}_l C)
+  + \boldsymbol{\nabla} \cdot (\phi_e s_l\, (\boldsymbol{D}_l + \tau \boldsymbol{M}_l) \boldsymbol{\nabla} C) + Q,
 
 where
 :math:`\phi` is total porosity [-],
@@ -58,11 +58,13 @@ for the fracture and matrix regions.
 In the fracture region, we have \citep{simunek-vangenuchten_2008}
 
 .. math::
-  \frac{\partial (\phi_f\, s_{lf}\, C_{lf})}{\partial t}
-  =
-  - \boldsymbol{\nabla} \cdot (\boldsymbol{q}_l C_{lf})
-  + \boldsymbol{\nabla} \cdot (\phi_f\, s_{lf}\, (\boldsymbol{D}_l + \tau_f M) \boldsymbol{\nabla} C_{lf})
-  - \frac{\phi_m\,\tau_m}{L_m}\, M \nabla C_m - \Sigma_w C^* + Q_f,
+  \begin{array}{rcl}
+  \frac{\partial (\phi_f\, s_{lf}\, C_f)}{\partial t}
+  &=&
+  - \boldsymbol{\nabla} \cdot (\boldsymbol{q}_l C_f)
+  + \boldsymbol{\nabla} \cdot (\phi_f\, s_{lf}\, (\boldsymbol{D}_l + \tau_f M) \boldsymbol{\nabla} C_f)\\
+  && - \displaystyle\frac{\phi_m\,\tau_m}{L_m}\, M \nabla C_m - \Sigma_w C^* + Q_f,
+  \end{array}
 
 where
 :math:`\phi_f` is fracture porosity [-],
@@ -75,13 +77,13 @@ where
 :math:`M` is molecular diffusion coefficient [:math:`m^2/s`], and
 :math:`L_m` is the characteristic matrix depth defined typically as the ratio of a matrix block [m],
 :math:`\Sigma_w` is transfer rate due to flow from the matrix to the fracture,
-:math:`C^*` is equal to :math:`C_{lf}` if :math:`\Sigma_w > 0` and :math:`C_{lm}` is :math:`\Sigma_w < 0`,
+:math:`C^*` is equal to :math:`C_f` if :math:`\Sigma_w > 0` and :math:`C_m` is :math:`\Sigma_w < 0`,
 and :math:`Q_f` is source or sink term.
 In the matrix region, we have
 
 .. math::
-  \frac{\partial (\phi_m\, s_{lm}\, C_{lm})}{\partial t}
-  = \nabla\cdot (\phi_m\, \tau_m\, M_m \nabla C_{lm}) + \Sigma_w C^* + Q_m,
+  \frac{\partial (\phi_m\, s_{lm}\, C_m)}{\partial t}
+  = \nabla\cdot (\phi_m\, \tau_m\, M_m \nabla C_m) + \Sigma_w C^* + Q_m,
 
 where
 :math:`\phi_m` is matrix porosity [-],
@@ -91,7 +93,7 @@ The simplified one-node dual porosity model uses a finite difference approximati
 solute gradient:
 
 .. math::
-  \nabla C_{lm} \approx WR \, \frac{C_{lf} - C_{lm}}{L_m},
+  \nabla C_m \approx WR \, \frac{C_f - C_m}{L_m},
 
 where
 :math:`WR` is the Warren-Root coefficient that estimates the poro-space geometry, [-]
@@ -103,23 +105,25 @@ This list is used to summarize physical models and assumptions, such as
 coupling with other PKs.
 This list is often generated or extended by a high-level MPC PK.
 
-* `"gas diffusion`" [bool] indicates that air-water partitioning coefficients
-  are used to distribute components between liquid and as phases. Default is *false*.
+.. admonition:: transport-spec
 
-* `"permeability field is required`" [bool] indicates if some transport features
-  require absolute permeability. Default is *false*.
+  * `"gas diffusion`" ``[bool]`` indicates that air-water partitioning coefficients
+    are used to distribute components between liquid and as phases. Default is *false*.
 
-* `"multiscale model`" [string] specifies a multiscale model.
-  Available options are `"single porosity`" (default) and `"dual porosity`".
+  * `"permeability field is required`" ``[bool]`` indicates if some transport features
+    require absolute permeability. Default is *false*.
 
-* `"effective transport porosity`" [bool] If *true*, effective transport porosity
-  will be used by dispersive-diffusive fluxes instead of total porosity.
-  Default is *false*.
+  * `"multiscale model`" ``[string]`` specifies a multiscale model.
+    Available options are `"single porosity`" (default) and `"dual porosity`".
 
-* `"eos lookup table`" [string] provides the name for optional EOS lookup table.
+  * `"effective transport porosity`" ``[bool]`` If *true*, effective transport porosity
+    will be used by dispersive-diffusive fluxes instead of total porosity.
+    Default is *false*.
 
-* `"use dispersion solver`" [bool] instructs PK to instantiate a solver but do
-  not call it. It is used now by MPC to form a global solver. Default is *false*.
+  * `"eos lookup table`" ``[string]`` provides the name for optional EOS lookup table.
+
+  * `"use dispersion solver`" ``[bool]`` instructs PK to instantiate a solver but do
+    not call it. It is used now by MPC to form a global solver. Default is *false*.
 
 .. code-block:: xml
 
@@ -137,39 +141,39 @@ This list is often generated or extended by a high-level MPC PK.
 
 Global parameters
 .................
-This list is used to summarize physical models and assumptions, such as
 The transport component of Amanzi performs advection of aqueous and gaseous
 components and their dispersion and diffusion.
 The main parameters control temporal stability, spatial
 and temporal accuracy, and verbosity:
 
+.. admonition:: transport_global_params-spec
 
-* `"domain name`" [string] specifies mesh name that defined domain of this PK.
-  Default is `"domain`".
+  * `"domain name`" ``[string]`` specifies mesh name that defined domain of this PK.
+    Default is `"domain`".
 
-* `"cfl`" [double] Time step limiter, a number less than 1. Default value is 1.
+  * `"cfl`" ``[double]`` Time step limiter, a number less than 1. Default value is 1.
 
-* `"method`" [string] defines flux method. Available options are `"muscl`" (default) and `"fct`".
+  * `"method`" ``[string]`` defines flux method. Available options are `"muscl`" (default) and `"fct`".
 
-* `"spatial discretization order`" [int] defines accuracy of spatial discretization.
-  It permits values 1 or 2. Default value is 1.
+  * `"spatial discretization order`" ``[int]`` defines accuracy of spatial discretization.
+    It permits values 1 or 2. Default value is 1.
 
-* `"temporal discretization order`" [int] defines accuracy of temporal discretization.
-  It permits values 1 or 2 and values 3 or 4. Note that RK3 is not monotone.
-  Default value is 1.
+  * `"temporal discretization order`" ``[int]`` defines accuracy of temporal discretization.
+    It permits values 1 or 2 and values 3 or 4. Note that RK3 is not monotone.
+    Default value is 1.
 
-* `"reconstruction`" [list] collects reconstruction parameters. The available options are
-  describe in the separate section below.
+  * `"reconstruction`" ``[list]`` collects reconstruction parameters. The available options are
+    describe in the separate section below.
 
-* `"solver`" [string] Specifies the dispersion/diffusion solver.
+  * `"solver`" ``[string]`` Specifies the dispersion/diffusion solver.
 
-* `"preconditioner`" [string] specifies preconditioner for dispersion solver.
+  * `"preconditioner`" ``[string]`` specifies preconditioner for dispersion solver.
 
-* `"number of aqueous components`" [int] The total number of aqueous components.
-  Default value is the total number of components.
+  * `"number of aqueous components`" ``[int]`` The total number of aqueous components.
+    Default value is the total number of components.
 
-* `"number of gaseous components`" [int] The total number of gaseous components.
-  Default value is 0.
+  * `"number of gaseous components`" ``[int]`` The total number of gaseous components.
+    Default value is 0.
 
 .. code-block:: xml
 
@@ -212,6 +216,7 @@ and temporal accuracy, and verbosity:
 #include "FCT.hh"
 #include "Key.hh"
 #include "LimiterCell.hh"
+#include "ModelAssumptions.hh"
 #include "PK.hh"
 #include "PK_Explicit.hh"
 #include "PK_Factory.hh"
@@ -224,8 +229,8 @@ and temporal accuracy, and verbosity:
 
 #include "Chemistry_PK.hh"
 #ifdef ALQUIMIA_ENABLED
-#  include "Alquimia_PK.hh"
-#  include "ChemistryEngine.hh"
+#include "Alquimia_PK.hh"
+#include "ChemistryEngine.hh"
 #endif
 
 // Amanzi::Transport
@@ -239,8 +244,7 @@ and temporal accuracy, and verbosity:
 namespace Amanzi {
 namespace Transport {
 
-typedef double
-AnalyticFunction(const AmanziGeometry::Point&, const double);
+typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
 class Transport_PK : public PK_Physical {
  public:
@@ -254,22 +258,23 @@ class Transport_PK : public PK_Physical {
                const std::string& pk_list_name,
                std::vector<std::string>& component_names);
 
-  virtual ~Transport_PK(){};
+  virtual ~Transport_PK() {};
 
   // members required by PK interface
+  virtual void parseParameterList() override;
   virtual void Setup() override;
   virtual void Initialize() override;
 
   virtual double get_dt() override;
-  virtual void set_dt(double dt) override{};
+  virtual void set_dt(double dt) override {};
 
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
-  virtual void CalculateDiagnostics(const Tag& tag) override{};
+  virtual void CalculateDiagnostics(const Tag& tag) override {};
 
   virtual std::string name() override { return "transport"; }
 
   // main transport members
-  // -- calculation of a stable time step needs saturations and darcy flux
+  // -- calculation of a stable timestep needs saturations and darcy flux
   double StableTimeStep(int n);
 
   // -- coupling with chemistry
@@ -323,8 +328,9 @@ class Transport_PK : public PK_Physical {
                                        const CompositeVector& component,
                                        CompositeVector& f,
                                        bool scale);
-  void
-  FunctionalTimeDerivative_FCT_(double t, const CompositeVector& component, CompositeVector& f);
+  void FunctionalTimeDerivative_FCT_(double t,
+                                     const CompositeVector& component,
+                                     CompositeVector& f);
 
   // sources and sinks for components from n0 to n1 including
   void ComputeSources_(double tp,
@@ -429,8 +435,9 @@ class Transport_PK : public PK_Physical {
   std::string passwd_;
   Method_t method_;
 
-  bool transport_on_manifold_;
-  bool subcycling_, use_transport_porosity_, use_effective_diffusion_;
+  // physical models and assumptions
+  ModelAssumptions assumptions_;
+  bool subcycling_;
   int dim;
 
   Teuchos::RCP<AmanziChemistry::Chemistry_PK> chem_pk_;
@@ -457,7 +464,7 @@ class Transport_PK : public PK_Physical {
   Teuchos::RCP<MDMPartition> mdm_;
   std::vector<WhetStone::Tensor> D_;
 
-  bool flag_dispersion_, flag_diffusion_, use_dispersion_;
+  bool flag_dispersion_, flag_diffusion_;
   std::vector<int> axi_symmetry_; // axi-symmetry direction of permeability tensor
   std::string dispersion_preconditioner, dispersion_solver;
 

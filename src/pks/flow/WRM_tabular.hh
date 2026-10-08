@@ -29,7 +29,8 @@ namespace Flow {
 
 class WRM_tabular : public WRM {
   struct F {
-    F(double s, const WRM_tabular* wrm) : s_(s), wrm_(wrm){};
+    F(double s, const WRM_tabular* wrm)
+      : s_(s), wrm_(wrm) {};
     double operator()(double pc) const { return wrm_->saturation(pc) - s_; }
     double s_;
     const WRM_tabular* wrm_;
@@ -37,7 +38,7 @@ class WRM_tabular : public WRM {
 
  public:
   explicit WRM_tabular(Teuchos::ParameterList& plist);
-  ~WRM_tabular(){};
+  ~WRM_tabular() {};
 
   // required methods from the base class
   double k_relative(double pc) const { return spline_kr_->Value(pc); }

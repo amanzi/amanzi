@@ -62,6 +62,12 @@ Additional options available only for the MFD family of discretizations include:
   non-symmetric (but positive definite) tensors. Available options are *symmetric*
   (default) and *nonsymmetric*.
 
+* `"penalty`" ``[double]`` penalizes displacement normal to the boundary.
+  Zero penalty means no equal weights.
+
+* `"check topology compatibility`" checks impirical condition between numbers 
+  of faces and cells which is typically sufficient for solvubility of internal 
+  algebraic problems.
 */
 
 /*
@@ -78,14 +84,17 @@ class PDE_DiffusionCurvedFace : public virtual PDE_Diffusion {
     : PDE_Diffusion(global_op), plist_(plist), factor_(1.0)
   {
     pde_type_ = PDE_DIFFUSION_MFD_CURVED_FACE;
+    weight_ = nullptr;
     Init_(plist);
   }
 
   PDE_DiffusionCurvedFace(Teuchos::ParameterList& plist,
-                          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+                          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                          std::shared_ptr<const CompositeVector> weight = nullptr)
     : PDE_Diffusion(mesh), plist_(plist), factor_(1.0)
   {
     pde_type_ = PDE_DIFFUSION_MFD_CURVED_FACE;
+    weight_ = weight;
     Init_(plist);
   }
 
@@ -96,8 +105,8 @@ class PDE_DiffusionCurvedFace : public virtual PDE_Diffusion {
     Init_(plist);
   }
 
-  virtual void
-  SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor>>& K) override;
+  virtual void SetTensorCoefficient(
+    const Teuchos::RCP<const std::vector<WhetStone::Tensor>>& K) override;
   virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
                                     const Teuchos::RCP<const CompositeVector>& dkdp) override;
 
@@ -124,7 +133,6 @@ class PDE_DiffusionCurvedFace : public virtual PDE_Diffusion {
 
   // -- by rescaling mass and stiffness matrices.
   virtual void ScaleMassMatrices(double s) override;
-  virtual void ScaleMatricesColumns(const CompositeVector& s) override{};
 
   // main virtual members after solving the problem
   // -- calculate the flux variable.
@@ -133,12 +141,12 @@ class PDE_DiffusionCurvedFace : public virtual PDE_Diffusion {
 
   virtual void UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
                                               const Teuchos::Ptr<const CompositeVector>& u,
-                                              double scalar_factor = 1.0) override{};
+                                              double scalar_factor = 1.0) override {};
 
-  virtual void
-  UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
-                                 const Teuchos::Ptr<const CompositeVector>& u,
-                                 const Teuchos::Ptr<const CompositeVector>& factor) override{};
+  virtual void UpdateMatricesNewtonCorrection(
+    const Teuchos::Ptr<const CompositeVector>& flux,
+    const Teuchos::Ptr<const CompositeVector>& u,
+    const Teuchos::Ptr<const CompositeVector>& factor) override {};
 
   // access
   std::shared_ptr<std::vector<AmanziGeometry::Point>> get_bf() { return bf_; }
@@ -158,6 +166,9 @@ class PDE_DiffusionCurvedFace : public virtual PDE_Diffusion {
   void LSProblemSetupRHS_(CompositeVector& rhs, int i0);
   void LSProblemPrimarySolution_(const CompositeVector& sol, int i0);
 
+ private:
+  WhetStone::Tensor InverseTensorialWeigth_(const AmanziGeometry::Point& normal);
+
  protected:
   Teuchos::ParameterList plist_;
   std::vector<WhetStone::DenseMatrix> Wff_cells_;
@@ -165,8 +176,13 @@ class PDE_DiffusionCurvedFace : public virtual PDE_Diffusion {
   double factor_;
 
   std::shared_ptr<std::vector<AmanziGeometry::Point>> bf_;
+  std::shared_ptr<const CompositeVector> weight_;
 
   int schema_prec_dofs_;
+
+ private:
+  bool check_topology_compatibility_;
+  double penalty_;
 };
 
 } // namespace Operators

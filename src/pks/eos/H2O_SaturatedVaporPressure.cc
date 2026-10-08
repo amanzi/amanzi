@@ -28,7 +28,7 @@ H2O_SaturatedVaporPressure::H2O_SaturatedVaporPressure(Teuchos::ParameterList& p
     ka_(-6096.9385),
     kb_(-2.7111933e-2),
     kc_(1.673952e-5),
-    kd_(2.433502){};
+    kd_(2.433502) {};
 
 
 double

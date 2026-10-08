@@ -1,19 +1,16 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-
   <ParameterList name="mesh">
+    <Parameter name="framework" type="string" value="MSTK"/>
+    <Parameter name="partitioner" type="string" value="zoltan_rcb"/>
     <ParameterList name="unstructured">
       <ParameterList name="Read">
         <Parameter name="file" type="string" value="mesh1.exo"/>
         <Parameter name="format" type="string" value="Exodus II"/>
       </ParameterList>
-      <ParameterList name="expert">
-        <Parameter name="framework" type="string" value="MSTK"/>
-        <Parameter name="partitioner" type="string" value="zoltan_rcb"/>
-      </ParameterList>
     </ParameterList>
-  </ParameterList>    
-   
+  </ParameterList>
+
   <!--  REGIONS  -->
   <ParameterList name="regions">
     <ParameterList name="Universe">
@@ -22,20 +19,20 @@
     </ParameterList>
     <ParameterList name="ALL">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0,1.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0, 1.0, 1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="fracture 1">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{0.0,0.0,0.5}"/>
-        <Parameter name="normal" type="Array(double)" value="{0.0,0.0,1.0}"/>
+        <Parameter name="point" type="Array(double)" value="{0.0, 0.0, 0.5}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0, 0.0, 1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="fracture 2">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{0.0,0.5,0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{0.0,1.0,0.0}"/>
+        <Parameter name="point" type="Array(double)" value="{0.0, 0.5, 0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0, 1.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="fractures">
@@ -49,7 +46,6 @@
   <!--  OPERATORS  -->
   <ParameterList name="PK operator">
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-
     <ParameterList name="diffusion operator">
       <Parameter name="discretization primary" type="string" value="fv: defaulty"/>
       <Parameter name="discretization secondary" type="string" value="fv: default"/>
@@ -59,7 +55,6 @@
       <Parameter name="manifolds" type="string" value="fractures"/>
     </ParameterList>
   </ParameterList>
-
   <!-- SOLVERS -->
   <ParameterList name="solvers">
     <ParameterList name="PCG">
@@ -78,7 +73,6 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
@@ -97,4 +91,3 @@
     </ParameterList>
   </ParameterList>
 </ParameterList>
-

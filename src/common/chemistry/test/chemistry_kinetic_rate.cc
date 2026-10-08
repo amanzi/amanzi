@@ -92,12 +92,13 @@ SUITE(GeochemistryTestsKineticRate)
   //
   class MockKineticRate : public ac::KineticRate {
    public:
-    MockKineticRate() : ac::KineticRate()
+    MockKineticRate()
+      : ac::KineticRate()
     {
       set_name("abc123");
       set_identifier(456);
     };
-    virtual ~MockKineticRate(){};
+    virtual ~MockKineticRate() {};
 
     void Update(const ac::SpeciesArray& primary_species, const std::vector<ac::Mineral>& minerals)
     {
@@ -129,7 +130,7 @@ SUITE(GeochemistryTestsKineticRate)
     {
       std::cout << this->name() << std::endl;
     }; // end Display()
-  };   // end MockKineticRate
+  }; // end MockKineticRate
 
   // make sure we can create an object with the constructor
   // can we set the identifier?

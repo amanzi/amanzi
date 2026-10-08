@@ -35,7 +35,7 @@ class Permeability_KozenyCarman : public Permeability {
     phi_ref_ = plist.get<double>("undeformed soil porosity");
     factor_ = std::pow(1.0 - phi_ref_, 2) / std::pow(phi_ref_, 3);
   }
-  ~Permeability_KozenyCarman(){};
+  ~Permeability_KozenyCarman() {};
 
   // required methods from the base class
   double Factor(double phi) { return factor_ * phi * phi * phi / (1.0 - phi) / (1.0 - phi); }

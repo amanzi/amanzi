@@ -16,8 +16,7 @@
   Virtual base class.
 */
 
-#ifndef AMANZI_OBSERVABLE_HH
-#define AMANZI_OBSERVABLE_HH
+#pragma once
 
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -30,15 +29,15 @@
 
 namespace Amanzi {
 
-class Observable : public IOEvent {
+class ObservableAmanzi : public Utils::IOEvent {
  public:
-  Observable(std::string variable,
-             std::string region,
-             std::string functional,
-             Teuchos::ParameterList& plist,
-             Teuchos::ParameterList& units_plist,
-             Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-    : IOEvent(plist),
+  ObservableAmanzi(std::string variable,
+                   std::string region,
+                   std::string functional,
+                   Teuchos::ParameterList& plist,
+                   Teuchos::ParameterList& units_plist,
+                   Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    : Utils::IOEvent(plist),
       variable_(variable),
       functional_(functional),
       sum_(0.0),
@@ -60,8 +59,13 @@ class Observable : public IOEvent {
     }
   }
 
-  virtual void
-  ComputeObservation(State& S, double* value, double* volume, std::string& unit, double dt) = 0;
+  virtual ~ObservableAmanzi() = default;
+
+  virtual void ComputeObservation(State& S,
+                                  double* value,
+                                  double* volume,
+                                  std::string& unit,
+                                  double dt) = 0;
   virtual int ComputeRegionSize() { return region_size_; }
 
  public:
@@ -81,5 +85,3 @@ class Observable : public IOEvent {
 };
 
 } // namespace Amanzi
-
-#endif

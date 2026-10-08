@@ -23,6 +23,7 @@
 #include "PK_DomainFunctionCoupling.hh"
 #include "PK_DomainFunctionField.hh"
 #include "PK_DomainFunctionFirstOrderExchange.hh"
+#include "PK_DomainFunctionParentMeshField.hh"
 #include "PK_DomainFunctionSimple.hh"
 #include "PK_DomainFunctionSimpleWell.hh"
 #include "PK_DomainFunctionSubgrid.hh"
@@ -34,13 +35,13 @@
 
 namespace Amanzi {
 
-template <class FunctionBase>
-class PK_DomainFunctionFactory : public FunctionBase {
+template<class FunctionBase>
+class PK_DomainFunctionFactory {
  public:
   PK_DomainFunctionFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                            const Teuchos::RCP<State>& S)
-    : mesh_(mesh), S_(S){};
-  ~PK_DomainFunctionFactory(){};
+    : mesh_(mesh), S_(S) {};
+  ~PK_DomainFunctionFactory() {};
 
   Teuchos::RCP<FunctionBase> Create(Teuchos::ParameterList& plist,
                                     AmanziMesh::Entity_kind kind,
@@ -62,7 +63,7 @@ class PK_DomainFunctionFactory : public FunctionBase {
 };
 
 
-template <class FunctionBase>
+template<class FunctionBase>
 Teuchos::RCP<FunctionBase>
 PK_DomainFunctionFactory<FunctionBase>::Create(Teuchos::ParameterList& plist,
                                                const std::string& keyword,
@@ -123,27 +124,31 @@ PK_DomainFunctionFactory<FunctionBase>::Create(Teuchos::ParameterList& plist,
     return func;
   } else if (model == "field") {
     Teuchos::RCP<PK_DomainFunctionField<FunctionBase>> func =
-      Teuchos::rcp(new PK_DomainFunctionField<FunctionBase>(mesh_, S_, kind));
+      Teuchos::rcp(new PK_DomainFunctionField<FunctionBase>(mesh_, S_, plist, kind));
     func->Init(plist, keyword);
+    return func;
+  } else if (model == "parent mesh field") {
+    Teuchos::RCP<PK_DomainFunctionParentMeshField<FunctionBase>> func =
+      Teuchos::rcp(new PK_DomainFunctionParentMeshField<FunctionBase>(mesh_, S_));
+    func->Init(plist, keyword, kind);
     return func;
   } else if (model == "first order exchange") {
     AMANZI_ASSERT(kind == AmanziMesh::Entity_kind::CELL);
-    plist.sublist("source function")
-      .set<std::string>("total component concentration copy", tag.get());
+    plist.sublist("source function").set<std::string>("exchanged quantity tag", tag.get());
     Teuchos::RCP<PK_DomainFunctionFirstOrderExchange<FunctionBase>> func =
       Teuchos::rcp(new PK_DomainFunctionFirstOrderExchange<FunctionBase>(mesh_, plist, kind));
     func->Init(plist, keyword);
     return func;
   } else if (model == "subgrid") {
     AMANZI_ASSERT(kind == AmanziMesh::Entity_kind::FACE);
-    plist.sublist(keyword).set<std::string>("copy_field_out_tag", tag.get());
+    plist.sublist(keyword).set<std::string>("disaggregated tag", tag.get());
     Teuchos::RCP<PK_DomainFunctionSubgrid<FunctionBase>> func =
       Teuchos::rcp(new PK_DomainFunctionSubgrid<FunctionBase>(mesh_));
     func->Init(plist, keyword, kind);
     return func;
   } else if (model == "subgrid return") {
     AMANZI_ASSERT(kind == AmanziMesh::Entity_kind::CELL);
-    plist.sublist("source function").set<std::string>("copy subgrid field", tag.get());
+    plist.sublist("source function").set<std::string>("subgrid field tag", tag.get());
     Teuchos::RCP<PK_DomainFunctionSubgridReturn<FunctionBase>> func =
       Teuchos::rcp(new PK_DomainFunctionSubgridReturn<FunctionBase>(mesh_, plist));
     func->Init(plist, keyword);
@@ -164,7 +169,7 @@ PK_DomainFunctionFactory<FunctionBase>::Create(Teuchos::ParameterList& plist,
 }
 
 
-template <class FunctionBase>
+template<class FunctionBase>
 Teuchos::RCP<FunctionBase>
 PK_DomainFunctionFactory<FunctionBase>::Create(Teuchos::ParameterList& plist,
                                                AmanziMesh::Entity_kind kind,

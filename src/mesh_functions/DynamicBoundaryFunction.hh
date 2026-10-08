@@ -33,7 +33,7 @@ namespace Functions {
 class DynamicBoundaryFunction : public BoundaryFunction {
  public:
   DynamicBoundaryFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : BoundaryFunction(mesh){};
+    : BoundaryFunction(mesh) {};
 
   void AddFunction(const Teuchos::RCP<BoundaryFunction>& f);
 

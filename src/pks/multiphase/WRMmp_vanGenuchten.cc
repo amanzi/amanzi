@@ -108,6 +108,7 @@ WRMmp_vanGenuchten::k_relative(double sl, int phase)
       return k_relative_gas_(sle);
     }
   }
+  return 0.0; // silence warnings
 }
 
 
@@ -154,6 +155,7 @@ WRMmp_vanGenuchten::dKdS(double sl, int phase)
       return factor * dKdSe_gas_(sle);
     }
   }
+  return 0.0; // silence compiler warnings
 }
 
 

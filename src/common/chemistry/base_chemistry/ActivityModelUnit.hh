@@ -24,8 +24,9 @@ class Species;
 
 class ActivityModelUnit : public ActivityModel {
  public:
-  ActivityModelUnit() : ActivityModel(){};
-  ~ActivityModelUnit(){};
+  ActivityModelUnit()
+    : ActivityModel() {};
+  ~ActivityModelUnit() {};
 
   virtual double Evaluate(const Species& species) final;
 

@@ -12,8 +12,8 @@
 
 namespace Amanzi {
 
-FunctionTabular::FunctionTabular(const std::vector<double>& x,
-                                 const std::vector<double>& y,
+FunctionTabular::FunctionTabular(const Teuchos::Array<double>& x,
+                                 const Teuchos::Array<double>& y,
                                  const int xi)
   : x_(x), y_(y), xi_(xi)
 {
@@ -21,8 +21,8 @@ FunctionTabular::FunctionTabular(const std::vector<double>& x,
   check_args(x, y, form_);
 }
 
-FunctionTabular::FunctionTabular(const std::vector<double>& x,
-                                 const std::vector<double>& y,
+FunctionTabular::FunctionTabular(const Teuchos::Array<double>& x,
+                                 const Teuchos::Array<double>& y,
                                  const int xi,
                                  const std::vector<Form_kind>& form)
   : x_(x), y_(y), xi_(xi), form_(form)
@@ -30,8 +30,8 @@ FunctionTabular::FunctionTabular(const std::vector<double>& x,
   check_args(x, y, form);
 }
 
-FunctionTabular::FunctionTabular(const std::vector<double>& x,
-                                 const std::vector<double>& y,
+FunctionTabular::FunctionTabular(const Teuchos::Array<double>& x,
+                                 const Teuchos::Array<double>& y,
                                  const int xi,
                                  const std::vector<Form_kind>& form,
                                  std::vector<std::unique_ptr<Function>> func)
@@ -44,13 +44,15 @@ FunctionTabular::FunctionTabular(const std::vector<double>& x,
 FunctionTabular::FunctionTabular(const FunctionTabular& other)
   : x_(other.x_), y_(other.y_), xi_(other.xi_), form_(other.form_), func_()
 {
-  for (const auto& f : other.func_) { func_.emplace_back(f->Clone()); }
+  for (const auto& f : other.func_) {
+    func_.emplace_back(f->Clone());
+  }
 }
 
 
 void
-FunctionTabular::check_args(const std::vector<double>& x,
-                            const std::vector<double>& y,
+FunctionTabular::check_args(const Teuchos::Array<double>& x,
+                            const Teuchos::Array<double>& y,
                             const std::vector<Form_kind>& form) const
 {
   if (x.size() != y.size()) {
@@ -102,15 +104,15 @@ FunctionTabular::operator()(const std::vector<double>& x) const
     // Now have x_[j1] <= xv < x_[j2], if right continuous
     // or x_[j1] < xv <= x_[j2], if left continuous
     switch (form_[j1]) {
-    case Form_kind::LINEAR:
-      // Linear interpolation between x[j1] and x[j2]
-      y = y_[j1] + ((y_[j2] - y_[j1]) / (x_[j2] - x_[j1])) * (xv - x_[j1]);
-      break;
-    case Form_kind::CONSTANT:
-      y = y_[j1];
-      break;
-    case Form_kind::FUNCTION:
-      y = (*func_[j1])(x);
+      case Form_kind::LINEAR:
+        // Linear interpolation between x[j1] and x[j2]
+        y = y_[j1] + ((y_[j2] - y_[j1]) / (x_[j2] - x_[j1])) * (xv - x_[j1]);
+        break;
+      case Form_kind::CONSTANT:
+        y = y_[j1];
+        break;
+      case Form_kind::FUNCTION:
+        y = (*func_[j1])(x);
     }
   }
   return y;

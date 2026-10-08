@@ -131,10 +131,11 @@ Tensor::Inverse()
     data_[2] /= -det;
 
   } else {
-    int info, ipiv[size_];
-    double work[size_];
-    DGETRF_F77(&size_, &size_, data_, &size_, ipiv, &info);
-    DGETRI_F77(&size_, data_, &size_, ipiv, work, &size_, &info);
+    int info;
+    std::vector<int> ipiv(size_);
+    std::vector<double> work(size_);
+    DGETRF_F77(&size_, &size_, data_, &size_, ipiv.data(), &info);
+    DGETRI_F77(&size_, data_, &size_, ipiv.data(), work.data(), &size_, &info);
   }
 }
 
@@ -153,14 +154,16 @@ Tensor::PseudoInverse()
   } else {
     int n = size_;
     int lwork(3 * n), info;
-    double S[n], work[lwork];
+    std::vector<double> S(n), work(lwork);
 
     Tensor T(*this);
-    DSYEV_F77("V", "U", &n, T.data(), &n, S, work, &lwork, &info);
+    DSYEV_F77("V", "U", &n, T.data(), &n, S.data(), work.data(), &lwork, &info);
 
     // pseudo-invert diagonal matrix S
     double norm_inf(fabs(S[0]));
-    for (int i = 1; i < n; i++) { norm_inf = std::max(norm_inf, fabs(S[i])); }
+    for (int i = 1; i < n; i++) {
+      norm_inf = std::max(norm_inf, fabs(S[i]));
+    }
 
     double eps = norm_inf * 1e-15;
     for (int i = 0; i < n; i++) {
@@ -176,7 +179,9 @@ Tensor::PseudoInverse()
     for (int i = 0; i < n; i++) {
       for (int j = i; j < n; j++) {
         double tmp(0.0);
-        for (int k = 0; k < n; k++) { tmp += T(i, k) * S[k] * T(j, k); }
+        for (int k = 0; k < n; k++) {
+          tmp += T(i, k) * S[k] * T(j, k);
+        }
         (*this)(i, j) = tmp;
         (*this)(j, i) = tmp;
       }
@@ -324,10 +329,10 @@ Tensor::SpectralBounds(double* lower, double* upper) const
   } else if (rank_ <= 2) {
     int n = size_;
     int lwork(3 * n), info;
-    double S[n], work[lwork];
+    std::vector<double> S(n), work(lwork);
 
     Tensor T(*this);
-    DSYEV_F77("N", "U", &n, T.data(), &n, S, work, &lwork, &info);
+    DSYEV_F77("N", "U", &n, T.data(), &n, S.data(), work.data(), &lwork, &info);
     *lower = S[0];
     *upper = S[n - 1];
   }
@@ -606,7 +611,9 @@ VectorToTensor(const DenseVector& v, Tensor& T)
 
   const double* data1 = v.Values();
   double* data2 = T.data();
-  for (int i = 0; i < v.NumRows(); ++i) { data2[i] = data1[i]; }
+  for (int i = 0; i < v.NumRows(); ++i) {
+    data2[i] = data1[i];
+  }
 }
 
 
@@ -633,6 +640,82 @@ RotationMatrix90(const AmanziGeometry::Point& u, bool ccw)
   T(2, 2) = u[2] * u[2];
 
   return T;
+}
+
+
+/* ******************************************************************
+* Rotate tensors using Euler angles
+****************************************************************** */
+void Tensor::Rotate(double* angles)
+{
+  if (rank_ == 1) return;
+
+  // rotation matrix
+  Tensor R(d_, 2);
+  if (d_ == 2) {
+    double cs = std::cos(angles[0]);
+    double sn = std::sin(angles[0]);
+    R(0, 0) = R(1, 1) = cs;
+    R(1, 0) = sn;
+    R(0, 1) = -sn;
+  } else {
+    double cphi = std::cos(angles[0]);  // roll
+    double sphi = std::sin(angles[0]);
+    double ctheta = std::cos(angles[1]);  // pitch
+    double stheta = std::sin(angles[1]);
+    double cpsi = std::cos(angles[2]);  // yaw
+    double spsi = std::sin(angles[2]);
+
+    R(0, 0) = cpsi * ctheta;
+    R(0, 1) = cpsi * stheta * sphi - spsi * cphi;
+    R(0, 2) = cpsi * stheta * cphi + spsi * sphi;
+
+    R(1, 0) = spsi * ctheta;
+    R(1, 1) = spsi * stheta * sphi + cpsi * cphi;
+    R(1, 2) = spsi * stheta * cphi - cpsi * sphi;
+
+    R(2, 0) = -stheta;
+    R(2, 1) = ctheta * sphi;
+    R(2, 2) = ctheta * cphi;
+  }
+
+  Tensor RT(R); 
+  RT.Transpose();
+
+  // rotation of tensor
+  if (rank_ == 2) *this = R * (*this) * RT;
+
+  if (rank_ == 4) {
+    Tensor T(*this);
+
+    std::vector<int> map(d_ * d_);
+    if (d_ == 2) map = {0, 2, 3, 1};
+    if (d_ == 3) map = {0, 3, 7, 4, 1, 5, 8, 6, 2};
+
+    for (int p = 0; p < d_; ++p) {
+      for (int q = 0; q < d_; ++q) {
+        for (int r = 0; r < d_; ++r) {
+          for (int s = 0; s < d_; ++s) {
+            double sum = 0.0;
+            for (int i = 0; i < d_; ++i) {
+              for (int j = 0; j < d_; ++j) {
+                for (int k = 0; k < d_; ++k) {
+                  for (int l = 0; l < d_; ++l) {
+                    int m = d_ * i + j;
+                    int n = d_ * k + l;
+                    sum += R(p, i) * R(q, j) * R(r, k) * R(s, l) * T(map[m], map[n]);
+                  }
+                }
+              }
+            }
+            int m = d_ * p + q;
+            int n = d_ * r + s;
+            (*this)(map[m], map[n]) = sum;
+          }
+        }
+      }
+    }
+  }
 }
 
 } // namespace WhetStone

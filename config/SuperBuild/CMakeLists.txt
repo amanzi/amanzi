@@ -161,7 +161,7 @@ set(TPL_VERSIONS_INCLUDE_FILE ${CMAKE_BINARY_DIR}/tpl_versions.h)
 file(WRITE ${TPL_VERSIONS_INCLUDE_FILE} "")
 install(FILES ${CMAKE_BINARY_DIR}/tpl_versions.h DESTINATION include)
 amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
-  PREFIX AMANZI
+  PREFIX AMANZI_TPLS
   VERSION ${AMANZI_TPLS_VERSION_MAJOR} ${AMANZI_TPLS_VERSION_MINOR} ${AMANZI_TPLS_VERSION_PATCH})
 
 # ############################################################################ #
@@ -490,7 +490,7 @@ if ( ${AMANZI_ARCH_NERSC} )
    set(LIBLAPACK_BASE_NAME "sci_${_lib_compiler_id}")
    #string (REPLACE "-" "_" CRAY_CPU_TEMP $ENV{CRAY_CPU_TARGET})
    #string (REPLACE "x86_64" "${CRAY_CPU_TEMP}/lib" BLA_DIR $ENV{CRAY_LIBSCI_PREFIX_DIR})
-   set(BLA_DIR $ENV{CRAY_LIBSCI_PREFIX_DIR}/lib)
+   set(BLA_DIR $ENV{CRAY_PE_LIBSCI_PREFIX_DIR}/lib)
    set(LAPCK_DIR ${BLA_DIR})
    
    message(STATUS ">>> Amanzi: On NERSC system BLA_DIR = ${BLA_DIR}")
@@ -577,6 +577,9 @@ include(ExternalProject)
 # Include the macro that defines uniform build, install and Add_ExternalProject args
 include(DefineExternalProjectArgs)
 
+# Include the macro that is used for patching TPLs
+include(PatchTPL)
+
 # Set of CMake configure arguments to pass to Amanzi once the TPLs are built
 set(Amanzi_TPL_CMAKE_ARGS)
 
@@ -624,25 +627,6 @@ if (ENABLE_Structured)
              -DENABLE_OpenMP:BOOL=${ENABLE_OpenMP}
              -DAMANZI_PRECISION:STRING=DOUBLE
              -DAMANZI_SPACEDIM:INT=${CCSE_BL_SPACEDIM})
-endif()
-
-# Boost
-if (NOT ENABLE_XSDK)
-    include(${SuperBuild_BUILD_FILES_DIR}/Build_Boost.cmake) 
-    append_set(Amanzi_TPL_CMAKE_ARGS
-        -DBOOST_ROOT:FILEPATH=${TPL_INSTALL_PREFIX}
-        -DBOOST_INCLUDEDIR=${TPL_INSTALL_PREFIX}/include/boost
-        -DBoost_NO_SYSTEM_PATHS:BOOL=TRUE)
-else()
-    find_spack_install_location(boost BOOST_INSTALL_PREFIX)
-    message(STATUS "BOOST_INSTALL_PREFIX = ${BOOST_INSTALL_PREFIX}")
-    set(BOOST_ROOT ${BOOST_INSTALL_PREFIX})
-    set(BOOST_INCLUDEDIR ${BOOST_INSTALL_PREFIX}/include/boost)
-    append_set(Amanzi_TPL_CMAKE_ARGS
-        -DBOOST_ROOT:FILEPATH=${BOOST_INSTALL_PREFIX}
-        -DBOOST_INCLUDEDIR=${BOOST_INSTALL_PREFIX}/include/boost
-        -DBoost_USE_STATIC_LIBS:BOOL=TRUE
-        -DBoost_NO_SYSTEM_PATHS:BOOL=TRUE)
 endif()
 
 # HDF5  
@@ -780,6 +764,9 @@ if (ENABLE_PETSC OR ENABLE_Structured)
   endif()
 endif()
 
+# FMT
+include(${SuperBuild_BUILD_FILES_DIR}/Build_fmt.cmake)
+
 # SEACAS
 include(${SuperBuild_BUILD_FILES_DIR}/Build_SEACAS.cmake)
 
@@ -819,6 +806,12 @@ endif()
 # CLM
 if (ENABLE_CLM)
   include(${SuperBuild_BUILD_FILES_DIR}/Build_CLM.cmake)
+endif()
+
+# EcoSIM land surface microbial and vegative processes
+option(ENABLE_ECOSIM "Build EcoSIM package" FALSE)
+if (ENABLE_ECOSIM)
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_EcoSIM.cmake)
 endif()
 
 # Alquimia and chemical engines (PFloTran and CrunchTope)

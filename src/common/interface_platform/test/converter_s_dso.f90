@@ -2,7 +2,7 @@
       subroutine probinit(init,name,namlen,problo,probhi)
       integer init,namlen
       integer name(namlen)
-      integer untin, i
+      integer untin
       real*8  problo(2), probhi(2)
       end
 

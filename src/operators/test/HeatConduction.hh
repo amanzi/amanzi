@@ -30,7 +30,8 @@ namespace Amanzi {
 
 class HeatConduction {
  public:
-  HeatConduction(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh), ana_(mesh)
+  HeatConduction(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    : mesh_(mesh), ana_(mesh)
   {
     int dim = mesh_->getSpaceDimension();
     cvs_.SetMesh(mesh_);
@@ -42,7 +43,7 @@ class HeatConduction {
     values_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs_, true));
     derivatives_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs_, true));
   }
-  ~HeatConduction(){};
+  ~HeatConduction() {};
 
   // main members
   void UpdateValues(const CompositeVector& u,
@@ -54,7 +55,7 @@ class HeatConduction {
       mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
 
     for (int c = 0; c < ncells; c++) {
-      const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
+      const auto& xc = mesh_->getCellCentroid(c);
       const WhetStone::Tensor& Kc = ana_.TensorDiffusivity(xc, 0.0);
       vcell[0][c] = Kc(0, 0);
     }
@@ -73,7 +74,7 @@ class HeatConduction {
     Epetra_MultiVector& vgrad = *values_->ViewComponent("grad", true);
 
     for (int c = 0; c < ncells; c++) {
-      const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
+      const auto& xc = mesh_->getCellCentroid(c);
       AmanziGeometry::Point grad = ana_.ScalarTensorGradient(xc, 0.0);
       for (int i = 0; i < dim; i++) vgrad[i][c] = grad[i];
     }

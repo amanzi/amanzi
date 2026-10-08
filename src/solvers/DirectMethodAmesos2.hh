@@ -46,7 +46,8 @@ class DirectMethodAmesos2
   using Inv = Inverse<Epetra_CrsMatrix, Epetra_CrsMatrix, Epetra_Vector, Epetra_Map>;
 
  public:
-  DirectMethodAmesos2() : Inv(), inited_(false), updated_(false), computed_(false){};
+  DirectMethodAmesos2()
+    : Inv(), inited_(false), updated_(false), computed_(false) {};
 
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override;
@@ -58,8 +59,8 @@ class DirectMethodAmesos2
   virtual std::string returned_code_string() const override { return "success"; }
 
  protected:
-  using Inv::m_;
   using Inv::h_;
+  using Inv::m_;
 
   Teuchos::ParameterList plist_;
   Teuchos::RCP<VerboseObject> vo_;

@@ -49,7 +49,7 @@ TEST(NLFV_POSITIVE_DECOMPOSITION_2D)
     std::cout << "tau[" << i << "] = " << p << std::endl;
   }
 
-  int ids[2];
+  int d(2), ids[2];
   double ws[2];
   WhetStone::NLFV nlfv;
   AmanziGeometry::Point conormal(2), v(2);
@@ -58,7 +58,7 @@ TEST(NLFV_POSITIVE_DECOMPOSITION_2D)
     conormal = tau[i];
     conormal[1] += 0.1;
 
-    int ierr = nlfv.PositiveDecomposition(i, tau, conormal, ws, ids);
+    int ierr = nlfv.PositiveDecomposition(i, tau, conormal, d, ws, ids);
 
     std::cout << "cornormal = " << conormal << "\nws: " << ws[0] << " " << ws[1]
               << "\nids: " << ids[0] << " " << ids[1] << std::endl;
@@ -94,7 +94,7 @@ TEST(NLFV_POSITIVE_DECOMPOSITION_3D)
     }
   }
 
-  int ids[3];
+  int d(3), ids[3];
   double ws[3];
   WhetStone::NLFV nlfv;
   AmanziGeometry::Point conormal(3), v(3);
@@ -105,7 +105,7 @@ TEST(NLFV_POSITIVE_DECOMPOSITION_3D)
     conormal[1] += 0.2 / (i + 1);
     conormal[2] += 0.3 / (i + 1);
 
-    int ierr = nlfv.PositiveDecomposition(i, tau, conormal, ws, ids);
+    int ierr = nlfv.PositiveDecomposition(i, tau, conormal, d, ws, ids);
 
     std::cout << "cornormal = " << conormal << "\nws: " << ws[0] << " " << ws[1] << " " << ws[2]
               << "\nids: " << ids[0] << " " << ids[1] << " " << ids[2] << std::endl;
@@ -127,7 +127,7 @@ TEST(HARMONIC_AVERAGING_POINT_2D)
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
 
-  std::cout << "\nTest: Harmonic averagin point in 2D" << std::endl;
+  std::cout << "\nTest: Harmonic averaging point in 2D" << std::endl;
 #ifdef HAVE_MPI
   auto comm = Amanzi::getDefaultComm();
 #else
@@ -147,9 +147,9 @@ TEST(HARMONIC_AVERAGING_POINT_2D)
   WhetStone::NLFV nlfv(mesh);
 
   int f(1), c1(0), c2(1);
-  double w;
+  double w, w2;
   AmanziGeometry::Point xa(0.8, 0.0), xb(0.7, 1.0); // end-points of face f
-  AmanziGeometry::Point p(2), v(2), u(2), xab(2), xcc(2);
+  AmanziGeometry::Point p(2), p2(2), v(2), u(2), xab(2), xcc(2);
   const AmanziGeometry::Point& xc1 = mesh->getCellCentroid(c1);
   const AmanziGeometry::Point& xc2 = mesh->getCellCentroid(c2);
 
@@ -173,6 +173,11 @@ TEST(HARMONIC_AVERAGING_POINT_2D)
 
     CHECK(norm(v - p) < 1e-12);
     CHECK(norm(u - p) < 1e-12);
+
+    // simplified function
+    nlfv.HarmonicAveragingPoint(f, c1, c2, p2, w2);
+    CHECK(fabs(w - w2) < 1e-12);
+    CHECK(norm(p - p2) < 1e-12);
   }
 
   // rotated normal
@@ -229,4 +234,45 @@ TEST(HARMONIC_AVERAGING_POINT_2D)
     CHECK_CLOSE(0.0, norm(p1 - p2), 1e-12);
     CHECK_CLOSE(1.0, w1 + w2, 1e-12);
   }
+}
+
+
+/* ****************************************************************
+* Test harmonic averaging points on manifolds
+**************************************************************** */
+TEST(HARMONIC_AVERAGING_POINT_MANIFOLD)
+{
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+
+  std::cout << "\nTest: Harmonic averaging point on manifold" << std::endl;
+#ifdef HAVE_MPI
+  auto comm = Amanzi::getDefaultComm();
+#else
+  auto comm = Amanzi::getCommSelf();
+#endif
+
+  // initialize a two-cell mesh (quad and triangle)
+  Preference pref;
+  pref.clear();
+  pref.push_back(Framework::MSTK);
+
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(pref);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/manifold_cell2.exo");
+
+  // instantiate the toolset and populate data
+  WhetStone::NLFV nlfv(mesh);
+
+  int f(1), c1(0), c2(1);
+  double w;
+  AmanziGeometry::Point p(3), v(3);
+  const AmanziGeometry::Point& xc1 = mesh->getCellCentroid(c1);
+  const AmanziGeometry::Point& xc2 = mesh->getCellCentroid(c2);
+
+  nlfv.HarmonicAveragingPoint(f, c1, c2, p, w);
+  std::cout << "hap: " << p << " weight=" << w << std::endl;
+  v = w * xc1 + (1.0 - w) * xc2;
+
+  CHECK_CLOSE(w, 0.172583, 1e-6);
 }

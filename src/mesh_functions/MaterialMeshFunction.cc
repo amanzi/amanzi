@@ -34,7 +34,7 @@ MaterialMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec)
 
   // Loop over regions in the spec, getting their ids and adding to the set.
   Teuchos::RCP<MaterialMesh> mat_mesh = Teuchos::rcp(new MaterialMesh());
-  for (RegionList::const_iterator region = domain->first.begin(); region != domain->first.end();
+  for (RegionList::const_iterator region = domain->first.begin() ; region != domain->first.end();
        ++region) {
     // Get the ids from the mesh by region name and entity kind.
     if (mesh_->isValidSetName(*region, kind)) {
@@ -73,7 +73,7 @@ MaterialMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec)
     other_specs = Teuchos::rcp(new MaterialSpecList());
     material_specs_[kind] = other_specs;
   } else {
-    for (MaterialSpecList::const_iterator us = other_specs->begin(); us != other_specs->end();
+    for (MaterialSpecList::const_iterator us = other_specs->begin() ; us != other_specs->end();
          ++us) {
       const MaterialMesh& tmp = *(*us)->second;
 

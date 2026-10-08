@@ -20,7 +20,7 @@
 namespace Amanzi {
 
 namespace Utils {
-template <>
+template<>
 Factory<Evaluator>::map_type* Factory<Evaluator>::map_;
 } // namespace Utils
 

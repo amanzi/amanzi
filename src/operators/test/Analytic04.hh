@@ -31,8 +31,9 @@
 
 class Analytic04 : public AnalyticBase {
  public:
-  Analytic04(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : AnalyticBase(mesh){};
-  ~Analytic04(){};
+  Analytic04(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
+    : AnalyticBase(mesh) {};
+  ~Analytic04() {};
 
   Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t)
   {
@@ -44,7 +45,6 @@ class Analytic04 : public AnalyticBase {
   double ScalarDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t)
   {
     double x = p[0];
-    double y = p[1];
     double k;
     if (x < 0.0) {
       k = 0.0;
@@ -59,7 +59,6 @@ class Analytic04 : public AnalyticBase {
   double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) const
   {
     double x = p[0];
-    double y = p[1];
     double pres;
     if (x < 0.0) {
       pres = 0.0;
@@ -74,7 +73,6 @@ class Analytic04 : public AnalyticBase {
   Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t)
   {
     double x = p[0];
-    double y = p[1];
     Amanzi::AmanziGeometry::Point v(2);
     v[1] = 0.0;
     if (x < 0.0) {
@@ -95,7 +93,6 @@ class Analytic04 : public AnalyticBase {
   double source_exact(const Amanzi::AmanziGeometry::Point& p, double t)
   {
     double x = p[0];
-    double y = p[1];
     double q;
     if (x < 0.0) {
       q = 0.0;

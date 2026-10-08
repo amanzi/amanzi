@@ -63,7 +63,9 @@ MeshMapsBase::VelocityEdge(int e, VectorPolynomial& v) const
   y1 -= x1;
   ye -= xe;
 
-  for (int i = 0; i < points1.size(); ++i) { points1[i] -= points0[i]; }
+  for (int i = 0; i < points1.size(); ++i) {
+    points1[i] -= points0[i];
+  }
 
   // velocity is transformed from local to global coordinate systems
   int order = points1.size() + 1;
@@ -121,7 +123,9 @@ MeshMapsBase::VelocityFace(int f, VectorPolynomial& v) const
   y1 -= x1;
   yf -= xf;
 
-  for (int i = 0; i < points1.size(); ++i) { points1[i] -= points0[i]; }
+  for (int i = 0; i < points1.size(); ++i) {
+    points1[i] -= points0[i];
+  }
 
   // velocity is transformed from local to global coordinate systems
   int order = points1.size() + 1;
@@ -185,7 +189,9 @@ MeshMapsBase::Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const
   // copy velocity gradients to Jacobian
   for (int i = 0; i < nvc; ++i) {
     auto tmp = Gradient(vc[i]);
-    for (int j = 0; j < d_; ++j) { J(i, j) = tmp[j]; }
+    for (int j = 0; j < d_; ++j) {
+      J(i, j) = tmp[j];
+    }
   }
 }
 
@@ -214,7 +220,9 @@ MeshMapsBase::LeastSquareFit(int order,
 
     for (int n = 0; n < nx; ++n) {
       double val(1.0);
-      for (int k = 0; k < d_; ++k) { val *= std::pow(x1[n][k], idx[k]); }
+      for (int k = 0; k < d_; ++k) {
+        val *= std::pow(x1[n][k], idx[k]);
+      }
       psi(n, i) = val;
     }
   }
@@ -235,12 +243,16 @@ MeshMapsBase::LeastSquareFit(int order,
 
     for (int i = 0; i < nk; ++i) {
       b(i) = 0.0;
-      for (int n = 0; n < nx; ++n) { b(i) += x2[n][k] * psi(n, i); }
+      for (int n = 0; n < nx; ++n) {
+        b(i) += x2[n][k] * psi(n, i);
+      }
     }
 
     A.Multiply(b, u, false);
 
-    for (auto i = 0; i < nk; ++i) { v[k](i) = u(i); }
+    for (auto i = 0; i < nk; ++i) {
+      v[k](i) = u(i);
+    }
   }
 
   return 0;

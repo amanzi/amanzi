@@ -77,11 +77,10 @@ TEST(NAVIER_STOKES_2D)
   int itrs(0);
   int max_itrs = plist->get<int>("max iterations", 50);
   double T1 = plist->get<double>("end time", 100.0);
-  double dT = plist->get<double>("initial time step", 1.0);
-  double T(0.0), T0(0.0), dT0(dT), dTnext;
+  double dT = plist->get<double>("initial timestep", 1.0);
+  double Told, Tnew(0.0), T(0.0), T0(0.0), dT0(dT), dTnext;
 
-  // T = T1;
-  while (T < T1 && itrs < max_itrs) {
+  while (Tnew < T1 && itrs < max_itrs) {
     if (itrs == 0) {
       Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*soln));
       udot->PutScalar(0.0);
@@ -90,10 +89,12 @@ TEST(NAVIER_STOKES_2D)
       NSPK->UpdatePreconditioner(T0, soln, dT0);
     }
 
-    while (NSPK->bdf1_dae()->TimeStep(dT, dTnext, soln)) { dT = dTnext; }
-    NSPK->bdf1_dae()->CommitSolution(dT, soln);
+    while (NSPK->bdf1_dae()->AdvanceStep(dT, dTnext, soln)) {
+      dT = dTnext;
+    }
 
-    T = NSPK->bdf1_dae()->time();
+    Told = Tnew;
+    Tnew += dT;
     dT = dTnext;
     itrs++;
 
@@ -113,7 +114,7 @@ TEST(NAVIER_STOKES_2D)
     pressure_eval->SetChanged();
 
     // commit step
-    NSPK->CommitStep(T - dT, T, Tags::DEFAULT);
+    NSPK->CommitStep(Told, Tnew, Tags::DEFAULT);
   }
 
   // initialize I/O

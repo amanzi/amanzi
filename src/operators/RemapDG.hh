@@ -47,14 +47,16 @@
 namespace Amanzi {
 namespace Operators {
 
-template <class Vector>
-class RemapDG : public Explicit_TI::fnBase<Vector>, public RemapDG_Helper {
+template<class Vector>
+class RemapDG
+  : public Explicit_TI::fnBase<Vector>
+  , public RemapDG_Helper {
  public:
   RemapDG(const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
           const Teuchos::RCP<AmanziMesh::Mesh> mesh1,
           Teuchos::ParameterList& plist)
-    : RemapDG_Helper(mesh0, mesh1, plist){};
-  ~RemapDG(){};
+    : RemapDG_Helper(mesh0, mesh1, plist) {};
+  ~RemapDG() {};
 
   // main members required by the time integration class
   // -- calculate functional f(t, u) where u is the conservative quantity

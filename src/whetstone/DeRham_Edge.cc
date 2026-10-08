@@ -157,7 +157,9 @@ DeRham_Edge::L2consistency3D_(int c, const Tensor& T, DenseMatrix& N, DenseMatri
       double len = mesh_->getEdgeLength(e);
       len /= 2.0 * area * area * fdirs[i] * edirs[m];
 
-      for (int k = 0; k < d_; ++k) { N(map[m], k) -= len * ((vv[k] ^ v3) * normal); }
+      for (int k = 0; k < d_; ++k) {
+        N(map[m], k) -= len * ((vv[k] ^ v3) * normal);
+      }
     }
   }
 
@@ -353,7 +355,9 @@ DeRham_Edge::L2consistencyInverse3D_(int c, const Tensor& T, DenseMatrix& R, Den
       double len = mesh_->getEdgeLength(e);
       len /= 2.0 * area * area * fdirs[i] * edirs[m];
 
-      for (int k = 0; k < d_; ++k) { R(map[m], k) -= len * ((vv[k] ^ v3) * normal); }
+      for (int k = 0; k < d_; ++k) {
+        R(map[m], k) -= len * ((vv[k] ^ v3) * normal);
+      }
     }
   }
 

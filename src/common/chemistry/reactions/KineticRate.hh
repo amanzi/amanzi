@@ -32,10 +32,10 @@ class MatrixBlock;
 
 class KineticRate {
  public:
-  virtual ~KineticRate(){};
+  virtual ~KineticRate() {};
 
-  virtual void
-  Update(const SpeciesArray& primary_species, const std::vector<Mineral>& minerals) = 0;
+  virtual void Update(const SpeciesArray& primary_species,
+                      const std::vector<Mineral>& minerals) = 0;
 
   virtual void AddContributionToResidual(const std::vector<Mineral>& minerals,
                                          const double bulk_volume,

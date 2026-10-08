@@ -43,9 +43,10 @@ namespace Multiphase {
 
 /* *******************************************************************
 * Populate boundary conditions for various bc types
+* comp_id = position in a list of solutes (-1 for water)
 ******************************************************************* */
 void
-Multiphase_PK::PopulateBCs(int icomp, bool flag)
+Multiphase_PK::PopulateBCs(int comp_id, bool flag)
 {
   int n0 = (system_["energy eqn"]) ? 2 : 1;
 
@@ -81,8 +82,9 @@ Multiphase_PK::PopulateBCs(int icomp, bool flag)
       }
     }
 
+    // flux condition is populated only for one component (water or solute)
     if (bcs_[i]->get_bc_name() == "flux") {
-      if (bcs_[i]->component_name() == "water") {
+      if (bcs_[i]->component_name() == "water" && comp_id == -1) {
         auto& bc_model = op_bcs_[pressure_liquid_key_]->bc_model();
         auto& bc_value = op_bcs_[pressure_liquid_key_]->bc_value();
 
@@ -91,7 +93,7 @@ Multiphase_PK::PopulateBCs(int icomp, bool flag)
           bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
           bc_value[f] = it->second[0] * factor;
         }
-      } else if (bcs_[i]->component_id() == icomp) {
+      } else if (bcs_[i]->component_id() == comp_id) {
         Key x_key_base = splitPhase(soln_names_[n0]).first;
         Key x_key = mergePhase(x_key_base, bcs_[i]->component_phase());
 
@@ -106,7 +108,7 @@ Multiphase_PK::PopulateBCs(int icomp, bool flag)
       }
     }
 
-    if (bcs_[i]->get_bc_name() == "concentration" && bcs_[i]->component_id() == icomp) {
+    if (bcs_[i]->get_bc_name() == "concentration" && bcs_[i]->component_id() == comp_id) {
       Key x_key_base = splitPhase(soln_names_[n0]).first;
       Key x_key = mergePhase(x_key_base, bcs_[i]->component_phase());
 
@@ -136,6 +138,17 @@ Multiphase_PK::PopulateBCs(int icomp, bool flag)
 
         bc_model_x[f] = Operators::OPERATOR_BC_DIRICHLET; // a huck
         bc_value_x[f] = 0.0;
+      }
+    }
+
+    if (bcs_[i]->get_bc_name() == "temperature") {
+      auto& bc_model_t = op_bcs_[temperature_key_]->bc_model();
+      auto& bc_value_t = op_bcs_[temperature_key_]->bc_value();
+
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        int f = it->first;
+        bc_model_t[f] = Operators::OPERATOR_BC_DIRICHLET;
+        bc_value_t[f] = it->second[0];
       }
     }
   }

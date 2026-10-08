@@ -40,7 +40,9 @@ TEST(MESH_FRACTURE_EXTRACTION_GENERATED)
   //
   // extract two inner surfaces as fractures
   std::vector<Framework> frameworks;
-  if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
@@ -101,7 +103,9 @@ TEST(MESH_FRACTURE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
   //if (comm->NumProc() == 1) {
   //  frameworks.push_back(Framework::SIMPLE);
   //}
-  if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
@@ -165,7 +169,9 @@ TEST(MESH_FRACTURE_EXTRACTION_EXO)
   //
   // extract two inner surfaces as fractures
   std::vector<Framework> frameworks;
-  if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
@@ -180,8 +186,10 @@ TEST(MESH_FRACTURE_EXTRACTION_EXO)
     auto parent_mesh_cache = Teuchos::rcp(
       new Mesh(parent_mesh, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
     cacheAll(*parent_mesh_cache);
-    auto mesh =
-      fac.create(parent_mesh_cache, { "fractures-two" }, AmanziMesh::Entity_kind::FACE, false);
+    auto mesh = fac.create(parent_mesh_cache,
+                           std::vector<std::string>({ "fractures-two" }),
+                           AmanziMesh::Entity_kind::FACE,
+                           false);
     cacheAll(*mesh);
 
     // test the surface mesh as a fracture mesh
@@ -222,7 +230,9 @@ TEST(MESH_FRACTURE_EXTRACTION_EXO_MANIFOLD)
   //
   // extract two inner surfaces as fractures
   std::vector<Framework> frameworks;
-  if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
 
   // NOTE, moab doesn't support edges, so this can't work here. See #596
   // if (framework_enabled(Framework::MOAB)) {

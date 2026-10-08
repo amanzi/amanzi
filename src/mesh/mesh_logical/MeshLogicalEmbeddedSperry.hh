@@ -40,8 +40,10 @@ class MeshLogicalEmbeddedSperry : public MeshLogicalFactory {
     : MeshLogicalFactory(comm, gm)
   {}
 
-  Teuchos::RCP<MeshLogical>
-  CreateLogical(int n_leaf, int n_stem, double max_rooting_depth, int n_rheizosphere_shells);
+  Teuchos::RCP<MeshLogical> CreateLogical(int n_leaf,
+                                          int n_stem,
+                                          double max_rooting_depth,
+                                          int n_rheizosphere_shells);
   Teuchos::RCP<MeshLogical> CreateEmbedded(int n_leaf,
                                            int n_stem,
                                            double max_rooting_depth,
@@ -49,8 +51,10 @@ class MeshLogicalEmbeddedSperry : public MeshLogicalFactory {
                                            const Teuchos::RCP<AmanziMesh::Mesh>& bg_mesh);
 
  protected:
-  std::string
-  Name_(const std::string& pftname, int col, const std::string& component, int col_cell = 0)
+  std::string Name_(const std::string& pftname,
+                    int col,
+                    const std::string& component,
+                    int col_cell = 0)
   {
     std::string name;
     if (component == "aroot" || component == "rheizosphere") {

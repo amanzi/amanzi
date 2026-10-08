@@ -205,18 +205,20 @@ TEST(SHALLOW_WATER_1D_CONVERGENCE)
 
     dam_break_1D_exact_field(mesh, hh_ex, vx_ex, t_out);
 
-    io.InitializeCycle(t_out, iter);
-    io.WriteVector(*hh(0), "depth", AmanziMesh::Entity_kind::CELL);
-    io.WriteVector(*ht(0), "total_depth", AmanziMesh::Entity_kind::CELL);
-    io.WriteVector(*vx(0), "vx", AmanziMesh::Entity_kind::CELL);
-    io.WriteVector(*vy(0), "vy", AmanziMesh::Entity_kind::CELL);
-    io.WriteVector(*qx(0), "qx", AmanziMesh::Entity_kind::CELL);
-    io.WriteVector(*qy(0), "qy", AmanziMesh::Entity_kind::CELL);
-    io.WriteVector(*B(0), "B", AmanziMesh::Entity_kind::CELL);
-    io.WriteVector(*pid(0), "pid", AmanziMesh::Entity_kind::CELL);
-    io.WriteVector(*hh_ex(0), "hh_ex", AmanziMesh::Entity_kind::CELL);
-    io.WriteVector(*vx_ex(0), "vx_ex", AmanziMesh::Entity_kind::CELL);
-    io.FinalizeCycle();
+    if (iter % 100 == 0) {
+      io.InitializeCycle(t_out, iter);
+      io.WriteVector(*hh(0), "depth", AmanziMesh::Entity_kind::CELL);
+      io.WriteVector(*ht(0), "total_depth", AmanziMesh::Entity_kind::CELL);
+      io.WriteVector(*vx(0), "vx", AmanziMesh::Entity_kind::CELL);
+      io.WriteVector(*vy(0), "vy", AmanziMesh::Entity_kind::CELL);
+      io.WriteVector(*qx(0), "qx", AmanziMesh::Entity_kind::CELL);
+      io.WriteVector(*qy(0), "qy", AmanziMesh::Entity_kind::CELL);
+      io.WriteVector(*B(0), "B", AmanziMesh::Entity_kind::CELL);
+      io.WriteVector(*pid(0), "pid", AmanziMesh::Entity_kind::CELL);
+      io.WriteVector(*hh_ex(0), "hh_ex", AmanziMesh::Entity_kind::CELL);
+      io.WriteVector(*vx_ex(0), "vx_ex", AmanziMesh::Entity_kind::CELL);
+      io.FinalizeCycle();
+    }
 
     dt = SWPK.get_dt();
 

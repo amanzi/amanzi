@@ -10,8 +10,8 @@
 /*
   Process Kernels
 
-  Keeps copies of fields which could be restored. e.g. when a time 
-  integration step fails. 
+  Keeps copies of fields which could be restored. e.g. when a time
+  integration step fails.
 */
 
 #ifndef AMANZI_PK_STATE_ARCHIVE_HH_
@@ -31,14 +31,16 @@ namespace Amanzi {
 class StateArchive {
  public:
   StateArchive() = delete;
-  StateArchive(Teuchos::RCP<State>& S, Teuchos::RCP<VerboseObject>& vo) : S_(S), vo_(vo){};
+  StateArchive(Teuchos::RCP<State>& S, Teuchos::RCP<VerboseObject>& vo)
+    : S_(S), vo_(vo) {};
 
   void Add(const std::vector<std::string>& fields, const Tag& tag);
 
   void Restore(const std::string& passwd);
 
-  void
-  CopyFieldsToPrevFields(std::vector<std::string>& fields, const std::string& passwd, bool add);
+  void CopyFieldsToPrevFields(std::vector<std::string>& fields,
+                              const std::string& passwd,
+                              bool add);
 
   // access
   const CompositeVector& get(const std::string& name);

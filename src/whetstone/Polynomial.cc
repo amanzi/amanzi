@@ -27,7 +27,8 @@ namespace WhetStone {
 /* ******************************************************************
 * Constructor of zero polynomial.
 ****************************************************************** */
-Polynomial::Polynomial(int d, int order) : PolynomialBase(d, order)
+Polynomial::Polynomial(int d, int order)
+  : PolynomialBase(d, order)
 {
   size_ = PolynomialSpaceDimension(d_, order_);
   coefs_.Reshape(size_);
@@ -38,7 +39,8 @@ Polynomial::Polynomial(int d, int order) : PolynomialBase(d, order)
 /* ******************************************************************
 * Constructor from a given vector.
 ****************************************************************** */
-Polynomial::Polynomial(int d, int order, const DenseVector& coefs) : PolynomialBase(d, order)
+Polynomial::Polynomial(int d, int order, const DenseVector& coefs)
+  : PolynomialBase(d, order)
 {
   size_ = PolynomialSpaceDimension(d_, order_);
   AMANZI_ASSERT(size_ == coefs.NumRows());
@@ -50,7 +52,8 @@ Polynomial::Polynomial(int d, int order, const DenseVector& coefs) : PolynomialB
 * Constructor of a polynomial with a single term:
 *    p(x) = factor * (x)^multi_index
 ****************************************************************** */
-Polynomial::Polynomial(int d, const int* multi_index, double factor) : PolynomialBase(d, 0)
+Polynomial::Polynomial(int d, const int* multi_index, double factor)
+  : PolynomialBase(d, 0)
 {
   for (int i = 0; i < d_; ++i) order_ += multi_index[i];
 
@@ -124,7 +127,9 @@ Polynomial::Polynomial(int d,
 
       for (int n = 0; n < size_; ++n) {
         double val(1.0);
-        for (int k = 0; k < d_; ++k) { val *= std::pow(xyz[n][k], idx[k]); }
+        for (int k = 0; k < d_; ++k) {
+          val *= std::pow(xyz[n][k], idx[k]);
+        }
         psi(n, i) = val;
       }
     }
@@ -189,7 +194,7 @@ Polynomial::operator+=(const Polynomial& poly)
 
   int order = poly.order();
   if (order_ < order) Reshape(d_, order);
-  for (int i = 0; i < poly.size(); ++i) coefs_(i) += poly(i);
+  for (int i = 0; i < poly.size() ; ++i) coefs_(i) += poly(i);
 
   return *this;
 }
@@ -203,7 +208,7 @@ Polynomial::operator-=(const Polynomial& poly)
 
   int order = poly.order();
   if (order_ < order) Reshape(d_, order);
-  for (int i = 0; i < poly.size(); ++i) coefs_(i) -= poly(i);
+  for (int i = 0; i < poly.size() ; ++i) coefs_(i) -= poly(i);
 
   return *this;
 }
@@ -235,7 +240,9 @@ Polynomial::ChangeOrigin(const AmanziGeometry::Point& origin)
   AmanziGeometry::Point shift(origin - origin_);
 
   if (order_ == 1) {
-    for (int i = 0; i < d_; ++i) { coefs_(0) += coefs_(i + 1) * shift[i]; }
+    for (int i = 0; i < d_; ++i) {
+      coefs_(0) += coefs_(i + 1) * shift[i];
+    }
   } else if (order_ > 1) {
     if (AmanziGeometry::L22(shift) == 0.0) return;
 
@@ -379,7 +386,9 @@ Polynomial::Value(const AmanziGeometry::Point& xp) const
   AmanziGeometry::Point dx(xp - origin_);
 
   if (order_ > 0) {
-    for (int i = 0; i < d_; ++i) { sum += dx[i] * coefs_(i + 1); }
+    for (int i = 0; i < d_; ++i) {
+      sum += dx[i] * coefs_(i + 1);
+    }
   }
 
   for (auto it = begin(2); it < end(); ++it) {
@@ -388,7 +397,9 @@ Polynomial::Value(const AmanziGeometry::Point& xp) const
 
     if (tmp != 0.0) {
       const int* index = it.multi_index();
-      for (int i = 0; i < d_; ++i) { tmp *= std::pow(dx[i], index[i]); }
+      for (int i = 0; i < d_; ++i) {
+        tmp *= std::pow(dx[i], index[i]);
+      }
       sum += tmp;
     }
   }
@@ -421,7 +432,9 @@ Polynomial::ChangeCoordinates(const AmanziGeometry::Point& x0, const AmanziMesh:
       double coef = coefs_(n);
       if (coef != 0.0) {
         const int* multi_index = it.multi_index();
-        for (int i = 0; i < d_; ++i) { coef *= std::pow(B[0][i], multi_index[i]); }
+        for (int i = 0; i < d_; ++i) {
+          coef *= std::pow(B[0][i], multi_index[i]);
+        }
         tmp(m, 0) += coef;
       }
     }
@@ -489,7 +502,9 @@ Polynomial::InverseChangeCoordinates(const AmanziGeometry::Point& x0,
     int i = (fabs(B[0][0]) > fabs(B[0][1])) ? 0 : 1;
     double scale = 1.0 / B[0][i];
 
-    for (int m = 0; m < size_; ++m) { tmp(m, i * m) = coefs_(m) * std::pow(scale, m); }
+    for (int m = 0; m < size_; ++m) {
+      tmp(m, i * m) = coefs_(m) * std::pow(scale, m);
+    }
   } else if (d_ == 1 && dnew == 3) {
     int i = (fabs(B[0][0]) > fabs(B[0][1])) ? 0 : 1;
     if (fabs(B[0][2]) > fabs(B[0][i])) i = 2;
@@ -643,12 +658,16 @@ operator*(const Polynomial& poly1, const Polynomial& poly2)
   tmp.set_origin(poly1.get_origin());
 
   if (order1 == 0) {
-    for (int n = 0; n < tmp.size(); ++n) { tmp(n) = poly1(0) * poly2(n); }
+    for (int n = 0; n < tmp.size(); ++n) {
+      tmp(n) = poly1(0) * poly2(n);
+    }
     return tmp;
   }
 
   if (order2 == 0) {
-    for (int n = 0; n < tmp.size(); ++n) { tmp(n) = poly2(0) * poly1(n); }
+    for (int n = 0; n < tmp.size(); ++n) {
+      tmp(n) = poly2(0) * poly1(n);
+    }
     return tmp;
   }
 
@@ -664,7 +683,9 @@ operator*(const Polynomial& poly1, const Polynomial& poly2)
       int n2 = it2.PolynomialPosition();
       double val2 = poly2(n2);
 
-      for (int i = 0; i < d; ++i) { index[i] = idx1[i] + idx2[i]; }
+      for (int i = 0; i < d; ++i) {
+        index[i] = idx1[i] + idx2[i];
+      }
       int l = PolynomialPosition(d, index);
       tmp(l) += val1 * val2;
     }

@@ -19,7 +19,7 @@
 
 namespace Amanzi {
 // This is not an optimal implementation, but we can improve it later
-template <class Vector>
+template<class Vector>
 class CompositeMultiVector : public Belos::MultiVec<double> {
  private:
   typedef double ScalarType;
@@ -78,7 +78,7 @@ class CompositeMultiVector : public Belos::MultiVec<double> {
   std::vector<Teuchos::RCP<Vector>> cmv_;
 }; // end class CompositeMultiVector
 
-template <class Vector>
+template<class Vector>
 CompositeMultiVector<Vector>*
 CompositeMultiVector<Vector>::Clone(const int numvecs) const
 {
@@ -90,51 +90,51 @@ CompositeMultiVector<Vector>::Clone(const int numvecs) const
   return temp;
 }
 
-template <class Vector>
+template<class Vector>
 CompositeMultiVector<Vector>*
 CompositeMultiVector<Vector>::CloneCopy() const
 {
   std::vector<Teuchos::RCP<Vector>> newcmv(cmv_.size());
-  for (int i = 0; i < cmv_.size(); i++) newcmv[i] = Teuchos::rcp(new Vector(*cmv_[i]));
+  for (int i = 0; i < cmv_.size() ; i++) newcmv[i] = Teuchos::rcp(new Vector(*cmv_[i]));
   CompositeMultiVector* temp = new CompositeMultiVector(newcmv);
 
   return temp;
 }
 
-template <class Vector>
+template<class Vector>
 CompositeMultiVector<Vector>*
 CompositeMultiVector<Vector>::CloneCopy(const std::vector<int>& index) const
 {
   std::vector<Teuchos::RCP<Vector>> newcmv(index.size());
-  for (int i = 0; i < index.size(); i++) newcmv[i] = Teuchos::rcp(new Vector(*cmv_[index[i]]));
+  for (int i = 0; i < index.size() ; i++) newcmv[i] = Teuchos::rcp(new Vector(*cmv_[index[i]]));
   CompositeMultiVector* temp = new CompositeMultiVector(newcmv);
 
   return temp;
 }
 
-template <class Vector>
+template<class Vector>
 CompositeMultiVector<Vector>*
 CompositeMultiVector<Vector>::CloneViewNonConst(const std::vector<int>& index)
 {
   std::vector<Teuchos::RCP<Vector>> newcmv(index.size());
-  for (int i = 0; i < index.size(); i++) newcmv[i] = cmv_[index[i]];
+  for (int i = 0; i < index.size() ; i++) newcmv[i] = cmv_[index[i]];
   CompositeMultiVector* temp = new CompositeMultiVector(newcmv);
 
   return temp;
 }
 
-template <class Vector>
+template<class Vector>
 const CompositeMultiVector<Vector>*
 CompositeMultiVector<Vector>::CloneView(const std::vector<int>& index) const
 {
   std::vector<Teuchos::RCP<Vector>> newcmv(index.size());
-  for (int i = 0; i < index.size(); i++) newcmv[i] = cmv_[index[i]];
+  for (int i = 0; i < index.size() ; i++) newcmv[i] = cmv_[index[i]];
   CompositeMultiVector* temp = new CompositeMultiVector(newcmv);
 
   return temp;
 }
 
-template <class Vector>
+template<class Vector>
 void
 CompositeMultiVector<Vector>::MvTimesMatAddMv(double alpha,
                                               const Belos::MultiVec<double>& A,
@@ -156,7 +156,7 @@ CompositeMultiVector<Vector>::MvTimesMatAddMv(double alpha,
   }
 }
 
-template <class Vector>
+template<class Vector>
 void
 CompositeMultiVector<Vector>::MvAddMv(double alpha,
                                       const Belos::MultiVec<double>& A,
@@ -176,21 +176,21 @@ CompositeMultiVector<Vector>::MvAddMv(double alpha,
     cmv_[i]->Update(alpha, *cmvA->cmv_[i], beta, *cmvB->cmv_[i], 0);
 }
 
-template <class Vector>
+template<class Vector>
 void
 CompositeMultiVector<Vector>::MvScale(ScalarType alpha)
 {
-  for (int i = 0; i < cmv_.size(); i++) cmv_[i]->Scale(alpha);
+  for (int i = 0; i < cmv_.size() ; i++) cmv_[i]->Scale(alpha);
 }
 
-template <class Vector>
+template<class Vector>
 void
 CompositeMultiVector<Vector>::MvScale(const std::vector<ScalarType>& alpha)
 {
-  for (int i = 0; i < cmv_.size(); i++) cmv_[i]->Scale(alpha[i]);
+  for (int i = 0; i < cmv_.size() ; i++) cmv_[i]->Scale(alpha[i]);
 }
 
-template <class Vector>
+template<class Vector>
 void
 CompositeMultiVector<Vector>::MvTransMv(ScalarType alpha,
                                         const Belos::MultiVec<double>& A,
@@ -202,11 +202,11 @@ CompositeMultiVector<Vector>::MvTransMv(ScalarType alpha,
                              "CompositeMultiVector::MvTransMv: A must be a CompositeMultiVector");
 
   for (int r = 0; r < cmvA->GetNumberVecs(); r++) {
-    for (int c = 0; c < GetNumberVecs(); c++) cmv_[c]->Dot(*cmvA->cmv_[r], &B(r, c));
+    for (int c = 0; c < GetNumberVecs() ; c++) cmv_[c]->Dot(*cmvA->cmv_[r], &B(r, c));
   }
 }
 
-template <class Vector>
+template<class Vector>
 void
 CompositeMultiVector<Vector>::MvDot(const Belos::MultiVec<double>& A,
                                     std::vector<ScalarType>& b) const
@@ -216,25 +216,27 @@ CompositeMultiVector<Vector>::MvDot(const Belos::MultiVec<double>& A,
                              std::invalid_argument,
                              "CompositeMultiVector::MvAddMv: A must be a CompositeMultiVector");
 
-  for (int i = 0; i < cmv_.size(); i++) { cmv_[i]->Dot(*cmvA->cmv_[i], &b[i]); }
+  for (int i = 0; i < cmv_.size(); i++) {
+    cmv_[i]->Dot(*cmvA->cmv_[i], &b[i]);
+  }
 }
 
-template <class Vector>
+template<class Vector>
 void
 CompositeMultiVector<Vector>::MvNorm(std::vector<MagnitudeType>& normvec,
                                      Belos::NormType type) const
 {
   if (type == Belos::TwoNorm) {
-    for (int i = 0; i < cmv_.size(); i++) cmv_[i]->Norm2(&normvec[i]);
+    for (int i = 0; i < cmv_.size() ; i++) cmv_[i]->Norm2(&normvec[i]);
   } else if (type == Belos::OneNorm) {
-    for (int i = 0; i < cmv_.size(); i++) cmv_[i]->Norm1(&normvec[i]);
+    for (int i = 0; i < cmv_.size() ; i++) cmv_[i]->Norm1(&normvec[i]);
   } else // if (type == Belos::InfNorm)
   {
-    for (int i = 0; i < cmv_.size(); i++) cmv_[i]->NormInf(&normvec[i]);
+    for (int i = 0; i < cmv_.size() ; i++) cmv_[i]->NormInf(&normvec[i]);
   }
 }
 
-template <class Vector>
+template<class Vector>
 void
 CompositeMultiVector<Vector>::SetBlock(const Belos::MultiVec<double>& A,
                                        const std::vector<int>& index)
@@ -244,28 +246,28 @@ CompositeMultiVector<Vector>::SetBlock(const Belos::MultiVec<double>& A,
                              std::invalid_argument,
                              "CompositeMultiVector::SetBlock: A must be a CompositeMultiVector");
 
-  for (int i = 0; i < index.size(); i++) *cmv_[index[i]] = *cmvA->cmv_[i];
+  for (int i = 0; i < index.size() ; i++) *cmv_[index[i]] = *cmvA->cmv_[i];
 }
 
-template <class Vector>
+template<class Vector>
 void
 CompositeMultiVector<Vector>::MvRandom()
 {
-  for (int i = 0; i < cmv_.size(); i++) cmv_[i]->Random();
+  for (int i = 0; i < cmv_.size() ; i++) cmv_[i]->Random();
 }
 
-template <class Vector>
+template<class Vector>
 void
 CompositeMultiVector<Vector>::MvInit(ScalarType alpha)
 {
-  for (int i = 0; i < cmv_.size(); i++) cmv_[i]->PutScalar(alpha);
+  for (int i = 0; i < cmv_.size() ; i++) cmv_[i]->PutScalar(alpha);
 }
 
-template <class Vector>
+template<class Vector>
 void
 CompositeMultiVector<Vector>::MvPrint(std::ostream& os) const
 {
-  for (int i = 0; i < cmv_.size(); i++) cmv_[i]->Print(os);
+  for (int i = 0; i < cmv_.size() ; i++) cmv_[i]->Print(os);
 }
 
 } // namespace Amanzi

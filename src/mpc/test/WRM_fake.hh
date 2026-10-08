@@ -30,7 +30,7 @@ class WRM_fake : public WRM {
     n = 2.0;
     m = 1.0;
   }
-  ~WRM_fake(){};
+  ~WRM_fake() {};
 
   // required methods from the base class
   // -- relative permeability formula

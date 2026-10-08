@@ -15,9 +15,11 @@ single-porosity model correspond now to the fracture continuum.
 Example: pressure = pressure in the fracture continuum;
 pressure_msp = pressure in the matrix continuum.
 
-* `"number of matrix nodes`" [int] defines number of matrix layers.
-* `"matrix depth`" [double] is the characteristic length for matrix continuum.
-* `"matrix volume fraction`" [double] defines relative volume of matrix continuum.
+.. admonition:: generalized_dual_porosity-spec
+
+  * `"number of matrix nodes`" [int] defines number of matrix layers.
+  * `"matrix depth`" [double] is the characteristic length for matrix continuum.
+  * `"matrix volume fraction`" [double] defines relative volume of matrix continuum.
 
 .. code-block:: xml
 
@@ -27,7 +29,7 @@ pressure_msp = pressure in the matrix continuum.
       <Parameter name="regions" type="Array(string)" value="{_TOP HALF}"/>
       <Parameter name="multiscale model" type="string" value="dual porosity"/>
       <ParameterList name="dual porosity parameters">
-        <Paramater name="mass transfer coefficient" type="double" value="4.0e-5"/>
+        <Paramater name="mass transfer coefficient" type="double" value="4e-5"/>
         <Paramater name="tolerance" type="double" value="1e-8"/>
       </ParameterList>
 
@@ -64,11 +66,12 @@ pressure_msp = pressure in the matrix continuum.
 namespace Amanzi {
 namespace Flow {
 
-class MultiscaleFlowPorosity_GDPM : public MultiscaleFlowPorosity,
-                                    public AmanziSolvers::SolverFnBase<WhetStone::DenseVector> {
+class MultiscaleFlowPorosity_GDPM
+  : public MultiscaleFlowPorosity
+  , public AmanziSolvers::SolverFnBase<WhetStone::DenseVector> {
  public:
   MultiscaleFlowPorosity_GDPM(Teuchos::ParameterList& plist);
-  ~MultiscaleFlowPorosity_GDPM(){};
+  ~MultiscaleFlowPorosity_GDPM() {};
 
   // interface for porosity models
   // -- calculate field water storage assuming pressure equilibrium
@@ -109,13 +112,13 @@ class MultiscaleFlowPorosity_GDPM : public MultiscaleFlowPorosity,
   virtual void UpdatePreconditioner(const Teuchos::RCP<const WhetStone::DenseVector>& u) override;
 
   // -- other required functions
-  virtual void ChangedSolution() override{};
+  virtual void ChangedSolution() override {};
 
   // --  modifies the correction
-  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-  ModifyCorrection(const Teuchos::RCP<const WhetStone::DenseVector>& r,
-                   const Teuchos::RCP<const WhetStone::DenseVector>& u,
-                   const Teuchos::RCP<WhetStone::DenseVector>& du) override;
+  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult ModifyCorrection(
+    const Teuchos::RCP<const WhetStone::DenseVector>& r,
+    const Teuchos::RCP<const WhetStone::DenseVector>& u,
+    const Teuchos::RCP<WhetStone::DenseVector>& du) override;
 
   // modifiers
   void set_op(std::shared_ptr<Operators::Mini_Diffusion1D> op) { op_diff_ = op; }

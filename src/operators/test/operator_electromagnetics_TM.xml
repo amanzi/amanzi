@@ -1,6 +1,5 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-
   <!--  REGIONS  -->
   <ParameterList name="regions">
   </ParameterList>
@@ -8,7 +7,6 @@
   <!--  OPERATORS  -->
   <ParameterList name="PK operator">
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-
     <ParameterList name="electromagnetics operator">
       <ParameterList name="schema electric">
         <Parameter name="base" type="string" value="cell"/>
@@ -18,7 +16,6 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <!-- SOLVERS -->
   <ParameterList name="solvers">
     <ParameterList name="default">
@@ -31,7 +28,6 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="silent">
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
@@ -43,7 +39,6 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
@@ -59,4 +54,3 @@
     </ParameterList>
   </ParameterList>
 </ParameterList>
-

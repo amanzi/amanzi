@@ -114,11 +114,29 @@ class BCs {
   // -- point is a vector DOF which has mesh dimension (example: fluid velocity)
   // -- vector is a general vector DOF (example: moments of pressure)
   // -- normal-component is a geometric DOF (example: normal component of fluid velocity)
+  BCs() : status_(false),
+          kind_(AmanziMesh::Entity_kind::FACE),
+          type_(WhetStone::DOF_Type::SCALAR) {};
+
   BCs(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
       AmanziMesh::Entity_kind kind,
       WhetStone::DOF_Type type)
-    : status_(false), kind_(kind), type_(type), mesh_(mesh){};
-  ~BCs(){};
+    : status_(false), kind_(kind), type_(type), mesh_(mesh) {};
+  ~BCs() {};
+
+  // set parameters of boundary conditions
+  BCs* SetMesh(Teuchos::RCP<const AmanziMesh::Mesh> mesh) {
+    mesh_ = mesh;
+    return this;
+  } 
+  BCs* SetKind(AmanziMesh::Entity_kind kind) {
+   kind_ = kind;
+   return this;
+  } 
+  BCs* SetType(WhetStone::DOF_Type type) {
+   type_ = type;
+   return this;
+  } 
 
   // non-const access
   Teuchos::RCP<const AmanziMesh::Mesh> mesh() const { return mesh_; }
@@ -172,7 +190,9 @@ class BCs {
       int nent = mesh_->getNumEntities(kind_, AmanziMesh::Parallel_kind::ALL);
       bc_value_vector_.resize(nent);
 
-      for (int i = 0; i < nent; ++i) { bc_value_vector_[i].resize(n); }
+      for (int i = 0; i < nent; ++i) {
+        bc_value_vector_[i].resize(n);
+      }
     }
     return bc_value_vector_;
   }

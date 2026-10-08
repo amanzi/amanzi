@@ -28,9 +28,6 @@
 #include "errors.hh"
 #include "Explicit_TI_RK.hh"
 #include "Mesh.hh"
-#include "PDE_AdvectionUpwind.hh"
-#include "PDE_AdvectionUpwindFracturedMatrix.hh"
-#include "PDE_AdvectionUpwindDFN.hh"
 #include "PDE_Diffusion.hh"
 #include "PK_DomainFunctionFactory.hh"
 #include "PK_Utils.hh"
@@ -45,6 +42,9 @@
 
 namespace Amanzi {
 namespace Transport {
+
+using CV_t = CompositeVector;
+using CVS_t = CompositeVectorSpace;
 
 /* ******************************************************************
 * New constructor compatible with new MPC framework.
@@ -131,7 +131,9 @@ TransportExplicit_PK::AdvanceSecondOrderUpwindRK2(double dt_cycle)
     mass_solutes_exact_[i] += mass_solutes_source_[i] * dt_ / 2;
   }
 
-  if (internal_tests_) { VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell")); }
+  if (internal_tests_) {
+    VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
+  }
 }
 
 
@@ -187,17 +189,16 @@ TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   double dt_MPC = t_new - t_old;
 
   // We use original tcc and make a copy of it later if needed.
-  tcc = S_->GetPtrW<CompositeVector>(tcc_key_, Tags::DEFAULT, passwd_);
+  tcc = S_->GetPtrW<CV_t>(tcc_key_, Tags::DEFAULT, passwd_);
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
 
-  auto wc = S_->GetW<CompositeVector>(wc_key_, Tags::DEFAULT, wc_key_).ViewComponent("cell");
-  auto wc_prev =
-    S_->GetW<CompositeVector>(prev_wc_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+  auto wc = S_->GetW<CV_t>(wc_key_, Tags::DEFAULT, wc_key_).ViewComponent("cell");
+  auto wc_prev = S_->GetW<CV_t>(prev_wc_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
 
   *wc_prev = *wc;
   S_->GetEvaluator(wc_key_).Update(*S_, "transport");
 
-  // calculate stable time step
+  // calculate stable timestep
   double dt_shift = 0.0, dt_global = dt_MPC;
   double time = S_->intermediate_time();
   if (time >= 0.0) {
@@ -296,13 +297,13 @@ TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // output of selected statistics
   VV_PrintLimiterStatistics();
 
-  dt_ = dt_original; // restore the original time step (just in case)
+  dt_ = dt_original; // restore the original timestep (just in case)
 
   // Dispersion/diffusion solver
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", false);
 
-  if (use_dispersion_) {
-    if (use_effective_diffusion_) {
+  if (assumptions_.use_dispersion) {
+    if (assumptions_.use_effective_diffusion) {
       CalculateDispersionTensor_(time, *transport_phi, *wc);
       DiffusionSolverEffective(tcc_next, t_old, t_new);
     } else {
@@ -311,7 +312,9 @@ TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   // optional Henry Law for the case of gas diffusion
-  if (henry_law_) { MakeAirWaterPartitioning_(); }
+  if (henry_law_) {
+    MakeAirWaterPartitioning_();
+  }
 
   // statistics output
   nsubcycles = ncycles;
@@ -444,7 +447,9 @@ TransportExplicit_PK::AdvanceDonorUpwind(double dt_cycle)
     mass_solutes_exact_[i] += mass_solutes_source_[i] * dt_;
   }
 
-  if (internal_tests_) { VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell")); }
+  if (internal_tests_) {
+    VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
+  }
 }
 
 
@@ -484,10 +489,14 @@ TransportExplicit_PK::AdvanceDonorUpwindManifold(double dt_cycle)
       int c = upwind_cells_[f][n];
       u = upwind_flux_[f][n];
 
-      for (int i = 0; i < num_advect; i++) { tcc_out[i] += u * tcc_prev[i][c]; }
+      for (int i = 0; i < num_advect; i++) {
+        tcc_out[i] += u * tcc_prev[i][c];
+      }
     }
 
-    for (int n = 0; n < downwind_cells_[f].size(); ++n) { flux_in -= downwind_flux_[f][n]; }
+    for (int n = 0; n < downwind_cells_[f].size(); ++n) {
+      flux_in -= downwind_flux_[f][n];
+    }
     if (flux_in == 0.0) flux_in = 1e-12;
 
     // update solutes
@@ -496,7 +505,9 @@ TransportExplicit_PK::AdvanceDonorUpwindManifold(double dt_cycle)
       u = upwind_flux_[f][n];
 
       if (c < ncells_owned) {
-        for (int i = 0; i < num_advect; i++) { tcc_next[i][c] -= dt_ * u * tcc_prev[i][c]; }
+        for (int i = 0; i < num_advect; i++) {
+          tcc_next[i][c] -= dt_ * u * tcc_prev[i][c];
+        }
       }
     }
 
@@ -506,7 +517,9 @@ TransportExplicit_PK::AdvanceDonorUpwindManifold(double dt_cycle)
 
       if (c < ncells_owned) {
         double tmp = u / flux_in;
-        for (int i = 0; i < num_advect; i++) { tcc_next[i][c] -= dt_ * tmp * tcc_out[i]; }
+        for (int i = 0; i < num_advect; i++) {
+          tcc_next[i][c] -= dt_ * tmp * tcc_out[i];
+        }
       }
     }
   }

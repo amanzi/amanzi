@@ -25,10 +25,11 @@
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template <class Vector>
+template<class Vector>
 class BackTracking {
  public:
-  BackTracking(const Teuchos::RCP<SolverFnBase<Vector>>& fn) : fn_(fn){};
+  BackTracking(const Teuchos::RCP<SolverFnBase<Vector>>& fn)
+    : fn_(fn) {};
 
   int Bisection(const Teuchos::RCP<Vector> u0, Teuchos::RCP<Vector> du);
   int Bisection(double f0, const Teuchos::RCP<Vector> u0, Teuchos::RCP<Vector> du);
@@ -58,7 +59,7 @@ class BackTracking {
 /* ******************************************************************
 * Bisection algorithm: u1 = u0 - s * du
 ****************************************************************** */
-template <class Vector>
+template<class Vector>
 int
 BackTracking<Vector>::Bisection(double f0, const Teuchos::RCP<Vector> u0, Teuchos::RCP<Vector> du)
 {
@@ -105,7 +106,7 @@ BackTracking<Vector>::Bisection(double f0, const Teuchos::RCP<Vector> u0, Teucho
 /* ******************************************************************
 * Bisection algorithm
 ****************************************************************** */
-template <class Vector>
+template<class Vector>
 int
 BackTracking<Vector>::Bisection(const Teuchos::RCP<Vector> u0, Teuchos::RCP<Vector> du)
 {
@@ -122,7 +123,7 @@ BackTracking<Vector>::Bisection(const Teuchos::RCP<Vector> u0, Teuchos::RCP<Vect
 /* ******************************************************************
 * Line search
 ****************************************************************** */
-template <class Vector>
+template<class Vector>
 int
 BackTracking<Vector>::LineSearch(Vector& xold,
                                  double fold,
@@ -143,7 +144,9 @@ BackTracking<Vector>::LineSearch(Vector& xold,
   p.Norm2(&sum);
 
   // Scale if attempted step is too big.
-  if (sum > step_max) { p.Scale(step_max / sum); }
+  if (sum > step_max) {
+    p.Scale(step_max / sum);
+  }
 
   double slope;
   g.Dot(p, &slope);

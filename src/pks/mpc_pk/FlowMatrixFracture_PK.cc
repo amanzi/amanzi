@@ -14,7 +14,6 @@
   Process kernel that couples flow in matrix and fracture network.
 */
 
-#include "CommonDefs.hh"
 #include "EvaluatorPrimary.hh"
 #include "InverseFactory.hh"
 #include "PDE_CouplingFlux.hh"
@@ -166,7 +165,9 @@ FlowMatrixFracture_PK::Initialize()
 
   FractureInsertion fi(mesh_matrix_, mesh_fracture_);
   fi.InitMatrixFaceToFractureCell(Teuchos::rcpFromRef(mmap), Teuchos::rcpFromRef(gmap));
-  double scale = (sub_pks_[0]->name() == "darcy") ? 1.0 : 1.0 / CommonDefs::MOLAR_MASS_H2O;
+
+  double molar_mass = S_->Get<double>("const_fluid_molar_mass");
+  double scale = (sub_pks_[0]->name() == "darcy") ? 1.0 : 1.0 / molar_mass;
   fi.SetValues(kn, scale / gravity);
 
   // -- operators
@@ -250,8 +251,11 @@ FlowMatrixFracture_PK::Initialize()
   if (ti_list_->isSublist("initialization")) {
     // bool wells_on = ti_list_->sublist("initialization").get<bool>("active wells", false);
     double dt(-1e+98), dt_solver;
-    bool fail = time_stepper_->TimeStep(dt, dt_solver, solution_);
+    bool fail = time_stepper_->AdvanceStep(dt, dt_solver, solution_);
     if (fail) Exceptions::amanzi_throw("Solver for coupled flow did not converge.");
+
+    double t_ini = S_->get_time();
+    CommitStep(t_ini, t_ini, Tags::DEFAULT);
   }
 
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
@@ -267,13 +271,15 @@ FlowMatrixFracture_PK::Initialize()
 
 
 /* *******************************************************************
-* Performs one time step.
+* Performs one timestep.
 ******************************************************************* */
 bool
 FlowMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   // create copies of conservative fields
-  std::vector<std::string> fields = { "saturation_liquid",
+  std::vector<std::string> fields = { "pressure",
+                                      "fracture-pressure",
+                                      "saturation_liquid",
                                       "fracture-saturation_liquid",
                                       "fracture-aperture" };
   if (sub_pks_[0]->name() == "richards") {
@@ -303,7 +309,7 @@ FlowMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void
 FlowMatrixFracture_PK::FunctionalResidual(double t_old,
                                           double t_new,
-                                          Teuchos::RCP<TreeVector> u_old,
+                                          Teuchos::RCP<const TreeVector> u_old,
                                           Teuchos::RCP<TreeVector> u_new,
                                           Teuchos::RCP<TreeVector> f)
 {

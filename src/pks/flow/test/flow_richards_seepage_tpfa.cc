@@ -70,8 +70,9 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA)
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
+  Teuchos::ParameterList pk_tree("flow");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  Richards_PK* RPK = new Richards_PK(plist, "flow", S, soln);
+  Richards_PK* RPK = new Richards_PK(pk_tree, plist, S, soln);
 
   RPK->Setup();
   S->Setup();
@@ -120,7 +121,7 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA)
 
   AdvanceToSteadyState(S, *RPK, ti_specs, soln);
   RPK->set_dt(1.0);
-  printf("time step = %12.4f\n", RPK->get_dt());
+  printf("timestep = %12.4f\n", RPK->get_dt());
   printf("seepage face total = %12.4f\n", RPK->seepage_mass());
   RPK->CommitStep(0.0, 1.0, Tags::DEFAULT); // dummy times for flow
 

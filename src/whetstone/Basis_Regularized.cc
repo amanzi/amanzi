@@ -69,7 +69,9 @@ Basis_Regularized::BilinearFormNaturalToMy(DenseMatrix& A) const
 
   // calculate R^T * A * R
   for (int k = 0; k < nrows; ++k) {
-    for (int i = 0; i < nrows; ++i) { A(i, k) = A(i, k) * a[k] * a[i]; }
+    for (int i = 0; i < nrows; ++i) {
+      A(i, k) = A(i, k) * a[k] * a[i];
+    }
   }
 }
 

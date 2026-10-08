@@ -10,7 +10,7 @@
 /*!
 
 Interpolate a depth-based, 1D column of data onto a mesh.  Values are
-prescribed only to cells.  Expected is an HDF5 file in the format:
+prescribed only to cells.  Expected is an HDF5 or NetCDF file in the format:
 
 Depth coordinates z:
 
@@ -23,13 +23,14 @@ Function values u:
 
   /f[:] = (f_0(z_0), f_1(z_1), ..., f_n(z_n))
 
-.. _column-initialization-spec
-.. admonition:: column-initialization-spec
+.. _column-file-initialization-spec:
+.. admonition:: column-file-initialization-spec
 
    * `"file`" ``[string]`` HDF5 filename
    * `"z header`" ``[string]`` name of the z-coordinate data: `z` above.  Depth
      coordinates (positive downward from the surface), [m]
    * `"f header`" ``[string]`` name of the function data: `f` above.
+
 */
 
 
@@ -49,11 +50,9 @@ class Function;
 
 namespace Functions {
 
-void
-ReadColumnMeshFunction(Teuchos::ParameterList& plist, CompositeVector& v);
+void ReadColumnMeshFunction(Teuchos::ParameterList& plist, CompositeVector& v);
 
-void
-ReadColumnMeshFunction_ByDepth(const Function& func, CompositeVector& v);
+void ReadColumnMeshFunction_ByDepth(const Function& func, CompositeVector& v);
 
 } // namespace Functions
 } // namespace Amanzi

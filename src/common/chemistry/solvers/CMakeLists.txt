@@ -14,6 +14,6 @@ set(geochemsolvers_inc LUSolver.hh
 	               Newton.hh)
 
 add_amanzi_library(geochemsolvers SOURCE ${geochemsolvers_src}
-	                          LINK_LIBS geochemutil) 
+	                          LINK_LIBS geochemutil atk) 
 
 add_install_include_file(${geochemsolvers_inc})

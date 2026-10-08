@@ -29,6 +29,7 @@
 #include "Tensor.hh"
 
 // Operators
+#include "MeshDeformation.hh"
 #include "Analytic00.hh"
 #include "Analytic02.hh"
 
@@ -39,8 +40,13 @@
 /* *****************************************************************
 * Exactness test for diffusion solver on meshes with curved faces.
 ***************************************************************** */
+template<typename Analytic = Analytic00>
 void
-RunTestDiffusionCurved(int d, const std::string& filename, int icase)
+RunTestDiffusionCurved(int d,
+                       const std::string& filename,
+                       int icase,
+                       bool use_weight = false,
+                       int nx = 0)
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -50,7 +56,9 @@ RunTestDiffusionCurved(int d, const std::string& filename, int icase)
 
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: elliptic solver, mesh with curved faces, new algorithm\n";
+  if (MyPID == 0)
+    std::cout << "\nTest: elliptic solver, mesh with curved faces, new algorithm: " << filename
+              << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion_curved_face.xml";
@@ -63,26 +71,54 @@ RunTestDiffusionCurved(int d, const std::string& filename, int icase)
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  // RCP<const Mesh> mesh = meshfactory.create(0.0,0.0,0.0, 1.0,1.0,1.0, 2,2,2);
-  RCP<const Mesh> mesh = meshfactory.create(filename);
-
-  // populate diffusion coefficient using the problem with analytic solution.
-  Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
-    Teuchos::rcp(new std::vector<WhetStone::Tensor>());
+  RCP<Mesh> mesh;
+  if (filename == "" && d == 2) {
+    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, nx);
+    DeformMesh(mesh, 7, 1.0);
+  } else if (filename == "" && d == 3) {
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx);
+    DeformMesh(mesh, 7, 1.0);
+  } else {
+    mesh = meshfactory.create(filename);
+  }
   int ncells_owned = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
 
-  Analytic00 ana(mesh, 1);
-  // Analytic02 ana(mesh);
+  // analytic function
+  Teuchos::RCP<AnalyticBase> ana;
+  if (filename == "") ana = Teuchos::rcp(new Analytic(mesh, 1));
+  else ana = Teuchos::rcp(new Analytic(mesh, 1));
 
-  for (int c = 0; c < ncells_owned; c++) {
-    const Point& xc = mesh->getCellCentroid(c);
-    const WhetStone::Tensor& Kc = ana.TensorDiffusivity(xc, 0.0);
-    K->push_back(Kc);
+  // set optional weights
+  std::shared_ptr<CompositeVector> weight = nullptr;
+  if (use_weight) {
+    auto cvs = Teuchos::rcp(new CompositeVectorSpace());
+    cvs->SetMesh(mesh)->SetGhosted(true)->AddComponent("face", AmanziMesh::FACE, 1);
+    weight = std::make_shared<CompositeVector>(*cvs);
+
+    auto& weight_f = *weight->ViewComponent("face");
+    const auto fmap = mesh->getMap(AmanziMesh::Entity_kind::FACE, true);
+    const auto bfmap = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true);
+
+    weight_f.PutScalar(1.0);
+    for (int n = 0; n < bfmap.NumMyElements(); ++n) {
+      int f = fmap.LID(bfmap.GID(n));
+      weight_f[0][f] = 5.0;
+    }
   }
 
   // create diffusion operator
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion curved face");
-  auto op = Teuchos::rcp(new PDE_DiffusionCurvedFace(op_list, mesh));
+  auto op = Teuchos::rcp(new PDE_DiffusionCurvedFace(op_list, mesh, weight));
+
+  // -- diffusion coefficient
+  auto K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
+  for (int c = 0; c < ncells_owned; ++c) {
+    const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
+    const WhetStone::Tensor& Kc = ana->TensorDiffusivity(xc, 0.0);
+    K->push_back(Kc);
+  }
+
+  op->PDE_DiffusionCurvedFace::SetTensorCoefficient(K);
 
   // -- boundary data
   int nneu(0);
@@ -99,7 +135,7 @@ RunTestDiffusionCurved(int d, const std::string& filename, int icase)
 
     auto yf = (*op->get_bf())[f];
     bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
-    bc_value[f] = ana.pressure_exact(yf, 0.0);
+    bc_value[f] = ana->pressure_exact(yf, 0.0);
 
     // overwrite boundary data on case-by-case basis
     if (icase == 1) {
@@ -107,7 +143,7 @@ RunTestDiffusionCurved(int d, const std::string& filename, int icase)
         double area = mesh->getFaceArea(f);
         const Point& normal = mesh->getFaceNormal(f);
         bc_model[f] = OPERATOR_BC_NEUMANN;
-        bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;
+        bc_value[f] = ana->velocity_exact(xf, 0.0) * normal / area;
         nneu++;
       }
     }
@@ -152,13 +188,13 @@ RunTestDiffusionCurved(int d, const std::string& filename, int icase)
   // -- compute pressure error
   Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
   double pnorm, pl2_err, pinf_err;
-  ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
+  ana->ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 
   // -- coumpute flux error (work in progress)
   // Epetra_MultiVector& flx = *flux.ViewComponent("face", true);
   double unorm(1.0), ul2_err(0.0), uinf_err(0.0);
   // op->UpdateFlux(solution, flux);
-  // ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
+  // ana->ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
 
   if (MyPID == 0) {
     pl2_err /= pnorm;
@@ -175,11 +211,21 @@ RunTestDiffusionCurved(int d, const std::string& filename, int icase)
   }
 }
 
+TEST(OPERATOR_DIFFUSION_CURVED_3D_TENSOR)
+{
+  RunTestDiffusionCurved<Analytic02>(3, "test/sphere.exo", 0);
+}
+
+TEST(OPERATOR_DIFFUSION_CURVED_3D_CONVERGENCE)
+{
+  RunTestDiffusionCurved(3, "", 0, false, 10);
+  RunTestDiffusionCurved(3, "", 0, false, 20);
+}
 
 TEST(OPERATOR_DIFFUSION_CURVED_2D)
 {
   RunTestDiffusionCurved(2, "test/median15x16.exo", 0);
-  RunTestDiffusionCurved(2, "test/random10.exo", 0);
+  RunTestDiffusionCurved(2, "test/random10.exo", 0, true);
 }
 
 
@@ -187,5 +233,5 @@ TEST(OPERATOR_DIFFUSION_CURVED_3D)
 {
   RunTestDiffusionCurved(3, "test/random3D_05.exo", 1);
   RunTestDiffusionCurved(3, "test/hexes.exo", 1);
-  RunTestDiffusionCurved(3, "test/sphere.exo", 0);
+  RunTestDiffusionCurved(3, "test/shell.exo", 0, true);
 }

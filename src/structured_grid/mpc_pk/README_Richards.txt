@@ -164,7 +164,7 @@ setting the PostCheck function for SNES to PostCheckAlt
 
 
 Another biggie is the linear solver to use for the Newton system.  It
-turns out that as the time step gets arbitrarily large, the Jacobian
+turns out that as the timestep gets arbitrarily large, the Jacobian
 matrix becomes really badly conditioned, horribly asymmetric and
 dominated by off-diagonal terms.  Because of this, standard
 Krylov-based linear solvers just don't do well. One option is direct

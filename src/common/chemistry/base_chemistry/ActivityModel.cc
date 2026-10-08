@@ -23,7 +23,9 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
-ActivityModel::ActivityModel() : I_(0.0), Z_(0.0), M_(0.0), name_(""), num_species_(0) {}
+ActivityModel::ActivityModel()
+  : I_(0.0), Z_(0.0), M_(0.0), name_(""), num_species_(0)
+{}
 
 
 void
@@ -103,12 +105,16 @@ ActivityModel::CalculateSumC(const std::vector<Species>& primary_species,
 
   // primary species
   for (auto it = primary_species.begin(); it != primary_species.end(); ++it) {
-    if (it->name() != "h2o" && it->name() != "H2O") { M_ += it->molality(); }
+    if (it->name() != "h2o" && it->name() != "H2O") {
+      M_ += it->molality();
+    }
   }
 
   // secondary aqueous complexes
   for (auto it = secondary_species.begin(); it != secondary_species.end(); ++it) {
-    if (it->name() != "h2o" && it->name() != "H2O") { M_ += it->molality(); }
+    if (it->name() != "h2o" && it->name() != "H2O") {
+      M_ += it->molality();
+    }
   }
 }
 

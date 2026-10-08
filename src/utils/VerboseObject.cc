@@ -97,7 +97,9 @@ VerboseObject::VerboseObject(const Comm_ptr_type& comm,
   // Options from ParameterList
   // -- Set up the VerboseObject header.
   std::string headername(name);
-  if (plist.isParameter("name")) { headername = plist.get<std::string>("name"); }
+  if (plist.isParameter("name")) {
+    headername = plist.get<std::string>("name");
+  }
   int width = plist.get("header width", -1);
   set_name(headername, width);
 
@@ -135,24 +137,24 @@ VerboseObject::getVerbLevelString() const
   Teuchos::EVerbosityLevel level = getVerbLevel();
   std::string level_str;
   switch (level) {
-  case Teuchos::VERB_NONE:
-    level_str = "none";
-    break;
-  case Teuchos::VERB_LOW:
-    level_str = "low";
-    break;
-  case Teuchos::VERB_MEDIUM:
-    level_str = "medium";
-    break;
-  case Teuchos::VERB_HIGH:
-    level_str = "high";
-    break;
-  case Teuchos::VERB_EXTREME:
-    level_str = "extreme";
-    break;
-  case Teuchos::VERB_DEFAULT:
-    level_str = "default";
-    break;
+    case Teuchos::VERB_NONE:
+      level_str = "none";
+      break;
+    case Teuchos::VERB_LOW:
+      level_str = "low";
+      break;
+    case Teuchos::VERB_MEDIUM:
+      level_str = "medium";
+      break;
+    case Teuchos::VERB_HIGH:
+      level_str = "high";
+      break;
+    case Teuchos::VERB_EXTREME:
+      level_str = "extreme";
+      break;
+    case Teuchos::VERB_DEFAULT:
+      level_str = "default";
+      break;
   }
   return level_str;
 }

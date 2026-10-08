@@ -152,8 +152,8 @@ protected:
   Array<Geometry> geomArray;
   Array<BoxArray> gridArray;
   Array<IntVect> refRatio;
-  int nGrow, nLevs;
   bool initialized;
+  int nLevs, nGrow;
   Amr* parent;
   int nNodes_global, nNodes_local;
 

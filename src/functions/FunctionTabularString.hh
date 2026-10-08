@@ -25,7 +25,7 @@ namespace Amanzi {
 class FunctionTabularString {
  public:
   FunctionTabularString(const std::vector<double>& x, const std::vector<std::string>& y);
-  ~FunctionTabularString(){};
+  ~FunctionTabularString() {};
 
   std::string operator()(double xv) const;
 

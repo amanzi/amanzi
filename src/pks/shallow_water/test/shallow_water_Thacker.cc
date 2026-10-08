@@ -280,7 +280,9 @@ RunTest(int icase)
 
       analytical_exact_field(mesh, hh_ex, vel_ex, t_out);
 
-      if (iter % 5 == 0) { IO_Fields(t_out, iter, MyPID, io, *S, &hh_ex, &vel_ex); }
+      if (iter % 100 == 0) {
+        IO_Fields(t_out, iter, MyPID, io, *S, &hh_ex, &vel_ex);
+      }
 
       dt = SWPK.get_dt();
 
@@ -323,6 +325,8 @@ RunTest(int icase)
     L1error.push_back(err_L1);
 
     IO_Fields(t_out, iter, MyPID, io, *S, &hh_ex, &vel_ex);
+
+    WriteStateStatistics(*S);
   } // NN
 
   double L1_order = Amanzi::Utils::bestLSfit(dx, L1error);
@@ -335,9 +339,9 @@ RunTest(int icase)
   }
 
   if (icase == 1) {
-    CHECK(L1_order > 0.9); // first order scheme (first order time stepping)
+    CHECK(L1_order > 0.9); // first order scheme (first order timestepping)
   } else {
-    CHECK(L1_order > 1.8); //second order scheme (second/third order time stepping)
+    CHECK(L1_order > 1.8); //second order scheme (second/third order timestepping)
   }
 }
 

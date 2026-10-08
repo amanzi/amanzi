@@ -38,6 +38,7 @@ class Operator_Diagonal : public Operator {
     row_compname_ = *(cvs_row->begin());
     col_compname_ = *(cvs_col->begin());
     set_schema_string("INDICES");
+    nvec_ = cvs_row->NumVectors(row_compname_);
   }
 
   // copy constructor
@@ -60,6 +61,12 @@ class Operator_Diagonal : public Operator {
                                         int my_block_row,
                                         int my_block_col) const override;
 
+  virtual void SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
+                                        const SuperMap& map,
+                                        GraphFE& graph,
+                                        int my_block_row,
+                                        int my_block_col) const override;
+
   // visit methods for assemble
   virtual void AssembleMatrixOp(const Op_Diagonal& op,
                                 const SuperMap& map,
@@ -67,8 +74,15 @@ class Operator_Diagonal : public Operator {
                                 int my_block_row,
                                 int my_block_col) const override;
 
+  virtual void AssembleMatrixOp(const Op_Cell_Cell& op,
+                                const SuperMap& map,
+                                MatrixFE& mat,
+                                int my_block_row,
+                                int my_block_col) const override;
+
  private:
   std::string row_compname_, col_compname_;
+  int nvec_;
 };
 
 } // namespace Operators

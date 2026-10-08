@@ -41,27 +41,17 @@ class Darcy_PK : public Flow_PK {
            const Teuchos::RCP<State>& S,
            const Teuchos::RCP<TreeVector>& soln);
 
-  Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-           const std::string& pk_list_name,
-           Teuchos::RCP<State> S,
-           const Teuchos::RCP<TreeVector>& soln);
-
-  ~Darcy_PK(){};
+  ~Darcy_PK() {};
 
   // methods required for PK interface
   virtual void Setup() final;
   virtual void Initialize() final;
 
-  virtual void set_dt(double dt) override
-  {
-    dt_ = dt;
-    dt_desirable_ = dt;
-  }
-  virtual double get_dt() override { return dt_desirable_; }
+  virtual void set_dt(double dt) override { dt_ = dt; }
+  virtual double get_dt() override { return dt_; }
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
-  virtual void CalculateDiagnostics(const Tag& tag) override;
 
   virtual std::string name() override { return Keys::getKey(domain_, "darcy"); }
 
@@ -70,59 +60,55 @@ class Darcy_PK : public Flow_PK {
   // -- computes the non-linear functional f = f(t,u,udot) and related norm.
   virtual void FunctionalResidual(const double t_old,
                                   double t_new,
-                                  Teuchos::RCP<TreeVector> u_old,
+                                  Teuchos::RCP<const TreeVector> u_old,
                                   Teuchos::RCP<TreeVector> u_new,
                                   Teuchos::RCP<TreeVector> f) override;
-  virtual double
-  ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) override;
+  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
+                           Teuchos::RCP<const TreeVector> du) override;
 
   // -- preconditioner management
-  virtual int
-  ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu) override;
-  virtual void
-  UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt) override;
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
+                                  Teuchos::RCP<TreeVector> pu) override;
+  virtual void UpdatePreconditioner(double t,
+                                    Teuchos::RCP<const TreeVector> up,
+                                    double dt) override;
 
   // -- check the admissibility of a solution
   //    override with the actual admissibility check
   virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> u) override { return true; }
 
   // -- possibly modifies the predictor that is going to be used as a
-  //    starting value for the nonlinear solve in the time integrator,
-  virtual bool
-  ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u) override
-  {
-    return false;
-  }
+  //    starting value for the nonlinear solve in the time integrator
+  virtual bool ModifyPredictor(double dt,
+                               Teuchos::RCP<const TreeVector> u0,
+                               Teuchos::RCP<TreeVector> u) override;
 
   // -- possibly modifies the correction, after the nonlinear solver (i.e., NKA)
   //    has computed it, will return true if it did change the correction,
   //    so that the nonlinear iteration can store the modified correction
   //    and pass it to NKA so that the NKA space can be updated
-  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-  ModifyCorrection(double dt,
-                   Teuchos::RCP<const TreeVector> res,
-                   Teuchos::RCP<const TreeVector> u,
-                   Teuchos::RCP<TreeVector> du) override
-  {
-    return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
-  }
+  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult ModifyCorrection(
+    double dt,
+    Teuchos::RCP<const TreeVector> res,
+    Teuchos::RCP<const TreeVector> u,
+    Teuchos::RCP<TreeVector> du) override;
 
   // -- experimental approach -- calling this indicates that the time
   //    integration scheme is changing the value of the solution in state.
-  virtual void ChangedSolution() override{};
+  virtual void ChangedSolution() override {};
 
   // other members of the PK linear solvers
   void SolveFullySaturatedProblem(CompositeVector& u, bool wells_on);
 
   // access methods
-  virtual Teuchos::RCP<Operators::Operator>
-  my_operator(const Operators::OperatorType& type) override
+  virtual Teuchos::RCP<Operators::Operator> my_operator(
+    const Operators::OperatorType& type) override
   {
     return op_;
   }
 
-  virtual Teuchos::RCP<Operators::PDE_HelperDiscretization>
-  my_pde(const Operators::PDEType& type) override
+  virtual Teuchos::RCP<Operators::PDE_HelperDiscretization> my_pde(
+    const Operators::PDEType& type) override
   {
     return op_diff_;
   }
@@ -146,14 +132,14 @@ class Darcy_PK : public Flow_PK {
   Teuchos::RCP<Operators::PDE_Accumulation> op_acc_;
 
   int error_control_;
-  double dt_desirable_, dt_factor_;
+  double dt_factor_;
   std::vector<std::pair<double, double>> dt_history_; // statistics
 
   std::string solver_name_;
   bool initialize_with_darcy_;
   int num_itrs_;
 
-  Key compliance_key_;
+  Key compliance_key_, ref_aperture_key_, ref_pressure_key_;
 
   Teuchos::RCP<CompositeVector> solution;      // next pressure state
   Teuchos::RCP<Epetra_Vector> pdot_cells_prev; // time derivative of pressure

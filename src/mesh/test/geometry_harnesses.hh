@@ -21,7 +21,7 @@ using namespace Amanzi::AmanziMesh;
 //
 // This is a helper function -- simply runs MeshAudit
 //
-template <class MeshAudit_type, class Mesh_type>
+template<class MeshAudit_type, class Mesh_type>
 void
 testMeshAudit(const Teuchos::RCP<Mesh_type>& mesh)
 {
@@ -36,7 +36,7 @@ testMeshAudit(const Teuchos::RCP<Mesh_type>& mesh)
 //
 // Used to check that partial counts add up to global count in parallel tests.
 //
-template <typename T>
+template<typename T>
 void
 CHECK_CLOSE_SUMALL(T exp, T contrib, const Amanzi::Comm_type& comm, T tol = 0)
 {
@@ -67,7 +67,7 @@ CHECK_MPI_ALL(std::vector<int>& contrib, const Amanzi::Comm_type& comm)
 //
 // Tests geometry given expected values
 //
-template <class Mesh_type>
+template<class Mesh_type>
 void
 testMeshGeometry(const Teuchos::RCP<Mesh_type>& mesh,
                  const Point_List& exp_cell_centroids,
@@ -195,7 +195,7 @@ testMeshGeometry(const Teuchos::RCP<Mesh_type>& mesh,
 //
 // Form the expected values and call testGeometry for a 2D box
 //
-template <class Mesh_type>
+template<class Mesh_type>
 void
 testGeometryQuad(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny)
 {
@@ -263,7 +263,7 @@ testGeometryQuad(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny)
 //
 // Form the expected values and call testGeometry for a 3D cube
 //
-template <class Mesh_type>
+template<class Mesh_type>
 void
 testGeometryCube(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int nz)
 {
@@ -357,25 +357,27 @@ testGeometryCube(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int nz)
 //
 // Note this is valid on 2D quads too with default value nz = -1
 //
-template <class Mesh_type>
+template<class Mesh_type>
 void
 testExteriorMapsUnitBox(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int nz = -1)
 {
   // check faces are on the boundary
-  int nbfaces = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false).NumGlobalElements();
-  int nbfaces_test;
+  int nbfaces_global =
+    mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false).NumGlobalElements();
+  int nbfaces_global_test;
   if (nz < 0) {
-    nbfaces_test = 2 * nx + 2 * ny;
+    nbfaces_global_test = 2 * nx + 2 * ny;
   } else {
-    nbfaces_test = nx * ny * 2 + nx * nz * 2 + ny * nz * 2;
+    nbfaces_global_test = nx * ny * 2 + nx * nz * 2 + ny * nz * 2;
   }
-  CHECK_EQUAL(nbfaces_test, nbfaces);
+  CHECK_EQUAL(nbfaces_global_test, nbfaces_global);
 
   auto& bfaces = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true);
+  int nbfaces_all = bfaces.NumMyElements();
   auto& faces = mesh->getMap(AmanziMesh::Entity_kind::FACE, true);
-  auto bface_ids = mesh->getBoundaryFaces();
+  auto bface_ids = mesh->getBoundaryFaces(); // this is ALL
 
-  for (int j = 0; j != bfaces.NumMyElements(); ++j) {
+  for (int j = 0; j != nbfaces_all; ++j) {
     auto bf = faces.LID(bfaces.GID(j));
     CHECK_EQUAL(bface_ids[j], bf);
     auto f_centroid = mesh->getFaceCentroid(bf);
@@ -386,26 +388,38 @@ testExteriorMapsUnitBox(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int
         break;
       }
     }
-    if (!found) { std::cout << "not found: " << bf << " at " << f_centroid << std::endl; }
+    if (!found) {
+      std::cout << "not found: " << bf << " at " << f_centroid << std::endl;
+    }
     CHECK(found);
+  }
+
+  // check that the owned map is a subset of the all map
+  int nbfaces_owned = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false).NumMyElements();
+  if (mesh->getComm()->NumProc() == 1) {
+    CHECK_EQUAL(nbfaces_owned, nbfaces_all);
+  } else {
+    CHECK(nbfaces_all > nbfaces_owned);
   }
 
   // check nodes are on the boundary
   //
   // NOTE: this appears broken in current master, see #583
-  int nbnodes = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_NODE, false).NumGlobalElements();
-  int nbnodes_test;
+  int nbnodes_global =
+    mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_NODE, false).NumGlobalElements();
+  int nbnodes_global_test;
   if (nz < 0) {
-    nbnodes_test = 2 * (nx - 1) + 2 * (ny - 1) + 4; // don't double count the corners
+    nbnodes_global_test = 2 * (nx - 1) + 2 * (ny - 1) + 4; // don't double count the corners
   } else {
-    nbnodes_test = 2 * (nx - 1) * (ny - 1) + 2 * (nx - 1) * (nz - 1) + 2 * (ny - 1) * (nz - 1) +
-                   4 * (nx - 1) + 4 * (ny - 1) + 4 * (nz - 1) + 8;
+    nbnodes_global_test = 2 * (nx - 1) * (ny - 1) + 2 * (nx - 1) * (nz - 1) +
+                          2 * (ny - 1) * (nz - 1) + 4 * (nx - 1) + 4 * (ny - 1) + 4 * (nz - 1) + 8;
   }
-  CHECK_EQUAL(nbnodes_test, nbnodes);
+  CHECK_EQUAL(nbnodes_global_test, nbnodes_global);
 
   auto& bnodes = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_NODE, true);
+  int nbnodes_all = bnodes.NumMyElements();
   auto& nodes = mesh->getMap(AmanziMesh::Entity_kind::NODE, true);
-  for (int j = 0; j != bnodes.NumMyElements(); ++j) {
+  for (int j = 0; j != nbnodes_all; ++j) {
     std::cout << " bnode " << j << " GID " << bnodes.GID(j) << " LID " << nodes.LID(bnodes.GID(j))
               << std::endl;
 
@@ -419,13 +433,21 @@ testExteriorMapsUnitBox(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int
     }
     CHECK(found);
   }
+
+  // check that the owned map is a subset of the all map
+  int nbnodes_owned = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_NODE, false).NumMyElements();
+  if (mesh->getComm()->NumProc() == 1) {
+    CHECK_EQUAL(nbnodes_owned, nbnodes_all);
+  } else {
+    CHECK(nbnodes_all > nbnodes_owned);
+  }
 }
 
 
 //
 // Test a columnar system
 //
-template <MemSpace_kind MEM>
+template<MemSpace_kind MEM>
 inline void
 testColumnsUniformDz(const MeshCache<MEM>& mesh, double dz)
 {
@@ -443,13 +465,17 @@ testColumnsUniformDz(const MeshCache<MEM>& mesh, double dz)
     // check all owned cells first, then all ghosted
     if (owned) {
       if (cells[0] < ncells_owned) {
-        for (const auto& c : cells) { CHECK(c < ncells_owned); }
+        for (const auto& c : cells) {
+          CHECK(c < ncells_owned);
+        }
       } else {
         owned = false;
       }
     }
     if (!owned) {
-      for (const auto& c : cells) { CHECK(c >= ncells_owned); }
+      for (const auto& c : cells) {
+        CHECK(c >= ncells_owned);
+      }
     }
 
     // check geometry

@@ -27,7 +27,7 @@ struct BeakerState {
       porosity(1.0),
       saturation(1.0),
       water_density(1000.0),
-      volume(1.0){};
+      volume(1.0) {};
 
   std::vector<double> total; // molarity
   std::vector<double> total_sorbed;

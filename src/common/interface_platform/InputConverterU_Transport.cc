@@ -58,9 +58,9 @@ InputConverterU::TranslateTransport_(const std::string& domain)
   // process CFL number
   bool flag;
   double cfl(1.0);
+  std::string prefix("unstructured_controls, unstr_transport_controls, ");
 
-  node =
-    GetUniqueElementByTagsString_("unstructured_controls, unstr_transport_controls, cfl", flag);
+  node = GetUniqueElementByTagsString_(prefix + "cfl", flag);
   if (flag) {
     text = mm.transcode(node->getTextContent());
     cfl = strtod(text, NULL);
@@ -79,23 +79,20 @@ InputConverterU::TranslateTransport_(const std::string& domain)
   out_list.set<bool>("transport subcycling", TRANSPORT_SUBCYCLING);
 
   // overwrite data from expert parameters
-  node = GetUniqueElementByTagsString_(
-    "unstructured_controls, unstr_transport_controls, sub_cycling", flag);
+  node = GetUniqueElementByTagsString_(prefix + "sub_cycling", flag);
   if (flag) {
     text = mm.transcode(node->getTextContent());
     out_list.set<bool>("transport subcycling", (strcmp(text, "on") == 0));
   }
 
-  node = GetUniqueElementByTagsString_(
-    "unstructured_controls, unstr_transport_controls, flux_method", flag);
+  node = GetUniqueElementByTagsString_(prefix + "flux_method", flag);
   if (flag) {
     text = mm.transcode(node->getTextContent());
     out_list.set<std::string>("method", text);
   }
 
   int nspace(1), ntime(1), poly_order(0);
-  std::string tags_default("unstructured_controls, unstr_transport_controls");
-  node = GetUniqueElementByTagsString_(tags_default + ", algorithm", flag);
+  node = GetUniqueElementByTagsString_(prefix + "algorithm", flag);
   if (flag) {
     std::string order = GetTextContentS_(node,
                                          "explicit, explicit first-order, explicit second-order, "
@@ -110,10 +107,10 @@ InputConverterU::TranslateTransport_(const std::string& domain)
     } else if (order == "explicit") {
       nspace = -1;
       ntime = -1;
-      node = GetUniqueElementByTagsString_(tags_default + ", spatial_order", flag);
+      node = GetUniqueElementByTagsString_(prefix + "spatial_order", flag);
       if (flag) nspace = std::strtol(mm.transcode(node->getTextContent()), NULL, 10);
 
-      node = GetUniqueElementByTagsString_(tags_default + ", temporal_order", flag);
+      node = GetUniqueElementByTagsString_(prefix + "temporal_order", flag);
       if (flag) ntime = std::strtol(mm.transcode(node->getTextContent()), NULL, 10);
 
       if (nspace < 0 || nspace > 2 || ntime < 0 || ntime > 4) {
@@ -156,15 +153,13 @@ InputConverterU::TranslateTransport_(const std::string& domain)
     .set<std::string>("limiter stencil", "face to cells");
 
   // -- overwrite data from expert parameters
-  node =
-    GetUniqueElementByTagsString_("unstructured_controls, unstr_transport_controls, limiter", flag);
+  node = GetUniqueElementByTagsString_(prefix + "limiter", flag);
   if (flag) {
     std::string limiter = GetTextContentS_(node, "tensorial, Kuzmin, Barth-Jespersen");
     trp_lift.set<std::string>("limiter", limiter);
   }
 
-  node = GetUniqueElementByTagsString_(
-    "unstructured_controls, unstr_transport_controls, limiter_stencil", flag);
+  node = GetUniqueElementByTagsString_(prefix + "limiter_stencil", flag);
   if (flag) {
     std::string stencil = GetTextContentS_(
       node, "node-to-cells, face-to-cells, cell-to-closest-cells, cell-to-all-cells");
@@ -172,8 +167,7 @@ InputConverterU::TranslateTransport_(const std::string& domain)
     trp_lift.set<std::string>("limiter stencil", stencil);
   }
 
-  node = GetUniqueElementByTagsString_(
-    "unstructured_controls, unstr_transport_controls, reconstruction_weight", flag);
+  node = GetUniqueElementByTagsString_(prefix + "reconstruction_weight", flag);
   if (flag) {
     std::string weight = GetTextContentS_(node, "constant, inverse-distance");
     std::replace(weight.begin(), weight.end(), '-', ' ');
@@ -212,7 +206,7 @@ InputConverterU::TranslateTransport_(const std::string& domain)
 
           std::string formula = GetAttributeValueS_(node, "alpha", TYPE_NONE, false, "m");
 
-          tmp_list.sublist("parameters for scalar")
+          tmp_list.sublist("scalar parameters")
             .sublist("alpha")
             .sublist("function-exprtk")
             .set<int>("number of arguments", dim_ + 1)
@@ -223,9 +217,7 @@ InputConverterU::TranslateTransport_(const std::string& domain)
           al = GetAttributeValueD_(node, "alpha_l", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
           at = GetAttributeValueD_(node, "alpha_t", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
 
-          tmp_list.sublist("parameters for Bear")
-            .set<double>("alpha_l", al)
-            .set<double>("alpha_t", at);
+          tmp_list.sublist("Bear parameters").set<double>("alpha_l", al).set<double>("alpha_t", at);
         } else if (strcmp(model.c_str(), "burnett_frind") == 0) {
           tmp_list.set<std::string>("model", "Burnett-Frind");
 
@@ -233,7 +225,7 @@ InputConverterU::TranslateTransport_(const std::string& domain)
           ath = GetAttributeValueD_(node, "alpha_th", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
           atv = GetAttributeValueD_(node, "alpha_tv", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
 
-          tmp_list.sublist("parameters for Burnett-Frind")
+          tmp_list.sublist("Burnett-Frind parameters")
             .set<double>("alpha_l", al)
             .set<double>("alpha_th", ath)
             .set<double>("alpha_tv", atv);
@@ -247,7 +239,7 @@ InputConverterU::TranslateTransport_(const std::string& domain)
           ath = GetAttributeValueD_(node, "alpha_th", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
           atv = GetAttributeValueD_(node, "alpha_tv", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
 
-          tmp_list.sublist("parameters for Lichtner-Kelkar-Robinson")
+          tmp_list.sublist("Lichtner-Kelkar-Robinson parameters")
             .set<double>("alpha_lh", alh)
             .set<double>("alpha_lv", alv)
             .set<double>("alpha_th", ath)
@@ -288,17 +280,19 @@ InputConverterU::TranslateTransport_(const std::string& domain)
   out_list.sublist("molecular diffusion") = TranslateMolecularDiffusion_();
 
   // add dispersion/diffusion operator
-  node = GetUniqueElementByTagsString_(
-    "unstructured_controls, unstr_transport_controls, dispersion_discretization_method", flag);
+  node = GetUniqueElementByTagsString_(prefix + "dispersion_discretization_method", flag);
   std::string disc_methods;
-  if (flag)
-    disc_methods = mm.transcode(node->getTextContent());
+  if (flag) disc_methods = mm.transcode(node->getTextContent());
   else
     disc_methods = (mesh_rectangular_) ? "mfd-monotone_for_hex" : "mfd-optimized_for_monotonicity";
   disc_methods.append(", mfd-two_point_flux_approximation");
 
   out_list.sublist("operators") =
     TranslateDiffusionOperator_(disc_methods, "diffusion_operator", "", "", "", domain, false);
+
+  // auxiliary fields
+  node = GetUniqueElementByTagsString_(prefix + "auxiliary_data", flag);
+  if (flag) out_list.set<std::string>("auxiliary data", "molar_concentration");
 
   // multiscale models sublist
   out_list.sublist("multiscale models") = TranslateTransportMSM_();
@@ -379,7 +373,7 @@ InputConverterU::TranslateMolecularDiffusion_()
       if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
       tagname = mm.transcode(inode->getNodeName());
-      if (strcmp(tagname, species.c_str()) != 0) continue;
+      if (strcmp(tagname, species.c_str() ) != 0) continue;
 
       text = mm.transcode(inode->getTextContent());
       double val = GetAttributeValueD_(
@@ -409,7 +403,7 @@ InputConverterU::TranslateMolecularDiffusion_()
       if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
       tagname = mm.transcode(inode->getNodeName());
-      if (strcmp(tagname, species.c_str()) != 0) continue;
+      if (strcmp(tagname, species.c_str() ) != 0) continue;
 
       text = mm.transcode(inode->getTextContent());
       double val = GetAttributeValueD_(
@@ -525,7 +519,7 @@ InputConverterU::TranslateTransportMSM_()
       if (!flag) ThrowErrorMissing_("materials", "element", "matrix", "multiscale_model");
 
       int nnodes =
-        GetAttributeValueL_(node, "number_of_nodes", TYPE_NUMERICAL, 0, INT_MAX, false, 1);
+        GetAttributeValueI_(node, "number_of_nodes", TYPE_NUMERICAL, 0, INT_MAX, false, 1);
       double depth = GetAttributeValueD_(node, "depth", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
 
       msm_slist.set<int>("number of matrix nodes", nnodes)
@@ -560,8 +554,7 @@ InputConverterU::TranslateTransportBCs_(const std::string& domain)
   bool flag;
   if (domain == "fracture")
     node = GetUniqueElementByTagsString_("fracture_network, boundary_conditions", flag);
-  else
-    node = GetUniqueElementByTagsString_("boundary_conditions", flag);
+  else node = GetUniqueElementByTagsString_("boundary_conditions", flag);
   if (!flag) return out_list;
 
   children = node->getChildNodes();
@@ -599,7 +592,9 @@ InputConverterU::TranslateTransportBCs_(const std::string& domain)
 
     // geochemical BCs
     node = GetUniqueElementByTagsString_(inode, "liquid_phase, geochemistry_component", flag);
-    if (flag) { TranslateTransportGeochemistry_(node, bcname, regions, out_list); }
+    if (flag) {
+      TranslateTransportGeochemistry_(node, bcname, regions, out_list);
+    }
   }
 
   // backward compatibility: translate constraints for native chemistry
@@ -707,7 +702,7 @@ InputConverterU::TranslateTransportGeochemistry_(DOMNode* node,
   // create vectors of values and forms
   std::vector<double> times;
   std::vector<std::string> forms, values;
-  for (std::map<double, std::string>::iterator it = tp_values.begin(); it != tp_values.end();
+  for (std::map<double, std::string>::iterator it = tp_values.begin() ; it != tp_values.end();
        ++it) {
     times.push_back(it->first);
     values.push_back(it->second);
@@ -855,7 +850,9 @@ InputConverterU::TranslateTransportSources_()
 
     // geochemical sources
     node = GetUniqueElementByTagsString_(inode, "liquid_phase, geochemistry_component", flag);
-    if (flag) { TranslateTransportGeochemistry_(node, srcname, regions, out_list); }
+    if (flag) {
+      TranslateTransportGeochemistry_(node, srcname, regions, out_list);
+    }
   }
 
   return out_list;

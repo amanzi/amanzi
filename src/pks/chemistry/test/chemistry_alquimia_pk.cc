@@ -191,6 +191,7 @@ TEST(INITIALIZE_CRUNCH)
   auto pks_list = plist->sublist("PK tree").sublist("chemistry");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   auto CPK = Teuchos::rcp(new Alquimia_PK(pks_list, plist, S, soln));
+  CPK->parseParameterList();
   CPK->Setup();
 
   S->Setup();
@@ -202,6 +203,7 @@ TEST(INITIALIZE_CRUNCH)
 
   // Now create second chemistry PK
   auto CPK2 = Teuchos::rcp(new Alquimia_PK(pks_list, plist, S, soln));
+  CPK2->parseParameterList();
   CPK2->Setup();
   CPK2->Initialize();
 }

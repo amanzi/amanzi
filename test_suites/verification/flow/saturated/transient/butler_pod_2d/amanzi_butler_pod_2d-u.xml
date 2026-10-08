@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="1.5-dev">
+<amanzi_input type="unstructured" version="1.7-dev">
   <misc>
     <echo_translated_input file_name="oldspec.xml" format="unstructured_native" />
   </misc>
@@ -45,10 +45,10 @@
   </definitions>
 
   <process_kernels>
-    <comments>Single-phase transient flow</comments>
-    <flow model="saturated" state="on" />
-    <transport state="off" />
-    <chemistry engine="none" state="off" />
+    <pk mode="transient">
+      <comments>Single-phase transient flow</comments>
+      <flow model="saturated" state="on" />
+    </pk>
   </process_kernels>
 
   <execution_controls>
@@ -106,9 +106,8 @@
 
   <phases>
     <liquid_phase name="water">
-      <eos>false</eos>
-      <viscosity>1.002E-03</viscosity>
-      <density>1000.0</density>
+      <eos model="constant" viscosity="1.002E-03" density="1000.0"/> 
+      <molar_mass>0.018</molar_mass>
     </liquid_phase>
   </phases>
 
@@ -117,7 +116,7 @@
       <comments>Material properties for zone 1</comments>
       <assigned_regions>cylinder</assigned_regions>
       <mechanical_properties>
-        <porosity value="0.25" />
+        <porosity model="constant" value="0.25" />
         <specific_storage model="constant" value="2.0e-4" />
       </mechanical_properties>
       <permeability x="1.187E-10" y="1.187E-10" z="1.187E-10" />
@@ -126,7 +125,7 @@
       <comments>Material properties for zone 2</comments>
       <assigned_regions>bg</assigned_regions>
       <mechanical_properties>
-        <porosity value="0.25" />
+        <porosity model="constant" value="0.25" />
         <specific_storage model="constant" value="2.0e-4" />
       </mechanical_properties>
       <permeability x="1.187E-9" y="1.187E-9" z="1.187E-9" />
@@ -151,7 +150,7 @@
       <assigned_regions>xz1,xz2,yz1,yz2</assigned_regions>
       <liquid_phase name="water">
         <liquid_component name="water">
-          <uniform_pressure function="constant" start="1.07785e6" value="1.07785e6" />
+          <uniform_pressure function="constant" start="0.0" value="1.07785e6" />
         </liquid_component>
       </liquid_phase>
     </boundary_condition>

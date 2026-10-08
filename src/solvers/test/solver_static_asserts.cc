@@ -29,7 +29,7 @@
 //
 // Default is false
 //
-template <typename Operator, typename Dummy = void>
+template<typename Operator, typename Dummy = void>
 struct is_assembled {
   const static bool value = false;
 };
@@ -43,7 +43,7 @@ struct is_assembled {
 // {
 //   const static bool value = true;
 // };
-template <typename Operator>
+template<typename Operator>
 struct is_assembled<
   Operator,
   typename std::enable_if<std::is_member_function_pointer<

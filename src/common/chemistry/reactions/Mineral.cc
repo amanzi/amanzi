@@ -51,14 +51,16 @@ Mineral::Mineral(int id,
 *
 * TODO(bandre): Right now we are just setting volume fraction to
 * zero if they go negative, introducing mass balance errors! Need
-* to adjust time step or reaction rate in the N-R solve!
+* to adjust timestep or reaction rate in the N-R solve!
 ******************************************************************* */
 void
 Mineral::UpdateVolumeFraction(double rate, double dt)
 {
   // delta_vf = [m^3/mole] * [moles/m^3/sec] * [sec]
   volume_fraction_ -= molar_volume_ * rate * dt;
-  if (volume_fraction_ < 0.0) { volume_fraction_ = 0.0; }
+  if (volume_fraction_ < 0.0) {
+    volume_fraction_ = 0.0;
+  }
 }
 
 
@@ -92,7 +94,9 @@ Mineral::Display(const Teuchos::Ptr<VerboseObject> vo) const
   message << "    " << name() << " = ";
   for (unsigned int i = 0; i < species_names_.size(); i++) {
     message << std::setprecision(2) << stoichiometry_[i] << " " << species_names_[i];
-    if (i < species_names_.size() - 1) { message << " + "; }
+    if (i < species_names_.size() - 1) {
+      message << " + ";
+    }
   }
 
   if (SecondarySpecies::h2o_stoich_ != 0.0) {

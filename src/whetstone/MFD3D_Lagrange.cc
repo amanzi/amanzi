@@ -198,7 +198,9 @@ MFD3D_Lagrange::ProjectorCell_(int c,
 
   uc.Reshape(d_, 1, true);
   for (int i = 0; i < nnodes; i++) {
-    for (int k = 0; k < d_; k++) { uc(k + 1) += R(i, k) * vf[i](0); }
+    for (int k = 0; k < d_; k++) {
+      uc(k + 1) += R(i, k) * vf[i](0);
+    }
   }
   uc *= 1.0 / mesh_->getCellVolume(c);
 }

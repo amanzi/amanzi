@@ -1,10 +1,11 @@
 diff -ruNbB petsc-v3.13-old/config/PETSc/Configure.py petsc-v3.13-new/config/PETSc/Configure.py
 --- petsc-v3.13-old/config/PETSc/Configure.py	2020-03-29 20:59:40.000000000 -0600
 +++ petsc-v3.13-new/config/PETSc/Configure.py	2020-08-11 20:39:31.000000000 -0600
-@@ -79,6 +79,7 @@
+@@ -79,7 +79,8 @@
      self.blasLapack    = framework.require('config.packages.BlasLapack',self)
      self.mpi           = framework.require('config.packages.MPI',       self)
      self.fortran       = framework.require('config.compilersFortran',   self)
+     self.ftncmdline    = framework.require('config.utilities.fortranCommandLine',self)
 +    self.cmake         = framework.require('config.packages.cmake',     self)
      self.externalpackagesdir = framework.require('PETSc.options.externalpackagesdir',self)
  

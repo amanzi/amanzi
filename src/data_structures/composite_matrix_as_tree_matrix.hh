@@ -15,22 +15,24 @@ Wraps a CompositeMatrix as a TreeMatrix.
 ------------------------------------------------------------------------- */
 
 #ifndef AMANZI_COMPOSITEMATRIX_AS_TREEMATRIX_HH_
-#  define AMANZI_COMPOSITEMATRIX_AS_TREEMATRIX_HH_
+#define AMANZI_COMPOSITEMATRIX_AS_TREEMATRIX_HH_
 
-#  include "Teuchos_RCP.hpp"
+#include "Teuchos_RCP.hpp"
 
-#  include "CompositeVector.hh"
-#  include "CompositeVectorSpace.hh"
-#  include "composite_matrix.hh"
-#  include "TreeVector.hh"
-#  include "TreeVectorSpace.hh"
-#  include "tree_matrix.hh"
+#include "CompositeVector.hh"
+#include "CompositeVectorSpace.hh"
+#include "composite_matrix.hh"
+#include "TreeVector.hh"
+#include "TreeVectorSpace.hh"
+#include "tree_matrix.hh"
 
 namespace Amanzi {
 
 class CompositeMatrixAsTreeMatrix : public TreeMatrix {
  public:
-  CompositeMatrixAsTreeMatrix(const Teuchos::RCP<const CompositeMatrix>& cm) : cm_(cm) {}
+  CompositeMatrixAsTreeMatrix(const Teuchos::RCP<const CompositeMatrix>& cm)
+    : cm_(cm)
+  {}
 
   CompositeMatrixAsTreeMatrix(const CompositeMatrixAsTreeMatrix& other) { cm_ = other.m_->Clone(); }
 

@@ -19,7 +19,7 @@
 #include "NCP_MolarDensities.hh"
 #include "NCP_MoleFractions.hh"
 #include "ProductEvaluator.hh"
-#include "SaturationGasEvaluator.hh"
+#include "SaturationEvaluator.hh"
 #include "TccGas.hh"
 #include "TccLiquid.hh"
 #include "TotalComponentStorage.hh"
@@ -31,21 +31,20 @@ namespace Amanzi {
 namespace Multiphase {
 
 Utils::RegisteredFactory<Evaluator, MassDensityGas> MassDensityGas::fac_("mass density gas");
-Utils::RegisteredFactory<Evaluator, MoleFractionLiquid>
-  MoleFractionLiquid::fac_("mole fraction liquid");
+Utils::RegisteredFactory<Evaluator, MoleFractionLiquid> MoleFractionLiquid::fac_(
+  "mole fraction liquid");
 Utils::RegisteredFactory<Evaluator, NCP_HenryLaw> NCP_HenryLaw::fac_("ncp henry law");
-Utils::RegisteredFactory<Evaluator, NCP_MolarDensities>
-  NCP_MolarDensities::fac_("ncp molar densities");
-Utils::RegisteredFactory<Evaluator, NCP_MoleFractions>
-  NCP_MoleFractions::fac_("ncp mole fraction gas");
+Utils::RegisteredFactory<Evaluator, NCP_MolarDensities> NCP_MolarDensities::fac_(
+  "ncp molar densities");
+Utils::RegisteredFactory<Evaluator, NCP_MoleFractions> NCP_MoleFractions::fac_(
+  "ncp mole fraction gas");
 Utils::RegisteredFactory<Evaluator, ProductEvaluator> ProductEvaluator::fac_("product");
-Utils::RegisteredFactory<Evaluator, SaturationGasEvaluator>
-  SaturationGasEvaluator::fac_("saturation gas");
+Utils::RegisteredFactory<Evaluator, SaturationEvaluator> SaturationEvaluator::fac_("saturation");
 
-Utils::RegisteredFactory<Evaluator, TotalComponentStorage>
-  TotalComponentStorage::fac_("storage component");
-Utils::RegisteredFactory<Evaluator, TotalComponentStorage_Tcc>
-  TotalComponentStorage_Tcc::fac_("storage component tcc");
+Utils::RegisteredFactory<Evaluator, TotalComponentStorage> TotalComponentStorage::fac_(
+  "storage component");
+Utils::RegisteredFactory<Evaluator, TotalComponentStorage_Tcc> TotalComponentStorage_Tcc::fac_(
+  "storage component tcc");
 Utils::RegisteredFactory<Evaluator, TotalComponentStorage_Jaffre>
   TotalComponentStorage_Jaffre::fac_("storage component jaffre");
 Utils::RegisteredFactory<Evaluator, TotalWaterStorage> TotalWaterStorage::fac_("storage water");

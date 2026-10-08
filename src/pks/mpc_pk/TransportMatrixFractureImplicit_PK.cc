@@ -41,13 +41,9 @@ TransportMatrixFractureImplicit_PK::TransportMatrixFractureImplicit_PK(
     glist_(glist),
     soln_(soln)
 {
-  std::string pk_name = pk_tree.name();
-  auto found = pk_name.rfind("->");
-  if (found != std::string::npos) pk_name.erase(0, found + 2);
-
   // We need the flow list
   auto pk_list = Teuchos::sublist(glist, "PKs", true);
-  tp_list_ = Teuchos::sublist(pk_list, pk_name, true);
+  tp_list_ = Teuchos::sublist(pk_list, name_, true);
 
   vo_ = Teuchos::rcp(new VerboseObject("TranCoupledImplicit_PK", *tp_list_));
 }
@@ -107,12 +103,12 @@ TransportMatrixFractureImplicit_PK::Initialize()
 {
   PK_MPCStrong<PK_BDF>::Initialize();
 
-  // set a huge time step that will be limited by advance step
+  // set a huge timestep that will be limited by advance step
   set_dt(1e+98);
 
-  TimestepControllerFactory<TreeVector> factory;
   auto ts_list = tp_list_->sublist("time integrator").sublist("BDF1");
-  ts_control_ = factory.Create(ts_list, Teuchos::null, Teuchos::null);
+  ts_control_ =
+    createTimestepController<TreeVector>("BDF1", ts_list, S_, Teuchos::null, Teuchos::null);
 
   // diagonal blocks in tree operator are the Transport Implicit PKs
   pk_matrix_ = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[0]);
@@ -250,7 +246,8 @@ TransportMatrixFractureImplicit_PK::Initialize()
   // time integrators
   if (nspace_m_ == 2 && nspace_f_ == 2) {
     Teuchos::ParameterList& bdf1_list = ti_list.sublist("BDF1");
-    bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
+    bdf1_dae_ = Teuchos::rcp(
+      new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1", bdf1_list, *this, soln_->get_map(), S_));
   }
 
   // Test SPD properties of the matrix.
@@ -277,6 +274,7 @@ TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new, bool
 
   num_aqueous_ = pk_matrix_->total_component_concentration()->ViewComponent("cell")->NumVectors();
 
+  S_->Get<CV_t>(matrix_vol_flowrate_key_, Tags::DEFAULT).ScatterMasterToGhosted("face");
   fia_->SetValues(S_->Get<CV_t>(matrix_vol_flowrate_key_));
 
   // fork between low-order and high-order
@@ -319,7 +317,7 @@ TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new, bool
 
 
 /* *******************************************************************
-* One time step for aqueous components only
+* One timestep for aqueous components only
 ******************************************************************* */
 bool
 TransportMatrixFractureImplicit_PK::AdvanceStepLO_(double t_old, double t_new, int* tot_itrs)
@@ -363,7 +361,6 @@ TransportMatrixFractureImplicit_PK::AdvanceStepLO_(double t_old, double t_new, i
     }
 
     // create solver
-    op_tree_matrix_->AssembleMatrix();
     op_tree_matrix_->ComputeInverse();
 
     auto& tvs = op_tree_matrix_->DomainMap();
@@ -380,12 +377,12 @@ TransportMatrixFractureImplicit_PK::AdvanceStepLO_(double t_old, double t_new, i
 
     bool fail = (ierr != 0);
     if (fail) {
-      dt_ = ts_control_->get_timestep(dt_, -1);
+      dt_ = ts_control_->getTimestep(dt_, -1, true);
       return fail;
     }
   }
 
-  dt_ = ts_control_->get_timestep(dt_, 1);
+  dt_ = ts_control_->getTimestep(dt_, 1, true);
   return false;
 }
 
@@ -414,7 +411,7 @@ TransportMatrixFractureImplicit_PK::AdvanceStepHO_(double t_old, double t_new, i
     *soln_->SubVector(0)->Data() = *tcc_m;
     *soln_->SubVector(1)->Data() = *tcc_f;
 
-    bool fail = bdf1_dae_->TimeStep(dt_, dt_next, soln_);
+    bool fail = bdf1_dae_->AdvanceStep(dt_, dt_next, soln_);
     dt_ = dt_next;
     if (fail) return fail;
   }
@@ -422,10 +419,28 @@ TransportMatrixFractureImplicit_PK::AdvanceStepHO_(double t_old, double t_new, i
   *tcc_m = *soln_->SubVector(0)->Data();
   *tcc_f = *soln_->SubVector(1)->Data();
 
-  bdf1_dae_->CommitSolution(dt_, soln_);
   *tot_itrs = bdf1_dae_->number_nonlinear_steps() - *tot_itrs;
 
   return false;
+}
+
+
+/* *******************************************************************
+* Commit solution to the history
+******************************************************************* */
+void
+TransportMatrixFractureImplicit_PK::CommitStep(double t_old, double t_new, const Tag& tag)
+{
+  if (nspace_m_ == 1 && nspace_f_ == 1) {
+    PK_MPCStrong<PK_BDF>::CommitStep(t_old, t_new, tag);
+  } else if (nspace_m_ == 2 && nspace_f_ == 2) {
+    double dt = t_new - t_old;
+    bdf1_dae_->CommitSolution(dt, soln_);
+
+    for (unsigned int i = 0; i != sub_pks_.size(); ++i) {
+      sub_pks_[i]->CommitStep(t_old, t_new, tag);
+    }
+  }
 }
 
 
@@ -435,7 +450,9 @@ TransportMatrixFractureImplicit_PK::AdvanceStepHO_(double t_old, double t_new, i
 void
 TransportMatrixFractureImplicit_PK::CalculateDiagnostics(const Tag& tag)
 {
-  if (nspace_m_ == 2 && nspace_f_ == 2) { PK_MPCStrong<PK_BDF>::CalculateDiagnostics(tag); }
+  if (nspace_m_ == 2 && nspace_f_ == 2) {
+    PK_MPCStrong<PK_BDF>::CalculateDiagnostics(tag);
+  }
 }
 
 
@@ -445,7 +462,7 @@ TransportMatrixFractureImplicit_PK::CalculateDiagnostics(const Tag& tag)
 void
 TransportMatrixFractureImplicit_PK::FunctionalResidual(double t_old,
                                                        double t_new,
-                                                       Teuchos::RCP<TreeVector> u_old,
+                                                       Teuchos::RCP<const TreeVector> u_old,
                                                        Teuchos::RCP<TreeVector> u_new,
                                                        Teuchos::RCP<TreeVector> f)
 {

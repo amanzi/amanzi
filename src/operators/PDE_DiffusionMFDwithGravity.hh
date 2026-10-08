@@ -38,7 +38,9 @@ namespace Operators {
 
 class BCs;
 
-class PDE_DiffusionMFDwithGravity : public PDE_DiffusionMFD, public PDE_DiffusionWithGravity {
+class PDE_DiffusionMFDwithGravity
+  : public PDE_DiffusionMFD
+  , public PDE_DiffusionWithGravity {
  public:
   PDE_DiffusionMFDwithGravity(Teuchos::ParameterList& plist,
                               const Teuchos::RCP<Operator>& global_op)
@@ -149,8 +151,7 @@ class PDE_DiffusionMFDwithGravity : public PDE_DiffusionMFD, public PDE_Diffusio
                                    const Teuchos::Ptr<CompositeVector>& flux) override;
 
   virtual void AddGravityToRHS_();
-  inline AmanziGeometry::Point
-  GravitySpecialDirection_(int f, AmanziMesh::Entity_ID_View& workspace) const;
+  inline AmanziGeometry::Point GravitySpecialDirection_(int f) const;
   void Init_(Teuchos::ParameterList& plist);
 
  protected:

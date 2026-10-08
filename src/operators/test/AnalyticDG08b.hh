@@ -52,8 +52,8 @@ class AnalyticDG08b : public AnalyticDGBase {
       cone_(true),
       hump_(true),
       cylinder_(true),
-      hump_amp_(1.0){};
-  ~AnalyticDG08b(){};
+      hump_amp_(1.0) {};
+  ~AnalyticDG08b() {};
 
   // control of details
   void set_shapes(bool cone, bool hump, bool cylinder)
@@ -66,8 +66,8 @@ class AnalyticDG08b : public AnalyticDGBase {
 
   // analytic data in conventional Taylor basis
   // -- diffusion tensor
-  virtual Amanzi::WhetStone::Tensor
-  Tensor(const Amanzi::AmanziGeometry::Point& p, double t) override
+  virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p,
+                                           double t) override
   {
     Amanzi::WhetStone::Tensor K(2, 1);
     K(0, 0) = 1.0;
@@ -136,7 +136,9 @@ class AnalyticDG08b : public AnalyticDGBase {
     if (cylinder_) {
       auto dp = p - r2;
       double tmp = Amanzi::AmanziGeometry::norm(dp);
-      if (tmp <= R2 && !(dp[1] >= 0.0 && std::fabs(dp[0]) <= W2)) { sol(0) += 1.0; }
+      if (tmp <= R2 && !(dp[1] >= 0.0 && std::fabs(dp[0]) <= W2)) {
+        sol(0) += 1.0;
+      }
     }
   }
 

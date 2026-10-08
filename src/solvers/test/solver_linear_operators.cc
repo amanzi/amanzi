@@ -34,8 +34,9 @@ SUITE(SOLVERS)
     using Vector_t = Epetra_Vector;
     using VectorSpace_t = Epetra_Map;
 
-    Matrix(){};
-    Matrix(const Teuchos::RCP<Epetra_Map>& map) : map_(map)
+    Matrix() {};
+    Matrix(const Teuchos::RCP<Epetra_Map>& map)
+      : map_(map)
     {
       x_[0] = 0.00699270335645641;
       x_[1] = 0.01398540671291281;
@@ -43,8 +44,9 @@ SUITE(SOLVERS)
       x_[3] = 0.02688033938777295;
       x_[4] = 0.03122225970045909;
     };
-    ~Matrix(){};
-    Matrix(const Matrix& other) : map_(other.map_){};
+    ~Matrix() {};
+    Matrix(const Matrix& other)
+      : map_(other.map_) {};
 
     Teuchos::RCP<Matrix> Clone() const { return Teuchos::rcp(new Matrix(*this)); }
 

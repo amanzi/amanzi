@@ -138,7 +138,9 @@ RadioactiveDecay::UpdateRate(const std::vector<double>& total,
   //    total * volume_h2o + total_sorbed * volume_bulk
   double volume_h2o = porosity * saturation * bulk_volume * 1000.0; // [L]
   rate_ = volume_h2o * total.at(parent_id());
-  if (total_sorbed.size() > 0) { rate_ += bulk_volume * total_sorbed.at(parent_id()); }
+  if (total_sorbed.size() > 0) {
+    rate_ += bulk_volume * total_sorbed.at(parent_id());
+  }
   rate_ *= rate_constant();
 }
 
@@ -176,7 +178,9 @@ RadioactiveDecay::AddContributionToJacobian(const MatrixBlock& dtotal,
     // row loop
     for (int j = 0; j < J->size(); ++j) {
       double tempd = dtotal(icomp0, j) * volume_h2o;
-      if (dtotal_sorbed.size() > 0) { tempd += dtotal_sorbed(icomp0, j) * bulk_volume; }
+      if (dtotal_sorbed.size() > 0) {
+        tempd += dtotal_sorbed(icomp0, j) * bulk_volume;
+      }
       tempd *= -rate_constant() * stoichiometry_.at(i);
       J->AddValue(icomp, j, tempd);
     }
@@ -196,13 +200,17 @@ RadioactiveDecay::Display(const Teuchos::Ptr<VerboseObject> vo) const
   // write the overall reaction
   // reactants:
   message << std::setw(6) << std::fixed << std::setprecision(2);
-  if (stoichiometry_.at(0) != -1.0) { message << -stoichiometry_.at(0) << " "; }
+  if (stoichiometry_.at(0) != -1.0) {
+    message << -stoichiometry_.at(0) << " ";
+  }
   message << parent_name() << " --> ";
 
   // products, note we start at 1 (0=parent)!
   for (unsigned int i = 1; i < species_names_.size(); i++) {
     message << stoichiometry_.at(i) << " " << species_names_.at(i);
-    if (i < species_names_.size() - 1) { message << " + "; }
+    if (i < species_names_.size() - 1) {
+      message << " + ";
+    }
   }
   message << std::endl;
   message << std::setprecision(6);

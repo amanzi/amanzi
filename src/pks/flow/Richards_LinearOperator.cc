@@ -97,7 +97,8 @@ Richards_PK::SolveFullySaturatedProblem(double t_old,
 void
 Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector> u)
 {
-  std::vector<int>& bc_model = op_bc_->bc_model();
+  auto op_bc = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state");
+  std::vector<int>& bc_model = op_bc->bc_model();
 
   UpdateSourceBoundaryData(t_new, t_new, *u);
 
@@ -143,7 +144,8 @@ Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector> u)
   op_preconditioner_diff_->ModifyMatrices(*u);
 
   // solve non-symmetric problem
-  Teuchos::ParameterList lin_op_list = linear_operator_list_->sublist(solver_name_constraint_);
+  std::string solver_name = ti_list_->sublist("dae constraint").get<std::string>("linear solver");
+  Teuchos::ParameterList lin_op_list = linear_operator_list_->sublist(solver_name);
   auto solver = AmanziSolvers::createIterativeMethod(lin_op_list, op_matrix_, op_preconditioner_);
   solver->InitializeInverse();
   solver->ComputeInverse();
@@ -179,8 +181,9 @@ Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector> u)
 void
 Richards_PK::UpwindInflowBoundary(Teuchos::RCP<const CompositeVector> u)
 {
-  std::vector<int>& bc_model = op_bc_->bc_model();
-  std::vector<double>& bc_value = op_bc_->bc_value();
+  auto op_bc = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state");
+  std::vector<int>& bc_model = op_bc->bc_model();
+  std::vector<double>& bc_value = op_bc->bc_value();
 
   const auto& mu_c = *S_->Get<CompositeVector>(viscosity_liquid_key_).ViewComponent("cell");
   const auto& u_cell = *u->ViewComponent("cell");
@@ -194,7 +197,7 @@ Richards_PK::UpwindInflowBoundary(Teuchos::RCP<const CompositeVector> u)
 
       const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
       double area = mesh_->getFaceArea(f);
-      double Knn = ((K[c] * normal) * normal) / (area * area);
+      double Knn = (((*K_)[c] * normal) * normal) / (area * area);
       // old version
       // double save = 3.0;
       // k_face[0][f] = std::min(1.0, -save * bc_value[f] * mu_c[0][c] / (Knn * rho_ * rho_ * g_));
@@ -216,8 +219,9 @@ Richards_PK::UpwindInflowBoundary(Teuchos::RCP<const CompositeVector> u)
 void
 Richards_PK::UpwindInflowBoundary_New(Teuchos::RCP<const CompositeVector> u)
 {
-  std::vector<int>& bc_model = op_bc_->bc_model();
-  std::vector<double>& bc_value = op_bc_->bc_value();
+  auto op_bc = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state");
+  std::vector<int>& bc_model = op_bc->bc_model();
+  std::vector<double>& bc_value = op_bc->bc_value();
 
   const auto& mu_c = *S_->Get<CompositeVector>(viscosity_liquid_key_).ViewComponent("cell");
   auto& k_face = *alpha_upwind_->ViewComponent("face", true);

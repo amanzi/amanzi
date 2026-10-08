@@ -227,7 +227,7 @@ AmanziStructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
     amrptr->init(strt_time,stop_time);
 
     // If we set the regrid_on_restart flag and if we are *not* going to take
-    //    a time step then we want to go ahead and regrid here.
+    //    a timestep then we want to go ahead and regrid here.
     if ( amrptr->RegridOnRestart() &&
          ( (amrptr->levelSteps(0) >= max_step) ||
            (amrptr->cumTime() >= stop_time) ) )

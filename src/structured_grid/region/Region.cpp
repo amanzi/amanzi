@@ -65,8 +65,7 @@ Region::setVal_DoIt(BaseFab<T>&     fab,
                     int             scomp,
                     int             ncomp) const
 {
-  int nval = val.size();
-  BL_ASSERT(ncomp-scomp <= nval);
+  BL_ASSERT(ncomp-scomp <= val.size());
 
   Array<Real> x(BL_SPACEDIM);
   const Box& box = fab.box();
@@ -152,8 +151,7 @@ PointRegion::setVal_DoIt(BaseFab<T>&     fab,
                          int             scomp,
                          int             ncomp) const
 {
-  int nval = val.size();
-  BL_ASSERT(ncomp-scomp <= nval);
+  BL_ASSERT(ncomp-scomp <= val.size());
 
   const Box& box = fab.box();
   const IntVect& se = box.smallEnd();

@@ -62,6 +62,7 @@ WRMmp_Corey::dKdS(double sl, int phase)
   } else if (phase == MULTIPHASE_PHASE_GAS) {
     return -2.0 * factor * std::pow(1.0 - sle, 2.0) * (1.0 + 2.0 * sle);
   }
+  return 0.0; // silence warnings
 }
 
 

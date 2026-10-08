@@ -64,19 +64,22 @@ class Data {
  public:
   // This should never be used, only exists to make containers happy. This is
   // NOT a valid object as it has no type information.
-  Data() : p_(std::unique_ptr<Data_Intf>()){};
+  Data()
+    : p_(std::unique_ptr<Data_Intf>()) {};
 
   // Constructor with type information
   // This should not be used, instead use the non-member function:
   // CreateNullData<T>().
-  Data(std::unique_ptr<Data_Intf> t) : p_(std::move(t)){};
+  Data(std::unique_ptr<Data_Intf> t)
+    : p_(std::move(t)) {};
 
   // Copy constructor deleted, as we don't necessarily know how to copy
   // construct
   Data(const Data& other) = delete;
 
   // move constructor
-  Data(Data&& other) noexcept : p_(std::move(other.p_)){};
+  Data(Data&& other) noexcept
+    : p_(std::move(other.p_)) {};
 
   // steal an r-value
   void swap(Data&& other) noexcept { p_.swap(other.p_); }
@@ -95,74 +98,76 @@ class Data {
   Data& operator=(Data&& other) = default;
 
   // accessor -- const ref
-  template <typename T>
+  template<typename T>
   const T& Get() const
   {
     if (!p_) {
       Errors::Message msg;
-      msg << " data not created through RecordSet::SetType() or State::CreateData()";
+      msg << " data not created through RecordSet::CreateData() or State::CreateData()";
       throw(msg);
     }
     return p_->Get<T>();
   }
 
   // accessor -- non-const ref
-  template <typename T>
+  template<typename T>
   T& GetW()
   {
     if (!p_) {
       Errors::Message msg;
-      msg << " data not created through RecordSet::SetType() or State::CreateData()";
+      msg << " data not created through RecordSet::CreateData() or State::CreateData()";
       throw(msg);
     }
     return p_->GetW<T>();
   }
 
   // accessor -- const pointer
-  template <typename T>
+  template<typename T>
   Teuchos::RCP<const T> GetPtr() const
   {
     if (!p_) {
       Errors::Message msg;
-      msg << " data not created through RecordSet::SetType() or State::CreateData()";
+      msg << " data not created through RecordSet::CreateData() or State::CreateData()";
       throw(msg);
     }
     return p_->GetPtr<T>();
   }
 
   // accessor -- non-const shared pointer
-  template <typename T>
+  template<typename T>
   Teuchos::RCP<T> GetPtrW()
   {
     if (!p_) {
       Errors::Message msg;
-      msg << " data not created through RecordSet::SetType() or State::CreateData()";
+      msg << " data not created through RecordSet::CreateData() or State::CreateData()";
       throw(msg);
     }
     return p_->GetPtrW<T>();
   }
 
   // mutator -- set data by pointer
-  template <typename T>
+  template<typename T>
   void SetPtr(Teuchos::RCP<T> t)
   {
-    if (!p_) { p_ = std::make_unique<Data_Impl<T>>(t); }
+    if (!p_) {
+      p_ = std::make_unique<Data_Impl<T>>(t);
+    }
     p_->SetPtr(t);
   }
 
   // mutator -- set value
-  template <typename T>
+  template<typename T>
   void Assign(const T& t)
   {
     if (!p_) {
       Errors::Message msg;
-      msg << " data not created through RecordSet::SetType() or State::CreateData()";
+      msg << " data not created through RecordSet::CreateData() or State::CreateData()";
       throw(msg);
     }
     p_->Assign(t);
   }
 
-  template <typename T>
+  template<typename T>
   bool ValidType() const
   {
     return p_->ValidType<T>();
@@ -175,7 +180,7 @@ class Data {
   {
     if (!p_) {
       Errors::Message msg;
-      msg << " data not created through RecordSet::SetType() or State::CreateData()";
+      msg << " data not created through RecordSet::CreateData() or State::CreateData()";
       throw(msg);
     }
     p_->WriteVis(vis, fieldname, subfieldnames);
@@ -187,7 +192,7 @@ class Data {
   {
     if (!p_) {
       Errors::Message msg;
-      msg << " data not created through RecordSet::SetType() or State::CreateData()";
+      msg << " data not created through RecordSet::CreateData() or State::CreateData()";
       throw(msg);
     }
     p_->WriteCheckpoint(chkp, fieldname, subfieldnames);
@@ -199,7 +204,7 @@ class Data {
   {
     if (!p_) {
       Errors::Message msg;
-      msg << " data not created through RecordSet::SetType() or State::CreateData()";
+      msg << " data not created through RecordSet::CreateData() or State::CreateData()";
       throw(msg);
     }
     return p_->ReadCheckpoint(chkp, fieldname, subfieldnames);
@@ -211,7 +216,7 @@ class Data {
   {
     if (!p_) {
       Errors::Message msg;
-      msg << " data not created through RecordSet::SetType() or State::CreateData()";
+      msg << " data not created through RecordSet::CreateData() or State::CreateData()";
       throw(msg);
     }
     return p_->Initialize(plist, fieldname, subfieldnames);
@@ -225,7 +230,7 @@ class Data {
 
 
 // Non-member constructor of default (empty) Data
-template <typename T>
+template<typename T>
 Data
 data()
 {
@@ -233,7 +238,7 @@ data()
 }
 
 // Non-member constructor of Data with RCP
-template <typename T>
+template<typename T>
 Data
 data(const Teuchos::RCP<T>& p)
 {

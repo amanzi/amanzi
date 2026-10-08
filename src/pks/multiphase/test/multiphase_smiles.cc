@@ -108,7 +108,9 @@ TEST(MULTIPHASE_SMILES)
   int iloop(0);
   double t(0.0), tend(3.1558e+8), dt(3.1558e+6), dt_max(2 * 3.1558e+6);
   while (t < tend) {
-    while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 10; }
+    while (MPK->AdvanceStep(t, t + dt, false)) {
+      dt /= 10;
+    }
 
     MPK->CommitStep(t, t + dt, Tags::DEFAULT);
     S->advance_cycle();

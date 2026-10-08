@@ -32,7 +32,8 @@ namespace Mechanics {
 
 class MechanicsBoundaryFunction : public PK_DomainFunction {
  public:
-  MechanicsBoundaryFunction() : bc_name_("undefined"){};
+  MechanicsBoundaryFunction()
+    : bc_name_("undefined") {};
   MechanicsBoundaryFunction(const Teuchos::ParameterList& plist);
 
   // modifiers and access
@@ -45,10 +46,14 @@ class MechanicsBoundaryFunction : public PK_DomainFunction {
   void set_kind(AmanziMesh::Entity_kind kind) { kind_ = kind; }
   AmanziMesh::Entity_kind kind() { return kind_; }
 
+  std::string plane_strain_direction() { return plane_strain_direction_; }
+
  private:
   std::string bc_name_;
   WhetStone::DOF_Type type_; // type of dofs related to this bc
   AmanziMesh::Entity_kind kind_;
+
+  std::string plane_strain_direction_;
 };
 
 } // namespace Mechanics

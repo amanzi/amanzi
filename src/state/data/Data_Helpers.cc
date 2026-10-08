@@ -33,7 +33,7 @@ namespace Helpers {
 // ======================================================================
 // Specializations for simple data types
 // ======================================================================
-template <>
+template<>
 void
 WriteVis<double>(const Visualization& vis,
                  const Key& fieldname,
@@ -43,7 +43,7 @@ WriteVis<double>(const Visualization& vis,
   vis.Write(fieldname, t);
 }
 
-template <>
+template<>
 void
 WriteCheckpoint<double>(const Checkpoint& chkp,
                         const Key& fieldname,
@@ -53,7 +53,7 @@ WriteCheckpoint<double>(const Checkpoint& chkp,
   chkp.Write(fieldname, t);
 }
 
-template <>
+template<>
 bool
 ReadCheckpoint<double>(const Checkpoint& chkp,
                        const Key& fieldname,
@@ -63,7 +63,7 @@ ReadCheckpoint<double>(const Checkpoint& chkp,
   return chkp.Read(fieldname, t);
 }
 
-template <>
+template<>
 bool
 Initialize<double>(Teuchos::ParameterList& plist,
                    double& t,
@@ -79,7 +79,7 @@ Initialize<double>(Teuchos::ParameterList& plist,
 }
 
 
-template <>
+template<>
 void
 WriteVis<int>(const Visualization& vis,
               const Key& fieldname,
@@ -89,7 +89,7 @@ WriteVis<int>(const Visualization& vis,
   vis.Write(fieldname, t);
 }
 
-template <>
+template<>
 void
 WriteCheckpoint<int>(const Checkpoint& chkp,
                      const Key& fieldname,
@@ -99,7 +99,7 @@ WriteCheckpoint<int>(const Checkpoint& chkp,
   chkp.Write(fieldname, t);
 }
 
-template <>
+template<>
 bool
 ReadCheckpoint<int>(const Checkpoint& chkp,
                     const Key& fieldname,
@@ -109,7 +109,7 @@ ReadCheckpoint<int>(const Checkpoint& chkp,
   return chkp.Read(fieldname, t);
 }
 
-template <>
+template<>
 bool
 Initialize<int>(Teuchos::ParameterList& plist,
                 int& t,
@@ -128,7 +128,7 @@ Initialize<int>(Teuchos::ParameterList& plist,
 // ======================================================================
 // Specializations for geometric objects
 // ======================================================================
-template <>
+template<>
 void
 WriteVis<AmanziGeometry::Point>(const Visualization& vis,
                                 const Key& fieldname,
@@ -136,7 +136,7 @@ WriteVis<AmanziGeometry::Point>(const Visualization& vis,
                                 const AmanziGeometry::Point& vec)
 {}
 
-template <>
+template<>
 bool
 Initialize<AmanziGeometry::Point>(Teuchos::ParameterList& plist,
                                   AmanziGeometry::Point& p,
@@ -157,7 +157,7 @@ Initialize<AmanziGeometry::Point>(Teuchos::ParameterList& plist,
 // ======================================================================
 // Specializations for CompositeVector
 // ======================================================================
-template <>
+template<>
 void
 WriteVis<CompositeVector>(const Visualization& vis,
                           const Key& fieldname,
@@ -203,7 +203,7 @@ WriteVis<CompositeVector>(const Visualization& vis,
   }
 }
 
-template <>
+template<>
 void
 WriteCheckpoint<CompositeVector>(const Checkpoint& chkp,
                                  const Key& fieldname,
@@ -238,7 +238,7 @@ WriteCheckpoint<CompositeVector>(const Checkpoint& chkp,
   }
 }
 
-template <>
+template<>
 bool
 ReadCheckpoint<CompositeVector>(const Checkpoint& chkp,
                                 const Key& fieldname,
@@ -272,7 +272,7 @@ ReadCheckpoint<CompositeVector>(const Checkpoint& chkp,
   return flag;
 }
 
-template <>
+template<>
 bool
 Initialize<CompositeVector>(Teuchos::ParameterList& plist,
                             CompositeVector& t,
@@ -350,65 +350,12 @@ Initialize<CompositeVector>(Teuchos::ParameterList& plist,
     std::vector<std::string> complist;
 
     // -- potential use of a mapping operator first --
-    bool map_normal = plist.get<bool>("dot with normal", false);
-    if (map_normal) {
-      // map_normal take a vector and dots it with face normals
-      AMANZI_ASSERT(t.NumComponents() == 1);                              // one comp
-      AMANZI_ASSERT(t.HasComponent("face"));                              // is named face
-      AMANZI_ASSERT(t.Location("face") == AmanziMesh::Entity_kind::FACE); // is on face
-      AMANZI_ASSERT(t.NumVectors("face") == 1);                           // and is scalar
-
-      // create a vector on faces of the appropriate dimension
-      int dim = t.Mesh()->getSpaceDimension();
-
-      CompositeVectorSpace cvs;
-      cvs.SetMesh(t.Mesh());
-      cvs.SetComponent("face", AmanziMesh::Entity_kind::FACE, dim);
-      Teuchos::RCP<CompositeVector> vel_vec = Teuchos::rcp(new CompositeVector(cvs));
-
-      // Evaluate the velocity function
-      auto func = Functions::CreateCompositeVectorFunction(func_plist, vel_vec->Map(), complist);
-      func->Compute(t_ini, vel_vec.ptr());
-
-      // CV's map may differ from the regular mesh map due to presense of fractures
-      const auto& fmap = *t.Map().Map("face", true);
-      int nfaces_owned =
-        t.Mesh()->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
-
-      Epetra_MultiVector& dat_f = *t.ViewComponent("face");
-      const Epetra_MultiVector& vel_f = *vel_vec->ViewComponent("face");
-
-      // Dot the velocity with the normal
-      // -- two branches: single flux per face, multiple fluxes
-      int dir;
-      AmanziGeometry::Point vel(dim);
-      for (int f = 0; f != nfaces_owned; ++f) {
-        for (int i = 0; i < dim; ++i) vel[i] = vel_f[i][f];
-
-        int ndofs = fmap.ElementSize(f);
-        int g = fmap.FirstPointInElement(f);
-        if (ndofs == 1) {
-          const AmanziGeometry::Point& normal = t.Mesh()->getFaceNormal(f);
-          dat_f[0][g] = vel * normal;
-        } else {
-          auto cells = t.Mesh()->getFaceCells(f);
-
-          for (int i = 0; i < ndofs; ++i) {
-            const AmanziGeometry::Point& normal = t.Mesh()->getFaceNormal(f, cells[i], &dir);
-            dat_f[0][g + i] = (vel * normal) * dir;
-          }
-        }
-      }
-      initialized = true;
-
-    } else {
-      auto t_ptr = Teuchos::rcpFromRef(t).ptr();
-
-      // no map, just evaluate the function
-      auto func = Functions::CreateCompositeVectorFunction(func_plist, t.Map(), complist);
-      func->Compute(t_ini, t_ptr);
-      initialized = true;
-    }
+    bool dot_with_normal = plist.get<bool>("dot with normal", false);
+    auto t_ptr = Teuchos::rcpFromRef(t).ptr();
+    auto func =
+      Functions::CreateCompositeVectorFunction(func_plist, t.Map(), complist, dot_with_normal);
+    func->Compute(t_ini, t_ptr);
+    initialized = true;
   }
 
   if ((t.HasComponent("face") || t.HasComponent("boundary_face")) && t.HasComponent("cell") &&
@@ -422,7 +369,7 @@ Initialize<CompositeVector>(Teuchos::ParameterList& plist,
 // ======================================================================
 // Specializations for Epetra_Vector
 // ======================================================================
-template <>
+template<>
 void
 WriteVis<Epetra_Vector>(const Visualization& vis,
                         const Key& fieldname,
@@ -432,7 +379,7 @@ WriteVis<Epetra_Vector>(const Visualization& vis,
   vis.Write(fieldname, vec);
 }
 
-template <>
+template<>
 void
 WriteCheckpoint<Epetra_Vector>(const Checkpoint& chkp,
                                const Key& fieldname,
@@ -442,7 +389,7 @@ WriteCheckpoint<Epetra_Vector>(const Checkpoint& chkp,
   chkp.Write(fieldname, vec);
 }
 
-template <>
+template<>
 bool
 ReadCheckpoint<Epetra_Vector>(const Checkpoint& chkp,
                               const Key& fieldname,
@@ -452,7 +399,7 @@ ReadCheckpoint<Epetra_Vector>(const Checkpoint& chkp,
   return chkp.Read(fieldname, vec);
 }
 
-template <>
+template<>
 bool
 Initialize<Epetra_Vector>(Teuchos::ParameterList& plist,
                           Epetra_Vector& t,
@@ -487,21 +434,21 @@ Initialize<Epetra_Vector>(Teuchos::ParameterList& plist,
 }
 
 
-template <>
+template<>
 bool
 Equivalent(const Epetra_Map& one, const Epetra_Map& two)
 {
   return one.SameAs(two);
 }
 
-template <>
+template<>
 bool
 Equivalent(const Epetra_BlockMap& one, const Epetra_BlockMap& two)
 {
   return one.SameAs(two);
 }
 
-template <>
+template<>
 bool
 Equivalent(const TreeVectorSpace& one, const TreeVectorSpace& two)
 {
@@ -512,7 +459,7 @@ Equivalent(const TreeVectorSpace& one, const TreeVectorSpace& two)
 // ======================================================================
 // Specializations for TreeVector
 // ======================================================================
-template <>
+template<>
 void
 WriteVis<TreeVector>(const Visualization& vis,
                      const Key& fieldname,
@@ -525,10 +472,12 @@ WriteVis<TreeVector>(const Visualization& vis,
     WriteVis(vis, subvec_name, nullptr, *subvec);
     ++i;
   }
-  if (vec.Data() != Teuchos::null) { WriteVis(vis, fieldname + "_data", nullptr, *vec.Data()); }
+  if (vec.Data() != Teuchos::null) {
+    WriteVis(vis, fieldname + "_data", nullptr, *vec.Data());
+  }
 }
 
-template <>
+template<>
 void
 WriteCheckpoint<TreeVector>(const Checkpoint& chkp,
                             const Key& fieldname,
@@ -546,7 +495,7 @@ WriteCheckpoint<TreeVector>(const Checkpoint& chkp,
   }
 }
 
-template <>
+template<>
 bool
 ReadCheckpoint<TreeVector>(const Checkpoint& chkp,
                            const Key& fieldname,
@@ -566,7 +515,7 @@ ReadCheckpoint<TreeVector>(const Checkpoint& chkp,
   return flag;
 }
 
-template <>
+template<>
 bool
 Initialize<TreeVector>(Teuchos::ParameterList& plist,
                        TreeVector& t,
@@ -580,7 +529,7 @@ Initialize<TreeVector>(Teuchos::ParameterList& plist,
 // ======================================================================
 // Specializations for Teuchos::Array<double>
 // ======================================================================
-template <>
+template<>
 void
 WriteVis<Teuchos::Array<double>>(const Visualization& vis,
                                  const Key& fieldname,
@@ -599,7 +548,7 @@ WriteVis<Teuchos::Array<double>>(const Visualization& vis,
   }
 }
 
-template <>
+template<>
 void
 WriteCheckpoint<Teuchos::Array<double>>(const Checkpoint& chkp,
                                         const Key& fieldname,
@@ -618,7 +567,7 @@ WriteCheckpoint<Teuchos::Array<double>>(const Checkpoint& chkp,
   }
 }
 
-template <>
+template<>
 bool
 ReadCheckpoint<Teuchos::Array<double>>(const Checkpoint& chkp,
                                        const Key& fieldname,
@@ -640,7 +589,7 @@ ReadCheckpoint<Teuchos::Array<double>>(const Checkpoint& chkp,
 }
 
 
-template <>
+template<>
 bool
 Initialize<Teuchos::Array<double>>(Teuchos::ParameterList& plist,
                                    Teuchos::Array<double>& t,

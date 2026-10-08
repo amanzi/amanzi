@@ -37,8 +37,17 @@ class Op_Cell_FaceCell : public Op {
     matrices_shadow = matrices;
   }
 
-  virtual void
-  ApplyMatrixFreeOp(const Operator* assembler, const CompositeVector& X, CompositeVector& Y) const
+  virtual Teuchos::RCP<Op> DeepClone() const override
+  {
+    auto op = Teuchos::rcp(new Op_Cell_FaceCell(*this));
+    *op->diag = *diag;
+    *op->diag_shadow = *diag_shadow;
+    return op;
+  }
+
+  virtual void ApplyMatrixFreeOp(const Operator* assembler,
+                                 const CompositeVector& X,
+                                 CompositeVector& Y) const override
   {
     assembler->ApplyMatrixFreeOp(*this, X, Y);
   }
@@ -47,7 +56,7 @@ class Op_Cell_FaceCell : public Op {
                                         const SuperMap& map,
                                         GraphFE& graph,
                                         int my_block_row,
-                                        int my_block_col) const
+                                        int my_block_col) const override
   {
     assembler->SymbolicAssembleMatrixOp(*this, map, graph, my_block_row, my_block_col);
   }
@@ -56,19 +65,21 @@ class Op_Cell_FaceCell : public Op {
                                 const SuperMap& map,
                                 MatrixFE& mat,
                                 int my_block_row,
-                                int my_block_col) const
+                                int my_block_col) const override
   {
     assembler->AssembleMatrixOp(*this, map, mat, my_block_row, my_block_col);
   }
 
-  virtual void Rescale(const CompositeVector& scaling)
+  virtual void Rescale(const CompositeVector& scaling) override
   {
     if (scaling.HasComponent("face")) {
       const Epetra_MultiVector& s_c = *scaling.ViewComponent("face", true);
       for (int c = 0; c != matrices.size(); ++c) {
         const auto& faces = mesh_->getCellFaces(c);
         for (int n = 0; n != faces.size(); ++n) {
-          for (int m = 0; m != faces.size(); ++m) { matrices[c](n, m) *= s_c[0][faces[n]]; }
+          for (int m = 0; m != faces.size(); ++m) {
+            matrices[c](n, m) *= s_c[0][faces[n]];
+          }
           matrices[c](n, faces.size()) *= s_c[0][faces[n]];
         }
       }
@@ -81,7 +92,9 @@ class Op_Cell_FaceCell : public Op {
       AmanziMesh::Entity_ID_View face;
       for (int c = 0; c != matrices.size(); ++c) {
         int nfaces = mesh_->getCellNumFaces(c);
-        for (int m = 0; m != nfaces; ++m) { matrices[c](nfaces, m) *= s_c[0][c]; }
+        for (int m = 0; m != nfaces; ++m) {
+          matrices[c](nfaces, m) *= s_c[0][c];
+        }
         matrices[c](nfaces, nfaces) *= s_c[0][c];
       }
     }

@@ -25,8 +25,8 @@ namespace Flow {
 
 class SpecificStorage {
  public:
-  SpecificStorage(Teuchos::ParameterList& plist){};
-  virtual ~SpecificStorage(){};
+  SpecificStorage(Teuchos::ParameterList& plist) {};
+  virtual ~SpecificStorage() {};
 
   virtual double Value(double porosity) const = 0;
 };

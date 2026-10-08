@@ -22,7 +22,7 @@
 
 namespace Amanzi {
 
-class ObservableSolute : public virtual Observable {
+class ObservableSolute : public virtual ObservableAmanzi {
  public:
   ObservableSolute(std::string variable,
                    std::string region,
@@ -31,8 +31,11 @@ class ObservableSolute : public virtual Observable {
                    Teuchos::ParameterList& units_plist,
                    Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
-  virtual void
-  ComputeObservation(State& S, double* value, double* volume, std::string& unit, double dt);
+  virtual void ComputeObservation(State& S,
+                                  double* value,
+                                  double* volume,
+                                  std::string& unit,
+                                  double dt);
   virtual int ComputeRegionSize();
   void RegisterComponentNames(std::vector<std::string> comp_names, int num_liquid, int tcc_index)
   {

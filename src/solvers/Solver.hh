@@ -32,7 +32,7 @@ the selected solver.
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template <class Vector, class VectorSpace>
+template<class Vector, class VectorSpace>
 class Solver {
  public:
   virtual ~Solver() = default;

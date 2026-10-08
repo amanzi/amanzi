@@ -22,10 +22,9 @@ class AnalyticElasticity03 : public AnalyticElasticityBase {
  public:
   AnalyticElasticity03(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
                        double mu = 1.0,
-                       double lambda = 0.0,
-                       bool flag = false)
-    : AnalyticElasticityBase(mesh), mu_(mu), lambda_(lambda), a_(2.0){};
-  ~AnalyticElasticity03(){};
+                       double lambda = 0.0)
+    : AnalyticElasticityBase(mesh), mu_(mu), lambda_(lambda), a_(2.0) {};
+  ~AnalyticElasticity03() {};
 
   virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t)
   {
@@ -36,8 +35,8 @@ class AnalyticElasticity03 : public AnalyticElasticityBase {
     return K;
   }
 
-  virtual Amanzi::AmanziGeometry::Point
-  velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  virtual Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p,
+                                                       double t)
   {
     double x = p[0];
     double y = p[1];
@@ -47,8 +46,8 @@ class AnalyticElasticity03 : public AnalyticElasticityBase {
 
   virtual double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) { return 0.0; }
 
-  virtual Amanzi::AmanziGeometry::Point
-  source_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  virtual Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p,
+                                                     double t)
   {
     double x = p[0];
     double y = p[1];

@@ -127,13 +127,11 @@ class ParameterList(base.TeuchosBaseXML):
         children = list(self)
         for child in children:
             self.remove(child)
-        sorted_children = sorted(children, key=lambda x: x.tag)
+        sorted_children = sorted(children, key=lambda x: str(x.tag))
         self.extend(sorted_children)
 
     def indent(self, ntabs, doublespace=False, doublespace_two=False):
         """Properly indent this list (and its Parameters/sublists) with [ntabs] tabs."""
-        self.sort()
-
         doublespace_sublists = self.get("name") in _doublespace
         doublespace_sublists_two_deep = self.get("name") in _doublespace_two
         postspace = doublespace or self.get("name") in _postspace
@@ -147,6 +145,7 @@ class ParameterList(base.TeuchosBaseXML):
             for el in self:
                 el.indent(ntabs+1, doublespace_sublists or doublespace_two,
                           doublespace_sublists_two_deep)
+
             self[-1].tail = "\n" + " "*(ntabs)*base._tabsize
             if doublespace_sublists or doublespace_two:
                 self[-1].tail = "\n"+self[-1].tail
@@ -201,7 +200,20 @@ class ParameterList(base.TeuchosBaseXML):
         return search.child_by_name(self, name)
 
     def pop(self, name):
+        """Remove and return element of a given name."""
         return search.remove_element(self, name, False, True)
+
+    def replace(self, name, element):
+        """Replace element of a given name, returning the removed element."""
+        try:
+            i = next(i for i,v in enumerate(self) if v.getName() == name)
+        except StopIteration:
+            raise errors.MissingXMLError(f'Cannot find element "{name}"')
+
+        res = self[i]
+        self[i] = element
+        return res
+
 
     def __copy__(self):
         cp = self.__class__(self.getName())

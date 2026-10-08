@@ -14,6 +14,7 @@
 
 #include <set>
 
+#include "CommonDefs.hh"
 #include "errors.hh"
 #include "MeshAlgorithms.hh"
 #include "OperatorDefs.hh"
@@ -28,9 +29,9 @@ namespace Flow {
 * TBW
 ****************************************************************** */
 void
-Flow_PK::VV_FractureConservationLaw() const
+Flow_PK::VV_FractureConservationLaw(double dt) const
 {
-  if (!coupled_to_matrix_ || fabs(dt_) < 1e+10) return;
+  if (!coupled_to_matrix_ || fabs(dt) < 1e+10) return;
 
   const auto& fracture_flux =
     *S_->Get<CompositeVector>("fracture-volumetric_flow_rate").ViewComponent("face", true);
@@ -100,6 +101,9 @@ Flow_PK::VV_ValidateBCs() const
   std::set<int> pressure_faces, head_faces, flux_faces;
 
   for (int i = 0; i < bcs_.size(); i++) {
+    bcs_[i]->Compute(0.0, 0.0);
+    bcs_[i]->ComputeSubmodel(mesh_);
+
     if (bcs_[i]->get_bc_name() == "pressure") {
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         pressure_faces.insert(it->first);
@@ -107,11 +111,21 @@ Flow_PK::VV_ValidateBCs() const
     }
 
     if (bcs_[i]->get_bc_name() == "flux") {
-      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) { flux_faces.insert(it->first); }
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        flux_faces.insert(it->first);
+      }
     }
 
     if (bcs_[i]->get_bc_name() == "head") {
-      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) { head_faces.insert(it->first); }
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        head_faces.insert(it->first);
+      }
+    }
+
+    if (bcs_[i]->get_bc_name() == "coupling") {
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        pressure_faces.insert(it->first);
+      }
     }
   }
 
@@ -178,18 +192,25 @@ Flow_PK::VV_ValidateBCs() const
 * Reports water balance.
 ******************************************************************* */
 void
-Flow_PK::VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const
+Flow_PK::VV_ReportWaterBalance(const Teuchos::Ptr<State>& S, double dt) const
 {
+  const auto& rho = *S->Get<CompositeVector>(mass_density_liquid_key_).ViewComponent("cell");
   const auto& phi = *S->Get<CompositeVector>(porosity_key_).ViewComponent("cell");
-  const auto& flowrate = *S->Get<CompositeVector>(vol_flowrate_key_).ViewComponent("face", true);
+  const auto& flowrate = *S->Get<CompositeVector>(mol_flowrate_key_).ViewComponent("face", true);
   const auto& ws = *S->Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
 
-  std::vector<int>& bc_model = op_bc_->bc_model();
-  double mass_bc_dT = WaterVolumeChangePerSecond(bc_model, flowrate) * rho_ * dt_;
+  auto op_bc = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state");
+  std::vector<int>& bc_model = op_bc->bc_model();
+  double mass_bc_dT = WaterVolumeChangePerSecond(bc_model, flowrate) * dt * CommonDefs::MOLAR_MASS_H2O;
+
+  Teuchos::RCP<const Epetra_MultiVector> aperture;
+  if (S->HasRecordSet(aperture_key_)) aperture = S->Get<CompositeVector>(aperture_key_).ViewComponent("cell");
 
   double mass_amanzi = 0.0;
   for (int c = 0; c < ncells_owned; c++) {
-    mass_amanzi += ws[0][c] * rho_ * phi[0][c] * mesh_->getCellVolume(c);
+    double add = ws[0][c] * rho[0][c] * phi[0][c] * mesh_->getCellVolume(c);
+    if (aperture.get()) add *= (*aperture)[0][c];
+    mass_amanzi += add;
   }
 
   double mass_amanzi_tmp = mass_amanzi, mass_bc_tmp = mass_bc_dT;
@@ -214,7 +235,7 @@ Flow_PK::VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const
 * Calculate flow out of the current seepage face.
 ******************************************************************* */
 void
-Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S, double dT) const
+Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S, double dt) const
 {
   const auto& flowrate = *S->Get<CompositeVector>(vol_flowrate_key_).ViewComponent("face");
 
@@ -240,7 +261,7 @@ Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S, double dT) const
   mesh_->getComm()->SumAll(&tmp, &outflow, 1);
 
   outflow *= rho_;
-  seepage_mass_ += outflow * dT;
+  seepage_mass_ += outflow * dt;
 
   if (MyPID == 0 && nbcs > 0) {
     Teuchos::OSTab tab = vo_->getOSTab();
@@ -256,8 +277,9 @@ Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S, double dT) const
 void
 Flow_PK::VV_PrintHeadExtrema(const CompositeVector& pressure) const
 {
-  std::vector<int>& bc_model = op_bc_->bc_model();
-  std::vector<double>& bc_value = op_bc_->bc_value();
+  auto op_bc = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state");
+  std::vector<int>& bc_model = op_bc->bc_model();
+  std::vector<double>& bc_value = op_bc->bc_value();
 
   int flag(0);
   double hmin(1.4e+9), hmax(-1.4e+9); // diameter of the Sun
@@ -336,7 +358,7 @@ Flow_PK::VV_PrintSourceExtrema() const
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH && nsrcs > 0) {
     Teuchos::RCP<const Epetra_MultiVector> aperture;
-    if (flow_on_manifold_)
+    if (assumptions_.flow_on_manifold)
       aperture = S_->Get<CompositeVector>(aperture_key_, Tags::DEFAULT).ViewComponent("cell");
 
     double smin(1.0e+99), smax(-1.0e+99);
@@ -352,7 +374,7 @@ Flow_PK::VV_PrintSourceExtrema() const
 
           double vol = mesh_->getCellVolume(c);
 
-          if (flow_on_manifold_) {
+          if (assumptions_.flow_on_manifold) {
             areas[i] += vol;
             rates[i] += tmp * vol;
             vol *= (*aperture)[0][c];
@@ -370,7 +392,7 @@ Flow_PK::VV_PrintSourceExtrema() const
     mesh_->getComm()->MaxAll(&tmp2, &smax, 1);
     mesh_->getComm()->SumAll(aux1.data(), rates.data(), nsrcs);
     mesh_->getComm()->SumAll(aux2.data(), volumes.data(), nsrcs);
-    if (flow_on_manifold_) {
+    if (assumptions_.flow_on_manifold) {
       std::vector<double> aux3(areas);
       mesh_->getComm()->SumAll(aux3.data(), areas.data(), nsrcs);
     }
@@ -378,7 +400,7 @@ Flow_PK::VV_PrintSourceExtrema() const
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "sources: total min/max: " << smin << "/" << smax << std::endl;
     for (int i = 0; i < nsrcs; ++i) {
-      if (flow_on_manifold_) {
+      if (assumptions_.flow_on_manifold) {
         *vo_->os() << " src #" << i << ": area=" << areas[i] << " m^2"
                    << ", rate=" << rates[i] << " kg/s"
                    << ", mean aperture=" << volumes[i] / areas[i] << " m" << std::endl;

@@ -30,6 +30,7 @@ include_directories(${DBC_SOURCE_DIR})
 include_directories(${DBG_SOURCE_DIR})
 include_directories(${ENERGY_SOURCE_DIR})
 include_directories(${EOS_SOURCE_DIR})
+include_directories(${EVALUATORS_SOURCE_DIR})
 include_directories(${FLOW_SOURCE_DIR})
 include_directories(${GEOCHEM_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
@@ -64,9 +65,12 @@ if (ENABLE_AmanziPhysicsModule)
       PK_MPC.hh
       PK_MPCAdditive.hh
       ChemistryMatrixFracture_PK.hh    
-      EnergyMatrixFracture_PK.hh
-      FlowEnergy_PK.hh
-      FlowEnergyMatrixFracture_PK.hh
+      EnergyPTMatrixFracture_PK.hh
+      EnergyPHMatrixFracture_PK.hh
+      FlowEnergyPH_PK.hh
+      FlowEnergyPHMatrixFracture_PK.hh
+      FlowEnergyPT_PK.hh
+      FlowEnergyPTMatrixFracture_PK.hh
       FlowMatrixFracture_PK.hh
       FlowMechanics_PK.hh
       MechanicsFlow_PK.hh
@@ -78,8 +82,7 @@ if (ENABLE_AmanziPhysicsModule)
       ReactiveTransport_PK.hh
       ReactiveTransportMatrixFracture_PK.hh
       ShallowWaterTransport_PK.hh
-      SurfaceSubsurface_PK.hh
-      WaterStorageStressSplit.hh)
+      SurfaceSubsurface_PK.hh)
 
   set(mpc_tree_src_files 
       FractureInsertion.cc
@@ -88,9 +91,12 @@ if (ENABLE_AmanziPhysicsModule)
       PK_MPCSequential.cc 
       PK_MPCSubcycled.cc 
       ChemistryMatrixFracture_PK.cc   
-      EnergyMatrixFracture_PK.cc
-      FlowEnergy_PK.cc
-      FlowEnergyMatrixFracture_PK.cc
+      EnergyPTMatrixFracture_PK.cc
+      EnergyPHMatrixFracture_PK.cc
+      FlowEnergyPH_PK.cc
+      FlowEnergyPHMatrixFracture_PK.cc
+      FlowEnergyPT_PK.cc
+      FlowEnergyPTMatrixFracture_PK.cc
       FlowMatrixFracture_PK.cc
       FlowMechanics_PK.cc
       HeatDiffusionMatrixFracture.cc
@@ -105,9 +111,9 @@ if (ENABLE_AmanziPhysicsModule)
       ShallowWaterTransport_PK.cc
       SoluteDiffusionMatrixFracture.cc
       SurfaceSubsurface_PK.cc
-      WaterStorageStressSplit.cc)
+      WaterStorageDarcyPoroelasticity.cc)
 
-  set(mpc_tree_link_libs pks flow transport multiphase shallow_water time_integration data_structures state)
+  set(mpc_tree_link_libs pks flow transport multiphase shallow_water evaluators time_integration data_structures state)
 
 else()
 

@@ -67,10 +67,8 @@ runTest(double switch_time,
   meshfactory.set_preference(Preference({ Framework::MSTK }));
 
   RCP<const Mesh> mesh;
-  if (exofile != "")
-    mesh = meshfactory.create(exofile);
-  else
-    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 10, 10);
+  if (exofile != "") mesh = meshfactory.create(exofile);
+  else mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 10, 10);
 
   // create a simple state and populate it
   Amanzi::VerboseObject::global_hide_line_prefix = true;
@@ -160,9 +158,13 @@ runTest(double switch_time,
 
   // check that the final state is constant for no swicth time
   if (switch_time > 0.5) {
-    for (int k = 0; k < 10; k++) { CHECK_CLOSE(1.0, (*tcc)[0][k], 1e-6); }
+    for (int k = 0; k < 10; k++) {
+      CHECK_CLOSE(1.0, (*tcc)[0][k], 1e-6);
+    }
   } else {
-    for (int k = 0; k < 10; k++) { CHECK_CLOSE(0.0, (*tcc)[0][k], 2e-6); }
+    for (int k = 0; k < 10; k++) {
+      CHECK_CLOSE(0.0, (*tcc)[0][k], 2e-6);
+    }
   }
 
   WriteStateStatistics(*S);

@@ -31,8 +31,8 @@ namespace WhetStone {
 
 class BasisFactory {
  public:
-  explicit BasisFactory(){};
-  ~BasisFactory(){};
+  explicit BasisFactory() {};
+  ~BasisFactory() {};
 
   // select numerical scheme using its name and order
   std::shared_ptr<Basis> Create(const std::string& name)

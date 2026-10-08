@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="1.5-dev">
+<amanzi_input type="unstructured" version="1.7-dev">
     <misc>
       <echo_translated_input file_name="oldspec.xml" format="unstructured_native" />
     </misc>
@@ -26,16 +26,15 @@
       </macros>
     </definitions>
     <process_kernels>
-      <comments>Variably saturated flow</comments>
-      <flow model="richards" state="on" />
-      <transport state="off" />
-      <chemistry engine="none" state="off" />
+      <pk mode="steady">
+        <comments>Variably saturated flow</comments>
+        <flow model="richards" state="on"/>
+      </pk>
     </process_kernels>
     <phases>
       <liquid_phase name="water">
-        <eos>false</eos>
-        <viscosity>1.002E-03</viscosity>
-        <density>998.2</density>
+        <eos model="constant" viscosity="1.002e-03" density="998.2"/> 
+        <molar_mass>0.018</molar_mass>
       </liquid_phase>
     </phases>
     <execution_controls>
@@ -133,7 +132,7 @@
       <material name="Aquifer">
         <comments>Aquifer</comments>
         <mechanical_properties>
-          <porosity value="0.43" />
+          <porosity model="constant" value="0.43" />
         </mechanical_properties>
         <permeability x="1.1844e-12" y="1.1844e-12" />
         <cap_pressure model="van_genuchten">

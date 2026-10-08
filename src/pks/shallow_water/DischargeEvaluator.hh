@@ -43,7 +43,7 @@ class DischargeEvaluator
                                           const std::vector<CompositeVector*>& results) override;
 
  private:
-  std::string velocity_key_, ponded_depth_key_;
+  std::string velocity_key_, primary_variable_key_;
 };
 
 } // namespace ShallowWater

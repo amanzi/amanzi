@@ -1,5 +1,5 @@
 ===================================================
-Unstructured Input Specification for Amanzi 1.5-dev
+Unstructured Input Specification for Amanzi 1.6-dev
 ===================================================
 
 .. contents:: **Table of Contents**
@@ -242,7 +242,7 @@ An example ``definition`` section would look as the following:
 Execution Controls
 ==================
 
-The ``execution_controls`` section defines the general execution of the Amanzi simulation.  Amanzi can execute in four modes: steady state, transient, transient with static flow, or initialize to a steady state and then continue to transient.  The transient with static flow mode does not compute the flow solution at each time step.  During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity. At present this mode only supports the "Single Phase" flow model.
+The ``execution_controls`` section defines the general execution of the Amanzi simulation.  Amanzi can execute in four modes: steady state, transient, transient with static flow, or initialize to a steady state and then continue to transient.  The transient with static flow mode does not compute the flow solution at each timestep.  During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity. At present this mode only supports the "Single Phase" flow model.
 
 .. code-block:: xml
   
@@ -283,9 +283,9 @@ The ``execution_control_defaults`` element specifies default values to be utiliz
 +------------------+----------------+----------------------------------+
 | max_dt           | time           | time value(,unit)                |
 +------------------+----------------+----------------------------------+
-| reduction_factor | double         | factor for reducing time step    |
+| reduction_factor | double         | factor for reducing timestep     |
 +------------------+----------------+----------------------------------+
-| increase_factor  | double         | factor for increasing time step  |
+| increase_factor  | double         | factor for increasing timestep   |
 +------------------+----------------+----------------------------------+
 | mode             | string         | ``steady, transient``            |
 +------------------+----------------+----------------------------------+
@@ -312,9 +312,9 @@ Individual time periods of the simulation are defined using ``execution_control`
 +------------------+----------------+----------------------------------------------------------+
 | max_dt           | time           | time value(,unit)                                        |
 +------------------+----------------+----------------------------------------------------------+
-| reduction_factor | double         | factor for reducing time step                            |
+| reduction_factor | double         | factor for reducing timestep                             |
 +------------------+----------------+----------------------------------------------------------+
-| increase_factor  | double         | factor for increasing time step                          |
+| increase_factor  | double         | factor for increasing timestep                           |
 +------------------+----------------+----------------------------------------------------------+
 | mode             | string         | ``steady, transient``                                    |
 +------------------+----------------+----------------------------------------------------------+
@@ -372,7 +372,7 @@ However, no options within the sections are required.  The list of available opt
   <unstructured_controls>
       Required Elements: none
       Optional Elements: unstr_flow_controls, unstr_transport_controls, unstr_chemistry_controls,
-                         unstr_steady-state_controls, unstr_transient_controls, 
+                         unstr_mechanics_controls, unstr_steady-state_controls, unstr_transient_controls, 
                          unstr_linear_solver, unstr_nonlinear_solver, unstr_preconditioners,
                          saturated_linear_solver, constraints_linear_solver, dispersion_linear_solver
   </unstructured_controls>
@@ -500,13 +500,29 @@ The subelements pertaining to the pflotran chemistry engine are:
 | read_chemistry_engine_inputfile        | string       |                                   |
 +----------------------------------------+--------------+-----------------------------------+
 
+Unstr_mechanics_controls
+________________________
+
+``unstr_mechanics_controls`` specifies numerical controls for the mechanics process kernel available under the unstructured algorithm.
+It has the following subelements:
+
++----------------------------------+--------------+--------------------------------------------------------+
+| Element Names                    | Content Type | Content Value                                          |
++==================================+==============+========================================================+
+| biot_model                       | string       | ``fixed_stress_split``, ``undrained_split``            |
++----------------------------------+--------------+--------------------------------------------------------+
+| elasticity_linear_solver         | sublist      | | ``pcg``, ``max_iterations``                          |
+|                                  |              | | ``tolerance``, ``convergence_criteria``              |
++----------------------------------+--------------+--------------------------------------------------------+
+
+
 Unstr_steady-state_controls and unstr_transient_controls
 ________________________________________________________
 
 The ``unstr_steady-state_controls`` and ``unstr_transient_controls`` have the same set of elements.
 The difference lies in the values of parameters.
 The state state controls are typically more relaxed, since we are intereted only in the quality
-of the converged solution.
+of the converged solution. 
 
 +-------------------------------------------------------+---------------+------------------------------------------+
 | Element Names                                         | Content Type  | Content Value                            |
@@ -537,8 +553,8 @@ of the converged solution.
 +-------------------------------------------------------+---------------+------------------------------------------+
 | preconditioner                                        | string        | ``trilinos_ml, hypre_amg, block_ilu``    |
 +-------------------------------------------------------+---------------+------------------------------------------+
-| initialize_with_darcy                                 | boolean       | | ``true, false``                        |
-|                                                       |               | | *default = false*                      |
+| enforce_dae_constraint                                | boolean       | | ``true, false``                        |
+|                                                       |               | | *default = true*                       |
 +-------------------------------------------------------+---------------+------------------------------------------+
 | timestep_controller                                   | name          | | ``standard``, ``fixed``, ``adaptive``, |
 |                                                       |               | | ``smarter``, ``from_file``             |
@@ -546,8 +562,15 @@ of the converged solution.
 +-------------------------------------------------------+---------------+------------------------------------------+
 | unstr_initialization                                  | element block |                                          |
 +-------------------------------------------------------+---------------+------------------------------------------+
+| sequential_tolerance                                  | double        | *default = 1.0e-5*                       |
++-------------------------------------------------------+---------------+------------------------------------------+
+| max_sequential_iterations                             | int           | *default = 100*                          |
++-------------------------------------------------------+---------------+------------------------------------------+
 
 Specifics about each ``preconditioner`` is defined in the `Unstr_preconditioners`_ section.
+
+The ``sequential_tolerance`` and ``max_sequential_iterations`` control convergence of nonlinear solvers
+in operator spliting methods.
 
 The ``unstr_initialization`` is used to calculate an initial pressure or a good guess for the initial pressure (for
 the steady state execution period).
@@ -722,7 +745,6 @@ An example ``unstructured_controls`` section would look as the following:
                 <nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
                 <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
                 <max_divergent_iterations>3</max_divergent_iterations>
-                <initialize_with_darcy>true</initialize_with_darcy>
                 <restart_tolerance_relaxation_factor>1</restart_tolerance_relaxation_factor>
                 <preconditioner>hypre_amg</preconditioner>
             </unstr_steady-state_controls>
@@ -738,7 +760,6 @@ An example ``unstructured_controls`` section would look as the following:
                 <restart_tolerance_relaxation_factor>1</restart_tolerance_relaxation_factor>
                 <error_control_options>pressure,residual</error_control_options>
                 <preconditioner>hypre_amg</preconditioner>
-                <initialize_with_darcy>true</initialize_with_darcy>
             </unstr_transient_controls>
             <unstr_preconditioners>
                 <hypre_amg>
@@ -1088,7 +1109,9 @@ _____________________
   <mechanical_properties>
       Required Elements: porosity
       Optional Elements: particle_density, specific_storage, specific_yield,
-                         dispersion_tensor, tortuosity, tortuosity_gas, transport_porosity
+                         dispersion_tensor, tortuosity, tortuosity_gas, transport_porosity,
+                         poisson_ratio, young_modulus, biot_coefficient,
+                         rock_thermal_dilation, liquid_thermal_dilation
   </mechanical_properties>
 
 The ``mechanical_properties`` has multiple elements that can be either values or specified as files.
@@ -1110,7 +1133,6 @@ It has the following requirements.
     * ``specific_yeild`` is defined in-line using attributes.
       It is specified as a value greater than 0 using ``value`` or through a file using type="file" and filename="<filename>".
       
-
     * ``dispersion_tensor`` is defined in-line using attributes.  The attribute ``type`` is used to specify either the model to utilize.
       The available options are: ``isotropic``, ``bear``, ``burnett_frind``, or ``lichtner_kelkar_robinson``.
       For ``isotropic`` values are specified using  attribute ``alpha`` [m].
@@ -1123,6 +1145,15 @@ It has the following requirements.
 
     * ``tortuosity_gas`` is defined in-line using attribute. It is specified as a value using ``value``.
 
+    * ``poisson_ratio`` is defined in-line using an attribute. It is specified as a value between 0 and 0.5 using ``value``.
+
+    * ``young_modulus`` is defined in-line using an attribute. It is specified as a positive value using ``value``. 
+
+    * ``biot_coefficient`` is defined in-line using an attribute. It is specified as a politive number less than 1 using ``value``.
+
+    * ``rock_thermal_dilation`` is defined in-line using an attribute. It is specified as positive number using ``value``.
+
+    * ``liquid_thermal_dilation`` is defined in-line using an attribute. It is specified as positive number using ``value``.
 
 .. code-block:: xml
 
@@ -1133,6 +1164,11 @@ It has the following requirements.
       <specific_yield value="double"/>
       <dispersion_tensor type="bear" alpha_l="double" alpha_t="double"/>
       <tortuosity value="double"/>
+      <poisson_ratio value="double"/>
+      <young_modulus value="double"/>
+      <biot_coefficient value="double"/>
+      <rock_thermal_dilation value="double"/>
+      <liquid_thermal_dilation value="double"/>
   </mechanical_properties>
 
 Assigned_regions
@@ -1309,7 +1345,7 @@ The ``process_kernels`` block specifies which PKs are active.  This block is req
 .. code-block:: xml
 
   <process_kernels>
-      Required Elements: flow, transport, chemistry, energy
+      Required Elements: flow, transport, chemistry, energy, mechanics
       Optional Elements: comments
   </process_kernels>
 
@@ -1338,7 +1374,7 @@ Currently three scenarios are available for calculated the flow field.
 
 *  ``saturated`` is a single phase, fully saturated flow.
 
-*  ``constant`` is equivalent to a flow model of single phase (saturated) with the time integration mode of transient with static flow in the version 1.2.1 input specification.  This flow model indicates that the flow field is static so no flow solver is called during time stepping. During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure and flux) field are used to solve for the Darcy velocity.
+*  ``constant`` is equivalent to a flow model of single phase (saturated) with the time integration mode of transient with static flow in the version 1.2.1 input specification.  This flow model indicates that the flow field is static so no flow solver is called during timestepping. During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure and flux) field are used to solve for the Darcy velocity.
 
 
 Transport
@@ -1384,6 +1420,19 @@ Currently three scenarios are available for calculated the flow field.
 *  ``two-phase energy`` is a two-phase (liquid, water-vapor) thermal flow.
 
 
+Mechanics
+---------
+
+The ``mechanics`` has the following attributes, 
+      
+      * ``state`` = "on | off"
+
+      *  ``model`` = " elastic" 
+
+Currently only elastic model is support at this level. A small strain model is supported 
+in the Native Spec.
+
+
 Phases
 ======
 
@@ -1404,7 +1453,7 @@ The ``liquid_phase`` has the following elements
 .. code-block:: xml
 
   <liquid_phase>
-      Required Elements: viscosity, density
+      Required Elements: viscosity, density, molar_mass
       Optional Elements: dissolved_components
   </liquid_phase>
 
@@ -1413,6 +1462,8 @@ Here is more info on the ``liquid_phase`` elements:
     * ``viscosity`` = "double"
 
     * ``density`` = "double"
+
+    * ``molar_mass`` = "double"
 
     * ``dissolved_components`` has the following elements
 
@@ -1426,7 +1477,7 @@ The subelement ``primaries`` is used for specifying reactive and non-reactive pr
 
     * ``coefficient_of_diffusion`` = "double", this is an optional attribute
 
-    * ``first_order_decay_constant`` = "double", this is an optional attribute
+    * ``first_order_decay_rate_constant`` = "double", this is an optional attribute
 
     * ``forward_rate`` = "double", this is a required attribute when being used with non-reactive primaries/solutes and automatically generating the chemistry engine input file
 
@@ -1563,7 +1614,7 @@ The following is a description of the ``boundary_condition`` element.
 
   <boundary_condition>
       Required Elements: assigned_regions, liquid_phase
-      Optional Elements: thermal_component, comments
+      Optional Elements: thermal_component, mechanics_component, comments
   </boundary_condition>
 
 Assigned_regions
@@ -1687,6 +1738,34 @@ The ``thermal_component`` has the following elements:
 .. code-block:: xml
 
      <uniform_temperature start="time" function="constant" value="double" />
+
+Mechanics_component
+-------------------
+
+The ``mechanics_component`` has the following elements:
+
+    * ``displacement`` is defined in-line using attributes.
+      The attributes include ``function``, ``start``, and ``vector``. 
+      The ``function`` specifies linear or constant temporal functional form during each time interval.
+      The ``start`` is a value at which time intervals start.
+      The ``vector`` is the displacement vector during the time interval. 
+
+    * ``traction`` is defined in-line using attributes.
+      The attributes include ``function``, ``start``, and ``vector``. 
+      The ``function`` specifies linear or constant temporal functional form during each time interval.
+      The ``start`` is a value at which time intervals start.
+      The ``vector`` is the traction vector during the time interval. 
+
+    * ``kinematic`` is defined in-line using attributes.
+      The attributes include ``function``, ``start``, and ``value``. 
+      The ``function`` specifies linear or constant temporal functional form during each time interval.
+      The ``start`` is a value at which time intervals start.
+      The ``value`` is the normal displacement value during the time interval. 
+
+.. code-block:: xml
+
+     <displacement function="linear" start="time" vector="double, double"/>
+     <traction function="constant" start="time" vector="double, double, double"/>
 
 
 Sources
@@ -1964,7 +2043,7 @@ Thus, the ``vis`` element has the following requirements
 
   <vis>
       Required Elements: base_filename, num_digits 
-      Optional Elements: time_macros, cycle_macros
+      Optional Elements: time_macros, cycle_macros, time_units
   </vis>
 
 The ``base_filename`` element contains the text component of the how the visualization files will be named.
@@ -1982,6 +2061,8 @@ See the `Definitions`_ section for defining individual macros.
 The ``vis`` element also includes an optional subelement ``write_regions``.  This was primarily implemented for debugging purposes but is also useful for visualizing fields only on specific regions.  The subelement accepts an arbitrary number of subelements named ``field``, with attributes ``name`` (a string) and ``regions`` (a comma separated list of region names).  For each such subelement, a field will be created in the vis files using the name as a label.  The field will be initialized to 0, and then, for region list R1, R2, R3..., cells in R1 will be set to 1, cells in R2 will be set to 2, etc.  When regions in the list overlap, later ones in the list will take precedence.
 
 The ``vis`` element also includes an optional boolean subelement ``write_partition``.  This is useful for visualizing parallel mesh partition.
+
+The ``times_units`` indicates format of time units, e.g. ``y`` for years (default) or ``h`` for hours.
 
 The output is controlled by two parameters ``whitelist`` and ``blacklist``. 
 The latter denies output for the specified list of fields.

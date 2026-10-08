@@ -39,14 +39,16 @@ namespace Operators {
 
 class UpwindFluxManifolds : public Upwind {
  public:
-  UpwindFluxManifolds(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : Upwind(mesh){};
-  ~UpwindFluxManifolds(){};
+  UpwindFluxManifolds(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    : Upwind(mesh) {};
+  ~UpwindFluxManifolds() {};
 
   // main methods
   void Init(Teuchos::ParameterList& plist);
 
-  void
-  Compute(const CompositeVector& flux, const std::vector<int>& bc_model, CompositeVector& field);
+  void Compute(const CompositeVector& flux,
+               const std::vector<int>& bc_model,
+               CompositeVector& field);
 
  private:
   int method_;

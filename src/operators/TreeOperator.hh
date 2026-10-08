@@ -43,6 +43,7 @@ class MatrixFE;
 class Operator;
 namespace Impl {
 class TreeOperator_BlockDiagonalPreconditioner;
+class TreeOperator_BlockTriangularPreconditioner;
 }
 
 class TreeOperator : public Matrix<TreeVector, TreeVectorSpace> {
@@ -143,27 +144,27 @@ class TreeOperator : public Matrix<TreeVector, TreeVectorSpace> {
   // Inverse diagnostics... these may change
   virtual double residual() const override
   {
-    if (preconditioner_.get()) return preconditioner_->residual();
+    if (preconditioner_.get() ) return preconditioner_->residual();
     return 0.;
   }
   virtual int num_itrs() const override
   {
-    if (preconditioner_.get()) return preconditioner_->num_itrs();
+    if (preconditioner_.get() ) return preconditioner_->num_itrs();
     return 0;
   }
   virtual int returned_code() const override
   {
-    if (preconditioner_.get()) return preconditioner_->returned_code();
+    if (preconditioner_.get() ) return preconditioner_->returned_code();
     return 0;
   }
   virtual std::string returned_code_string() const override
   {
-    if (preconditioner_.get()) return preconditioner_->returned_code_string();
+    if (preconditioner_.get() ) return preconditioner_->returned_code_string();
     return "success";
   }
   virtual std::string name() const override
   {
-    if (preconditioner_.get()) return std::string("TreeOperator: ") + preconditioner_->name();
+    if (preconditioner_.get() ) return std::string("TreeOperator: ") + preconditioner_->name();
     return "TreeOperator: block diagonal";
   }
 
@@ -175,6 +176,7 @@ class TreeOperator : public Matrix<TreeVector, TreeVectorSpace> {
 
  protected:
   friend Impl::TreeOperator_BlockDiagonalPreconditioner;
+  friend Impl::TreeOperator_BlockTriangularPreconditioner;
 
   Teuchos::RCP<const TreeVectorSpace> row_map_, col_map_;
   std::size_t row_size_, col_size_;
@@ -197,6 +199,7 @@ class TreeOperator : public Matrix<TreeVector, TreeVectorSpace> {
   bool initialize_complete_;
   bool compute_complete_;
   bool assembly_complete_;
+  bool symbolic_assembly_complete_;
 
   Teuchos::RCP<VerboseObject> vo_;
 };
@@ -216,7 +219,9 @@ class TreeOperator_BlockDiagonalPreconditioner {
   using Vector_t = TreeOperator::Vector_t;
   using VectorSpace_t = TreeOperator::VectorSpace_t;
 
-  TreeOperator_BlockDiagonalPreconditioner(TreeOperator& op) : op_(op) {}
+  TreeOperator_BlockDiagonalPreconditioner(TreeOperator& op)
+    : op_(op)
+  {}
 
   int Apply(const TreeVector& X, TreeVector& Y) const
   {
@@ -230,11 +235,65 @@ class TreeOperator_BlockDiagonalPreconditioner {
   }
   void InitializeInverse()
   {
-    for (int n = 0; n != op_.get_col_size(); ++n) { op_.get_block(n, n)->InitializeInverse(); }
+    for (int n = 0; n != op_.get_col_size(); ++n) {
+      op_.get_block(n, n)->InitializeInverse();
+    }
   }
   void ComputeInverse()
   {
-    for (int n = 0; n != op_.get_col_size(); ++n) { op_.get_block(n, n)->ComputeInverse(); }
+    for (int n = 0; n != op_.get_col_size(); ++n) {
+      op_.get_block(n, n)->ComputeInverse();
+    }
+  }
+
+ private:
+  TreeOperator& op_;
+};
+
+
+// This class implements the Gauss-Seidel algorithm.
+class TreeOperator_BlockTriangularPreconditioner {
+ public:
+  using Vector_t = TreeOperator::Vector_t;
+  using VectorSpace_t = TreeOperator::VectorSpace_t;
+
+  TreeOperator_BlockTriangularPreconditioner(TreeOperator& op)
+    : op_(op)
+  {}
+
+  int Apply(const TreeVector& X, TreeVector& Y) const
+  {
+    Exceptions::amanzi_throw("TreeOperator GS Preconditioner does not implement Apply()");
+    return 1;
+  }
+
+  int ApplyInverse(const TreeVector& X, TreeVector& Y) const
+  {
+    for (int i = 0; i != op_.get_col_size(); ++i) {
+      const TreeVector& Xi = *X.SubVector(i);
+      TreeVector Z(Xi), Z1(Xi);
+
+      for (int j = 0; j < i; ++j) {
+        op_.get_block(i, j)->Apply(*Y.SubVector(j), Z1);
+        Z.Update(-1.0, Z1, 1.0);
+      }
+      int ierr = op_.get_block(i, i)->ApplyInverse(Z, *Y.SubVector(i));
+      if (ierr) return ierr;
+    }
+    return 0;
+  }
+
+  void InitializeInverse()
+  {
+    for (int n = 0; n != op_.get_col_size(); ++n) {
+      op_.get_block(n, n)->InitializeInverse();
+    }
+  }
+  void ComputeInverse()
+  {
+    for (int n = 0; n != op_.get_col_size(); ++n) {
+      op_.get_block(n, n)->ComputeInverse();
+    }
   }
 
  private:
@@ -245,11 +304,11 @@ class TreeOperator_BlockDiagonalPreconditioner {
 // Nonmember function that flattens the TreeOperator into a 2D array of only
 // its leaf Operators.  Returns the shape (n_leaves_row, n_leaves_col)
 //
-std::pair<int, int>
-collectTreeOperatorLeaves(TreeOperator& tm,
-                          std::vector<std::vector<Teuchos::RCP<Operator>>>& leaves,
-                          std::size_t i,
-                          std::size_t j);
+std::pair<int, int> collectTreeOperatorLeaves(
+  TreeOperator& tm,
+  std::vector<std::vector<Teuchos::RCP<Operator>>>& leaves,
+  std::size_t i,
+  std::size_t j);
 
 } // namespace Impl
 

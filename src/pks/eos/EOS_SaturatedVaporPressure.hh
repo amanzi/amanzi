@@ -21,7 +21,7 @@ namespace AmanziEOS {
 
 class EOS_SaturatedVaporPressure {
  public:
-  virtual ~EOS_SaturatedVaporPressure(){};
+  virtual ~EOS_SaturatedVaporPressure() {};
 
   virtual double Pressure(double T) = 0;
   virtual double DPressureDT(double T) = 0;

@@ -27,6 +27,7 @@
 // Amanzi
 #include "EvaluatorPrimary.hh"
 #include "GMVMesh.hh"
+#include "IO.hh"
 #include "LeastSquare.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
@@ -34,7 +35,7 @@
 
 // Energy
 #include "Analytic00.hh"
-#include "EnergyOnePhase_PK.hh"
+#include "EnergyPressureTemperature_PK.hh"
 #include "EnthalpyEvaluator.hh"
 
 using namespace Amanzi;
@@ -46,7 +47,8 @@ namespace Amanzi {
 
 class TestEnthalpyEvaluator : public EnthalpyEvaluator {
  public:
-  explicit TestEnthalpyEvaluator(Teuchos::ParameterList& plist) : EnthalpyEvaluator(plist){};
+  explicit TestEnthalpyEvaluator(Teuchos::ParameterList& plist)
+    : EnthalpyEvaluator(plist) {};
 
   virtual Teuchos::RCP<Evaluator> Clone() const override
   {
@@ -60,7 +62,9 @@ class TestEnthalpyEvaluator : public EnthalpyEvaluator {
       const auto& temp_c = *S.Get<CompositeVector>("temperature").ViewComponent(*comp);
       auto& result_c = *results[0]->ViewComponent(*comp);
       int ncomp = results[0]->size(*comp, false);
-      for (int i = 0; i != ncomp; ++i) { result_c[0][i] = temp_c[0][i]; }
+      for (int i = 0; i != ncomp; ++i) {
+        result_c[0][i] = temp_c[0][i];
+      }
     }
   }
 
@@ -72,7 +76,9 @@ class TestEnthalpyEvaluator : public EnthalpyEvaluator {
     for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
       auto& result_c = *results[0]->ViewComponent(*comp);
       int ncomp = results[0]->size(*comp, false);
-      for (int i = 0; i != ncomp; ++i) { result_c[0][i] = 1.0; }
+      for (int i = 0; i != ncomp; ++i) {
+        result_c[0][i] = 1.0;
+      }
     }
   }
 
@@ -131,13 +137,14 @@ TEST(ENERGY_CONVERGENCE_SRC)
 
     Teuchos::ParameterList pk_tree = plist->sublist("PKs").sublist("energy");
     Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-    Teuchos::RCP<EnergyOnePhase_PK> EPK =
-      Teuchos::rcp(new EnergyOnePhase_PK(pk_tree, plist, S, soln));
+    Teuchos::RCP<EnergyPressureTemperature_PK> EPK =
+      Teuchos::rcp(new EnergyPressureTemperature_PK(pk_tree, plist, S, soln));
 
     // overwrite enthalpy with a different model
     Teuchos::ParameterList ev_list;
     ev_list.set<std::string>("enthalpy key", "enthalpy")
       .set<bool>("include work term", false)
+      .set<double>("liquid molar mass", 0.018015)
       .set<std::string>("tag", "");
     ev_list.setName("enthalpy");
 
@@ -162,36 +169,17 @@ TEST(ENERGY_CONVERGENCE_SRC)
     EPK->Initialize();
     S->CheckAllFieldsInitialized();
 
-    // constant time stepping
+    // constant timestepping
     std::string passwd("");
     int itrs(0);
     double t(0.0), t1(100), dt_next;
     while (t < t1) {
-      // swap conserved quntity (no backup, we check dt_next instead)
-      const auto& e = S->Get<CompositeVector>("energy");
-      auto& e_prev = S->GetW<CompositeVector>("prev_energy", Tags::DEFAULT, passwd);
-      e_prev = e;
-
-      if (itrs == 0) {
-        Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*soln));
-        udot->PutScalar(0.0);
-        EPK->bdf1_dae()->SetInitialState(t, soln, udot);
-        EPK->UpdatePreconditioner(t, soln, dt);
-      }
-
-      EPK->bdf1_dae()->TimeStep(dt, dt_next, soln);
-      CHECK(dt_next >= dt);
-      EPK->bdf1_dae()->CommitSolution(dt, soln);
-      Teuchos::rcp_static_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>(
-        S->GetEvaluatorPtr("temperature", Tags::DEFAULT))
-        ->SetChanged();
+      EPK->AdvanceStep(t, t + dt, false);
+      EPK->CommitStep(t, t + dt, Tags::DEFAULT);
 
       t += dt;
       itrs++;
     }
-
-    EPK->CommitStep(0.0, 1.0, Tags::DEFAULT);
-
 
     // calculate errors
     auto temp = S->GetPtr<CompositeVector>("temperature", Tags::DEFAULT);
@@ -205,7 +193,7 @@ TEST(ENERGY_CONVERGENCE_SRC)
 
     printf("mesh=%d bdf1_steps=%3d  L2_temp_err=%7.3e L2_temp=%7.3e\n", n, itrs, l2_err, l2_norm);
     CHECK(l2_err < 8e-1);
-    //WriteStateStatistics(*S, *vo_);
+    WriteStateStatistics(*S, *vo_);
 
     // save solution
     GMV::open_data_file(*mesh, (std::string) "energy.gmv");
@@ -213,7 +201,6 @@ TEST(ENERGY_CONVERGENCE_SRC)
     GMV::write_cell_data(*temp->ViewComponent("cell"), 0, "temperature");
     GMV::close_data_file();
   }
-
 
   // check convergence rate
   double l2_rate = Amanzi::Utils::bestLSfit(h, error);

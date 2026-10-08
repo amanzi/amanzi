@@ -12,7 +12,9 @@
 
 Constant function is defined as :math:`f(x) = a`, for all :math:`x`.
 
-* `"value`" ``[double]`` The constant to be applied.
+.. admonition:: function-constant-spec
+
+  * `"value`" ``[double]`` The constant to be applied.
 
 Example:
 
@@ -33,7 +35,9 @@ namespace Amanzi {
 
 class FunctionConstant : public Function {
  public:
-  FunctionConstant(double c) : c_(c) {}
+  FunctionConstant(double c)
+    : c_(c)
+  {}
   std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionConstant>(*this); }
   double operator()(const std::vector<double>& x) const { return c_; }
 

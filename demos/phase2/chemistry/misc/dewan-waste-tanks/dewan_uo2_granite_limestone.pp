@@ -354,13 +354,13 @@ amr.check_int		= 100
 
 #*******************************************************************************
 
-# CFL number to be used in calculating the time step : dt = dx / max(velocity)
+# CFL number to be used in calculating the timestep : dt = dx / max(velocity)
 prob.cfl                  = 0.8 # CFL number used to set dt
 
 #*******************************************************************************
 
 # Factor by which the first time is shrunk relative to CFL constraint
-prob.init_shrink          = 1  # factor which multiplies the very first time step
+prob.init_shrink          = 1  # factor which multiplies the very first timestep
 
 #*******************************************************************************
 

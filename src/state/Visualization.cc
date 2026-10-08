@@ -25,7 +25,7 @@
 
 #include "OutputXDMF.hh"
 #if ENABLE_Silo
-#  include "OutputSilo.hh"
+#include "OutputSilo.hh"
 #endif
 
 #include "Visualization.hh"
@@ -56,7 +56,9 @@ Visualization::Visualization(Teuchos::ParameterList& plist)
 // -----------------------------------------------------------------------------
 // Constructor for a disabled Vis.
 // -----------------------------------------------------------------------------
-Visualization::Visualization() : IOEvent(), my_units_("y"), time_unit_written_(false) {}
+Visualization::Visualization()
+  : IOEvent(), my_units_("y"), time_unit_written_(false)
+{}
 
 
 void
@@ -69,7 +71,7 @@ Visualization::set_name(const std::string& name)
 bool
 Visualization::WritesDomain(const std::string& name) const
 {
-  if (std::find(domains_.begin(), domains_.end(), name) != domains_.end()) return true;
+  if (std::find(domains_.begin() , domains_.end(), name) != domains_.end()) return true;
   if (Keys::isDomainSet(name) && WritesDomain(Keys::getDomainSetName(name))) return true;
   return false;
 }
@@ -152,7 +154,7 @@ Visualization::WriteRegions()
 
       // loop over the regions and initialize the reg array
       double reg_index = 1.0;
-      for (Teuchos::Array<std::string>::const_iterator reg_it = (it->second).begin();
+      for (Teuchos::Array<std::string>::const_iterator reg_it = (it->second) .begin();
            reg_it != (it->second).end();
            ++reg_it, reg_index += 1.0) {
         // only do something if the user provided a valid region name
@@ -161,7 +163,9 @@ Visualization::WriteRegions()
           auto ids = mesh_->getSetEntities(
             *reg_it, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
-          for (auto jt = ids.begin(); jt != ids.end(); ++jt) { reg[0][*jt] = reg_index; }
+          for (auto jt = ids.begin(); jt != ids.end(); ++jt) {
+            reg[0][*jt] = reg_index;
+          }
         }
       }
       std::vector<std::string> name;

@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="1.5-dev">
+<amanzi_input type="unstructured" version="1.7-dev">
   <model_description name="1D Flow and Transport w/ calcite dissolution">
     <units>
       <length_unit>m</length_unit>
@@ -24,16 +24,22 @@
   </definitions>
 
   <process_kernels>
-    <flow model="saturated" state="on" />
-    <transport state="on" />
-    <chemistry engine="amanzi" state="on" />
+    <pk mode="steady">
+      <flow model="saturated" state="on" />
+    </pk>
+    <pk mode="transient">
+      <flow model="saturated" state="on" />
+      <transport state="on" />
+      <chemistry engine="amanzi" state="on" />
+      <weakly_coupled name="reactive transport">chemistry,transport</weakly_coupled>
+      <weakly_coupled name="mpc">flow,reactive transport</weakly_coupled>
+    </pk>
   </process_kernels>
 
   <phases>
     <liquid_phase name="water">
-      <eos>false</eos>
-      <viscosity>1.002E-03</viscosity>
-      <density>998.2</density>
+      <eos model="constant" viscosity="1.002E-03" density="998.2"/>
+      <molar_mass>0.018015</molar_mass>
       <dissolved_components>
         <primaries>
           <primary coefficient_of_diffusion="0.0">H+</primary>
@@ -76,6 +82,10 @@
         <nonlinear_tolerance>1.0e-12</nonlinear_tolerance>
         <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
         <max_divergent_iterations>3</max_divergent_iterations>
+        <unstr_initialization>
+          <method>darcy_solver</method>
+          <linear_solver>pcg</linear_solver>
+        </unstr_initialization>
       </unstr_steady-state_controls>
 
       <unstr_transient_controls>
@@ -133,7 +143,7 @@
   <materials>
     <material name="Soil">
       <mechanical_properties>
-        <porosity value="0.25"/>
+        <porosity model="constant" value="0.25"/>
         <specific_storage model="constant" value="0.0"/>
       </mechanical_properties>
       <permeability x="1.E-12" y="1.E-12" z="1.E-12" />

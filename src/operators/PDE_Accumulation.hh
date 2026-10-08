@@ -57,21 +57,21 @@ class PDE_Accumulation : public PDE_HelperBCsList {
     : global_op_(global_op), mesh_(Teuchos::null)
   {
     Schema schema(entity, 1);
-    InitAccumulation_(schema);
+    Init_(schema);
   }
 
   PDE_Accumulation(AmanziMesh::Entity_kind entity, Teuchos::RCP<AmanziMesh::Mesh> mesh)
     : global_op_(Teuchos::null), mesh_(mesh)
   {
     Schema schema(entity, 1);
-    InitAccumulation_(schema);
+    Init_(schema);
   }
 
   PDE_Accumulation(AmanziMesh::Entity_kind entity, Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : global_op_(Teuchos::null), mesh_(mesh)
   {
     Schema schema(entity, 1);
-    InitAccumulation_(schema);
+    Init_(schema);
   }
 
   PDE_Accumulation(Teuchos::ParameterList& plist, Teuchos::RCP<Operator> global_op)
@@ -82,7 +82,7 @@ class PDE_Accumulation : public PDE_HelperBCsList {
     int n_vecs = plist_.get<int>("number of vectors", 1);
 
     schema.Init(schema.StringToKind(name), n_vecs);
-    InitAccumulation_(schema, plist_.get<bool>("surface operator", false));
+    Init_(schema, plist_.get<bool>("surface operator", false));
   }
 
   PDE_Accumulation(Teuchos::ParameterList& plist, Teuchos::RCP<AmanziMesh::Mesh> mesh)
@@ -93,7 +93,7 @@ class PDE_Accumulation : public PDE_HelperBCsList {
     int n_vecs = plist_.get<int>("number of vectors", 1);
 
     schema.Init(schema.StringToKind(name), n_vecs);
-    InitAccumulation_(schema, plist_.get<bool>("surface operator", false));
+    Init_(schema, plist_.get<bool>("surface operator", false));
   }
 
   PDE_Accumulation(Teuchos::ParameterList& plist, Teuchos::RCP<const AmanziMesh::Mesh> mesh)
@@ -106,13 +106,13 @@ class PDE_Accumulation : public PDE_HelperBCsList {
     schema.Init(schema.StringToKind(name), n_vecs);
 
     bool surface = plist_.get<bool>("surface operator", false);
-    InitAccumulation_(schema, surface);
+    Init_(schema, surface);
   }
 
   PDE_Accumulation(const Schema& schema, Teuchos::RCP<Operator> global_op)
     : global_op_(global_op), mesh_(Teuchos::null)
   {
-    InitAccumulation_(schema, false);
+    Init_(schema, false);
   }
 
   // update methods
@@ -159,7 +159,7 @@ class PDE_Accumulation : public PDE_HelperBCsList {
 
  protected:
   void CalculateEntityVolume_(CompositeVector& entity_volume, const std::string& name);
-  void InitAccumulation_(const Schema& schema, bool surface = false);
+  void Init_(const Schema& schema, bool surface = false);
   Teuchos::RCP<Op> FindOp_(const std::string& name) const;
 
  protected:

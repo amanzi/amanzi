@@ -114,7 +114,7 @@ RunTest(int ntest)
   while (t_new < 2.0 && iter < 20) {
     double t_out = t_new;
 
-    if (iter % 5 == 0) {
+    if (iter % 50 == 0) {
       io.InitializeCycle(t_out, iter, "");
       io.WriteVector(*hh(0), "depth", AmanziMesh::Entity_kind::CELL);
       io.WriteVector(*ht(0), "total_depth", AmanziMesh::Entity_kind::CELL);

@@ -22,12 +22,15 @@
 // Amanzi
 #include "amanzi_version.hh"
 #include "errors.hh"
-#include "HDF5Reader.hh"
+#include "Reader.hh"
 
 #include "InputConverterU.hh"
 
 namespace Amanzi {
 namespace AmanziInput {
+
+#define XSTR(s) STR(s)
+#define STR(s) #s
 
 XERCES_CPP_NAMESPACE_USE
 
@@ -62,6 +65,7 @@ InputConverterU::Translate(int rank, int num_proc)
   ParseModelDescription_();
   ParseFractureNetwork_();
   ParseGlobalNumericalControls_();
+  ParseMisc_();
 
   out_list.set<bool>("Native Unstructured Input", "true");
 
@@ -180,7 +184,9 @@ InputConverterU::Translate(int rank, int num_proc)
   }
 
   // -- walkabout enforces non-contiguous maps
-  if (io_walkabout_) { out_list.sublist("mesh").set<bool>("contiguous global ids", false); }
+  if (io_walkabout_) {
+    out_list.sublist("mesh").set<bool>("contiguous global ids", false);
+  }
 
   // -- single region for fracture network
   if (fracture_regions_.size() > 0) {
@@ -248,8 +254,6 @@ void
 InputConverterU::VerifyXMLStructure_()
 {
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-#define XSTR(s) STR(s)
-#define STR(s) #s
     *vo_->os() << "Amanzi executable tag: " << XSTR(AMANZI_VERSION) << "\n"
                << "Verify high-level XML structure" << std::endl;
   }
@@ -353,7 +357,7 @@ InputConverterU::ParseSolutes_()
         text_content = mm.transcode(inode->getTextContent());
 
         if (species == tagname) {
-          if (strcmp(text_content, phases_[LIQUID].primary.c_str()) == 0) continue;
+          if (strcmp(text_content, phases_[LIQUID].primary.c_str() ) == 0) continue;
           phases_[GAS].dissolved.push_back(TrimString_(text_content));
         }
       }
@@ -378,7 +382,7 @@ InputConverterU::ModifyDefaultPhysicalConstants_()
   // gravity magnitude
   const_gravity_ = GRAVITY_MAGNITUDE;
   auto it = constants_.find("gravity");
-  if (it != constants_.end()) const_gravity_ = std::strtod(it->second.c_str(), NULL);
+  if (it != constants_.end() ) const_gravity_ = std::strtod(it->second.c_str(), NULL);
 
   if (const_gravity_ <= 0.0) {
     Errors::Message msg;
@@ -390,7 +394,7 @@ InputConverterU::ModifyDefaultPhysicalConstants_()
   // reference atmospheric pressure
   const_atm_pressure_ = ATMOSPHERIC_PRESSURE;
   it = constants_.find("atmospheric_pressure");
-  if (it != constants_.end()) const_atm_pressure_ = std::strtod(it->second.c_str(), NULL);
+  if (it != constants_.end() ) const_atm_pressure_ = std::strtod(it->second.c_str(), NULL);
 }
 
 
@@ -440,12 +444,14 @@ InputConverterU::ParseFractureNetwork_()
 
     for (int i = 0; i < children->getLength(); i++) {
       DOMNode* inode = children->item(i);
-      if (DOMNode::ELEMENT_NODE != inode->getNodeType()) continue;
+      if (DOMNode::ELEMENT_NODE != inode->getNodeType() ) continue;
 
       node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
       std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
 
-      for (int n = 0; n < regions.size(); ++n) { fracture_regions_.push_back(regions[n]); }
+      for (int n = 0; n < regions.size(); ++n) {
+        fracture_regions_.push_back(regions[n]);
+      }
       fracture_regions_.erase(
         SelectUniqueEntries(fracture_regions_.begin(), fracture_regions_.end()),
         fracture_regions_.end());
@@ -468,6 +474,22 @@ InputConverterU::ParseGlobalNumericalControls_()
   if (flag) {
     std::string text = GetTextContentS_(node, "on, off");
     gravity_on_ = (text == "on");
+  }
+}
+
+
+/* ******************************************************************
+* Simulation-wide control parameters
+****************************************************************** */
+void
+InputConverterU::ParseMisc_()
+{
+  try {
+    bool flag;
+    GetUniqueElementByTagsString_("process_kernels, pk, multiphase", flag);
+    if (flag) multiphase_ = true;
+  } catch (...) {
+    // do nothing
   }
 }
 
@@ -665,7 +687,9 @@ std::string
 InputConverterU::CreateNameFromVector_(const std::vector<std::string>& list)
 {
   std::string str;
-  for (auto it = list.begin(); it != list.end(); ++it) { str = str + *it; }
+  for (auto it = list.begin(); it != list.end(); ++it) {
+    str = str + *it;
+  }
   return str;
 }
 
@@ -684,7 +708,7 @@ InputConverterU::SaveXMLFile(Teuchos::ParameterList& out_list, std::string& xmlf
   if (flag) {
     DOMElement* element = static_cast<DOMElement*>(node);
     filename = GetAttributeValueS_(element, "file_name", TYPE_NONE, false, "skip");
-    precision = GetAttributeValueL_(element, "output_precision", TYPE_NONE, 0, 10, false, 0);
+    precision = GetAttributeValueI_(element, "output_precision", TYPE_NONE, 0, 10, false, 0);
   }
 
   if (filename == "") {
@@ -719,7 +743,9 @@ std::string
 InputConverterU::CreateUniqueName_(const Teuchos::Array<std::string>& list)
 {
   std::string name;
-  for (auto it = list.begin(); it != list.end(); ++it) { name.append(*it); }
+  for (auto it = list.begin(); it != list.end(); ++it) {
+    name.append(*it);
+  }
   return name;
 }
 
@@ -733,7 +759,7 @@ InputConverterU::PrintStatistics_()
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     *vo_->os() << "Final comments:\n found units: ";
     int n(0);
-    for (std::set<std::string>::iterator it = found_units_.begin(); it != found_units_.end();
+    for (std::set<std::string>::iterator it = found_units_.begin() ; it != found_units_.end();
          ++it) {
       *vo_->os() << *it << " ";
       if (++n > 10) {
@@ -752,8 +778,8 @@ InputConverterU::PrintStatistics_()
 bool
 InputConverterU::CheckVariableName_(const std::string& filename, const std::string& varname)
 {
-  HDF5Reader reader(filename);
-  return reader.CheckVariableName(varname);
+  auto reader = createReader(filename);
+  return reader->hasVariableOrGroup(varname);
 }
 
 } // namespace AmanziInput

@@ -83,7 +83,9 @@ Mini_Operator1D::AddAccumulationTerm(const WhetStone::DenseVector& s1, bool add_
 {
   int ncells = diag_.NumRows();
   if (add_volume) {
-    for (int i = 0; i < ncells; ++i) { diag_(i) += s1(i) * mesh_cell_volume(i); }
+    for (int i = 0; i < ncells; ++i) {
+      diag_(i) += s1(i) * mesh_cell_volume(i);
+    }
   } else {
     diag_ += s1;
   }
@@ -97,9 +99,15 @@ void
 Mini_Operator1D::Apply(const WhetStone::DenseVector& v, WhetStone::DenseVector& av)
 {
   int ncells = diag_.NumRows();
-  for (int i = 0; i < ncells; ++i) { av(i) = diag_(i) * v(i); }
-  for (int i = 0; i < ncells - 1; ++i) { av(i) += up_(i) * v(i + 1); }
-  for (int i = 1; i < ncells; ++i) { av(i) += down_(i) * v(i - 1); }
+  for (int i = 0; i < ncells; ++i) {
+    av(i) = diag_(i) * v(i);
+  }
+  for (int i = 0; i < ncells - 1; ++i) {
+    av(i) += up_(i) * v(i + 1);
+  }
+  for (int i = 1; i < ncells; ++i) {
+    av(i) += down_(i) * v(i - 1);
+  }
 }
 
 

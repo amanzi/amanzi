@@ -84,7 +84,9 @@ InputConverterU::TranslateMesh_()
 
   // Define the parameter partitioner_
   node = GetUniqueElementByTagsString_(inode, "partitioner", flag);
-  if (flag) { partitioner = mm.transcode(node->getTextContent()); }
+  if (flag) {
+    partitioner = mm.transcode(node->getTextContent());
+  }
 
   // Now we can properly parse the generate/read list.
   children = inode->getChildNodes();
@@ -102,11 +104,11 @@ InputConverterU::TranslateMesh_()
         if (!flag) ThrowErrorIllformed_("mesh", "number_of_cells", "generate");
 
         std::vector<int> ncells;
-        int nx = GetAttributeValueL_(node, "nx");
+        int nx = GetAttributeValueI_(node, "nx");
         if (nx > 0) ncells.push_back(nx);
-        int ny = GetAttributeValueL_(node, "ny", TYPE_NUMERICAL, 0, INT_MAX, false, 0);
+        int ny = GetAttributeValueI_(node, "ny", TYPE_NUMERICAL, 0, INT_MAX, false, 0);
         if (ny > 0) ncells.push_back(ny);
-        int nz = GetAttributeValueL_(node, "nz", TYPE_NUMERICAL, 0, INT_MAX, false, 0);
+        int nz = GetAttributeValueI_(node, "nz", TYPE_NUMERICAL, 0, INT_MAX, false, 0);
         if (nz > 0) ncells.push_back(nz);
 
         if (ncells.size() != dim_) ThrowErrorIllformed_("mesh", "number_of_cells", "generate");
@@ -124,6 +126,12 @@ InputConverterU::TranslateMesh_()
         mesh_list.set<Teuchos::Array<int>>("number of cells", ncells);
         mesh_list.set<Teuchos::Array<double>>("domain low coordinate", low);
         mesh_list.set<Teuchos::Array<double>>("domain high coordinate", high);
+
+        node = GetUniqueElementByTagsString_(inode, "submesh", flag);
+        if (flag) {
+          auto regions = GetAttributeVectorS_(node, "regions");
+          mesh_list.set<Teuchos::Array<std::string>>("regions", regions);
+        }
       }
 
       // Un unstructured mesh will be read from a file.
@@ -159,13 +167,15 @@ InputConverterU::TranslateMesh_()
                  << std::setfill('0') << rank_;
               std::filesystem::path p(ss.str());
 
-              if (std::filesystem::exists(p)) filename = par_filename;
+              if (std::filesystem::exists(p) ) filename = par_filename;
             }
             mesh_list.set<std::string>("file", filename);
           }
         }
         node = GetUniqueElementByTagsString_(inode, "verify", flag3);
-        if (flag3) { verify = mm.transcode(node->getTextContent()); }
+        if (flag3) {
+          verify = mm.transcode(node->getTextContent());
+        }
         read = flag1 && flag2;
       }
     }
@@ -327,7 +337,7 @@ InputConverterU::TranslateRegions_()
 
         text = GetAttributeValueS_(reg_elem, "type");
         if (strcmp(text.c_str(), "color") == 0) {
-          int value = GetAttributeValueL_(reg_elem, "label");
+          int value = GetAttributeValueI_(reg_elem, "label");
           rfPL.set<int>("value", value);
           out_list.sublist(reg_name).sublist("region: color function") = rfPL;
         } else if (strcmp(text.c_str(), "labeled set") == 0) {
@@ -352,6 +362,18 @@ InputConverterU::TranslateRegions_()
         out_list.sublist(reg_name)
           .sublist("region: point")
           .set<Teuchos::Array<double>>("coordinate", coord);
+      }
+
+      else if (strcmp(node_name, "level_set") == 0) {
+        tree_["regions"].push_back(reg_name);
+
+        int dim = GetAttributeValueI_(reg_elem, "dimension");
+        std::string formula = GetAttributeValueS_(reg_elem, "formula");
+
+        out_list.sublist(reg_name)
+          .sublist("region: level set")
+          .set<int>("dimension", dim)
+          .set<std::string>("formula", formula);
       }
 
       else if (strcmp(node_name, "polygonal_surface") == 0) {
@@ -431,8 +453,12 @@ InputConverterU::TranslateRegions_()
           }
         }
 
-        if (!haveOp) { ThrowErrorMissing_("regions", "element", "operation", "logical"); }
-        if (!haveRL) { ThrowErrorMissing_("regions", "element", "region_list", "logical"); }
+        if (!haveOp) {
+          ThrowErrorMissing_("regions", "element", "operation", "logical");
+        }
+        if (!haveRL) {
+          ThrowErrorMissing_("regions", "element", "region_list", "logical");
+        }
       }
 
       else if (strcmp(node_name, "boundary") == 0) {
@@ -448,7 +474,8 @@ InputConverterU::TranslateRegions_()
         std::vector<double> low = GetAttributeVectorD_(reg_elem, "corner_coordinates", dim_, "m");
         std::vector<double> high =
           GetAttributeVectorD_(reg_elem, "opposite_corner_coordinates", dim_, "m");
-        std::vector<double> normals = GetAttributeVectorD_(reg_elem, "normals", dim_, "", false);
+        std::vector<double> normals =
+          GetAttributeVectorD_(reg_elem, "normals", dim_ * dim_, "", false);
 
         out_list.sublist(reg_name)
           .sublist("region: box volume fractions")
@@ -505,6 +532,24 @@ InputConverterU::CreateRegionAll_()
   all.set<Teuchos::Array<double>>("high coordinate", high);
 
   return out_list;
+}
+
+
+/* ******************************************************************
+* Create global region.
+****************************************************************** */
+void
+InputConverterU::CreateSubmesh_(Teuchos::ParameterList& mesh_list, bool all_faces)
+{
+  Teuchos::Array<std::string> aux(1, "FRACTURE_NETWORK_INTERNAL");
+  mesh_list.sublist("unstructured")
+    .sublist("submesh")
+    .set<Teuchos::Array<std::string>>("regions", aux)
+    .set<std::string>("extraction method", "manifold mesh")
+    .set<std::string>("domain name", "fracture")
+    .set<bool>("extract all faces", all_faces);
+
+  if (dim_ == 3) mesh_list.set<bool>("request edges", true);
 }
 
 } // namespace AmanziInput

@@ -57,7 +57,7 @@ SUITE(RESTART2)
     auto S = Teuchos::rcp(new State());
     S->RegisterDomainMesh(domain_mesh);
     std::stringstream serial_dname_ss;
-    serial_dname_ss << "serial_" << rank;
+    serial_dname_ss << "serial:" << rank;
 
     std::string serial_dname = serial_dname_ss.str();
     Key serial_fname = Keys::getKey(serial_dname, "field");
@@ -79,7 +79,9 @@ SUITE(RESTART2)
     // Set values
     int cell_index_list[] = { 0, 1, 2, 3 };
     double cell_values[] = { 10.0, 20.0, 30.0, 40.0 };
-    for (int i = 0; i != 4; ++i) { cell_values[i] += rank * 40; }
+    for (int i = 0; i != 4; ++i) {
+      cell_values[i] += rank * 40;
+    }
     auto& mf =
       *S->GetW<CompositeVector>("my_field", Tags::DEFAULT, "my_field").ViewComponent("cell");
     mf(0)->ReplaceMyValues(4, cell_values, cell_index_list);
@@ -104,7 +106,7 @@ SUITE(RESTART2)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S2.Require<CompositeVector, CompositeVectorSpace>(serial_fname, Tags::DEFAULT, serial_fname)
-      .SetMesh(domain_mesh)
+      .SetMesh(serial_mesh)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S2.Setup();

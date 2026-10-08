@@ -37,6 +37,7 @@
 #include "dbc.hh"
 #include "eos_reg.hh"
 #include "errors.hh"
+#include "evaluators_reg.hh"
 #include "evaluators_flow_reg.hh"
 #include "evaluators_mpc_reg.hh"
 #include "evaluators_multiphase_reg.hh"
@@ -280,8 +281,21 @@ AmanziUnstructuredGridSimulationDriver::InitMesh(
       ierr++;
     }
 
+    // replace mesh with a submesh
+    if (gen_params.isParameter("regions")) {
+      try {
+        auto regions = gen_params.get<Teuchos::Array<std::string>>("regions").toVector();
+        mesh = meshfactory->create(mesh, regions, Amanzi::AmanziMesh::Entity_kind::CELL);
+      } catch (const std::exception& e) {
+        std::cerr << rank << ": error: " << e.what() << std::endl;
+        ierr++;
+      }
+    }
+
     comm_->SumAll(&ierr, &aerr, 1);
-    if (aerr > 0) { return Amanzi::Simulator::FAIL; }
+    if (aerr > 0) {
+      return Amanzi::Simulator::FAIL;
+    }
 
   } else { // generate parameters are specified
     std::cerr << rank << ": error: "
@@ -289,8 +303,10 @@ AmanziUnstructuredGridSimulationDriver::InitMesh(
     throw std::exception();
   }
 
-  Teuchos::OSTab tab = mesh_vo->getOSTab();
-  *mesh_vo->os() << "CPU time stamp: " << mesh_vo->clock() << std::endl;
+  if (mesh_vo.get() && mesh_vo->os_OK(Teuchos::VERB_LOW)) {
+    Teuchos::OSTab tab = mesh_vo->getOSTab();
+    *mesh_vo->os() << "CPU time stamp: " << mesh_vo->clock() << std::endl;
+  }
   AMANZI_ASSERT(!mesh.is_null());
 
   // Verify mesh and geometric model compatibility

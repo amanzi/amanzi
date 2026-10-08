@@ -46,10 +46,12 @@ class Operator_Cell : public Operator {
   virtual void UpdateRHS(const CompositeVector& source, bool volume_included);
 
   // visit methods for Apply
-  virtual int
-  ApplyMatrixFreeOp(const Op_Cell_Cell& op, const CompositeVector& X, CompositeVector& Y) const;
-  virtual int
-  ApplyMatrixFreeOp(const Op_Face_Cell& op, const CompositeVector& X, CompositeVector& Y) const;
+  virtual int ApplyMatrixFreeOp(const Op_Cell_Cell& op,
+                                const CompositeVector& X,
+                                CompositeVector& Y) const;
+  virtual int ApplyMatrixFreeOp(const Op_Face_Cell& op,
+                                const CompositeVector& X,
+                                CompositeVector& Y) const;
 
   // visit methods for symbolic assemble
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,

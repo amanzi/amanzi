@@ -29,7 +29,8 @@ namespace AmanziEOS {
 
 class ViscosityTabular : public EOS_Viscosity {
  public:
-  ViscosityTabular(Teuchos::ParameterList& plist) : EOS_Viscosity(plist)
+  ViscosityTabular(Teuchos::ParameterList& plist)
+    : EOS_Viscosity(plist)
   {
     table_ = CreateLookupTable(plist);
   }

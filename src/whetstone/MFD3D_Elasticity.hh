@@ -39,7 +39,7 @@ class MFD3D_Elasticity : public MFD3D {
  public:
   MFD3D_Elasticity(const Teuchos::ParameterList& plist,
                    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : MFD3D(mesh){};
+    : MFD3D(mesh) {};
 
   // required methods
   // -- schema
@@ -49,7 +49,7 @@ class MFD3D_Elasticity : public MFD3D {
       1, std::make_tuple(AmanziMesh::Entity_kind::NODE, DOF_Type::POINT, d_));
   }
 
-  // -- stiffness matrix
+  // -- stiffness matrices
   int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 

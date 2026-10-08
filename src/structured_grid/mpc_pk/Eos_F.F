@@ -519,9 +519,9 @@ c ::: -----------------------------------------------------------
       integer i
       REAL_T  alpha, alpha_scale
       REAL_T  m,n,twom
-      REAL_T  sat(nc),satl
+      REAL_T  sat(nc)
 
-      REAL_T k_st, k_st1, k_sat, msat, mt, ds, dels, dels1, vgk, sa
+      REAL_T k_st, k_st1, msat, mt, ds, dels, dels1, vgk, sa
 
       vgk(m,sa) = sqrt(sa)*(one-(one-sa**(one/m))**m)**2.d0
 

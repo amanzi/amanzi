@@ -43,9 +43,9 @@
       <density>998.2</density>
       <dissolved_components>
 	<solutes>
-	  <solute coefficient_of_diffusion="5.e-12" first_order_decay_constant="0">Tracer</solute>
-	  <solute coefficient_of_diffusion="5.e-12" first_order_decay_constant="0">Sr90</solute>
-	  <solute coefficient_of_diffusion="5.e-12" first_order_decay_constant="0">Cs137</solute>
+	  <solute coefficient_of_diffusion="5.e-12" first_order_decay_rate_constant="0">Tracer</solute>
+	  <solute coefficient_of_diffusion="5.e-12" first_order_decay_rate_constant="0">Sr90</solute>
+	  <solute coefficient_of_diffusion="5.e-12" first_order_decay_rate_constant="0">Cs137</solute>
 	</solutes>
       </dissolved_components>
     </liquid_phase>

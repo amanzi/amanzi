@@ -26,8 +26,8 @@
 #include "TransportDomainFunction.hh"
 
 #ifdef ALQUIMIA_ENABLED
-#  include "Alquimia_PK.hh"
-#  include "ChemistryEngine.hh"
+#include "Alquimia_PK.hh"
+#include "ChemistryEngine.hh"
 
 namespace Amanzi {
 namespace Transport {
@@ -40,15 +40,14 @@ class TransportSourceFunction_Alquimia : public TransportDomainFunction {
                                    Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine);
   ~TransportSourceFunction_Alquimia();
 
-  void Compute(double t_old, double t_new);
+  virtual void Compute(double t_old, double t_new) override;
 
-  // require by the case class
-  virtual std::string name() const { return "alquimia source"; }
+  DomainFunction_kind getType() const override { return DomainFunction_kind::ALQUIMIA; }
 
- private:
+ protected:
   void Init_(const std::vector<std::string>& regions);
 
- private:
+ protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
   // string function of geochemical conditions
@@ -59,10 +58,7 @@ class TransportSourceFunction_Alquimia : public TransportDomainFunction {
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;
 
   // Containers for interacting with the chemistry engine.
-  AlquimiaState alq_state_;
-  AlquimiaProperties alq_mat_props_;
-  AlquimiaAuxiliaryData alq_aux_data_;
-  AlquimiaAuxiliaryOutputData alq_aux_output_;
+  AmanziChemistry::AlquimiaBeaker beaker_;
 };
 
 } // namespace Transport

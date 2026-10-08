@@ -39,7 +39,7 @@ namespace AmanziGeometry {
 // volumes of tets created by connecting the polyhedron center to
 // a face center and an edge of the face
 
-template <typename PVT>
+template<typename PVT>
 void
 polyhed_get_vol_centroid(PVT& ccoords,
                          const std::size_t nf,
@@ -48,7 +48,6 @@ polyhed_get_vol_centroid(PVT& ccoords,
                          double* volume,
                          Point* centroid)
 {
-  using namespace std;
   Point v1(3), v2(3), v3(3);
   bool negvol = false;
 
@@ -61,7 +60,7 @@ polyhed_get_vol_centroid(PVT& ccoords,
 
   int np = ccoords.size();
   if (np < 4) {
-    cout << "Not a polyhedron" << std::endl;
+    std::cout << "Not a polyhedron" << std::endl;
     return;
   }
 
@@ -117,14 +116,14 @@ polyhed_get_vol_centroid(PVT& ccoords,
 
           (*centroid) += tvolume * tcentroid; // sum up 1st moment
           (*volume) += tvolume;               // sum up 0th moment
-        }                                     // for each edge of face
+        } // for each edge of face
       }
 
       offset += nfnodes[i];
     }
 
     (*centroid) /= (*volume); // centroid = 1st moment / 0th moment
-  }                           // end if (np > 4)
+  } // end if (np > 4)
 
   (*volume) /= 6; // Account for multiplier here rather than in
                   // computation of each tet
@@ -152,7 +151,7 @@ polyhed_get_vol_centroid(PVT& ccoords,
 // Assuming that the polyhedron's faces can be broken into
 // triangular subfaces, this routine checks that the test point
 // forms a positive volume with each triangular subface
-template <class PVT>
+template<class PVT>
 bool
 point_in_polyhed(const Point testpnt,
                  const PVT& ccoords,
@@ -186,7 +185,6 @@ point_in_polyhed(const Point testpnt,
 
       for (int j = 0; j < nfnodes[i]; j++) { // for each edge of face
         // form tet from edge of face, face center and test point
-        Point tcentroid(3);
         int k, kp1;
 
         k = offset + j;
@@ -218,7 +216,7 @@ point_in_polyhed(const Point testpnt,
 // self-intersecting polygon has positive volume. This situation
 // might occur in dynamic meshes
 
-template <typename PVT>
+template<typename PVT>
 void
 polygon_get_area_centroid_normal(PVT& coords, double* area, Point* centroid, Point* normal)
 {
@@ -253,7 +251,7 @@ polygon_get_area_centroid_normal(PVT& coords, double* area, Point* centroid, Poi
     (*area) = norm(*normal);
     (*centroid) = center;
 
-    if (dim == 2 && (*normal)[0] <= 0.0) negvol = true;
+    if (dim == 2 && (*normal) [0] <= 0.0) negvol = true;
   } else {
     // Compute the area of each triangle formed by
     // the center point and each polygon edge
@@ -292,33 +290,55 @@ polygon_get_area_centroid_normal(PVT& coords, double* area, Point* centroid, Poi
 }
 
 
-// Get area weighted normal of polygon
-// In 2D, the normal is unambiguous - the normal is evaluated at one corner
-// In 3D, the procedure evaluates the normal at each corner and averages it
-
-//  Point polygon_get_normal(const std::vector<Point> coords);
-
-
 // Check if point is in polygon by Jordan's crossing algorithm
-template <class PVT>
+template<class PVT>
 bool
-point_in_polygon(const Point testpnt, const PVT& coords)
+point_in_polygon(const Point& testpnt, const PVT& coords)
+{
+  int np = coords.size();
+  int d = coords[0].dim();
+
+  if (d == 3) {
+    double xmax(0.0), ymax(0.0), zmax(0.0);
+    for (int i = 1; i < np; i++) {
+      xmax = std::max(xmax, std::fabs(coords[i][0] - coords[0][0]));
+      ymax = std::max(ymax, std::fabs(coords[i][1] - coords[0][1]));
+      zmax = std::max(zmax, std::fabs(coords[i][2] - coords[0][2]));
+    }
+    // projection on one of the three planes: XY, XZ, and YZ
+    if (zmax <= std::min(xmax, ymax)) {
+      return point_in_polygon_flat(testpnt, coords, 0, 1);
+    } else if (ymax <= std::min(xmax, zmax)) {
+      return point_in_polygon_flat(testpnt, coords, 0, 2);
+    } else if (xmax <= std::min(ymax, zmax)) {
+      return point_in_polygon_flat(testpnt, coords, 1, 2);
+    }
+  } else {
+    return point_in_polygon_flat(testpnt, coords, 0, 1);
+  }
+
+  return false;
+}
+
+
+template<class PVT>
+bool
+point_in_polygon_flat(const Point& testpnt, const PVT& coords, int i0, int i1)
 {
   int i, ip1, c;
 
-  /* Basic test - will work for strictly interior and exterior points */
+  // Basic test - will work for strictly interior and exterior points
   int np = coords.size();
 
-  double x = testpnt.x();
-  double y = testpnt.y();
+  double x = testpnt[i0];
+  double y = testpnt[i1];
 
   for (i = 0, c = 0; i < np; i++) {
-    //    std::cout<<"coords "<<coords[i]<<"\n";
     ip1 = (i + 1) % np;
-    if (((coords[i].y() > y && coords[ip1].y() <= y) ||
-         (coords[ip1].y() > y && coords[i].y() <= y)) &&
-        (x <= (coords[i].x() + (y - coords[i].y()) * (coords[ip1].x() - coords[i].x()) /
-                                 (coords[ip1].y() - coords[i].y()))))
+    if (((coords[i][i1] > y && coords[ip1][i1] <= y) ||
+         (coords[ip1][i1] > y && coords[i][i1] <= y)) &&
+        (x <= (coords[i][i0] + (y - coords[i][i1]) * (coords[ip1][i0] - coords[i][i0]) /
+                                 (coords[ip1][i1] - coords[i][i1]))))
       c = !c;
   }
 
@@ -330,9 +350,7 @@ point_in_polygon(const Point testpnt, const PVT& coords)
   return (c == 1);
 }
 
-} // end namespace AmanziGeometry
-
-} // end namespace Amanzi
-
+} // namespace AmanziGeometry
+} // namespace Amanzi
 
 #endif

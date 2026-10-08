@@ -7,33 +7,30 @@
   Authors: Markus Berndt
            Ethan Coon (ecoon@lanl.gov)
 */
-
-//! Manages checkpoint/restart capability.
 /*!
 
-A user may request periodic dumps of ATS Checkpoint Data in the
-`"checkpoint`" sublist.  The user has no explicit control over the
-content of these files, but has the guarantee that the ATS run will be
-reproducible (with accuracies determined by machine round errors and
-randomness due to execution in a parallel computing environment).
-Therefore, output controls for Checkpoint Data are limited to file
-name generation and writing frequency, by numerical cycle number.
-Unlike `"visualization`", there is only one `"checkpoint`" list for
-all domains/meshes.
+A user may request periodic dumps of checkpoint data in the `"checkpoint`"
+sublist.  The user has no explicit control over the content of these files, but
+has the guarantee that the run can be continued perfectly from that file, in
+the sense that a simulation started from a checkpoint file will have the
+bitwise same solution as if the run was continued without stopping.  Unlike
+`"visualization`", there is only one `"checkpoint`" list for all
+domains/meshes.
 
 .. _checkpoint-spec:
 .. admonition:: checkpoint-spec
 
-    * `"file name base`" ``[string]`` **"checkpoint"**
-    * `"file name digits`" ``[int]`` **5**
-    * `"single file checkpoint`" ``[bool]`` **true** If true, writes all
-      checkpoint to one file.  If false, uses a subdirectory with one file per
-      mesh.  false is required if meshes exist on other communicators than
-      MPI_COMM_WORLD, but this is toggled if the code detects that this is
-      necessary.
+   * `"file name base`" ``[string]`` **"checkpoint"**
+   * `"file name digits`" ``[int]`` **5**
+   * `"single file checkpoint`" ``[bool]`` **true** If true, writes all
+     checkpoint to one file.  If false, uses a subdirectory with one file per
+     mesh.  false is required if meshes exist on other communicators than
+     MPI_COMM_WORLD, but this is toggled automatically if the code detects that
+     this is necessary.
 
-    INCLUDES:
-    - ``[io-event-spec]`` An IOEvent_ spec
+   INCLUDES:
+
+   - ``[io-event-spec]`` An :ref:`IOEvent` spec.
 
 Example:
 
@@ -68,10 +65,12 @@ every 25 seconds thereafter, along with times 101, 303, and 422.  Files will be 
 #include "ObservationData.hh"
 #include "Key.hh"
 
+#define DEBUG_COMM_HANGS 0
+
 namespace Amanzi {
 class State;
 
-class Checkpoint : public IOEvent {
+class Checkpoint : public Utils::IOEvent {
  public:
   enum class WriteType { STANDARD = 0, FINAL, POST_MORTEM };
 
@@ -91,10 +90,10 @@ class Checkpoint : public IOEvent {
              const std::string& domain = "domain");
 
   // public interface for coordinator clients
-  template <typename T>
+  template<typename T>
   void Write(const std::string& name, const T& t) const;
 
-  template <typename T>
+  template<typename T>
   bool Read(const std::string& name, T& t) const
   {
     return true;
@@ -129,67 +128,92 @@ class Checkpoint : public IOEvent {
 };
 
 
-template <>
-void
-Checkpoint::Write<Epetra_Vector>(const std::string& name, const Epetra_Vector& t) const;
+template<>
+void Checkpoint::Write<Epetra_Vector>(const std::string& name, const Epetra_Vector& t) const;
 
-template <>
+template<>
 inline void
 Checkpoint::Write<double>(const std::string& name, const double& t) const
 {
   auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
-  if (!output_.count(domain)) domain = "domain";
+  if (!output_.count(domain) ) domain = "domain";
   output_.at(domain)->writeAttrReal(t, name);
 }
 
-template <>
+template<>
 inline void
 Checkpoint::Write<int>(const std::string& name, const int& t) const
 {
   auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
-  if (!output_.count(domain)) domain = "domain";
+  if (!output_.count(domain) ) domain = "domain";
   output_.at(domain)->writeAttrInt(t, name);
 }
 
-template <>
+template<>
 inline bool
 Checkpoint::Read<Epetra_Vector>(const std::string& name, Epetra_Vector& t) const
 {
   auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
-  if (!output_.count(domain)) domain = "domain";
-  return output_.at(domain)->readData(t, name);
+  if (!output_.count(domain) ) domain = "domain";
+
+#if DEBUG_COMM_HANGS
+  {
+    auto comm_world = getDefaultComm();
+    std::string fname = std::string("./err.") + std::to_string(comm_world->MyPID());
+    std::fstream str(fname, std::fstream::out | std::fstream::app);
+    str << "rank (" << comm_world->MyPID() << "/" << comm_world->NumProc() << ") on comm ("
+        << output_.at(domain)->Comm()->MyPID() << "/" << output_.at(domain)->Comm()->NumProc()
+        << ") reading \"" << name << "\" of type Epetra_Vector from domain \"" << domain
+        << "\" in file \"" << output_.at(domain)->H5DataFilename() << std::endl;
+  }
+#endif
+
+  output_.at(domain)->readData(t, name);
+  return true;
 }
 
-template <>
+template<>
 inline bool
 Checkpoint::Read<double>(const std::string& name, double& t) const
 {
   auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
-  if (!output_.count(domain)) domain = "domain";
-  std::string fname = std::string("./err.") + std::to_string(output_.at("domain")->Comm()->MyPID());
-  std::fstream str(fname);
-  str << "rank (" << output_.at("domain")->Comm()->MyPID() << "/"
-      << output_.at("domain")->Comm()->NumProc() << ") on comm ("
-      << output_.at(domain)->Comm()->MyPID() << "/" << output_.at(domain)->Comm()->NumProc()
-      << ") reading \"" << name << "\" from domain \"" << domain << "\" in file \""
-      << output_.at(domain)->H5DataFilename() << std::endl;
+  if (!output_.count(domain) ) domain = "domain";
+
+#if DEBUG_COMM_HANGS
+  {
+    auto comm_world = getDefaultComm();
+    std::string fname = std::string("./err.") + std::to_string(comm_world->MyPID());
+    std::fstream str(fname, std::fstream::out | std::fstream::app);
+    str << "rank (" << comm_world->MyPID() << "/" << comm_world->NumProc() << ") on comm ("
+        << output_.at(domain)->Comm()->MyPID() << "/" << output_.at(domain)->Comm()->NumProc()
+        << ") reading \"" << name << "\" of type double from domain \"" << domain << "\" in file \""
+        << output_.at(domain)->H5DataFilename() << std::endl;
+  }
+#endif
+
   output_.at(domain)->readAttrReal(t, name);
   return true; // FIXME
 }
 
-template <>
+template<>
 inline bool
 Checkpoint::Read<int>(const std::string& name, int& t) const
 {
   auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
-  if (!output_.count(domain)) domain = "domain";
-  std::string fname = std::string("./err.") + std::to_string(output_.at("domain")->Comm()->MyPID());
-  std::fstream str(fname);
-  str << "rank (" << output_.at("domain")->Comm()->MyPID() << "/"
-      << output_.at("domain")->Comm()->NumProc() << ") on comm ("
-      << output_.at(domain)->Comm()->MyPID() << "/" << output_.at(domain)->Comm()->NumProc()
-      << ") reading \"" << name << "\" from domain \"" << domain << "\" in file \""
-      << output_.at(domain)->H5DataFilename() << std::endl;
+  if (!output_.count(domain) ) domain = "domain";
+
+#if DEBUG_COMM_HANGS
+  {
+    auto comm_world = getDefaultComm();
+    std::string fname = std::string("./err.") + std::to_string(comm_world->MyPID());
+    std::fstream str(fname, std::fstream::out | std::fstream::app);
+    str << "rank (" << comm_world->MyPID() << "/" << comm_world->NumProc() << ") on comm ("
+        << output_.at(domain)->Comm()->MyPID() << "/" << output_.at(domain)->Comm()->NumProc()
+        << ") reading \"" << name << "\" of type int from domain \"" << domain << "\" in file \""
+        << output_.at(domain)->H5DataFilename() << std::endl;
+  }
+#endif
+
   output_.at(domain)->readAttrInt(t, name);
   return true; // FIXME
 }

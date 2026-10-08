@@ -24,6 +24,7 @@
 #include "CycleDriver.hh"
 #include "MeshAudit.hh"
 #include "eos_reg.hh"
+#include "evaluators_reg.hh"
 #include "evaluators_flow_reg.hh"
 #include "Mesh.hh"
 #include "MeshExtractedManifold.hh"
@@ -70,10 +71,8 @@ RunTest(const std::string xmlInFileName)
   int status(0);
   double tmp(0.0);
   for (auto& quad : obs_data[label]) {
-    if (quad.value > tmp)
-      CHECK(status == 0);
-    else
-      status++;
+    if (quad.value > tmp) CHECK(status == 0);
+    else status++;
 
     tmp = quad.value;
   }

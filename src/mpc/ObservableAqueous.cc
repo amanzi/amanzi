@@ -35,7 +35,7 @@ ObservableAqueous::ObservableAqueous(std::string variable,
                                      Teuchos::ParameterList& plist,
                                      Teuchos::ParameterList& units_plist,
                                      Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-  : Observable(variable, region, functional, plist, units_plist, mesh){};
+  : ObservableAmanzi(variable, region, functional, plist, units_plist, mesh) {};
 
 
 /* ******************************************************************
@@ -167,6 +167,28 @@ ObservableAqueous::ComputeObservation(State& S,
     }
   } else if (variable_ == "aqueous pressure") {
     const auto& pressure = *S.Get<CompositeVector>(pressure_key).ViewComponent("cell");
+
+    for (int i = 0; i < region_size_; i++) {
+      int c = entity_ids_[i];
+      double vol = mesh_->getCellVolume(c);
+      *volume += vol;
+      *value += pressure[0][c] * vol;
+    }
+    unit = "Pa";
+  } else if (variable_ == "pressure liquid") {
+    Key key = Keys::getKey(domain_, "pressure_liquid");
+    const auto& pressure = *S.Get<CompositeVector>(key).ViewComponent("cell");
+
+    for (int i = 0; i < region_size_; i++) {
+      int c = entity_ids_[i];
+      double vol = mesh_->getCellVolume(c);
+      *volume += vol;
+      *value += pressure[0][c] * vol;
+    }
+    unit = "Pa";
+  } else if (variable_ == "pressure gas") {
+    Key key = Keys::getKey(domain_, "pressure_gas");
+    const auto& pressure = *S.Get<CompositeVector>(key).ViewComponent("cell");
 
     for (int i = 0; i < region_size_; i++) {
       int c = entity_ids_[i];

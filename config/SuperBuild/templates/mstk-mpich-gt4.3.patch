@@ -1,0 +1,39 @@
+diff --color -ruN MSTK-3.3.6-orig/include/MSTK_types.h MSTK-3.3.6/include/MSTK_types.h
+--- MSTK-3.3.6-orig/include/MSTK_types.h	2025-10-03 11:48:29
++++ MSTK-3.3.6/include/MSTK_types.h	2025-10-06 14:11:50
+@@ -9,13 +9,18 @@
+ #ifndef _H_TYPESMSTK
+ #define _H_TYPESMSTK
+ 
+-#ifdef MSTK_HAVE_MPI
+-#include "mpi.h"
+-typedef MPI_Comm MSTK_Comm;
++#if defined(MSTK_HAVE_MPI) || defined(HAVE_MPI) || defined(MPI_VERSION)
++# include <mpi.h>
++  typedef MPI_Comm MSTK_Comm;
++# define MSTK_COMM_WORLD MPI_COMM_WORLD
++# define MSTK_COMM_NULL  MPI_COMM_NULL
+ #else 
+ /* For serial builds define typedef MSTK_Comm so that codes can send in
+-   a NULL argument */
+-typedef void *MSTK_Comm;    
++   a NULL argument - rpf newer mpich enforces expectation of int handle 
++   here, so type needs to be int. - 251006 */
++  typedef int MSTK_Comm;
++# define MSTK_COMM_WORLD 0
++# define MSTK_COMM_NULL  0 
+ #endif
+ 
+ #ifdef   __cplusplus
+diff --color -ruN MSTK-3.3.6-orig/utils/mkstruc/src/mkstruc.c MSTK-3.3.6/utils/mkstruc/src/mkstruc.c
+--- MSTK-3.3.6-orig/utils/mkstruc/src/mkstruc.c	2025-10-03 11:48:29
++++ MSTK-3.3.6/utils/mkstruc/src/mkstruc.c	2025-10-06 14:09:18
+@@ -556,7 +556,7 @@
+     MV_Set_Coords(mv,xyz);
+   }
+ 
+-  MESH_WriteToFile(mesh,outfile,F1,NULL);
++  MESH_WriteToFile(mesh,outfile,F1,MSTK_COMM_NULL);
+ 
+   MESH_Delete(mesh);
+ }

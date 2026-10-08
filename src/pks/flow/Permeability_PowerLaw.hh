@@ -14,11 +14,11 @@ The power law permeability porosity relations is given by
 .. math::
   K = K_0 \left(\frac{\phi}{\phi_0}\right)^n
 
-* `"permeability porosity model`" [string] is the name of this model
+.. admonition:: permeability_power_law
 
-* `"undeformed soil porosity`" [double] defines the reference porosity :math:`\phi_0`
-
-* `"power law exponent`" [double] defines exponent :math:`n`
+  * `"permeability porosity model`" [string] is the name of this model
+  * `"undeformed soil porosity`" [double] defines the reference porosity :math:`\phi_0`
+  * `"power law exponent`" [double] defines exponent :math:`n`
 
 .. code-block:: xml
 
@@ -49,7 +49,7 @@ class Permeability_PowerLaw : public Permeability {
     phi_ref_ = plist.get<double>("undeformed soil porosity");
     exp_ = plist.get<double>("power law exponent");
   }
-  ~Permeability_PowerLaw(){};
+  ~Permeability_PowerLaw() {};
 
   // required methods from the base class
   double Factor(double phi) { return std::pow(phi / phi_ref_, exp_); }

@@ -27,7 +27,7 @@ namespace Energy {
 void
 EnergyTwoPhase_PK::FunctionalResidual(double t_old,
                                       double t_new,
-                                      Teuchos::RCP<TreeVector> u_old,
+                                      Teuchos::RCP<const TreeVector> u_old,
                                       Teuchos::RCP<TreeVector> u_new,
                                       Teuchos::RCP<TreeVector> g)
 {
@@ -45,7 +45,8 @@ EnergyTwoPhase_PK::FunctionalResidual(double t_old,
     const auto& conductivity = S_->Get<CompositeVector>(conductivity_gen_key_);
     *upw_conductivity_->ViewComponent("cell") = *conductivity.ViewComponent("cell");
 
-    const auto& bc_model = op_bc_->bc_model();
+    auto op_bc_temp = S_->GetPtrW<Operators::BCs>(bcs_temperature_key_, Tags::DEFAULT, "state");
+    const auto& bc_model = op_bc_temp->bc_model();
     Operators::CellToBoundaryFaces(bc_model, *upw_conductivity_);
     upwind_->Compute(*flux, bc_model, *upw_conductivity_);
   }
@@ -80,6 +81,7 @@ EnergyTwoPhase_PK::FunctionalResidual(double t_old,
   S_->GetEvaluator(enthalpy_key_).Update(*S_, passwd_);
   const auto& enthalpy = S_->Get<CompositeVector>(enthalpy_key_);
 
+  op_advection_->Init();
   op_matrix_advection_->Setup(*flux);
   op_matrix_advection_->UpdateMatrices(flux.ptr());
   op_matrix_advection_->ApplyBCs(false, true, false);
@@ -109,8 +111,10 @@ EnergyTwoPhase_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
     const auto& conductivity = S_->Get<CompositeVector>(conductivity_gen_key_);
     *upw_conductivity_->ViewComponent("cell") = *conductivity.ViewComponent("cell");
 
+    auto op_bc_temp = S_->GetPtrW<Operators::BCs>(bcs_temperature_key_, Tags::DEFAULT, "state");
+    const auto& bc_model = op_bc_temp->bc_model();
+
     auto flux = S_->GetPtr<CompositeVector>(mol_flowrate_key_, Tags::DEFAULT);
-    const auto& bc_model = op_bc_->bc_model();
     Operators::CellToBoundaryFaces(bc_model, *upw_conductivity_);
     upwind_->Compute(*flux, bc_model, *upw_conductivity_);
   }
@@ -126,7 +130,9 @@ EnergyTwoPhase_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
   auto& dEdT = S_->GetDerivativeW<CompositeVector>(
     energy_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, energy_key_);
 
-  if (dt > 0.0) { op_acc_->AddAccumulationDelta(*up->Data().ptr(), dEdT, dEdT, dt, "cell"); }
+  if (dt > 0.0) {
+    op_acc_->AddAccumulationDelta(*up->Data().ptr(), dEdT, dEdT, dt, "cell");
+  }
 
   // add advection term dHdT
   if (prec_include_enthalpy_) {
@@ -163,7 +169,9 @@ EnergyTwoPhase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<cons
   double ref_temp(273.0);
   for (int c = 0; c < ncells_owned; c++) {
     double tmp = fabs(duc[0][c]) / (fabs(uc[0][c] - ref_temp) + ref_temp);
-    if (tmp > error_t) { error_t = tmp; }
+    if (tmp > error_t) {
+      error_t = tmp;
+    }
   }
 
   // Cell error is based upon error in energy conservation relative to

@@ -13,7 +13,6 @@
 */
 
 #include <algorithm>
-#include <iterator>
 
 #include "MultiphaseBoundaryFunction.hh"
 
@@ -26,7 +25,7 @@ namespace Multiphase {
 MultiphaseBoundaryFunction::MultiphaseBoundaryFunction(const Teuchos::ParameterList& plist)
 {
   rainfall_ = false;
-  if (plist.isParameter("name")) component_name_ = plist.get<std::string>("name");
+  if (plist.isParameter("name") ) component_name_ = plist.get<std::string>("name");
 
   component_phase_ = MULTIPHASE_PHASE_LIQUID;
   if (plist.isParameter("phase")) {
@@ -35,7 +34,7 @@ MultiphaseBoundaryFunction::MultiphaseBoundaryFunction(const Teuchos::ParameterL
     if (phase == "napl") component_phase_ = MULTIPHASE_PHASE_NAPL;
   }
 
-  if (plist.isParameter("rainfall")) rainfall_ = plist.get<bool>("rainfall");
+  if (plist.isParameter("rainfall") ) rainfall_ = plist.get<bool>("rainfall");
 }
 
 

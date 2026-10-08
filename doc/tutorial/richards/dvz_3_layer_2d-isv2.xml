@@ -1,4 +1,4 @@
-<amanzi_input version="1.5-dev" type="unstructured">
+<amanzi_input version="1.7-dev" type="unstructured">
 
   <model_description name="BC Cribs">
     <comments>Three homogeneous layers in 2D with two cribs discharging Tc-99</comments>
@@ -77,17 +77,21 @@
   <!--  if flow,transport,chemistry are missing, this implies that state == off -->
   <process_kernels>
     <comments>This is a proposed comment field for process_kernels</comments>
-    <flow state = "on" model = "richards"/>
-    <transport state = "on" algorithm = "explicit first-order" sub_cycling = "on"/>
-    <chemistry state = "off" engine = "none"/>
+    <pk mode="steady">
+      <flow state = "on" model = "richards"/>
+    </pk>
+    <pk mode="transient">
+      <flow state = "on" model = "richards"/>
+      <transport state="on" algorithm="explicit first-order" sub_cycling="on"/>
+      <subcycled name="mpc" model="default">flow,transport</subcycled>
+    </pk>
   </process_kernels>
 
   <phases>
     <comments>Eliminated term "Uniform" from viscosity and density input. Designed for additional phases to be included.</comments>
     <liquid_phase name = "water">
-      <eos>false</eos>  <!-- default is false; and can be left out -->
-      <viscosity>1.002E-03</viscosity>
-      <density>998.2</density>
+      <eos model="constant" viscosity="1.002e-3" density="998.2"/> 
+      <molar_mass>0.018</molar_mass>
       <dissolved_components> 
         <solutes>
           <solute coefficient_of_diffusion="1.0e-9">Tc-99</solute>
@@ -101,10 +105,7 @@
     <execution_control_defaults init_dt="10"  max_dt="20 y" reduction_factor="0.8" 
                                 increase_factor="1.25" mode="transient" method="bdf1"/>
     <execution_control start="0.0;y"  end="1956.0,y" init_dt= "1000" max_dt="500.0 y" reduction_factor="0.8" mode="steady"/>
-    <execution_control start="B-17_release_begin" />
-    <execution_control start="B-17_release_end" />
-    <execution_control start="B-18_release_begin" />
-    <execution_control start="B-18_release_end" end="3000.0;y" />
+    <execution_control start="B-17_release_begin" end="3000.0; y" mode="transient"/>
   </execution_controls>
 
   <!-- There are few different ways to iterate to steady-state -
@@ -164,7 +165,7 @@
     <material name="Facies_1">
       <comments>Material corresponds to region facies1</comments>
       <mechanical_properties>
-        <porosity value="0.4082"/>
+        <porosity model="constant" value="0.4082"/>
         <particle_density value="2720.0"/>
       </mechanical_properties>
       <permeability x="1.9976E-12" y="1.9976E-12" z="1.9976E-13"/>
@@ -179,7 +180,7 @@
     <material name ="Facies_2">
       <comments>Material corresponds to region facies2</comments>
       <mechanical_properties>
-        <porosity value="0.2206" />
+        <porosity model="constant" value="0.2206" />
         <particle_density value="2720.0"/>
       </mechanical_properties>
       <permeability x="6.9365E-11" y="6.9365E-11" z="6.9365E-12"/>
@@ -194,7 +195,7 @@
     <material name ="Facies_3">
       <comments>Material corresponds to region facies3</comments>
       <mechanical_properties>
-        <porosity value="0.234" />
+        <porosity model="constant" value="0.234" />
         <particle_density value="2720.0"/>
       </mechanical_properties>
       <permeability x="2.0706E-09" y="2.0706E-09" z="2.0706E-09"/>
@@ -218,6 +219,7 @@
         </liquid_component>
         <solute_component name = "Tc-99" value = "0" function="uniform"/>
       </liquid_phase>
+      <temperature formula="300.0"/>
     </initial_condition>
   </initial_conditions>
 

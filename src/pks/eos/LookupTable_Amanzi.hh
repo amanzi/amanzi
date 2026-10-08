@@ -27,11 +27,14 @@ namespace AmanziEOS {
 class LookupTable_Amanzi : public LookupTable {
  public:
   LookupTable_Amanzi(Teuchos::ParameterList& plist);
-  ~LookupTable_Amanzi(){};
+  ~LookupTable_Amanzi() {};
 
  private:
-  void
-  ReadMetaData_(std::ifstream& ifs, const std::string& label, int* n, double* scale, double* shift);
+  void ReadMetaData_(std::ifstream& ifs,
+                     const std::string& label,
+                     int* n,
+                     double* scale,
+                     double* shift);
 
   void ReadBlock_(std::ifstream& ifs,
                   const std::string& field,

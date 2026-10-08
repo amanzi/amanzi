@@ -243,7 +243,6 @@ MatFiller::FindMixedCells()
   MultiFab junk(cba,1,0,Fab_noallocate);
   const DistributionMapping& dm = junk.DistributionMap();
   int my_proc = ParallelDescriptor::MyProc();
-  bool is_ioproc = ParallelDescriptor::IOProcessor();
   Array<int> my_grids;
   for (int i=0; i<cba_size ; ++i) {
     if (dm[i] == my_proc) {

@@ -45,6 +45,7 @@ Darcy_PK::SolveFullySaturatedProblem(CompositeVector& u, bool wells_on)
   op_->ComputeInverse();
   int ierr = op_->ApplyInverse(rhs, *solution);
   pressure_eval_->SetChanged();
+  mol_flowrate_eval_->SetChanged();
 
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     int num_itrs = op_->num_itrs();

@@ -66,14 +66,14 @@ public:
 
   ~ChemConstraint() {};
 
-  virtual void apply(FArrayBox&       fab, int vcomp,
-		     FArrayBox&       aux, int acomp,
-		     const IArrayBox& idx,
-		     const Real*      dx,
-		     const Box&       box,
-		     const FArrayBox& density,     int dComp,
-		     const FArrayBox& temperature, int TComp,
-		     Real             time) const;
+  void apply(FArrayBox&       fab, int vcomp,
+	     FArrayBox&       aux, int acomp,
+	     const IArrayBox& idx,
+	     const Real*      dx,
+	     const Box&       box,
+	     const FArrayBox& density,     int dComp,
+	     const FArrayBox& temperature, int TComp,
+	     Real             time) const;
 };
 
 

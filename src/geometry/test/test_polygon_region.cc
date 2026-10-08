@@ -78,7 +78,7 @@ TEST(POLYGON_REGION2)
 
   int lcv = 0;
   int dim = 0;
-  for (Amanzi::AmanziGeometry::RegionPolygon::PointIterator p = poly->begin(); p != poly->end();
+  for (Amanzi::AmanziGeometry::RegionPolygon::PointIterator p = poly->begin() ; p != poly->end();
        ++lcv, ++p) {
     dim = p->dim();
     for (int j = 0; j < dim; j++) CHECK_EQUAL((*p)[j], in_xyz[dim * lcv + j]);
@@ -162,7 +162,7 @@ TEST(POLYGON_REGION3)
 
   int lcv = 0;
   int dim = 0;
-  for (Amanzi::AmanziGeometry::RegionPolygon::PointIterator p = poly->begin(); p != poly->end();
+  for (Amanzi::AmanziGeometry::RegionPolygon::PointIterator p = poly->begin() ; p != poly->end();
        ++lcv, ++p) {
     dim = p->dim();
     for (int j = 0; j < dim; j++) CHECK_EQUAL((*p)[j], in_xyz[dim * lcv + j]);

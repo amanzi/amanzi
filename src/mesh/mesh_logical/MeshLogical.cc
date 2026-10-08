@@ -130,9 +130,9 @@ MeshLogical::MeshLogical(const Comm_ptr_type& comm,
   }
 
   // geometric info that must get set later
-  Kokkos::resize(cell_volumes_, num_cells);
+  Kokkos::realloc(cell_volumes_, num_cells);
   Kokkos::deep_copy(cell_volumes_, -1.);
-  Kokkos::resize(face_areas_, face_cell_ids_.size<MemSpace_kind::HOST>());
+  Kokkos::realloc(face_areas_, face_cell_ids_.size<MemSpace_kind::HOST>());
   Kokkos::deep_copy(face_areas_, -1.);
 
   std::vector<Entity_ID_List> cell_face_ids_v(num_cells);
@@ -217,22 +217,28 @@ MeshLogical::setLogicalGeometry(Double_List const* const cell_volumes,
   auto n_faces = getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
 
   if (cell_volumes && n_cells != cell_volumes->size()) {
-    Errors::Message mesg("MeshLogical::setLogicalGeometry() called with bad data");
+    Errors::Message mesg("MeshLogical::setLogicalGeometry() called with bad cell volumes");
     Exceptions::amanzi_throw(mesg);
   }
   if (face_areas && n_faces != face_areas->size()) {
-    Errors::Message mesg("MeshLogical::setLogicalGeometry() called with bad data");
+    Errors::Message mesg("MeshLogical::setLogicalGeometry() called with bad face areas");
     Exceptions::amanzi_throw(mesg);
   }
   if (face_cell_bisectors && n_faces != face_cell_bisectors->size()) {
-    Errors::Message mesg("MeshLogical::setLogicalGeometry() called with bad data");
+    Errors::Message mesg("MeshLogical::setLogicalGeometry() called with bad bisectors");
     Exceptions::amanzi_throw(mesg);
   }
   if (cell_centroids && n_cells != cell_centroids->size()) {
-    Errors::Message mesg("MeshLogical::setLogicalGeometry() called with bad data");
+    Errors::Message mesg("MeshLogical::setLogicalGeometry() called with bad cell centroids");
     Exceptions::amanzi_throw(mesg);
   }
 
+  // align dimensions of mesh and points
+  if (cell_centroids) {
+    int d = (*cell_centroids)[0].dim();
+    setSpaceDimension(d);
+    setManifoldDimension(d);
+  }
 
   if (cell_volumes) vectorToView(cell_volumes_, *cell_volumes);
   if (face_areas) vectorToView(face_areas_, *face_areas);
@@ -283,7 +289,7 @@ MeshLogical::operator==(const MeshLogical& other)
     if (cell_face_bisectors_.getRowUnmanaged<MemSpace_kind::HOST>(i).size() !=
         other.cell_face_bisectors_.getRowUnmanaged<MemSpace_kind::HOST>(i).size())
       return false;
-    for (size_t j = 0; j != cell_face_bisectors_.getRowUnmanaged<MemSpace_kind::HOST>(i).size();
+    for (size_t j = 0; j != cell_face_bisectors_.getRowUnmanaged<MemSpace_kind::HOST>(i) .size();
          ++j)
       if (AmanziGeometry::norm(cell_face_bisectors_.get<MemSpace_kind::HOST>(i, j) -
                                other.cell_face_bisectors_.get<MemSpace_kind::HOST>(i, j)) > _eps)

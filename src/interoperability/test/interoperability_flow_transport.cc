@@ -45,7 +45,7 @@ class ATS_Richards : public Richards {
                const Teuchos::RCP<Teuchos::ParameterList>& glist,
                const Teuchos::RCP<State>& S,
                const Teuchos::RCP<TreeVector>& soln)
-    : PK(pk_tree, glist, S, soln), Richards(pk_tree, glist, S, soln){};
+    : PK(pk_tree, glist, S, soln), Richards(pk_tree, glist, S, soln) {};
 
   virtual void Setup() override
   {
@@ -91,7 +91,7 @@ class ATS_Richards : public Richards {
     S_->GetW<CompositeVector>("volumetric_flow_rate", Tags::DEFAULT, "state") =
       S_->Get<CompositeVector>("water_flux", Tags::NEXT);
 
-    // reset time to beginning of time step as expected by Amanzi FIXME
+    // reset time to beginning of timestep as expected by Amanzi FIXME
     S_->GetW<double>("time", Tags::NEXT, "time") = t_old;
   }
 

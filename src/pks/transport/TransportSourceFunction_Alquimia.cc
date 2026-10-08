@@ -27,11 +27,15 @@ TransportSourceFunction_Alquimia::TransportSourceFunction_Alquimia(
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
   Teuchos::RCP<AmanziChemistry::Alquimia_PK> alquimia_pk,
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine)
-  : mesh_(mesh), alquimia_pk_(alquimia_pk), chem_engine_(chem_engine)
+  : mesh_(mesh),
+    alquimia_pk_(alquimia_pk),
+    chem_engine_(chem_engine),
+    TransportDomainFunction(plist)
 {
   // Check arguments.
   if (chem_engine_ != Teuchos::null) {
-    chem_engine_->InitState(alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
+    chem_engine_->InitState(
+      beaker_.properties, beaker_.state, beaker_.aux_data, beaker_.aux_output);
     chem_engine_->GetPrimarySpeciesNames(tcc_names_);
   } else {
     Errors::Message msg;
@@ -47,6 +51,8 @@ TransportSourceFunction_Alquimia::TransportSourceFunction_Alquimia(
   std::vector<std::string> conditions =
     plist.get<Teuchos::Array<std::string>>("geochemical conditions").toVector();
 
+  set_location("interior");
+
   // Function of geochemical conditions and the associates regions.
   f_ = Teuchos::rcp(new FunctionTabularString(times, conditions));
   Init_(regions);
@@ -58,7 +64,7 @@ TransportSourceFunction_Alquimia::TransportSourceFunction_Alquimia(
 ****************************************************************** */
 TransportSourceFunction_Alquimia::~TransportSourceFunction_Alquimia()
 {
-  chem_engine_->FreeState(alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
+  chem_engine_->FreeState(beaker_.properties, beaker_.state, beaker_.aux_data, beaker_.aux_output);
 }
 
 
@@ -70,7 +76,7 @@ TransportSourceFunction_Alquimia::Init_(const std::vector<std::string>& regions)
 {
   for (int i = 0; i < regions.size(); ++i) {
     auto block = mesh_->getSetEntities(
-      regions[i], AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+      regions[i], AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     int nblock = block.size();
 
     // Now get the cells that are attached to these faces.
@@ -95,16 +101,16 @@ TransportSourceFunction_Alquimia::Compute(double t_old, double t_new)
     int cell = it->first;
 
     // Dump the contents of the chemistry state into our Alquimia containers.
-    alquimia_pk_->CopyToAlquimia(cell, alq_mat_props_, alq_state_, alq_aux_data_);
+    alquimia_pk_->copyToAlquimia(cell, beaker_);
 
     // Enforce the condition.
     chem_engine_->EnforceCondition(
-      cond_name, t_new, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
+      cond_name, t_new, beaker_.properties, beaker_.state, beaker_.aux_data, beaker_.aux_output);
 
     // Move the concentrations into place.
     std::vector<double>& values = it->second;
     for (int i = 0; i < values.size(); i++) {
-      values[i] = alq_state_.total_mobile.data[i] / domain_volume_;
+      values[i] = beaker_.state.total_mobile.data[i] / domain_volume_;
     }
   }
 }

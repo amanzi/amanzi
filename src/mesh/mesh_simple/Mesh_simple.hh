@@ -61,14 +61,14 @@ class Mesh_simple : public MeshFramework {
 
   // Number of entities of any kind (cell, face, node) and in a
   // particular category (OWNED, GHOST, ALL)
-  virtual std::size_t
-  getNumEntities(const Entity_kind kind, const Parallel_kind ptype) const override;
+  virtual std::size_t getNumEntities(const Entity_kind kind,
+                                     const Parallel_kind ptype) const override;
 
 
   // Node coordinates - 3 in 3D and 2 in 2D
   virtual AmanziGeometry::Point getNodeCoordinate(const Entity_ID nodeid) const override;
-  virtual void
-  setNodeCoordinate(const Entity_ID nodeid, const AmanziGeometry::Point& coord) override;
+  virtual void setNodeCoordinate(const Entity_ID nodeid,
+                                 const AmanziGeometry::Point& coord) override;
 
   virtual void getCellFacesAndDirs(
     const Entity_ID c,
@@ -87,17 +87,17 @@ class Mesh_simple : public MeshFramework {
                             View_type<const Entity_ID, MemSpace_kind::HOST>& nodes) const override;
 
   // backward compatilities
-  virtual void
-  getNodeEdges(const Entity_ID nodeid,
-               View_type<const Entity_ID, MemSpace_kind::HOST>& edgeids) const override;
+  virtual void getNodeEdges(
+    const Entity_ID nodeid,
+    View_type<const Entity_ID, MemSpace_kind::HOST>& edgeids) const override;
 
-  virtual void
-  getNodeFaces(const Entity_ID nodeid,
-               View_type<const Entity_ID, MemSpace_kind::HOST>& faceids) const override;
+  virtual void getNodeFaces(
+    const Entity_ID nodeid,
+    View_type<const Entity_ID, MemSpace_kind::HOST>& faceids) const override;
 
-  virtual void
-  getEdgeFaces(const Entity_ID edgeid,
-               View_type<const Entity_ID, MemSpace_kind::HOST>& faceids) const override;
+  virtual void getEdgeFaces(
+    const Entity_ID edgeid,
+    View_type<const Entity_ID, MemSpace_kind::HOST>& faceids) const override;
 
 
   virtual void getFaceCells(const Entity_ID f,

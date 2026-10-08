@@ -165,7 +165,7 @@ TransportMatrixFracture_PK::Initialize()
 
 
 /* *******************************************************************
-* Performs one time step.
+* Performs one timestep.
 ******************************************************************* */
 bool
 TransportMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)

@@ -27,7 +27,7 @@ H2O_Viscosity::H2O_Viscosity(Teuchos::ParameterList& eos_plist)
     kcv1_(0.00585),
     kbv2_(1.3272),
     kcv2_(-0.001053),
-    kT1_(293.15){};
+    kT1_(293.15) {};
 
 
 double

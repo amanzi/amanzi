@@ -182,13 +182,16 @@ FractureInsertion::SetValues(const CompositeVector& flux)
     int shift = Operators::UniqueIndexFaceToCells(*mesh_matrix_, f, cells[0]);
 
     for (int k = 0; k < ncells; ++k) {
-      // since cells are ordered differenty then points, we need a map
+      // since cells could be ordered differenty then points, we need a map
       double tmp = flux_f[0][first + shift] * dir;
 
-      if (tmp > 0)
+      if (tmp > 0) {
         (*values_)[np] = tmp;
-      else
+        (*values2_)[np] = 0.0;
+      } else {
+        (*values_)[np] = 0.0;
         (*values2_)[np] = -tmp;
+      }
 
       dir = -dir;
       shift = 1 - shift;

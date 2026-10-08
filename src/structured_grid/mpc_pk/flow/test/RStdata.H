@@ -51,8 +51,8 @@ struct RStdata
                                  int            dComp,
                                  int            nGrow) const;
 
-  virtual Array<int>& rinflowBCLo();
-  virtual Array<int>& rinflowBCHi();
+  virtual Array<int>& rinflowBCLo() { return rinflow_bc_lo; }
+  virtual Array<int>& rinflowBCHi() { return rinflow_bc_hi; }
   virtual void SetDensity() {};
   virtual void SetGravity() {};
   virtual void SetViscosity() {};
@@ -72,6 +72,10 @@ struct RStdata
   static Real Pa_per_ATM;
   RStstruct inputs;
   PArray<iMultiFab> materialID;
+
+  // Richard boundary conditions
+  Array<int> rinflow_bc_lo;
+  Array<int> rinflow_bc_hi;
 };
 
 #endif

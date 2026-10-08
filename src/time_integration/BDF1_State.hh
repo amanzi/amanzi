@@ -30,22 +30,12 @@
 
 namespace Amanzi {
 
-template <class Vector>
+template<class Vector, class VectorSpace>
 struct BDF1_State {
-  BDF1_State()
-    : freeze_pc(false),
-      maxpclag(0),
-      extrapolate_guess(true),
-      uhist_size(2),
-      pc_calls(0),
-      seq(-1),
-      failed_solve(0),
-      failed_current(0),
-      pc_updates(0),
-      hmin(std::numeric_limits<double>::max()),
-      hmax(std::numeric_limits<double>::min()),
-      solve_itrs(0)
-  {}
+  BDF1_State(const std::string& name,
+             Teuchos::ParameterList& plist,
+             const Teuchos::RCP<const VectorSpace>& space,
+             const Teuchos::RCP<State>& S = Teuchos::null);
 
   // Parameters and control
   bool freeze_pc;         // freeze initial preconditioner
@@ -53,9 +43,10 @@ struct BDF1_State {
   bool extrapolate_guess; // extrapolate forward in time or use previous
                           // step as initial guess for nonlinear solver
   int extrapolation_order;
+  double extrapolation_damping;
 
   // Solution history
-  Teuchos::RCP<SolutionHistory<Vector>> uhist;
+  Teuchos::RCP<SolutionHistory<Vector, VectorSpace>> uhist;
 
   // internal counters and state
   int uhist_size; // extrapolation order for initial guess
@@ -71,26 +62,37 @@ struct BDF1_State {
   int pc_updates;     // counter for the number of preconditioner updates
   double hmin, hmax;  // minimum and maximum dt used on a successful step
 
-  // performane of nonlinear solver
+  // performance of nonlinear solver
   int solve_itrs;
 
   // restart fine constrol
   double tol_multiplier, tol_multiplier_damp;
 
-  void InitializeFromPlist(Teuchos::ParameterList&,
-                           const Teuchos::RCP<const Vector>&,
-                           const Teuchos::RCP<State>&);
+  // debug tool
+  int report_failure;
 };
 
 
 /* ******************************************************************
 * Initiazition of fundamental parameters
 ****************************************************************** */
-template <class Vector>
-void
-BDF1_State<Vector>::InitializeFromPlist(Teuchos::ParameterList& plist,
-                                        const Teuchos::RCP<const Vector>& initvec,
-                                        const Teuchos::RCP<State>& S)
+template<class Vector, class VectorSpace>
+BDF1_State<Vector, VectorSpace>::BDF1_State(const std::string& name,
+                                            Teuchos::ParameterList& plist,
+                                            const Teuchos::RCP<const VectorSpace>& space,
+                                            const Teuchos::RCP<State>& S)
+  : freeze_pc(false),
+    maxpclag(0),
+    extrapolate_guess(true),
+    uhist_size(2),
+    pc_calls(0),
+    seq(-1),
+    failed_solve(0),
+    failed_current(0),
+    pc_updates(0),
+    hmin(std::numeric_limits<double>::max()),
+    hmax(std::numeric_limits<double>::min()),
+    solve_itrs(0)
 {
   // preconditioner control
   freeze_pc = plist.get<bool>("freeze preconditioner", false);
@@ -98,22 +100,20 @@ BDF1_State<Vector>::InitializeFromPlist(Teuchos::ParameterList& plist,
 
   // forward time extrapolation (fix me lipnikov@lanl.gov)
   extrapolate_guess = plist.get<bool>("extrapolate initial guess", true);
+  extrapolation_damping = plist.get<double>("extrapolation damping factor", 1.0);
   extrapolation_order = plist.get<int>("nonlinear iteration initial guess extrapolation order", 1);
   if (extrapolation_order == 0) extrapolate_guess = false;
 
   // solution history object
   double t0 = plist.get<double>("initial time", 0.0);
-  std::string name;
-  if (plist.sublist("verbose object").isParameter("name")) {
-    name = plist.sublist("verbose object").get<std::string>("name");
-  } else {
-    name = "TI_BDF1";
-  }
-  uhist = Teuchos::rcp(new SolutionHistory<Vector>(name, uhist_size, t0, *initvec, nullptr, S));
+  uhist = Teuchos::rcp(new SolutionHistory<Vector, VectorSpace>(name, uhist_size, t0, space, S));
 
   // restart fine control
   tol_multiplier = plist.get<double>("restart tolerance relaxation factor", 1.0);
   tol_multiplier_damp = plist.get<double>("restart tolerance relaxation factor damping", 1.0);
+
+  // debug tool
+  report_failure = plist.get<int>("report failure on step", -2);
 }
 
 } // namespace Amanzi

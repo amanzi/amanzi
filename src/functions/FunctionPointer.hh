@@ -18,7 +18,9 @@ namespace Amanzi {
 
 class FunctionPointer : public Function {
  public:
-  FunctionPointer(double (*f)(const double*, const double*)) : f_(f), np_(0), p_(0) {}
+  FunctionPointer(double (*f)(const double*, const double*))
+    : f_(f), np_(0), p_(0)
+  {}
   FunctionPointer(double (*f)(const double*, const double*), const std::vector<double>&);
   FunctionPointer(const FunctionPointer&);
   ~FunctionPointer();

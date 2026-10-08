@@ -23,8 +23,8 @@ const double ct = 0.5;
 class AnalyticElectromagnetics05 : public AnalyticElectromagneticsBase {
  public:
   AnalyticElectromagnetics05(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
-    : AnalyticElectromagneticsBase(mesh){};
-  ~AnalyticElectromagnetics05(){};
+    : AnalyticElectromagneticsBase(mesh) {};
+  ~AnalyticElectromagnetics05() {};
 
   Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t)
   {

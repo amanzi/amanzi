@@ -30,7 +30,7 @@ class TensorSimple {
     d_ = 0;
     for (int i = 0; i < 9; ++i) data_[i] = 0.0;
   }
-  ~TensorSimple(){};
+  ~TensorSimple() {};
 
   // primary members
   void set(int d) { d_ = d; }

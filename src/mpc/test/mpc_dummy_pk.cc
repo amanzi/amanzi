@@ -85,7 +85,9 @@ TEST(NEW_DRIVER_DUMMY_PK)
     }
 
     comm->SumAll(&ierr, &aerr, 1);
-    if (aerr > 0) { exit(-aerr); }
+    if (aerr > 0) {
+      exit(-aerr);
+    }
 
   } else { // If Generate parameters are specified
     std::cerr << rank << ": error: "

@@ -43,11 +43,24 @@ class PDE_AdvectionUpwindFracturedMatrix : public PDE_AdvectionUpwind {
   // required members
   // -- setup
   virtual void Setup(const CompositeVector& u) override;
+
   // -- generate a linearized operator
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
                               const Teuchos::Ptr<const CompositeVector>& dHdT) override;
 
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u) override;
+
+  // -- boundary conditions
+  //    primary=true indicates that the operator updates both matrix and right-hand
+  //      side using BC data. If primary=false, only matrix is changed.
+  //    eliminate=true indicates that we eliminate essential BCs for a trial
+  //      function, i.e. zeros go in the corresponding matrix columns and
+  //      right-hand side is modified using BC values. This is the optional
+  //      parameter that enforces symmetry for a symmetric tree  operators.
+  //    essential_eqn=true indicates that the operator places a positive number on
+  //      the main matrix diagonal for the case of essential BCs. This is the
+  //      implementation trick.
+  virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
 
  private:
   void InitAdvection_(Teuchos::ParameterList& plist);
@@ -55,6 +68,7 @@ class PDE_AdvectionUpwindFracturedMatrix : public PDE_AdvectionUpwind {
 
  private:
   std::vector<std::string> fractures_;
+  Teuchos::RCP<const Epetra_BlockMap> gmap_;
 };
 
 } // namespace Operators

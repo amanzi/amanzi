@@ -40,8 +40,8 @@ namespace Operators {
 class UpwindFluxAndGravity : public Upwind {
  public:
   UpwindFluxAndGravity(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-    : Upwind(mesh), upwind_flux_(mesh), upwind_gravity_(mesh){};
-  ~UpwindFluxAndGravity(){};
+    : Upwind(mesh), upwind_flux_(mesh), upwind_gravity_(mesh) {};
+  ~UpwindFluxAndGravity() {};
 
   // main methods
   // -- initialization of control parameters
@@ -49,8 +49,9 @@ class UpwindFluxAndGravity : public Upwind {
 
   // -- returns combined map for the original and upwinded fields.
   // -- Currently, composite vector cannot be extended on a fly.
-  void
-  Compute(const CompositeVector& flux, const std::vector<int>& bc_model, CompositeVector& field);
+  void Compute(const CompositeVector& flux,
+               const std::vector<int>& bc_model,
+               CompositeVector& field);
 
   // -- returns combined map for the original and upwinded fields.
   // -- Currently, composite vector cannot be extended on a fly.

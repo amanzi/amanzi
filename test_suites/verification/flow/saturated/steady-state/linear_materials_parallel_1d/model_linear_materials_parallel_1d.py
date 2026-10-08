@@ -91,9 +91,9 @@ def createFromXML(filename):
     params["k1"] = float(strK)
     strK = search.find_tag_path(xml, ["amanzi_input","materials","material,Back Material","permeability",]).get('x')
     params["k2"] = float(strK)
-    strMu = search.find_tag_path(xml, ["amanzi_input","phases","liquid_phase","viscosity",]).text
+    strMu = search.find_tag_path(xml, ["amanzi_input","phases","liquid_phase","eos",]).get('viscosity')
     params["mu"] = float(strMu)
-    strRho = search.find_tag_path(xml, ["amanzi_input","phases","liquid_phase","density",]).text
+    strRho = search.find_tag_path(xml, ["amanzi_input","phases","liquid_phase","eos",]).get('density')
     params["rho"] = float(strRho)
 
     #

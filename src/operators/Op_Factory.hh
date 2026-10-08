@@ -26,7 +26,7 @@ namespace Operators {
 
 class Op_Factory {
  public:
-  Op_Factory(){};
+  Op_Factory() {};
 
   void set_mesh(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) { mesh_ = mesh; }
   Teuchos::RCP<const AmanziMesh::Mesh> mesh() const { return mesh_; }
@@ -54,7 +54,7 @@ class Op_Factory {
     AMANZI_ASSERT(schema_row_.OldSchema() == schema_col_.OldSchema());
 
     if (schema_row_.OldSchema() == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL)) {
-      return Teuchos::rcp(new Op_Cell_Cell(name_, mesh_));
+      return Teuchos::rcp(new Op_Cell_Cell(name_, mesh_, 1));
     } else if (schema_row_.OldSchema() == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_FACE |
                                            OPERATOR_SCHEMA_DOFS_CELL)) {
       return Teuchos::rcp(new Op_Cell_FaceCell(name_, mesh_));

@@ -97,8 +97,9 @@ class SuperMapLumped {
 
  protected:
   // Constructs and returns the vector of indices for a given component into the SuperMapLumped
-  virtual const std::vector<int>&
-  CreateIndices_(const std::string& compname, int dofnum, bool ghosted) const;
+  virtual const std::vector<int>& CreateIndices_(const std::string& compname,
+                                                 int dofnum,
+                                                 bool ghosted) const;
 
   // step one of the construction process
   //
@@ -133,8 +134,7 @@ class SuperMapLumped {
 };
 
 
-Teuchos::RCP<SuperMapLumped>
-createSuperMapLumped(const CompositeVectorSpace& cv);
+Teuchos::RCP<SuperMapLumped> createSuperMapLumped(const CompositeVectorSpace& cv);
 
 } // namespace Operators
 } // namespace Amanzi

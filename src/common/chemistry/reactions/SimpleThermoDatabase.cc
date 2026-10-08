@@ -52,7 +52,7 @@ namespace AmanziChemistry {
 ******************************************************************* */
 SimpleThermoDatabase::SimpleThermoDatabase(Teuchos::RCP<Teuchos::ParameterList> plist,
                                            Teuchos::RCP<VerboseObject> vo)
-  : Beaker(vo.ptr()), plist_(plist){};
+  : Beaker(vo.ptr()), plist_(plist) {};
 
 
 /* *******************************************************************
@@ -276,7 +276,7 @@ SimpleThermoDatabase::RebuildAqueousComplexes_(const Teuchos::ParameterList& pli
 
   for (auto it = plist.begin(); it != plist.end(); ++it) {
     std::string name = it->first;
-    if (plist.isSublist(name)) secondaries.push_back(name);
+    if (plist.isSublist(name) ) secondaries.push_back(name);
   }
 
   std::string empty("");
@@ -284,8 +284,8 @@ SimpleThermoDatabase::RebuildAqueousComplexes_(const Teuchos::ParameterList& pli
   int nsec = secondaries.size();
 
   MatrixBlock A(nsec, nsec), B(nsec, npri), Bnew(nsec, npri);
-  A.Zero();
-  B.Zero();
+  A.PutScalar(0.);
+  B.PutScalar(0.);
 
   // two ways to provide the equilibrium constant are reduced to one
   int nT(1);
@@ -314,7 +314,9 @@ SimpleThermoDatabase::RebuildAqueousComplexes_(const Teuchos::ParameterList& pli
       for (int k = 0; k < nT; ++k) logK(i, k) = Keq;
     } else {
       auto Keq = tmp.sublist("equilibrium constant").get<Teuchos::Array<double>>("Keq").toVector();
-      if (Keq.size() != nT) { AMANZI_ASSERT(false); }
+      if (Keq.size() != nT) {
+        AMANZI_ASSERT(false);
+      }
       for (int k = 0; k < nT; ++k) logK(i, k) = Keq[k];
     }
 
@@ -346,7 +348,9 @@ SimpleThermoDatabase::RebuildAqueousComplexes_(const Teuchos::ParameterList& pli
 
     std::stringstream ss;
     for (int k = 0; k < npri; ++k) {
-      if (Bnew(i, k) != 0.0) { ss << Bnew(i, k) << " " << primaries[k] << " "; }
+      if (Bnew(i, k) != 0.0) {
+        ss << Bnew(i, k) << " " << primaries[k] << " ";
+      }
     }
     tmp.set<std::string>("reaction", ss.str());
 

@@ -381,13 +381,17 @@ MeshLogicalFactory::AddSegment(Point_List const* const cell_centroids,
   // set the new cell lids
   int cell_first = cell_volumes_.size();
   Entity_ID_List new_cells(n_cells);
-  for (int i = 0; i != n_cells; ++i) { new_cells[i] = cell_first + i; }
+  for (int i = 0; i != n_cells; ++i) {
+    new_cells[i] = cell_first + i;
+  }
   if (cells) *cells = new_cells;
 
   // set face ids
   int face_first = face_cell_list_.size();
   Entity_ID_List new_faces(n_faces);
-  for (int i = 0; i != n_faces; ++i) { new_faces[i] = face_first + i; }
+  for (int i = 0; i != n_faces; ++i) {
+    new_faces[i] = face_first + i;
+  }
   if (faces) *faces = new_faces;
 
   // insert or make space for cell volumes

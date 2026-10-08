@@ -24,10 +24,10 @@ namespace Flow {
 FlowBoundaryFunction::FlowBoundaryFunction(const Teuchos::ParameterList& plist)
 {
   rainfall_ = false;
-  if (plist.isParameter("rainfall")) rainfall_ = plist.get<bool>("rainfall");
+  if (plist.isParameter("rainfall") ) rainfall_ = plist.get<bool>("rainfall");
 
   relative_to_top_ = false;
-  if (plist.isParameter("relative to top")) relative_to_top_ = plist.get<bool>("relative to top");
+  if (plist.isParameter("relative to top") ) relative_to_top_ = plist.get<bool>("relative to top");
 
   relative_to_bottom_ = false;
   if (plist.isParameter("relative to bottom"))
@@ -37,7 +37,7 @@ FlowBoundaryFunction::FlowBoundaryFunction(const Teuchos::ParameterList& plist)
   if (plist.isParameter("no flow above water table"))
     no_flow_above_water_table_ = plist.get<bool>("no flow above water table");
 
-  if (plist.isParameter("submodel")) seepage_model_ = plist.get<std::string>("submodel");
+  if (plist.isParameter("submodel") ) seepage_model_ = plist.get<std::string>("submodel");
 
   seepage_flux_threshold_ = 0.0;
   if (plist.isParameter("seepage flux threshold"))

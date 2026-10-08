@@ -28,7 +28,8 @@ namespace Flow {
 /* ******************************************************************
 * Constructors
 ****************************************************************** */
-WRM_tabular::WRM_tabular(Teuchos::ParameterList& plist) : tol_(1.0e-11)
+WRM_tabular::WRM_tabular(Teuchos::ParameterList& plist)
+  : tol_(1.0e-11)
 {
   auto pc = plist.get<Teuchos::Array<double>>("cap pressure").toVector();
   auto kr = plist.get<Teuchos::Array<double>>("permeability").toVector();

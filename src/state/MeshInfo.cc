@@ -53,7 +53,9 @@ MeshInfo::WriteMeshCentroids(std::string domain, const AmanziMesh::Mesh& mesh)
 
   for (int n = 0; n < ncells_owned; n++) {
     const AmanziGeometry::Point& xc = mesh.getCellCentroid(n);
-    for (int i = 0; i < dim; i++) { (*(*aux)(i))[n] = xc[i]; }
+    for (int i = 0; i < dim; i++) {
+      (*(*aux)(i))[n] = xc[i];
+    }
   }
 
   WriteVector(*aux, name);

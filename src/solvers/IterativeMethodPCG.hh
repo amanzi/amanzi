@@ -57,16 +57,18 @@
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template <class Matrix,
-          class Preconditioner = Matrix,
-          class Vector = typename Matrix::Vector_t,
-          class VectorSpace = typename Vector::VectorSpace_t>
+template<class Matrix,
+         class Preconditioner = Matrix,
+         class Vector = typename Matrix::Vector_t,
+         class VectorSpace = typename Vector::VectorSpace_t>
 class IterativeMethodPCG
   : public InverseIterativeMethod<Matrix, Preconditioner, Vector, VectorSpace> {
  public:
   using InvIt = InverseIterativeMethod<Matrix, Preconditioner, Vector, VectorSpace>;
 
-  IterativeMethodPCG() : InvIt() {}
+  IterativeMethodPCG()
+    : InvIt()
+  {}
 
   virtual int ApplyInverse(const Vector& v, Vector& hv) const override final
   {
@@ -85,17 +87,17 @@ class IterativeMethodPCG
   IterativeMethodPCG(const IterativeMethodPCG& other) = delete;
 
  private:
-  using InvIt::m_;
+  using InvIt::CheckConvergence_;
   using InvIt::h_;
-  using InvIt::vo_;
-  using InvIt::num_itrs_;
+  using InvIt::inited_;
+  using InvIt::m_;
   using InvIt::max_itrs_;
-  using InvIt::tol_;
+  using InvIt::num_itrs_;
   using InvIt::residual_;
   using InvIt::returned_code_;
-  using InvIt::CheckConvergence_;
-  using InvIt::inited_;
   using InvIt::rnorm0_;
+  using InvIt::tol_;
+  using InvIt::vo_;
 };
 
 
@@ -112,7 +114,7 @@ class IterativeMethodPCG
  *  was checked first. If it is negative, it indicates a failure, see
  *  LinearSolverDefs.hh for the error explanation.
  ***************************************************************** */
-template <class Matrix, class Preconditioner, class Vector, class VectorSpace>
+template<class Matrix, class Preconditioner, class Vector, class VectorSpace>
 int
 IterativeMethodPCG<Matrix, Preconditioner, Vector, VectorSpace>::PCG_(const Vector& f,
                                                                       Vector& x,
@@ -193,7 +195,9 @@ IterativeMethodPCG<Matrix, Preconditioner, Vector, VectorSpace>::PCG_(const Vect
     r.Norm2(&rnorm);
     residual_ = rnorm;
 
-    if (vo_->os_OK(Teuchos::VERB_HIGH)) { *vo_->os() << i << " ||r||=" << residual_ << std::endl; }
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      *vo_->os() << i << " ||r||=" << residual_ << std::endl;
+    }
     num_itrs_ = i + 1;
 
     int ierr = CheckConvergence_(residual_, fnorm);

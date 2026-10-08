@@ -26,6 +26,7 @@ set(ZLIB_CMAKE_CACHE_ARGS
 # --- Add external project build and tie to the ZLIB build target
 ExternalProject_Add(${ZLIB_BUILD_TARGET}
                     DEPENDS   ${ZLIB_PACKAGE_DEPENDS}             # Package dependency target
+                    PREFIX    ${ZLIB_prefix_dir}
                     TMP_DIR   ${ZLIB_tmp_dir}                     # Temporary files directory
                     STAMP_DIR ${ZLIB_stamp_dir}                   # Timestamp and log directory
                     # -- Download and URL definitions

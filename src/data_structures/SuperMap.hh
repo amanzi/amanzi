@@ -55,8 +55,8 @@ class SuperMap {
     return smap_->ComponentMap(block_info_.at(std::make_tuple(block_num, compname, 0)).first);
   }
 
-  Teuchos::RCP<const Epetra_BlockMap>
-  ComponentGhostedMap(int block_num, const std::string& compname) const
+  Teuchos::RCP<const Epetra_BlockMap> ComponentGhostedMap(int block_num,
+                                                          const std::string& compname) const
   {
     return smap_->ComponentGhostedMap(
       block_info_.at(std::make_tuple(block_num, compname, 0)).first);
@@ -81,8 +81,9 @@ class SuperMap {
     return smap_->Indices(bi->second.first, bi->second.second);
   }
 
-  const std::vector<int>&
-  GhostIndices(int block_num, const std::string& compname, int dof_num) const
+  const std::vector<int>& GhostIndices(int block_num,
+                                       const std::string& compname,
+                                       int dof_num) const
   {
     auto bi = block_info_.find(std::make_tuple(block_num, compname, dof_num));
     if (bi == block_info_.end()) {
@@ -110,36 +111,28 @@ class SuperMap {
 
 
 // Nonmember contructors/factories
-Teuchos::RCP<SuperMap>
-createSuperMap(const CompositeVectorSpace& cv);
-Teuchos::RCP<SuperMap>
-createSuperMap(const TreeVectorSpace& cv);
+Teuchos::RCP<SuperMap> createSuperMap(const CompositeVectorSpace& cv);
+Teuchos::RCP<SuperMap> createSuperMap(const TreeVectorSpace& cv);
 
 // Copy in/out
-int
-copyToSuperVector(const SuperMap& map,
-                  const CompositeVector& bv,
-                  Epetra_Vector& sv,
-                  int block_num = 0);
-int
-copyFromSuperVector(const SuperMap& map,
-                    const Epetra_Vector& sv,
-                    CompositeVector& bv,
-                    int block_num = 0);
-int
-addFromSuperVector(const SuperMap& map,
-                   const Epetra_Vector& sv,
-                   CompositeVector& bv,
-                   int block_num = 0);
+int copyToSuperVector(const SuperMap& map,
+                      const CompositeVector& bv,
+                      Epetra_Vector& sv,
+                      int block_num = 0);
+int copyFromSuperVector(const SuperMap& map,
+                        const Epetra_Vector& sv,
+                        CompositeVector& bv,
+                        int block_num = 0);
+int addFromSuperVector(const SuperMap& map,
+                       const Epetra_Vector& sv,
+                       CompositeVector& bv,
+                       int block_num = 0);
 
 // Nonmember TreeVector to/from Super-vector
 // -- simple schema version
-int
-copyToSuperVector(const SuperMap& map, const TreeVector& tv, Epetra_Vector& sv);
-int
-copyFromSuperVector(const SuperMap& map, const Epetra_Vector& sv, TreeVector& tv);
-int
-addFromSuperVector(const SuperMap& map, const Epetra_Vector& sv, TreeVector& tv);
+int copyToSuperVector(const SuperMap& map, const TreeVector& tv, Epetra_Vector& sv);
+int copyFromSuperVector(const SuperMap& map, const Epetra_Vector& sv, TreeVector& tv);
+int addFromSuperVector(const SuperMap& map, const Epetra_Vector& sv, TreeVector& tv);
 
 } // namespace Operators
 } // namespace Amanzi

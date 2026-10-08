@@ -47,7 +47,9 @@ Operator_ConsistentFace::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
 
       WhetStone::DenseVector v(nfaces), av(nfaces);
       av.PutScalar(0.0);
-      for (int n = 0; n != nfaces; ++n) { v(n) = Xf[0][faces[n]]; }
+      for (int n = 0; n != nfaces; ++n) {
+        v(n) = Xf[0][faces[n]];
+      }
 
       const WhetStone::DenseMatrix& Acell = op.matrices[c];
       // must do multiply manually because Acell is not nfaces x nfaces

@@ -26,10 +26,10 @@ namespace AmanziSolvers {
 //
 // Class for assembled inverse methods.
 //
-template <class Operator,
-          class Assembler = Operator,
-          class Vector = typename Operator::Vector_t,
-          class VectorSpace = typename Vector::VectorSpace_t>
+template<class Operator,
+         class Assembler = Operator,
+         class Vector = typename Operator::Vector_t,
+         class VectorSpace = typename Vector::VectorSpace_t>
 class InverseAssembled : public Inverse<Operator, Assembler, Vector, VectorSpace> {
  public:
   InverseAssembled(const std::string& method_name)

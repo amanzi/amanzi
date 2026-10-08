@@ -103,7 +103,7 @@ SUITE(GeochemistryTestsAqueousEquilibriumComplex)
       .set<double>("equilibrium constant", logK_);
   }
 
-  AqueousEquilibriumComplexTest::~AqueousEquilibriumComplexTest(){};
+  AqueousEquilibriumComplexTest::~AqueousEquilibriumComplexTest() {};
 
   //
   // most of the basic functionality comes from the parent SecondarySpecies class.
@@ -150,7 +150,7 @@ SUITE(GeochemistryTestsAqueousEquilibriumComplex)
     ac::AqueousEquilibriumComplex aec(id_, name_, plist_, primary_species_);
 
     ac::MatrixBlock expected(aec.ncomp());
-    expected.Zero();
+    expected.PutScalar(0.);
     expected(0, 0) = 6.9485826433413e-08;
     expected(0, 1) = -5.21143698250598e-08;
     expected(1, 0) = -6.9485826433413e-08;
@@ -158,7 +158,7 @@ SUITE(GeochemistryTestsAqueousEquilibriumComplex)
     double* e = expected.GetValues();
 
     ac::MatrixBlock dtotal(aec.ncomp());
-    dtotal.Zero();
+    dtotal.PutScalar(0.);
     aec.Update(primary_species_, water_);
     aec.AddContributionToDTotal(primary_species_, &dtotal);
     double* dt = dtotal.GetValues();

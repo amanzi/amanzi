@@ -133,8 +133,9 @@ class Operator_Schema : public Operator {
                                 int my_block_col) const override;
 
   // debugging methods
-  virtual int
-  ApplyAssembled(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const override;
+  virtual int ApplyAssembled(const CompositeVector& X,
+                             CompositeVector& Y,
+                             double scalar = 0.0) const override;
 };
 
 } // namespace Operators

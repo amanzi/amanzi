@@ -28,16 +28,14 @@ class WRM_fake : public WRM {
     n = 2.0;
     m = 1.0;
   }
-  ~WRM_fake(){};
+  ~WRM_fake() {};
 
   // required methods from the base class
   // -- relative permeability formula
   double k_relative(double pc) const
   {
-    if (pc < 0.0)
-      return 1.0 / (1.0 + pc * pc);
-    else
-      return 1.0;
+    if (pc < 0.0) return 1.0 / (1.0 + pc * pc);
+    else return 1.0;
   }
 
   // -- analytic solution was designed for stationary PDE

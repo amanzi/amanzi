@@ -26,7 +26,7 @@ namespace Transport {
 class MaterialProperties {
  public:
   MaterialProperties() { tau.resize(TRANSPORT_NUMBER_PHASES, 0.0); }
-  ~MaterialProperties(){};
+  ~MaterialProperties() {};
 
  public:
   std::vector<double> tau;

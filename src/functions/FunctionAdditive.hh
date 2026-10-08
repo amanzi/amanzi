@@ -21,8 +21,8 @@ where :math:`f_1` is defined by the `"function1`" sublist, and
 .. _function-additive-spec:
 .. admonition:: function-additive-spec
 
-   * `"function1`" ``[function-spec]`` :math:`f_1` in :math:`f(x) = f_1(x) + f_2(x)`
-   * `"function2`" ``[function-spec]`` :math:`f_2` in :math:`f(x) = f_1(x) + f_2(x)`
+   * `"function1`" ``[function-typedinline-spec]`` :math:`f_1` in :math:`f(x) = f_1(x) + f_2(x)`
+   * `"function2`" ``[function-typedinline-spec]`` :math:`f_2` in :math:`f(x) = f_1(x) + f_2(x)`
 
 Example:
 
@@ -50,12 +50,14 @@ namespace Amanzi {
 class FunctionAdditive : public Function {
  public:
   FunctionAdditive(std::unique_ptr<Function> f1, std::unique_ptr<Function> f2)
-    : f1_(std::move(f1)), f2_(std::move(f2)){};
-  FunctionAdditive(const Function& f1, const Function& f2) : f1_(f1.Clone()), f2_(f2.Clone()) {}
+    : f1_(std::move(f1)), f2_(std::move(f2)) {};
+  FunctionAdditive(const Function& f1, const Function& f2)
+    : f1_(f1.Clone()), f2_(f2.Clone())
+  {}
   FunctionAdditive(const FunctionAdditive& source)
     : f1_(source.f1_->Clone()), f2_(source.f2_->Clone())
   {}
-  ~FunctionAdditive(){};
+  ~FunctionAdditive() {};
   std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionAdditive>(*this); }
   double operator()(const std::vector<double>& x) const { return (*f1_)(x) + (*f2_)(x); }
 

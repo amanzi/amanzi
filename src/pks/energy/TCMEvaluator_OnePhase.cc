@@ -26,26 +26,44 @@ namespace Energy {
 /* ******************************************************************
 * Constructor.
 ****************************************************************** */
-TCMEvaluator_OnePhase::TCMEvaluator_OnePhase(Teuchos::ParameterList& plist)
+TCMEvaluator_OnePhase::TCMEvaluator_OnePhase(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                                             Teuchos::ParameterList& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(
       make_pair(plist_.get<std::string>("thermal conductivity key"), Tags::DEFAULT));
   }
-  auto prefix = Keys::getDomainPrefix(my_keys_[0].first);
+  std::string domain = Keys::getDomain(my_keys_[0].first);
 
-  temperature_key_ = plist_.get<std::string>("temperature key", prefix + "temperature");
+  pressure_key_ = plist_.get<std::string>("pressure key", Keys::getKey(domain, "pressure"));
+  dependencies_.insert(std::make_pair(pressure_key_, Tags::DEFAULT));
+
+  temperature_key_ =
+    plist_.get<std::string>("temperature key", Keys::getKey(domain, "temperature"));
   dependencies_.insert(std::make_pair(temperature_key_, Tags::DEFAULT));
 
-  porosity_key_ = plist_.get<std::string>("porosity key", prefix + "porosity");
+  porosity_key_ = plist_.get<std::string>("porosity key", Keys::getKey(domain, "porosity"));
   dependencies_.insert(std::make_pair(porosity_key_, Tags::DEFAULT));
 
+  // EOS for thermal conductivity
+  std::vector<std::vector<std::string>> region_list;
   AmanziEOS::EOSFactory<AmanziEOS::EOS_ThermalConductivity> eos_fac;
-  auto& sublist = plist_.sublist("thermal conductivity parameters");
-  tc_ = eos_fac.Create(sublist);
 
-  k_rock_ = sublist.get<double>("thermal conductivity of rock");
+  for (auto lcv = plist.begin(); lcv != plist.end(); ++lcv) {
+    std::string name = lcv->first;
+    if (plist.isSublist(name)) {
+      Teuchos::ParameterList sublist = plist.sublist(name);
+      region_list.push_back(sublist.get<Teuchos::Array<std::string>>("regions").toVector());
+
+      tc_liq_.push_back(eos_fac.Create(sublist.sublist("liquid phase")));
+      tc_solid_.push_back(eos_fac.Create(sublist.sublist("solid phase")));
+    }
+  }
+
+  partition_ = Teuchos::rcp(new Functions::MeshPartition());
+  partition_->Initialize(mesh, AmanziMesh::Entity_kind::CELL, region_list, -1);
+  partition_->Verify();
 }
 
 
@@ -54,8 +72,9 @@ TCMEvaluator_OnePhase::TCMEvaluator_OnePhase(Teuchos::ParameterList& plist)
 ****************************************************************** */
 TCMEvaluator_OnePhase::TCMEvaluator_OnePhase(const TCMEvaluator_OnePhase& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
-    tc_(other.tc_),
-    temperature_key_(other.temperature_key_){};
+    tc_liq_(other.tc_liq_),
+    tc_solid_(other.tc_solid_),
+    temperature_key_(other.temperature_key_) {};
 
 
 /* ******************************************************************
@@ -75,6 +94,7 @@ void
 TCMEvaluator_OnePhase::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   // pull out the dependencies
+  const auto& pres_c = *S.Get<CompositeVector>(pressure_key_).ViewComponent("cell");
   const auto& temp_c = *S.Get<CompositeVector>(temperature_key_).ViewComponent("cell");
   const auto& poro_c = *S.Get<CompositeVector>(porosity_key_).ViewComponent("cell");
   Epetra_MultiVector& result_c = *results[0]->ViewComponent("cell");
@@ -82,13 +102,19 @@ TCMEvaluator_OnePhase::Evaluate_(const State& S, const std::vector<CompositeVect
   int ierr(0);
   int ncomp = results[0]->size("cell", false);
   for (int i = 0; i != ncomp; ++i) {
-    double k_liq = tc_->ThermalConductivity(temp_c[0][i], 0.0); // no models with pressure yet
-    ierr = std::max(ierr, tc_->error_code());
-
+    int id = (*partition_)[i];
     double phi = poro_c[0][i];
-    result_c[0][i] = phi * k_liq + (1.0 - phi) * k_rock_;
+
+    double k_liq = tc_liq_[id]->ThermalConductivity(pres_c[0][i], temp_c[0][i], phi);
+    ierr = std::max(ierr, tc_liq_[id]->error_code());
+
+    double k_solid = tc_solid_[id]->ThermalConductivity(pres_c[0][i], temp_c[0][i], phi);
+    ierr = std::max(ierr, tc_solid_[id]->error_code());
+
+    result_c[0][i] = phi * k_liq + (1.0 - phi) * k_solid;
   }
-  AmanziEOS::ErrorAnalysis(S.Get<CompositeVector>(temperature_key_).Comm(), ierr, tc_->error_msg());
+  AmanziEOS::ErrorAnalysis(
+    S.Get<CompositeVector>(temperature_key_).Comm(), ierr, tc_liq_[0]->error_msg());
 }
 
 
@@ -102,6 +128,7 @@ TCMEvaluator_OnePhase::EvaluatePartialDerivative_(const State& S,
                                                   const std::vector<CompositeVector*>& results)
 {
   for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
+    const auto& pres_v = *S.Get<CompositeVector>(pressure_key_).ViewComponent(*comp);
     const auto& temp_v = *S.Get<CompositeVector>(temperature_key_).ViewComponent(*comp);
     const auto& poro_v = *S.Get<CompositeVector>(porosity_key_).ViewComponent(*comp);
     Epetra_MultiVector& result_v = *results[0]->ViewComponent(*comp);
@@ -109,13 +136,40 @@ TCMEvaluator_OnePhase::EvaluatePartialDerivative_(const State& S,
 
     if (wrt_key == porosity_key_) {
       for (int i = 0; i != ncells; ++i) {
-        double k_liq = tc_->ThermalConductivity(temp_v[0][i], 0.0);
-        result_v[0][i] = k_liq - k_rock_;
+        int id = (*partition_)[i];
+        double p = pres_v[0][i];
+        double T = temp_v[0][i];
+        double phi = poro_v[0][i];
+
+        double k_liq = tc_liq_[id]->ThermalConductivity(p, T, phi);
+        double k_solid = tc_solid_[id]->ThermalConductivity(p, T, phi);
+        result_v[0][i] = k_liq - k_solid;
+
+        k_liq = tc_liq_[id]->DThermalConductivityDPhi(p, T, phi);
+        k_solid = tc_solid_[id]->DThermalConductivityDPhi(p, T, phi);
+        result_v[0][i] += phi * k_liq + (1.0 - phi) * k_solid;
       }
     } else if (wrt_key == temperature_key_) {
       for (int i = 0; i != ncells; ++i) {
-        double k_liq = tc_->DThermalConductivityDT(temp_v[0][i], 0.0);
-        result_v[0][i] = poro_v[0][i] * k_liq;
+        int id = (*partition_)[i];
+        double p = pres_v[0][i];
+        double T = temp_v[0][i];
+        double phi = poro_v[0][i];
+
+        double k_liq = tc_liq_[id]->DThermalConductivityDT(p, T, phi);
+        double k_solid = tc_solid_[id]->DThermalConductivityDT(p, T, phi);
+        result_v[0][i] = phi * k_liq + (1.0 - phi) * k_solid;
+      }
+    } else if (wrt_key == pressure_key_) {
+      for (int i = 0; i != ncells; ++i) {
+        int id = (*partition_)[i];
+        double p = pres_v[0][i];
+        double T = temp_v[0][i];
+        double phi = poro_v[0][i];
+
+        double k_liq = tc_liq_[id]->DThermalConductivityDp(p, T, phi);
+        double k_solid = tc_solid_[id]->DThermalConductivityDp(p, T, phi);
+        result_v[0][i] = phi * k_liq + (1.0 - phi) * k_solid;
       }
     }
   }

@@ -271,7 +271,7 @@ ReconstructionCellPolynomial::CellAllAdjFaces_(AmanziMesh::Entity_ID c,
 * Calculates reconstructed value at point p.
 ****************************************************************** */
 double
-ReconstructionCellPolynomial::getValue(int c, const AmanziGeometry::Point& p)
+ReconstructionCellPolynomial::getValue(int c, const AmanziGeometry::Point& p) const
 {
   AmanziGeometry::Point xcc = p - mesh_->getCellCentroid(c);
 

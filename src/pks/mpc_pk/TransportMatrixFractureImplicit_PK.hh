@@ -45,6 +45,7 @@ class TransportMatrixFractureImplicit_PK : public PK_MPCStrong<PK_BDF> {
 
   // -- advance each sub pk from t_old to t_new.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
 
   // -- miscaleneous methods
   virtual std::string name() override { return "coupled transport implicit"; }
@@ -53,14 +54,15 @@ class TransportMatrixFractureImplicit_PK : public PK_MPCStrong<PK_BDF> {
   // interface to time integrator
   virtual void FunctionalResidual(double t_old,
                                   double t_new,
-                                  Teuchos::RCP<TreeVector> u_old,
+                                  Teuchos::RCP<const TreeVector> u_old,
                                   Teuchos::RCP<TreeVector> u_new,
                                   Teuchos::RCP<TreeVector> f) override;
 
-  virtual void
-  UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, double dtp) override;
-  virtual int
-  ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, Teuchos::RCP<TreeVector> Y) override;
+  virtual void UpdatePreconditioner(double tp,
+                                    Teuchos::RCP<const TreeVector> u,
+                                    double dtp) override;
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
+                                  Teuchos::RCP<TreeVector> Y) override;
 
  private:
   bool AdvanceStepLO_(double t_old, double t_new, int* tot_itrs);
@@ -80,7 +82,6 @@ class TransportMatrixFractureImplicit_PK : public PK_MPCStrong<PK_BDF> {
   Teuchos::RCP<Transport::TransportImplicit_PK> pk_matrix_, pk_fracture_;
 
   Key matrix_vol_flowrate_key_, fracture_vol_flowrate_key_;
-
 
   Teuchos::RCP<Operators::PDE_CouplingFlux> op_coupling00_, op_coupling01_;
   Teuchos::RCP<Operators::PDE_CouplingFlux> op_coupling10_, op_coupling11_;

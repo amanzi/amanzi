@@ -54,7 +54,9 @@ createSuperMap(const TreeVectorSpace& tvs)
     auto tvss = collectTreeVectorLeaves_const<TreeVectorSpace>(tvs);
 
     std::vector<CompositeVectorSpace> cvss;
-    for (auto tvs_tmp : tvss) { cvss.push_back(*tvs_tmp->Data()); }
+    for (auto tvs_tmp : tvss) {
+      cvss.push_back(*tvs_tmp->Data());
+    }
     return Teuchos::rcp(new SuperMap(cvss));
   }
 }
@@ -69,7 +71,9 @@ copyToSuperVector(const SuperMap& map, const CompositeVector& bv, Epetra_Vector&
       auto& data = *bv.ViewComponent(compname, false);
       for (int dofnum = 0; dofnum != bv.NumVectors(compname); ++dofnum) {
         auto inds = map.Indices(block_num, compname, dofnum);
-        for (int i = 0; i != data.MyLength(); ++i) { sv[inds[i]] = data[dofnum][i]; }
+        for (int i = 0; i != data.MyLength(); ++i) {
+          sv[inds[i]] = data[dofnum][i];
+        }
       }
     }
   }
@@ -87,7 +91,9 @@ copyFromSuperVector(const SuperMap& map,
       auto& data = *bv.ViewComponent(compname, false);
       for (int dofnum = 0; dofnum != bv.NumVectors(compname); ++dofnum) {
         auto inds = map.Indices(block_num, compname, dofnum);
-        for (int i = 0; i != data.MyLength(); ++i) { data[dofnum][i] = sv[inds[i]]; }
+        for (int i = 0; i != data.MyLength(); ++i) {
+          data[dofnum][i] = sv[inds[i]];
+        }
       }
     }
   }
@@ -102,7 +108,9 @@ addFromSuperVector(const SuperMap& map, const Epetra_Vector& sv, CompositeVector
       auto& data = *bv.ViewComponent(compname, false);
       for (int dofnum = 0; dofnum != bv.NumVectors(compname); ++dofnum) {
         auto inds = map.Indices(block_num, compname, dofnum);
-        for (int i = 0; i != data.MyLength(); ++i) { data[dofnum][i] += sv[inds[i]]; }
+        for (int i = 0; i != data.MyLength(); ++i) {
+          data[dofnum][i] += sv[inds[i]];
+        }
       }
     }
   }

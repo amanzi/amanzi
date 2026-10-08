@@ -13,12 +13,14 @@ A reaction operator may represent either reaction of identity operator.
 It is symmetric so far and requires one schema.
 The structure of the schema is described in the previous section.
 
-* `"pks operator name`" [list] a PK specific name for the advection operator.
+.. admonition:: reaction_op-spec
 
-  * `"method`" [string] defines a discretization method. The only supported
-    option is `"dg nodal`".
+  * `"pks operator name`" ``[list]`` a PK specific name for the advection operator.
 
-  * `"schema`" [list] defines a discretization schema for the operator domain.
+    * `"method`" ``[string]`` defines a discretization method. The only supported
+      option is `"dg nodal`".
+
+    * `"schema`" ``[list]`` defines a discretization schema for the operator domain.
 
 .. code-block:: xml
 
@@ -83,7 +85,7 @@ class PDE_Reaction : public PDE_HelperDiscretization {
     Kpoly_st_ = Teuchos::null;
   }
 
-  template <typename T>
+  template<typename T>
   void Setup(const Teuchos::RCP<std::vector<T>>& K, bool reset);
 
   // -- generate a linearized operator
@@ -95,7 +97,7 @@ class PDE_Reaction : public PDE_HelperDiscretization {
 
   // -- flux calculation has yet no meaning for this operator
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
-                          const Teuchos::Ptr<CompositeVector>& u) override{};
+                          const Teuchos::Ptr<CompositeVector>& u) override {};
 
   // boundary conditions
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
@@ -121,7 +123,7 @@ class PDE_Reaction : public PDE_HelperDiscretization {
 /* ******************************************************************
 * Specialization of Setup
 ****************************************************************** */
-template <>
+template<>
 inline void
 PDE_Reaction::Setup<WhetStone::Polynomial>(
   const Teuchos::RCP<std::vector<WhetStone::Polynomial>>& K,
@@ -133,7 +135,7 @@ PDE_Reaction::Setup<WhetStone::Polynomial>(
   coef_type_ = CoefType::POLYNOMIAL;
 }
 
-template <>
+template<>
 inline void
 PDE_Reaction::Setup<WhetStone::SpaceTimePolynomial>(
   const Teuchos::RCP<std::vector<WhetStone::SpaceTimePolynomial>>& K,

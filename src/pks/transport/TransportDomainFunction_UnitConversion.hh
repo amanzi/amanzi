@@ -50,7 +50,7 @@ _vector_ coefficient, but not the scalar one.
 namespace Amanzi {
 namespace Transport {
 
-template <class T>
+template<class T, AmanziMesh::Entity_kind E>
 class TransportDomainFunction_UnitConversion : public T {
  public:
   using T::T;
@@ -64,11 +64,25 @@ class TransportDomainFunction_UnitConversion : public T {
 
     if (reciprocal_) {
       for (auto& it : *this) {
-        for (auto& val : it.second) { val *= scalar_ / vector[0][it.first]; }
+        AmanziMesh::Entity_ID lid = it.first;
+        if constexpr (E == AmanziMesh::Entity_kind::FACE) {
+          lid = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh_, lid);
+        }
+
+        for (auto& val : it.second) {
+          val *= scalar_ / vector[0][lid];
+        }
       }
     } else {
       for (auto& it : *this) {
-        for (auto& val : it.second) { val *= scalar_ * vector[0][it.first]; }
+        AmanziMesh::Entity_ID lid = it.first;
+        if constexpr (E == AmanziMesh::Entity_kind::FACE) {
+          lid = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh_, lid);
+        }
+
+        for (auto& val : it.second) {
+          val *= scalar_ * vector[0][lid];
+        }
       }
     }
   }
@@ -84,6 +98,8 @@ class TransportDomainFunction_UnitConversion : public T {
 
 
  protected:
+  using T::mesh_;
+
   double scalar_;
   Teuchos::RCP<const Epetra_MultiVector> vector_;
   bool reciprocal_;
@@ -92,11 +108,13 @@ class TransportDomainFunction_UnitConversion : public T {
 
 #ifdef ALQUIMIA_ENABLED
 using TransportBoundaryFunction_Alquimia_Units =
-  TransportDomainFunction_UnitConversion<TransportBoundaryFunction_Alquimia>;
+  TransportDomainFunction_UnitConversion<TransportBoundaryFunction_Alquimia,
+                                         AmanziMesh::Entity_kind::FACE>;
 using TransportSourceFunction_Alquimia_Units =
-  TransportDomainFunction_UnitConversion<TransportSourceFunction_Alquimia>;
+  TransportDomainFunction_UnitConversion<TransportSourceFunction_Alquimia,
+                                         AmanziMesh::Entity_kind::CELL>;
 using TransportSourceFunction_Concentrations =
-  TransportDomainFunction_UnitConversion<TransportDomainFunction>;
+  TransportDomainFunction_UnitConversion<TransportDomainFunction, AmanziMesh::Entity_kind::CELL>;
 #endif
 
 } // namespace Transport

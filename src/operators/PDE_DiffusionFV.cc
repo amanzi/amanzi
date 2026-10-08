@@ -189,7 +189,7 @@ PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
     Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
     if (k_ != Teuchos::null) {
       k_->ScatterMasterToGhosted("face");
-      if (k_->HasComponent("face")) k_face = k_->ViewComponent("face", true);
+      if (k_->HasComponent("face") ) k_face = k_->ViewComponent("face", true);
     }
 
     // updating matrix blocks
@@ -256,7 +256,9 @@ PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
 
   Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
-  if (k_ != Teuchos::null) { k_face = k_->ViewComponent("face", true); }
+  if (k_ != Teuchos::null) {
+    k_face = k_->ViewComponent("face", true);
+  }
 
   if (!exclude_primary_terms_) {
     Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell", true);
@@ -268,7 +270,8 @@ PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 
         if (bc_model[f] == OPERATOR_BC_DIRICHLET && primary) {
           rhs_cell[0][c] += bc_value[f] * trans_face[0][f] * (k_face.get() ? (*k_face)[0][f] : 1.0);
-        } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+        } else if (bc_model[f] == OPERATOR_BC_NEUMANN ||
+                   bc_model[f] == OPERATOR_BC_TOTAL_FLUX) {
           local_op_->matrices_shadow[f] = local_op_->matrices[f];
           local_op_->matrices[f](0, 0) = 0.0;
 
@@ -325,7 +328,7 @@ PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solution,
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
         double value = bc_value[f];
         flux[0][f] = dirs[n] * trans_face[0][f] * (p[0][c] - value);
-        if (Krel_face.get()) flux[0][f] *= (*Krel_face)[0][f];
+        if (Krel_face.get() ) flux[0][f] *= (*Krel_face)[0][f];
 
       } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
         double value = bc_value[f];
@@ -346,32 +349,10 @@ PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solution,
           } else {
             flux[0][f] = dirs[n] * trans_face[0][f] * (p[0][c2] - p[0][c1]);
           }
-          if (Krel_face.get()) flux[0][f] *= (*Krel_face)[0][f];
+          if (Krel_face.get() ) flux[0][f] *= (*Krel_face)[0][f];
           flag[f] = 1;
         }
       }
-    }
-  }
-}
-
-
-/* ******************************************************************
-* Scale face-based matrices.
-****************************************************************** */
-void
-PDE_DiffusionFV::ScaleMatricesColumns(const CompositeVector& s)
-{
-  const auto& s_c = *s.ViewComponent("cell");
-
-  for (int f = 0; f < nfaces_owned; ++f) {
-    WhetStone::DenseMatrix& Aface = local_op_->matrices[f];
-
-    auto cells = mesh_->getFaceCells(f);
-    int ncells = cells.size();
-
-    for (int n = 0; n < ncells; ++n) {
-      double factor = s_c[0][cells[n]];
-      for (int m = 0; m < ncells; ++m) { Aface(m, n) *= factor; }
     }
   }
 }
@@ -390,14 +371,12 @@ PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
 
   u.ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
-  double dkdp[2], pres[2];
+  double dkdp[2] = { 0., 0. };
+  double pres[2] = { 0., 0. };
 
   dkdp_->ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& dKdP_cell = *dkdp_->ViewComponent("cell", true);
   AMANZI_ASSERT(dKdP_cell.MyLength() == ncells_wghost);
-
-  Teuchos::RCP<const Epetra_MultiVector> dKdP_face;
-  if (dkdp_->HasComponent("face")) { dKdP_face = dkdp_->ViewComponent("face", true); }
 
   for (int f = 0; f != nfaces_owned; ++f) {
     auto cells = mesh_->getFaceCells(f);
@@ -409,8 +388,6 @@ PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
       pres[n] = uc[0][c1];
       dkdp[n] = dKdP_cell[0][c1];
     }
-
-    if (mcells == 1) dkdp[1] = dKdP_face.get() ? (*dKdP_face)[0][f] : 0.;
 
     // find the face direction from cell 0 to cell 1
     const auto& [cfaces, fdirs] = mesh_->getCellFacesAndDirections(cells[0]);
@@ -443,8 +420,7 @@ PDE_DiffusionFV::ComputeJacobianLocal_(int mcells,
   if (mcells == 2) {
     dpres = pres[0] - pres[1]; // + grn;
     if (little_k_ == OPERATOR_LITTLE_K_UPWIND) {
-      double flux0to1;
-      flux0to1 = trans_face[0][f] * dpres;
+      double flux0to1 = trans_face[0][f] * dpres;
       if (flux0to1 > OPERATOR_UPWIND_RELATIVE_TOLERANCE) { // Upwind
         dKrel_dp[0] = dkdp_cell[0];
         dKrel_dp[1] = 0.0;
@@ -469,12 +445,24 @@ PDE_DiffusionFV::ComputeJacobianLocal_(int mcells,
     Jpp(1, 1) = -Jpp(0, 1);
 
   } else if (mcells == 1) {
+    Jpp(0, 0) = 0.0;
     if (bc_model_f == OPERATOR_BC_DIRICHLET) {
       pres[1] = bc_value_f;
       dpres = pres[0] - pres[1];
-      Jpp(0, 0) = trans_face[0][f] * dpres * dkdp_cell[0];
-    } else {
-      Jpp(0, 0) = 0.0;
+
+      if (little_k_ == OPERATOR_LITTLE_K_UPWIND) {
+        double flux0to1 = trans_face[0][f] * dpres;
+        if (flux0to1 > OPERATOR_UPWIND_RELATIVE_TOLERANCE) {
+          Jpp(0, 0) = trans_face[0][f] * dpres * dkdp_cell[0];
+        } else if (flux0to1 < -OPERATOR_UPWIND_RELATIVE_TOLERANCE) {
+          Jpp(0, 0) = 0.;
+        } else {
+          Jpp(0, 0) = 0.5 * trans_face[0][f] * dpres * dkdp_cell[0];
+        }
+      } else if (little_k_ == OPERATOR_UPWIND_ARITHMETIC_AVERAGE) {
+        // arithmetic average takes full value from interior cell
+        Jpp(0, 0) = trans_face[0][f] * dpres * dkdp_cell[0];
+      }
     }
   }
 }
@@ -504,7 +492,7 @@ PDE_DiffusionFV::ComputeTransmissibility_()
   Kc(0, 0) = 1.0;
 
   for (int c = 0; c < ncells_owned; ++c) {
-    if (K_.get()) Kc = (*K_)[c];
+    if (K_.get() ) Kc = (*K_)[c];
     auto [faces, bisectors] = mesh_->getCellFacesAndBisectors(c);
     int nfaces = faces.size();
 
@@ -528,7 +516,9 @@ PDE_DiffusionFV::ComputeTransmissibility_()
   // some calculatons.
   transmissibility_->PutScalar(0.0);
 
-  for (int f = 0; f < nfaces_owned; f++) { trans_face[0][f] = 1.0 / beta_face[0][f]; }
+  for (int f = 0; f < nfaces_owned; f++) {
+    trans_face[0][f] = 1.0 / beta_face[0][f];
+  }
   transmissibility_->ScatterMasterToGhosted("face", true);
   transmissibility_initialized_ = true;
 }

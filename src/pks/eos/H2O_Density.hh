@@ -42,10 +42,10 @@ class H2O_Density : public EOS_Density {
   // up with names for these in a parameter list...
   // -- temperature dependence of density
   const double ka_, kb_, kc_, kd_;
-  const double kT0_;
+  double kT0_;
 
   // -- pressure dependence of density
-  const double kalpha_, kp0_;
+  double kalpha_, kp0_;
 
   static Utils::RegisteredFactory<EOS_Density, H2O_Density> reg_;
 };

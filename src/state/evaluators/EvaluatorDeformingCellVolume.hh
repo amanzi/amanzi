@@ -31,8 +31,9 @@ class EvaluatorDeformingCellVolume : public EvaluatorSecondary {
   virtual Teuchos::RCP<Evaluator> Clone() const override;
 
   // not differentiable WRT to anything
-  virtual bool
-  IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const override
+  virtual bool IsDifferentiableWRT(const State& S,
+                                   const Key& wrt_key,
+                                   const Tag& wrt_tag) const override
   {
     return false;
   }
@@ -41,7 +42,7 @@ class EvaluatorDeformingCellVolume : public EvaluatorSecondary {
 
  protected:
   virtual void Update_(State& S) override;
-  virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Tag& wrt_tag) override{};
+  virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Tag& wrt_tag) override {};
 
  protected:
   Key domain_;

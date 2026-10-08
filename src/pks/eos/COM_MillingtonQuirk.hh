@@ -28,8 +28,8 @@ namespace AmanziEOS {
 class COM_MillingtonQuirk : public COM_Tortuosity {
  public:
   COM_MillingtonQuirk(Teuchos::ParameterList& plist)
-    : COM_Tortuosity(plist), a_(1.0 / 3), b_(7.0 / 3){};
-  ~COM_MillingtonQuirk(){};
+    : COM_Tortuosity(plist), a_(1.0 / 3), b_(7.0 / 3) {};
+  ~COM_MillingtonQuirk() {};
 
   virtual double Tortuosity(double phi, double s);
   virtual double DTortuosityDphi(double phi, double s);

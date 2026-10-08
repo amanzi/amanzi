@@ -44,12 +44,9 @@ test(const std::string& prec_solver,
               << std::endl;
   }
 
-  if (ana == "00")
-    fix.ana = Teuchos::rcp(new Analytic00(fix.mesh, order));
-  else if (ana == "02")
-    fix.ana = Teuchos::rcp(new Analytic02(fix.mesh));
-  else if (ana == "03")
-    fix.ana = Teuchos::rcp(new Analytic03(fix.mesh));
+  if (ana == "00") fix.ana = Teuchos::rcp(new Analytic00(fix.mesh, order));
+  else if (ana == "02") fix.ana = Teuchos::rcp(new Analytic02(fix.mesh));
+  else if (ana == "03") fix.ana = Teuchos::rcp(new Analytic03(fix.mesh));
 
   fix.Discretize(disc_type, scalar_coef);
 
@@ -108,12 +105,9 @@ testWGravity(double gravity,
               << std::endl;
   }
 
-  if (ana == "00")
-    fix.ana = Teuchos::rcp(new Analytic00(fix.mesh, order, gravity));
-  else if (ana == "02")
-    fix.ana = Teuchos::rcp(new Analytic02(fix.mesh, gravity));
-  else if (ana == "03")
-    fix.ana = Teuchos::rcp(new Analytic03(fix.mesh));
+  if (ana == "00") fix.ana = Teuchos::rcp(new Analytic00(fix.mesh, order, gravity));
+  else if (ana == "02") fix.ana = Teuchos::rcp(new Analytic02(fix.mesh, gravity));
+  else if (ana == "03") fix.ana = Teuchos::rcp(new Analytic03(fix.mesh));
 
   fix.DiscretizeWithGravity(disc_type, gravity, scalar_coef);
 

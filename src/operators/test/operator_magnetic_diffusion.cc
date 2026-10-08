@@ -40,13 +40,13 @@
 
 #include "AnalyticElectromagnetics04.hh"
 #include "AnalyticElectromagnetics05.hh"
-#include "MeshDeformation.hh"
+// #include "MeshDeformation.hh"
 
 /* *****************************************************************
 * Testing operators for Maxwell-type problems: 2D
 * Magnetic flux B = (Bx, By, 0), electric field E = (0, 0, Ez)
 ***************************************************************** */
-template <class Analytic>
+template<class Analytic>
 void
 MagneticDiffusion2D(double dt,
                     double tend,
@@ -80,14 +80,17 @@ MagneticDiffusion2D(double dt,
   ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
-  MeshFactory meshfactory(comm, gm);
+  auto mesh_list = Teuchos::rcp(new Teuchos::ParameterList());
+  mesh_list->set<bool>("request edges", true);
+  mesh_list->set<bool>("request faces", true);
+  MeshFactory meshfactory(comm, gm, mesh_list);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
 
   RCP<const Mesh> mesh;
   if (name == "structured") {
-    mesh = meshfactory.create(Xa, Ya, Xb, Yb, nx, ny, true, true);
+    mesh = meshfactory.create(Xa, Ya, Xb, Yb, nx, ny);
   } else {
-    mesh = meshfactory.create(name, true, true);
+    mesh = meshfactory.create(name);
   }
 
   // create resistivity coefficient
@@ -137,13 +140,11 @@ MagneticDiffusion2D(double dt,
   Epetra_MultiVector& Ee = *E.ViewComponent("node");
   Epetra_MultiVector& Bf = *B.ViewComponent("face");
 
-  AmanziGeometry::Point xv(2);
-
   Ee.PutScalar(0.0);
   Bf.PutScalar(0.0);
 
   for (int v = 0; v < nnodes_owned; ++v) {
-    xv = mesh->getNodeCoordinate(v);
+    const auto& xv = mesh->getNodeCoordinate(v);
     Ee[0][v] = (ana.electric_exact(xv, told))[2];
   }
 
@@ -166,7 +167,7 @@ MagneticDiffusion2D(double dt,
     op_mag->SetTensorCoefficient(K);
     op_mag->UpdateMatrices();
 
-    // Add an accumulation term using dt=1 since time step is taken into
+    // Add an accumulation term using dt=1 since timestep is taken into
     // account in the system modification routine. Kc=constant FIXME
     CompositeVector phi(cvs_e);
     phi.PutScalar(1.0 / Kc(0, 0));
@@ -181,7 +182,7 @@ MagneticDiffusion2D(double dt,
     std::vector<double>& bc_value = bc1->bc_value();
 
     for (int v = 0; v < nnodes_wghost; ++v) {
-      xv = mesh->getNodeCoordinate(v);
+      const auto& xv = mesh->getNodeCoordinate(v);
 
       if (fabs(xv[0] - Xa) < 1e-6 || fabs(xv[0] - Xb) < 1e-6 || fabs(xv[1] - Ya) < 1e-6 ||
           fabs(xv[1] - Yb) < 1e-6) {
@@ -227,8 +228,7 @@ MagneticDiffusion2D(double dt,
     for (int c = 0; c < ncells_owned; ++c) {
       double vol = mesh->getCellVolume(c);
       const Amanzi::AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
-      const auto& faces = mesh->getCellFaces(c);
-      const auto& dirs = mesh->getCellFacesAndDirections(c);
+      const auto& [faces, dirs] = mesh->getCellFacesAndDirections(c);
       int nfaces = faces.size();
 
       double tmp(0.0);
@@ -300,7 +300,7 @@ TEST(MAGNETIC_DIFFUSION2D_RELAX)
 /* *****************************************************************
 * Testing operators for Maxwell-type problems: 3D
 * **************************************************************** */
-template <class Analytic>
+template<class Analytic>
 void
 MagneticDiffusion3D(double dt,
                     double tend,
@@ -338,16 +338,16 @@ MagneticDiffusion3D(double dt,
   ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
 
-  MeshFactory meshfactory(comm, gm);
+  auto mesh_list = Teuchos::rcp(new Teuchos::ParameterList());
+  mesh_list->set<bool>("request edges", true);
+  mesh_list->set<bool>("request faces", true);
+  MeshFactory meshfactory(comm, gm, mesh_list);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
 
-  bool request_faces(true), request_edges(true);
   RCP<Mesh> mesh;
-  if (name == "structured")
-    mesh = meshfactory.create(Xa, Ya, Za, Xb, Yb, Zb, nx, ny, nz, request_faces, request_edges);
-  else
-    mesh = meshfactory.create(name, request_faces, request_edges);
-  // mesh = meshfactory.create("test/hex_split_faces5.exo", request_faces, request_edges);
+  if (name == "structured") mesh = meshfactory.create(Xa, Ya, Za, Xb, Yb, Zb, nx, ny, nz);
+  else mesh = meshfactory.create(name);
+  // mesh = meshfactory.create("test/hex_split_faces5.exo");
 
   int ncells_owned =
     mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
@@ -355,6 +355,8 @@ MagneticDiffusion3D(double dt,
   Analytic ana(mesh);
 
   if (deform > 0) {
+    CHECK(false);
+    /*
     double vol0(0.0), vol1(0.0);
     for (int c = 0; c < ncells_owned; ++c) vol0 += mesh->getCellVolume(c);
     DeformMesh(mesh, deform, 0.0);
@@ -363,6 +365,7 @@ MagneticDiffusion3D(double dt,
     vol0 -= vol1;
     ana.GlobalOp("sum", &vol0, 1);
     if (MyPID == 0) std::cout << "volume change after deformation=" << vol0 << std::endl;
+    */
   }
 
   // create resistivity coefficient
@@ -445,9 +448,6 @@ MagneticDiffusion3D(double dt,
     std::vector<int>& bc_model2 = bc2->bc_model();
     std::vector<Point>& bc_value2 = bc2->bc_value_point();
 
-    std::vector<int> edirs;
-    AmanziMesh::Entity_ID_View cells, edges;
-
     for (int f = 0; f < nfaces_wghost; ++f) {
       const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
 
@@ -457,7 +457,7 @@ MagneticDiffusion3D(double dt,
       } else if ((fabs(xf[0] - Xa) < 1e-6 && convergence) || fabs(xf[0] - Xb) < 1e-6 ||
                  fabs(xf[1] - Ya) < 1e-6 || fabs(xf[1] - Yb) < 1e-6 || fabs(xf[2] - Za) < 1e-6 ||
                  fabs(xf[2] - Zb) < 1e-6) {
-        mesh->getFaceEdgesAndDirections(f, &edges, &edirs);
+        const auto& [edges, edirs] = mesh->getFaceEdgesAndDirections(f);
         int nedges = edges.size();
         for (int i = 0; i < nedges; ++i) {
           int e = edges[i];
@@ -483,7 +483,11 @@ MagneticDiffusion3D(double dt,
 
     // Solve the problem.
     global_op->set_inverse_parameters(
-      "Hypre AMS", plist.sublist("preconditioners"), "GMRES", plist.sublist("solvers"));
+      // "Hypre AMS",
+      "Hypre AMG",
+      plist.sublist("preconditioners"),
+      "GMRES",
+      plist.sublist("solvers"));
     global_op->InitializeInverse();
     global_op->ComputeInverse();
 
@@ -518,8 +522,7 @@ MagneticDiffusion3D(double dt,
     for (int c = 0; c < ncells_owned; ++c) {
       double vol = mesh->getCellVolume(c);
       const Amanzi::AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
-      const auto& faces = mesh->getCellFaces(c);
-      const auto& dirs = mesh->getCellFacesAndDirections(c);
+      const auto& [faces, dirs] = mesh->getCellFacesAndDirections(c);
       int nfaces = faces.size();
 
       double tmp(0.0);
@@ -550,19 +553,23 @@ MagneticDiffusion3D(double dt,
     Ic(0, 0) = 1.0;
 
     for (int c = 0; c < ncells_owned; ++c) {
-      edges = mesh->getCellEdges(c);
+      const auto& edges = mesh->getCellEdges(c);
       int nedges = edges.size();
 
       WhetStone::DenseMatrix R(nedges, 3), W(nedges, nedges);
       WhetStone::DenseVector v1(nedges), v2(3);
 
-      for (int n = 0; n < nedges; ++n) { v1(n) = Ee[0][edges[n]]; }
+      for (int n = 0; n < nedges; ++n) {
+        v1(n) = Ee[0][edges[n]];
+      }
 
-      mfd.L2consistencyInverse(c, Ic, R, W, true);
+      mfd.L2consistencyInverse(c, Ic, R, W);
       R.Multiply(v1, v2, true);
 
       double vol = mesh->getCellVolume(c);
-      for (int k = 0; k < 3; ++k) { sol_e[k][c] = v2(k) / vol; }
+      for (int k = 0; k < 3; ++k) {
+        sol_e[k][c] = v2(k) / vol;
+      }
     }
 
     ana.GlobalOp("sum", &avgB, 1);

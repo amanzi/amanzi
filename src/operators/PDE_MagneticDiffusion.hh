@@ -38,7 +38,7 @@ namespace Operators {
 class PDE_MagneticDiffusion : public PDE_Electromagnetics {
  public:
   PDE_MagneticDiffusion(const Teuchos::RCP<Operator>& global_op)
-    : PDE_Electromagnetics(global_op){};
+    : PDE_Electromagnetics(global_op) {};
 
   PDE_MagneticDiffusion(Teuchos::ParameterList& plist,
                         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)

@@ -1,4 +1,4 @@
-<amanzi_input version="1.5-dev" type="unstructured">
+<amanzi_input version="1.7-dev" type="unstructured">
   <misc>
     <echo_translated_input file_name="oldspec.xml"/>
   </misc>
@@ -28,16 +28,22 @@
   </definitions>
 
   <process_kernels>
-    <flow state="on" model="saturated"/>
-    <transport state="on" />
-    <chemistry state="on" engine="crunchflow" input_filename="1d-surface-complexation-crunch.in" database="surface-complexation.dbs"/>
+    <pk mode="steady">
+      <flow state="on" model="saturated"/>
+     </pk>
+    <pk mode="transient">
+      <flow state="on" model="saturated"/>
+      <transport state="on" />
+      <chemistry state="on" engine="crunchflow" input_filename="1d-surface-complexation-crunch.in" database="surface-complexation.dbs"/>
+      <weakly_coupled name="reactive transport">chemistry,transport</weakly_coupled>
+      <weakly_coupled name="mpc">flow,reactive transport</weakly_coupled>
+    </pk>
   </process_kernels>
 
   <phases>
     <liquid_phase name="water">
-      <eos>False</eos>
-      <viscosity>1.002e-3</viscosity>
-      <density>998.2</density>
+      <eos model="constant" viscosity="1.002e-03" density="998.2"/> 
+      <molar_mass>0.018015</molar_mass>
       <dissolved_components>
         <primaries>
           <primary>H+</primary>
@@ -163,7 +169,7 @@
   <materials>
     <material name="soil">
       <mechanical_properties>
-        <porosity value="0.25"/>
+        <porosity model="constant" value="0.25"/>
         <specific_storage value="0.0" model="constant"/>
       </mechanical_properties>
       <permeability x="1.0e-12" y="1.0e-12" z="1.0e-12"/>

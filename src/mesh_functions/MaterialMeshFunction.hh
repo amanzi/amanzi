@@ -33,7 +33,8 @@ namespace Functions {
 
 class MaterialMeshFunction : public MeshFunction {
  public:
-  MaterialMeshFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : MeshFunction(mesh){};
+  MaterialMeshFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : MeshFunction(mesh) {};
 
   // Overload the AddSpec method to check uniqueness and sum-up
   // volume fractions.

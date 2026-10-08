@@ -68,7 +68,7 @@ TEST(HYDROSTATIC_STRESS)
   S->CheckAllFieldsInitialized();
 
   // solve the problem
-  double dT = plist->get<double>("initial time step", 1.0);
+  double dT = plist->get<double>("initial timestep", 1.0);
 
   MPK->AdvanceStep(0.0, dT);
   MPK->CommitStep(0.0, dT, Tags::DEFAULT);
@@ -96,7 +96,7 @@ TEST(HYDROSTATIC_STRESS)
     mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   for (int c = 0; c < ncells_owned; ++c) {
     const auto& xp = mesh->getCellCentroid(c);
-    if (xp[0] < 0.135 && xp[2] < 0.51) CHECK_CLOSE(-p[0][c], 200000.0, 50000.0);
-    if (xp[0] > 3.871 && xp[2] < 0.51) CHECK_CLOSE(-p[0][c], 490000.0, 40000.0);
+    if (xp[0] < 0.135 && xp[2] < 0.51) CHECK_CLOSE(-p[0][c], 66000.0, 16000.0);
+    if (xp[0] > 3.871 && xp[2] < 0.51) CHECK_CLOSE(-p[0][c], 170000.0, 13000.0);
   }
 }

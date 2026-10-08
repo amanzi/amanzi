@@ -64,7 +64,7 @@ PDE_Electromagnetics::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
   Kc(0, 0) = 1.0;
 
   for (int c = 0; c < ncells_owned; c++) {
-    if (K_.get()) Kc = (*K_)[c];
+    if (K_.get() ) Kc = (*K_)[c];
     mfd_->StiffnessMatrix(c, Kc, Acell);
     local_op_->matrices[c] = Acell;
   }
@@ -120,7 +120,9 @@ PDE_Electromagnetics::ApplyBCs_Edge_(const Teuchos::Ptr<const BCs>& bc_f,
     auto edges = mesh_->getCellEdges(c);
     int nedges = edges.size();
 
-    for (int n = 0; n < nedges; ++n) { edge_ncells[edges[n]]++; }
+    for (int n = 0; n < nedges; ++n) {
+      edge_ncells[edges[n]]++;
+    }
   }
 
   for (int c = 0; c != ncells_owned; ++c) {
@@ -290,9 +292,8 @@ PDE_Electromagnetics::GraphGeometry()
   auto map = mesh_->getMap(AmanziMesh::Entity_kind::NODE, false);
   auto xyz = Teuchos::rcp(new Epetra_MultiVector(map, d));
 
-  AmanziGeometry::Point xv;
   for (int n = 0; n < nnodes_owned; ++n) {
-    xv = mesh_->getNodeCoordinate(n);
+    const auto xv = mesh_->getNodeCoordinate(n);
     for (int i = 0; i < d; ++i) (*xyz)[i][n] = xv[i];
   }
 

@@ -24,44 +24,49 @@
 namespace Amanzi {
 
 // Basic constructors
-TreeVector::TreeVector() : map_(Teuchos::rcp(new TreeVectorSpace())) {}
+TreeVector::TreeVector()
+  : map_(Teuchos::rcp(new TreeVectorSpace()))
+{}
 
-TreeVector::TreeVector(const Comm_ptr_type& comm) : map_(Teuchos::rcp(new TreeVectorSpace(comm))) {}
+TreeVector::TreeVector(const Comm_ptr_type& comm)
+  : map_(Teuchos::rcp(new TreeVectorSpace(comm)))
+{}
 
 TreeVector::TreeVector(const TreeVectorSpace& space, InitMode mode)
 {
   map_ = Teuchos::rcp(new TreeVectorSpace(space));
   InitMap_(mode);
-  if (mode == INIT_MODE_ZERO) { PutScalar(0.); }
+  if (mode == InitMode::ZERO) {
+    PutScalar(0.);
+  }
 }
 
 TreeVector::TreeVector(const Teuchos::RCP<TreeVectorSpace>& space, InitMode mode)
 {
   map_ = space;
   InitMap_(mode);
-  if (mode == INIT_MODE_ZERO) { PutScalar(0.); }
+  if (mode == InitMode::ZERO) {
+    PutScalar(0.);
+  }
 }
 
-TreeVector::TreeVector(const TreeVector& other, InitMode mode)
+TreeVector::TreeVector(const TreeVector& other)
+  : TreeVector(other.map_, InitMode::NONE)
 {
-  map_ = Teuchos::rcp(new TreeVectorSpace(*other.map_));
-  InitMap_(mode);
-  if (mode == INIT_MODE_ZERO) {
-    PutScalar(0.);
-  } else if (mode == INIT_MODE_COPY) {
-    *this = other;
-  }
+  *this = other;
 }
 
 
 void
 TreeVector::InitMap_(InitMode mode)
 {
-  if (mode != INIT_MODE_NOALLOC && map_->Data() != Teuchos::null) {
+  if (mode != InitMode::NOALLOC && map_->Data() != Teuchos::null) {
     data_ = Teuchos::rcp(new CompositeVector(*map_->Data()));
   }
 
-  for (const auto& i : *map_) { InitPushBack_(Teuchos::rcp(new TreeVector(*i, mode))); }
+  for (const auto& i : *map_) {
+    InitPushBack_(Teuchos::rcp(new TreeVector(*i, mode)));
+  }
 }
 
 
@@ -72,9 +77,13 @@ TreeVector::operator=(const TreeVector& other)
     // Ensure the maps match.
     AMANZI_ASSERT(map_->SubsetOf(*other.map_));
 
-    if (other.data_ != Teuchos::null) { *data_ = *other.data_; }
+    if (other.data_ != Teuchos::null) {
+      *data_ = *other.data_;
+    }
 
-    for (unsigned int i = 0; i != subvecs_.size(); ++i) { *subvecs_[i] = *other.subvecs_[i]; }
+    for (unsigned int i = 0; i != subvecs_.size(); ++i) {
+      *subvecs_[i] = *other.subvecs_[i];
+    }
   }
   return *this;
 };
@@ -225,7 +234,9 @@ TreeVector::Print(std::ostream& os, bool data_io) const
   // Print data to ostream for this node and all children.
   if (data_ != Teuchos::null) data_->Print(os, data_io);
 
-  for (const auto& subvec : subvecs_) { subvec->Print(os, data_io); }
+  for (const auto& subvec : subvecs_) {
+    subvec->Print(os, data_io);
+  }
 };
 
 
@@ -331,7 +342,9 @@ TreeVector::Update(double scalarA, const TreeVector& A, double scalarThis)
 {
   //  AMANZI_ASSERT(map_->SubsetOf(*A.map_));
 
-  if (data_ != Teuchos::null) { data_->Update(scalarA, *A.data_, scalarThis); }
+  if (data_ != Teuchos::null) {
+    data_->Update(scalarA, *A.data_, scalarThis);
+  }
   for (unsigned int i = 0; i != subvecs_.size(); ++i) {
     subvecs_[i]->Update(scalarA, *A.subvecs_[i], scalarThis);
   }
@@ -348,7 +361,9 @@ TreeVector::Update(double scalarA,
   //  AMANZI_ASSERT(map_->SubsetOf(*A.map_));
   //  AMANZI_ASSERT(map_->SubsetOf(*B.map_));
 
-  if (data_ != Teuchos::null) { data_->Update(scalarA, *A.data_, scalarB, *B.data_, scalarThis); }
+  if (data_ != Teuchos::null) {
+    data_->Update(scalarA, *A.data_, scalarB, *B.data_, scalarThis);
+  }
   for (unsigned int i = 0; i != subvecs_.size(); ++i) {
     subvecs_[i]->Update(scalarA, *A.subvecs_[i], scalarB, *B.subvecs_[i], scalarThis);
   }
@@ -400,7 +415,9 @@ Teuchos::RCP<TreeVector>
 TreeVector::SubVector(int index)
 {
   // Get a pointer to the sub-vector by index
-  if (index < subvecs_.size()) { return subvecs_[index]; }
+  if (index < subvecs_.size()) {
+    return subvecs_[index];
+  }
   return Teuchos::null;
 };
 
@@ -408,7 +425,9 @@ Teuchos::RCP<const TreeVector>
 TreeVector::SubVector(int index) const
 {
   // Get a pointer to the sub-vector by index
-  if (index < subvecs_.size()) { return subvecs_[index]; }
+  if (index < subvecs_.size()) {
+    return subvecs_[index];
+  }
   return Teuchos::null;
 };
 
@@ -440,9 +459,13 @@ int
 TreeVector::GlobalLength() const
 {
   int total = 0;
-  if (data_ != Teuchos::null) { total += data_->GlobalLength(); }
+  if (data_ != Teuchos::null) {
+    total += data_->GlobalLength();
+  }
 
-  for (const auto& subvec : subvecs_) { total += subvec->GlobalLength(); }
+  for (const auto& subvec : subvecs_) {
+    total += subvec->GlobalLength();
+  }
   return total;
 };
 

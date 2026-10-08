@@ -11,7 +11,7 @@
 /*
   Operators
 
-  Upwind-based advection operator for a scalar field in fractured rock.
+  Upwind-based scalar advection operator on manifolds.
 */
 
 #ifndef AMANZI_OPERATOR_PDE_ADVECTION_UPWIND_FRACTURE_HH_
@@ -28,12 +28,18 @@ class PDE_AdvectionUpwindDFN : public PDE_AdvectionUpwind {
  public:
   PDE_AdvectionUpwindDFN(Teuchos::ParameterList& plist, const Teuchos::RCP<Operator>& global_op)
     : PDE_AdvectionUpwind(plist, global_op)
-  {}
+  {
+    // call init function of derived class, in addition, to init function of base class
+    InitAdvection_(plist);
+  }
 
   PDE_AdvectionUpwindDFN(Teuchos::ParameterList& plist,
                          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : PDE_AdvectionUpwind(plist, mesh)
-  {}
+  {
+    // call init function of derived class, in addition, to init function of base class
+    InitAdvection_(plist);
+  }
 
   // required members
   virtual void Setup(const CompositeVector& u) override;
@@ -43,16 +49,17 @@ class PDE_AdvectionUpwindDFN : public PDE_AdvectionUpwind {
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
                               const Teuchos::Ptr<const CompositeVector>& dhdT) override;
 
-  virtual void
-  UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u, double (*)(double)) override;
+  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
+                              double (*)(double)) override;
 
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& h,
                           const Teuchos::Ptr<const CompositeVector>& u,
                           const Teuchos::RCP<BCs>& bc,
-                          const Teuchos::Ptr<CompositeVector>& flux) override{};
+                          const Teuchos::Ptr<CompositeVector>& flux) override {};
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
 
  private:
+  void InitAdvection_(Teuchos::ParameterList& plist);
   void IdentifyUpwindCells_(const CompositeVector& u);
 
  protected:

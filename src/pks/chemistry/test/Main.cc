@@ -9,6 +9,7 @@
 
 #include <UnitTest++.h>
 #include <TestReporterStdout.h>
+#include <ThrowingTestReporter.h>
 
 #include "Teuchos_GlobalMPISession.hpp"
 
@@ -20,7 +21,11 @@ main(int argc, char* argv[])
 {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   Kokkos::initialize();
-  int status = UnitTest::RunAllTests();
+
+  UnitTest::TestReporterStdout base_reporter;
+  UnitTest::ThrowingTestReporter reporter(&base_reporter);
+  UnitTest::TestRunner runner(reporter);
+  int status = runner.RunTestsIf(UnitTest::Test::GetTestList(), NULL, UnitTest::True(), 0);
   Kokkos::finalize();
   return status;
 }

@@ -39,7 +39,9 @@ CreateThyraVector(const Teuchos::RCP<TreeVector>& tv)
   std::vector<Teuchos::RCP<TreeVector>> tv_subvecs = tv->SubVectors();
 
   // If no data and no subvecs, return NULL
-  if (tv_subvecs.size() == 0) { return Teuchos::null; }
+  if (tv_subvecs.size() == 0) {
+    return Teuchos::null;
+  }
 
   // Loop over subvecs, collecting the Thyra Vectors and VectorSpaces
   // associated with each subvec.
@@ -83,7 +85,9 @@ CreateThyraVector(const Teuchos::RCP<const TreeVector>& tv)
   const std::vector<Teuchos::RCP<TreeVector>> tv_subvecs = tv->SubVectors();
 
   // If no data and no subvecs, return NULL
-  if (tv_subvecs.size() == 0) { return Teuchos::null; }
+  if (tv_subvecs.size() == 0) {
+    return Teuchos::null;
+  }
 
   // Loop over subvecs, collecting the Thyra Vectors and VectorSpaces
   // associated with each subvec.
@@ -118,7 +122,9 @@ Teuchos::RCP<Thyra::VectorBase<double>>
 CreateThyraVector(const Teuchos::RCP<CompositeVector>& cv)
 {
   // If the CompositeVector is empty, return null.
-  if (cv->num_components() == 0) { return Teuchos::null; }
+  if (cv->num_components() == 0) {
+    return Teuchos::null;
+  }
 
   // Loop over components, collecting the Thyra Vectors and VectorSpaces
   // associated with each component.
@@ -168,7 +174,9 @@ Teuchos::RCP<const Thyra::VectorBase<double>>
 CreateThyraVector(const Teuchos::RCP<const CompositeVector>& cv)
 {
   // If the CompositeVector is empty, return null.
-  if (cv->num_components() == 0) { return Teuchos::null; }
+  if (cv->num_components() == 0) {
+    return Teuchos::null;
+  }
 
   // Loop over components, collecting the Thyra Vectors and VectorSpaces
   // associated with each component.
@@ -228,7 +236,9 @@ CreateThyraVectorSpace(const Teuchos::RCP<const TreeVector>& tv)
   const std::vector<Teuchos::RCP<TreeVector>> tv_subvecs = tv->SubVectors();
 
   // If no data and no subvecs, return NULL
-  if (tv_subvecs.size() == 0) { return Teuchos::null; }
+  if (tv_subvecs.size() == 0) {
+    return Teuchos::null;
+  }
 
   // Loop over subvecs, collecting the Thyra Vectors and VectorSpaces
   // associated with each subvec.
@@ -237,7 +247,9 @@ CreateThyraVectorSpace(const Teuchos::RCP<const TreeVector>& tv)
        tv_subvec != tv_subvecs.end();
        ++tv_subvec) {
     Teuchos::RCP<Thyra::VectorSpaceBase<double>> subspace = CreateThyraVectorSpace(*tv_subvec);
-    if (subspace != Teuchos::null) { subspaces.push_back(subspace); }
+    if (subspace != Teuchos::null) {
+      subspaces.push_back(subspace);
+    }
   }
 
   // Convert the list of subspaces into a ProductVectorSpace
@@ -263,7 +275,9 @@ Teuchos::RCP<Thyra::VectorSpaceBase<double>>
 CreateThyraVectorSpace(const Teuchos::RCP<const CompositeVector>& cv)
 {
   // If the CompositeVector is empty, return null.
-  if (cv->num_components() == 0) { return Teuchos::null; }
+  if (cv->num_components() == 0) {
+    return Teuchos::null;
+  }
 
   // Loop over components, collecting the Thyra Vectors and VectorSpaces
   // associated with each component.
@@ -344,7 +358,9 @@ ViewThyraVectorAsTreeVector(const Teuchos::RCP<Thyra::VectorBase<double>>& vec,
   const std::vector<Teuchos::RCP<TreeVector>> tv_subvecs = tv->SubVectors();
 
   // If no data and no subvecs, return.
-  if (tv_subvecs.size() == 0) { return; }
+  if (tv_subvecs.size() == 0) {
+    return;
+  }
 
   // Otherwise the vector is a ProductVector for SubVectors in the TV.
   // Unpack vec as ProductVector
@@ -370,7 +386,9 @@ ViewThyraVectorAsCompositeVector(const Teuchos::RCP<Thyra::VectorBase<double>>& 
 {
   // The thyra vec is NOT ghosted -- if the CV is ghosted, we need to make
   // sure it has been created.
-  if (cv->ghosted() && !cv->created()) { cv->CreateData(); }
+  if (cv->ghosted() && !cv->created()) {
+    cv->CreateData();
+  }
 
   // Unpack vec as ProductVector
   Teuchos::RCP<Thyra::DefaultProductVector<double>> pvec =

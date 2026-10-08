@@ -48,7 +48,7 @@ MolarFractionGasEvaluator::MolarFractionGasEvaluator(Teuchos::ParameterList& pli
 MolarFractionGasEvaluator::MolarFractionGasEvaluator(const MolarFractionGasEvaluator& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
     temp_key_(other.temp_key_),
-    svp_model_(other.svp_model_){};
+    svp_model_(other.svp_model_) {};
 
 
 Teuchos::RCP<Evaluator>

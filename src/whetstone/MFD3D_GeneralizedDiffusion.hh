@@ -33,7 +33,7 @@ class MFD3D_GeneralizedDiffusion : public MFD3D {
  public:
   MFD3D_GeneralizedDiffusion(const Teuchos::ParameterList& plist,
                              const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : MFD3D(mesh){};
+    : MFD3D(mesh) {};
 
   // required member functions
   // -- schema for this element

@@ -28,10 +28,10 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
   : verb_level_(verb_level),
     plist_(plist),
     mesh_(mesh),
-    formatter_(plist.get<int>("column width", 15),
-               plist.get<int>("precision", 7),
-               plist.get<int>("header width", 20),
-               plist.get<int>("cell number width", 5)),
+    formatter_(plist.sublist("verbose object").get<int>("column width", 15),
+               plist.sublist("verbose object").get<int>("precision", 7),
+               plist.sublist("verbose object").get<int>("debug cell header width", 24),
+               plist.sublist("verbose object").get<int>("gid number width", 5)),
     name_(name)
 {
   vo_ = Teuchos::rcp(new VerboseObject(name, plist));
@@ -56,7 +56,7 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
         // debug the neighboring cells
         auto fcells = mesh->getFaceCells(lf);
         for (const auto& c : fcells)
-          if (c < cell_map.NumMyElements()) vcells.emplace_back(cell_map.GID(c));
+          if (c < cell_map.NumMyElements() ) vcells.emplace_back(cell_map.GID(c));
       }
     }
   }
@@ -120,7 +120,9 @@ void
 Debugger::WriteCellInfo(bool include_faces)
 {
   Teuchos::OSTab tab1 = vo_->getOSTab();
-  if (vo_->os_OK(verb_level_)) { *vo_->os() << "Debug Cells Information:" << std::endl; }
+  if (vo_->os_OK(verb_level_)) {
+    *vo_->os() << "Debug Cells Information:" << std::endl;
+  }
 
   for (int i = 0; i != dc_.size(); ++i) {
     AmanziMesh::Entity_ID c0 = dc_[i];
@@ -153,7 +155,8 @@ Debugger::WriteCellInfo(bool include_faces)
 void
 Debugger::WriteVector(const std::string& vname,
                       const Teuchos::Ptr<const CompositeVector>& vec,
-                      bool include_faces)
+                      bool include_faces,
+                      std::vector<std::string> const* subfield_names)
 {
   int n_vecs = 0;
   Teuchos::RCP<const Epetra_MultiVector> vec_c;
@@ -162,19 +165,17 @@ Debugger::WriteVector(const std::string& vname,
     n_vecs = vec_c->NumVectors();
   }
 
-  Teuchos::RCP<const Epetra_MultiVector> vec_f;
-  int nfaces_valid = 0;
-  if (vec->HasComponent("face")) {
-    vec_f = vec->ViewComponent("face", true);
-    nfaces_valid = vec_f->MyLength();
-    n_vecs = vec_f->NumVectors();
+  if (subfield_names != nullptr) {
+    AMANZI_ASSERT(subfield_names->size() == n_vecs);
   }
 
+  Teuchos::RCP<const Epetra_MultiVector> vec_f;
   Teuchos::RCP<const Epetra_MultiVector> vec_bf;
-  int nbfaces_valid = 0;
-  if (vec->HasComponent("boundary_face")) {
+  if (vec->HasComponent("face")) {
+    vec_f = vec->ViewComponent("face", true);
+    n_vecs = vec_f->NumVectors();
+  } else if (vec->HasComponent("boundary_face")) {
     vec_bf = vec->ViewComponent("boundary_face", true);
-    nbfaces_valid = vec_bf->MyLength();
     n_vecs = vec_bf->NumVectors();
   }
 
@@ -185,7 +186,11 @@ Debugger::WriteVector(const std::string& vname,
       Teuchos::OSTab tab = dcvo_[i]->getOSTab();
 
       if (dcvo_[i]->os_OK(verb_level_)) {
-        *dcvo_[i]->os() << formatter_.formatHeader(vname, c0_gid);
+        if (subfield_names != nullptr) {
+          *dcvo_[i]->os() << formatter_.formatHeader(vname + "." + (*subfield_names)[j], c0_gid);
+        } else {
+          *dcvo_[i]->os() << formatter_.formatHeader(vname, c0_gid);
+        }
 
         if (vec_c != Teuchos::null) *dcvo_[i]->os() << " " << formatter_.format((*vec_c)[j][c0]);
 
@@ -193,20 +198,15 @@ Debugger::WriteVector(const std::string& vname,
           auto [fnums0, dirs] = mesh_->getCellFacesAndDirections(c0);
 
           for (unsigned int n = 0; n != fnums0.size(); ++n)
-            if (fnums0[n] < nfaces_valid)
-              *dcvo_[i]->os() << " " << formatter_.format((*vec_f)[j][fnums0[n]]);
+            *dcvo_[i]->os() << " " << formatter_.format((*vec_f)[j][fnums0[n]]);
         }
 
         if (include_faces && vec_bf != Teuchos::null) {
           auto [fnums0, dirs] = mesh_->getCellFacesAndDirections(c0);
 
           for (unsigned int n = 0; n != fnums0.size(); ++n) {
-            AmanziMesh::Entity_ID f = fnums0[n];
-            AmanziMesh::Entity_ID bf =
-              mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true)
-                .LID(mesh_->getMap(AmanziMesh::Entity_kind::FACE, true).GID(f));
-            if (bf >= 0 && bf < nbfaces_valid)
-              *dcvo_[i]->os() << " " << formatter_.format((*vec_bf)[j][bf]);
+            AmanziMesh::Entity_ID bf = AmanziMesh::getFaceOnBoundaryBoundaryFace(*mesh_, fnums0[n]);
+            if (bf >= 0) *dcvo_[i]->os() << " " << formatter_.format((*vec_bf)[j][bf]);
           }
         }
         *dcvo_[i]->os() << std::endl;
@@ -218,9 +218,15 @@ Debugger::WriteVector(const std::string& vname,
 
 // Write a vector individually.
 void
-Debugger::WriteCellVector(const std::string& name, const Epetra_MultiVector& vec)
+Debugger::WriteCellVector(const std::string& name,
+                          const Epetra_MultiVector& vec,
+                          std::vector<std::string> const* subfield_names)
 {
   int n_vecs = vec.NumVectors();
+  if (subfield_names != nullptr) {
+    AMANZI_ASSERT(subfield_names->size() == n_vecs);
+  }
+
   for (int i = 0; i != dc_.size(); ++i) {
     for (int j = 0; j != n_vecs; ++j) {
       AmanziMesh::Entity_ID c0 = dc_[i];
@@ -228,8 +234,13 @@ Debugger::WriteCellVector(const std::string& name, const Epetra_MultiVector& vec
       Teuchos::OSTab tab = dcvo_[i]->getOSTab();
 
       if (dcvo_[i]->os_OK(verb_level_)) {
-        *dcvo_[i]->os() << formatter_.formatHeader(name, c0_gid) << formatter_.format(vec[j][c0])
-                        << std::endl;
+        if (subfield_names != nullptr) {
+          *dcvo_[i]->os() << formatter_.formatHeader(name + '.' + (*subfield_names)[j], c0_gid);
+        } else {
+          *dcvo_[i]->os() << formatter_.formatHeader(name, c0_gid);
+        }
+
+        *dcvo_[i]->os() << formatter_.format(vec[j][c0]) << std::endl;
       }
     }
   }
@@ -262,13 +273,11 @@ Debugger::WriteVectors(const std::vector<std::string>& names,
         }
 
         Teuchos::RCP<const Epetra_MultiVector> vec_f;
+        Teuchos::RCP<const Epetra_MultiVector> vec_bf;
         if (vec->HasComponent("face")) {
           vec_f = vec->ViewComponent("face", false);
           n_vec = vec_f->NumVectors();
-        }
-
-        Teuchos::RCP<const Epetra_MultiVector> vec_bf;
-        if (vec->HasComponent("boundary_face")) {
+        } else if (vec->HasComponent("boundary_face")) {
           vec_bf = vec->ViewComponent("boundary_face", false);
           n_vec = vec_bf->NumVectors();
         }
@@ -288,10 +297,8 @@ Debugger::WriteVectors(const std::vector<std::string>& names,
             auto [fnums0, dirs] = mesh_->getCellFacesAndDirections(c0);
 
             for (unsigned int n = 0; n != fnums0.size(); ++n) {
-              AmanziMesh::Entity_ID f = fnums0[n];
               AmanziMesh::Entity_ID bf =
-                mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true)
-                  .LID(mesh_->getMap(AmanziMesh::Entity_kind::FACE, true).GID(f));
+                AmanziMesh::getFaceOnBoundaryBoundaryFace(*mesh_, fnums0[n]);
               if (bf >= 0) *dcvo_[i]->os() << " " << formatter_.format((*vec_bf)[j][bf]);
             }
           }

@@ -50,7 +50,7 @@ class MeshExtractedManifold : public MeshFramework {
     const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
     const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null,
     bool flattened = false);
-  ~MeshExtractedManifold(){};
+  ~MeshExtractedManifold() {};
 
   // initialization
   void InitParentMaps(const std::string& setname);
@@ -77,8 +77,8 @@ class MeshExtractedManifold : public MeshFramework {
   // general mesh information
   // -- number of entities of any kind (cell, face, node) and in a
   //    particular category (OWNED, GHOST, ALL)
-  virtual std::size_t
-  getNumEntities(const Entity_kind kind, const Parallel_kind ptype) const override;
+  virtual std::size_t getNumEntities(const Entity_kind kind,
+                                     const Parallel_kind ptype) const override;
 
   // -- faces
   // On a distributed mesh, all nodes (OWNED or GHOST) of the face are returned
@@ -96,21 +96,11 @@ class MeshExtractedManifold : public MeshFramework {
 
   // -- faces of type 'ptype' connected to a node - The order of faces is not guaranteed
   //    to be the same for corresponding nodes on different processors
-  virtual void getNodeFaces(const Entity_ID n, cEntity_ID_View& nfaces) const override
-  {
-    auto parent_nodes = entid_to_parent_.at(Entity_kind::NODE);
-    auto parent_faces = entid_to_parent_.at(Entity_kind::FACE);
-    auto my_parent_node = parent_nodes(n);
-    auto my_parent_faces = parent_mesh_->getNodeFaces(my_parent_node);
-    Entity_ID_View faces("faces", my_parent_faces.size());
-    int i = 0;
-    for (auto f : my_parent_faces) {
-      for (auto pf : parent_faces)
-        if (f == pf) faces(i++) = parent_to_entid_[Entity_kind::FACE].at(f);
-    }
-    Kokkos::resize(faces, i);
-    nfaces = faces;
-  }
+  virtual void getNodeFaces(const Entity_ID n, cEntity_ID_View& faces) const override;
+
+  // -- cells of type 'ptype' connected to a node - The order of faces is not guaranteed
+  //    to be the same for corresponding nodes on different processors
+  virtual void getNodeCells(const Entity_ID n, cEntity_ID_View& cells) const override;
 
   // -- cells of type 'ptype' connected to an edge - The order of cells is not guaranteed
   //    to be the same for corresponding edges on different processors
@@ -130,8 +120,8 @@ class MeshExtractedManifold : public MeshFramework {
   virtual AmanziGeometry::Point getNodeCoordinate(const Entity_ID n) const override;
 
   // Mesh Sets for ICs, BCs, Material Properties
-  virtual bool
-  isValidSetType(const AmanziGeometry::RegionType rtype, const Entity_kind kind) const override
+  virtual bool isValidSetType(const AmanziGeometry::RegionType rtype,
+                              const Entity_kind kind) const override
   {
     return true;
   }
@@ -160,7 +150,7 @@ class MeshExtractedManifold : public MeshFramework {
                      Entity_kind kind_p,
                      Entity_kind kind_d,
                      Entity_ID_View* setents) const;
-  template <class Entity_ID_View_Type>
+  template<class Entity_ID_View_Type>
   std::map<Entity_ID, int> EnforceOneLayerOfGhosts_(const std::string& setname,
                                                     Entity_kind kind,
                                                     Entity_ID_View_Type* setents) const;
@@ -171,11 +161,11 @@ class MeshExtractedManifold : public MeshFramework {
   // owned ids are enforced to be first in the child -> parent map
   mutable std::map<Entity_kind, Entity_ID> nents_owned_, nents_ghost_;
   mutable std::map<Entity_kind, Entity_ID_View> entid_to_parent_;
-  mutable std::map<Entity_kind, std::map<Entity_ID, Entity_ID>>
-    parent_to_entid_; // reverse to previous map
+  mutable std::map<Entity_kind, std::map<Entity_ID, Entity_ID>> parent_to_entid_; // reverse map
   mutable std::map<Entity_kind, Teuchos::RCP<const Epetra_Map>> ent_map_wghost_;
 
   mutable bool flattened_;
+  mutable bool extract_all_faces_;
 };
 
 } // namespace AmanziMesh

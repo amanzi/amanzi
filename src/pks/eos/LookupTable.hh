@@ -21,16 +21,23 @@
 namespace Amanzi {
 namespace AmanziEOS {
 
+const int EOS_TABLE_UNKNOWN = -1;
+const int EOS_TABLE_LIQUID = -2;
+const int EOS_TABLE_GAS = -3;
+const int EOS_TABLE_SATURATION_CURVE = -4;
+const double EOS_TABLE_TOL = 2e-10;
+
 // Equation of State model
 class LookupTable {
  public:
-  LookupTable(Teuchos::ParameterList& plist){};
-  virtual ~LookupTable(){};
+  LookupTable(Teuchos::ParameterList& plist) {};
+  virtual ~LookupTable() {};
 
   // virtual methods
   virtual double Function(double T, double p, int* ierr);
   virtual double DFunctionDT(double T, double p, int* ierr);
   virtual double DFunctionDp(double T, double p, int* ierr);
+  virtual int Location(double T, double p, int* ierr) { return EOS_TABLE_UNKNOWN; }
 
   // error parsing
   std::string ErrorMessage(double T, double p);

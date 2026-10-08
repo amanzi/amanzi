@@ -52,7 +52,7 @@ PDE_Reaction::InitReaction_(Teuchos::ParameterList& plist)
       int num;
       AmanziMesh::Entity_kind kind;
       std::tie(kind, std::ignore, num) = *it;
-      std::string name(local_schema_row_.KindToString(kind));
+      std::string name(AmanziMesh::to_string(kind));
 
       const auto& maps = Amanzi::getMaps(*mesh_, kind);
       cvs->AddComponent(name, kind, maps.first, maps.second, num);
@@ -136,7 +136,9 @@ PDE_Reaction::UpdateMatrices(double t)
 void
 PDE_Reaction::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
-  for (auto bc = bcs_trial_.begin(); bc != bcs_trial_.end(); ++bc) {}
+  for (auto bc = bcs_trial_.begin(); bc != bcs_trial_.end(); ++bc) {
+    
+  }
 }
 
 

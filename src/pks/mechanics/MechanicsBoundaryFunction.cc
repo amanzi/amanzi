@@ -24,7 +24,8 @@ namespace Mechanics {
 **************************************************************** */
 MechanicsBoundaryFunction::MechanicsBoundaryFunction(const Teuchos::ParameterList& plist)
 {
-  // place holder
+  if (plist.isParameter("plane strain direction"))
+    plane_strain_direction_ = plist.get<std::string>("plane strain direction");
 }
 
 } // namespace Mechanics

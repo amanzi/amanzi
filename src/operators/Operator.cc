@@ -43,6 +43,7 @@
 #include "Op_Edge_Edge.hh"
 #include "Op_Face_Cell.hh"
 #include "Op_Face_CellBndFace.hh"
+#include "Op_Face_Face.hh"
 #include "Op_Face_Schema.hh"
 #include "Op_Node_Node.hh"
 #include "Op_Node_Schema.hh"
@@ -198,7 +199,7 @@ Operator::SymbolicAssembleMatrix()
 {
   // Create the supermap given a space (set of possible schemas) and a
   // specific schema (assumed/checked to be consistent with the space).
-  if (!smap_.get()) smap_ = createSuperMap(*cvs_col_);
+  if (!smap_.get() ) smap_ = createSuperMap(*cvs_col_);
 
   // create the graph
   int row_size = MaxRowSize(*mesh_, schema_col());
@@ -229,11 +230,12 @@ Operator::SymbolicAssembleMatrix(const SuperMap& map,
                                  int my_block_col) const
 {
   Teuchos::OSTab tab = vo_->getOSTab();
-  if (vo_->os_OK(Teuchos::VERB_EXTREME)) *vo_->os() << "Symbolic Assembling..." << std::endl;
+  if (vo_->os_OK(Teuchos::VERB_EXTREME) ) *vo_->os() << "Symbolic Assembling..." << std::endl;
 
   // first of double dispatch via Visitor pattern
   for (auto& it : *this) {
-    if (vo_->os_OK(Teuchos::VERB_EXTREME)) *vo_->os() << "  op: " << it->schema_string << std::endl;
+    if (vo_->os_OK(Teuchos::VERB_EXTREME)
+      ) *vo_->os() << "  op: " << it->schema_string << std::endl;
     it->SymbolicAssembleMatrixOp(this, map, graph, my_block_row, my_block_col);
   }
 }
@@ -292,7 +294,7 @@ Operator::AssembleMatrix()
   // override this because ApplyAssembled is not valid for them.
   assembly_complete_ = true;
 
-  Amat_->Zero();
+  Amat_->PutScalar(0.);
   AssembleMatrix(*smap_, *Amat_, 0, 0);
   Amat_->FillComplete();
 
@@ -303,10 +305,11 @@ Operator::AssembleMatrix()
   }
 
   compute_complete_ = false;
+
   // std::stringstream filename_s2;
   // filename_s2 << "assembled_matrix" << 0 << ".txt";
   // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *Amat_ ->Matrix());
-  // exit(0);
+  // throw("dumped matrix");
 }
 
 
@@ -326,7 +329,8 @@ Operator::AssembleMatrix(const SuperMap& map,
 
   // first of double dispatch via Visitor pattern
   for (auto& it : *this) {
-    if (vo_->os_OK(Teuchos::VERB_EXTREME)) *vo_->os() << "  op: " << it->schema_string << std::endl;
+    if (vo_->os_OK(Teuchos::VERB_EXTREME)
+      ) *vo_->os() << "  op: " << it->schema_string << std::endl;
     it->AssembleMatrixOp(this, map, matrix, my_block_row, my_block_col);
   }
 }
@@ -620,7 +624,9 @@ Operator::InitializeInverse()
 void
 Operator::ComputeInverse()
 {
-  if (!initialize_complete_) { InitializeInverse(); }
+  if (!initialize_complete_) {
+    InitializeInverse();
+  }
   // assembly must be possible now
   AMANZI_ASSERT(preconditioner_.get());
   preconditioner_->ComputeInverse(); // NOTE: calls this->AssembleMatrix()
@@ -629,11 +635,13 @@ Operator::ComputeInverse()
 
 /* ******************************************************************
 * Update the RHS with this vector.
-* Note that derived classes may reimplement this with a volume term.
 ****************************************************************** */
 void
 Operator::UpdateRHS(const CompositeVector& source, bool volume_included)
 {
+  // A derived class should implement the volume factor
+  if (!volume_included) AMANZI_ASSERT(false);
+
   for (auto& it : *rhs_) {
     if (source.HasComponent(it)) {
       rhs_->ViewComponent(it, false)->Update(1.0, *source.ViewComponent(it, false), 1.0);
@@ -704,7 +712,9 @@ Operator::RestoreCheckPoint()
   *rhs_ = *rhs_checkpoint_;
 
   // restore local matrices without boundary conditions
-  for (auto& it : *this) { it->RestoreCheckPoint(); }
+  for (auto& it : *this) {
+    it->RestoreCheckPoint();
+  }
 
   assembly_complete_ = false;
   compute_complete_ = false;
@@ -734,7 +744,9 @@ Operator::const_op_iterator
 Operator::FindMatrixOp(int schema_dofs, int matching_rule, bool action) const
 {
   for (const_op_iterator it = begin(); it != end(); ++it) {
-    if ((*it)->Matches(schema_dofs, matching_rule)) { return it; }
+    if ((*it)->Matches(schema_dofs, matching_rule)) {
+      return it;
+    }
   }
 
   if (action) {
@@ -754,7 +766,9 @@ Operator::op_iterator
 Operator::FindMatrixOp(int schema_dofs, int matching_rule, bool action)
 {
   for (op_iterator it = begin(); it != end(); ++it) {
-    if ((*it)->Matches(schema_dofs, matching_rule)) { return it; }
+    if ((*it)->Matches(schema_dofs, matching_rule)) {
+      return it;
+    }
   }
 
   if (action) {
@@ -888,6 +902,15 @@ Operator::ApplyMatrixFreeOp(const Op_Face_CellBndFace& op,
 
 int
 Operator::ApplyMatrixFreeOp(const Op_Face_Schema& op,
+                            const CompositeVector& X,
+                            CompositeVector& Y) const
+{
+  return SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
+int
+Operator::ApplyMatrixFreeOp(const Op_Face_Face& op,
                             const CompositeVector& X,
                             CompositeVector& Y) const
 {
@@ -1058,6 +1081,17 @@ Operator::SymbolicAssembleMatrixOp(const Op_Face_CellBndFace& op,
 
 void
 Operator::SymbolicAssembleMatrixOp(const Op_Face_Schema& op,
+                                   const SuperMap& map,
+                                   GraphFE& graph,
+                                   int my_block_row,
+                                   int my_block_col) const
+{
+  SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
+void
+Operator::SymbolicAssembleMatrixOp(const Op_Face_Face& op,
                                    const SuperMap& map,
                                    GraphFE& graph,
                                    int my_block_row,
@@ -1242,6 +1276,17 @@ Operator::AssembleMatrixOp(const Op_Face_CellBndFace& op,
 
 void
 Operator::AssembleMatrixOp(const Op_Face_Schema& op,
+                           const SuperMap& map,
+                           MatrixFE& mat,
+                           int my_block_row,
+                           int my_block_col) const
+{
+  SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
+void
+Operator::AssembleMatrixOp(const Op_Face_Face& op,
                            const SuperMap& map,
                            MatrixFE& mat,
                            int my_block_row,

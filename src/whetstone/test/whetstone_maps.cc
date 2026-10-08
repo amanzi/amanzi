@@ -94,7 +94,9 @@ TEST(DG_MAP_DETERMINANT_CELL)
       for (int f = 0; f < nfaces; ++f) maps->VelocityFace(f, vf[f]);
 
       // run differet discretization methods
-      if (std::strcmp(name, "SerendipityPk") == 0) { maps->VelocityCell(cell, vf, vf, uc); }
+      if (std::strcmp(name, "SerendipityPk") == 0) {
+        maps->VelocityCell(cell, vf, vf, uc);
+      }
       maps->Jacobian(uc, J);
       J(0, 0)(0) += 1.0;
       J(1, 1)(0) += 1.0;
@@ -164,7 +166,9 @@ TEST(DG_MAP_LEAST_SQUARE_CELL)
   std::vector<VectorPolynomial> vf(nfaces);
   VectorPolynomial vc1(d, d), vc2(d, d);
 
-  for (int n = 0; n < nfaces; ++n) { vf[n] = u; }
+  for (int n = 0; n < nfaces; ++n) {
+    vf[n] = u;
+  }
 
   // -- mesh deformation
   for (int v = 0; v < nnodes; ++v) {
@@ -336,12 +340,16 @@ TEST(DG_MAP_VELOCITY_CELL)
 
   std::vector<VectorPolynomial> ve(nedges);
   auto edges = mesh0->getCellEdges(0);
-  for (int n = 0; n < nedges; ++n) { maps->VelocityEdge(edges[n], ve[n]); }
+  for (int n = 0; n < nedges; ++n) {
+    maps->VelocityEdge(edges[n], ve[n]);
+  }
 
   // -- on faces
   std::vector<VectorPolynomial> vf(nfaces);
   auto faces = mesh0->getCellFaces(0);
-  for (int n = 0; n < nfaces; ++n) { maps->VelocityFace(faces[n], vf[n]); }
+  for (int n = 0; n < nfaces; ++n) {
+    maps->VelocityFace(faces[n], vf[n]);
+  }
 
   // -- in cell
   VectorPolynomial vc;

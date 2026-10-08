@@ -27,7 +27,8 @@ namespace Functions {
 
 class MeshPartition {
  public:
-  MeshPartition() : initialized_(false){};
+  MeshPartition()
+    : initialized_(false) {};
 
   MeshPartition(AmanziMesh::Entity_kind kind, const std::vector<std::string>& regions);
 

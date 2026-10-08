@@ -16,27 +16,17 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 # --- Patch the original code
 set(NetCDF_patch_file netcdf-cmake.patch
                       netcdf-cmake-rpath.patch)
-#                     netcdf-cmake-dl.patch)
-#                     netcdf-cmake-namespace.patch)
-set(NetCDF_sh_patch ${NetCDF_prefix_dir}/netcdf-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/netcdf-patch-step.sh.in
-               ${NetCDF_sh_patch}
-               @ONLY)
-
-# configure the CMake patch step
-set(NetCDF_cmake_patch ${NetCDF_prefix_dir}/netcdf-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/netcdf-patch-step.cmake.in
-               ${NetCDF_cmake_patch}
-               @ONLY)
-
-# configure the CMake command file
-set(NetCDF_PATCH_COMMAND ${CMAKE_COMMAND} -P ${NetCDF_cmake_patch})     
+patch_tpl(NetCDF
+          ${NetCDF_prefix_dir}
+          ${NetCDF_source_dir}
+          ${NetCDF_stamp_dir}
+          NetCDF_patch_file)
 
 # --- Define the configure command
 set(NetCDF_CMAKE_CACHE_ARGS "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}")
 list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}")
-list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DCMAKE_INSTALL_LIBDIR:FILEPATH=${TPL_INSTALL_PREFIX}/lib")
-list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DCMAKE_INSTALL_BINDIR:FILEPATH=${TPL_INSTALL_PREFIX}/bin")
+list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DCMAKE_INSTALL_LIBDIR:FILEPATH=lib")
+list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DCMAKE_INSTALL_BINDIR:FILEPATH=bin")
 list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DENABLE_DAP:BOOL=FALSE")
 list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DENABLE_PARALLEL4:BOOL=TRUE")
 list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DHDF5_PARALLEL:BOOL=TRUE")
@@ -45,6 +35,10 @@ list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DHDF5_HL_LIBRARY:FILEPATH=${HDF5_HL_LIBRAR
 list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DHDF5_INCLUDE_DIR:PATH=${HDF5_INCLUDE_DIRS}")
 list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DHDF5_VERSION:STRING=${HDF5_VERSION}")
 
+# --- Override minimum version
+if(CMAKE_MAJOR_VERSION VERSION_EQUAL "4")
+  list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.5")
+endif()
 
 # Default is to build with NetCDF4 which depends on HDF5
 option(ENABLE_NetCDF4 "Enable netCDF4 build" TRUE)
@@ -92,6 +86,7 @@ ExternalProject_Add(${NetCDF_BUILD_TARGET}
 # --- Useful variables for packages that depend on NetCDF (Trilinos)
 include(BuildLibraryName)
 build_library_name(netcdf NetCDF_C_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+
 build_library_name(netcdf_c++ NetCDF_CXX_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
 set(NetCDF_DIR ${TPL_INSTALL_PREFIX})
 set(NetCDF_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)

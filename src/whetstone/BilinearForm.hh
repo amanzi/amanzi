@@ -39,8 +39,8 @@ class Polynomial;
 class BilinearForm {
  public:
   BilinearForm(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : mesh_(mesh), d_(mesh->getSpaceDimension()), order_(1){};
-  virtual ~BilinearForm(){};
+    : mesh_(mesh), d_(mesh->getSpaceDimension()), order_(1) {};
+  virtual ~BilinearForm() {};
 
   // schema
   virtual std::vector<SchemaItem> schema() const = 0;
@@ -105,8 +105,10 @@ class BilinearForm {
   }
 
   // -- advection
-  virtual int
-  AdvectionMatrix(int c, const AmanziGeometry::Point& v, DenseMatrix& A, bool grad_on_test)
+  virtual int AdvectionMatrix(int c,
+                              const AmanziGeometry::Point& v,
+                              DenseMatrix& A,
+                              bool grad_on_test)
   {
     Errors::Message msg("Advection operator is not supported.");
     Exceptions::amanzi_throw(msg);

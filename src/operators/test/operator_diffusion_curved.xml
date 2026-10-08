@@ -1,11 +1,10 @@
 <ParameterList name="Main">
-
   <!--  REGIONS  -->
   <ParameterList name="regions">
     <ParameterList name="Top side">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{1.0,1.0,1.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{0.0,0.0,1.0}"/>
+        <Parameter name="point" type="Array(double)" value="{1.0, 1.0, 1.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0, 0.0, 1.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -23,7 +22,6 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
@@ -39,7 +37,6 @@
         <Parameter name="verbosity" type="int" value="0"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="Trilinos ML">
       <Parameter name="preconditioning method" type="string" value="ml"/>
       <ParameterList name="ml parameters">
@@ -63,20 +60,18 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
   <!--  OPERATORS  -->
   <ParameterList name="PK operator">
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-
     <!-- Curved MFD schemes -->
     <ParameterList name="diffusion operator curved">
       <Parameter name="matrix type" type="string" value="stiffness"/>
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
         <Parameter name="method" type="string" value="diffusion generalized"/>
-        <Parameter name="method order" type="int" value="-1"/>  <!-- not used /-->
+        <Parameter name="method order" type="int" value="-1"/>
+        <!-- not used /-->
       </ParameterList>
     </ParameterList>
   </ParameterList>
 </ParameterList>
-

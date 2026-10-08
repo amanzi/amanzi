@@ -12,9 +12,10 @@
 The `"ion exchange sites`" section is the list of ion exchange reactions.
 Each sublist is named after the exchanger site and has the following parameters:
 
-* `"location`" [string] is the mineral name.
+.. admonition:: ion_exchange-spec
 
-* `"charge`" [int] is the exchanger charge.
+  * `"location`" ``[string]`` is the mineral name.
+  * `"charge`" ``[int]`` is the exchanger charge.
 
 .. code-block:: xml
 
@@ -47,7 +48,7 @@ class IonExchangeRxn {
   IonExchangeRxn(IonExchangeSite* ionx_sites,
                  const std::vector<IonExchangeComplex>& ionx_complexes);
   explicit IonExchangeRxn(IonExchangeSite ionx_sites);
-  ~IonExchangeRxn(){};
+  ~IonExchangeRxn() {};
 
   // add complexes to the reaction
   void AddIonExchangeComplex(const IonExchangeComplex& complex);

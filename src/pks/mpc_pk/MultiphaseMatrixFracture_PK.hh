@@ -49,7 +49,7 @@ class MultiphaseMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
 
   virtual void FunctionalResidual(double t_old,
                                   double t_new,
-                                  Teuchos::RCP<TreeVector> u_old,
+                                  Teuchos::RCP<const TreeVector> u_old,
                                   Teuchos::RCP<TreeVector> u_new,
                                   Teuchos::RCP<TreeVector> f) override;
 
@@ -57,8 +57,8 @@ class MultiphaseMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u, double dt) override;
 
   // // preconditioner application
-  virtual int
-  ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) override;
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
+                                  Teuchos::RCP<TreeVector> Pu) override;
 
   std::string name() override { return "multiphase matrix-fracture"; }
 

@@ -8,10 +8,10 @@
            Ethan Coon (ecoon@lanl.gov)
 */
 
-//! RegionLabeledSet: A region defined by a set of mesh entities in a mesh file
+//! A region defined by a set of mesh entities identified in a mesh file.
 /*!
 
-The list *region: labeled set* defines a named set of mesh entities
+The labeled set defines a named set of mesh entities
 existing in an input mesh file. This is the same file that contains
 the computational mesh. The name of the entity set is given
 by *label*.  For example, a mesh file in the Exodus II
@@ -27,25 +27,26 @@ requires *cell*, *face* or *node* as well as a label (which is
 an integer).  The resulting region will have the dimensionality
 associated with the entities in the indicated set.
 
+`"region type`" = `"labeled set`"
+
 .. _region-labeled-set-spec:
 .. admonition:: region-labeled-set-spec
 
-    * `"label`" ``[string]`` Set per label defined in the mesh file.
-    * `"file`" ``[string]`` File name.
-    * `"format`" ``[string]`` Currently, we only support mesh files in the "Exodus II" format.
-    * `"entity`" ``[string]`` Type of the mesh object (cell, face, etc).
+   * `"label`" ``[string]`` Set per label defined in the mesh file.
+   * `"file`" ``[string]`` File name.
+   * `"format`" ``[string]`` Currently, we only support mesh files in the "Exodus II" format.
+   * `"entity`" ``[string]`` Type of the mesh object (cell, face, etc).
 
 Example:
 
 .. code-block:: xml
 
    <ParameterList name="AQUIFER">
-     <ParameterList name="region: labeled set">
-       <Parameter name="entity" type="string" value="cell"/>
-       <Parameter name="file" type="string" value="porflow4_4.exo"/>
-       <Parameter name="format" type="string" value="Exodus II"/>
-       <Parameter name="label" type="string" value="1"/>
-     </ParameterList>
+     <Parameter name="region type" type="string" value="labeled set"/>
+     <Parameter name="entity" type="string" value="cell"/>
+     <Parameter name="file" type="string" value="porflow4_4.exo"/>
+     <Parameter name="format" type="string" value="Exodus II"/>
+     <Parameter name="label" type="string" value="1"/>
    </ParameterList>
 
 */

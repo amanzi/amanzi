@@ -49,8 +49,8 @@ class MyRemapDG : public Operators::RemapDG<CompositeVector> {
     : Operators::RemapDG<CompositeVector>(mesh0, mesh1, plist),
       tprint_(0.0),
       dt_output_(0.1),
-      l2norm_(-1.0){};
-  ~MyRemapDG(){};
+      l2norm_(-1.0) {};
+  ~MyRemapDG() {};
 
   // time control
   // -- stability condition
@@ -66,7 +66,7 @@ class MyRemapDG : public Operators::RemapDG<CompositeVector> {
 
   // access
   const std::vector<WhetStone::SpaceTimePolynomial> det() const { return *det_; }
-  const std::shared_ptr<WhetStone::MeshMaps> maps() const { return maps_; }
+  const std::shared_ptr<WhetStone::MeshMapsBase> maps() const { return maps_; }
 
  public:
   double tprint_, dt_output_, l2norm_;
@@ -127,7 +127,7 @@ MyRemapDG::CollectStatistics(double t, const CompositeVector& u)
   if (tglob >= tprint_) {
     op_reac_->UpdateMatrices(t);
     auto& matrices = op_reac_->local_op()->matrices;
-    for (int n = 0; n < matrices.size(); ++n) matrices[n].Inverse();
+    for (int n = 0; n < matrices.size() ; ++n) matrices[n].Inverse();
 
     auto& rhs = *op_reac_->global_operator()->rhs();
     op_reac_->global_operator()->Apply(u, rhs);
@@ -135,9 +135,10 @@ MyRemapDG::CollectStatistics(double t, const CompositeVector& u)
 
     Epetra_MultiVector& xc = *rhs.ViewComponent("cell");
     int nk = xc.NumVectors();
-    double xmax[nk], xmin[nk], lmax(-1.0), lmin(-1.0), lavg(-1.0);
-    xc.MaxValue(xmax);
-    xc.MinValue(xmin);
+    double lmax(-1.0), lmin(-1.0), lavg(-1.0);
+    std::vector<double> xmax(nk), xmin(nk);
+    xc.MaxValue(xmax.data());
+    xc.MinValue(xmin.data());
 
     if (limiter() != Teuchos::null) {
       const auto& lim = *limiter()->limiter();
@@ -234,21 +235,22 @@ RemapTestsDualRK(std::string map_name,
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(dim, region_list, *comm));
 
   auto mlist = Teuchos::rcp(new Teuchos::ParameterList(plist.sublist("mesh")));
+  mlist->set<bool>("request faces", true);
+  mlist->set<bool>("request edges", (dim == 3));
   MeshFactory meshfactory(comm, gm, mlist);
   meshfactory.set_preference(Preference({ AmanziMesh::Framework::MSTK }));
 
   Teuchos::RCP<const Mesh> mesh0;
   Teuchos::RCP<Mesh> mesh1;
   if (file_name != "") {
-    bool request_edges = (dim == 3);
-    mesh0 = meshfactory.create(file_name, true, request_edges);
-    mesh1 = meshfactory.create(file_name, true, request_edges);
+    mesh0 = meshfactory.create(file_name);
+    mesh1 = meshfactory.create(file_name);
   } else if (dim == 2) {
     mesh0 = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, ny);
     mesh1 = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, ny);
   } else {
-    mesh0 = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, true, true);
-    mesh1 = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, true, true);
+    mesh0 = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz);
+    mesh1 = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz);
   }
 
   int ncells_owned =

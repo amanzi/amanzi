@@ -112,7 +112,9 @@ main(int argc, char** argv)
   }
   std::cout << "Serial cleanup:" << std::endl;
   // cleanup memory
-  for (int thread = 0; thread < num_threads; thread++) { delete mixing_cells[thread]; }
+  for (int thread = 0; thread < num_threads; thread++) {
+    delete mixing_cells[thread];
+  }
 
   std::cout << "Done!\n";
   return error;
@@ -128,30 +130,30 @@ CommandLineOptions(int argc, char** argv)
 
   while ((option = getopt(argc, argv, "hv:?")) != -1) {
     switch (option) {
-    case 'v': {
-      verbosity = std::atoi(optarg);
-      break;
-    }
-    case '?':
-    case 'h': { /* help mode */
-      /* print some help stuff and exit without doing anything */
-      std::cout << argv[0] << " command line options:" << std::endl;
-      std::cout << std::endl;
-      std::cout << "    -v integer" << std::endl;
-      std::cout << "         verbose output:" << std::endl;
-      std::cout << "             0: silent" << std::endl;
-      std::cout << "             1: terse" << std::endl;
-      std::cout << "             2: verbose" << std::endl;
-      std::cout << "             3: debug" << std::endl;
-      std::cout << "             4: debug beaker" << std::endl;
-      std::cout << "             5......" << std::endl;
-      error = -1;
-      break;
-    }
-    default: {
-      /* no options */
-      break;
-    }
+      case 'v': {
+        verbosity = std::atoi(optarg);
+        break;
+      }
+      case '?':
+      case 'h': { /* help mode */
+        /* print some help stuff and exit without doing anything */
+        std::cout << argv[0] << " command line options:" << std::endl;
+        std::cout << std::endl;
+        std::cout << "    -v integer" << std::endl;
+        std::cout << "         verbose output:" << std::endl;
+        std::cout << "             0: silent" << std::endl;
+        std::cout << "             1: terse" << std::endl;
+        std::cout << "             2: verbose" << std::endl;
+        std::cout << "             3: debug" << std::endl;
+        std::cout << "             4: debug beaker" << std::endl;
+        std::cout << "             5......" << std::endl;
+        error = -1;
+        break;
+      }
+      default: {
+        /* no options */
+        break;
+      }
     }
   }
 

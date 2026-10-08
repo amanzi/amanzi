@@ -64,7 +64,7 @@ InputConverter::TranslateThermodynamicDatabase_()
       if (!flag) Exceptions::amanzi_throw(msg);
 
       double ion_size = GetAttributeValueD_(knode, "ion_size", TYPE_NUMERICAL, 0.0, DVAL_MAX);
-      int z = GetAttributeValueL_(knode, "z", TYPE_NUMERICAL, -100, 100);
+      int z = GetAttributeValueI_(knode, "z", TYPE_NUMERICAL, -100, 100);
       double mol_weight = GetAttributeValueD_(knode, "weight", TYPE_NUMERICAL, 0.0, 10000.0);
 
       out_list.sublist("primary species")
@@ -89,7 +89,7 @@ InputConverter::TranslateThermodynamicDatabase_()
       if (!flag) Exceptions::amanzi_throw(msg);
 
       double ion_size = GetAttributeValueD_(knode, "ion_size", TYPE_NUMERICAL, 0.0, DVAL_MAX);
-      int z = GetAttributeValueL_(knode, "z", TYPE_NUMERICAL, -100, 100);
+      int z = GetAttributeValueI_(knode, "z", TYPE_NUMERICAL, -100, 100);
       double mol_weight = GetAttributeValueD_(knode, "weight", TYPE_NUMERICAL, 0.0, 10000.0);
 
       knode = GetUniqueElementByTagsString_(inode, "reaction", flag);
@@ -210,7 +210,7 @@ InputConverter::TranslateThermodynamicDatabase_()
 
       std::string name = GetAttributeValueS_(inode, "name");
       std::string location = GetAttributeValueS_(inode, "location");
-      int z = GetAttributeValueL_(inode, "z", TYPE_NUMERICAL, -100, 100);
+      int z = GetAttributeValueI_(inode, "z", TYPE_NUMERICAL, -100, 100);
 
       out_list.sublist("ion exchange sites")
         .sublist(name)
@@ -271,7 +271,7 @@ InputConverter::TranslateThermodynamicDatabase_()
       inode = children->item(i);
 
       std::string name = GetAttributeValueS_(inode, "name");
-      int z = GetAttributeValueL_(inode, "z", TYPE_NUMERICAL, -100, 100);
+      int z = GetAttributeValueI_(inode, "z", TYPE_NUMERICAL, -100, 100);
 
       knode = GetUniqueElementByTagsString_(inode, "reaction", flag);
       if (!flag) Exceptions::amanzi_throw(msg);

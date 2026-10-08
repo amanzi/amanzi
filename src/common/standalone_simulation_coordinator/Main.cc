@@ -15,7 +15,6 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
-#include "Teuchos_TimeMonitor.hpp"
 
 #include "ErrorHandler.hpp"
 #include "SimulatorFactory.hh"
@@ -29,7 +28,8 @@
 #include "AmanziComm.hh"
 
 #ifdef ENABLE_Unstructured
-#  include "state_evaluators_registration.hh"
+#include "state_evaluators_registration.hh"
+#include "AmanziUnstructuredGridSimulationDriver.hh"
 #endif
 
 #include "tpl_versions.h"
@@ -119,12 +119,12 @@ main(int argc, char* argv[])
 
     if (print_tpl_versions) {
       if (rank == 0) {
-#ifdef AMANZI_MAJOR
-        std::cout << "Amanzi TPL collection version " << XSTR(AMANZI_MAJOR) << "."
-                  << XSTR(AMANZI_MINOR) << "." << XSTR(AMANZI_PATCH) << std::endl;
-#endif
-        std::cout << "Third party libraries that this amanzi binary is linked against:"
+        std::cout << "Third party libraries that above amanzi binary is linked against:"
                   << std::endl;
+#ifdef AMANZI_TPLS_MAJOR
+        std::cout << "Amanzi TPL collection version " << XSTR(AMANZI_TPLS_MAJOR) << "."
+                  << XSTR(AMANZI_TPLS_MINOR) << "." << XSTR(AMANZI_TPLS_PATCH) << std::endl;
+#endif
 #ifdef ALQUIMIA_MAJOR
         std::cout << "  ALQUIMIA       " << XSTR(ALQUIMIA_MAJOR) << "." << XSTR(ALQUIMIA_MINOR)
                   << "." << XSTR(ALQUIMIA_PATCH) << std::endl;
@@ -225,7 +225,9 @@ main(int argc, char* argv[])
     }
 
     if (print_paths) {
-      if (rank == 0) { std::cout << "xml input file:  " << xmlInFileName << std::endl; }
+      if (rank == 0) {
+        std::cout << "xml input file:  " << xmlInFileName << std::endl;
+      }
     }
 
     if (xmlInFileName.size() == 0) {
@@ -253,17 +255,21 @@ main(int argc, char* argv[])
     auto comm = Amanzi::getDefaultComm();
     Amanzi::ObservationData observations_data;
     Amanzi::Simulator::ReturnType ret = simulator->Run(comm, observations_data);
-    Teuchos::TimeMonitor::summarize();
+    simulator->Summarize();
 
     if (ret == Amanzi::Simulator::FAIL) {
       amanzi_throw(Errors::Message("The amanzi simulator returned an error code, this is most "
                                    "likely due to an error in the mesh creation."));
     }
 
-    if (rank == 0) { std::cout << "Amanzi::SIMULATION_SUCCESSFUL\n\n"; }
+    if (rank == 0) {
+      std::cout << "Amanzi::SIMULATION_SUCCESSFUL\n\n";
+    }
   } catch (std::string& s) {
     if (rank == 0) {
-      if (s == "Amanzi not run") { std::cout << "Amanzi::SIMULATION_DID_NOT_RUN\n"; }
+      if (s == "Amanzi not run") {
+        std::cout << "Amanzi::SIMULATION_DID_NOT_RUN\n";
+      }
     }
     Kokkos::finalize();
     return 1;

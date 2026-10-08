@@ -99,9 +99,10 @@ class NavierStokes_PK : public PK_PhysicalBDF {
                   Teuchos::RCP<State> S,
                   const Teuchos::RCP<TreeVector>& soln);
 
-  ~NavierStokes_PK(){};
+  ~NavierStokes_PK() {};
 
   // methods required for PK interface
+  virtual void parseParameterList() final {};
   virtual void Setup() final;
   virtual void Initialize() final;
 
@@ -114,7 +115,7 @@ class NavierStokes_PK : public PK_PhysicalBDF {
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) final;
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) final;
-  virtual void CalculateDiagnostics(const Tag& tag) final{};
+  virtual void CalculateDiagnostics(const Tag& tag) final {};
 
   virtual std::string name() { return passwd_; }
 
@@ -122,7 +123,7 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   // -- computes the non-linear functional f = f(t,u,udot) and related norm.
   void FunctionalResidual(const double t_old,
                           double t_new,
-                          Teuchos::RCP<TreeVector> u_old,
+                          Teuchos::RCP<const TreeVector> u_old,
                           Teuchos::RCP<TreeVector> u_new,
                           Teuchos::RCP<TreeVector> f);
   double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du);
@@ -138,7 +139,7 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   // -- possibly modifies the predictor that is going to be used as a
   //    starting value for the nonlinear solve in the time integrator,
   //    the time integrator will pass the predictor that is computed
-  //    using extrapolation and the time step that is used to compute
+  //    using extrapolation and the timestep that is used to compute
   //    this predictor this function returns true if the predictor was
   //    modified, false if not
   bool ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u)
@@ -150,11 +151,11 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   //    has computed it, will return true if it did change the correction,
   //    so that the nonlinear iteration can store the modified correction
   //    and pass it to NKA so that the NKA space can be updated
-  AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-  ModifyCorrection(double dt,
-                   Teuchos::RCP<const TreeVector> res,
-                   Teuchos::RCP<const TreeVector> u,
-                   Teuchos::RCP<TreeVector> du)
+  AmanziSolvers::FnBaseDefs::ModifyCorrectionResult ModifyCorrection(
+    double dt,
+    Teuchos::RCP<const TreeVector> res,
+    Teuchos::RCP<const TreeVector> u,
+    Teuchos::RCP<TreeVector> du)
   {
     return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
   }

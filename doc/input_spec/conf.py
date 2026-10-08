@@ -24,9 +24,9 @@ copyright = '202X, jointly shared by contributor institutions'
 author = 'Konstantin Lipnikov'
 
 # The short X.Y version
-version = '1.5'
+version = '1.6'
 # The full version, including alpha/beta/rc tags
-release = '1.5'
+release = '1.6'
 
 
 # -- General configuration ---------------------------------------------------
@@ -96,6 +96,7 @@ html_theme = 'sphinx_rtd_theme'
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+html_css_files = ['custom.css']
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -188,5 +189,5 @@ epub_exclude_files = ['search.html']
 # -- Options for intersphinx extension ---------------------------------------
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'amanzi': ('https://amanzi.github.io/amanzi', None),
-                      }
+# intersphinx_mapping = {'amanzi': ('https://amanzi.github.io/amanzi', None),
+#                      }

@@ -15,7 +15,6 @@
 */
 
 #include <cmath>
-#include <iterator>
 #include <vector>
 
 #include "Mesh.hh"
@@ -369,7 +368,9 @@ MFD3D_Diffusion::DivergenceMatrix(int c, DenseMatrix& A)
 
   A.Reshape(1, nfaces);
 
-  for (int n = 0; n < nfaces; ++n) { A(0, n) = mesh_->getFaceArea(faces[n]) * dirs[n]; }
+  for (int n = 0; n < nfaces; ++n) {
+    A(0, n) = mesh_->getFaceArea(faces[n]) * dirs[n];
+  }
   return 0;
 }
 
@@ -589,7 +590,7 @@ MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M)
   }
 
   // create groups of quasi-parallel faces
-  int map[nrows];
+  std::vector<int> map(nrows);
   for (int i = 0; i < nrows; i++) map[i] = i;
 
   const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);

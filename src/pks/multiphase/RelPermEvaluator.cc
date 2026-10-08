@@ -36,17 +36,15 @@ RelPermEvaluator::RelPermEvaluator(Teuchos::ParameterList& plist,
     plist.get<std::string>("saturation key", Keys::getKey(domain, "saturation_liquid"));
 
   std::string name = plist.get<std::string>("phase name");
-  if (name == "liquid")
-    phase_ = MULTIPHASE_PHASE_LIQUID;
-  else if (name == "gas")
-    phase_ = MULTIPHASE_PHASE_GAS;
+  if (name == "liquid") phase_ = MULTIPHASE_PHASE_LIQUID;
+  else if (name == "gas") phase_ = MULTIPHASE_PHASE_GAS;
 
   dependencies_.insert(std::make_pair(saturation_liquid_key_, Tags::DEFAULT));
 }
 
 
 RelPermEvaluator::RelPermEvaluator(const RelPermEvaluator& other)
-  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other), wrm_(other.wrm_){};
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other), wrm_(other.wrm_) {};
 
 
 /* ******************************************************************

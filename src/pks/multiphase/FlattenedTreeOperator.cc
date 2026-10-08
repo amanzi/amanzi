@@ -67,10 +67,8 @@ FlattenedTreeOperator::FlattenedTreeOperator(Teuchos::RCP<const TreeVectorSpace>
   // second map helps matrix assembly from smaller-size blocks
   row_supermap_ = createSuperMap(*row_map_);
   col_supermap_ = row_supermap_;
-  if (flag)
-    smap_flat_ = createSuperMap(*tvs_flat_);
-  else
-    smap_flat_ = row_supermap_;
+  if (flag) smap_flat_ = createSuperMap(*tvs_flat_);
+  else smap_flat_ = row_supermap_;
 }
 
 
@@ -136,7 +134,7 @@ void
 FlattenedTreeOperator::AssembleMatrix()
 {
   int n_blocks = blocks_.size();
-  Amat_->Zero();
+  Amat_->PutScalar(0.);
 
   // check that each row has at least one non-null operator block
   for (int row = 0; row != n_blocks; ++row) {

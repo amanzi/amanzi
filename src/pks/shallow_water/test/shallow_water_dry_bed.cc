@@ -78,7 +78,9 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
     double x = node_crd[0], y = node_crd[1];
 
     B_n[0][n] = 0.0;
-    if ((x - 0.5) * (x - 0.5) + (y - 0.5) * (y - 0.5) < 0.35 * 0.35 + 1.e-12) { B_n[0][n] = 0.8; }
+    if ((x - 0.5) * (x - 0.5) + (y - 0.5) * (y - 0.5) < 0.35 * 0.35 + 1.e-12) {
+      B_n[0][n] = 0.8;
+    }
   }
 
   S->Get<CompositeVector>("surface-bathymetry").ScatterMasterToGhosted("node");
@@ -140,7 +142,9 @@ RunTest(int icase)
 
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0) { std::cout << "Test: Shallow water: Flow over dry bed with B > 0" << std::endl; }
+  if (MyPID == 0) {
+    std::cout << "Test: Shallow water: Flow over dry bed with B > 0" << std::endl;
+  }
 
   // Read parameter list
   std::string xmlFilename;
@@ -205,7 +209,9 @@ RunTest(int icase)
   while ((t_new < Tend) && (iter >= 0)) {
     double t_out = t_new;
 
-    if (iter % 100 == 0) { IO_Fields(t_out, iter, MyPID, io, *S, nullptr, nullptr); }
+    if (iter % 100 == 0) {
+      IO_Fields(t_out, iter, MyPID, io, *S, nullptr, nullptr);
+    }
 
     dt = SWPK.get_dt();
 
@@ -218,7 +224,9 @@ RunTest(int icase)
     iter++;
 
     // check depth positivity
-    for (int c = 0; c < ncells_owned; ++c) { CHECK(hh[0][c] >= 0.0); }
+    for (int c = 0; c < ncells_owned; ++c) {
+      CHECK(hh[0][c] >= 0.0);
+    }
   } // time loop
 
   if (MyPID == 0) {

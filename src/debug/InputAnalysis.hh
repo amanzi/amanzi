@@ -11,17 +11,19 @@
 
 This list contains data collected by the input parser of a higher-level spec.
 
-* `"used boundary condition regions`" [Array(string)] provides list of boundary regions
-  for analysis. The simulator will print number of faces and total area of these regions
-  if verbosity level is equal to or above *high*.
+.. admonition:: input_analysis-spec
 
-* `"used source and sink regions`" [Array(string)] provides list of source and sink regions
-  for analysis. The simulator will print number of cells and the total volume of these regions
-  if verbosity level is equal to or above *high*.
+  * `"used boundary condition regions`" ``[Array(string)]`` provides list of boundary regions
+    for analysis. The simulator will print number of faces and total area of these regions
+    if verbosity level is equal to or above *high*.
 
-* `"used observation regions`" [Array(string)] provides list of observation regions
-  for analysis. The simulator will print number of faces(or cells) and the total area
-  (or volume) of these regions if verbosity level is equal to or above *high*.
+  * `"used source and sink regions`" ``[Array(string)]`` provides list of source and sink regions
+    for analysis. The simulator will print number of cells and the total volume of these regions
+    if verbosity level is equal to or above *high*.
+
+  * `"used observation regions`" ``[Array(string)]`` provides list of observation regions
+    for analysis. The simulator will print number of faces(or cells) and the total area
+    (or volume) of these regions if verbosity level is equal to or above *high*.
 
 .. code-block:: xml
 
@@ -56,7 +58,7 @@ namespace Amanzi {
 class InputAnalysis {
  public:
   InputAnalysis(Teuchos::RCP<const AmanziMesh::Mesh> mesh, const std::string& domain)
-    : mesh_(mesh), domain_(domain), vo_(NULL){};
+    : mesh_(mesh), domain_(domain), vo_(NULL) {};
   ~InputAnalysis()
   {
     if (vo_ != NULL) delete vo_;
@@ -68,7 +70,7 @@ class InputAnalysis {
   void OutputBCs();
 
   // supporting members
-  template <class Iterator>
+  template<class Iterator>
   Iterator SelectUniqueEntries(Iterator first, Iterator last);
 
  private:

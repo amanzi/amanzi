@@ -128,7 +128,9 @@ DenseMatrix::Reshape(int mrow, int ncol)
   n_ = ncol;
 
   if (mem_ < m_ * n_) {
-    if (data_ != NULL) { delete[] data_; }
+    if (data_ != NULL) {
+      delete[] data_;
+    }
     mem_ = m_ * n_;
     data_ = new double[mem_];
   }
@@ -448,13 +450,13 @@ DenseMatrix::Inverse()
   if (n_ != m_) return 911;
 
   int ierr;
-  int iwork[n_];
-  DGETRF_F77(&n_, &n_, data_, &n_, iwork, &ierr);
+  std::vector<int> iwork(n_);
+  DGETRF_F77(&n_, &n_, data_, &n_, iwork.data(), &ierr);
   if (ierr) return ierr;
 
   int lwork = n_ * n_;
-  double dwork[lwork];
-  DGETRI_F77(&n_, data_, &n_, iwork, dwork, &lwork, &ierr);
+  std::vector<double> dwork(lwork);
+  DGETRI_F77(&n_, data_, &n_, iwork.data(), dwork.data(), &lwork, &ierr);
   return ierr;
 }
 
@@ -495,15 +497,28 @@ DenseMatrix::NullSpace()
   // Allocate memory for Lapack routine.
   int ldv(1), lwork, info;
   lwork = m_ + 5 * n_;
-  double U[m_ * m_], V[ldv], S[n_], work[lwork];
+  std::vector<double> U(m_ * m_), V(ldv), S(n_), work(lwork);
 
-  DGESVD_F77("A", "N", &m_, &n_, data_, &m_, S, U, &m_, V, &ldv, work, &lwork, &info);
+  DGESVD_F77("A",
+             "N",
+             &m_,
+             &n_,
+             data_,
+             &m_,
+             S.data(),
+             U.data(),
+             &m_,
+             V.data(),
+             &ldv,
+             work.data(),
+             &lwork,
+             &info);
 
   if (info != 0) AMANZI_ASSERT(false);
 
   double* data = D.Values();
   int offset = m_ * n_;
-  for (int i = 0; i < m_ * (m_ - n_); i++) data[i] = U[offset + i];
+  for (int i = 0; i < m_ * (m_ - n_) ; i++) data[i] = U[offset + i];
 
   return D;
 }
@@ -523,9 +538,22 @@ DenseMatrix::InverseMoorePenrose()
   int mn, lwork, info;
   mn = std::min(n_, m_);
   lwork = std::max(m_ + 3 * n_, 5 * n_);
-  double U[m_ * m_], V[n_ * n_], S[mn], work[lwork];
+  std::vector<double> U(m_ * m_), V(n_ * n_), S(mn), work(lwork);
 
-  DGESVD_F77("A", "A", &m_, &n_, data_, &m_, S, U, &m_, V, &n_, work, &lwork, &info);
+  DGESVD_F77("A",
+             "A",
+             &m_,
+             &n_,
+             data_,
+             &m_,
+             S.data(),
+             U.data(),
+             &m_,
+             V.data(),
+             &n_,
+             work.data(),
+             &lwork,
+             &info);
 
   if (info != 0) return 1;
 
@@ -534,8 +562,8 @@ DenseMatrix::InverseMoorePenrose()
     if (fabs(S[i]) > 1e-12) S[i] = 1.0 / S[i];
 
   // assemble preuso-inverse
-  DenseMatrix UU(m_, m_, U, WHETSTONE_DATA_ACCESS_VIEW);
-  DenseMatrix VV(n_, n_, V, WHETSTONE_DATA_ACCESS_VIEW);
+  DenseMatrix UU(m_, m_, U.data(), WHETSTONE_DATA_ACCESS_VIEW);
+  DenseMatrix VV(n_, n_, V.data(), WHETSTONE_DATA_ACCESS_VIEW);
 
   for (int i = 0; i < n_; ++i) {
     for (int j = 0; j < m_; ++j) {

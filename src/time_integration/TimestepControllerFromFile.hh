@@ -31,9 +31,7 @@ cause doubt over their correctness.
 
 */
 
-
-#ifndef AMANZI_FROMFILE_TIMESTEP_CONTROLLER_HH_
-#define AMANZI_FROMFILE_TIMESTEP_CONTROLLER_HH_
+#pragma once
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -48,7 +46,7 @@ class TimestepControllerFromFile : public TimestepController {
   TimestepControllerFromFile(Teuchos::ParameterList& plist);
 
   // single method for timestep control
-  double get_timestep(double dt, int iterations);
+  double getTimestep(double dt, int iterations, bool valid) override;
 
  protected:
   std::vector<double> dt_history_;
@@ -56,5 +54,3 @@ class TimestepControllerFromFile : public TimestepController {
 };
 
 } // namespace Amanzi
-
-#endif

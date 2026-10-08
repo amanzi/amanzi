@@ -149,7 +149,7 @@ struct NLScontrol
   int min_nl_iterations_for_dt; // Maximum iterations to solve, below which next dt will be increased by time_step_increase_factor
   int min_nl_iterations_for_dt_2; // Maximum iterations to solve, below which next dt will be increased by time_step_increase_factor_2
   int max_nl_iterations_for_dt; // Maximum iterations to solve, above which next dt will not be modified
-  Real max_time_step_size;      // Maximum time step to attempt
+  Real max_time_step_size;      // Maximum timestep to attempt
   Real time_step_increase_factor, time_step_increase_factor_2, time_step_reduction_factor;
   Real time_step_retry_factor, time_step_retry_factor_2, time_step_retry_factor_f;
 

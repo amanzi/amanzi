@@ -14,16 +14,26 @@ int g_constructor_calls_main = 0;
 struct Vec {
   Vec() { g_constructor_calls_default++; }
 
-  Vec(const Vec& other) : v(other.v) { g_constructor_calls_copy++; }
+  Vec(const Vec& other)
+    : v(other.v)
+  {
+    g_constructor_calls_copy++;
+  }
 
-  Vec(int size) : v(size, 0.0) { g_constructor_calls_main++; }
+  Vec(int size)
+    : v(size, 0.0)
+  {
+    g_constructor_calls_main++;
+  }
 
   std::vector<double> v;
 };
 
 class VecFactory {
  public:
-  VecFactory() : size_(-1) {}
+  VecFactory()
+    : size_(-1)
+  {}
 
   void set_size(int size) { size_ = size; }
 

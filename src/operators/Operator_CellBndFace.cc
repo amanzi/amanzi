@@ -39,10 +39,10 @@ Operator_CellBndFace::ApplyMatrixFreeOp(const Op_Face_CellBndFace& op,
 {
   AMANZI_ASSERT(op.matrices.size() == nfaces_owned);
   const Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
-  const Epetra_MultiVector& Xbnd = *X.ViewComponent("boundary_face", true);
+  const Epetra_MultiVector& Xbnd = *X.ViewComponent("boundary_face");
 
   Epetra_MultiVector& Yc = *Y.ViewComponent("cell", true);
-  Epetra_MultiVector& Ybnd = *Y.ViewComponent("boundary_face", true);
+  Epetra_MultiVector& Ybnd = *Y.ViewComponent("boundary_face");
 
   for (int f = 0; f != nfaces_owned; ++f) {
     auto cells = mesh_->getFaceCells(f);
@@ -50,12 +50,16 @@ Operator_CellBndFace::ApplyMatrixFreeOp(const Op_Face_CellBndFace& op,
 
     if (ncells == 2) {
       WhetStone::DenseVector v(ncells), av(ncells);
-      for (int n = 0; n != ncells; ++n) { v(n) = Xc[0][cells[n]]; }
+      for (int n = 0; n != ncells; ++n) {
+        v(n) = Xc[0][cells[n]];
+      }
 
       const WhetStone::DenseMatrix& Aface = op.matrices[f];
       Aface.Multiply(v, av, false);
 
-      for (int n = 0; n != ncells; ++n) { Yc[0][cells[n]] += av(n); }
+      for (int n = 0; n != ncells; ++n) {
+        Yc[0][cells[n]] += av(n);
+      }
     } else if (ncells == 1) {
       int bf = mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false)
                  .LID(mesh_->getMap(AmanziMesh::Entity_kind::FACE, false).GID(f));
@@ -170,8 +174,9 @@ Operator_CellBndFace::ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
     op.surf_mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   AMANZI_ASSERT(op.diag->MyLength() == nsurf_cells);
 
-  const Epetra_MultiVector& Xf = *X.ViewComponent("boundary_face", false);
-  Epetra_MultiVector& Yf = *Y.ViewComponent("boundary_face", false);
+  const Epetra_MultiVector& Xf = *X.ViewComponent("boundary_face");
+  Epetra_MultiVector& Yf = *Y.ViewComponent("boundary_face");
+
   for (int sc = 0; sc != nsurf_cells; ++sc) {
     int f = op.surf_mesh->getEntityParent(AmanziMesh::Entity_kind::CELL, sc);
     int bf = mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false)
@@ -280,7 +285,6 @@ Operator_CellBndFace::SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell&
     ierr |= graph.InsertMyIndices(ncells, lid_r, ncells, lid_c);
   }
   AMANZI_ASSERT(!ierr);
-  //   exit(0);
 }
 
 

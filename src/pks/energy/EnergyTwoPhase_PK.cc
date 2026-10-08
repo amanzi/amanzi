@@ -25,7 +25,7 @@
 #include "IEMEvaluator.hh"
 #include "StateArchive.hh"
 #include "TCMEvaluator_TwoPhase.hh"
-#include "TotalEnergyEvaluator.hh"
+#include "TotalEnergyEvaluatorPT.hh"
 
 namespace Amanzi {
 namespace Energy {
@@ -62,6 +62,8 @@ EnergyTwoPhase_PK::Setup()
   // basic class setup
   Energy_PK::Setup();
 
+  double molar_mass = S_->ICList().sublist("const_fluid_molar_mass").get<double>("value");
+
   // Get data and evaluators needed by the PK
   // -- energy, the conserved quantity
   if (!S_->HasRecord(energy_key_)) {
@@ -75,11 +77,12 @@ EnergyTwoPhase_PK::Setup()
       .set<std::string>("particle density key", particle_density_key_)
       .set<std::string>("internal energy rock key", ie_rock_key_)
       .set<bool>("vapor diffusion", true)
+      .set<double>("liquid molar mass", molar_mass)
       .set<std::string>("tag", "");
     elist.setName(energy_key_);
-    if (flow_on_manifold_) elist.set<std::string>("aperture key", aperture_key_);
+    if (assumptions_.flow_on_manifold) elist.set<std::string>("aperture key", aperture_key_);
 
-    auto ee = Teuchos::rcp(new TotalEnergyEvaluator(elist));
+    auto ee = Teuchos::rcp(new TotalEnergyEvaluatorPT(elist));
     S_->SetEvaluator(energy_key_, Tags::DEFAULT, ee);
 
     S_->RequireDerivative<CV_t, CVS_t>(
@@ -96,7 +99,9 @@ EnergyTwoPhase_PK::Setup()
       ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
 
     Teuchos::ParameterList elist = ep_list_->sublist("enthalpy evaluator");
-    elist.set("enthalpy key", enthalpy_key_).set<std::string>("tag", "");
+    elist.set("enthalpy key", enthalpy_key_)
+      .set<double>("liquid molar mass", molar_mass)
+      .set<std::string>("tag", "");
     elist.setName(enthalpy_key_);
 
     auto enth = Teuchos::rcp(new EnthalpyEvaluator(elist));
@@ -176,7 +181,7 @@ EnergyTwoPhase_PK::Initialize()
 {
   // times, initialization could be done on any non-zero interval.
   double t_old = S_->get_time();
-  dt_ = ti_list_->get<double>("initial time step", 1.0);
+  dt_ = ti_list_->get<double>("initial timestep", 1.0);
 
   // Call the base class initialize.
   Energy_PK::Initialize();
@@ -186,6 +191,7 @@ EnergyTwoPhase_PK::Initialize()
   soln_->SetData(solution);
 
   // Create local evaluators. Initialize local fields.
+  temperature_eval_->SetChanged();
   InitializeFields_();
 
   // Create specific evaluators (not used yet)
@@ -210,6 +216,7 @@ EnergyTwoPhase_PK::Initialize()
   Operators::PDE_DiffusionFactory opfactory;
   Operators::PDE_AdvectionUpwindFactory opfactory_adv;
 
+  auto op_bc_ = S_->GetPtrW<Operators::BCs>(bcs_temperature_key_, Tags::DEFAULT, "state");
   op_matrix_diff_ = opfactory.Create(oplist_matrix, mesh_, op_bc_);
   op_matrix_diff_->SetBCs(op_bc_, op_bc_);
   op_matrix_ = op_matrix_diff_->global_operator();
@@ -218,9 +225,10 @@ EnergyTwoPhase_PK::Initialize()
   Teuchos::ParameterList oplist_adv = ep_list_->sublist("operators").sublist("advection operator");
   op_matrix_advection_ = opfactory_adv.Create(oplist_adv, mesh_);
 
+  auto op_bc_enth = S_->GetPtrW<Operators::BCs>(bcs_enthalpy_key_, Tags::DEFAULT, "state");
   const auto& flux = S_->Get<CV_t>(mol_flowrate_key_);
   op_matrix_advection_->Setup(flux);
-  op_matrix_advection_->SetBCs(op_bc_enth_, op_bc_enth_);
+  op_matrix_advection_->SetBCs(op_bc_enth, op_bc_enth);
   op_advection_ = op_matrix_advection_->global_operator();
 
   // initialize copuled operators: diffusion + advection + accumulation
@@ -247,7 +255,7 @@ EnergyTwoPhase_PK::Initialize()
   op_acc_ = Teuchos::rcp(
     new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, op_preconditioner_));
   op_preconditioner_advection_ = opfactory_adv.Create(oplist_adv, op_preconditioner_);
-  op_preconditioner_advection_->SetBCs(op_bc_enth_, op_bc_enth_);
+  op_preconditioner_advection_->SetBCs(op_bc_enth, op_bc_enth);
 
   // initialize preconditioner
   AMANZI_ASSERT(ti_list_->isParameter("preconditioner"));
@@ -264,7 +272,8 @@ EnergyTwoPhase_PK::Initialize()
     if (!bdf1_list.isSublist("verbose object"))
       bdf1_list.sublist("verbose object") = ep_list_->sublist("verbose object");
 
-    bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
+    bdf1_dae_ = Teuchos::rcp(
+      new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1", bdf1_list, *this, soln_->get_map(), S_));
   }
 
   // initialize boundary conditions
@@ -289,35 +298,8 @@ EnergyTwoPhase_PK::Initialize()
   }
 }
 
-
-/* ****************************************************************
-* This completes initialization of missed fields in the state.
-**************************************************************** */
-void
-EnergyTwoPhase_PK::InitializeFields_()
-{
-  Teuchos::OSTab tab = vo_->getOSTab();
-
-  if (S_->HasRecord(prev_energy_key_)) {
-    if (!S_->GetRecord(prev_energy_key_, Tags::DEFAULT).initialized()) {
-      temperature_eval_->SetChanged();
-      S_->GetEvaluator(energy_key_).Update(*S_, passwd_);
-
-      const auto& e1 = S_->Get<CV_t>(energy_key_);
-      auto& e0 = S_->GetW<CV_t>(prev_energy_key_, Tags::DEFAULT, passwd_);
-      e0 = e1;
-
-      S_->GetRecordW(prev_energy_key_, passwd_).set_initialized();
-
-      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-        *vo_->os() << "initialized prev_energy to previous energy" << std::endl;
-    }
-  }
-}
-
-
 /* *******************************************************************
-* Performs one time step of size dt_ either for steady-state or
+* Performs one timestep of size dt_ either for steady-state or
 * transient sumulation.
 ******************************************************************* */
 bool
@@ -342,22 +324,14 @@ EnergyTwoPhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // trying to make a step
   bool failed(false);
-  failed = bdf1_dae_->TimeStep(dt_, dt_next_, soln_);
+  failed = bdf1_dae_->AdvanceStep(dt_, dt_next_, soln_);
   if (failed) {
     dt_ = dt_next_;
-
     archive.Restore("");
     temperature_eval_->SetChanged();
-    return failed;
   }
 
-  // commit solution (should we do it here ?)
-  bdf1_dae_->CommitSolution(dt_, soln_);
-  temperature_eval_->SetChanged();
-
-  num_itrs_++;
   dt_ = dt_next_;
-
   return failed;
 }
 
@@ -368,7 +342,11 @@ EnergyTwoPhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void
 EnergyTwoPhase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
-  dt_ = dt_next_;
+  // commit solution to time history
+  if (bdf1_dae_.get()) bdf1_dae_->CommitSolution(t_new - t_old, soln_);
+  temperature_eval_->SetChanged();
+
+  num_itrs_++;
 
   // update previous fields
   std::vector<std::string> fields({ energy_key_ });

@@ -133,7 +133,7 @@ ReconstructionCellLinear::PopulateLeastSquareSystem_(AmanziGeometry::Point& cent
 
 
 /* ******************************************************************
-* On intersecting manifolds, we extract neighboors living in the same
+* On intersecting manifolds, we extract neighbors living in the same
 * manifold using a smoothness criterion.
 ****************************************************************** */
 void
@@ -180,7 +180,7 @@ ReconstructionCellLinear::CellFaceAdjCellsManifold_(AmanziMesh::Entity_ID c,
 * Calculates reconstructed value at point p.
 ****************************************************************** */
 double
-ReconstructionCellLinear::getValue(int c, const AmanziGeometry::Point& p)
+ReconstructionCellLinear::getValue(int c, const AmanziGeometry::Point& p) const
 {
   const auto& xc = mesh_->getCellCentroid(c);
 

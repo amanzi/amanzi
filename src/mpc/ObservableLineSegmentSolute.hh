@@ -16,7 +16,9 @@
 
 namespace Amanzi {
 
-class ObservableLineSegmentSolute : public ObservableSolute, public ObservableLineSegment {
+class ObservableLineSegmentSolute
+  : public ObservableSolute
+  , public ObservableLineSegment {
  public:
   ObservableLineSegmentSolute(std::string variable,
                               std::string region,
@@ -25,8 +27,11 @@ class ObservableLineSegmentSolute : public ObservableSolute, public ObservableLi
                               Teuchos::ParameterList& units_plist,
                               Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
-  virtual void
-  ComputeObservation(State& S, double* value, double* volume, std::string& unit, double dt);
+  virtual void ComputeObservation(State& S,
+                                  double* value,
+                                  double* volume,
+                                  std::string& unit,
+                                  double dt);
   virtual int ComputeRegionSize();
   void InterpolatedValues(State& S,
                           std::string var,
@@ -43,9 +48,9 @@ ObservableLineSegmentSolute::ObservableLineSegmentSolute(std::string variable,
                                                          Teuchos::ParameterList& plist,
                                                          Teuchos::ParameterList& units_plist,
                                                          Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-  : Observable(variable, region, functional, plist, units_plist, mesh),
+  : ObservableAmanzi(variable, region, functional, plist, units_plist, mesh),
     ObservableSolute(variable, region, functional, plist, units_plist, mesh),
-    ObservableLineSegment(variable, region, functional, plist, units_plist, mesh){};
+    ObservableLineSegment(variable, region, functional, plist, units_plist, mesh) {};
 
 
 int

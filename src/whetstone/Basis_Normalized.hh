@@ -32,11 +32,13 @@ namespace WhetStone {
 class Basis_Normalized : public Basis {
  public:
   Basis_Normalized() { id_ = TAYLOR_BASIS_NORMALIZED; }
-  ~Basis_Normalized(){};
+  ~Basis_Normalized() {};
 
   // initialization
-  virtual void
-  Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order, Polynomial& integrals);
+  virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                    int c,
+                    int order,
+                    Polynomial& integrals);
 
   // transformation of bilinear form
   virtual void BilinearFormNaturalToMy(DenseMatrix& A) const;

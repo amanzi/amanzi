@@ -64,7 +64,7 @@ class RemapDG_Helper {
   RemapDG_Helper(const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
                  const Teuchos::RCP<AmanziMesh::Mesh> mesh1,
                  Teuchos::ParameterList& plist);
-  ~RemapDG_Helper(){};
+  ~RemapDG_Helper() {};
 
   // initialization routines
   // -- static quantities

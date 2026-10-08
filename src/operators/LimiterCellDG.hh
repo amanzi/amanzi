@@ -24,7 +24,7 @@ namespace Operators {
 class LimiterCellDG : public LimiterCell {
  public:
   LimiterCellDG(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh);
-  ~LimiterCellDG(){};
+  ~LimiterCellDG() {};
 
   void ApplyLimiterDG(const AmanziMesh::Entity_ID_View& ids,
                       Teuchos::RCP<const Epetra_MultiVector> field,

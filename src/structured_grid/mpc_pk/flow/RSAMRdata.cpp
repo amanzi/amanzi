@@ -265,8 +265,6 @@ RSAMRdata::SetInflowVelocity(PArray<MFTower>& velocity,
     BL_ASSERT(layout.IsCompatible(velocity[d]));
   }
 
-  const Array<Geometry>& geomArray = layout.GeomArray();
-
   FArrayBox inflow, mask;
   for (OrientationIter oitr; oitr; ++oitr) {
     Orientation face = oitr();

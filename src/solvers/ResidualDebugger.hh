@@ -50,23 +50,23 @@ class State;
 
 namespace AmanziSolvers {
 
-class ResidualDebugger : public IOEvent {
+class ResidualDebugger : public Utils::IOEvent {
  public:
   // Constructor
   ResidualDebugger(Teuchos::ParameterList& plist,
                    const Teuchos::RCP<State>& S = Teuchos::null,
                    const Tag& tag = Tags::DEFAULT)
-    : IOEvent(plist), S_(S), tag_(tag)
+    : Utils::IOEvent(plist), S_(S), tag_(tag)
   {
     filebasename_ = plist_.get<std::string>("file name base", "amanzi_dbg");
     additional_vars_ = plist_.get<Teuchos::Array<std::string>>("additional variables", {});
   }
 
-  template <class VectorSpace>
+  template<class VectorSpace>
   void StartIteration(int attempt, const VectorSpace& space)
   {}
 
-  template <class Vector>
+  template<class Vector>
   void WriteVector(int iter,
                    const Vector& res,
                    const Teuchos::Ptr<const Vector>& u = Teuchos::null,
@@ -85,15 +85,13 @@ class ResidualDebugger : public IOEvent {
 };
 
 
-template <>
-void
-ResidualDebugger::StartIteration<TreeVectorSpace>(int attempt, const TreeVectorSpace& space);
-template <>
-void
-ResidualDebugger::WriteVector<TreeVector>(int iter,
-                                          const TreeVector& res,
-                                          const Teuchos::Ptr<const TreeVector>& u,
-                                          const Teuchos::Ptr<const TreeVector>& du);
+template<>
+void ResidualDebugger::StartIteration<TreeVectorSpace>(int attempt, const TreeVectorSpace& space);
+template<>
+void ResidualDebugger::WriteVector<TreeVector>(int iter,
+                                               const TreeVector& res,
+                                               const Teuchos::Ptr<const TreeVector>& u,
+                                               const Teuchos::Ptr<const TreeVector>& du);
 
 
 } // namespace AmanziSolvers

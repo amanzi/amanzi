@@ -51,7 +51,9 @@ SUITE(RESTART)
     int cycles_[31] = { 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0,
                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     int cycles[31];
-    for (int ic = 0; ic <= 30; ic++) { cycles[ic] = R.DumpRequested(ic); }
+    for (int ic = 0; ic <= 30; ic++) {
+      cycles[ic] = R.DumpRequested(ic);
+    }
     CHECK_ARRAY_EQUAL(cycles_, cycles, 31);
   }
 
@@ -77,7 +79,9 @@ SUITE(RESTART)
     int cycles_[31] = { 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1,
                         0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1 };
     int cycles[31];
-    for (int ic = 0; ic <= 30; ic++) { cycles[ic] = R.DumpRequested(ic); }
+    for (int ic = 0; ic <= 30; ic++) {
+      cycles[ic] = R.DumpRequested(ic);
+    }
     CHECK_ARRAY_EQUAL(cycles_, cycles, 31);
   }
 
@@ -103,7 +107,9 @@ SUITE(RESTART)
     int cycles_[31] = { 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
                         0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0 };
     int cycles[31];
-    for (int ic = 0; ic <= 30; ic++) { cycles[ic] = R.DumpRequested(ic); }
+    for (int ic = 0; ic <= 30; ic++) {
+      cycles[ic] = R.DumpRequested(ic);
+    }
     CHECK_ARRAY_EQUAL(cycles_, cycles, 31);
   }
 
@@ -135,7 +141,9 @@ SUITE(RESTART)
     int cycles_[31] = { 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0,
                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     int cycles[31];
-    for (int ic = 0; ic <= 30; ic++) { cycles[ic] = R.DumpRequested(ic); }
+    for (int ic = 0; ic <= 30; ic++) {
+      cycles[ic] = R.DumpRequested(ic);
+    }
     CHECK_ARRAY_EQUAL(cycles_, cycles, 31);
   }
 
@@ -167,7 +175,9 @@ SUITE(RESTART)
     int times_[31] = { 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0,
                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     int times[31];
-    for (int ic = 0; ic <= 30; ic += 1) { times[ic] = R.DumpRequested((double)ic); }
+    for (int ic = 0; ic <= 30; ic += 1) {
+      times[ic] = R.DumpRequested((double)ic);
+    }
     CHECK_ARRAY_EQUAL(times_, times, 31);
   }
 
@@ -245,6 +255,8 @@ SUITE(RESTART)
     CHECK_EQUAL(S0.get_time(), S1.get_time());
     CHECK_EQUAL(s0p.MyLength(), s1p.MyLength());
 
-    for (int i = 0; i < s1p.MyLength(); ++i) { CHECK_EQUAL(s1p[0][i], s0p[0][i]); }
+    for (int i = 0; i < s1p.MyLength(); ++i) {
+      CHECK_EQUAL(s1p[0][i], s0p[0][i]);
+    }
   }
 }

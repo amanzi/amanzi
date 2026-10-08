@@ -34,8 +34,9 @@ namespace Amanzi {
 class CompositeVector;
 
 // Nonmember helper function
-std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map>>
-getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location);
+std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map>> getMaps(
+  const AmanziMesh::Mesh& mesh,
+  AmanziMesh::Entity_kind location);
 
 
 class CompositeVectorSpace {
@@ -85,6 +86,10 @@ class CompositeVectorSpace {
   {
     return indexmap_.find(name) != indexmap_.end();
   }
+  bool HasImportedComponent(const std::string& name) const
+  {
+    return HasComponent(name) || (name == "boundary_face" && HasComponent("face"));
+  }
   int NumComponents() const { return size(); }
 
   // Each component has a number of Degrees of Freedom.
@@ -102,15 +107,22 @@ class CompositeVectorSpace {
   // Useful for PKs to maintain default factories that apply to multiple CVs.
   CompositeVectorSpace* Update(const CompositeVectorSpace& other);
 
+  // Update mesh and  the components from other keep the same # of dofs
+  CompositeVectorSpace* UpdateSameNumDofs(const CompositeVectorSpace& other);
+
   // Update only the components from other
   CompositeVectorSpace* UpdateComponents(const CompositeVectorSpace& other);
+
+  // Update only the components from other keep the same # of dofs
+  CompositeVectorSpace* UpdateComponentsSameNumDofs(const CompositeVectorSpace& other);
 
   // component specification
 
   // Add methods append their specs to the space's spec, checking to make
   // sure the spec is OK if the full spec has been set (by an owning PK).
-  CompositeVectorSpace*
-  AddComponent(const std::string& name, AmanziMesh::Entity_kind location, int num_dofs);
+  CompositeVectorSpace* AddComponent(const std::string& name,
+                                     AmanziMesh::Entity_kind location,
+                                     int num_dofs);
 
   CompositeVectorSpace* AddComponents(const std::vector<std::string>& names,
                                       const std::vector<AmanziMesh::Entity_kind>& locations,
@@ -122,17 +134,18 @@ class CompositeVectorSpace {
                                      Teuchos::RCP<const Epetra_BlockMap> ghostmap,
                                      int num_dofs);
 
-  CompositeVectorSpace*
-  AddComponents(const std::vector<std::string>& names,
-                const std::vector<AmanziMesh::Entity_kind>& locations,
-                std::map<std::string, Teuchos::RCP<const Epetra_BlockMap>> mastermaps,
-                std::map<std::string, Teuchos::RCP<const Epetra_BlockMap>> ghostmaps,
-                const std::vector<int>& num_dofs);
+  CompositeVectorSpace* AddComponents(
+    const std::vector<std::string>& names,
+    const std::vector<AmanziMesh::Entity_kind>& locations,
+    std::map<std::string, Teuchos::RCP<const Epetra_BlockMap>> mastermaps,
+    std::map<std::string, Teuchos::RCP<const Epetra_BlockMap>> ghostmaps,
+    const std::vector<int>& num_dofs);
 
   // Set methods fix the component specs, checking to make sure all previously
   // added specs are contained in the new spec.
-  CompositeVectorSpace*
-  SetComponent(const std::string& name, AmanziMesh::Entity_kind location, int num_dofs);
+  CompositeVectorSpace* SetComponent(const std::string& name,
+                                     AmanziMesh::Entity_kind location,
+                                     int num_dofs);
 
   CompositeVectorSpace* SetComponents(const std::vector<std::string>& names,
                                       const std::vector<AmanziMesh::Entity_kind>& locations,
@@ -144,19 +157,20 @@ class CompositeVectorSpace {
                                      Teuchos::RCP<const Epetra_BlockMap> ghostmap,
                                      int num_dof);
 
-  CompositeVectorSpace*
-  SetComponents(const std::vector<std::string>& names,
-                const std::vector<AmanziMesh::Entity_kind> locations,
-                std::map<std::string, Teuchos::RCP<const Epetra_BlockMap>> mastermaps,
-                std::map<std::string, Teuchos::RCP<const Epetra_BlockMap>> ghostmaps,
-                const std::vector<int>& num_dofs);
+  CompositeVectorSpace* SetComponents(
+    const std::vector<std::string>& names,
+    const std::vector<AmanziMesh::Entity_kind> locations,
+    std::map<std::string, Teuchos::RCP<const Epetra_BlockMap>> mastermaps,
+    std::map<std::string, Teuchos::RCP<const Epetra_BlockMap>> ghostmaps,
+    const std::vector<int>& num_dofs);
 
   // Write components to outstream.
   void Print(std::ostream& os) const
   {
     for (int i = 0; i != names_.size(); ++i) {
       os << "comp=" << names_[i] << " location=" << locations_[i] << " dofs=" << num_dofs_[i]
-         << std::endl;
+         << " size=" << mastermaps_.at(names_[i])->NumMyElements()
+         << " points=" << mastermaps_.at(names_[i])->NumMyPoints() << std::endl;
     }
   }
 

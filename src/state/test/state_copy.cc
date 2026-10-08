@@ -63,7 +63,7 @@ struct test_state {
     // state->GetRecordW("fieldname", "owner".set_initialized();
     // state->Initialize();
   }
-  ~test_state(){};
+  ~test_state() {};
 };
 
 

@@ -62,7 +62,7 @@ The interface to Trilinos NOX solver is as follows:
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template <class VectorClass, class VectorSpace>
+template<class VectorClass, class VectorSpace>
 class SolverNox : public Solver<VectorClass, VectorSpace> {
  public:
   SolverNox(Teuchos::ParameterList& plist)
@@ -134,7 +134,7 @@ class SolverNox : public Solver<VectorClass, VectorSpace> {
 
   // access
   double tolerance() { return tol_; }
-  double residual() { return 0.0; } // FIXME
+  double residual() { return solver_->getSolutionGroup().getNormF(); }
   int num_itrs() { return solver_->getNumIterations(); }
   int returned_code() { return 0; }
   int pc_calls() { return 0; }

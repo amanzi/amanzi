@@ -46,6 +46,9 @@
 namespace Amanzi {
 namespace Transport {
 
+using CV_t = CompositeVector;
+using CVS_t = CompositeVectorSpace;
+
 /* ******************************************************************
 * New constructor compatible with new MPC framework.
 ****************************************************************** */
@@ -61,26 +64,6 @@ TransportImplicit_PK::TransportImplicit_PK(Teuchos::ParameterList& pk_tree,
   // We also need miscaleneous sublists
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
-}
-
-
-/* ******************************************************************
-* Simple constructor for unit tests.
-****************************************************************** */
-TransportImplicit_PK::TransportImplicit_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                                           Teuchos::RCP<State> S,
-                                           const std::string& pk_list_name,
-                                           std::vector<std::string>& component_names)
-  : Transport_PK(glist, S, pk_list_name, component_names)
-{
-  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  tp_list_ = Teuchos::sublist(pk_list, pk_list_name, true);
-
-  // We also need miscaleneous sublists
-  preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
-  linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
-  if (tp_list_->isSublist("time integrator"))
-    ti_list_ = Teuchos::sublist(tp_list_, "time integrator", true);
 }
 
 
@@ -104,7 +87,7 @@ TransportImplicit_PK::Initialize()
 
   // operators
   // -- dispertion and/or diffusion
-  if (use_dispersion_) {
+  if (assumptions_.use_dispersion) {
     D_.resize(ncells_owned);
     Teuchos::RCP<std::vector<WhetStone::Tensor>> Dptr = Teuchos::rcpFromRef(D_);
     Teuchos::ParameterList& oplist_d =
@@ -120,7 +103,7 @@ TransportImplicit_PK::Initialize()
   // Solution vector does not match tcc in general, even for one species.
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh_)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)->SetGhosted(true);
-  if (use_dispersion_) cvs = op_diff_->global_operator()->DomainMap();
+  if (assumptions_.use_dispersion) cvs = op_diff_->global_operator()->DomainMap();
 
   solution_ = Teuchos::rcp(new CompositeVector(cvs));
   soln_->SetData(solution_);
@@ -141,7 +124,7 @@ TransportImplicit_PK::Initialize()
   // refresh data BC and source data
   UpdateBoundaryData(t_physics_, t_physics_, 0);
 
-  auto flux = S_->GetPtr<CompositeVector>(vol_flowrate_key_, Tags::DEFAULT);
+  auto flux = S_->GetPtr<CV_t>(vol_flowrate_key_, Tags::DEFAULT);
   op_adv_->Setup(*flux);
   op_adv_->UpdateMatrices(flux.ptr());
 
@@ -156,8 +139,8 @@ TransportImplicit_PK::Initialize()
       udot->PutScalar(0.0);
 
       for (int i = 0; i < num_aqueous; i++) {
-        bdf1_dae_.push_back(
-          Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_)));
+        bdf1_dae_.push_back(Teuchos::rcp(
+          new BDF1_TI<TreeVector, TreeVectorSpace>(name_, bdf1_list, *this, soln_->get_map(), S_)));
         bdf1_dae_[i]->SetInitialState(0.0, soln_, udot);
       }
     } else {
@@ -230,12 +213,11 @@ TransportImplicit_PK::AdvanceStepLO_(double t_old, double t_new, int* tot_itrs)
   tcc->ScatterMasterToGhosted("cell");
 
   S_->GetEvaluator(wc_key_).Update(*S_, "transport");
-  const auto& wc = S_->Get<CompositeVector>(wc_key_, Tags::DEFAULT);
-  const auto& wc_prev = S_->Get<CompositeVector>(prev_wc_key_, Tags::DEFAULT);
+  const auto& wc = S_->Get<CV_t>(wc_key_, Tags::DEFAULT);
+  const auto& wc_prev = S_->Get<CV_t>(prev_wc_key_, Tags::DEFAULT);
 
   const auto& wc_c = *wc.ViewComponent("cell");
-  const auto& sat_c =
-    *S_->Get<CompositeVector>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
+  const auto& sat_c = *S_->Get<CV_t>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
 
   *tot_itrs = 0;
   CompositeVector tcc_aux(wc);
@@ -253,10 +235,10 @@ TransportImplicit_PK::AdvanceStepLO_(double t_old, double t_new, int* tot_itrs)
     Epetra_MultiVector& rhs_cell = *rhs.ViewComponent("cell");
 
     // apply boundary conditions
-    op_adv_->UpdateMatrices(S_->GetPtr<CompositeVector>(vol_flowrate_key_, Tags::DEFAULT).ptr());
+    op_adv_->UpdateMatrices(S_->GetPtr<CV_t>(vol_flowrate_key_, Tags::DEFAULT).ptr());
     op_adv_->ApplyBCs(true, true, true);
 
-    if (use_dispersion_) {
+    if (assumptions_.use_dispersion) {
       int phase;
       double md;
       CalculateDispersionTensor_(t_old + dt_ / 2, *transport_phi, wc_c);
@@ -304,13 +286,16 @@ TransportImplicit_PK::AdvanceStepHO_(double t_old, double t_new, int* tot_itrs)
     int num_itrs = bdf1_dae_[i]->number_nonlinear_steps();
     *(*solution_->ViewComponent("cell"))(0) = *(*tcc->ViewComponent("cell"))(i);
 
-    failed = bdf1_dae_[i]->TimeStep(dt_, dt_next, soln_);
-    dt_ = dt_next;
-    if (failed) return failed;
+    failed = bdf1_dae_[i]->AdvanceStep(dt_, dt_next, soln_);
+    if (failed) {
+      dt_ = dt_next;
+      return failed;
+    }
 
     *(*tcc_tmp->ViewComponent("cell"))(i) = *(*solution_->ViewComponent("cell"))(0);
     *tot_itrs += bdf1_dae_[i]->number_nonlinear_steps() - num_itrs;
   }
+  dt_ = dt_next;
 
   // if we reach this point, we can commit solution
   for (int i = 0; i < num_aqueous; i++) {
@@ -333,12 +318,11 @@ void
 TransportImplicit_PK::UpdateLinearSystem(double t_old, double t_new, int component)
 {
   S_->GetEvaluator(wc_key_).Update(*S_, "transport");
-  const auto& wc = S_->Get<CompositeVector>(wc_key_, Tags::DEFAULT);
-  const auto& wc_prev = S_->Get<CompositeVector>(prev_wc_key_, Tags::DEFAULT);
+  const auto& wc = S_->Get<CV_t>(wc_key_, Tags::DEFAULT);
+  const auto& wc_prev = S_->Get<CV_t>(prev_wc_key_, Tags::DEFAULT);
 
   const auto& wc_c = *wc.ViewComponent("cell");
-  const auto& sat_c =
-    *S_->Get<CompositeVector>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
+  const auto& sat_c = *S_->Get<CV_t>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
 
   CompositeVector tcc_aux(wc);
   *(*tcc_aux.ViewComponent("cell"))(0) = *(*tcc->ViewComponent("cell"))(component);
@@ -350,10 +334,11 @@ TransportImplicit_PK::UpdateLinearSystem(double t_old, double t_new, int compone
 
   UpdateBoundaryData(t_old, t_new, component);
 
-  op_adv_->UpdateMatrices(S_->GetPtr<CompositeVector>(vol_flowrate_key_, Tags::DEFAULT).ptr());
+  op_adv_->Setup(S_->Get<CV_t>(vol_flowrate_key_, Tags::DEFAULT));
+  op_adv_->UpdateMatrices(S_->GetPtr<CV_t>(vol_flowrate_key_, Tags::DEFAULT).ptr());
   op_adv_->ApplyBCs(true, true, true);
 
-  if (use_dispersion_) {
+  if (assumptions_.use_dispersion) {
     int phase;
     double md;
     CalculateDispersionTensor_(t_old + dt / 2, *transport_phi, wc_c);

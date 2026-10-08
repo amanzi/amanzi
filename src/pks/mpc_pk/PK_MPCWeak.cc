@@ -8,7 +8,7 @@
 */
 
 /*
-  This is the mpc_pk component of the Amanzi code.
+  MPC PK
 
   Implementation for the derived PK_MPCWeak class.  Provides only the Advance()
   method missing from MPC.hh.  In weak coupling, we simply loop over the
@@ -38,15 +38,32 @@ PK_MPCWeak::get_dt()
 
 
 // -----------------------------------------------------------------------------
+// Set time step for sub PKs.
+// -----------------------------------------------------------------------------
+void
+PK_MPCWeak::set_dt(double dt)
+{
+  for (PK_MPC<PK>::SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
+    (*pk)->set_dt(dt);
+  }
+}
+
+
+// -----------------------------------------------------------------------------
 // Advance each sub-PK individually, returning a failure as soon as possible.
 // -----------------------------------------------------------------------------
 bool
 PK_MPCWeak::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   bool fail = false;
-  for (PK_MPC<PK>::SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
-    fail = (*pk)->AdvanceStep(t_old, t_new, reinit);
-    if (fail) { return fail; }
+  for (int i = 0; i < sub_pks_.size(); ++i) {
+    fail = sub_pks_[i]->AdvanceStep(t_old, t_new, reinit);
+    if (fail) {
+      for (int k = 0; k < i; ++k) {
+        sub_pks_[k]->FailStep(t_old, t_new, Tags::DEFAULT);
+      }
+      return fail;
+    }
   }
   return fail;
 }

@@ -38,13 +38,14 @@ include_directories(${Epetra_INCLUDE_DIRS})
 add_amanzi_library(whetstone
                    SOURCE DeRham_Node.cc DeRham_Edge.cc DeRham_Face.cc
                           MFD3D.cc
-                          MFD3D_BernardiRaugel.cc
+                          MFD3D_BernardiRaugel.cc MFD3D_BernardiRaugelGradDiv.cc
                           MFD3D_CrouzeixRaviart.cc MFD3D_CrouzeixRaviartAnyOrder.cc
                           MFD3D_CrouzeixRaviartSerendipity.cc
                           MFD3D_Diffusion.cc MFD3D_Diffusion_Surface.cc MFD3D_Diffusion_Other.cc 
-                          MFD3D_Diffusion_CurvedFace.cc
-                          MFD3D_Elasticity.cc 
-                          MFD3D_ElasticityWeakSymmetry.cc 
+                          MFD3D_Diffusion_CurvedFace.cc 
+                          MFD3D_Elasticity.cc MFD3D_ElasticityGradDiv.cc 
+                          MFD3D_ElasticityWeakSym.cc MFD3D_ElasticityWeakSymBdV.cc 
+                          MFD3D_ElasticityWeakSym_CurvedFace.cc 
                           MFD3D_Electromagnetics.cc MFD3D_Electromagnetics_Surface.cc
                           MFD3D_GeneralizedDiffusion.cc
                           MFD3D_Lagrange.cc MFD3D_LagrangeAnyOrder.cc
@@ -60,6 +61,8 @@ add_amanzi_library(whetstone
                           MeshMapsBase.cc
                           MeshMaps_FEM.cc MeshMaps_VEM.cc
                           SplinePolynomial.cc
+                          SplineCubicNotAKnot1D.cc SplineCubicNotAKnot2D.cc
+                          TensorCubicBSpline2D.cc
                    HEADERS DenseMatrix.hh DenseVector.hh
                            DG_Modal.hh
                            Basis.hh BasisFactory.hh
@@ -72,16 +75,18 @@ add_amanzi_library(whetstone
                            FunctionUpwind.hh
                            FunctionComposite.hh
                            MFD3D.hh
-                           MFD3D_BernardiRaugel.hh
+                           MFD3D_BernardiRaugel.hh MFD3D_BernardiRaugelGradDiv.hh
                            MFD3D_CrouzeixRaviart.hh MFD3D_CrouzeixRaviartAnyOrder.hh
                            MFD3D_CrouzeixRaviartSerendipity.hh
                            MFD3D_Diffusion.hh MFD3D_Diffusion_CurvedFace.hh
-                           MFD3D_Elasticity.hh
-                           MFD3D_ElasticityWeakSymmetry.hh
+                           MFD3D_Elasticity.hh MFD3D_ElasticityGradDiv.hh
+                           MFD3D_ElasticityWeakSym.hh
+                           MFD3D_ElasticityWeakSymBdV.hh
+                           MFD3D_ElasticityWeakSym_CurvedFace.hh
                            MFD3D_Electromagnetics.hh
                            MFD3D_GeneralizedDiffusion.hh
-                           MFD3D_Lagrange.hh MFD3D_LagrangeAnyOrder.hh
-                           MFD3D_LagrangeSerendipity.hh
+                           MFD3D_Lagrange.hh MFD3D_LagrangeAnyOrder.hh 
+                                             MFD3D_LagrangeSerendipity.hh
                            nlfv.hh
                            NumericalIntegration.hh
                            Quadrature1D.hh Quadrature2D.hh Quadrature3D.hh
@@ -90,6 +95,8 @@ add_amanzi_library(whetstone
                            Monomial.hh Polynomial.hh PolynomialIterator.hh PolynomialBase.hh
                            SpaceTimePolynomial.hh
                            SplinePolynomial.hh
+                           SplineCubicNotAKnot1D.hh SplineCubicNotAKnot2D.hh
+                           TensorCubicBSpline2D.hh
                            VectorObjects.hh MatrixObjects.hh PolynomialOnMesh.hh
                            Tensor.hh
                            WhetStoneDefs.hh
@@ -114,7 +121,8 @@ if (BUILD_TESTS)
     # Test: matrices for diffusion
     add_amanzi_test(whetstone_diffusion whetstone_diffusion
                     KIND unit
-                    SOURCE test/Main.cc test/whetstone_diffusion.cc
+                    SOURCE test/Main.cc test/whetstone_diffusion.cc 
+                           test/whetstone_diffusion_tangled.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: matrices for elasticity
@@ -122,6 +130,11 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/whetstone_elasticity.cc
                            test/whetstone_elasticity_other.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(whetstone_elasticity_weak_symmetry whetstone_elasticity_weak_symmetry
+                    KIND unit
+                    SOURCE test/Main.cc test/whetstone_elasticity_weak_symmetry.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: matrices for electromagnetics
@@ -168,6 +181,16 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/whetstone_derham.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
+    add_amanzi_test(whetstone_powell whetstone_powell
+                    KIND unit
+                    SOURCE test/Main.cc test/whetstone_powell.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # Test: splines
+    add_amanzi_test(whetstone_spline whetstone_spline
+                    KIND unit
+                    SOURCE test/Main.cc test/whetstone_spline.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 
 

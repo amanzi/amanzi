@@ -112,21 +112,19 @@ AnalyticElectromagneticsBase::ComputeNodeError(Epetra_MultiVector& u,
   inf_err = 0.0;
 
   int d = mesh_->getSpaceDimension();
-  Amanzi::AmanziGeometry::Point xv(d);
 
-  Amanzi::AmanziMesh::Entity_ID_View nodes;
   int ncells = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
                                      Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
   for (int c = 0; c < ncells; c++) {
     double volume = mesh_->getCellVolume(c);
 
-    nodes = mesh_->getCellNodes(c);
+    auto nodes = mesh_->getCellNodes(c);
     int nnodes = nodes.size();
 
     for (int k = 0; k < nnodes; k++) {
       int v = nodes[k];
-      xv = mesh_->getNodeCoordinate(v);
+      const auto& xv = mesh_->getNodeCoordinate(v);
       double tmp = (electric_exact(xv, t))[2];
 
       // std::cout << v << " at " << xv << " error: " << tmp << " " << u[0][v] << std::endl;
@@ -154,10 +152,8 @@ AnalyticElectromagneticsBase::GlobalOp(std::string op, double* val, int n)
   double* val_tmp = new double[n];
   for (int i = 0; i < n; ++i) val_tmp[i] = val[i];
 
-  if (op == "sum")
-    mesh_->getComm()->SumAll(val_tmp, val, n);
-  else if (op == "max")
-    mesh_->getComm()->MaxAll(val_tmp, val, n);
+  if (op == "sum") mesh_->getComm()->SumAll(val_tmp, val, n);
+  else if (op == "max") mesh_->getComm()->MaxAll(val_tmp, val, n);
 
   delete[] val_tmp;
 }

@@ -55,9 +55,9 @@ PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
     Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
     Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
     if (k_ != Teuchos::null) {
-      if (k_->HasComponent("cell")) k_cell = k_->ViewComponent("cell");
-      if (k_->HasComponent("face")) k_face = k_->ViewComponent("face", true);
-      if (k_->HasComponent("grav")) k_face = k_->ViewComponent("grav", true);
+      if (k_->HasComponent("cell") ) k_cell = k_->ViewComponent("cell");
+      if (k_->HasComponent("face") ) k_face = k_->ViewComponent("face", true);
+      if (k_->HasComponent("grav") ) k_face = k_->ViewComponent("grav", true);
     }
 
     int dir;
@@ -74,7 +74,6 @@ PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
     bool fv_flag =
       (gravity_method_ == OPERATOR_GRAVITY_FV) || !(little_k_ & OPERATOR_LITTLE_K_DIVK_BASE);
 
-    AmanziMesh::Entity_ID_View grav_workspace;
     for (int c = 0; c < ncells_owned; c++) {
       const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
       int nfaces = faces.size();
@@ -112,7 +111,7 @@ PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
       // add gravity term to the right-hand side vector.
       // -- use always for the finite volume method
       if (fv_flag) {
-        if (K_.get()) Kc = (*K_)[c];
+        if (K_.get() ) Kc = (*K_)[c];
         AmanziGeometry::Point Kcg(Kc * g_);
 
         for (int n = 0; n < nfaces; n++) {
@@ -121,7 +120,7 @@ PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
           double tmp;
 
           if (gravity_special_projection_) {
-            const AmanziGeometry::Point& xcc = GravitySpecialDirection_(f, grav_workspace);
+            const AmanziGeometry::Point& xcc = GravitySpecialDirection_(f);
             double sign = (normal * xcc) * dir;
 
             tmp = (Kcg * xcc) * rho * kf[n] * dirs[n];
@@ -186,9 +185,9 @@ PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector
   Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
   Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
   if (k_ != Teuchos::null) {
-    if (k_->HasComponent("cell")) k_cell = k_->ViewComponent("cell");
-    if (k_->HasComponent("face")) k_face = k_->ViewComponent("face", true);
-    if (k_->HasComponent("grav")) k_face = k_->ViewComponent("grav", true);
+    if (k_->HasComponent("cell") ) k_cell = k_->ViewComponent("cell");
+    if (k_->HasComponent("face") ) k_face = k_->ViewComponent("face", true);
+    if (k_->HasComponent("grav") ) k_face = k_->ViewComponent("grav", true);
   }
 
   int dim = mesh_->getSpaceDimension();
@@ -206,7 +205,6 @@ PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector
   bool fv_flag =
     (gravity_method_ == OPERATOR_GRAVITY_FV) || !(little_k_ & OPERATOR_LITTLE_K_DIVK_BASE);
 
-  AmanziMesh::Entity_ID_View grav_workspace;
   for (int c = 0; c < ncells_owned; c++) {
     const auto& faces = mesh_->getCellFaces(c);
     int nfaces = faces.size();
@@ -232,7 +230,7 @@ PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector
     }
 
     if (fv_flag) {
-      if (K_.get()) Kc = (*K_)[c];
+      if (K_.get() ) Kc = (*K_)[c];
       AmanziGeometry::Point Kcg(Kc * g_);
 
       for (int n = 0; n < nfaces; n++) {
@@ -241,7 +239,7 @@ PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector
           const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
 
           if (gravity_special_projection_) {
-            const AmanziGeometry::Point& xcc = GravitySpecialDirection_(f, grav_workspace);
+            const AmanziGeometry::Point& xcc = GravitySpecialDirection_(f);
             double sign = normal * xcc;
             double tmp = copysign(norm(normal) / norm(xcc), sign);
             grav_flux[0][f] += (Kcg * xcc) * rho * kf[n] * tmp;
@@ -278,7 +276,9 @@ PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector
     }
   }
 
-  for (int f = 0; f < nfaces_owned; f++) { flux_data[0][f] += grav_flux[0][f] / hits[f]; }
+  for (int f = 0; f < nfaces_owned; f++) {
+    flux_data[0][f] += grav_flux[0][f] / hits[f];
+  }
 }
 
 
@@ -292,13 +292,17 @@ PDE_DiffusionMFDwithGravity::UpdateFluxManifold_(const Teuchos::Ptr<const Compos
   // Calculate diffusive part of the flux.
   PDE_DiffusionMFD::UpdateFluxManifold_(u, flux);
 
+  // vector or scalar rho?
+  const Epetra_MultiVector* rho_c = NULL;
+  if (!is_scalar_) rho_c = &*rho_cv_->ViewComponent("cell", false);
+
   // preparing little-k data
   Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
   Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
   if (k_ != Teuchos::null) {
-    if (k_->HasComponent("cell")) k_cell = k_->ViewComponent("cell");
-    if (k_->HasComponent("face")) k_face = k_->ViewComponent("face", true);
-    if (k_->HasComponent("grav")) k_face = k_->ViewComponent("grav", true);
+    if (k_->HasComponent("cell") ) k_cell = k_->ViewComponent("cell");
+    if (k_->HasComponent("face") ) k_face = k_->ViewComponent("face", true);
+    if (k_->HasComponent("grav") ) k_face = k_->ViewComponent("grav", true);
   }
 
   int dim = mesh_->getSpaceDimension();
@@ -316,7 +320,6 @@ PDE_DiffusionMFDwithGravity::UpdateFluxManifold_(const Teuchos::Ptr<const Compos
   Kc(0, 0) = 1.0;
   if (const_K_.rank() > 0) Kc = const_K_;
 
-  AmanziMesh::Entity_ID_View grav_workspace;
   for (int c = 0; c < ncells_owned; c++) {
     const auto& faces = mesh_->getCellFaces(c);
     int nfaces = faces.size();
@@ -336,8 +339,10 @@ PDE_DiffusionMFDwithGravity::UpdateFluxManifold_(const Teuchos::Ptr<const Compos
       for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
     }
 
-    if (K_.get()) Kc = (*K_)[c];
+    if (K_.get() ) Kc = (*K_)[c];
     AmanziGeometry::Point Kcg(Kc * g_);
+
+    double rho = rho_c ? (*rho_c)[0][c] : rho_;
 
     for (int n = 0; n < nfaces; n++) {
       int dir, f = faces[n];
@@ -349,12 +354,12 @@ PDE_DiffusionMFDwithGravity::UpdateFluxManifold_(const Teuchos::Ptr<const Compos
       if (ndofs > 1) g += Operators::UniqueIndexFaceToCells(*mesh_, f, c);
 
       if (gravity_special_projection_) {
-        const AmanziGeometry::Point& xcc = GravitySpecialDirection_(f, grav_workspace);
+        const AmanziGeometry::Point& xcc = GravitySpecialDirection_(f);
         double sign = normal * xcc;
         double tmp = copysign(norm(normal) / norm(xcc), sign);
-        grav_data[0][g] += (Kcg * xcc) * rho_ * kf[n] * tmp;
+        grav_data[0][g] += (Kcg * xcc) * rho * kf[n] * tmp;
       } else {
-        grav_data[0][g] += (Kcg * normal) * rho_ * kf[n];
+        grav_data[0][g] += (Kcg * normal) * rho * kf[n];
       }
     }
   }
@@ -362,7 +367,9 @@ PDE_DiffusionMFDwithGravity::UpdateFluxManifold_(const Teuchos::Ptr<const Compos
   // if f is on a processor boundary, some g are not initialized
   grav.GatherGhostedToMaster(Add);
 
-  for (int g = 0; g < ndofs_owned; ++g) { flux_data[0][g] += grav_data[0][g]; }
+  for (int g = 0; g < ndofs_owned; ++g) {
+    flux_data[0][g] += grav_data[0][g];
+  }
 }
 
 
@@ -376,10 +383,8 @@ PDE_DiffusionMFDwithGravity::Init_(Teuchos::ParameterList& plist)
 
   // gravity discretization
   std::string name = plist.get<std::string>("gravity term discretization", "hydraulic head");
-  if (name == "hydraulic head")
-    gravity_method_ = OPERATOR_GRAVITY_HH;
-  else
-    gravity_method_ = OPERATOR_GRAVITY_FV;
+  if (name == "hydraulic head") gravity_method_ = OPERATOR_GRAVITY_HH;
+  else gravity_method_ = OPERATOR_GRAVITY_FV;
 
   gravity_term_initialized_ = false;
 }
@@ -390,11 +395,9 @@ PDE_DiffusionMFDwithGravity::Init_(Teuchos::ParameterList& plist)
 * to project gravity vector in the MFD-TPFA discretization method.
 ****************************************************************** */
 AmanziGeometry::Point
-PDE_DiffusionMFDwithGravity::GravitySpecialDirection_(int f,
-                                                      AmanziMesh::Entity_ID_View& cells) const
+PDE_DiffusionMFDwithGravity::GravitySpecialDirection_(int f) const
 {
-  auto ccells = mesh_->getFaceCells(f);
-  cells.fromConst(ccells);
+  auto cells = mesh_->getFaceCells(f);
   int ncells = cells.size();
 
   if (ncells == 2) {

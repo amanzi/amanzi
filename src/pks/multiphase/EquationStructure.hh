@@ -38,8 +38,9 @@ typedef std::pair<Key, Key> EquationTerm;
 
 struct EquationStructure {
  public:
-  std::vector<EquationTerm> advection, diffusion;
-  std::vector<double> adv_factors, diff_factors;
+  std::vector<EquationTerm> terms;
+  std::vector<double> factors;
+  std::vector<int> types, phases;
 
   Key storage;
   EquationTerm constraint;

@@ -25,7 +25,7 @@ class SorptionIsothermLinear : public SorptionIsotherm {
  public:
   SorptionIsothermLinear();
   SorptionIsothermLinear(double KD);
-  ~SorptionIsothermLinear(){};
+  ~SorptionIsothermLinear() {};
 
   void Init(double KD);
 

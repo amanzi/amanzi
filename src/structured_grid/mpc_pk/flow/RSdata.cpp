@@ -47,21 +47,6 @@ RSdata::RSdata(int slev, int nlevs, Layout& _layout, NLScontrol& nlsc, const Roc
   Pnew = 0;
   Rhs = 0;
   Alpha = 0;
-
-  MFTower *InitialState;
-  MFTower *Rhs;
-  MFTower *RhoSatOld;
-  MFTower *RhoSatNew;
-  MFTower *Lambda;
-  MFTower *Porosity;
-  MFTower *SpecificStorage;
-  MFTower *Pold;
-  MFTower *Pnew;
-  MFTower *KappaCCavg;
-  MFTower *PCapParams;
-  MFTower *KrParams;
-  MFTower *Alpha;
-  MFTower *CoeffCC;
 }
 
 const Array<Real>&

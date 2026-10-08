@@ -55,7 +55,7 @@ class Point {
     xyz[1] = y;
     xyz[2] = z;
   }
-  ~Point(){};
+  ~Point() {};
 
   // main members
   void set(const double& val)

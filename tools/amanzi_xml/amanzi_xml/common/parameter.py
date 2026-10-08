@@ -1,75 +1,125 @@
 from . import base
+from decimal import Decimal
 import amanzi_xml.utils.io as io
 
 _valid_parameter_types = ['double', 'int', 'string', 'bool']
-def _valid_parameter_from_string(ptype, value):
-    # ensure types
-    retval = None
+def _validValueFromString(ptype, value):
+    """Given a string, return a ptype-typed value."""
+    assert isinstance(value, str)
+    value = value.strip()
 
-    if ptype == "double":
+    if ptype == 'double':
+        if '.' not in value and 'e' not in value.lower():
+            value = value + '.0'
+
         try:
-            retval = float(value)
+            retval = Decimal(value)
         except ValueError:
-            raise RuntimeError("Parameter of type double with invalid value \"%s\""%str(value))
+            raise ValueError("Parameter of type double with invalid value \"%s\""%str(value))
 
-    elif ptype == "int":
+    elif ptype == 'int':
         try:
             retval = int(value)
         except ValueError:
-            raise RuntimeError("Parameter of type int with invalid value \"%s\""%str(value))
+            raise ValueError("Parameter of type int with invalid value \"%s\""%str(value))
 
-    elif ptype == "bool":
-        if value is True:
-            retval = value
-        elif value is False:
-            retval = value
-        elif value == "true":
+    elif ptype == 'bool':
+        if value.lower() == 'true':
             retval = True
-        elif value == "True":
-            retval = True
-        elif value == "TRUE":
-            retval = True
-        elif value == "false":
-            retval = False
-        elif value == "False":
-            retval = False
-        elif value == "FALSE":
+        elif value.lower() == 'false':
             retval = False
         else:
-            raise RuntimeError("Parameter of type bool with invalid value \"%s\""%str(value))
+            raise ValueError("Parameter of type bool with invalid value \"%s\""%str(value))
 
-    elif ptype == "string":
-        try:
-            assert type(value) is str
-        except AssertionError:
-            raise RuntimeError("Parameter of type string with invalid value \"%s\""%str(value))
-        else:
-            retval = str(value)
+    elif ptype == 'string':
+        retval = value
+
+    else:
+        raise ValueError(f"Invalid ptype {ptype}")
+
     return retval
 
 
-def _valid_parameter_from_type(ptype, value):
-    # null string is valid
-    if type(value) == str and len(value) == 0:
-        return ''
+def _validValueFromType(ptype, value):
+    """Given a typed value, convert it to ptype."""
+    if ptype == 'string':
+        if not isinstance(value, str):
+            raise ValueError("Parameter of type string given non-string value.")
+        return value
+
+    elif ptype == 'bool':
+        if not isinstance(value, bool):
+            raise ValueError("Parameter of type bool given non-bool value.")
+        return value
+
+    elif ptype == 'int':
+        if not isinstance(value, int):
+            try:
+                int_val = np.round(value)
+            except ValueError:
+                raise ValueError("Parameter of type int given non-int-convertible value.")
+
+            if abs(int_val - val) > 1.e-10:
+                raise ValueError("Parameter of type int given non-int-convertible value.")
+            value = int(int_val)
+        return int(value)
+
+    elif ptype == 'double':
+        if not isinstance(value, Decimal):
+            try:
+                value = Decimal(value)
+            except ValueError:
+                raise ValueError("Parameter of type float given non-Decimal-convertible value.")
+
+        if '.' not in str(value) and 'e' not in str(value).lower():
+            value = Decimal(str(value)+'.0')
+        return value
+
+    else:
+        raise ValueError(f"Invalid ptype {ptype}")
+
+
+def _validValue(ptype, value):
+    """Valid typed value from string or typed value."""
+    if ptype != 'string' and isinstance(value, str):
+        return _validValueFromString(ptype, value)
+    else:
+        return _validValueFromType(ptype, value)
     
-    # ensure types
+
+def _checkType(ptype, value):
+    """Simply asserts that value is the right type."""
+    if ptype == 'string':
+        assert isinstance(value, str)
+    elif ptype == 'bool':
+        assert isinstance(value, bool)
+    elif ptype == 'int':
+        assert isinstance(value, int)
+    elif ptype == 'double':
+        assert isinstance(value, Decimal)
+    else:
+        assert(False)
+
+    
+def _convertTypeToString(ptype, value):
+    """Given a type, write it to a string."""
+    _checkType(ptype, value)
+    
     retval = None
-    if ptype == "double":
-        # note, it is very useful to "pick" a value here, but too
-        # small and we can cut off some user-provided but arbitrarily
-        # highly precise numbers.  Unfortunately too low of a value
-        # then allows tests to break.  This may need rethinking?
-        retval = '%2.14g'%float(value)
-    elif ptype == "int":
-        retval = str(int(value))
-    elif ptype == "bool":
+
+    if ptype == 'bool':
         if value is True:
             retval = "true"
         elif value is False:
             retval = "false"
-    elif ptype == "string":
-        retval = str(value)
+
+    elif ptype == 'double':
+        retval = f'{value:g}'
+        if '.' not in retval and 'e' not in retval.lower():
+            retval = retval + '.0'
+
+    else:
+        retval = str(value).strip()
     return retval
 
 
@@ -100,8 +150,8 @@ class Parameter(base.TeuchosBaseXML):
         try:
             this.setType(mytype) #validation
             this.setValue(myval) #validation
-        except RuntimeError as err:
-            raise RuntimeError(str(err)+"\n from xml entry: \"%s\""%str(elem.attrib))
+        except ValueError as err:
+            raise ValueError(str(err)+f"\n from xml entry: \"{str(elem.attrib)}\"")
         return this
 
     def __str__(self):
@@ -129,60 +179,51 @@ class Parameter(base.TeuchosBaseXML):
             self.set('type', ptype)
             self._basetype = ptype
             self._isarray = False
-        elif ptype in ["Array(%s)"%lcv for lcv in _valid_parameter_types]:
+        elif ptype in [f'Array({t})' for t in _valid_parameter_types]:
             self.set('type', ptype)
             self._basetype = ptype[6:-1]
-            self._isarray = True
-        elif ptype in ["Array %s"%lcv for lcv in _valid_parameter_types]:
-            self._basetype = ptype.split()[1]
-            self.set('type', "Array(%s)"%self._basetype)
             self._isarray = True
         else:
             raise RuntimeError("Unknown Parameter type %s"%ptype)
 
-        self.set('value', None)
-
-    def setValue(self, value):
-        """Set the value.  This checks it can be cast to the correct type."""
-        if self._isarray:
-            if type(value) is str:
-                vals = value.strip().strip('{').strip('}').split(',')
-                if len(vals) == 1 and vals[0] == '':
-                    self.value = ['',]
-                else:
-                    self.value = [self._checkSingleValueFromString(val) for val in vals]
-            elif type(value) is list:
-                if len(value) == 1 and value[0] == '':
-                    self.value = ['',]
-                else:
-                    self.value = [self._checkSingleValueFromString(val) for val in value]
-
-            self.set("value", "{"+",".join([self._checkSingleValueFromType(val) for val in self.value])+"}")
-        else:
-            self.value = self._checkSingleValueFromString(value)
-            self.set("value", self._checkSingleValueFromType(self.value))
-
     def getValue(self):
         """Gets the value, cast to the correct type. Note this is here for API consistency only."""
         return self.value
+    
+    def setValue(self, value):
+        """Set the value given either string or a typed value.
 
-    def _checkSingleValueFromString(self, value):
-        retval = _valid_parameter_from_string(self._basetype, value)
-        assert retval is not None
-        return retval
+        This checks it can be cast to the correct type. Note that
+        setType() must already have been called.
 
-    def _checkSingleValueFromType(self, value):
-        retval = _valid_parameter_from_type(self._basetype, value)
-        assert retval is not None
-        return retval
+        Note this must handle both strings and typed values.
+        """
+        if self._isarray:
+            if type(value) is str:
+                value = value.strip().strip('{').strip('}').split(',')
+                if len(value) == 1 and value[0] == '':
+                    value = []
 
+            try:
+                vals = [i for i in value]
+            except TypeError:
+                raise ValueError(f'Cannot convert "{value}" to list for an array-typed parameter.')
+
+            self.value = [_validValue(self._basetype, val) for val in vals]
+            self.set("value", "{" + ", ".join([_convertTypeToString(self._basetype, val) for val in self.value]) + "}")
+
+        else:
+            self.value = _validValue(self.getType(), value)
+            self.set("value", _convertTypeToString(self.getType(), self.value))
+            
     def __copy__(self):
         return Parameter(self.getName(), self.getType(), self.getValue())
-
+    
     def __deepcopy__(self, memo):
         cp = self.__copy__()
         memo[id(self)] = cp
         return cp
+
 
 from amanzi_xml.utils import parser
 def make_class(typename, array=False):

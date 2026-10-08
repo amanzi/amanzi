@@ -29,14 +29,13 @@ namespace Amanzi {
 // stepper and provides interpolation methods that are used in the DAE
 // object.
 
-template <class Vector>
+template<class Vector, class VectorSpace>
 class SolutionHistory {
  public:
   SolutionHistory(const std::string& name,
                   int mvec,
                   double t,
-                  const Vector& x,
-                  Vector const* xdot = nullptr,
+                  const Teuchos::RCP<const VectorSpace>& space,
                   const Teuchos::RCP<State>& S = Teuchos::null);
 
   // Flushes the accumulated solution vectors from an existing history
@@ -68,7 +67,7 @@ class SolutionHistory {
 
   // Function returns the most recent solution vector
   // maintained by the history.
-  void MostRecentSolution(Vector& x);
+  Teuchos::RCP<const Vector> MostRecentSolution();
 
   // Function returns the the time index T associated with the most
   // recent solution vector maintained by the history THIS.
@@ -91,7 +90,7 @@ class SolutionHistory {
   void MoveToState();
 
  protected:
-  void Initialize_(int mvec, const Vector& initvec);
+  void Initialize_(int mvec, const VectorSpace& initvec);
 
  protected:
   Teuchos::RCP<int> nvec_;
@@ -106,26 +105,24 @@ class SolutionHistory {
 /* ******************************************************************
 * Constructors
 ****************************************************************** */
-template <class Vector>
-SolutionHistory<Vector>::SolutionHistory(const std::string& name,
-                                         int mvec,
-                                         double t,
-                                         const Vector& x,
-                                         Vector const* xdot,
-                                         const Teuchos::RCP<State>& S)
+template<class Vector, class VectorSpace>
+SolutionHistory<Vector, VectorSpace>::SolutionHistory(const std::string& name,
+                                                      int mvec,
+                                                      double t,
+                                                      const Teuchos::RCP<const VectorSpace>& space,
+                                                      const Teuchos::RCP<State>& S)
   : S_(S), name_(Keys::cleanName(name, true))
 {
-  Initialize_(mvec, x);
-  RecordSolution(t, x, xdot);
+  Initialize_(mvec, *space);
 }
 
 
 /* ******************************************************************
 * Initialize and allocate memory
 ****************************************************************** */
-template <class Vector>
+template<class Vector, class VectorSpace>
 void
-SolutionHistory<Vector>::Initialize_(int mvec, const Vector& initvec)
+SolutionHistory<Vector, VectorSpace>::Initialize_(int mvec, const VectorSpace& space)
 {
   d_.resize(mvec);
 
@@ -133,7 +130,9 @@ SolutionHistory<Vector>::Initialize_(int mvec, const Vector& initvec)
   nvec_ = Teuchos::rcp(new int(0));
   times_ = Teuchos::rcp(new Teuchos::Array<double>(mvec));
   d_.resize(mvec);
-  for (int j = 0; j < mvec; ++j) { d_[j] = Teuchos::rcp(new Vector(initvec)); }
+  for (int j = 0; j < mvec; ++j) {
+    d_[j] = Teuchos::rcp(new Vector(space));
+  }
 
   // move into state
   if (S_ != Teuchos::null) {
@@ -146,7 +145,7 @@ SolutionHistory<Vector>::Initialize_(int mvec, const Vector& initvec)
         name_ = name_ + "_000";
       } else {
         char i[4];
-        snprintf(i, 3, "%03i", counter);
+        snprintf(i, sizeof(i), "%03i", counter % 1000u);
         name_ = name_.substr(0, name_.size() - 4) + "_" + i;
       }
       counter++;
@@ -170,11 +169,12 @@ SolutionHistory<Vector>::Initialize_(int mvec, const Vector& initvec)
 
     // require time deltas
     for (int j = 0; j < mvec; j++) {
-      S_->Require<Vector>(initvec.Map(), name_, Tag(std::to_string(j)), name_);
-      S_->SetPtr<Vector>(name_, Tag(std::to_string(j)), name_, d_[j]);
-      S_->GetRecordW(name_, Tag(std::to_string(j)), name_).set_initialized();
-      S_->GetRecordW(name_, Tag(std::to_string(j)), name_).set_io_checkpoint();
-      S_->GetRecordW(name_, Tag(std::to_string(j)), name_).set_io_vis(false);
+      std::string sh_name = name_ + "_solution_history";
+      S_->Require<Vector>(space, sh_name, Tag(std::to_string(j)), name_);
+      S_->SetPtr<Vector>(sh_name, Tag(std::to_string(j)), name_, d_[j]);
+      S_->GetRecordW(sh_name, Tag(std::to_string(j)), name_).set_initialized();
+      S_->GetRecordW(sh_name, Tag(std::to_string(j)), name_).set_io_checkpoint();
+      S_->GetRecordW(sh_name, Tag(std::to_string(j)), name_).set_io_vis(false);
     }
   }
 }
@@ -183,9 +183,9 @@ SolutionHistory<Vector>::Initialize_(int mvec, const Vector& initvec)
 /* ******************************************************************
 * Modify history
 ****************************************************************** */
-template <class Vector>
+template<class Vector, class VectorSpace>
 void
-SolutionHistory<Vector>::FlushHistory(double t, const Vector& x, Vector const* xdot)
+SolutionHistory<Vector, VectorSpace>::FlushHistory(double t, const Vector& x, Vector const* xdot)
 {
   *nvec_ = 0;
   RecordSolution(t, x, xdot);
@@ -195,9 +195,9 @@ SolutionHistory<Vector>::FlushHistory(double t, const Vector& x, Vector const* x
 /* *****************************************************************
 * Update history
 ****************************************************************** */
-template <class Vector>
+template<class Vector, class VectorSpace>
 void
-SolutionHistory<Vector>::RecordSolution(double t, const Vector& x, Vector const* xdot)
+SolutionHistory<Vector, VectorSpace>::RecordSolution(double t, const Vector& x, Vector const* xdot)
 {
   // update the number of vectors
   (*nvec_)++;
@@ -261,65 +261,69 @@ SolutionHistory<Vector>::RecordSolution(double t, const Vector& x, Vector const*
 /* *****************************************************************
 * Interpolation routines.
 ****************************************************************** */
-template <class Vector>
+template<class Vector, class VectorSpace>
 void
-SolutionHistory<Vector>::InterpolateSolution(double t, Vector& x)
+SolutionHistory<Vector, VectorSpace>::InterpolateSolution(double t, Vector& x)
 {
   InterpolateSolution(t, x, (*nvec_) - 1);
 }
 
 
-template <class Vector>
+template<class Vector, class VectorSpace>
 void
-SolutionHistory<Vector>::InterpolateSolution(double t, Vector& x, unsigned int order)
+SolutionHistory<Vector, VectorSpace>::InterpolateSolution(double t, Vector& x, unsigned int order)
 {
   AMANZI_ASSERT(order < (*nvec_));
   AMANZI_ASSERT(order >= 0);
 
   x = *d_[order];
-  for (int k = order - 1; k >= 0; k--) { x.Update(1.0, *d_[k], t - (*times_)[k]); }
+  for (int k = order - 1; k >= 0; k--) {
+    x.Update(1.0, *d_[k], t - (*times_)[k]);
+  }
 }
 
 
 /* *****************************************************************
 * Access members.
 ****************************************************************** */
-template <class Vector>
-void
-SolutionHistory<Vector>::MostRecentSolution(Vector& x)
+template<class Vector, class VectorSpace>
+Teuchos::RCP<const Vector>
+SolutionHistory<Vector, VectorSpace>::MostRecentSolution()
 {
-  x = *d_[0];
+  return d_[0];
 }
 
 
-template <class Vector>
+template<class Vector, class VectorSpace>
 double
-SolutionHistory<Vector>::MostRecentTime()
+SolutionHistory<Vector, VectorSpace>::MostRecentTime()
 {
   return (*times_)[0];
 }
 
 
-template <class Vector>
+template<class Vector, class VectorSpace>
 void
-SolutionHistory<Vector>::TimeDeltas(std::vector<double>& h)
+SolutionHistory<Vector, VectorSpace>::TimeDeltas(std::vector<double>& h)
 {
   h.resize((*nvec_) - 1);
-
-  for (unsigned int j = 0; j <= (*nvec_) - 2; j++) { h[j] = (*times_)[0] - (*times_)[j + 1]; }
+  for (unsigned int j = 0; j <= (*nvec_) - 2; j++) {
+    h[j] = (*times_)[0] - (*times_)[j + 1];
+  }
 }
 
 
 /* ******************************************************************
 * Save our history in state to allow checkpoint/restart
 ****************************************************************** */
-template <class Vector>
+template<class Vector, class VectorSpace>
 void
-SolutionHistory<Vector>::MoveToState()
+SolutionHistory<Vector, VectorSpace>::MoveToState()
 {
+  std::string sh_name = name_ + "_solution_history";
   if (S_ != Teuchos::null) {
     for (int j = 0; j != d_.size(); ++j) {
-      S_->SetPtr<Vector>(name_, Tag(std::to_string(j)), name_, d_[j]);
+      S_->SetPtr<Vector>(sh_name, Tag(std::to_string(j)), name_, d_[j]);
     }
   }
 }

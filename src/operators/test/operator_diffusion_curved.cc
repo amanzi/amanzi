@@ -41,7 +41,7 @@
 * Exactness test for diffusion solver on meshes with curved faces.
 ***************************************************************** */
 void
-RunTestDiffusionCurved()
+RunTestDiffusionCurved(const std::string& filename)
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -51,7 +51,8 @@ RunTestDiffusionCurved()
 
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: elliptic solver, mesh with curved faces\n";
+  if (MyPID == 0)
+    std::cout << "\nTest: elliptic solver, mesh with curved faces: " << filename << "\n";
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion_curved.xml";
@@ -65,7 +66,7 @@ RunTestDiffusionCurved()
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   // RCP<const Mesh> mesh = meshfactory.create(0.0,0.0,0.0, 1.0,1.0,1.0, 2,2,2);
-  RCP<const Mesh> mesh = meshfactory.create("test/random3D_05.exo");
+  RCP<const Mesh> mesh = meshfactory.create(filename);
 
   // populate diffusion coefficient using the problem with analytic solution.
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
@@ -106,18 +107,18 @@ RunTestDiffusionCurved()
   // create diffusion operator
   // -- use the abstract operator based on factory of MFD discretization methods.
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator curved");
-  Teuchos::RCP<PDE_Abstract> op = Teuchos::rcp(new PDE_Abstract(op_list, mesh));
-  op->SetBCs(bc, bc);
+  auto pde = Teuchos::rcp(new PDE_Abstract(op_list, mesh));
+  pde->SetBCs(bc, bc);
 
   // -- set up diffusivity coefficient and populate local matrices.
-  op->Setup(K, false);
-  op->UpdateMatrices();
+  pde->Setup(K, false);
+  pde->UpdateMatrices();
 
   // -- apply boundary conditions
-  op->ApplyBCs(true, true, true);
+  pde->ApplyBCs(true, true, true);
 
   // -- assemble the global matrix
-  Teuchos::RCP<Operator> global_op = op->global_operator();
+  Teuchos::RCP<Operator> global_op = pde->global_operator();
 
   // create a preconditoner using the global matrix
   global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"));
@@ -135,11 +136,12 @@ RunTestDiffusionCurved()
   global_op->ComputeInverse();
 
   CompositeVector rhs = *global_op->rhs();
-  CompositeVector solution(rhs), flux(rhs);
-  solution.PutScalar(0.0);
+  auto solution = Teuchos::rcp(new CompositeVector(rhs));
+  auto flux = Teuchos::rcp(new CompositeVector(rhs));
 
   // -- run PCG
-  global_op->ApplyInverse(rhs, solution);
+  solution->PutScalar(0.0);
+  global_op->ApplyInverse(rhs, *solution);
 
   if (MyPID == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << global_op->residual()
@@ -147,20 +149,20 @@ RunTestDiffusionCurved()
               << std::endl;
   }
 
-  ver.CheckResidual(solution, 3.0e-7);
+  ver.CheckResidual(*solution, 3.0e-7);
 
   // Post-processing
   // -- compute pressure error
-  Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
+  Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
   double pnorm, pl2_err, pinf_err;
   ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 
   // -- coumpute flux error (work in progress)
-  // Epetra_MultiVector& flx = *flux.ViewComponent("face", true);
   double unorm(1.0), ul2_err(0.0), uinf_err(0.0);
+  // Epetra_MultiVector& flux_f = *flux->ViewComponent("face", true);
 
-  // op->UpdateFlux(solution, flux);
-  // ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
+  // pde->UpdateFlux(solution.ptr(), flux.ptr());
+  // ana.ComputeFaceError(flux_f, 0.0, unorm, ul2_err, uinf_err);
 
   double totvol(0.0);
   AmanziGeometry::Point center(3);
@@ -176,7 +178,8 @@ RunTestDiffusionCurved()
   CHECK_CLOSE(1.0, totvol, 1e-12);
 
   if (MyPID == 0) {
-    std::cout << "Domain center:" << center << std::endl;
+    std::cout << "Number of cells: " << ncells_owned << std::endl;
+    std::cout << "Domain center: " << center << std::endl;
     std::cout << "Volume error: " << 1.0 - totvol << std::endl;
 
     pl2_err /= pnorm;
@@ -189,12 +192,13 @@ RunTestDiffusionCurved()
            global_op->num_itrs());
 
     CHECK(pl2_err < 0.001 && ul2_err < 0.01);
-    CHECK(global_op->num_itrs() < 1000);
+    CHECK(global_op->num_itrs() < 100);
   }
 }
 
 
 TEST(OPERATOR_DIFFUSION_CURVED)
 {
-  RunTestDiffusionCurved();
+  RunTestDiffusionCurved("test/random3D_05.exo");
+  RunTestDiffusionCurved("test/voronoi1.exo");
 }

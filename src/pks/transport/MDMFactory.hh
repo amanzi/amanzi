@@ -7,10 +7,20 @@
   Authors: Konstantin Lipnikov
 */
 
-/*
-  Transport PK
+/*!
 
-  Self-registering factory for MDM implementations.
+The mechanical dispersion coefficient may be described by a number of different
+models.  Each is defined on its own region.
+
+.. _mechanical-dispersion-typed-spec:
+.. admonition:: mechanical-dispersion-typed-spec
+
+   * `"region`" ``[string]`` Region on which the model is valid.
+   * `"mechanical dispersion type`" ``[string]`` Name of the model, see below for options.
+   * `"_mechanical_dispersion_type_ parameters`"
+     ``[_mechanical_dispersion_type_-spec]`` See below for the required
+     parameter spec for each type.
+
 */
 
 #ifndef PK_TRANSPORT_MDM_FACTORY_HH_

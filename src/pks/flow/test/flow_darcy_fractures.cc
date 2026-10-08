@@ -82,8 +82,9 @@ TEST(DARCY_TWO_FRACTURES)
   S->RegisterDomainMesh(mesh);
 
   std::string passwd("");
+  Teuchos::ParameterList pk_tree("flow");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
+  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(pk_tree, plist, S, soln));
   DPK->Setup();
 
   S->Setup();
@@ -114,7 +115,9 @@ TEST(DARCY_TWO_FRACTURES)
     t_old = t_new;
   }
 
-  for (int c = 0; c < p.MyLength(); c++) { CHECK(p[0][c] > -1.0 && p[0][c] < 2.0); }
+  for (int c = 0; c < p.MyLength(); c++) {
+    CHECK(p[0][c] > -1.0 && p[0][c] < 2.0);
+  }
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Darcy", *plist));
   WriteStateStatistics(*S, *vo);
 

@@ -162,7 +162,7 @@ TEST(FE_GRAPH_FACE_FACE)
     faces.fromConst(cfaces);
 
     std::vector<int> global_faces(faces.size());
-    for (int n = 0; n != faces.size(); ++n) global_faces[n] = face_map_ghosted->GID(faces[n]);
+    for (int n = 0; n != faces.size() ; ++n) global_faces[n] = face_map_ghosted->GID(faces[n]);
 
     for (int n = 0; n != faces.size(); ++n) {
       ierr |= graph_local.InsertMyIndices(faces[n], faces.size(), &faces[0]);

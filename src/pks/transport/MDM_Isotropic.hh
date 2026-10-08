@@ -7,10 +7,41 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-/*
-  Transport PK
+/*!
 
-  Isotropic mechanical dispersion model, primarily for code testing.
+An isotropic mechanical dispersion model.  Note this is rarely used for real
+problems, but is useful for testing.  Note there is no velocity component to
+this model -- it is equivalent to isotropic diffusion.  Prefer to use Bear for
+a basic dispersion model.
+
+`"mechanical dispersion type`" = `"scalar`"
+
+OR
+
+`"mechanical dispersion type`" = `"isotropic`"
+
+
+.. _mdm-scalar-spec
+.. admonition:: mdm-scalar-spec
+
+  ONE OF:
+
+  * `"dispersivity [m]`" ``[double]``
+
+  OR
+
+  * `"dispersivity [m]`" ``[function-spec]``
+
+  OR
+
+  * `"dispersion coefficient [m^2 s^-1]`" ``[double]``
+
+  OR
+
+  * `"dispersion coefficient [m^2 s^-1]`" ``[function-spec]``
+
+  END
+
 */
 
 #ifndef AMANZI_MDM_ISOTROPIC_HH_
@@ -34,7 +65,7 @@ namespace Transport {
 class MDM_Isotropic : public MDM {
  public:
   explicit MDM_Isotropic(Teuchos::ParameterList& plist);
-  ~MDM_Isotropic(){};
+  ~MDM_Isotropic() {};
 
   // Required methods from the base class
   // -- scalar dispersion tensor.
@@ -58,6 +89,7 @@ class MDM_Isotropic : public MDM {
   bool dispersivity_;
 
   static Utils::RegisteredFactory<MDM, MDM_Isotropic> reg_;
+  static Utils::RegisteredFactory<MDM, MDM_Isotropic> reg2_;
 };
 
 } // namespace Transport

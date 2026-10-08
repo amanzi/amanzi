@@ -41,11 +41,10 @@ Transport_PK::VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next,
   const auto& wc = *S_->Get<CV_t>(wc_key_).ViewComponent("cell");
 
   int num_components = tcc_next.NumVectors();
-  double tccmin_vec[num_components];
-  double tccmax_vec[num_components];
+  std::vector<double> tccmin_vec(num_components), tccmax_vec(num_components);
 
-  tcc_next.MinValue(tccmin_vec);
-  tcc_next.MaxValue(tccmax_vec);
+  tcc_next.MinValue(tccmin_vec.data());
+  tcc_next.MaxValue(tccmax_vec.data());
 
   for (int n = 0; n < runtime_solutes_.size(); n++) {
     int i = FindComponentNumber(runtime_solutes_[n]);
@@ -188,11 +187,10 @@ void
 Transport_PK::VV_CheckGEDproperty(Epetra_MultiVector& tracer) const
 {
   int i, num_components = tracer.NumVectors();
-  double tr_min[num_components];
-  double tr_max[num_components];
+  std::vector<double> tr_min(num_components), tr_max(num_components);
 
-  tracer.MinValue(tr_min);
-  tracer.MaxValue(tr_max);
+  tracer.MinValue(tr_min.data());
+  tracer.MaxValue(tr_max.data());
 
   for (i = 0; i < num_components; i++) {
     if (tr_min[i] < 0) {

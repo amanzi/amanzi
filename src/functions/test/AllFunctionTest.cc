@@ -12,7 +12,7 @@
 #include "UnitTest++.h"
 #include "TestReporterStdout.h"
 
-#include "HDF5Reader.hh"
+#include "Reader.hh"
 #include "errors.hh"
 #include "VerboseObject_objs.hh"
 
@@ -429,18 +429,18 @@ TEST(static_head_test)
 TEST(bilinear_test)
 {
   std::string filename = "test/bilinear.h5";
-  HDF5Reader reader(filename);
+  auto reader = createReader(filename);
   std::string row_name = "times";
-  std::vector<double> vec_x;
+  Teuchos::Array<double> vec_x;
   int xi = 0;
-  reader.ReadData(row_name, vec_x);
+  reader->read(row_name, vec_x);
   std::string col_name = "x";
-  std::vector<double> vec_y;
+  Teuchos::Array<double> vec_y;
   int yi = 1;
-  reader.ReadData(col_name, vec_y);
+  reader->read(col_name, vec_y);
   std::string v_name = "values";
-  Epetra_SerialDenseMatrix mat_v;
-  reader.ReadMatData(v_name, mat_v);
+  Teuchos::SerialDenseMatrix<int, double> mat_v;
+  reader->read(v_name, mat_v);
   Function* f = new FunctionBilinear(vec_x, vec_y, mat_v, xi, yi);
   // Corners
   std::vector<double> z(2, 0.);

@@ -81,7 +81,9 @@ PressureGasEvaluator::EvaluatePartialDerivative_(const State& S,
 
   int ncells = result_c.MyLength();
   if (wrt_key == pressure_liquid_key_) {
-    for (int c = 0; c != ncells; ++c) { result_c[0][c] = 1.0; }
+    for (int c = 0; c != ncells; ++c) {
+      result_c[0][c] = 1.0;
+    }
   } else if (wrt_key == saturation_liquid_key_) {
     for (int c = 0; c != ncells; ++c) {
       result_c[0][c] = wrm_->second[(*wrm_->first)[c]]->dPc_dS(sat_c[0][c]);

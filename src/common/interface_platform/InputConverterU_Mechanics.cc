@@ -44,27 +44,35 @@ InputConverterU::TranslateMechanics_(const std::string& domain)
     *vo_->os() << "Translating mechanics, domain=" << domain << std::endl;
 
   MemoryManager mm;
-  DOMNode* node;
+  DOMNode *node, *inode;
   DOMElement* element;
 
   // process expert parameters
+  bool biot_undrained_split(false), biot_stress_split(false), use_fracture(false);
+  std::string disc_method("elasticity");
+
   bool flag;
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_mechanics_controls", flag);
-
-  bool biot_undrained_split(false), biot_stress_split(false);
-  node = GetUniqueElementByTagsString_(node, "biot_model", flag);
   if (flag) {
-    std::string method = GetTextContentS_(node, "undrained_split, fixed_stress_split");
-    biot_undrained_split = (method == "undrained_split");
-    biot_stress_split = (method == "fixed_stress_split");
+    // -- insert operator sublist
+    inode = GetUniqueElementByTagsString_(node, "biot_model", flag);
+    if (flag) {
+      std::string method = GetTextContentS_(inode, "undrained_split, fixed_stress_split");
+      biot_undrained_split = (method == "undrained_split");
+      biot_stress_split = (method == "fixed_stress_split");
+    }
+
+    // -- discretization method
+    inode = GetUniqueElementByTagsString_(node, "discretization_method", flag);
+    if (flag) disc_method = GetTextContentS_(inode, "elasticity, BernardiRaugel");
+
+    // -- insert fracture
+    inode = GetUniqueElementByTagsString_(node, "use_fracture", flag);
+    if (flag) use_fracture = GetTextContentL_(inode);
   }
 
-  // create flow header
+  // create header
   out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
-
-  // insert operator sublist
-  std::string disc_method("mfd-default");
-  std::string pc_method("linearized_operator");
 
   std::string nonlinear_solver("nka");
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_nonlinear_solver", flag);
@@ -95,18 +103,94 @@ InputConverterU::TranslateMechanics_(const std::string& domain)
     .set<std::string>("matrix type", "stiffness")
     .sublist("schema")
     .set<std::string>("base", "cell")
-    .set<std::string>("method", "elasticity")
+    .set<std::string>("method", disc_method)
     .set<int>("method order", 1);
+
+  if (fracture_network_ && use_fracture)
+    out_list.sublist("operators")
+      .sublist("elasticity operator")
+      .sublist("schema")
+      .set<Teuchos::Array<std::string>>("fracture", { "fracture" });
 
   out_list.sublist("physical models and assumptions")
     .set<bool>("use gravity", gravity_on_)
     .set<bool>("biot scheme: undrained split", biot_undrained_split)
     .set<bool>("biot scheme: fixed stress split", biot_stress_split);
 
+  // small strain model
+  auto tmp = TranslateMechanicsSSM_();
+  if (tmp.numParams() > 0) out_list.sublist("small strain models") = tmp;
+
   // insert boundary conditions and source terms
   out_list.sublist("boundary conditions") = TranslateMechanicsBCs_(domain);
 
+  // evaluators
+  Teuchos::ParameterList& aux = glist_->sublist("state").sublist("evaluators");
+  aux.sublist("volumetric_strain").set<std::string>("evaluator type", "volumetric strain");
+
   out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
+  return out_list;
+}
+
+
+/* ******************************************************************
+* Create list of permeability porosity models.
+****************************************************************** */
+Teuchos::ParameterList
+InputConverterU::TranslateMechanicsSSM_()
+{
+  Teuchos::ParameterList out_list;
+
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+    *vo_->os() << "Translating small strain models" << std::endl;
+
+  MemoryManager mm;
+  DOMNodeList* children;
+  DOMNode* node;
+  DOMElement* element;
+
+  bool flag, found(false);
+
+  node = GetUniqueElementByTagsString_("materials", flag);
+  element = static_cast<DOMElement*>(node);
+  children = element->getElementsByTagName(mm.transcode("material"));
+
+  for (int i = 0; i < children->getLength(); ++i) {
+    DOMNode* inode = children->item(i);
+
+    bool flag;
+    node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
+    std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
+
+    // get optional compressibility
+    node = GetUniqueElementByTagsString_(inode, "mechanical_properties, small_strain", flag);
+    std::string model = GetAttributeValueS_(node, "model", TYPE_NONE, false, "");
+
+    std::stringstream ss;
+    ss << "SSM " << i;
+
+    Teuchos::ParameterList& ssm_list = out_list.sublist(ss.str());
+    ssm_list.set<Teuchos::Array<std::string>>("regions", regions);
+
+    if (model == "hardin_drnevich") {
+      found = true;
+      double gamma =
+        GetAttributeValueD_(node, "reference_shear_strain", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa");
+      double Gmax =
+        GetAttributeValueD_(node, "maximum_shear_stress", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa");
+
+      ssm_list.set<std::string>("model", "Hardin Drnevich")
+        .set<double>("reference shear strain", gamma)
+        .set<double>("maximum shear stress", Gmax);
+    }
+  }
+
+  if (!found) {
+    Teuchos::ParameterList empty;
+    out_list = empty;
+  }
+
   return out_list;
 }
 
@@ -164,12 +248,21 @@ InputConverterU::TranslateMechanicsBCs_(const std::string& domain)
     if (bcs.type == "displacement") {
       Teuchos::ParameterList& bcfn = bc.sublist("no slip");
       bcfn.set<int>("number of dofs", dim_).set<std::string>("function type", "composite function");
+
+      auto formulas = CharToStrings_(bcs.formulas[0].c_str());
       for (int k = 0; k < dim_; ++k) {
         std::stringstream dof_str;
         dof_str << "dof " << k + 1 << " function";
-        bcfn.sublist(dof_str.str())
-          .sublist("function-constant")
-          .set<double>("value", bcs.vectors[0][k]);
+        if (formulas.size() == dim_) {
+          bcfn.sublist(dof_str.str())
+            .sublist("function-exprtk")
+            .set<int>("number of arguments", dim_ + 1)
+            .set<std::string>("formula", formulas[k]);
+        } else {
+          bcfn.sublist(dof_str.str())
+            .sublist("function-constant")
+            .set<double>("value", bcs.vectors[0][k]);
+        }
       }
     } else if (bcs.type == "traction") {
       Teuchos::ParameterList& bcfn = bc.sublist("traction");
@@ -184,6 +277,7 @@ InputConverterU::TranslateMechanicsBCs_(const std::string& domain)
     } else if (bcs.type == "kinematic") {
       Teuchos::ParameterList& bcfn = bc.sublist("kinematic");
       bcfn.sublist("function-constant").set<double>("value", bcs.values[0]);
+      if (bcs.kinematic != "") bc.set<std::string>("plane strain direction", bcs.kinematic);
     }
   }
 

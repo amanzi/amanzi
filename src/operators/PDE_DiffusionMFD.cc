@@ -42,12 +42,13 @@
 #include "UniqueLocalIndex.hh"
 
 #include "PDE_DiffusionMFD.hh"
+#include "PDE_AdvectionUpwindDFN.hh"
 
 namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
-* Initialization of the operator, scalar coefficient.
+* Setup method for cell-centered tensor coefficient
 ****************************************************************** */
 void
 PDE_DiffusionMFD::SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor>>& K)
@@ -76,13 +77,17 @@ PDE_DiffusionMFD::SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>
 
   // compatibility checks
   if (k_ != Teuchos::null) {
-    if (little_k_ != OPERATOR_LITTLE_K_UPWIND) { AMANZI_ASSERT(k->HasComponent("cell")); }
+    if (little_k_ != OPERATOR_LITTLE_K_UPWIND) {
+      AMANZI_ASSERT(k->HasComponent("cell"));
+    }
 
     if (little_k_ != OPERATOR_LITTLE_K_STANDARD && little_k_ != OPERATOR_LITTLE_K_NONE) {
       AMANZI_ASSERT(k->HasComponent("face"));
     }
 
-    if (little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN) { AMANZI_ASSERT(k->HasComponent("twin")); }
+    if (little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN) {
+      AMANZI_ASSERT(k->HasComponent("twin"));
+    }
   }
 }
 
@@ -132,8 +137,25 @@ PDE_DiffusionMFD::UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const Compos
   // add Newton-type corrections
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
     if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
-      if (dkdp_ != Teuchos::null) dkdp_->ScatterMasterToGhosted();
-      AddNewtonCorrectionCell_(flux, u, scalar_factor);
+      if (flux == Teuchos::null || k_ == Teuchos::null || dkdp_ == Teuchos::null) {
+        Errors::Message msg("PDE_DiffusionMFD: Flux, nonlinear coefficient, and its "
+                            "derivative should be provided for Newton correction");
+        Exceptions::amanzi_throw(msg);
+      }
+
+      if (little_k_ == OPERATOR_UPWIND_NONE) {
+        Errors::Message msg("PDE_DiffusionMFD: Newton correction works for upwind methods only");
+        Exceptions::amanzi_throw(msg);
+      }
+
+      const auto& map = *flux->ComponentMap("face");
+
+      dkdp_->ScatterMasterToGhosted();
+      if (map.NumGlobalElements() < map.NumGlobalPoints()) {
+        AddNewtonCorrectionDFN_(flux, u, scalar_factor);
+      } else {
+        AddNewtonCorrectionCell_(flux, u, scalar_factor);
+      }
 
     } else {
       Errors::Message msg("PDE_DiffusionMFD: Newton correction may only be applied to schemas that "
@@ -152,7 +174,18 @@ PDE_DiffusionMFD::UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const Compos
   // add Newton-type corrections
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
     if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
-      if (dkdp_ != Teuchos::null) dkdp_->ScatterMasterToGhosted();
+      if (flux == Teuchos::null || k_ == Teuchos::null || dkdp_ == Teuchos::null) {
+        Errors::Message msg("PDE_DiffusionMFD: Flux, nonlinear coefficient, and its "
+                            "derivative should be provided for Newton correction");
+        Exceptions::amanzi_throw(msg);
+      }
+
+      if (little_k_ == OPERATOR_UPWIND_NONE) {
+        Errors::Message msg("PDE_DiffusionMFD: Newton correction works for upwind methods only");
+        Exceptions::amanzi_throw(msg);
+      }
+
+      dkdp_->ScatterMasterToGhosted();
       AddNewtonCorrectionCell_(flux, u, factor);
 
     } else {
@@ -207,9 +240,9 @@ PDE_DiffusionMFD::UpdateMatricesMixed_little_k_()
   Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
   Teuchos::RCP<const Epetra_MultiVector> k_twin = Teuchos::null;
   if (k_ != Teuchos::null) {
-    if (k_->HasComponent("cell")) k_cell = k_->ViewComponent("cell");
-    if (k_->HasComponent("face")) k_face = k_->ViewComponent("face", true);
-    if (k_->HasComponent("twin")) k_twin = k_->ViewComponent("twin", true);
+    if (k_->HasComponent("cell") ) k_cell = k_->ViewComponent("cell");
+    if (k_->HasComponent("face") ) k_face = k_->ViewComponent("face", true);
+    if (k_->HasComponent("twin") ) k_twin = k_->ViewComponent("twin", true);
   }
 
   // update matrix blocks
@@ -224,7 +257,7 @@ PDE_DiffusionMFD::UpdateMatricesMixed_little_k_()
     double kc(1.0);
     std::vector<double> kf(nfaces, 1.0);
 
-    if (k_cell != Teuchos::null && k_cell.get()) kc = (*k_cell)[0][c];
+    if (k_cell != Teuchos::null && k_cell.get() ) kc = (*k_cell)[0][c];
 
     // -- chefs recommendation: SPD discretization with upwind
     if (little_k_ == OPERATOR_LITTLE_K_DIVK && k_face != Teuchos::null) {
@@ -343,7 +376,7 @@ PDE_DiffusionMFD::UpdateMatricesNodal_()
   if (const_K_.rank() > 0) K = const_K_;
 
   for (int c = 0; c < ncells_owned; c++) {
-    if (K_.get()) K = (*K_)[c];
+    if (K_.get() ) K = (*K_)[c];
 
     auto nodes = mesh_->getCellNodes(c);
     int nnodes = nodes.size();
@@ -403,7 +436,7 @@ PDE_DiffusionMFD::UpdateMatricesTPFA_()
   Ttmp.PutScalar(0.0);
 
   for (int c = 0; c < ncells_owned; c++) {
-    if (K_.get()) Kc = (*K_)[c];
+    if (K_.get() ) Kc = (*K_)[c];
     if (Kc.isZero()) continue; // We skip zero matrices
 
     const auto& faces = mesh_->getCellFaces(c);
@@ -526,8 +559,8 @@ PDE_DiffusionMFD::ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_trial,
   Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
   Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
   if (k_ != Teuchos::null) {
-    if (k_->HasComponent("cell")) k_cell = k_->ViewComponent("cell");
-    if (k_->HasComponent("face")) k_face = k_->ViewComponent("face", true);
+    if (k_->HasComponent("cell") ) k_cell = k_->ViewComponent("cell");
+    if (k_->HasComponent("face") ) k_face = k_->ViewComponent("face", true);
   }
 
   for (int c = 0; c != ncells_owned; ++c) {
@@ -539,7 +572,7 @@ PDE_DiffusionMFD::ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_trial,
     std::vector<double> kf(nfaces, 1.0);
     if (scaled_constraint_) {
       // un-rolling little-k data
-      if (k_cell != Teuchos::null && k_cell.get()) kc = (*k_cell)[0][c];
+      if (k_cell != Teuchos::null && k_cell.get() ) kc = (*k_cell)[0][c];
 
       if (little_k_ == OPERATOR_LITTLE_K_UPWIND) {
         for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
@@ -816,15 +849,6 @@ PDE_DiffusionMFD::AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVec
                                            const Teuchos::Ptr<const CompositeVector>& u,
                                            double scalar_factor)
 {
-  // hack: ignore correction if no flux provided.
-  if (flux == Teuchos::null) return;
-
-  // Correction is zero for linear problems
-  if (k_ == Teuchos::null || dkdp_ == Teuchos::null) return;
-
-  // only works on upwinded methods
-  if (little_k_ == OPERATOR_UPWIND_NONE) return;
-
   const Epetra_MultiVector& kf = *k_->ViewComponent("face");
   const Epetra_MultiVector& dkdp_f = *dkdp_->ViewComponent("face");
   const Epetra_MultiVector& flux_f = *flux->ViewComponent("face");
@@ -867,18 +891,9 @@ PDE_DiffusionMFD::AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVec
                                            const Teuchos::Ptr<const CompositeVector>& u,
                                            const Teuchos::Ptr<const CompositeVector>& factor)
 {
-  // hack: ignore correction if no flux provided.
-  if (flux == Teuchos::null) return;
-
-  // Correction is zero for linear problems
-  if (k_ == Teuchos::null || dkdp_ == Teuchos::null) return;
-
-  // only works on upwinded methods
-  if (little_k_ == OPERATOR_UPWIND_NONE) return;
-
+  const Epetra_MultiVector& flux_f = *flux->ViewComponent("face");
   const Epetra_MultiVector& kf = *k_->ViewComponent("face");
   const Epetra_MultiVector& dkdp_f = *dkdp_->ViewComponent("face");
-  const Epetra_MultiVector& flux_f = *flux->ViewComponent("face");
   const Epetra_MultiVector& factor_cell = *factor->ViewComponent("cell");
 
   // populate the local matrices
@@ -893,9 +908,9 @@ PDE_DiffusionMFD::AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVec
     v = std::abs(kf[0][f]) > 0.0 ? flux_f[0][f] * dkdp_f[0][f] / kf[0][f] : 0.0;
     vmod = std::abs(v);
 
-    double scalar_factor = 0.;
+    double scalar_factor = 0.0;
     for (int j = 0; j < ncells; j++) scalar_factor += factor_cell[0][cells[j]];
-    scalar_factor *= 1. / ncells;
+    scalar_factor *= 1.0 / ncells;
 
     // prototype for future limiters (external or internal ?)
     vmod *= scalar_factor;
@@ -915,6 +930,43 @@ PDE_DiffusionMFD::AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVec
 
     jac_op_->matrices[f] = Aface;
   }
+}
+
+
+/* ******************************************************************
+* Add Newton crrection for a DFN
+****************************************************************** */
+void
+PDE_DiffusionMFD::AddNewtonCorrectionDFN_(const Teuchos::Ptr<const CompositeVector>& flux,
+                                          const Teuchos::Ptr<const CompositeVector>& u,
+                                          double scalar_factor)
+{
+  AMANZI_ASSERT(scalar_factor >= 0.0);
+
+  const auto& kf = *k_->ViewComponent("cell");
+  const auto& dkdp_c = *dkdp_->ViewComponent("cell");
+  
+  // create cell-centered coefficient 
+  auto cvs = Teuchos::rcp(new CompositeVectorSpace());
+  cvs->SetMesh(mesh_)->SetGhosted()->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+
+  auto coef = Teuchos::rcp(new CompositeVector(*cvs));
+  auto& coef_c = *coef->ViewComponent("cell");
+  for (int c = 0; c < ncells_owned; ++c) {
+    coef_c[0][c] *= scalar_factor * dkdp_c[0][c] / (kf[0][c] + 1.0e-14);
+  }
+
+  // create advection operator
+  Teuchos::ParameterList plist;
+  PDE_AdvectionUpwindDFN pde(plist, mesh_);
+
+  pde.Setup(*flux);
+  pde.UpdateMatrices(flux.ptr(), coef.ptr());
+  pde.SetBCs(bcs_trial_[0], bcs_test_[0]);
+  pde.ApplyBCs(true, false, false);
+
+  // copy local matrices
+  jac_op_->matrices = pde.local_op()->matrices;
 }
 
 
@@ -974,7 +1026,7 @@ PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
   u->ScatterMasterToGhosted("face");
 
   if (k_ != Teuchos::null) {
-    if (k_->HasComponent("face")) k_->ScatterMasterToGhosted("face");
+    if (k_->HasComponent("face") ) k_->ScatterMasterToGhosted("face");
   }
 
   const Epetra_MultiVector& u_cell = *u->ViewComponent("cell");
@@ -988,7 +1040,9 @@ PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
     int nfaces = faces.size();
 
     WhetStone::DenseVector v(nfaces + 1), av(nfaces + 1);
-    for (int n = 0; n < nfaces; n++) { v(n) = u_face[0][faces[n]]; }
+    for (int n = 0; n < nfaces; n++) {
+      v(n) = u_face[0][faces[n]];
+    }
     v(nfaces) = u_cell[0][c];
 
     if (local_op_->matrices_shadow[c].NumRows() == 0) {
@@ -1006,7 +1060,9 @@ PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
     }
   }
 
-  for (int f = 0; f != nfaces_owned; ++f) { flux_data[0][f] /= hits[f]; }
+  for (int f = 0; f != nfaces_owned; ++f) {
+    flux_data[0][f] /= hits[f];
+  }
 }
 
 
@@ -1036,7 +1092,9 @@ PDE_DiffusionMFD::UpdateFluxManifold_(const Teuchos::Ptr<const CompositeVector>&
     int nfaces = faces.size();
 
     WhetStone::DenseVector v(nfaces + 1), av(nfaces + 1);
-    for (int n = 0; n < nfaces; n++) { v(n) = u_face[0][faces[n]]; }
+    for (int n = 0; n < nfaces; n++) {
+      v(n) = u_face[0][faces[n]];
+    }
     v(nfaces) = u_cell[0][c];
 
     if (local_op_->matrices_shadow[c].NumRows() == 0) {
@@ -1080,7 +1138,7 @@ PDE_DiffusionMFD::CreateMassMatrices_()
 
   for (int c = 0; c < ncells_owned; c++) {
     int ok;
-    if (K_.get()) Kc = (*K_)[c];
+    if (K_.get() ) Kc = (*K_)[c];
 
     // For problems with degenerate coefficients we should skip WhetStone.
     if (Kc.Trace() == 0.0) {
@@ -1154,7 +1212,9 @@ PDE_DiffusionMFD::CreateMassMatrices_()
 void
 PDE_DiffusionMFD::ScaleMassMatrices(double s)
 {
-  for (int c = 0; c < ncells_owned; c++) { Wff_cells_[c] *= s; }
+  for (int c = 0; c < ncells_owned; c++) {
+    Wff_cells_[c] *= s;
+  }
 }
 
 
@@ -1416,7 +1476,9 @@ PDE_DiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
 
     WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
 
-    for (int n = 0; n != nfaces; ++n) { y_f[0][faces[n]] -= Acell(n, nfaces) * x_c[0][c]; }
+    for (int n = 0; n != nfaces; ++n) {
+      y_f[0][faces[n]] -= Acell(n, nfaces) * x_c[0][c];
+    }
   }
 
   y.GatherGhostedToMaster("face", Add);

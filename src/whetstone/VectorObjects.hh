@@ -30,26 +30,30 @@
 namespace Amanzi {
 namespace WhetStone {
 
-template <class T>
+template<class T>
 class VectorObjects {
  public:
-  VectorObjects() : d_(0){};
-  VectorObjects(int d, int size) : d_(d)
+  VectorObjects()
+    : d_(0) {};
+  VectorObjects(int d, int size)
+    : d_(d)
   {
     polys_.resize(size);
     for (int i = 0; i < size; ++i) polys_[i].Reshape(d_, 0, true);
   }
-  VectorObjects(int d, int size, int order) : d_(d)
+  VectorObjects(int d, int size, int order)
+    : d_(d)
   {
     polys_.resize(size);
     for (int i = 0; i < size; ++i) polys_[i].Reshape(d_, order, true);
   }
-  VectorObjects(const T& p) : d_(p.dimension())
+  VectorObjects(const T& p)
+    : d_(p.dimension())
   {
     polys_.resize(1);
     polys_[0] = p;
   }
-  ~VectorObjects(){};
+  ~VectorObjects() {};
 
   // reshape polynomial with erase (optionally) memory
   void Reshape(int d, int m, int order, bool reset = false)
@@ -69,30 +73,30 @@ class VectorObjects {
   // typical operations with polynomials
   void PutScalar(double val)
   {
-    for (int i = 0; i < size(); ++i) polys_[i].PutScalar(val);
+    for (int i = 0; i < size() ; ++i) polys_[i].PutScalar(val);
   }
   double NormInf() const
   {
     double tmp(0.0);
-    for (int i = 0; i < size(); ++i) tmp = std::max(tmp, polys_[i].NormInf());
+    for (int i = 0; i < size() ; ++i) tmp = std::max(tmp, polys_[i].NormInf());
     return tmp;
   }
 
   // ring algebra
   VectorObjects<T>& operator*=(double val)
   {
-    for (int i = 0; i < polys_.size(); ++i) polys_[i] *= val;
+    for (int i = 0; i < polys_.size() ; ++i) polys_[i] *= val;
     return *this;
   }
 
   VectorObjects<T>& operator+=(const VectorObjects<T>& vp)
   {
-    for (int i = 0; i < polys_.size(); ++i) polys_[i] += vp[i];
+    for (int i = 0; i < polys_.size() ; ++i) polys_[i] += vp[i];
     return *this;
   }
   VectorObjects<T>& operator-=(const VectorObjects<T>& vp)
   {
-    for (int i = 0; i < polys_.size(); ++i) polys_[i] -= vp[i];
+    for (int i = 0; i < polys_.size() ; ++i) polys_[i] -= vp[i];
     return *this;
   }
 
@@ -123,11 +127,11 @@ class VectorObjects {
   // change the coordinate system
   void set_origin(const AmanziGeometry::Point& origin)
   {
-    for (int i = 0; i < size(); ++i) polys_[i].set_origin(origin);
+    for (int i = 0; i < size() ; ++i) polys_[i].set_origin(origin);
   }
   void ChangeOrigin(const AmanziGeometry::Point& origin)
   {
-    for (int i = 0; i < size(); ++i) polys_[i].ChangeOrigin(origin);
+    for (int i = 0; i < size() ; ++i) polys_[i].ChangeOrigin(origin);
   }
 
   // typical operations with vector polynomials
@@ -147,7 +151,9 @@ class VectorObjects {
 
     T tmp(poly[0] * p[0]);
 
-    for (int i = 1; i < p.dim(); ++i) { tmp += poly[i] * p[i]; }
+    for (int i = 1; i < p.dim(); ++i) {
+      tmp += poly[i] * p[i];
+    }
     return tmp;
   }
 
@@ -164,7 +170,9 @@ class VectorObjects {
       tmp.set_origin(poly[0].get_origin());
 
       for (int i = 0; i < d; ++i) {
-        for (int j = 0; j < d; ++j) { tmp[i] += K(i, j) * poly[j]; }
+        for (int j = 0; j < d; ++j) {
+          tmp[i] += K(i, j) * poly[j];
+        }
       }
     }
     return tmp;
@@ -177,7 +185,9 @@ class VectorObjects {
 
     T tmp(v1[0] * v2[0]);
 
-    for (int i = 1; i < v1.size(); ++i) { tmp += v1[i] * v2[i]; }
+    for (int i = 1; i < v1.size(); ++i) {
+      tmp += v1[i] * v2[i];
+    }
     return tmp;
   }
 
@@ -185,7 +195,9 @@ class VectorObjects {
   friend std::ostream& operator<<(std::ostream& os, const VectorObjects<T>& poly)
   {
     os << "Vector Object (length=" << poly.size() << "):" << std::endl;
-    for (int i = 0; i < poly.size(); ++i) { os << "i=" << i << " " << poly[i]; }
+    for (int i = 0; i < poly.size(); ++i) {
+      os << "i=" << i << " " << poly[i];
+    }
     return os;
   }
 
@@ -201,20 +213,15 @@ typedef VectorObjects<SpaceTimePolynomial> VectorSpaceTimePolynomial;
 
 
 // non-member functions
-VectorPolynomial
-Gradient(const Polynomial& p);
-VectorSpaceTimePolynomial
-Gradient(const SpaceTimePolynomial& p);
+VectorPolynomial Gradient(const Polynomial& p);
+VectorSpaceTimePolynomial Gradient(const SpaceTimePolynomial& p);
 
-Polynomial
-Divergence(const VectorObjects<Polynomial>& vp);
-VectorPolynomial
-GradientOnUnitSphere(const Polynomial& poly, int k);
+Polynomial Divergence(const VectorObjects<Polynomial>& vp);
+VectorPolynomial GradientOnUnitSphere(const Polynomial& poly, int k);
 
 // project gradient of the given polynomial on unit sphere using
 // the Taylor expansion with k terms
-VectorPolynomial
-GradientOnUnitSphere(const Polynomial& poly, int k);
+VectorPolynomial GradientOnUnitSphere(const Polynomial& poly, int k);
 
 } // namespace WhetStone
 } // namespace Amanzi

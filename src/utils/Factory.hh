@@ -87,7 +87,7 @@
 namespace Amanzi {
 namespace Utils {
 
-template <typename TBase>
+template<typename TBase>
 class Factory {
  public:
   typedef std::map<std::string, TBase* (*)(Teuchos::ParameterList&)> map_type;
@@ -97,21 +97,27 @@ class Factory {
     typename map_type::iterator iter = GetMap()->find(s);
     if (iter == GetMap()->end()) {
       std::cout << "Factory: cannot get item of type: " << s << std::endl;
-
-      for (typename map_type::iterator piter = GetMap()->begin(); piter != GetMap()->end();
-           ++piter) {
-        std::cout << "  option: " << piter->first << std::endl;
-      }
+      WriteChoices(std::cout);
       return 0;
     }
     return iter->second(plist);
+  }
+
+  static void WriteChoices(std::ostream& os)
+  {
+    os << "Valid types" << std::endl
+       << "--------------------------------------------------" << std::endl;
+    for (auto choice : *GetMap() ) os << " - \"" << choice.first << "\"" << std::endl;
+    os << "--------------------------------------------------" << std::endl << std::endl;
   }
 
  protected:
   static map_type* GetMap()
   {
     static map_type* map_;
-    if (!map_) { map_ = new map_type; }
+    if (!map_) {
+      map_ = new map_type;
+    }
     return map_;
   }
 
@@ -119,10 +125,10 @@ class Factory {
   static map_type* map_;
 };
 
-template <typename TBase>
+template<typename TBase>
 typename Factory<TBase>::map_type* Factory<TBase>::map_;
 
-template <typename TBase, typename TDerived>
+template<typename TBase, typename TDerived>
 TBase*
 CreateT(Teuchos::ParameterList& plist)
 {
@@ -130,7 +136,7 @@ CreateT(Teuchos::ParameterList& plist)
 }
 
 
-template <typename TBase, typename TDerived>
+template<typename TBase, typename TDerived>
 class RegisteredFactory : public Factory<TBase> {
  public:
   // Constructor for the registered factory.  Needs some error checking in
@@ -138,12 +144,12 @@ class RegisteredFactory : public Factory<TBase> {
   // call themselves the same thing) --etc
   RegisteredFactory(const std::string& s)
   {
-    for (typename Factory<TBase>::map_type::iterator iter = Factory<TBase>::GetMap()->begin();
+    for (typename Factory<TBase>::map_type::iterator iter = Factory<TBase>::GetMap() ->begin();
          iter != Factory<TBase>::GetMap()->end();
          ++iter) {}
     Factory<TBase>::GetMap()->insert(
       std::pair<std::string, TBase* (*)(Teuchos::ParameterList&)>(s, &CreateT<TBase, TDerived>));
-    for (typename Factory<TBase>::map_type::iterator iter = Factory<TBase>::GetMap()->begin();
+    for (typename Factory<TBase>::map_type::iterator iter = Factory<TBase>::GetMap() ->begin();
          iter != Factory<TBase>::GetMap()->end();
          ++iter) {}
   }

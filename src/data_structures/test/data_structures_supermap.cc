@@ -77,7 +77,9 @@ CHECK_OWNED_SUBSET_GHOST(const std::vector<int>& owned,
 {
   CHECK_EQUAL(n_owned, owned.size());
   CHECK_EQUAL(n_ghost, ghost.size());
-  for (int i = 0; i != n_owned; ++i) { CHECK_EQUAL(owned[i], ghost[i]); }
+  for (int i = 0; i != n_owned; ++i) {
+    CHECK_EQUAL(owned[i], ghost[i]);
+  }
 }
 
 void
@@ -109,9 +111,13 @@ SuperMap_Manual(bool continuous)
   // make a ghosted and local map 1
   std::vector<int> gids(3);
   if (continuous) {
-    for (int i = 0; i != 3; ++i) { gids[i] = 3 * MyPID + i; }
+    for (int i = 0; i != 3; ++i) {
+      gids[i] = 3 * MyPID + i;
+    }
   } else {
-    for (int i = 0; i != 3; ++i) { gids[i] = 3 * (NumProc - MyPID) + i; }
+    for (int i = 0; i != 3; ++i) {
+      gids[i] = 3 * (NumProc - MyPID) + i;
+    }
   }
   Teuchos::RCP<Epetra_Map> owned_map1 =
     Teuchos::rcp(new Epetra_Map(3 * NumProc, 3, &gids[0], 0, *comm));
@@ -123,7 +129,9 @@ SuperMap_Manual(bool continuous)
 
   // make a ghosted and local map 2
   std::vector<int> gids2(5);
-  for (int i = 0; i != 5; ++i) { gids2[i] = 5 * MyPID + i; }
+  for (int i = 0; i != 5; ++i) {
+    gids2[i] = 5 * MyPID + i;
+  }
   Teuchos::RCP<Epetra_Map> owned_map2 =
     Teuchos::rcp(new Epetra_Map(5 * NumProc, 5, &gids2[0], 0, *comm));
 
@@ -190,7 +198,9 @@ SuperMap_Manual(bool continuous)
   Epetra_Vector ghosted(*map.GhostedMap());
   Epetra_Import importer(*map.GhostedMap(), *map.Map());
 
-  for (int i = 0; i != map.Map()->NumMyElements(); ++i) { owned[i] = map.Map()->GID(i); }
+  for (int i = 0; i != map.Map()->NumMyElements(); ++i) {
+    owned[i] = map.Map()->GID(i);
+  }
 
   int ierr = ghosted.Import(owned, importer, Insert);
   ghosted.Print(std::cout);

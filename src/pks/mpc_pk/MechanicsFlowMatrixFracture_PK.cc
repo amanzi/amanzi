@@ -16,7 +16,6 @@
 #include <string>
 
 #include "PK_Utils.hh"
-#include "Transport_PK.hh"
 
 #include "MechanicsFlowMatrixFracture_PK.hh"
 
@@ -60,7 +59,7 @@ MechanicsFlowMatrixFracture_PK::Setup()
 
 
 /* ******************************************************************
-* Extended treatment of time step in transport PK.
+* Extended treatment of timestep in transport PK.
 ****************************************************************** */
 bool
 MechanicsFlowMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
@@ -68,7 +67,6 @@ MechanicsFlowMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool rei
   auto pk0 = sub_pks_[0];
   bool fail = pk0->AdvanceStep(t_old, t_new, reinit);
   if (fail) return fail;
-  pk0->CommitStep(t_old, t_new, Tags::DEFAULT);
 
   auto pk1 = sub_pks_[1];
   fail = pk1->AdvanceStep(t_old, t_new, reinit);

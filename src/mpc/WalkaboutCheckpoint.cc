@@ -88,7 +88,9 @@ WalkaboutCheckpoint::CalculateDarcyVelocity(Teuchos::RCP<State>& S,
       for (int i = 0; i < d; i++) {
         rhs(i) += normal[i] * flux[0][f];
         matrix(i, i) += normal[i] * normal[i];
-        for (int j = i + 1; j < d; j++) { matrix(j, i) = matrix(i, j) += normal[i] * normal[j]; }
+        for (int j = i + 1; j < d; j++) {
+          matrix(j, i) = matrix(i, j) += normal[i] * normal[j];
+        }
       }
     }
 
@@ -97,8 +99,7 @@ WalkaboutCheckpoint::CalculateDarcyVelocity(Teuchos::RCP<State>& S,
 
     // enforce constraint: formulas follow from solution of saddle-point problem
     if (projection) {
-      const auto pk_flow = dynamic_cast<Flow::Flow_PK*>(pk_.get());
-      const auto& bc = pk_flow->op_bc();
+      auto bc = S->GetPtrW<Operators::BCs>("bcs_flow", Tags::DEFAULT, "state");
       const auto& bc_model = bc->bc_model();
       const auto& bc_value = bc->bc_value();
 
@@ -141,7 +142,9 @@ WalkaboutCheckpoint::CalculateDarcyVelocity(Teuchos::RCP<State>& S,
           node_basis[m] /= node_area[m];
           node_flux[m] /= node_area[m];
 
-          for (int k = 0; k < d; ++k) { N(k, m) = node_basis[m][k]; }
+          for (int k = 0; k < d; ++k) {
+            N(k, m) = node_basis[m][k];
+          }
           f(m) = node_flux[m];
         }
 
@@ -219,7 +222,9 @@ WalkaboutCheckpoint::CalculateData(Teuchos::RCP<State>& S,
       auto cells = mesh->getSetEntities(
         regs[n], AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
-      for (auto it = cells.begin(); it != cells.end(); ++it) { cell_ids[*it] = ids[n]; }
+      for (auto it = cells.begin(); it != cells.end(); ++it) {
+        cell_ids[*it] = ids[n];
+      }
     }
   }
 
@@ -230,7 +235,7 @@ WalkaboutCheckpoint::CalculateData(Teuchos::RCP<State>& S,
   }
 
   ParallelCommunication pp(mesh);
-  pp.CopyMasterCell2GhostCell(cell_ids);
+  pp.CopyMasterEntity2GhostEntity(AmanziMesh::Entity_kind::CELL, cell_ids);
 
   // prepare reconstrction data
   Teuchos::ParameterList plist;
@@ -327,7 +332,9 @@ WalkaboutCheckpoint::WriteDataFile(Teuchos::RCP<State>& S, Teuchos::RCP<PK> pk)
     // -- coordinates of mesh nodes
     int ndata = xyz.size();
     for (int n = 0; n < ndata; n++) {
-      for (int i = 0; i < dim; i++) { (*(*vs)(i))[n] = xyz[n][i]; }
+      for (int i = 0; i < dim; i++) {
+        (*(*vs)(i))[n] = xyz[n][i];
+      }
     }
     std::vector<std::string> name;
     name.resize(0);
@@ -342,7 +349,9 @@ WalkaboutCheckpoint::WriteDataFile(Teuchos::RCP<State>& S, Teuchos::RCP<PK> pk)
     vs->PutScalar(0.0);
     vt->PutScalar(0.0);
     for (int n = 0; n < ndata; n++) {
-      for (int i = 0; i < dim; i++) { (*(*vs)(i))[n] = velocity[n][i]; }
+      for (int i = 0; i < dim; i++) {
+        (*(*vs)(i))[n] = velocity[n][i];
+      }
     }
     name.resize(0);
     name.push_back("pore velocity x");
@@ -379,7 +388,9 @@ WalkaboutCheckpoint::WriteDataFile(Teuchos::RCP<State>& S, Teuchos::RCP<PK> pk)
       vs = Teuchos::rcp(new Epetra_MultiVector(source_map, 1));
       vt = Teuchos::rcp(new Epetra_MultiVector(target_map, 1));
 
-      for (int n = 0; n < ndata; n++) { (*(*vs)(0))[n] = isotherm_kd[n]; }
+      for (int n = 0; n < ndata; n++) {
+        (*(*vs)(0))[n] = isotherm_kd[n];
+      }
 
       name.resize(0);
       name.push_back("isotherm kd");
@@ -391,7 +402,9 @@ WalkaboutCheckpoint::WriteDataFile(Teuchos::RCP<State>& S, Teuchos::RCP<PK> pk)
     vs = Teuchos::rcp(new Epetra_MultiVector(source_map, 1));
     vt = Teuchos::rcp(new Epetra_MultiVector(target_map, 1));
 
-    for (int n = 0; n < ndata; n++) { (*(*vs)(0))[n] = material_ids[n]; }
+    for (int n = 0; n < ndata; n++) {
+      (*(*vs)(0))[n] = material_ids[n];
+    }
 
     name.resize(0);
     name.push_back("material ids");

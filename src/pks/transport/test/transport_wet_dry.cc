@@ -97,10 +97,14 @@ runTest(std::string xmlfile)
     iter++;
 
     printf("T=%8.4f  C_0(x):", t_new);
-    for (int k = 3; k < 100; k += 10) { printf("%8.5f", (*tcc)[0][k]); }
+    for (int k = 3; k < 100; k += 10) {
+      printf("%8.5f", (*tcc)[0][k]);
+    }
     printf("\n");
 
-    for (int c = 0; c < 10; ++c) { CHECK((*tcc)[0][c] <= 1.0 && (*tcc)[0][c] >= 0.0); }
+    for (int c = 0; c < 10; ++c) {
+      CHECK((*tcc)[0][c] <= 1.0 && (*tcc)[0][c] >= 0.0);
+    }
   }
   CHECK(iter < 45);
 

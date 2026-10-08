@@ -627,13 +627,13 @@ Layout::Build()
     MPI_Comm comm = ParallelDescriptor::Communicator();
 
 #if PETSC_VERSION_LT(3,4,3)
-    ierr = MatCreateMPIAIJ(comm, n, n, N, N, d_nz, PETSC_NULL, o_nz, PETSC_NULL, &J_mat); CHKPETSC(ierr);
+    ierr = MatCreateMPIAIJ(comm, n, n, N, N, d_nz, PETSC_NULLPTR, o_nz, PETSC_NULLPTR, &J_mat); CHKPETSC(ierr);
 #else
     ierr = MatCreate(comm, &J_mat); CHKPETSC(ierr);
     ierr = MatSetSizes(J_mat,n,n,N,N);  CHKPETSC(ierr);
     ierr = MatSetFromOptions(J_mat); CHKPETSC(ierr);
-    ierr = MatSeqAIJSetPreallocation(J_mat, d_nz*d_nz, PETSC_NULL); CHKPETSC(ierr);
-    ierr = MatMPIAIJSetPreallocation(J_mat, d_nz, PETSC_NULL, o_nz, PETSC_NULL); CHKPETSC(ierr);
+    ierr = MatSeqAIJSetPreallocation(J_mat, d_nz*d_nz, PETSC_NULLPTR); CHKPETSC(ierr);
+    ierr = MatMPIAIJSetPreallocation(J_mat, d_nz, PETSC_NULLPTR, o_nz, PETSC_NULLPTR); CHKPETSC(ierr);
 #endif
     mats_I_created.push_back(&J_mat);
     ierr = VecCreateMPI(comm,nNodes_local,nNodes_global,&JRowScale_vec); CHKPETSC(ierr);
@@ -733,8 +733,6 @@ Layout::MFTowerToVec(Vec&           V,
     BL_ASSERT(initialized);
     BL_ASSERT(IsCompatible(mft));
 
-    int myproc = ParallelDescriptor::MyProc();
-    bool isio = ParallelDescriptor::IOProcessor();
     int numLevs = mft.NumLevels();
     BL_ASSERT(numLevs <= nLevs);
 
@@ -792,7 +790,6 @@ Layout::VecToMFTower(MFTower&   mft,
     BL_ASSERT(initialized);
     BL_ASSERT(IsCompatible(mft));
 
-    bool isio = ParallelDescriptor::IOProcessor();
     int numLevs = mft.NumLevels();
     BL_ASSERT(numLevs<=nLevs);
 

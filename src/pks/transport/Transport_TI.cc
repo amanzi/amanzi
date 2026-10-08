@@ -131,7 +131,9 @@ Transport_PK::FunctionalTimeDerivative_MUSCL_(double t,
         tcc_out += u * component_c[0][c];
       }
 
-      for (int n = 0; n < downwind_cells_[f].size(); ++n) { flux_in -= downwind_flux_[f][n]; }
+      for (int n = 0; n < downwind_cells_[f].size(); ++n) {
+        flux_in -= downwind_flux_[f][n];
+      }
       if (flux_in == 0.0) flux_in = 1e-12;
 
       // update solutes
@@ -139,7 +141,9 @@ Transport_PK::FunctionalTimeDerivative_MUSCL_(double t,
         int c = upwind_cells_[f][n];
         u = upwind_flux_[f][n];
 
-        if (c < ncells_owned) { f_c[0][c] -= u * component_c[0][c]; }
+        if (c < ncells_owned) {
+          f_c[0][c] -= u * component_c[0][c];
+        }
       }
 
       for (int n = 0; n < downwind_cells_[f].size(); ++n) {
@@ -356,7 +360,9 @@ Transport_PK::FunctionalTimeDerivative_FCT_(double t,
   }
   residual.GatherGhostedToMaster();
 
-  for (int c = 0; c < ncells_owned; ++c) { f_c[0][c] = residual_c[0][c]; }
+  for (int c = 0; c < ncells_owned; ++c) {
+    f_c[0][c] = residual_c[0][c];
+  }
 
   // process external sources
   if (srcs_.size() != 0) {

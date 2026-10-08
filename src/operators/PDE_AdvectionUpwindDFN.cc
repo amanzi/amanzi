@@ -11,7 +11,7 @@
 /*
   Operators
 
-  Advection operator on a fracture network.
+  Upwind-based scalar advection operator on manifolds.
 */
 
 #include <vector>
@@ -78,7 +78,9 @@ PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>
     }
 
     double flux_in(0.0);
-    for (int n = 0; n < ndownwind; ++n) { flux_in -= downwind_flux_dfn_[f][n]; }
+    for (int n = 0; n < ndownwind; ++n) {
+      flux_in -= downwind_flux_dfn_[f][n];
+    }
     if (flux_in == 0.0) flux_in = 1e-12;
 
     for (int n = 0; n < ndownwind; ++n) {
@@ -87,7 +89,7 @@ PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>
 
       for (int m = 0; m < nupwind; m++) {
         double v = upwind_flux_dfn_[f][m];
-        for (int j = 0; j < cells.size(); j++) {
+        for (int j = 0; j < ncells; j++) {
           if (cells[j] == c) {
             Aface(j, upwind_loc[m]) = (u / flux_in) * v;
             break;
@@ -95,6 +97,7 @@ PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>
         }
       }
     }
+
     matrix[f] = Aface;
   }
 }
@@ -145,7 +148,9 @@ PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>
     }
 
     double flux_in(0.0);
-    for (int n = 0; n < ndownwind; ++n) { flux_in -= downwind_flux_dfn_[f][n]; }
+    for (int n = 0; n < ndownwind; ++n) {
+      flux_in -= downwind_flux_dfn_[f][n];
+    }
     if (flux_in == 0.0) flux_in = 1e-12;
 
     for (int n = 0; n < ndownwind; ++n) {
@@ -286,7 +291,7 @@ PDE_AdvectionUpwindDFN::IdentifyUpwindCells_(const CompositeVector& u)
       int ndofs = map->ElementSize(f);
       if (ndofs > 1) g += Operators::UniqueIndexFaceToCells(*mesh_, f, c);
 
-      double flux = u_f[0][g] * dirs[i]; // exterior flux
+      double flux = u_f[0][g] * dirs[i]; // exterior flux. Note that dirs could be negative
       if (flux >= 0.0) {
         upwind_cells_dfn_[f].push_back(c);
         upwind_flux_dfn_[f].push_back(flux);
@@ -296,6 +301,16 @@ PDE_AdvectionUpwindDFN::IdentifyUpwindCells_(const CompositeVector& u)
       }
     }
   }
+}
+
+
+/* ******************************************************************
+* Initialize and re-initialzied parameters in the derived object.
+****************************************************************** */
+void
+PDE_AdvectionUpwindDFN::InitAdvection_(Teuchos::ParameterList& plist)
+{
+  local_op_->schema_string = "AdvectionDFN: FACE_CELL";
 }
 
 } // namespace Operators

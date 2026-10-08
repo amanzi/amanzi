@@ -19,12 +19,13 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include "dbc.hh"
 #include "Factory.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
-template <typename EOS>
+template<typename EOS>
 class EOSFactory : public Utils::Factory<EOS> {
  public:
   using Utils::Factory<EOS>::CreateInstance;
@@ -39,7 +40,10 @@ class EOSFactory : public Utils::Factory<EOS> {
       name = plist.get<std::string>("com type");
     }
 
-    return Teuchos::rcp(CreateInstance(name, plist));
+    auto model = CreateInstance(name, plist);
+    if (model == nullptr) AMANZI_ASSERT(false);
+
+    return Teuchos::rcp(model);
   }
 };
 

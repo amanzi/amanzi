@@ -69,7 +69,9 @@ MFD3D_CrouzeixRaviartSerendipity::H1consistency(int c,
   // calculate degrees of freedom
   Polynomial poly(d_, order_), pf, pc;
   pf.Reshape(d_ - 1, order_ - 1);
-  if (order_ > 3) { pc.Reshape(d_, order_ - 4); }
+  if (order_ > 3) {
+    pc.Reshape(d_, order_ - 4);
+  }
 
   int nd = poly.size();
   int ndf = pf.size();
@@ -213,7 +215,9 @@ MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(int c,
   if (ndof_cs > 0) {
     AMANZI_ASSERT(moments != NULL);
     const DenseVector& v3 = moments->coefs();
-    for (int n = 0; n < ndof_cs; ++n) { vdof(ndof_f + n) = v3(n); }
+    for (int n = 0; n < ndof_cs; ++n) {
+      vdof(ndof_f + n) = v3(n);
+    }
   }
 
   Ns.Multiply(vdof, v1, true);
@@ -234,7 +238,9 @@ MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(int c,
     M.Multiply(v5, v4, false);
 
     vdof.Reshape(ndof_f + ndof_c);
-    for (int n = ndof_cs; n < ndof_c; ++n) { vdof(ndof_f + n) = v4(n) / mesh_->getCellVolume(c); }
+    for (int n = ndof_cs; n < ndof_c; ++n) {
+      vdof(ndof_f + n) = v4(n) / mesh_->getCellVolume(c);
+    }
 
     R_.Multiply(vdof, v4, true);
     G_.Multiply(v4, v5, false);
@@ -257,9 +263,13 @@ MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(int c,
     M2.Multiply(v5, v6, false);
 
     const DenseVector& v3 = moments->coefs();
-    for (int n = 0; n < ndof_cs; ++n) { v4(n) = v3(n) * mesh_->getCellVolume(c); }
+    for (int n = 0; n < ndof_cs; ++n) {
+      v4(n) = v3(n) * mesh_->getCellVolume(c);
+    }
 
-    for (int n = 0; n < nd - ndof_cs; ++n) { v4(ndof_cs + n) = v6(n); }
+    for (int n = 0; n < nd - ndof_cs; ++n) {
+      v4(ndof_cs + n) = v6(n);
+    }
 
     M.Inverse();
     M.Multiply(v4, v5, false);

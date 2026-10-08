@@ -28,7 +28,9 @@ void
 PreconditionerML::set_matrices(const Teuchos::RCP<Epetra_CrsMatrix>& m,
                                const Teuchos::RCP<Epetra_CrsMatrix>& h)
 {
-  if (h == Teuchos::null && ML_.get()) { ML_->DestroyPreconditioner(); }
+  if (h == Teuchos::null && ML_.get()) {
+    ML_->DestroyPreconditioner();
+  }
   Preconditioner::set_matrices(m, h);
 }
 

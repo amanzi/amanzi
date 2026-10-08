@@ -495,10 +495,10 @@
           <ParameterList name="timestep controller standard parameters">
             <Parameter name="max iterations" type="int" value="15"/>
             <Parameter name="min iterations" type="int" value="10"/>
-            <Parameter name="time step increase factor" type="double" value="1.25000000000000000e+00"/>
-            <Parameter name="time step reduction factor" type="double" value="1.00000000000000006e-01"/>
-            <Parameter name="max time step" type="double" value="3.15575999999999953e+06"/>
-            <Parameter name="min time step" type="double" value="9.99999999999999945e-21"/>
+            <Parameter name="timestep increase factor" type="double" value="1.25000000000000000e+00"/>
+            <Parameter name="timestep reduction factor" type="double" value="1.00000000000000006e-01"/>
+            <Parameter name="max timestep" type="double" value="3.15575999999999953e+06"/>
+            <Parameter name="min timestep" type="double" value="9.99999999999999945e-21"/>
           </ParameterList>
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
@@ -537,10 +537,10 @@
           <ParameterList name="timestep controller standard parameters">
             <Parameter name="max iterations" type="int" value="15"/>
             <Parameter name="min iterations" type="int" value="10"/>
-            <Parameter name="time step increase factor" type="double" value="1.25000000000000000e+00"/>
-            <Parameter name="time step reduction factor" type="double" value="5.00000000000000000e-01"/>
-            <Parameter name="max time step" type="double" value="1.00000000000000000e+07"/>
-            <Parameter name="min time step" type="double" value="9.99999999999999945e-21"/>
+            <Parameter name="timestep increase factor" type="double" value="1.25000000000000000e+00"/>
+            <Parameter name="timestep reduction factor" type="double" value="5.00000000000000000e-01"/>
+            <Parameter name="max timestep" type="double" value="1.00000000000000000e+07"/>
+            <Parameter name="min timestep" type="double" value="9.99999999999999945e-21"/>
           </ParameterList>
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">

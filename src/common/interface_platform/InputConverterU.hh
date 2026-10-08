@@ -15,6 +15,8 @@
 #ifndef AMANZI_INPUT_CONVERTER_UNSTRUCTURED_HH_
 #define AMANZI_INPUT_CONVERTER_UNSTRUCTURED_HH_
 
+#include <map>
+
 // TPLs
 #include "xercesc/dom/DOM.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -35,7 +37,8 @@ typedef std::map<std::string, std::vector<std::string>> Tree;
 
 struct Phase {
  public:
-  Phase() : active(false){};
+  Phase()
+    : active(false) {};
 
   bool active;
   std::string primary;
@@ -47,8 +50,10 @@ typedef std::map<std::string, Phase> PhaseTree;
 
 struct BCs {
  public:
-  BCs() : mol_mass(-1.0){};
-  BCs(double value) : mol_mass(value){};
+  BCs()
+    : mol_mass(-1.0), coupling(false) {};
+  BCs(double value)
+    : mol_mass(value) {};
 
   std::string type;
   std::vector<double> times, values, fluxes;
@@ -57,6 +62,30 @@ struct BCs {
 
   std::string filename, xheader, yheader, variable;
   double mol_mass;
+
+  std::string kinematic;
+
+  bool coupling;
+};
+
+
+struct MPC {
+  MPC()
+    : basename(""),
+      submodel(""),
+      is_pk(false),
+      is_mpc(false),
+      matrix_fracture(false),
+      mpc_type(""),
+      parsed(false) {};
+  std::string basename;
+  std::string submodel;
+  std::vector<std::string> pks;
+  bool is_pk;
+  bool is_mpc;
+  bool matrix_fracture;
+  std::string mpc_type;
+  bool parsed;
 };
 
 
@@ -71,20 +100,19 @@ class InputConverterU : public InputConverter {
       const_atm_pressure_(ATMOSPHERIC_PRESSURE),
       fracture_network_(false),
       flow_single_phase_(false),
-      compressibility_(false),
+      use_porosity_model_(false),
       beta_(0.0),
       mesh_rectangular_(false),
       use_transport_porosity_(false),
       use_transport_dispersion_(true),
       transport_permeability_(false),
-      transport_implicit_(false),
       restart_(false),
       ic_time_flow_(0.0),
-      ic_time_(0.0),
+      ic_time_chemistry_(0.0),
       output_prefix_(""),
       io_walkabout_(false),
       io_mesh_info_(false),
-      vo_(NULL){};
+      vo_(NULL) {};
 
   explicit InputConverterU(const std::string& input_filename,
                            xercesc::DOMDocument* input_doc,
@@ -97,20 +125,19 @@ class InputConverterU : public InputConverter {
       const_atm_pressure_(ATMOSPHERIC_PRESSURE),
       fracture_network_(false),
       flow_single_phase_(false),
-      compressibility_(false),
+      use_porosity_model_(false),
       beta_(0.0),
       mesh_rectangular_(false),
       use_transport_porosity_(false),
       use_transport_dispersion_(true),
       transport_permeability_(false),
-      transport_implicit_(false),
       restart_(false),
       ic_time_flow_(0.0),
-      ic_time_(0.0),
+      ic_time_chemistry_(0.0),
       output_prefix_(output_prefix),
       io_walkabout_(false),
       io_mesh_info_(false),
-      vo_(NULL){};
+      vo_(NULL) {};
 
   ~InputConverterU()
   {
@@ -128,6 +155,7 @@ class InputConverterU : public InputConverter {
   void ParseFractureNetwork_();
   void ModifyDefaultPhysicalConstants_();
   void ParseGlobalNumericalControls_();
+  void ParseMisc_();
 
   BCs ParseCondList_(DOMNode* node,
                      double vmin,
@@ -159,15 +187,22 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateHypreAMG_();
   Teuchos::ParameterList TranslateBILU_();
   Teuchos::ParameterList TranslateILU_();
-  Teuchos::ParameterList
-  TranslateLinearSolvers_(std::string tags, std::string method_default, std::string method_enforce);
+  Teuchos::ParameterList TranslateLinearSolvers_(std::string tags,
+                                                 std::string method_default,
+                                                 std::string method_enforce);
   Teuchos::ParameterList TranslateSolvers_();
   Teuchos::ParameterList TranslateState_();
   Teuchos::ParameterList TranslateMaterialsPartition_();
   Teuchos::ParameterList TranslateCycleDriver_();
-  Teuchos::ParameterList TranslateCycleDriverNew_();
   Teuchos::ParameterList TranslateTimePeriodControls_();
   Teuchos::ParameterList TranslatePKs_(Teuchos::ParameterList& glist);
+
+  Teuchos::ParameterList TranslateSinglePhysicsPK_(const std::string& prefix,
+                                                   const std::string& domain,
+                                                   const std::string& pkname,
+                                                   const std::string& pk_model,
+                                                   Teuchos::ParameterList& glist);
+
   Teuchos::ParameterList TranslateDiffusionOperator_(const std::string& disc_methods,
                                                      const std::string& pc_method,
                                                      const std::string& nonlinear_solver,
@@ -186,7 +221,11 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateInitialization_(const std::string& unstr_controls);
 
   // -- general
-  Teuchos::ParameterList TranslateSources_(const std::string& domain, const std::string& pkname);
+  Teuchos::ParameterList TranslateSources_(const std::string& domain,
+                                           const std::string& pkname,
+                                           const std::string& pk_model);
+
+  void CreateSubmesh_(Teuchos::ParameterList& mesh_list, bool all_faces);
 
   // -- state
   void TranslateCommonContinuumFields_(const std::string& domain,
@@ -221,18 +260,22 @@ class InputConverterU : public InputConverter {
                                    const Key& field,
                                    const Key& key,
                                    const std::string& type,
-                                   const std::string& eos_table_name);
+                                   const std::string& eos_table_name,
+                                   const std::vector<KeyPair>& deps = {});
 
   void AddConstantFieldInitialization_(Teuchos::ParameterList& out_ev,
                                        const std::string& field,
                                        const std::string& region,
                                        double val);
+  void TranslatePOM_(const std::string& domain,
+                     Teuchos::ParameterList& out_ic,
+                     Teuchos::ParameterList& out_ev);
 
   // -- flow
-  Teuchos::ParameterList
-  TranslateFlow_(const std::string& mode, const std::string& domain, const std::string& pk_model);
+  Teuchos::ParameterList TranslateFlow_(const std::string& mode,
+                                        const std::string& domain,
+                                        const std::string& pk_model);
   Teuchos::ParameterList TranslateWRM_(const std::string& pk_name);
-  Teuchos::ParameterList TranslatePOM_(const std::string& domain);
   Teuchos::ParameterList TranslatePPM_(const std::string& domain);
   Teuchos::ParameterList TranslateFAM_(const std::string& domain);
   Teuchos::ParameterList TranslateFlowMSM_();
@@ -261,6 +304,7 @@ class InputConverterU : public InputConverter {
 
   // -- mechanics
   Teuchos::ParameterList TranslateMechanics_(const std::string& domain);
+  Teuchos::ParameterList TranslateMechanicsSSM_();
   Teuchos::ParameterList TranslateMechanicsBCs_(const std::string& domain);
 
   // -- backward compatibility
@@ -277,8 +321,8 @@ class InputConverterU : public InputConverter {
 
   // -- multiphase
   bool multiphase_, isothermal_;
-  Teuchos::ParameterList
-  TranslateMultiphase_(const std::string& domain, Teuchos::ParameterList& state_list);
+  Teuchos::ParameterList TranslateMultiphase_(const std::string& domain,
+                                              Teuchos::ParameterList& state_list);
   Teuchos::ParameterList TranslateMultiphaseBCs_();
 
   // -- shallow water
@@ -286,7 +330,7 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateShallowWaterBCs_();
 
   // -- mpc pks
-  bool coupled_flow_, coupled_transport_, coupled_energy_, coupled_multiphase_;
+  bool coupled_flow_;
   std::vector<std::string> fracture_regions_, surface_regions_;
 
   void ProcessMacros_(const std::string& prefix,
@@ -294,8 +338,8 @@ class InputConverterU : public InputConverter {
                       Teuchos::ParameterList& mPL,
                       Teuchos::ParameterList& outPL);
 
-  void PopulatePKTree_(Teuchos::ParameterList& pk_tree, const std::string pk_name);
-  void RegisterPKsList_(Teuchos::ParameterList& pk_tree, Teuchos::ParameterList& pks_list);
+  std::pair<bool, std::vector<std::string>> RegisterPKsList_(Teuchos::ParameterList& pk_tree,
+                                                             Teuchos::ParameterList& pks_list);
 
   void FinalizeMPC_PKs_(Teuchos::ParameterList& glist);
 
@@ -315,11 +359,10 @@ class InputConverterU : public InputConverter {
   bool TranslateGenericMath_(const BCs& bcs, Teuchos::ParameterList& bcfn);
 
   // -- sort functions
-  template <class Iterator>
+  template<class Iterator>
   Iterator SelectUniqueEntries(Iterator first, Iterator last);
 
   // -- miscalleneous
-  DOMNode* GetPKChemistryPointer_(bool& flag);
   bool FindNameInVector_(const std::string& name, const std::vector<std::string>& list);
   std::string CreateNameFromVector_(const std::vector<std::string>& list);
   bool WeightVolumeSubmodel_(const std::vector<std::string>& regions);
@@ -359,8 +402,8 @@ class InputConverterU : public InputConverter {
   // global flow constants
   std::string flow_model_; // global value
   bool flow_single_phase_; // runtime value
-  bool compressibility_;
-  double rho_, beta_;
+  bool use_porosity_model_, linearized_aperture_;
+  double rho_, molar_mass_, beta_, ref_mu_, ref_temp_, ref_sutherland_;
 
   // global mesh data
   bool mesh_rectangular_;
@@ -372,14 +415,11 @@ class InputConverterU : public InputConverter {
   std::vector<std::string> comp_names_all_;
   std::map<std::string, double> solute_molar_mass_;
 
-  // global mpc parameters
-  std::vector<std::string> pks_strong_, pks_weak_;
-
   // global state parameters
   // -- initialization filename, different from restart
   bool restart_;
   std::string init_filename_;
-  double ic_time_flow_, ic_time_;
+  double ic_time_flow_, ic_time_chemistry_;
 
   // global solvers parameters
   std::vector<std::pair<std::string, double>> gmres_solvers_;
@@ -423,7 +463,7 @@ InputConverterU::HasSubmodel_(const std::string& model, const std::string& submo
 /* ******************************************************************
 * Selects unique entries and places them in [first, last)
 ****************************************************************** */
-template <class Iterator>
+template<class Iterator>
 Iterator
 InputConverterU::SelectUniqueEntries(Iterator first, Iterator last)
 {

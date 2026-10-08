@@ -17,9 +17,9 @@
 #include "Teuchos_ParameterList.hpp"
 
 #if defined(HAVE_MUELU_EPETRA)
-#  include "MueLu.hpp"
-#  include "MueLu_EpetraOperator.hpp"
-#  include "MueLu_CreateEpetraPreconditioner.hpp"
+#include "MueLu.hpp"
+#include "MueLu_EpetraOperator.hpp"
+#include "MueLu_CreateEpetraPreconditioner.hpp"
 #endif
 
 #include "exceptions.hh"
@@ -30,7 +30,8 @@ namespace AmanziSolvers {
 
 class PreconditionerMueLu : public Preconditioner {
  public:
-  PreconditionerMueLu() : Preconditioner(){};
+  PreconditionerMueLu()
+    : Preconditioner() {};
 
   virtual void set_matrices(const Teuchos::RCP<Epetra_CrsMatrix>& m,
                             const Teuchos::RCP<Epetra_CrsMatrix>& h) override final;

@@ -15,13 +15,18 @@
 #pragma once
 
 #include <iostream>
+#include "errors.hh"
 
 namespace Amanzi {
 
 class Tag {
  public:
-  Tag() : tag_("") {}
-  explicit Tag(const std::string& tag) : tag_(tag) {}
+  Tag()
+    : tag_("")
+  {}
+  explicit Tag(const std::string& tag)
+    : tag_(tag)
+  {}
   Tag(const Tag& other) = default;
 
   void set(const std::string& key) { tag_ = key; }
@@ -46,6 +51,15 @@ class Tag {
   std::string tag_;
 };
 
+
+inline Errors::Message&
+operator<<(Errors::Message& message, const Tag& tag)
+{
+  message.add_data(tag.get());
+  return message;
+}
+
+
 // non-member function
 inline Tag
 make_tag(const std::string& key)
@@ -61,7 +75,7 @@ make_tag(const std::string& key)
 
 namespace std {
 
-template <>
+template<>
 struct hash<Amanzi::Tag> {
   std::size_t operator()(const Amanzi::Tag& tag) const
   {

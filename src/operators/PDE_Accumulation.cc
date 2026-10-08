@@ -21,6 +21,7 @@
 #include "Operator_Edge.hh"
 #include "Operator_Node.hh"
 #include "Op_Cell_Cell.hh"
+#include "Op_Face_Face.hh"
 #include "Op_Edge_Edge.hh"
 #include "Op_Node_Node.hh"
 #include "Op_SurfaceCell_SurfaceCell.hh"
@@ -45,11 +46,15 @@ PDE_Accumulation::AddAccumulationTerm(const CompositeVector& du, const std::stri
 
   if (m == m0) {
     for (int k = 0; k < m; k++) {
-      for (int i = 0; i < n; i++) { diag[k][i] += duc[k][i]; }
+      for (int i = 0; i < n; i++) {
+        diag[k][i] += duc[k][i];
+      }
     }
   } else if (m == 1) {
     for (int k = 0; k < m0; k++) {
-      for (int i = 0; i < n; i++) { diag[k][i] += duc[0][i]; }
+      for (int i = 0; i < n; i++) {
+        diag[k][i] += duc[0][i];
+      }
     }
   } else {
     AMANZI_ASSERT(false);
@@ -133,7 +138,9 @@ PDE_Accumulation::AddAccumulationTerm(const CompositeVector& du1,
   } else {
     for (int k = 0; k < m0; k++) {
       int k0 = std::min(0, k);
-      for (int i = 0; i < n0; i++) { diag[k][i] += alpha * du1c[k0][i] * du2c[k0][i]; }
+      for (int i = 0; i < n0; i++) {
+        diag[k][i] += alpha * du1c[k0][i] * du2c[k0][i];
+      }
     }
   }
 }
@@ -272,7 +279,7 @@ PDE_Accumulation::AddAccumulationDeltaNoVolume(const CompositeVector& u0,
                                                const CompositeVector& ss,
                                                const std::string& name)
 {
-  if (!ss.HasComponent(name)) AMANZI_ASSERT(false);
+  if (!ss.HasComponent(name) ) AMANZI_ASSERT(false);
 
   Teuchos::RCP<Op> op = FindOp_(name);
   Epetra_MultiVector& diag = *op->diag;
@@ -302,7 +309,9 @@ PDE_Accumulation::CalculateEntityVolume_(CompositeVector& volume, const std::str
   if (name == "cell" && volume.HasComponent("cell")) {
     Epetra_MultiVector& vol = *volume.ViewComponent(name);
 
-    for (int c = 0; c != ncells_owned; ++c) { vol[0][c] = mesh_->getCellVolume(c); }
+    for (int c = 0; c != ncells_owned; ++c) {
+      vol[0][c] = mesh_->getCellVolume(c);
+    }
 
   } else if (name == "face" && volume.HasComponent("face")) {
     // Missing code.
@@ -316,7 +325,9 @@ PDE_Accumulation::CalculateEntityVolume_(CompositeVector& volume, const std::str
       auto edges = mesh_->getCellEdges(c);
       int nedges = edges.size();
 
-      for (int i = 0; i < nedges; i++) { vol[0][edges[i]] += mesh_->getCellVolume(c) / nedges; }
+      for (int i = 0; i < nedges; i++) {
+        vol[0][edges[i]] += mesh_->getCellVolume(c) / nedges;
+      }
     }
     volume.GatherGhostedToMaster(name);
 
@@ -335,7 +346,9 @@ PDE_Accumulation::CalculateEntityVolume_(CompositeVector& volume, const std::str
         WhetStone::PolygonCentroidWeights(*mesh_, nodes, cellvolume, weights);
       }
 
-      for (int i = 0; i < nnodes; i++) { vol[0][nodes[i]] += weights[i] * cellvolume; }
+      for (int i = 0; i < nnodes; i++) {
+        vol[0][nodes[i]] += weights[i] * cellvolume;
+      }
     }
     volume.GatherGhostedToMaster(name);
 
@@ -350,7 +363,7 @@ PDE_Accumulation::CalculateEntityVolume_(CompositeVector& volume, const std::str
 * the local local_op_ is not well defined.
 ****************************************************************** */
 void
-PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
+PDE_Accumulation::Init_(const Schema& schema, bool surf)
 {
   int num;
   AmanziMesh::Entity_kind kind;
@@ -365,7 +378,7 @@ PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
       std::tie(kind, std::ignore, num) = *it;
 
       Teuchos::RCP<Op> op;
-      auto cvs = CreateCompositeVectorSpace(mesh_, schema.KindToString(kind), kind, num);
+      auto cvs = CreateCompositeVectorSpace(mesh_, AmanziMesh::to_string(kind), kind, num);
 
       if (kind == AmanziMesh::Entity_kind::CELL) {
         int old_schema = OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL;
@@ -374,7 +387,7 @@ PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
         if (surf) {
           op = Teuchos::rcp(new Op_SurfaceCell_SurfaceCell(name, mesh_));
         } else {
-          op = Teuchos::rcp(new Op_Cell_Cell(name, mesh_));
+          op = Teuchos::rcp(new Op_Cell_Cell(name, mesh_, num));
         }
 
       } else if (kind == AmanziMesh::Entity_kind::EDGE) {
@@ -388,7 +401,7 @@ PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
         op = Teuchos::rcp(new Op_Node_Node(name, mesh_, num));
 
       } else {
-        msg << "Accumulation operator: Unknown kind \"" << schema.KindToString(kind) << "\".\n";
+        msg << "Accumulation operator: Unknown kind \"" << AmanziMesh::to_string(kind) << "\".\n";
         Exceptions::amanzi_throw(msg);
       }
 
@@ -413,15 +426,13 @@ PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
         if (surf) {
           op = Teuchos::rcp(new Op_SurfaceCell_SurfaceCell(name, mesh_));
         } else {
-          op = Teuchos::rcp(new Op_Cell_Cell(name, mesh_));
+          op = Teuchos::rcp(new Op_Cell_Cell(name, mesh_, num));
         }
 
-        /*
       } else if (kind == AmanziMesh::Entity_kind::FACE) {
         old_schema = OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_FACE;
         std::string name("FACE_FACE");
         op = Teuchos::rcp(new Op_Face_Face(name, mesh_));
-      */
 
       } else if (kind == AmanziMesh::Entity_kind::EDGE) {
         old_schema = OPERATOR_SCHEMA_BASE_EDGE | OPERATOR_SCHEMA_DOFS_EDGE;
@@ -434,7 +445,7 @@ PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
         op = Teuchos::rcp(new Op_Node_Node(name, mesh_, num));
 
       } else {
-        msg << "Accumulation operator: Unknown kind \"" << schema.KindToString(kind) << "\".\n";
+        msg << "Accumulation operator: Unknown kind \"" << AmanziMesh::to_string(kind) << "\".\n";
         Exceptions::amanzi_throw(msg);
       }
 
@@ -472,7 +483,9 @@ PDE_Accumulation::ApplyBCs()
 
         for (int i = 0; i < diag.MyLength(); i++) {
           if (bc_model[i] == OPERATOR_BC_DIRICHLET) {
-            for (int k = 0; k < m; ++k) { diag[k][i] = 0.0; }
+            for (int k = 0; k < m; ++k) {
+              diag[k][i] = 0.0;
+            }
           } else if (bc_model[i] == OPERATOR_BC_KINEMATIC) {
             const auto& normal = WhetStone::getNodeUnitNormal(*mesh_, i);
             int k = (std::fabs(normal[0]) > std::fabs(normal[1])) ? 0 : 1;
@@ -495,7 +508,7 @@ PDE_Accumulation::FindOp_(const std::string& name) const
 {
   for (auto it = local_ops_.begin(); it != local_ops_.end(); ++it) {
     const Schema& schema = (*it)->schema_row();
-    if (schema.KindToString(schema.get_base()) == name) return *it;
+    if (AmanziMesh::to_string(schema.get_base()) == name) return *it;
   }
   return Teuchos::null;
 }

@@ -71,7 +71,9 @@ MeshMaps_FEM::VelocityCell(int c,
   }
 
   // calculate velocity u(X) = F(X) - X
-  for (int i = 0; i < d_; ++i) { vc[i](1, i) -= 1.0; }
+  for (int i = 0; i < d_; ++i) {
+    vc[i](1, i) -= 1.0;
+  }
 }
 
 

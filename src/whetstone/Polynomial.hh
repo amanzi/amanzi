@@ -37,12 +37,11 @@ namespace WhetStone {
 // formard declarations
 class Monomial;
 
-int
-PolynomialSpaceDimension(int d, int order);
+int PolynomialSpaceDimension(int d, int order);
 
 class Polynomial : public PolynomialBase {
  public:
-  Polynomial(){};
+  Polynomial() {};
   Polynomial(int d, int order);
   Polynomial(int d, int order, const DenseVector& coefs);
   Polynomial(int d, const int* multi_index, double factor);
@@ -99,13 +98,13 @@ class Polynomial : public PolynomialBase {
   friend Polynomial operator*(double val, const Polynomial& poly)
   {
     Polynomial tmp(poly);
-    for (int n = 0; n < tmp.size(); ++n) tmp(n) *= val;
+    for (int n = 0; n < tmp.size() ; ++n) tmp(n) *= val;
     return tmp;
   }
   friend Polynomial operator*(const Polynomial& poly, double val)
   {
     Polynomial tmp(poly);
-    for (int n = 0; n < tmp.size(); ++n) tmp(n) *= val;
+    for (int n = 0; n < tmp.size() ; ++n) tmp(n) *= val;
     return tmp;
   }
 

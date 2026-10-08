@@ -146,7 +146,9 @@ Operator_FaceCellScc::AssembleMatrix(const SuperMap& map,
   // first check preconditions -- Scc must have exactly one face-based schema (a FACE+CELL)
   int num_with_faces = 0;
   for (const_op_iterator it = begin(); it != end(); ++it) {
-    if ((*it)->schema_old() & OPERATOR_SCHEMA_DOFS_FACE) { num_with_faces++; }
+    if ((*it)->schema_old() & OPERATOR_SCHEMA_DOFS_FACE) {
+      num_with_faces++;
+    }
   }
   if (num_with_faces == 0 || num_with_faces > 1) {
     Errors::Message msg(
@@ -170,12 +172,12 @@ Operator_FaceCellScc::AssembleMatrix(const SuperMap& map,
       if (diag_ops_.size() > i_schur) {
         // get existing
         diag_op = diag_ops_[i_schur];
-        schur_ops_[i_schur];
+        schur_op = schur_ops_[i_schur];
       } else {
         // create and fill
         AMANZI_ASSERT(i_schur == diag_ops_.size());
         std::string name = "Scc alt as CELL_CELL";
-        diag_op = Teuchos::rcp(new Op_Cell_Cell(name, mesh_));
+        diag_op = Teuchos::rcp(new Op_Cell_Cell(name, mesh_, 1));
         diag_ops_.push_back(diag_op);
 
         name = "Scc alt as FACE_CELL";
@@ -196,7 +198,9 @@ Operator_FaceCellScc::AssembleMatrix(const SuperMap& map,
         WhetStone::DenseMatrix& Acell = (*it)->matrices[c];
         int n = Acell.NumCols() - 1;
         diag[0][c] = (*it)->matrices[c](n, n);
-        if (diag[0][c] > 1.e30 || diag[0][c] < -1.e30) { AMANZI_ASSERT(0); }
+        if (diag[0][c] > 1.e30 || diag[0][c] < -1.e30) {
+          AMANZI_ASSERT(0);
+        }
       }
 
       // populate the schur component
@@ -246,7 +250,9 @@ Operator_FaceCellScc::AssembleMatrix(const SuperMap& map,
         auto cells = mesh_->getFaceCells(f);
         int ncells = cells.size();
 
-        for (int n = 0; n != ncells; ++n) { gid[n] = cmap_wghost.GID(cells[n]); }
+        for (int n = 0; n != ncells; ++n) {
+          gid[n] = cmap_wghost.GID(cells[n]);
+        }
 
         a1 = Ttmp[0][f];
         a2 = Ttmp[1][f];
@@ -259,7 +265,9 @@ Operator_FaceCellScc::AssembleMatrix(const SuperMap& map,
         if (coef == 0.0) continue;
 
         mat(0, 0) = -a1 * a1 / coef;
-        if (mat(0, 0) > 1.e30 || mat(0, 0) < -1.e30) { AMANZI_ASSERT(0); }
+        if (mat(0, 0) > 1.e30 || mat(0, 0) < -1.e30) {
+          AMANZI_ASSERT(0);
+        }
         if (ncells > 1) {
           mat(0, 1) = -a1 * a2 / coef;
           mat(1, 0) = -a1 * a2 / coef;
@@ -303,13 +311,17 @@ Operator_FaceCellScc::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
       int nfaces = faces.size();
 
       WhetStone::DenseVector v(nfaces + 1), av(nfaces + 1);
-      for (int n = 0; n != nfaces; ++n) { v(n) = Xf[0][faces[n]]; }
+      for (int n = 0; n != nfaces; ++n) {
+        v(n) = Xf[0][faces[n]];
+      }
       v(nfaces) = Xc[0][c];
 
       const WhetStone::DenseMatrix& Acell = op.matrices[c];
       Acell.Multiply(v, av, false);
 
-      for (int n = 0; n != nfaces; ++n) { Yf[0][faces[n]] += av(n); }
+      for (int n = 0; n != nfaces; ++n) {
+        Yf[0][faces[n]] += av(n);
+      }
       Yc[0][c] += av(nfaces);
     }
   }
@@ -359,7 +371,7 @@ Operator_FaceCellScc::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
   Operator_Cell::SymbolicAssembleMatrixOp(schur_op, map, graph, my_block_row, my_block_col);
 
   name = "Scc alt as CELL_CELL";
-  Op_Cell_Cell diag_op(name, mesh_);
+  Op_Cell_Cell diag_op(name, mesh_, 1);
   Operator_Cell::SymbolicAssembleMatrixOp(diag_op, map, graph, my_block_row, my_block_col);
 }
 

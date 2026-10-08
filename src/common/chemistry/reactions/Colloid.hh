@@ -28,12 +28,12 @@ class Colloid {
  public:
   Colloid();
   Colloid(int id, const std::string& name, const Teuchos::ParameterList& plist)
-    : id_(id), name_(name){};
-  virtual ~Colloid(){};
+    : id_(id), name_(name) {};
+  virtual ~Colloid() {};
 
   // returns sorbed concentration
-  virtual void Evaluate(const Species& primary_species){};
-  virtual void EvaluateDerivative(const Species& primary_species){};
+  virtual void Evaluate(const Species& primary_species) {};
+  virtual void EvaluateDerivative(const Species& primary_species) {};
 
   // access
   std::string name() const { return name_; }

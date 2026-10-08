@@ -67,8 +67,8 @@ class PDE_DiffusionNLFVwithBndFaces : public virtual PDE_Diffusion {
   // main virtual members
   // -- setup
   using PDE_Diffusion::Setup;
-  virtual void
-  SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor>>& K) override
+  virtual void SetTensorCoefficient(
+    const Teuchos::RCP<const std::vector<WhetStone::Tensor>>& K) override
   {
     K_ = K;
   }
@@ -83,10 +83,10 @@ class PDE_DiffusionNLFVwithBndFaces : public virtual PDE_Diffusion {
                                               const Teuchos::Ptr<const CompositeVector>& u,
                                               double scalar_limiter) override;
 
-  virtual void
-  UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
-                                 const Teuchos::Ptr<const CompositeVector>& u,
-                                 const Teuchos::Ptr<const CompositeVector>& factor) override;
+  virtual void UpdateMatricesNewtonCorrection(
+    const Teuchos::Ptr<const CompositeVector>& flux,
+    const Teuchos::Ptr<const CompositeVector>& u,
+    const Teuchos::Ptr<const CompositeVector>& factor) override;
 
   // -- after solving the problem: postrocessing
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
@@ -94,9 +94,8 @@ class PDE_DiffusionNLFVwithBndFaces : public virtual PDE_Diffusion {
 
   // -- modify an operator
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
-  virtual void ModifyMatrices(const CompositeVector& u) override{};
-  virtual void ScaleMassMatrices(double s) override{};
-  virtual void ScaleMatricesColumns(const CompositeVector& s) override{};
+  virtual void ModifyMatrices(const CompositeVector& u) override { AMANZI_ASSERT(false); }
+  virtual void ScaleMassMatrices(double s) override { AMANZI_ASSERT(false); }
 
   // -- interface to solvers for treating nonlinear BCs.
   virtual double ComputeTransmissibility(int f) const override { return 0.0; }
@@ -119,7 +118,7 @@ class PDE_DiffusionNLFVwithBndFaces : public virtual PDE_Diffusion {
   int NLTPFAContributions_(int f, double& tc1, double& tc2);
 
  protected:
-  int dim_;
+  int dim_, manifold_dim_;
   int newton_correction_;
 
   bool stencil_initialized_;

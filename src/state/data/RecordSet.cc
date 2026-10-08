@@ -26,9 +26,13 @@ void
 RecordSet::WriteVis(const Visualization& vis, Tag const* const tag) const
 {
   if (tag) {
-    if (HasRecord(*tag)) { GetRecord(*tag).WriteVis(vis, subfieldnames()); }
+    if (HasRecord(*tag)) {
+      GetRecord(*tag).WriteVis(vis, subfieldnames());
+    }
   } else {
-    for (auto& e : records_) { e.second->WriteVis(vis, subfieldnames()); }
+    for (auto& e : records_) {
+      e.second->WriteVis(vis, subfieldnames());
+    }
   }
 }
 void
@@ -41,13 +45,17 @@ RecordSet::WriteCheckpoint(const Checkpoint& chkp, bool post_mortem) const
 void
 RecordSet::ReadCheckpoint(const Checkpoint& chkp)
 {
-  for (auto& e : records_) { e.second->ReadCheckpoint(chkp, e.first, subfieldnames()); }
+  for (auto& e : records_) {
+    e.second->ReadCheckpoint(chkp, e.first, subfieldnames());
+  }
 }
 bool
 RecordSet::Initialize(Teuchos::ParameterList& plist, bool force)
 {
   bool init = false;
-  for (auto& e : records_) { init |= e.second->Initialize(plist, subfieldnames(), force); }
+  for (auto& e : records_) {
+    init |= e.second->Initialize(plist, subfieldnames(), force);
+  }
   return init;
 }
 
@@ -99,7 +107,8 @@ RecordSet::GetRecord(const Tag& tag) const
 void
 RecordSet::AliasRecord(const Tag& target, const Tag& alias)
 {
-  records_[alias] = std::make_shared<Record>(*records_[target], &alias);
+  if (!HasRecord(target) ) RequireRecord(target, "", false);
+  records_[alias] = std::make_shared<Record>(*records_.at(target), &alias);
   aliases_[alias] = target;
 }
 
@@ -145,7 +154,6 @@ RecordSet::isInitialized(Tag& failed)
 {
   for (auto& r : records_) {
     if (!r.second->initialized()) {
-      ;
       failed = r.first;
       return false;
     }

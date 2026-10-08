@@ -19,7 +19,8 @@ using namespace Amanzi;
 using namespace Amanzi::Utils;
 
 struct Tol {
-  Tol(double eps) : eps_(eps){};
+  Tol(double eps)
+    : eps_(eps) {};
   bool operator()(double a, double b) const { return std::abs(a - b) <= eps_; }
   double eps_;
 };

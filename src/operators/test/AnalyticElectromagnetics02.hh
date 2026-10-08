@@ -21,8 +21,8 @@
 class AnalyticElectromagnetics02 : public AnalyticElectromagneticsBase {
  public:
   AnalyticElectromagnetics02(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
-    : AnalyticElectromagneticsBase(mesh){};
-  ~AnalyticElectromagnetics02(){};
+    : AnalyticElectromagneticsBase(mesh) {};
+  ~AnalyticElectromagnetics02() {};
 
   Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t)
   {

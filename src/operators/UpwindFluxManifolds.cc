@@ -19,7 +19,6 @@
 #include "Teuchos_RCP.hpp"
 
 // Operators
-#include "UniqueLocalIndex.hh"
 #include "UpwindFluxManifolds.hh"
 
 namespace Amanzi {
@@ -52,12 +51,13 @@ UpwindFluxManifolds::Compute(const CompositeVector& flux,
 
   const auto& flux_f = *flux.ViewComponent("face", true);
   const auto& field_c = *field.ViewComponent("cell", true);
-  const auto& field_bf = *field.ViewComponent("boundary_face", true);
+  const auto& field_bf = *std::as_const(field).ViewComponent("boundary_face", true);
   auto& field_f = *field.ViewComponent("face", true);
 
-  double flxmin, flxmax;
+  double flxmin, flxmax, tol;
   flux_f.MinValue(&flxmin);
   flux_f.MaxValue(&flxmax);
+  tol = tolerance_ * std::max(fabs(flxmin), fabs(flxmax));
 
   int nfaces_wghost = mesh_->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
 
@@ -70,16 +70,39 @@ UpwindFluxManifolds::Compute(const CompositeVector& flux,
 
     int g = fmap.FirstPointInElement(f);
 
-    // harmonic average over upwind cells
+    // volume-weigthed average over downwind cells
     if (ncells > 1) {
-      double mean(0.0);
+      int dir;
+      double uvol(0.0), umean(0.0), tvol(0.0), tmean(0.0), vol;
+
       for (int i = 0; i < ncells; ++i) {
         int c = cells[i];
-        mean += field_c[0][c];
-      }
-      mean /= ncells;
+        mesh_->getFaceNormal(f, c, &dir);
+        vol = mesh_->getCellVolume(c);
 
-      for (int i = 0; i < ncells; ++i) { field_f[0][g + i] = mean; }
+        tvol += vol;
+        tmean += vol * field_c[0][c];
+
+        if (flux_f[0][g + i] * dir >= tol) {
+          uvol += vol;
+          umean += vol * field_c[0][c];
+        }
+      }
+
+      // average upwind cell values and use them for all downwind faces
+      if (uvol > 0.0) {
+        umean /= uvol;
+        for (int i = 0; i < ncells; ++i) {
+          int c = cells[i];
+          mesh_->getFaceNormal(f, c, &dir);
+          if (flux_f[0][g + i] * dir >= tol) field_f[0][g + i] = field_c[0][c];
+          else field_f[0][g + i] = umean;
+        }
+        // flow is negligent, use average all cell values
+      } else {
+        tmean /= tvol;
+        for (int i = 0; i < ncells; ++i) field_f[0][g + i] = tmean;
+      }
 
       // upwind only on inflow Dirichlet faces
     } else {

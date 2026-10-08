@@ -16,10 +16,13 @@ A sorption isotherm may represent equilibrium or kinetic processes depending on 
 fit the isotherm.
 Each sublist has two parameters:
 
-* `"model`" [string] specifies the model name. The available options are `"linear", `"langmuir`", and `"freundlich`".
+.. admonition:: isotherms-spec
 
-* `"parameters`" [Array(double)] is the list of model parameters. The distribution coefficient
-  *K* is in the first position.
+  * `"model`" ``[string]`` specifies the model name. The available options are `"linear",
+    `"langmuir`", and `"freundlich`".
+
+  * `"parameters`" ``[Array(double)]`` is the list of model parameters. The distribution
+    coefficient *K* is in the first position.
 
 .. code-block:: xml
 
@@ -74,8 +77,8 @@ class SorptionIsotherm;
 
 class SorptionIsothermFactory {
  public:
-  SorptionIsothermFactory(){};
-  ~SorptionIsothermFactory(){};
+  SorptionIsothermFactory() {};
+  ~SorptionIsothermFactory() {};
 
   std::shared_ptr<SorptionIsotherm> Create(const Teuchos::ParameterList& plist);
 

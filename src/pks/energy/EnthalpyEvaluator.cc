@@ -10,7 +10,7 @@
 /*
   Energy
 
-  Field evaluator for specific menthalpy, h = u + p / eta + g z.
+  Field evaluator for specific methalpy, h = u + p / eta + g z.
 */
 
 #include "CommonDefs.hh"
@@ -38,6 +38,7 @@ EnthalpyEvaluator::EnthalpyEvaluator(Teuchos::ParameterList& plist)
 
   include_work_ = plist_.get<bool>("include work term", true);
   include_potential_ = plist_.get<bool>("include potential term", false);
+  liquid_molar_mass_ = plist_.get<double>("liquid molar mass");
 
   // Set up my dependencies.
   // -- internal energy
@@ -65,7 +66,7 @@ EnthalpyEvaluator::EnthalpyEvaluator(const EnthalpyEvaluator& other)
     pressure_key_(other.pressure_key_),
     mol_density_key_(other.mol_density_key_),
     ie_key_(other.ie_key_),
-    include_work_(other.include_work_){};
+    include_work_(other.include_work_) {};
 
 
 /* ******************************************************************
@@ -96,7 +97,9 @@ EnthalpyEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>
       Epetra_MultiVector& result_v = *results[0]->ViewComponent(*comp);
 
       int ncomp = results[0]->size(*comp);
-      for (int i = 0; i != ncomp; ++i) { result_v[0][i] += pres_v[0][i] / nl_v[0][i]; }
+      for (int i = 0; i != ncomp; ++i) {
+        result_v[0][i] += pres_v[0][i] / nl_v[0][i];
+      }
     }
   }
 
@@ -106,7 +109,7 @@ EnthalpyEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>
 
     int d = mesh->getSpaceDimension();
     double g = std::fabs(std::fabs((S.Get<AmanziGeometry::Point>("gravity", tag_))[d - 1]));
-    g *= CommonDefs::MOLAR_MASS_H2O;
+    g *= liquid_molar_mass_;
 
     for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
       Epetra_MultiVector& result_v = *results[0]->ViewComponent(*comp);
@@ -152,7 +155,9 @@ EnthalpyEvaluator::EvaluatePartialDerivative_(const State& S,
       Epetra_MultiVector& result_v = *results[0]->ViewComponent(*comp);
 
       int ncomp = results[0]->size(*comp);
-      for (int i = 0; i != ncomp; ++i) { result_v[0][i] = 1.0 / nl_v[0][i]; }
+      for (int i = 0; i != ncomp; ++i) {
+        result_v[0][i] = 1.0 / nl_v[0][i];
+      }
     }
 
   } else if (wrt_key == mol_density_key_) {

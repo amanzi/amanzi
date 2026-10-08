@@ -13,6 +13,7 @@
   Self-registering factory for flow evaluators.
 */
 
+#include "ApertureDarcyEvaluator.hh"
 #include "ModelEvaluator.hh"
 #include "SpecificStorage.hh"
 #include "WaterStorage.hh"
@@ -20,8 +21,10 @@
 namespace Amanzi {
 namespace Flow {
 
+Utils::RegisteredFactory<Evaluator, ApertureDarcyEvaluator> ApertureDarcyEvaluator::reg_(
+  "linearized aperture");
 Utils::RegisteredFactory<Evaluator, WaterStorage> WaterStorage::reg_("water storage");
-template <>
+template<>
 Utils::RegisteredFactory<Evaluator, ModelEvaluator<SpecificStorage>>
   ModelEvaluator<SpecificStorage>::reg_("specific storage");
 

@@ -12,12 +12,14 @@
 The `"surface complexes`" is the list of surface complexation reactions.
 Each reaction is defined by the following parameters:
 
-* `"reaction`" [string] is a surface complexation reaction involing the complex site
-  and primary species.
+.. admonition:: surface_complex-spec
 
-* `"charge`" [int] is the charge of the complex.
+  * `"reaction`" ``[string]`` is a surface complexation reaction involing the complex site
+    and primary species.
 
-* `"equilibrium constant`" [double] is the logarithm of the reaction equilibrium coefficeint.
+  * `"charge`" ``[int]`` is the charge of the complex.
+
+  * `"equilibrium constant`" ``[double]`` is the logarithm of the reaction equilibrium coefficeint.
 
 .. code-block:: xml
 
@@ -72,13 +74,13 @@ class MatrixBlock;
 
 class SurfaceComplex {
  public:
-  SurfaceComplex(){};
+  SurfaceComplex() {};
   SurfaceComplex(const std::string& name,
                  int id,
                  const std::vector<Species>& primary_species,
                  const std::vector<SurfaceSite>& surface_sites,
                  const Teuchos::ParameterList& plist);
-  ~SurfaceComplex(){};
+  ~SurfaceComplex() {};
 
   // update molalities
   void Update(const std::vector<Species>& primary_species, const SurfaceSite& surface_site);

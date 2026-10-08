@@ -37,13 +37,13 @@
 
 namespace Amanzi {
 
-Teuchos::RCP<Observable>
+Teuchos::RCP<ObservableAmanzi>
 CreateObservable(Teuchos::ParameterList& coord_plist,
                  Teuchos::ParameterList& observable_plist,
                  Teuchos::ParameterList& units_plist,
                  Teuchos::RCP<const AmanziMesh::Mesh> mesh)
 {
-  Teuchos::RCP<Observable> observe;
+  Teuchos::RCP<ObservableAmanzi> observe;
   std::string var = observable_plist.get<std::string>("variable");
   std::string func = observable_plist.get<std::string>("functional");
   std::string region = observable_plist.get<std::string>("region");

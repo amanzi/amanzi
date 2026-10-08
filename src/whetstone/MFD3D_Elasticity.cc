@@ -15,7 +15,6 @@
 */
 
 #include <cmath>
-#include <iterator>
 #include <vector>
 
 #include "Mesh.hh"

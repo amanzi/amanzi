@@ -43,8 +43,9 @@ main(int argc, char* argv[])
 // a test class to access data
 class DomainFunction : public MaterialMeshFunction {
  public:
-  DomainFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : MaterialMeshFunction(mesh){};
-  ~DomainFunction(){};
+  DomainFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : MaterialMeshFunction(mesh) {};
+  ~DomainFunction() {};
 
   // access specs
   const std::map<AmanziMesh::Entity_ID, double> get_ids(const AmanziMesh::Entity_kind& kind)
@@ -97,8 +98,7 @@ TEST(MESH2D)
 
     double vofs[4] = { 1.0, 0.2, 0.2, 0.04 };
     int n(0);
-    for (std::map<AmanziMesh::Entity_ID, double>::const_iterator it = ids.begin(); it != ids.end();
-         ++it) {
+    for (auto it = ids.begin(); it != ids.end(); ++it) {
       CHECK_CLOSE(it->second, vofs[n++], 1e-10);
     }
   }
@@ -115,8 +115,7 @@ TEST(MESH2D)
     df.AddSpec(spec);
     const std::map<AmanziMesh::Entity_ID, double>& ids = df.get_ids(kind);
 
-    for (std::map<AmanziMesh::Entity_ID, double>::const_iterator it = ids.begin(); it != ids.end();
-         ++it) {
+    for (auto it = ids.begin(); it != ids.end(); ++it) {
       CHECK_CLOSE(it->second, 1.0, 1e-10);
     }
   }

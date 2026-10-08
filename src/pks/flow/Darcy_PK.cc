@@ -27,15 +27,19 @@
 #include "MeshAlgorithms.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "PK_Utils.hh"
+#include "TreeVector.hh"
 #include "TimestepControllerFactory.hh"
 #include "Tensor.hh"
 
 // Amanzi::Flow
+#include "ApertureDarcyEvaluator.hh"
 #include "Darcy_PK.hh"
 #include "FlowDefs.hh"
 #include "ModelEvaluator.hh"
 #include "SpecificStorage.hh"
+#include "StateHelpers.hh"
 #include "VolumetricFlowRateEvaluator.hh"
+#include "WaterStorageDarcy.hh"
 #include "WRM.hh"
 
 namespace Amanzi {
@@ -53,48 +57,22 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& pk_tree,
                    const Teuchos::RCP<TreeVector>& soln)
   : PK(pk_tree, glist, S, soln), Flow_PK(pk_tree, glist, S, soln), soln_(soln)
 {
-  S_ = S;
-
-  std::string pk_name = pk_tree.name();
-  auto found = pk_name.rfind("->");
-  if (found != std::string::npos) pk_name.erase(0, found + 2);
-
   // We need the flow list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  fp_list_ = Teuchos::sublist(pk_list, pk_name, true);
+  fp_list_ = Teuchos::sublist(pk_list, name_, true);
 
   // We also need miscaleneous sublists
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(fp_list_, "time integrator", true);
 
-  // computational domain
+  // domain and primary evaluators
   domain_ = fp_list_->template get<std::string>("domain name", "domain");
-}
+  pressure_key_ = Keys::getKey(domain_, "pressure");
+  mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
 
-
-/* ******************************************************************
-* Old constructor for unit tests.
-****************************************************************** */
-Darcy_PK::Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                   const std::string& pk_list_name,
-                   Teuchos::RCP<State> S,
-                   const Teuchos::RCP<TreeVector>& soln)
-  : Flow_PK(), soln_(soln)
-{
-  S_ = S;
-
-  // We need the flow list
-  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  fp_list_ = Teuchos::sublist(pk_list, pk_list_name, true);
-
-  // We also need miscaleneous sublists
-  preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
-  linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
-  ti_list_ = Teuchos::sublist(fp_list_, "time integrator", true);
-
-  // domain name
-  domain_ = fp_list_->template get<std::string>("domain name", "domain");
+  AddDefaultPrimaryEvaluator(S_, pressure_key_);
+  AddDefaultPrimaryEvaluator(S_, mol_flowrate_key_);
 }
 
 
@@ -104,17 +82,15 @@ Darcy_PK::Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 void
 Darcy_PK::Setup()
 {
-  dt_ = -1.0;
   mesh_ = S_->GetMesh(domain_);
   dim = mesh_->getSpaceDimension();
 
-  // generate keys here to be available for setup of the base class
-  pressure_key_ = Keys::getKey(domain_, "pressure");
-  hydraulic_head_key_ = Keys::getKey(domain_, "hydraulic_head");
-  darcy_velocity_key_ = Keys::getKey(domain_, "darcy_velocity");
-
+  // generate keys used by Darcy PK only
   specific_yield_key_ = Keys::getKey(domain_, "specific_yield");
   specific_storage_key_ = Keys::getKey(domain_, "specific_storage");
+
+  ref_aperture_key_ = Keys::getKey(domain_, "ref_aperture");
+  ref_pressure_key_ = Keys::getKey(domain_, "ref_pressure");
   compliance_key_ = Keys::getKey(domain_, "compliance");
 
   // optional keys
@@ -124,10 +100,7 @@ Darcy_PK::Setup()
   Flow_PK::Setup();
 
   // Our decision can be affected by the list of models
-  auto physical_models = Teuchos::sublist(fp_list_, "physical models and assumptions");
-  std::string mu_model = physical_models->get<std::string>("viscosity model", "constant viscosity");
-  use_bulk_modulus_ = physical_models->get<bool>("use bulk modulus", false);
-  if (mu_model != "constant viscosity") {
+  if (assumptions_.mu_model != "constant viscosity") {
     Errors::Message msg;
     msg << "Darcy PK supports only constant viscosity model.";
     Exceptions::amanzi_throw(msg);
@@ -139,14 +112,12 @@ Darcy_PK::Setup()
   std::string name = list3->get<std::string>("discretization primary");
 
   // primary field: pressure
-  if (!S_->HasRecord(pressure_key_)) {
-    std::vector<std::string> names;
-    std::vector<AmanziMesh::Entity_kind> locations;
-    std::vector<int> ndofs;
-
-    names.push_back("cell");
-    locations.push_back(AmanziMesh::Entity_kind::CELL);
-    ndofs.push_back(1);
+  // A new component is NOT added if its name and number of dofs are the same.
+  // Face components for matrix and fractured matrix are considered the same.
+  {
+    std::vector<std::string> names({ "cell" });
+    std::vector<AmanziMesh::Entity_kind> locations({ AmanziMesh::Entity_kind::CELL });
+    std::vector<int> ndofs({ 1 });
 
     if (name != "fv: default" && name != "nlfv: default") {
       names.push_back("face");
@@ -157,16 +128,42 @@ Darcy_PK::Setup()
     S_->Require<CV_t, CVS_t>(pressure_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponents(names, locations, ndofs);
-    AddDefaultPrimaryEvaluator(S_, pressure_key_);
+      ->AddComponents(names, locations, ndofs);
   }
 
-  // require additional fields for this PK
-  if (!S_->HasRecord(specific_storage_key_)) {
-    S_->Require<CV_t, CVS_t>(specific_storage_key_, Tags::DEFAULT, specific_storage_key_)
+  // require additional fields and evaluators
+  // Many fields/evaluators have a simple structure. They are ghosted
+  //   cell-based fields. We use a helper function that reruires a field
+  //   and returns a parameter list populated with standard values.
+  // -- water storage
+  if (!S_->HasRecord(water_storage_key_)) {
+    auto elist = RequireFieldForEvaluator(*S_, water_storage_key_);
+    S_->GetRecordW(water_storage_key_, water_storage_key_).set_io_vis(false);
+
+    elist.set<std::string>("pressure key", pressure_key_)
+      .set<std::string>("specific storage key", specific_storage_key_);
+    if (assumptions_.flow_on_manifold) elist.set<std::string>("aperture key", aperture_key_);
+
+    S_->RequireDerivative<CV_t, CVS_t>(
+        water_storage_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, water_storage_key_)
+      .SetGhosted();
+
+    auto eval = Teuchos::rcp(new WaterStorageDarcy(elist));
+    S_->SetEvaluator(water_storage_key_, Tags::DEFAULT, eval);
+  }
+
+  // -- water storage from the previous timestep
+  if (!S_->HasRecord(prev_water_storage_key_)) {
+    S_->Require<CV_t, CVS_t>(prev_water_storage_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+    S_->GetRecordW(prev_water_storage_key_, passwd_).set_io_vis(false);
+  }
+
+  // -- specific storage
+  if (!S_->HasRecord(specific_storage_key_)) {
+    RequireFieldForEvaluator(*S_, specific_storage_key_);
     S_->RequireEvaluator(specific_storage_key_, Tags::DEFAULT);
   }
 
@@ -177,11 +174,9 @@ Darcy_PK::Setup()
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   }
 
+  // -- saturation
   if (!S_->HasRecord(saturation_liquid_key_)) {
-    S_->Require<CV_t, CVS_t>(saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_key_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+    RequireFieldForEvaluator(*S_, saturation_liquid_key_);
     S_->RequireEvaluator(saturation_liquid_key_, Tags::DEFAULT);
   }
 
@@ -192,13 +187,9 @@ Darcy_PK::Setup()
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   }
 
-  // Require additional fields and evaluators for this PK.
   // -- porosity
   if (!S_->HasRecord(porosity_key_)) {
-    S_->Require<CV_t, CVS_t>(porosity_key_, Tags::DEFAULT, porosity_key_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+    RequireFieldForEvaluator(*S_, porosity_key_);
     S_->RequireEvaluator(porosity_key_, Tags::DEFAULT);
   }
 
@@ -209,19 +200,35 @@ Darcy_PK::Setup()
 
   // -- molar and volumetric flow rates
   double rho = S_->ICList().sublist("const_fluid_density").get<double>("value");
-  double molar_rho = rho / CommonDefs::MOLAR_MASS_H2O;
+  molar_mass_ = S_->ICList().sublist("const_fluid_molar_mass").get<double>("value");
+  double molar_rho = rho / molar_mass_;
   Setup_FlowRates_(true, molar_rho);
 
   // -- fracture dynamics
-  if (flow_on_manifold_) {
+  if (assumptions_.flow_on_manifold) {
     S_->Require<CV_t, CVS_t>(compliance_key_, Tags::DEFAULT, compliance_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S_->RequireEvaluator(compliance_key_, Tags::DEFAULT);
 
-    S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
-  } else if (use_bulk_modulus_) {
+    if (assumptions_.external_aperture) {
+      RequireFieldForEvaluator(*S_, ref_aperture_key_);
+      S_->GetRecordW(ref_aperture_key_, ref_aperture_key_).set_io_vis(false);
+      S_->RequireEvaluator(ref_aperture_key_, Tags::DEFAULT);
+
+      S_->Require<CV_t, CVS_t>(ref_pressure_key_, Tags::DEFAULT, passwd_)
+        .SetMesh(mesh_)
+        ->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+      S_->GetRecordW(ref_pressure_key_, passwd_).set_io_vis(false);
+      S_->GetRecordW(ref_pressure_key_, passwd_).set_io_checkpoint(false);
+
+      S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
+    } else {
+      S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
+    }
+  } else if (assumptions_.use_bulk_modulus) {
     S_->Require<CV_t, CVS_t>(bulk_modulus_key_, Tags::DEFAULT)
       .SetMesh(mesh_)
       ->SetGhosted(true)
@@ -276,6 +283,8 @@ Darcy_PK::Setup()
   // save frequently used evaluators
   pressure_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
     S_->GetEvaluatorPtr(pressure_key_, Tags::DEFAULT));
+  mol_flowrate_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
+    S_->GetEvaluatorPtr(mol_flowrate_key_, Tags::DEFAULT));
 
   // set units
   S_->GetRecordSetW(pressure_key_).set_units("Pa");
@@ -284,6 +293,7 @@ Darcy_PK::Setup()
   S_->GetRecordSetW(porosity_key_).set_units("-");
   S_->GetRecordSetW(saturation_liquid_key_).set_units("-");
   S_->GetRecordSetW(hydraulic_head_key_).set_units("m");
+  S_->GetRecordSetW(mass_density_liquid_key_).set_units("kg/m^3");
 }
 
 
@@ -294,12 +304,6 @@ void
 Darcy_PK::Initialize()
 {
   // Initialize miscalleneous defaults.
-  // -- times
-  double t_ini = S_->get_time();
-  dt_next_ = dt_;
-  dt_desirable_ = dt_; // The minimum desirable time step from now on.
-  dt_history_.clear();
-
   // -- others
   initialize_with_darcy_ = true;
   num_itrs_ = 0;
@@ -314,6 +318,11 @@ Darcy_PK::Initialize()
 
   // Initilize various base class data.
   Flow_PK::Initialize();
+
+  // -- times
+  double t_ini = S_->get_time();
+  dt_next_ = dt_;
+  dt_history_.clear();
 
   // Initialize local fields and evaluators.
   InitializeFields_();
@@ -333,9 +342,11 @@ Darcy_PK::Initialize()
 
     error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE; // usually 1e-4;
 
-    // time step controller
-    TimestepControllerFactory<Epetra_MultiVector> fac;
-    ts_control_ = fac.Create(bdf1_list, pdot_cells, pdot_cells_prev);
+    // timestep controller
+    auto pdot_cells_prev_c = Teuchos::RCP<const Epetra_Vector>(pdot_cells_prev);
+    auto pdot_cells_c = Teuchos::RCP<const Epetra_Vector>(pdot_cells);
+    ts_control_ = createTimestepController("BDF1", bdf1_list, S_, pdot_cells_c, pdot_cells_prev_c);
+
   } else {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "WARNING: BDF1 time integration list is missing..." << std::endl;
@@ -348,9 +359,8 @@ Darcy_PK::Initialize()
   // Initialize lambdas. It may be used by boundary conditions.
   auto& pressure = S_->GetW<CompositeVector>(pressure_key_, Tags::DEFAULT, passwd_);
 
-  if (ti_list_->isSublist("pressure-lambda constraints") && solution->HasComponent("face")) {
-    std::string method =
-      ti_list_->sublist("pressure-lambda constraints").get<std::string>("method");
+  if (ti_list_->isSublist("dae constraint") && solution->HasComponent("face")) {
+    std::string method = ti_list_->sublist("dae constraint").get<std::string>("method");
     if (method == "projection") {
       Epetra_MultiVector& p = *solution->ViewComponent("cell");
       Epetra_MultiVector& lambda = *solution->ViewComponent("face");
@@ -370,18 +380,19 @@ Darcy_PK::Initialize()
   double mu = S_->Get<double>("const_fluid_viscosity");
   Teuchos::ParameterList& oplist =
     fp_list_->sublist("operators").sublist("diffusion operator").sublist("matrix");
-  if (flow_on_manifold_) oplist.set<std::string>("nonlinear coefficient", "standard: cell");
-  if (coupled_to_matrix_ || flow_on_manifold_) {
+  if (assumptions_.flow_on_manifold)
+    oplist.set<std::string>("nonlinear coefficient", "standard: cell");
+  if (coupled_to_matrix_ || assumptions_.flow_on_manifold) {
+    if (!oplist.isParameter("manifolds")) oplist.set<bool>("manifolds", true);
     if (!oplist.isParameter("use manifold flux")) oplist.set<bool>("use manifold flux", true);
   }
 
   Operators::PDE_DiffusionFactory opfactory(oplist, mesh_);
   opfactory.SetConstantGravitationalTerm(gravity_, rho_);
 
-  if (!flow_on_manifold_) {
+  if (!assumptions_.flow_on_manifold) {
     SetAbsolutePermeabilityTensor();
-    Teuchos::RCP<std::vector<WhetStone::Tensor>> Kptr = Teuchos::rcpFromRef(K);
-    opfactory.SetVariableTensorCoefficient(Kptr);
+    opfactory.SetVariableTensorCoefficient(K_);
     opfactory.SetConstantScalarCoefficient(rho_ / mu);
   } else {
     WhetStone::Tensor Ktmp(dim, 1);
@@ -393,9 +404,10 @@ Darcy_PK::Initialize()
     opfactory.SetVariableScalarCoefficient(kptr);
   }
 
+  auto op_bc = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state");
   op_diff_ = opfactory.Create();
   op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-  op_diff_->SetBCs(op_bc_, op_bc_);
+  op_diff_->SetBCs(op_bc, op_bc);
   op_ = op_diff_->global_operator();
 
   // -- accumulation operator
@@ -413,6 +425,10 @@ Darcy_PK::Initialize()
     name, *preconditioner_list_, solver_name_, *linear_operator_list_, true);
   op_->InitializeInverse();
 
+  // set up operators for evaluators
+  auto eval = S_->GetEvaluatorPtr(vol_flowrate_key_, Tags::DEFAULT);
+  Teuchos::rcp_dynamic_cast<VolumetricFlowRateEvaluator>(eval)->set_bc(op_bc);
+
   // Optional step: calculate hydrostatic solution consistent with BCs.
   // We have to do it only once per time period.
   bool init_darcy(false);
@@ -421,11 +437,8 @@ Darcy_PK::Initialize()
     bool wells_on = ti_list_->sublist("initialization").get<bool>("active wells", false);
     SolveFullySaturatedProblem(*solution, wells_on);
     init_darcy = true;
+    CommitStep(t_ini, t_ini, Tags::DEFAULT);
   }
-
-  // set up operators for evaluators
-  auto eval = S_->GetEvaluatorPtr(vol_flowrate_key_, Tags::DEFAULT);
-  Teuchos::rcp_dynamic_cast<VolumetricFlowRateEvaluator>(eval)->set_bc(op_bc_);
 
   // Verbose output of initialization statistics.
   InitializeStatistics_(init_darcy);
@@ -444,10 +457,14 @@ Darcy_PK::InitializeFields_()
   InitializeCVField(S_, *vo_, saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_key_, 1.0);
   InitializeCVField(S_, *vo_, prev_saturation_liquid_key_, Tags::DEFAULT, passwd_, 1.0);
 
-  if (flow_on_manifold_)
+  if (assumptions_.flow_on_manifold)
     InitializeCVField(S_, *vo_, compliance_key_, Tags::DEFAULT, compliance_key_, 0.0);
 
-  InitializeCVFieldFromCVField(S_, *vo_, prev_aperture_key_, aperture_key_, passwd_);
+  if (assumptions_.flow_on_manifold && assumptions_.external_aperture) {
+    InitializeCVFieldFromCVField(S_, *vo_, ref_pressure_key_, pressure_key_, passwd_);
+  }
+
+  InitializeCVFieldFromCVField(S_, *vo_, prev_water_storage_key_, water_storage_key_, passwd_);
 }
 
 
@@ -506,7 +523,7 @@ Darcy_PK::InitializeStatistics_(bool init_darcy)
 
 
 /* *******************************************************************
-* Performs one time step from t_old to t_new. The boundary conditions
+* Performs one timestep from t_old to t_new. The boundary conditions
 * are calculated only once, during the initialization step.
 ******************************************************************* */
 bool
@@ -518,25 +535,27 @@ Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // refresh data
   UpdateSourceBoundaryData(t_old, t_new, *solution);
 
-  // calculate and assemble elemental stiffness matrices
-  double factor = 1.0 / g_;
-  const auto& ss = S_->Get<CV_t>(specific_storage_key_, Tags::DEFAULT);
-  CompositeVector ss_g(ss);
-  ss_g.Update(0.0, ss, factor);
+  // add accumulation term: specific storage
+  op_->RestoreCheckPoint();
 
-  factor = 1.0 / (g_ * dt_);
+  const auto& ws_prev = S_->Get<CV_t>(prev_water_storage_key_, Tags::DEFAULT);
+  S_->GetEvaluator(water_storage_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
+  const auto& dws_dp =
+    S_->GetDerivative<CV_t>(water_storage_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT);
+  op_acc_->AddAccumulationRhs(dws_dp, ws_prev, 1.0 / dt_, "cell", true);
+  // op_acc_->AddAccumulationDelta(*solution, dws_dp, dws_dp, dt_, "cell");
+
+  // add accumulation term: specific yield
+  double factor = 1.0 / (g_ * dt_);
   CompositeVector sy_g(*specific_yield_copy_);
   sy_g.Scale(factor);
 
-  if (flow_on_manifold_) {
+  if (assumptions_.flow_on_manifold) {
     S_->GetEvaluator(aperture_key_).Update(*S_, aperture_key_);
     const auto& aperture = S_->Get<CV_t>(aperture_key_, Tags::DEFAULT);
-    ss_g.Multiply(1.0, ss_g, aperture, 0.0);
     sy_g.Multiply(1.0, sy_g, aperture, 0.0);
   }
 
-  op_->RestoreCheckPoint();
-  op_acc_->AddAccumulationDelta(*solution, ss_g, ss_g, dt_, "cell");
   op_acc_->AddAccumulationDeltaNoVolume(*solution, sy_g, "cell");
 
   // Peaceman model
@@ -545,8 +564,15 @@ Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     op_acc_->AddAccumulationTerm(wi, "cell");
   }
 
-  // Update fields due to fracture dynamics or other dynamics
-  if (flow_on_manifold_) {
+  // add stabilization based on Lipschiz constant
+  if (L_scheme_) {
+    const auto& stability = S_->Get<CV_t>(L_scheme_stab_key_);
+    const auto& u_prev = S_->Get<CV_t>(L_scheme_prev_key_);
+    op_acc_->AddAccumulationDelta(u_prev, stability, stability, dt_, "cell");
+  }
+
+  // add diffusion matrices
+  if (assumptions_.flow_on_manifold) {
     S_->GetEvaluator(permeability_eff_key_).Update(*S_, "flow");
     op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   }
@@ -565,12 +591,7 @@ Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   op_->ApplyInverse(rhs, *solution);
-
-  // update some fields, we cannot move this to commit step due to "initialize"
-  if (flow_on_manifold_) {
-    S_->GetW<CV_t>(prev_aperture_key_, Tags::DEFAULT, passwd_) =
-      S_->Get<CV_t>(aperture_key_, Tags::DEFAULT);
-  }
+  pressure_eval_->SetChanged();
 
   // statistics
   num_itrs_++;
@@ -596,9 +617,9 @@ Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   // estimate time multiplier
-  dt_desirable_ = ts_control_->get_timestep(dt_MPC, 1);
+  dt_ = ts_control_->getTimestep(dt_MPC, 1, true);
 
-  // Darcy_PK always takes the suggested time step and cannot fail
+  // Darcy_PK always takes the suggested timestep and cannot fail
   dt_tuple times(t_new, dt_MPC);
   dt_history_.push_back(times);
 
@@ -613,10 +634,16 @@ Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void
 Darcy_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
+  double dt = t_new - t_old;
+
   ComputeMolarFlowRate_(true);
   S_->GetEvaluator(vol_flowrate_key_).Update(*S_, passwd_);
 
-  if (coupled_to_matrix_ || flow_on_manifold_) VV_FractureConservationLaw();
+  S_->GetEvaluator(water_storage_key_).Update(*S_, "flow");
+  S_->GetW<CV_t>(prev_water_storage_key_, Tags::DEFAULT, passwd_) =
+    S_->Get<CV_t>(water_storage_key_, Tags::DEFAULT);
+
+  if (coupled_to_matrix_ || assumptions_.flow_on_manifold) VV_FractureConservationLaw(dt);
 
   // update time derivative
   *pdot_cells_prev = *pdot_cells;
@@ -675,15 +702,6 @@ Darcy_PK::UpdateSpecificYield_()
   }
 }
 
-
-/* ******************************************************************
-* This is strange.
-****************************************************************** */
-void
-Darcy_PK::CalculateDiagnostics(const Tag& tag)
-{
-  UpdateLocalFields_(S_.ptr());
-}
 
 } // namespace Flow
 } // namespace Amanzi

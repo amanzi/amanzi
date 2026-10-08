@@ -26,36 +26,27 @@ ReactiveTransport_PK::ReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
                                            const Teuchos::RCP<TreeVector>& soln)
   : Amanzi::PK_MPCAdditive<PK>(pk_tree, global_list, S, soln)
 {
-  storage_created = false;
-  chem_step_succeeded = true;
+  int i0(-1);
+  for (int i = 0; i < 2; ++i) {
+    transport_pk_ = Teuchos::rcp_dynamic_cast<Transport::Transport_PK>(sub_pks_[i]);
+    if (transport_pk_ != Teuchos::null) {
+      i0 = i;
+      break;
+    }
+  }
+  AMANZI_ASSERT(i0 >= 0);
 
-  transport_pk_ = Teuchos::rcp_dynamic_cast<Transport::Transport_PK>(sub_pks_[1]);
-  AMANZI_ASSERT(transport_pk_ != Teuchos::null);
-
-  chemistry_pk_ = Teuchos::rcp_dynamic_cast<AmanziChemistry::Chemistry_PK>(sub_pks_[0]);
+  chemistry_pk_ = Teuchos::rcp_dynamic_cast<AmanziChemistry::Chemistry_PK>(sub_pks_[1 - i0]);
   AMANZI_ASSERT(chemistry_pk_ != Teuchos::null);
 
   // communicate chemistry engine to transport.
   transport_pk_->SetupChemistry(chemistry_pk_);
 
-  // master_ = 1;  // Transport;
-  // slave_ = 0;  // Chemistry;
-}
-
-
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-void
-ReactiveTransport_PK::Initialize()
-{
-  Amanzi::PK_MPCAdditive<PK>::Initialize();
-
-  if (S_->HasRecord("total_component_concentration")) {
-    total_component_concentration_stor = Teuchos::rcp(new Epetra_MultiVector(
-      *S_->Get<CompositeVector>("total_component_concentration").ViewComponent("cell", true)));
-    storage_created = true;
-  }
+  // tell chemistry it is operator split, which means it will use TCC next
+  // instead of current.  Also tell it to use Amanzi generic passwd
+  getSubPKPlist_(0)->set("concentration tag current", Tags::COPY.get());
+  getSubPKPlist_(0)->set("concentration tag next", "operator_split");
+  getSubPKPlist_(0)->set("primary variable password", "state");
 }
 
 
@@ -67,11 +58,7 @@ ReactiveTransport_PK::get_dt()
 {
   dTtran_ = transport_pk_->get_dt();
   dTchem_ = chemistry_pk_->get_dt();
-
-  if (!chem_step_succeeded && (dTchem_ / dTtran_ > 0.99)) { dTchem_ *= 0.5; }
-
   if (dTtran_ > dTchem_) dTtran_ = dTchem_;
-
   return dTchem_;
 }
 
@@ -84,9 +71,6 @@ ReactiveTransport_PK::set_dt(double dt)
 {
   dTtran_ = dt;
   dTchem_ = dt;
-  //dTchem_ = chemistry_pk_->get_dt();
-  //if (dTchem_ > dTtran_) dTchem_ = dTtran_;
-  //if (dTtran_ > dTchem_) dTtran_= dTchem_;
   chemistry_pk_->set_dt(dTchem_);
   transport_pk_->set_dt(dTtran_);
 }
@@ -98,40 +82,24 @@ ReactiveTransport_PK::set_dt(double dt)
 bool
 ReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
+  // NOTE: this need not be implemented except that the PKs are reversed.  Is
+  // there a good reason that chemistry's Setup() is called before transport's
+  // Setup(), but transport's Advance() is called before chemistry's Advance()?
+  // --ETC
   bool fail = false;
-  chem_step_succeeded = false;
 
   // First we do a transport step.
   bool pk_fail = transport_pk_->AdvanceStep(t_old, t_new, reinit);
-
-  // Right now transport step is always succeeded.
-  if (!pk_fail) {
-    *total_component_concentration_stor =
-      *transport_pk_->total_component_concentration()->ViewComponent("cell", true);
-  } else {
-    Errors::Message message("MPC: Transport PK returned an unexpected error.");
-    Exceptions::amanzi_throw(message);
-  }
+  if (pk_fail) return pk_fail;
 
   // Second, we do a chemistry step using a copy of the tcc vector
-  try {
-    chemistry_pk_->set_aqueous_components(total_component_concentration_stor);
-
-    pk_fail = chemistry_pk_->AdvanceStep(t_old, t_new, reinit);
-    chem_step_succeeded = true;
-
-    *S_->GetW<CompositeVector>("total_component_concentration", "state")
-       .ViewComponent("cell", true) = *chemistry_pk_->aqueous_components();
-  } catch (const Errors::Message& chem_error) {
-    fail = true;
-  }
-
-  return fail;
+  pk_fail = chemistry_pk_->AdvanceStep(t_old, t_new, reinit);
+  return pk_fail;
 };
 
 
 // -----------------------------------------------------------------------------
-//
+// Only one needs to commit due to the shared primary unknown
 // -----------------------------------------------------------------------------
 void
 ReactiveTransport_PK::CommitStep(double t_old, double t_new, const Tag& tag)

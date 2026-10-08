@@ -30,12 +30,12 @@ namespace AmanziMesh {
 // -- subset_maps - pair of discontinuous master and ghosted maps
 //                 this must be a subset of parent_maps
 // Returns pair of continuous master and ghosted maps that corresponds to subset maps
-std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map>>
-createContiguousMaps(Teuchos::RCP<const AmanziMesh::MeshFramework> mesh,
-                     const std::pair<Teuchos::RCP<const Epetra_BlockMap>,
-                                     Teuchos::RCP<const Epetra_BlockMap>>& parent_maps,
-                     const std::pair<Teuchos::RCP<const Epetra_BlockMap>,
-                                     Teuchos::RCP<const Epetra_BlockMap>>& subset_maps);
+std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map>> createContiguousMaps(
+  Teuchos::RCP<const AmanziMesh::MeshFramework> mesh,
+  const std::pair<Teuchos::RCP<const Epetra_BlockMap>, Teuchos::RCP<const Epetra_BlockMap>>&
+    parent_maps,
+  const std::pair<Teuchos::RCP<const Epetra_BlockMap>, Teuchos::RCP<const Epetra_BlockMap>>&
+    subset_maps);
 
 } // namespace AmanziMesh
 } // namespace Amanzi

@@ -143,7 +143,9 @@ RunTest(std::string filename, std::string basis, double& l2norm)
       double unorm = honorm;
       for (int i = 0; i <= dim; ++i) unorm += (*field_c)[i][c] * (*field_c)[i][c];
 
-      if (unorm > 0.0 && std::log10(honorm / unorm) > threshold) { ids[ids_count++] = c; }
+      if (unorm > 0.0 && std::log10(honorm / unorm) > threshold) {
+        ids[ids_count++] = c;
+      }
     }
     Kokkos::resize(ids, ids_count);
 

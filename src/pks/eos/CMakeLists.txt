@@ -26,17 +26,29 @@ set(eos_src_files
     EOSViscosityEvaluator.cc
     H2O_Density.cc
     H2O_DensityFEHM.cc
+    H2O_DensityIAPWS95.cc
+    H2O_DensityIAPWS97.cc
     H2O_ThermalConductivity.cc
+    H2O_ThermalConductivityIAPWS95.cc
+    H2O_ThermalConductivityIAPWS97.cc
     H2O_SaturatedVaporPressure.cc
     H2O_Viscosity.cc
     H2O_ViscosityFEHM.cc
+    H2O_ViscosityIAPWS95.cc
+    H2O_ViscosityIAPWS97.cc
     Henry_Solubility.cc
+    IAPWS97.cc
+    IAPWS95.cc
+    IAPWS95_Spline.cc
     IdealGas_Density.cc
+    IdealGas_ThermalConductivity.cc
+    IdealGas_Viscosity.cc
     IsobaricEOSEvaluator.cc
     LookupTable.cc
     LookupTable_Amanzi.cc
     LookupTable_FEHM.cc
     MolarFractionGasEvaluator.cc
+    NaCl_ThermalConductivity.cc
     VaporInGas_Density.cc
     VaporInGas_Diffusion.cc
     VaporLiquid_Tabular.cc
@@ -62,23 +74,36 @@ set(eos_inc_files
     EOS_Diffusion.hh
     EOS_SaturatedVaporPressure.hh
     H2O_ThermalConductivity.hh
+    H2O_ThermalConductivityIAPWS95.hh
+    H2O_ThermalConductivityIAPWS97.hh
+    IAPWS97.hh
+    IAPWS95.hh
+    IAPWS95_Spline.hh
+    IAPWS95Factory.hh
     EOS_Utils.hh
     EOS_Viscosity.hh
     eos_reg.hh
     EOSFactory.hh
     H2O_Density.hh
     H2O_DensityFEHM.hh
+    H2O_DensityIAPWS95.hh
+    H2O_DensityIAPWS97.hh
     H2O_SaturatedVaporPressure.hh
     H2O_Viscosity.hh
     H2O_ViscosityFEHM.hh
+    H2O_ViscosityIAPWS95.hh
+    H2O_ViscosityIAPWS97.hh
     Henry_Solubility.hh
     IdealGas_Density.hh
+    IdealGas_ThermalConductivity.hh
+    IdealGas_Viscosity.hh
     IsobaricEOSEvaluator.hh
     LookupTable.hh
     LookupTable_Amanzi.hh
     LookupTable_FEHM.hh
     LookupTableFactory.hh
     MolarFractionGasEvaluator.hh
+    NaCl_ThermalConductivity.hh
     VaporInGas_Density.hh
     VaporInGas_Diffusion.hh
     ViscosityConstant.hh
@@ -95,16 +120,32 @@ if (BUILD_TESTS)
     # Copy test directory files if any out of source build
     if (NOT (${EOS_SOURCE_DIR} EQUAL ${EOS_BINARY_DIR}) )
         file(GLOB DataFiles "${EOS_SOURCE_DIR}/test/*.xml"
-                            "${EOS_SOURCE_DIR}/test/*.eos")
+                            "${EOS_SOURCE_DIR}/test/*.eos"
+                            "${EOS_SOURCE_DIR}/test/*.csv")
         file(COPY ${DataFiles} DESTINATION ${EOS_BINARY_DIR}/test/)
     endif()
 
     set(amanzi_libs eos atk operators)
 
-    # Test: Multiscale
+    # Test: All
     add_amanzi_test(eos_evaluators eos_evaluators
                     KIND unit
                     SOURCE test/Main.cc test/eos_evaluators.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(eos_iapws95 eos_iapws95
+                    KIND unit
+                    SOURCE test/Main.cc test/eos_iapws95.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(eos_iapws97 eos_iapws97
+                    KIND unit
+                    SOURCE test/Main.cc test/eos_iapws97.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    #add_amanzi_test(eos_iapws95_spline eos_iapws95_spline
+    #                KIND unit
+    #                SOURCE test/Main.cc test/eos_iapws95_spline.cc
+    #                LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 

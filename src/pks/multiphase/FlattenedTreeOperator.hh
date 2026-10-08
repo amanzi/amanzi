@@ -30,7 +30,7 @@
 /* ******************************************************************
   TreeOperator is the block analogue of Operators -- it provides a
   linear operator acting on a TreeVectorSpace (TVS). This class
-  flattens a TVS by creting as many blocks as there are copies of
+  flattens a TVS by creating as many blocks as there are copies of
   a CompositeVectorSpace in the TVS.
 ****************************************************************** */
 
@@ -44,13 +44,13 @@ class FlattenedTreeOperator : public Operators::TreeOperator {
   using Vector_t = TreeVector;
   using VectorSpace_t = TreeVector::VectorSpace_t;
 
-  FlattenedTreeOperator(){};
+  FlattenedTreeOperator() {};
   FlattenedTreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs);
-  ~FlattenedTreeOperator(){};
+  ~FlattenedTreeOperator() {};
 
   // modified algorithms that use two supermaps
   virtual void SymbolicAssembleMatrix();
-  virtual void InitializeInverse(){};
+  virtual void InitializeInverse() {};
   virtual void AssembleMatrix();
 
   // only assembled matrix is allowed

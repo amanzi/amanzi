@@ -59,7 +59,8 @@ class DomainSet;
 
 class VisualizationDomainSet : public Visualization {
  public:
-  VisualizationDomainSet(Teuchos::ParameterList& plist) : Visualization(plist)
+  VisualizationDomainSet(Teuchos::ParameterList& plist)
+    : Visualization(plist)
   {
     write_partition_ = false; // doesn't work yet
   }

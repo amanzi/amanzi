@@ -21,11 +21,11 @@ function(CHECK_MPI_SOURCE_COMPILES FLAG)
   set(_mpi_c_source "
       #include <stdio.h>
       #include <mpi.h>
-      void main(int argc, char **argv) 
+      int main(int argc, char **argv) 
       {
         MPI_Init(&argc,&argv);
-        puts(__LINE__);
         MPI_Finalize();
+        return 0;
       }")
 
     # CHECK_C_SOURCE_COMPILES is a MACRO not a function

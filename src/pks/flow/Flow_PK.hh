@@ -184,25 +184,27 @@ Second, the developers may use it instead of a factory of evaluators such as
 creation of primary and secondary evaluators for rock porosity models.
 Combination of both approaches may lead to a more efficient code.
 
-* `"vapor diffusion`" [bool] is set up automatically by a high-level PK,
-  e.g. by EnergyFlow PK. The default value is `"false`".
+.. admonition:: flow_assumptions-spec
 
-* `"flow and transport in fractures`" [bool] indicates that Darcy flow is calculated in fractures.
-  This option is ignored is mesh dimentionaly equals to manifold dimensionality.
+  * `"vapor diffusion`" [bool] is set up automatically by a high-level PK,
+    e.g. by EnergyFlow PK. The default value is `"false`".
 
-* `"multiscale model`" [string] specifies a multiscale model.
-  Available options are `"single porosity`" (default) and `"dual continuum discontinum matrix`".
+  * `"flow and transport in fractures`" [bool] indicates that Darcy flow is calculated in fractures.
+    This option is ignored is mesh dimentionaly equals to manifold dimensionality.
 
-* `"viscosity model`" [string] changes the evaluator for liquid viscosity.
-  Available options are `"generic`" and `"constant viscosity`" (default).
+  * `"multiscale model`" [string] specifies a multiscale model.
+    Available options are `"single porosity`" (default) and `"dual continuum discontinum matrix`".
 
-* `"porosity model`" [string] specifies an isothermal porosity model.
-  Available options are `"compressible`" and `"constant`" (default).
+  * `"viscosity model`" [string] changes the evaluator for liquid viscosity.
+    Available options are `"generic`" and `"constant viscosity`" (default).
 
-* `"coupled matrix fracture flow`" [string] specifies PK's role in the strong
-  coupling of two flow PKs. The value is either `"matrix`" or `"fracture`".
+  * `"porosity model`" [string] specifies an isothermal porosity model.
+    Available options are `"compressible`" and `"constant`" (default).
 
-* `"eos lookup table`" [string] provides the name for optional EOS lookup table.
+  * `"coupled matrix fracture flow`" [string] specifies PK's role in the strong
+    coupling of two flow PKs. The value is either `"matrix`" or `"fracture`".
+
+  * `"eos lookup table`" [string] provides the name for optional EOS lookup table.
 
 .. code-block:: xml
 
@@ -243,6 +245,7 @@ Global parameters
 #include "CompositeVectorSpace.hh"
 #include "EvaluatorIndependentFunction.hh"
 #include "Key.hh"
+#include "ModelAssumptions.hh"
 #include "Operator.hh"
 #include "PK_DomainFunction.hh"
 #include "PK_PhysicalBDF.hh"
@@ -267,11 +270,14 @@ class Flow_PK : public PK_PhysicalBDF {
           const Teuchos::RCP<Teuchos::ParameterList>& glist,
           const Teuchos::RCP<State>& S,
           const Teuchos::RCP<TreeVector>& soln);
-  virtual ~Flow_PK(){};
+  virtual ~Flow_PK() {};
 
   // members required by PK interface
+  virtual void parseParameterList() override {};
   virtual void Setup() override;
   virtual void Initialize() override;
+  virtual void CalculateDiagnostics(const Tag& tag) override { UpdateLocalFields_(S_.ptr()); }
+  virtual std::vector<Key> SetupLSchemeKey(Teuchos::ParameterList& plist) override;
 
   // other members of this PK.
   // -- initialize simple fields common for both flow models.
@@ -302,19 +308,19 @@ class Flow_PK : public PK_PhysicalBDF {
 
   // -- V&V
   void VV_ValidateBCs() const;
-  void VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const;
-  void VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S, double dT) const;
+  void VV_ReportWaterBalance(const Teuchos::Ptr<State>& S, double dt) const;
+  void VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S, double dt) const;
   void VV_PrintHeadExtrema(const CompositeVector& pressure) const;
   void VV_PrintSourceExtrema() const;
-  void VV_FractureConservationLaw() const;
+  void VV_FractureConservationLaw(double dt) const;
 
   // -- extensions
   void VerticalNormals(int c, AmanziGeometry::Point& n1, AmanziGeometry::Point& n2);
   virtual double BoundaryFaceValue(int f, const CompositeVector& u);
 
-  // access
-  Teuchos::RCP<Operators::BCs> op_bc() { return op_bc_; }
   double seepage_mass() { return seepage_mass_; } // support of unit tests
+  Teuchos::RCP<const std::vector<WhetStone::Tensor>> getK() { return K_; }
+  bool IsManifold() { return assumptions_.flow_on_manifold; }
 
  protected:
   void Setup_FlowRates_(bool mass_to_molar, double molar_rho);
@@ -344,12 +350,12 @@ class Flow_PK : public PK_PhysicalBDF {
   int dim;
 
   std::string passwd_;
-  bool peaceman_model_, use_bulk_modulus_;
+  bool peaceman_model_;
 
-  // Stationary physical quantatities
-  std::vector<WhetStone::Tensor> K;
+  // Stationary physical quantaties
+  Teuchos::RCP<std::vector<WhetStone::Tensor>> K_;
   AmanziGeometry::Point gravity_;
-  double g_, rho_, molar_rho_, atm_pressure_;
+  double g_, rho_, molar_rho_, molar_mass_, atm_pressure_;
   double flux_units_; // scaling for flux units from kg to moles.
 
   Teuchos::RCP<Epetra_MultiVector> Kxy;
@@ -359,8 +365,6 @@ class Flow_PK : public PK_PhysicalBDF {
   std::vector<Teuchos::RCP<FlowBoundaryFunction>> bcs_;
   int nseepage_prev;
 
-  Teuchos::RCP<Operators::BCs> op_bc_;
-
   // source terms and liquid balance
   std::vector<Teuchos::RCP<FlowSourceFunction>> srcs;
   mutable double mass_bc, seepage_mass_, mass_initial;
@@ -368,10 +372,16 @@ class Flow_PK : public PK_PhysicalBDF {
   // field evaluators (MUST GO AWAY lipnikov@lanl.gov)
   Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>> pressure_eval_;
   Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>> pressure_msp_eval_;
+  Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>> mol_flowrate_eval_;
 
-  // DFN model
-  bool flow_on_manifold_; // true for the DFN model
+  // physical models and assumptions
+  ModelAssumptions assumptions_;
   bool coupled_to_matrix_, coupled_to_fracture_;
+  
+  bool L_scheme_ = false;
+  Key L_scheme_stab_key_, L_scheme_prev_key_, L_scheme_data_key_;
+
+  Key bcs_flow_key_;
 
   // names of state fields
   Key pressure_key_;
@@ -382,7 +392,7 @@ class Flow_PK : public PK_PhysicalBDF {
   Key permeability_key_, permeability_eff_key_;
   Key water_storage_key_, prev_water_storage_key_;
   Key viscosity_liquid_key_, mol_density_liquid_key_, mass_density_liquid_key_;
-  Key prev_aperture_key_, aperture_key_, bulk_modulus_key_, hydrostatic_stress_key_;
+  Key aperture_key_, bulk_modulus_key_;
 
   // io
   Utils::Units units_;

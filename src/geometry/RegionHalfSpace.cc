@@ -52,7 +52,9 @@ RegionHalfSpace::inside(const Point& p) const
 {
   double res(0.0);
 
-  for (int i = 0; i != p.dim(); ++i) { res += n_[i] * (p[i] - p_[i]); }
+  for (int i = 0; i != p.dim(); ++i) {
+    res += n_[i] * (p[i] - p_[i]);
+  }
 
   return res > tol_ ? false : true;
 }

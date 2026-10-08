@@ -162,10 +162,8 @@ orientFace(const MeshCache<MemSpace_kind::HOST>& mesh, const Entity_ID f, const 
 {
   auto normal = mesh.getFaceNormal(f, c);
   normal /= AmanziGeometry::norm(normal);
-  if (normal[normal.dim() - 1] > 1.e-10)
-    return 1;
-  else if (normal[normal.dim() - 1] < -1.e-10)
-    return -1;
+  if (normal[normal.dim() - 1] > 1.e-10) return 1;
+  else if (normal[normal.dim() - 1] < -1.e-10) return -1;
   return 0;
 }
 
@@ -193,12 +191,9 @@ Entity_ID
 findOpposingCell(const MeshCache<MemSpace_kind::HOST>& mesh, const Entity_ID c, const Entity_ID f)
 {
   auto fcells = mesh.getFaceCells(f);
-  if (fcells.size() == 1)
-    return -1;
-  else if (fcells[0] == c)
-    return fcells[1];
-  else
-    return fcells[0];
+  if (fcells.size() == 1) return -1;
+  else if (fcells[0] == c) return fcells[1];
+  else return fcells[0];
 }
 
 //

@@ -106,10 +106,8 @@ SUITE(DEBUG_STRING_FORMATTING)
       std::cout << " = \"" << vs << "\"" << std::endl;
       CHECK_EQUAL(width, vs.size());
 
-      if (i < 26)
-        CHECK_EQUAL('.', vs[width - precision - 1]);
-      else
-        CHECK_EQUAL('.', vs[width - precision - 4 - 1]);
+      if (i < 26) CHECK_EQUAL('.', vs[width - precision - 1]);
+      else CHECK_EQUAL('.', vs[width - precision - 4 - 1]);
       i++;
     }
   }

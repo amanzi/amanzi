@@ -40,19 +40,19 @@ namespace Operators {
 
 class ReconstructionCellLinear : public Reconstruction {
  public:
-  ReconstructionCellLinear(){};
+  ReconstructionCellLinear() {};
 
   ReconstructionCellLinear(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
-    : Reconstruction(mesh), dim(mesh->getSpaceDimension()){};
+    : Reconstruction(mesh), dim(mesh->getSpaceDimension()) {};
 
   ReconstructionCellLinear(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
                            Teuchos::RCP<CompositeVector>& gradient)
     : Reconstruction(mesh),
       dim(mesh->getSpaceDimension()),
       gradient_(gradient),
-      gradient_c_(gradient->ViewComponent("cell")){};
+      gradient_c_(gradient->ViewComponent("cell")) {};
 
-  ~ReconstructionCellLinear(){};
+  ~ReconstructionCellLinear() {};
 
   // save pointer to the already distributed field.
   virtual void Init(Teuchos::ParameterList& plist) override;
@@ -71,7 +71,7 @@ class ReconstructionCellLinear : public Reconstruction {
   }
 
   // -- calculate value, deviation from mean, and full polynomial
-  virtual double getValue(int c, const AmanziGeometry::Point& p) override;
+  virtual double getValue(int c, const AmanziGeometry::Point& p) const override;
   virtual double getValueSlope(int c, const AmanziGeometry::Point& p) override;
   virtual WhetStone::Polynomial getPolynomial(int c) const override;
 

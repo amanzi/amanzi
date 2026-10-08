@@ -12,7 +12,7 @@
 
 */
 
-#include "HDF5Reader.hh"
+#include "Reader.hh"
 
 #include "EvaluatorIndependentFromFile.hh"
 #include "Function.hh"
@@ -29,10 +29,18 @@ EvaluatorIndependentFromFile::EvaluatorIndependentFromFile(Teuchos::ParameterLis
     meshname_(plist.get<std::string>("domain name", "domain")),
     compname_(plist.get<std::string>("component name", "cell")),
     varname_(plist.get<std::string>("variable name")),
-    locname_(plist.get<std::string>("mesh entity", "cell")),
-    ndofs_(plist.get<int>("number of dofs", 1))
+    ndofs_(plist.get<int>("number of dofs", 1)),
+    checkpoint_file_(plist.get<bool>("checkpoint file", false))
 {
-  if (plist.isSublist("time function")) {
+  if (checkpoint_file_) temporally_variable_ = false;
+
+  if (plist.isParameter("mesh entity")) {
+    locname_ = AmanziMesh::createEntityKind(plist.get<std::string>("mesh entity"));
+  } else {
+    locname_ = AmanziMesh::createEntityKind(compname_);
+  }
+
+  if (temporally_variable_ && plist.isSublist("time function")) {
     FunctionFactory fac;
     time_func_ = Teuchos::rcp(fac.Create(plist.sublist("time function")));
   }
@@ -85,31 +93,19 @@ EvaluatorIndependentFromFile::EnsureCompatibility(State& S)
   EvaluatorIndependent::EnsureCompatibility(S);
 
   // requirements on vector data
-  if (locname_ == "cell") {
-    S.Require<CompositeVector, CompositeVectorSpace>(my_key_, my_tag_, my_key_)
-      .SetMesh(S.GetMesh(meshname_))
-      ->AddComponent(compname_, AmanziMesh::CELL, ndofs_);
-  } else if (locname_ == "face") {
-    S.Require<CompositeVector, CompositeVectorSpace>(my_key_, my_tag_, my_key_)
-      .SetMesh(S.GetMesh(meshname_))
-      ->AddComponent(compname_, AmanziMesh::FACE, ndofs_);
-  } else if (locname_ == "boundary_face") {
-    S.Require<CompositeVector, CompositeVectorSpace>(my_key_, my_tag_, my_key_)
-      .SetMesh(S.GetMesh(meshname_))
-      ->AddComponent(compname_, AmanziMesh::BOUNDARY_FACE, ndofs_);
-  } else {
-    Errors::Message m;
-    m << "IndependentVariableFromFile: invalid location name: \"" << locname_ << "\"";
-    throw(m);
-  }
+  S.Require<CompositeVector, CompositeVectorSpace>(my_key_, my_tag_, my_key_)
+    .SetMesh(S.GetMesh(meshname_))
+    ->AddComponent(compname_, locname_, ndofs_);
 
   // load times, ensure file is valid
   // if there exists no times, default value is set to +infinity
-  HDF5Reader reader(filename_);
+  auto reader = createReader(filename_);
   times_.clear();
   if (temporally_variable_) {
     try {
-      reader.ReadData("/time", times_);
+      Teuchos::Array<double> times;
+      reader->read("/time", times);
+      times_ = times.toVector();
     } catch (...) {
       std::stringstream messagestream;
       messagestream << "Variable " << my_key_ << " is defined as a field changing in time.\n"
@@ -228,7 +224,9 @@ EvaluatorIndependentFromFile::Update_(State& S)
     }
   }
 
-  if (locname_ == "cell" && (cv.HasComponent("boundary_face") || cv.HasComponent("face")))
+
+  if (locname_ == AmanziMesh::Entity_kind::CELL &&
+      (cv.HasComponent("boundary_face") || cv.HasComponent("face")))
     DeriveFaceValuesFromCellValues(cv);
 }
 
@@ -254,14 +252,11 @@ EvaluatorIndependentFromFile::LoadFile_(int i)
   Epetra_MultiVector& vec = *val_after_->ViewComponent(compname_, false);
   for (int j = 0; j != ndofs_; ++j) {
     std::stringstream varname;
-    varname << varname_ << "." << locname_ << "." << j << "//" << i;
-    bool successful = file_input->readData(*vec(j), varname.str());
-    if (!successful) {
-      Errors::Message msg;
-      msg << "EvaluatorIndependentFromFile for \"" << my_key_ << "\" cannot read variable \""
-          << varname.str() << "\" from file \"" << filename_ << "\"";
-      Exceptions::amanzi_throw(msg);
+    varname << varname_ << "." << compname_ << "." << j;
+    if (!checkpoint_file_) {
+      varname << "//" << i;
     }
+    file_input->readData(*vec(j), varname.str());
   }
 
   // close file

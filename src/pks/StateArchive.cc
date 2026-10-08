@@ -20,7 +20,9 @@ void
 StateArchive::Add(const std::vector<std::string>& fields, const Tag& tag)
 {
   tag_ = tag;
-  for (const auto& name : fields) { fields_.emplace(name, S_->Get<CompositeVector>(name, tag)); }
+  for (const auto& name : fields) {
+    fields_.emplace(name, S_->Get<CompositeVector>(name, tag));
+  }
 }
 
 
@@ -30,18 +32,17 @@ StateArchive::Add(const std::vector<std::string>& fields, const Tag& tag)
 void
 StateArchive::Restore(const std::string& passwd)
 {
-  for (auto it = fields_.begin(); it != fields_.end(); ++it) {
-    if (S_->HasEvaluator(it->first, tag_)) {
-      if (S_->GetEvaluatorPtr(it->first, tag_)->get_type() == EvaluatorType::SECONDARY)
-        S_->GetW<CompositeVector>(it->first, tag_, it->first) = it->second;
-    } else {
-      S_->GetW<CompositeVector>(it->first, tag_, passwd) = it->second;
-    }
+  std::stringstream ss1, ss2;
 
-    if (vo_->getVerbLevel() > Teuchos::VERB_MEDIUM) {
-      Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "reverted field \"" << it->first << "\"" << std::endl;
+  for (auto it = fields_.begin(); it != fields_.end(); ++it) {
+    std::string owner(passwd);
+    if (S_->HasEvaluator(it->first, tag_)) {
+      auto type = S_->GetEvaluatorPtr(it->first, tag_)->get_type();
+      if (type == EvaluatorType::SECONDARY || type == EvaluatorType::INDEPENDENT) owner = it->first;
     }
+    S_->GetW<CompositeVector>(it->first, tag_, owner) = it->second;
+
+    ss1 << "\"" << it->first << "\", ";
 
     if (S_->HasEvaluator(it->first, tag_)) {
       if (S_->GetEvaluatorPtr(it->first, tag_)->get_type() == EvaluatorType::PRIMARY) {
@@ -49,12 +50,15 @@ StateArchive::Restore(const std::string& passwd)
           S_->GetEvaluatorPtr(it->first, tag_))
           ->SetChanged();
 
-        if (vo_->getVerbLevel() > Teuchos::VERB_MEDIUM) {
-          Teuchos::OSTab tab = vo_->getOSTab();
-          *vo_->os() << "changed status of primary field \"" << it->first << "\"" << std::endl;
-        }
+        ss2 << "\"" << it->first << "\", ";
       }
     }
+  }
+
+  if (vo_->getVerbLevel() > Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "restored: " << ss1.str() << std::endl;
+    *vo_->os() << "changed status of primaries: " << ss2.str() << std::endl;
   }
 }
 
@@ -78,6 +82,11 @@ StateArchive::CopyFieldsToPrevFields(std::vector<std::string>& fields,
       }
       if (add) fields_.emplace(prev, S_->Get<CompositeVector>(prev));
       S_->GetW<CompositeVector>(prev, tag_, passwd) = S_->Get<CompositeVector>(*it);
+
+      // if (vo_->getVerbLevel() > Teuchos::VERB_MEDIUM) {
+      //   Teuchos::OSTab tab = vo_->getOSTab();
+      //   *vo_->os() << "moved " << *it << " to " << prev << std::endl;
+      // }
     }
   }
 }
@@ -90,9 +99,10 @@ const CompositeVector&
 StateArchive::get(const std::string& name)
 {
   auto it = fields_.find(name);
-  if (it != fields_.end()) return it->second;
-
+  if (it != fields_.end() ) return it->second;
   AMANZI_ASSERT(false);
+  // hide warnings
+  return fields_.begin()->second;
 }
 
 } // namespace Amanzi

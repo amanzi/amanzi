@@ -20,7 +20,8 @@
 namespace Amanzi {
 namespace Energy {
 
-IEM_Linear::IEM_Linear(Teuchos::ParameterList& plist) : plist_(plist)
+IEM_Linear::IEM_Linear(Teuchos::ParameterList& plist)
+  : plist_(plist)
 {
   InitializeFromPlist_();
 }

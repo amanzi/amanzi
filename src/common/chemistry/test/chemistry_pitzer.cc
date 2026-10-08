@@ -30,7 +30,7 @@ SUITE(TestPitzer)
   class PitzerTest {
    public:
     PitzerTest();
-    ~PitzerTest(){};
+    ~PitzerTest() {};
 
     void StorePrimaries();
 
@@ -164,10 +164,14 @@ SUITE(TestPitzer)
 
     am_ = amfac_.Create("pitzer-hwm", parameters, sp_, aqx_, vo_.ptr());
 
-    if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) { am_->Display(); }
+    if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+      am_->Display();
+    }
     am_->CalculateActivityCoefficients(&sp_, &aqx_, &H2O);
     double actw = log10(H2O.act_coef());
-    for (int i = 0; i < sp_.size(); i++) { gamma[i] = log10(sp_[i].act_coef()); }
+    for (int i = 0; i < sp_.size(); i++) {
+      gamma[i] = log10(sp_[i].act_coef());
+    }
     // std::cout << "Testing coeff. 1" << std::endl;
     // Results are compared with PHREEQC
     CHECK_CLOSE(-0.243, gamma[0], 1.0e-2);  // Cl-

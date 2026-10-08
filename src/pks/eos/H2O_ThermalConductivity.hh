@@ -29,18 +29,16 @@ namespace AmanziEOS {
 class H2O_ThermalConductivity : public EOS_ThermalConductivity {
  public:
   explicit H2O_ThermalConductivity(Teuchos::ParameterList& plist);
-  virtual ~H2O_ThermalConductivity(){};
+  virtual ~H2O_ThermalConductivity() {};
 
-  virtual double ThermalConductivity(double T, double p);
-  virtual double DThermalConductivityDT(double T, double p);
-  virtual double DThermalConductivityDP(double T, double p)
+  virtual double ThermalConductivity(double p, double T, double phi);
+  virtual double DThermalConductivityDp(double p, double T, double phi) { return 0.0; }
+  virtual double DThermalConductivityDT(double p, double T, double phi);
+  virtual double DThermalConductivityDPhi(double p, double T, double phi)
   {
     AMANZI_ASSERT(false);
     return 0.0;
   }
-
- protected:
-  virtual void InitializeFromPlist_();
 
  protected:
   // constants for water, hard-coded

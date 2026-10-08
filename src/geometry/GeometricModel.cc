@@ -23,7 +23,9 @@ namespace Amanzi {
 namespace AmanziGeometry {
 
 // Constructor with no regions
-GeometricModel::GeometricModel(unsigned int dim) : dim_(dim) {}
+GeometricModel::GeometricModel(unsigned int dim)
+  : dim_(dim)
+{}
 
 GeometricModel::GeometricModel(unsigned int dim,
                                Teuchos::ParameterList& gm_params,

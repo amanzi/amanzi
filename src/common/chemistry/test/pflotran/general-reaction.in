@@ -32,7 +32,7 @@ CHEMISTRY
 : == reference variables ======================================================
 REFERENCE_POROSITY 0.25d0
 
-: == time stepping ============================================================
+: == timestepping ============================================================
 TIMESTEPPER
   TS_ACCELERATION 0
 /

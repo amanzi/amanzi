@@ -34,7 +34,8 @@ namespace Amanzi {
 namespace Operators {
 
 // Constructor
-MatrixFE::MatrixFE(const Teuchos::RCP<const GraphFE>& graph) : graph_(graph)
+MatrixFE::MatrixFE(const Teuchos::RCP<const GraphFE>& graph)
+  : graph_(graph)
 {
   // create the crs matrices
   n_used_ = graph_->GhostedRowMap().NumMyElements();
@@ -47,11 +48,11 @@ MatrixFE::MatrixFE(const Teuchos::RCP<const GraphFE>& graph) : graph_(graph)
 
 // zero for summation
 int
-MatrixFE::Zero()
+MatrixFE::PutScalar(double val)
 {
   int ierr(0);
-  ierr = matrix_->PutScalar(0.);
-  if (graph_->includes_offproc()) ierr |= offproc_matrix_->PutScalar(0.);
+  ierr = matrix_->PutScalar(val);
+  if (graph_->includes_offproc() ) ierr |= offproc_matrix_->PutScalar(val);
   return ierr;
 }
 
@@ -92,7 +93,7 @@ MatrixFE::SumIntoMyValues(const int* row_indices,
   int ierr(0);
   std::vector<double> row_vals(vals.N());
   for (int i = 0; i != vals.M(); ++i) {
-    for (int j = 0; j != vals.N(); ++j) row_vals[j] = vals(i, j);
+    for (int j = 0; j != vals.N() ; ++j) row_vals[j] = vals(i, j);
     ierr |= SumIntoMyValues(row_indices[i], vals.N(), &row_vals[0], col_indices);
   }
   return ierr;
@@ -119,7 +120,7 @@ MatrixFE::SumIntoMyValues(const int* row_indices,
   int ierr(0);
   std::vector<double> row_vals(vals.numCols());
   for (int i = 0; i != vals.numRows(); ++i) {
-    for (int j = 0; j != vals.numCols(); ++j) row_vals[j] = vals(i, j);
+    for (int j = 0; j != vals.numCols() ; ++j) row_vals[j] = vals(i, j);
     ierr |= SumIntoMyValues(row_indices[i], vals.numRows(), &row_vals[0], col_indices);
   }
   return ierr;
@@ -147,7 +148,7 @@ MatrixFE::SumIntoMyValues(const int* row_indices,
   int ierr(0);
   std::vector<double> row_vals(vals.NumCols());
   for (int i = 0; i != vals.NumRows(); ++i) {
-    for (int j = 0; j != vals.NumCols(); ++j) row_vals[j] = vals(i, j);
+    for (int j = 0; j != vals.NumCols() ; ++j) row_vals[j] = vals(i, j);
     ierr |= SumIntoMyValues(row_indices[i], vals.NumCols(), &row_vals[0], col_indices);
   }
   return ierr;
@@ -160,7 +161,7 @@ MatrixFE::DiagonalShift(double shift)
   int ierr(0);
   Epetra_Vector diag(RowMap());
   ierr = matrix_->ExtractDiagonalCopy(diag);
-  for (int i = 0; i != diag.MyLength(); ++i) diag[i] += shift;
+  for (int i = 0; i != diag.MyLength() ; ++i) diag[i] += shift;
   ierr |= matrix_->ReplaceDiagonalValues(diag);
   return ierr;
 }
@@ -172,7 +173,9 @@ MatrixFE::DiagonalShiftMin(double shift_min)
   int ierr(0);
   Epetra_Vector diag(RowMap());
   ierr = matrix_->ExtractDiagonalCopy(diag);
-  for (int i = 0; i != diag.MyLength(); ++i) { diag[i] = std::max(diag[i], shift_min); }
+  for (int i = 0; i != diag.MyLength(); ++i) {
+    diag[i] = std::max(diag[i], shift_min);
+  }
   ierr |= matrix_->ReplaceDiagonalValues(diag);
   return ierr;
 }

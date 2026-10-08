@@ -26,8 +26,8 @@ namespace WhetStone {
 class FunctionComposite : public WhetStoneFunction {
  public:
   FunctionComposite(const WhetStoneFunction* f1, std::vector<const WhetStoneFunction*>& f2)
-    : f1_(f1), f2_(f2){};
-  ~FunctionComposite(){};
+    : f1_(f1), f2_(f2) {};
+  ~FunctionComposite() {};
 
   virtual double Value(const AmanziGeometry::Point& xp) const
   {

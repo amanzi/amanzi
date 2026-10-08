@@ -227,5 +227,12 @@ if (BUILD_TESTS)
                     KIND unit
         	    SOURCE test/Main.cc test/mesh_nanoflann.cc
         	    LINK_LIBS ${mesh_test_link_libs})
+
+    # # Test: merge two meshes, currently
+    #   only supported by MSTK. 
+    add_amanzi_test(mesh_merge mesh_merge
+                    KIND unit
+                    SOURCE test/Main.cc test/mesh_merge.cc
+                    LINK_LIBS ${mesh_test_link_libs})
 endif()
   

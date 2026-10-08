@@ -57,7 +57,7 @@ Transport_PK::InitializeAll_()
 
     int nblocks = 0;
     for (auto i = dlist.begin(); i != dlist.end(); i++) {
-      if (dlist.isSublist(dlist.name(i))) nblocks++;
+      if (dlist.isSublist(dlist.name(i) )) nblocks++;
     }
 
     mat_properties_.resize(nblocks);
@@ -121,7 +121,7 @@ Transport_PK::InitializeAll_()
   flag_diffusion_ = false;
   for (int i = 0; i < 2; i++) {
     if (diffusion_phase_[i] != Teuchos::null) {
-      if (diffusion_phase_[i]->values().size() != 0) flag_diffusion_ = true;
+      if (diffusion_phase_[i]->values() .size() != 0) flag_diffusion_ = true;
     }
   }
   if (flag_diffusion_) {
@@ -133,7 +133,7 @@ Transport_PK::InitializeAll_()
     if (tau == 0.0) flag_diffusion_ = false;
   }
 
-  use_dispersion_ &= flag_dispersion_ || flag_diffusion_;
+  assumptions_.use_dispersion &= flag_dispersion_ || flag_diffusion_; // FIXME
 
   // statistics of solutes
   if (tp_list_->isParameter("runtime diagnostics: solute names")) {
@@ -154,7 +154,7 @@ Transport_PK::InitializeAll_()
   internal_tests_ = tp_list_->get<bool>("enable internal tests", false);
   internal_tests_tol_ =
     tp_list_->get<double>("internal tests tolerance", TRANSPORT_CONCENTRATION_OVERSHOOT);
-  dt_debug_ = tp_list_->get<double>("maximum time step", TRANSPORT_LARGE_TIME_STEP);
+  dt_debug_ = tp_list_->get<double>("maximum timestep", TRANSPORT_LARGE_TIME_STEP);
 
   if (spatial_disc_order < 1 || spatial_disc_order > 2 || temporal_disc_order < 1 ||
       temporal_disc_order > 4) {

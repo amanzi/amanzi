@@ -37,10 +37,10 @@ namespace Operators {
 
 class ReconstructionCellPolynomial : public Reconstruction {
  public:
-  ReconstructionCellPolynomial(){};
+  ReconstructionCellPolynomial() {};
   ReconstructionCellPolynomial(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
-    : Reconstruction(mesh), poly_(Teuchos::null){};
-  ~ReconstructionCellPolynomial(){};
+    : Reconstruction(mesh), poly_(Teuchos::null) {};
+  ~ReconstructionCellPolynomial() {};
 
   // save pointer to the already distributed field.
   virtual void Init(Teuchos::ParameterList& plist) override;
@@ -59,7 +59,7 @@ class ReconstructionCellPolynomial : public Reconstruction {
   }
 
   // -- calculate value, deviation from mean, and full polynomial
-  virtual double getValue(int c, const AmanziGeometry::Point& p) override;
+  virtual double getValue(int c, const AmanziGeometry::Point& p) const override;
   virtual double getValueSlope(int c, const AmanziGeometry::Point& p) override;
   virtual WhetStone::Polynomial getPolynomial(int c) const override;
 
@@ -92,8 +92,8 @@ class ReconstructionCellPolynomial : public Reconstruction {
   // using a smoothness criterion.
   void CellAllAdjCells_(AmanziMesh::Entity_ID c, std::set<AmanziMesh::Entity_ID>& cells) const;
 
-  void
-  CellAdjCellsTwoLevels_(AmanziMesh::Entity_ID c, std::set<AmanziMesh::Entity_ID>& cells) const;
+  void CellAdjCellsTwoLevels_(AmanziMesh::Entity_ID c,
+                              std::set<AmanziMesh::Entity_ID>& cells) const;
 
   void CellAllAdjFaces_(AmanziMesh::Entity_ID c,
                         const std::set<AmanziMesh::Entity_ID>& cells,

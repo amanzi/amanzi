@@ -19,7 +19,8 @@
 namespace Amanzi {
 namespace Energy {
 
-IEM_WaterVapor::IEM_WaterVapor(Teuchos::ParameterList& plist) : plist_(plist)
+IEM_WaterVapor::IEM_WaterVapor(Teuchos::ParameterList& plist)
+  : plist_(plist)
 {
   InitializeFromPlist_();
 };

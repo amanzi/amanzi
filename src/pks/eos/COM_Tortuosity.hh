@@ -24,8 +24,9 @@ namespace AmanziEOS {
 
 class COM_Tortuosity {
  public:
-  COM_Tortuosity(Teuchos::ParameterList& plist) : plist_(plist){};
-  virtual ~COM_Tortuosity(){};
+  COM_Tortuosity(Teuchos::ParameterList& plist)
+    : plist_(plist) {};
+  virtual ~COM_Tortuosity() {};
 
   virtual double Tortuosity(double phi, double s) = 0;
   virtual double DTortuosityDphi(double phi, double s) = 0;

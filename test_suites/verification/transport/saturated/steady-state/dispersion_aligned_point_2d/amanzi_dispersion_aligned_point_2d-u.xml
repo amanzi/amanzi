@@ -1,7 +1,4 @@
-<amanzi_input type="unstructured" version="1.5-dev">
-    <misc>
-      <echo_translated_input format="unstructured_native" file_name="oldspec.xml"/>
-    </misc>
+<amanzi_input type="unstructured" version="1.7-dev">
     <model_description name="Dispersion Example Problem">
       <comments>Example input file</comments>
       <model_id>Single-Phase Saturated</model_id>
@@ -31,16 +28,14 @@
       </macros>
     </definitions>
     <process_kernels>
-      <comments>Single phase flow only</comments>
-      <flow model="constant" state="on" />
-      <transport state="on" />
-      <chemistry engine="none" state="off" />
+      <pk mode="transient">
+        <transport state="on" />
+      </pk>
     </process_kernels>
     <phases>
       <liquid_phase name="water">
-        <eos>false</eos>
-        <viscosity>1.002E-03</viscosity>
-        <density>998.2</density>
+        <eos model="constant" viscosity="1.002E-03" density="998.2"/> 
+        <molar_mass>0.018015</molar_mass>
         <dissolved_components>
           <primaries>
             <primary coefficient_of_diffusion="0.0">Tc-99</primary>
@@ -49,9 +44,9 @@
       </liquid_phase>
     </phases>
     <execution_controls>
-      <verbosity level="high" />
-      <execution_control_defaults init_dt="1.0" method="picard" mode="steady" />
-      <execution_control end="1.2096e+8" mode="transient" start="0.0" />
+      <verbosity level="high"/>
+      <execution_control_defaults init_dt="1.0" method="picard" mode="steady"/>
+      <execution_control end="1.2096e+8" mode="transient" start="0.0"/>
     </execution_controls>
     <numerical_controls>
       <unstructured_controls>
@@ -128,7 +123,7 @@
     <materials>
       <material name="Aquifers">
         <mechanical_properties>
-          <porosity value="0.35" />
+          <porosity model="constant" value="0.35" />
           <dispersion_tensor alpha_l="21.3" alpha_t="4.3" type="bear" />
           <tortuosity value="0.0" />
         </mechanical_properties>
@@ -143,12 +138,14 @@
         <liquid_phase name="water">
           <liquid_component name="water">
             <velocity x="1.8634e-06" z="0.0" />
+            <uniform_saturation value="1.0"/>
             <uniform_pressure value="101325" />
           </liquid_component>
           <solute_component name="solute">
             <uniform_conc name="Tc-99" value="0.0"/>
           </solute_component>
         </liquid_phase>
+        <temperature value="298.0"/>
       </initial_condition>
     </initial_conditions>
 

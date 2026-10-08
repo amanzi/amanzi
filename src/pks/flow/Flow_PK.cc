@@ -19,12 +19,14 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "EvaluatorMultiplicativeReciprocal.hh"
+#include "LScheme_Helpers.hh"
 #include "Mesh.hh"
 #include "MeshAlgorithms.hh"
 #include "OperatorDefs.hh"
 #include "PK_DomainFunctionFactory.hh"
 #include "PK_Utils.hh"
 #include "State.hh"
+#include "StateHelpers.hh"
 #include "WhetStoneDefs.hh"
 
 #include "DarcyVelocityEvaluator.hh"
@@ -57,7 +59,8 @@ Flow_PK::Flow_PK(Teuchos::ParameterList& pk_tree,
 };
 
 
-Flow_PK::Flow_PK() : passwd_("")
+Flow_PK::Flow_PK()
+  : passwd_("")
 {
   vo_ = Teuchos::null;
 }
@@ -71,10 +74,7 @@ Flow_PK::Setup()
 {
   // Work flow can be affected by the list of models
   auto physical_models = Teuchos::sublist(fp_list_, "physical models and assumptions");
-
-  // type of the flow (in matrix or on manifold)
-  flow_on_manifold_ = physical_models->get<bool>("flow and transport in fractures", false);
-  flow_on_manifold_ &= (mesh_->getManifoldDimension() != mesh_->getSpaceDimension());
+  assumptions_.Init(*physical_models, *mesh_);
 
   // coupling with other PKs
   coupled_to_matrix_ =
@@ -85,30 +85,38 @@ Flow_PK::Setup()
   // keys and tags
   Tag tag = Tags::DEFAULT;
 
+  hydraulic_head_key_ = Keys::getKey(domain_, "hydraulic_head");
+  darcy_velocity_key_ = Keys::getKey(domain_, "darcy_velocity");
+
   vol_flowrate_key_ = Keys::getKey(domain_, "volumetric_flow_rate");
-  mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
   permeability_key_ = Keys::getKey(domain_, "permeability");
   permeability_eff_key_ = Keys::getKey(domain_, "permeability_effective");
   aperture_key_ = Keys::getKey(domain_, "aperture");
-  prev_aperture_key_ = Keys::getKey(domain_, "prev_aperture");
   bulk_modulus_key_ = Keys::getKey(domain_, "bulk_modulus");
 
   porosity_key_ = Keys::getKey(domain_, "porosity");
   saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid");
   prev_saturation_liquid_key_ = Keys::getKey(domain_, "prev_saturation_liquid");
+
   wc_key_ = Keys::getKey(domain_, "water_content");
+  water_storage_key_ = Keys::getKey(domain_, "water_storage");
+  prev_water_storage_key_ = Keys::getKey(domain_, "prev_water_storage");
 
   mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid");
   mass_density_liquid_key_ = Keys::getKey(domain_, "mass_density_liquid");
 
+  L_scheme_data_key_ = "l_scheme_data";
+  bcs_flow_key_ = Keys::getKey(domain_, "bcs_flow");
+
   // constant fields
   S_->Require<double>("const_fluid_density", Tags::DEFAULT, "state");
+  S_->Require<double>("const_fluid_molar_mass", Tags::DEFAULT, "state");
   S_->Require<double>("atmospheric_pressure", Tags::DEFAULT, "state");
   S_->Require<AmanziGeometry::Point>("gravity", Tags::DEFAULT, "state");
 
   // fields and evaluators
   // -- effective fracture permeability
-  if (flow_on_manifold_) {
+  if (assumptions_.flow_on_manifold) {
     if (!S_->HasRecord(permeability_key_)) {
       S_->Require<CV_t, CVS_t>(permeability_key_, Tags::DEFAULT, permeability_key_)
         .SetMesh(mesh_)
@@ -133,11 +141,6 @@ Flow_PK::Setup()
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
-    S_->Require<CV_t, CVS_t>(prev_aperture_key_, Tags::DEFAULT)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-
     {
       S_->Require<CV_t, CVS_t>(permeability_eff_key_, Tags::DEFAULT, permeability_eff_key_)
         .SetMesh(mesh_)
@@ -148,7 +151,7 @@ Flow_PK::Setup()
       std::vector<std::string> listm(
         { Keys::getVarName(aperture_key_), Keys::getVarName(permeability_key_) });
       elist.set<std::string>("my key", permeability_eff_key_)
-        .set<Teuchos::Array<std::string>>("multiplicative dependencies", listm)
+        .set<Teuchos::Array<std::string>>("multiplicative dependency key suffixes", listm)
         .set<std::string>("tag", "");
       auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
       S_->SetEvaluator(permeability_eff_key_, Tags::DEFAULT, eval);
@@ -166,18 +169,13 @@ Flow_PK::Setup()
 
   // -- water content
   if (!S_->HasRecord(wc_key_)) {
-    S_->Require<CV_t, CVS_t>(wc_key_, Tags::DEFAULT, wc_key_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+    auto elist = RequireFieldForEvaluator(*S_, wc_key_);
 
     std::vector<std::string> listm(
       { Keys::getVarName(porosity_key_), Keys::getVarName(saturation_liquid_key_) });
-    if (flow_on_manifold_) listm.push_back(Keys::getVarName(aperture_key_));
+    if (assumptions_.flow_on_manifold) listm.push_back(Keys::getVarName(aperture_key_));
 
-    Teuchos::ParameterList elist(wc_key_);
-    elist.set<std::string>("my key", wc_key_)
-      .set<Teuchos::Array<std::string>>("multiplicative dependencies", listm)
+    elist.set<Teuchos::Array<std::string>>("multiplicative dependency key suffixes", listm)
       .set<std::string>("tag", "");
     auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
     S_->SetEvaluator(wc_key_, Tags::DEFAULT, eval);
@@ -213,17 +211,49 @@ Flow_PK::Setup()
         const Teuchos::ParameterList& spec = tmp_list.sublist(it->first).sublist("field");
         auto name = spec.get<std::string>("field key");
 
-        S_->Require<CV_t, CVS_t>(name, Tags::DEFAULT, passwd_)
-          .SetMesh(mesh_)
-          ->SetGhosted(true)
-          ->SetComponent("cell", AmanziMesh::CELL, 1);
+        RequireFieldForEvaluator(*S_, name);
         S_->RequireEvaluator(name, Tags::DEFAULT);
+
+        if (spec.isParameter("submodel")) {
+          auto submodel = spec.get<std::string>("submodel");
+          if (submodel == "poromechanics") {
+            std::string strain("strain_rate");
+            RequireFieldForEvaluator(*S_, strain);
+            S_->RequireEvaluator(strain, Tags::DEFAULT);
+            S_->GetRecordSetW(strain).set_units("s^-1");
+          }
+        }
       }
     }
   }
 
+  // L-scheme support
+  if (L_scheme_) {
+    S_->Require<LSchemeData>(L_scheme_data_key_, Tags::DEFAULT, "state");
+    S_->GetRecordW(L_scheme_data_key_, "state").set_initialized();
+
+    S_->Require<CV_t, CVS_t>(L_scheme_stab_key_, Tags::DEFAULT, "state")
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+    S_->GetRecordW(L_scheme_stab_key_, "state").set_initialized();
+
+    S_->Require<CV_t, CVS_t>(L_scheme_prev_key_, Tags::DEFAULT, "state")
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+    S_->GetRecordW(L_scheme_prev_key_, "state").set_initialized();
+  }
+
+  // boundary conditions
+  S_->Require<Operators::BCs, Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state")
+    .SetMesh(mesh_)
+    ->SetKind(AmanziMesh::Entity_kind::FACE)
+    ->SetType(WhetStone::DOF_Type::SCALAR);
+  S_->GetRecordW(bcs_flow_key_, "state").set_initialized();
+
   // set units
-  if (flow_on_manifold_) { S_->GetRecordSetW(aperture_key_).set_units("m"); }
+  if (assumptions_.flow_on_manifold) S_->GetRecordSetW(aperture_key_).set_units("m");
 }
 
 
@@ -236,7 +266,7 @@ Flow_PK::Setup_FlowRates_(bool mass_to_molar, double molar_rho)
   Tag tag = Tags::DEFAULT;
 
   CompositeVectorSpace cvs;
-  if (flow_on_manifold_) {
+  if (assumptions_.flow_on_manifold) {
     cvs = *Operators::CreateManifoldCVS(mesh_);
   } else {
     cvs.SetMesh(mesh_)->SetGhosted(true)->SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
@@ -300,6 +330,20 @@ Flow_PK::Setup_LocalFields_()
 
 
 /* ******************************************************************
+* L-scheme support
+****************************************************************** */
+std::vector<Key>
+Flow_PK::SetupLSchemeKey(Teuchos::ParameterList& plist)
+{
+  L_scheme_ = true;
+  Key key = Keys::getKey(domain_, "l_scheme_pressure");
+  L_scheme_stab_key_ = key + "_stab";
+  L_scheme_prev_key_ = key + "_prev";
+  return std::vector<Key>(1, key);
+}
+
+
+/* ******************************************************************
 * Initiazition of fundamental flow sturctures.
 ****************************************************************** */
 void
@@ -329,7 +373,8 @@ Flow_PK::Initialize()
   rho_ = S_->Get<double>("const_fluid_density");
 
   // -- molar rescaling of some quantatities.
-  molar_rho_ = rho_ / CommonDefs::MOLAR_MASS_H2O;
+  molar_mass_ = S_->Get<double>("const_fluid_molar_mass");
+  molar_rho_ = rho_ / molar_mass_;
   flux_units_ = 0.0; // scaling from kg to moles
 
   // parallel execution data
@@ -412,10 +457,10 @@ Flow_PK::UpdateLocalFields_(const Teuchos::Ptr<State>& S)
     *vo_->os() << "Secondary fields: hydraulic head, darcy_velocity, etc." << std::endl;
   }
 
-  auto& hydraulic_head =
-    *S->GetW<CompositeVector>(hydraulic_head_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
-  const auto& pressure = *S->Get<CompositeVector>(pressure_key_).ViewComponent("cell");
-  double rho = S->Get<double>("const_fluid_density");
+  auto tag = Tags::DEFAULT;
+  auto& head_c = *S->GetW<CV_t>(hydraulic_head_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+  const auto& pressure_c = *S->Get<CV_t>(pressure_key_).ViewComponent("cell");
+  const auto& rho_c = *S_->Get<CV_t>(mass_density_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
 
   // calculate hydraulic head
   double g = fabs(gravity_[dim - 1]);
@@ -423,15 +468,16 @@ Flow_PK::UpdateLocalFields_(const Teuchos::Ptr<State>& S)
   for (int c = 0; c != ncells_owned; ++c) {
     const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
     double z = xc[dim - 1];
-    hydraulic_head[0][c] = z + (pressure[0][c] - atm_pressure_) / (g * rho);
+    head_c[0][c] = z + (pressure_c[0][c] - atm_pressure_) / (g * rho_c[0][c]);
   }
 
   // calculate optional fields
   Key optional_key = Keys::getKey(domain_, "pressure_head");
   if (S->HasRecord(optional_key)) {
-    auto& field_c =
-      *S->GetW<CompositeVector>(optional_key, Tags::DEFAULT, passwd_).ViewComponent("cell");
-    for (int c = 0; c != ncells_owned; ++c) { field_c[0][c] = pressure[0][c] / (g * rho); }
+    auto& field_c = *S->GetW<CV_t>(optional_key, Tags::DEFAULT, passwd_).ViewComponent("cell");
+    for (int c = 0; c != ncells_owned; ++c) {
+      field_c[0][c] = pressure_c[0][c] / (g * rho_c[0][c]);
+    }
   }
 
   // calculate full velocity vector
@@ -450,10 +496,6 @@ Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
   atm_pressure_ = S_->Get<double>("atmospheric_pressure");
 
   // Create BC objects
-  // -- memory
-  op_bc_ = Teuchos::rcp(
-    new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
-
   Teuchos::RCP<FlowBoundaryFunction> bc;
   auto& bc_list = plist.sublist("boundary conditions");
 
@@ -538,6 +580,27 @@ Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
     }
   }
 
+  // -- coupling
+  if (bc_list.isSublist("coupling")) {
+    PK_DomainFunctionFactory<FlowBoundaryFunction> bc_factory(mesh_, S_);
+
+    Teuchos::ParameterList& tmp_list = bc_list.sublist("coupling");
+    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
+      std::string name = it->first;
+      if (tmp_list.isSublist(name)) {
+        Teuchos::ParameterList& spec = tmp_list.sublist(name);
+        bc = bc_factory.Create(spec,
+                               "boundary pressure",
+                               AmanziMesh::Entity_kind::FACE,
+                               Teuchos::null,
+                               Tags::DEFAULT,
+                               true);
+        bc->set_bc_name("coupling");
+        bcs_.push_back(bc);
+      }
+    }
+  }
+
   VV_ValidateBCs();
 
   // Create source objects
@@ -554,7 +617,9 @@ Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
         std::string name = it->first;
         if (tmp_list.isSublist(name)) {
           Teuchos::ParameterList& spec = tmp_list.sublist(name);
-          if (IsWellIndexRequire(spec)) { ComputeWellIndex(spec); }
+          if (IsWellIndexRequire(spec)) {
+            ComputeWellIndex(spec);
+          }
         }
       }
     }
@@ -602,11 +667,9 @@ Flow_PK::ComputeMolarFlowRate_(bool mass_to_molar)
   auto flux = S_->GetPtrW<CompositeVector>(mol_flowrate_key_, Tags::DEFAULT, passwd_);
 
   my_pde(Operators::PDE_DIFFUSION)->UpdateFlux(p.ptr(), flux.ptr());
-  if (mass_to_molar) flux->Scale(1.0 / CommonDefs::MOLAR_MASS_H2O);
+  if (mass_to_molar) flux->Scale(1.0 / molar_mass_);
 
-  auto eval = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
-    S_->GetEvaluatorPtr(mol_flowrate_key_, Tags::DEFAULT));
-  eval->SetChanged();
+  mol_flowrate_eval_->SetChanged();
 }
 
 
@@ -650,10 +713,8 @@ Flow_PK::ComputeWellIndex(Teuchos::ParameterList& spec)
       }
       dx = xmax - xmin;
       dy = ymax - ymin;
-      if (d > 2)
-        h = zmax - zmin;
-      else
-        h = 1.0;
+      if (d > 2) h = zmax - zmin;
+      else h = 1.0;
 
       kx = perm[0][c];
       ky = perm[1][c];
@@ -682,7 +743,9 @@ Flow_PK::IsWellIndexRequire(Teuchos::ParameterList& spec)
     if (model == "simple well") {
       Teuchos::ParameterList well_list = spec.sublist("well");
       if (well_list.isParameter("submodel")) {
-        if (well_list.get<std::string>("submodel") == "bhp") { return true; }
+        if (well_list.get<std::string>("submodel") == "bhp") {
+          return true;
+        }
       }
     }
   }
@@ -718,9 +781,10 @@ Flow_PK::UpdateSourceBoundaryData(double t_old, double t_new, const CompositeVec
 void
 Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
 {
-  std::vector<int>& bc_model = op_bc_->bc_model();
-  std::vector<double>& bc_value = op_bc_->bc_value();
-  std::vector<double>& bc_mixed = op_bc_->bc_mixed();
+  auto op_bc = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state");
+  std::vector<int>& bc_model = op_bc->bc_model();
+  std::vector<double>& bc_value = op_bc->bc_value();
+  std::vector<double>& bc_mixed = op_bc->bc_mixed();
 
   for (int n = 0; n < bc_model.size(); n++) {
     bc_model[n] = Operators::OPERATOR_BC_NONE;
@@ -757,6 +821,14 @@ Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
         int f = it->first;
         bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_value[f] = it->second[0] * flux_units_;
+      }
+    }
+
+    if (bcs_[i]->get_bc_name() == "coupling") {
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        int f = it->first;
+        bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
+        bc_value[f] = it->second[0];
       }
     }
   }
@@ -824,11 +896,12 @@ Flow_PK::SetAbsolutePermeabilityTensor()
   AmanziGeometry::Point n1(dim), n2(dim), normal(dim), tau(dim);
   WhetStone::Tensor N(dim, 2), Ninv(dim, 2), D(dim, 2);
 
-  K.resize(ncells_owned);
+  K_ = Teuchos::rcp(new std::vector<WhetStone::Tensor>(ncells_owned));
   bool cartesian = (coordinate_system_ == "cartesian");
   bool off_diag = cv.HasComponent("offd");
 
   // most common cases of diagonal permeability
+  auto& K = *K_;
   if (cartesian && dim == 2) {
     for (int c = 0; c < ncells_owned; c++) {
       if (!off_diag && perm[0][c] == perm[1][c]) {
@@ -950,9 +1023,9 @@ Flow_PK::DeriveFaceValuesFromCellValues(const Epetra_MultiVector& ucells,
 ****************************************************************** */
 double
 Flow_PK::WaterVolumeChangePerSecond(const std::vector<int>& bc_model,
-                                    const Epetra_MultiVector& vol_flowrate) const
+                                    const Epetra_MultiVector& flowrate) const
 {
-  const auto& fmap = vol_flowrate.Map();
+  const auto& fmap = flowrate.Map();
 
   double volume = 0.0;
   for (int c = 0; c < ncells_owned; c++) {
@@ -963,11 +1036,7 @@ Flow_PK::WaterVolumeChangePerSecond(const std::vector<int>& bc_model,
 
       if (bc_model[f] != Operators::OPERATOR_BC_NONE && f < nfaces_owned) {
         int g = fmap.FirstPointInElement(f);
-        if (fdirs[i] >= 0) {
-          volume -= vol_flowrate[0][g];
-        } else {
-          volume += vol_flowrate[0][g];
-        }
+        volume -= flowrate[0][g] * fdirs[i];
       }
     }
   }

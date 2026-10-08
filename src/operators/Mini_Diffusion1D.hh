@@ -29,8 +29,9 @@ namespace Operators {
 
 class Mini_Diffusion1D : public Mini_Operator1D {
  public:
-  Mini_Diffusion1D() : Kconst_(1.0){};
-  ~Mini_Diffusion1D(){};
+  Mini_Diffusion1D()
+    : Kconst_(1.0) {};
+  ~Mini_Diffusion1D() {};
 
   // set up operator
   void Setup(double K) { Kconst_ = K; }
@@ -54,8 +55,11 @@ class Mini_Diffusion1D : public Mini_Operator1D {
   void UpdateMatrices(const PDEType method = PDE_DIFFUSION_MFD);
 
   // -- build Jacobian
-  void
-  UpdateJacobian(const WhetStone::DenseVector& p, double bcl, int type_l, double bcr, int type_r);
+  void UpdateJacobian(const WhetStone::DenseVector& p,
+                      double bcl,
+                      int type_l,
+                      double bcr,
+                      int type_r);
 
   // modify matrix due to boundary conditions
   void ApplyBCs(double bcl, int type_l, double bcr, int type_r);

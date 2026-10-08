@@ -1,5 +1,3 @@
-# -*- mode: cmake -*-
-
 #
 #  Amanzi
 #    Mulitprocess Coordinator (MPC)
@@ -29,6 +27,7 @@ include_directories(${DBG_SOURCE_DIR})
 include_directories(${DUMMYPK_SOURCE_DIR})
 include_directories(${ENERGY_SOURCE_DIR})
 include_directories(${EOS_SOURCE_DIR})
+include_directories(${EVALUATORS_SOURCE_DIR})
 include_directories(${FLOW_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
@@ -144,6 +143,13 @@ if (BUILD_TESTS)
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})
 
+    add_amanzi_test(mpc_multiphase_thermal mpc_multiphase_thermal
+                    KIND      int
+                    NPROCS    2
+                    SOURCE    test/Main.cc test/mpc_multiphase_thermal.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARY})
+
     # Test: mpc driver for reactive transport
     add_amanzi_test(mpc_reactive_transport mpc_reactive_transport
                     KIND      int
@@ -151,7 +157,12 @@ if (BUILD_TESTS)
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})
 
-    # Test: mpc driver for thermal richards
+    # Test: mpc driver for thermal flow
+    add_amanzi_test(mpc_thermal_darcy mpc_thermal_darcy
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_thermal_darcy.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
     add_amanzi_test(mpc_thermal_richards mpc_thermal_richards
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_thermal_richards.cc
@@ -167,6 +178,33 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_thermal_richards_jacobian.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+    add_amanzi_test(mpc_compressed_liquid mpc_compressed_liquid
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_compressed_liquid.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(mpc_supercriticalPT mpc_supercriticalPT
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_supercriticalPT.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(mpc_supercriticalPT_jacobian mpc_supercriticalPT_jacobian
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_supercriticalPT_jacobian.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+
+    add_amanzi_test(mpc_supercriticalPH_jacobian mpc_supercriticalPH_jacobian
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_supercriticalPH_jacobian.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(mpc_supercriticalPH mpc_supercriticalPH
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_supercriticalPH.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    # Test: mpc driver for flow and reactive transport
     # Test: mpc driver for flow and reactive transport
     add_amanzi_test(mpc_flow_reactive_transport mpc_flow_reactive_transport
                     KIND      int
@@ -227,6 +265,12 @@ if (BUILD_TESTS)
                       SOURCE    test/Main.cc test/mpc_coupled_flow_transport_implicit.cc
                       LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+      add_amanzi_test(mpc_coupled_flow_transport_gas mpc_coupled_flow_transport_gas
+                      KIND      int
+                      NPROCS    3
+                      SOURCE    test/Main.cc test/mpc_coupled_flow_transport_gas.cc
+                      LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
       add_amanzi_test(mpc_coupled_reactive_transport mpc_coupled_reactive_transport
                       KIND      int
                       SOURCE    test/Main.cc test/mpc_coupled_reactive_transport.cc
@@ -243,6 +287,11 @@ if (BUILD_TESTS)
                       NPROCS    3
                       SOURCE    test/Main.cc test/mpc_benchmark_single.cc
                       LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                  
+
+      add_amanzi_test(mpc_coupled_mechanics_flow mpc_coupled_mechanics_flow
+                      KIND      int
+                      SOURCE    test/Main.cc test/mpc_coupled_mechanics_flow.cc
+                      LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     endif()
 
@@ -263,6 +312,10 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_coupled_thermal_flow_methalpy.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+#    add_amanzi_test(mpc_recovery mpc_recovery
+#                    KIND      int
+#                    SOURCE    test/Main.cc test/mpc_recovery.cc
+# 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}) 
 
     # Test: mpc driver for integrated hydrology: 1D dam break over saturated subsurface
     add_amanzi_test(mpc_ihm_flow_shallow_water mpc_ihm_flow_shallow_water
@@ -304,11 +357,17 @@ if (BUILD_TESTS)
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})
 
-    # Test: default MPCs
+    # Test: simple MPCs
     add_amanzi_test(mpc_default mpc_default
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_default.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARY})
+    # Test: sequential MPC for energy
+    add_amanzi_test(mpc_l_scheme mpc_l_scheme
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_l_scheme.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})
 
     # Test: mechanics
@@ -320,6 +379,7 @@ if (BUILD_TESTS)
 
     add_amanzi_test(mpc_mechanics_mandel mpc_mechanics_mandel
                     KIND      int
+                    NPROCS    3
                     SOURCE    test/Main.cc test/mpc_mechanics_mandel.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})
@@ -328,6 +388,39 @@ if (BUILD_TESTS)
                     KIND      int
                     NPROCS    3
                     SOURCE    test/Main.cc test/mpc_mechanics_stress_split.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARY})
+
+    add_amanzi_test(mpc_mechanics_thermal_flow mpc_mechanics_thermal_flow
+                    KIND      int
+                    NPROCS    3
+                    SOURCE    test/Main.cc test/mpc_mechanics_thermal_flow.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARY})
+
+    add_amanzi_test(mpc_mechanics_thermal_flow_3D mpc_mechanics_thermal_flow_3D
+                    KIND      int
+                    NPROCS    3
+                    SOURCE    test/Main.cc test/mpc_mechanics_thermal_flow_3D.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARY})
+
+    add_amanzi_test(mpc_biot_consolidation mpc_biot_consolidation
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_biot_consolidation.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARY})
+
+    add_amanzi_test(mpc_biot_schiffman mpc_biot_schiffman
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_biot_schiffman.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARY})
+
+    add_amanzi_test(mpc_biot_mcnamee_gibson mpc_biot_mcnamee_gibson
+                    KIND      int
+                    NPROCS    3
+                    SOURCE    test/Main.cc test/mpc_biot_mcnamee_gibson.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})
 endif()

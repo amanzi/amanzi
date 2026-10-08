@@ -56,7 +56,70 @@ struct test_cv {
     x_space->SetMesh(mesh)->SetGhosted()->SetComponents(names, locations, num_dofs);
     x = Teuchos::rcp(new CompositeVector(*x_space));
   }
-  ~test_cv() {}
+};
+
+
+struct test_cv_bf {
+  Comm_ptr_type comm;
+  Teuchos::RCP<Mesh> mesh;
+
+  Teuchos::RCP<CompositeVectorSpace> x_space;
+  Teuchos::RCP<CompositeVector> x;
+
+  test_cv_bf()
+  {
+    comm = getDefaultComm();
+    MeshFactory meshfactory(comm);
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
+
+    std::vector<Entity_kind> locations(2);
+    locations[0] = CELL;
+    locations[1] = BOUNDARY_FACE;
+
+    std::vector<std::string> names(2);
+    names[0] = "cell";
+    names[1] = "boundary_face";
+
+    std::vector<int> num_dofs(2);
+    num_dofs[0] = 2;
+    num_dofs[1] = 1;
+
+    x_space = Teuchos::rcp(new CompositeVectorSpace());
+    x_space->SetMesh(mesh)->SetGhosted()->SetComponents(names, locations, num_dofs);
+    x = Teuchos::rcp(new CompositeVector(*x_space));
+  }
+};
+
+
+struct test_cv_slicable {
+  Comm_ptr_type comm;
+  Teuchos::RCP<Mesh> mesh;
+
+  Teuchos::RCP<CompositeVectorSpace> x_space;
+  Teuchos::RCP<CompositeVector> x;
+
+  test_cv_slicable()
+  {
+    comm = getDefaultComm();
+    MeshFactory meshfactory(comm);
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
+
+    std::vector<Entity_kind> locations(2);
+    locations[0] = CELL;
+    locations[1] = FACE;
+
+    std::vector<std::string> names(2);
+    names[0] = "cell";
+    names[1] = "face";
+
+    std::vector<int> num_dofs(2);
+    num_dofs[0] = 2;
+    num_dofs[1] = 2;
+
+    x_space = Teuchos::rcp(new CompositeVectorSpace());
+    x_space->SetMesh(mesh)->SetGhosted()->SetComponents(names, locations, num_dofs);
+    x = Teuchos::rcp(new CompositeVector(*x_space));
+  }
 };
 
 
@@ -212,7 +275,9 @@ SUITE(COMPOSITE_VECTOR)
 
     { // scope for x_c
       Epetra_MultiVector& x_c = *x->ViewComponent("cell", false);
-      for (int c = 0; c != ncells; ++c) { x_c[0][c] = rank + 1.0; }
+      for (int c = 0; c != ncells; ++c) {
+        x_c[0][c] = rank + 1.0;
+      }
       x->ScatterMasterToGhosted("cell");
     }
 
@@ -232,7 +297,9 @@ SUITE(COMPOSITE_VECTOR)
       int nfaces =
         mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
       Epetra_MultiVector& x_f = *x->ViewComponent("face", false);
-      for (int f = 0; f != nfaces; ++f) { x_f[0][f] = rank + 1.0; }
+      for (int f = 0; f != nfaces; ++f) {
+        x_f[0][f] = rank + 1.0;
+      }
       x->ScatterMasterToGhosted("face");
     }
   }
@@ -243,13 +310,17 @@ SUITE(COMPOSITE_VECTOR)
     int ncells =
       mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
     Epetra_MultiVector& x_c = *x->ViewComponent("cell", true);
-    for (int c = 0; c != ncells; ++c) { x_c[0][c] = rank + 1; }
+    for (int c = 0; c != ncells; ++c) {
+      x_c[0][c] = rank + 1;
+    }
     x->GatherGhostedToMaster("cell");
 
     int nfaces =
       mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
     Epetra_MultiVector& x_f = *x->ViewComponent("face", true);
-    for (int f = 0; f != nfaces; ++f) { x_f[0][f] = rank + 1; }
+    for (int f = 0; f != nfaces; ++f) {
+      x_f[0][f] = rank + 1;
+    }
     x->GatherGhostedToMaster("face");
   }
 
@@ -261,7 +332,9 @@ SUITE(COMPOSITE_VECTOR)
     int ncells =
       mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     Epetra_MultiVector& x_c = *x->ViewComponent("cell", false);
-    for (int c = 0; c != ncells; ++c) { x_c[0][c] = rank + 1.0; }
+    for (int c = 0; c != ncells; ++c) {
+      x_c[0][c] = rank + 1.0;
+    }
     x->ScatterMasterToGhosted("cell");
 
     x->PutScalar(100.);
@@ -290,7 +363,9 @@ SUITE(COMPOSITE_VECTOR)
       mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
     Epetra_MultiVector& x_c = *x->ViewComponent("cell", false);
-    for (int c = 0; c != ncells; ++c) { x_c[0][c] = rank + 1.0; }
+    for (int c = 0; c != ncells; ++c) {
+      x_c[0][c] = rank + 1.0;
+    }
     x->ScatterMasterToGhosted("cell");
     if (size == 2) {
       if (rank == 0) {
@@ -306,7 +381,9 @@ SUITE(COMPOSITE_VECTOR)
 
     // by changing the values using the same vector ref, we can cheat the
     // system
-    for (int c = 0; c != ncells; ++c) { x_c[0][c] = rank + 100; }
+    for (int c = 0; c != ncells; ++c) {
+      x_c[0][c] = rank + 100;
+    }
     x->ScatterMasterToGhosted("cell"); // this call should NOT communicate
     if (size == 2) {
       if (rank == 0) {
@@ -321,5 +398,64 @@ SUITE(COMPOSITE_VECTOR)
     } else {
       std::cout << "Test CVScatter requires 2 procs" << std::endl;
     }
+  }
+
+  TEST_FIXTURE(test_cv_bf, CVBoundaryFaces)
+  {
+    // this test just confirms that CVs use BOUNDARY_FACE maps correctly, a
+    // long-running bug
+    int size = comm->NumProc();
+    int rank = comm->MyPID();
+
+    int nbf_owned = x->ViewComponent("boundary_face", false)->MyLength();
+    int nbf_all = x->ViewComponent("boundary_face", true)->MyLength();
+    std::cout << "On rank " << rank << " of " << size << ", nbf_all = " << nbf_all
+              << ", nbf_owned = " << nbf_owned << std::endl;
+
+    if (size == 1) {
+      CHECK_EQUAL(nbf_owned, nbf_all);
+    } else {
+      CHECK(nbf_owned < nbf_all);
+    }
+  }
+
+  TEST_FIXTURE(test_cv_slicable, CVSliceable)
+  {
+    // checks slicing
+    x->PutScalar(1.0);
+
+    CHECK_CLOSE(1.0, (*x)("cell", 0, 0), 1.e-10);
+    CHECK_CLOSE(1.0, (*x)("cell", 1, 0), 1.e-10);
+    CHECK_CLOSE(1.0, (*x)("face", 0, 0), 1.e-10);
+    CHECK_CLOSE(1.0, (*x)("face", 1, 0), 1.e-10);
+
+    // slice
+    {
+      auto x1 = x->GetVector(1);
+      x1->PutScalar(2.0);
+    }
+
+    CHECK_CLOSE(1.0, (*x)("cell", 0, 0), 1.e-10);
+    CHECK_CLOSE(2.0, (*x)("cell", 1, 0), 1.e-10);
+    CHECK_CLOSE(1.0, (*x)("face", 0, 0), 1.e-10);
+    CHECK_CLOSE(2.0, (*x)("face", 1, 0), 1.e-10);
+
+    // check slicing of const vector
+    Teuchos::RCP<const CompositeVector> x_const(x);
+    {
+      auto x1 = x_const->GetVector(1);
+      CHECK_CLOSE(2.0, (*x1)("cell", 0, 0), 1.e-10);
+      CHECK_CLOSE(2.0, (*x1)("face", 0, 0), 1.e-10);
+    }
+  }
+
+
+  TEST_FIXTURE(test_cv, CVSliceableThrows)
+  {
+    // checks that slicing a non-slicable vector throws
+    CHECK_THROW(x->GetVector(1), Errors::Message);
+
+    Teuchos::RCP<const CompositeVector> x_const(x);
+    CHECK_THROW(x_const->GetVector(1), Errors::Message);
   }
 }

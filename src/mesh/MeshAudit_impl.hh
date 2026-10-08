@@ -29,7 +29,7 @@ namespace Amanzi {
 namespace AmanziMesh {
 namespace Impl {
 
-template <class Mesh_type>
+template<class Mesh_type>
 MeshAudit_Base<Mesh_type>::MeshAudit_Base(const Teuchos::RCP<const Mesh_type>& mesh,
                                           std::ostream& os)
   : mesh_(mesh),
@@ -42,7 +42,7 @@ MeshAudit_Base<Mesh_type>::MeshAudit_Base(const Teuchos::RCP<const Mesh_type>& m
 {}
 
 
-template <class MeshAudit_type>
+template<class MeshAudit_type>
 void
 createTestDependencies_Base(MeshAudit_type& audit, AuditDirectedGraph<MeshAudit_type>& graph)
 {}
@@ -58,7 +58,7 @@ createTestDependencies_Base(MeshAudit_type& audit, AuditDirectedGraph<MeshAudit_
 //
 // The last line specifies that other_test_handle is a pre-requisite for
 // my_test_handle.  There may be multiple pre-requisites or none.
-template <class MeshAudit_type>
+template<class MeshAudit_type>
 void
 createTestDependencies_Geometry(MeshAudit_type& audit, AuditDirectedGraph<MeshAudit_type>& graph)
 {
@@ -135,7 +135,7 @@ createTestDependencies_Geometry(MeshAudit_type& audit, AuditDirectedGraph<MeshAu
 }
 
 
-template <class MeshAudit_type>
+template<class MeshAudit_type>
 void
 createTestDependencies_Maps(MeshAudit_type& audit, AuditDirectedGraph<MeshAudit_type>& graph)
 {
@@ -184,7 +184,7 @@ createTestDependencies_Maps(MeshAudit_type& audit, AuditDirectedGraph<MeshAudit_
   graph.AddEdge("owned and overlap cell maps", test33);
 };
 
-template <class MeshAudit_type>
+template<class MeshAudit_type>
 void
 createTestDependencies_Sets(MeshAudit_type& audit, AuditDirectedGraph<MeshAudit_type>& graph)
 {
@@ -237,7 +237,7 @@ createTestDependencies_Sets(MeshAudit_type& audit, AuditDirectedGraph<MeshAudit_
 // the authoritative source of information.  A positive value is returned
 // if any discrepancy is found, but it is safe to perform other tests as
 // they do not use these methods.
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Geometry<Mesh_type>::check_entity_counts() const
 {
@@ -298,7 +298,7 @@ MeshAudit_Geometry<Mesh_type>::check_entity_counts() const
 // nodes.  Here the std::vector accessor is used.  The consistency of
 // the alternative accessors is checked elsewhere.  A nonzero return value
 // signals an error, and further tests using its data should be avoided.
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Geometry<Mesh_type>::check_cell_to_nodes() const
 {
@@ -338,7 +338,7 @@ MeshAudit_Geometry<Mesh_type>::check_cell_to_nodes() const
 // Check that every node is referenced by at least one cell.  This assumes
 // that cell_to_nodes have been verified to return valid data.  A nonzero
 // return value indicates that one or more nodes are not attached to any cell.
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Geometry<Mesh_type>::check_node_refs_by_cells() const
 {
@@ -347,7 +347,7 @@ MeshAudit_Geometry<Mesh_type>::check_node_refs_by_cells() const
 
   for (Entity_ID j = 0; j < ncells_all_; ++j) {
     mesh_->getCellNodes(j, cnode); // this should not fail
-    for (int k = 0; k < cnode.size(); ++k) ref[cnode[k]] = true;
+    for (int k = 0; k < cnode.size() ; ++k) ref[cnode[k]] = true;
   }
 
   Entity_ID_List free_nodes;
@@ -370,7 +370,7 @@ MeshAudit_Geometry<Mesh_type>::check_node_refs_by_cells() const
 // faces.  Here the std::vector accessor is used.  The consistency of
 // the alternative accessors is checked elsewhere.  A nonzero return value
 // signals an error, and further tests using its data should be avoided.
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Geometry<Mesh_type>::check_cell_to_faces() const
 {
@@ -411,7 +411,7 @@ MeshAudit_Geometry<Mesh_type>::check_cell_to_faces() const
 // assumes that cell_to_faces have been verified to return valid data.  A
 // nonzero return value indicates that faces were found that do not belong
 // to any cell or belong to more than two cells (bad topology).
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Geometry<Mesh_type>::check_face_refs_by_cells() const
 {
@@ -420,17 +420,15 @@ MeshAudit_Geometry<Mesh_type>::check_face_refs_by_cells() const
 
   for (Entity_ID j = 0; j < ncells_all_; ++j) {
     mesh_->getCellFaces(j, cface);
-    for (int k = 0; k < cface.size(); ++k) (refs[cface[k]])++;
+    for (int k = 0; k < cface.size() ; ++k) (refs[cface[k]])++;
   }
 
   Entity_ID_List free_faces;
   Entity_ID_List bad_faces;
 
   for (int j = 0; j < nfaces_all_; ++j) {
-    if (refs[j] == 0)
-      free_faces.push_back(j);
-    else if (refs[j] > 2)
-      bad_faces.push_back(j);
+    if (refs[j] == 0) free_faces.push_back(j);
+    else if (refs[j] > 2) bad_faces.push_back(j);
   }
 
   bool error = false;
@@ -455,7 +453,7 @@ MeshAudit_Geometry<Mesh_type>::check_face_refs_by_cells() const
 // nodes.  Here the std::vector accessor is used.  The consistency of
 // the alternative accessors is checked elsewhere.  A nonzero return value
 // signals an error, and further tests using its data should be avoided.
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Geometry<Mesh_type>::check_face_to_nodes() const
 {
@@ -494,7 +492,7 @@ MeshAudit_Geometry<Mesh_type>::check_face_to_nodes() const
 // Check that every node is referenced by at least one face.  This assumes
 // that face_to_nodes has been verified to return valid data.  A nonzero
 // return value indicates that one or more nodes are not attached to any face.
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Geometry<Mesh_type>::check_node_refs_by_faces() const
 {
@@ -503,7 +501,7 @@ MeshAudit_Geometry<Mesh_type>::check_node_refs_by_faces() const
 
   for (Entity_ID j = 0; j < nfaces_all_; ++j) {
     mesh_->getFaceNodes(j, fnode);
-    for (int k = 0; k < fnode.size(); ++k) ref[fnode[k]] = true;
+    for (int k = 0; k < fnode.size() ; ++k) ref[fnode[k]] = true;
   }
 
   Entity_ID_List free_nodes;
@@ -526,7 +524,7 @@ MeshAudit_Geometry<Mesh_type>::check_node_refs_by_faces() const
 // that the values are either +1 or -1. The std::vector-based method is used;
 // the consistency of the alternative methods is checked elsewhere.  If this
 // test fails, further tests using this data should be avoided.
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Geometry<Mesh_type>::check_cell_to_face_dirs() const
 {
@@ -570,7 +568,7 @@ MeshAudit_Geometry<Mesh_type>::check_cell_to_face_dirs() const
 // If this test fails, many further tests involving the cell_to_nodes data
 // should be avoided.
 //
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Geometry<Mesh_type>::check_cell_degeneracy() const
 {
@@ -580,7 +578,7 @@ MeshAudit_Geometry<Mesh_type>::check_cell_degeneracy() const
 
   for (Entity_ID j = 0; j < ncells_all_; ++j) {
     auto cnodes = mesh_->getCellNodes(j); // should not fail
-    if (!this->areDistinctValues_(cnodes)) bad_cells.push_back(j);
+    if (!this->areDistinctValues_(cnodes) ) bad_cells.push_back(j);
   }
 
   bool error = false;
@@ -602,7 +600,7 @@ MeshAudit_Geometry<Mesh_type>::check_cell_degeneracy() const
 // fails, one or more of the methods cell_to_faces, face_to_nodes, and
 // cell_to_face_dirs are returning incorrect results and that further tests
 // using their values should be avoided.
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Geometry<Mesh_type>::check_cell_to_faces_to_nodes() const
 {
@@ -630,8 +628,7 @@ MeshAudit_Geometry<Mesh_type>::check_cell_to_faces_to_nodes() const
     bool bad_face = false;
     bool bad_dir = false;
 
-    if (cface.size() != Topology::nface_std[ctype])
-      bad_face = true;
+    if (cface.size() != Topology::nface_std[ctype]) bad_face = true;
     else {
       for (int k = 0; k < cface.size(); ++k) {
         auto fnode = mesh_->getFaceNodes(cface[k]); // this should not fail
@@ -685,7 +682,7 @@ MeshAudit_Geometry<Mesh_type>::check_cell_to_faces_to_nodes() const
 // Check that getNodeCoordinate successfully returns data for all nodes
 // A negative return value signals a terminal error
 //
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Geometry<Mesh_type>::check_node_to_coordinates() const
 {
@@ -701,7 +698,7 @@ MeshAudit_Geometry<Mesh_type>::check_node_to_coordinates() const
       x0 = mesh_->getNodeCoordinate(j); // this may fail
       bool bad_data = false;
       for (int k = 0; k < spdim; ++k)
-        if (x0[k] == std::numeric_limits<double>::max()) bad_data = true;
+        if (x0[k] == std::numeric_limits<double>::max() ) bad_data = true;
       if (bad_data) bad_nodes.push_back(j);
     } catch (...) {
       bad_nodes_exc.push_back(j);
@@ -731,7 +728,7 @@ MeshAudit_Geometry<Mesh_type>::check_node_to_coordinates() const
 // elsewhere.  If this test fails, further tests using cell_to_coordinates data
 // should be avoided.
 //
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Geometry<Mesh_type>::check_cell_to_coordinates() const
 {
@@ -784,7 +781,7 @@ MeshAudit_Geometry<Mesh_type>::check_cell_to_coordinates() const
 // of getNodeCoordinate have been verified to return valid data. A
 // negative return value signals a terminal error.
 //
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Geometry<Mesh_type>::check_face_to_coordinates() const
 {
@@ -834,7 +831,7 @@ MeshAudit_Geometry<Mesh_type>::check_face_to_coordinates() const
 // Check that upward and downward adjacencies and orientations are consistent
 // between cells and faces.
 //
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Geometry<Mesh_type>::check_face_cell_adjacency_consistency() const
 {
@@ -910,7 +907,7 @@ MeshAudit_Geometry<Mesh_type>::check_face_cell_adjacency_consistency() const
 // Check that a face normal, relative to a cell, is outward.  Note this
 // requires star-convex meshes.
 //
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Geometry<Mesh_type>::check_face_normal_relto_cell() const
 {
@@ -953,7 +950,7 @@ MeshAudit_Geometry<Mesh_type>::check_face_normal_relto_cell() const
 //
 // Check that a face normal has the correct orientation.
 //
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Geometry<Mesh_type>::check_face_normal_orientation() const
 {
@@ -1000,7 +997,7 @@ MeshAudit_Geometry<Mesh_type>::check_face_normal_orientation() const
 // The cells must not be degenerate, either topologically (repeated
 // node index) or geometrically (with coincident nodes).
 //
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Geometry<Mesh_type>::check_cell_geometry() const
 {
@@ -1034,7 +1031,7 @@ MeshAudit_Geometry<Mesh_type>::check_cell_geometry() const
 // by other processes.  In addition there should be no duplicate GIDs on
 // any processes map.
 //
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Maps<Mesh_type>::check_node_maps() const
 {
@@ -1042,7 +1039,7 @@ MeshAudit_Maps<Mesh_type>::check_node_maps() const
                     mesh_->getMap(AmanziMesh::Entity_kind::NODE, true));
 }
 
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Maps<Mesh_type>::check_face_maps() const
 {
@@ -1050,7 +1047,7 @@ MeshAudit_Maps<Mesh_type>::check_face_maps() const
                     mesh_->getMap(AmanziMesh::Entity_kind::FACE, true));
 }
 
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Maps<Mesh_type>::check_cell_maps() const
 {
@@ -1058,7 +1055,7 @@ MeshAudit_Maps<Mesh_type>::check_cell_maps() const
                     mesh_->getMap(AmanziMesh::Entity_kind::CELL, true));
 }
 
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Maps<Mesh_type>::check_maps(const Epetra_Map& map_own, const Epetra_Map& map_use) const
 {
@@ -1084,7 +1081,7 @@ MeshAudit_Maps<Mesh_type>::check_maps(const Epetra_Map& map_own, const Epetra_Ma
   // necessarily uniformly) across all processers
 
   std::vector<int> owned_GIDs(map_own.NumMyElements());
-  for (int i = 0; i < map_own.NumMyElements(); i++) owned_GIDs[i] = map_own.GID(i);
+  for (int i = 0; i < map_own.NumMyElements() ; i++) owned_GIDs[i] = map_own.GID(i);
   std::sort(owned_GIDs.begin(), owned_GIDs.end());
 
   for (int i = 0; i < map_own.NumMyElements() - 1; i++) {
@@ -1115,8 +1112,7 @@ MeshAudit_Maps<Mesh_type>::check_maps(const Epetra_Map& map_own, const Epetra_Ma
 
     // Verify that the used map extends the owned map.
     bool bad_map = false;
-    if (num_ovl < 0)
-      bad_map = true;
+    if (num_ovl < 0) bad_map = true;
     else {
       for (int j = 0; j < num_own; ++j)
         if (map_use.GID(j) != map_own.GID(j)) bad_map = true;
@@ -1137,7 +1133,7 @@ MeshAudit_Maps<Mesh_type>::check_maps(const Epetra_Map& map_own, const Epetra_Ma
     map_own.RemoteIDList(num_ovl, gids, pids, lids);
     bad_map = false;
     for (int j = 0; j < num_ovl; ++j)
-      if (pids[j] < 0 || pids[j] == this->comm_->MyPID()) bad_map = true;
+      if (pids[j] < 0 || pids[j] == this->comm_->MyPID() ) bad_map = true;
     if (bad_map) {
       os_ << "ERROR: invalid ghosts in overlap map." << std::endl;
       error = true;
@@ -1161,7 +1157,7 @@ MeshAudit_Maps<Mesh_type>::check_maps(const Epetra_Map& map_own, const Epetra_Ma
 // Check that ghost nodes are exact copies of their master.
 // This simply means that they have the same coordinates.
 //
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Maps<Mesh_type>::check_node_to_coordinates_ghost_data() const
 {
@@ -1212,7 +1208,7 @@ MeshAudit_Maps<Mesh_type>::check_node_to_coordinates_ghost_data() const
 // that the the GIDs of the nodes defining the face are the same, including
 // their order (face orientation).
 //
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Maps<Mesh_type>::check_face_to_nodes_ghost_data() const
 {
@@ -1241,8 +1237,8 @@ MeshAudit_Maps<Mesh_type>::check_face_to_nodes_ghost_data() const
   Epetra_IntSerialDenseMatrix gids(nface_use, maxnodes); // no Epetra_IntMultiVector :(
   for (Entity_ID j = 0; j < nface_own; ++j) {
     mesh_->getFaceNodes(j, fnode);
-    for (int k = 0; k < fnode.size(); ++k) gids(j, k) = node_map.GID(fnode[k]);
-    for (int k = fnode.size(); k < maxnodes; ++k) gids(j, k) = 0;
+    for (int k = 0; k < fnode.size() ; ++k) gids(j, k) = node_map.GID(fnode[k]);
+    for (int k = fnode.size() ; k < maxnodes; ++k) gids(j, k) = 0;
   }
 
   // Import these GIDs to all used faces; sets values on ghost faces.
@@ -1258,7 +1254,9 @@ MeshAudit_Maps<Mesh_type>::check_face_to_nodes_ghost_data() const
     mesh_->getFaceNodes(j, fnode);
     bool bad_data = false;
     for (int k = 0; k < fnode.size(); ++k)
-      if (node_map.GID(fnode[k]) != gids(j, k)) { bad_data = true; }
+      if (node_map.GID(fnode[k]) != gids(j, k)) {
+        bad_data = true;
+      }
     if (bad_data) {
       typename Mesh_type::Entity_ID_View lfnode;
       lfnode.fromConst(fnode);
@@ -1270,40 +1268,40 @@ MeshAudit_Maps<Mesh_type>::check_face_to_nodes_ghost_data() const
       }
       int n = this->isSameFace_(lfnode, fnode_ref);
       switch (n) {
-      case 0: // completely bad -- different face
-        bad_faces.push_back(j);
+        case 0: // completely bad -- different face
+          bad_faces.push_back(j);
 
-        os_ << "P " << this->comm_->MyPID() << ": ghost face " << j << " (GID "
-            << face_map_use.GID(j) << "),"
-            << " has different nodes than its master " << std::endl;
-        os_ << "ghost face nodes (GIDs): ";
-        for (int k = 0; k < lfnode.size(); ++k) os_ << lfnode[k] << " ";
-        os_ << std::endl;
-        os_ << "master face nodes (GIDs): ";
-        for (int k = 0; k < fnode_ref.size(); ++k) os_ << fnode_ref[k] << " ";
-        os_ << std::endl;
-        break;
-      case -1: // very bad -- same face but wrong orientation
-        bad_faces1.push_back(j);
+          os_ << "P " << this->comm_->MyPID() << ": ghost face " << j << " (GID "
+              << face_map_use.GID(j) << "),"
+              << " has different nodes than its master " << std::endl;
+          os_ << "ghost face nodes (GIDs): ";
+          for (int k = 0; k < lfnode.size() ; ++k) os_ << lfnode[k] << " ";
+          os_ << std::endl;
+          os_ << "master face nodes (GIDs): ";
+          for (int k = 0; k < fnode_ref.size() ; ++k) os_ << fnode_ref[k] << " ";
+          os_ << std::endl;
+          break;
+        case -1: // very bad -- same face but wrong orientation
+          bad_faces1.push_back(j);
 
-        os_ << "P " << this->comm_->MyPID() << ": ghost face " << j
-            << ", has different orientation than its master " << std::endl;
-        os_ << "ghost face nodes (GIDs): ";
-        for (int k = 0; k < lfnode.size(); ++k) os_ << lfnode[k];
-        os_ << std::endl;
-        os_ << "master face nodes (GIDs): ";
-        for (int k = 0; k < fnode_ref.size(); ++k) os_ << fnode_ref[k];
-        os_ << std::endl;
-        break;
-      case 1:
-        // This is fine because there is no way to ensure this for
-        // general meshes (think of building a tet mesh and defining
-        // the faces such that they return the same vertices in the
-        // same order (unpermuted) no matter which way the elements
-        // match up. You can only ensure this for hexahedral meshes
-        // As long as the faces have the same vertices and have the
-        // same direction, but the vertices are permuted, its fine
-        break;
+          os_ << "P " << this->comm_->MyPID() << ": ghost face " << j
+              << ", has different orientation than its master " << std::endl;
+          os_ << "ghost face nodes (GIDs): ";
+          for (int k = 0; k < lfnode.size() ; ++k) os_ << lfnode[k];
+          os_ << std::endl;
+          os_ << "master face nodes (GIDs): ";
+          for (int k = 0; k < fnode_ref.size() ; ++k) os_ << fnode_ref[k];
+          os_ << std::endl;
+          break;
+        case 1:
+          // This is fine because there is no way to ensure this for
+          // general meshes (think of building a tet mesh and defining
+          // the faces such that they return the same vertices in the
+          // same order (unpermuted) no matter which way the elements
+          // match up. You can only ensure this for hexahedral meshes
+          // As long as the faces have the same vertices and have the
+          // same direction, but the vertices are permuted, its fine
+          break;
       }
     }
   }
@@ -1329,7 +1327,7 @@ MeshAudit_Maps<Mesh_type>::check_face_to_nodes_ghost_data() const
 // that the the GIDs of the nodes defining the cell are the same, including
 // their order (face orientation).
 //
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Maps<Mesh_type>::check_cell_to_nodes_ghost_data() const
 {
@@ -1358,8 +1356,8 @@ MeshAudit_Maps<Mesh_type>::check_cell_to_nodes_ghost_data() const
   // Create a matrix of the GIDs for all owned cells.
   for (Entity_ID j = 0; j < ncell_own; ++j) {
     mesh_->getCellNodes(j, cnode);
-    for (int k = 0; k < cnode.size(); ++k) gids(j, k) = node_map.GID(cnode[k]);
-    for (int k = cnode.size(); k < maxnodes; ++k) gids(j, k) = 0;
+    for (int k = 0; k < cnode.size() ; ++k) gids(j, k) = node_map.GID(cnode[k]);
+    for (int k = cnode.size() ; k < maxnodes; ++k) gids(j, k) = 0;
   }
 
   // Import these GIDs to all used cells; sets values on ghost cells.
@@ -1414,7 +1412,7 @@ MeshAudit_Maps<Mesh_type>::check_cell_to_nodes_ghost_data() const
 // the same nodes as the correct face.  So the two faces would be
 // geometrically identical, including orientation, but be distinct.
 //
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Maps<Mesh_type>::check_cell_to_faces_ghost_data() const
 {
@@ -1443,8 +1441,8 @@ MeshAudit_Maps<Mesh_type>::check_cell_to_faces_ghost_data() const
 
   for (Entity_ID j = 0; j < ncell_own; ++j) {
     mesh_->getCellFaces(j, cface);
-    for (int k = 0; k < cface.size(); ++k) gids(j, k) = face_map.GID(cface[k]);
-    for (int k = cface.size(); k < maxfaces; ++k) gids(j, k) = 0;
+    for (int k = 0; k < cface.size() ; ++k) gids(j, k) = face_map.GID(cface[k]);
+    for (int k = cface.size() ; k < maxfaces; ++k) gids(j, k) = 0;
   }
 
   // Import these GIDs to all used cells; sets values on ghost cells.
@@ -1487,28 +1485,28 @@ MeshAudit_Maps<Mesh_type>::check_cell_to_faces_ghost_data() const
 // duplicates, and that each process gets the exact same vector of set IDs.
 // This is a collective test, returning a collective pass/fail result.
 //
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Sets<Mesh_type>::check_node_set_ids() const
 {
   return check_get_set_ids(Entity_kind::NODE);
 }
 
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Sets<Mesh_type>::check_face_set_ids() const
 {
   return check_get_set_ids(Entity_kind::FACE);
 }
 
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Sets<Mesh_type>::check_cell_set_ids() const
 {
   return check_get_set_ids(Entity_kind::CELL);
 }
 
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Sets<Mesh_type>::check_get_set_ids(Entity_kind kind) const
 {
@@ -1599,28 +1597,28 @@ MeshAudit_Sets<Mesh_type>::check_get_set_ids(Entity_kind kind) const
 // Check that valid_set_id() returns the correct results.
 // This is a collective test, returning a collective pass/fail result.
 //
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Sets<Mesh_type>::check_valid_node_set_id() const
 {
   return check_valid_set_id(Entity_kind::NODE);
 }
 
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Sets<Mesh_type>::check_valid_face_set_id() const
 {
   return check_valid_set_id(Entity_kind::FACE);
 }
 
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Sets<Mesh_type>::check_valid_cell_set_id() const
 {
   return check_valid_set_id(Entity_kind::CELL);
 }
 
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Sets<Mesh_type>::check_valid_set_id(Entity_kind kind) const
 {
@@ -1665,7 +1663,7 @@ MeshAudit_Sets<Mesh_type>::check_valid_set_id(Entity_kind kind) const
 // local entities, without duplicates, and that the used set is consistent
 // with the owned set.
 //
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Sets<Mesh_type>::check_node_sets() const
 {
@@ -1674,7 +1672,7 @@ MeshAudit_Sets<Mesh_type>::check_node_sets() const
                     mesh_->getMap(AmanziMesh::Entity_kind::NODE, true));
 }
 
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Sets<Mesh_type>::check_face_sets() const
 {
@@ -1683,7 +1681,7 @@ MeshAudit_Sets<Mesh_type>::check_face_sets() const
                     mesh_->getMap(AmanziMesh::Entity_kind::FACE, true));
 }
 
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Sets<Mesh_type>::check_cell_sets() const
 {
@@ -1692,7 +1690,7 @@ MeshAudit_Sets<Mesh_type>::check_cell_sets() const
                     mesh_->getMap(AmanziMesh::Entity_kind::CELL, true));
 }
 
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Sets<Mesh_type>::check_sets(Entity_kind kind,
                                       const Epetra_Map& map_own,
@@ -1731,7 +1729,7 @@ MeshAudit_Sets<Mesh_type>::check_sets(Entity_kind kind,
 // to the map.  This test runs independently on each process and returns a
 // per-process pass/fail result.
 //
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Sets<Mesh_type>::check_get_set(Set_ID sid,
                                          Entity_kind kind,
@@ -1765,7 +1763,7 @@ MeshAudit_Sets<Mesh_type>::check_get_set(Set_ID sid,
   // Check that all values were assigned.
   bool bad_data = false;
   for (int j = 0; j < set.size(); ++j)
-    if (set[j] == std::numeric_limits<unsigned int>::max()) bad_data = true;
+    if (set[j] == std::numeric_limits<unsigned int>::max() ) bad_data = true;
   if (bad_data) {
     os_ << "  ERROR: not all values assigned by get_set()" << std::endl;
     return true;
@@ -1774,7 +1772,7 @@ MeshAudit_Sets<Mesh_type>::check_get_set(Set_ID sid,
   // Check that the LIDs in the set belong to the map.
   Entity_ID_List bad_LIDs;
   for (int j = 0; j < set.size(); ++j)
-    if (!map.MyLID(set[j])) bad_LIDs.push_back(set[j]);
+    if (!map.MyLID(set[j]) ) bad_LIDs.push_back(set[j]);
   if (!bad_LIDs.empty()) {
     os_ << "  ERROR: set contains invalid LIDs:";
     writeList_(bad_LIDs);
@@ -1798,7 +1796,7 @@ MeshAudit_Sets<Mesh_type>::check_get_set(Set_ID sid,
 // presented in any order.  This is a collective test, returning a collective
 // pass/fail result.
 //
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Sets<Mesh_type>::check_used_set(Set_ID sid,
                                           Entity_kind kind,
@@ -1847,13 +1845,13 @@ MeshAudit_Sets<Mesh_type>::check_used_set(Set_ID sid,
     int* tag_data;
     tag_use.ExtractView(&tag_data);
     Epetra_IntVector tag_own(View, map_own, tag_data);
-    for (int j = 0; j < set_own.size(); ++j) tag_own[set_own[j]] = 1;
+    for (int j = 0; j < set_own.size() ; ++j) tag_own[set_own[j]] = 1;
     Epetra_Import importer(map_use, map_own);
     tag_use.Import(tag_own, importer, Insert);
 
     // Now untag all the LIDs that belong to the used set.  If things
     // are correct, the tag vector will be filled with zeros afterwards.
-    for (int j = 0; j < set_use.size(); ++j) --tag_use[set_use[j]];
+    for (int j = 0; j < set_use.size() ; ++j) --tag_use[set_use[j]];
 
     bool error = false;
 
@@ -1893,23 +1891,22 @@ MeshAudit_Sets<Mesh_type>::check_used_set(Set_ID sid,
 // that owns a particular face (node) must also own one of the cells containing
 // the face (node).
 //
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Maps<Mesh_type>::check_face_partition() const
 {
   // Mark all the faces contained by owned cells.
-  bool owned[nfaces_all_];
-  for (int j = 0; j < nfaces_all_; ++j) owned[j] = false;
+  std::vector<bool> owned(nfaces_all_, false);
   View_type<const Entity_ID, MemSpace_kind::HOST> cface;
-  for (Entity_ID j = 0; j < mesh_->getMap(AmanziMesh::Entity_kind::CELL, false).NumMyElements();
+  for (Entity_ID j = 0; j < mesh_->getMap(AmanziMesh::Entity_kind::CELL, false) .NumMyElements();
        ++j) {
     mesh_->getCellFaces(j, cface);
-    for (int k = 0; k < cface.size(); ++k) owned[cface[k]] = true;
+    for (int k = 0; k < cface.size() ; ++k) owned[cface[k]] = true;
   }
 
   // Verify that every owned face has been marked as belonging to an owned cell.
   Entity_ID_List bad_faces;
-  for (Entity_ID j = 0; j < mesh_->getMap(AmanziMesh::Entity_kind::FACE, false).NumMyElements();
+  for (Entity_ID j = 0; j < mesh_->getMap(AmanziMesh::Entity_kind::FACE, false) .NumMyElements();
        ++j)
     if (!owned[j]) bad_faces.push_back(j);
 
@@ -1924,23 +1921,22 @@ MeshAudit_Maps<Mesh_type>::check_face_partition() const
 }
 
 
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Maps<Mesh_type>::check_node_partition() const
 {
   // Mark all the nodes contained by owned cells.
-  bool owned[nnodes_all_];
-  for (int j = 0; j < nnodes_all_; ++j) owned[j] = false;
+  std::vector<bool> owned(nnodes_all_, false);
   View_type<const Entity_ID, MemSpace_kind::HOST> cnode;
-  for (Entity_ID j = 0; j < mesh_->getMap(AmanziMesh::Entity_kind::CELL, false).NumMyElements();
+  for (Entity_ID j = 0; j < mesh_->getMap(AmanziMesh::Entity_kind::CELL, false) .NumMyElements();
        ++j) {
     mesh_->getCellNodes(j, cnode);
-    for (int k = 0; k < cnode.size(); ++k) owned[cnode[k]] = true;
+    for (int k = 0; k < cnode.size() ; ++k) owned[cnode[k]] = true;
   }
 
   // Verify that every owned node has been marked as belonging to an owned cell.
   Entity_ID_List bad_nodes;
-  for (Entity_ID j = 0; j < mesh_->getMap(AmanziMesh::Entity_kind::NODE, false).NumMyElements();
+  for (Entity_ID j = 0; j < mesh_->getMap(AmanziMesh::Entity_kind::NODE, false) .NumMyElements();
        ++j)
     if (!owned[j]) bad_nodes.push_back(j);
 
@@ -1956,7 +1952,7 @@ MeshAudit_Maps<Mesh_type>::check_node_partition() const
 
 
 // Returns true if the values in the list are distinct -- no repeats.
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Base<Mesh_type>::areDistinctValues_(
   const View_type<const Entity_ID, MemSpace_kind::HOST>& list) const
@@ -1972,7 +1968,7 @@ MeshAudit_Base<Mesh_type>::areDistinctValues_(
 // but with opposite orientations.  Returns 0 if the lists describe different
 // faces.  Implicitly assumes non-degenerate faces; the results are not
 // reliable otherwise.
-template <class Mesh_type>
+template<class Mesh_type>
 int
 MeshAudit_Base<Mesh_type>::isSameFace_(
   const View_type<const Entity_ID, MemSpace_kind::HOST> fnode1,
@@ -1980,7 +1976,7 @@ MeshAudit_Base<Mesh_type>::isSameFace_(
 {
   int nn = fnode1.size();
 
-  if (nn != fnode2.size()) return 0;
+  if (nn != fnode2.size() ) return 0;
 
   // Locate position in fnode1 of fnode2[0].
   int i, n;
@@ -2013,17 +2009,17 @@ MeshAudit_Base<Mesh_type>::isSameFace_(
   return 0; // different faces
 }
 
-template <class Mesh_type>
+template<class Mesh_type>
 void
 MeshAudit_Base<Mesh_type>::writeList_(const Entity_ID_List& list) const
 {
   int num_out = std::min((unsigned int)list.size(), this->MAX_OUT);
   for (int i = 0; i < num_out; ++i) os_ << " " << list[i];
-  if (num_out < list.size()) os_ << " [" << list.size() - num_out << " items omitted]";
+  if (num_out < list.size() ) os_ << " [" << list.size() - num_out << " items omitted]";
   os_ << std::endl;
 }
 
-template <class Mesh_type>
+template<class Mesh_type>
 bool
 MeshAudit_Base<Mesh_type>::globalAny_(bool value) const
 {
