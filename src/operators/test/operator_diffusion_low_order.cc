@@ -592,6 +592,8 @@ SUITE(DIFFUSION)
                  1e-12);
   }
 #endif
+#endif  
+
   //
   // with uniform kr
   //
