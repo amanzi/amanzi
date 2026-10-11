@@ -105,6 +105,11 @@ class AnalyticBase : public Amanzi::WhetStone::WhetStoneFunction {
                         double& unorm,
                         double& l2_err,
                         double& inf_err);
+  void ComputeBFaceError(Epetra_MultiVector& pb,
+                        double t,
+                        double& pnorm,
+                        double& l2_err,
+                        double& inf_err);  
   void ComputeNodeError(Epetra_MultiVector& p,
                         double t,
                         double& pnorm,
@@ -173,6 +178,47 @@ AnalyticBase::ComputeCellError(Epetra_MultiVector& p,
   l2_err = sqrt(std::fabs(l2_err));
 }
 
+/* ******************************************************************
+* discarete L2 error for scalar fields on boundary faces
+****************************************************************** */
+inline void
+AnalyticBase::ComputeBFaceError(Epetra_MultiVector& pb,
+                               double t,
+                               double& pnorm,
+                               double& l2_err,
+                               double& inf_err)
+{
+  pnorm = 0.0;
+  l2_err = 0.0;
+  inf_err = 0.0;
+
+  int nfaces = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE,
+                                     Amanzi::AmanziMesh::Parallel_kind::OWNED);
+  for (int f = 0; f < nfaces; f++) {
+    auto cells = mesh_->getFaceCells(f);
+    if (cells.size()==1) {
+      const Amanzi::AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
+      double tmp = pressure_exact(xf, t);
+      double volume = mesh_->getCellVolume(cells[0])*0.25;
+
+      int bf = mesh_->getMap( Amanzi::AmanziMesh::Entity_kind::BOUNDARY_FACE, false)
+        .LID(mesh_->getMap( Amanzi::AmanziMesh::Entity_kind::FACE, false).GID(f));
+    
+      l2_err += std::pow(tmp - pb[0][bf], 2.0) * volume;
+      inf_err = std::max(inf_err, fabs(tmp - pb[0][bf]));
+      pnorm += std::pow(tmp, 2.0) * volume;
+      std::cout << f << " xf=" << xf << " p: " << tmp << " " << pb[0][bf] << " err=" << inf_err << std::endl;
+    }
+  }
+#ifdef HAVE_MPI
+  GlobalOp("sum", &pnorm, 1);
+  GlobalOp("sum", &l2_err, 1);
+  GlobalOp("max", &inf_err, 1);
+#endif
+  pnorm = sqrt(pnorm);
+  l2_err = sqrt(std::fabs(l2_err));
+}
+
 
 /* ******************************************************************
 * Discrete L2 error for face-based fields
@@ -215,7 +261,8 @@ AnalyticBase::ComputeFaceError(Epetra_MultiVector& u,
       l2_err += std::pow((tmp - u[0][g + k]) / area, 2.0) * volume;
       inf_err = std::max(inf_err, fabs(tmp - u[0][g + k]) / area);
       unorm += std::pow(tmp / area, 2.0) * volume;
-      // std::cout << f << " xf=" << xf << " u=" << u[0][g + k] << " u_ex=" << tmp << " err=" << inf_err << " " << dir << std::endl;
+      if (fabs(tmp - u[0][g + k]) / area > 1e-6)
+        std::cout << f << " xf=" << xf << " u=" << u[0][g + k] << " u_ex=" << tmp << " err inf = " << inf_err << "\n";// << dir << std::endl;
     }
   }
 #ifdef HAVE_MPI

@@ -31,52 +31,77 @@ namespace Operators {
 
 /* ******************************************************************
 * Initialization
+* 
+* Purpose: Initializes the NLFV diffusion operator with boundary faces.
+*          Sets up operator schemas, creates local and global operators,
+*          and configures nonlinear coefficient treatment and Newton 
+*          correction options.
+*
+* Key tasks:
+*   1. Define operator schemas (data layout for DOFs and stencils)
+*   2. Create or validate global operator with cell and boundary_face DOFs
+*   3. Create local face-based operators for matrix assembly
+*   4. Configure upwind treatment for nonlinear coefficients
+*   5. Set up Newton correction for nonlinear problems
+*   6. Store mesh dimension information
 ****************************************************************** */
 void
 PDE_DiffusionNLFVwithBndFaces::Init_(Teuchos::ParameterList& plist)
 {
   // Define stencil for the FV diffusion method.
+  // Local operator schema specifies:
+  //   - BASE_FACE: matrices are assembled on faces  CHECK!!!
+  //   - DOFS_CELL: primary unknowns are cell-centered
+  //   - DOFS_BNDFACE: boundary values are explicit DOFs
   local_op_schema_ =
     OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_BNDFACE;
 
   // create or check the existing Operator
   if (global_op_ == Teuchos::null) {
-    // constructor was given a mesh
+    // constructor was given a mesh - need to create the global operator
+    // Global schema defines where degrees of freedom live (cells + boundary faces)
     global_op_schema_ = OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_BNDFACE;
 
-    // build the CVS from the global schema
+    // build the Composite Vector Space (CVS) from the global schema
+    // CVS defines the data structure for solution vectors
+    // Ghosted = true means we include ghost cells for parallel communication
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)->SetGhosted(true);
-    cvs->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-    cvs->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
+    cvs->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);              // 1 DOF per cell
+    cvs->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1); // 1 DOF per boundary face
 
+    // Create specialized operator for cell-boundary_face coupling
     global_op_ = Teuchos::rcp(new Operator_CellBndFace(cvs, plist, global_op_schema_));
 
   } else {
-    // constructor was given an Operator
+    // constructor was given an Operator - extract schema and mesh from it
     global_op_schema_ = global_op_->schema();
     mesh_ = global_op_->DomainMap().Mesh();
   }
 
   // create the local Op and register it with the global Operator
+  // Local operator stores face-based 2x2 matrices connecting adjacent cells/boundary faces
   std::string name = "Diffusion: FACE_CELLBNDFACE";
   local_op_ = Teuchos::rcp(new Op_Face_CellBndFace(name, mesh_));
   global_op_->OpPushBack(local_op_);
 
-  // upwind options (not used yet)
+  // Configure upwind treatment for nonlinear scalar coefficients (e.g., relative permeability)
+  // Upwinding determines how to average coefficients across faces based on flux direction
   std::string uwname = plist.get<std::string>("nonlinear coefficient", "upwind: face");
   little_k_ = OPERATOR_LITTLE_K_UPWIND;
   if (uwname == "none") {
-    little_k_ = OPERATOR_LITTLE_K_NONE;
+    little_k_ = OPERATOR_LITTLE_K_NONE;  // No upwinding - use simple averaging
   }
 
-  // Newton correction terms
+  // Configure Newton correction terms for nonlinear problems
+  // When permeability depends on solution (e.g., k(p)), we need Jacobian corrections
   std::string jacobian = plist.get<std::string>("Newton correction", "none");
   if (jacobian == "none") {
-    newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_NONE;
+    newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_NONE;  // Linear problem
   } else if (jacobian == "approximate Jacobian") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE;
 
+    // Create additional operator to store Jacobian correction terms
     name = "Diffusion: FACE_CELLBNDFACE Jacobian terms";
     jac_op_ = Teuchos::rcp(new Op_Face_CellBndFace(name, mesh_));
 
@@ -94,7 +119,9 @@ PDE_DiffusionNLFVwithBndFaces::Init_(Teuchos::ParameterList& plist)
     Exceptions::amanzi_throw(msg);
   }
 
-  // other data
+  // Store mesh dimensions
+  // dim_ = space dimension (2 or 3)
+  // manifold_dim_ = manifold dimension (for surface/fracture meshes embedded in higher dim space)
   dim_ = mesh_->getSpaceDimension();
   manifold_dim_ = mesh_->getManifoldDimension();
 }
@@ -126,26 +153,66 @@ PDE_DiffusionNLFVwithBndFaces::SetScalarCoefficient(const Teuchos::RCP<const Com
 * Compute harmonic averaging points (function of geometry and tensor)
 * and the positive decomposition of face conormals. The face-based
 * data from left and right cells are ordered by the global cells ids.
+*
+* Purpose: Builds the geometric stencils needed for NLFV discretization.
+*          This is a preprocessing step that depends only on mesh geometry
+*          and diffusion tensor K, not on the solution.
+*
+* Algorithm Overview:
+*   PART 1: Allocate storage for stencil data
+*   PART 2: Compute Harmonic Averaging Points (HAPs) for all faces
+*   PART 3: Compute positive decomposition of conormals for interior faces
+*   PART 4: Compute positive decomposition for boundary faces
+*   PART 5: Parallel communication of stencil data
+*
+* Key Concepts:
+*   - HAP: A special point on each face where flux interpolation is centered
+*          Computed to ensure monotonicity and positivity of the scheme
+*   - Conormal: K·n where K is diffusion tensor and n is face normal
+*   - Positive decomposition: Expresses conormal as positive linear combination
+*          of vectors pointing to neighboring cells/faces (ensures M-matrix)
+*   - Stencil: For each face, identifies which neighboring cells contribute
+*          to the flux, along with their weights
+*
+* Data Structures Created:
+*   stencil_data_: CompositeVector containing:
+*     - "hap": Coordinates of harmonic averaging points [dim_ per face]
+*     - "gamma": Weighting factor (1-hap_weight) for flux interpolation [1 per face]
+*     - "weight": Decomposition weights [2*dim_ per face, dim_ for each side]
+*     - "flux_data": Precomputed flux coefficients [2*dim_ per face]
+*   stencil_faces_[2*dim_]: For each face, lists which faces are in its stencil
+*   stencil_cells_[2*dim_]: For each face, lists which cells are in its stencil
+*
+* Storage pattern for each face f:
+*   Indices [0, dim_-1]: Stencil for "left" cell (lower global ID)
+*   Indices [dim_, 2*dim_-1]: Stencil for "right" cell or boundary
 ****************************************************************** */
 void
 PDE_DiffusionNLFVwithBndFaces::InitStencils_()
 {
-  // allocate persistent memory
+  // ==================== PART 1: ALLOCATE PERSISTENT MEMORY ====================
+  
+  // Create storage for all stencil-related data
+  // This data persists across multiple UpdateMatrices() calls
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh_)
-    ->SetGhosted(true)
-    ->AddComponent("hap", AmanziMesh::Entity_kind::FACE, dim_)
-    ->AddComponent("gamma", AmanziMesh::Entity_kind::FACE, 1)
-    ->AddComponent("weight", AmanziMesh::Entity_kind::FACE, 2 * dim_)
-    ->AddComponent("flux_data", AmanziMesh::Entity_kind::FACE, 2 * dim_);
+    ->SetGhosted(true)  // Include ghost cells for parallel computing
+    ->AddComponent("hap", AmanziMesh::Entity_kind::FACE, dim_)           // HAP coordinates
+    ->AddComponent("gamma", AmanziMesh::Entity_kind::FACE, 1)            // Interpolation weight
+    ->AddComponent("weight", AmanziMesh::Entity_kind::FACE, 2 * dim_)   // Decomposition weights
+    ->AddComponent("flux_data", AmanziMesh::Entity_kind::FACE, 2 * dim_); // Flux coefficients
   stencil_data_ = Teuchos::rcp(new CompositeVector(cvs));
 
+  // Get references to the components for easy access
   Epetra_MultiVector& hap = *stencil_data_->ViewComponent("hap", true);
   Epetra_MultiVector& gamma = *stencil_data_->ViewComponent("gamma", true);
   Epetra_MultiVector& weight = *stencil_data_->ViewComponent("weight", true);
 
   stencil_data_->PutScalarMasterAndGhosted(0.0);
 
+  // Allocate integer arrays to store stencil topology
+  // For each face, we store up to 2*dim_ stencil entries (dim_ per side)
+  // In 3D: up to 6 entries (3 for left cell, 3 for right cell/boundary)
   stencil_faces_.resize(2 * dim_);
   stencil_cells_.resize(2 * dim_);
   for (int i = 0; i < 2 * dim_; ++i) {
@@ -158,7 +225,10 @@ PDE_DiffusionNLFVwithBndFaces::InitStencils_()
     stencil_cells_[i]->PutValue(0);
   }
 
+  // ==================== PREPARE DIFFUSION TENSOR DATA ====================
+  
   // allocate temporary memory for distributed tensor
+  // We need to communicate tensor K to ghost cells for stencil computation
   CompositeVectorSpace cvs_tmp;
   cvs_tmp.SetMesh(mesh_)->SetGhosted(true)->AddComponent(
     "tensor", AmanziMesh::Entity_kind::CELL, dim_ * dim_);
@@ -166,15 +236,17 @@ PDE_DiffusionNLFVwithBndFaces::InitStencils_()
   Epetra_MultiVector& Ktmp = *cv_tmp->ViewComponent("tensor", true);
 
   // instantiate variables to access supporting tools
-  WhetStone::NLFV nlfv(mesh_);
-  WhetStone::MFD3D_Diffusion mfd3d(mesh_);
+  WhetStone::NLFV nlfv(mesh_);           // NLFV geometric algorithms
+  WhetStone::MFD3D_Diffusion mfd3d(mesh_); // MFD discretization tools (if needed)
 
-  // distribute diffusion tensor
+  // Convert diffusion tensor from tensor format to vector format for storage
+  // For each cell, flatten K matrix into a vector [K11, K12, K13, K21, K22, ...]
   WhetStone::DenseVector data(dim_ * dim_);
   for (int c = 0; c < ncells_owned; ++c) {
     if (K_ != Teuchos::null) {
-      WhetStone::TensorToVector((*K_)[c], data);
+      WhetStone::TensorToVector((*K_)[c], data);  // Use provided tensor
     } else {
+      // Default to identity tensor if none provided
       WhetStone::Tensor Kc(dim_, 1);
       Kc(0, 0) = 1.0;
       WhetStone::TensorToVector(Kc, data);
@@ -184,9 +256,13 @@ PDE_DiffusionNLFVwithBndFaces::InitStencils_()
       Ktmp[i][c] = data(i);
     }
   }
+  // Communicate tensor data to ghost cells (needed for faces on processor boundaries)
   cv_tmp->ScatterMasterToGhosted();
 
-  // calculate harmonic averaging points (HAPs)
+  // ==================== PART 2: COMPUTE HARMONIC AVERAGING POINTS ====================
+  
+  // For each interior face, compute the HAP based on geometry and diffusion tensor
+  // HAP is located between cell centroids such that the discrete flux is consistent
   int c1, c2;
   double hap_weight;
   WhetStone::Tensor T(dim_, 2);
@@ -197,10 +273,11 @@ PDE_DiffusionNLFVwithBndFaces::InitStencils_()
     int ncells = cells.size();
 
     if (ncells == 2) {
+      // Interior face: compute HAP between two cells
       const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
-      OrderCellsByGlobalId_(cells, c1, c2);
+      OrderCellsByGlobalId_(cells, c1, c2);  // Ensure consistent ordering
 
-      // create to conormals
+      // Compute conormals Kn1 = K1·n and Kn2 = K2·n for both cells
       for (int i = 0; i < dim_ * dim_; ++i) data(i) = Ktmp[i][c1];
       VectorToTensor(data, T);
       Kn1 = T * normal;
@@ -209,36 +286,48 @@ PDE_DiffusionNLFVwithBndFaces::InitStencils_()
       VectorToTensor(data, T);
       Kn2 = T * normal;
 
+      // Compute HAP location p and weight using NLFV algorithm
+      // hap_weight determines how close HAP is to cell c1 (0) vs c2 (1)
       nlfv.HarmonicAveragingPoint(f, c1, c2, Kn1, Kn2, p, hap_weight);
     } else {
+      // Boundary face: HAP is at the face centroid
       p = mesh_->getFaceCentroid(f);
       hap_weight = 0.0;
     }
 
-    // factor going to stencil should be (1 - weight)
+    // Store HAP coordinates
     for (int i = 0; i < dim_; ++i) hap[i][f] = p[i];
+    // gamma = (1 - hap_weight) is used later for flux interpolation
     gamma[0][f] = 1.0 - hap_weight;
   }
 
+  // Communicate HAP data to ghost faces
   stencil_data_->ScatterMasterToGhosted("hap");
   stencil_data_->ScatterMasterToGhosted("gamma");
 
-  // calculate coefficients in positive decompositions of conormals
+  // ==================== PART 3: POSITIVE DECOMPOSITION FOR INTERIOR FACES ====================
+  
+  // For each cell, decompose the conormal of each adjacent face as a positive
+  // linear combination of vectors pointing to neighboring cells/faces
+  // This ensures the scheme produces an M-matrix (diagonal dominant with positive diagonal)
+  
   AmanziGeometry::Point conormal(dim_), v(dim_);
-  std::vector<AmanziGeometry::Point> tau;
+  std::vector<AmanziGeometry::Point> tau;  // Candidate vectors for decomposition
 
   for (int c = 0; c < ncells_owned; c++) {
     const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
 
-    // calculate list of candidate vectors
+    // Get all faces of this cell and their orientations
     const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
     int nfaces = faces.size();
 
+    // Get diffusion tensor for this cell
     WhetStone::Tensor Kc(mesh_->getSpaceDimension(), 1);
     Kc(0, 0) = 1.0;
-
     if (K_.get() ) Kc = (*K_)[c];
 
+    // Build candidate vectors tau: from cell centroid to HAP of each face
+    // These form the basis for positive decomposition
     tau.clear();
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
@@ -246,68 +335,92 @@ PDE_DiffusionNLFVwithBndFaces::InitStencils_()
       tau.push_back(v);
     }
 
-    // decompose co-normals
-    int ierr, ids[3];
-    double ws[3];
+    // For each face of this cell, decompose its conormal
+    int ierr, ids[3];   // ids stores which tau vectors are selected
+    double ws[3];       // ws stores the weights for the decomposition
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
       const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
+      // Conormal = K·n with correct orientation for this cell
       conormal = ((*K_)[c] * normal) * dirs[n];
 
+      // Find positive decomposition: conormal = sum(ws[i] * tau[ids[i]])
+      // where ws[i] >= 0 for all i
       ierr = nlfv.PositiveDecomposition(n, tau, conormal, manifold_dim_, ws, ids);
       AMANZI_ASSERT(ierr == 0);
 
+      // Store decomposition weights and stencil connectivity
       auto cells = mesh_->getFaceCells(f);
       OrderCellsByGlobalId_(cells, c1, c2);
+      // k = 0 for left cell, dim_ for right cell (storage offset)
       int k = (c == c1) ? 0 : dim_;
 
       for (int i = 0; i < dim_; i++) {
-        weight[k + i][f] = ws[i];
-        (*stencil_faces_[k + i])[f] = faces[ids[i]];
+        weight[k + i][f] = ws[i];                    // Store weight
+        (*stencil_faces_[k + i])[f] = faces[ids[i]]; // Which face in stencil
+        // Which cell is across that face from current cell c
         (*stencil_cells_[k + i])[f] = AmanziMesh::getFaceAdjacentCell(*mesh_, c, faces[ids[i]]);
       }
     }
   }
 
+  // ==================== PART 4: POSITIVE DECOMPOSITION FOR BOUNDARY FACES ====================
+  
+  // Boundary faces require special treatment because they have only one adjacent cell
+  // We build vectors from the boundary HAP to interior cell HAP and the cell centroid
+  
   for (int f = 0; f < nfaces_owned; f++) {
     auto cells = mesh_->getFaceCells(f);
     int ncells = cells.size();
     if (ncells == 1) {
+      // This is a boundary face
       int c = cells[0];
       const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
       const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
       int nfaces = faces.size();
 
+      // Get diffusion tensor for the adjacent cell
       WhetStone::Tensor Kc(mesh_->getSpaceDimension(), 1);
       Kc(0, 0) = 1.0;
-
       if (K_.get() ) Kc = (*K_)[c];
-      int face_itself;
+      
+      int face_itself;  // Index of boundary face f within cell c's face list
 
+      // Build candidate vectors tau
+      // For boundary face itself: vector from HAP to cell centroid (inward pointing)
+      // For other faces: vector from boundary HAP to their HAPs
       tau.clear();
       for (int n = 0; n < nfaces; n++) {
         int g = faces[n];
         if (g == f) {
           face_itself = n;
+          // Inward vector: from boundary HAP to cell centroid
           for (int i = 0; i < dim_; ++i) v[i] = xc[i] - hap[i][f];
         } else {
+          // Vector to neighboring face's HAP
           for (int i = 0; i < dim_; ++i) v[i] = hap[i][g] - hap[i][f];
         }
         tau.push_back(v);
       }
 
+      // Compute conormal for boundary face (negative orientation, pointing outward from cell)
       const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
       conormal = -(Kc * normal) * dirs[face_itself];
 
       int ierr, ids[3];
       double ws[3];
 
+      // Positive decomposition for boundary face
       ierr = nlfv.PositiveDecomposition(face_itself, tau, conormal, manifold_dim_, ws, ids);
       AMANZI_ASSERT(ierr == 0);
 
+      // Store decomposition data
+      // First component (i=0) corresponds to cell itself (tau vector points to cell center)
       weight[dim_][f] = ws[0];
-      (*stencil_faces_[dim_])[f] = -100;
-      (*stencil_cells_[dim_])[f] = c;
+      (*stencil_faces_[dim_])[f] = -100;  // Special marker: stencil includes cell, not a face
+      (*stencil_cells_[dim_])[f] = c;     // The adjacent cell
+      
+      // Remaining components (i=1 to dim_-1) correspond to neighboring faces
       for (int i = 1; i < dim_; i++) {
         weight[dim_ + i][f] = ws[i];
         (*stencil_faces_[dim_ + i])[f] = faces[ids[i]];
@@ -316,17 +429,25 @@ PDE_DiffusionNLFVwithBndFaces::InitStencils_()
     }
   }
 
-  // distribute stencils
+  // ==================== PART 5: PARALLEL COMMUNICATION OF STENCIL DATA ====================
+  
+  // In parallel computations, faces on processor boundaries need stencil information
+  // from neighboring processors. We gather/scatter to synchronize this data.
+  
+  // Synchronize weights across processors
   stencil_data_->GatherGhostedToMaster("weight");
   stencil_data_->ScatterMasterToGhosted("weight");
 
+  // Synchronize stencil topology (which faces and cells are in each stencil)
   ParallelCommunication pp(mesh_);
   for (int i = 0; i < 2 * dim_; ++i) {
+    // Combine contributions from ghost to master entities
     pp.CombineGhostEntity2MasterEntity(
       AmanziMesh::Entity_kind::FACE, *stencil_faces_[i], (Epetra_CombineMode)Add);
     pp.CombineGhostEntity2MasterEntity(
       AmanziMesh::Entity_kind::FACE, *stencil_cells_[i], (Epetra_CombineMode)Add);
 
+    // Copy master entity data back to ghost entities
     pp.CopyMasterEntity2GhostEntity(AmanziMesh::Entity_kind::FACE, *stencil_faces_[i]);
     pp.CopyMasterEntity2GhostEntity(AmanziMesh::Entity_kind::FACE, *stencil_cells_[i]);
   }
@@ -336,6 +457,7 @@ PDE_DiffusionNLFVwithBndFaces::InitStencils_()
   // for (int n=0; n<6; n++) std::cout<<(*stencil_faces_[n])[9]<<" ";
   // std::cout<<"\n";
 
+  // Mark stencils as initialized - this expensive computation only done once
   stencil_initialized_ = true;
 }
 
@@ -515,7 +637,7 @@ PDE_DiffusionNLFVwithBndFaces::UpdateMatrices(const Teuchos::Ptr<const Composite
       Aface(1, 0) = -flux_data[0][f];
     }
 
-    if (ncells==2) std::cout<<"Aface "<<f<<" "<<ncells<<"\n"<<Aface<<"\n";
+    //    if (ncells==2) std::cout<<"Aface "<<f<<" "<<ncells<<"\n"<<Aface<<"\n";
     
     local_op_->matrices[f] = Aface;
   }
@@ -663,8 +785,8 @@ PDE_DiffusionNLFVwithBndFaces::OneSidedFluxCorrections_(int i0,
   const Epetra_MultiVector& ubnd = *u.ViewComponent("boundary_face", true);
   Epetra_MultiVector& flux = *flux_cv.ViewComponent("face", true);
 
-  std::cout<<uc<<"\n";
-  std::cout<<ubnd<<"\n";
+  // std::cout<<uc<<"\n";
+  // std::cout<<ubnd<<"\n";
   
   Epetra_MultiVector& hap_gamma = *stencil_data_->ViewComponent("gamma", true);
   Epetra_MultiVector& weight = *stencil_data_->ViewComponent("weight", true);
@@ -731,7 +853,7 @@ PDE_DiffusionNLFVwithBndFaces::OneSidedFluxCorrections_(int i0,
         }
       }
 
-      if (f==9) std::cout<<"k1 "<<k1<<" sideflux "<<sideflux<<"\n";
+      //if (f==9) std::cout<<"k1 "<<k1<<" sideflux "<<sideflux<<"\n";
       
       flux[k1][f] = kf * sideflux;
     }
@@ -865,8 +987,6 @@ PDE_DiffusionNLFVwithBndFaces::OneSidedWeightFluxes_(int i0,
             int bf = mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false)
                        .LID(mesh_->getMap(AmanziMesh::Entity_kind::FACE, false).GID(f1));
 
-            ubnd[0][bf] = bc_value[f1];
-            
             //sideflux += flux_data[i + k2][f] * (uc[0][c] - ubnd[0][bf]);
             neumann_flux += flux_data[i + k2][f] * bc_value[f1] * mesh_->getFaceArea(f1);
           }
@@ -876,8 +996,7 @@ PDE_DiffusionNLFVwithBndFaces::OneSidedWeightFluxes_(int i0,
         int bf = mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false)
                    .LID(mesh_->getMap(AmanziMesh::Entity_kind::FACE, false).GID(f));
 
-        ubnd[0][bf] = bc_value[f];
-        
+
         flux[0][f] = flux_data[0][f] * uc[0][c] - flux_data[dim_][f] * ubnd[0][bf];
       }
     }
@@ -949,6 +1068,7 @@ PDE_DiffusionNLFVwithBndFaces::UpdateFlux(const Teuchos::Ptr<const CompositeVect
                                           const Teuchos::Ptr<CompositeVector>& flux)
 {
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
+  const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
 
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh_)->SetGhosted(true)->AddComponent("face", AmanziMesh::Entity_kind::FACE, 2);
@@ -980,8 +1100,9 @@ PDE_DiffusionNLFVwithBndFaces::UpdateFlux(const Teuchos::Ptr<const CompositeVect
       double wg1 = wgt_sideflux[0][f];
       double wg2 = wgt_sideflux[1][f];
 
-      if (cells.size() == 2) flux_data[0][f] = 0.5 * (wg1 - wg2) * dir;
-      else flux_data[0][f] = dir * wg1;
+      // if (cells.size() == 2) flux_data[0][f] = 0.5 * (wg1 - wg2) * dir;
+      // else flux_data[0][f] = dir * wg1; 
+      flux_data[0][f] = 0.5 * (wg1 - wg2) * dir;  
     }
   }
 }

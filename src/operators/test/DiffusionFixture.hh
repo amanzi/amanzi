@@ -376,13 +376,25 @@ DiffusionFixture::Go(double tol)
     double pnorm(0.0), pl2_err(0.0), pinf_err(0.0);
     ana->ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 
+    if (solution->HasComponent("boundary_face")){
+      Epetra_MultiVector& pb = *solution->ViewComponent("boundary_face", false);
+      double pb_norm(0.0), pb_l2_err(0.0), pb_inf_err(0.0);
+      ana->ComputeBFaceError(pb, 0.0, pb_norm, pb_l2_err, pb_inf_err);
+      std::cout<<"Boundary face error "<<pb_l2_err<<" "<<pb_inf_err<<"\n";
+    }
+      
+
+    
     // calculate flux error
     double unorm, ul2_err, uinf_err;
 
     op->UpdateMatrices(Teuchos::null, solution.ptr());
     op->UpdateFlux(solution.ptr(), flux.ptr());
-
+    
     Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
+
+    std::cout<<"flux "<<flx<<"\n";
+    
     ana->ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
 
     auto MyPID = comm->MyPID();

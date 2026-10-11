@@ -381,11 +381,17 @@ if (ENABLE_TESTS)
 
     add_amanzi_test(operators_diffusion_3pe operators_diffusion NPROCS 3 KIND unit)
 
-    add_amanzi_test(operators_diffusion_low_order operators_diffusion_low_order
+#    add_amanzi_test(operators_diffusion_low_order operators_diffusion_low_order
+#                    KIND unit
+#                    SOURCE test/Main.cc test/operator_diffusion_low_order.cc
+#                    LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(operators_diffusion_low_order operators_diffusion_nlfv_bnd
                     KIND unit
-                    SOURCE test/Main.cc test/operator_diffusion_low_order.cc
+                    SOURCE test/Main.cc test/operator_diffusion_nlfv_bnd.cc
                     LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-                 
+
+
     add_amanzi_test(operators_diffusion_consistent_face operators_diffusion_consistent_face
                     KIND unit
                     SOURCE test/Main.cc test/operator_diffusion_consistent_face.cc

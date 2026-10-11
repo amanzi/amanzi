@@ -446,7 +446,7 @@ PDE_DiffusionNLFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flu
       Aface(0, 0) = matrix[0][f];
     }
 
-    if (ncells==2) std::cout<<"Aface "<<f<<" "<<ncells<<"\n"<<Aface<<"\n";
+    //    if (ncells==2) std::cout<<"Aface "<<f<<" "<<ncells<<"\n"<<Aface<<"\n";
     
     local_op_->matrices[f] = Aface;
   }
@@ -595,7 +595,7 @@ PDE_DiffusionNLFV::OneSidedFluxCorrections_(int i0,
   const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
   Epetra_MultiVector& flux = *flux_cv.ViewComponent("face", true);
 
-  std::cout<<uc<<"\n";
+  //std::cout<<uc<<"\n";
   
   Epetra_MultiVector& hap_gamma = *stencil_data_->ViewComponent("gamma", true);
   Epetra_MultiVector& weight = *stencil_data_->ViewComponent("weight", true);
@@ -651,7 +651,7 @@ PDE_DiffusionNLFV::OneSidedFluxCorrections_(int i0,
         }
       }
 
-      if (f==9) std::cout<<"k1 "<<k1<<" sideflux "<<sideflux<<" "<<neumann_flux<<"\n";
+      //if (f==9) std::cout<<"k1 "<<k1<<" sideflux "<<sideflux<<" "<<neumann_flux<<"\n";
       
       flux[k1][f] = kf * sideflux + neumann_flux;
     }
