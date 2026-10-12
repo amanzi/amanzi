@@ -57,7 +57,9 @@ EvaluatorIndependentFromFile::EvaluatorIndependentFromFile(
 // ---------------------------------------------------------------------------
 Teuchos::RCP<Evaluator>
 EvaluatorIndependentFromFile::Clone() const
-{ return Teuchos::rcp(new EvaluatorIndependentFromFile(*this)); }
+{
+  return Teuchos::rcp(new EvaluatorIndependentFromFile(*this));
+}
 
 // ---------------------------------------------------------------------------
 // Operator=
