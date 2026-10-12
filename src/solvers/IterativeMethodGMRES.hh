@@ -86,6 +86,7 @@ space, see Rollin et al.
 #define AMANZI_GMRES_OPERATOR_HH_
 
 #include <cmath>
+#include <vector>
 
 #include "Teuchos_RCP.hpp"
 #include "errors.hh"
@@ -250,7 +251,7 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::GMRES_(const 
   Vector& r = *r_;
   Vector& p = *p_;
 
-  double s[krylov_dim_ + 1], cs[krylov_dim_ + 1], sn[krylov_dim_ + 1];
+  std::vector<double> s(krylov_dim_ + 1), cs(krylov_dim_ + 1), sn(krylov_dim_ + 1);
   WhetStone::DenseMatrix<> T(krylov_dim_ + 1, krylov_dim_);
   T = 0.;
   num_itrs_inner_ = 0;
@@ -356,7 +357,7 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::GMRES_(const 
       // << std::endl; std::cout << "GMRES: CS p = " << Debug::get0(p) << "," <<
       // p.normInf() << std::endl; std::cout << "GMRES: CS r = " <<
       // Debug::get0(r) << "," << r.normInf() << std::endl;
-      ComputeSolution_(x, i, T, s, p, r); // vector s is overwritten
+      ComputeSolution_(x, i, T, s.data(), p, r); // vector s is overwritten
       // std::cout << "GMRES: CS2 x = " << Debug::get0(x) << "," << x.normInf()
       // << std::endl; std::cout << "GMRES: CS2 p = " << Debug::get0(p) << ","
       // << p.normInf() << std::endl; std::cout << "GMRES: CS2 r = " <<
@@ -378,7 +379,7 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::GMRES_(const 
         if (vo_->os_OK(Teuchos::VERB_EXTREME))
           *vo_->os() << "controller indicates convergence stagnation\n";
 
-        ComputeSolution_(x, i, T, s, p, r);
+        ComputeSolution_(x, i, T, s.data(), p, r);
         return LIN_SOLVER_MAX_ITERATIONS;
       }
       controller_[1] = residual_;
@@ -402,7 +403,7 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::GMRES_(const 
     }
   }
 
-  ComputeSolution_(x, krylov_dim_ - 1, T, s, p, r); // vector s is overwritten
+  ComputeSolution_(x, krylov_dim_ - 1, T, s.data(), p, r); // vector s is overwritten
   return LIN_SOLVER_MAX_ITERATIONS;
 }
 

@@ -202,8 +202,8 @@ class Tensor {
       data_[2] /= -det;
 
     } else {
-      int info, ipiv[size_];
-      double work[size_];
+      int info, ipiv[6];
+      double work[6];
       DGETRF_F77(&size_, &size_, data_ptr(), &size_, ipiv, &info);
       DGETRI_F77(&size_, data_ptr(), &size_, ipiv, work, &size_, &info);
     }
@@ -222,8 +222,8 @@ class Tensor {
 
     } else {
       int n = size_;
-      int ipiv[n], lwork(3 * n), info;
-      double S[n], work[lwork];
+      int lwork(3 * n), info;
+      double S[6], work[18];
 
       Tensor T(*this);
       DSYEV_F77("V", "U", &n, T.data_ptr(), &n, S, work, &lwork, &info);
@@ -331,8 +331,8 @@ class Tensor {
       *upper = (trace + D) / 2;
     } else if (rank_ <= 2) {
       int n = size_;
-      int ipiv[n], lwork(3 * n), info;
-      double S[n], work[lwork];
+      int lwork(3 * n), info;
+      double S[6], work[18];
 
       Tensor T(*this);
       DSYEV_F77("N", "U", &n, T.data_ptr(), &n, S, work, &lwork, &info);

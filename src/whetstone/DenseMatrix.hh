@@ -21,6 +21,7 @@
 #include <iostream>
 #include <cstdio>
 #include <iomanip>
+#include <vector>
 #include <Kokkos_Core.hpp>
 
 #include "lapack.hh"
@@ -37,9 +38,7 @@ class DenseMatrix {
   KOKKOS_INLINE_FUNCTION DenseMatrix() : m_(0), n_(0), mem_(0) {}
 
   DenseMatrix(const int& mrow, const int& ncol) : m_(mrow), n_(ncol), mem_(m_ * n_)
-  {
-    Kokkos::resize(data_, mem_);
-  } // memory is not initialized
+  { Kokkos::resize(data_, mem_); } // memory is not initialized
 
   template <class MEMSPACE_OTHER>
   DenseMatrix(const DenseMatrix<MEMSPACE_OTHER>& other)
@@ -348,9 +347,7 @@ class DenseMatrix {
 
   // -- extrema in rows and columns
   KOKKOS_INLINE_FUNCTION void MaxRowValue(int irow, int* j, double* value)
-  {
-    MaxRowValue(irow, 0, n_, j, value);
-  }
+  { MaxRowValue(irow, 0, n_, j, value); }
 
   /*******************************************************************
    * Second level routine: max values
@@ -376,9 +373,7 @@ class DenseMatrix {
   }
 
   KOKKOS_INLINE_FUNCTION void MaxRowMagnitude(int irow, int* j, double* value)
-  {
-    MaxRowMagnitude(irow, 0, n_, j, value);
-  }
+  { MaxRowMagnitude(irow, 0, n_, j, value); }
 
   /* ******************************************************************
    * Second level routine: max absolute value
@@ -539,14 +534,14 @@ class DenseMatrix {
     if (n_ != m_) return 911;
 
     int ierr;
-    int iwork[n_];
-    DGETRF_F77(&n_, &n_, &data_(0), &n_, iwork, &ierr);
+    std::vector<int> iwork(n_);
+    DGETRF_F77(&n_, &n_, &data_(0), &n_, iwork.data(), &ierr);
     //assert(!ierr);
     if (ierr) return ierr;
 
     int lwork = n_ * n_;
-    double dwork[lwork];
-    DGETRI_F77(&n_, &data_(0), &n_, iwork, dwork, &lwork, &ierr);
+    std::vector<double> dwork(lwork);
+    DGETRI_F77(&n_, &data_(0), &n_, iwork.data(), dwork.data(), &lwork, &ierr);
     //assert(!ierr);
     return ierr;
   }
@@ -586,9 +581,23 @@ class DenseMatrix {
     // Allocate memory for Lapack routine.
     int ldv(1), lwork, info;
     lwork = std::max(m_ + 3 * n_, 5 * n_);
-    double U[m_ * m_], V, S[n_], work[lwork];
+    std::vector<double> U(m_ * m_), S(n_), work(lwork);
+    double V;
 
-    DGESVD_F77("A", "N", &m_, &n_, &data_(0), &m_, S, U, &m, &V, &ldv, work, &lwork, &info);
+    DGESVD_F77("A",
+               "N",
+               &m_,
+               &n_,
+               &data_(0),
+               &m_,
+               S.data(),
+               U.data(),
+               &m,
+               &V,
+               &ldv,
+               work.data(),
+               &lwork,
+               &info);
 
     AMANZI_ASSERT(!info);
 
