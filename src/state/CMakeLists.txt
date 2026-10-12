@@ -267,6 +267,14 @@ if (BUILD_TESTS)
                            test/state_evaluators_cv.cc
                     LINK_LIBS ${state_test_link_libs})
 
+    # tests FileTimeInterpolator (EvaluatorFromFile_Helpers.hh), in particular
+    # paging when the time series length is not an even multiple of page_size
+    add_amanzi_test(state_evaluator_from_file state_evaluator_from_file
+                    KIND int
+                    SOURCE test/Main.cc
+                           test/state_evaluator_from_file.cc
+                    LINK_LIBS ${state_test_link_libs})
+
     # tests Evaluators IndependentFromFunction and SecondaryFromFunction
     add_amanzi_test(state_functional_evaluators state_functional_evaluators
                     KIND int

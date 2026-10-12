@@ -31,11 +31,14 @@ and FileXDMF), specifying a layout.
 #define AMANZI_INPUT_HH_
 
 #include <string>
+#include <typeinfo>
 #include <vector>
 #include "AmanziTypes.hh"
 #include "MeshDefs.hh"
 #include "CompositeVector_decl.hh"
 #include "OutputUtils.hh"
+#include "errors.hh"
+#include "exceptions.hh"
 
 namespace Amanzi {
 
@@ -49,12 +52,31 @@ class Input {
 
   virtual ~Input() {}
 
-  // read data from file
-  virtual void read(const Teuchos::ParameterList& attrs, double& val) const = 0;
-  virtual void read(const Teuchos::ParameterList& attrs, int& val) const = 0;
-  virtual void read(const Teuchos::ParameterList& attrs, std::string& val) const = 0;
-  virtual void read(const Teuchos::ParameterList& attrs, Vector_type& vec) const = 0;
-  virtual void read(const Teuchos::ParameterList& attrs, IntVector_type& vec) const = 0;
+  // read data from file -- not every Input implementation supports every
+  // overload (e.g. a range-only format); unsupported overloads fall back
+  // to this default, which throws naming the concrete class, rather than
+  // being pure virtual and forcing every implementation to supply a
+  // boilerplate override it doesn't need.
+  virtual void read(const Teuchos::ParameterList& attrs, double& val) const
+  {
+    notImplemented_("read(double&)");
+  }
+  virtual void read(const Teuchos::ParameterList& attrs, int& val) const
+  {
+    notImplemented_("read(int&)");
+  }
+  virtual void read(const Teuchos::ParameterList& attrs, std::string& val) const
+  {
+    notImplemented_("read(std::string&)");
+  }
+  virtual void read(const Teuchos::ParameterList& attrs, Vector_type& vec) const
+  {
+    notImplemented_("read(Vector_type&)");
+  }
+  virtual void read(const Teuchos::ParameterList& attrs, IntVector_type& vec) const
+  {
+    notImplemented_("read(IntVector_type&)");
+  }
 
   virtual void read(const Teuchos::ParameterList& attrs, AmanziGeometry::Point& val) const
   {
@@ -81,7 +103,22 @@ class Input {
     readCompositeVector_(attrs, vec);
   }
 
+  // Reads time_count consecutive time slices starting at time_start into
+  // buf, shaped [time_count, ndofs, num_entities].
+  virtual void readRange(const Teuchos::ParameterList& attrs,
+                         std::size_t time_start,
+                         std::size_t time_count,
+                         Kokkos::View<double***, Kokkos::LayoutRight, Kokkos::HostSpace> buf)
+    const = 0;
+
  protected:
+  void notImplemented_(const std::string& method) const
+  {
+    Errors::Message msg;
+    msg << typeid(*this).name() << "::" << method << " is not implemented";
+    Exceptions::amanzi_throw(msg);
+  }
+
   template <typename SerialArray>
   void readArray_(const Teuchos::ParameterList& attrs, SerialArray& arr) const
   {

@@ -969,7 +969,7 @@ PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
         for (int n = 0; n < nfaces; n++) {
           int f = faces[n];
           Kokkos::atomic_add(&flux_data(f, 0), -lAv(n) * dirs[n]);
-          Kokkos::atomic_increment(&hits_data(f, 0));
+          Kokkos::atomic_inc(&hits_data(f, 0));
         }
       });
   }

@@ -20,6 +20,7 @@
 #include "FunctionFactory.hh"
 #include "EvaluatorFromFile_Helpers.hh"
 #include "EvaluatorTensorFromFile_Helpers.hh"
+#include "IOFileFormat.hh"
 
 #include "EvaluatorIndependentTensorFromFile.hh"
 
@@ -44,6 +45,7 @@ EvaluatorIndependentTensorFromFile::EvaluatorIndependentTensorFromFile(
     rank_(-1),
     num_funcs_(-1),
     page_size_(plist->get<int>("page size", 2)),
+    file_format_(createIOFileFormat(plist->get<std::string>("file format", "HDF5"))),
     rescaling_(plist->get<double>("rescaling factor", 1.0)),
     checkpoint_file_(plist->get<bool>("checkpoint file", false))
 {
@@ -108,24 +110,18 @@ EvaluatorIndependentTensorFromFile::EnsureCompatibility(State& S)
     auto& map_old = f.getMap();
     map_new.SetMesh(map_old.getMesh());
 
-    AmanziMesh::Entity_kind location;
-    if (locname_ == "cell") {
-      location = AmanziMesh::Entity_kind::CELL;
-    } else if (locname_ == "face") {
-      location = AmanziMesh::Entity_kind::FACE;
-    } else if (locname_ == "boundary_face") {
-      location = AmanziMesh::Entity_kind::BOUNDARY_FACE;
-    } else {
-      Errors::Message m;
-      m << "EvaluatorIndependentTensorFromFile: invalid \"mesh entity\": \"" << locname_ << "\"";
-      Exceptions::amanzi_throw(m);
-    }
+    AmanziMesh::Entity_kind location = AmanziMesh::createEntityKind(locname_);
     map_new.AddComponent(compname_, location, num_funcs_);
     f.setMap(map_new);
 
-    interpolator_ = Teuchos::rcp(new EvaluatorFromFile_Helpers::FileTimeInterpolator(
-      filename_, varname_, compname_, locname_, num_funcs_, checkpoint_file_, page_size_));
-    interpolator_->setup(map_new.CreateSpace(), temporally_variable_);
+    interpolator_ =
+      Teuchos::rcp(new EvaluatorFromFile_Helpers::TimeSeriesInterpolatorCV(filename_,
+                                                                           varname_,
+                                                                           map_new.CreateSpace(),
+                                                                           temporally_variable_,
+                                                                           page_size_,
+                                                                           file_format_,
+                                                                           checkpoint_file_));
   }
 }
 
@@ -145,7 +141,8 @@ EvaluatorIndependentTensorFromFile::Update_(State& S)
     t = (*time_func_)(point);
   }
 
-  CompositeVector cv(interpolator_->interpolate(t));
+  CompositeVector cv(interpolator_->getSpace());
+  interpolator_->interpolate(t, cv);
 
   if (rescaling_ != 1.0) cv.scale(rescaling_);
   if (tv.ghosted) cv.scatterMasterToGhosted();

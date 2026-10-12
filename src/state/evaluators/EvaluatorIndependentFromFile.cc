@@ -20,6 +20,7 @@
 #include "FunctionFactory.hh"
 #include "DataStructuresHelpers.hh"
 #include "EvaluatorFromFile_Helpers.hh"
+#include "IOFileFormat.hh"
 
 #include "EvaluatorIndependentFromFile.hh"
 
@@ -40,6 +41,7 @@ EvaluatorIndependentFromFile::EvaluatorIndependentFromFile(
     locname_(plist->get<std::string>("mesh entity", "cell")),
     ndofs_(plist->get<int>("number of DoFs", 1)),
     page_size_(plist->get<int>("page size", 2)),
+    file_format_(createIOFileFormat(plist->get<std::string>("file format", "HDF5"))),
     checkpoint_file_(plist->get<bool>("checkpoint file", false))
 {
   if (checkpoint_file_) temporally_variable_ = false;
@@ -94,25 +96,19 @@ EvaluatorIndependentFromFile::EnsureCompatibility(State& S)
     auto mesh = S.GetMesh(meshname_);
 
     // requirements on vector data
-    AmanziMesh::Entity_kind location;
-    if (locname_ == "cell") {
-      location = AmanziMesh::Entity_kind::CELL;
-    } else if (locname_ == "face") {
-      location = AmanziMesh::Entity_kind::FACE;
-    } else if (locname_ == "boundary_face") {
-      location = AmanziMesh::Entity_kind::BOUNDARY_FACE;
-    } else {
-      Errors::Message m;
-      m << "IndependentVariableFromFile: invalid location name: \"" << locname_ << "\"";
-      throw(m);
-    }
+    AmanziMesh::Entity_kind location = AmanziMesh::createEntityKind(locname_);
 
     auto& space = S.Require<CompositeVector, CompositeVectorSpace>(my_key_, my_tag_, my_key_);
     space.SetMesh(mesh)->AddComponent(compname_, location, ndofs_);
 
-    interpolator_ = Teuchos::rcp(new EvaluatorFromFile_Helpers::FileTimeInterpolator(
-      filename_, varname_, compname_, locname_, ndofs_, checkpoint_file_, page_size_));
-    interpolator_->setup(space.CreateSpace(), temporally_variable_);
+    interpolator_ =
+      Teuchos::rcp(new EvaluatorFromFile_Helpers::TimeSeriesInterpolatorCV(filename_,
+                                                                           varname_,
+                                                                           space.CreateSpace(),
+                                                                           temporally_variable_,
+                                                                           page_size_,
+                                                                           file_format_,
+                                                                           checkpoint_file_));
   }
 }
 
@@ -131,7 +127,7 @@ EvaluatorIndependentFromFile::Update_(State& S)
     t = (*time_func_)(point);
   }
 
-  cv.assign(interpolator_->interpolate(t));
+  interpolator_->interpolate(t, cv);
 
   if (locname_ == "cell" && (cv.hasComponent("boundary_face") || cv.hasComponent("face")))
     DeriveFaceValuesFromCellValues(cv);

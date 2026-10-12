@@ -179,7 +179,9 @@ for layering in the various capabilities that make this a fully-featured mesh.
 namespace Amanzi {
 
 // -- forward declarations
-namespace AmanziGeometry { class GeometricModel; }
+namespace AmanziGeometry {
+class GeometricModel;
+}
 
 namespace AmanziMesh {
 
@@ -226,7 +228,7 @@ class Mesh {
   //
   // Build the cache, fine grained control
   // =============================================
-  void cacheCellGeometry();  // cell centroid, volume
+  void cacheCellGeometry(); // cell centroid, volume
   void cacheCellFaces();
   void cacheCellEdges();
   void cacheCellNodes();
@@ -238,7 +240,7 @@ class Mesh {
   void cacheFaceNodes();
   void cacheFaceCoordinates();
 
-  void cacheEdgeGeometry();  // edge centroid, length, vector
+  void cacheEdgeGeometry(); // edge centroid, length, vector
   void cacheEdgeCells();
   void cacheEdgeFaces();
   void cacheEdgeNodes();
@@ -312,6 +314,11 @@ class Mesh {
   // mesh properties
   // ----------------
   int getSpaceDimension() const { return data_.space_dim_; }
+  // names of the space dimensions, e.g. {"x","y","z"} -- defaults to that
+  // (truncated/extended for the mesh's actual dimension), overridable via
+  // the "space dimension names" plist parameter.  Host-only (not part of
+  // MeshCacheData, which must stay a device-friendly POD).
+  const std::vector<std::string>& getSpaceDimensionNames() const { return space_dim_names_; }
   int getManifoldDimension() const { return data_.manifold_dim_; }
   bool isOrdered() const { return data_.is_ordered_; }
   bool isLogical() const { return data_.is_logical_; }
@@ -376,13 +383,13 @@ class Mesh {
                  const Entity_kind kind,
                  const Parallel_kind ptype) const;
 
-  template<MemSpace_kind MEM>
+  template <MemSpace_kind MEM>
   auto // cEntity_ID_View on MEM
   getSetEntities(const std::string& region_name,
                  const Entity_kind kind,
                  const Parallel_kind ptype) const;
 
-  template<MemSpace_kind MEM>
+  template <MemSpace_kind MEM>
   auto // Kokkos::pair<cEntity_ID_View, cDouble_View> on MEM
   getSetEntitiesAndVolumeFractions(const std::string& region_name,
                                    const Entity_kind kind,
@@ -400,7 +407,7 @@ class Mesh {
   // logic is left to the user of this class -- we simply store the IDs.
   Entity_ID getEntityParent(const Entity_kind kind, const Entity_ID entid) const;
 
-  template<MemSpace_kind MEM>
+  template <MemSpace_kind MEM>
   auto // cEntity_ID_View
   getEntityParents(const Entity_kind kind) const;
 
@@ -439,8 +446,7 @@ class Mesh {
 
   // at run-time, calls one of get*Centroid
   template <AccessPattern_kind = AccessPattern_kind::DEFAULT>
-  AmanziGeometry::Point
-  getCentroid(const Entity_kind kind, const Entity_ID ent) const;
+  AmanziGeometry::Point getCentroid(const Entity_kind kind, const Entity_ID ent) const;
 
   // at compile-time, calls one of get*Centroid
   template <Entity_kind, AccessPattern_kind = AccessPattern_kind::DEFAULT>
@@ -526,13 +532,13 @@ class Mesh {
   void getCellFaces(const Entity_ID c, cEntity_ID_View& cfaces) const;
 
   Kokkos::pair<cEntity_ID_View, cDirection_View> getCellFacesAndDirections(const Entity_ID c) const;
-  void getCellFacesAndDirs(const Entity_ID c,
-                           cEntity_ID_View& faces,
-                           cDirection_View* const dirs) const;
+  void
+  getCellFacesAndDirs(const Entity_ID c, cEntity_ID_View& faces, cDirection_View* const dirs) const;
 
   Kokkos::pair<cEntity_ID_View, cPoint_View> getCellFacesAndBisectors(const Entity_ID c) const;
-  void getCellFacesAndBisectors(const Entity_ID c, cEntity_ID_View& cfaces,
-          cPoint_View* const bisectors) const;
+  void getCellFacesAndBisectors(const Entity_ID c,
+                                cEntity_ID_View& cfaces,
+                                cPoint_View* const bisectors) const;
 
 
   //
@@ -579,12 +585,10 @@ class Mesh {
 
   cEntity_ID_View getFaceEdges(const Entity_ID f) const;
 
-  Kokkos::pair<cEntity_ID_View, cDirection_View>
-  getFaceEdgesAndDirections(const Entity_ID f) const;
+  Kokkos::pair<cEntity_ID_View, cDirection_View> getFaceEdgesAndDirections(const Entity_ID f) const;
 
-  void getFaceEdgesAndDirs(const Entity_ID f,
-          cEntity_ID_View& edges,
-          cDirection_View* const dirs) const;
+  void
+  getFaceEdgesAndDirs(const Entity_ID f, cEntity_ID_View& edges, cDirection_View* const dirs) const;
 
   // Get nodes of face
   //
@@ -646,8 +650,7 @@ class Mesh {
   // NOTE: The order of cells is not guaranteed to be the same for
   // corresponding nodes on different processors
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
-  cEntity_ID_View
-  getNodeCells(const Entity_ID n) const;
+  cEntity_ID_View getNodeCells(const Entity_ID n) const;
 
   // Node --> Face
   // Faces of type parallel 'ptype' connected to a node
@@ -683,6 +686,7 @@ class Mesh {
   Teuchos::RCP<const Mesh> vis_mesh_;
 
   MeshCacheData data_;
+  std::vector<std::string> space_dim_names_;
   Teuchos::RCP<MeshCache> cache_;
 
   // friend MeshAudit_Sets so it can check any existing MeshSets

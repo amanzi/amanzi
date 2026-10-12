@@ -34,10 +34,11 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Tpetra_INCLUDE_DIRS})
 include_directories(${HDF5_C_INCLUDE_DIR})
 include_directories(${ASCEMIO_INCLUDE_DIR})
+include_directories(${NetCDF_INCLUDE_DIRS})
 
 if (ENABLE_Silo)
   include_directories(${Silo_INCLUDE_DIRS})
-endif(ENABLE_Silo)    
+endif(ENABLE_Silo)
 
 #
 # Library: output
@@ -50,34 +51,38 @@ set(output_tpl_list
   ${MOAB_LIBRARIES}
   ${ASCEMIO_LIBRARIES}
   ${HDF5_LIBRARIES}
+  ${NetCDF_C_LIBRARIES}
   ${Silo_LIBRARIES}
   )
 
+# InputOutputHDF5 and InputOutputVerticallyStructuredNetCDF are both
+# current.  OutputDomainSet and OutputSilo depend only on Output.hh (the
+# abstract interface), not on FileHDF5/FileNetCDF directly, so they build
+# against the current API too.
 set(output_inc_files OutputUtils.hh
-                     FileHDF5.hh
-                     FileHDF5_impl.hh
-                     FileXDMF.hh
                      Output.hh
-                     OutputXDMF.hh
                      Input.hh
                      InputOutputHDF5.hh
-                     OutputDomainSet.hh
-                     OutputFactory.hh
+                     InputOutputVerticallyStructuredNetCDF.hh
                      InputFactory.hh
+                     OutputFactory.hh
+                     OutputXDMF.hh
+                     FileXDMF.hh
+                     OutputDomainSet.hh
                      )
 
 set(output_source_files OutputUtils.cc
-                        FileHDF5.cc
+                        InputOutputHDF5.cc
+                        InputOutputVerticallyStructuredNetCDF.cc
+                        InputFactory.cc
+                        OutputFactory.cc
                         FileXDMF.cc
                         OutputXDMF.cc
-                        InputOutputHDF5.cc
                         OutputDomainSet.cc
-                        OutputFactory.cc
-                        InputFactory.cc
                         )
 
-set(output_link_libs data_structures mesh geometry error_handling ${output_tpl_list})
-                      
+set(output_link_libs data_structures mesh geometry atk error_handling ${output_tpl_list})
+
 
 if (ENABLE_Silo)
   list(APPEND output_inc_files "OutputSilo.hh")
@@ -115,12 +120,12 @@ if (BUILD_TESTS)
   include_directories(${UnitTest_INCLUDE_DIRS})
 
   set(output_test_link_libs output mesh_factory)
-  
+
   if (ENABLE_MESH_MSTK)
     include_directories(${MESH_MSTK_SOURCE_DIR})
     list(APPEND output_test_link_libs mesh_mstk)
   endif()
-  
+
   if (ENABLE_MESH_MOAB)
     include_directories(${MESH_MOAB_SOURCE_DIR})
     list(APPEND output_test_link_libs mesh_moab)
@@ -128,7 +133,7 @@ if (BUILD_TESTS)
   include_directories(${MESH_LOGICAL_SOURCE_DIR})
   include_directories(${MESH_EXTRACTED_SOURCE_DIR})
   include_directories(${MESH_FACTORY_SOURCE_DIR})
-  
+
   # Copy test directory files if an out of source build
   if (NOT (${OUTPUT_SOURCE_DIR} EQUAL ${OUTPUT_BINARY_DIR}))
       file(GLOB DataFiles "${OUTPUT_SOURCE_DIR}/test/*.exo")
@@ -137,13 +142,22 @@ if (BUILD_TESTS)
       file(COPY ${DataFiles} ${DataFiles2} ${DataFiles3} DESTINATION ${OUTPUT_BINARY_DIR}/test/)
   endif()
 
-  # Test: file_hdf5
-  add_amanzi_test(output_file_hdf5 output_file_hdf5
-                  SOURCE      test/Main.cc test/output_file_hdf5.cc
+
+  # Test: inputoutput_hdf5
+  add_amanzi_test(output_inputoutput_hdf5 output_inputoutput_hdf5
+                  SOURCE      test/Main.cc test/output_inputoutput_hdf5.cc
                   LINK_LIBS  ${output_test_link_libs} ${UnitTest_LIBRARIES}
                   KIND unit)
-  add_amanzi_test(output_file_hdf5_np2 output_file_hdf5 NPROCS 2 KIND unit)
-  add_amanzi_test(output_file_hdf5_np5 output_file_hdf5 NPROCS 5 KIND unit)
+  add_amanzi_test(output_inputoutput_hdf5_np2 output_inputoutput_hdf5 NPROCS 2 KIND unit)
+
+  # Test: inputoutput_vertically_structured_netcdf
+  add_amanzi_test(output_inputoutput_vertically_structured_netcdf
+                  output_inputoutput_vertically_structured_netcdf
+                  SOURCE      test/Main.cc test/output_inputoutput_vertically_structured_netcdf.cc
+                  LINK_LIBS  ${output_test_link_libs} ${UnitTest_LIBRARIES}
+                  KIND unit)
+  add_amanzi_test(output_inputoutput_vertically_structured_netcdf_np2
+                  output_inputoutput_vertically_structured_netcdf NPROCS 2 KIND unit)
 
   if (ENABLE_MESH_MSTK OR ENABLE_MESH_MOAB)
     # Test: file_xdmf

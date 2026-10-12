@@ -15,19 +15,25 @@
 // Timestep controller which loads a timestep history from file.
 
 #include "dbc.hh"
-#include "HDF5Reader.hh"
+#include "AmanziComm.hh"
+#include "IOFileFormat.hh"
+#include "FileReaderUtils.hh"
 #include "TimestepControllerFromFile.hh"
 
 namespace Amanzi {
 
-TimestepControllerFromFile::TimestepControllerFromFile(Teuchos::ParameterList& plist)
+TimestepControllerFromFile::TimestepControllerFromFile(Teuchos::ParameterList& plist,
+                                                       const Comm_ptr_type& comm)
   : TimestepController(plist), current_(0)
 {
   std::string filename = plist.get<std::string>("file name");
   std::string header = plist.get<std::string>("timestep header", "timesteps");
+  IOFileFormat_kind file_format = createIOFileFormat(plist.get<std::string>("file format", "HDF5"));
 
-  HDF5Reader reader(filename);
-  reader.ReadData(header, dt_history_);
+  Kokkos::View<double*, Kokkos::HostSpace> dt_history_view;
+  readLocalArray(file_format, comm, filename, header, dt_history_view);
+  dt_history_.resize(dt_history_view.extent(0));
+  for (std::size_t i = 0; i != dt_history_view.extent(0); ++i) dt_history_[i] = dt_history_view(i);
   dt_init_ = dt_history_[0];
 }
 

@@ -20,6 +20,7 @@
 #include "Output.hh"
 #include "OutputXDMF.hh"
 #include "InputOutputHDF5.hh"
+#include "InputOutputVerticallyStructuredNetCDF.hh"
 #ifdef HAVE_SILO
 #  include "OutputSilo.hh"
 #endif
@@ -62,6 +63,9 @@ createForVis(Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh:
   std::string output_type = plist.get<std::string>("file format", "XDMF");
   if (output_type == "XDMF" || output_type == "xdmf" || output_type == "Xdmf") {
     return std::make_unique<OutputXDMF>(plist, mesh);
+
+  } else if (output_type == "NetCDF" || output_type == "netcdf" || output_type == "NETCDF") {
+    return std::make_unique<OutputVerticallyStructuredNetCDF>(plist, mesh->getComm(), mesh);
 
   } else if (output_type == "SILO" || output_type == "silo" || output_type == "Silo") {
 #ifdef HAVE_SILO

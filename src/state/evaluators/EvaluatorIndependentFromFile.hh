@@ -50,6 +50,8 @@ This evaluator is used by providing the option:
    * `"page size`" ``[int]`` **2** Number of consecutive time slices to keep
      resident in memory at once.  Larger values amortize file reads across
      more timesteps at the cost of more memory; must be at least 2.
+   * `"file format`" ``[string]`` **optional, default="HDF5"** `"HDF5`" or
+     `"NetCDF`".
    * `"checkpoint file`" ``[bool]`` **false** If this is true, then it is
      expected that `"filename`" is a checkpoint-file-like object, where
      /variable_name.ENTITY.DOF is itself a single 1D array, and not a group
@@ -91,6 +93,7 @@ interpolated between three time intervals.
 #include "EvaluatorIndependent.hh"
 #include "Evaluator_Factory.hh"
 #include "EvaluatorFromFile_Helpers.hh"
+#include "IOFileFormat.hh"
 
 namespace Amanzi {
 
@@ -132,10 +135,11 @@ class EvaluatorIndependentFromFile
   std::string locname_;
   int ndofs_;
   int page_size_;
+  IOFileFormat_kind file_format_;
   bool checkpoint_file_;
 
   Teuchos::RCP<Function> time_func_;
-  Teuchos::RCP<EvaluatorFromFile_Helpers::FileTimeInterpolator> interpolator_;
+  Teuchos::RCP<EvaluatorFromFile_Helpers::TimeSeriesInterpolatorCV> interpolator_;
 
  private:
   static Utils::RegisteredFactory<Evaluator, EvaluatorIndependentFromFile> reg_;

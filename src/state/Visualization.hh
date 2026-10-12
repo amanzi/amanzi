@@ -25,6 +25,12 @@ DOMAIN-NAME`".
 .. admonition:: visualization-spec
 
     * `"file name base`" ``[string]`` **visdump_DOMAIN_data**
+    * `"file format`" ``[string]`` **XDMF** One of `"XDMF`" (writes
+      XDMF+HDF5, for VisIt), `"SILO`" (requires Silo enabled at configure
+      time), or `"NetCDF`" (OutputVerticallyStructuredNetCDF -- a 2D
+      (surface) mesh is fine as-is; a 3D mesh must already be columnar:
+      mesh->columns built, e.g. via MeshFactory's `"build columns`"
+      parameter, with uniform-height, memory-contiguous columns).
     * `"dynamic mesh`" ``[bool]`` **false** Write mesh data for every
       visualization dump; this facilitates visualizing deforming meshes.
     * `"time unit`" ``[string]`` **s** A valid time unit to convert time

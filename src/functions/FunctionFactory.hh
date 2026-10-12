@@ -10,13 +10,16 @@
 #pragma once
 #include "Teuchos_ParameterList.hpp"
 
+#include "AmanziComm.hh"
+#include "AmanziTypes.hh"
+
 namespace Amanzi {
 
 class Function; // forward declaration
 
 class FunctionFactory {
  public:
-  FunctionFactory() {}
+  FunctionFactory(const Comm_ptr_type& comm = getDefaultComm()) : comm_(comm) {}
   ~FunctionFactory() {}
 
   // parse the list and create a function
@@ -27,6 +30,8 @@ class FunctionFactory {
   Create(const std::string& func_type, Teuchos::ParameterList& func_params) const;
 
  private:
+  Comm_ptr_type comm_;
+
   std::unique_ptr<Function> create_constant(Teuchos::ParameterList&) const;
   std::unique_ptr<Function> create_tabular(Teuchos::ParameterList&) const;
   std::unique_ptr<Function> create_smooth_step(Teuchos::ParameterList&) const;
