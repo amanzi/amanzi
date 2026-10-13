@@ -65,8 +65,7 @@ class FunctionBilinear : public Function {
                    const int xi,
                    const int yi);
 
-  std::unique_ptr<Function> Clone() const override
-  { return std::make_unique<FunctionBilinear>(*this); }
+  std::unique_ptr<Function> Clone() const override { return std::make_unique<FunctionBilinear>(*this); }
 
   double operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& in) const override;
 
@@ -88,7 +87,9 @@ class FunctionBilinear : public Function {
 
 namespace Impl {
 
-template <class XYView_type, class VView_type, class InView_type>
+template<class XYView_type,
+         class VView_type,
+         class InView_type>
 class FunctionBilinearFunctor {
  public:
   FunctionBilinearFunctor(const XYView_type& x,
@@ -97,12 +98,10 @@ class FunctionBilinearFunctor {
                           size_t yi,
                           const VView_type& v,
                           const InView_type& in)
-    : x_(x), y_(y), xi_(xi), yi_(yi), v_(v), in_(in)
-  {}
+    : x_(x), y_(y), xi_(xi), yi_(yi), v_(v), in_(in) {}
 
   KOKKOS_INLINE_FUNCTION
-  double operator()(const int i) const
-  {
+  double operator()(const int i) const {
     int nx = x_.extent(0);
     int ny = y_.extent(0);
     double xv = in_(xi_, i);
@@ -158,3 +157,4 @@ class FunctionBilinearFunctor {
 
 } // namespace Impl
 } // namespace Amanzi
+

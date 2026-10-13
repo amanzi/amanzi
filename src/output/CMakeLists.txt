@@ -120,12 +120,12 @@ if (BUILD_TESTS)
   include_directories(${UnitTest_INCLUDE_DIRS})
 
   set(output_test_link_libs output mesh_factory)
-
+  
   if (ENABLE_MESH_MSTK)
     include_directories(${MESH_MSTK_SOURCE_DIR})
     list(APPEND output_test_link_libs mesh_mstk)
   endif()
-
+  
   if (ENABLE_MESH_MOAB)
     include_directories(${MESH_MOAB_SOURCE_DIR})
     list(APPEND output_test_link_libs mesh_moab)
@@ -133,7 +133,7 @@ if (BUILD_TESTS)
   include_directories(${MESH_LOGICAL_SOURCE_DIR})
   include_directories(${MESH_EXTRACTED_SOURCE_DIR})
   include_directories(${MESH_FACTORY_SOURCE_DIR})
-
+  
   # Copy test directory files if an out of source build
   if (NOT (${OUTPUT_SOURCE_DIR} EQUAL ${OUTPUT_BINARY_DIR}))
       file(GLOB DataFiles "${OUTPUT_SOURCE_DIR}/test/*.exo")

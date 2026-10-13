@@ -113,7 +113,9 @@ OutputXDMF::writeMesh_(int cycle)
     } else if (ctype == AmanziMesh::Cell_kind::POLYHED) {
       int my_conns = 2; // POLYHED indicator + nfaces
       auto faces = vis_mesh.getCellFaces(c);
-      for (auto f : faces) { my_conns += vis_mesh.getFaceNodes(f).size() + 1; }
+      for (auto f : faces) {
+        my_conns += vis_mesh.getFaceNodes(f).size() + 1;
+      }
       local_conns += my_conns;
 
     } else {

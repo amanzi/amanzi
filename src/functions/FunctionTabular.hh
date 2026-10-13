@@ -137,8 +137,7 @@ class FunctionTabular : public Function {
     : x_(other.x_), y_(other.y_), form_(other.form_), xi_(other.xi_)
   {}
 
-  std::unique_ptr<Function> Clone() const override
-  { return std::make_unique<FunctionTabular>(*this); }
+  std::unique_ptr<Function> Clone() const override { return std::make_unique<FunctionTabular>(*this); }
 
   double operator()(const Kokkos::View<const double**, Kokkos::HostSpace>&) const override;
 
@@ -161,16 +160,17 @@ class FunctionTabular : public Function {
 
 namespace Impl {
 
-template <class DoubleView_type, class FormView_type, class InView_type>
+template <class DoubleView_type,
+          class FormView_type,
+          class InView_type>
 class FunctionTabularFunctor {
  public:
   FunctionTabularFunctor(const DoubleView_type& x,
-                         const DoubleView_type& y,
-                         const FormView_type& form,
-                         int xi,
-                         const InView_type& in)
-    : x_(x), y_(y), form_(form), xi_(xi), in_(in)
-  {}
+                        const DoubleView_type& y,
+                        const FormView_type& form,
+                        int xi,
+                        const InView_type& in)
+    : x_(x), y_(y), form_(form), xi_(xi), in_(in) {}
 
   KOKKOS_INLINE_FUNCTION
   double operator()(const int i) const
@@ -195,7 +195,9 @@ class FunctionTabularFunctor {
       switch (form_[j1]) {
       case Form_kind::LINEAR:
         // Linear interpolation between x[j1] and x[j2]
-        y = y_[j1] + ((y_[j2] - y_[j1]) / (x_[j2] - x_[j1])) * (xv - x_[j1]);
+        y = y_[j1] + ((y_[j2] - y_[j1]) /
+                                    (x_[j2] - x_[j1])) *
+                                     (xv - x_[j1]);
         break;
       case Form_kind::CONSTANT:
         y = y_[j1];
@@ -217,3 +219,5 @@ class FunctionTabularFunctor {
 
 } // namespace Impl
 } // namespace Amanzi
+
+
