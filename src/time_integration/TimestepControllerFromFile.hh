@@ -28,7 +28,8 @@ cause doubt over their correctness.
 
     * `"file name`" ``[string]`` Path to the file containing timestep information.
     * `"timestep header`" ``[string]`` Name of the dataset containing the history of timestep sizes.
-    * `"file format`" ``[string]`` **optional, default="HDF5"** `"HDF5`" or `"NetCDF`".
+    * `"file format`" ``[string]`` **optional** `"HDF5`" or `"NetCDF`" --
+      inferred from the filename's extension (".h5" or ".nc") if not provided.
 
 */
 

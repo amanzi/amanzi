@@ -81,7 +81,7 @@
 
 namespace Amanzi {
 
-namespace InputOutputVerticallyStructuredNetCDF_Helpers {
+namespace Impl {
 
 // Shared columnar-mesh bookkeeping.  Two cases, keyed on
 // mesh->getManifoldDimension() (topological dimension -- a surface mesh
@@ -109,13 +109,13 @@ struct ColumnarMeshInfo {
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh;
   bool is_columnar;
-  int ncells_per_column;
-  int ncolumns_global;
-  int column_offset; // this rank's first owned column (global index)
-  int ncolumns_local;
+  LO ncells_per_column;
+  GO ncolumns_global;
+  GO column_offset; // this rank's first owned column (global index)
+  LO ncolumns_local;
 };
 
-} // namespace InputOutputVerticallyStructuredNetCDF_Helpers
+} // namespace Impl
 
 
 // Only readRange() is implemented (used by FileTimeInterpolator to read
@@ -128,8 +128,6 @@ class InputVerticallyStructuredNetCDF : public Input {
                                   const std::string& filename,
                                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
-  virtual void read(const Teuchos::ParameterList& attrs, MultiVector_type& vec) const override;
-
   virtual void
   readRange(const Teuchos::ParameterList& attrs,
             std::size_t time_start,
@@ -137,8 +135,8 @@ class InputVerticallyStructuredNetCDF : public Input {
             Kokkos::View<double***, Kokkos::LayoutRight, Kokkos::HostSpace> buf) const override;
 
  protected:
-  std::unique_ptr<FileNetCDF> file_;
-  InputOutputVerticallyStructuredNetCDF_Helpers::ColumnarMeshInfo info_;
+  std::unique_ptr<Utils::FileNetCDF> file_;
+  Impl::ColumnarMeshInfo info_;
 };
 
 
@@ -177,7 +175,7 @@ class OutputVerticallyStructuredNetCDF : public Output {
   void write_(const std::string& varname,
               const MultiVector_type& vec,
               AmanziMesh::Entity_kind location) const;
-  void writeRavelled_(const std::string& varname, const MultiVector_type& vec) const;
+  void writeVerticallyStructured_(const std::string& varname, const MultiVector_type& vec) const;
   void writeFlat_(const std::string& varname,
                   const MultiVector_type& vec,
                   AmanziMesh::Entity_kind location) const;
@@ -195,8 +193,8 @@ class OutputVerticallyStructuredNetCDF : public Output {
   // FileNetCDF::writeAttribute(name, value, time_index_).
   int time_index_;
 
-  std::unique_ptr<FileNetCDF> file_;
-  InputOutputVerticallyStructuredNetCDF_Helpers::ColumnarMeshInfo info_;
+  std::unique_ptr<Utils::FileNetCDF> file_;
+  Impl::ColumnarMeshInfo info_;
 };
 
 

@@ -13,6 +13,7 @@
 #include "FileNetCDF.hh"
 
 namespace Amanzi {
+namespace Utils {
 
 FileNetCDF::FileNetCDF(const Comm_ptr_type& comm, const std::string& filename, file_mode_t mode)
   : comm_(comm), filename_(filename), mode_(mode), ncid_(-1), file_open_(false)
@@ -166,4 +167,5 @@ FileNetCDF::getOrCreateVariable_(const std::string& varname,
   return varid;
 }
 
+} // namespace Utils
 } // namespace Amanzi

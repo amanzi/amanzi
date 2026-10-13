@@ -22,6 +22,7 @@
 #include "IOFileFormat.hh"
 
 using namespace Amanzi;
+using namespace Amanzi::Utils;
 
 void
 run_read1D_test(IOFileFormat_kind file_format, const std::string& filename)

@@ -26,7 +26,8 @@ bounds.
 .. admonition:: function-bilinear-and-time-spec
 
    * `"file`" ``[string]`` filename of the data
-   * `"file format`" ``[string]`` **optional, default="HDF5"** `"HDF5`" or `"NetCDF`"
+   * `"file format`" ``[string]`` **optional** `"HDF5`" or `"NetCDF`" --
+     inferred from the filename's extension (".h5" or ".nc") if not provided
    * `"time header`" ``[string]`` **time** Name of the temporal dimension indices, the :math:`t_i`.
    * `"row header`" ``[string]`` **x** name of the row dataset, the :math:`x_i`
    * `"row coordinate`" ``[string]`` **x** one of `"x`",`"y`",`"z`"
@@ -92,7 +93,7 @@ class FunctionBilinearAndTime : public Function {
                           const std::string& val_header,
                           Form_kind form,
                           int page_size = 2,
-                          IOFileFormat_kind file_format = IOFileFormat_kind::HDF5,
+                          Utils::IOFileFormat_kind file_format = Utils::IOFileFormat_kind::HDF5,
                           const Comm_ptr_type& comm = getDefaultComm());
 
   FunctionBilinearAndTime(const FunctionBilinearAndTime& other);
@@ -119,10 +120,10 @@ class FunctionBilinearAndTime : public Function {
   int row_index_, col_index_;
   Form_kind form_;
   int page_size_;
-  IOFileFormat_kind file_format_;
+  Utils::IOFileFormat_kind file_format_;
   Comm_ptr_type comm_;
 
-  std::unique_ptr<FileReader> file_;
+  std::unique_ptr<Utils::FileReader> file_;
   Kokkos::DualView<double*> row_, col_;
   int nx_, ny_;
 

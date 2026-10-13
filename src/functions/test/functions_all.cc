@@ -31,16 +31,17 @@
 #include "IOFileFormat.hh"
 
 using namespace Amanzi;
+using namespace Amanzi::Utils;
 
 
 void
 test_values(Function& f, std::vector<double>& values, std::vector<double>& res)
 {
   // CPU
-  Kokkos::View<double**, Kokkos::HostSpace> x("txyz", 1,1);
+  Kokkos::View<double**, Kokkos::HostSpace> x("txyz", 1, 1);
   Kokkos::View<double*, Kokkos::HostSpace> tmp_x("tmp_txyz", values.size());
   for (int i = 0; i < values.size(); ++i) {
-    x(0,0) = values[i];
+    x(0, 0) = values[i];
     CHECK_EQUAL(f(x), res[i]);
     tmp_x(i) = values[i];
   }
@@ -66,7 +67,7 @@ test_values_multi(Function& f, std::vector<std::vector<double>>& values, std::ve
   Kokkos::DualView<double**> x_d("tmp_x", s1, s0);
   for (int i = 0; i < s0; ++i) {
     for (int j = 0; j < s1; ++j) {
-      x(j,0) = values[i][j];
+      x(j, 0) = values[i][j];
       x_d.view_host()(j, i) = values[i][j];
     }
     CHECK_EQUAL(res[i], f(x));
@@ -159,7 +160,6 @@ TEST(tabular_test)
   formvec = Kokkos::subview(formvec, Kokkos::make_pair(0, 2));
   CHECK_THROW(auto f6 = new FunctionTabular(xvec, yvec, xi, formvec), Errors::Message);
 }
-
 
 
 SUITE(polynomial_test)
@@ -310,7 +310,7 @@ SUITE(linear_test)
 
     FunctionLinear f2(y0, grad, x0);
 
-    std::vector<std::vector<double>> val = { { 3., 2.}, { 1., -1.} };
+    std::vector<std::vector<double>> val = { { 3., 2. }, { 1., -1. } };
     std::vector<double> res = { 3., -5. };
     test_values_multi(f2, val, res);
 
@@ -329,7 +329,12 @@ SUITE(linear_test)
 
     FunctionLinear f3(y0, grad);
 
-    std::vector<std::vector<double>> val = { { 3., }, { 1., } };
+    std::vector<std::vector<double>> val = { {
+                                               3.,
+                                             },
+                                             {
+                                               1.,
+                                             } };
     std::vector<double> res = { 4., 2. };
     test_values_multi(f3, val, res);
   }
@@ -768,4 +773,3 @@ TEST(composition_test)
   std::vector<double> res = { 2., 1. };
   test_values_multi(f, val, res);
 }
-

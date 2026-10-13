@@ -20,7 +20,7 @@
 namespace Amanzi {
 
 InputHDF5::InputHDF5(const Comm_ptr_type& comm, const std::string& filename)
-  : file_(std::make_unique<FileHDF5>(comm, filename, FILE_READONLY))
+  : file_(std::make_unique<Utils::FileHDF5>(comm, filename, FILE_READONLY))
 {}
 
 void
@@ -96,7 +96,7 @@ void
 OutputHDF5::createTimestep(double time, int cycle)
 {
   cycle_ = cycle;
-  file_ = std::make_unique<FileHDF5>(comm_, getFilename_(cycle), FILE_CREATE);
+  file_ = std::make_unique<Utils::FileHDF5>(comm_, getFilename_(cycle), FILE_CREATE);
 }
 
 void

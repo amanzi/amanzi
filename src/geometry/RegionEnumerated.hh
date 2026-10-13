@@ -23,8 +23,9 @@ parallel mesh is created on a fly.
     * `"file`" ``[string]`` **optional** Path to a file containing the entity
       global IDs, as a 1D array named `"NAME`" (where NAME is the region's
       name).  An alternative to `"entity gids`".
-    * `"file format`" ``[string]`` **optional, default="HDF5"** `"HDF5`" or
-      `"NetCDF`".  Only used if `"file`" is provided.
+    * `"file format`" ``[string]`` **optional** `"HDF5`" or `"NetCDF`" --
+      inferred from the filename's extension (".h5" or ".nc") if not
+      provided.  Only used if `"file`" is provided.
 
 
 Example:

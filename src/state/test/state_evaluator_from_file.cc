@@ -33,6 +33,7 @@
 SUITE(EVALUATOR_FROM_FILE)
 {
   using namespace Amanzi;
+  using namespace Amanzi::Utils;
 
   // Writes an HDF5 file with ntimes time slices of a single-DoF, cell-based
   // field "myvar" on the given mesh's "cell" component, following

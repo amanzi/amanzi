@@ -31,12 +31,6 @@ namespace OutputFactory {
 Output::FilenameFormatter
 createDirectoryFormatter(Teuchos::ParameterList& plist);
 
-// Dispatches on plist's "file format" ("XDMF", the default, "SILO", or
-// "NetCDF").  NetCDF (OutputVerticallyStructuredNetCDF) is fine with a 2D
-// (surface) mesh as-is; a 3D mesh must already be columnar (mesh->columns
-// built, e.g. via MeshFactory's "build columns" parameter) with
-// uniform-height, memory-contiguous columns -- see
-// InputOutputVerticallyStructuredNetCDF.hh for the full requirement.
 std::unique_ptr<Output>
 createForVis(Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 

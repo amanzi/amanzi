@@ -55,10 +55,6 @@ set(output_tpl_list
   ${Silo_LIBRARIES}
   )
 
-# InputOutputHDF5 and InputOutputVerticallyStructuredNetCDF are both
-# current.  OutputDomainSet and OutputSilo depend only on Output.hh (the
-# abstract interface), not on FileHDF5/FileNetCDF directly, so they build
-# against the current API too.
 set(output_inc_files OutputUtils.hh
                      Output.hh
                      Input.hh

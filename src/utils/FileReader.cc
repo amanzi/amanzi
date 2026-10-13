@@ -7,11 +7,14 @@
   Authors: Ethan Coon
 */
 
+#include "errors.hh"
+#include "exceptions.hh"
 #include "FileHDF5.hh"
 #include "FileNetCDF.hh"
 #include "FileReader.hh"
 
 namespace Amanzi {
+namespace Utils {
 
 namespace {
 
@@ -67,16 +70,24 @@ class FileReaderNetCDF : public FileReader {
 } // namespace
 
 std::unique_ptr<FileReader>
-createFileReader(IOFileFormat_kind file_format, const Comm_ptr_type& comm, const std::string& filename)
+createFileReader(IOFileFormat_kind file_format,
+                 const Comm_ptr_type& comm,
+                 const std::string& filename)
 {
   switch (file_format) {
   case IOFileFormat_kind::HDF5:
     return std::make_unique<FileReaderHDF5>(comm, filename);
   case IOFileFormat_kind::NETCDF:
     return std::make_unique<FileReaderNetCDF>(comm, filename);
-  default:
+  default: {
+    Errors::Message msg;
+    msg << "createFileReader: invalid \"file format\" \"" << to_string(file_format)
+        << "\" for reading a file";
+    Exceptions::amanzi_throw(msg);
     return nullptr;
+  }
   }
 }
 
+} // namespace Utils
 } // namespace Amanzi

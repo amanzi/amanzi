@@ -16,12 +16,15 @@
 
 #include <string>
 
+#include "errors.hh"
+#include "exceptions.hh"
 #include "AmanziTypes.hh"
 #include "IOFileFormat.hh"
 #include "FileHDF5.hh"
 #include "FileNetCDF.hh"
 
 namespace Amanzi {
+namespace Utils {
 
 template <typename view_type>
 void
@@ -42,7 +45,14 @@ readLocalArray(IOFileFormat_kind file_format,
     file.readLocalView(name, view);
     break;
   }
+  default: {
+    Errors::Message msg;
+    msg << "readLocalArray: invalid \"file format\" \"" << to_string(file_format)
+        << "\" for reading a file";
+    Exceptions::amanzi_throw(msg);
+  }
   }
 }
 
+} // namespace Utils
 } // namespace Amanzi

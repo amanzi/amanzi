@@ -70,8 +70,8 @@ This evaluator is used by providing the option:
    * `"page size`" ``[int]`` **2** Number of consecutive time slices to keep
      resident in memory at once.  Larger values amortize file reads across
      more timesteps at the cost of more memory; must be at least 2.
-   * `"file format`" ``[string]`` **optional, default="HDF5"** `"HDF5`" or
-     `"NetCDF`".
+   * `"file format`" ``[string]`` **optional** `"HDF5`" or `"NetCDF`" --
+     inferred from the filename's extension (".h5" or ".nc") if not provided.
    * `"checkpoint file`" ``[bool]`` **false** If this is true, then it is
      expected that `"filename`" is a checkpoint-file-like object, where
      /variable_name.ENTITY.DOF is itself a single 1D array, and not a group
@@ -154,7 +154,7 @@ class EvaluatorIndependentTensorFromFile
   int rank_;
   int num_funcs_;
   int page_size_;
-  IOFileFormat_kind file_format_;
+  Utils::IOFileFormat_kind file_format_;
   double rescaling_;
   bool checkpoint_file_;
 

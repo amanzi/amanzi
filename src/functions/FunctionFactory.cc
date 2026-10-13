@@ -160,7 +160,7 @@ FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
   if (params.isParameter("file")) {
     //    try {
     std::string filename = params.get<std::string>("file");
-    IOFileFormat_kind file_format = createIOFileFormat(params.get<std::string>("file format", "HDF5"));
+    Utils::IOFileFormat_kind file_format = Utils::createIOFileFormat(params, filename);
 
     int xi = 0;
     std::string x = params.get<std::string>("x header");
@@ -568,7 +568,7 @@ FunctionFactory::create_bilinear(Teuchos::ParameterList& params) const
   if (params.isParameter("file")) {
     try {
       std::string filename = params.get<std::string>("file");
-      IOFileFormat_kind file_format = createIOFileFormat(params.get<std::string>("file format", "HDF5"));
+      Utils::IOFileFormat_kind file_format = Utils::createIOFileFormat(params, filename);
 
       int xi, yi(0); // input indices
       std::string x = params.get<std::string>("row header");
@@ -681,7 +681,7 @@ FunctionFactory::create_bilinear_and_time(Teuchos::ParameterList& params) const
   std::string time_header = params.get<std::string>("time header");
   std::string value_header = params.get<std::string>("value header");
   int page_size = params.get<int>("page size", 2);
-  IOFileFormat_kind file_format = createIOFileFormat(params.get<std::string>("file format", "HDF5"));
+  Utils::IOFileFormat_kind file_format = Utils::createIOFileFormat(params, filename);
 
   std::string form_string = params.get<std::string>("forms", "linear");
   Form_kind form;

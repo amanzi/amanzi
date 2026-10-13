@@ -10,22 +10,49 @@ covers things NOT handled by clang-format).
 
 ## Formatting
 
-- The codebase is `clang-format`-formatted. Format only the specific files you added or
-  edited, by running `clang-format -i` directly on each one:
+- The codebase is `clang-format`-formatted, but **only a specific major version produces
+  correct output against this repo's `src/.clang-format`**. `tools/formatting/clang-format.sh`
+  records the required version in `EXPECTED_CLANG_FORMAT_VERSION` (as of this writing: 19).
+  Before running `clang-format` in this repo, for any reason, check the installed version
+  against that script's expectation:
+
+  ```
+  clang-format --version
+  grep EXPECTED_CLANG_FORMAT_VERSION tools/formatting/clang-format.sh
+  ```
+
+  **If the major version doesn't match exactly, do NOT run `clang-format` at all** — not
+  even on a single file. A mismatched version (confirmed: v23 against a v19-authored style
+  file) does not just produce slightly different whitespace — it actively collapses things
+  the style file is written to keep multi-line, e.g. turning a multi-line template
+  parameter list into one line, or collapsing an out-of-line short function body onto a
+  single malformed line. These are real behavior changes in newer clang-format releases,
+  not configuration bugs to "fix" by editing `.clang-format`. If the version doesn't match,
+  hand-write the correct multi-line form for just the lines you touched instead, and tell
+  the user the installed clang-format is the wrong version rather than installing a
+  different one yourself or leaving mis-formatted output in place.
+
+- When the version does match, format only the specific files you added or edited, by
+  running `clang-format -i` directly on each one, followed by the repo's short-block
+  post-pass (which exists specifically to correct the out-of-line short-function-body
+  collapse described above):
 
   ```
   clang-format -i path/to/FileYouEdited.cc path/to/FileYouEdited.hh
+  python tools/formatting/format_short_blocks.py path/to/FileYouEdited.cc
+  python tools/formatting/format_short_blocks.py path/to/FileYouEdited.hh
   ```
 
-- **Do NOT** source/run `tools/formatting/clang-format.sh` (or any variant that walks a
-  whole directory tree, e.g. `cd $AMANZI_SRC_DIR/src && . ../tools/formatting/clang-format.sh`)
-  to format a change. That script reformats every file under `src/` — in a repo with
-  pre-existing uncommitted work, this silently rewrites hundreds of unrelated files
-  (including other in-progress, uncommitted edits) in the same pass as your intended
-  change, with no way to cleanly separate "the formatter's reflow" from "someone's real
-  edit" after the fact if there's no commit to diff against. If a repo-wide reformat is
-  ever genuinely wanted, that is the user's call to make and run themselves, not
-  something to do as a byproduct of finishing an edit.
+- **Do NOT** source/run `tools/formatting/clang-format.sh` itself (or any variant that
+  walks a whole directory tree, e.g. `cd $AMANZI_SRC_DIR/src && . ../tools/formatting/clang-format.sh`)
+  to format a change, even when the version matches. That script reformats every file
+  under `src/` — in a repo with pre-existing uncommitted work, this silently rewrites
+  hundreds of unrelated files (including other in-progress, uncommitted edits) in the
+  same pass as your intended change, with no way to cleanly separate "the formatter's
+  reflow" from "someone's real edit" after the fact if there's no commit to diff against.
+  If a repo-wide reformat is ever genuinely wanted, that is the user's call to make and
+  run themselves, not something to do as a byproduct of finishing an edit. Use the script
+  only to read its `EXPECTED_CLANG_FORMAT_VERSION` value — never execute it.
 - Before formatting, confirm the target file list is exactly the files you touched —
   nothing broader — and prefer passing explicit paths over any wildcard/recursive
   invocation.

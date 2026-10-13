@@ -312,10 +312,6 @@ class Mesh {
   // mesh properties
   // ----------------
   int getSpaceDimension() const { return data_.space_dim_; }
-  // names of the space dimensions, e.g. {"x","y","z"} -- defaults to that
-  // (truncated/extended for the mesh's actual dimension), overridable via
-  // the "space dimension names" plist parameter.  Host-only (not part of
-  // MeshCacheData, which must stay a device-friendly POD).
   const std::vector<std::string>& getSpaceDimensionNames() const { return space_dim_names_; }
   int getManifoldDimension() const { return data_.manifold_dim_; }
   bool isOrdered() const { return data_.is_ordered_; }

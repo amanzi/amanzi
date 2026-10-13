@@ -47,6 +47,7 @@
 #include "CompositeSpace.hh"
 #include "CompositeVector.hh"
 #include "TimeSeriesInterpolator.hh"
+#include "ViewUtils.hh"
 
 namespace Amanzi {
 namespace EvaluatorFromFile_Helpers {
@@ -55,18 +56,12 @@ class TimeSeriesInterpolatorCV {
  public:
   using Page_type = Kokkos::View<double***, Kokkos::LayoutRight, Kokkos::HostSpace>;
 
-  // Reads /time (unless checkpoint_file) and opens the file, so this does
-  // I/O -- space must already be the finalized CompositeSpace (post
-  // CreateSpace()).  checkpoint_file indicates the on-disk layout itself
-  // has no time dimension (a single, flat array per DoF) -- readRange
-  // assumes a time dimension exists, so it does not apply here; the value
-  // is read once, directly, via Input::read(MultiVector_type&).
   TimeSeriesInterpolatorCV(std::string filename,
                            std::string varname,
                            const Teuchos::RCP<const CompositeSpace>& space,
                            bool temporally_variable,
                            int page_size = 2,
-                           IOFileFormat_kind file_format = IOFileFormat_kind::HDF5,
+                           Utils::IOFileFormat_kind file_format = Utils::IOFileFormat_kind::HDF5,
                            bool checkpoint_file = false)
     : filename_(std::move(filename)),
       varname_(std::move(varname)),
@@ -103,8 +98,7 @@ class TimeSeriesInterpolatorCV {
       // NOTE: all ranks read this.  Could do on rank 0 and broadcast.
       Kokkos::View<double*, Kokkos::HostSpace> times_view;
       readLocalArray(file_format_, space_->getComm(), filename_, "time", times_view);
-      times.resize(times_view.extent(0));
-      for (std::size_t i = 0; i != times_view.extent(0); ++i) times[i] = times_view(i);
+      times = asVector(Kokkos::MeshView<double*, Kokkos::HostSpace>(times_view));
 
       for (std::size_t j = 1; j < times.size(); ++j) {
         if (times[j] <= times[j - 1]) {
@@ -164,7 +158,7 @@ class TimeSeriesInterpolatorCV {
   std::string filename_, varname_, compname_, locname_;
   Teuchos::RCP<const CompositeSpace> space_;
   int page_size_;
-  IOFileFormat_kind file_format_;
+  Utils::IOFileFormat_kind file_format_;
   int ndofs_, num_entities_;
 
   Teuchos::RCP<Input> file_;

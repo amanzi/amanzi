@@ -40,6 +40,7 @@ extern "C"
 #include "AmanziTypes.hh"
 
 namespace Amanzi {
+namespace Utils {
 
 class FileHDF5 {
  public:
@@ -219,6 +220,7 @@ class FileHDF5 {
 };
 
 
+} // namespace Utils
 } // namespace Amanzi
 
 

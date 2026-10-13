@@ -26,7 +26,7 @@ FunctionBilinearAndTime::FunctionBilinearAndTime(const std::string& filename,
                                                  const std::string& val_header,
                                                  Form_kind form,
                                                  int page_size,
-                                                 IOFileFormat_kind file_format,
+                                                 Utils::IOFileFormat_kind file_format,
                                                  const Comm_ptr_type& comm)
   : filename_(filename),
     time_header_(time_header),
@@ -116,7 +116,7 @@ FunctionBilinearAndTime::initialize_()
   // so the closure stays valid across the copy constructor's
   // reassignment of file_/page_ (each FunctionBilinearAndTime owns its
   // own interp_, never shared).
-  FileReader* file_ptr = file_.get();
+  Utils::FileReader* file_ptr = file_.get();
   Page_type page = page_;
   std::string val_header = val_header_;
   interp_ = std::make_unique<TimeSeriesInterpolator<Page_type>>(
@@ -126,7 +126,7 @@ FunctionBilinearAndTime::initialize_()
       Page_type dest(&page(dest_block, 0, 0), count, page.extent(1), page.extent(2));
       file_ptr->readPagedChunk(
         val_header,
-        FileReader::TimeRange{ (std::size_t)start, (std::size_t)(start + count) },
+        Utils::FileReader::TimeRange{ (std::size_t)start, (std::size_t)(start + count) },
         dest);
     },
     page_,

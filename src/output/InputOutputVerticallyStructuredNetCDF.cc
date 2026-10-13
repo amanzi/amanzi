@@ -18,7 +18,7 @@
 
 namespace Amanzi {
 
-namespace InputOutputVerticallyStructuredNetCDF_Helpers {
+namespace Impl {
 
 ColumnarMeshInfo::ColumnarMeshInfo(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_)
   : mesh(mesh_), ncells_per_column(-1), ncolumns_global(-1), column_offset(-1), ncolumns_local(-1)
@@ -52,11 +52,11 @@ ColumnarMeshInfo::ColumnarMeshInfo(const Teuchos::RCP<const AmanziMesh::Mesh>& m
 
   ncolumns_local = mesh->columns->num_columns_owned;
   ncells_per_column =
-    ncolumns_local > 0 ? (int)mesh->columns->getCells<MemSpace_kind::HOST>(0).extent(0) : 0;
+    ncolumns_local > 0 ? (LO)mesh->columns->getCells<MemSpace_kind::HOST>(0).extent(0) : 0;
 
-  for (int col = 0; col != ncolumns_local; ++col) {
+  for (LO col = 0; col != ncolumns_local; ++col) {
     auto col_cells = mesh->columns->getCells<MemSpace_kind::HOST>(col);
-    if ((int)col_cells.extent(0) != ncells_per_column) {
+    if ((LO)col_cells.extent(0) != ncells_per_column) {
       Errors::Message msg;
       msg << "InputOutputVerticallyStructuredNetCDF: column " << col << " has "
           << col_cells.extent(0) << " cells, column 0 has " << ncells_per_column
@@ -75,12 +75,11 @@ ColumnarMeshInfo::ColumnarMeshInfo(const Teuchos::RCP<const AmanziMesh::Mesh>& m
     }
   }
 
-  long long local = ncolumns_local;
-  long long global = 0, inclusive_scan = 0;
-  Teuchos::reduceAll(*mesh->getComm(), Teuchos::REDUCE_SUM, 1, &local, &global);
+  GO local = ncolumns_local;
+  GO inclusive_scan = 0;
+  Teuchos::reduceAll(*mesh->getComm(), Teuchos::REDUCE_SUM, 1, &local, &ncolumns_global);
   Teuchos::scan(*mesh->getComm(), Teuchos::REDUCE_SUM, 1, &local, &inclusive_scan);
-  ncolumns_global = (int)global;
-  column_offset = (int)(inclusive_scan - local);
+  column_offset = inclusive_scan - local;
 
   // Two independent, reduction-free cross-checks that ncells_per_column
   // (derived above from one rank's own column 0) is actually consistent
@@ -89,7 +88,7 @@ ColumnarMeshInfo::ColumnarMeshInfo(const Teuchos::RCP<const AmanziMesh::Mesh>& m
   // global cells must divide evenly among all columns, both landing on
   // the same ncells_per_column this rank already computed.
   if (ncolumns_local > 0) {
-    int ncells_owned =
+    LO ncells_owned =
       mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     if (ncells_owned != ncolumns_local * ncells_per_column) {
       Errors::Message msg;
@@ -101,7 +100,7 @@ ColumnarMeshInfo::ColumnarMeshInfo(const Teuchos::RCP<const AmanziMesh::Mesh>& m
     }
   }
 
-  int ncells_global = mesh->getMap(AmanziMesh::Entity_kind::CELL, false)->getGlobalNumElements();
+  GO ncells_global = mesh->getMap(AmanziMesh::Entity_kind::CELL, false)->getGlobalNumElements();
   if (ncells_global != ncolumns_global * ncells_per_column) {
     Errors::Message msg;
     msg << "InputOutputVerticallyStructuredNetCDF: mesh's total cell count (" << ncells_global
@@ -111,7 +110,7 @@ ColumnarMeshInfo::ColumnarMeshInfo(const Teuchos::RCP<const AmanziMesh::Mesh>& m
   }
 }
 
-} // namespace InputOutputVerticallyStructuredNetCDF_Helpers
+} // namespace Impl
 
 
 //
@@ -121,7 +120,7 @@ InputVerticallyStructuredNetCDF::InputVerticallyStructuredNetCDF(
   const Comm_ptr_type& comm,
   const std::string& filename,
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-  : file_(std::make_unique<FileNetCDF>(comm, filename, FILE_READONLY)), info_(mesh)
+  : file_(std::make_unique<Utils::FileNetCDF>(comm, filename, FILE_READONLY)), info_(mesh)
 {}
 
 
@@ -138,14 +137,6 @@ hasSubfieldNames(const Teuchos::ParameterList& attrs, std::size_t count)
 
 
 void
-InputVerticallyStructuredNetCDF::read(const Teuchos::ParameterList& attrs,
-                                      MultiVector_type& vec) const
-{
-  notImplemented_("read(MultiVector_type&)");
-}
-
-
-void
 InputVerticallyStructuredNetCDF::readRange(
   const Teuchos::ParameterList& attrs,
   std::size_t time_start,
@@ -155,7 +146,7 @@ InputVerticallyStructuredNetCDF::readRange(
   int ndofs = buf.extent(1);
   AMANZI_ASSERT(buf.span_is_contiguous());
 
-  FileNetCDF::TimeRange time_chunk{ time_start, time_start + time_count };
+  Utils::FileNetCDF::TimeRange time_chunk{ time_start, time_start + time_count };
 
   if (info_.is_columnar) {
     AMANZI_ASSERT((int)buf.extent(2) == info_.ncolumns_local * info_.ncells_per_column);
@@ -202,7 +193,7 @@ OutputVerticallyStructuredNetCDF::OutputVerticallyStructuredNetCDF(
   : comm_(comm), info_(mesh)
 {
   filename_ = plist.get<std::string>("file name base") + ".nc";
-  file_ = std::make_unique<FileNetCDF>(comm_, filename_, FILE_CREATE);
+  file_ = std::make_unique<Utils::FileNetCDF>(comm_, filename_, FILE_CREATE);
   time_index_ = -1;
 }
 
@@ -286,7 +277,7 @@ OutputVerticallyStructuredNetCDF::write_(const std::string& varname,
                                          AmanziMesh::Entity_kind location) const
 {
   if (location == AmanziMesh::Entity_kind::CELL && info_.is_columnar) {
-    writeRavelled_(varname, vec);
+    writeVerticallyStructured_(varname, vec);
   } else {
     writeFlat_(varname, vec, location);
   }
@@ -303,6 +294,7 @@ OutputVerticallyStructuredNetCDF::writeFlat_(const std::string& varname,
   int ndofs = vec.getNumVectors();
   int n = (int)vec.getMap()->getLocalNumElements();
   auto vecv = vec.getLocalViewHost(Tpetra::Access::ReadOnly);
+  AMANZI_ASSERT(vecv.span_is_contiguous());
 
   // named by location, not varname, so every field at the same location
   // shares one dimension on disk -- "n" + singular entity name, matching
@@ -310,16 +302,17 @@ OutputVerticallyStructuredNetCDF::writeFlat_(const std::string& varname,
   std::string loc_name = "n" + AmanziMesh::to_string(location);
 
   if (ndofs == 1) {
-    Kokkos::View<double*, Kokkos::LayoutRight, Kokkos::HostSpace> buf(
-      "OutputVerticallyStructuredNetCDF::writeFlat_", n);
-    for (int i = 0; i != n; ++i) buf(i) = vecv(i, 0);
+    // vecv's column 0 is n contiguous doubles -- LayoutLeft and
+    // LayoutRight agree for a rank-1 shape, so this is a reshape, not a
+    // copy.
+    Kokkos::View<const double*, Kokkos::LayoutRight, Kokkos::HostSpace> buf(vecv.data(), n);
     file_->writeDistributedView(varname, buf, 0, { "time", loc_name }, time_index);
   } else {
-    Kokkos::View<double**, Kokkos::LayoutRight, Kokkos::HostSpace> buf(
-      "OutputVerticallyStructuredNetCDF::writeFlat_", ndofs, n);
-    for (int j = 0; j != ndofs; ++j) {
-      for (int i = 0; i != n; ++i) buf(j, i) = vecv(i, j);
-    }
+    // vecv is [N, ndofs] LayoutLeft (element (i,j) at i + j*N, i
+    // fastest-varying) -- exactly LayoutRight's [ndofs, N] over the same
+    // memory.  Reshape, no copy.
+    Kokkos::View<const double**, Kokkos::LayoutRight, Kokkos::HostSpace> buf(
+      vecv.data(), ndofs, n);
     file_->writeDistributedView(
       varname, buf, 1, { "time", "ndofs_" + varname, loc_name }, time_index);
   }
@@ -327,41 +320,31 @@ OutputVerticallyStructuredNetCDF::writeFlat_(const std::string& varname,
 
 
 void
-OutputVerticallyStructuredNetCDF::writeRavelled_(const std::string& varname,
+OutputVerticallyStructuredNetCDF::writeVerticallyStructured_(const std::string& varname,
                                                  const MultiVector_type& vec) const
 {
   AMANZI_ASSERT(time_index_ >= 0); // createTimestep() must precede any field write
   std::size_t time_index = (std::size_t)time_index_;
   int ndofs = vec.getNumVectors();
   auto vecv = vec.getLocalViewHost(Tpetra::Access::ReadOnly);
+  AMANZI_ASSERT(vecv.span_is_contiguous());
 
   if (ndofs == 1) {
-    Kokkos::View<double**, Kokkos::LayoutRight, Kokkos::HostSpace> buf(
-      "OutputVerticallyStructuredNetCDF::writeRavelled_",
-      info_.ncolumns_local,
-      info_.ncells_per_column);
-    for (int col = 0; col != info_.ncolumns_local; ++col) {
-      for (int layer = 0; layer != info_.ncells_per_column; ++layer) {
-        int local_id = col * info_.ncells_per_column + layer;
-        buf(col, layer) = vecv(local_id, 0);
-      }
-    }
+    // vecv's column 0 is ncolumns_local*ncells_per_column contiguous
+    // doubles, local_id = col*ncells_per_column + layer -- i.e. layer is
+    // fastest-varying, exactly LayoutRight's [ncolumn, ncell_per_column].
+    // Reshape, no copy.
+    Kokkos::View<const double**, Kokkos::LayoutRight, Kokkos::HostSpace> buf(
+      vecv.data(), info_.ncolumns_local, info_.ncells_per_column);
     file_->writeDistributedView(
       varname, buf, 0, { "time", "ncolumn", "ncell_per_column" }, time_index);
   } else {
-    Kokkos::View<double***, Kokkos::LayoutRight, Kokkos::HostSpace> buf(
-      "OutputVerticallyStructuredNetCDF::writeRavelled_",
-      ndofs,
-      info_.ncolumns_local,
-      info_.ncells_per_column);
-    for (int j = 0; j != ndofs; ++j) {
-      for (int col = 0; col != info_.ncolumns_local; ++col) {
-        for (int layer = 0; layer != info_.ncells_per_column; ++layer) {
-          int local_id = col * info_.ncells_per_column + layer;
-          buf(j, col, layer) = vecv(local_id, j);
-        }
-      }
-    }
+    // vecv is [N, ndofs] LayoutLeft (element (local_id, j) at local_id +
+    // j*N) -- splitting local_id = col*ncells_per_column + layer, that is
+    // exactly LayoutRight's [ndofs, ncolumn, ncell_per_column] (layer
+    // fastest, then col, then j slowest).  Reshape, no copy.
+    Kokkos::View<const double***, Kokkos::LayoutRight, Kokkos::HostSpace> buf(
+      vecv.data(), ndofs, info_.ncolumns_local, info_.ncells_per_column);
     file_->writeDistributedView(
       varname, buf, 1, { "time", "ndofs_" + varname, "ncolumn", "ncell_per_column" }, time_index);
   }
@@ -377,7 +360,7 @@ OutputVerticallyStructuredNetCDF::write(const Teuchos::ParameterList& attrs,
 
   if (hasSubfieldNames(attrs, ndofs)) {
     std::vector<std::string> names = OutputUtils::getNames(attrs, ndofs);
-    for (int j = 0; j != ndofs; ++j) { write_(names[j], *vec.getVector(j), location); }
+    for (int j = 0; j != ndofs; ++j) write_(names[j], *vec.getVector(j), location);
   } else {
     write_(attrs.name(), vec, location);
   }

@@ -24,6 +24,7 @@
 #include "IOFileFormat.hh"
 
 namespace Amanzi {
+namespace Utils {
 
 class FileReader {
  public:
@@ -46,8 +47,10 @@ class FileReader {
                  Kokkos::View<double***, Kokkos::LayoutRight, Kokkos::HostSpace>& view) const = 0;
 };
 
-std::unique_ptr<FileReader> createFileReader(IOFileFormat_kind file_format,
-                                             const Comm_ptr_type& comm,
-                                             const std::string& filename);
+std::unique_ptr<FileReader>
+createFileReader(IOFileFormat_kind file_format,
+                 const Comm_ptr_type& comm,
+                 const std::string& filename);
 
+} // namespace Utils
 } // namespace Amanzi

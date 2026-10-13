@@ -21,6 +21,7 @@
 #include "exceptions.hh"
 
 namespace Amanzi {
+namespace Utils {
 
 namespace NetCDFDetails {
 
@@ -1008,4 +1009,5 @@ template <>
 std::string
 FileNetCDF::readAttribute<std::string>(const std::string& attr_name);
 
+} // namespace Utils
 } // namespace Amanzi

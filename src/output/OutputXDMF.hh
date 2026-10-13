@@ -99,9 +99,9 @@ class OutputXDMF : public Output {
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
-  std::unique_ptr<FileHDF5> h5_data_;
+  std::unique_ptr<Utils::FileHDF5> h5_data_;
   std::string h5_data_filename_;
-  std::unique_ptr<FileHDF5> h5_mesh_;
+  std::unique_ptr<Utils::FileHDF5> h5_mesh_;
   std::string h5_mesh_filename_;
   std::unique_ptr<FileXDMF> xdmf_;
   std::string xdmf_filename_;

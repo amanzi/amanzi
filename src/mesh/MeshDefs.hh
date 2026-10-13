@@ -250,7 +250,7 @@ to_string(const Partitioner_kind partitioner_type)
   case (Partitioner_kind::ZOLTAN_RCB):
     return "Partitioner_kind::ZOLTAN_RCB";
   case (Partitioner_kind::FROM_EXO):
-    return "Partitioner_kind::FROM_EXO";
+    return "from exodus file";
   default:
     return "unknown";
   }

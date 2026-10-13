@@ -41,6 +41,7 @@
 SUITE(FILE_HDF5)
 {
   using namespace Amanzi;
+  using namespace Amanzi::Utils;
 
   //
   // Attribute -- scalar, at a group given by path (default root).

@@ -39,6 +39,7 @@ extern "C"
 #include "AmanziTypes.hh"
 
 namespace Amanzi {
+namespace Utils {
 class FileNetCDF {
  public:
   // [begin, end) range of time indices, for chunked time-dependent reads/writes.
@@ -279,6 +280,7 @@ class FileNetCDF {
   std::map<std::string, int> varids_;
 };
 
+} // namespace Utils
 } // namespace Amanzi
 
 #include "FileNetCDF_impl.hh"

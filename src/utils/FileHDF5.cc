@@ -16,6 +16,7 @@
 #include "FileHDF5.hh"
 
 namespace Amanzi {
+namespace Utils {
 
 FileHDF5::FileHDF5(const Comm_ptr_type& comm, const std::string& filename, file_mode_t mode)
   : comm_(comm), filename_(filename), data_file_(-1)
@@ -160,4 +161,5 @@ FileHDF5::readAttribute<std::string>(const std::string& name, const std::string&
   return value;
 }
 
+} // namespace Utils
 } // namespace Amanzi

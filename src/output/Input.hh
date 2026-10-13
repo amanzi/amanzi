@@ -52,11 +52,6 @@ class Input {
 
   virtual ~Input() {}
 
-  // read data from file -- not every Input implementation supports every
-  // overload (e.g. a range-only format); unsupported overloads fall back
-  // to this default, which throws naming the concrete class, rather than
-  // being pure virtual and forcing every implementation to supply a
-  // boilerplate override it doesn't need.
   virtual void read(const Teuchos::ParameterList& attrs, double& val) const
   {
     notImplemented_("read(double&)");

@@ -20,6 +20,7 @@
 #include "errors.hh"
 
 namespace Amanzi {
+namespace Utils {
 
 namespace IODetails {
 
@@ -959,4 +960,5 @@ template <>
 std::string
 FileHDF5::readAttribute<std::string>(const std::string& name, const std::string& path);
 
+} // namespace Utils
 } // namespace Amanzi

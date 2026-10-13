@@ -41,7 +41,7 @@ EvaluatorIndependentFromFile::EvaluatorIndependentFromFile(
     locname_(plist->get<std::string>("mesh entity", "cell")),
     ndofs_(plist->get<int>("number of DoFs", 1)),
     page_size_(plist->get<int>("page size", 2)),
-    file_format_(createIOFileFormat(plist->get<std::string>("file format", "HDF5"))),
+    file_format_(Utils::createIOFileFormat(*plist, filename_)),
     checkpoint_file_(plist->get<bool>("checkpoint file", false))
 {
   if (checkpoint_file_) temporally_variable_ = false;

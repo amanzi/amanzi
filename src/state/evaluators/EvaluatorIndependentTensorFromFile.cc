@@ -45,7 +45,7 @@ EvaluatorIndependentTensorFromFile::EvaluatorIndependentTensorFromFile(
     rank_(-1),
     num_funcs_(-1),
     page_size_(plist->get<int>("page size", 2)),
-    file_format_(createIOFileFormat(plist->get<std::string>("file format", "HDF5"))),
+    file_format_(Utils::createIOFileFormat(*plist, filename_)),
     rescaling_(plist->get<double>("rescaling factor", 1.0)),
     checkpoint_file_(plist->get<bool>("checkpoint file", false))
 {

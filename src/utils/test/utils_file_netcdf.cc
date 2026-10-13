@@ -38,6 +38,7 @@ extern "C"
 SUITE(FILE_NETCDF)
 {
   using namespace Amanzi;
+  using namespace Amanzi::Utils;
 
   TEST(ATTR_WRITEREAD_SCALAR)
   {

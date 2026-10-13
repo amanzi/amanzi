@@ -18,6 +18,7 @@
 #include "AmanziComm.hh"
 #include "IOFileFormat.hh"
 #include "FileReaderUtils.hh"
+#include "ViewUtils.hh"
 #include "TimestepControllerFromFile.hh"
 
 namespace Amanzi {
@@ -28,12 +29,11 @@ TimestepControllerFromFile::TimestepControllerFromFile(Teuchos::ParameterList& p
 {
   std::string filename = plist.get<std::string>("file name");
   std::string header = plist.get<std::string>("timestep header", "timesteps");
-  IOFileFormat_kind file_format = createIOFileFormat(plist.get<std::string>("file format", "HDF5"));
+  Utils::IOFileFormat_kind file_format = Utils::createIOFileFormat(plist, filename);
 
   Kokkos::View<double*, Kokkos::HostSpace> dt_history_view;
   readLocalArray(file_format, comm, filename, header, dt_history_view);
-  dt_history_.resize(dt_history_view.extent(0));
-  for (std::size_t i = 0; i != dt_history_view.extent(0); ++i) dt_history_[i] = dt_history_view(i);
+  dt_history_ = asVector(Kokkos::MeshView<double*, Kokkos::HostSpace>(dt_history_view));
   dt_init_ = dt_history_[0];
 }
 

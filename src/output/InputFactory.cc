@@ -29,15 +29,15 @@ std::unique_ptr<Input>
 createForCheckpoint(Teuchos::ParameterList& plist, const Comm_ptr_type& comm)
 {
   std::string filename = plist.get<std::string>("file name");
-  IOFileFormat_kind file_format = createIOFileFormat(plist.get<std::string>("file format", "HDF5"));
+  Utils::IOFileFormat_kind file_format = Utils::createIOFileFormat(plist, filename);
 
   switch (file_format) {
-  case IOFileFormat_kind::HDF5:
+  case Utils::IOFileFormat_kind::HDF5:
     return std::make_unique<InputHDF5>(comm, filename);
   default: {
     Errors::Message msg;
-    msg << "InputFactory::createForCheckpoint: Unknown input type \"" << to_string(file_format)
-        << "\"";
+    msg << "InputFactory::createForCheckpoint: invalid \"file format\" \"" << to_string(file_format)
+        << "\" for reading a checkpoint file";
     throw(msg);
   }
   }
@@ -50,16 +50,17 @@ createForFile(Teuchos::ParameterList& plist,
               const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
 {
   std::string filename = plist.get<std::string>("file name");
-  IOFileFormat_kind file_format = createIOFileFormat(plist.get<std::string>("file format", "HDF5"));
+  Utils::IOFileFormat_kind file_format = Utils::createIOFileFormat(plist, filename);
 
   switch (file_format) {
-  case IOFileFormat_kind::HDF5:
+  case Utils::IOFileFormat_kind::HDF5:
     return std::make_unique<InputHDF5>(comm, filename);
-  case IOFileFormat_kind::NETCDF:
+  case Utils::IOFileFormat_kind::NETCDF:
     return std::make_unique<InputVerticallyStructuredNetCDF>(comm, filename, mesh);
   default: {
     Errors::Message msg;
-    msg << "InputFactory::createForFile: Unknown input type \"" << to_string(file_format) << "\"";
+    msg << "InputFactory::createForFile: invalid \"file format\" \"" << to_string(file_format)
+        << "\" for reading a file";
     throw(msg);
   }
   }

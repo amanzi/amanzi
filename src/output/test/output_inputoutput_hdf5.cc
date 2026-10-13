@@ -8,26 +8,6 @@
 */
 
 //! Tests InputHDF5/OutputHDF5 (checkpoint/restart via FileHDF5).
-/*
-  Exercises the Input/Output interface layer on top of FileHDF5's new
-  readView/writeView/readAttribute/writeAttribute API: scalar attributes
-  (double, int, string) and Vector_type/IntVector_type round-trips through
-  the Input/Output interface, pulling Tpetra's host-resident local view out
-  of the vector and handing FileHDF5 a plain Kokkos::View, exactly as
-  InputOutputHDF5.cc itself does.
-
-  These are the Vector_type-shaped round-trip tests formerly covered
-  directly against FileHDF5 in output_file_hdf5.cc's VECTOR_WRITE_READ (now
-  removed there, since Vector_type/MultiVector_type are no longer part of
-  FileHDF5's own API) -- they belong at this layer instead, since going from
-  a Tpetra vector to a Kokkos::View (and handling the Tpetra host view's
-  LayoutLeft vs. FileHDF5's LayoutRight) is exactly what InputOutputHDF5
-  does, not something FileHDF5 itself does anymore.
-
-  Also covers a path-encoded attribute name (e.g. "42/time"), matching
-  OutputXDMF's real usage of writeAttribute to scope per-cycle attributes
-  into their own group without a separate path argument.
-*/
 
 #include "UnitTest++.h"
 
@@ -42,6 +22,7 @@
 SUITE(INPUTOUTPUT_HDF5)
 {
   using namespace Amanzi;
+  using namespace Amanzi::Utils;
 
   TEST(ATTR_SCALAR_WRITEREAD)
   {

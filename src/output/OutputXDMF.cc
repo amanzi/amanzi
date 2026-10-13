@@ -36,11 +36,11 @@ OutputXDMF::createTimestep(double time, int cycle)
   if (!init_) {
     // create and set up the FileHDF5 object
     h5_data_filename_ = filenamebase_ + "_data.h5";
-    h5_data_ = std::make_unique<FileHDF5>(mesh_->getComm(), h5_data_filename_, FILE_CREATE);
+    h5_data_ = std::make_unique<Utils::FileHDF5>(mesh_->getComm(), h5_data_filename_, FILE_CREATE);
 
     // create and set up the FileHDF5Mesh h5
     h5_mesh_filename_ = filenamebase_ + "_mesh.h5";
-    h5_mesh_ = std::make_unique<FileHDF5>(mesh_->getComm(), h5_mesh_filename_, FILE_CREATE);
+    h5_mesh_ = std::make_unique<Utils::FileHDF5>(mesh_->getComm(), h5_mesh_filename_, FILE_CREATE);
 
     // write the mesh
     auto global_sizes = writeMesh_(cycle);

@@ -38,6 +38,7 @@
 SUITE(INPUTOUTPUT_VERTICALLY_STRUCTURED_NETCDF)
 {
   using namespace Amanzi;
+  using namespace Amanzi::Utils;
 
   // domain.lnd.oakharbor_transect.exo has 5 columns, 15 cells per column.
   const int ncells_per_column = 15;
