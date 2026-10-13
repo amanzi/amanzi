@@ -528,6 +528,12 @@ template <typename view_type>
 std::enable_if_t<view_type::rank == 1>
 FileHDF5::writeDistributedView(const std::string& name, const std::string& path, view_type view)
 {
+  // parallelIO's dataset dims are always int -- if GO is ever widened past
+  // int (e.g. to support meshes with more than INT_MAX global entities),
+  // this narrowing must be revisited.
+  static_assert(std::is_same_v<GO, int>,
+                "FileHDF5::writeDistributedView narrows GO to int for parallelIO; "
+                "revisit this cast if GO is redefined.");
   AMANZI_ASSERT(view.span_is_contiguous());
   using scalar_type = typename view_type::non_const_value_type;
   std::string var_path = joinPath_(path, name);
@@ -556,6 +562,9 @@ template <typename view_type>
 std::enable_if_t<view_type::rank == 1>
 FileHDF5::readDistributedView(const std::string& name, const std::string& path, view_type view)
 {
+  static_assert(std::is_same_v<GO, int>,
+                "FileHDF5::readDistributedView narrows GO to int for parallelIO; "
+                "revisit this cast if GO is redefined.");
   AMANZI_ASSERT(view.span_is_contiguous());
   using scalar_type = typename view_type::non_const_value_type;
   std::string var_path = joinPath_(path, name);
@@ -629,6 +638,9 @@ std::enable_if_t<std::is_same_v<typename view_type::array_layout, Kokkos::Layout
                  view_type::rank == 2>
 FileHDF5::writeDistributedView(const std::string& name, const std::string& path, view_type view)
 {
+  static_assert(std::is_same_v<GO, int>,
+                "FileHDF5::writeDistributedView narrows GO to int for parallelIO; "
+                "revisit this cast if GO is redefined.");
   AMANZI_ASSERT(view.span_is_contiguous());
   using scalar_type = typename view_type::non_const_value_type;
   std::string var_path = joinPath_(path, name);
@@ -658,6 +670,9 @@ std::enable_if_t<std::is_same_v<typename view_type::array_layout, Kokkos::Layout
                  view_type::rank == 2>
 FileHDF5::readDistributedView(const std::string& name, const std::string& path, view_type view)
 {
+  static_assert(std::is_same_v<GO, int>,
+                "FileHDF5::readDistributedView narrows GO to int for parallelIO; "
+                "revisit this cast if GO is redefined.");
   AMANZI_ASSERT(view.span_is_contiguous());
   using scalar_type = typename view_type::non_const_value_type;
   std::string var_path = joinPath_(path, name);
