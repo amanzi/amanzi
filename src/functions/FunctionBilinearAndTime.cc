@@ -10,7 +10,9 @@
 #include "errors.hh"
 #include "exceptions.hh"
 #include <memory>
-#include "HDF5Reader.hh"
+
+#include "ViewUtils.hh"
+
 #include "FunctionBilinearAndTime.hh"
 
 namespace Amanzi {
@@ -22,66 +24,126 @@ FunctionBilinearAndTime::FunctionBilinearAndTime(const std::string& filename,
                                                  const std::string& col_header,
                                                  const std::string& col_coordinate,
                                                  const std::string& val_header,
-                                                 Form_kind form)
-  : row_header_(row_header),
+                                                 Form_kind form,
+                                                 int page_size,
+                                                 Utils::IOFileFormat_kind file_format,
+                                                 const Comm_ptr_type& comm)
+  : filename_(filename),
+    time_header_(time_header),
+    row_header_(row_header),
     col_header_(col_header),
     val_header_(val_header),
-    filename_(filename),
+    row_coordinate_(row_coordinate),
+    col_coordinate_(col_coordinate),
     form_(form),
-    t_before_(-1.0),
-    t_after_(-1.0),
-    current_interval_(-2)
+    page_size_(page_size),
+    file_format_(file_format),
+    comm_(comm)
 {
-  HDF5Reader reader(filename_);
-  reader.ReadData(time_header, times_);
-
-  if (row_coordinate == "x")
+  if (row_coordinate_ == "x")
     row_index_ = 1;
-  else if (row_coordinate == "y")
+  else if (row_coordinate_ == "y")
     row_index_ = 2;
-  else if (row_coordinate == "z")
+  else if (row_coordinate_ == "z")
     row_index_ = 3;
 
-  if (col_coordinate == "x")
+  if (col_coordinate_ == "x")
     col_index_ = 1;
-  else if (col_coordinate == "y")
+  else if (col_coordinate_ == "y")
     col_index_ = 2;
-  else if (col_coordinate == "z")
+  else if (col_coordinate_ == "z")
     col_index_ = 3;
+
+  initialize_();
 }
 
 
 FunctionBilinearAndTime::FunctionBilinearAndTime(const FunctionBilinearAndTime& other)
-  : row_header_(other.row_header_),
+  : filename_(other.filename_),
+    time_header_(other.time_header_),
+    row_header_(other.row_header_),
     col_header_(other.col_header_),
     val_header_(other.val_header_),
+    row_coordinate_(other.row_coordinate_),
+    col_coordinate_(other.col_coordinate_),
     row_index_(other.row_index_),
     col_index_(other.col_index_),
-    times_(other.times_),
-    filename_(other.filename_),
     form_(other.form_),
-    t_before_(other.t_before_),
-    t_after_(other.t_after_),
-    current_interval_(other.current_interval_),
-    val_before_(other.val_before_->Clone()),
-    val_after_(other.val_after_->Clone())
-{}
+    page_size_(other.page_size_),
+    file_format_(other.file_format_),
+    comm_(other.comm_)
+{
+  // file_, interp_, and their associated views cannot be cheaply copied
+  // (file_ is an open FileReader; interp_'s load_page closure captures
+  // this) -- rebuild from the stored construction parameters instead,
+  // exactly as a fresh construction would.
+  initialize_();
+}
+
+
+// (Re-)builds file_, row_/col_, and interp_ from the stored construction
+// parameters.  Reads the row/column grids and the time series once; the
+// first page is loaded by TimeSeriesInterpolator's own constructor.
+void
+FunctionBilinearAndTime::initialize_()
+{
+  file_ = createFileReader(file_format_, comm_, filename_);
+
+  Kokkos::View<double*, Kokkos::HostSpace> row_h, col_h, times_h;
+  file_->read1D(row_header_, row_h);
+  file_->read1D(col_header_, col_h);
+  file_->read1D(time_header_, times_h);
+
+  nx_ = row_h.extent(0);
+  ny_ = col_h.extent(0);
+  row_ = asDualView(row_h);
+  col_ = asDualView(col_h);
+
+  std::vector<double> times(times_h.extent(0));
+  for (std::size_t i = 0; i != times_h.extent(0); ++i) times[i] = times_h(i);
+
+  Kokkos::resize(page_, page_size_, nx_, ny_);
+  Kokkos::resize(result_, 1, nx_, ny_);
+  Kokkos::resize(result_d_, nx_, ny_);
+
+  auto form = (form_ == Form_kind::CONSTANT) ?
+                TimeSeriesInterpolator<Page_type>::Form_kind::CONSTANT :
+                TimeSeriesInterpolator<Page_type>::Form_kind::LINEAR;
+
+  // captures file_'s raw pointer, page_ (via Kokkos' reference-counted
+  // View copy -- the lambda's page and this->page_ share the same
+  // underlying buffer), and a copy of val_header_ -- never this itself,
+  // so the closure stays valid across the copy constructor's
+  // reassignment of file_/page_ (each FunctionBilinearAndTime owns its
+  // own interp_, never shared).
+  Utils::FileReader* file_ptr = file_.get();
+  Page_type page = page_;
+  std::string val_header = val_header_;
+  interp_ = std::make_unique<TimeSeriesInterpolator<Page_type>>(
+    times,
+    page_size_,
+    [file_ptr, page, val_header](int start, int count, int dest_block) {
+      Page_type dest(&page(dest_block, 0, 0), count, page.extent(1), page.extent(2));
+      file_ptr->readPagedChunk(
+        val_header,
+        Utils::FileReader::TimeRange{ (std::size_t)start, (std::size_t)(start + count) },
+        dest);
+    },
+    page_,
+    result_,
+    form);
+}
 
 
 double
 FunctionBilinearAndTime::operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& x) const
 {
-  int interval;
-  double s;
-  std::tie(interval, s) = ComputeAndLoadInterval_(x(0,0));
-
-  if (interval == -1) {
-    return (*val_after_)(x);
-  } else if (interval == times_.size() - 1) {
-    return (*val_before_)(x);
-  } else {
-    return (*val_after_)(x)*s + (*val_before_)(x) * (1.0 - s);
-  }
+  const auto& result = interp_->interpolate(x(0, 0));
+  Kokkos::View<const double**, Kokkos::LayoutRight, Kokkos::HostSpace> result_slice(
+    &result(0, 0, 0), nx_, ny_);
+  auto f = Impl::FunctionBilinearFunctor(
+    row_.view_host(), col_.view_host(), row_index_, col_index_, result_slice, x);
+  return f(0);
 }
 
 
@@ -91,108 +153,28 @@ FunctionBilinearAndTime::apply(
   Kokkos::View<double*>& out,
   const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
 {
-  int interval;
-  double s;
-  auto t_view = Kokkos::create_mirror_view_and_copy(Amanzi::DefaultHostMemorySpace(), Kokkos::subview(in, 0, 0));
-  std::tie(interval, s) = ComputeAndLoadInterval_(t_view());
+  auto t_view = Kokkos::create_mirror_view_and_copy(Amanzi::DefaultHostMemorySpace(),
+                                                    Kokkos::subview(in, 0, 0));
+  const auto& result = interp_->interpolate(t_view());
+  Kokkos::View<const double**, Kokkos::LayoutRight, Kokkos::HostSpace> result_h(
+    &result(0, 0, 0), nx_, ny_);
+  Kokkos::deep_copy(result_d_, result_h);
 
-  if (interval == -1) {
-    return val_after_->apply(in, out, ids);
-  } else if (interval == times_.size() - 1) {
-    return val_before_->apply(in, out, ids);
+  auto f = Impl::FunctionBilinearFunctor(
+    row_.view_device(), col_.view_device(), row_index_, col_index_, result_d_, in);
+
+  if (ids) {
+    auto ids_loc = *ids;
+    Kokkos::parallel_for(
+      "FunctionBilinearAndTime::apply1", ids_loc.extent(0), KOKKOS_LAMBDA(const int i) {
+        out(ids_loc(i)) = f(i);
+      });
   } else {
-    Kokkos::View<double*> out2("FunctionBilinearAndTime workspace", in.extent(1));
-    val_before_->apply(in, out, ids);
-    val_after_->apply(in, out2, ids);
-
-    if (ids) {
-      auto& ids_loc = *ids;
-      Kokkos::parallel_for(
-        "FunctionBilinearAndTime::apply", ids_loc.extent(0), KOKKOS_LAMBDA(const int& i) {
-          int j = ids_loc(i);
-          out(j) = (1 - s) * out(j) + s * out2(j);
-        });
-    } else {
-      Kokkos::parallel_for(
-        "FunctionBilinearAndTime::apply", out2.extent(0), KOKKOS_LAMBDA(const int& i) {
-          out(i) = (1 - s) * out(i) + s * out2(i);
-        });
-    }
+    Kokkos::parallel_for(
+      "FunctionBilinearAndTime::apply2", in.extent(1), KOKKOS_LAMBDA(const int i) {
+        out(i) = f(i);
+      });
   }
-}
-
-
-std::pair<int, double>
-FunctionBilinearAndTime::ComputeAndLoadInterval_(double time) const
-{
-  // get the interval of the current time
-  int interval = std::lower_bound(times_.begin(), times_.end(), time) - times_.begin() - 1;
-
-  if ((interval < times_.size() - 1) && (time + 1.e-6 > times_[interval + 1]) &&
-      form_ == Form_kind::CONSTANT) {
-    // basicaly on the right-side endpoint -- need to deal with roundoff error
-    // as this is a discontinuous case.  Note 1e-6 is chosen so that dt in
-    // seconds is bigger than machine precision of a double on 100 years in
-    // seconds
-    interval++;
-  }
-
-  if (interval != current_interval_) {
-    if ((current_interval_ == -2) || (interval != current_interval_ + 1)) {
-      // completely uninitialized, or not an increment, load both
-      if (interval == -1) {
-        val_before_ = nullptr;
-        val_after_ = Load_(0);
-      } else if (interval == times_.size() - 1) {
-        val_before_ = Load_(times_.size() - 1);
-        val_after_ = nullptr;
-      } else {
-        val_before_ = Load_(interval);
-        val_after_ = Load_(interval + 1);
-      }
-
-    } else {
-      // an increment, we can move after --> before
-      val_before_ = std::move(val_after_);
-      if ((interval + 1) < times_.size()) {
-        val_after_ = Load_(interval + 1);
-      } else {
-        val_after_ = nullptr;
-      }
-    }
-    current_interval_ = interval;
-  }
-
-  // interpolate
-  double s = 0.;
-  if (interval == -1) {
-    s = -1;
-  } else if (interval == times_.size() - 1) {
-    s = -1;
-  } else {
-    if (form_ == Form_kind::LINEAR) {
-      s = (time - times_[interval]) / (times_[interval + 1] - times_[interval]);
-    } else {
-      // form CONSTANT takes the left endpoint
-      s = -1;
-    }
-  }
-  return std::make_pair(interval, s);
-}
-
-
-std::unique_ptr<FunctionBilinear>
-FunctionBilinearAndTime::Load_(const int time_index) const
-{
-  HDF5Reader reader(filename_);
-
-  Kokkos::View<double*, Kokkos::HostSpace> row, col;
-  reader.ReadData(row_header_, row);
-  reader.ReadData(col_header_, col);
-
-  Kokkos::View<double**, Kokkos::HostSpace> values;
-  reader.ReadMatData(val_header_ + "/" + std::to_string(time_index), values);
-  return std::make_unique<FunctionBilinear>(row, col, values, row_index_, col_index_);
 }
 
 } // namespace Amanzi

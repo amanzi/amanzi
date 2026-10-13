@@ -140,6 +140,7 @@ class Output {
       std::string vname = attrs.name() + "." + compname;
       Teuchos::ParameterList attrs_comp(attrs);
       attrs_comp.setName(vname);
+      attrs_comp.set<AmanziMesh::Entity_kind>("location", vec.getLocation(compname));
       write(attrs_comp, *vec.getComponent(compname, false));
     }
   }

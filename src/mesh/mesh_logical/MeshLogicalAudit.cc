@@ -648,8 +648,7 @@ bool
 MeshLogicalAudit::check_face_partition() const
 {
   // Mark all the faces contained by owned cells.
-  bool owned[nfaces_all_];
-  for (int j = 0; j < nfaces_all_; ++j) owned[j] = false;
+  std::vector<bool> owned(nfaces_all_, false);
   Mesh::cEntity_ID_View cface;
   for (Entity_ID j = 0; j < mesh->getMap(Entity_kind::CELL, false)->getLocalNumElements(); ++j) {
     mesh->getCellFaces(j, cface);

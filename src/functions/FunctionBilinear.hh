@@ -25,7 +25,9 @@ bounds.
 .. _function-bilinear-spec:
 .. admonition:: function-bilinear-spec
 
-   * `"file`" ``[string]`` HDF5 filename of the data
+   * `"file`" ``[string]`` filename of the data
+   * `"file format`" ``[string]`` **optional** `"HDF5`" or `"NetCDF`" -- inferred
+     from the filename's extension (".h5" or ".nc") if not provided
    * `"row header`" ``[string]`` name of the row dataset, the :math:`x_i`
    * `"row coordinate`" ``[string]`` one of `"t`",`"x`",`"y`",`"z`"
    * `"column header`" ``[string]`` name of the column dataset, the :math:`y_i`
@@ -64,7 +66,10 @@ class FunctionBilinear : public Function {
                    const int xi,
                    const int yi);
 
-  std::unique_ptr<Function> Clone() const override { return std::make_unique<FunctionBilinear>(*this); }
+  std::unique_ptr<Function> Clone() const override
+  {
+    return std::make_unique<FunctionBilinear>(*this);
+  }
 
   double operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& in) const override;
 

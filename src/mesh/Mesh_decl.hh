@@ -312,6 +312,7 @@ class Mesh {
   // mesh properties
   // ----------------
   int getSpaceDimension() const { return data_.space_dim_; }
+  const std::vector<std::string>& getSpaceDimensionNames() const { return space_dim_names_; }
   int getManifoldDimension() const { return data_.manifold_dim_; }
   bool isOrdered() const { return data_.is_ordered_; }
   bool isLogical() const { return data_.is_logical_; }
@@ -683,6 +684,7 @@ class Mesh {
   Teuchos::RCP<const Mesh> vis_mesh_;
 
   MeshCacheData data_;
+  std::vector<std::string> space_dim_names_;
   Teuchos::RCP<MeshCache> cache_;
 
   // friend MeshAudit_Sets so it can check any existing MeshSets

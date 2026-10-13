@@ -47,8 +47,14 @@ class InputHDF5 : public Input {
   // virtual void read(const Teuchos::ParameterList& attrs, MultiVector_type& vec) const override;
   // virtual void read(const Teuchos::ParameterList& attrs, IntMultiVector_type& vec) const override;
 
+  virtual void
+  readRange(const Teuchos::ParameterList& attrs,
+            std::size_t time_start,
+            std::size_t time_count,
+            Kokkos::View<double***, Kokkos::LayoutRight, Kokkos::HostSpace> buf) const override;
+
  protected:
-  std::unique_ptr<FileHDF5> file_;
+  std::unique_ptr<Utils::FileHDF5> file_;
 };
 
 
@@ -77,7 +83,7 @@ class OutputHDF5 : public Output {
   int cycle_;
   std::string domain_name_;
 
-  std::unique_ptr<FileHDF5> file_;
+  std::unique_ptr<Utils::FileHDF5> file_;
 };
 
 

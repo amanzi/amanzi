@@ -24,7 +24,9 @@
 #include "dbc.hh"
 #include "errors.hh"
 
-#include "HDF5Reader.hh"
+#include "IOFileFormat.hh"
+#include "FileReaderUtils.hh"
+#include "ViewUtils.hh"
 
 #include "Region.hh"
 #include "RegionAll.hh"
@@ -170,8 +172,10 @@ createRegion(const std::string& reg_name,
 
     if (plist.isParameter("file")) {
       std::string filename = plist.get<std::string>("file");
-      HDF5Reader reader(filename);
-      reader.ReadData(reg_name, gids);
+      Utils::IOFileFormat_kind file_format = Utils::createIOFileFormat(plist, filename);
+      Kokkos::View<int*, Kokkos::HostSpace> gids_view;
+      readLocalArray(file_format, Teuchos::rcpFromRef(comm), filename, reg_name, gids_view);
+      gids = asVector(Kokkos::MeshView<int*, Kokkos::HostSpace>(gids_view));
     } else {
       auto entity_list = plist.get<Teuchos::Array<int>>("entity gids");
       gids = entity_list.toVector();

@@ -14,9 +14,9 @@
 
 #include "dbc.hh"
 #include "FileHDF5.hh"
-#include "AmanziVector.hh"
 
 namespace Amanzi {
+namespace Utils {
 
 FileHDF5::FileHDF5(const Comm_ptr_type& comm, const std::string& filename, file_mode_t mode)
   : comm_(comm), filename_(filename), data_file_(-1)
@@ -69,7 +69,7 @@ FileHDF5::closeFile()
 }
 
 void
-FileHDF5::createGroup(const std::string& h5path_)
+FileHDF5::createGroup_(const std::string& h5path_)
 {
   IODetails::DangerousString h5path(h5path_);
   if (open_groups_.size() > 0) {
@@ -87,7 +87,7 @@ FileHDF5::createGroup(const std::string& h5path_)
 }
 
 void
-FileHDF5::closeGroup()
+FileHDF5::closeGroup_()
 {
   if (open_groups_.size() == 1) {
     parallelIO_close_dataset_group(data_file_, &IOgroup_);
@@ -96,9 +96,32 @@ FileHDF5::closeGroup()
 }
 
 bool
-FileHDF5::hasGroup(const std::string& h5path) const
+FileHDF5::hasGroup_(const std::string& h5path) const
 {
   return std::find(all_groups_.begin(), all_groups_.end(), h5path) != all_groups_.end();
+}
+
+void
+FileHDF5::ensureGroupExists_(const std::string& h5path)
+{
+  if (h5path.empty() || h5path == "/") return;
+  if (!hasGroup_(h5path)) {
+    createGroup_(h5path);
+    closeGroup_();
+  }
+}
+
+std::string
+FileHDF5::joinPath_(const std::string& path, const std::string& name)
+{
+  if (path.empty() || path.back() == '/') return path + name;
+  return path + "/" + name;
+}
+
+hid_t
+FileHDF5::rawFileId_() const
+{
+  return IOgroup_.file[data_file_]->fid;
 }
 
 
@@ -107,17 +130,13 @@ FileHDF5::hasGroup(const std::string& h5path) const
 //
 template <>
 void
-FileHDF5::writeAttribute<std::string>(const std::string& attr_name_,
-                                      const std::string& h5path_,
+FileHDF5::writeAttribute<std::string>(const std::string& name,
+                                      const std::string& path,
                                       std::string value)
 {
-  if (!hasGroup(h5path_)) {
-    createGroup(h5path_);
-    closeGroup();
-  }
-
-  IODetails::DangerousString attr_name(attr_name_);
-  IODetails::DangerousString h5path(h5path_);
+  ensureGroupExists_(path);
+  IODetails::DangerousString attr_name(name);
+  IODetails::DangerousString h5path(path);
   parallelIO_write_simple_attr(
     attr_name.c_str(), (void*)value.c_str(), PIO_STRING, data_file_, h5path.c_str(), &IOgroup_);
 }
@@ -125,10 +144,10 @@ FileHDF5::writeAttribute<std::string>(const std::string& attr_name_,
 
 template <>
 std::string
-FileHDF5::readAttribute<std::string>(const std::string& attr_name_, const std::string& h5path_)
+FileHDF5::readAttribute<std::string>(const std::string& name, const std::string& path)
 {
-  IODetails::DangerousString attr_name(attr_name_);
-  IODetails::DangerousString h5path(h5path_);
+  IODetails::DangerousString attr_name(name);
+  IODetails::DangerousString h5path(path);
 
   char* loc_value;
   parallelIO_read_simple_attr(attr_name.c_str(),
@@ -142,4 +161,5 @@ FileHDF5::readAttribute<std::string>(const std::string& attr_name_, const std::s
   return value;
 }
 
+} // namespace Utils
 } // namespace Amanzi

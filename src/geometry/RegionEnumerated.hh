@@ -18,7 +18,14 @@ parallel mesh is created on a fly.
 .. admonition:: region-enumerated-spec
 
     * `"entity`" ``[string]`` Type of the mesh object.  One of: `"cell`", `"face`", `"edge`", `"node`"
-    * `"entity gids`" ``[Array(int)]`` List of the global IDs of the entities.
+    * `"entity gids`" ``[Array(int)]`` **optional** List of the global IDs of
+      the entities.  Required unless `"file`" is provided.
+    * `"file`" ``[string]`` **optional** Path to a file containing the entity
+      global IDs, as a 1D array named `"NAME`" (where NAME is the region's
+      name).  An alternative to `"entity gids`".
+    * `"file format`" ``[string]`` **optional** `"HDF5`" or `"NetCDF`" --
+      inferred from the filename's extension (".h5" or ".nc") if not
+      provided.  Only used if `"file`" is provided.
 
 
 Example:

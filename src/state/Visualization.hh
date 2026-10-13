@@ -25,6 +25,10 @@ DOMAIN-NAME`".
 .. admonition:: visualization-spec
 
     * `"file name base`" ``[string]`` **visdump_DOMAIN_data**
+    * `"file format`" ``[string]`` **XDMF** One of `"XDMF`" (writes
+      XDMF+HDF5, for VisIt), `"SILO`" (requires Silo enabled at configure
+      time), or `"NetCDF`", which only writes vis for domains with
+      vertically structured meshes.
     * `"dynamic mesh`" ``[bool]`` **false** Write mesh data for every
       visualization dump; this facilitates visualizing deforming meshes.
     * `"time unit`" ``[string]`` **s** A valid time unit to convert time

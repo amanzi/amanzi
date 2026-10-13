@@ -17,6 +17,7 @@
 #include "EvaluatorIndependentFunction.hh"
 #include "EvaluatorIndependentConstant.hh"
 #include "EvaluatorIndependentTensorFunction.hh"
+#include "EvaluatorIndependentTensorFromFile.hh"
 #include "EvaluatorIndependentPatchFunction.hh"
 #include "EvaluatorSecondaryMonotypeFromFunction.hh"
 #include "EvaluatorSecondaryMonotypeAdditive.hh"
@@ -34,6 +35,7 @@ REGISTER(EvaluatorIndependentFunction);
 REGISTER(EvaluatorIndependentFromFile);
 REGISTER(EvaluatorIndependentConstant);
 REGISTER(EvaluatorIndependentTensorFunction);
+REGISTER(EvaluatorIndependentTensorFromFile);
 REGISTER(EvaluatorIndependentPatchFunction);
 REGISTER(EvaluatorSecondaryMonotypeFromFunction);
 template <>

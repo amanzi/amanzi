@@ -24,10 +24,23 @@ namespace Amanzi {
 
 class Input;
 
+namespace AmanziMesh {
+class Mesh;
+}
+
 namespace InputFactory {
 
 std::unique_ptr<Input>
 createForCheckpoint(Teuchos::ParameterList& plist, const Comm_ptr_type& comm);
+
+// Dispatches on plist's "file format" ("HDF5", the default, or "NetCDF"),
+// constructing an InputHDF5 or InputVerticallyStructuredNetCDF as
+// appropriate.  mesh is only used by the NetCDF case, to derive columnar
+// mesh structure.
+std::unique_ptr<Input>
+createForFile(Teuchos::ParameterList& plist,
+              const Comm_ptr_type& comm,
+              const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
 } // namespace InputFactory
 } // namespace Amanzi

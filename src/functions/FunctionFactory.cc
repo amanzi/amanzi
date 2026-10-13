@@ -11,7 +11,9 @@
 #include "Teuchos_SerialDenseMatrix.hpp"
 
 #include "errors.hh"
-#include "HDF5Reader.hh"
+#include "AmanziComm.hh"
+#include "IOFileFormat.hh"
+#include "FileReaderUtils.hh"
 #include "Key.hh"
 
 #include "FunctionAdditive.hh"
@@ -158,7 +160,7 @@ FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
   if (params.isParameter("file")) {
     //    try {
     std::string filename = params.get<std::string>("file");
-    HDF5Reader reader(filename);
+    Utils::IOFileFormat_kind file_format = Utils::createIOFileFormat(params, filename);
 
     int xi = 0;
     std::string x = params.get<std::string>("x header");
@@ -175,8 +177,8 @@ FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
 
     Kokkos::View<double*, Kokkos::HostSpace> vec_x;
     Kokkos::View<double*, Kokkos::HostSpace> vec_y;
-    reader.ReadData(x, vec_x);
-    reader.ReadData(y, vec_y);
+    readLocalArray(file_format, comm_, filename, x, vec_x);
+    readLocalArray(file_format, comm_, filename, y, vec_y);
     if (params.isParameter("forms")) {
       Kokkos::View<Form_kind*, Kokkos::HostSpace> form("forms", 0);
 
@@ -566,7 +568,7 @@ FunctionFactory::create_bilinear(Teuchos::ParameterList& params) const
   if (params.isParameter("file")) {
     try {
       std::string filename = params.get<std::string>("file");
-      HDF5Reader reader(filename);
+      Utils::IOFileFormat_kind file_format = Utils::createIOFileFormat(params, filename);
 
       int xi, yi(0); // input indices
       std::string x = params.get<std::string>("row header");
@@ -588,7 +590,7 @@ FunctionFactory::create_bilinear(Teuchos::ParameterList& params) const
         xi = 0;
       }
       Kokkos::View<double*, Kokkos::HostSpace> vec_x;
-      reader.ReadData(x, vec_x);
+      readLocalArray(file_format, comm_, filename, x, vec_x);
 
       std::string y = params.get<std::string>("column header");
       std::string ydim = params.get<std::string>("column coordinate");
@@ -609,11 +611,11 @@ FunctionFactory::create_bilinear(Teuchos::ParameterList& params) const
         yi = 0;
       }
       Kokkos::View<double*, Kokkos::HostSpace> vec_y;
-      reader.ReadData(y, vec_y);
+      readLocalArray(file_format, comm_, filename, y, vec_y);
 
       std::string v = params.get<std::string>("value header");
       Kokkos::View<double**, Kokkos::HostSpace> mat_v;
-      reader.ReadMatData(v, mat_v);
+      readLocalArray(file_format, comm_, filename, v, mat_v);
       f = std::make_unique<FunctionBilinear>(vec_x, vec_y, mat_v, xi, yi);
     } catch (Teuchos::Exceptions::InvalidParameter& msg) {
       Errors::Message m;
@@ -678,6 +680,8 @@ FunctionFactory::create_bilinear_and_time(Teuchos::ParameterList& params) const
   }
   std::string time_header = params.get<std::string>("time header");
   std::string value_header = params.get<std::string>("value header");
+  int page_size = params.get<int>("page size", 2);
+  Utils::IOFileFormat_kind file_format = Utils::createIOFileFormat(params, filename);
 
   std::string form_string = params.get<std::string>("forms", "linear");
   Form_kind form;
@@ -698,7 +702,10 @@ FunctionFactory::create_bilinear_and_time(Teuchos::ParameterList& params) const
                                                    col_header,
                                                    col_coordinate,
                                                    value_header,
-                                                   form);
+                                                   form,
+                                                   page_size,
+                                                   file_format,
+                                                   comm_);
 }
 
 

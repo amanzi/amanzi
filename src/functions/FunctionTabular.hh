@@ -89,7 +89,9 @@ but could be made so if requested).
 .. _function-tabular-fromfile-spec:
 .. admonition:: function-tabular-fromfile-spec
 
-   * `"file`" ``[string]`` filename of the HDF5 data
+   * `"file`" ``[string]`` filename of the data
+   * `"file format`" ``[string]`` **optional** `"HDF5`" or `"NetCDF`" --
+     inferred from the filename's extension (".h5" or ".nc") if not provided
    * `"x header`" ``[string]`` name of the dataset for the :math:`x_i` in the file
    * `"y header`" ``[string]`` name of the dataset for the :math:`y_i` in the file
    * `"forms`" ``[string]`` **optional**, Form of the interpolant, either
@@ -136,7 +138,10 @@ class FunctionTabular : public Function {
     : x_(other.x_), y_(other.y_), form_(other.form_), xi_(other.xi_)
   {}
 
-  std::unique_ptr<Function> Clone() const override { return std::make_unique<FunctionTabular>(*this); }
+  std::unique_ptr<Function> Clone() const override
+  {
+    return std::make_unique<FunctionTabular>(*this);
+  }
 
   double operator()(const Kokkos::View<const double**, Kokkos::HostSpace>&) const override;
 

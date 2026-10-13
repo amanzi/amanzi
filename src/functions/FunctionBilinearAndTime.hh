@@ -25,7 +25,9 @@ bounds.
 .. _function-bilinear-and-time-spec:
 .. admonition:: function-bilinear-and-time-spec
 
-   * `"file`" ``[string]`` HDF5 filename of the data
+   * `"file`" ``[string]`` filename of the data
+   * `"file format`" ``[string]`` **optional** `"HDF5`" or `"NetCDF`" --
+     inferred from the filename's extension (".h5" or ".nc") if not provided
    * `"time header`" ``[string]`` **time** Name of the temporal dimension indices, the :math:`t_i`.
    * `"row header`" ``[string]`` **x** name of the row dataset, the :math:`x_i`
    * `"row coordinate`" ``[string]`` **x** one of `"x`",`"y`",`"z`"
@@ -37,6 +39,8 @@ bounds.
      interpolation (2x space and time) and `"constant`" indicates that the
      value on an interval is provided by the left point's (earlier in time)
      value.
+   * `"page size`" ``[int]`` **optional, default=2** Number of consecutive
+     time slices kept resident at once.
 
 Example1:
 
@@ -56,18 +60,21 @@ An example HDF5 file, called head.h5, might then look like:
 | time: array(4) = [0, 60, 120, 180]
 | x: array(3) = [0, 1, 2]
 | y: array(2) = [0, 1]
-| rain: (group)
-|      | 0: array(3,2) = ...   # values at time 0
-|      | 1: array(3,2) = ...   # values at time 60
-|      | 2: array(3,2) = ...   # values at time 120
-|      | 3: array(3,2) = ...   # values at time 180
-
+| rain: array(4,3,2) -- one [3,2] slice per time index, in that order.
 
 */
 #ifndef AMANZI_BILINEAR_AND_TIME_FUNCTION_HH_
 #define AMANZI_BILINEAR_AND_TIME_FUNCTION_HH_
 
+#include <memory>
+#include <string>
 #include <vector>
+
+#include "AmanziComm.hh"
+#include "AmanziTypes.hh"
+#include "IOFileFormat.hh"
+#include "FileReader.hh"
+#include "TimeSeriesInterpolator.hh"
 
 #include "FunctionBilinear.hh"
 
@@ -75,6 +82,8 @@ namespace Amanzi {
 
 class FunctionBilinearAndTime : public Function {
  public:
+  using Page_type = Kokkos::View<double***, Kokkos::LayoutRight, Kokkos::HostSpace>;
+
   FunctionBilinearAndTime(const std::string& filename,
                           const std::string& time_header,
                           const std::string& row_header,
@@ -82,38 +91,45 @@ class FunctionBilinearAndTime : public Function {
                           const std::string& column_header,
                           const std::string& column_coordinate,
                           const std::string& val_header,
-                          Form_kind form);
+                          Form_kind form,
+                          int page_size = 2,
+                          Utils::IOFileFormat_kind file_format = Utils::IOFileFormat_kind::HDF5,
+                          const Comm_ptr_type& comm = getDefaultComm());
 
   FunctionBilinearAndTime(const FunctionBilinearAndTime& other);
 
   std::unique_ptr<Function> Clone() const override
-  {
-    return std::make_unique<FunctionBilinearAndTime>(*this);
-  }
+  { return std::make_unique<FunctionBilinearAndTime>(*this); }
 
   double operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& x) const override;
 
-  void apply(const Kokkos::View<const double**>& in,
-             Kokkos::View<double*>& out,
-             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids = nullptr) const override;
+  void apply(
+    const Kokkos::View<const double**>& in,
+    Kokkos::View<double*>& out,
+    const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids = nullptr) const override;
 
  private:
-  std::unique_ptr<FunctionBilinear> Load_(const int i) const;
-  std::pair<int, double> ComputeAndLoadInterval_(double time) const;
+  // (Re-)builds file_, row_/col_, and interp_ from the stored construction
+  // parameters -- shared by the constructor and the copy constructor
+  // (which cannot cheaply copy an open FileReader or a
+  // TimeSeriesInterpolator whose load_page closure captures this).
+  void initialize_();
 
- private:
-  std::string row_header_, col_header_, val_header_;
+  std::string filename_, time_header_, row_header_, col_header_, val_header_;
+  std::string row_coordinate_, col_coordinate_;
   int row_index_, col_index_;
-  std::vector<double> times_;
-  std::string filename_;
   Form_kind form_;
+  int page_size_;
+  Utils::IOFileFormat_kind file_format_;
+  Comm_ptr_type comm_;
 
-  mutable double t_before_;
-  mutable double t_after_;
-  mutable int current_interval_;
+  std::unique_ptr<Utils::FileReader> file_;
+  Kokkos::DualView<double*> row_, col_;
+  int nx_, ny_;
 
-  mutable std::unique_ptr<Function> val_before_;
-  mutable std::unique_ptr<Function> val_after_;
+  mutable std::unique_ptr<TimeSeriesInterpolator<Page_type>> interp_;
+  mutable Page_type page_, result_;
+  mutable Kokkos::View<double**, Kokkos::LayoutRight> result_d_;
 };
 
 } // namespace Amanzi

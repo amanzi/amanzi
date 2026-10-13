@@ -23,19 +23,24 @@ project(ATK)
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${EXPRTK_INLCUDE_DIR})
+include_directories(${ASCEMIO_INCLUDE_DIR})
+include_directories(${NetCDF_INCLUDE_DIRS})
 
 add_amanzi_library(atk
                    SOURCE AmanziComm.cc
                           ExprTK.cc
+                          FileHDF5.cc
+                          FileNetCDF.cc
+                          FileReader.cc
                           Formatter.cc
                           IOEvent.cc
                           Key.cc
-                          LeastSquare.cc 
+                          LeastSquare.cc
                           SplinedCurve.cc
                           TimeStepManager.cc
                           Units.cc
                           VerboseObject.cc
-                          XMLParameterListWriter.cc 
+                          XMLParameterListWriter.cc
                    HEADERS Abbreviations.hh
                            AmanziComm.hh
                            AmanziTypes.hh
@@ -44,8 +49,13 @@ add_amanzi_library(atk
                            Factory.hh
                            FencedTimer.hh
                            FIFO_Set.hh
+                           FileHDF5.hh
+                           FileHDF5_impl.hh
+                           FileNetCDF.hh
+                           FileNetCDF_impl.hh
+                           FileReader.hh
+                           FileReaderUtils.hh
                            Formatter.hh
-                           HDF5Reader.hh
                            IOEvent.hh
                            Iterators.hh
                            Key.hh
@@ -56,6 +66,7 @@ add_amanzi_library(atk
                            SplinedCurve.hh
                            StringExt.hh
                            Tag.hh
+                           TimeSeriesInterpolator.hh
                            TimeStepManager.hh
                            Units.hh
                            Utils.hh
@@ -64,7 +75,7 @@ add_amanzi_library(atk
                            ViewUtils.hh
                            XMLParameterListWriter.hh
                            StringReducer.hh
-                    LINK_LIBS error_handling ${Tpetra_LIBRARIES} ${Teuchos_LIBRARIES} ${HDF5_LIBRARIES})
+                    LINK_LIBS error_handling ${Tpetra_LIBRARIES} ${Teuchos_LIBRARIES} ${HDF5_LIBRARIES} ${ASCEMIO_LIBRARIES} ${NetCDF_C_LIBRARIES})
 
 if (APPLE AND BUILD_SHARED_LIBS)
   set_target_properties(atk PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
@@ -134,6 +145,33 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/utils_brent.cc
                     LINK_LIBS atk ${UnitTest_LIBRARIES})
+
+    # Test: file_hdf5
+    add_amanzi_test(utils_file_hdf5 utils_file_hdf5
+                    SOURCE      test/MainKokkos.cc test/utils_file_hdf5.cc
+                    LINK_LIBS  atk ${UnitTest_LIBRARIES}
+                    KIND unit)
+    add_amanzi_test(utils_file_hdf5_np2 utils_file_hdf5 NPROCS 2 KIND unit)
+    add_amanzi_test(utils_file_hdf5_np5 utils_file_hdf5 NPROCS 5 KIND unit)
+
+    # Test: file_netcdf
+    add_amanzi_test(utils_file_netcdf utils_file_netcdf
+                    SOURCE      test/MainKokkos.cc test/utils_file_netcdf.cc
+                    LINK_LIBS  atk ${UnitTest_LIBRARIES}
+                    KIND unit)
+    add_amanzi_test(utils_file_netcdf_np2 utils_file_netcdf NPROCS 2 KIND unit)
+
+    # Test: file_reader
+    add_amanzi_test(utils_file_reader utils_file_reader
+                    SOURCE      test/MainKokkos.cc test/utils_file_reader.cc
+                    LINK_LIBS  atk ${UnitTest_LIBRARIES}
+                    KIND unit)
+
+    # Test: time_series_interpolator
+    add_amanzi_test(utils_time_series_interpolator utils_time_series_interpolator
+                    SOURCE      test/MainKokkos.cc test/utils_time_series_interpolator.cc
+                    LINK_LIBS  atk ${UnitTest_LIBRARIES}
+                    KIND unit)
 
 endif()
 

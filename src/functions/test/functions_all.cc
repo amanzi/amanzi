@@ -22,21 +22,26 @@
 #include "FunctionSeparable.hh"
 #include "FunctionStaticHead.hh"
 #include "FunctionBilinear.hh"
+#include "FunctionBilinearAndTime.hh"
 #include "FunctionComposition.hh"
 #include "errors.hh"
-#include "HDF5Reader.hh"
+#include "AmanziComm.hh"
+#include "FileNetCDF.hh"
+#include "FileReaderUtils.hh"
+#include "IOFileFormat.hh"
 
 using namespace Amanzi;
+using namespace Amanzi::Utils;
 
 
 void
 test_values(Function& f, std::vector<double>& values, std::vector<double>& res)
 {
   // CPU
-  Kokkos::View<double**, Kokkos::HostSpace> x("txyz", 1,1);
+  Kokkos::View<double**, Kokkos::HostSpace> x("txyz", 1, 1);
   Kokkos::View<double*, Kokkos::HostSpace> tmp_x("tmp_txyz", values.size());
   for (int i = 0; i < values.size(); ++i) {
-    x(0,0) = values[i];
+    x(0, 0) = values[i];
     CHECK_EQUAL(f(x), res[i]);
     tmp_x(i) = values[i];
   }
@@ -62,7 +67,7 @@ test_values_multi(Function& f, std::vector<std::vector<double>>& values, std::ve
   Kokkos::DualView<double**> x_d("tmp_x", s1, s0);
   for (int i = 0; i < s0; ++i) {
     for (int j = 0; j < s1; ++j) {
-      x(j,0) = values[i][j];
+      x(j, 0) = values[i][j];
       x_d.view_host()(j, i) = values[i][j];
     }
     CHECK_EQUAL(res[i], f(x));
@@ -155,7 +160,6 @@ TEST(tabular_test)
   formvec = Kokkos::subview(formvec, Kokkos::make_pair(0, 2));
   CHECK_THROW(auto f6 = new FunctionTabular(xvec, yvec, xi, formvec), Errors::Message);
 }
-
 
 
 SUITE(polynomial_test)
@@ -306,7 +310,7 @@ SUITE(linear_test)
 
     FunctionLinear f2(y0, grad, x0);
 
-    std::vector<std::vector<double>> val = { { 3., 2.}, { 1., -1.} };
+    std::vector<std::vector<double>> val = { { 3., 2. }, { 1., -1. } };
     std::vector<double> res = { 3., -5. };
     test_values_multi(f2, val, res);
 
@@ -325,7 +329,12 @@ SUITE(linear_test)
 
     FunctionLinear f3(y0, grad);
 
-    std::vector<std::vector<double>> val = { { 3., }, { 1., } };
+    std::vector<std::vector<double>> val = { {
+                                               3.,
+                                             },
+                                             {
+                                               1.,
+                                             } };
     std::vector<double> res = { 4., 2. };
     test_values_multi(f3, val, res);
   }
@@ -403,28 +412,27 @@ TEST(static_head_test)
 }
 
 
-TEST(bilinear_test)
+// Shared by bilinear_test (HDF5, against the checked-in fixture) and
+// bilinear_netcdf_test (NetCDF, against a fixture written on the fly) --
+// both exercise the same row/column/value data through readLocalArray,
+// just dispatched to a different backend by format/filename.
+void
+run_bilinear_test(IOFileFormat_kind file_format, const std::string& filename)
 {
-  std::string filename = "test/bilinear.h5";
-  HDF5Reader reader(filename);
   std::string row_name = "times";
-  // std::vector<double> vec_x;
-  // HostSpace test
   Kokkos::View<double*, Kokkos::HostSpace> vec_x;
   int xi = 0;
-  reader.ReadData(row_name, vec_x);
+  readLocalArray(file_format, getDefaultComm(), filename, row_name, vec_x);
   std::string col_name = "x";
-  // std::vector<double> vec_y;
   Kokkos::View<double*, Kokkos::HostSpace> vec_y;
   int yi = 1;
-  reader.ReadData(col_name, vec_y);
+  readLocalArray(file_format, getDefaultComm(), filename, col_name, vec_y);
   std::string v_name = "values";
 
   Kokkos::View<double**, Kokkos::HostSpace> mat_v;
-  reader.ReadMatData(v_name, mat_v);
+  readLocalArray(file_format, getDefaultComm(), filename, v_name, mat_v);
   auto f = std::make_unique<FunctionBilinear>(vec_x, vec_y, mat_v, xi, yi);
   // Corners
-  // std::vector<double> z(2,0.);
   std::vector<std::vector<double>> val = { { 0., 0. },   { 10., 0. },  { 10., 5. },  { 0., 5. },
                                            { -1., -1 },  { 11., -1. }, { 11., 6. },  { -1., 6. },
                                            { 5.5, -1. }, { 5.5, 6. },  { -1., 2.5 }, { 11, 2.5 },
@@ -433,6 +441,306 @@ TEST(bilinear_test)
   std::vector<double> res = { 0.0,  60.0, 65.0, 5.0,  0.0,  60.0, 65.0, 5.0, 33.,
                               38.0, 2.5,  62.5, 35.5, 17.5, 47.5, 34.5, 36.5 };
   test_values_multi(*f, val, res);
+}
+
+
+TEST(bilinear_test)
+{
+  run_bilinear_test(IOFileFormat_kind::HDF5, "test/bilinear.h5");
+}
+
+
+// Writes the same times/x/values data as test/bilinear.h5, in NetCDF, so
+// readLocalArray's NetCDF branch gets the same coverage as its HDF5
+// branch -- this caller (FunctionFactory::create_bilinear) had never been
+// exercised against NetCDF before readLocalArray made that possible.
+TEST(bilinear_netcdf_test)
+{
+  std::string filename = "test/bilinear.nc";
+  {
+    FileNetCDF out(getDefaultComm(), filename, FILE_CREATE);
+    Kokkos::View<double*, Kokkos::HostSpace> times("times", 11);
+    for (int i = 0; i != 11; ++i) times(i) = i;
+    out.writeLocalView("times", times);
+
+    Kokkos::View<double*, Kokkos::HostSpace> x("x", 6);
+    for (int i = 0; i != 6; ++i) x(i) = i;
+    out.writeLocalView("x", x);
+
+    Kokkos::View<double**, Kokkos::LayoutRight, Kokkos::HostSpace> values("values", 11, 6);
+    for (int i = 0; i != 11; ++i)
+      for (int j = 0; j != 6; ++j) values(i, j) = 6 * i + j;
+    out.writeLocalView("values", values);
+  }
+  run_bilinear_test(IOFileFormat_kind::NETCDF, filename);
+}
+
+
+// Evaluates f at a single (time, x, y) point, matching
+// FunctionBilinearAndTime's dim ordering (dim 0 = time, then row/column
+// coordinates per its "row coordinate"/"column coordinate" parameters).
+// Checks both the host-side operator() and the device-side apply() path
+// (which FunctionBilinearAndTime::apply() delegates to FunctionBilinear's
+// Kokkos::parallel_for functor for), returning the host value so callers
+// can CHECK_CLOSE it against an expected value as usual.
+double
+eval3(Function& f, double t, double x, double y)
+{
+  Kokkos::View<double**, Kokkos::HostSpace> pt("pt", 3, 1);
+  pt(0, 0) = t;
+  pt(1, 0) = x;
+  pt(2, 0) = y;
+  double host_val = f(pt);
+
+  Kokkos::View<double**> pt_d("pt_d", 3, 1);
+  Kokkos::deep_copy(pt_d, pt);
+  Kokkos::View<double*> res_d("res_d", 1);
+  f.apply(pt_d, res_d);
+  Kokkos::View<double*, Kokkos::HostSpace> res_h("res_h", 1);
+  Kokkos::deep_copy(res_h, res_d);
+  CHECK_CLOSE(host_val, res_h(0), 1.e-10);
+
+  return host_val;
+}
+
+
+// Runs every bilinear_and_time_test assertion (both LINEAR and CONSTANT
+// forms) against a FunctionBilinearAndTime constructed with the given
+// page_size, filename, and backend format -- shared so the same coverage
+// can be re-run at page_size > 2 (here, page_size == times_.size() == 3,
+// so the whole series is resident from construction, a genuinely
+// different code path than page_size == 2's incremental paging) and
+// against the NetCDF backend.
+void
+run_bilinear_and_time_test(int page_size,
+                           const std::string& filename = "test/bilinear_and_time.h5",
+                           IOFileFormat_kind file_format = IOFileFormat_kind::HDF5)
+{
+  // x = 0 2
+  // y = 0 2 3
+  // t = 0, 1, 3
+
+  // v(0) = 0
+  // v(1) = 4
+  // v(3) = [ 4 6 ]
+  //        [ 6 8 ]
+  //        [ 7 9 ]
+  {
+    FunctionBilinearAndTime f(
+      filename, "time", "x", "x", "y", "y", "values", Form_kind::LINEAR, page_size, file_format);
+    CHECK_CLOSE(0., eval3(f, -1., 0., 0.), 1.e-7);
+    CHECK_CLOSE(0., eval3(f, 0., 0., 0.), 1.e-7);
+    CHECK_CLOSE(1., eval3(f, .25, 0., 0.), 1.e-7);
+    CHECK_CLOSE(1., eval3(f, .25, -1., -1.), 1.e-7);
+    CHECK_CLOSE(1., eval3(f, .25, 3., 3.), 1.e-7);
+    CHECK_CLOSE(3., eval3(f, .75, 0., 0.), 1.e-7);
+    CHECK_CLOSE(3., eval3(f, .75, 3., 3.), 1.e-7);
+    CHECK_CLOSE(4., eval3(f, 1., 0., 0.), 1.e-7);
+    CHECK_CLOSE(4., eval3(f, 1., 3., 3.), 1.e-7);
+
+    CHECK_CLOSE(4., eval3(f, 2.0, -1., -1.), 1.e-7);
+    CHECK_CLOSE(4., eval3(f, 2.0, 0., -1.), 1.e-7);
+    CHECK_CLOSE(4.05, eval3(f, 2.0, 0.1, -1.), 1.e-7);
+    CHECK_CLOSE(4.5, eval3(f, 2.0, 1., -1.), 1.e-7);
+    CHECK_CLOSE(4.95, eval3(f, 2.0, 1.9, -1.), 1.e-7);
+    CHECK_CLOSE(5., eval3(f, 2.0, 2, -1.), 1.e-7);
+    CHECK_CLOSE(5., eval3(f, 2.0, 2.1, -1.), 1.e-7);
+
+    CHECK_CLOSE(4., eval3(f, 2.0, -1., 0.), 1.e-7);
+    CHECK_CLOSE(4., eval3(f, 2.0, 0., 0.), 1.e-7);
+    CHECK_CLOSE(4.05, eval3(f, 2.0, 0.1, 0.), 1.e-7);
+    CHECK_CLOSE(4.5, eval3(f, 2.0, 1., 0.), 1.e-7);
+    CHECK_CLOSE(4.95, eval3(f, 2.0, 1.9, 0.), 1.e-7);
+    CHECK_CLOSE(5., eval3(f, 2.0, 2, 0.), 1.e-7);
+    CHECK_CLOSE(5., eval3(f, 2.0, 2.1, 0.), 1.e-7);
+
+    CHECK_CLOSE(4.05, eval3(f, 2.0, -1., 0.1), 1.e-7);
+    CHECK_CLOSE(4.05, eval3(f, 2.0, 0., 0.1), 1.e-7);
+    CHECK_CLOSE(4.1, eval3(f, 2.0, 0.1, 0.1), 1.e-7);
+    CHECK_CLOSE(4.55, eval3(f, 2.0, 1., 0.1), 1.e-7);
+    CHECK_CLOSE(5., eval3(f, 2.0, 1.9, 0.1), 1.e-7);
+    CHECK_CLOSE(5.05, eval3(f, 2.0, 2, 0.1), 1.e-7);
+    CHECK_CLOSE(5.05, eval3(f, 2.0, 2.1, 0.1), 1.e-7);
+
+    CHECK_CLOSE(5., eval3(f, 2.0, -1., 2.0), 1.e-7);
+    CHECK_CLOSE(5., eval3(f, 2.0, 0., 2.0), 1.e-7);
+    CHECK_CLOSE(5.05, eval3(f, 2.0, 0.1, 2.0), 1.e-7);
+    CHECK_CLOSE(5.5, eval3(f, 2.0, 1., 2.0), 1.e-7);
+    CHECK_CLOSE(5.95, eval3(f, 2.0, 1.9, 2.0), 1.e-7);
+    CHECK_CLOSE(6., eval3(f, 2.0, 2, 2.0), 1.e-7);
+    CHECK_CLOSE(6., eval3(f, 2.0, 2.1, 2.0), 1.e-7);
+
+    CHECK_CLOSE(5.05, eval3(f, 2.0, -1., 2.1), 1.e-7);
+    CHECK_CLOSE(5.05, eval3(f, 2.0, 0., 2.1), 1.e-7);
+    CHECK_CLOSE(5.1, eval3(f, 2.0, 0.1, 2.1), 1.e-7);
+    CHECK_CLOSE(5.55, eval3(f, 2.0, 1., 2.1), 1.e-7);
+    CHECK_CLOSE(6., eval3(f, 2.0, 1.9, 2.1), 1.e-7);
+    CHECK_CLOSE(6.05, eval3(f, 2.0, 2, 2.1), 1.e-7);
+    CHECK_CLOSE(6.05, eval3(f, 2.0, 2.1, 2.1), 1.e-7);
+
+    CHECK_CLOSE(5.5, eval3(f, 2.0, -1., 3.0), 1.e-7);
+    CHECK_CLOSE(5.5, eval3(f, 2.0, 0., 3.0), 1.e-7);
+    CHECK_CLOSE(5.55, eval3(f, 2.0, 0.1, 3.0), 1.e-7);
+    CHECK_CLOSE(6., eval3(f, 2.0, 1., 3.0), 1.e-7);
+    CHECK_CLOSE(6.45, eval3(f, 2.0, 1.9, 3.0), 1.e-7);
+    CHECK_CLOSE(6.5, eval3(f, 2.0, 2, 3.0), 1.e-7);
+    CHECK_CLOSE(6.5, eval3(f, 2.0, 2.1, 3.0), 1.e-7);
+
+    CHECK_CLOSE(5.5, eval3(f, 2.0, -1., 4.0), 1.e-7);
+    CHECK_CLOSE(5.5, eval3(f, 2.0, 0., 4.0), 1.e-7);
+    CHECK_CLOSE(5.55, eval3(f, 2.0, 0.1, 4.0), 1.e-7);
+    CHECK_CLOSE(6., eval3(f, 2.0, 1., 4.0), 1.e-7);
+    CHECK_CLOSE(6.45, eval3(f, 2.0, 1.9, 4.0), 1.e-7);
+    CHECK_CLOSE(6.5, eval3(f, 2.0, 2, 4.0), 1.e-7);
+    CHECK_CLOSE(6.5, eval3(f, 2.0, 2.1, 4.0), 1.e-7);
+
+    // check again (can we go out of order in time)
+    CHECK_CLOSE(0., eval3(f, -1., 0., 0.), 1.e-7);
+    CHECK_CLOSE(0., eval3(f, 0., 0., 0.), 1.e-7);
+    CHECK_CLOSE(1., eval3(f, .25, 0., 0.), 1.e-7);
+    CHECK_CLOSE(1., eval3(f, .25, -1., -1.), 1.e-7);
+    CHECK_CLOSE(1., eval3(f, .25, 3., 3.), 1.e-7);
+    CHECK_CLOSE(3., eval3(f, .75, 0., 0.), 1.e-7);
+    CHECK_CLOSE(3., eval3(f, .75, 3., 3.), 1.e-7);
+    CHECK_CLOSE(4., eval3(f, 1., 0., 0.), 1.e-7);
+    CHECK_CLOSE(4., eval3(f, 1., 3., 3.), 1.e-7);
+
+    CHECK_CLOSE(4., eval3(f, 2.0, -1., -1.), 1.e-7);
+    CHECK_CLOSE(4., eval3(f, 2.0, 0., -1.), 1.e-7);
+    CHECK_CLOSE(4.05, eval3(f, 2.0, 0.1, -1.), 1.e-7);
+    CHECK_CLOSE(4.5, eval3(f, 2.0, 1., -1.), 1.e-7);
+    CHECK_CLOSE(4.95, eval3(f, 2.0, 1.9, -1.), 1.e-7);
+    CHECK_CLOSE(5., eval3(f, 2.0, 2, -1.), 1.e-7);
+    CHECK_CLOSE(5., eval3(f, 2.0, 2.1, -1.), 1.e-7);
+  }
+  {
+    FunctionBilinearAndTime f(
+      filename, "time", "x", "x", "y", "y", "values", Form_kind::CONSTANT, page_size, file_format);
+    CHECK_CLOSE(0., eval3(f, -1., 0., 0.), 1.e-7);
+    CHECK_CLOSE(0., eval3(f, 0., 0., 0.), 1.e-7);
+    CHECK_CLOSE(0., eval3(f, .25, 0., 0.), 1.e-7);
+    CHECK_CLOSE(0., eval3(f, .25, -1., -1.), 1.e-7);
+    CHECK_CLOSE(0., eval3(f, .25, 3., 3.), 1.e-7);
+    CHECK_CLOSE(0., eval3(f, .75, 0., 0.), 1.e-7);
+    CHECK_CLOSE(0., eval3(f, .75, 3., 3.), 1.e-7);
+
+    CHECK_CLOSE(4., eval3(f, 1., 0., 0.), 1.e-7);
+    CHECK_CLOSE(4., eval3(f, 1., 3., 3.), 1.e-7);
+
+    CHECK_CLOSE(4., eval3(f, 2., 0., 0.), 1.e-7);
+    CHECK_CLOSE(4., eval3(f, 2., 3., 3.), 1.e-7);
+
+    CHECK_CLOSE(4., eval3(f, 2.9, 0., 0.), 1.e-7);
+    CHECK_CLOSE(4., eval3(f, 2.9, 3., 3.), 1.e-7);
+
+    CHECK_CLOSE(4., eval3(f, 3.0, -1., 0.), 1.e-7);
+    CHECK_CLOSE(4., eval3(f, 3.0, 0., 0.), 1.e-7);
+    CHECK_CLOSE(4.1, eval3(f, 3.0, 0.1, 0.), 1.e-7);
+    CHECK_CLOSE(5, eval3(f, 3.0, 1., 0.), 1.e-7);
+    CHECK_CLOSE(5.9, eval3(f, 3.0, 1.9, 0.), 1.e-7);
+    CHECK_CLOSE(6., eval3(f, 3.0, 2, 0.), 1.e-7);
+    CHECK_CLOSE(6., eval3(f, 3.0, 2.1, 0.), 1.e-7);
+
+    CHECK_CLOSE(4.1, eval3(f, 3.0, -1., 0.1), 1.e-7);
+    CHECK_CLOSE(4.1, eval3(f, 3.0, 0., 0.1), 1.e-7);
+    CHECK_CLOSE(4.2, eval3(f, 3.0, 0.1, 0.1), 1.e-7);
+    CHECK_CLOSE(5.1, eval3(f, 3.0, 1., 0.1), 1.e-7);
+    CHECK_CLOSE(6., eval3(f, 3.0, 1.9, 0.1), 1.e-7);
+    CHECK_CLOSE(6.1, eval3(f, 3.0, 2, 0.1), 1.e-7);
+    CHECK_CLOSE(6.1, eval3(f, 3.0, 2.1, 0.1), 1.e-7);
+
+    CHECK_CLOSE(4.1, eval3(f, 4.0, -1., 0.1), 1.e-7);
+    CHECK_CLOSE(4.1, eval3(f, 4.0, 0., 0.1), 1.e-7);
+    CHECK_CLOSE(4.2, eval3(f, 4.0, 0.1, 0.1), 1.e-7);
+    CHECK_CLOSE(5.1, eval3(f, 4.0, 1., 0.1), 1.e-7);
+    CHECK_CLOSE(6., eval3(f, 4.0, 1.9, 0.1), 1.e-7);
+    CHECK_CLOSE(6.1, eval3(f, 4.0, 2, 0.1), 1.e-7);
+    CHECK_CLOSE(6.1, eval3(f, 4.0, 2.1, 0.1), 1.e-7);
+
+    // check again (can we go out of order in time)
+    CHECK_CLOSE(0., eval3(f, -1., 0., 0.), 1.e-7);
+    CHECK_CLOSE(0., eval3(f, 0., 0., 0.), 1.e-7);
+    CHECK_CLOSE(0., eval3(f, .25, 0., 0.), 1.e-7);
+    CHECK_CLOSE(0., eval3(f, .25, -1., -1.), 1.e-7);
+    CHECK_CLOSE(0., eval3(f, .25, 3., 3.), 1.e-7);
+    CHECK_CLOSE(0., eval3(f, .75, 0., 0.), 1.e-7);
+    CHECK_CLOSE(0., eval3(f, .75, 3., 3.), 1.e-7);
+    CHECK_CLOSE(4., eval3(f, 1., 0., 0.), 1.e-7);
+    CHECK_CLOSE(4., eval3(f, 1., 3., 3.), 1.e-7);
+
+    CHECK_CLOSE(4., eval3(f, 2.0, -1., -1.), 1.e-7);
+    CHECK_CLOSE(4., eval3(f, 2.0, 0., -1.), 1.e-7);
+    CHECK_CLOSE(4.1, eval3(f, 3.0, 0.1, -1.), 1.e-7);
+    CHECK_CLOSE(5, eval3(f, 3.0, 1., -1.), 1.e-7);
+    CHECK_CLOSE(5.9, eval3(f, 3.0, 1.9, -1.), 1.e-7);
+    CHECK_CLOSE(6., eval3(f, 3.0, 2, -1.), 1.e-7);
+    CHECK_CLOSE(6., eval3(f, 3.0, 2.1, -1.), 1.e-7);
+
+    CHECK_CLOSE(4., eval3(f, 4.0, -1., -1.), 1.e-7);
+    CHECK_CLOSE(4., eval3(f, 4.0, 0., -1.), 1.e-7);
+    CHECK_CLOSE(4.1, eval3(f, 4.0, 0.1, -1.), 1.e-7);
+    CHECK_CLOSE(5, eval3(f, 4.0, 1., -1.), 1.e-7);
+    CHECK_CLOSE(5.9, eval3(f, 4.0, 1.9, -1.), 1.e-7);
+    CHECK_CLOSE(6., eval3(f, 4.0, 2, -1.), 1.e-7);
+    CHECK_CLOSE(6., eval3(f, 4.0, 2.1, -1.), 1.e-7);
+  }
+}
+
+
+TEST(bilinear_and_time_test)
+{
+  run_bilinear_and_time_test(2);
+}
+
+
+// Same coverage, page_size > 2 -- with times_.size() == 3, the whole
+// series is resident from construction (TimeSeriesInterpolator's
+// n_resident_ == page_size_ == times_.size() path), never exercising the
+// incremental/page-forward paging that page_size == 2 above does.
+TEST(bilinear_and_time_page_size_test)
+{
+  run_bilinear_and_time_test(3);
+}
+
+
+// Same coverage again, against a freshly-written NetCDF fixture holding
+// the same time/x/y/values data as test/bilinear_and_time.h5, so
+// FunctionBilinearAndTime's NetCDF branch (via createFileReader/
+// FileReader) gets the same coverage as its HDF5 branch.
+TEST(bilinear_and_time_netcdf_test)
+{
+  std::string filename = "test/bilinear_and_time.nc";
+  {
+    FileNetCDF out(getDefaultComm(), filename, FILE_CREATE);
+    Kokkos::View<double*, Kokkos::HostSpace> times("times", 3);
+    times(0) = 0.;
+    times(1) = 1.;
+    times(2) = 3.;
+    out.writeLocalView("time", times);
+
+    Kokkos::View<double*, Kokkos::HostSpace> x("x", 2);
+    x(0) = 0.;
+    x(1) = 2.;
+    out.writeLocalView("x", x);
+
+    Kokkos::View<double*, Kokkos::HostSpace> y("y", 3);
+    y(0) = 0.;
+    y(1) = 2.;
+    y(2) = 3.;
+    out.writeLocalView("y", y);
+
+    Kokkos::View<double***, Kokkos::LayoutRight, Kokkos::HostSpace> values("values", 3, 2, 3);
+    double raw[3][2][3] = {
+      { { 0., 0., 0. }, { 0., 0., 0. } },
+      { { 4., 4., 4. }, { 4., 4., 4. } },
+      { { 4., 6., 7. }, { 6., 8., 9. } },
+    };
+    for (int t = 0; t != 3; ++t)
+      for (int i = 0; i != 2; ++i)
+        for (int j = 0; j != 3; ++j) values(t, i, j) = raw[t][i][j];
+    out.writeLocalView("values", values, FileNetCDF::TimeRange{ 0, 3 });
+  }
+  run_bilinear_and_time_test(2, filename, IOFileFormat_kind::NETCDF);
 }
 
 
@@ -465,4 +773,3 @@ TEST(composition_test)
   std::vector<double> res = { 2., 1. };
   test_values_multi(f, val, res);
 }
-

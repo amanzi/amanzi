@@ -20,6 +20,8 @@
 #include "Output.hh"
 #include "OutputXDMF.hh"
 #include "InputOutputHDF5.hh"
+#include "InputOutputVerticallyStructuredNetCDF.hh"
+#include "IOFileFormat.hh"
 #ifdef HAVE_SILO
 #  include "OutputSilo.hh"
 #endif
@@ -59,22 +61,29 @@ createForVis(Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh:
     filenamebase = filenamebase + "_" + domain_name;
   plist.set<std::string>("file name base", filenamebase);
 
-  std::string output_type = plist.get<std::string>("file format", "XDMF");
-  if (output_type == "XDMF" || output_type == "xdmf" || output_type == "Xdmf") {
+  Utils::IOFileFormat_kind file_format =
+    Utils::createIOFileFormat(plist, Utils::IOFileFormat_kind::XDMF);
+  switch (file_format) {
+  case Utils::IOFileFormat_kind::XDMF:
     return std::make_unique<OutputXDMF>(plist, mesh);
-
-  } else if (output_type == "SILO" || output_type == "silo" || output_type == "Silo") {
+  case Utils::IOFileFormat_kind::NETCDF:
+    return std::make_unique<OutputVerticallyStructuredNetCDF>(plist, mesh->getComm(), mesh);
+  case Utils::IOFileFormat_kind::SILO:
 #ifdef HAVE_SILO
     return std::make_unique<OutputSilo>(plist, mesh);
 #else
-    Errors::Message msg(
-      "OutputFactory: requested output type Silo was not enabled at configure time.");
-    throw(msg);
+    {
+      Errors::Message msg(
+        "OutputFactory: requested output type Silo was not enabled at configure time.");
+      throw(msg);
+    }
 #endif
-  } else {
+  default: {
     Errors::Message msg;
-    msg << "OutputFactory: Unknown output type \"" << output_type << "\"";
+    msg << "OutputFactory::createForVis: invalid \"file format\" \""
+        << Utils::to_string(file_format) << "\" for writing vis";
     throw(msg);
+  }
   }
 }
 
@@ -85,13 +94,17 @@ createForCheckpoint(Teuchos::ParameterList& plist, const Comm_ptr_type& comm)
   std::string domain_name = Keys::cleanName(Keys::cleanPListName(plist));
   if (!plist.isParameter("file name base")) plist.set<std::string>("file name base", "checkpoint");
 
-  std::string output_type = plist.get<std::string>("file format", "HDF5");
-  if (output_type == "HDF5") {
+  Utils::IOFileFormat_kind file_format =
+    Utils::createIOFileFormat(plist, Utils::IOFileFormat_kind::HDF5);
+  switch (file_format) {
+  case Utils::IOFileFormat_kind::HDF5:
     return std::make_unique<OutputHDF5>(plist, comm);
-  } else {
+  default: {
     Errors::Message msg;
-    msg << "OutputFactory: Unknown output type \"" << output_type << "\"";
+    msg << "OutputFactory::createForCheckpoint: invalid \"file format\" \""
+        << Utils::to_string(file_format) << "\" for writing a checkpoint file";
     throw(msg);
+  }
   }
 }
 

@@ -74,6 +74,9 @@ set(state_inc_files
   evaluators/EvaluatorIndependentFunction.hh
   evaluators/EvaluatorIndependentConstant.hh
   evaluators/EvaluatorIndependentTensorFunction.hh
+  evaluators/EvaluatorFromFile_Helpers.hh
+  evaluators/EvaluatorTensorFromFile_Helpers.hh
+  evaluators/EvaluatorIndependentTensorFromFile.hh
   evaluators/EvaluatorIndependentPatchFunction.hh
   evaluators/EvaluatorPrimary.hh
   evaluators/EvaluatorPrimaryStaticMesh.hh
@@ -112,6 +115,7 @@ set(state_src_files
   evaluators/EvaluatorIndependentFunction.cc
   evaluators/EvaluatorIndependentConstant.cc
   evaluators/EvaluatorIndependentTensorFunction.cc
+  evaluators/EvaluatorIndependentTensorFromFile.cc
   evaluators/EvaluatorIndependentPatchFunction.cc
   evaluators/EvaluatorPrimary.cc
   evaluators/EvaluatorSecondary.cc
@@ -261,6 +265,14 @@ if (BUILD_TESTS)
                     KIND int
                     SOURCE test/Main.cc
                            test/state_evaluators_cv.cc
+                    LINK_LIBS ${state_test_link_libs})
+
+    # tests FileTimeInterpolator (EvaluatorFromFile_Helpers.hh), in particular
+    # paging when the time series length is not an even multiple of page_size
+    add_amanzi_test(state_evaluator_from_file state_evaluator_from_file
+                    KIND int
+                    SOURCE test/Main.cc
+                           test/state_evaluator_from_file.cc
                     LINK_LIBS ${state_test_link_libs})
 
     # tests Evaluators IndependentFromFunction and SecondaryFromFunction

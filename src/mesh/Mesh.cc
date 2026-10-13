@@ -573,6 +573,20 @@ Mesh::setMeshFramework(const Teuchos::RCP<MeshFramework>& framework_mesh)
   data_.has_nodes_ = framework_mesh->hasNodes();
   data_.has_node_faces_ = framework_mesh->hasNodeFaces();
   data_.space_dim_ = framework_mesh_->getSpaceDimension();
+  if (plist_->isParameter("space dimension names")) {
+    space_dim_names_ = plist_->get<Teuchos::Array<std::string>>("space dimension names").toVector();
+    if ((int)space_dim_names_.size() != data_.space_dim_) {
+      Errors::Message msg;
+      msg << "Mesh: \"space dimension names\" has " << space_dim_names_.size()
+          << " entries but the mesh is of dimension " << data_.space_dim_;
+      Exceptions::amanzi_throw(msg);
+    }
+  } else {
+    space_dim_names_.resize(data_.space_dim_);
+    if (data_.space_dim_ > 0) space_dim_names_[0] = "x";
+    if (data_.space_dim_ > 1) space_dim_names_[1] = "y";
+    if (data_.space_dim_ > 2) space_dim_names_[2] = "z";
+  }
   data_.manifold_dim_ = framework_mesh_->getManifoldDimension();
   data_.is_logical_ = framework_mesh_->isLogical();
   data_.is_ordered_ = framework_mesh_->isOrdered();

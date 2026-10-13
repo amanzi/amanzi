@@ -26,8 +26,10 @@ cause doubt over their correctness.
 .. _timestep-controller-from-file-spec:
 .. admonition:: timestep-controller-from-file-spec
 
-    * `"file name`" ``[string]`` Path to hdf5 file containing timestep information.
+    * `"file name`" ``[string]`` Path to the file containing timestep information.
     * `"timestep header`" ``[string]`` Name of the dataset containing the history of timestep sizes.
+    * `"file format`" ``[string]`` **optional** `"HDF5`" or `"NetCDF`" --
+      inferred from the filename's extension (".h5" or ".nc") if not provided.
 
 */
 
@@ -39,13 +41,16 @@ cause doubt over their correctness.
 #include "Teuchos_ParameterList.hpp"
 
 #include "errors.hh"
+#include "AmanziComm.hh"
+#include "AmanziTypes.hh"
 #include "TimestepController.hh"
 
 namespace Amanzi {
 
 class TimestepControllerFromFile : public TimestepController {
  public:
-  TimestepControllerFromFile(Teuchos::ParameterList& plist);
+  TimestepControllerFromFile(Teuchos::ParameterList& plist,
+                             const Comm_ptr_type& comm = getDefaultComm());
 
   // single method for timestep control
   double get_timestep(double dt, int iterations);

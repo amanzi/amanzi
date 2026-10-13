@@ -36,11 +36,11 @@ OutputXDMF::createTimestep(double time, int cycle)
   if (!init_) {
     // create and set up the FileHDF5 object
     h5_data_filename_ = filenamebase_ + "_data.h5";
-    h5_data_ = std::make_unique<FileHDF5>(mesh_->getComm(), h5_data_filename_, FILE_CREATE);
+    h5_data_ = std::make_unique<Utils::FileHDF5>(mesh_->getComm(), h5_data_filename_, FILE_CREATE);
 
     // create and set up the FileHDF5Mesh h5
     h5_mesh_filename_ = filenamebase_ + "_mesh.h5";
-    h5_mesh_ = std::make_unique<FileHDF5>(mesh_->getComm(), h5_mesh_filename_, FILE_CREATE);
+    h5_mesh_ = std::make_unique<Utils::FileHDF5>(mesh_->getComm(), h5_mesh_filename_, FILE_CREATE);
 
     // write the mesh
     auto global_sizes = writeMesh_(cycle);
@@ -91,7 +91,6 @@ OutputXDMF::writeMesh_(int cycle)
   h5path << "/" << cycle << "/Mesh/";
 
   h5_mesh_->openFile();
-  h5_mesh_->createGroup(h5path.str());
 
   // get node and cell maps
   auto node_map = vis_mesh.getMap(AmanziMesh::Entity_kind::NODE, false);
@@ -144,7 +143,7 @@ OutputXDMF::writeMesh_(int cycle)
 
   // Get and write coordinates and coordinate map
   // -- create and store a vector of coordinates
-  Kokkos::View<double**, Kokkos::LayoutRight, DefaultHost> coords(
+  Kokkos::View<double**, Kokkos::LayoutRight, Kokkos::HostSpace> coords(
     "coordinates", node_map->getLocalNumElements(), 3);
   AmanziGeometry::Point p;
   for (AmanziMesh::Entity_ID i = 0; i != coords.extent(0); ++i) {
@@ -152,10 +151,10 @@ OutputXDMF::writeMesh_(int cycle)
     for (int j = 0; j != p.dim(); ++j) { coords(i, j) = p[j]; }
   }
   // -- write the coordinates
-  h5_mesh_->writeView(h5path.str() + "Nodes", coords);
+  h5_mesh_->writeDistributedView("Nodes", h5path.str(), coords);
 
   // -- write the coordinate map
-  h5_mesh_->writeVector(h5path.str() + "NodeMap", OutputUtils::asVector(node_map));
+  h5_mesh_->writeVector("NodeMap", h5path.str(), OutputUtils::asVector(node_map));
 
   // Get and write connectivity information
   // nodes are written to h5 out of order, need the natural node map
@@ -212,15 +211,14 @@ OutputXDMF::writeMesh_(int cycle)
           connv(lcv++, 0) = gid;
         }
       }
-
     }
   }
 
   // write the connections
-  h5_mesh_->writeVector(h5path.str() + "MixedElements", conns);
+  h5_mesh_->writeVector("MixedElements", h5path.str(), conns);
 
   // write the cell map
-  h5_mesh_->writeVector(h5path.str() + "ElementMap", OutputUtils::asVector(cell_map));
+  h5_mesh_->writeVector("ElementMap", h5path.str(), OutputUtils::asVector(cell_map));
 
   h5_mesh_->closeFile();
   return std::make_tuple(global_nodes, global_cells, global_conns);
@@ -236,7 +234,6 @@ OutputXDMF::writeDualMesh_(int cycle)
   h5path << "/" << cycle << "/Mesh/";
 
   h5_mesh_->openFile();
-  h5_mesh_->createGroup(h5path.str());
 
   // on the dual, the node map is CELLS
   auto node_map = vis_mesh.getMap(AmanziMesh::Entity_kind::CELL, false);
@@ -279,7 +276,7 @@ OutputXDMF::writeDualMesh_(int cycle)
 
   // Get and write coordinates and coordinate map
   // -- create and store a vector of coordinates
-  Kokkos::View<double**, Kokkos::LayoutRight, DefaultHost> coords(
+  Kokkos::View<double**, Kokkos::LayoutRight, Kokkos::HostSpace> coords(
     "coordinates", node_map->getLocalNumElements(), 3);
   AmanziGeometry::Point p;
   for (AmanziMesh::Entity_ID i = 0; i != coords.extent(0); ++i) {
@@ -287,10 +284,10 @@ OutputXDMF::writeDualMesh_(int cycle)
     for (int j = 0; j != p.dim(); ++j) { coords(i, j) = p[j]; }
   }
   // -- write the coordinates
-  h5_mesh_->writeView(h5path.str() + "Nodes", coords);
+  h5_mesh_->writeDistributedView("Nodes", h5path.str(), coords);
 
   // -- write the coordinate map
-  h5_mesh_->writeVector(h5path.str() + "NodeMap", OutputUtils::asVector(node_map));
+  h5_mesh_->writeVector("NodeMap", h5path.str(), OutputUtils::asVector(node_map));
 
   // Get and write connectivity information
   // nodes are written to h5 out of order, need the natural node map
@@ -316,12 +313,12 @@ OutputXDMF::writeDualMesh_(int cycle)
   }
 
   // write the connections
-  h5_mesh_->writeVector(h5path.str() + "MixedElements", conns);
+  h5_mesh_->writeVector("MixedElements", h5path.str(), conns);
 
   // write the cell map
   auto dual_cell_map =
     Teuchos::rcp(new Map_type(global_cells_tp, local_conn_ents[1], 0, vis_mesh.getComm()));
-  h5_mesh_->writeVector(h5path.str() + "ElementMap", OutputUtils::asVector(dual_cell_map));
+  h5_mesh_->writeVector("ElementMap", h5path.str(), OutputUtils::asVector(dual_cell_map));
   h5_mesh_->closeFile();
   return std::make_tuple(global_nodes, global_cells, global_conns);
 }
@@ -334,8 +331,8 @@ OutputXDMF::write(const Teuchos::ParameterList& attrs, const Vector_type& vec) c
   if (location == AmanziMesh::Entity_kind::CELL || location == AmanziMesh::Entity_kind::NODE) {
     xdmf_->writeField<Vector_type::scalar_type>(attrs.name(), location);
     std::stringstream path;
-    path << "/" << attrs.name() << "/" << cycle_;
-    h5_data_->writeVector<Vector_type::scalar_type>(path.str(), vec);
+    path << "/" << attrs.name() << "/";
+    h5_data_->writeVector(std::to_string(cycle_), path.str(), vec);
   }
 }
 
@@ -346,8 +343,8 @@ OutputXDMF::write(const Teuchos::ParameterList& attrs, const IntVector_type& vec
   if (location == AmanziMesh::Entity_kind::CELL || location == AmanziMesh::Entity_kind::NODE) {
     xdmf_->writeField<IntVector_type::scalar_type>(attrs.name(), location);
     std::stringstream path;
-    path << "/" << attrs.name() << "/" << cycle_;
-    h5_data_->writeVector<IntVector_type::scalar_type>(path.str(), vec);
+    path << "/" << attrs.name() << "/";
+    h5_data_->writeVector(std::to_string(cycle_), path.str(), vec);
   }
 }
 
@@ -388,19 +385,19 @@ OutputXDMF::write(const Teuchos::ParameterList& attrs, const CompositeVector_<in
 void
 OutputXDMF::write(const Teuchos::ParameterList& attrs, const double& val) const
 {
-  h5_data_->writeAttribute(std::to_string(cycle_), attrs.name(), val);
+  h5_data_->writeAttribute(std::to_string(cycle_), attrs.name() + "/", val);
 }
 
 void
 OutputXDMF::write(const Teuchos::ParameterList& attrs, const int& val) const
 {
-  h5_data_->writeAttribute(std::to_string(cycle_), attrs.name(), val);
+  h5_data_->writeAttribute(std::to_string(cycle_), attrs.name() + "/", val);
 }
 
 void
 OutputXDMF::write(const Teuchos::ParameterList& attrs, const std::string& val) const
 {
-  h5_data_->writeAttribute(std::to_string(cycle_), attrs.name(), val);
+  h5_data_->writeAttribute(std::to_string(cycle_), attrs.name() + "/", val);
 }
 
 

@@ -196,7 +196,7 @@ PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector
               } else {
                 Kokkos::atomic_add(&grav_flux_v(f, 0), (Kcg * normal) * rho_c(c, 0) * kr(n));
               }
-              Kokkos::atomic_increment(&hits(f));
+              Kokkos::atomic_inc(&hits(f));
             }
           }
         }

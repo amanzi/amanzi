@@ -20,37 +20,54 @@
 namespace Amanzi {
 
 InputHDF5::InputHDF5(const Comm_ptr_type& comm, const std::string& filename)
-  : file_(std::make_unique<FileHDF5>(comm, filename, FILE_READONLY))
+  : file_(std::make_unique<Utils::FileHDF5>(comm, filename, FILE_READONLY))
 {}
 
 void
 InputHDF5::read(const Teuchos::ParameterList& attrs, double& val) const
 {
-  val = file_->readAttribute<double>(attrs.name(), "/");
+  val = file_->readAttribute<double>(attrs.name());
 }
 
 void
 InputHDF5::read(const Teuchos::ParameterList& attrs, int& val) const
 {
-  val = file_->readAttribute<int>(attrs.name(), "/");
+  val = file_->readAttribute<int>(attrs.name());
 }
 
 void
 InputHDF5::read(const Teuchos::ParameterList& attrs, std::string& val) const
 {
-  val = file_->readAttribute<std::string>(attrs.name(), "/");
+  val = file_->readAttribute<std::string>(attrs.name());
 }
 
 void
 InputHDF5::read(const Teuchos::ParameterList& attrs, Vector_type& vec) const
 {
-  file_->readVector(attrs.name(), vec);
+  file_->readVector(attrs.name(), "/", vec);
 }
 
 void
 InputHDF5::read(const Teuchos::ParameterList& attrs, IntVector_type& vec) const
 {
-  file_->readVector(attrs.name(), vec);
+  file_->readVector(attrs.name(), "/", vec);
+}
+
+void
+InputHDF5::readRange(const Teuchos::ParameterList& attrs,
+                     std::size_t time_start,
+                     std::size_t time_count,
+                     Kokkos::View<double***, Kokkos::LayoutRight, Kokkos::HostSpace> buf) const
+{
+  int ndofs = buf.extent(1);
+  for (std::size_t t = 0; t != time_count; ++t) {
+    for (int j = 0; j != ndofs; ++j) {
+      std::string path = attrs.name() + "." + std::to_string(j) + "/";
+      std::string name = std::to_string(time_start + t);
+      auto slice = Kokkos::subview(buf, t, j, Kokkos::ALL());
+      file_->readDistributedView(name, path, slice);
+    }
+  }
 }
 
 // void
@@ -79,7 +96,7 @@ void
 OutputHDF5::createTimestep(double time, int cycle)
 {
   cycle_ = cycle;
-  file_ = std::make_unique<FileHDF5>(comm_, getFilename_(cycle), FILE_CREATE);
+  file_ = std::make_unique<Utils::FileHDF5>(comm_, getFilename_(cycle), FILE_CREATE);
 }
 
 void
@@ -127,13 +144,13 @@ OutputHDF5::write(const Teuchos::ParameterList& attrs, const std::string& val) c
 void
 OutputHDF5::write(const Teuchos::ParameterList& attrs, const Vector_type& vec) const
 {
-  file_->writeVector(attrs.name(), vec);
+  file_->writeVector(attrs.name(), "/", vec);
 }
 
 void
 OutputHDF5::write(const Teuchos::ParameterList& attrs, const IntVector_type& vec) const
 {
-  file_->writeVector(attrs.name(), vec);
+  file_->writeVector(attrs.name(), "/", vec);
 }
 
 // void
