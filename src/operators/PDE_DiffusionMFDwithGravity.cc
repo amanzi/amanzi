@@ -62,6 +62,13 @@ PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
       bool gravity_special_projection(gravity_special_projection_);
       auto& Wff_cells = Wff_cells_;
       auto& kr_cells = kr_cells_;
+      // When the scalar coefficient is unset (little_k_type_ == NONE, e.g.
+      // during ComputeFluxDirection()), kr_cells_ is NOT rebuilt (it is only
+      // written by UpdateMatricesMixed_little_k_(), never called in this
+      // case) and may hold stale values from a previous real-coefficient
+      // call. Treat the coefficient as unity in that case, matching the
+      // "k_ == null means unity" convention used elsewhere.
+      bool kr_is_unity = (little_k_type_ == OPERATOR_LITTLE_K_NONE);
 
       Kokkos::parallel_for(
         "PDE_DiffusionMFDwithGravity::AddGravityToRHS_", ncells_owned, KOKKOS_LAMBDA(const int& c) {
@@ -88,14 +95,15 @@ PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
               double zf = (mesh.getFaceCentroid(f))[dim - 1];
               double tmp;
 
+              double kr_n = kr_is_unity ? 1.0 : kr(n);
               if (gravity_special_projection) {
                 const AmanziGeometry::Point& xcc = Impl::GravitySpecialDirection(mesh, f);
                 double sign = (normal * xcc) * dir;
 
-                tmp = (Kcg * xcc) * rho_c(c, 0) * kr(n) * dirs[n];
+                tmp = (Kcg * xcc) * rho_c(c, 0) * kr_n * dirs[n];
                 tmp *= copysign(norm(normal) / norm(xcc), sign);
               } else {
-                tmp = (Kcg * normal) * rho_c(c, 0) * kr(n);
+                tmp = (Kcg * normal) * rho_c(c, 0) * kr_n;
               }
 
               Kokkos::atomic_add(&rhs_face(f, 0), tmp);
@@ -165,6 +173,10 @@ PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector
     auto& kr_cells = kr_cells_;
     int lnfaces_owned(nfaces_owned);
     bool gravity_special_projection(gravity_special_projection_);
+    // See AddGravityToRHS_(): kr_cells_ is not rebuilt when the scalar
+    // coefficient is unset (e.g. during ComputeFluxDirection()) and may be
+    // stale; treat the coefficient as unity in that case.
+    bool kr_is_unity = (little_k_type_ == OPERATOR_LITTLE_K_NONE);
 
     // gravity discretization
     bool fv_flag =
@@ -187,14 +199,15 @@ PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector
             int f = faces[n];
             if (f < lnfaces_owned) {
               const AmanziGeometry::Point& normal = mesh.getFaceNormal(f);
+              double kr_n = kr_is_unity ? 1.0 : kr(n);
 
               if (gravity_special_projection) {
                 const AmanziGeometry::Point& xcc = Impl::GravitySpecialDirection(mesh, f);
                 double sign = normal * xcc;
                 double tmp = std::copysign(norm(normal) / norm(xcc), sign);
-                Kokkos::atomic_add(&grav_flux_v(f, 0), (Kcg * xcc) * rho_c(c, 0) * kr(n) * tmp);
+                Kokkos::atomic_add(&grav_flux_v(f, 0), (Kcg * xcc) * rho_c(c, 0) * kr_n * tmp);
               } else {
-                Kokkos::atomic_add(&grav_flux_v(f, 0), (Kcg * normal) * rho_c(c, 0) * kr(n));
+                Kokkos::atomic_add(&grav_flux_v(f, 0), (Kcg * normal) * rho_c(c, 0) * kr_n);
               }
               Kokkos::atomic_inc(&hits(f));
             }

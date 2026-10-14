@@ -65,14 +65,6 @@ class PDE_DiffusionFVwithGravity : public PDE_DiffusionFV, public PDE_DiffusionW
 
   // -- modify an operator
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
-  virtual void ModifyMatrices(const CompositeVector& u) override {};
-  virtual void ScaleMassMatrices(double s) override
-  {
-    ComputeTransmissibility_(gravity_term_);
-    transmissibility_->scale(s);
-  };
-
-
   virtual void AnalyticJacobian_(const CompositeVector& solution) override;
 
   // Developments

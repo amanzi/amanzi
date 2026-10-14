@@ -12,6 +12,13 @@
 #ifndef AMANZI_OPERATORS_DEFS_HH_
 #define AMANZI_OPERATORS_DEFS_HH_
 
+#include <string>
+
+#include "Teuchos_ParameterList.hpp"
+
+#include "errors.hh"
+#include "exceptions.hh"
+
 namespace Amanzi {
 namespace Operators {
 
@@ -116,6 +123,26 @@ const int OPERATOR_LITTLE_K_DIVK = 6;            // add cell component
 const int OPERATOR_LITTLE_K_DIVK_TWIN = 10;      // add twin component
 const int OPERATOR_LITTLE_K_DIVK_TWIN_GRAD = 18; // add grad component
 const int OPERATOR_LITTLE_K_STANDARD = 32;
+
+
+inline int
+ParseLittleKType(Teuchos::ParameterList& plist)
+{
+  std::string name = plist.get<std::string>("scalar coefficient type", "none");
+
+  if (name == "none") return OPERATOR_LITTLE_K_NONE;
+  if (name == "upwind: face") return OPERATOR_LITTLE_K_UPWIND;
+  if (name == "divk: face") return OPERATOR_LITTLE_K_DIVK_BASE;
+  if (name == "divk: cell-face") return OPERATOR_LITTLE_K_DIVK;
+  if (name == "divk: cell-face-twin") return OPERATOR_LITTLE_K_DIVK_TWIN;
+  if (name == "standard: cell") return OPERATOR_LITTLE_K_STANDARD;
+
+  Errors::Message msg;
+  msg << "Unknown \"scalar coefficient type\" (or \"nonlinear coefficient\") value \"" << name
+      << "\".";
+  Exceptions::amanzi_throw(msg);
+  return OPERATOR_LITTLE_K_NONE; // unreachable
+}
 
 // method for gravity
 const int OPERATOR_GRAVITY_HH = 1;

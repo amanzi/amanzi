@@ -82,6 +82,7 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
                                     const Teuchos::RCP<const CompositeVector>& dkdp)
   {
+    little_k_type_ = OPERATOR_LITTLE_K_NONE;
     k_ = k;
     dkdp_ = dkdp;
   }
@@ -111,40 +112,29 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
                                               const Teuchos::Ptr<const CompositeVector>& u,
                                               double scalar_factor = 1.0) = 0;
 
-  virtual void
-  UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
-                                 const Teuchos::Ptr<const CompositeVector>& u,
-                                 const Teuchos::Ptr<const CompositeVector>& factor) = 0;
-
   // postprocessing
   // -- flux calculation uses potential p to calculate flux u
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
                           const Teuchos::Ptr<CompositeVector>& u) = 0;
 
-  // -- additional interface on non-manifolds
-  virtual void UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
-                                     const Teuchos::Ptr<CompositeVector>& flux)
+  // -- convenience: compute a "flux direction" field with the scalar
+  //    coefficient set to unity (the existing convention for k_ == null,
+  //    see ScalarCoefficientFaces()), useful for deciding upwind direction
+  //    before the real coefficient is known.  Leaves the scalar coefficient
+  //    null on exit -- the caller is responsible for calling
+  //    SetScalarCoefficient() again with the real coefficient afterward, as
+  //    it was always going to do next regardless.
+  void ComputeFluxDirection(const Teuchos::Ptr<const CompositeVector>& p,
+                            const Teuchos::Ptr<CompositeVector>& flux_dir)
   {
-    Errors::Message msg("Diffusion: This diffusion implementation does not support non-manifolds.");
-    Exceptions::amanzi_throw(msg);
+    SetScalarCoefficient(Teuchos::null, Teuchos::null);
+    UpdateMatrices(Teuchos::null, p);
+    UpdateFlux(p, flux_dir);
   }
 
   // -- matrix modifications
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) = 0;
   virtual void ApplyBCsJacobian() = 0;
-
-  virtual void ModifyMatrices(const CompositeVector& u)
-  {
-    Errors::Message msg(
-      "Diffusion: This diffusion implementation does not support ModifyMatrices.");
-    Exceptions::amanzi_throw(msg);
-  }
-  virtual void ScaleMassMatrices(double s)
-  {
-    Errors::Message msg(
-      "Diffusion: This diffusion implementation does not support ScaleMassMatrices.");
-    Exceptions::amanzi_throw(msg);
-  }
 
 
   // -- working with consistent faces -- may not be implemented
@@ -208,20 +198,6 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   }
   virtual CompositeVectorSpace scalar_coefficient_derivative_space() const = 0;
 
-
- protected:
-  // accessors for things that may or may not be constant
-  CompositeVector::cView_type ScalarCoefficientFaces(bool scatter) const
-  {
-    if (k_ != Teuchos::null) {
-      if (scatter) k_->scatterMasterToGhosted("face");
-      if (k_->hasComponent("face")) { return k_->viewComponent("face", true); }
-    }
-    CompositeVector::View_type k_face("k_face", nfaces_wghost, 1);
-    Kokkos::deep_copy(k_face, 1.0);
-    return k_face;
-  }
-
  protected:
   Teuchos::ParameterList plist_;
   Teuchos::RCP<const TensorVector> K_;
@@ -229,7 +205,7 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
 
   // nonlinear coefficient and its representation
   Teuchos::RCP<const CompositeVector> k_, dkdp_;
-  int little_k_type_;
+  int little_k_type_ = OPERATOR_LITTLE_K_NONE;
 
   // additional operators
   int newton_correction_;

@@ -83,20 +83,12 @@ class PDE_DiffusionFV : public virtual PDE_Diffusion {
                                               const Teuchos::Ptr<const CompositeVector>& u,
                                               double scalar_factor = 1.0) override;
 
-  virtual void
-  UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
-                                 const Teuchos::Ptr<const CompositeVector>& u,
-                                 const Teuchos::Ptr<const CompositeVector>& factor) override;
-
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                           const Teuchos::Ptr<CompositeVector>& flux) override;
 
   // -- modify an operator
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
   virtual void ApplyBCsJacobian() override;
-
-  virtual void ModifyMatrices(const CompositeVector& u) override {};
-  virtual void ScaleMassMatrices(double s) override {};
 
   // access
   const CompositeVector& transmissibility() { return *transmissibility_; }
@@ -106,7 +98,13 @@ class PDE_DiffusionFV : public virtual PDE_Diffusion {
     CompositeVectorSpace out;
     out.SetMesh(mesh_);
     out.SetGhosted();
-    if (little_k_type_ != OPERATOR_LITTLE_K_NONE) { out.AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1); }
+    // The FV true-Jacobian path consumes a 2-DoF, face-based derivative (one
+    // slot per neighboring cell, ordered by getFaceCells(f)) -- this is
+    // provided by an upwinding evaluator, not the raw cell-based
+    // d(coefficient)/dp.
+    if (little_k_type_ != OPERATOR_LITTLE_K_NONE) {
+      out.AddComponent("face", AmanziMesh::Entity_kind::FACE, 2);
+    }
     return out;
   }
 
@@ -115,9 +113,8 @@ class PDE_DiffusionFV : public virtual PDE_Diffusion {
   void ComputeTransmissibility_();
   virtual void AnalyticJacobian_(const CompositeVector& solution);
 
-  // virtual void ComputeJacobianLocal_(
-  //     int mcells, int f, int face_dir_0to1, int bc_model, double bc_value,
-  //     double *pres, double *dkdp_cell, WhetStone::DenseMatrix& Jpp);
+  // accessors for things that may or may not be constant
+  CompositeVector::cView_type ScalarCoefficientFaces(bool scatter) const;
 
  protected:
   Teuchos::RCP<CompositeVector> transmissibility_;
