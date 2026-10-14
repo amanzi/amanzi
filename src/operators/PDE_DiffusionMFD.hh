@@ -75,7 +75,6 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
  public:
   PDE_DiffusionMFD(Teuchos::ParameterList& plist, const Teuchos::RCP<Operator>& global_op)
     : PDE_Diffusion(plist, global_op),
-      factor_(1.0),
       transmissibility_initialized_(false),
       bcs_applied_(false),
       mass_matrices_initialized_(false)
@@ -85,7 +84,6 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
 
   PDE_DiffusionMFD(Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : PDE_Diffusion(plist, mesh),
-      factor_(1.0),
       transmissibility_initialized_(false),
       bcs_applied_(false),
       mass_matrices_initialized_(false)
@@ -115,17 +113,12 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
                                               const Teuchos::Ptr<const CompositeVector>& u,
                                               double scalar_factor = 1) override;
 
-  virtual void
-  UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
-                                 const Teuchos::Ptr<const CompositeVector>& u,
-                                 const Teuchos::Ptr<const CompositeVector>& factor) override;
-
   virtual CompositeVectorSpace scalar_coefficient_derivative_space() const override
   {
     CompositeVectorSpace out;
     out.SetMesh(mesh_);
     out.SetGhosted();
-    if (little_k_type_ != OPERATOR_LITTLE_K_NONE) { out.AddComponent("face", AmanziMesh::Entity_kind::FACE, 1); }
+    if (little_k_type_ != OPERATOR_LITTLE_K_NONE) out.AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
     return out;
   }
 
@@ -167,32 +160,13 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
                        bool eliminate,
                        bool essential_eqn);
 
-  // -- by breaking p-lambda coupling.
-  virtual void ModifyMatrices(const CompositeVector& u) override;
-
-  // -- by rescaling mass matrices.
-  virtual void ScaleMassMatrices(double s) override;
-
   // main virtual members after solving the problem
   // -- calculate the flux variable.
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                           const Teuchos::Ptr<CompositeVector>& flux) override;
-  virtual void UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
-                                     const Teuchos::Ptr<CompositeVector>& flux) override;
-
-  // Developments
-  // -- working with consistent faces
-  virtual int UpdateConsistentFaces(CompositeVector& u) override;
-  Teuchos::RCP<const Operator> consistent_face_operator() const { return consistent_face_op_; }
-  Teuchos::RCP<Operator> consistent_face_operator() { return consistent_face_op_; }
-
-  // -- interface to solvers for treating nonlinear BCs.
-  virtual double ComputeTransmissibility(int f) const override;
-  virtual double ComputeGravityFlux(int f) const override { return 0.0; }
 
   // developer checks
   int nfailed_primary() { return nfailed_primary_; }
-  void set_factor(double factor) { factor_ = factor; }
 
  protected:
   void ParsePList_();
@@ -219,12 +193,7 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
   bool mass_matrices_initialized_;
 
   int newton_correction_;
-  double factor_;
   bool exclude_primary_terms_;
-
-  // modifiers for flux continuity equations
-  bool scaled_constraint_;
-  double scaled_constraint_cutoff_, scaled_constraint_fuzzy_;
 
   int mfd_primary_, mfd_secondary_, mfd_pc_primary_, mfd_pc_secondary_;
   int nfailed_primary_;
