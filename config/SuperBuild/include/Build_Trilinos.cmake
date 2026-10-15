@@ -282,7 +282,6 @@ if (ENABLE_CUDA)
   -Xcudafe --diag_suppress=code_is_unreachable")
   list(APPEND Trilinos_CMAKE_ARCH_ARGS
     "-DMPI_USE_COMPILER_WRAPPERS:BOOL=ON"
-    "-DKokkos_ENABLE_CUDA_UVM:BOOL=ON"
     "-DKokkos_ENABLE_CUDA_LAMBDA:BOOL=ON")
   # Change the default compiler for Trilinos to use nvcc_wrapper
   set(Trilinos_CXX_COMPILER ${NVCC_WRAPPER_PATH})
