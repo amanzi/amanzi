@@ -13,23 +13,30 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
                          PREFIX Nanoflann
                          VERSION ${Nanoflann_VERSION_MAJOR} ${Nanoflann_VERSION_MINOR} ${Nanoflann_VERSION_PATCH})
 
-# --- Set the name of the patch
+# --- Patch the source
 set(Nanoflann_patch_file nanoflann-cstdint-gcc13.patch)
-# --- Configure the bash patch script
-set(Nanoflann_sh_patch ${Nanoflann_prefix_dir}/nanoflann-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/nanoflann-patch-step.sh.in
-               ${Nanoflann_sh_patch}
-               @ONLY)
-# --- Configure the CMake patch step
-set(Nanoflann_cmake_patch ${Nanoflann_prefix_dir}/nanoflann-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/nanoflann-patch-step.cmake.in
-               ${Nanoflann_cmake_patch}
-               @ONLY)
-# --- Set the patch command
-set(Nanoflann_PATCH_COMMAND ${CMAKE_COMMAND} -P ${Nanoflann_cmake_patch})
+patch_tpl(Nanoflann
+          ${Nanoflann_prefix_dir}
+          ${Nanoflann_source_dir}
+          ${Nanoflann_stamp_dir}
+          Nanoflann_patch_file)
 
 # --- Define the install directory
 set(nanoflann_install_dir ${TPL_INSTALL_PREFIX})
+
+# --- Set CMake cache arguments
+set(Nanoflann_CMAKE_CACHE_ARGS
+    -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
+    -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+    -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
+    -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
+    -DCMAKE_INSTALL_PREFIX:PATH=${nanoflann_install_dir})
+
+# --- Override minimum version
+if(CMAKE_MAJOR_VERSION VERSION_EQUAL "4")
+  list(APPEND Nanoflann_CMAKE_CACHE_ARGS "-DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.5")
+endif()
+
 
 # --- Add external project and tie to the Nanoflann build target
 ExternalProject_Add(${Nanoflann_BUILD_TARGET}
@@ -46,11 +53,7 @@ ExternalProject_Add(${Nanoflann_BUILD_TARGET}
                     PATCH_COMMAND ${Nanoflann_PATCH_COMMAND}
                     #
                     CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}   # Ensure uniform build
-                                 -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
-                                 -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
-                                 -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
-                                 -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
-                                 -DCMAKE_INSTALL_PREFIX:PATH=${nanoflann_install_dir}
+                                  ${Nanoflann_CMAKE_CACHE_ARGS}
                     # -- Build
                     BINARY_DIR    ${Nanoflann_build_dir}   # Build directory 
                     # -- Install

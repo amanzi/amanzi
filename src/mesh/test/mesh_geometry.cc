@@ -180,8 +180,8 @@ TEST(MESH_GEOMETRY_2x3CUBE)
     std::cout << std::endl
               << "Testing 3D Box 2x2x3 with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    Teuchos::RCP<const Mesh> mesh = createStructuredUnitHex(Preference{ frm }, 2, 2, 3);
-    testMeshAuditHost<MeshAudit, Mesh>(mesh);
+    Teuchos::RCP<Mesh> mesh = createStructuredUnitHex(Preference{ frm }, 2, 2, 3);
+    testMeshAuditHostCacheStates<MeshAudit>(mesh);
     testGeometryCube(*mesh, mesh.get(), 2, 2, 3);
 
     if (frm == Framework::MSTK) testExteriorMapsUnitBox(*mesh, mesh.get(), 2, 2, 3);
@@ -206,8 +206,8 @@ TEST(MESH_GEOMETRY_FRACTURE_EXO)
     std::cout << std::endl
               << "Testing 3D Fracture Exo with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    Teuchos::RCP<const Mesh> mesh = createUnstructured(Preference{ frm }, "test/fractures.exo");
-    testMeshAuditHost<MeshAudit, Mesh>(mesh);
+    Teuchos::RCP<Mesh> mesh = createUnstructured(Preference{ frm }, "test/fractures.exo");
+    testMeshAuditHostCacheStates<MeshAudit>(mesh);
   }
 }
 
@@ -222,8 +222,8 @@ TEST(MESH_GEOMETRY_PINCHOUTS)
     std::cout << std::endl
               << "Testing 3D Pinchout with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    Teuchos::RCP<const Mesh> mesh = createUnstructured(Preference{ frm }, "test/test_pri_pinchout_mesh.exo");
-    testMeshAuditHost<MeshAudit, Mesh>(mesh);
+    Teuchos::RCP<Mesh> mesh = createUnstructured(Preference{ frm }, "test/test_pri_pinchout_mesh.exo");
+    testMeshAuditHostCacheStates<MeshAudit>(mesh);
   }
 }
 

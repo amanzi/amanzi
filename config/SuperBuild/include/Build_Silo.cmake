@@ -61,28 +61,29 @@ else()
    set(CONFIG_SILO_DEBUG --enable-optimization)
 endif()
 
-# --- Set the name of the patch 
-#set(Silo_patch_file silo-4.10.2-remove-mpiposix.patch
-#                    silo-4.10.2-debug-builds.patch
-#                    silo-4.10.2-static-tools.patch
-#                    silo-4.10.2-nouppercase.patch)
-set(Silo_patch_file silo-4.11-h5epr-semi-colon.patch)
+# --- Set the name of the patch
+set(Silo_patch_file silo-4.11.1-h5epr-semi-colon.patch silo-4.11.1-hdf5-libname.patch)
+patch_tpl(Silo
+          ${Silo_prefix_dir}
+          ${Silo_source_dir}
+          ${Silo_stamp_dir}
+          Silo_patch_file)
 
-set(Silo_sh_patch ${Silo_prefix_dir}/silo-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/silo-patch-step.sh.in
-               ${Silo_sh_patch}
-               @ONLY)
-# --- Configure the CMake patch step
-set(Silo_cmake_patch ${Silo_prefix_dir}/silo-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/silo-patch-step.cmake.in
-               ${Silo_cmake_patch}
-               @ONLY)
-# --- Set the patch command
-set(Silo_PATCH_COMMAND ${CMAKE_COMMAND} -P ${Silo_cmake_patch})
+# HDF5 installs its libraries with a "_debug" suffix in Debug builds
+# (see Build_HDF5.cmake). Silo's own configure script hardcodes the
+# "-lhdf5" library name with no override, so the silo-4.11.1-hdf5-libname.patch
+# makes that name overridable via the SILO_HDF5_LIBNAME env var.
+if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+  set(SILO_HDF5_LIBNAME hdf5_debug)
+else()
+  set(SILO_HDF5_LIBNAME hdf5)
+endif()
+
 
 # --- Add external project build 
 ExternalProject_Add(${Silo_BUILD_TARGET}
                     DEPENDS   ${Silo_PACKAGE_DEPENDS}      # Package dependency target
+                    PREFIX    ${Silo_prefix_dir}
                     TMP_DIR   ${Silo_tmp_dir}              # Temporary files directory
                     STAMP_DIR ${Silo_stamp_dir}            # Timestamp and log directory
                     # -- Download and URL definitions
@@ -94,6 +95,7 @@ ExternalProject_Add(${Silo_BUILD_TARGET}
                     # -- Configure
                     SOURCE_DIR    ${Silo_source_dir}       # Source directory
                     CONFIGURE_COMMAND
+                              ${CMAKE_COMMAND} -E env SILO_HDF5_LIBNAME=${SILO_HDF5_LIBNAME}
                               ${Silo_source_dir}/configure
                                           --prefix=${silo_install_dir}
                                           --with-x=0

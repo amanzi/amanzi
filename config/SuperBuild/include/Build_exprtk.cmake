@@ -14,24 +14,14 @@ define_external_project_args(EXPRTK
 amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   PREFIX EXPRTK
   VERSION ${EXPRTK_VERSION_MAJOR} ${EXPRTK_VERSION_MINOR} ${EXPRTK_VERSION_PATCH})
-  
-# --- Define the patch command
-# nvcc rejects exprtk's bare branch() calls (default argument on a name brought in
-# by a using-declaration).  See templates/exprtk-nvcc-branch.patch.
+
+# --- Patch the original code
 set(EXPRTK_patch_file exprtk-nvcc-branch.patch)
-set(EXPRTK_sh_patch ${EXPRTK_prefix_dir}/exprtk-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/exprtk-patch-step.sh.in
-               ${EXPRTK_sh_patch}
-               @ONLY)
-
-# configure the CMake patch step
-set(EXPRTK_cmake_patch ${EXPRTK_prefix_dir}/exprtk-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/exprtk-patch-step.cmake.in
-               ${EXPRTK_cmake_patch}
-               @ONLY)
-
-# set the patch command
-set(EXPRTK_PATCH_COMMAND ${CMAKE_COMMAND} -P ${EXPRTK_cmake_patch})
+patch_tpl(EXPRTK
+          ${EXPRTK_prefix_dir}
+          ${EXPRTK_source_dir}
+          ${EXPRTK_stamp_dir}
+          EXPRTK_patch_file)
 
 # --- Define the install command
 # Build the install script
@@ -50,6 +40,7 @@ set(EXPRTK_INSTALL_COMMAND ${CMAKE_COMMAND} -P ${EXPRTK_cmake_install})
 # --- Add external project build and tie to the EXPRTK build target
 ExternalProject_Add(${EXPRTK_BUILD_TARGET}
                     DEPENDS   ${EXPRTK_PACKAGE_DEPENDS}        # Package dependency target
+                    PREFIX    ${EXPRTK_prefix_dir}
                     TMP_DIR   ${EXPRTK_tmp_dir}                # Temporary files directory
                     STAMP_DIR ${EXPRTK_stamp_dir}              # Timestamp and log directory
                     # -- Download and URL definitions

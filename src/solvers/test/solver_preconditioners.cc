@@ -120,6 +120,15 @@ SUITE(SOLVERS)
     Teuchos::ParameterList plist;
     plist.set("error tolerance", 1.e-12);
     plist.set("maximum number of iterations", 200);
+    if (name == "identity" || name == "diagonal") {
+      // weak preconditioners converge slowly on this matrix; the default
+      // 10-dimensional Krylov space is too small -- restarting that often
+      // discards most of the built-up subspace, so convergence stalls well
+      // short of 200 iterations. Give these two cases enough Krylov space
+      // to converge within a single (unrestarted) cycle.
+      plist.set("size of Krylov space", 150);
+      plist.set("maximum number of iterations", 250);
+    }
     auto inv = Teuchos::rcp(new IterativeMethodGMRES<Matrix_type,
                                                    Amanzi::AmanziSolvers::Preconditioner,
                                                    Vector_type,

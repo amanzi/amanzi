@@ -1,6 +1,6 @@
 #
 # Build TPL:  SuperLU
-#   
+#
 # --- Define all the directories and common external project flags
 define_external_project_args(SuperLU
                              TARGET superlu)
@@ -10,27 +10,28 @@ include(${SuperBuild_SOURCE_DIR}/TPLVersions.cmake)
 amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   PREFIX SuperLU
   VERSION ${SuperLU_VERSION_MAJOR} ${SuperLU_VERSION_MINOR} ${SuperLU_VERSION_PATCH})
-  
+
 # --- Patch the original code
-set(SuperLU_patch_file superlu-osx-shared.patch)
-set(SuperLU_sh_patch ${SuperLU_prefix_dir}/superlu-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/superlu-patch-step.sh.in
-               ${SuperLU_sh_patch}
-               @ONLY)
-# configure the CMake patch step
-set(SuperLU_cmake_patch ${SuperLU_prefix_dir}/superlu-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/superlu-patch-step.cmake.in
-               ${SuperLU_cmake_patch}
-               @ONLY)
-# set the patch command
-set(SuperLU_PATCH_COMMAND ${CMAKE_COMMAND} -P ${SuperLU_cmake_patch})
+set(SuperLU_patch_file superlu-osx-shared.patch
+                       superlu-stdio-conflict.patch)
+patch_tpl(SuperLU
+          ${SuperLU_prefix_dir}
+          ${SuperLU_source_dir}
+          ${SuperLU_stamp_dir}
+          SuperLU_patch_file)
+
 
 # --- Define the arguments passed to CMake.
-set(SuperLU_CMAKE_ARGS 
+set(SuperLU_CMAKE_ARGS
       "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}"
       "-DCMAKE_INSTALL_LIBDIR:FILEPATH=${TPL_INSTALL_PREFIX}/lib"
       "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
       "-Denable_internal_blaslib:BOOL=FALSE")
+
+# --- Override minimum version
+if(CMAKE_MAJOR_VERSION VERSION_EQUAL "4")
+  list(APPEND SuperLU_CMAKE_ARGS "-DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.5")
+endif()
 
 string(REPLACE ";" "\\\;" superlu_module_opt "${CMAKE_MODULE_PATH}")
 
@@ -44,7 +45,7 @@ ExternalProject_Add(${SuperLU_BUILD_TARGET}
                     URL           ${SuperLU_URL}               # URL may be a web site OR a local file
                     URL_MD5       ${SuperLU_MD5_SUM}           # md5sum of the archive file
                     DOWNLOAD_NAME ${SuperLU_SAVEAS_FILE}       # file name to store (if not end of URL)
-                    # -- Patch 
+                    # -- Patch
                     PATCH_COMMAND ${SuperLU_PATCH_COMMAND}     # Mods to source
                     # -- Configure
                     SOURCE_DIR       ${SuperLU_source_dir}        # Source directory
@@ -57,7 +58,7 @@ ExternalProject_Add(${SuperLU_BUILD_TARGET}
                                      -DTPL_BLAS_LIBRARIES:STRING=${BLAS_LIBRARIES}
 
                     # -- Build
-                    BINARY_DIR      ${SuperLU_build_dir}       # Build directory 
+                    BINARY_DIR      ${SuperLU_build_dir}       # Build directory
                     BUILD_COMMAND   $(MAKE)
                     # -- Install
                     INSTALL_DIR     ${TPL_INSTALL_PREFIX}      # Install directory
