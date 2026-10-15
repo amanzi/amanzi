@@ -23,7 +23,6 @@
 
 // Amanzi
 #include "MeshFactory.hh"
-#include "GMVMesh.hh"
 #include "LinearOperatorBelosGMRES.hh"
 #include "Tensor.hh"
 
