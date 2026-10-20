@@ -61,13 +61,23 @@ else()
    set(CONFIG_SILO_DEBUG --enable-optimization)
 endif()
 
-# --- Set the name of the patch 
-set(Silo_patch_file silo-4.11.1-h5epr-semi-colon.patch)
+# --- Set the name of the patch
+set(Silo_patch_file silo-4.11.1-h5epr-semi-colon.patch silo-4.11.1-hdf5-libname.patch)
 patch_tpl(Silo
           ${Silo_prefix_dir}
           ${Silo_source_dir}
           ${Silo_stamp_dir}
           Silo_patch_file)
+
+# HDF5 installs its libraries with a "_debug" suffix in Debug builds
+# (see Build_HDF5.cmake). Silo's own configure script hardcodes the
+# "-lhdf5" library name with no override, so the silo-4.11.1-hdf5-libname.patch
+# makes that name overridable via the SILO_HDF5_LIBNAME env var.
+if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+  set(SILO_HDF5_LIBNAME hdf5_debug)
+else()
+  set(SILO_HDF5_LIBNAME hdf5)
+endif()
 
 
 # --- Add external project build 
@@ -85,6 +95,7 @@ ExternalProject_Add(${Silo_BUILD_TARGET}
                     # -- Configure
                     SOURCE_DIR    ${Silo_source_dir}       # Source directory
                     CONFIGURE_COMMAND
+                              ${CMAKE_COMMAND} -E env SILO_HDF5_LIBNAME=${SILO_HDF5_LIBNAME}
                               ${Silo_source_dir}/configure
                                           --prefix=${silo_install_dir}
                                           --with-x=0
