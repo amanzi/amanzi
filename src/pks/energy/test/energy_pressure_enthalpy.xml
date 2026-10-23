@@ -40,7 +40,7 @@
 
   <ParameterList name="PK tree">
     <ParameterList name="energy">
-      <Parameter name="PK type" type="string" value="pt energy"/>
+      <Parameter name="PK type" type="string" value="energy pt"/>
     </ParameterList>
   </ParameterList>
 
@@ -57,13 +57,11 @@
           <ParameterList name="solid phase">
             <Parameter name="eos type" type="string" value="constant"/>
             <Parameter name="reference conductivity" type="double" value="0.2"/>
-            <Parameter name="reference temperature" type="double" value="1.0"/>
+            <Parameter name="reference temperature" type="double" value="273.15"/>
           </ParameterList>
           <ParameterList name="liquid phase">
-            <Parameter name="eos type" type="string" value="liquid water"/>
-            <Parameter name="reference conductivity" type="double" value="2.0"/>
-            <Parameter name="reference temperature" type="double" value="1.0"/>
-            <Parameter name="polynomial expansion" type="Array(double)" value="{0.0, 1.0, 0.0}"/>
+            <Parameter name="eos type" type="string" value="iapws97"/>
+            <Parameter name="use iapws97" type="bool" value="true"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
@@ -187,12 +185,14 @@
     <ParameterList name="evaluators">
       <ParameterList name="thermodynamic_state">
         <Parameter name="evaluator type" type="string" value="iapws97 state"/>
+        <Parameter name="use iapws97" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="molar_density_liquid">
         <Parameter name="evaluator type" type="string" value="iapws97 density"/>
       </ParameterList>
       <ParameterList name="viscosity_liquid">
         <Parameter name="evaluator type" type="string" value="iapws97 viscosity"/>
+        <Parameter name="use iapws97" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="temperature">
         <Parameter name="evaluator type" type="string" value="iapws97 temperature"/>

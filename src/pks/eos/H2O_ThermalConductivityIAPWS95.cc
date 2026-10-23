@@ -46,7 +46,7 @@ H2O_ThermalConductivityIAPWS95::ThermalConductivity(double p, double T, double p
   } catch (...) {
     ierr_ = 1;
     std::stringstream ss;
-    ss << "invalid T=" << T << " conductivity=" << k;
+    ss << "invalid T=" << T << " and p=" << p << " for computing thermal conductivity\n";
     error_msg_ = ss.str();
   }
   return k;

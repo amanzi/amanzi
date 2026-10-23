@@ -319,32 +319,35 @@ TEST(EOS_IAPWS97_PT)
   CHECK_CLOSE(0.000508830641, prop.av, 1e-10);
 
   // full thermodynamics: PT formulation
-  prop = eos.ThermodynamicsPT(3.0, 500.0);
+  prop = std::get<0>(eos.ThermodynamicsPT(3.0, 500.0));
   CHECK_CLOSE(0.258041912e+1, prop.s, 1e-8);
   CHECK_EQUAL(prop.rgn, 1);
 
-  prop = eos.ThermodynamicsPT(0.0006112127, 323.15);
+  prop = std::get<0>(eos.ThermodynamicsPT(0.0006112127, 323.15));
   CHECK_CLOSE(2594.66, prop.h, 0.2);
   CHECK_EQUAL(prop.rgn, 2);
 
-  prop = eos.ThermodynamicsPT(30.0, 700.0);
+  prop = std::get<0>(eos.ThermodynamicsPT(30.0, 700.0));
   CHECK_CLOSE(0.103505092e+2, prop.cp, 1e-8);
   CHECK_EQUAL(prop.rgn, 2);
 
-  prop = eos.ThermodynamicsPT(25.5837018, 650.0);
+  eos.brent_root_itrs = 0;
+  prop = std::get<0>(eos.ThermodynamicsPT(25.5837018, 650.0));
   CHECK_CLOSE(0.502005554e+3, prop.w, 1e-6);
   CHECK_EQUAL(prop.rgn, 3);
-  CHECK(eos.get_itrs() < 3);
+  CHECK(eos.brent_root_itrs < 3);
 
-  prop = eos.ThermodynamicsPT(22.29305999995, 650.0);
+  eos.brent_root_itrs = 0;
+  prop = std::get<0>(eos.ThermodynamicsPT(22.29305999995, 650.0));
   CHECK_CLOSE(44.65762757698, prop.cp, 1e-9);
   CHECK_EQUAL(prop.rgn, 3);
-  CHECK(eos.get_itrs() < 3);
+  CHECK(eos.brent_root_itrs < 3);
 
-  prop = eos.ThermodynamicsPT(78.30956391692, 750.0);
+  eos.brent_root_itrs = 0;
+  prop = std::get<0>(eos.ThermodynamicsPT(78.30956391692, 750.0));
   CHECK_CLOSE(7.606960408824e+02, prop.w, 1e-6);
   CHECK_EQUAL(prop.rgn, 3);
-  CHECK(eos.get_itrs() < 3);
+  CHECK(eos.brent_root_itrs < 3);
 }
 
 
@@ -356,22 +359,23 @@ TEST(EOS_IAPWS97_TABLE_PT)
   Teuchos::ParameterList plist;
   IAPWS97 eos(plist);
 
-  int nitrs(0), mitrs(0), count(0);
+  int mitrs(0), count(0);
   double dp(5.0e-2), dT(1.0), p, T, rho; 
 
   for (int i = -50; i < 50; ++i) {
     for (int j = -50; j < 50; ++j) {
       p = eos.PC + i * dp; // Mpa
       T = eos.TC + j * dT;
-      rho = (eos.ThermodynamicsPT(p, T)).rho;
-      nitrs += eos.get_itrs();
-      mitrs = std::max(mitrs, eos.get_itrs());
+
+      auto nitrs = eos.brent_root_itrs;
+      rho = std::get<0>(eos.ThermodynamicsPT(p, T)).rho;
+      mitrs = std::max(mitrs, int(eos.brent_root_itrs - nitrs));
       count++;
       // std::cout << p << " " << T << " " << rho << std::endl;
     }
   }
-  std::cout << "mean itrs = " << double(nitrs) / count << std::endl;
-  std::cout << "max itrs = " << mitrs << std::endl;
+  std::cout << "mean Brent root itrs = " << double(eos.brent_root_itrs) / count << std::endl;
+  std::cout << "max Brent root itrs = " << mitrs << std::endl;
 }
 
 
@@ -386,7 +390,7 @@ TEST(EOS_IAPWS97_CRITICAL_POINT_PT)
   double dp(0.01), p;
   for (int i = -6; i < -2; ++i) {
     p = eos.PC + i * dp; 
-    auto prop = eos.ThermodynamicsPT(p, eos.TC);;
+    const auto& prop = std::get<0>(eos.ThermodynamicsPT(p, eos.TC));
     std::cout << "dp = " << p - eos.PC << " cp = " << prop.cp << " cv = " << prop.cv << std::endl;
   }
 }
@@ -400,8 +404,11 @@ TEST(EOS_IAPWS97_PH)
   Teuchos::ParameterList plist;
   IAPWS97 eos(plist);
 
-  double p, T, h, v, k, sigma, mu;
-  Properties prop;
+  plist.set<bool>("thermal conductivity enhancement", true);
+  IAPWS97 eos_k(plist);
+
+  double p, T, h, v, k, k2, sigma, mu;
+  Properties prop, liquid, vapor;
 
   p = eos.SaturationLineH(1700.0);
   CHECK_CLOSE(17.24175718, p, 1e-8);
@@ -461,6 +468,7 @@ TEST(EOS_IAPWS97_PH)
   CHECK_CLOSE(8.420460876e2, T, 1e-7);
 
   // other properties
+  // -- thermal conductivity
   k = eos.ThermalConductivity(998.0, 298.15, prop); // Table 4
   CHECK_CLOSE(0.607712868, k, 1e-9);
   k = eos.ThermalConductivity(0.0, 873.15, prop);
@@ -468,45 +476,59 @@ TEST(EOS_IAPWS97_PH)
   k = eos.ThermalConductivity(1200.0, 298.15, prop);
   CHECK_CLOSE(0.799038144, k, 1e-9);
 
+  std::tie(prop, liquid, vapor) = eos_k.ThermodynamicsPT(20.0, 620.0); // Table 7
+  k2 = eos.ThermalConductivityCriticalEnhancement(prop);
+  CHECK_CLOSE(0.126391714e-1, k2, 1e-10);
+  CHECK_CLOSE(0.481485195, prop.k, 1e-8);
+
+  std::tie(prop, liquid, vapor) = eos_k.ThermodynamicsPT(50.0, 620.0);
+  k2 = eos.ThermalConductivityCriticalEnhancement(prop);
+  CHECK_CLOSE(0.575816285e-2, k2, 1e-11);
+  CHECK_CLOSE(0.545038940, prop.k, 1e-8);
+
+  std::tie(prop, liquid, vapor) = eos_k.ThermodynamicsPT(0.3, 650.0); // Table 8
+  k2 = eos.ThermalConductivityCriticalEnhancement(prop);
+  CHECK_CLOSE(0.129246457e-6, k2, 1e-14);
+  CHECK_CLOSE(0.522311024e-1, prop.k, 1e-9);
+
+  std::tie(prop, liquid, vapor) = eos_k.ThermodynamicsPT(50.0, 800.0); 
+  k2 = eos.ThermalConductivityCriticalEnhancement(prop);
+  CHECK_CLOSE(0.664341394e-2, k2, 1e-11);
+  CHECK_CLOSE(0.177709914, prop.k, 1e-9);
+
+  // -- surface tension
   sigma = eos.SurfaceTension(300.0);
   CHECK_CLOSE(0.0716859625, sigma, 1e-10);
   sigma = eos.SurfaceTension(450.0);
   CHECK_CLOSE(0.0428914992, sigma, 1e-10);
 
-  mu = eos.Viscosity(998.0, 298.15); // Table 4
+  // -- viscosity (prop is not used)
+  mu = eos.Viscosity(998.0, 298.15, prop); // Table 4
   CHECK_CLOSE(8.89735100e-4, mu, 1e-12);
-  mu = eos.Viscosity(600.0, 873.15);
+  mu = eos.Viscosity(600.0, 873.15, prop);
   CHECK_CLOSE(7.7430195e-05, mu, 1e-12);
-  mu = eos.Viscosity(1.0, 873.15);
+  mu = eos.Viscosity(1.0, 873.15, prop);
   CHECK_CLOSE(3.2619287e-05, mu, 1e-12);
-  mu = eos.Viscosity(100.0, 873.15);
+  mu = eos.Viscosity(100.0, 873.15, prop);
   CHECK_CLOSE(3.5802262e-05, mu, 1e-12);
-  mu = eos.Viscosity(400.0, 1173.15);
+  mu = eos.Viscosity(400.0, 1173.15, prop);
   CHECK_CLOSE(6.4154608e-05, mu, 1e-12);
 
-  {
-    auto [prop, liquid, gas] = eos.ThermodynamicsPH(20.0, 2988.8);
-    CHECK(prop.rgn == 2);
-    CHECK(prop.x == 1.0); // gas phas
-  }
+  std::tie(prop, liquid, vapor) = eos.ThermodynamicsPH(20.0, 2988.8);
+  CHECK(prop.rgn == 2);
+  CHECK(prop.x == 1.0); // vapor phase
 
-  {
-    auto [prop, liquid, gas] = eos.ThermodynamicsPH(16.0, 2087.0);
-    CHECK(prop.rgn == 4);
-    CHECK_CLOSE(prop.h, (1.0 - prop.x) * liquid.h + prop.x * gas.h, 1e-8);
-    CHECK_CLOSE(prop.v, (1.0 - prop.x) * liquid.v + prop.x * gas.v, 1e-10);
-    CHECK(liquid.mu > gas.mu);
-  }
+  std::tie(prop, liquid, vapor) = eos.ThermodynamicsPH(16.0, 2087.0);
+  CHECK(prop.rgn == 4);
+  CHECK_CLOSE(prop.h, (1.0 - prop.x) * liquid.h + prop.x * vapor.h, 1e-8);
+  CHECK_CLOSE(prop.v, (1.0 - prop.x) * liquid.v + prop.x * vapor.v, 1e-10);
+  CHECK(liquid.mu > vapor.mu);
 
-  {
-    auto [prop, liquid, gas] = eos.ThermodynamicsPH(40.0, 2200.0);
-    CHECK(prop.rgn == 3);
-  }
+  std::tie(prop, liquid, vapor) = eos.ThermodynamicsPH(40.0, 2200.0);
+  CHECK(prop.rgn == 3);
 
-  {
-    auto [prop, liquid, gas] = eos.ThermodynamicsPH(20.0, 1750.0);
-    CHECK(prop.rgn == 3);
-  }
+  std::tie(prop, liquid, vapor) = eos.ThermodynamicsPH(20.0, 1750.0);
+  CHECK(prop.rgn == 3);
 }
 
 
@@ -518,16 +540,17 @@ TEST(EOS_IAPWS97_TABLE_PH)
   Teuchos::ParameterList plist;
   IAPWS97 eos(plist);
 
-  int nitrs(0), mitrs(0), count(0);
+  int mitrs(0), count(0);
   double dp(5.0e-2), dh(15.0), p, h, T, Tmin(1000.0), Tmax(100.0); 
 
   for (int i = -50; i < 50; ++i) {
     for (int j = -50; j < 50; ++j) {
       p = eos.PC + i * dp; // Mpa
       h = eos.HC + j * dh;
+
+      auto nitrs = eos.brent_root_itrs;
       auto [prop, liquid, gas] = eos.ThermodynamicsPH(p, h);
-      nitrs += eos.get_itrs();
-      mitrs = std::max(mitrs, eos.get_itrs());
+      mitrs = std::max(mitrs, int(eos.brent_root_itrs - nitrs));
       count++;
      
       if (prop.x == 0.0 || prop.x == 1.0) {
@@ -542,7 +565,7 @@ TEST(EOS_IAPWS97_TABLE_PH)
       // std::cout << p << " " << h << " " << prop.rho << std::endl;
     }
   }
-  std::cout << "mean itrs = " << double(nitrs) / count << std::endl;
+  std::cout << "mean Brent root itrs = " << double(eos.brent_root_itrs) / count << std::endl;
   std::cout << "max itrs = " << mitrs << std::endl;
   std::cout << "temperature variation = " << Tmin << " " << Tmax << std::endl;
 }

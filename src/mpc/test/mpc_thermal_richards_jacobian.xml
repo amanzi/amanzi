@@ -265,7 +265,7 @@
         <Parameter name="PK type" type="string" value="richards"/>
       </ParameterList>
       <ParameterList name="energy">
-        <Parameter name="PK type" type="string" value="pt energy"/>
+        <Parameter name="PK type" type="string" value="energy pt"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

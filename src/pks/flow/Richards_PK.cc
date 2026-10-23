@@ -465,7 +465,6 @@ Richards_PK::Setup()
       ->AddComponent("dpre", AmanziMesh::Entity_kind::CELL, 1);
     cnls_limiter_ = Teuchos::rcp(new CompositeVector(cvs1));
   }
-  
 }
 
 
@@ -562,22 +561,22 @@ Richards_PK::Initialize()
     oplist_pc.set<std::string>("nonlinear coefficient", nonlinear_coef);
   }
   if (coupled_to_matrix_ || assumptions_.flow_on_manifold) {
-    if (!oplist_matrix.isParameter("use manifold flux"))
-      oplist_matrix.set<bool>("use manifold flux", true);
+    if (!oplist_matrix.isParameter("manifolds")) oplist_matrix.set<bool>("manifolds", true);
+    if (!oplist_matrix.isParameter("use manifold flux")) oplist_matrix.set<bool>("use manifold flux", true);
+
+    if (!oplist_pc.isParameter("manifolds")) oplist_pc.set<bool>("manifolds", true);
+    if (!oplist_pc.isParameter("use manifold flux")) oplist_pc.set<bool>("use manifold flux", true);
   }
 
   Operators::PDE_DiffusionFactory opfactory(oplist_matrix, mesh_);
 
   auto rho_cv = S_->GetPtr<CV_t>(mass_density_liquid_key_, Tags::DEFAULT);
   opfactory.SetVariableGravitationalTerm(gravity_, rho_cv);
+  opfactory.SetVariableScalarCoefficient(alpha_upwind_, alpha_upwind_dP_);
 
   if (!assumptions_.flow_on_manifold) {
     SetAbsolutePermeabilityTensor();
     opfactory.SetVariableTensorCoefficient(K_);
-    opfactory.SetVariableScalarCoefficient(alpha_upwind_, alpha_upwind_dP_);
-  } else {
-    auto kptr = S_->GetPtrW<CV_t>(alpha_key_, Tags::DEFAULT, alpha_key_);
-    opfactory.SetVariableScalarCoefficient(kptr);
   }
 
   op_matrix_diff_ = opfactory.Create();

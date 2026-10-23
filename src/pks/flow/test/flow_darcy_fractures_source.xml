@@ -72,6 +72,7 @@
             <Parameter name="regions" type="Array(string)" value="{fracture 1}"/>
             <Parameter name="spatial distribution method" type="string" value="none"/>
             <Parameter name="use volume fractions" type="bool" value="false"/>
+            <Parameter name="scale by aperture" type="bool" value="true"/>
             <ParameterList name="well">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="0.080"/>

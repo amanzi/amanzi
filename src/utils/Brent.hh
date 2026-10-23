@@ -150,6 +150,41 @@ bracketRoot(const F& f, double start, double delta, int* itrs)
 
 
 /* ******************************************************************
+* Symmtric version of the bracketRoot where initial guess is centered
+* and brackets grow by ten persent with each iteration.
+*
+* Return <a,b> where f(a) * f(b) is negative.
+****************************************************************** */
+template<class F>
+std::pair<double, double>
+bracketRootSymmetric(const F& f, double start, double delta, int* itrs)
+{
+  AMANZI_ASSERT(delta > 0.0);
+  AMANZI_ASSERT(itrs != nullptr);
+  AMANZI_ASSERT(*itrs >= 0);
+
+  int max_itrs(*itrs);
+  *itrs = 0;
+  while (*itrs < max_itrs) {
+    double a = start - delta;
+    double b = start + delta;
+
+    double fa = f(a);
+    double fb = f(b);
+
+    if (fa == 0.0) return std::make_pair(a, a);
+    else if (fb == 0.0) return std::make_pair(b, b);
+    else if (fa * fb < 0.0) return std::make_pair(a, b);
+    else delta *= 1.1;
+
+    ++(*itrs);
+  }
+
+  *itrs = -1;
+  return std::make_pair(start, start);
+}
+
+/* ******************************************************************
 * A local minimum of a function f(x) in an interval [a, b].
 * Follows closely to https://www.youtube.com/watch?v=BQm7uTYC0sg
 ****************************************************************** */

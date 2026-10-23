@@ -1023,9 +1023,9 @@ Flow_PK::DeriveFaceValuesFromCellValues(const Epetra_MultiVector& ucells,
 ****************************************************************** */
 double
 Flow_PK::WaterVolumeChangePerSecond(const std::vector<int>& bc_model,
-                                    const Epetra_MultiVector& vol_flowrate) const
+                                    const Epetra_MultiVector& flowrate) const
 {
-  const auto& fmap = vol_flowrate.Map();
+  const auto& fmap = flowrate.Map();
 
   double volume = 0.0;
   for (int c = 0; c < ncells_owned; c++) {
@@ -1036,11 +1036,7 @@ Flow_PK::WaterVolumeChangePerSecond(const std::vector<int>& bc_model,
 
       if (bc_model[f] != Operators::OPERATOR_BC_NONE && f < nfaces_owned) {
         int g = fmap.FirstPointInElement(f);
-        if (fdirs[i] >= 0) {
-          volume -= vol_flowrate[0][g];
-        } else {
-          volume += vol_flowrate[0][g];
-        }
+        volume -= flowrate[0][g] * fdirs[i];
       }
     }
   }

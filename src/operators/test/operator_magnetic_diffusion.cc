@@ -159,6 +159,12 @@ MagneticDiffusion2D(double dt,
   // CompositeVector B0(B);
   // Epetra_MultiVector& B0f = *B0.ViewComponent("face");
 
+  // Don't try to modify the structure of a matrix after it has been assembled/computed/etc.
+  Teuchos::RCP<PDE_Accumulation> op_acc =
+    Teuchos::rcp(new PDE_Accumulation(AmanziMesh::Entity_kind::NODE, global_op));
+  op_acc->SetBCs(bc1, bc1);
+
+
   int cycle(0);
   double divB0(0.0);
   while (told + dt / 2 < tend) {
@@ -172,9 +178,6 @@ MagneticDiffusion2D(double dt,
     CompositeVector phi(cvs_e);
     phi.PutScalar(1.0 / Kc(0, 0));
 
-    Teuchos::RCP<PDE_Accumulation> op_acc =
-      Teuchos::rcp(new PDE_Accumulation(AmanziMesh::Entity_kind::NODE, global_op));
-    op_acc->SetBCs(bc1, bc1);
     op_acc->AddAccumulationTerm(phi, 1.0, "node");
 
     // update electric boundary conditions

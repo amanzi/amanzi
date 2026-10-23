@@ -76,7 +76,7 @@ TEST(EVALUATORS)
   S->Require<CV_t, CVS_t>(state_key, Tags::DEFAULT, state_key)
     .SetMesh(mesh)
     ->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, TS97_t_size);
+    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, TSPH_t_size);
 
   Teuchos::ParameterList elist1(state_key);
   elist1.set<std::string>("tag", "");

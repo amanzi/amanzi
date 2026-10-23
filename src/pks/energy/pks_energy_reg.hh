@@ -20,8 +20,8 @@
 namespace Amanzi {
 namespace Energy {
 
-RegisteredPKFactory<EnergyPressureTemperature_PK> EnergyPressureTemperature_PK::reg_("pt energy");
-RegisteredPKFactory<EnergyPressureEnthalpy_PK> EnergyPressureEnthalpy_PK::reg_("ph energy");
+RegisteredPKFactory<EnergyPressureTemperature_PK> EnergyPressureTemperature_PK::reg_("energy pt");
+RegisteredPKFactory<EnergyPressureEnthalpy_PK> EnergyPressureEnthalpy_PK::reg_("energy ph");
 RegisteredPKFactory<EnergyTwoPhase_PK> EnergyTwoPhase_PK::reg_("two-phase energy");
 
 } // namespace Energy

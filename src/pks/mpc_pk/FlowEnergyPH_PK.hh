@@ -22,6 +22,7 @@ Process kernel that strongly couples Flow PK with Energy PK.
 #include "EvaluatorIndependentFunction.hh"
 #include "EvaluatorSecondaryMonotype.hh"
 #include "IAPWS97_StateEvaluators.hh"
+#include "OutputXDMF.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_Advection.hh"
 #include "PDE_Diffusion.hh"
@@ -93,13 +94,11 @@ protected:
   PreconditionerType precon_type_;
   
  private:
-
   Teuchos::RCP<TreeVector> res_scale_;
   bool compute_scaling_completed_, left_scaling_, right_scaling_;
   double left_scaling_eps_;
   double P0_, H0_;
 
-  
   void RemoveFluxContinuityEquations_(Teuchos::RCP<Operators::PDE_Diffusion>& pde);
     
  private:
@@ -125,7 +124,7 @@ protected:
   Key bcs_flow_key_, bcs_enthalpy_key_;
   Key permeability_key_, aperture_key_;
   Key conductivity_key_, conductivity_eff_key_, conductivity_gen_key_;
-  Key alpha_key_, beta_key_, beta_jacobian_key_;
+  Key heat_src_key_, alpha_key_, beta_key_;
 
   // factory registration
   static RegisteredPKFactory<FlowEnergyPH_PK> reg_;

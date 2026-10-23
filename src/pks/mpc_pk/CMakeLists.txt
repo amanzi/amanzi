@@ -65,10 +65,12 @@ if (ENABLE_AmanziPhysicsModule)
       PK_MPC.hh
       PK_MPCAdditive.hh
       ChemistryMatrixFracture_PK.hh    
-      EnergyMatrixFracture_PK.hh
-      FlowEnergyPT_PK.hh
+      EnergyPTMatrixFracture_PK.hh
+      EnergyPHMatrixFracture_PK.hh
       FlowEnergyPH_PK.hh
-      FlowEnergyMatrixFracture_PK.hh
+      FlowEnergyPHMatrixFracture_PK.hh
+      FlowEnergyPT_PK.hh
+      FlowEnergyPTMatrixFracture_PK.hh
       FlowMatrixFracture_PK.hh
       FlowMechanics_PK.hh
       MechanicsFlow_PK.hh
@@ -89,10 +91,12 @@ if (ENABLE_AmanziPhysicsModule)
       PK_MPCSequential.cc 
       PK_MPCSubcycled.cc 
       ChemistryMatrixFracture_PK.cc   
-      EnergyMatrixFracture_PK.cc
-      FlowEnergyPT_PK.cc
+      EnergyPTMatrixFracture_PK.cc
+      EnergyPHMatrixFracture_PK.cc
       FlowEnergyPH_PK.cc
-      FlowEnergyMatrixFracture_PK.cc
+      FlowEnergyPHMatrixFracture_PK.cc
+      FlowEnergyPT_PK.cc
+      FlowEnergyPTMatrixFracture_PK.cc
       FlowMatrixFracture_PK.cc
       FlowMechanics_PK.cc
       HeatDiffusionMatrixFracture.cc

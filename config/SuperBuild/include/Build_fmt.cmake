@@ -28,6 +28,7 @@ set(FMT_CMAKE_CACHE_ARGS
 # --- Add external project build and tie to the FMT build target
 ExternalProject_Add(${FMT_BUILD_TARGET}
                     DEPENDS   ${FMT_PACKAGE_DEPENDS}             # Package dependency target
+                    PREFIX    ${FMT_prefix_dir}
                     TMP_DIR   ${FMT_tmp_dir}                     # Temporary files directory
                     STAMP_DIR ${FMT_stamp_dir}                   # Timestamp and log directory
                     # -- Download and URL definitions

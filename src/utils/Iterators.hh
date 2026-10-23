@@ -29,7 +29,7 @@ namespace Impl {
 
 template<typename View_type>
 struct View_iter {
-  using iterator_category = std::forward_iterator_tag;
+  using iterator_category = std::random_access_iterator_tag;
   using value_type = typename View_type::value_type;
   using difference_type = int;
   using pointer = value_type*;
@@ -44,6 +44,7 @@ struct View_iter {
 
   KOKKOS_INLINE_FUNCTION reference operator*() const { return v_(i_); }
   KOKKOS_INLINE_FUNCTION pointer operator->() { return &v_(i_); }
+  KOKKOS_INLINE_FUNCTION reference operator[](const difference_type& n) const { return v_(i_ + n); }
 
   // prefix
   KOKKOS_INLINE_FUNCTION View_iter& operator++()
@@ -61,6 +62,12 @@ struct View_iter {
   {
     View_iter tmp(*this);
     ++(*this);
+    return tmp;
+  }
+  KOKKOS_INLINE_FUNCTION View_iter operator--(int)
+  {
+    View_iter tmp(*this);
+    --(*this);
     return tmp;
   }
 
@@ -114,11 +121,6 @@ struct View_iter {
     return *this;
   }
   KOKKOS_INLINE_FUNCTION View_iter& operator-=(const int& decr)
-  {
-    this->i_ -= decr;
-    return *this;
-  }
-  KOKKOS_INLINE_FUNCTION View_iter operator-(const int& decr)
   {
     this->i_ -= decr;
     return *this;

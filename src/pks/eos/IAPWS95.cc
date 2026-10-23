@@ -26,47 +26,59 @@ namespace AmanziEOS {
 * F(rho) = F3(rho) - p = 0
 ****************************************************************** */
 struct Frho95 {
-  Frho95(double p, double T, IAPWS95* eos) : p_(p), T_(T), eos_(eos) {};
+  Frho95(double p, double T, IAPWS95* eos) : p_(p), T_(T), eos_(eos), RT_(IAPWS95::R * T / 1000.0) {};
   double operator()(double rho) const {
-    double delta = rho / eos_->RHOC;
+    double delta = rho / IAPWS95::RHOC;
 
-    double gd = eos_->ResidualPart(rho, T_)[1];
-    double po = (1.0 + delta * gd) * eos_->R * T_ * rho / 1000.0;
+    double gd = eos_->ResidualPartFirst(rho, T_)[1];
+    double po = RT_ * (1.0 + delta * gd) * rho;
     return po - p_;
   }
 
   double p_, T_;
   IAPWS95* eos_;
+  const double RT_;
 };
 
 
 /* ******************************************************************
-* Calculate all properties
+* Calculate all properties for (p,T) input data
 ****************************************************************** */
 std::tuple<Properties, Properties, Properties>
 IAPWS95::ThermodynamicsPT(double p, double T)
 {
-  itrs_ = 20;
+  // initial guess and estimates of root brackets
+  int itrs = 20;
   double tol = 1e-9;
-  double rho0 = eos97_.ThermodynamicsPT(p, T).rho;
-  double rhomin = rho0 * 0.905;
+  double rho0 = std::get<0>(eos97_.ThermodynamicsPT(p, T)).rho; 
+  double rhomin = rho0 * 0.995;
   double rhomax = rho0 * 1.005;
 
   Frho95 f(p, T, this);
-  double rho = Utils::findRootBrent(f, rhomin, rhomax, tol, &itrs_);
+  double rho = Utils::findRootBrent(f, rhomin, rhomax, tol, &itrs);
+  brent_root_itrs += itrs;
 
-  // refine soltution strategy starting with bracketing a root
-  if (itrs_ < 0) {
-    itrs_ = 20;
-    auto [rhomin, rhomax] = Utils::bracketRoot(f, rho0, rho0 * 0.01, &itrs_);
-    itrs_ = 20;
-    rho = Utils::findRootBrent(f, rhomin, rhomax, tol, &itrs_);
+  // refine soltution strategy by bracketing a root starting with a twice 
+  // bigger bracket than before
+  if (itrs < 0) {
+    itrs = 20;
+    auto [rhomin, rhomax] = Utils::bracketRootSymmetric(f, rho0, rho0 * 0.01, &itrs);
+    AMANZI_ASSERT(itrs >= 0);
+    brent_bracket_itrs += itrs;
+
+    itrs = 20;
+    rho = Utils::findRootBrent(f, rhomin, rhomax, tol, &itrs);
+    AMANZI_ASSERT(itrs > 0);
+    brent_root_itrs += itrs;
   }
 
   return ThermodynamicsRhoT(rho, T);
 }
 
 
+/* ******************************************************************
+* Calculate all properties for (rho,T) input data
+****************************************************************** */
 std::tuple<Properties, Properties, Properties>
 IAPWS95::ThermodynamicsRhoT(double rho, double T)
 {
@@ -83,7 +95,7 @@ IAPWS95::ThermodynamicsRhoT(double rho, double T)
     rhov0 = DensityVapor(T);
 
     if (rhol0 > rho && rho > rhov0) {
-      std::tie(rhol, rhov, p) = SaturationLine(T, rhol0, rhov0);
+      std::tie(rhol, rhov, p) = SaturationLineT(T, rhol0, rhov0);
       if (rhol * (1.0 + tol) > rho && rho > rhov * (1.0 - tol)) {
         liquid = PopulateProperties(rhol, T);
         vapor = PopulateProperties(rhov, T);
@@ -130,6 +142,68 @@ IAPWS95::ThermodynamicsRhoT(double rho, double T)
 
 
 /* ******************************************************************
+* Calculate all properties for (p, h) input data
+****************************************************************** */
+std::tuple<Properties, Properties, Properties>
+IAPWS95::ThermodynamicsPH(double p, double h)
+{
+  Properties prop, liquid, vapor;
+
+  int phase = 1;
+  if (p < PC) {
+    const SaturationState& sat = SaturationLineP(p);
+    double hl = sat.liquid.h;
+    double hv = sat.vapor.h;
+
+    if (h < hl) {
+      prop = PopulatePropertiesFromEntropy1(p, h);
+      prop.rgn = (int)Phase_t::Liquid;
+      liquid = prop;
+    } else if (h > hv) {
+      prop = PopulatePropertiesFromEntropy1(p, h);
+      prop.rgn = (int)Phase_t::Gas;
+      vapor = prop;
+    } else {
+      prop = PopulatePropertiesFromEntropy2(p, h, sat);
+      prop.rgn = (int)Phase_t::TwoPhases;
+      liquid = sat.liquid;
+      vapor = sat.vapor;
+      phase = 2;
+    }
+  } else {
+    prop = PopulatePropertiesFromEntropy1(p, h);
+    prop.rgn = (h < HC) ? (int)Phase_t::CompressibleLiquid : (int)Phase_t::SupercriticalLiquid;
+  }
+
+  // extend state with kinematic properties 
+  // for a homogeneous model, a default is logarithmic interpolation in volume fraction
+  double T = prop.T;
+  if (phase == 1) {
+    double rho = prop.rho;
+    prop.mu = Viscosity(rho, T, prop);
+    prop.k = ThermalConductivity(rho, T, prop);
+  } else {
+    double rhol = liquid.rho;
+    double rhov = vapor.rho;
+    double x = prop.x;
+    double alpha = x / rhol / ((1 - x) / rhol + x / rhov);
+
+    liquid.mu = Viscosity(rhol, T, liquid);
+    vapor.mu = Viscosity(rhov, T, vapor);
+    prop.mu = std::pow(liquid.mu, 1.0 - alpha) * std::pow(vapor.mu, alpha);
+
+    liquid.k = ThermalConductivity(rhol, T, liquid);
+    vapor.k = ThermalConductivity(rhov, T, vapor);
+    prop.k = std::pow(liquid.k, 1.0 - alpha) * std::pow(vapor.k, alpha);
+
+    prop.kt = std::pow(liquid.kt, 1.0 - alpha) * std::pow(vapor.kt, alpha);
+  }
+
+  return { prop, liquid, vapor };
+}
+
+
+/* ******************************************************************
 * Populate state from the Helmholtz free energy
 ****************************************************************** */
 Properties
@@ -143,25 +217,171 @@ IAPWS95::PopulateProperties(double rho, double T)
   double delta = rho / RHOC;
   double tau = TC / T;
 
-  double A = 1.0 + delta * g[1] - delta * tau * g[4];
+  double delta2 = delta * delta;
+  double tau2 = tau * tau;
+  double RT = R * T;
+
+  double dg1 = delta * g[1];
+  double dg3 = delta2 * g[3];
+  double delta_tau_g4 = delta * tau * g[4];
+
+  const double Z = 1.0 + dg1;
+  const double D = 1.0 + 2.0 * dg1 + dg3;
+  const double A = Z - delta_tau_g4;
+
+  double g02 = g0[2] + g[2];
+  double g05 = g0[5] + g[5];
+  double tau_g02 = tau * g02;
+  double tau2_g05 = tau2 * g05;
 
   prop.rho = rho;
   prop.T = T;
-  prop.p = (1 + delta * g[1]) * R * T * rho / 1000.0;
-  prop.h = R * T * (1 + tau * (g0[2] + g[2]) + delta * g[1]);
-  prop.u = R * T * tau * (g0[2] + g[2]);
-  prop.s = R * (tau * (g0[2] + g[2]) - g0[0] - g[0]);
-  prop.cv = -R * tau * tau * (g0[5] + g[5]);
-  prop.cp = -R * tau * tau * (g0[5] + g[5]) + A * A / (1.0 + 2 * delta * g[1] + delta * delta * g[3]);
-  prop.ap = (1 - delta * tau * g[4] / (1 + delta * g[1])) / T;
-  prop.bp = rho * (1 + (delta * g[1] + delta * delta * g[3]) / (1 + delta * g[1]));
-  prop.w = std::sqrt(R * T * 1000.0 * (1.0 + 2 * delta * g[1] + delta * delta * g[3]
-                                           - A * A / (tau * tau * (g0[5] + g[5]))));
 
-  prop.v = 1 / rho;
-  prop.helmholtz = R * T * (g0[0] + g[0]);
+  prop.p = Z * RT * rho / 1000.0;
+  prop.h = RT * (1.0 + tau_g02 + dg1);
+  prop.u = RT * tau_g02;
+  prop.s = R * (tau_g02 - g0[0] - g[0]);
+
+  prop.cv = -R * tau2_g05;
+  prop.cp = prop.cv + R * A * A / D;
+
+  prop.ap = (1.0 - delta_tau_g4 / Z) / T;
+  prop.av = (Z - delta_tau_g4) / (T * D);
+  prop.bp = rho * (1.0 + (dg1 + dg3) / Z);
+
+  prop.w = std::sqrt(1000.0 * RT * (D - A * A / tau2_g05));
+
+  prop.v = 1.0 / rho;
+
+  prop.helmholtz = RT * (g0[0] + g[0]);
   prop.gibbs = prop.helmholtz + 1000.0 * prop.p * prop.v;
-  prop.kt = 1000.0 / (rho * R * T * (1 + 2 * delta * g[1] + delta * delta * g[3]));
+
+  prop.kt = 1000.0 / (rho * RT * D);
+
+  return prop;
+}
+
+
+/* ******************************************************************
+* Populate state from entropy at its derivatives
+****************************************************************** */
+Properties
+IAPWS95::PopulatePropertiesFromEntropy1(double p, double h)
+{
+  Properties prop;
+
+  std::array<double, 6> a = EntropyDerivativesPH(p, h); 
+  double s   = a[0];
+  double sp  = a[1];
+  double sh  = a[2];
+  double spp = a[3];
+  double sph = a[4];
+  double shh = a[5];
+
+  double T = 1.0 / sh;
+  double Tp = -sph / (sh * sh);
+  double Th = -shh / (sh * sh);
+
+  // dh = T ds + 1000 v dp, because p is in MPa and h is in kJ/kg.
+  double v = -sp / (1000.0 * sh);
+  double vp = -(spp * sh - sp * sph) / (1000.0 * sh * sh);
+  double vh = -(sph * sh - sp * shh) / (1000.0 * sh * sh);
+
+  double rho = 1.0 / v;
+  double rhop = -vp / (v * v);
+  double rhoh = -vh / (v * v);
+
+  double K = spp - sph * sph / shh;
+  double rhop_T = 1000.0 * sh * K / (sp * sp);
+
+  // Along isentrope ds = sp dp + sh dh = 0
+  // hence (dh/dp)_s = -sp / sh = 1000 v
+  double drho_dp_s = rhop + 1000.0 * v * rhoh;
+  prop.cp = Th > 0.0 ? 1.0 / Th : std::numeric_limits<double>::infinity();
+  prop.cv = -(sh * sh * spp - 2.0 * sp * sh * sph + sp * sp * shh) / (K * shh);
+  prop.w = drho_dp_s > 0.0 ? std::sqrt(1.0e6 / drho_dp_s) : std::numeric_limits<double>::quiet_NaN();
+
+  prop.p = p;
+  prop.T = T;
+  prop.u = h - p * v * 1000.0;
+  prop.h = h;
+  prop.s = s;
+
+  prop.av = vh / (v * Th);
+  prop.bp = rho * rho / (p * rhop_T);
+  prop.kt = rhop_T / rho;
+  prop.ap = prop.av * prop.bp / rho;
+
+  prop.v = v;
+  prop.rho = rho;
+
+  return prop;
+}
+
+
+/* ******************************************************************
+* Populate state from entropy at its derivatives
+****************************************************************** */
+Properties
+IAPWS95::PopulatePropertiesFromEntropy2(double p, double h, const SaturationState& sat)
+{
+  Properties prop;
+
+  double hl = sat.liquid.h;
+  double sl = sat.liquid.s;
+  double vl = sat.liquid.v;
+
+  double hv = sat.vapor.h;
+  double sv = sat.vapor.s;
+  double vv = sat.vapor.v;
+
+  double dh = hv - hl;
+  double dv = vv - vl;
+
+  double x = (h - hl) / dh;
+  x = std::clamp(x, 0.0, 1.0);
+
+  double dh_dp = sat.hv_p - sat.hl_p;
+  double dv_dp = sat.vv_p - sat.vl_p;
+
+  double xh = 1.0 / dh;
+  double xp = -(sat.hl_p + x * dh_dp) / dh;
+
+  double T = sat.Tsat;
+  double Tp = sat.Tsat_p;
+  double Th = 0.0;
+
+  // volume and its derivatives
+  double v = vl + x * dv;
+  double vp = sat.vl_p + x * dv_dp + xp * dv;
+  double vh = xh * dv;
+
+  double rhop = -vp / (v * v);
+  double rhoh = -vh / (v * v);
+
+  double s = sl + x * (sv - sl);
+  double sh = 1.0 / T;
+  double sp = -1000.0 * v / T;
+
+  double shh = 0.0;
+  double sph = -Tp / (T * T);
+  double spp = 1000.0 * (-vp / T + v * Tp / (T * T));
+
+  prop.p = p;
+  prop.T = T;
+  prop.h = h;
+
+  double drho_dp_s = rhop + 1000.0 * v * rhoh;
+  prop.w = drho_dp_s > 0.0 ? std::sqrt(1.0e6 / drho_dp_s) : 0.0;
+
+  prop.rho = 1.0 / v;
+  prop.v = v;
+  prop.u = h - p * v * 1000.0;
+  prop.s = s;
+  prop.x = x;
+
+  prop.helmholtz = prop.u - T * s;
+  prop.gibbs = h - T * s;
 
   return prop;
 }
@@ -198,179 +418,100 @@ IAPWS95::IdealGasPart(double rho, double T)
 
 
 /* ******************************************************************
-* Residual part of Hemholtz free energy
-* http://www.iapws.org/relguide/IAPWS-95.html
+* Derivatives are computed outside the saturation dome and inside 
+* the metastable extension which requires direct call for computing 
+* the ideal gas and residual parts of energy.
 ****************************************************************** */
-std::array<double, 6>
-IAPWS95::ResidualPart(double rho, double T)
+FrhoT::Vector
+FrhoT::operator()(FrhoT::Vector& x)
 {
-  double delta, tau;
-  delta = rho / RHOC;
-  tau = TC / T;
+  const auto& g0 = eos_->IAPWS95::IdealGasPart(x[0], x[1]);
+  const auto& gr = eos_->IAPWS95::ResidualPartFirst(x[0], x[1]);
 
-  double dpow[Nd_max];
-  double tpow[Nt_max];
-  double epow[Nc_max];
+  double delta = x[0] / IAPWS95::RHOC;
+  double tau = IAPWS95::TC / x[1];
 
-  dpow[0] = 1.0;
-  for (int i = 1; i < Nd_max; ++i)
-    dpow[i] = dpow[i - 1] * delta;
+  Vector r(x.size());
+  r[0] = x[0] * IAPWS95::R * x[1] * (1 + delta * gr[1]) / 1000 - p_;
+  r[1] = IAPWS95::R * x[1] * (1 + tau * (g0[2] + gr[2]) + delta * gr[1]) - h_;
+  return r;
+}
 
-  tpow[0] = 1.0;
-  for (int i = 1; i < Nt_max; ++i)
-    tpow[i] = tpow[i - 1] * tau;
 
-  epow[0] = 1.0;
-  for (int i = 1; i < Nc_max; ++i)
-    epow[i] = std::exp(-dpow[i]);
-
-  double tpow1[7];
-  tpow1[0] = std::pow(tau, -0.5);
-  tpow1[1] = std::pow(tau, 0.875);
-  tpow1[2] = tau;
-  tpow1[3] = 1.0 / tpow1[0];
-  tpow1[4] = std::pow(tau, 0.75);
-  tpow1[5] = std::pow(tau, 0.375);
-  tpow1[6] = tau;
-
-  double g(0.0), gd(0.0), gt(0.0), gdd(0.0), gdt(0.0), gtt(0.0);
-
-  // polynomial terms
-  for (int i = 0; i < 7; ++i) {
-    g += n1[i] * dpow[d1[i]] * tpow1[i];
-    if (d1[i] > 0) gd += n1[i] * d1[i] * dpow[d1[i] - 1] * tpow1[i];
-    if (d1[i] > 1) gdd += n1[i] * d1[i] * (d1[i] - 1) * dpow[d1[i] - 2] * tpow1[i];
-
-    double tmp1 = dpow[d1[i]];
-    double tmp2 = std::pow(tau, t1[i] - 1.0);
-    gt += n1[i] * t1[i] * tmp1 * tmp2;
-    if (t1[i] != 1.0) gtt += n1[i] * t1[i] * (t1[i] - 1.0) * tmp1 * std::pow(tau, t1[i] - 2.0);
-
-    if (d1[i] > 0) gdt += n1[i] * d1[i] * t1[i] * dpow[d1[i] - 1] * tmp2;
-  }
-
-  // exponential terms
-  double tmp1, tmp2, tmp3, tmp4, tmp5, tmp6;
-  for (int i = 0; i < 44; ++i) {
-    int c = c2[i];
-    int d = d2[i];
-    int t = t2[i];
-    double tmp1 = dpow[d] * epow[c];
-    double tmp2 = tpow[t];
-
-    g += n2[i] * tmp1 * tmp2;
-    gd += n2[i] * tmp2 * dpow[d - 1] * (d - c * dpow[c]) * epow[c]; 
-    if (d == 1) {
-      gdd += n2[i] * tmp2 * epow[c] * c * dpow[c - 1] * (-1 + c * dpow[c] - c);
+std::array<double, 6>
+IAPWS95::EntropyDerivativesPH(double p, double h)
+{
+  auto [prop, liquid, vapor] = eos97_.ThermodynamicsPH(p, h); 
+  double rho0, T0;
+  if (prop.rgn == 4) {
+    double dhl = std::fabs(h - liquid.h);
+    double dhv = std::fabs(h - vapor.h);
+    if (dhl < dhv) {
+      rho0 = liquid.rho;
+      T0 = liquid.T;
     } else {
-      gdd += n2[i] * tmp2 * epow[c] * dpow[d - 2] * ((d - c * dpow[c]) * (d - 1 - c * dpow[c]) - c * c * dpow[c]);
+      rho0 = vapor.rho;
+      T0 = vapor.T;
     }
-
-    gt += n2[i] * t * tmp1 * tpow[t - 1];
-    if (t > 1) gtt += n2[i] * t * (t - 1) * tmp1 * tpow[t - 2];
-
-    gdt += n2[i] * t * tpow[t - 1] * dpow[d - 1] * (d - c * dpow[c]) * epow[c]; 
+  } else {
+    rho0 = prop.rho;
+    T0 = prop.T;
   }
 
-  // Gaussian terms
-  double al, be, ga;
-  for (int i = 0; i < 3; ++i) {
-    int d = d3[i];
-    int t = t3[i];
-    al = alpha3[i];
-    be = beta3[i];
-    ga = gamma3[i];
+  // refine initial quess
+  int itrs = 20;
+  double tol(1e-11);
+  FrhoT f(p, h, this);
+  FrhoT::Vector x0(2);
+  x0[0] = rho0;
+  x0[1] = T0;
+  FrhoT::Vector sol = PowellHybrid(x0, f, &itrs, tol);
+  AMANZI_ASSERT(itrs >= 0);
+  powell_root_itrs += itrs;
 
-    tmp1 = al * (delta - 1) * (delta - 1);
-    tmp2 = be * (tau - ga) * (tau - ga);
-    tmp3 = std::exp(-tmp1 - tmp2);
-    tmp4 = dpow[d] * tpow[t];
-    tmp5 = t / tau - 2 * be * (tau - ga);
+  double rho = sol[0];
+  double T = sol[1];
+  return EntropyDerivativesPHbase(rho, T);
+}
 
-    g += n3[i] * tmp4 * tmp3;
 
-    // we know that d > 1, so the result is "symmetric" to gt and gtt
-    gd += n3[i] * tmp3 * dpow[d - 1] * tpow[t] * (d - 2 * al * delta * (delta - 1));
-    gdd += n3[i] * dpow[d - 2] * tpow[t] * tmp3 *
-      (2 * al * delta * delta * (2 * tmp1 - 1.0) - 4 * d * al * delta * (delta - 1) + d * (d - 1));
+std::array<double, 6>
+IAPWS95::EntropyDerivativesPHbase(double rho, double T)
+{
+  // use the homogeneous IAPWS95 state
+  auto prop = PopulateProperties(rho, T);
+  double s = prop.s;
+  double cp = prop.cp;
+  double alpha = prop.av;
 
-    gt += n3[i] * tmp4 * tmp3 * (t / tau - 2 * be * (tau - ga));
-    gtt += n3[i] * tmp4 * tmp3 * (tmp5 * tmp5 - t / tau / tau - 2 * be);
+  double sp = -1000.0 / (rho * T);  // p in MPa, h in kJ/kg
+  double sh = 1.0 / T;
 
-    gdt += n3[i] * tmp4 * tmp3 * (d / delta - 2 * al * (delta - 1)) * (t / tau - 2 * be * (tau - ga)); 
-  }
+  double T2 = T * T;
+  double rho2 = rho * rho;
+  double Tp = 1000.0 * (alpha * T - 1.0) / (rho * cp);
+  double rhop_h = rho2 / (prop.p * prop.bp) - rho * alpha * Tp;
 
-  // other terms
-  double theta;
-  double del, deld(0.0), delt(0.0), deldd(0.0), deldt(0.0), deltt(0.0);
-  double psi, psid, psit, psidd, psidt, psitt;
-
-  for (int i = 0; i < 2; ++i) {
-    tmp1 = (delta - 1) * (delta - 1);
-    tmp2 = (tau - 1) * (tau - 1);
-
-    tmp3 = std::pow(tmp1, 0.5 / beta4[i]);
-    tmp4 = std::pow(tmp1, a4[i]);
-    theta = (1.0 - tau) + A[i] * tmp3;
-    del = theta * theta + B[i] * tmp4;
-    psi = std::exp(-C[i] * tmp1 - D[i] * tmp2);
-
-    psid = -2 * C[i] * (delta - 1) * psi;
-    psit = -2 * D[i] * (tau - 1) * psi;
-
-    psidd = 2 * C[i] * (2 * C[i] * tmp1 - 1) * psi;
-    psitt = 2 * D[i] * (2 * D[i] * tmp2 - 1) * psi;
-    psidt = 4 * C[i] * D[i] * (delta - 1) * (tau - 1) * psi;
-
-    if (delta != 1.0) {
-      tmp5 = theta * A[i] / beta4[i] * tmp3 / tmp1 + B[i] * a4[i] * tmp4 / tmp1;
-      tmp6 = A[i] / beta4[i] * tmp3 / tmp1;
-      deld = 2 * (delta - 1) * tmp5;
-      deldd = 2 * tmp5 + tmp1 * (4 * B[i] * a4[i] * (a4[i] - 1) * tmp4 / tmp1 / tmp1 +
-                                 2 * tmp6 * tmp6 + 
-                                 4 * A[i] * theta / beta4[i] * (0.5 / beta4[i] - 1) * tmp3 / tmp1 / tmp1);
-
-      deldt = -2 * tmp6 * (delta - 1);
-    }
-
-    delt = -2 * theta;
-    deltt = 2.0;
-
-    tmp3 = std::pow(del, b4[i]);
-    tmp4 = b4[i] * std::pow(del, b4[i] - 1);
-    tmp5 = b4[i] * (b4[i] - 1) * std::pow(del, b4[i] - 2);
-    g += n4[i] * tmp3 * delta * psi;
-
-    gd += n4[i] * (tmp3 * (psi + delta * psid) + tmp4 * deld * delta * psi);
-    gdd += n4[i] * (tmp3 * (2 * psid + delta * psidd) + 
-                    2 * tmp4 * deld * (psi + delta * psid) +
-                    (tmp4 * deldd + tmp5 * deld * deld) * delta * psi);
-
-    gt += n4[i] * delta * (psit * tmp3 + tmp4 * psi * delt);
-    gtt += n4[i] * delta * (tmp3 * psitt + 2 * tmp4 * psit * delt + tmp5 * delt * delt * psi + tmp4 * deltt * psi);
-    
-    gdt += n4[i] * (tmp3 * (psit + delta * psidt) + delta * tmp4 * deld * psit + 
-                    tmp4 * delt * (psi + delta * psid) + 
-                    (tmp5 * deld * delt + tmp4 * deldt) * delta * psi);
-  }
-
-  return { g, gd, gt, gdd, gdt, gtt };
+  double shh = -1.0 / (T2 * cp);
+  double sph = -Tp / T2;
+  double spp = 1000.0 * (rhop_h / (rho2 * T) + Tp / (rho * T2));
+  return {s, sp, sh, spp, sph, shh};
 }
 
 
 /* ******************************************************************
-* Saturation calculation for two phase search FIXME
+* Calculation of the two phase liquid and vapor boundaries.
 ****************************************************************** */
 struct Frho2 {
   typedef Utils::VectorSTL Vector;
 
   Frho2(double T, IAPWS95* eos) : T_(T), eos_(eos) {};
   Vector operator()(Vector& x) {
-    const auto& gl = eos_->ResidualPart(x[0], T_);
-    const auto& gv = eos_->ResidualPart(x[1], T_);
+    const auto& gl = eos_->IAPWS95::ResidualPartFirst(x[0], T_);
+    const auto& gv = eos_->IAPWS95::ResidualPartFirst(x[1], T_);
 
-    double delta_l = x[0] / eos_->RHOC;
-    double delta_v = x[1] / eos_->RHOC;
+    double delta_l = x[0] / IAPWS95::RHOC;
+    double delta_v = x[1] / IAPWS95::RHOC;
     double jl = delta_l * (1.0 + delta_l * gl[1]);
     double jv = delta_v * (1.0 + delta_v * gv[1]);
     double kl = delta_l * gl[1] + gl[0] + std::log(delta_l);
@@ -387,27 +528,102 @@ struct Frho2 {
 
 
 std::tuple<double, double, double>
-IAPWS95::SaturationLine(double T, double rhol0, double rhov0)
+IAPWS95::SaturationLineT(double T, double rhol0, double rhov0)
 {
+  int itrs = 10;
   double psat, Tmin, tol(1e-11);
   Tmin = std::min(T, TC);
 
-  itrs_ = 10;
   Frho2 f(T, this);
   Frho2::Vector x0(2);
   x0[0] = rhol0;
   x0[1] = rhov0;
-  Frho2::Vector sol = PowellHybrid(x0, f, &itrs_, tol);
+  Frho2::Vector sol = PowellHybrid(x0, f, &itrs, tol);
+  AMANZI_ASSERT(itrs >= 0);
+  powell_root_itrs += itrs;
 
   if (sol[0] == sol[1]) {
     psat = PC;
   } else {
-    double gl = ResidualPart(sol[0], Tmin)[0];
-    double gv = ResidualPart(sol[1], Tmin)[0];
+    double gl = IAPWS95::ResidualPartFirst(sol[0], Tmin)[0];
+    double gv = IAPWS95::ResidualPartFirst(sol[1], Tmin)[0];
 
     psat = R * T * sol[0] * sol[1] / (sol[0] - sol[1]) * (gl - gv + std::log(sol[0] / sol[1])) / 1000.0;
   }
   return { sol[0], sol[1], psat };
+}
+
+
+/* ******************************************************************
+* Calculation of the two phase liquid and vapor boundaries which
+* returns more data.
+****************************************************************** */
+struct Frho3 {
+  typedef Utils::VectorSTL Vector;
+
+  Frho3(double p, IAPWS95* eos) : p_(p), eos_(eos) {};
+  Vector operator()(Vector& x) {
+    const auto& gl = eos_->IAPWS95::ResidualPartFirst(x[0], x[2]);
+    const auto& gv = eos_->IAPWS95::ResidualPartFirst(x[1], x[2]);
+
+    double delta_l = x[0] / IAPWS95::RHOC;
+    double delta_v = x[1] / IAPWS95::RHOC;
+
+    Vector r(x.size());
+    r[0] = x[0] * IAPWS95::R * x[2] * (1 + delta_l * gl[1]) / 1000 - p_;
+    r[1] = x[1] * IAPWS95::R * x[2] * (1 + delta_v * gv[1]) / 1000 - p_;
+    r[2] = std::log(delta_l) + gl[0] + delta_l * gl[1] - (std::log(delta_v) + gv[0] + delta_v * gv[1]);
+    return r;
+  }
+  double p_;
+  IAPWS95* eos_;
+};
+
+
+SaturationState
+IAPWS95::SaturationLineP(double p)
+{
+  SaturationState sat{};
+
+  sat.p = p;
+
+  if (p >= PC) {
+    sat.Tsat = TC;
+    return sat;
+  }
+
+  if (p < PC) {
+    double T0, T, rhol0, rhov0;
+    T0 = eos97_.SaturationLineP(p);
+    rhol0 = DensityLiquid(T0);
+    rhov0 = DensityVapor(T0);
+
+    int itrs = 15;
+    double tol(1e-11);
+    Frho3 f(p, this);
+    Frho3::Vector x0(3);
+    x0[0] = rhol0;
+    x0[1] = rhov0;
+    x0[2] = T0;
+    Frho3::Vector sol = PowellHybrid(x0, f, &itrs, tol);
+    AMANZI_ASSERT(itrs >= 0);
+    powell_root_itrs += itrs;
+
+    double rhol = sol[0];
+    double rhov = sol[1];
+    T = sol[2];
+
+    const auto& liquid1 = PopulateProperties(rhol, T);
+    sat.liquid = ExtendProperties(rhol, liquid1);
+
+    const auto& vapor2 = PopulateProperties(rhov, T);
+    sat.vapor = ExtendProperties(rhov, vapor2);
+
+    sat.p = p;
+    sat.Tsat = T;
+  }
+
+  return sat;
 }
 
 
@@ -475,7 +691,7 @@ IAPWS95::ExtendProperties(double rho, const Properties& prop_in)
   prop = prop_in;
 
   double T = prop.T;
-  prop.mu = Viscosity(rho, T);
+  prop.mu = Viscosity(rho, T, prop);
   prop.k = ThermalConductivity(rho, T, prop);
 
   return prop;
@@ -489,6 +705,7 @@ void
 IAPWS95::Print(Properties& prop)
 {
   std::cout << std::setprecision(12)
+    << "============================" 
     << "\np = " << prop.p
     << "\nT = " << prop.T
     << "\nrho = " << prop.rho 
@@ -507,7 +724,8 @@ IAPWS95::Print(Properties& prop)
     << "\n\nmu = " << prop.mu
     << "\nk = " << prop.k
     << "\nsigma = " << prop.sigma
-    << "\nx = " << prop.x << "\n\n";
+    << "\nx = " << prop.x 
+    << "\n=============================\n\n";
 }
 } // namespace AmanziEOS
 } // namespace Amanzi

@@ -40,7 +40,7 @@
 
   <ParameterList name="PK tree">
     <ParameterList name="energy">
-      <Parameter name="PK type" type="string" value="ph energy"/>
+      <Parameter name="PK type" type="string" value="energy ph"/>
     </ParameterList>
   </ParameterList>
 
@@ -189,6 +189,9 @@
       </ParameterList>
       <ParameterList name="viscosity_liquid">
         <Parameter name="evaluator type" type="string" value="iapws97 viscosity"/>
+      </ParameterList>
+      <ParameterList name="internal_energy">
+        <Parameter name="evaluator type" type="string" value="iapws97 internal energy"/>
       </ParameterList>
 
       <ParameterList name="particle_density">

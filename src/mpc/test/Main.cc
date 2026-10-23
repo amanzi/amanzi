@@ -20,6 +20,7 @@ int
 main(int argc, char* argv[])
 {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  // Epetra_Object::SetTracebackMode(2); 
   Kokkos::initialize();
   auto ret = UnitTest::RunAllTests();
   Kokkos::finalize();

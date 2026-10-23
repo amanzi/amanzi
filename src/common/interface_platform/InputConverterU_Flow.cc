@@ -126,7 +126,8 @@ InputConverterU::TranslateFlow_(const std::string& mode,
       .set<double>("tolerance", 1e-12)
       .set<std::string>("method", "cell-based")
       .set<int>("polynomial order", 1)
-      .set<std::string>("limiter", "Barth-Jespersen");
+      .set<std::string>("limiter", "Barth-Jespersen")
+      .set<bool>("manifolds", domain == "fracture");
     flow_list = &out_list;
 
     out_list.sublist("water retention models") = TranslateWRM_("flow");

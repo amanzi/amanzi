@@ -155,6 +155,21 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/energy_iapws97.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+    add_amanzi_test(energy_iapws95 energy_iapws95
+                    KIND int
+                    SOURCE test/Main.cc test/energy_iapws95.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(energy_iapws95_spline energy_iapws95_spline
+                    KIND int
+                    SOURCE test/Main.cc test/energy_iapws95_spline.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(energy_iapws95_spline_ph energy_iapws95_spline_ph
+                    KIND int
+                    SOURCE test/Main.cc test/energy_iapws95_spline_ph.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
     # Test: preconditioner
     add_amanzi_test(energy_jacobian energy_jacobian
                     KIND int
@@ -167,14 +182,14 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/energy_evaluators.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    add_amanzi_test(energy_evaluators95_tables energy_evaluators95_tables
+    add_amanzi_test(energy_evaluators95_tables_pt energy_evaluators95_tables_pt
                     KIND int
-                    SOURCE test/Main.cc test/energy_evaluators95_tables.cc
+                    SOURCE test/Main.cc test/energy_evaluators95_tables_pt.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    add_amanzi_test(energy_iapws95_spline energy_iapws95_spline
+    add_amanzi_test(energy_evaluators95_tables_ph energy_evaluators95_tables_ph
                     KIND int
-                    SOURCE test/Main.cc test/energy_iapws95_spline.cc
+                    SOURCE test/Main.cc test/energy_evaluators95_tables_ph.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(energy_evaluators97_tables energy_evaluators97_tables

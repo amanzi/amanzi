@@ -483,6 +483,7 @@
           <ParameterList name="SRC 0">
             <Parameter name="regions" type="Array(string)" value="{WELL}"/>
             <Parameter name="spatial distribution method" type="string" value="volume"/>
+            <Parameter name="scale by aperture" type="bool" value="true"/>
             <Parameter name="submodel" type="string" value="rate"/>
             <ParameterList name="well">
               <ParameterList name="function-constant">

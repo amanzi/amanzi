@@ -826,6 +826,8 @@ BoundaryFacesToFaces(const std::vector<int>& bc_model,
                      const CompositeVector& input,
                      CompositeVector& output)
 {
+  if (!input.HasComponent("boundary_face")) return;
+
   int nfaces = bc_model.size();
   const auto& mesh = output.Mesh();
 

@@ -42,6 +42,7 @@ class FracturePermModel {
  public:
   virtual ~FracturePermModel() {};
   virtual double Permeability(double aperture) = 0;
+  virtual double DpermeabilityDaperture(double aperture) = 0;
 };
 
 } // namespace Flow

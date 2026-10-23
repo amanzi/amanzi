@@ -171,10 +171,10 @@ EnergyPressureEnthalpy_PK::Setup()
   // other fields
   // thermodynamics
   if (!S_->HasRecord(state_key_)) {
-    S_->Require<CV_t, CVS_t>(state_key_, Tags::DEFAULT, state_key_, Evaluators::TS97_names)
+    S_->Require<CV_t, CVS_t>(state_key_, Tags::DEFAULT, state_key_, Evaluators::TSPH_names)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, Evaluators::TS97_t_size);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, Evaluators::TSPH_t_size);
     S_->RequireEvaluator(state_key_, Tags::DEFAULT);
   }
 
@@ -363,8 +363,6 @@ EnergyPressureEnthalpy_PK::Setup()
     S_->SetEvaluator(conductivity_eff_key_, Tags::DEFAULT, eval);
   }
 
-  
-
   // source terms
   Teuchos::ParameterList src_list = ep_list_->sublist("source terms");
   if (src_list.isSublist("linear relaxation")) {
@@ -416,6 +414,7 @@ EnergyPressureEnthalpy_PK::Setup()
 
     std::vector<std::string> listm({ Keys::getVarName(viscosity_liquid_key_) });
     std::vector<std::string> listr({ Keys::getVarName(mol_density_liquid_key_) });
+    if (assumptions_.flow_on_manifold) listr.push_back(Keys::getVarName(aperture_key_));
 
     Teuchos::ParameterList elist(beta_jacobian_key_);
     elist.set<std::string>("my key", beta_jacobian_key_)
@@ -512,17 +511,20 @@ EnergyPressureEnthalpy_PK::Initialize()
   op_matrix_ = op_matrix_diff_->global_operator();
   op_matrix_->Init();
 
-  Teuchos::RCP<Operators::BCs> bc_trial;
-  if (S_->HasRecord(bcs_flow_key_)) {
-    bc_trial = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, Tags::DEFAULT, "state");
-  } else {
-    bc_trial = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
-    bc_trial->bc_model();  // allocate memory 
-    bc_trial->bc_value();
-  } 
+  // boundary conditions
+  // We split heat diffusion into two diffusion operators for enthalpy and pressure. 
+  // BCs for enthalpy are in state. The essential BC for pressure could be taken from 
+  // a flow PK (if it exsts); hence, for state. However, if flow PK exists, we do not 
+  // need to elliminate pressure. The trial test function will elliminate
+  // corresponding matrix equation. Heat flux BC is imposed as the total flux BC.
+  // This implies no flux BC for the pressure operator.
+  auto bc_trial_pres = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
+  bc_trial_pres->bc_model();  // allocate memory
+  bc_trial_pres->bc_value();
+
   op_matrix_diff_pres_ = opfactory.Create(oplist_matrix, mesh_, op_bc_enth);
   op_matrix_diff_pres_->global_operator()->Init();
-  op_matrix_diff_pres_->SetBCs(bc_trial, op_bc_enth);
+  op_matrix_diff_pres_->SetBCs(bc_trial_pres, op_bc_enth);
 
   Teuchos::ParameterList oplist_adv = ep_list_->sublist("operators").sublist("advection operator");
   op_matrix_advection_ = opfactory_adv.Create(oplist_adv, mesh_);
@@ -709,7 +711,7 @@ void EnergyPressureEnthalpy_PK::ComputeSecondaryBCs()
       else pMPa = (*p_bf)[0][bf] * 1e-6;
 
       bc_model_enth[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_value_enth[f] = CommonDefs::ENTHALPY_FACTOR * eos->ThermodynamicsPT(pMPa, bc_value[f]).h;
+      bc_value_enth[f] = CommonDefs::ENTHALPY_FACTOR * std::get<0>(eos->ThermodynamicsPT(pMPa, bc_value[f])).h;
 
       if (p_f.get()) (*h_f)[0][f] = bc_value_enth[f];
       else (*h_bf)[0][bf] = bc_value_enth[f];

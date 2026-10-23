@@ -85,12 +85,14 @@ TEST(RICHARDS_TWO_FRACTURES)
 
   RCP<const Mesh> mesh = meshfactory.create(mesh3D, setnames, AmanziMesh::Entity_kind::FACE);
 
-  int ncells_owned =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
-  int ncells_wghost =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+  int ncells_owned = mesh->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
+  int ncells_wghost = mesh->getNumEntities(Entity_kind::CELL, Parallel_kind::ALL);
 
-  std::cout << "pid=" << MyPID << " cells: " << ncells_owned << " " << ncells_wghost << std::endl;
+  int nfaces_owned = mesh->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
+  int nfaces_wghost = mesh->getNumEntities(Entity_kind::FACE, Parallel_kind::ALL);
+
+  std::cout << "pid=" << MyPID << " cells: " << ncells_owned << " " << ncells_wghost 
+                               << " faces: " << nfaces_owned << " " << nfaces_wghost << std::endl;
 
   Teuchos::ParameterList state_list = plist->sublist("state");
   RCP<State> S = rcp(new State(state_list));

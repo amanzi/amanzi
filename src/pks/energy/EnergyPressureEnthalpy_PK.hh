@@ -49,6 +49,8 @@ class EnergyPressureEnthalpy_PK : public Energy_PK {
   double get_dt() final { return dt_; }
   void set_dt(double dt) final { dt_ = dt; }
 
+  virtual std::string name() final { return Keys::getKey(domain_, "pressure-enthalpy energy"); }
+
   virtual void FunctionalResidual(const double t_old,
                                   double t_new,
                                   Teuchos::RCP<const TreeVector> u_old,
@@ -88,7 +90,7 @@ class EnergyPressureEnthalpy_PK : public Energy_PK {
   const Teuchos::RCP<TreeVector> soln_;
   Teuchos::RCP<CompositeVector> solution;
 
-  // operators and solvers
+  // operators
   Teuchos::RCP<Operators::PDE_Diffusion> op_matrix_diff_pres_;
   Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_preconditioner_adv_enth_;
 

@@ -57,7 +57,7 @@ void
 LinearRelaxationEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   double t = S.get_time();
-  double dt = S.Get<double>("dt", Tags::DEFAULT);;
+  double dt = S.Get<double>("dt", Tags::DEFAULT);
 
   for (int i = 0; i < srcs_.size(); ++i) {
     srcs_[i]->Compute(t, t + dt);

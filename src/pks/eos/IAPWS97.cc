@@ -12,6 +12,9 @@
   for the Thermodynamic Properties of Water and Steam.
 */
 
+#include <algorithm>
+#include <cmath>
+
 #include "Brent.hh"
 #include "PowellHybrid.hh"
 
@@ -68,7 +71,7 @@ struct FhT {
 /* ******************************************************************
 * Calculate all properties
 ****************************************************************** */
-Properties
+std::tuple<Properties, Properties, Properties>
 IAPWS97::ThermodynamicsPT(double p, double T)
 {
   Properties prop;
@@ -76,7 +79,6 @@ IAPWS97::ThermodynamicsPT(double p, double T)
   prop.T = T;
 
   int rgn = RegionIdPT(p, T);
-  itrs_ = 0;
 
   switch (rgn) {
     case 1: {
@@ -95,19 +97,25 @@ IAPWS97::ThermodynamicsPT(double p, double T)
         double v = Region3_BackwardPT(p, T);
         double rho0 = 1.0 / v;
 
-        itrs_ = 10;
+        int itrs = 10;
         double tol = 1e-8;
         double rhomin = rho0 * 0.999;
         double rhomax = rho0 * 1.001;
         Frho97 f(p, T, this);
-        rho = Utils::findRootBrent(f, rhomin, rhomax, tol, &itrs_);
+        rho = Utils::findRootBrent(f, rhomin, rhomax, tol, &itrs);
+        brent_root_itrs += itrs;
 
         // refine soltution strategy starting with bracketing a root
-        if (itrs_ < 0) {
-          itrs_ = 10;
-          auto [rhomin, rhomax] = Utils::bracketRoot(f, rho0, rho0 * 0.002, &itrs_);
-          itrs_ = 10;
-          rho = Utils::findRootBrent(f, rhomin, rhomax, tol, &itrs_);
+        if (itrs < 0) {
+          itrs = 10;
+          auto [rhomin, rhomax] = Utils::bracketRoot(f, rho0, rho0 * 0.002, &itrs);
+          AMANZI_ASSERT(itrs >= 0);
+          brent_bracket_itrs += itrs;
+
+          itrs = 10;
+          rho = Utils::findRootBrent(f, rhomin, rhomax, tol, &itrs);
+          AMANZI_ASSERT(itrs >= 0);
+          brent_root_itrs += itrs;
         }
       }
       prop = Region3(rho, T);
@@ -125,10 +133,10 @@ IAPWS97::ThermodynamicsPT(double p, double T)
   prop.rho = 1.0 / prop.v;
   prop.phase = PhaseId(p, T, prop.rgn, prop.x);
 
-  prop.mu = Viscosity(prop.rho, T);
+  prop.mu = Viscosity(prop.rho, T, prop);
   prop.k = ThermalConductivity(prop.rho, T, prop);
 
-  return prop;
+  return { prop, prop, prop };
 }
 
 
@@ -146,28 +154,33 @@ IAPWS97::ThermodynamicsPH(double p, double h)
   prop.rgn = rgn;
 
   double tol(1e-8), tol2(1e-12), T, T0, Tmin, Tmax;
-  itrs_ = 0;
 
   switch (rgn) {
     case 1: {
       T0 = Region1_BackwardPH(p, h);
 
-      itrs_ = 10;
+      int itrs = 10;
       Tmin = T0 * 0.999;
       Tmax = T0 * 1.001;
       Fh f(p, h, 1, this);
-      T = Utils::findRootBrent(f, Tmin, Tmax, tol, &itrs_);
+      T = Utils::findRootBrent(f, Tmin, Tmax, tol, &itrs);
+      AMANZI_ASSERT(itrs >= 0);
+      brent_root_itrs += itrs;
+
       prop = Region1(p, T);
       break;
     }
     case 2: {
       T0 = Region2_BackwardPH(p, h);
 
-      itrs_ = 10;
+      int itrs = 10;
       Tmin = T0 * 0.999;
       Tmax = T0 * 1.001;
       Fh f(p, h, 2, this);
-      T = Utils::findRootBrent(f, Tmin, Tmax, tol, &itrs_);
+      T = Utils::findRootBrent(f, Tmin, Tmax, tol, &itrs);
+      AMANZI_ASSERT(itrs >= 0);
+      brent_root_itrs += itrs;
+
       prop = Region2(p, T);
       break;
     }
@@ -175,13 +188,15 @@ IAPWS97::ThermodynamicsPH(double p, double h)
       double v0 = Region3_BackwardPH_v(p, h);
       double T0 = Region3_BackwardPH_T(p, h);
 
-      itrs_ = 10;
+      int itrs = 10;
       FhT f(p, h, this);
       FhT::Vector x0(2);
       x0[0] = 1.0 / v0;
       x0[1] = T0;
-      FhT::Vector sol = PowellHybrid(x0, f, &itrs_, tol2);
-      if (itrs_ < 0) Exceptions::amanzi_throw("Powell solver did not converge.");
+      FhT::Vector sol = PowellHybrid(x0, f, &itrs, tol2);
+      if (itrs < 0) Exceptions::amanzi_throw("Powell solver did not converge.");
+      powell_root_itrs += itrs;
+
       prop = Region3(sol[0], sol[1]);
       break;
     }
@@ -190,11 +205,14 @@ IAPWS97::ThermodynamicsPH(double p, double h)
       break;
     }
     case 5: {
-      itrs_ = 10;
+      int itrs = 10;
       Tmin = 1500.0;
       Tmax = 2273.15;
       Fh f(p, h, 5, this);
-      T = Utils::findRootBrent(f, Tmin, Tmax, tol, &itrs_);
+      T = Utils::findRootBrent(f, Tmin, Tmax, tol, &itrs);
+      AMANZI_ASSERT(itrs >= 0);
+      brent_root_itrs += itrs;
+
       prop = Region5(p, T);
       break;
     }
@@ -311,11 +329,13 @@ IAPWS97::Region1(double p, double T)
   prop.w = std::sqrt(R * T * 1000 * gp * gp / (A / (Tr * Tr * gtt) - gpp));
   prop.kt = -(pr / p) * gpp / gp;
   prop.av = (1 - Tr * gpt / gp) / T;
+  prop.ap = prop.av / (p * prop.kt);
   prop.x = 0.0;
   prop.rgn = 1;
 
   // derived properties
   prop.rho = 1.0 / prop.v;
+  prop.bp = prop.rho / (prop.p * prop.kt);
 
   return prop;
 }
@@ -451,6 +471,7 @@ IAPWS97::Region2(double p, double T)
 
   // derived properties
   prop.rho = 1.0 / prop.v;
+  prop.bp = prop.rho / (prop.p * prop.kt);
 
   return prop;
 }
@@ -668,7 +689,6 @@ IAPWS97::Region3(double rho, double T)
   prop.kt = 1 / (2 * rhor * gd + rhor * rhor * gdd) / rho / R / T * 1000;
   prop.av = (gd - Tr * gdt) / (2 * gd + rhor * gdd) / T;
   prop.ap = (1 - Tr * gdt / gd) / T;
-  prop.bp = rho * (2 + rhor * gdd / gd);
 
   prop.rgn = 3;
   prop.x = 1.0;
@@ -679,6 +699,7 @@ IAPWS97::Region3(double rho, double T)
 
   // derived properties
   prop.rho = 1.0 / prop.v;
+  prop.bp = prop.rho / (prop.p * prop.kt);
 
   return prop;
 }
@@ -1353,6 +1374,7 @@ IAPWS97::Region5(double p, double T)
 
   // derived properties
   prop.rho = 1.0 / prop.v;
+  prop.bp = prop.rho / (prop.p * prop.kt);
 
   return prop;
 }
@@ -1541,14 +1563,14 @@ IAPWS97::RegionIdPH(double p, double h)
 {
   int rgn(0);
 
-  double hmin = (Region1(p, 273.15)).h;
-  double hmax = (Region5(p, 2273.15)).h;
+  double hmin = Region1(p, 273.15).h;
+  double hmax = Region5(p, 2273.15).h;
 
   if (PMIN <= p && p <= PSAT_623) {
     double Tsat = SaturationLineP(p);
-    double h14 = (Region1(p, Tsat)).h;
-    double h24 = (Region2(p, Tsat)).h;
-    double h25 = (Region2(p, 1073.15)).h;
+    double h14 = Region1(p, Tsat).h;
+    double h24 = Region2(p, Tsat).h;
+    double h25 = Region2(p, 1073.15).h;
     if (hmin <= h && h <= h14) {
       rgn = 1;
     } else if (h14 < h && h < h24) {
@@ -1559,15 +1581,15 @@ IAPWS97::RegionIdPH(double p, double h)
       rgn = 5;
     }
   } else if (PSAT_623 < p && p < PC) {
-    double h13 = (Region1(p, 623.15)).h;
-    double h32 = (Region2(p, BoundaryLine23(p))).h;
-    double h25 = (Region2(p, 1073.15)).h;
+    double h13 = Region1(p, 623.15).h;
+    double h32 = Region2(p, BoundaryLine23(p)).h;
+    double h25 = Region2(p, 1073.15).h;
     if (hmin <= h && h <= h13) {
       rgn = 1;
     } else if (h13 < h && h < h32) {
       double p34;
-      double hmin3 = (Region1(PSAT_623, 623.15)).h;
-      double hmax3 = (Region2(PSAT_623, 623.15)).h;
+      double hmin3 = Region1(PSAT_623, 623.15).h;
+      double hmax3 = Region2(PSAT_623, 623.15).h;
       if (hmin3 <= h && h <= hmax3) {
         p34 = SaturationLineH(h);
       } else {
@@ -1584,9 +1606,9 @@ IAPWS97::RegionIdPH(double p, double h)
       rgn = 5;
     }
   } else if (PC <= p && p <= 100.0) {
-    double h13 = (Region1(p, 623.15)).h;
-    double h32 = (Region2(p, BoundaryLine23(p))).h;
-    double h25 = (Region2(p, 1073.15)).h;
+    double h13 = Region1(p, 623.15).h;
+    double h32 = Region2(p, BoundaryLine23(p)).h;
+    double h25 = Region2(p, 1073.15).h;
     if (hmin <= h && h <= h13) {
       rgn = 1;
     } else if (h13 < h && h < h32) {
@@ -1648,124 +1670,10 @@ IAPWS97::ExtendProperties(const Properties& prop_in)
   prop.helmholtz = prop.u - T * prop.s;
   prop.gibbs = prop.h - T * prop.s;
 
-  prop.mu = Viscosity(prop.rho, T);
+  prop.mu = Viscosity(prop.rho, T, prop);
   prop.k = ThermalConductivity(prop.rho, T, prop);
 
   return prop;
-}
-
-
-/* ******************************************************************
-* Thermal conductivity
-* http://www.iapws.org/relguide/ThCond.html, formulas (15)-(17)
-****************************************************************** */
-double
-IAPWS97::ThermalConductivity(double rho, double T, Properties& prop)
-{
-  double rhor, Tr;
-  rhor = rho / RHOC;
-  Tr = T / TC;
-
-  // first factor
-  const auto& n0 = thermal_cond_n0;
-
-  double tmp(1.0), inva(1.0 / Tr);
-  double k0(0.0), k1(0.0);
-  for (int i = 0; i < N0_ThCond; ++i) {
-    k0 += n0[i] * tmp;
-    tmp *= inva;
-  } 
-  k0 = std::sqrt(Tr) / k0;
- 
-  // second factor
-  double a(inva - 1.0), b(rhor - 1.0); 
-  double apow[N0_ThCond];
-  double bpow[N1_ThCond];
-
-  apow[0] = 1.0;
-  for (int i = 1; i < N0_ThCond; ++i)
-    apow[i] = apow[i - 1] * a;
-
-  bpow[0] = 1.0;
-  for (int i = 1; i < N1_ThCond; ++i)
-    bpow[i] = bpow[i - 1] * b;
-
-  const auto& n1 = thermal_cond_n1;
-
-  for (int i = 0; i < N0_ThCond; ++i) {
-    for (int j = 0; j < N1_ThCond; ++j) {
-      k1 += n1[i][j] * apow[i] * bpow[j];
-    }
-  }
-  k1 = std::exp(rhor * k1);
-
-  // critical enhancement (k2) is not implemented yet FIXME
-  return 1e-3 * k0 * k1;
-}
-
-
-/* ******************************************************************
-* Surface tension
-* http://www.iapws.org/relguide/Surf-H2O.html
-* Validity range 248.15 <= T <= TC
-****************************************************************** */
-double
-IAPWS97::SurfaceTension(double T)
-{
-  if (248.15 <= T && T <= TC) {
-    double tau = 1.0 - T / TC;
-    return 235.8e-3 * std::pow(tau, 1.256) * (1.0 - 0.625 * tau);
-  }
-  return -1.0;
-}
-
-
-/* ******************************************************************
-* Dynamic viscosity
-* http://www.iapws.org/relguide/viscosity.html, formulas (10)-(12)
-****************************************************************** */
-double
-IAPWS97::Viscosity(double rho, double T)
-{
-  double rhor = rho / RHOC;
-  double Tr = T / TC;
-
-  // first factor
-  const auto& n0 = viscosity_n0;
-
-  double tmp(1.0), inva(1.0 / Tr);
-  double mu0(0.0), mu1(0.0);
-  for (int i = 0; i < N0_Visc; ++i) {
-    mu0 += n0[i] * tmp;
-    tmp *= inva;
-  } 
-  mu0 = 100.0 * std::sqrt(Tr) / mu0;
- 
-  // second factor
-  const auto& k = viscosity_k1;
-  const auto& l = viscosity_l1;
-  const auto& n1 = viscosity_n1;
-
-  double a(inva - 1.0), b(rhor - 1.0); 
-  double apow[N1_Visc_kmax];
-  double bpow[N1_Visc_lmax];
-
-  apow[0] = 1.0;
-  for (int i = 1; i < N1_Visc_kmax; ++i)
-    apow[i] = apow[i - 1] * a;
-
-  bpow[0] = 1.0;
-  for (int i = 1; i < N1_Visc_lmax; ++i)
-    bpow[i] = bpow[i - 1] * b;
-
-  for (int i = 0; i < N1_Visc; ++i) {
-    mu1 += n1[i] * apow[k[i]] * bpow[l[i]];
-  }
-  mu1 = std::exp(rhor * mu1);
-
-  // third factor (critical enhancement) is not implemeneted yet FIXME
-
-  return 1e-6 * mu0 * mu1;
 }
 
 

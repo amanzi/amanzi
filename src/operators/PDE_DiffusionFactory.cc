@@ -97,12 +97,20 @@ PDE_DiffusionFactory::Create(const Teuchos::RCP<Operator>& global_op)
 
   gravity_ = false;
   manifolds_ = false;
-  if (oplist_.isParameter("gravity") ) gravity_ = oplist_.get<bool>("gravity");
-  if (oplist_.isParameter("manifolds") ) manifolds_ = oplist_.get<bool>("manifolds");
+  if (oplist_.isParameter("gravity")) gravity_ = oplist_.get<bool>("gravity");
+  if (oplist_.isParameter("manifolds")) manifolds_ = oplist_.get<bool>("manifolds");
 
   if (gravity_ && norm(g_) == 0.0) {
     double tmp = oplist_.get<double>("gravity magnitude");
     g_[mesh_->getSpaceDimension() - 1] = tmp;
+  }
+
+  // verify consistency of input for manifold discretizations
+  bool manifold_flux(false);
+  if (oplist_.isParameter("use manifold flux")) manifold_flux = oplist_.get<bool>("use manifold flux");
+  if (manifolds_ && !manifold_flux && discretization.compare(0, 4, "mfd:") == 0) {
+    Errors::Message msg("Request to create MFD diffusion on manifold with only one flux value.");
+    Exceptions::amanzi_throw(msg);
   }
 
   Teuchos::RCP<PDE_Diffusion> op;

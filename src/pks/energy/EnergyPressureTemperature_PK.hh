@@ -73,7 +73,7 @@ class EnergyPressureTemperature_PK : public Energy_PK {
   const Teuchos::RCP<TreeVector> soln_;
   Teuchos::RCP<CompositeVector> solution;
 
-  Key state_key_;
+  Key state_key_, beta_key_;
 
   // timestepping
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>> bdf1_dae_;

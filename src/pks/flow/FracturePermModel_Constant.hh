@@ -32,7 +32,8 @@ class FracturePermModel_Constant : public FracturePermModel {
   ~FracturePermModel_Constant() {};
 
   // required methods from the base class
-  inline double Permeability(double aperture) { return value_; }
+  double Permeability(double aperture) { return value_; }
+  double DpermeabilityDaperture(double aperture) { return 0.0; }
 
  private:
   double value_;

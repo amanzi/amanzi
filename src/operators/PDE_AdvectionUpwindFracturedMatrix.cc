@@ -251,12 +251,13 @@ PDE_AdvectionUpwindFracturedMatrix::IdentifyUpwindCells_(const CompositeVector& 
 
 
 /* ******************************************************************
-* Initialize additional parameters
+* Initialize and re-initialzied parameters in the derived object.
 ****************************************************************** */
 void
 PDE_AdvectionUpwindFracturedMatrix::InitAdvection_(Teuchos::ParameterList& plist)
 {
   fractures_ = plist.get<Teuchos::Array<std::string>>("fracture").toVector();
+  local_op_->schema_string = "AdvectionFractureMatrix: FACE_CELL";
 }
 
 } // namespace Operators

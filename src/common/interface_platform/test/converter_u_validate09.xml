@@ -271,6 +271,7 @@
           <Parameter name="method" type="string" value="cell-based"/>
           <Parameter name="polynomial order" type="int" value="1"/>
           <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
+          <Parameter name="manifolds" type="bool" value="false"/>
         </ParameterList>
       </ParameterList>
 
@@ -463,6 +464,7 @@
           <Parameter name="method" type="string" value="cell-based"/>
           <Parameter name="polynomial order" type="int" value="1"/>
           <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
+          <Parameter name="manifolds" type="bool" value="false"/>
         </ParameterList>
       </ParameterList>
 

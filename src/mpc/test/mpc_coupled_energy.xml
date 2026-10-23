@@ -563,12 +563,12 @@
       <ParameterList name="TP 1">
         <ParameterList name="PK tree">
           <ParameterList name="transient:coupled energy">
-            <Parameter name="PK type" type="string" value="energy matrix fracture"/>
+            <Parameter name="PK type" type="string" value="energy pt matrix fracture"/>
             <ParameterList name="transient:energy matrix">
-              <Parameter name="PK type" type="string" value="pt energy"/>
+              <Parameter name="PK type" type="string" value="energy pt"/>
             </ParameterList>
             <ParameterList name="transient:energy fracture">
-              <Parameter name="PK type" type="string" value="pt energy"/>
+              <Parameter name="PK type" type="string" value="energy pt"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -822,7 +822,7 @@
     </ParameterList>
 
     <ParameterList name="transient:coupled energy">
-      <Parameter isUsed="true" name="PK type" type="string" value="energy matrix fracture"/>
+      <Parameter isUsed="true" name="PK type" type="string" value="energy pt matrix fracture"/>
       <Parameter name="PKs order" type="Array(string)" value="{transient:energy matrix, transient:energy fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
       <ParameterList name="time integrator">

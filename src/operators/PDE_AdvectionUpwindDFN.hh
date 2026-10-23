@@ -28,12 +28,18 @@ class PDE_AdvectionUpwindDFN : public PDE_AdvectionUpwind {
  public:
   PDE_AdvectionUpwindDFN(Teuchos::ParameterList& plist, const Teuchos::RCP<Operator>& global_op)
     : PDE_AdvectionUpwind(plist, global_op)
-  {}
+  {
+    // call init function of derived class, in addition, to init function of base class
+    InitAdvection_(plist);
+  }
 
   PDE_AdvectionUpwindDFN(Teuchos::ParameterList& plist,
                          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : PDE_AdvectionUpwind(plist, mesh)
-  {}
+  {
+    // call init function of derived class, in addition, to init function of base class
+    InitAdvection_(plist);
+  }
 
   // required members
   virtual void Setup(const CompositeVector& u) override;
@@ -53,6 +59,7 @@ class PDE_AdvectionUpwindDFN : public PDE_AdvectionUpwind {
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
 
  private:
+  void InitAdvection_(Teuchos::ParameterList& plist);
   void IdentifyUpwindCells_(const CompositeVector& u);
 
  protected:

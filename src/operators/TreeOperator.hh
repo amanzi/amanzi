@@ -108,6 +108,13 @@ class TreeOperator : public Matrix<TreeVector, TreeVectorSpace> {
   void set_operator(const Teuchos::RCP<Operator>& op);
   void set_operator_block(std::size_t i, std::size_t j, const Teuchos::RCP<Operator>& op);
 
+  // Locks the structure of the TreeOperator (which sub-operator occupies
+  // each block), preventing any further structural changes. Recursively
+  // locks every sub-TreeOperator block and leaf Operator. Called
+  // automatically by SymbolicAssembleMatrix(), but may also be called
+  // directly.
+  void lockStructure();
+
   bool IsSquare() const { return get_col_size() == get_row_size(); }
   std::size_t get_col_size() const { return col_size_; }
   std::size_t get_row_size() const { return row_size_; }
@@ -173,6 +180,7 @@ class TreeOperator : public Matrix<TreeVector, TreeVectorSpace> {
 
  protected:
   int ApplyInverseBlockDiagonal_(const TreeVector& X, TreeVector& Y) const;
+  void AssertStructureNotLocked_() const;
 
  protected:
   friend Impl::TreeOperator_BlockDiagonalPreconditioner;
@@ -199,7 +207,7 @@ class TreeOperator : public Matrix<TreeVector, TreeVectorSpace> {
   bool initialize_complete_;
   bool compute_complete_;
   bool assembly_complete_;
-  bool symbolic_assembly_complete_;
+  bool structure_locked_;
 
   Teuchos::RCP<VerboseObject> vo_;
 };
