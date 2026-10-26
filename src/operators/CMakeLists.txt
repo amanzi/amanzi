@@ -128,6 +128,7 @@ set(operators_inc_files
     PDE_HelperBCsList.hh
     PDE_HelperDiscretization.hh
     PDE_Reaction.hh
+    RemapCochains.hh
     RemapDG.hh
     RemapDG_Helper.hh
     RemapUtils.hh
@@ -197,6 +198,7 @@ set(operators_src_files
   TreeOperator.cc
   ReconstructionCellLinear.cc
   ReconstructionCellPolynomial.cc
+  RemapCochains.cc
   RemapDG.cc RemapUtils.cc
   UniqueLocalIndex.cc
   RemapDG_Helper.cc RemapUtils.cc
@@ -346,6 +348,12 @@ if (ENABLE_TESTS)
                         NPROCS 3
                         SOURCE test/Main.cc test/operator_remap_gcl.cc
                                             test/operator_remap_gcl_reinit.cc
+                                            LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+        add_amanzi_test(operators_remap_cochains operators_remap_cochains
+                        KIND unit
+                        SOURCE test/Main.cc test/operator_remap_cochains1.cc
+                                            test/operator_remap_cochains2.cc
                                             LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
         # DG advection test
