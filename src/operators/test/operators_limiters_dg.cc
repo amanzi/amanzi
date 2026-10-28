@@ -24,7 +24,6 @@
 
 // Amanzi
 #include "CompositeVector.hh"
-#include "GMVMesh.hh"
 #include "DG_Modal.hh"
 #include "MeshFactory.hh"
 

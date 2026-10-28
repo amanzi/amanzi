@@ -22,7 +22,6 @@
 #include "UnitTest++.h"
 
 // Amanzi
-#include "GMVMesh.hh"
 #include "LinearOperatorGMRES.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
@@ -243,14 +242,6 @@ RunTest(std::string op_list_name)
     source.PutScalar(0.0);
   }
 
-  if (MyPID == 0) {
-    // visualization
-    const Epetra_MultiVector& p = *solution->viewComponent("cell");
-    GMV::open_data_file(*surfmesh, (std::string) "operators.gmv");
-    GMV::start_data();
-    GMV::write_cell_data(p, 0, "solution");
-    GMV::close_data_file();
-  }
 }
 
 } // end anonymous namespace

@@ -23,7 +23,6 @@
 
 // Amanzi
 #include "MeshFactory.hh"
-#include "GMVMesh.hh"
 #include "LinearOperatorPCG.hh"
 #include "Tensor.hh"
 
@@ -193,12 +192,6 @@ TEST(OPERATOR_MIXED_DIFFUSION)
       CHECK(pl2_err < 0.15 && ul2_err < 0.15);
     }
   }
-
-  Epetra_MultiVector& p = *solution->viewComponent("cell", false);
-  GMV::open_data_file(*mesh, (std::string) "operators.gmv");
-  GMV::start_data();
-  GMV::write_cell_data(p, 0, "pressure");
-  GMV::close_data_file();
 }
 
 
