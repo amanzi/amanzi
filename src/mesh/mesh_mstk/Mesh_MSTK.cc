@@ -3398,6 +3398,38 @@ Mesh_MSTK::rebuildAll()
   faces_initialized_ = false;
   edges_initialized_ = false;
 
+  // post_create_steps_() recreates the owned/ghost MSets and the cell type
+  // attribute by name.  MSTK's MSet_New()/MAttrib_New() return the *existing*
+  // object if the name is already taken, so without deleting them first the
+  // re-initialization appends to the stale sets, leaving e.g. num_owned_cells >
+  // num_all_cells.
+  if (owned_verts_) MSet_Delete(owned_verts_);
+  if (ghost_verts_) MSet_Delete(ghost_verts_);
+  if (owned_edges_) MSet_Delete(owned_edges_);
+  if (ghost_edges_) MSet_Delete(ghost_edges_);
+  if (owned_faces_) MSet_Delete(owned_faces_);
+  if (ghost_faces_) MSet_Delete(ghost_faces_);
+  if (owned_cells_) MSet_Delete(owned_cells_);
+  if (ghost_cells_) MSet_Delete(ghost_cells_);
+  owned_verts_ = ghost_verts_ = nullptr;
+  owned_edges_ = ghost_edges_ = nullptr;
+  owned_faces_ = ghost_faces_ = nullptr;
+  owned_cells_ = ghost_cells_ = nullptr;
+
+  if (celltype_att_) {
+    MAttrib_Delete(celltype_att_);
+    celltype_att_ = nullptr;
+  }
+
+  if (faceflip_) {
+    delete[] faceflip_;
+    faceflip_ = nullptr;
+  }
+  if (edgeflip_) {
+    delete[] edgeflip_;
+    edgeflip_ = nullptr;
+  }
+
   post_create_steps_();
 }
 
