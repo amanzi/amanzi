@@ -1636,11 +1636,15 @@ function define_nersc_options
 
   fi
 
-   echo ""
-   echo "Setting ARCH:        NERSC"
-   echo "ARCH TPL OPTIONS     = " ${arch_tpl_opts}
-   echo "ARCH AMANZI OPTIONS  = " ${arch_amanzi_opts}
-   echo ""
+  echo ""
+  echo "Setting ARCH:        NERSC"
+  if [ "${cuda}" -eq "${TRUE}" ]; then
+    cuda_arch="80"
+    echo "CUDA arch            = " "sm_"${cuda_arch}
+  fi
+  echo "ARCH TPL OPTIONS     = " ${arch_tpl_opts}
+  echo "ARCH AMANZI OPTIONS  = " ${arch_amanzi_opts}
+  echo ""
 
 }
 
