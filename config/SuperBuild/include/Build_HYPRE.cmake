@@ -71,7 +71,10 @@ endif()
 # set(hypre_fortran_opt -"--disable-fortran)
 
 set(Hypre_CC_FLAGS ${CMAKE_C_FLAGS})
-set(Hypre_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+# Hypre's autoconf build does not see CMAKE_CXX_STANDARD, so the standard
+# must be passed explicitly or nvcc falls back to its own default dialect
+# (too old for newer CUB/CCCL, which now hard-errors below C++17).
+set(Hypre_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 set(Hypre_LINK_FLAGS ${CMAKE_LINK_FLAGS})
 
 # Locate SuperLU and SuperLUDist
