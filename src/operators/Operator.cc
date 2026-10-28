@@ -39,6 +39,7 @@
 //#include "Op_Node_Schema.hh"
 #include "Op_SurfaceCell_SurfaceCell.hh"
 #include "Op_SurfaceFace_SurfaceCell.hh"
+#include "Op_MeshInjection.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
 #include "OperatorUtils.hh"
@@ -837,6 +838,19 @@ Operator::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
 
 
 /* ******************************************************************
+* Visit methods for Apply: MeshInjection -- only Operator_Schema knows
+* how to apply this (a cross-mesh, rectangular, one-nonzero-per-row block).
+****************************************************************** */
+int
+Operator::ApplyMatrixFreeOp(const Op_MeshInjection& op,
+                            const CompositeVector& X,
+                            CompositeVector& Y) const
+{
+  return SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
+/* ******************************************************************
 * Visit methods for symbolic assemble: Cell.
 ****************************************************************** */
 void
@@ -970,6 +984,21 @@ Operator::SymbolicAssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
 ****************************************************************** */
 void
 Operator::SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
+                                   const SuperMap& map,
+                                   GraphFE& graph,
+                                   int my_block_row,
+                                   int my_block_col) const
+{
+  SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
+/* ******************************************************************
+* Visit methods for symbolic assemble: MeshInjection -- only
+* Operator_Schema knows how to assemble this.
+****************************************************************** */
+void
+Operator::SymbolicAssembleMatrixOp(const Op_MeshInjection& op,
                                    const SuperMap& map,
                                    GraphFE& graph,
                                    int my_block_row,
@@ -1116,6 +1145,26 @@ Operator::AssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
 ****************************************************************** */
 void
 Operator::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
+                           const SuperMap& map,
+                           MatrixFE& mat,
+                           int my_block_row,
+                           int my_block_col) const
+{
+  std::stringstream err;
+  err << "Assemble matrix: invalid schema combination -- " << op.schema_string
+      << " cannot be used with a matrix on " << schema_string_;
+  Errors::Message message(err.str());
+  Exceptions::amanzi_throw(message);
+}
+
+
+/* ******************************************************************
+* Visit methods for assemble: MeshInjection -- only Operator_Schema
+* knows how to assemble this (a cross-mesh, rectangular,
+* one-nonzero-per-row block).
+****************************************************************** */
+void
+Operator::AssembleMatrixOp(const Op_MeshInjection& op,
                            const SuperMap& map,
                            MatrixFE& mat,
                            int my_block_row,

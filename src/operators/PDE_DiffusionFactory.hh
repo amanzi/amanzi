@@ -232,6 +232,40 @@ PDE_DiffusionFactory::CreateWithGravity_(Teuchos::ParameterList& oplist,
 }
 
 
+// ---------------------------------------------------------------------------
+// Resolves a PDE_DiffusionWithGravity's concrete discretization once,
+// host-side, and invokes `f` with that discretization's own
+// GetTransmissibilityGravityFunctor() result -- a lightweight,
+// KOKKOS_FUNCTION-callable value (see each concrete class's own
+// TransGravFunctor) giving on-demand, per-face {transmissibility, gravity
+// flux}, meant to be captured by value into a device loop with no further
+// virtual/dynamic dispatch per face.
+//
+// This is the one place that is allowed to know every concrete
+// PDE_DiffusionWithGravity subclass (same role as this factory's own
+// CreateWithGravity_) -- callers (e.g. a cross-mesh coupling MPC) template
+// their own per-face kernel on the functor type and pass it as `f`, so they
+// never need to name a concrete discretization themselves. Add a branch
+// here, and that subclass's own nested TransGravFunctor type, to support a
+// new discretization (e.g. NLFV) -- PDE_Diffusion/PDE_DiffusionWithGravity
+// themselves never need to change.
+// ---------------------------------------------------------------------------
+template <class Callable>
+void
+WithTransmissibilityGravityFunctor(const PDE_DiffusionWithGravity& diff_op, Callable&& f)
+{
+  if (auto* fv = dynamic_cast<const PDE_DiffusionFVwithGravity*>(&diff_op)) {
+    f(fv->GetTransmissibilityGravityFunctor());
+  } else if (auto* mfd = dynamic_cast<const PDE_DiffusionMFDwithGravity*>(&diff_op)) {
+    f(mfd->GetTransmissibilityGravityFunctor());
+  } else {
+    Errors::Message msg("WithTransmissibilityGravityFunctor: discretization does not provide a "
+                        "transmissibility/gravity functor.");
+    Exceptions::amanzi_throw(msg);
+  }
+}
+
+
 } // namespace Operators
 } // namespace Amanzi
 

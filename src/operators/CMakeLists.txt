@@ -55,14 +55,16 @@ set(operators_inc_files
   Op_Cell_Cell.hh
   Op_Cell_FaceCell.hh
   Op_Face_Cell.hh
-  Op_SurfaceCell_SurfaceCell.hh  
+  Op_SurfaceCell_SurfaceCell.hh
   Op_SurfaceFace_SurfaceCell.hh
+  Op_MeshInjection.hh
   OperatorUtils.hh
   Operator.hh
   Operator_Cell.hh
   Operator_FaceCell.hh
   Operator_FaceCellSff.hh
   Operator_Factory.hh
+  Operator_Schema.hh
   TreeOperator.hh
   PDE_HelperBCsList.hh
   PDE_HelperDiscretization.hh
@@ -85,6 +87,7 @@ set(operators_src_files
   Operator_FaceCell.cc
   Operator_FaceCellSff.cc
   Operator_Factory.cc
+  Operator_Schema.cc
   TreeOperator.cc
   PDE_Accumulation.cc
   PDE_HelperDiscretization.cc
@@ -181,6 +184,11 @@ endif()
     add_amanzi_test(operators_solvers operators_solvers
                     KIND unit
                     SOURCE test/Main.cc test/operators_solvers.cc
+                    LINK_LIBS ${UnitTest_LIBRARIES} ${operators_test_link_libs})
+
+    add_amanzi_test(operators_tree operators_tree
+                    KIND unit
+                    SOURCE test/Main.cc test/operators_tree.cc
                     LINK_LIBS ${UnitTest_LIBRARIES} ${operators_test_link_libs})
 
 

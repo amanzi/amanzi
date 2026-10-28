@@ -23,7 +23,7 @@
 
     <ParameterList name="diffusion operator">
       <Parameter name="discretization primary" type="string" value="fv: default"/>
-      <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
+      <Parameter name="scalar coefficient type" type="string" value="upwind: face"/>
       <Parameter name="scaled constraint equation" type="bool" value="true"/>
     </ParameterList>
     

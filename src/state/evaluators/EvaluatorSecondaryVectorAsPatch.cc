@@ -41,8 +41,7 @@ EvaluatorSecondaryVectorAsPatch::Update_(State& S)
   AMANZI_ASSERT(multipatch.size() == 1);
   auto& patch = multipatch[0];
 
-  auto& cv = S.GetW<CompositeVector>(
-    dependencies_.front().first, dependencies_.front().second, dependencies_.front().first);
+  const auto& cv = S.Get<CompositeVector>(dependencies_.front().first, dependencies_.front().second);
   AMANZI_ASSERT(cv.hasComponent("cell"));
   auto cv_view = cv.viewComponent("cell", false);
   Kokkos::deep_copy(patch.data, cv_view);

@@ -156,7 +156,7 @@
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="schema" type="Array(string)" value="{node}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{node}"/>
-      <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
+      <Parameter name="scalar coefficient type" type="string" value="upwind: face"/>
     </ParameterList>
 
     <ParameterList name="Lagrange">
@@ -219,7 +219,7 @@
       <Parameter name="discretization primary" type="string" value="mfd: default"/>
       <Parameter name="discretization secondary" type="string" value="mfd: default"/>
       <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-      <Parameter name="nonlinear coefficient" type="string" value="none"/>
+      <Parameter name="scalar coefficient type" type="string" value="none"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
     </ParameterList>
 
@@ -227,7 +227,7 @@
       <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-      <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
+      <Parameter name="scalar coefficient type" type="string" value="upwind: face"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
     </ParameterList>
     
@@ -235,7 +235,7 @@
       <Parameter name="discretization primary" type="string" value="mfd: support operator"/>
       <Parameter name="discretization secondary" type="string" value="mfd: support operator"/>
       <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-      <Parameter name="nonlinear coefficient" type="string" value="none"/>
+      <Parameter name="scalar coefficient type" type="string" value="none"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
     </ParameterList>
 
@@ -244,7 +244,7 @@
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
-      <Parameter name="nonlinear coefficient" type="string" value="divk: cell-face"/>
+      <Parameter name="scalar coefficient type" type="string" value="divk: cell-face"/>
       <!--Parameter name="file name" type="string" value="test/struct.exo"/-->
     </ParameterList>
 
@@ -299,7 +299,7 @@
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
-      <Parameter name="nonlinear coefficient" type="string" value="divk: cell-grad-face-twin"/>
+      <Parameter name="scalar coefficient type" type="string" value="divk: cell-grad-face-twin"/>
     </ParameterList>
 
     <ParameterList name="upwind second-order">
