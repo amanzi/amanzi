@@ -153,7 +153,7 @@ TreeOperator::set_operator_block(std::size_t i, std::size_t j, const Teuchos::RC
 
 
 /* ******************************************************************
-* Calculate Y = A * X using matrix-free matvec on blocks of operators.
+* Calculate Y = scalar * Y + A * X using matrix-free matvec on blocks of operators.
 ****************************************************************** */
 int
 TreeOperator::apply(const TreeVector& X, TreeVector& Y, double scalar) const
@@ -164,14 +164,14 @@ TreeOperator::apply(const TreeVector& X, TreeVector& Y, double scalar) const
 #endif
 
   int ierr(0);
-  //if (scalar == 0.0) {
-  //  Y.PutScalarMasterAndGhosted(0.0);
-  //} else if (scalar != 1.0) {
-  //  Y.Scale(scalar);
-  //}
-  Y.putScalar(0.0);
+  // Y = scalar * Y
+  if (scalar == 0.0) {
+    Y.putScalar(0.0);
+  } else if (scalar != 1.0) {
+    Y.scale(scalar);
+  }
 
-
+  // Y += A*X
   if (Y.getData() != Teuchos::null) {
     if (X.getData() != Teuchos::null) {
       ierr = get_operator()->apply(*X.getData(), *Y.getData(), 1.0);
@@ -370,6 +370,7 @@ TreeOperator::AssembleMatrix()
 {
   AMANZI_ASSERT(leaves_.size() != 0);
   computed_ = false;
+  Amat_->resumeFill();
   Amat_->zero();
 
   // check that each row has at least one non-null operator block

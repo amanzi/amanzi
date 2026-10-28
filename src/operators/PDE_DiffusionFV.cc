@@ -67,28 +67,15 @@ PDE_DiffusionFV::Init()
     }
   }
 
-  // upwind options
+  // upwind options -- re-parsed in SetScalarCoefficient() each time a real
+  // (non-null) coefficient is set, so this is just to populate
+  // little_k_type_ for Setup-time callers (e.g. scalar_coefficient_space())
+  // that run before any SetScalarCoefficient() call.
   Errors::Message msg;
   AMANZI_ASSERT(!plist_.isParameter("upwind method"));
-  std::string default_sc = "none";
-  // DEPRECATE!
-  if (plist_.isParameter("nonlinear coefficient")) {
-    default_sc = plist_.get<std::string>("nonlinear coefficient");
-  }
-  std::string uwname = plist_.get<std::string>("scalar coefficient type", default_sc);
-  if (uwname == "none") {
-    little_k_type_ = OPERATOR_LITTLE_K_NONE;
-
-  } else if (uwname == "upwind: face") {
-    little_k_type_ = OPERATOR_LITTLE_K_UPWIND;
-
-  } else if (uwname == "divk: cell-face" || uwname == "divk: cell-grad-face-twin" ||
-             uwname == "standard: cell") {
-    msg << "DiffusionFV: \"" << uwname << "\" upwinding not supported.";
-    Exceptions::amanzi_throw(msg);
-
-  } else {
-    msg << "DiffusionFV: unknown upwind scheme specified.";
+  little_k_type_ = ParseLittleKType(plist_);
+  if (little_k_type_ != OPERATOR_LITTLE_K_NONE && little_k_type_ != OPERATOR_LITTLE_K_UPWIND) {
+    msg << "DiffusionFV: upwinding scheme not supported for this coefficient type.";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -150,22 +137,47 @@ void
 PDE_DiffusionFV::SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
                                       const Teuchos::RCP<const CompositeVector>& dkdp)
 {
+  if (k == Teuchos::null) {
+    little_k_type_ = OPERATOR_LITTLE_K_NONE;
+  } else {
+    little_k_type_ = ParseLittleKType(plist_);
+    if (little_k_type_ != OPERATOR_LITTLE_K_NONE && little_k_type_ != OPERATOR_LITTLE_K_UPWIND) {
+      Errors::Message msg;
+      msg << "DiffusionFV: upwinding scheme not supported for this coefficient type.";
+      Exceptions::amanzi_throw(msg);
+    }
+
+    AMANZI_ASSERT(k->hasComponent("face"));
+    // NOTE: it seems that Amanzi passes in a cell based kr which is then
+    // ignored, and assumed = 1.  This seems dangerous to me. --etc
+    // AMANZI_ASSERT(!k->hasComponent("cell"));
+  }
+
   transmissibility_initialized_ = false;
   k_ = k;
   dkdp_ = dkdp;
 
-  if (k_ != Teuchos::null) {
-    AMANZI_ASSERT(k_->hasComponent("face"));
-    // NOTE: it seems that Amanzi passes in a cell based kr which is then
-    // ignored, and assumed = 1.  This seems dangerous to me. --etc
-    // AMANZI_ASSERT(!k_->hasComponent("cell"));
-  }
-  if (dkdp_ != Teuchos::null) { AMANZI_ASSERT(dkdp_->hasComponent("cell")); }
+  if (dkdp_ != Teuchos::null) { AMANZI_ASSERT(dkdp_->hasComponent("face")); }
 
   // verify that mass matrices were initialized.
   // -- this shouldn't be called here, as Trans has no dependence on
   //    rel perm, and abs perm may not be set yet! --etc
   // if (!transmissibility_initialized_)  ComputeTransmissibility_();
+}
+
+
+// accessors for things that may or may not be constant
+CompositeVector::cView_type
+PDE_DiffusionFV::ScalarCoefficientFaces(bool scatter) const
+{
+  if (k_ != Teuchos::null && k_->hasComponent("face")) {
+    if (scatter) k_->scatterMasterToGhosted("face");
+    return k_->viewComponent("face", true);
+  } else {
+    CompositeVector::View_type k_face("k_face", nfaces_wghost, 1);
+    Kokkos::deep_copy(k_face, 1.0);
+    return k_face;
+  }
 }
 
 
@@ -224,30 +236,6 @@ PDE_DiffusionFV::UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const Composi
   }
 }
 
-void
-PDE_DiffusionFV::UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
-                                                const Teuchos::Ptr<const CompositeVector>& u,
-                                                const Teuchos::Ptr<const CompositeVector>& factor)
-{
-#if 0
-  // Add derivatives to the matrix (Jacobian in this case)
-  if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_TRUE && u.get()) {
-    AMANZI_ASSERT(u != Teuchos::null);
-
-    if (k_ != Teuchos::null) {
-      if (k_->hasComponent("face")) k_->scatterMasterToGhosted("face");
-    }
-    if (dkdp_ != Teuchos::null) {
-      if (dkdp_->hasComponent("face")) dkdp_->scatterMasterToGhosted("face");
-    }
-
-    AnalyticJacobian_(*u);
-  }
-#else
-  Errors::Message msg("PDE_DiffusionFV::UpdateMatricesNewtonCorrection with factor not implemented");
-  Exceptions::amanzi_throw(msg);
-#endif
-}
 
 /* ******************************************************************
 * Special implementation of boundary conditions.
@@ -383,8 +371,8 @@ void
 PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
 {
   u.scatterMasterToGhosted("cell");
-  AMANZI_ASSERT(dkdp_.get() && dkdp_->hasComponent("cell"));
-  dkdp_->scatterMasterToGhosted("cell");
+  AMANZI_ASSERT(dkdp_.get() && dkdp_->hasComponent("face"));
+  dkdp_->scatterMasterToGhosted("face");
 
   { // scope for views
     const auto bc_model = bcs_trial_[0]->bc_model();
@@ -394,11 +382,14 @@ PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
     const auto cmap_wghost = mesh_->getMap(AmanziMesh::Entity_kind::CELL, true);
     const auto trans_face = transmissibility_->viewComponent("face", false);
 
-    const auto dKdP_cell = dkdp_->viewComponent("cell", true);
+    // dkface_dp(f, 0/1): the 2-DoF, face-based derivative of the upwinded
+    // coefficient wrt the pressure of cells[0]/cells[1] of that face,
+    // computed by whichever upwinding evaluator was selected -- this makes
+    // the Jacobian consistent with any upwind rule, not just total flux.
+    const auto dkface_dp = dkdp_->viewComponent("face", true);
 
     const Amanzi::AmanziMesh::MeshCache& m = mesh_->getCache();
     DenseMatrix_Vector& A = jac_op_->A;
-    int little_k_type = little_k_type_;
 
     Kokkos::parallel_for(
       "PDE_DiffusionFV::AnalyticJacobian_", nfaces_owned, KOKKOS_LAMBDA(const int& f) {
@@ -407,37 +398,14 @@ PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
 
         auto Aface = A[f];
 
-        double dkdp_cells[2] = {0., 0.};
         double pres[2] = {0., 0.};
-        for (int n = 0; n < mcells; n++) {
-          pres[n] = uc(cells(n), 0);
-          dkdp_cells[n] = dKdP_cell(cells(n), 0);
-        }
+        for (int n = 0; n < mcells; n++) { pres[n] = uc(cells(n), 0); }
 
         if (mcells == 2) {
-          double dkface_dp[2] = {0., 0.};
           double dpres = pres[0] - pres[1];
-          if (little_k_type == OPERATOR_LITTLE_K_UPWIND) {
-            double flux0to1 = trans_face(f, 0) * dpres;
-            if (flux0to1 > OPERATOR_UPWIND_RELATIVE_TOLERANCE) { // Upwind
-              dkface_dp[0] = dkdp_cells[0];
-              dkface_dp[1] = 0.0;
-            } else if (flux0to1 < -OPERATOR_UPWIND_RELATIVE_TOLERANCE) { // Upwind
-              dkface_dp[0] = 0.0;
-              dkface_dp[1] = dkdp_cells[1];
-            } else if (fabs(flux0to1) < OPERATOR_UPWIND_RELATIVE_TOLERANCE) { // Upwind
-              dkface_dp[0] = 0.5 * dkdp_cells[0];
-              dkface_dp[1] = 0.5 * dkdp_cells[1];
-            }
-          } else if (little_k_type == OPERATOR_UPWIND_ARITHMETIC_AVERAGE) {
-            dkface_dp[0] = 0.5 * dkdp_cells[0];
-            dkface_dp[1] = 0.5 * dkdp_cells[1];
-          } else {
-            assert(false);
-          }
 
-          Aface(0, 0) = trans_face(f, 0) * dpres * dkface_dp[0];
-          Aface(0, 1) = trans_face(f, 0) * dpres * dkface_dp[1];
+          Aface(0, 0) = trans_face(f, 0) * dpres * dkface_dp(f, 0);
+          Aface(0, 1) = trans_face(f, 0) * dpres * dkface_dp(f, 1);
           Aface(1, 0) = -Aface(0, 0);
           Aface(1, 1) = -Aface(0, 1);
 
@@ -446,7 +414,7 @@ PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
           Aface(0, 0) = 0.0;
           if (bc_model(f) == OPERATOR_BC_DIRICHLET) {
             double dpres = pres[0] - bc_value(f);
-            Aface(0, 0) = trans_face(f, 0) * dpres * dkdp_cells[0];
+            Aface(0, 0) = trans_face(f, 0) * dpres * dkface_dp(f, 0);
           }
         }
       });

@@ -16,6 +16,7 @@
 #include <strings.h>
 
 // TPLs
+#include "Kokkos_Core.hpp"
 #include "Teuchos_RCP.hpp"
 
 // Amanzi
@@ -65,14 +66,6 @@ class PDE_DiffusionFVwithGravity : public PDE_DiffusionFV, public PDE_DiffusionW
 
   // -- modify an operator
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
-  virtual void ModifyMatrices(const CompositeVector& u) override {};
-  virtual void ScaleMassMatrices(double s) override
-  {
-    ComputeTransmissibility_(gravity_term_);
-    transmissibility_->scale(s);
-  };
-
-
   virtual void AnalyticJacobian_(const CompositeVector& solution) override;
 
   // Developments
@@ -81,6 +74,32 @@ class PDE_DiffusionFVwithGravity : public PDE_DiffusionFV, public PDE_DiffusionW
 
   // access
   const CompositeVector& gravity_terms() { return *gravity_term_; }
+
+  // Lightweight, KOKKOS_FUNCTION-callable, on-demand per-face
+  // {transmissibility, gravity flux} lookup -- wraps the already-cached
+  // transmissibility_/gravity_term_ views (both computed eagerly over every
+  // face as a normal part of UpdateMatrices anyway, so this implies no new
+  // eager computation). Meant to be captured by value into a device loop
+  // (see WithTransmissibilityGravityFunctor in PDE_DiffusionFactory.hh),
+  // not called through a virtual pointer per face.
+  struct TransGravFunctor {
+    CompositeVector::cView_type trans_face, grav_face;
+    KOKKOS_INLINE_FUNCTION Kokkos::pair<double, double> operator()(int f) const
+    {
+      return { trans_face(f, 0), grav_face(f, 0) };
+    }
+  };
+
+  TransGravFunctor GetTransmissibilityGravityFunctor() const
+  {
+    if (!transmissibility_initialized_) {
+      Errors::Message msg(
+        "PDE_DiffusionFVwithGravity::GetTransmissibilityGravityFunctor: transmissibility_/"
+        "gravity_term_ have not yet been computed -- call UpdateMatrices() first.");
+      Exceptions::amanzi_throw(msg);
+    }
+    return { transmissibility_->viewComponent("face", true), gravity_term_->viewComponent("face", true) };
+  }
 
 
  public:

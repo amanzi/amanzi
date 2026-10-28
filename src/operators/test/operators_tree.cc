@@ -10,19 +10,23 @@
 /*
   Operators
 
+  Exercises a 2x2 TreeOperator with cross-mesh Op_MeshInjection /
+  Operator_Schema off-diagonal coupling blocks -- the same machinery used by
+  MPCCoupledWaterNonInjected
+  (src/physics/ats/src/pks/mpc/mpc_coupled_water_noninjected.cc).
 */
 
 #include "UnitTest++.h"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "AmanziTypes.hh"
 #include "MeshFactory.hh"
 #include "PDE_DiffusionFV.hh"
 #include "PDE_Accumulation.hh"
-#include "PDE_CouplingFlux.hh"
 #include "TreeVectorSpace.hh"
 #include "TreeVector.hh"
-#include "TreeVector_Utils.hh"
+#include "DataStructuresHelpers.hh"
 #include "SuperMap.hh"
 #include "TreeOperator.hh"
 #include "Operator_Schema.hh"
@@ -58,44 +62,46 @@ SUITE(SURFACE_SUBSURFACE)
       mesh_surf->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
     // cvs
-    auto cvs_surf = Teuchos::rcp(new CompositeVectorSpace());
-    cvs_surf->SetMesh(mesh_surf)->SetGhosted(true)->SetComponent(
+    CompositeVectorSpace cvs_surf;
+    cvs_surf.SetMesh(mesh_surf)->SetGhosted(true)->SetComponent(
       "cell", AmanziMesh::Entity_kind::CELL, 1);
-    auto tvs_surf =
-      Teuchos::rcp(new TreeVectorSpace((Teuchos::RCP<const CompositeVectorSpace>)cvs_surf));
+    auto tvs_surf = Teuchos::rcp(new TreeVectorSpace(cvs_surf.CreateSpace()));
 
-    auto cvs_subsurf = Teuchos::rcp(new CompositeVectorSpace());
-    cvs_subsurf->SetMesh(mesh_subsurf)
+    CompositeVectorSpace cvs_subsurf;
+    cvs_subsurf.SetMesh(mesh_subsurf)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-    auto tvs_subsurf =
-      Teuchos::rcp(new TreeVectorSpace((Teuchos::RCP<const CompositeVectorSpace>)cvs_subsurf));
+    auto tvs_subsurf = Teuchos::rcp(new TreeVectorSpace(cvs_subsurf.CreateSpace()));
 
-    TreeVectorSpace tvs_global;
-    tvs_global.PushBack(tvs_subsurf);
-    tvs_global.PushBack(tvs_surf);
+    auto tvs_global = Teuchos::rcp(new TreeVectorSpace(comm));
+    tvs_global->PushBack(tvs_subsurf);
+    tvs_global->PushBack(tvs_surf);
 
-    auto supermap = Operators::createSuperMap(tvs_global);
+    auto supermap = createSuperMap(*tvs_global);
 
-    CHECK_EQUAL(ncells_subsurf, supermap->Indices(0, "cell", 0).size());
-    CHECK_EQUAL(0, supermap->Indices(0, "cell", 0).front());
-    CHECK_EQUAL(ncells_subsurf - 1, supermap->Indices(0, "cell", 0).back());
+    auto subsurf_inds = supermap->viewIndices<MemSpace_kind::HOST>(0, "cell", 0);
+    CHECK_EQUAL(ncells_subsurf, (int)subsurf_inds.extent(0));
+    CHECK_EQUAL(0, subsurf_inds(0));
+    CHECK_EQUAL(ncells_subsurf - 1, subsurf_inds(ncells_subsurf - 1));
 
-    CHECK_EQUAL(ncells_surf, supermap->Indices(1, "cell", 0).size());
-    CHECK_EQUAL(ncells_subsurf, supermap->Indices(1, "cell", 0).front());
-    CHECK_EQUAL(ncells_surf + ncells_subsurf - 1, supermap->Indices(1, "cell", 0).back());
+    auto surf_inds = supermap->viewIndices<MemSpace_kind::HOST>(1, "cell", 0);
+    CHECK_EQUAL(ncells_surf, (int)surf_inds.extent(0));
+    CHECK_EQUAL(ncells_subsurf, surf_inds(0));
+    CHECK_EQUAL(ncells_surf + ncells_subsurf - 1, surf_inds(ncells_surf - 1));
 
-    Epetra_Vector supervec(*supermap->getMap(), 1);
-    CHECK_EQUAL(ncells_subsurf + ncells_surf, supervec.getLocalLength());
+    Vector_type supervec(supermap->getMap());
+    CHECK_EQUAL(ncells_subsurf + ncells_surf, (int)supervec.getLocalLength());
 
     TreeVector tv(tvs_global);
-    tv.SubVector(0)->Data()->putScalar(1.0);
-    tv.SubVector(1)->Data()->putScalar(2.0);
-    Operators::copyToSuperVector(*supermap, tv, supervec);
-    CHECK_EQUAL(1, supervec[0]);
-    CHECK_EQUAL(1, supervec[ncells_subsurf - 1]);
-    CHECK_EQUAL(2, supervec[ncells_subsurf]);
-    CHECK_EQUAL(2, supervec[ncells_subsurf + ncells_surf - 1]);
+    tv.getSubVector(0)->getData()->putScalar(1.0);
+    tv.getSubVector(1)->getData()->putScalar(2.0);
+    copyToSuperVector(*supermap, tv, supervec);
+
+    auto supervec_v = supervec.getLocalViewHost(Tpetra::Access::ReadOnly);
+    CHECK_EQUAL(1, supervec_v(0, 0));
+    CHECK_EQUAL(1, supervec_v(ncells_subsurf - 1, 0));
+    CHECK_EQUAL(2, supervec_v(ncells_subsurf, 0));
+    CHECK_EQUAL(2, supervec_v(ncells_subsurf + ncells_surf - 1, 0));
   }
 
 
@@ -127,14 +133,18 @@ SUITE(SURFACE_SUBSURFACE)
 
     // create diffusion operators
     Teuchos::ParameterList diff_list_subsurf;
-    Operators::PDE_DiffusionFV diff_subsurf(diff_list_subsurf, mesh_subsurf);
+    Operators::PDE_DiffusionFV diff_subsurf(
+      diff_list_subsurf, Teuchos::RCP<const AmanziMesh::Mesh>(mesh_subsurf));
+    diff_subsurf.Init();
     Teuchos::RCP<Operators::BCs> bc_subsurf = Teuchos::rcp(
       new Operators::BCs(mesh_subsurf, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
     diff_subsurf.SetBCs(bc_subsurf, bc_subsurf);
     diff_subsurf.Setup(Teuchos::null, Teuchos::null, Teuchos::null);
 
     Teuchos::ParameterList diff_list_surf;
-    Operators::PDE_DiffusionFV diff_surf(diff_list_surf, mesh_surf);
+    Operators::PDE_DiffusionFV diff_surf(
+      diff_list_surf, Teuchos::RCP<const AmanziMesh::Mesh>(mesh_surf));
+    diff_surf.Init();
     Teuchos::RCP<Operators::BCs> bc_surf = Teuchos::rcp(
       new Operators::BCs(mesh_surf, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
     diff_surf.SetBCs(bc_surf, bc_surf);
@@ -142,9 +152,8 @@ SUITE(SURFACE_SUBSURFACE)
 
     // create the TreeOperator
     // -- note these operators are square
-    auto tv_subsurf =
-      Teuchos::rcp(new TreeVectorSpace(diff_subsurf.global_operator()->get_row_map()));
-    auto tv_surf = Teuchos::rcp(new TreeVectorSpace(diff_surf.global_operator()->get_row_map()));
+    auto tv_subsurf = Teuchos::rcp(new TreeVectorSpace(diff_subsurf.global_operator()->getRowMap()));
+    auto tv_surf = Teuchos::rcp(new TreeVectorSpace(diff_surf.global_operator()->getRowMap()));
 
     // -- row and col maps for the coupled operator
     auto tv_global = Teuchos::rcp(new TreeVectorSpace(comm));
@@ -156,32 +165,38 @@ SUITE(SURFACE_SUBSURFACE)
     global_op.set_operator_block(0, 0, diff_subsurf.global_operator());
     global_op.set_operator_block(1, 1, diff_surf.global_operator());
 
-    // now we need to do something with off-diagonal blocks, which are not square
+    // now we need to do something with off-diagonal blocks, which are not square.
+    // These are purely cell-to-cell, regardless of the diagonal blocks' own
+    // (FV, so also cell-only here, but mirroring the general pattern used in
+    // mpc_coupled_water_noninjected.cc) schema.
+    Operators::Schema cell_schema(AmanziMesh::Entity_kind::CELL, 1);
+
     Teuchos::ParameterList subsurf_surf_list;
     auto gop_subsurf_surf =
-      Teuchos::rcp(new Operators::Operator_Schema(diff_subsurf.global_operator()->get_row_map(),
-                                                  diff_surf.global_operator()->get_col_map(),
+      Teuchos::rcp(new Operators::Operator_Schema(diff_subsurf.global_operator()->getRowMap(),
+                                                  diff_surf.global_operator()->getDomainMap(),
                                                   subsurf_surf_list,
-                                                  diff_subsurf.global_operator()->schema_row(),
-                                                  diff_surf.global_operator()->schema_col()));
+                                                  cell_schema,
+                                                  cell_schema));
 
     // assume this is a coupling block for q_exchange_surf_to_subsurf = alpha * (p_surf - p_subsurf)
-    // Create an injection map
-    std::vector<int> parents(
-      mesh_surf->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED));
-    const Epetra_Map& cell_map = mesh_subsurf->getMap(AmanziMesh::Entity_kind::CELL, false);
-    for (int sc = 0; sc != ncells_surf; ++sc) {
-      int f = mesh_surf->getEntityParent(AmanziMesh::Entity_kind::CELL, sc);
+    // Create an injection map: for surface-cell-local-index sc, the GID of its
+    // parent subsurface top cell.
+    int ncells_surf_owned = ncells_surf;
+    Kokkos::View<GO*, Kokkos::HostSpace> parent_gids_host("coupling injection GIDs",
+                                                          ncells_surf_owned);
+    for (int sc = 0; sc != ncells_surf_owned; ++sc) {
+      AmanziMesh::Entity_ID f = mesh_surf->getEntityParent(AmanziMesh::Entity_kind::CELL, sc);
       auto cells = mesh_subsurf->getFaceCells(f);
       AMANZI_ASSERT(cells.size() == 1);
-      parents[sc] = cell_map.getGlobalElement(cells[0]);
+      parent_gids_host(sc) = mesh_subsurf->getEntityGID(AmanziMesh::Entity_kind::CELL, cells(0));
     }
-    auto injection = Teuchos::rcp(new Epetra_Map(-1, parents.size(), parents.data(), 0, *comm));
+    auto injection = Teuchos::rcp(new Map_type(-1, parent_gids_host, 0, comm));
 
     auto lop_subsurf_surf =
-      Teuchos::rcp(new Operators::Op_MeshInjection(diff_subsurf.global_operator()->schema_row(),
+      Teuchos::rcp(new Operators::Op_MeshInjection(cell_schema,
                                                    mesh_subsurf,
-                                                   diff_surf.global_operator()->schema_col(),
+                                                   cell_schema,
                                                    mesh_surf,
                                                    injection,
                                                    true));
@@ -192,16 +207,16 @@ SUITE(SURFACE_SUBSURFACE)
     // and the other coupling block
     Teuchos::ParameterList surf_subsurf_list;
     auto gop_surf_subsurf =
-      Teuchos::rcp(new Operators::Operator_Schema(diff_surf.global_operator()->get_row_map(),
-                                                  diff_subsurf.global_operator()->get_col_map(),
-                                                  subsurf_surf_list,
-                                                  diff_surf.global_operator()->schema_row(),
-                                                  diff_subsurf.global_operator()->schema_col()));
+      Teuchos::rcp(new Operators::Operator_Schema(diff_surf.global_operator()->getRowMap(),
+                                                  diff_subsurf.global_operator()->getDomainMap(),
+                                                  surf_subsurf_list,
+                                                  cell_schema,
+                                                  cell_schema));
 
     auto lop_surf_subsurf =
-      Teuchos::rcp(new Operators::Op_MeshInjection(diff_surf.global_operator()->schema_row(),
+      Teuchos::rcp(new Operators::Op_MeshInjection(cell_schema,
                                                    mesh_surf,
-                                                   diff_subsurf.global_operator()->schema_col(),
+                                                   cell_schema,
                                                    mesh_subsurf,
                                                    injection,
                                                    false));
@@ -211,22 +226,46 @@ SUITE(SURFACE_SUBSURFACE)
     // now, can we do something with it?
     global_op.SymbolicAssembleMatrix();
 
-
     // ok, fill it...
-    diff_subsurf.global_operator()->Init();
+    diff_subsurf.global_operator()->Zero();
     diff_subsurf.UpdateMatrices(Teuchos::null, Teuchos::null);
 
-    diff_surf.global_operator()->Init();
+    diff_surf.global_operator()->Zero();
     diff_surf.UpdateMatrices(Teuchos::null, Teuchos::null);
 
-    gop_surf_subsurf->Init();
-    gop_subsurf_surf->Init();
+    gop_surf_subsurf->Zero();
+    gop_subsurf_surf->Zero();
     lop_surf_subsurf->diag->putScalar(0.1);
     lop_subsurf_surf->diag->putScalar(0.2);
 
     global_op.AssembleMatrix();
 
-    global_op.A()->Print(std::cout);
+    // Applying the assembled matrix and the matrix-free (unassembled)
+    // operator to the same vector must agree exactly.
+    TreeVector x(tv_global);
+    x.randomize();
+
+    TreeVector y_mf(tv_global);
+    y_mf.putScalar(0.0);
+    global_op.apply(x, y_mf, 0.0);
+
+    TreeVector y_asm(tv_global);
+    y_asm.putScalar(0.0);
+    global_op.ApplyAssembled(x, y_asm);
+
+    auto ymf_sub = y_mf.getSubVector(0)->getData()->viewComponent<MemSpace_kind::HOST>("cell", false);
+    auto yasm_sub =
+      y_asm.getSubVector(0)->getData()->viewComponent<MemSpace_kind::HOST>("cell", false);
+    for (int c = 0; c != (int)ymf_sub.extent(0); ++c) {
+      CHECK_CLOSE(yasm_sub(c, 0), ymf_sub(c, 0), 1.e-10);
+    }
+
+    auto ymf_surf = y_mf.getSubVector(1)->getData()->viewComponent<MemSpace_kind::HOST>("cell", false);
+    auto yasm_surf =
+      y_asm.getSubVector(1)->getData()->viewComponent<MemSpace_kind::HOST>("cell", false);
+    for (int c = 0; c != (int)ymf_surf.extent(0); ++c) {
+      CHECK_CLOSE(yasm_surf(c, 0), ymf_surf(c, 0), 1.e-10);
+    }
   }
 
 
@@ -268,11 +307,11 @@ SUITE(SURFACE_SUBSURFACE)
     // create the TreeOperator
     // -- note these operators are square
     auto tv1_subsurf =
-      Teuchos::rcp(new TreeVectorSpace(diff1_subsurf.global_operator()->get_row_map()));
+      Teuchos::rcp(new TreeVectorSpace(diff1_subsurf.global_operator()->getRowMap()));
     auto tv2_subsurf =
-      Teuchos::rcp(new TreeVectorSpace(diff2_subsurf.global_operator()->get_row_map()));
-    auto tv1_surf = Teuchos::rcp(new TreeVectorSpace(diff1_surf.global_operator()->get_row_map()));
-    auto tv2_surf = Teuchos::rcp(new TreeVectorSpace(diff2_surf.global_operator()->get_row_map()));
+      Teuchos::rcp(new TreeVectorSpace(diff2_subsurf.global_operator()->getRowMap()));
+    auto tv1_surf = Teuchos::rcp(new TreeVectorSpace(diff1_surf.global_operator()->getRowMap()));
+    auto tv2_surf = Teuchos::rcp(new TreeVectorSpace(diff2_surf.global_operator()->getRowMap()));
 
     // -- row and col maps for the coupled operator
     auto tv_subsurf = Teuchos::rcp(new TreeVectorSpace(comm));
@@ -311,31 +350,31 @@ SUITE(SURFACE_SUBSURFACE)
     op_surf->set_operator_block(1, 0, dE_dp_surf.global_operator());
 
     // Now we need to add things to the coupling block, where surface flow is coupled to subsurface flow
+    Operators::Schema cell_schema(AmanziMesh::Entity_kind::CELL, 1);
+
     Teuchos::ParameterList subsurf_surf_list;
     auto gop_subsurf_surf_flow =
-      Teuchos::rcp(new Operators::Operator_Schema(diff1_subsurf.global_operator()->get_row_map(),
-                                                  diff1_surf.global_operator()->get_col_map(),
+      Teuchos::rcp(new Operators::Operator_Schema(diff1_subsurf.global_operator()->getRowMap(),
+                                                  diff1_surf.global_operator()->getDomainMap(),
                                                   subsurf_surf_list,
-                                                  diff1_subsurf.global_operator()->schema_row(),
-                                                  diff1_surf.global_operator()->schema_col()));
+                                                  cell_schema,
+                                                  cell_schema));
 
     // assume this is a coupling block for q_exchange_surf_to_subsurf = alpha * (p_surf - p_subsurf)
     // Create an injection map
-    std::vector<int> parents(
-      mesh_surf->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED));
-    const Epetra_Map& cell_map = mesh_subsurf->getMap(AmanziMesh::Entity_kind::CELL, false);
+    Kokkos::View<GO*, Kokkos::HostSpace> parent_gids_host("coupling injection GIDs", ncells_surf);
     for (int sc = 0; sc != ncells_surf; ++sc) {
-      int f = mesh_surf->getEntityParent(AmanziMesh::Entity_kind::CELL, sc);
+      AmanziMesh::Entity_ID f = mesh_surf->getEntityParent(AmanziMesh::Entity_kind::CELL, sc);
       auto cells = mesh_subsurf->getFaceCells(f);
       AMANZI_ASSERT(cells.size() == 1);
-      parents[sc] = cell_map.getGlobalElement(cells[0]);
+      parent_gids_host(sc) = mesh_subsurf->getEntityGID(AmanziMesh::Entity_kind::CELL, cells(0));
     }
-    auto injection = Teuchos::rcp(new Epetra_Map(-1, parents.size(), parents.data(), 0, *comm));
+    auto injection = Teuchos::rcp(new Map_type(-1, parent_gids_host, 0, comm));
 
     auto lop_subsurf_surf_flow =
-      Teuchos::rcp(new Operators::Op_MeshInjection(diff1_subsurf.global_operator()->schema_row(),
+      Teuchos::rcp(new Operators::Op_MeshInjection(cell_schema,
                                                    mesh_subsurf,
-                                                   diff1_surf.global_operator()->schema_col(),
+                                                   cell_schema,
                                                    mesh_surf,
                                                    injection,
                                                    true));
@@ -356,16 +395,16 @@ SUITE(SURFACE_SUBSURFACE)
     // latter)
     Teuchos::ParameterList surf_subsurf_list;
     auto gop_surf_subsurf_flow =
-      Teuchos::rcp(new Operators::Operator_Schema(diff1_surf.global_operator()->get_row_map(),
-                                                  diff1_subsurf.global_operator()->get_col_map(),
-                                                  subsurf_surf_list,
-                                                  diff1_surf.global_operator()->schema_row(),
-                                                  diff1_subsurf.global_operator()->schema_col()));
+      Teuchos::rcp(new Operators::Operator_Schema(diff1_surf.global_operator()->getRowMap(),
+                                                  diff1_subsurf.global_operator()->getDomainMap(),
+                                                  surf_subsurf_list,
+                                                  cell_schema,
+                                                  cell_schema));
 
     auto lop_surf_subsurf_flow =
-      Teuchos::rcp(new Operators::Op_MeshInjection(diff1_surf.global_operator()->schema_row(),
+      Teuchos::rcp(new Operators::Op_MeshInjection(cell_schema,
                                                    mesh_surf,
-                                                   diff1_subsurf.global_operator()->schema_col(),
+                                                   cell_schema,
                                                    mesh_subsurf,
                                                    injection,
                                                    false));
@@ -409,285 +448,117 @@ SUITE(SURFACE_SUBSURFACE)
     op_global.SymbolicAssembleMatrix();
 
     // ok, fill it...
-    diff1_subsurf.global_operator()->Init();
-    CompositeVector vals1(diff1_subsurf.global_operator()->DomainMap());
+    diff1_subsurf.global_operator()->Zero();
+    CompositeVector vals1(diff1_subsurf.global_operator()->getDomainMap());
     vals1.putScalar(1.);
     diff1_subsurf.AddAccumulationTerm(vals1, "cell");
 
-    diff2_subsurf.global_operator()->Init();
-    CompositeVector vals2(diff2_subsurf.global_operator()->DomainMap());
+    diff2_subsurf.global_operator()->Zero();
+    CompositeVector vals2(diff2_subsurf.global_operator()->getDomainMap());
     vals2.putScalar(2.);
     diff2_subsurf.AddAccumulationTerm(vals2, "cell");
 
-    diff1_surf.global_operator()->Init();
-    CompositeVector vals3(diff1_surf.global_operator()->DomainMap());
+    diff1_surf.global_operator()->Zero();
+    CompositeVector vals3(diff1_surf.global_operator()->getDomainMap());
     vals3.putScalar(3.);
     diff1_surf.AddAccumulationTerm(vals3, "cell");
 
-    diff2_surf.global_operator()->Init();
-    CompositeVector vals4(diff2_surf.global_operator()->DomainMap());
+    diff2_surf.global_operator()->Zero();
+    CompositeVector vals4(diff2_surf.global_operator()->getDomainMap());
     vals4.putScalar(4.);
     diff2_surf.AddAccumulationTerm(vals4, "cell");
 
     // fill the coupling flux terms
-    gop_surf_subsurf_flow->Init();
-    gop_subsurf_surf_flow->Init();
+    gop_surf_subsurf_flow->Zero();
+    gop_subsurf_surf_flow->Zero();
     lop_surf_subsurf_flow->diag->putScalar(0.1);
     lop_subsurf_surf_flow->diag->putScalar(0.2);
 
     // fill the tightly coupled flow/energy terms
-    dWC_dT.global_operator()->Init();
-    CompositeVector dWC_dT_values(dWC_dT.global_operator()->DomainMap());
+    dWC_dT.global_operator()->Zero();
+    CompositeVector dWC_dT_values(dWC_dT.global_operator()->getDomainMap());
     dWC_dT_values.putScalar(1.e-2);
     dWC_dT.AddAccumulationTerm(dWC_dT_values, "cell");
 
-    dE_dp_surf.global_operator()->Init();
-    CompositeVector dE_dp_surf_values(dE_dp_surf.global_operator()->DomainMap());
+    dE_dp_surf.global_operator()->Zero();
+    CompositeVector dE_dp_surf_values(dE_dp_surf.global_operator()->getDomainMap());
     dE_dp_surf_values.putScalar(2.e-2);
     dE_dp_surf.AddAccumulationTerm(dE_dp_surf_values, "cell");
 
     op_global.AssembleMatrix();
-    op_global.A()->Print(std::cout);
 
     // apply it to the ones vector and make sure we get the right answer...
 
     // apply in assembled form
-    Epetra_Vector ones(*op_global.get_supermap()->getMap());
+    auto supermap = op_global.getSuperMap();
+    Vector_type ones(supermap->getMap());
     ones.putScalar(1.0);
-    ones[0] = 1.0001;
-    Epetra_Vector result(ones);
+    {
+      auto ones_v = ones.getLocalViewHost(Tpetra::Access::ReadWrite);
+      ones_v(0, 0) = 1.0001;
+    }
+    Vector_type result(supermap->getMap());
     result.putScalar(0.);
-    op_global.A()->Apply(ones, result);
-    result.Print(std::cout);
+    op_global.A()->apply(ones, result);
 
-    CHECK_EQUAL(6, result.getLocalLength()); // size
-    CHECK_CLOSE(1.0101, result[0], 1.e-10);  // subsurface flow + dWC_dT
-    CHECK_CLOSE(1.21, result[2], 1.e-10);    // subsurface flow + dwc_dt + coupling to surface
+    CHECK_EQUAL(6, (int)result.getLocalLength()); // size
+    {
+      auto result_v = result.getLocalViewHost(Tpetra::Access::ReadOnly);
+      CHECK_CLOSE(1.0101, result_v(0, 0), 1.e-10); // subsurface flow + dWC_dT
+      CHECK_CLOSE(1.21, result_v(2, 0), 1.e-10);   // subsurface flow + dwc_dt + coupling to surface
 
-    CHECK_CLOSE(2.0, result[1], 1.e-10); // subsurface energy
-    CHECK_CLOSE(2.0, result[3], 1.e-10); // subsurface energy
+      CHECK_CLOSE(2.0, result_v(1, 0), 1.e-10); // subsurface energy
+      CHECK_CLOSE(2.0, result_v(3, 0), 1.e-10); // subsurface energy
 
-    CHECK_CLOSE(3.1, result[4], 1.e-10);  // surface flow + coupling to subsurface
-    CHECK_CLOSE(4.02, result[5], 1.e-10); // surface energy + dE_dp_surf
-
-
-    // apply in unassembled form
-    TreeVector ones_t(op_global.DomainMap());
-    ones_t.putScalar(1.0);
-    // make sure we get the right subsurface gid in our restriction operation
-    (*ones_t.SubVector(0)->SubVector(0)->Data()->viewComponent("cell", false))[0][0] = 1.0001;
-    TreeVector result_t(op_global.RangeMap());
-    result_t.putScalar(0.0);
-    op_global.Apply(ones_t, result_t);
-
-
-    CHECK_CLOSE(1.0101,
-                (*result_t.SubVector(0)->SubVector(0)->Data()->viewComponent("cell", false))[0][0],
-                1.e-10); // subsurface flow + dWC_dT
-    CHECK_CLOSE(1.21,
-                (*result_t.SubVector(0)->SubVector(0)->Data()->viewComponent("cell", false))[0][1],
-                1.e-10); // subsurface flow + dWC_dT + coupling to surface
-
-    CHECK_CLOSE(2.0,
-                (*result_t.SubVector(0)->SubVector(1)->Data()->viewComponent("cell", false))[0][0],
-                1.e-10); // subsurface energy
-    CHECK_CLOSE(2.0,
-                (*result_t.SubVector(0)->SubVector(1)->Data()->viewComponent("cell", false))[0][1],
-                1.e-10); // subsurface energy
-
-    CHECK_CLOSE(3.1,
-                (*result_t.SubVector(1)->SubVector(0)->Data()->viewComponent("cell", false))[0][0],
-                1.e-10); // surface flow + coupling to subsurface
-    CHECK_CLOSE(4.02,
-                (*result_t.SubVector(1)->SubVector(1)->Data()->viewComponent("cell", false))[0][0],
-                1.e-10); // surface energy + dE_dp_surf
-
-
-    Epetra_Vector result2(result);
-    Operators::copyToSuperVector(*op_global.get_supermap(), result_t, result2);
-    result2.Update(1, result, -1);
-    double norm2(0.);
-    result2.Norm2(&norm2);
-    CHECK_CLOSE(0.0, norm2, 1.e-10);
-  }
-
-
-  TEST(THREE_LEVEL_HIERARCHY)
-  {
-    // This tests coupling three block with 1x1, 2x2 and 3x3 diagonal operators.
-    using namespace Amanzi;
-    auto comm = Amanzi::getDefaultComm();
-
-    // create meshes
-    AmanziMesh::MeshFactory meshfactory(comm, Teuchos::null);
-    auto mesh1 = meshfactory.create(0.0, 0.0, 1.0, 1.0, 2, 2);
-    auto mesh2 = meshfactory.create(0.0, 0.0, 1.0, 1.0, 3, 3);
-    auto mesh3 = meshfactory.create(0.0, 0.0, 1.0, 1.0, 4, 4);
-
-    // create primary (diagonal) entries
-    Operators::PDE_Accumulation diff1(AmanziMesh::Entity_kind::CELL, mesh1);
-
-    Operators::PDE_Accumulation diff2a(AmanziMesh::Entity_kind::CELL, mesh2);
-    Operators::PDE_Accumulation diff2b(AmanziMesh::Entity_kind::CELL, mesh2);
-
-    Operators::PDE_Accumulation diff3a(AmanziMesh::Entity_kind::CELL, mesh3);
-    Operators::PDE_Accumulation diff3b(AmanziMesh::Entity_kind::CELL, mesh3);
-    Operators::PDE_Accumulation diff3c(AmanziMesh::Entity_kind::CELL, mesh3);
-
-    // create the TreeOperator
-    // -- note these operators are square
-    auto tv1 = Teuchos::rcp(new TreeVectorSpace(diff1.global_operator()->get_row_map()));
-    auto tv2 = Teuchos::rcp(new TreeVectorSpace(diff2a.global_operator()->get_row_map()));
-    auto tv3 = Teuchos::rcp(new TreeVectorSpace(diff3a.global_operator()->get_row_map()));
-
-    // -- row and col maps for the coupled operator
-    auto tv1all = Teuchos::rcp(new TreeVectorSpace(comm));
-    tv1all->PushBack(tv1);
-
-    auto tv2all = Teuchos::rcp(new TreeVectorSpace(comm));
-    tv2all->PushBack(tv2);
-    tv2all->PushBack(tv2);
-
-    auto tv3all = Teuchos::rcp(new TreeVectorSpace(comm));
-    tv3all->PushBack(tv3);
-    tv3all->PushBack(tv3);
-    tv3all->PushBack(tv3);
-
-    auto tv23 = Teuchos::rcp(new TreeVectorSpace(comm));
-    tv23->PushBack(tv2all);
-    tv23->PushBack(tv3all);
-
-    auto tv123 = Teuchos::rcp(new TreeVectorSpace(comm));
-    tv123->PushBack(tv1all);
-    tv123->PushBack(tv23);
-
-    // -- now the operator
-    auto op1 = Teuchos::rcp(new Operators::TreeOperator(tv1all, tv1all));
-    op1->set_operator_block(0, 0, diff1.global_operator());
-
-    auto op2 = Teuchos::rcp(new Operators::TreeOperator(tv2all, tv2all));
-    op2->set_operator_block(0, 0, diff2a.global_operator());
-    op2->set_operator_block(1, 1, diff2b.global_operator());
-
-    auto op3 = Teuchos::rcp(new Operators::TreeOperator(tv3all, tv3all));
-    op3->set_operator_block(0, 0, diff3a.global_operator());
-    op3->set_operator_block(1, 1, diff3b.global_operator());
-    op3->set_operator_block(2, 2, diff3c.global_operator());
-
-    auto op23 = Teuchos::rcp(new Operators::TreeOperator(tv23, tv23));
-    op23->set_block(0, 0, op2);
-    op23->set_block(1, 1, op3);
-
-    auto op123 = Teuchos::rcp(new Operators::TreeOperator(tv123, tv123));
-    op123->set_block(0, 0, op1);
-    op123->set_block(1, 1, op23);
-
-    // -- add coupling of operators across multiple levels (1 -> 2a)
-    //    curently we cannot couple between two levels
-    /*
-  auto coup12 = Teuchos::rcp(new Operators::TreeOperator(tv1all, tv2all));
-  op123->set_block(0, 1, coup12);
-
-  auto cvs0 = op1->get_row_map()->SubVector(0)->Data();
-  auto cvs1 = op2->get_col_map()->SubVector(0)->Data();
-
-  auto inds_row0 = std::make_shared<std::vector<std::vector<int> > >(4);
-  auto inds_col1 = std::make_shared<std::vector<std::vector<int> > >(4);
-
-  for (int k = 0; k < 4; ++k) {
-    (*inds_row0)[k].resize(1);
-    (*inds_col1)[k].resize(1);
-
-    (*inds_row0)[k][0] = k;  // local row id for op1
-    (*inds_col1)[k][0] = k;  // local column id for op23
-  }
-
-  auto op_coupling12 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
-      plist, cvs0, cvs1, inds_row0, inds_col1));
-  coup12->set_operator_block(0, 0, op_coupling12->global_operator());
-  */
-
-    // -- add coupling of operators on the same level (2a -> 3a)
-    //    we add one off-diagonal block to 2x2 tree-operator op23.
-    //    currently it is not possible to select components to couple.
-    auto coup23 = Teuchos::rcp(new Operators::TreeOperator(tv2all, tv3all));
-    op23->set_block(0, 1, coup23);
-
-    auto cvs1 = op23->get_row_map()->SubVector(0)->SubVector(0)->Data();
-    auto cvs2 = op23->get_col_map()->SubVector(1)->SubVector(0)->Data();
-
-    auto inds_row1 = std::make_shared<std::vector<std::vector<int>>>(9);
-    auto inds_col2 = std::make_shared<std::vector<std::vector<int>>>(9);
-
-    for (int k = 0; k < 9; ++k) {
-      (*inds_row1)[k].resize(1);
-      (*inds_col2)[k].resize(1);
-
-      (*inds_row1)[k][0] = k; // local row id for op23
-      (*inds_col2)[k][0] = k; // local column id for op23
+      CHECK_CLOSE(3.1, result_v(4, 0), 1.e-10);  // surface flow + coupling to subsurface
+      CHECK_CLOSE(4.02, result_v(5, 0), 1.e-10); // surface energy + dE_dp_surf
     }
 
-    Teuchos::ParameterList plist;
-    auto op_coupling23 =
-      Teuchos::rcp(new Operators::PDE_CouplingFlux(plist, cvs1, cvs2, inds_row1, inds_col2));
-    coup23->set_operator_block(0, 1, op_coupling23->global_operator());
+    // apply in unassembled form
+    TreeVector ones_t(op_global.getDomainMap());
+    ones_t.putScalar(1.0);
+    // make sure we get the right subsurface gid in our restriction operation
+    ones_t.getSubVector(0)
+      ->getSubVector(0)
+      ->getData()
+      ->viewComponent<MemSpace_kind::HOST>("cell", false)(0, 0) = 1.0001;
+    TreeVector result_t(op_global.getRangeMap());
+    result_t.putScalar(0.0);
+    op_global.apply(ones_t, result_t);
 
-    // print capabilities
-    std::cout << "Tree Operator Structure:\n" << op123->PrintDiagnostics() << std::endl;
+    CHECK_CLOSE(1.0101,
+               result_t.getSubVector(0)->getSubVector(0)->getData()->viewComponent<MemSpace_kind::HOST>(
+                 "cell", false)(0, 0),
+               1.e-10); // subsurface flow + dWC_dT
+    CHECK_CLOSE(1.21,
+               result_t.getSubVector(0)->getSubVector(0)->getData()->viewComponent<MemSpace_kind::HOST>(
+                 "cell", false)(1, 0),
+               1.e-10); // subsurface flow + dWC_dT + coupling to surface
 
-    // add data
-    diff1.global_operator()->Init();
-    CompositeVector val1(diff1.global_operator()->DomainMap());
-    val1.putScalar(1.0);
-    diff1.AddAccumulationTerm(val1, "cell");
+    CHECK_CLOSE(2.0,
+               result_t.getSubVector(0)->getSubVector(1)->getData()->viewComponent<MemSpace_kind::HOST>(
+                 "cell", false)(0, 0),
+               1.e-10); // subsurface energy
+    CHECK_CLOSE(2.0,
+               result_t.getSubVector(0)->getSubVector(1)->getData()->viewComponent<MemSpace_kind::HOST>(
+                 "cell", false)(1, 0),
+               1.e-10); // subsurface energy
 
-    diff2a.global_operator()->Init();
-    CompositeVector val2a(diff2a.global_operator()->DomainMap());
-    val2a.putScalar(2.1);
-    diff2a.AddAccumulationTerm(val2a, "cell");
+    CHECK_CLOSE(3.1,
+               result_t.getSubVector(1)->getSubVector(0)->getData()->viewComponent<MemSpace_kind::HOST>(
+                 "cell", false)(0, 0),
+               1.e-10); // surface flow + coupling to subsurface
+    CHECK_CLOSE(4.02,
+               result_t.getSubVector(1)->getSubVector(1)->getData()->viewComponent<MemSpace_kind::HOST>(
+                 "cell", false)(0, 0),
+               1.e-10); // surface energy + dE_dp_surf
 
-    diff2b.global_operator()->Init();
-    CompositeVector val2b(diff2b.global_operator()->DomainMap());
-    val2b.putScalar(2.2);
-    diff2b.AddAccumulationTerm(val2b, "cell");
-
-    diff3a.global_operator()->Init();
-    CompositeVector val3a(diff3a.global_operator()->DomainMap());
-    val3a.putScalar(3.1);
-    diff3a.AddAccumulationTerm(val3a, "cell");
-
-    diff3b.global_operator()->Init();
-    CompositeVector val3b(diff3b.global_operator()->DomainMap());
-    val3b.putScalar(3.2);
-    diff3b.AddAccumulationTerm(val3b, "cell");
-
-    diff3c.global_operator()->Init();
-    CompositeVector val3c(diff3c.global_operator()->DomainMap());
-    val3c.putScalar(3.3);
-    diff3c.AddAccumulationTerm(val3c, "cell");
-
-    // auto values12 = std::make_shared<std::vector<double> >(4);
-    // for (int k = 0; k < 4; ++k) (*values12)[k] = 4.1;
-    // op_coupling12->Setup(values12, -1.0);
-    // op_coupling12->UpdateMatrices(Teuchos::null, Teuchos::null);
-
-    auto values23 = std::make_shared<std::vector<double>>(9);
-    for (int k = 0; k < 9; ++k) { (*values23)[k] = 4.2; }
-    op_coupling23->Setup(values23, -1.0);
-    op_coupling23->UpdateMatrices(Teuchos::null, Teuchos::null);
-
-    // assemble procedure
-    op123->SymbolicAssembleMatrix();
-    op123->AssembleMatrix();
-    // std::cout << *op123->A() << std::endl;
-
-    // verify matrix
-    Epetra_Vector ones(*op123->get_supermap()->getMap());
-    Epetra_Vector result(ones);
-
-    ones.putScalar(1.0);
-    op123->A()->Apply(ones, result);
-    // CHECK_CLOSE(result[0], -3.1, 1e-12);
-    CHECK_CLOSE(result[4], -2.1, 1e-12);
+    // matrix-free (unassembled) apply and assembled apply must agree exactly.
+    Vector_type result2(supermap->getMap());
+    copyToSuperVector(*supermap, result_t, result2);
+    // result2 <- result2 - result  (update's convention is this = beta*this + alpha*A)
+    result2.update(-1., result, 1.);
+    double norm2 = result2.norm2();
+    CHECK_CLOSE(0.0, norm2, 1.e-10);
   }
 }

@@ -13,7 +13,6 @@
 #include "errors.hh"
 #include "Inverse.hh"
 #include "MatrixFE.hh"
-// #include "MFD3D_CrouzeixRaviart.hh"
 #include "MFD3D_Diffusion.hh"
 #include "InverseFactory.hh"
 #include "SuperMap.hh"
@@ -21,18 +20,12 @@
 
 // Operators
 #include "Op.hh"
-//#include "Op_Cell_Node.hh"
 #include "Op_Cell_FaceCell.hh"
 #include "Op_Face_Cell.hh"
-//#include "Op_SurfaceFace_SurfaceCell.hh"
 
 #include "OperatorDefs.hh"
 #include "Operator_FaceCell.hh"
-//#include "Operator_FaceCellScc.hh"
 #include "Operator_FaceCellSff.hh"
-//#include "Operator_Node.hh"
-//#include "Operator_ConsistentFace.hh"
-//#include "UniqueLocalIndex.hh"
 
 #include "PDE_DiffusionMFD.hh"
 
@@ -48,9 +41,8 @@ PDE_DiffusionMFD::SetTensorCoefficient(const Teuchos::RCP<const TensorVector>& K
 {
   transmissibility_initialized_ = false;
   K_ = K;
-  if (local_op_schema_ ==
-      OPERATOR_SCHEMA_BASE_CELL + OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL) {
-    if (K_ != Teuchos::null && K_.get()) AMANZI_ASSERT(K_->size() == ncells_owned);
+  if ((local_op_schema_ & OPERATOR_SCHEMA_BASE_CELL) && (K_ != Teuchos::null)) {
+    AMANZI_ASSERT(K_->size() == ncells_owned);
   }
 }
 
@@ -61,19 +53,20 @@ void
 PDE_DiffusionMFD::SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
                                        const Teuchos::RCP<const CompositeVector>& dkdp)
 {
+  if (k == Teuchos::null) {
+    little_k_type_ = OPERATOR_LITTLE_K_NONE;
+  } else {
+    little_k_type_ = ParseLittleKType(plist_);
+    AMANZI_ASSERT(little_k_type_ != OPERATOR_LITTLE_K_NONE);
+
+    // compatibility checks
+    if (little_k_type_ != OPERATOR_LITTLE_K_UPWIND) AMANZI_ASSERT(k->hasComponent("cell"));
+    if (little_k_type_ != OPERATOR_LITTLE_K_STANDARD) AMANZI_ASSERT(k->hasComponent("face"));
+    if (little_k_type_ == OPERATOR_LITTLE_K_DIVK_TWIN) AMANZI_ASSERT(k->hasComponent("twin"));
+  }
+
   k_ = k;
   dkdp_ = dkdp;
-
-  // compatibility checks
-  if (k_ != Teuchos::null) {
-    if (little_k_type_ != OPERATOR_LITTLE_K_UPWIND) {
-      //AMANZI_ASSERT(k->hasComponent("cell"));
-    }
-
-    if (little_k_type_ != OPERATOR_LITTLE_K_STANDARD) { AMANZI_ASSERT(k->hasComponent("face")); }
-
-    if (little_k_type_ == OPERATOR_LITTLE_K_DIVK_TWIN) { AMANZI_ASSERT(k->hasComponent("twin")); }
-  }
 }
 
 
@@ -91,19 +84,10 @@ PDE_DiffusionMFD::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux
   if (k_ != Teuchos::null) k_->scatterMasterToGhosted();
 
   if (!exclude_primary_terms_) {
-    if (local_op_schema_ & OPERATOR_SCHEMA_DOFS_NODE) {
-      assert(false);
-      //UpdateMatricesNodal_();
-    } else if ((local_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) &&
-               (local_op_schema_ & OPERATOR_SCHEMA_DOFS_FACE)) {
-      if (little_k_type_ == OPERATOR_LITTLE_K_NONE) {
-        UpdateMatricesMixed_();
-      } else {
-        UpdateMatricesMixed_little_k_();
-      }
-    } else if (local_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
-      assert(false);
-      //UpdateMatricesTPFA_();
+    if (little_k_type_ == OPERATOR_LITTLE_K_NONE) {
+      UpdateMatricesMixed_();
+    } else {
+      UpdateMatricesMixed_little_k_();
     }
   }
 }
@@ -120,37 +104,9 @@ PDE_DiffusionMFD::UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const Compos
 {
   //  add Newton-type corrections
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
-    if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
-      if (dkdp_ != Teuchos::null) dkdp_->scatterMasterToGhosted();
-      AddNewtonCorrectionCell_(flux, u, scalar_factor);
-
-    } else {
-      Errors::Message msg("PDE_DiffusionMFD: Newton correction may only be applied to schemas that "
-                          "include CELL dofs.");
-      Exceptions::amanzi_throw(msg);
-    }
+    if (dkdp_ != Teuchos::null) dkdp_->scatterMasterToGhosted();
+    AddNewtonCorrectionCell_(flux, u, scalar_factor);
   }
-}
-
-
-void
-PDE_DiffusionMFD::UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
-                                                 const Teuchos::Ptr<const CompositeVector>& u,
-                                                 const Teuchos::Ptr<const CompositeVector>& factor)
-{
-  assert(false);
-  // add Newton-type corrections
-  //if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
-  //  if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
-
-  //    if (dkdp_ !=  Teuchos::null) dkdp_->scatterMasterToGhosted();
-  //    AddNewtonCorrectionCell_(flux, u, factor);
-
-  //  } else {
-  //    Errors::Message msg("PDE_DiffusionMFD: Newton correction may only be applied to schemas that include CELL dofs.");
-  //    Exceptions::amanzi_throw(msg);
-  //  }
-  //}
 }
 
 
@@ -211,7 +167,7 @@ PDE_DiffusionMFD::Preallocate_little_k_(bool init)
 void
 PDE_DiffusionMFD::UpdateMatricesMixed_little_k_()
 {
-  k_->scatterMasterToGhosted();
+  if (k_ != Teuchos::null) k_->scatterMasterToGhosted();
   CompositeVector::cView_type k_cell, k_face, k_twin;
   if (k_ != Teuchos::null) {
     if (k_->hasComponent("cell")) k_cell = k_->viewComponent("cell", false);
@@ -242,7 +198,7 @@ PDE_DiffusionMFD::UpdateMatricesMixed_little_k_()
           for (int n = 0; n < nfaces; n++) kr(n) = k_face(faces[n], 0);
         if (k_cell.extent(0) > 0) kr(nfaces) = k_cell(c, 0);
 
-        // -- new scheme: SPD discretization with upwind and equal spliting
+        // -- new scheme: SPD discretization with upwind and equal splitting
       } else if (little_k_type == OPERATOR_LITTLE_K_DIVK_BASE) {
         if (k_face.extent(0) > 0)
           for (int n = 0; n < nfaces; n++) kr(n) = sqrt(k_face(faces[n], 0));
@@ -314,139 +270,6 @@ PDE_DiffusionMFD::UpdateMatricesMixed_little_k_()
 
 
 /* ******************************************************************
-* Calculate elemental stiffness matrices: nodal DOFs.
-****************************************************************** */
-void
-PDE_DiffusionMFD::UpdateMatricesNodal_()
-{
-  AMANZI_ASSERT(!scaled_constraint_);
-  assert(false);
-  // update matrix blocks
-  //WhetStone::MFD3D_Diffusion mfd(mesh_);
-  //mfd.ModifyStabilityScalingFactor(factor_);
-
-  //AmanziMesh::Entity_ID_List nodes;
-
-  //nfailed_primary_ = 0;
-
-  //WhetStone::Tensor<> K(2, 1);
-  //K(0, 0) = 1.0;
-
-  //for (int c = 0; c < ncells_owned; c++) {
-  //  if (K_.get()) K = K_->at_host(c);
-
-  //  mesh_->cell_get_nodes(c, nodes);
-  //  int nnodes = nodes.size();
-
-  //  WhetStone::DenseMatrix<> Acell(nnodes, nnodes);
-
-  //  int method = mfd_primary_;
-  //  int ok = WhetStone::WHETSTONE_ELEMENTAL_MATRIX_FAILED;
-
-  //  if (method == WhetStone::DIFFUSION_OPTIMIZED_FOR_MONOTONICITY) {
-  //    ok = mfd.StiffnessMatrixMMatrix(c, K, Acell);
-  //    method = mfd_secondary_;
-  //  } else {
-  //    ok = mfd.StiffnessMatrix(c, K, Acell);
-  //    method = mfd_secondary_;
-  //  }
-
-  //  if (ok != WhetStone::WHETSTONE_ELEMENTAL_MATRIX_OK) {
-  //    nfailed_primary_++;
-  //    ok = mfd.StiffnessMatrix(c, K, Acell);
-  //  }
-
-  //  if (ok == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_FAILED) {
-  //    Errors::Message msg("Stiffness_MFD: unexpected failure of LAPACK in WhetStone.");
-  //    Exceptions::amanzi_throw(msg);
-  //  }
-
-  //  local_op_->matrices[c].assign(Acell);
-  //}
-}
-
-/* ******************************************************************
-* Calculate and assemble fluxes using the TPFA scheme.
-* This routine does not use little k.
-****************************************************************** */
-void
-PDE_DiffusionMFD::UpdateMatricesTPFA_()
-{
-  assert(false);
-  // populate transmissibilities
-  //WhetStone::MFD3D_Diffusion mfd(mesh_);
-  //WhetStone::DenseMatrix<> Mff;
-
-  // \TODO Allocate memory
-  //CSR_Matrix Mffv;
-
-  //CSR_Matrix& A = local_op_->A;
-
-  //CompositeVectorSpace cv_space;
-  //cv_space.SetMesh(mesh_);
-  //cv_space.SetGhosted(true);
-  //cv_space.SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
-
-  //Teuchos::RCP<CompositeVector> T = cv_space.Create(); //Teuchos::RCP<CompositeVector>(new CompositeVector(cv_space, true));
-  //const auto Ttmp = T->viewComponent("face", true);
-
-  //WhetStone::Tensor<> Kc(mesh_->space_dimension(), 1);
-  //Kc(0, 0) = 1.0;
-  // const AmanziMesh::MeshCache& m = mesh_->getCache();
-
-  //AmanziMesh::Entity_ID_View cells, faces;
-  //Ttmp.PutScalar(0.0);
-
-  //Kokkos::parallel_for(
-  //  "PDE_DiffusionMFD::UpdateMatricesTPFA_",
-  //  ncells_owned,
-  //  KOKKOS_LAMBDA(const int& c){
-  //    AmanziMesh::Entity_ID_View faces;
-  //    m.cell_get_faces(c, faces);
-  //    int nfaces = faces.size();
-
-  //    WhetStone::Tensor<DeviceOnlyMemorySpace> Kc = K_->at(c);
-  //    WhetStone::DenseMatrix<DeviceOnlyMemorySpace> Mff(Mffv.at(c),Mffv.size(c,0),Mffv.size(c,1));
-
-  //mfd.MassMatrixInverseTPFA(c, Kc, Mff);
-
-  //    for (int n = 0; n < nfaces; n++) {
-  //      int f = faces[n];
-  //      Ttmp(0,f) += 1.0 / Mff(n, n);
-  //    }
-  //  });
-
-  //Kokkos::parallel_for(
-  //  "PDE_DiffusionMFD::UpdateMatricesTPFA_",
-  //  nfaces_owned,
-  //  KOKKOS_LAMBDA(const int& f){
-  //    AmanziMesh::Entity_ID_View cells;
-  //    m.face_get_cells(f, AmanziMesh::Parallel_kind::ALL, cells);
-  //    int ncells = cells.size();
-  //    WhetStone::DenseMatrix<DeviceOnlyMemorySpace> Aface(A.at(f),A.size(f,0),A.size(f,1));
-
-  //if (Ttmp(0,f) == 0.0) {
-  //  Aface = 0.0;
-  //  local_op_->matrices[f].assign(Aface);
-  //  continue;  // We skip zero transmissibilities
-  //}
-
-  //    if (ncells == 2) {
-  //      double coef = 1.0 / Ttmp(0,f);
-  //      Aface(0, 0) =  coef;
-  //      Aface(1, 1) =  coef;
-  //      Aface(0, 1) = -coef;
-  //      Aface(1, 0) = -coef;
-  //    } else {
-  //      double coef = 1.0 / Ttmp(0,f);
-  //      Aface(0, 0) = coef;
-  //    }
-
-  //  });
-}
-
-
-/* ******************************************************************
 * Apply boundary conditions to the local matrices. We always zero-out
 * matrix rows for essential test BCs. As to trial BCs, there are
 * options: eliminate them or not. Finally we may add the essntial BC
@@ -461,30 +284,9 @@ PDE_DiffusionMFD::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
   bcs_applied_ = true;
 
   if (!exclude_primary_terms_) {
-    if (local_op_schema_ ==
-        (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_FACE | OPERATOR_SCHEMA_DOFS_CELL)) {
-      AMANZI_ASSERT(bcs_trial_.size() == 1);
-      AMANZI_ASSERT(bcs_test_.size() == 1);
-      ApplyBCs_Mixed_(bcs_trial_[0].ptr(), bcs_test_[0].ptr(), primary, eliminate, essential_eqn);
-
-    } else if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_CELL)) {
-      assert(false);
-      //AMANZI_ASSERT(bcs_trial_.size() == 1);
-      //AMANZI_ASSERT(bcs_test_.size() == 1);
-      //ApplyBCs_Cell_(bcs_trial_[0].ptr(), bcs_test_[0].ptr(), primary, eliminate, essential_eqn);
-
-    } else if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_NODE)) {
-      assert(false);
-      //Teuchos::Ptr<const BCs> bc_f, bc_n;
-      //for (const auto& bc : bcs_trial_) {
-      //  if (bc->kind() == AmanziMesh::Entity_kind::FACE) {
-      //    bc_f = bc.ptr();
-      //  } else if (bc->kind() == AmanziMesh::Entity_kind::NODE) {
-      //    bc_n = bc.ptr();
-      //  }
-      //}
-      //ApplyBCs_Nodal_(bc_f.ptr(), bc_n.ptr(), primary, eliminate, essential_eqn);
-    }
+    AMANZI_ASSERT(bcs_trial_.size() == 1);
+    AMANZI_ASSERT(bcs_test_.size() == 1);
+    ApplyBCs_Mixed_(bcs_trial_[0].ptr(), bcs_test_[0].ptr(), primary, eliminate, essential_eqn);
   }
   if (jac_op_.get()) ApplyBCsJacobian();
 }
@@ -585,178 +387,6 @@ PDE_DiffusionMFD::ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_trial,
 
 
 /* ******************************************************************
-* Apply BCs on cell operators
-****************************************************************** */
-void
-PDE_DiffusionMFD::ApplyBCs_Cell_(const Teuchos::Ptr<const BCs>& bc_trial,
-                                 const Teuchos::Ptr<const BCs>& bc_test,
-                                 bool primary,
-                                 bool eliminate,
-                                 bool essential_eqn)
-{
-  assert(false);
-  // apply diffusion type BCs to CELL system
-  //AmanziMesh::Entity_ID_View cells;
-
-  //const auto bc_model = bc_trial->bc_model();
-  //const auto bc_value = bc_trial->bc_value();
-  //const auto bc_mixed = bc_trial->bc_mixed();
-
-  //AMANZI_ASSERT(bc_model.size() == nfaces_wghost);
-  //AMANZI_ASSERT(bc_value.size() == nfaces_wghost);
-
-  //const auto rhs_cell = global_op_->rhs()->viewComponent("cell");
-
-  //for (int f = 0; f != nfaces_owned; ++f) {
-  //  WhetStone::DenseMatrix<> Aface = local_op_->matrices[f];
-
-  //  if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-  //    mesh_->face_get_cells(f, AmanziMesh::Parallel_kind::ALL, cells);
-  //    rhs_cell(0,cells[0]) += bc_value[f] * Aface(0, 0);
-  //  }
-  // Neumann condition contributes to the RHS
-  //  else if (bc_model[f] == OPERATOR_BC_NEUMANN && primary) {
-  //    local_op_->matrices_shadow[f].assign(Aface);
-
-  //    mesh_->face_get_cells(f, AmanziMesh::Parallel_kind::ALL, cells);
-  //    rhs_cell(0,cells[0]) -= bc_value[f] * mesh_->getFaceArea(f);
-  //    Aface *= 0.0;
-  //  }
-  // solve system of two equations in three unknowns
-  //  else if (bc_model[f] == OPERATOR_BC_MIXED && primary) {
-  //    local_op_->matrices_shadow[f].assign(Aface);
-
-  //    mesh_->face_get_cells(f, AmanziMesh::Parallel_kind::ALL, cells);
-  //    double area = mesh_->getFaceArea(f);
-  //    double factor = area / (1.0 + bc_mixed[f] * area / Aface(0, 0));
-  //    rhs_cell(0,cells[0]) -= bc_value[f] * factor;
-  //    Aface(0, 0) = bc_mixed[f] * factor;
-  //  }
-  //}
-}
-
-
-/* ******************************************************************
-* Apply BCs on nodal operators
-****************************************************************** */
-void
-PDE_DiffusionMFD::ApplyBCs_Nodal_(const Teuchos::Ptr<const BCs>& bc_f,
-                                  const Teuchos::Ptr<const BCs>& bc_v,
-                                  bool primary,
-                                  bool eliminate,
-                                  bool essential_eqn)
-{
-  assert(false);
-  //AmanziMesh::Entity_ID_View faces;
-  //AmanziMesh::Entity_ID_List nodes, cells;
-
-  //global_op_->rhs()->PutScalarGhosted(0.0);
-  //const auto rhs_node = global_op_->rhs()->viewComponent("node", true);
-
-  //int nn(0), nm(0);
-  //for (int c = 0; c != ncells_owned; ++c) {
-  //  bool flag(true);
-  //  WhetStone::DenseMatrix<> Acell = local_op_->matrices[c];
-
-  // process boundary integrals
-  //  if (bc_f != Teuchos::null) {
-  //    const auto bc_model = bc_f->bc_model();
-  //    const auto bc_value = bc_f->bc_value();
-  //    const auto bc_mixed = bc_f->bc_mixed();
-
-  //    mesh_->cell_get_faces(c, faces);
-  //    int nfaces = faces.size();
-
-  //    for (int n = 0; n != nfaces; ++n) {
-  //      int f = faces[n];
-
-  //      if (bc_model[f] == OPERATOR_BC_NEUMANN && primary) {
-  //        nn++;
-  //        double value = bc_value[f];
-  //        double area = mesh_->getFaceArea(f);
-
-  //        mesh_->face_get_nodes(f, nodes);
-  //        int nnodes = nodes.size();
-
-  //        for (int m = 0; m < nnodes; m++) {
-  //          int v = nodes[m];
-  //          if (bc_v->bc_model()[v] != OPERATOR_BC_DIRICHLET)
-  //            rhs_node(0,v) -= value * area / nnodes;
-  //        }
-  //      } else if (bc_model[f] == OPERATOR_BC_MIXED && primary) {
-  //        nm++;
-  //        if (flag) {  // make a copy of cell-based matrix
-  //          local_op_->matrices_shadow[c].assign(Acell);
-  //          flag = false;
-  //        }
-  //        double value = bc_value[f];
-  //        double area = mesh_->getFaceArea(f);
-
-  //        mesh_->face_get_nodes(f, nodes);
-  //        int nnodes = nodes.size();
-
-  //        for (int m = 0; m < nnodes; m++) {
-  //          int v = nodes[m];
-  //          if (bc_v->bc_model()[v] != OPERATOR_BC_DIRICHLET)
-  //            rhs_node(0,v) -= value * area / nnodes;
-  //          Acell(n, n) += bc_mixed[f] * area / nnodes;
-  //        }
-  //      }
-  //    }
-  //  }
-
-  //  if (bc_v != Teuchos::null) {
-  //    const auto bc_model = bc_v->bc_model();
-  //    const auto bc_value = bc_v->bc_value();
-
-  //    mesh_->cell_get_nodes(c, nodes);
-  //    int nnodes = nodes.size();
-
-  // essential conditions for test functions
-  //    for (int n = 0; n != nnodes; ++n) {
-  //      int v = nodes[n];
-  //      if (bc_model[v] == OPERATOR_BC_DIRICHLET) {
-  //        if (flag) {  // make a copy of elemental matrix
-  //          local_op_->matrices_shadow[c].assign(Acell);
-  //          flag = false;
-  //        }
-  //        for (int m = 0; m < nnodes; m++) Acell(n, m) = 0.0;
-  //      }
-  //    }
-
-  //    for (int n = 0; n != nnodes; ++n) {
-  //      int v = nodes[n];
-  //      double value = bc_value[v];
-
-  //      if (bc_model[v] == OPERATOR_BC_DIRICHLET) {
-  //        if (flag) {  // make a copy of cell-based matrix
-  //          local_op_->matrices_shadow[c].assign(Acell);
-  //          flag = false;
-  //        }
-
-  //        if (eliminate) {
-  //          for (int m = 0; m < nnodes; m++) {
-  //            rhs_node(0,nodes[m]) -= Acell(m, n) * value;
-  //            Acell(m, n) = 0.0;
-  //          }
-  //        }
-
-  // We take into account multiple contributions to matrix diagonal
-  // by dividing by the number of cells attached to a vertex.
-  //        if (essential_eqn) {
-  //          mesh_->node_get_cells(v, AmanziMesh::Parallel_kind::ALL, cells);
-  //          if (v < nnodes_owned) rhs_node(0,v) = value;
-  //          Acell(n, n) = 1.0 / cells.size();
-  //        }
-  //      }
-  //    }
-  //  }
-  //}
-  //global_op_->rhs()->gatherGhostedToMaster("node", Add);
-}
-
-
-/* ******************************************************************
 * Modify operator by adding upwind approximation of Newton corection.
 * A special care should be taken later to deal with the case
 * where kf < 0, i.e. for energy when: div (qh) = div (h k grad p),
@@ -815,102 +445,6 @@ PDE_DiffusionMFD::AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVec
         }
       });
   }
-}
-
-
-void
-PDE_DiffusionMFD::AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVector>& flux,
-                                           const Teuchos::Ptr<const CompositeVector>& u,
-                                           const Teuchos::Ptr<const CompositeVector>& factor)
-{
-  assert(false);
-  // hack: ignore correction if no flux provided.
-  //if (flux == Teuchos::null) return;
-
-  // Correction is zero for linear problems
-  //if (k_ == Teuchos::null || dkdp_ == Teuchos::null) return;
-
-  // only works on upwinded methods
-  //if (little_k_type_ == OPERATOR_UPWIND_NONE) return;
-
-  //const auto kf = k_->viewComponent("face");
-  //const auto dkdp_f = dkdp_->viewComponent("face");
-  //const auto flux_f = flux->viewComponent("face");
-  //const auto factor_cell = factor->viewComponent("cell");
-
-  // populate the local matrices
-  //double v, vmod;
-  //AmanziMesh::Entity_ID_View cells;
-  //for (int f = 0; f < nfaces_owned; f++) {
-  //  mesh_->face_get_cells(f, AmanziMesh::Parallel_kind::ALL, cells);
-  //  int ncells = cells.size();
-  //  WhetStone::DenseMatrix<> Aface(ncells, ncells);
-  //  //Aface.PutScalar(0.0);
-
-  // We use the upwind discretization of the generalized flux.
-  //  v = std::abs(kf(0,f)) > 0.0 ? flux_f(0,f) * dkdp_f(0,f) / kf(0,f) : 0.0;
-  //  vmod = std::abs(v);
-
-  //  double scalar_factor=0.;
-  //  for (int j=0; j<ncells; j++) scalar_factor += factor_cell(0,cells[j]);
-  //  scalar_factor *= 1./ncells;
-
-  // prototype for future limiters (external or internal ?)
-  //  vmod *= scalar_factor;
-
-  // define the upwind cell, index i in this case
-  //  int i, dir, c1;
-  //  c1 = cells[0];
-  //  const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c1, &dir);
-  //  i = (v * dir >= 0.0) ? 0 : 1;
-
-  //  if (ncells == 2) {
-  //    Aface(i, i) = vmod;
-  //    Aface(1 - i, i) = -vmod;
-  //  } else if (i == 0) {
-  //    Aface(0, 0) = vmod;
-  //  }
-
-  //  jac_op_->matrices[f].assign(Aface);
-  //}
-}
-
-
-/* ******************************************************************
-* Given pressures, reduce the problem to Lagrange multipliers.
-****************************************************************** */
-void
-PDE_DiffusionMFD::ModifyMatrices(const CompositeVector& u)
-{
-  assert(false);
-  //if (local_op_schema_ != (OPERATOR_SCHEMA_BASE_CELL |
-  //                         OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
-  //  std::cout << "Schema " << global_op_schema_ << " is not supported" << std::endl;
-  //  AMANZI_ASSERT(0);
-  //}
-
-  // populate the matrix
-  //AmanziMesh::Entity_ID_View faces;
-  //const auto u_c = u.viewComponent("cell");
-
-  //global_op_->rhs()->PutScalarGhosted(0.0);
-
-  //const auto rhs_f = global_op_->rhs()->viewComponent("face", true);
-  //for (int c = 0; c != ncells_owned; ++c) {
-  //  mesh_->cell_get_faces(c, faces);
-  //  int nfaces = faces.size();
-
-  //  WhetStone::DenseMatrix<> Acell = local_op_->matrices[c];
-
-  //  for (int n = 0; n < nfaces; n++) {
-  //    int f = faces[n];
-  //    rhs_f(0,f) -= Acell(n, nfaces) * u_c(0,c);
-  //    Acell(n, nfaces) = 0.0;
-  //    Acell(nfaces, n) = 0.0;
-  //  }
-  //}
-  // Assemble all right-hand sides
-  //global_op_->rhs()->gatherGhostedToMaster("face", Add);
 }
 
 
@@ -989,63 +523,6 @@ PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
 
 
 /* ******************************************************************
-* Calculates one-sided (cell-based) fluxes that satisfy proper
-* continuity conditions. This differs from other subroutines
-* calculing fluxes due to presence of multiple normals on some
-* non-manifold faces.
-* **************************************************************** */
-void
-PDE_DiffusionMFD::UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
-                                        const Teuchos::Ptr<CompositeVector>& flux)
-{
-  assert(false);
-  // Initialize intensity in ghost faces.
-  //u->scatterMasterToGhosted("face");
-
-  //const auto u_cell = u->viewComponent("cell");
-  //const auto u_face = u->viewComponent("face", true);
-  //const auto flux_data = flux->viewComponent("face", true);
-
-  //flux_data.PutScalar(0.0);
-
-  //int ndofs_owned = flux->viewComponent("face").extent(0);
-  //int ndofs_wghost = flux_data.extent(0);
-
-  //AmanziMesh::Entity_ID_View faces;
-  //Kokkos::View<int*> dirs;
-  //const auto fmap = flux->getMap()->getMap("face", true);
-
-  //for (int c = 0; c < ncells_owned; c++) {
-  //  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
-  //  int nfaces = faces.size();
-
-  //  WhetStone::DenseVector<> v(nfaces + 1), av(nfaces + 1);
-  //  for (int n = 0; n < nfaces; n++) {
-  //    v(n) = u_face(0,faces[n]);
-  //  }
-  //  v(nfaces) = u_cell(0,c);
-
-  //  if (local_op_->matrices_shadow[c].NumRows() == 0) {
-  //    local_op_->matrices[c].Multiply(v, av, false);
-  //  } else {
-  //    local_op_->matrices_shadow[c].Multiply(v, av, false);
-  //  }
-
-  //  for (int n = 0; n < nfaces; n++) {
-  //    int f = faces[n];
-  //    int g = fmap.FirstPointInElement(f);
-
-  //    int ndofs = fmap.ElementSize(f);
-  //    if (ndofs > 1) g += Operators::UniqueIndexFaceToCells(*mesh_, f, c);
-
-  //    flux_data(0,g) -= av(n) * dirs[n];
-  //  }
-  //}
-  //flux->gatherGhostedToMaster(Add);
-}
-
-
-/* ******************************************************************
 * Calculate elemental inverse mass matrices.
 ****************************************************************** */
 void
@@ -1053,12 +530,11 @@ PDE_DiffusionMFD::CreateMassMatrices_()
 {
   WhetStone::MFD3D_Diffusion mfd(mesh_);
   WhetStone::DenseMatrix<> Wff;
-  bool surface_mesh = (mesh_->getManifoldDimension() != mesh_->getSpaceDimension());
 
-  mfd.ModifyStabilityScalingFactor(factor_);
+  // not supporting surface mesh
+  assert(mesh_->getManifoldDimension() == mesh_->getSpaceDimension());
 
   std::vector<WhetStone::DenseMatrix<>> tmp_Wff_cells;
-
   tmp_Wff_cells.resize(ncells_owned);
 
   WhetStone::Tensor<> Kc(mesh_->getSpaceDimension(), 1);
@@ -1071,43 +547,35 @@ PDE_DiffusionMFD::CreateMassMatrices_()
     if (K_.get()) Kc = K_->at_host(c);
 
     // For problems with degenerate coefficients we should skip WhetStone.
-    if (Kc.Trace() == 0.0) {
-      assert(false);
-      //int nfaces = mesh_->cell_get_num_faces(c);
-      //Wff.reshape(nfaces, nfaces);
-      //Wff.putScalar(0.0);
-      //ok = WhetStone::WHETSTONE_ELEMENTAL_MATRIX_OK;
-    } else if (surface_mesh) {
-      assert(false);
-      // ok = mfd.MassMatrixInverseSurface(c, Kc, Wff);
-    } else {
-      int method = mfd_primary_;
-      ok = WhetStone::WHETSTONE_ELEMENTAL_MATRIX_FAILED;
+    assert(Kc.Trace() != 0.0);
 
-      // try primary and then secondary discretization methods.
-      if (method == WhetStone::DIFFUSION_HEXAHEDRA_MONOTONE) {
-        AMANZI_ASSERT(0);
-        ok = mfd.MassMatrixInverseMMatrixHex(c, Kc, Wff);
-        method = mfd_secondary_;
-      } else if (method == WhetStone::DIFFUSION_OPTIMIZED_FOR_MONOTONICITY) {
+    int method = mfd_primary_;
+    ok = WhetStone::WHETSTONE_ELEMENTAL_MATRIX_FAILED;
+
+    // try primary and then secondary discretization methods.
+    if (method == WhetStone::DIFFUSION_HEXAHEDRA_MONOTONE) {
+      assert(false);
+      ok = mfd.MassMatrixInverseMMatrixHex(c, Kc, Wff);
+      method = mfd_secondary_;
+    } else if (method == WhetStone::DIFFUSION_OPTIMIZED_FOR_MONOTONICITY) {
+      assert(false);
+      ok = mfd.MassMatrixInverseMMatrix(c, Kc, Wff);
+      method = mfd_secondary_;
+    }
+
+    if (ok != WhetStone::WHETSTONE_ELEMENTAL_MATRIX_OK) {
+      if (method == WhetStone::DIFFUSION_OPTIMIZED_FOR_SPARSITY) {
+        ok = mfd.MassMatrixInverseOptimized(c, Kc, Wff);
+      } else if (method == WhetStone::DIFFUSION_TPFA) {
+        ok = mfd.MassMatrixInverseTPFA(c, Kc, Wff);
+      } else if (method == WhetStone::DIFFUSION_SUPPORT_OPERATOR) {
         assert(false);
-        ok = mfd.MassMatrixInverseMMatrix(c, Kc, Wff);
-        method = mfd_secondary_;
-      }
-
-      if (ok != WhetStone::WHETSTONE_ELEMENTAL_MATRIX_OK) {
-        if (method == WhetStone::DIFFUSION_OPTIMIZED_FOR_SPARSITY) {
-          ok = mfd.MassMatrixInverseOptimized(c, Kc, Wff);
-        } else if (method == WhetStone::DIFFUSION_TPFA) {
-          ok = mfd.MassMatrixInverseTPFA(c, Kc, Wff);
-        } else if (method == WhetStone::DIFFUSION_SUPPORT_OPERATOR) {
-          ok = mfd.MassMatrixInverseSO(c, Kc, Wff);
-        } else if (method == WhetStone::DIFFUSION_POLYHEDRA_SCALED) {
-          if (K_symmetric_) {
-            ok = mfd.MassMatrixInverse(c, Kc, Wff);
-          } else {
-            ok = mfd.MassMatrixInverseNonSymmetric(c, Kc, Wff);
-          }
+        ok = mfd.MassMatrixInverseSO(c, Kc, Wff);
+      } else if (method == WhetStone::DIFFUSION_POLYHEDRA_SCALED) {
+        if (K_symmetric_) {
+          ok = mfd.MassMatrixInverse(c, Kc, Wff);
+        } else {
+          ok = mfd.MassMatrixInverseNonSymmetric(c, Kc, Wff);
         }
       }
     }
@@ -1120,27 +588,10 @@ PDE_DiffusionMFD::CreateMassMatrices_()
       Exceptions::amanzi_throw(msg);
     }
   }
+
   // Copy data to GPU
   Wff_cells_.Init(tmp_Wff_cells);
-
   mass_matrices_initialized_ = true;
-}
-
-
-/* ******************************************************************
-* Scale elemental inverse mass matrices. Use case is saturated flow.
-****************************************************************** */
-void
-PDE_DiffusionMFD::ScaleMassMatrices(double s)
-{
-  assert(Wff_cells_.size() == ncells_owned);
-  auto& Wff_cells = Wff_cells_;
-
-  Kokkos::parallel_for(
-    "PDE_DiffusionMFD::ScaleMassMatrices", ncells_owned, KOKKOS_LAMBDA(const int& c) {
-      auto lm = Wff_cells[c];
-      lm *= s;
-    });
 }
 
 
@@ -1162,8 +613,8 @@ PDE_DiffusionMFD::ParsePList_()
     mfd_primary_ = WhetStone::DIFFUSION_POLYHEDRA_SCALED;
   } else if (primary == "mfd: optimized for sparsity") {
     mfd_primary_ = WhetStone::DIFFUSION_OPTIMIZED_FOR_SPARSITY;
-    // } else if (primary == "mfd: support operator") {
-    //   mfd_primary_ = WhetStone::DIFFUSION_SUPPORT_OPERATOR;
+  } else if (primary == "mfd: support operator") {
+    mfd_primary_ = WhetStone::DIFFUSION_SUPPORT_OPERATOR;
   } else {
     Errors::Message msg;
     msg << "PDE_DiffusionMFD: primary discretization method \"" << primary
@@ -1178,8 +629,8 @@ PDE_DiffusionMFD::ParsePList_()
     mfd_secondary_ = WhetStone::DIFFUSION_POLYHEDRA_SCALED;
   } else if (secondary == "mfd: optimized for sparsity") {
     mfd_secondary_ = WhetStone::DIFFUSION_OPTIMIZED_FOR_SPARSITY;
-    // } else if (secondary == "mfd: support operator") {
-    //   mfd_secondary_ = WhetStone::DIFFUSION_SUPPORT_OPERATOR;
+  } else if (secondary == "mfd: support operator") {
+    mfd_secondary_ = WhetStone::DIFFUSION_SUPPORT_OPERATOR;
   } else {
     Errors::Message msg;
     msg << "PDE_DiffusionMFD: secondary discretization method \"" << secondary
@@ -1198,46 +649,9 @@ PDE_DiffusionMFD::ParsePList_()
     plist_.set<Teuchos::Array<std::string>>("schema", names);
   }
 
-  int schema_dofs = 0;
-  for (int i = 0; i < names.size(); i++) {
-    if (names[i] == "cell") {
-      schema_dofs += OPERATOR_SCHEMA_DOFS_CELL;
-    } else if (names[i] == "node") {
-      schema_dofs += OPERATOR_SCHEMA_DOFS_NODE;
-    } else if (names[i] == "face") {
-      schema_dofs += OPERATOR_SCHEMA_DOFS_FACE;
-    }
-  }
-
-  if (schema_dofs == OPERATOR_SCHEMA_DOFS_NODE) {
-    local_op_schema_ = OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_NODE;
-  } else if (schema_dofs == (OPERATOR_SCHEMA_DOFS_FACE | OPERATOR_SCHEMA_DOFS_CELL)) {
-    local_op_schema_ =
-      OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_FACE | OPERATOR_SCHEMA_DOFS_CELL;
-  } else if (schema_dofs == (OPERATOR_SCHEMA_DOFS_CELL)) {
-    local_op_schema_ = OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_CELL;
-  } else {
-    Errors::Message msg;
-    msg << "PDE_DiffusionMFD: \"schema\" must be CELL, FACE+CELL, or NODE";
-    Exceptions::amanzi_throw(msg);
-  }
-
-  // define stencil for the assembled matrix
-  schema_prec_dofs_ = 0;
-  if (plist_.isParameter("preconditioner schema")) {
-    names = plist_.get<Teuchos::Array<std::string>>("preconditioner schema").toVector();
-    for (int i = 0; i < names.size(); i++) {
-      if (names[i] == "cell") {
-        schema_prec_dofs_ += OPERATOR_SCHEMA_DOFS_CELL;
-      } else if (names[i] == "node") {
-        schema_prec_dofs_ += OPERATOR_SCHEMA_DOFS_NODE;
-      } else if (names[i] == "face") {
-        schema_prec_dofs_ += OPERATOR_SCHEMA_DOFS_FACE;
-      }
-    }
-  } else {
-    schema_prec_dofs_ = schema_dofs;
-  }
+  // map schema into DOFS
+  local_op_schema_ = OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_FACE | OPERATOR_SCHEMA_DOFS_CELL;
+  schema_prec_dofs_ = OPERATOR_SCHEMA_DOFS_FACE | OPERATOR_SCHEMA_DOFS_CELL;
 }
 
 
@@ -1254,38 +668,11 @@ PDE_DiffusionMFD::Init()
 
     // build the CVS from the global schema
     auto cvs = Teuchos::rcp(new CompositeVectorSpace());
-    cvs->SetMesh(mesh_)->SetGhosted(true);
+    cvs->SetMesh(mesh_)->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
 
-    if (global_op_schema & OPERATOR_SCHEMA_DOFS_CELL) {
-      cvs->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-    }
-    if (global_op_schema & OPERATOR_SCHEMA_DOFS_FACE) {
-      cvs->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
-    }
-    if (global_op_schema & OPERATOR_SCHEMA_DOFS_NODE) {
-      cvs->AddComponent("node", AmanziMesh::Entity_kind::NODE, 1);
-    }
-
-    // choose the Operator from the prec schema
-    if (schema_prec_dofs_ == OPERATOR_SCHEMA_DOFS_NODE) {
-      assert(false);
-      //global_op_ = Teuchos::rcp(new Operator_Node(cvs, plist_));
-    } else if (schema_prec_dofs_ == OPERATOR_SCHEMA_DOFS_CELL) {
-      assert(false);
-      // cvs->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
-      // global_op_ = Teuchos::rcp(new Operator_FaceCellScc(cvs, plist_));
-      //global_op_ = Teuchos::rcp(new Operator_Cell(cvs->CreateSpace(), plist_, schema_prec_dofs_));
-    } else if (schema_prec_dofs_ == OPERATOR_SCHEMA_DOFS_FACE) {
-      //assert(false);
-      cvs->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-      global_op_ = Teuchos::rcp(new Operator_FaceCellSff(cvs, plist_));
-    } else if (schema_prec_dofs_ == (OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
-      global_op_ = Teuchos::rcp(new Operator_FaceCell(cvs->CreateSpace(), plist_));
-    } else {
-      Errors::Message msg;
-      msg << "PDE_DiffusionMFD: \"preconditioner schema\" must be NODE, CELL, FACE, or FACE+CELL";
-      Exceptions::amanzi_throw(msg);
-    }
+    global_op_ = Teuchos::rcp(new Operator_FaceCell(cvs->CreateSpace(), plist_));
 
   } else {
     // constructor was given an Operator
@@ -1293,96 +680,26 @@ PDE_DiffusionMFD::Init()
     mesh_ = global_op_->getDomainMap()->getMesh();
   }
 
-  // Do we need to exclude the primary terms?
+  // Do we need to exclude the primary terms for a Jacobian-only off-diagonal?
   exclude_primary_terms_ = plist_.get<bool>("exclude primary terms", false);
 
   // create the local Op and register it with the global Operator
   if (!exclude_primary_terms_) {
-    if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_NODE)) {
-      assert(false);
-      //std::string name = "Diffusion: CELL_NODE";
-      //local_op_ = Teuchos::rcp(new Op_Cell_Node(name, mesh_));
-    } else if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_FACE |
-                                    OPERATOR_SCHEMA_DOFS_CELL)) {
-      std::string name = "Diffusion: CELL_FACE+CELL";
-      local_op_ = Teuchos::rcp(new Op_Cell_FaceCell(name, mesh_));
-    } else if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_CELL)) {
-      if (plist_.get<bool>("surface operator", false)) {
-        assert(false);
-        //std::string name = "Diffusion: FACE_CELL Surface";
-        //local_op_ = Teuchos::rcp(new Op_SurfaceFace_SurfaceCell(name, mesh_));
-      } else {
-        assert(false);
-        //std::string name = "Diffusion: FACE_CELL";
-        //local_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
-      }
-    } else {
-      AMANZI_ASSERT(0);
-    }
+    std::string name = "Diffusion: CELL_FACE+CELL";
+    local_op_ = Teuchos::rcp(new Op_Cell_FaceCell(name, mesh_));
     global_op_->OpPushBack(local_op_);
   }
 
-  // scaled constraint -- enables zero value of k on a face
-  // scaled_constraint_ = plist_.get<bool>("scaled constraint equation", false);
-  scaled_constraint_ = false;
-  scaled_constraint_cutoff_ = plist_.get<double>("constraint equation scaling cutoff", 1.0);
-  scaled_constraint_fuzzy_ = plist_.get<double>("constraint equation fuzzy number", 1.0e-12);
-
-  // little-k options
-  AMANZI_ASSERT(!plist_.isParameter("upwind method"));
-  std::string default_sc = "none";
-  // DEPRECATE!
-  if (plist_.isParameter("nonlinear coefficient")) {
-    default_sc = plist_.get<std::string>("nonlinear coefficient");
-  }
-  std::string name = plist_.get<std::string>("scalar coefficient type", default_sc);
-  if (name == "none") {
-    little_k_type_ = OPERATOR_LITTLE_K_NONE;
-  } else if (name == "upwind: face") {
-    little_k_type_ = OPERATOR_LITTLE_K_UPWIND; // upwind scheme (non-symmetric in general)
-  } else if (name == "divk: face") {
-    little_k_type_ = OPERATOR_LITTLE_K_DIVK_BASE; // new SPD upwind scheme
-  } else if (name == "divk: cell-face") {
-    little_k_type_ = OPERATOR_LITTLE_K_DIVK; // standard SPD upwind scheme
-  } else if (name == "standard: cell") {
-    little_k_type_ = OPERATOR_LITTLE_K_STANDARD; // cell-centered scheme.
-  } else if (name == "divk: cell-face-twin") {
-    little_k_type_ = OPERATOR_LITTLE_K_DIVK_TWIN; // for resolved simulation
-  } else {
-    AMANZI_ASSERT(false);
-  }
-
-  // verify input consistency
-  if (scaled_constraint_) {
-    AMANZI_ASSERT(little_k_type_ != OPERATOR_LITTLE_K_DIVK &&
-                  little_k_type_ != OPERATOR_LITTLE_K_DIVK_TWIN);
-  }
+  // scalar coefficient
+  little_k_type_ = ParseLittleKType(plist_);
 
   // Do we need to calculate Newton correction terms?
-  std::string jacobian;
-  if (plist_.isParameter("Newton correction") && plist_.isType<bool>("Newton correction")) {
-    jacobian = plist_.get<bool>("Newton correction", false) ? "approximate Jacobian" : "none";
-  } else {
-    // legacy version
-    jacobian = plist_.get<std::string>("Newton correction", "none");
-  }
-
+  std::string jacobian = plist_.get<string>("Newton correction", "none");
   if (jacobian == "none") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_NONE;
-  } else if (jacobian == "true Jacobian") {
-    newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_TRUE;
-    Errors::Message msg("PDE_DiffusionMFD: \"true Jacobian\" not supported -- maybe you mean "
-                        "\"approximate Jacobian\"?");
-    Exceptions::amanzi_throw(msg);
   } else if (jacobian == "approximate Jacobian") {
-    // cannot do jacobian terms without cells
-    if (!(schema_prec_dofs_ & OPERATOR_SCHEMA_DOFS_CELL)) {
-      Errors::Message msg(
-        "PDE_DiffusionMFD: incompatible options.  \"approximate Jacobian\" terms require CELL "
-        "quantities, and the requested preconditioner schema does not include CELL.");
-      Exceptions::amanzi_throw(msg);
-    }
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE;
+
     // create a local op
     jac_op_schema_ = OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_CELL;
     std::string opname("Jacobian FACE_CELL");
@@ -1390,103 +707,16 @@ PDE_DiffusionMFD::Init()
     global_op_->OpPushBack(jac_op_);
   } else {
     Errors::Message msg;
-    msg << "PDE_DiffusionMFD: invalid parameter \"" << jacobian
-        << "\" for option \"Newton correction\" -- valid are: \"none\", \"approximate Jacobian\"";
+    msg << "PDE_DiffusionMFD: unrecognized Jacobian option \"" << jacobian << "\".";
     Exceptions::amanzi_throw(msg);
   }
-
+  
   // miscalleneous variables
   K_ = Teuchos::null;
   k_ = Teuchos::null;
   dkdp_ = Teuchos::null;
 }
 
-
-/* ******************************************************************
-* Given a set of cell values, update faces using the consistency
-* equations:
-*   x_f = Aff^-1 * (y_f - Afc * x_c)
-****************************************************************** */
-int
-PDE_DiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
-{
-  assert(false);
-  //if (consistent_face_op_ == Teuchos::null) {
-  // create the op
-  //  Teuchos::RCP<CompositeVectorSpace> cface_cvs = Teuchos::rcp(new CompositeVectorSpace());
-  //  cface_cvs->SetMesh(mesh_)->SetGhosted()
-  //      ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
-
-  //  consistent_face_op_ = Teuchos::rcp(new Operator_ConsistentFace(cface_cvs, plist_.sublist("consistent faces")));
-  //  consistent_face_op_->OpPushBack(local_op_);
-  //  consistent_face_op_->SymbolicAssembleMatrix();
-  //  consistent_face_op_->InitializePreconditioner(plist_.sublist("consistent faces").sublist("preconditioner"));
-  //}
-
-  // calculate the rhs, given by y_f - Afc * x_c
-  //CompositeVector& y = *consistent_face_op_->rhs();
-  //const auto y_f = y.viewComponent("face", true);
-  //y_f = global_op_->rhs()->viewComponent("face", true);
-  //consistent_face_op_->rhs()->PutScalarGhosted(0.0);
-
-  // y_f - Afc * x_c
-  //const auto x_c = u.viewComponent("cell", false);
-  //AmanziMesh::Entity_ID_View faces;
-  //for (int c=0; c!=ncells_owned; ++c) {
-  //  mesh_->cell_get_faces(c, faces);
-  //  int nfaces = faces.size();
-
-  //  WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
-
-  //  for (int n=0; n!=nfaces; ++n) {
-  //    y_f(0,faces[n]) -= Acell(n,nfaces) * x_c(0,c);
-  //  }
-  //}
-
-  //y.gatherGhostedToMaster("face", Add);
-
-  // x_f = Aff^-1 * ...
-  //consistent_face_op_->AssembleMatrix();
-  //consistent_face_op_->UpdatePreconditioner();
-
-  //int ierr = 0;
-  //if (plist_.sublist("consistent faces").isSublist("linear solver")) {
-  //  AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> fac;
-  //  Teuchos::RCP<Operator> lin_solver = fac.Create(
-  //      plist_.sublist("consistent faces").sublist("linear solver"), consistent_face_op_);
-
-  //  CompositeVector u_f_copy(y);
-  //  ierr = lin_solver->applyInverse(y, u_f_copy);
-  //  u.viewComponent("face", false) = u_f_copy.viewComponent("face", false);
-  //} else {
-  //  CompositeVector u_f_copy(y);
-  //  ierr = consistent_face_op_->applyInverse(y, u);
-  //  u.viewComponent("face", false) = u_f_copy.viewComponent("face", false);
-  //}
-
-  //return (ierr > 0) ? 0 : 1;
-  return 0;
-}
-
-
-/* ******************************************************************
-* Calculates transmissibility value on the given BOUNDARY face f.
-****************************************************************** */
-double
-PDE_DiffusionMFD::ComputeTransmissibility(int f) const
-{
-  WhetStone::MFD3D_Diffusion mfd(mesh_);
-  auto cells = mesh_->getFaceCells(f);
-  int c = cells[0];
-
-  if (K_.get()) {
-    return mfd.Transmissibility(f, c, K_->at_host(c));
-  } else {
-    WhetStone::Tensor<> Kc(mesh_->getSpaceDimension(), 1);
-    Kc(0, 0) = 1.0;
-    return mfd.Transmissibility(f, c, Kc);
-  }
-}
 
 } // namespace Operators
 } // namespace Amanzi

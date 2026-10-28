@@ -134,6 +134,8 @@ void
 PDE_DiffusionFVwithGravity::AnalyticJacobian_(const CompositeVector& u)
 {
   u.scatterMasterToGhosted("cell");
+  AMANZI_ASSERT(dkdp_.get() && dkdp_->hasComponent("face"));
+  dkdp_->scatterMasterToGhosted("face");
 
   { // scope for views
     const auto bc_model = bcs_trial_[0]->bc_model();
@@ -144,35 +146,23 @@ PDE_DiffusionFVwithGravity::AnalyticJacobian_(const CompositeVector& u)
     const auto trans_face = transmissibility_->viewComponent("face", true);
     const auto gravity_face = gravity_term_->viewComponent("face", true);
 
+    // dkface_dp(f, 0/1): the 2-DoF, face-based derivative of the upwinded
+    // coefficient wrt the pressure of cells[0]/cells[1] of that face,
+    // computed by whichever upwinding evaluator was selected.
+    const auto dkface_dp = dkdp_->viewComponent("face", true);
 
-    // AmanziMesh::Entity_ID_View cells, faces;
-
-    const auto dKdP_cell = dkdp_->viewComponent("cell");
-    // Teuchos::RCP<const Epetra_MultiVector> dKdP_face;
-    // if (dkdp_->hasComponent("face")) {
-    //   dKdP_face = dkdp_->viewComponent("face", true);
-    // }
     const AmanziMesh::MeshCache& mesh = mesh_->getCache();
     DenseMatrix_Vector& A = jac_op_->A;
-    int little_k_type(little_k_type_);
 
     Kokkos::parallel_for(
-      "PDE_DiffusionFV::AnalyticJacobian_", nfaces_owned, KOKKOS_LAMBDA(const int& f) {
+      "PDE_DiffusionFVwithGravity::AnalyticJacobian_", nfaces_owned, KOKKOS_LAMBDA(const int& f) {
         auto cells = mesh.getFaceCells(f);
         int mcells = cells.size();
 
         auto Aface = A[f];
 
-        double k_rel[2], dkdp[2], pres[2], dist;
-        for (int n = 0; n < mcells; n++) {
-          pres[n] = uc(cells(n), 0);
-          dkdp[n] = dKdP_cell(cells(n), 0);
-        }
-
-        if (mcells == 1) {
-          dkdp[1] = 0.;
-          //dkdp[1] = dKdP_face.get() ? (*dKdP_face)(f,0) : 0.;
-        }
+        double pres[2] = {0., 0.};
+        for (int n = 0; n < mcells; n++) { pres[n] = uc(cells(n), 0); }
 
         // find the face direction from cell 0 to cell 1
         auto [cfaces, fdirs] = mesh.getCellFacesAndDirections(cells(0));
@@ -181,37 +171,15 @@ PDE_DiffusionFVwithGravity::AnalyticJacobian_(const CompositeVector& u)
           if (cfaces(f_index) == f) break;
         }
 
-        // Old virtual call... yuck
-        // ComputeJacobianLocal_(mcells, f, fdirs[f_index], bc_model[f], bc_value[f],
-        //         pres, dkdp, Aface);
-        double dKrel_dp[2];
         double dpres;
 
         if (mcells == 2) {
           dpres = pres[0] - pres[1];
-          if (little_k_type == OPERATOR_LITTLE_K_UPWIND) {
-            double flux0to1 = trans_face(f, 0) * dpres + fdirs(f_index) * gravity_face(f, 0);
-            if (flux0to1 > OPERATOR_UPWIND_RELATIVE_TOLERANCE) { // Upwind
-              dKrel_dp[0] = dkdp[0];
-              dKrel_dp[1] = 0.0;
-            } else if (flux0to1 < -OPERATOR_UPWIND_RELATIVE_TOLERANCE) { // Upwind
-              dKrel_dp[0] = 0.0;
-              dKrel_dp[1] = dkdp[1];
-            } else if (fabs(flux0to1) < OPERATOR_UPWIND_RELATIVE_TOLERANCE) { // Upwind
-              dKrel_dp[0] = 0.5 * dkdp[0];
-              dKrel_dp[1] = 0.5 * dkdp[1];
-            }
-          } else if (little_k_type == OPERATOR_UPWIND_ARITHMETIC_AVERAGE) {
-            dKrel_dp[0] = 0.5 * dkdp[0];
-            dKrel_dp[1] = 0.5 * dkdp[1];
-          } else {
-            assert(false);
-          }
 
-          Aface(0, 0) = trans_face(f, 0) * dpres * dKrel_dp[0] +
-                        fdirs(f_index) * gravity_face(f, 0) * dKrel_dp[0];
-          Aface(0, 1) = trans_face(f, 0) * dpres * dKrel_dp[1] +
-                        fdirs(f_index) * gravity_face(f, 0) * dKrel_dp[1];
+          Aface(0, 0) = trans_face(f, 0) * dpres * dkface_dp(f, 0) +
+                        fdirs(f_index) * gravity_face(f, 0) * dkface_dp(f, 0);
+          Aface(0, 1) = trans_face(f, 0) * dpres * dkface_dp(f, 1) +
+                        fdirs(f_index) * gravity_face(f, 0) * dkface_dp(f, 1);
 
           Aface(1, 0) = -Aface(0, 0);
           Aface(1, 1) = -Aface(0, 1);
@@ -220,8 +188,8 @@ PDE_DiffusionFVwithGravity::AnalyticJacobian_(const CompositeVector& u)
           if (bc_model(f) == OPERATOR_BC_DIRICHLET) {
             pres[1] = bc_value(f);
             dpres = pres[0] - pres[1];
-            Aface(0, 0) =
-              trans_face(f, 0) * dpres * dkdp[0] + fdirs(f_index) * gravity_face(f, 0) * dkdp[0];
+            Aface(0, 0) = trans_face(f, 0) * dpres * dkface_dp(f, 0) +
+                          fdirs(f_index) * gravity_face(f, 0) * dkface_dp(f, 0);
           } else {
             Aface(0, 0) = 0.0;
           }

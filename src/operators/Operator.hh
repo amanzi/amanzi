@@ -145,6 +145,7 @@ class Op_Face_Cell;
 //class Op_Edge_Edge;
 class Op_SurfaceCell_SurfaceCell;
 class Op_SurfaceFace_SurfaceCell;
+class Op_MeshInjection;
 
 
 class Operator : public Matrix<CompositeVector, CompositeSpace> {
@@ -337,6 +338,8 @@ class Operator : public Matrix<CompositeVector, CompositeSpace> {
   virtual int ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
                                 const CompositeVector& X,
                                 CompositeVector& Y) const;
+  virtual int
+  ApplyMatrixFreeOp(const Op_MeshInjection& op, const CompositeVector& X, CompositeVector& Y) const;
 
   // virtual int ApplyMatrixFreeOp(const Op_Diagonal& op, const CompositeVector& X,
   //                               CompositeVector& Y) const;
@@ -412,6 +415,11 @@ class Operator : public Matrix<CompositeVector, CompositeSpace> {
                                         GraphFE& graph,
                                         int my_block_row,
                                         int my_block_col) const;
+  virtual void SymbolicAssembleMatrixOp(const Op_MeshInjection& op,
+                                        const SuperMap& map,
+                                        GraphFE& graph,
+                                        int my_block_row,
+                                        int my_block_col) const;
 
   // virtual void
   // SymbolicAssembleMatrixOp(const Op_Diagonal& op, const SuperMap& map,
@@ -471,6 +479,11 @@ class Operator : public Matrix<CompositeVector, CompositeSpace> {
                                 int my_block_row,
                                 int my_block_col) const;
   virtual void AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
+                                const SuperMap& map,
+                                MatrixFE& mat,
+                                int my_block_row,
+                                int my_block_col) const;
+  virtual void AssembleMatrixOp(const Op_MeshInjection& op,
                                 const SuperMap& map,
                                 MatrixFE& mat,
                                 int my_block_row,

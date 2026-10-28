@@ -301,7 +301,7 @@
           <Parameter name="discretization secondary" type="string" value="nlfv: default"/>
           <Parameter name="schema" type="Array(string)" value="{cell}"/>
           <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
-          <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
+          <Parameter name="scalar coefficient type" type="string" value="upwind: face"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="molecular diffusion operator">
@@ -310,7 +310,7 @@
           <Parameter name="discretization secondary" type="string" value="nlfv: default"/>
           <Parameter name="schema" type="Array(string)" value="{cell}"/>
           <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
-          <Parameter name="nonlinear coefficient" type="string" value="none"/>
+          <Parameter name="scalar coefficient type" type="string" value="none"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
