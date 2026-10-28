@@ -1873,7 +1873,7 @@ if [ -z "${tpl_config_file}" ]; then
   fi
  
   if [ "${cuda}" -eq "${TRUE}" ]; then
-      export NVCC_WRAPPER_DEFAULT_COMPILER=mpicxx
+      export NVCC_WRAPPER_DEFAULT_COMPILER=${build_cxx_compiler}
       export CUDA_LAUNCH_BLOCKING=1
   fi
  

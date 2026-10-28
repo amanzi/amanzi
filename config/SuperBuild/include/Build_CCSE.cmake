@@ -38,6 +38,7 @@ set(CCSE_CMAKE_CACHE_ARGS
                        -DBL_PRECISION:STRING=DOUBLE
                        -DBL_SPACEDIM:INT=${CCSE_BL_SPACEDIM}
                        -DBL_USE_PARTICLES:INT=0
+                       -DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.5
                        -DCMAKE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}
                        -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
                        -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
@@ -53,7 +54,11 @@ set(CCSE_CMAKE_CACHE_ARGS
                        -DMPI_Fortran_COMPILER:FILEPATH=${MPI_Fortran_COMPILER}
                        -DVERBOSE:BOOL=ON)
 
-
+# --- Override minimum version
+if(CMAKE_MAJOR_VERSION VERSION_EQUAL "4")
+  list(APPEND CCSE_CMAKE_CACHE_ARGS "-DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.5")
+endif()
+                     
 # --- Set the name of the patch
 set(CCSE_patch_file ccse-1.3.4-dependency.patch ccse-1.3.4-tools-compilers.patch
                     ccse-1.3.4-tools-plot1d.patch
@@ -62,18 +67,11 @@ set(CCSE_patch_file ccse-1.3.4-dependency.patch ccse-1.3.4-tools-compilers.patch
                     ccse-16.10-f90.patch
                     ccse-mpi4.patch
                     ccse-arm64.patch)
-# --- Configure the bash patch script
-set(CCSE_sh_patch ${CCSE_prefix_dir}/ccse-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ccse-patch-step.sh.in
-               ${CCSE_sh_patch}
-               @ONLY)
-# --- Configure the CMake patch step
-set(CCSE_cmake_patch ${CCSE_prefix_dir}/ccse-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ccse-patch-step.cmake.in
-               ${CCSE_cmake_patch}
-               @ONLY)
-# --- Set the patch command
-set(CCSE_PATCH_COMMAND ${CMAKE_COMMAND} -P ${CCSE_cmake_patch})     
+patch_tpl(CCSE
+          ${CCSE_prefix_dir}
+          ${CCSE_source_dir}
+          ${CCSE_stamp_dir}
+          CCSE_patch_file)
 
   
 # --- Add external project build and tie to the CCSE build target

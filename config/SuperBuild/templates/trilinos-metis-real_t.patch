@@ -1,0 +1,23 @@
+diff -Naur trilinos-15-1-0-old/packages/ml/src/Coarsen/ml_agg_ParMETIS.c trilinos-15-1-0-new/packages/ml/src/Coarsen/ml_agg_ParMETIS.c
+--- trilinos-15-1-0-old/packages/ml/src/Coarsen/ml_agg_ParMETIS.c	2024-02-29 08:55:54
++++ trilinos-15-1-0-new/packages/ml/src/Coarsen/ml_agg_ParMETIS.c	2025-05-12 19:11:25
+@@ -491,8 +491,8 @@
+   int * offsets = NULL;
+   indextype * vtxdist = NULL;
+   int ncon = 1;
+-  float * tpwgts = NULL;
+-  float ubvec; /* size = ncon */
++  real_t * tpwgts = NULL;
++  real_t ubvec; /* size = ncon */
+   int * proc_with_parmetis = NULL;
+ #ifdef ML_MPI
+   MPI_Group orig_group, parmetis_group;
+@@ -655,7 +655,7 @@
+   /* ********************************************************************** */
+ 
+   part = (indextype *) ML_allocate( sizeof(indextype) * (Nrows+1));
+-  tpwgts = (float *) ML_allocate( sizeof(float) * N_parts );
++  tpwgts = (real_t *) ML_allocate( sizeof(real_t) * N_parts );
+ 
+   if( N_parts == 1 ) {
+ 
