@@ -1,0 +1,127 @@
+# =============================================================================
+# bump-tool-versions.yml
+#
+# Checks upstream GitHub releases for mpich, OpenMPI, and CMake against the
+# versions pinned in image-matrix.yml's gcc:latest variants (3 & 4). If any
+# have moved, opens a PR updating the pins.
+#
+# This exists so build-tpls.yml (which publishes TPL images under these
+# pinned versions) and amanzi-ci.yml (which consumes them) always agree on
+# the exact same version string -- see image-matrix.yml's header comment.
+# =============================================================================
+name: Bump TPL tool versions
+
+on:
+  schedule:
+    - cron: '0 1 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      MATRIX_FILE: .github/workflows/image-matrix.yml
+    steps:
+      - name: Check out the Amanzi repo
+        uses: actions/checkout@v7
+
+      - name: Resolve latest upstream versions
+        id: latest
+        run: |
+          set -euo pipefail
+
+          # latest_tag <repo>
+          #   Query the upstream "latest" release tag and strip a leading "v".
+          #   Fails the step (no silent fallback) if the API call fails.
+          latest_tag() {
+            local repo="$1" tag=""
+            tag="$(gh api "repos/${repo}/releases/latest" --jq .tag_name)"
+            echo "${tag#v}"
+          }
+
+          MPICH_LATEST="$(latest_tag pmodels/mpich)"
+          OPENMPI_LATEST="$(latest_tag open-mpi/ompi)"
+          CMAKE_LATEST="$(latest_tag Kitware/CMake)"
+
+          echo "Latest mpich   release: ${MPICH_LATEST}"
+          echo "Latest openmpi release: ${OPENMPI_LATEST}"
+          echo "Latest cmake   release: ${CMAKE_LATEST}"
+
+          {
+            echo "mpich=${MPICH_LATEST}"
+            echo "openmpi=${OPENMPI_LATEST}"
+            echo "cmake=${CMAKE_LATEST}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Compare against pinned versions and update if changed
+        id: bump
+        run: |
+          set -euo pipefail
+
+          # Current pins live in variants 3 (gcc/mpich) & 4 (gcc/openmpi) --
+          # the *last* mpi_ver value for each distro in the file (variants 1/2
+          # pin the ubuntu-bundled versions, which are intentionally static
+          # and not touched here). cmake_version is shared by variants 3 & 4.
+          CURRENT_MPICH="$(grep -A5 -E 'mpi_distro:[[:space:]]+"mpich"' "$MATRIX_FILE" | grep -oP 'mpi_ver:\s+"\K[^"]+' | tail -1)"
+          CURRENT_OPENMPI="$(grep -A5 -E 'mpi_distro:[[:space:]]+"openmpi"' "$MATRIX_FILE" | grep -oP 'mpi_ver:\s+"\K[^"]+' | tail -1)"
+          CURRENT_CMAKE="$(grep -oP 'cmake_version:\s+"\K[^"]+' "$MATRIX_FILE" | tail -1)"
+
+          NEW_MPICH="${{ steps.latest.outputs.mpich }}"
+          NEW_OPENMPI="${{ steps.latest.outputs.openmpi }}"
+          NEW_CMAKE="${{ steps.latest.outputs.cmake }}"
+
+          echo "mpich:   ${CURRENT_MPICH} -> ${NEW_MPICH}"
+          echo "openmpi: ${CURRENT_OPENMPI} -> ${NEW_OPENMPI}"
+          echo "cmake:   ${CURRENT_CMAKE} -> ${NEW_CMAKE}"
+
+          changed=false
+          body="| Tool | Current | Latest |\n|---|---|---|\n"
+
+          # Each substitution is scoped to the block between its mpi_distro
+          # line and the next "target:" line, and captures/preserves the
+          # existing whitespace so column alignment in the file is untouched.
+          if [ "${CURRENT_MPICH}" != "${NEW_MPICH}" ]; then
+            sed -i -E "/mpi_distro:[[:space:]]+\"mpich\"/,/target:/{s/(mpi_ver:[[:space:]]+)\"${CURRENT_MPICH}\"/\1\"${NEW_MPICH}\"/}" "$MATRIX_FILE"
+            body="${body}| mpich | ${CURRENT_MPICH} | ${NEW_MPICH} |\n"
+            changed=true
+          fi
+
+          if [ "${CURRENT_OPENMPI}" != "${NEW_OPENMPI}" ]; then
+            sed -i -E "/mpi_distro:[[:space:]]+\"openmpi\"/,/target:/{s/(mpi_ver:[[:space:]]+)\"${CURRENT_OPENMPI}\"/\1\"${NEW_OPENMPI}\"/}" "$MATRIX_FILE"
+            body="${body}| openmpi | ${CURRENT_OPENMPI} | ${NEW_OPENMPI} |\n"
+            changed=true
+          fi
+
+          if [ "${CURRENT_CMAKE}" != "${NEW_CMAKE}" ]; then
+            sed -i -E "s/(cmake_version:[[:space:]]+)\"${CURRENT_CMAKE}\"/\1\"${NEW_CMAKE}\"/g" "$MATRIX_FILE"
+            body="${body}| cmake | ${CURRENT_CMAKE} | ${NEW_CMAKE} |\n"
+            changed=true
+          fi
+
+          echo "changed=${changed}" >> "$GITHUB_OUTPUT"
+          printf '%b' "${body}" > /tmp/bump-body.md
+
+      - name: Open PR with updated pins
+        if: steps.bump.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          BRANCH="bump-tool-versions-$(date -u +%Y%m%d)"
+          git checkout -b "${BRANCH}"
+          git add "$MATRIX_FILE"
+          git commit -m "Bump TPL tool versions (mpich/openmpi/cmake)"
+          git push origin "${BRANCH}"
+
+          gh pr create \
+            --title "Bump TPL tool versions (mpich/openmpi/cmake)" \
+            --body-file /tmp/bump-body.md \
+            --base master \
+            --head "${BRANCH}"
