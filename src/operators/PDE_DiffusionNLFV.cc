@@ -446,7 +446,7 @@ PDE_DiffusionNLFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flu
       Aface(0, 0) = matrix[0][f];
     }
 
-    //    if (ncells==2) std::cout<<"Aface "<<f<<" "<<ncells<<"\n"<<Aface<<"\n";
+    //    if ((ncells==2)&&(f==1)) std::cout<<"Aface "<<f<<" "<<ncells<<"\n"<<Aface<<"\n";
     
     local_op_->matrices[f] = Aface;
   }

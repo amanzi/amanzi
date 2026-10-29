@@ -38,6 +38,7 @@
 #ifndef AMANZI_OPERATOR_ANALYTIC_BASE_HH_
 #define AMANZI_OPERATOR_ANALYTIC_BASE_HH_
 
+#include "CompositeVector.hh"
 #include "Epetra_MultiVector.h"
 
 #include "MFD3D_Diffusion.hh"
@@ -63,6 +64,8 @@ class AnalyticBase : public Amanzi::WhetStone::WhetStoneFunction {
 
   // -- analytic solution p
   virtual double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) const = 0;
+
+  
 
   // -- gradient of continuous velocity grad(h), where h = p - g z
   virtual Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p,
@@ -130,6 +133,8 @@ class AnalyticBase : public Amanzi::WhetStone::WhetStoneFunction {
                                double& pnorm,
                                double& l2_err,
                                double& inf_err);
+
+  void set_pressure_exact(Teuchos::RCP<Amanzi::CompositeVector> sol, double t);
 
   // utilities
   Amanzi::AmanziGeometry::Point face_normal_exterior(int f, bool* flag);
@@ -207,7 +212,7 @@ AnalyticBase::ComputeBFaceError(Epetra_MultiVector& pb,
       l2_err += std::pow(tmp - pb[0][bf], 2.0) * volume;
       inf_err = std::max(inf_err, fabs(tmp - pb[0][bf]));
       pnorm += std::pow(tmp, 2.0) * volume;
-      std::cout << f << " xf=" << xf << " p: " << tmp << " " << pb[0][bf] << " err=" << inf_err << std::endl;
+      //std::cout << f << " xf=" << xf << " p: " << tmp << " " << pb[0][bf] << " err=" << inf_err << std::endl;
     }
   }
 #ifdef HAVE_MPI
@@ -261,8 +266,8 @@ AnalyticBase::ComputeFaceError(Epetra_MultiVector& u,
       l2_err += std::pow((tmp - u[0][g + k]) / area, 2.0) * volume;
       inf_err = std::max(inf_err, fabs(tmp - u[0][g + k]) / area);
       unorm += std::pow(tmp / area, 2.0) * volume;
-      if (fabs(tmp - u[0][g + k]) / area > 1e-6)
-        std::cout << f << " xf=" << xf << " u=" << u[0][g + k] << " u_ex=" << tmp << " err inf = " << inf_err << "\n";// << dir << std::endl;
+      //      if (fabs(tmp - u[0][g + k]) / area > 1e-6)
+      //        std::cout << f << " xf=" << xf << " u=" << u[0][g + k] << " u_ex=" << tmp << " err inf = " << fabs(tmp - u[0][g + k]) << "\n";// << dir << std::endl;
     }
   }
 #ifdef HAVE_MPI
@@ -497,6 +502,33 @@ AnalyticBase::GlobalOp(std::string op, double* val, int n)
   else if (op == "max") mesh_->getComm()->MaxAll(val_tmp, val, n);
 
   delete[] val_tmp;
+}
+
+inline  void
+AnalyticBase::set_pressure_exact(Teuchos::RCP<Amanzi::CompositeVector> sol, double t){
+
+  int ncells = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
+                                     Amanzi::AmanziMesh::Parallel_kind::OWNED);
+  
+  Epetra_MultiVector& p = *sol->ViewComponent("cell", false);
+  
+  for (int c = 0; c < ncells; c++) {
+    const Amanzi::AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
+    p[0][c] = pressure_exact(xc, t);
+  }
+
+  if (sol->HasComponent("boundary_face")){
+    Epetra_MultiVector& p_bf = *sol->ViewComponent("boundary_face", false);
+    const auto& bf_map = mesh_->getMap(Amanzi::AmanziMesh::Entity_kind::BOUNDARY_FACE, true);
+    const auto& f_map = mesh_->getMap(Amanzi::AmanziMesh::Entity_kind::FACE, true);
+
+    for (int bf = 0; bf != bf_map.NumMyElements(); ++bf) {
+      auto f = f_map.LID(bf_map.GID(bf));
+      const auto& xf = mesh_->getFaceCentroid(f);
+      p_bf[0][bf] = pressure_exact(xf, t);
+    }    
+  }
+  
 }
 
 #endif

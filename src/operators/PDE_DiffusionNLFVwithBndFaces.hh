@@ -46,6 +46,7 @@ class PDE_DiffusionNLFVwithBndFaces : public virtual PDE_Diffusion {
   {
     pde_type_ = PDE_DIFFUSION_NLFVFACES;
     Init_(plist);
+    shift_ = 0.0;
   }
 
   PDE_DiffusionNLFVwithBndFaces(Teuchos::ParameterList& plist,
@@ -54,6 +55,7 @@ class PDE_DiffusionNLFVwithBndFaces : public virtual PDE_Diffusion {
   {
     pde_type_ = PDE_DIFFUSION_NLFVFACES;
     Init_(plist);
+    shift_ = 0.0;
   }
 
   PDE_DiffusionNLFVwithBndFaces(Teuchos::ParameterList& plist,
@@ -62,6 +64,7 @@ class PDE_DiffusionNLFVwithBndFaces : public virtual PDE_Diffusion {
   {
     pde_type_ = PDE_DIFFUSION_NLFVFACES;
     Init_(plist);
+    shift_ = 0.0;
   }
 
   // main virtual members
@@ -115,12 +118,13 @@ class PDE_DiffusionNLFVwithBndFaces : public virtual PDE_Diffusion {
   void OneSidedWeightFluxes_(int i0, const CompositeVector& u, CompositeVector& sideflux);
   void OneSidedNeumannCorrections_(const CompositeVector& u, CompositeVector& sideflux);
   int OrderCellsByGlobalId_(const AmanziMesh::cEntity_ID_View& cells, int& c1, int& c2);
-  int NLTPFAContributions_(int f, double& tc1, double& tc2);
+  int NLTPFAContributions_(int f, double& tc1, double& tc2,  double& tc3, double& tc4);
 
  protected:
   int dim_, manifold_dim_;
   int newton_correction_;
 
+  double shift_;
   bool stencil_initialized_;
   Teuchos::RCP<CompositeVector> stencil_data_;
   std::vector<Teuchos::RCP<Epetra_IntVector>> stencil_faces_;

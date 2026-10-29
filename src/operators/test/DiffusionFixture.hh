@@ -67,6 +67,7 @@ struct DiffusionFixture {
 
   void Go(double tol = 1.e-14);
   void MatVec(int nloops);
+  void Residual();
 
   // access
   Comm_ptr_type getComm() const { return comm; }
@@ -195,16 +196,19 @@ DiffusionFixture::Setup(const std::string& prec_solver_, bool symmetric_)
   // create preconditoner using the base operator class
   if (prec_solver.substr(0, 6) == "Amesos") {
     global_op->set_inverse_parameters(prec_solver, plist->sublist("solvers"));
+    global_op->InitializeInverse();
   } else {
     if (symmetric) {
       global_op->set_inverse_parameters(
         prec_solver, plist->sublist("preconditioners"), "AztecOO CG", plist->sublist("solvers"));
+      global_op->InitializeInverse();
     } else {
       global_op->set_inverse_parameters(
         prec_solver, plist->sublist("preconditioners"), "GMRES", plist->sublist("solvers"));
+      global_op->InitializeInverse();
     }
   }
-  global_op->InitializeInverse();
+
 
   CompositeVectorSpace flux_space;
   flux_space.SetMesh(mesh)->SetGhosted(true)->SetComponent(
@@ -371,7 +375,7 @@ DiffusionFixture::Go(double tol)
     // compute pressure error
     Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
 
-    std::cout<<"pressure "<<p<<"\n";
+    //std::cout<<"pressure "<<p<<"\n";
     
     double pnorm(0.0), pl2_err(0.0), pinf_err(0.0);
     ana->ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
@@ -380,7 +384,7 @@ DiffusionFixture::Go(double tol)
       Epetra_MultiVector& pb = *solution->ViewComponent("boundary_face", false);
       double pb_norm(0.0), pb_l2_err(0.0), pb_inf_err(0.0);
       ana->ComputeBFaceError(pb, 0.0, pb_norm, pb_l2_err, pb_inf_err);
-      std::cout<<"Boundary face error "<<pb_l2_err<<" "<<pb_inf_err<<"\n";
+      //std::cout<<"Boundary face error "<<pb_l2_err<<" "<<pb_inf_err<<"\n";
     }
       
 
@@ -393,7 +397,7 @@ DiffusionFixture::Go(double tol)
     
     Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
 
-    std::cout<<"flux "<<flx<<"\n";
+    //std::cout<<"flux "<<flx<<"\n";
     
     ana->ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
 
@@ -447,6 +451,72 @@ DiffusionFixture::MatVec(int nloops)
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 
   printf("iterative loop time = %g sec\n", double(duration.count() * 1e-6));
+}
+
+void
+DiffusionFixture::Residual()
+{
+  //set solution to exact
+
+  ana->set_pressure_exact(solution, 0.0);
+
+
+  std::cout<<"Pressure\n";
+  
+  Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
+  std::cout<<std::setprecision(16)<<p<<"\n";
+
+  if (solution->HasComponent("boundary_face")){
+    Epetra_MultiVector& p_bf = *solution->ViewComponent("boundary_face", false);
+    std::cout<<p_bf<<"\n";
+  }
+    
+  global_op->Init();
+  op->UpdateMatrices(Teuchos::null, solution.ptr());
+
+  op->ApplyBCs(true, true, true);
+
+  CompositeVector res(*solution);
+  global_op->ComputeNegativeResidual(*solution, res);
+
+
+  op->UpdateFlux(solution.ptr(), flux.ptr());
+  Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
+  std::cout<<"flux "<<flx<<"\n";
+
+  double unorm, l2_err, inf_err;
+  ana->ComputeFaceError(flx, 0.0, unorm, l2_err, inf_err);
+
+  std::cout<<"Residual\n";
+  
+  std::cout<<*res.ViewComponent("cell", false)<<"\n";
+
+  if (res.HasComponent("boundary_face")){
+    std::cout<<*res.ViewComponent("boundary_face", false)<<"\n";
+  }
+
+  exit(0);
+  
+  double norm;
+  res.ViewComponent("cell", false)->NormInf(&norm);
+  std::cout<<"cell norm "<<norm<<"\n";
+  
+  res.ViewComponent("boundary_face", false)->NormInf(&norm);
+  std::cout<<"boundary_face norm "<<norm<<"\n";
+
+  
+  // global_op->ComputeInverse();
+
+  // auto sol(*solution);
+
+  // auto start = std::chrono::high_resolution_clock::now();
+  // for (int i = 0; i < nloops; ++i) {
+  //   global_op->Apply(sol, *solution);
+  // }
+  // auto stop = std::chrono::high_resolution_clock::now();
+  // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+
+  // printf("iterative loop time = %g sec\n", double(duration.count() * 1e-6));
 }
 
 #endif

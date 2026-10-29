@@ -12,7 +12,7 @@
 
   Linear solution for problem with constant tensorial coefficient
   working in 2D and 3D
-  Solution: p = x + 2y - gy y
+  Solution: p = x + 2y + 10 - gy y
   Diffusion: K = [1   0.1]
                  [0.1   3]
   Velocity: v = [0, 0]
@@ -59,7 +59,7 @@ class Analytic02 : public AnalyticBase {
 
   double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) const
   {
-    return p * v_ - g_ * p[d_ - 1];
+    return p * v_ - g_ * p[d_ - 1] + 10.0;
   }
 
   // Gradient of potential, since the base class does not handle gravity.

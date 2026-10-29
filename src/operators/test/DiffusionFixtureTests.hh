@@ -63,6 +63,8 @@ test(const std::string& prec_solver,
 
   if (prec_solver == "mat-vec") {
     fix.MatVec(niters);
+  }else if(prec_solver == "residual"){
+    fix.Residual();
   } else {
     for (int i = 0; i < niters - 1; ++i) fix.Go(0.0);
     fix.Go(tol);
