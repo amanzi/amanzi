@@ -6,14 +6,25 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'config/Superbuild/**'
+      - 'config/SuperBuild/**'
       - 'tools/**'
+      - 'Docker/Dockerfile-TPLs'
+      - '.github/workflows/build-tpls.yml'
+
+
+# Pushes to a feature branch publish throwaway "-test" tags, so workflow changes
+# can be exercised without clobbering the images consumed by downstream
+# workflows. Scheduled runs, manual dispatch, and pushes to master (i.e. merges)
+# keep the plain "-resolute" tag.
+env:
+  TAG_SUFFIX: ${{ (github.event_name == 'push' && github.ref_name != 'master') && '-test' || '' }}
+
 
 jobs:
   build-tpl-image:
     strategy:
       matrix:
-        os: [ ubuntu-latest, ubuntu-24.04-arm ]
+        os: [ ubuntu-24.04, ubuntu-24.04-arm ]
     runs-on: ${{matrix.os}}
     steps:
     - name: Check out the Amanzi repo
@@ -22,8 +33,9 @@ jobs:
       id: version
       working-directory: Docker
       run: |
-        echo "AMANZI_TPLS_VER=$(./get_tpls_version.sh)" >> $GITHUB_ENV
-        echo "TPLs version = ${{env.AMANZI_TPLS_VER}}"
+        AMANZI_TPLS_VER=$(./get_tpls_version.sh)
+        echo "AMANZI_TPLS_VER=$AMANZI_TPLS_VER" >> $GITHUB_ENV
+        echo "TPLs version = $AMANZI_TPLS_VER"
     - name: Get runner architecture
       run: |
         if [[ ${{matrix.os}} == "ubuntu-24.04-arm" ]]; then
@@ -50,13 +62,13 @@ jobs:
         context: .
         file: ./Docker/Dockerfile-TPLs
         push: true
-        tags: ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{env.ARCH}}-mpich-ubuntu-jammy
+        tags: ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-${{env.ARCH}}-mpich-ubuntu-resolute${{env.TAG_SUFFIX}}
         build-args: |
           amanzi_branch=${{env.AMANZI_BRANCH}}
           mpi_flavor=mpich
 
   fix-manifest:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: build-tpl-image
     if: success()
     steps:
@@ -74,11 +86,11 @@ jobs:
           password: ${{secrets.DOCKERHUB_PASSWORD}}
       - name: Pull images (remove with artifacts??)
         run: |
-          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-arm64-mpich-ubuntu-jammy
-          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-amd64-mpich-ubuntu-jammy
+          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-arm64-mpich-ubuntu-resolute${{env.TAG_SUFFIX}}
+          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-amd64-mpich-ubuntu-resolute${{env.TAG_SUFFIX}}
       - name: Edit manifest
         run: |
-          docker manifest create ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-mpich-ubuntu-jammy \
-            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-amd64-mpich-ubuntu-jammy \
-            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-arm64-mpich-ubuntu-jammy
-          docker manifest push ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-mpich-ubuntu-jammy
+          docker manifest create ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-mpich-ubuntu-resolute${{env.TAG_SUFFIX}} \
+            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-amd64-mpich-ubuntu-resolute${{env.TAG_SUFFIX}} \
+            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-arm64-mpich-ubuntu-resolute${{env.TAG_SUFFIX}}
+          docker manifest push ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-mpich-ubuntu-resolute${{env.TAG_SUFFIX}}

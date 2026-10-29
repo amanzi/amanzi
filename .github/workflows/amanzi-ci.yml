@@ -12,7 +12,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ ubuntu-latest, ubuntu-24.04-arm ]
+        os: [ ubuntu-24.04, ubuntu-24.04-arm ]
     runs-on: ${{ matrix.os }}
     name: Build Docker container
     steps:
@@ -93,7 +93,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, ubuntu-24.04-arm ]
+        os: [ ubuntu-24.04, ubuntu-24.04-arm ]
     runs-on: ${{ matrix.os }}
     name: serial tests
     needs: build
@@ -119,7 +119,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, ubuntu-24.04-arm ]
+        os: [ ubuntu-24.04, ubuntu-24.04-arm ]
     runs-on: ${{ matrix.os }}
     name: parallel tests
     needs: build
@@ -145,7 +145,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, ubuntu-24.04-arm ]
+        os: [ ubuntu-24.04, ubuntu-24.04-arm ]
     runs-on: ${{ matrix.os }}
     name: regression tests
     needs: build
@@ -187,7 +187,7 @@ jobs:
       run:
         docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{env.ARCH}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest -L REG --output-on-failure"
   fix-manifest:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [parallel-tests, serial-tests, regression-tests]
     if: success()
     steps:

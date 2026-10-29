@@ -20,6 +20,7 @@
 #include <array>
 #include <cstdint>
 #include <tuple>
+#include <array>
 
 #include "Teuchos_ParameterList.hpp"
 
