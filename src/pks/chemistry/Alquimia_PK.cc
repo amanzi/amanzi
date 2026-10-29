@@ -395,11 +395,11 @@ Alquimia_PK::Initialize()
   // Read XML parameters from our input file.
   XMLParameters();
 
-  bool restarted = false;
+  bool ic_is_restart_file = false;
   std::string restart_filename;
-  if (plist_->isSublist("initial conditions") && 
+  if (plist_->isSublist("initial conditions") &&
     plist_->sublist("initial conditions").isParameter("restart file")) {
-    restarted = true;
+    ic_is_restart_file = true;
     restart_filename = plist_->sublist("initial conditions").get<std::string>("restart file");
   }
 
@@ -408,7 +408,7 @@ Alquimia_PK::Initialize()
   // initialized aux_data and aux_out from restart file if there is
   for (const auto& [name, key] : aux_out_names_) {
     Record& rec = S_->GetRecordW(key, tag_next_, passwd_);
-    if (restarted) {
+    if (ic_is_restart_file) {
       Teuchos::ParameterList ic_plist;
       ic_plist.set("restart file", restart_filename);
       const std::vector<std::string>* subfieldnames = S_->GetRecordSetW(key).subfieldnames();
@@ -422,7 +422,7 @@ Alquimia_PK::Initialize()
     }
   }
 
-  if (restarted) {
+  if (ic_is_restart_file) {
     Teuchos::ParameterList ic_plist;
     ic_plist.set("restart file", restart_filename);
     const std::vector<std::string>* subfieldnames = S_->GetRecordSetW(aux_data_key_).subfieldnames();
@@ -433,7 +433,7 @@ Alquimia_PK::Initialize()
     }
   }
 
-  if (!restarted &&
+  if (!ic_is_restart_file &&
       chem_initial_conditions_.size() > 0 &&
       std::abs(initial_conditions_time_ - S_->get_time()) < 1e-8 * (1.0 + std::abs(S_->get_time()))) {
     int ierr = 0;
