@@ -1099,7 +1099,6 @@ PDE_DiffusionNLFVwithBndFaces::OneSidedWeightFluxes_(int i0,
             int bf = mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false)
                        .LID(mesh_->getMap(AmanziMesh::Entity_kind::FACE, false).GID(f1));
             
-            ubnd[0][bf] = bc_value[f1];
             
             sideflux += flux_data[i + k2][f] * (uc[0][c] - ubnd[0][bf]);
           } else if (bc_model[f1] == OPERATOR_BC_NEUMANN) {
@@ -1118,6 +1117,7 @@ PDE_DiffusionNLFVwithBndFaces::OneSidedWeightFluxes_(int i0,
 
 
         flux[0][f] = flux_data[0][f] * uc[0][c] - flux_data[dim_][f] * ubnd[0][bf];
+
       }
     }
   }

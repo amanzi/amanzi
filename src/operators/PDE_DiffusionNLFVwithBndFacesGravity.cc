@@ -40,19 +40,25 @@ PDE_DiffusionNLFVwithBndFacesGravity::UpdateMatrices(
   const Epetra_MultiVector& u_c = *u->ViewComponent("cell");
   const Epetra_MultiVector& u_bnd = *u->ViewComponent("boundary_face");
 
+  // Compute hydraulic head for cells
   for (int c = 0; c < ncells_owned; ++c) {
     double rho_g = GetDensity(c) * fabs(g_[dim_ - 1]);
     double zc = (mesh_->getCellCentroid(c))[dim_ - 1];
     hh_c[0][c] = u_c[0][c] + rho_g * zc;
-    auto faces = mesh_->getCellFaces(c);
-    for (auto f : faces) {
-      int bf = mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false)
-                 .LID(mesh_->getMap(AmanziMesh::Entity_kind::FACE, false).GID(f));
-      if (bf >= 0) {
-        double zf = (mesh_->getFaceCentroid(f))[dim_ - 1];
-        hh_bnd[0][bf] = u_bnd[0][bf] + rho_g * zf;
-      }
-    }
+  }
+
+  // Compute hydraulic head for boundary faces
+  // Each boundary face is processed exactly once using its adjacent cell's density
+  int nbfaces_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::BOUNDARY_FACE,
+                                            AmanziMesh::Parallel_kind::OWNED);
+  for (int bf = 0; bf < nbfaces_owned; ++bf) {
+    int f = mesh_->getMap(AmanziMesh::Entity_kind::FACE, false)
+               .LID(mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false).GID(bf));
+    auto cells = mesh_->getFaceCells(f);
+    int c = cells[0];  // Boundary face has exactly one adjacent cell
+    double rho_g = GetDensity(c) * fabs(g_[dim_ - 1]);
+    double zf = (mesh_->getFaceCentroid(f))[dim_ - 1];
+    hh_bnd[0][bf] = u_bnd[0][bf] + rho_g * zf;
   }
 
   if (!is_scalar_) {
@@ -88,18 +94,17 @@ PDE_DiffusionNLFVwithBndFacesGravity::UpdateMatrices(
       for (int n = 0; n < ncells; n++) {
         rhs_cell[0][cells[n]] -= av(n);
       }
-    } else if ((bc_model[f] == OPERATOR_BC_DIRICHLET) || (bc_model[f] == OPERATOR_BC_NEUMANN)) {
+    } else if ((bc_model[f] == OPERATOR_BC_DIRICHLET)) {
       int c = cells[0];
       double rho_g = GetDensity(c) * fabs(g_[dim_ - 1]);
       double zf = (mesh_->getFaceCentroid(f))[dim_ - 1];
       double zc = (mesh_->getCellCentroid(c))[dim_ - 1];
-
-      //rhs_cell[0][c] -= Aface(0, 0) * (zc - zf) * rho_g;
+           
       rhs_cell[0][c] -= (Aface(0, 0) * zc + Aface(0, 1) * zf) * rho_g;
 
-      int bf = mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false)
-                 .LID(mesh_->getMap(AmanziMesh::Entity_kind::FACE, false).GID(f));
-      rhs_bnd[0][bf] -= (Aface(1, 0) * zc + Aface(1, 1) * zf) * rho_g;
+      // int bf = mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false)
+      //            .LID(mesh_->getMap(AmanziMesh::Entity_kind::FACE, false).GID(f));
+      // rhs_bnd[0][bf] -= (Aface(1, 0) * zc - Aface(1, 1) * zf) * rho_g;
     }
   }
 
@@ -122,21 +127,26 @@ PDE_DiffusionNLFVwithBndFacesGravity::UpdateFlux(const Teuchos::Ptr<const Compos
   const Epetra_MultiVector& u_c = *u->ViewComponent("cell");
   const Epetra_MultiVector& u_bnd = *u->ViewComponent("boundary_face");
 
+  // Compute hydraulic head for cells
   for (int c = 0; c < ncells_owned; ++c) {
     double rho_g = GetDensity(c) * fabs(g_[dim_ - 1]);
     double zc = (mesh_->getCellCentroid(c))[dim_ - 1];
     hh_c[0][c] = u_c[0][c] + rho_g * zc;
-    auto faces = mesh_->getCellFaces(c);
-    for (auto f : faces) {
-      int bf = mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false)
-                 .LID(mesh_->getMap(AmanziMesh::Entity_kind::FACE, false).GID(f));
-      if (bf >= 0) {
-        double zf = (mesh_->getFaceCentroid(f))[dim_ - 1];
-        hh_bnd[0][bf] = u_bnd[0][bf] + rho_g * zf;
-      }
-    }
   }
 
+  // Compute hydraulic head for boundary faces
+  // Each boundary face is processed exactly once using its adjacent cell's density
+  int nbfaces_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::BOUNDARY_FACE,
+                                            AmanziMesh::Parallel_kind::OWNED);
+  for (int bf = 0; bf < nbfaces_owned; ++bf) {
+    int f = mesh_->getMap(AmanziMesh::Entity_kind::FACE, false)
+               .LID(mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false).GID(bf));
+    auto cells = mesh_->getFaceCells(f);
+    int c = cells[0];  // Boundary face has exactly one adjacent cell
+    double rho_g = GetDensity(c) * fabs(g_[dim_ - 1]);
+    double zf = (mesh_->getFaceCentroid(f))[dim_ - 1];
+    hh_bnd[0][bf] = u_bnd[0][bf] + rho_g * zf;
+  }
 
   PDE_DiffusionNLFVwithBndFaces::UpdateFlux(hh.ptr(), flux);
 }
