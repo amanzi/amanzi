@@ -202,7 +202,7 @@ DiffusionFixture::Setup(const std::string& prec_solver_, bool symmetric_)
       global_op->set_inverse_parameters(
         prec_solver, plist->sublist("preconditioners"), "AztecOO CG", plist->sublist("solvers"));
       global_op->InitializeInverse();
-    } else {
+    } else if(prec_solver.substr(0, 6) == "ifpack") {
       global_op->set_inverse_parameters(
         prec_solver, plist->sublist("preconditioners"), "GMRES", plist->sublist("solvers"));
       global_op->InitializeInverse();
@@ -459,7 +459,6 @@ DiffusionFixture::Residual()
   //set solution to exact
 
   ana->set_pressure_exact(solution, 0.0);
-
 
   std::cout<<"Pressure\n";
   

@@ -121,9 +121,16 @@ testWGravity(double gravity,
     AMANZI_ASSERT(false);
   }
   fix.Setup(pc_type, symmetric);
-  for (int i = 0; i < niters - 1; ++i) fix.Go(0.0);
-  fix.Go(tol);
 
+  if (pc_type == "mat-vec") {
+    fix.MatVec(niters);
+  }else if(pc_type == "residual"){
+    fix.Residual();
+  } else {
+    for (int i = 0; i < niters - 1; ++i) fix.Go(0.0);
+    fix.Go(tol);
+  }
+  
   if (fix.getComm()->MyPID() == 0) {
     std::cout << "================================================================================"
               << std::endl

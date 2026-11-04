@@ -35,6 +35,7 @@ PDE_DiffusionNLFVwithBndFacesGravity::UpdateMatrices(
 {
   // affine map of u. It is equivalent to calculating hydraulic head.
   auto hh = Teuchos::rcp(new CompositeVector(*u));
+  auto grav = Teuchos::rcp(new CompositeVector(*u));
   Epetra_MultiVector& hh_c = *hh->ViewComponent("cell");
   Epetra_MultiVector& hh_bnd = *hh->ViewComponent("boundary_face");
   const Epetra_MultiVector& u_c = *u->ViewComponent("cell");
@@ -53,21 +54,22 @@ PDE_DiffusionNLFVwithBndFacesGravity::UpdateMatrices(
                                             AmanziMesh::Parallel_kind::OWNED);
   for (int bf = 0; bf < nbfaces_owned; ++bf) {
     int f = mesh_->getMap(AmanziMesh::Entity_kind::FACE, false)
-               .LID(mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false).GID(bf));
+      .LID(mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false).GID(bf));
     auto cells = mesh_->getFaceCells(f);
     int c = cells[0];  // Boundary face has exactly one adjacent cell
     double rho_g = GetDensity(c) * fabs(g_[dim_ - 1]);
     double zf = (mesh_->getFaceCentroid(f))[dim_ - 1];
-    hh_bnd[0][bf] = u_bnd[0][bf] + rho_g * zf;
+    hh_bnd[0][bf] = u_bnd[0][bf] + rho_g * zf; 
   }
 
   if (!is_scalar_) {
     rho_cv_->ScatterMasterToGhosted("cell");
   }
 
+  // Assemble matrices using hydraulic head
   PDE_DiffusionNLFVwithBndFaces::UpdateMatrices(flux, hh.ptr());
 
-  // add gravity fluxes to the right-hand side.
+  // Add gravity fluxes to the right-hand side.
   global_op_->rhs()->PutScalarGhosted(0.0);
 
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
@@ -94,23 +96,27 @@ PDE_DiffusionNLFVwithBndFacesGravity::UpdateMatrices(
       for (int n = 0; n < ncells; n++) {
         rhs_cell[0][cells[n]] -= av(n);
       }
-    } else if ((bc_model[f] == OPERATOR_BC_DIRICHLET)) {
+      
+    } else if ((bc_model[f] == OPERATOR_BC_DIRICHLET) || (bc_model[f] == OPERATOR_BC_NEUMANN)) {
       int c = cells[0];
       double rho_g = GetDensity(c) * fabs(g_[dim_ - 1]);
       double zf = (mesh_->getFaceCentroid(f))[dim_ - 1];
       double zc = (mesh_->getCellCentroid(c))[dim_ - 1];
            
+      // Cell RHS correction for gravity
       rhs_cell[0][c] -= (Aface(0, 0) * zc + Aface(0, 1) * zf) * rho_g;
 
-      // int bf = mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false)
-      //            .LID(mesh_->getMap(AmanziMesh::Entity_kind::FACE, false).GID(f));
-      // rhs_bnd[0][bf] -= (Aface(1, 0) * zc - Aface(1, 1) * zf) * rho_g;
+      // Boundary Neuman face RHS correction for gravity
+      if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+        int bf = mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false)
+          .LID(mesh_->getMap(AmanziMesh::Entity_kind::FACE, false).GID(f));
+        rhs_bnd[0][bf] -= (Aface(1, 0) * zc + Aface(1, 1) * zf) * rho_g;
+      }
     }
   }
 
   global_op_->rhs()->GatherGhostedToMaster();
 }
-
 
 /* ******************************************************************
 * Calculate flux using cell-centered data.
@@ -150,6 +156,7 @@ PDE_DiffusionNLFVwithBndFacesGravity::UpdateFlux(const Teuchos::Ptr<const Compos
 
   PDE_DiffusionNLFVwithBndFaces::UpdateFlux(hh.ptr(), flux);
 }
+
 
 
 } // namespace Operators

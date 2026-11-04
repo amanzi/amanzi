@@ -814,9 +814,6 @@ PDE_DiffusionNLFVwithBndFaces::OneSidedFluxCorrections_(int i0,
   const Epetra_MultiVector& ubnd = *u.ViewComponent("boundary_face", true);
   Epetra_MultiVector& flux = *flux_cv.ViewComponent("face", true);
 
-  // std::cout<<uc<<"\n";
-  // std::cout<<ubnd<<"\n";
-  
   Epetra_MultiVector& hap_gamma = *stencil_data_->ViewComponent("gamma", true);
   Epetra_MultiVector& weight = *stencil_data_->ViewComponent("weight", true);
 
@@ -876,21 +873,14 @@ PDE_DiffusionNLFVwithBndFaces::OneSidedFluxCorrections_(int i0,
           int bf = mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false)
                      .LID(mesh_->getMap(AmanziMesh::Entity_kind::FACE, false).GID(f1));
 
-          ubnd[0][bf] = bc_value[f1] ;
+          //ubnd[0][bf] = bc_value[f1] ;
 
           if ((ncells==1)&&(i0==1)) {
-            sideflux += -tmp * (bc_value[f1]); // * dir;
+            sideflux += -tmp * (ubnd[0][bf] ); // * dir;
           }else{
-            sideflux += tmp * (uc[0][c] -  bc_value[f1]); // * dir;
+            sideflux += tmp * (uc[0][c] -  ubnd[0][bf]); // * dir;
           }
           
-          // if (f==0){
-          //     std::cout<<"FluxCorrection "<<"f1 "<<f1<<" c3 "<<c3<<"\n";
-          //     std::cout<<"weight "<<weight[i + k2][f] << "\n";
-          //     std::cout<<"ubnd "<<ubnd[0][bf]<<"\n";
-          //     std::cout<<"sideflux "<<sideflux<<"\n";
-          // }
-
           
         } else if (bc_model[f1] == OPERATOR_BC_NEUMANN) {
           tmp = weight[i + k2][f];
@@ -903,13 +893,6 @@ PDE_DiffusionNLFVwithBndFaces::OneSidedFluxCorrections_(int i0,
           }else{
             sideflux += tmp * (uc[0][c] -  ubnd[0][bf]); // * dir;
           }
-
-          // if (f==0){
-          //   std::cout<<"FluxCorrection "<<"f1 "<<f1<<" c3 "<<c3<<"\n";
-          //   std::cout<<"weight "<<weight[i + k2][f] << "\n";
-          //   std::cout<<"ubnd "<<ubnd[0][bf]<<"\n";
-          //   std::cout<<"sideflux "<<sideflux<<"\n";
-          // }
 
         }
       }
@@ -942,29 +925,16 @@ PDE_DiffusionNLFVwithBndFaces::OneSidedFluxCorrections_(int i0,
             int bf = mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false)
                      .LID(mesh_->getMap(AmanziMesh::Entity_kind::FACE, false).GID(f1));
 
-            ubnd[0][bf] = bc_value[f1];
+            //ubnd[0][bf] = bc_value[f1];
           
-            sideflux += -tmp * (bc_value[f1]); // * dir;
-            if (f==0){
-              std::cout<<"FluxCorrection "<<"f1 "<<f1<<" c3 "<<c3<<"\n";
-              std::cout<<"weight "<<weight[i + k2][f] <<" gamma "<< gamma<<"\n";
-              std::cout<<"ubnd "<<ubnd[0][bf]<<"\n";
-              std::cout<<"sideflux "<<sideflux<<"\n";
-            }
-          
+            sideflux += -tmp * (ubnd[0][bf] ); // * dir;
+            
           } else if (bc_model[f1] == OPERATOR_BC_NEUMANN) {
             tmp = weight[i + k2][f];
             int bf = mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false)
               .LID(mesh_->getMap(AmanziMesh::Entity_kind::FACE, false).GID(f1));
 
             sideflux += -tmp * (ubnd[0][bf]); //* dir;
-
-            if (f==0){
-              std::cout<<"FluxCorrection "<<"f1 "<<f1<<" c3 "<<c3<<"\n";
-              std::cout<<"weight "<<weight[i + k2][f] <<" gamma "<< gamma<<"\n";
-              std::cout<<"ubnd "<<ubnd[0][bf]<<"\n";
-              std::cout<<"sideflux "<<sideflux<<"\n";
-            }
 
             
             //neumanflux += tmp * bc_value[f1] * mesh_->getFaceArea(f1);
@@ -977,79 +947,6 @@ PDE_DiffusionNLFVwithBndFaces::OneSidedFluxCorrections_(int i0,
             
     }
   }
-}
-
-void
-PDE_DiffusionNLFVwithBndFaces::OneSidedNeumannCorrections_(const CompositeVector& u,
-                                                           CompositeVector& flux_cv)
-{
-  // un-rolling composite vectors
-  const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
-  const Epetra_MultiVector& ubnd = *u.ViewComponent("boundary_face", true);
-  Epetra_MultiVector& flux = *flux_cv.ViewComponent("face", true);
-
-  Epetra_MultiVector& hap_gamma = *stencil_data_->ViewComponent("gamma", true);
-  Epetra_MultiVector& weight = *stencil_data_->ViewComponent("weight", true);
-
-  const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
-  const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
-  
-  // un-rolling little-k data
-  Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
-  if (k_ != Teuchos::null) k_face = k_->ViewComponent("face");
-
-  int c1, c2, c3, k1, k2;
-  double gamma, tmp;
-  std::vector<int> dirs;
-
-  for (int f = 0; f < nfaces_owned; f++) {
-    if ((bc_model[f] == OPERATOR_BC_NEUMANN) || (bc_model[f] == OPERATOR_BC_DIRICHLET)) {
-      auto cells = mesh_->getFaceCells(f);
-      AMANZI_ASSERT(cells.size() == 1);
-
-      k1 = 1;
-      k2 = dim_;
-
-      // scalar (nonlinear) coefficient
-      double kf(1.0);
-      if (k_face.get() ) kf = (*k_face)[0][f];
-
-      for (k1 = 0; k1 < 2; k1++) {
-        k2 = k1 * dim_;
-        double sideflux(0.0);
-        for (int i = 1; i < dim_; ++i) {
-          int f1 = (*stencil_faces_[i + k2])[f];
-          c3 = (*stencil_cells_[i + k2])[f];
-          if (f1 >= 0) {
-            if (c3 >= 0) {
-              auto cells_tmp = mesh_->getFaceCells(f1);
-              OrderCellsByGlobalId_(cells_tmp, c1, c2);
-
-              gamma = hap_gamma[0][f1];
-
-              double uf = (1 - gamma) * uc[0][c1] + gamma * uc[0][c2];
-              sideflux += weight[i + k2][f] * uf;
-
-            } else if (bc_model[f1] == OPERATOR_BC_DIRICHLET) {
-              tmp = weight[i + k2][f];
-              int bf = mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false)
-                         .LID(mesh_->getMap(AmanziMesh::Entity_kind::FACE, false).GID(f1));
-              sideflux += tmp * ubnd[0][bf];
-
-            } else if (bc_model[f1] == OPERATOR_BC_NEUMANN) {
-              tmp = weight[i + k2][f];
-              int bf = mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false)
-                         .LID(mesh_->getMap(AmanziMesh::Entity_kind::FACE, false).GID(f1));
-              sideflux += tmp * ubnd[0][bf];
-            }
-          }
-        }
-        flux[k1][f] = kf * sideflux;
-      }
-    }
-  }
-  // flux_cv.GatherGhostedToMaster();
-  // flux_cv.ScatterMasterToGhosted();
 }
 
 
