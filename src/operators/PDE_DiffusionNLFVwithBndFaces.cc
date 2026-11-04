@@ -919,13 +919,10 @@ PDE_DiffusionNLFVwithBndFaces::OneSidedFluxCorrections_(int i0,
             tmp = weight[i + k2][f] * gamma;
             sideflux += -tmp * (uc[0][c3]);
 
-            //std::cout<<"f "<<f<<" c "<<c<<" c3 "<<c3<<" sideflux "<<sideflux<<"\n";
           } else if (bc_model[f1] == OPERATOR_BC_DIRICHLET) {
             tmp = weight[i + k2][f];
             int bf = mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false)
                      .LID(mesh_->getMap(AmanziMesh::Entity_kind::FACE, false).GID(f1));
-
-            //ubnd[0][bf] = bc_value[f1];
           
             sideflux += -tmp * (ubnd[0][bf] ); // * dir;
             
@@ -1105,10 +1102,10 @@ PDE_DiffusionNLFVwithBndFaces::UpdateFlux(const Teuchos::Ptr<const CompositeVect
       mesh_->getFaceNormal(f, cells[0], &dir);
       flux_data[0][f] = wgt_sideflux[0][f] * dir;
     } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
-      flux_data[0][f] = bc_value[f] * mesh_->getFaceArea(f);
-      // auto cells = mesh_->getFaceCells(f);
-      // mesh_->getFaceNormal(f, cells[0], &dir);
-      // flux_data[0][f] = wgt_sideflux[0][f] * dir;
+      //flux_data[0][f] = bc_value[f] * mesh_->getFaceArea(f);
+      auto cells = mesh_->getFaceCells(f);
+      mesh_->getFaceNormal(f, cells[0], &dir);
+      flux_data[0][f] = wgt_sideflux[0][f] * dir;
     } else if (bc_model[f] == OPERATOR_BC_NONE) {
       auto cells = mesh_->getFaceCells(f);
       OrderCellsByGlobalId_(cells, c1, c2);
@@ -1117,9 +1114,9 @@ PDE_DiffusionNLFVwithBndFaces::UpdateFlux(const Teuchos::Ptr<const CompositeVect
       double wg1 = wgt_sideflux[0][f];
       double wg2 = wgt_sideflux[1][f];
 
-      // if (cells.size() == 2) flux_data[0][f] = 0.5 * (wg1 - wg2) * dir;
-      // else flux_data[0][f] = dir * wg1; 
-      flux_data[0][f] = 0.5 * (wg1 - wg2) * dir;  
+      if (cells.size() == 2) flux_data[0][f] = 0.5 * (wg1 - wg2) * dir;
+      else flux_data[0][f] = dir * wg1; 
+      //flux_data[0][f] = 0.5 * (wg1 - wg2) * dir;  
     }
   }
 }
@@ -1161,7 +1158,6 @@ PDE_DiffusionNLFVwithBndFaces::NLTPFAContributions_(int f, double& tc1, double& 
   int c, c1, c2, c3, f1;
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
 
-  //AMANZI_ASSERT(bc_model[f] == OPERATOR_BC_NEUMANN);
   auto cells = mesh_->getFaceCells(f);
   c = cells[0];
   tc1 = 0.;

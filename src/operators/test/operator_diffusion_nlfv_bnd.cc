@@ -235,7 +235,44 @@ SUITE(DIFFUSION)
          "02",
          50);
   }
-       
+
+     TEST(Analytic02_NLFVwithBnd_DirichletNeumann_structured3d_ifpack2_ILUT)
+  {
+    std::cout << "Test: "
+              << "Analytic02_NLFVwithBnd_DirichletNeumann_structured3d_ifpack2_ILUT" << std::endl;
+    test("ifpack2: ILUT",
+         "DirichletNeumann",
+         "structured3d",
+         3,
+         5,
+         "nlfv with bfaces",
+         false,
+         AmanziMesh::Entity_kind::UNKNOWN,
+         1e-11,
+         1,
+         "02",
+         20);
+  }    
+
+     TEST(Analytic02_NLFVwithBnd_wGravity_DirichletNeumann_structured3d_ifpack2_ILUT)
+  {
+    std::cout << "Test: "
+              << "Analytic02_NLFVwithBnd_DirichletNeumann_structured3d_ifpack2_ILUT" << std::endl;
+    testWGravity(0.1,
+                 "ifpack2: ILUT",
+                 "DirichletNeumann",
+                 "structured3d",
+                 3,
+                 5,
+                 "nlfv with bfaces",
+                 false,
+                 AmanziMesh::Entity_kind::UNKNOWN,
+                 1e-11,
+                 1,
+                 "02",
+                 20);
+  }    
+
      
   //  TEST(Analytic02_NLFVWithBnd_Dirichlet_structured2d_ifpack2_ILUT0)
   // {
