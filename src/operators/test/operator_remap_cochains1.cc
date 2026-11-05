@@ -188,11 +188,18 @@ TestRemap(std::function<double(AmanziGeometry::Point)> fun_u,
   // energies
   const auto& u0r = remap.getCellFieldFromEdges(mesh0, *u0);
   const auto& u1r = remap.getCellFieldFromEdges(mesh1, *u1);
+  auto u0r_c = *u0r->ViewComponent("cell");
+  auto u1r_c = *u1r->ViewComponent("cell");
 
   double energy0(0.0), energy1(0.0);
   for (int c = 0; c < ncells_owned; ++c) {
-    energy0 += L22(u0r[c]) * mesh0->getCellVolume(c);
-    energy1 += L22(u1r[c]) * mesh1->getCellVolume(c);
+    double tmp0(0.0), tmp1(0.0);
+    for (int i = 0; i < 3; ++i) {
+      tmp0 += u0r_c[i][c] * u0r_c[i][c];
+      tmp1 += u1r_c[i][c] * u1r_c[i][c];
+    }
+    energy0 += tmp0 * mesh0->getCellVolume(c);
+    energy1 += tmp1 * mesh1->getCellVolume(c);
   }
   energy0 = std::sqrt(energy0);
   energy1 = std::sqrt(energy1);

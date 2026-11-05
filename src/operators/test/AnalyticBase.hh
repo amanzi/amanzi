@@ -271,11 +271,10 @@ AnalyticBase::ComputeNodeError(Epetra_MultiVector& p,
       const auto xv = mesh_->getNodeCoordinate(v);
       double tmp = pressure_exact(xv, t);
 
-      if (std::abs(tmp - p[0][v]) > .01) {
-        Amanzi::AmanziGeometry::Point xv2(2);
-        xv2 = mesh_->getNodeCoordinate(v);
-        // std::cout << v << " at " << xv << " error: " << tmp << " " << p[0][v] << std::endl;
-      }
+      Amanzi::AmanziGeometry::Point xv2(2);
+      xv2 = mesh_->getNodeCoordinate(v);
+      // std::cout << v << " at " << xv << " error: " << tmp << " " << p[0][v] << std::endl;
+
       l2_err += std::pow(tmp - p[0][v], 2.0) * volume / nnodes;
       inf_err = std::max(inf_err, fabs(tmp - p[0][v]));
       pnorm += std::pow(tmp, 2.0) * volume / nnodes;

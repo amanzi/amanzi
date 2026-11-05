@@ -47,9 +47,9 @@ class RemapCochains {
   AmanziGeometry::Point getSweptFaceCentroid(int f) const { return AmanziGeometry::Point(3); }
 
   // reconstruction
-  std::vector<AmanziGeometry::Point>
+  Teuchos::RCP<CompositeVector>
   getCellFieldFromEdges(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, const CompositeVector& in);
-  std::vector<AmanziGeometry::Point>
+  Teuchos::RCP<CompositeVector>
   getCellFieldFromFaces(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, const CompositeVector& in);
 
  private:
