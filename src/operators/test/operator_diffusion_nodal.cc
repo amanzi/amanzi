@@ -263,13 +263,16 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS)
     if (fabs(xf[0]) < 1e-6) {
       bc_model_f[f] = OPERATOR_BC_NEUMANN;
       bc_value_f[f] = -(ana.velocity_exact(xf, 0.0))[0]; // We assume exterior normal.
-    } else if (fabs(xf[1]) < 1e-6) {
-      bc_model_f[f] = OPERATOR_BC_MIXED;
-      bc_value_f[f] = -(ana.velocity_exact(xf, 0.0))[1]; // We assume exterior normal.
+    } 
+    else if (fabs(xf[1]) < 1e-6) {
+      bc_model_f[f] = OPERATOR_BC_NEUMANN;
+      bc_value_f[f] = -(ana.velocity_exact(xf, 0.0))[1];
 
-      double tmp = ana.pressure_exact(xf, 0.0);
-      bc_mixed_f[f] = 1.0;
-      bc_value_f[f] -= bc_mixed_f[f] * tmp;
+      // Mixed condition requries exact quadrature for product of two linear functions.
+      // We use the trapesoidal rule, so exactness does not hold.
+      // bc_model_f[f] = OPERATOR_BC_MIXED;
+      // bc_mixed_f[f] = 1.0;
+      // bc_value_f[f] -= bc_mixed_f[f] * ana.pressure_exact(xf, 0.0);
     }
   }
 
@@ -317,7 +320,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS)
     ph1_err /= hnorm;
     printf("L2(p)=%9.6f  H1(p)=%9.6f  itr=%3d\n", pl2_err, ph1_err, global_op->num_itrs());
 
-    CHECK(pl2_err < 1e-5 && ph1_err < 2e-5);
+    CHECK(pl2_err < 1e-12 && ph1_err < 1e-12);
     CHECK(global_op->num_itrs() < 10);
   }
 }

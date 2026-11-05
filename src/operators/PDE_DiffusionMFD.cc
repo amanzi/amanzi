@@ -772,14 +772,17 @@ PDE_DiffusionMFD::ApplyBCs_Nodal_(const Teuchos::Ptr<const BCs>& bc_f,
           double value = bc_value[f];
           double area = mesh_->getFaceArea(f);
 
-          auto nodes = mesh_->getFaceNodes(f);
+          auto cnodes = mesh_->getCellNodes(c);  // all cell nodes
+          auto nodes = mesh_->getFaceNodes(f);  // only face nodes
           int nnodes = nodes.size();
 
           for (int m = 0; m < nnodes; m++) {
             int v = nodes[m];
             if (bc_v->bc_model()[v] != OPERATOR_BC_DIRICHLET)
               rhs_node[0][v] -= value * area / nnodes;
-            Acell(n, n) += bc_mixed[f] * area / nnodes;
+
+            int k = std::distance(cnodes.begin(), std::find(cnodes.begin(), cnodes.end(), v));
+            Acell(k, k) += bc_mixed[f] * area / nnodes;
           }
         }
       }
