@@ -2014,7 +2014,7 @@ cacheDefault(MeshCache<MEM>& mesh)
   }
 
   Teuchos::RCP<Teuchos::ParameterList> plist = mesh.getParameterList();
-  if (plist->isSublist("unstructured")) {
+  if (plist.get() && plist->isSublist("unstructured")) {
     const auto& tmp = plist->sublist("unstructured");
     if (tmp.isSublist("expert")) {
       const auto& aux = tmp.sublist("expert");
