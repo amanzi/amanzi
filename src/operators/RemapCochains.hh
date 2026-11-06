@@ -19,6 +19,9 @@
 #ifndef AMANZI_OPERATOR_REMAP_COCHAINS_HH_
 #define AMANZI_OPERATOR_REMAP_COCHAINS_HH_
 
+#include <utility>
+#include <vector>
+
 // TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -44,6 +47,8 @@ class RemapCochains {
   void HighOrder(const CompositeVector& in, CompositeVector& out);
 
   AmanziGeometry::Point getSweptEdgeCentroid(int e) const;
+  std::vector<std::pair<AmanziGeometry::Point, AmanziGeometry::Point>>
+  getSweptEdgeQuadrature(int e) const;
   AmanziGeometry::Point getSweptFaceCentroid(int f) const { return AmanziGeometry::Point(3); }
 
   // reconstruction

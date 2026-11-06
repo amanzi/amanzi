@@ -138,8 +138,10 @@ set(operators_inc_files
     SmoothnessIndicatorShu.hh
     TreeOperator.hh
     Reconstruction.hh
+    ReconstructionCellCochain.hh
     ReconstructionCellLinear.hh
     ReconstructionCellPolynomial.hh
+    ReconstructionUtils.hh
     UniqueLocalIndex.hh
     Upwind.hh
     UpwindArithmeticAverage.hh
@@ -196,8 +198,10 @@ set(operators_src_files
   Schema.cc SchemaUtils.cc
   SmoothnessIndicatorShu.cc
   TreeOperator.cc
+  ReconstructionCellCochain.cc
   ReconstructionCellLinear.cc
   ReconstructionCellPolynomial.cc
+  ReconstructionUtils.cc
   RemapCochains.cc
   RemapDG.cc RemapUtils.cc
   UniqueLocalIndex.cc

@@ -183,9 +183,9 @@ TestRemap(std::function<AmanziGeometry::Point(AmanziGeometry::Point)> fun_u,
   int nedges_wghost = mesh0->getNumEntities(AmanziMesh::EDGE, AmanziMesh::Parallel_kind::ALL);
 
   // initialize I/O
-  // Teuchos::ParameterList iolist;
-  // iolist.get<std::string>("file name base", "plot2");
-  // OutputXDMF io(iolist, mesh0, true, true);
+  Teuchos::ParameterList iolist;
+  iolist.get<std::string>("file name base", "plot");
+  OutputXDMF io(iolist, mesh0, true, true);
 
   // create and initialize cell-based fields
   CompositeVectorSpace cvs0, cvs1;
@@ -291,9 +291,9 @@ TestRemap(std::function<AmanziGeometry::Point(AmanziGeometry::Point)> fun_u,
     u0_f = u1_f;
 
     // io
-    // io.InitializeCycle(m * dtau, m, "");
-    // io.WriteVector(*u0r_c(0), "solution", AmanziMesh::Entity_kind::CELL);
-    // io.FinalizeCycle();
+    io.InitializeCycle(m * dtau, m, "");
+    io.WriteVector(*u0r_c(0), "solution", AmanziMesh::Entity_kind::CELL);
+    io.FinalizeCycle();
 
     /*
     if (m == 0) {
@@ -318,8 +318,8 @@ TEST(REMAP_2_COCHAINS) {
   int low(1), high(2);
   double l2_err = TestRemap(fun0_u, fun0_v, low, 2, 2);
   CHECK_CLOSE(0.0, l2_err, 1e-12);
-  l2_err = TestRemap(fun1_u, fun1_v, high, 8, 2);
-  CHECK_CLOSE(0.0, l2_err, 2e-3);
+  l2_err = TestRemap(fun1_u, fun1_v, high, 8, 4);
+  CHECK_CLOSE(0.0, l2_err, 1e-12);
 
   // TestRemap(tornado_u, tornado_v, high, 12, 4);
 }

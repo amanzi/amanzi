@@ -14,17 +14,20 @@
   for physics packages.
 */
 
+#include <cmath>
+#include <utility>
+#include <vector>
+
 // TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
 // Amanzi
 #include "dbc.hh"
-#include "LimiterCell.hh"
 #include "MFD3D_Diffusion.hh"
 #include "MFD3D_Electromagnetics.hh"
 #include "Point.hh"
-#include "ReconstructionCellLinear.hh"
+#include "ReconstructionCellCochain.hh"
 
 #include "RemapCochains.hh"
 
@@ -188,23 +191,9 @@ void RemapCochains::HighOrder<2>(const CompositeVector& in, CompositeVector& out
   const auto& in_f = *in.ViewComponent("face", true);
   auto& out_f = *out.ViewComponent("face");
 
-  const auto& vc = getCellFieldFromFaces(mesh0_, in);
-  auto vc_c = vc->ViewComponent("cell");
-
-  // component-wise linear reconstruction in cells
-  Teuchos::ParameterList plist;
-  std::vector<Teuchos::RCP<Operators::ReconstructionCellLinear>> grad(d_);
-
-  auto limiter = Teuchos::rcp(new Operators::LimiterCell(mesh0_));
-  limiter->Init(plist);
-
-  for (int i = 0; i < d_; ++i) {
-    grad[i] = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh0_));
-    grad[i]->Init(plist);
-    grad[i]->Compute(vc_c, i);
-    // limiter->ApplyLimiter(vc, 0, grad, bc_model_vector, bc_value_qx);
-    grad[i]->data()->ScatterMasterToGhosted("cell");
-  }
+  // patch-based linear reconstruction that is exact for linear fields
+  ReconstructionCellCochain recon(mesh0_);
+  recon.Compute(in);
 
   // compute swept areas and donor cells 
   double eps = 1e-8;
@@ -254,12 +243,12 @@ void RemapCochains::HighOrder<2>(const CompositeVector& in, CompositeVector& out
       int e = edges[n];
       int c = donor_cell[e];
 
-      const auto& p = getSweptEdgeCentroid(e);
-
-      for (int i = 0; i < d_; ++i) {
-        val[i] = grad[i]->getValue(c, p);
+      // exact integration of linear fields over the bilinear swept surface
+      double flux(0.0);
+      for (const auto& [p, w] : getSweptEdgeQuadrature(e)) {
+        flux += recon.getValue(c, p) * w;
       }
-      sum -= val * swept_area[e] * dirs[n];
+      sum -= flux * dirs[n];
     }
     out_f[0][f] = sum;
   }
@@ -357,18 +346,38 @@ RemapCochains::getSweptEdgeCentroid(int e) const
   const AmanziGeometry::Point& v3 = mesh1_->getNodeCoordinate(nodes1[1]);
 
   return (v0 + v1 + v2 + v3) / 4;
+}
 
-  /*
-  auto b = v1 - v0;
-  auto c = v3 - v0;
-  auto d = v2 - v0;
- 
-  double s1 = norm(b ^ c);
-  double s2 = norm(d ^ c);
 
-  if (s1 + s2 <= 1.0e-12) return 0.5 * (v0 + v1);
-  else return v0 + (s1 * (c + b) + s2 * (c + d)) / (3 * (s1 + s2));
-  */
+/* *****************************************************************
+* 2x2 Gauss rule on the bilinear surface swept by edge e. Each entry
+* is a point and the weighted area vector (x_s ^ x_t) * weight.
+* It integrates exactly linear fields, even on non-planar surfaces.
+***************************************************************** */
+std::vector<std::pair<AmanziGeometry::Point, AmanziGeometry::Point>>
+RemapCochains::getSweptEdgeQuadrature(int e) const
+{
+  const auto& nodes0 = mesh0_->getEdgeNodes(e);
+  const auto& nodes1 = mesh1_->getEdgeNodes(e);
+
+  const AmanziGeometry::Point& a0 = mesh0_->getNodeCoordinate(nodes0[0]);
+  const AmanziGeometry::Point& a1 = mesh0_->getNodeCoordinate(nodes0[1]);
+  const AmanziGeometry::Point& b0 = mesh1_->getNodeCoordinate(nodes1[0]);
+  const AmanziGeometry::Point& b1 = mesh1_->getNodeCoordinate(nodes1[1]);
+
+  const double g = 0.5 - 0.5 / std::sqrt(3.0);
+  const double gauss[2] = { g, 1.0 - g };
+
+  std::vector<std::pair<AmanziGeometry::Point, AmanziGeometry::Point>> q;
+  for (double s : gauss) {
+    for (double t : gauss) {
+      auto xs = (1 - t) * (a1 - a0) + t * (b1 - b0);
+      auto xt = (1 - s) * (b0 - a0) + s * (b1 - a1);
+      auto x = (1 - t) * ((1 - s) * a0 + s * a1) + t * ((1 - s) * b0 + s * b1);
+      q.emplace_back(x, 0.25 * (xs ^ xt));
+    }
+  }
+  return q;
 }
 
 } // namespace Operators
