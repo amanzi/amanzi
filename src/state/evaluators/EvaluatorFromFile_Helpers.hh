@@ -159,7 +159,7 @@ class FileTimeInterpolator {
   {
     Teuchos::RCP<Amanzi::HDF5_MPI> file_input =
       Teuchos::rcp(new Amanzi::HDF5_MPI(page_->Comm(), filename_));
-    file_input->open_h5file();
+    file_input->open_h5file(true);
 
     Epetra_MultiVector& vec = *page_->ViewComponent(compname_, false);
     for (int c = 0; c != count; ++c) {
