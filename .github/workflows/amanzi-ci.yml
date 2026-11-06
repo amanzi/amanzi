@@ -71,7 +71,7 @@ jobs:
         context: .
         file: ./Docker/Dockerfile-Amanzi-build
         push: true
-        tags: metsi/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{env.ARCH}}-latest
+        tags: ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{env.ARCH}}-latest
         build-args: |
           ARCH=linux/${{env.ARCH}}
           amanzi_branch=${{env.AMANZI_BRANCH}}
@@ -83,7 +83,7 @@ jobs:
         context: .
         file: ./Docker/Dockerfile-Amanzi-build
         push: true
-        tags: metsi/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{env.ARCH}}-latest
+        tags: ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-${{env.ARCH}}-latest
         build-args: |
           ARCH=linux/${{env.ARCH}}
           amanzi_branch=${{env.AMANZI_BRANCH}}
