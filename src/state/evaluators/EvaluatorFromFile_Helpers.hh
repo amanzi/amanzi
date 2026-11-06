@@ -37,7 +37,6 @@
 #include "CompositeVectorSpace.hh"
 #include "TensorVector.hh"
 
-
 namespace Amanzi {
 namespace EvaluatorFromFile_Helpers {
 
@@ -77,23 +76,25 @@ class FileTimeInterpolator {
   // times, and loads the initial page starting at time index 0.
   void setup(const CompositeVectorSpace& space, bool temporally_variable)
   {
-    auto reader = createReader(filename_);
-    times_.clear();
-    if (temporally_variable) {
-      try {
-        Teuchos::Array<double> times;
-        reader->read("/time", times);
-        times_ = times.toVector();
-      } catch (...) {
-        std::stringstream messagestream;
-        messagestream << "FileTimeInterpolator: variable " << varname_
-                      << " is defined as a field changing in time.\n"
-                      << " Dataset /time is not provided in file " << filename_ << "\n";
-        Errors::Message message(messagestream.str());
-        Exceptions::amanzi_throw(message);
+    {
+      auto reader = createReader(filename_);
+      times_.clear();
+      if (temporally_variable) {
+        try {
+          Teuchos::Array<double> times;
+          reader->read("/time", times);
+          times_ = times.toVector();
+        } catch (...) {
+          std::stringstream messagestream;
+          messagestream << "FileTimeInterpolator: variable " << varname_
+                        << " is defined as a field changing in time.\n"
+                        << " Dataset /time is not provided in file " << filename_ << "\n";
+          Errors::Message message(messagestream.str());
+          Exceptions::amanzi_throw(message);
+        }
+      } else {
+        times_.push_back(std::numeric_limits<double>::max());
       }
-    } else {
-      times_.push_back(std::numeric_limits<double>::max());
     }
 
     for (int j = 1; j < times_.size(); ++j) {
@@ -159,7 +160,7 @@ class FileTimeInterpolator {
   {
     Teuchos::RCP<Amanzi::HDF5_MPI> file_input =
       Teuchos::rcp(new Amanzi::HDF5_MPI(page_->Comm(), filename_));
-    file_input->open_h5file(true);
+    file_input->open_h5file(true);  // read only
 
     Epetra_MultiVector& vec = *page_->ViewComponent(compname_, false);
     for (int c = 0; c != count; ++c) {
