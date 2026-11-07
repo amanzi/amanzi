@@ -92,10 +92,13 @@ Debugger::set_cells(const AmanziMesh::Entity_ID_View& dc)
       vo_plist.sublist("verbose object");
       vo_plist.sublist("verbose object") = plist_.sublist("verbose object");
       vo_plist.sublist("verbose object").set("write on rank", my_pid);
-      vo_plist.sublist("verbose object").set("show rank", false);
+      bool show_rank_default = mesh_->getComm()->NumProc() > 1;
+      vo_plist.sublist("verbose object")
+        .get<bool>("show rank", show_rank_default); // sets default if not already set by the user
       dcvo_.emplace_back(Teuchos::rcp(new VerboseObject(mesh_->getComm(), name_, vo_plist)));
     }
   }
+  Kokkos::resize(dc_gid_, size);
 }
 
 
