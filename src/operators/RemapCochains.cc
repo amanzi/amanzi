@@ -112,7 +112,6 @@ template<>
 void RemapCochains::LowOrder<2>(const CompositeVector& in, CompositeVector& out) 
 {
   int nfaces_owned = mesh0_->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
-  int ncells_wghost = mesh0_->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
   int nedges_wghost = mesh0_->getNumEntities(AmanziMesh::EDGE, AmanziMesh::Parallel_kind::ALL);
 
   const auto& in_f = *in.ViewComponent("face", true);
@@ -184,7 +183,6 @@ template<>
 void RemapCochains::HighOrder<2>(const CompositeVector& in, CompositeVector& out) 
 {
   int nfaces_owned = mesh0_->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
-  int ncells_wghost = mesh0_->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
   int nedges_wghost = mesh0_->getNumEntities(AmanziMesh::EDGE, AmanziMesh::Parallel_kind::ALL);
 
   // projection to constant vectors in cells

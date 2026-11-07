@@ -97,7 +97,6 @@ TEST(MPC_TWO_PHASE)
   const auto& h = *S->Get<CompositeVector>("enthalpy", Tags::DEFAULT).ViewComponent("cell");
   const auto& T = *S->Get<CompositeVector>("temperature", Tags::DEFAULT).ViewComponent("cell");
   const auto& rho = *S->Get<CompositeVector>("mass_density_liquid", Tags::DEFAULT).ViewComponent("cell");
-  const auto& eta = *S->Get<CompositeVector>("molar_density_liquid", Tags::DEFAULT).ViewComponent("cell");
   const auto& mu = *S->Get<CompositeVector>("viscosity_liquid", Tags::DEFAULT).ViewComponent("cell");
   const auto& state = *S->Get<CompositeVector>("thermodynamic_state", Tags::DEFAULT).ViewComponent("cell");
 

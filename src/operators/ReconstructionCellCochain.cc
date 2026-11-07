@@ -79,6 +79,7 @@ ReconstructionCellCochain::Compute(const CompositeVector& flux)
     WhetStone::DenseMatrix K(nk, nk);
     WhetStone::DenseVector rhs(nk);
     K.PutScalar(0.0);
+    rhs.PutScalar(0.0);
 
     for (int f : faces) {
       const auto& normal = mesh_->getFaceNormal(f);

@@ -109,7 +109,6 @@ TestRemap(std::function<double(AmanziGeometry::Point)> fun_u,
   WhetStone::Tensor T(3, 2);
   for (int f = 0; f < nfaces_owned; ++f) {
     const auto& nodes = mesh1->getFaceNodes(f);
-    int nnodes = nodes.size();
     const auto& x0 = mesh1->getNodeCoordinate(nodes[0]);
     const auto& x1 = mesh1->getNodeCoordinate(nodes[1]);
     const auto& x2 = mesh1->getNodeCoordinate(nodes[2]);
