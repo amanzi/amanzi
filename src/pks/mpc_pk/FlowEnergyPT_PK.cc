@@ -366,7 +366,6 @@ FlowEnergyPT_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   if (include_pt_coupling_) {
     const auto& rho = S_->Get<CV_t>(mol_density_liquid_key_, tag);
     const auto& mu = S_->Get<CV_t>(viscosity_liquid_key_, tag);
-    const auto& enth = S_->Get<CV_t>(enthalpy_key_, tag);
     auto flux = S_->GetPtr<CompositeVector>(mol_flowrate_key_, tag);
 
     auto bc_pres = S_->GetPtrW<Operators::BCs>(bcs_flow_key_, tag, "state");

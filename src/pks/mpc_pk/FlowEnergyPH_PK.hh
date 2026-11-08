@@ -94,10 +94,6 @@ protected:
   PreconditionerType precon_type_;
   
  private:
-  Teuchos::RCP<TreeVector> res_scale_;
-  bool compute_scaling_completed_, left_scaling_, right_scaling_;
-  double left_scaling_eps_;
-
   void RemoveFluxContinuityEquations_(Teuchos::RCP<Operators::PDE_Diffusion>& pde);
     
  private:

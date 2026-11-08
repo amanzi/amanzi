@@ -256,7 +256,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS)
     Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model_f = bc_f->bc_model();
   std::vector<double>& bc_value_f = bc_f->bc_value();
-  std::vector<double>& bc_mixed_f = bc_f->bc_mixed();
+  // std::vector<double>& bc_mixed_f = bc_f->bc_mixed();
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->getFaceCentroid(f);

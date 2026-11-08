@@ -64,7 +64,7 @@ class IAPWS {
     k_enhancement_ = plist.get<bool>("thermal conductivity enhancement", false);
     mu_enhancement_ = plist.get<bool>("viscosity enhancement", false);
   }
-  ~IAPWS() {};
+  virtual ~IAPWS() = default;
 
   virtual std::tuple<Properties, Properties, Properties> ThermodynamicsPT(double p, double T) = 0;
   virtual std::tuple<Properties, Properties, Properties> ThermodynamicsPH(double p, double h) = 0;

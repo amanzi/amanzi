@@ -164,7 +164,7 @@ IAPWS95_RaggedSplineRhoT::BuildSplineCoefficients(const std::vector<Sample>& sam
       int q = 0;
       for (int a = 0; a < 4; ++a) {
         for (int b = 0; b < 4; ++b) {
-          double xd, xt;
+          double xd(0.0), xt(0.0);
           switch (component) {
             case 0:
               xd = Bd.value[a];

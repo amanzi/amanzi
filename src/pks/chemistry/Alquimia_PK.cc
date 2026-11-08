@@ -54,10 +54,8 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
                          const Teuchos::RCP<TreeVector>& soln)
   : PK(pk_tree, global_list, S, soln),
     Chemistry_PK(pk_tree, global_list, S, soln),
-    chem_initialized_(false),
     number_aqueous_kinetics_(0),
     number_sorption_sites_(0),
-    number_isotherm_species_(0),
     number_ion_exchange_sites_(0)
 {
   std::string engine_name = plist_->get<std::string>("engine");
@@ -364,7 +362,6 @@ Alquimia_PK::Setup()
   // We only need these at the NEXT time as they are diagnostics, not state.
   //
   // No need to checkpoint these, despite being primary variables
-  unsigned i = 0;
   for (const auto& [name, key] : aux_out_names_) {
     AMANZI_ASSERT(!key.empty());
     requireEvaluatorAtNext(key, tag_next_, *S_, true, passwd_)
@@ -377,7 +374,6 @@ Alquimia_PK::Setup()
     }
     S_->GetRecordW(key, tag_next_, passwd_).set_io_checkpoint(true);
     S_->GetRecordSetW(key).set_subfieldnames(aux_out_subfield_names_[name]);
-    ++i;
   }
 }
 

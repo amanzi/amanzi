@@ -168,7 +168,7 @@ TEST(ENERGY_CONVERGENCE)
     // constant timestepping
     std::string passwd("");
     int itrs(0);
-    double t(0.0), t1(0.5), dt_next;
+    double t(0.0), t1(0.5);
     while (std::fabs(t - t1) > 1e-6) {
       bool failed = EPK->AdvanceStep(t, t + dt, false);
       CHECK(!failed);
@@ -271,14 +271,12 @@ TEST(ENERGY_PRECONDITIONER)
 
     // constant timestepping
     std::string passwd("");
-    int itrs(0);
     double t(0.0), t1(0.5), dt(0.02);
     while (t < t1) {
       EPK->AdvanceStep(t, t + dt, false);
       EPK->CommitStep(t, t + dt, Tags::DEFAULT);
 
       t += dt;
-      itrs++;
     }
 
     num_itrs[loop] = EPK->bdf1_dae()->number_nonlinear_steps();

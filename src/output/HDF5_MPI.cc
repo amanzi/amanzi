@@ -1371,7 +1371,7 @@ HDF5_MPI::cleanFieldData_(const std::string& varname)
 
     if (exists) {
       std::cout << "rewriting existing HDF5 dataset: " << varname << std::endl;
-      herr_t ierr = H5Ldelete(currfile->fid, varname.c_str(), H5P_DEFAULT);
+      H5Ldelete(currfile->fid, varname.c_str(), H5P_DEFAULT);
     }
 
     MPI_Bcast(&exists, 1, MPI_C_BOOL, 0, viz_comm_->Comm());

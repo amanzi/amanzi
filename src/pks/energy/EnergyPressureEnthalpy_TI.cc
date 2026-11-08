@@ -111,7 +111,6 @@ EnergyPressureEnthalpy_PK::FunctionalResidual(double t_old,
 
   // -- use modified residual for saturated region 4 (WIP)
   //    this is actually the scaled residual
-  double units(CommonDefs::ENTHALPY_FACTOR);
   residual_max_norm_ = 0.0;
   if (dt>0) {
     for (int c = 0; c < ncells_owned; ++c) {

@@ -60,8 +60,8 @@ TotalEnergyEvaluatorPH::TotalEnergyEvaluatorPH(Teuchos::ParameterList& plist)
 TotalEnergyEvaluatorPH::TotalEnergyEvaluatorPH(const TotalEnergyEvaluatorPH& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
     enthalpy_key_(other.enthalpy_key_),
-    mol_density_liquid_key_(other.mol_density_liquid_key_),
     ie_rock_key_(other.ie_rock_key_),
+    mol_density_liquid_key_(other.mol_density_liquid_key_),
     particle_density_key_(other.particle_density_key_),
     porosity_key_(other.porosity_key_)
 {}

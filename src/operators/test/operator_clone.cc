@@ -79,9 +79,6 @@ TEST(OPERATOR_CLONE)
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 10, 10);
 
-  int ncells = mesh->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
-  int nfaces_wghost = mesh->getNumEntities(Entity_kind::FACE, Parallel_kind::ALL);
-
   // TEST 1
   // create diffusion operator
   auto op = Teuchos::rcp(new PDE_DiffusionMFD(op_list, mesh));

@@ -40,7 +40,7 @@ TEST(GIBBS_ENERGY_IAPWS95_SINGLE_PHASE)
 
   int n = 100;
   double scale(50.0 / n), eps(2e-6);
-  double dp(0.05 * scale), dT(1.0 * scale), p, pl, pr, p1, T, Tl, Tr, T1, der, der1, der2, der3;
+  double dp(0.05 * scale), dT(1.0 * scale), p, pl, pr, p1, T, Tl, Tr, T1, der, der1, der2;
 
   for (int i = -n; i < n; ++i) {
     for (int j = -n; j < n; ++j) {
@@ -72,7 +72,6 @@ TEST(GIBBS_ENERGY_IAPWS95_SINGLE_PHASE)
       CHECK(der1 < 0.0);
       der2 = (prop1.gibbs - 2 * prop.gibbs + prop2.gibbs) / (eps * eps * p * p);
       CHECK(der2 < 0.0);
-      der3 = (prop1.gibbs + prop3.gibbs - prop2.gibbs - prop4.gibbs) / (eps * eps * p * T) / 4;
 
       // determinant of Hessian is positive
       double der3(0.0);
