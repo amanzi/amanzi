@@ -150,12 +150,18 @@ USER amanzi_user
 #===========================================================================
 # here and above can be run with --target base in the docker build command
 #===========================================================================
-FROM base AS tpls
+FROM base AS tpls-build
+
+# If true, a failed TPL build does not fail this stage; instead the *.log
+# files from the TPL build directory are saved to /home/amanzi_user/tpl_logs
+# (exportable with --target tpl-logs) and the tpls stage fails.
+ARG capture_tpl_logs=false
+RUN mkdir -p /home/amanzi_user/tpl_logs
 
 # Build and install the TPLs using bootstrap.sh, and remove
 # the source, objects, etc. after installation to save space.
 # Consider adding ...
-#  --enable-mesh_moab 
+#  --enable-mesh_moab
 RUN if [ ${base_image} = "gcc" ] || [ ${mpi_flavor} = "openmpi" ]; then \
   # need to set LD_LIBRARY_PATH just for build stage to link libpetsc.so to
   # correct compiler libraries.
@@ -183,6 +189,15 @@ RUN if [ ${base_image} = "gcc" ] || [ ${mpi_flavor} = "openmpi" ]; then \
       --enable-pf_clm --enable-ecosim --enable-mesh_moab \
       --with-mpi=/usr/local \
       --with-python=/usr/bin/python ; \
+  fi ; \
+  status=$? ; \
+  if [ $status -ne 0 ]; then \
+    if [ "${capture_tpl_logs}" != "true" ]; then exit $status; fi ; \
+    echo $status > /home/amanzi_user/tpl_build_status \
+    && (cd /home/amanzi_user/amanzi_builddir \
+        && find . -name '*.log' -exec cp --parents {} /home/amanzi_user/tpl_logs \;) ; \
+    rm -rf /home/amanzi_user/amanzi_builddir ; \
+    exit 0 ; \
   fi \
   && git checkout master \
   && rm -r /home/amanzi_user/amanzi_builddir \
@@ -190,6 +205,24 @@ RUN if [ ${base_image} = "gcc" ] || [ ${mpi_flavor} = "openmpi" ]; then \
   && find . -type f -name '*.pdf' -exec rm {} \; \
   && find . -type f -name '*.png' -exec rm {} \; \
   && find . -type f -name '*.html' -exec rm {} \;
+
+#===========================================================================
+# TPL build logs saved when capture_tpl_logs=true and the TPL build failed;
+# export with --target tpl-logs --output type=local,dest=<dir>
+#===========================================================================
+FROM scratch AS tpl-logs
+COPY --from=tpls-build /home/amanzi_user/tpl_logs /
+
+#===========================================================================
+# Final image: fails here if the TPL build failed with capture_tpl_logs=true
+#===========================================================================
+FROM tpls-build AS tpls
+
+RUN if [ -f /home/amanzi_user/tpl_build_status ]; then \
+    echo "TPL build failed with exit code $(cat /home/amanzi_user/tpl_build_status)." \
+         "Build the tpl-logs target to retrieve the logs." ; \
+    exit 1 ; \
+  fi
 
 ENV HDF5_DIR=/home/amanzi_user/install/tpls
 

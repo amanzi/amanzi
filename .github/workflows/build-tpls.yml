@@ -12,6 +12,8 @@ on:
 jobs:
   build-tpl-image:
     strategy:
+      # Let each architecture finish so both upload logs on failure
+      fail-fast: false
       matrix:
         os: [ ubuntu-latest, ubuntu-24.04-arm ]
     runs-on: ${{matrix.os}}
@@ -45,6 +47,7 @@ jobs:
         username: ${{secrets.DOCKERHUB_USERNAME}}
         password: ${{secrets.DOCKERHUB_PASSWORD}}
     - name: Build and push image
+      id: build
       uses: docker/build-push-action@v7
       with:
         context: .
@@ -54,6 +57,26 @@ jobs:
         build-args: |
           amanzi_branch=${{env.AMANZI_BRANCH}}
           mpi_flavor=mpich
+          capture_tpl_logs=true
+    # The build-args must match the step above so the cached TPL build is reused
+    - name: Export TPL build logs
+      if: failure() && steps.build.outcome == 'failure'
+      uses: docker/build-push-action@v7
+      with:
+        context: .
+        file: ./Docker/Dockerfile-TPLs
+        target: tpl-logs
+        outputs: type=local,dest=tpl-logs
+        build-args: |
+          amanzi_branch=${{env.AMANZI_BRANCH}}
+          mpi_flavor=mpich
+          capture_tpl_logs=true
+    - name: Upload TPL build logs
+      if: failure() && steps.build.outcome == 'failure'
+      uses: actions/upload-artifact@v7
+      with:
+        name: tpl-logs-${{env.ARCH}}
+        path: tpl-logs
 
   fix-manifest:
     runs-on: ubuntu-latest
