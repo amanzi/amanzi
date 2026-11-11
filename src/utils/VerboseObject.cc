@@ -100,6 +100,16 @@ VerboseObject::VerboseObject(const Comm_ptr_type& comm,
   if (plist.isParameter("name")) {
     headername = plist.get<std::string>("name");
   }
+
+  // -- set the comm info
+  int size = comm_->NumProc();
+  int pid = comm_->MyPID();
+
+  // -- Include rank in the prefix, written as "[pid]" instead of Trilinos's
+  //    default "p=pid," formatting (setShowProcRank() cannot be reformatted).
+  bool show_rank = plist.get<bool>("show rank", false);
+  if (show_rank) { headername = "[" + std::to_string(pid) + "] " + headername; }
+
   int width = plist.get("header width", -1);
   set_name(headername, width);
 
@@ -116,13 +126,6 @@ VerboseObject::VerboseObject(const Comm_ptr_type& comm,
   bool no_pre = plist.get<bool>("hide line prefix", global_hide_line_prefix);
   getOStream()->setShowLinePrefix(!no_pre);
 
-  // -- Include rank in the prefix
-  bool show_rank = plist.get<bool>("show rank", false);
-  getOStream()->setShowProcRank(show_rank);
-
-  // -- set the comm info
-  int size = comm_->NumProc();
-  int pid = comm_->MyPID();
   getOStream()->setProcRankAndSize(pid, size);
 
   // -- write from a different rank than 0

@@ -111,8 +111,6 @@ AnalyticElectromagneticsBase::ComputeNodeError(Epetra_MultiVector& u,
   l2_err = 0.0;
   inf_err = 0.0;
 
-  int d = mesh_->getSpaceDimension();
-
   int ncells = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
                                      Amanzi::AmanziMesh::Parallel_kind::OWNED);
 

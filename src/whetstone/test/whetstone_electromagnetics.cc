@@ -436,3 +436,53 @@ TEST(STIFFNESS_MATRIX_3D_24SIDES)
 {
   StiffnessMatrix3D("test/cube_triangulated.exo", 10);
 }
+
+
+/* **************************************************************** */
+TEST(RECONSTRUCTION)
+{
+  using namespace Teuchos;
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziGeometry;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "\nTest: Recover vector from tangent data" << std::endl;
+  auto comm = Amanzi::getDefaultComm();
+
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::rcp(new Teuchos::ParameterList());
+  plist->set<bool>("request edges", true);
+  plist->set<bool>("request faces", true);
+
+  MeshFactory meshfactory(comm, Teuchos::null, plist);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  RCP<Mesh> mesh = meshfactory.create("test/parallepiped.exo");
+
+  MFD3D_Electromagnetics mfd(mesh);
+
+  // create tangent value
+  int nedges = 12, cell = 0;
+  auto edges = mesh->getCellEdges(cell);
+
+  Point target(1.0, 2.0, 3.0);
+  std::vector<Polynomial> solution(nedges);
+
+  for (int n = 0; n < nedges; n++) {
+    int e = edges[n];
+    const Point& tau = mesh->getEdgeVector(e);
+    double len = mesh->getEdgeLength(e);
+
+    solution[n].Reshape(3, 0);
+    solution[n](0) = (target * tau) / len;
+  }
+
+  // reconstruction
+  Polynomial linear(3, 1);
+  mfd.L2Cell(cell, solution, solution, NULL, linear);
+
+  printf("Field %f %f %f\n", linear(1), linear(2), linear(3));
+
+  CHECK_CLOSE(linear(1), 1.0, 1e-10);
+  CHECK_CLOSE(linear(2), 2.0, 1e-10);
+  CHECK_CLOSE(linear(3), 3.0, 1e-10);
+}

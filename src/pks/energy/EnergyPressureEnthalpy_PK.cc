@@ -50,8 +50,8 @@ EnergyPressureEnthalpy_PK::EnergyPressureEnthalpy_PK(
   : PK(pk_tree, glist, S, soln),
     Energy_PK(),
     glist_(glist), 
-    soln_(soln),
-    passwd_("")
+    passwd_(""),
+    soln_(soln)
 {
   auto pk_list = Teuchos::sublist(glist, "PKs", true);
   ep_list_ = Teuchos::sublist(pk_list, name_, true);
@@ -271,8 +271,6 @@ EnergyPressureEnthalpy_PK::Setup()
       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S_->RequireEvaluator(porosity_key_, Tags::DEFAULT);
   }
-
-  double molar_mass = S_->ICList().sublist("const_fluid_molar_mass").get<double>("value");
 
   // Get data and evaluators needed by the PK
   // -- energy, the conserved quantity

@@ -85,7 +85,7 @@ IAPWS95_StateEvaluator::Clone() const
 void
 IAPWS95_StateEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
-  double p, v, ap, av, bp, cp, cv, kt;
+  double p, v, ap, bp, cv;
   for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
     const auto& p_v = *S.Get<CompositeVector>(pressure_key_).ViewComponent(*comp);
     const auto& T_v = *S.Get<CompositeVector>(temperature_key_).ViewComponent(*comp);

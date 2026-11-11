@@ -172,7 +172,7 @@ TEST(ENERGY_CONVERGENCE_SRC)
     // constant timestepping
     std::string passwd("");
     int itrs(0);
-    double t(0.0), t1(100), dt_next;
+    double t(0.0), t1(100);
     while (t < t1) {
       EPK->AdvanceStep(t, t + dt, false);
       EPK->CommitStep(t, t + dt, Tags::DEFAULT);

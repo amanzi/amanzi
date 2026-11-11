@@ -86,7 +86,7 @@ IAPWS95_StateEvaluatorPH::Clone() const
 void
 IAPWS95_StateEvaluatorPH::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
-  double p, T, rho, v, av, bp, cp, cv, kt;
+  double p, T, rho, v, av, bp, cp, kt;
   const auto& p_c = *S.Get<CompositeVector>(pressure_key_).ViewComponent("cell");
   const auto& h_c = *S.Get<CompositeVector>(enthalpy_key_).ViewComponent("cell");
 
@@ -324,10 +324,10 @@ IAPWS95_TemperatureEvaluatorPH::IAPWS95_TemperatureEvaluatorPH(Teuchos::Paramete
 IAPWS95_TemperatureEvaluatorPH::IAPWS95_TemperatureEvaluatorPH(
   const IAPWS95_TemperatureEvaluatorPH& other)
   : EvaluatorSecondaryMonotypeDetached(other),
+    domain_name_(other.domain_name_),
     pressure_key_(other.pressure_key_),
     enthalpy_key_(other.enthalpy_key_),
-    state_key_(other.state_key_),
-    domain_name_(other.domain_name_) 
+    state_key_(other.state_key_)
 {}
 
 
@@ -367,12 +367,10 @@ IAPWS95_TemperatureEvaluatorPH::EvaluatePartialDerivative_(
     const std::vector<CompositeVector*>& results)
 {
   const auto& ts_c = *S.Get<CompositeVector>(state_key_).ViewComponent("cell");
-  const auto& p_c = *S.Get<CompositeVector>(pressure_key_).ViewComponent("cell");
 
   auto& result_v = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell");
 
-  double v, p, T, ap, av, bp, cp, cv;
   if (wrt_key == pressure_key_) {
     for (int c = 0; c != ncells; ++c) {
       result_v[0][c] = ts_c[(int)TSPH_t::dTdP][c];

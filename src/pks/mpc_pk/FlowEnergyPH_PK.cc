@@ -31,8 +31,6 @@
 
 namespace Amanzi {
 
-static constexpr double units = CommonDefs::ENTHALPY_FACTOR;
-
 using CV_t = CompositeVector;
 using CVS_t = CompositeVectorSpace;
 
@@ -384,7 +382,6 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, passwd);
   S_->GetEvaluator(viscosity_liquid_key_).Update(*S_, passwd);
 
-  const auto& rho = S_->Get<CV_t>(mol_density_liquid_key_, Tags::DEFAULT);
   const auto& mu = S_->Get<CV_t>(viscosity_liquid_key_, Tags::DEFAULT);
   auto flux = S_->GetPtr<CompositeVector>(mol_flowrate_key_, Tags::DEFAULT);
 
@@ -543,7 +540,7 @@ FlowEnergyPH_PK::ModifyCorrection(double dt,
   int ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL,
                                            AmanziMesh::Parallel_kind::OWNED);
 
-  // increment clipping
+  // correction clipping (cells)
   // -- limit pressure change
   double max_change(0.20);
   for (int c = 0; c < ncells_owned; ++c) {
@@ -554,12 +551,38 @@ FlowEnergyPH_PK::ModifyCorrection(double dt,
 
   // -- limit enthalpy change
   max_change = 0.20;
+  constexpr double dTmax = 1.0;
+  constexpr double dHmax = 180.0 * dTmax;
   for (int c = 0; c < ncells_owned; ++c) {
-    double tmp = std::min(std::fabs(h_c[0][c]) * max_change, 20.0);
+    double tmp = std::min(std::fabs(h_c[0][c]) * max_change, dHmax);
     dh_c[0][c] = std::clamp(dh_c[0][c], -tmp, tmp);
     if (std::fabs(std::fabs(dh_c[0][c]) - tmp) < 1e-8 * tmp) nclipped++;
   }
 
+  // correction clipping (faces)
+  // potentiall, we may use different strategy
+  const auto& p_f = *u->SubVector(0)->Data()->ViewComponent("face");
+  const auto& h_f = *u->SubVector(1)->Data()->ViewComponent("face");
+
+  const auto& dp_f = *du->SubVector(0)->Data()->ViewComponent("face");
+  const auto& dh_f = *du->SubVector(1)->Data()->ViewComponent("face");
+
+  int nfaces_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE,
+                                           AmanziMesh::Parallel_kind::OWNED);
+
+  for (int f = 0; f < nfaces_owned; ++f) {
+    double tmp = std::fabs(p_f[0][f]) * max_change;
+    dp_f[0][f] = std::clamp(dp_f[0][f], -tmp, tmp);
+    if (std::fabs(std::fabs(dp_f[0][f]) - tmp) < 1e-8 * tmp) nclipped++;
+  }
+
+  for (int f = 0; f < nfaces_owned; ++f) {
+    double tmp = std::min(std::fabs(h_f[0][f]) * max_change, dHmax);
+    dh_f[0][f] = std::clamp(dh_f[0][f], -tmp, tmp);
+    if (std::fabs(std::fabs(dh_f[0][f]) - tmp) < 1e-8 * tmp) nclipped++;
+  }
+
+  // report if correction was modifed
   int ntmp(nclipped);
   mesh_->getComm()->SumAll(&ntmp, &nclipped, 1);
 

@@ -326,5 +326,38 @@ MFD3D_Electromagnetics::CurlMatrix(int c, DenseMatrix& C)
   }
 }
 
+
+/* *****************************************************************
+* Low-order L2 projector.
+* NOTE: we abuse the interface and return a linear polynomial.
+***************************************************************** */
+void
+MFD3D_Electromagnetics::L2Cell(int c,
+                               const std::vector<Polynomial>& ve,
+                               const std::vector<Polynomial>& vf,
+                               const Polynomial* moments,
+                               Polynomial& vc)
+{
+  const auto& edges = mesh_->getCellEdges(c);
+  int nedges = edges.size();
+
+  Tensor T(d_, 1);
+  T(0, 0) = 1.0;
+  
+  DenseMatrix R, Mc;
+  L2consistencyInverse(c, T, R, Mc);
+
+  vc.Reshape(d_, 1, true);
+
+  for (int i = 0; i < nedges; i++) {
+    for (int k = 0; k < d_; k++) {
+      vc(k + 1) += R(i, k) * vf[i](0);
+    }
+  }
+
+  vc *= 1.0 / mesh_->getCellVolume(c);
+}
+
+
 } // namespace WhetStone
 } // namespace Amanzi

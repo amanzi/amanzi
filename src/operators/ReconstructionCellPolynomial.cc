@@ -26,6 +26,7 @@
 #include "Point.hh"
 #include "Polynomial.hh"
 #include "ReconstructionCellPolynomial.hh"
+#include "ReconstructionUtils.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -88,7 +89,7 @@ ReconstructionCellPolynomial::Compute(const AmanziMesh::Entity_ID_View& ids,
     const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
     quad.set_origin(xc);
 
-    CellAllAdjCells_(c, cells);
+    getCellAllAdjCells(*mesh_, c, cells);
 
     // compute othogonality coefficients
     int n(0);
@@ -195,29 +196,6 @@ ReconstructionCellPolynomial::PopulateLeastSquareSystem_(WhetStone::DenseVector&
     for (int j = i; j < npoly; j++) matrix(j, i) = matrix(i, j) += coef(i) * coef(j);
 
     rhs(i) += coef(i) * field_value;
-  }
-}
-
-
-/* ******************************************************************
-* On intersecting manifolds, we extract neighboors living in the same
-* manifold using a smoothness criterion.
-****************************************************************** */
-void
-ReconstructionCellPolynomial::CellAllAdjCells_(AmanziMesh::Entity_ID c,
-                                               std::set<AmanziMesh::Entity_ID>& cells) const
-{
-  cells.clear();
-
-  auto nodes = mesh_->getCellNodes(c);
-  for (int i = 0; i < nodes.size(); i++) {
-    int v = nodes[i];
-    auto vcells = mesh_->getNodeCells(v);
-
-    for (int k = 0; k < vcells.size(); ++k) {
-      int c1 = vcells[k];
-      if (cells.find(c1) == cells.end() && c != c1) cells.insert(c1);
-    }
   }
 }
 
@@ -351,7 +329,7 @@ ReconstructionCellPolynomial::ComputeReconstructionMap(int c,
   int ncells, nfaces(0);
   std::set<AmanziMesh::Entity_ID> cells, faces;
   try {
-    CellAllAdjCells_(c, cells);
+    getCellAllAdjCells(*mesh_, c, cells);
   } catch (...) {
     // some meshes have no nodes, so we try a different algorithm based on
     // cell->face->cell connectivities. It extract two level of cell neighboors

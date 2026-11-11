@@ -348,7 +348,6 @@ TEST(ELASTICITY_WEAK_SYMMETRY_BDV_2D)
     std::vector<double> vx(mrows);
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
-      double area = mesh->getFaceArea(f);
       const auto& xf = mesh->getFaceCentroid(f);
       const auto& normal = mesh->getFaceNormal(f);
       vx[4 * i] = 0.0;

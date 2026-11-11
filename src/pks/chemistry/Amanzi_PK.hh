@@ -168,7 +168,6 @@ class Amanzi_PK : public Chemistry_PK {
   bool using_sorption_isotherms_;
   int number_free_ion_, number_total_sorbed_;
   int number_ion_exchange_sites_, number_sorption_sites_;
-  int number_aqueous_kinetics_;
   std::vector<std::string> sorption_site_names_;
   std::vector<std::string> aqueous_kinetics_names_;
 

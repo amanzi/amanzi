@@ -23,10 +23,11 @@ class AnalyticElasticity01 : public AnalyticElasticityBase {
   AnalyticElasticity01(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
                        double mu = 1.0,
                        double lambda = 0.0)
-    : AnalyticElasticityBase(mesh), mu_(mu), lambda_(lambda), d_(mesh_->getSpaceDimension()) {};
+    : AnalyticElasticityBase(mesh), d_(mesh_->getSpaceDimension()), mu_(mu), lambda_(lambda) {};
   ~AnalyticElasticity01() {};
 
-  Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t)
+  virtual Amanzi::WhetStone::Tensor
+  Tensor(const Amanzi::AmanziGeometry::Point& p, double t) override
   {
     if (lambda_ == 0.0) {
       Amanzi::WhetStone::Tensor K(d_, 1);
@@ -44,7 +45,8 @@ class AnalyticElasticity01 : public AnalyticElasticityBase {
     }
   }
 
-  Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  virtual Amanzi::AmanziGeometry::Point
+  velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t) override
   {
     Amanzi::AmanziGeometry::Point out(d_);
 
@@ -60,14 +62,16 @@ class AnalyticElasticity01 : public AnalyticElasticityBase {
     return out;
   }
 
-  double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) { return 0.0; }
+  virtual double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) override { return 0.0; }
 
-  Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  virtual Amanzi::AmanziGeometry::Point
+  source_exact(const Amanzi::AmanziGeometry::Point& p, double t) override
   {
     return Amanzi::AmanziGeometry::Point(d_);
   }
 
-  virtual Amanzi::WhetStone::Tensor stress_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  virtual Amanzi::WhetStone::Tensor
+  stress_exact(const Amanzi::AmanziGeometry::Point& p, double t) override
   {
     Amanzi::WhetStone::Tensor T(d_, 2);
     if (d_ == 2) {
@@ -85,7 +89,7 @@ class AnalyticElasticity01 : public AnalyticElasticityBase {
     return T;
   }
 
-  virtual double volumetric_strain_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  virtual double volumetric_strain_exact(const Amanzi::AmanziGeometry::Point& p, double t) override
   {
     return (d_ == 2) ? -1.0 : -4.0;
   }

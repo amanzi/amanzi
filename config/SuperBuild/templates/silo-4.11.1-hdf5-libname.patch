@@ -1,0 +1,41 @@
+--- Silo-4.11.1-orig/configure
++++ Silo-4.11.1/configure
+@@ -27097,7 +27097,7 @@
+    elif test "$withval" = "default" ; then
+       if test "$DEFAULT_HDF5_LIBDIR" != "" ; then
+          LDFLAGS="$LDFLAGS -L$DEFAULT_HDF5_LIBDIR"
+-         LIBS="$LIBS -lhdf5 -lz"
++         LIBS="$LIBS -l${SILO_HDF5_LIBNAME:-hdf5} -lz"
+          hdf5_lib=$DEFAULT_HDF5_LIBDIR
+          hdf5_explicit=true
+       fi
+@@ -27123,7 +27123,7 @@
+    elif test "$withval" = "yes" ; then
+       if test "$DEFAULT_HDF5_LIBDIR" != "" ; then
+          LDFLAGS="$LDFLAGS -L$DEFAULT_HDF5_LIBDIR"
+-         LIBS="$LIBS -lhdf5 -lz"
++         LIBS="$LIBS -l${SILO_HDF5_LIBNAME:-hdf5} -lz"
+          hdf5_lib=$DEFAULT_HDF5_LIBDIR
+          hdf5_explicit=true
+       fi
+@@ -27190,9 +27190,9 @@
+       tmp_LIBS="$LIBS"
+       if test -n "$szlib_lib"; then
+ ###      LIBS="$hdf5_lib/libhdf5.a $LIBS"
+-         LIBS="-lhdf5 -lsz $LIBS"
++         LIBS="-l${SILO_HDF5_LIBNAME:-hdf5} -lsz $LIBS"
+       else
+-         LIBS="-lhdf5 $LIBS"
++         LIBS="-l${SILO_HDF5_LIBNAME:-hdf5} $LIBS"
+       fi
+       ac_fn_c_check_func "$LINENO" "H5open" "ac_cv_func_H5open"
+ if test "x$ac_cv_func_H5open" = xyes; then :
+@@ -27415,7 +27415,7 @@
+ #define HAVE_LIBHDF5 1
+ _ACEOF
+
+-  LIBS="-lhdf5 $LIBS"
++  LIBS="-l${SILO_HDF5_LIBNAME:-hdf5} $LIBS"
+
+ else
+   notfound="$notfound libhdf5.a"

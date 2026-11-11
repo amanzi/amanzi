@@ -96,7 +96,6 @@ void ModifyMesh3(Amanzi::AmanziMesh::Mesh& mesh, int nx, int id)
   for (int n = 0; n < nnodes_owned; ++n) {
     int i = n % (nx + 1);
     auto xp = mesh.getNodeCoordinate(n);
-    double s = 0.1 * std::sin(2 * M_PI * xp[1]);
 
     if (id == 1) {
       double xmax = 0.5 + amp * std::sin(4 * M_PI * xp[1]);

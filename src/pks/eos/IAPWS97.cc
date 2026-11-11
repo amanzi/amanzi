@@ -47,8 +47,8 @@ struct Fh {
     return 0.0;
   }
 
-  int id_;
   double p_, h_;
+  int id_;
   IAPWS97* eos_;
 };
 
@@ -394,10 +394,10 @@ IAPWS97::Region2(double p, double T)
   // ideal gas part of the dimensionless Gibbs free energy
   const auto& no = rgn2n_o;
 
-  double go, gop, gopp, got, gott, gopt(0.0);
+  double go, gop, got, gott;
   go = std::log(pr);
   gop = 1.0 / pr;
-  gopp = -gop / pr;
+  // gopp = -gop / pr;
   
   double b2, b3, bneg1, bneg2, bneg3, bneg4, bneg5, bneg6, bneg7;
   b2 = b * b;
@@ -1304,10 +1304,10 @@ IAPWS97::Region5(double p, double T)
   // ideal gas part of the dimensionless Gibbs free energy
   const auto& no = rgn5n_o;
 
-  double go, gop, gopp, got, gott, gopt(0.0);
+  double go, gop, got, gott, gopt(0.0);
   go = std::log(pr);
   gop = 1.0 / pr;
-  gopp = -gop / pr;
+  // gopp = -gop / pr;
   
   double b2, bneg1, bneg2, bneg3, bneg4, bneg5;
   b2 = b * b;
@@ -1355,7 +1355,7 @@ IAPWS97::Region5(double p, double T)
 
   double A = (1 + pr * grp - Tr * pr * grpt) * (1 + pr * grp - Tr * pr * grpt);
   double B = 1 + 2 * pr * grp + pr * pr * grp * grp;
-  double C = ((gop + grp) - Tr * (gopt + grpt)) * ((gop + grp) - Tr * (gopt + grpt));
+  // double C = ((gop + grp) - Tr * (gopt + grpt)) * ((gop + grp) - Tr * (gopt + grpt));
 
   prop.p = p;
   prop.T = T;
@@ -1665,7 +1665,6 @@ IAPWS97::ExtendProperties(const Properties& prop_in)
   Properties prop;
   prop = prop_in;
 
-  double p = prop.p;
   double T = prop.T;
   prop.helmholtz = prop.u - T * prop.s;
   prop.gibbs = prop.h - T * prop.s;

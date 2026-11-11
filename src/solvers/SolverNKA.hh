@@ -417,7 +417,7 @@ SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u)
     }
 
     // Keep track of diverging iterations
-    if (num_itrs_ > 0 && du_norm >= previous_du_norm) {
+    if (num_itrs_ > 0 && du_norm > previous_du_norm) {
       divergence_count++;
 
       // If it does not recover quickly, abort.

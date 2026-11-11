@@ -84,13 +84,11 @@ jobs:
         with:
           username: ${{secrets.DOCKERHUB_USERNAME}}
           password: ${{secrets.DOCKERHUB_PASSWORD}}
-      - name: Pull images (remove with artifacts??)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+      - name: Create multi-arch manifest
         run: |
-          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-arm64-mpich-ubuntu-resolute${{env.TAG_SUFFIX}}
-          docker pull ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-amd64-mpich-ubuntu-resolute${{env.TAG_SUFFIX}}
-      - name: Edit manifest
-        run: |
-          docker manifest create ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-mpich-ubuntu-resolute${{env.TAG_SUFFIX}} \
-            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-amd64-mpich-ubuntu-resolute${{env.TAG_SUFFIX}} \
-            --amend ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-arm64-mpich-ubuntu-resolute${{env.TAG_SUFFIX}}
-          docker manifest push ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-mpich-ubuntu-resolute${{env.TAG_SUFFIX}}
+          docker buildx imagetools create \
+            -t ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-mpich-ubuntu-jammy \
+            ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-amd64-mpich-ubuntu-jammy \
+            ${{secrets.DOCKERHUB_USERNAME}}/amanzi-tpls:${{env.AMANZI_TPLS_VER}}-arm64-mpich-ubuntu-jammy

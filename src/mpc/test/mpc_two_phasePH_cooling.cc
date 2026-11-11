@@ -94,9 +94,6 @@ TEST(MPC_TWO_PHASE)
 
   // variable timestepping
   const auto& p = *S->Get<CompositeVector>("pressure", Tags::DEFAULT).ViewComponent("cell");
-  const auto& T = *S->Get<CompositeVector>("temperature", Tags::DEFAULT).ViewComponent("cell");
-  const auto& rho = *S->Get<CompositeVector>("mass_density_liquid", Tags::DEFAULT).ViewComponent("cell");
-  const auto& mu = *S->Get<CompositeVector>("viscosity_liquid", Tags::DEFAULT).ViewComponent("cell");
   const auto& state = *S->Get<CompositeVector>("thermodynamic_state", Tags::DEFAULT).ViewComponent("cell");
 
   CHECK(state[(int)TSPH_t::RGN][0] == 2);

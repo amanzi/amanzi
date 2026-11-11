@@ -291,13 +291,11 @@ IAPWS97_DensityEvaluator::EvaluatePartialDerivative_(const State& S,
                                                      const std::vector<CompositeVector*>& results)
 {
   const auto& ts_c = *S.Get<CompositeVector>(state_key_).ViewComponent("cell");
-  const auto& p_c = *S.Get<CompositeVector>(pressure_key_).ViewComponent("cell");
 
   auto& result0_v = *results[0]->ViewComponent("cell");
   auto& result1_v = *results[1]->ViewComponent("cell");
   int ncells = results[0]->size("cell");
 
-  double v, p, T, ap, av, bp, cv, cp, kt;
   if (wrt_key == pressure_key_) {
     for (int c = 0; c != ncells; ++c) {
       result0_v[0][c] = ts_c[(int)TSPH_t::dRHOdP][c];
@@ -342,10 +340,10 @@ IAPWS97_TemperatureEvaluator::IAPWS97_TemperatureEvaluator(Teuchos::ParameterLis
 IAPWS97_TemperatureEvaluator::IAPWS97_TemperatureEvaluator(
   const IAPWS97_TemperatureEvaluator& other)
   : EvaluatorSecondaryMonotypeDetached(other),
+    domain_name_(other.domain_name_),
     pressure_key_(other.pressure_key_),
     enthalpy_key_(other.enthalpy_key_),
-    state_key_(other.state_key_),
-    domain_name_(other.domain_name_) 
+    state_key_(other.state_key_)
 {}
 
 
@@ -385,12 +383,10 @@ IAPWS97_TemperatureEvaluator::EvaluatePartialDerivative_(
     const std::vector<CompositeVector*>& results)
 {
   const auto& ts_c = *S.Get<CompositeVector>(state_key_).ViewComponent("cell");
-  const auto& p_c = *S.Get<CompositeVector>(pressure_key_).ViewComponent("cell");
 
   auto& result_v = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell");
 
-  double v, p, T, ap, av, bp, cp, cv;
   if (wrt_key == pressure_key_) {
     for (int c = 0; c != ncells; ++c) {
       result_v[0][c] = ts_c[(int)TSPH_t::dTdP][c];
@@ -434,10 +430,10 @@ IAPWS97_ThermalConductivityEvaluator::IAPWS97_ThermalConductivityEvaluator(Teuch
 IAPWS97_ThermalConductivityEvaluator::IAPWS97_ThermalConductivityEvaluator(
     const IAPWS97_ThermalConductivityEvaluator& other)
   : EvaluatorSecondaryMonotypeDetached(other),
+    domain_name_(other.domain_name_),
     density_key_(other.density_key_),
     temperature_key_(other.temperature_key_),
-    state_key_(other.state_key_),
-    domain_name_(other.domain_name_)
+    state_key_(other.state_key_)
 {}
 
 
@@ -571,10 +567,10 @@ IAPWS97_InternalEnergyEvaluator::IAPWS97_InternalEnergyEvaluator(Teuchos::Parame
 IAPWS97_InternalEnergyEvaluator::IAPWS97_InternalEnergyEvaluator(
     const IAPWS97_InternalEnergyEvaluator& other)
   : EvaluatorSecondaryMonotypeDetached(other),
+    domain_name_(other.domain_name_),
     pressure_key_(other.pressure_key_),
     enthalpy_key_(other.enthalpy_key_),
-    state_key_(other.state_key_),
-    domain_name_(other.domain_name_)
+    state_key_(other.state_key_)
 {}
 
 
@@ -617,7 +613,6 @@ IAPWS97_InternalEnergyEvaluator::EvaluatePartialDerivative_(
 {
   const auto& ts_c = *S.Get<CompositeVector>(state_key_).ViewComponent("cell");
   const auto& p_c = *S.Get<CompositeVector>(pressure_key_).ViewComponent("cell");
-  const auto& h_c = *S.Get<CompositeVector>(enthalpy_key_).ViewComponent("cell");
 
   auto& result_v = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell");
@@ -669,10 +664,10 @@ IAPWS97_IsothermalCompressibilityEvaluator::IAPWS97_IsothermalCompressibilityEva
 IAPWS97_IsothermalCompressibilityEvaluator::IAPWS97_IsothermalCompressibilityEvaluator(
     const IAPWS97_IsothermalCompressibilityEvaluator& other)
   : EvaluatorSecondaryMonotypeDetached(other),
+    domain_name_(other.domain_name_),
     pressure_key_(other.pressure_key_),
     enthalpy_key_(other.enthalpy_key_),
-    state_key_(other.state_key_),
-    domain_name_(other.domain_name_)
+    state_key_(other.state_key_)
 {}
 
 
@@ -746,10 +741,10 @@ IAPWS97_ViscosityEvaluator::IAPWS97_ViscosityEvaluator(Teuchos::ParameterList& p
 ****************************************************************** */
 IAPWS97_ViscosityEvaluator::IAPWS97_ViscosityEvaluator(const IAPWS97_ViscosityEvaluator& other)
   : EvaluatorSecondaryMonotypeDetached(other),
+    domain_name_(other.domain_name_),
     density_key_(other.density_key_),
     temperature_key_(other.temperature_key_),
-    state_key_(other.state_key_),
-    domain_name_(other.domain_name_)
+    state_key_(other.state_key_)
 {}
 
 

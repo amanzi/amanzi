@@ -116,7 +116,7 @@ void
 PDE_Geometry::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
                              const Teuchos::Ptr<const CompositeVector>& u)
 {
-  int row = plist_.get<int>("vector component");
+  // int row = plist_.get<int>("vector component");
   int pos = plist_.get<int>("polynomial component");
 
   // updating matrix blocks
@@ -379,7 +379,7 @@ createConnectivityGraph(std::vector<AmanziGeometry::Point>& face_centroids_bnd,
   for (int n = 0; n < ncells; ++n) {
     std::vector<std::pair<size_t, double>> matches, filter0, filter1;
 
-    int nresults, mresults(0), nmin(2 * d - count[n]), nmax(3 * d - count[n]);
+    int mresults(0), nmin(2 * d - count[n]), nmax(3 * d - count[n]);
     int num = nmin - 1;
     while (mresults < nmin || mresults > nmax) {
       num++;

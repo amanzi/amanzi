@@ -86,7 +86,6 @@ ReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // there a good reason that chemistry's Setup() is called before transport's
   // Setup(), but transport's Advance() is called before chemistry's Advance()?
   // --ETC
-  bool fail = false;
 
   // First we do a transport step.
   bool pk_fail = transport_pk_->AdvanceStep(t_old, t_new, reinit);

@@ -98,14 +98,12 @@ TEST(ENERGY_PRESSURE_TEMPERATURE)
 
   // constant timestepping
   std::string passwd("");
-  int itrs(0);
   double t(0.0), dt(0.1), t1(5.5);
   while (t < t1) {
     EPK->AdvanceStep(t, t + dt, false);
     EPK->CommitStep(t, t + dt, Tags::DEFAULT);
 
     t += dt;
-    itrs++;
   }
 
   WriteStateStatistics(*S, *vo);

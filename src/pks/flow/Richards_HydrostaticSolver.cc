@@ -45,7 +45,6 @@ Richards_PK::SolveHydrostaticProblem(Teuchos::ParameterList& plist, const Teucho
   srcs.clear();
   bcs_.clear();
 
-  int f;
   std::vector<double> value;
 
   for (int i = 0; i < bcs_copy.size(); ++i) {
