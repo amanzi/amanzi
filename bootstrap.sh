@@ -59,6 +59,12 @@ cmake_version=3.23.0
 cmake_url=https://cmake.org/files/v3.23
 cmake_archive_file=cmake-${cmake_version}.tar.gz
 
+# Ninja (preferred over make for the Amanzi build when available)
+ninja=${TRUE}
+ninja_binary=`command -v ninja 2>/dev/null`
+amanzi_generator=
+amanzi_generator_opts=
+
 # Build configuration
 parallel_jobs=2
 build_type=Release
@@ -394,6 +400,8 @@ Value in brackets indicates default setting.
   test_suite              run Amanzi Test Suite before installing ['"${test_suite}"']
   reg_tests               build regression tests into Amanzi or ATS Test Suite ['"${reg_tests}"']
   shared                  build Amanzi and tpls using shared libraries ['"${shared}"']
+  ninja                   build Amanzi with Ninja instead of make when a ninja binary is found.
+                          TPLs are always built with make. ['"${ninja}"']
   external_downloads      allow TPL tar balls or git repos to be downloaded directly from
                           external sites ['"${external_downloads}"']
   Spack                   build TPLs using the Spack package manager when appropriate ['"${Spack}"']
@@ -431,6 +439,7 @@ Tool definitions:
   --with-ctest=FILE          FILE is the CTest binary ['"${ctest_binary}"'], ignored if --with-cmake is set
   --with-git=FILE            FILE is the git binary ['"${git_binary}"']
   --with-curl=FILE           FILE is the CURL binary ['"${curl_binary}"']
+  --with-ninja=FILE          FILE is the Ninja binary ['"${ninja_binary}"']
 
   --with-mpi=DIR             use MPI installed in DIR ['"${mpi_root_dir}"'].
                              Will search for MPI compiler wrappers under this directory. It this
@@ -616,6 +625,9 @@ Tools and Tests:
     ctest_binary = '"${ctest_binary}"'
     curl_binary  = '"${curl_binary}"'
     git_binary   = '"${git_binary}"'
+    ninja        = '"${ninja}"'
+    ninja_binary = '"${ninja_binary}"'
+    amanzi_generator = '"${amanzi_generator}"'
     Spack_binary = '"${Spack_binary}"'
     reg_tests    = '"${reg_tests}"'
     test_suite   = '"${test_suite}"'
@@ -784,6 +796,11 @@ List of INPUT parameters
       --with-git=*)
                  tmp=`parse_option_with_equal "${opt}" 'with-git'`
                  git_binary=`make_fullpath $tmp`
+                 ;;
+
+      --with-ninja=*)
+                 tmp=`parse_option_with_equal "${opt}" 'with-ninja'`
+                 ninja_binary=`make_fullpath $tmp`
                  ;;
 
       --with-curl=*)
@@ -1557,7 +1574,53 @@ function check_tools
   status_message "CMake binary: ${cmake_binary}"
   status_message "CTest binary: ${ctest_binary}"
 
+  define_amanzi_generator
+
   status_message "Tools check complete"
+}
+
+# Choose the CMake generator for the Amanzi build: prefer Ninja, fall back to
+# make. The TPL and tools superbuilds always use Unix Makefiles because their
+# ExternalProject steps call $(MAKE), which only make expands.
+function define_amanzi_generator
+{
+  local cache_file=${amanzi_build_dir}/CMakeCache.txt
+  local cached_generator=
+
+  if [ -f "${cache_file}" ]; then
+    cached_generator=`sed -n 's/^CMAKE_GENERATOR:INTERNAL=//p' ${cache_file}`
+  fi
+
+  if [ "${ninja}" -eq "${TRUE}" ]; then
+    if [ -n "${ninja_binary}" ] && [ -x "${ninja_binary}" ]; then
+      status_message "Ninja binary: ${ninja_binary}"
+    else
+      status_message "Ninja not found, will build Amanzi with make"
+      ninja=${FALSE}
+    fi
+  fi
+
+  # CMake cannot switch generators in an existing build directory.
+  if [ -n "${cached_generator}" ]; then
+    if [ "${cached_generator}" = "Ninja" ] && [ "${ninja}" -eq "${FALSE}" ]; then
+      error_message "Amanzi build directory ${amanzi_build_dir} was configured with Ninja, but Ninja is disabled or not found. Remove the build directory or provide --with-ninja=FILE."
+      exit_now 10
+    fi
+    if [ "${cached_generator}" != "Ninja" ] && [ "${ninja}" -eq "${TRUE}" ]; then
+      warning_message "Amanzi build directory ${amanzi_build_dir} was configured with '${cached_generator}'; keeping it. Remove the build directory to switch to Ninja."
+      ninja=${FALSE}
+    fi
+  fi
+
+  if [ "${ninja}" -eq "${TRUE}" ]; then
+    amanzi_generator=Ninja
+    amanzi_generator_opts="-GNinja -DCMAKE_MAKE_PROGRAM:FILEPATH=${ninja_binary}"
+  else
+    amanzi_generator="${cached_generator:-Unix Makefiles}"
+    amanzi_generator_opts=
+  fi
+
+  status_message "Amanzi CMake generator: ${amanzi_generator}"
 }
 
 
@@ -1778,6 +1841,7 @@ if [ ! -n "${mpi_root_dir}" ]; then
 
   cd ${tools_build_dir}
   ${cmake_binary} \
+      -G "Unix Makefiles" \
       -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
       -DCMAKE_CXX_FLAGS:STRING="${build_cxx_flags}" \
       -DCMAKE_Fortran_FLAGS:STRING="${build_fort_flags}" \
@@ -1919,7 +1983,8 @@ if [ -z "${tpl_config_file}" ]; then
     echo ""
   else
     cd ${tpl_build_dir}
-    ${cmd_configure}
+    # TPL ExternalProjects use $(MAKE): never inherit a Ninja generator from the environment
+    CMAKE_GENERATOR="Unix Makefiles" ${cmd_configure}
 
     if [ $? -ne 0 ]; then
       error_message "Failed to configure TPL build"
@@ -2003,6 +2068,7 @@ fi
 
 # Configure the Amanzi build
 cmd_configure="${cmake_binary} \
+    ${amanzi_generator_opts} \
     -C${tpl_config_file} \
     -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
     -DCMAKE_CXX_FLAGS:STRING="${build_cxx_flags}" \
@@ -2047,27 +2113,40 @@ if [ ${dry_run} == "${TRUE}" ] ; then
 else
    cd ${amanzi_build_dir}
    ${cmd_configure}
+   amanzi_configure_status=$?
 fi
 
 if [ ${dry_run} == "${FALSE}" ]; then
-  if [ $? -ne 0 ]; then
+  if [ ${amanzi_configure_status} -ne 0 ]; then
     error_message "Failed to configure Amanzi"
     exit_now 50
   fi
   status_message "Amanzi configure complete"
 
+  # Use the generator CMake actually chose (it may come from CMAKE_GENERATOR in the environment)
+  amanzi_generator=`sed -n 's/^CMAKE_GENERATOR:INTERNAL=//p' ${amanzi_build_dir}/CMakeCache.txt`
+  status_message "Amanzi build tool: ${amanzi_generator}"
+  amanzi_build_cmd="${cmake_binary} --build ${amanzi_build_dir} --parallel ${parallel_jobs}"
+
   # Amanzi Build
+  cd ${amanzi_build_dir}
   if [ "${build_stage_1}" == "${TRUE}" ]; then
     # we could make this fancier, but operators is roughly mid-way in the build in terms of dependencies.
     status_message "Amanzi build-stage 1: "
-    cd ${amanzi_build_dir}/src/whetstone
-    status_message "  - building in $(pwd)"
-    make -j ${parallel_jobs}
-    cd ${amanzi_build_dir}/src/operators
-    status_message "  - building in $(pwd)"
-    make -j ${parallel_jobs}
-    cd ${amanzi_build_dir}
-    if [ $? -ne 0 ]; then
+    stage_1_status=0
+    for stage_1_dir in src/whetstone src/operators; do
+      status_message "  - building in ${amanzi_build_dir}/${stage_1_dir}"
+      if [ "${amanzi_generator}" = "Ninja" ]; then
+        ${amanzi_build_cmd} --target ${stage_1_dir}/all
+      else
+        ( cd ${amanzi_build_dir}/${stage_1_dir} && make -j ${parallel_jobs} )
+      fi
+      if [ $? -ne 0 ]; then
+        stage_1_status=1
+        break
+      fi
+    done
+    if [ ${stage_1_status} -ne 0 ]; then
         error_message "Amanzi build-stage 1: FAILED"
         exit_now 50
     else
@@ -2078,7 +2157,7 @@ if [ ${dry_run} == "${FALSE}" ]; then
   elif [ "${build_stage_2}" == "${TRUE}" ]; then
     status_message "Amanzi build-stage 2: "
     status_message "  - building in $(pwd)"
-    make -j ${parallel_jobs}
+    ${amanzi_build_cmd}
     if [ $? -ne 0 ]; then
         error_message "Amanzi build-stage 2: FAILED"
         exit_now 50
@@ -2086,7 +2165,7 @@ if [ ${dry_run} == "${FALSE}" ]; then
         status_message "Amanzi build-stage 2: complete"
     fi
   else
-    make -j ${parallel_jobs}
+    ${amanzi_build_cmd}
     if [ $? -ne 0 ]; then
         error_message "Failed to build Amanzi"
         exit_now 50
@@ -2107,7 +2186,7 @@ if [ ${dry_run} == "${FALSE}" ]; then
 
   # Amanzi Install
   if [ "${build_stage_1}" -ne "${TRUE}" ]; then
-    make install
+    ${cmake_binary} --build ${amanzi_build_dir} --target install
   fi
   if [ $? -ne 0 ]; then
     error_message "Failed to install Amanzi"
