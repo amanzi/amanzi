@@ -38,6 +38,7 @@ RUN apt-get -q update -y && apt-get install -y tzdata && \
   libssl-dev \
   m4 \
   make \
+  ninja-build \
   openssl \
   pkg-config \
   python3 \

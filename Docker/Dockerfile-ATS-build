@@ -24,6 +24,13 @@ FROM metsi/amanzi-tpls:${amanzi_tpls_ver}-${mpi_flavor}-${base_image}-${ver_tag}
 LABEL Description="ATS CI: Build ATS in a Docker image."
 SHELL ["/bin/bash", "-c"]
 
+# bootstrap.sh builds Amanzi with Ninja when available. Install it here in
+# case the TPL image predates ninja-build being part of Dockerfile-TPLs.
+USER root
+RUN command -v ninja > /dev/null || \
+    (apt-get -q update -y && apt-get -q install -y ninja-build \
+     && apt-get clean && rm -rf /var/lib/apt/lists/*)
+
 ARG build_type=opt
 ARG amanzi_branch=
 ARG ats_branch=

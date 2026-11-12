@@ -6,6 +6,13 @@ ARG mpi_version=4.0.3
 FROM metsi/amanzi-tpls:${amanzi_tpls_ver}-${mpi_distro}-${base_image}-${ver_tag}
 LABEL Description="Amanzi: Build and install Amanzi in a Docker image."
 
+# bootstrap.sh builds Amanzi with Ninja when available. Install it here in
+# case the TPL image predates ninja-build being part of Dockerfile-TPLs.
+USER root
+RUN command -v ninja > /dev/null || \
+    (apt-get -q update -y && apt-get -q install -y ninja-build \
+     && apt-get clean && rm -rf /var/lib/apt/lists/*)
+
 # Switch to amanzi_user
 USER amanzi_user
 

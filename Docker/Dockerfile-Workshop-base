@@ -24,6 +24,7 @@ RUN apt-get update --fix-missing && \
     gfortran \
     git \
     make \
+    ninja-build \
     cmake \
     emacs \
     vim \
