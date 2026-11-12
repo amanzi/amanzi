@@ -32,7 +32,6 @@
 #include "MeshFactory.hh"
 #include "FrameworkTraits.hh"
 #include "Geometry.hh"
-#include "GMVMesh.hh"
 // #include "Vis.hh"
 
 int
@@ -222,10 +221,6 @@ main(int argc, char* argv[])
     std::cerr << "Error deforming the mesh" << std::endl;
     exit(-1);
   }
-
-
-  std::string viz_filename("deform.gmv");
-  Amanzi::GMV::create_mesh_file(*mesh, viz_filename);
 
 
   MPI_Finalize();

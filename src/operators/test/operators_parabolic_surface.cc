@@ -22,7 +22,6 @@
 #include "UnitTest++.h"
 
 // Amanzi
-#include "GMVMesh.hh"
 #include "LinearOperatorPCG.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
@@ -190,13 +189,6 @@ RunTest(std::string op_list_name)
   if (MyPID == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() << " itr=" << num_itrs
               << " code=" << solver.returned_code() << std::endl;
-
-    // visualization
-    const Epetra_MultiVector& p = *solution.viewComponent("cell");
-    GMV::open_data_file(*surfmesh, (std::string) "operators.gmv");
-    GMV::start_data();
-    GMV::write_cell_data(p, 0, "solution");
-    GMV::close_data_file();
   }
 }
 

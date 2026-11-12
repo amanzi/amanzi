@@ -23,7 +23,6 @@
 
 // Amanzi
 #include "CompositeVector.hh"
-#include "GMVMesh.hh"
 #include "LinearOperatorPCG.hh"
 #include "MeshFactory.hh"
 #include "NumericalIntegration.hh"
@@ -154,13 +153,6 @@ TestDiffusionFracturedMatrix(double gravity)
   if (MyPID == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual()
               << " itr=" << solver.num_itrs() << " code=" << solver.returned_code() << std::endl;
-
-    // visualization
-    const Epetra_MultiVector& p = *solution->viewComponent("cell");
-    GMV::open_data_file(*mesh, (std::string) "operators.gmv");
-    GMV::start_data();
-    GMV::write_cell_data(p, 0, "solution");
-    GMV::close_data_file();
   }
 
   CHECK(solver.num_itrs() < 200);

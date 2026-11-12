@@ -25,7 +25,6 @@
 
 // Amanzi
 #include "Explicit_TI_RK.hh"
-#include "GMVMesh.hh"
 #include "CompositeVector.hh"
 #include "DG_Modal.hh"
 #include "LinearOperatorGMRES.hh"
@@ -282,17 +281,6 @@ AdvectionSteady(int dim,
   if (MyPID == 0) {
     std::cout << "dG solver (gmres): ||r||=" << solver.residual() << " itr=" << solver.num_itrs()
               << " code=" << solver.returned_code() << " order=" << order << std::endl;
-
-    // visualization
-    const Epetra_MultiVector& p = *solution.viewComponent("cell");
-    GMV::open_data_file(*mesh, (std::string) "operators.gmv");
-    GMV::start_data();
-    GMV::write_cell_data(p, 0, "solution");
-    if (order > 0) {
-      GMV::write_cell_data(p, 1, "gradx");
-      GMV::write_cell_data(p, 2, "grady");
-    }
-    GMV::close_data_file();
   }
 
   CHECK(solver.num_itrs() < 200);

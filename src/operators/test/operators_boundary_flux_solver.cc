@@ -21,7 +21,6 @@
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
 #include "MeshFactory.hh"
-#include "GMVMesh.hh"
 
 #include "OperatorDefs.hh"
 #include "BoundaryFlux.hh"

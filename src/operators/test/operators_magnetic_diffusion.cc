@@ -22,7 +22,6 @@
 #include "UnitTest++.h"
 
 // Amanzi
-#include "GMVMesh.hh"
 #include "LinearOperatorPCG.hh"
 #include "MeshFactory.hh"
 #include "MFD3D_Electromagnetics.hh"
@@ -264,16 +263,6 @@ MagneticDiffusion2D(double dt,
                 << " itr=" << solver.num_itrs() << "  energy= " << energy << "  heat= " << heat
                 << "  avgB=" << avgB / Bf.GlobalLength() << "  divB=" << std::pow(divB, 0.5)
                 << "  ||B||=" << std::pow(errB, 0.5) << std::endl;
-    }
-
-    // visualization
-    if (MyPID == 0) {
-      GMV::open_data_file(*mesh, "operators.gmv");
-      GMV::start_data();
-      GMV::write_cell_data(sol, 0, "Bx");
-      GMV::write_cell_data(sol, 1, "By");
-      GMV::write_node_data(Ee, 0, "Ez");
-      GMV::close_data_file();
     }
   }
 
@@ -586,20 +575,6 @@ MagneticDiffusion3D(double dt,
                 << " itr=" << solver.num_itrs() << "  energy= " << energy << "  heat= " << heat
                 << "  avgB=" << avgB / ncells_owned << "  divB=" << std::pow(divB, 0.5)
                 << "  errB=" << std::pow(errB, 0.5) << std::endl;
-    }
-
-    // visualization
-    if (MyPID == 0 && (cycle % 5 == 0)) {
-      GMV::open_data_file(*mesh, "operators.gmv");
-      GMV::start_data();
-      GMV::write_cell_data(sol_b, 0, "Bx");
-      GMV::write_cell_data(sol_b, 1, "By");
-      GMV::write_cell_data(sol_b, 2, "Bz");
-
-      GMV::write_cell_data(sol_e, 0, "Ex");
-      GMV::write_cell_data(sol_e, 1, "Ey");
-      GMV::write_cell_data(sol_e, 2, "Ez");
-      GMV::close_data_file();
     }
   }
 
