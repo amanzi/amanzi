@@ -75,7 +75,8 @@ jobs:
         build-args: |
           ARCH=linux/${{env.ARCH}}
           amanzi_branch=${{env.AMANZI_BRANCH}}
-          amanzi_tpls_ver=${{env.AMANZI_TPLS_VER}}  
+          amanzi_tpls_ver=${{env.AMANZI_TPLS_VER}}
+          additional_bootstrap_args=--with-linker=mold
     - name: Build and push image - pull requests
       if: steps.pr_check.outputs.exist_pr_to_master == 'true'
       uses: docker/build-push-action@v7
@@ -88,7 +89,7 @@ jobs:
           ARCH=linux/${{env.ARCH}}
           amanzi_branch=${{env.AMANZI_BRANCH}}
           amanzi_tpls_ver=${{env.AMANZI_TPLS_VER}}
-          additional_bootstrap_args=--enable-reg_tests
+          additional_bootstrap_args=--enable-reg_tests --with-linker=mold
   serial-tests:
     strategy:
       fail-fast: false

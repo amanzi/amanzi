@@ -65,6 +65,10 @@ ninja_binary=`command -v ninja 2>/dev/null`
 amanzi_generator=
 amanzi_generator_opts=
 
+# Linker for the Amanzi build (empty means the compiler default)
+amanzi_linker=
+linker_flags=
+
 # Build configuration
 parallel_jobs=2
 build_type=Release
@@ -440,6 +444,8 @@ Tool definitions:
   --with-git=FILE            FILE is the git binary ['"${git_binary}"']
   --with-curl=FILE           FILE is the CURL binary ['"${curl_binary}"']
   --with-ninja=FILE          FILE is the Ninja binary ['"${ninja_binary}"']
+  --with-linker=NAME         link Amanzi with NAME (mold, lld or gold) instead of the compiler
+                             default linker. TPLs always use the default. ['"${amanzi_linker}"']
 
   --with-mpi=DIR             use MPI installed in DIR ['"${mpi_root_dir}"'].
                              Will search for MPI compiler wrappers under this directory. It this
@@ -627,6 +633,7 @@ Tools and Tests:
     git_binary   = '"${git_binary}"'
     ninja        = '"${ninja}"'
     ninja_binary = '"${ninja_binary}"'
+    amanzi_linker = '"${amanzi_linker}"'
     amanzi_generator = '"${amanzi_generator}"'
     Spack_binary = '"${Spack_binary}"'
     reg_tests    = '"${reg_tests}"'
@@ -796,6 +803,10 @@ List of INPUT parameters
       --with-git=*)
                  tmp=`parse_option_with_equal "${opt}" 'with-git'`
                  git_binary=`make_fullpath $tmp`
+                 ;;
+
+      --with-linker=*)
+                 amanzi_linker=`parse_option_with_equal "${opt}" 'with-linker'`
                  ;;
 
       --with-ninja=*)
@@ -1623,6 +1634,58 @@ function define_amanzi_generator
   status_message "Amanzi CMake generator: ${amanzi_generator}"
 }
 
+# Translate --with-linker into compiler-driver flags for the Amanzi build and
+# check that the C++ compiler really links with it.
+function define_linker_flags
+{
+  linker_flags=
+
+  if [ -z "${amanzi_linker}" ] || [ "${amanzi_linker}" = "default" ]; then
+    return
+  fi
+
+  case "${amanzi_linker}" in
+    mold)
+      # -fuse-ld=mold needs GCC >= 12.1; -B works with older GCC and with clang,
+      # pointing the driver at the "ld" wrapper that mold installs in libexec/mold.
+      local mold_binary=`command -v mold 2>/dev/null`
+      if [ -z "${mold_binary}" ]; then
+        error_message "--with-linker=mold given, but no mold binary found in PATH"
+        exit_now 10
+      fi
+      local mold_libexec=`cd $(dirname ${mold_binary})/../libexec/mold 2>/dev/null && pwd`
+      if [ -z "${mold_libexec}" ] || [ ! -x "${mold_libexec}/ld" ]; then
+        error_message "Cannot find libexec/mold/ld next to ${mold_binary}"
+        exit_now 10
+      fi
+      linker_flags="-B${mold_libexec}"
+      ;;
+    lld|gold)
+      linker_flags="-fuse-ld=${amanzi_linker}"
+      ;;
+    *)
+      error_message "Unsupported linker '${amanzi_linker}' -- valid are mold, lld, and gold"
+      exit_now 10
+      ;;
+  esac
+
+  local probe_dir=`mktemp -d`
+  echo 'int main() { return 0; }' > ${probe_dir}/probe.cc
+  local ld_version=`${build_cxx_compiler} ${linker_flags} -Wl,--version ${probe_dir}/probe.cc -o ${probe_dir}/probe 2>&1`
+  rm -rf ${probe_dir}
+
+  local ld_pattern=${amanzi_linker}
+  if [ "${amanzi_linker}" = "lld" ]; then
+    ld_pattern=LLD
+  fi
+  if ! echo "${ld_version}" | grep -q "${ld_pattern}"; then
+    error_message "${build_cxx_compiler} does not link with ${amanzi_linker} using ${linker_flags}"
+    exit_now 10
+  fi
+
+  status_message "Amanzi linker: ${amanzi_linker} (${linker_flags})"
+}
+
 
 # ---------------------------------------------------------------------------- #
 # Directory functions
@@ -1897,6 +1960,9 @@ check_mpi_root
 # Define the compilers
 check_compilers
 
+# Check the requested linker now, before any long TPL build
+define_linker_flags
+
 
 # ---------------------------------------------------------------------------- #
 # Now build the TPLs if the config file is not defined
@@ -2073,7 +2139,6 @@ cmd_configure="${cmake_binary} \
     -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
     -DCMAKE_CXX_FLAGS:STRING="${build_cxx_flags}" \
     -DCMAKE_Fortran_FLAGS:STRING="${build_fort_flags}" \
-    -DCMAKE_EXE_LINKER_FLAGS:STRING="${build_link_flags}" \
     -DCMAKE_INSTALL_PREFIX:STRING=${amanzi_install_prefix} \
     -DCMAKE_BUILD_TYPE:STRING=${build_type} \
     -DENABLE_Structured:BOOL=${structured} \
@@ -2105,14 +2170,22 @@ cmd_configure="${cmake_binary} \
     ${arch_amanzi_opts} \
     ${amanzi_source_dir}"
 
+# Link flags may contain spaces, so keep them out of the word-split string.
+# The linker flags go to shared and module links too (Amanzi builds shared libs).
+amanzi_link_args=(
+    "-DCMAKE_EXE_LINKER_FLAGS:STRING=${build_link_flags}${linker_flags:+ ${linker_flags}}"
+    "-DCMAKE_SHARED_LINKER_FLAGS:STRING=${linker_flags}"
+    "-DCMAKE_MODULE_LINKER_FLAGS:STRING=${linker_flags}"
+)
+
 # Echo or execute configure command
 if [ ${dry_run} == "${TRUE}" ] ; then
    status_message "Amanzi configure command: \n"
-   echo ${cmd_configure}
+   echo ${cmd_configure} `printf '%q ' "${amanzi_link_args[@]}"`
    echo ""
 else
    cd ${amanzi_build_dir}
-   ${cmd_configure}
+   ${cmd_configure} "${amanzi_link_args[@]}"
    amanzi_configure_status=$?
 fi
 

@@ -13,6 +13,13 @@ RUN command -v ninja > /dev/null || \
     (apt-get -q update -y && apt-get -q install -y ninja-build \
      && apt-get clean && rm -rf /var/lib/apt/lists/*)
 
+# mold linker, used by CI via bootstrap.sh --with-linker=mold. Release
+# tarballs exist for both CI architectures (x86_64 and aarch64).
+ARG mold_version=2.42.1
+RUN command -v mold > /dev/null || \
+    (curl -fsSL https://github.com/rui314/mold/releases/download/v${mold_version}/mold-${mold_version}-$(uname -m)-linux.tar.gz \
+     | tar -xz -C /usr/local --strip-components=1)
+
 # Switch to amanzi_user
 USER amanzi_user
 
