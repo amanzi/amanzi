@@ -23,6 +23,11 @@ regression testing.
      of timesteps to take, ignores the PK and all events.
    * `"prescribed timesteps file name`" ``[string]`` **optional** Path to an h5 file
      containing a list of dts, ignores the PK and all events.
+   * `"prescribed timesteps are maximum`" ``[bool]`` **false** Allow PK
+     timestep restrictions and failure retries to subdivide the prescribed
+     intervals while preserving their cumulative absolute-time boundaries.
+   * `"prescribed timesteps start time [s]`" ``[double]`` **0** Origin of
+     those boundaries in maximum mode; also used when restarting mid-schedule.
    * `"prescribed timesteps header`" ``[string]`` **"timesteps"** Name of the
      dataset containing the dts.
 
@@ -61,6 +66,8 @@ class TimeStepManager {
  protected:
   std::vector<Teuchos::RCP<const Event<double>>> time_events_;
   bool manual_override_;
+  bool manual_maximum_ = false;
+  std::vector<double> manual_boundaries_;
   std::vector<double> manual_dts_;
   int manual_dts_i_;
   Teuchos::RCP<VerboseObject> vo_;

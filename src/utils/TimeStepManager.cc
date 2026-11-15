@@ -15,6 +15,8 @@
 
 #include <algorithm>
 #include <iostream>
+#include <cmath>
+#include <limits>
 
 #include "dbc.hh"
 #include "TimeStepManager.hh"
@@ -55,6 +57,23 @@ TimeStepManager::TimeStepManager(Teuchos::ParameterList& plist)
     reader->read(header, manual_dts_);
     manual_dts_i_ = 0;
     manual_override_ = true;
+  }
+
+  manual_maximum_ = plist.get<bool>("prescribed timesteps are maximum", false);
+  if (manual_override_ && manual_maximum_) {
+    double time = plist.get<double>("prescribed timesteps start time [s]", 0.);
+    if (!std::isfinite(time)) {
+      Errors::Message msg("TimeStepManager: nonfinite prescribed start time.");
+      Exceptions::amanzi_throw(msg);
+    }
+    for (double dt : manual_dts_) {
+      if (!(std::isfinite(dt) && dt > 0.) || !std::isfinite(time + dt) || time + dt <= time) {
+        Errors::Message msg("TimeStepManager: prescribed timesteps must be finite and positive.");
+        Exceptions::amanzi_throw(msg);
+      }
+      time += dt;
+      manual_boundaries_.push_back(time);
+    }
   }
 
   vo_ = Teuchos::rcp(new VerboseObject(Keys::cleanPListName(plist, "TimeStepManager"), plist));
@@ -98,7 +117,18 @@ TimeStepManager::TimeStep(double T, double dT, bool after_failure)
   Teuchos::OSTab tab = vo_->getOSTab();
   Utils::Units units("molar");
 
-  if (manual_override_) {
+  if (manual_override_ && manual_maximum_) {
+    // Find the next original boundary by absolute time, not by attempted step
+    // count. Retries/substeps cannot consume a schedule entry; restarts work too.
+    const double eps = 16. * std::numeric_limits<double>::epsilon() * std::max(1., std::abs(T));
+    auto next = std::upper_bound(manual_boundaries_.begin(), manual_boundaries_.end(), T + eps);
+    if (next != manual_boundaries_.end()) {
+      const double remaining = *next - T;
+      // Snap near-equal proposals to the exact boundary so periodic source
+      // refreshes are not delayed by a roundoff-sized gap.
+      dT = std::abs(dT - remaining) <= eps ? remaining : std::min(dT, remaining);
+    }
+  } else if (manual_override_) {
     // under manual override, the PK dt is prescribed
     if (after_failure) {
       Errors::Message msg("TimeStepManager: manually prescribed timestep failed.");

@@ -1,4 +1,4 @@
 [submodule "src/physics/ats"]
 	path = src/physics/ats
-	url = https://github.com/amanzi/ats
-    branch = master
+	url = https://github.com/jinyun1tang/ats.git
+	branch = jytang/pond-soil-couple

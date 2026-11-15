@@ -79,3 +79,59 @@ TEST(TIME_STEP_MANAGER)
   // the largest time specified in time events
   CHECK_CLOSE(50.0, TSM.TimeStep(100.0, 50.0), 1e-12);
 }
+
+
+TEST(TIME_STEP_MANAGER_PRESCRIBED_MAXIMUM)
+{
+  Teuchos::ParameterList p;
+  p.set("prescribed timesteps [s]", Teuchos::Array<double>{4., 6., 2.});
+  p.set("prescribed timesteps are maximum", true);
+  Amanzi::Utils::TimeStepManager manager(p);
+  CHECK_CLOSE(1., manager.TimeStep(0., 1.), 1e-12);
+  CHECK_CLOSE(3., manager.TimeStep(1., 20.), 1e-12);
+  // A retry neither consumes an interval nor throws in maximum mode.
+  CHECK_CLOSE(.25, manager.TimeStep(1., .25, true), 1e-12);
+  CHECK_CLOSE(3., manager.TimeStep(1., 20.), 1e-12);
+  CHECK_CLOSE(6., manager.TimeStep(4., 20.), 1e-12);
+  CHECK_CLOSE(2., manager.TimeStep(10., 20.), 1e-12);
+  // Once the schedule ends, ordinary adaptive/event control continues.
+  CHECK_CLOSE(20., manager.TimeStep(12., 20.), 1e-12);
+  Amanzi::Utils::TimeStepManager restarted(p);
+  CHECK_CLOSE(3., restarted.TimeStep(7., 20.), 1e-12);
+  restarted.RegisterTimeEvent(8.);
+  CHECK_CLOSE(1., restarted.TimeStep(7., 20.), 1e-12);
+}
+
+TEST(TIME_STEP_MANAGER_PRESCRIBED_MAXIMUM_OFFSET)
+{
+  Teuchos::ParameterList p;
+  p.set("prescribed timesteps [s]", Teuchos::Array<double>{4., 6.});
+  p.set("prescribed timesteps are maximum", true);
+  p.set("prescribed timesteps start time [s]", 5.);
+  Amanzi::Utils::TimeStepManager manager(p);
+  CHECK_CLOSE(4., manager.TimeStep(5., 20.), 1e-12);
+  CHECK_CLOSE(6., manager.TimeStep(9., 20.), 1e-12);
+}
+
+TEST(TIME_STEP_MANAGER_STRICT_PRESCRIPTION_UNCHANGED)
+{
+  Teuchos::ParameterList p;
+  p.set("prescribed timesteps [s]", Teuchos::Array<double>{4., 6.});
+  Amanzi::Utils::TimeStepManager manager(p);
+  CHECK_CLOSE(4., manager.TimeStep(0., 1.), 1e-12);
+  CHECK_CLOSE(6., manager.TimeStep(4., 1.), 1e-12);
+  bool threw = false;
+  try { manager.TimeStep(10., 1., true); } catch (...) { threw = true; }
+  CHECK(threw);
+}
+
+
+TEST(TIME_STEP_MANAGER_PRESCRIBED_MAXIMUM_ROUNDOFF)
+{
+  Teuchos::ParameterList p;
+  p.set("prescribed timesteps [s]", Teuchos::Array<double>{4.});
+  p.set("prescribed timesteps are maximum", true);
+  p.set("prescribed timesteps start time [s]", 1.e7);
+  Amanzi::Utils::TimeStepManager manager(p);
+  CHECK_CLOSE(4., manager.TimeStep(1.e7, 4.-1.e-9), 1e-12);
+}
