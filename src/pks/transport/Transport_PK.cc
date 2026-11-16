@@ -110,8 +110,23 @@ Transport_PK::Transport_PK::parseParameterList()
 
   // domain and primary evaluators
   domain_ = tp_list_->template get<std::string>("domain name", "domain");
+  
+  // Check for backward compatibility (default is true for backward compatibility)
+  use_constant_molar_density_ = tp_list_->get<bool>("use constant molar density", true);
+  
+  // Always initialize both keys
   tcc_key_ = Keys::getKey(domain_, "total_component_concentration");
-  AddDefaultPrimaryEvaluator(S_, tcc_key_);
+  tcc_frac_key_ = Keys::getKey(domain_, "total_component_concentration_frac");
+  
+  if (use_constant_molar_density_) {
+    // OLD BEHAVIOR: tcc is primary variable
+    tcc_primary_key_ = tcc_key_;
+    AddDefaultPrimaryEvaluator(S_, tcc_key_);
+  } else {
+    // NEW BEHAVIOR: tcc_frac is primary, tcc is derived
+    tcc_primary_key_ = tcc_frac_key_;
+    AddDefaultPrimaryEvaluator(S_, tcc_frac_key_);
+  }
 }
 
 
@@ -136,8 +151,23 @@ Transport_PK::Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 
   // domain and primary evaluators
   domain_ = tp_list_->template get<std::string>("domain name", "domain");
+  
+  // Check for backward compatibility (default is true for backward compatibility)
+  use_constant_molar_density_ = tp_list_->get<bool>("use constant molar density", true);
+  
+  // Always initialize both keys
   tcc_key_ = Keys::getKey(domain_, "total_component_concentration");
-  AddDefaultPrimaryEvaluator(S_, tcc_key_);
+  tcc_frac_key_ = Keys::getKey(domain_, "total_component_concentration_frac");
+  
+  if (use_constant_molar_density_) {
+    // OLD BEHAVIOR: tcc is primary variable
+    tcc_primary_key_ = tcc_key_;
+    AddDefaultPrimaryEvaluator(S_, tcc_key_);
+  } else {
+    // NEW BEHAVIOR: tcc_frac is primary, tcc is derived
+    tcc_primary_key_ = tcc_frac_key_;
+    AddDefaultPrimaryEvaluator(S_, tcc_frac_key_);
+  }
 
   // other variables
   dt_prev_ = 1e+91;
@@ -216,6 +246,15 @@ Transport_PK::Setup()
   wc_key_ = Keys::getKey(domain_, "water_content");
   prev_wc_key_ = Keys::getKey(domain_, "prev_water_content");
 
+  // Initialize variable density keys and set flow rate pointer
+  if (!use_constant_molar_density_) {
+    molar_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid");
+    molar_flow_rate_key_ = Keys::getKey(domain_, "molar_flow_rate");
+    flowrate_key_ = molar_flow_rate_key_;  // Point to molar flow rate
+  } else {
+    flowrate_key_ = vol_flowrate_key_;     // Point to volumetric flow rate
+  }
+
   porosity_msp_key_ = Keys::getKey(domain_, "porosity_msp");
   water_content_msp_key_ = Keys::getKey(domain_, "water_content_msp");
   prev_water_content_msp_key_ = Keys::getKey(domain_, "prev_water_content_msp");
@@ -223,7 +262,18 @@ Transport_PK::Setup()
   aperture_key_ = Keys::getKey(domain_, "aperture");
 
   // require state fields when Flow PK is off
-  S_->Require<double>("const_fluid_density", Tags::DEFAULT, "state");
+  if (use_constant_molar_density_) {
+    S_->Require<double>("const_fluid_density", Tags::DEFAULT, "state");
+  } else {
+    // Require molar density evaluator
+    if (!S_->HasRecord(molar_density_liquid_key_)) {
+      S_->Require<CV_t, CVS_t>(molar_density_liquid_key_, Tags::DEFAULT, molar_density_liquid_key_)
+        .SetMesh(mesh_)
+        ->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+      S_->RequireEvaluator(molar_density_liquid_key_, Tags::DEFAULT);
+    }
+  }
 
   if (!S_->HasRecord(permeability_key_) && assumptions_.abs_perm) {
     S_->Require<CV_t, CVS_t>(permeability_key_, Tags::DEFAULT, permeability_key_)
@@ -243,6 +293,21 @@ Transport_PK::Setup()
         ->SetGhosted(true)
         ->SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
     }
+  }
+
+  // Setup molar flow rate evaluator (qm = q * n_l) for variable density
+  if (!use_constant_molar_density_ && !S_->HasRecord(molar_flow_rate_key_)) {
+    if (assumptions_.flow_on_manifold) {
+      auto cvs = Operators::CreateManifoldCVS(mesh_);
+      *S_->Require<CV_t, CVS_t>(molar_flow_rate_key_, Tags::DEFAULT, molar_flow_rate_key_)
+         .SetMesh(mesh_)
+         ->SetGhosted(true) = *cvs;
+    } else {
+      S_->Require<CV_t, CVS_t>(molar_flow_rate_key_, Tags::DEFAULT, molar_flow_rate_key_)
+        .SetMesh(mesh_)
+        ->SetGhosted(true)
+        ->SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
+    }        
   }
 
   if (!S_->HasRecord(saturation_liquid_key_)) {
@@ -275,11 +340,44 @@ Transport_PK::Setup()
   }
 
   int ncomponents = component_names_.size();
-  if (!S_->HasRecord(tcc_key_)) {
-    S_->Require<CV_t, CVS_t>(tcc_key_, Tags::DEFAULT, passwd_, component_names_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, ncomponents);
+  
+  if (use_constant_molar_density_) {
+    // OLD BEHAVIOR: tcc is primary, already set up in parseParameterList()
+    if (!S_->HasRecord(tcc_key_)) {
+      S_->Require<CV_t, CVS_t>(tcc_key_, Tags::DEFAULT, passwd_, component_names_)
+        .SetMesh(mesh_)
+        ->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, ncomponents);
+    }
+  } else {
+    // NEW BEHAVIOR: tcc_frac is primary, tcc is derived
+    
+    // Setup tcc_frac as primary variable (field requirement)
+    if (!S_->HasRecord(tcc_frac_key_)) {
+      S_->Require<CV_t, CVS_t>(tcc_frac_key_, Tags::DEFAULT, passwd_, component_names_)
+        .SetMesh(mesh_)
+        ->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, ncomponents);
+    }
+    
+    // Setup tcc as derived variable: tcc = tcc_frac * molar_density_liquid
+    if (!S_->HasRecord(tcc_key_)) {
+      S_->Require<CV_t, CVS_t>(tcc_key_, Tags::DEFAULT, tcc_key_, component_names_)
+        .SetMesh(mesh_)
+        ->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, ncomponents);
+      
+      // Create multiplicative evaluator
+      std::vector<std::string> listm(
+        { Keys::getVarName(tcc_frac_key_), Keys::getVarName(molar_density_liquid_key_) });
+      
+      Teuchos::ParameterList elist(tcc_key_);
+      elist.set<std::string>("my key", tcc_key_)
+        .set<Teuchos::Array<std::string>>("multiplicative dependency key suffixes", listm)
+        .set<std::string>("tag", "");
+      auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
+      S_->SetEvaluator(tcc_key_, Tags::DEFAULT, eval);
+    }
   }
 
   // porosity evaluators
@@ -308,8 +406,18 @@ Transport_PK::Setup()
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
-    std::vector<std::string> listm(
-      { Keys::getVarName(porosity_key_), Keys::getVarName(saturation_liquid_key_) });
+    std::vector<std::string> listm;
+    
+    if (use_constant_molar_density_) {
+      // OLD: water_content = φ * s_l (volumetric)
+      listm = { Keys::getVarName(porosity_key_), Keys::getVarName(saturation_liquid_key_) };
+    } else {
+      // NEW: water_content = φ * s_l * n_l (molar)
+      listm = { Keys::getVarName(porosity_key_), 
+                Keys::getVarName(saturation_liquid_key_),
+                Keys::getVarName(molar_density_liquid_key_) };
+    }
+    
     if (assumptions_.flow_on_manifold) listm.push_back(Keys::getVarName(aperture_key_));
 
     Teuchos::ParameterList elist(wc_key_);
@@ -397,14 +505,20 @@ Transport_PK::Setup()
   }
 
   // temporary fields
-  S_->Require<CV_t, CVS_t>(tcc_key_, Tags::COPY, passwd_, component_names_).SetGhosted(true);
+  S_->Require<CV_t, CVS_t>(tcc_primary_key_, Tags::COPY, passwd_, component_names_).SetGhosted(true);
 
 #ifdef ALQUIMIA_ENABLED
   SetupAlquimia();
 #endif
 
   // set units
-  S_->GetRecordSetW(tcc_key_).set_units("mol/m^3");
+  if (use_constant_molar_density_) {
+    S_->GetRecordSetW(tcc_key_).set_units("mol/m^3");
+  } else {
+    S_->GetRecordSetW(tcc_frac_key_).set_units("mol/mol");
+    S_->GetRecordSetW(tcc_key_).set_units("mol/m^3");  // derived variable
+  }
+  
   S_->GetRecordSetW(porosity_key_).set_units("-");
   S_->GetRecordSetW(saturation_liquid_key_).set_units("-");
   if (assumptions_.flow_on_manifold) {
@@ -467,11 +581,11 @@ Transport_PK::Initialize()
     transport_phi = phi;
   }
 
-  // initialize copy of component
-  tcc = S_->GetPtrW<CV_t>(tcc_key_, Tags::DEFAULT, passwd_);
-  tcc_tmp = S_->GetPtrW<CV_t>(tcc_key_, Tags::COPY, passwd_);
+  // initialize copy of component - works for both formulations
+  tcc = S_->GetPtrW<CV_t>(tcc_primary_key_, Tags::DEFAULT, passwd_);
+  tcc_tmp = S_->GetPtrW<CV_t>(tcc_primary_key_, Tags::COPY, passwd_);
   *tcc_tmp = *tcc;
-  S_->GetRecordW(tcc_key_, Tags::COPY, passwd_).set_initialized();
+  S_->GetRecordW(tcc_primary_key_, Tags::COPY, passwd_).set_initialized();
 
   // upwind structures
   IdentifyUpwindCells();
@@ -909,9 +1023,9 @@ void
 Transport_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
   dt_prev_ = std::min(dt_, t_new - t_old);
-  S_->GetW<CV_t>(tcc_key_, Tags::DEFAULT, passwd_) = *tcc_tmp;
+  S_->GetW<CV_t>(tcc_primary_key_, Tags::DEFAULT, passwd_) = *tcc_tmp;
   Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
-    S_->GetEvaluatorPtr(tcc_key_, Tags::DEFAULT))
+    S_->GetEvaluatorPtr(tcc_primary_key_, Tags::DEFAULT))
     ->SetChanged();
 }
 
@@ -1026,7 +1140,7 @@ Transport_PK::ComputeBCs_(std::vector<int>& bc_model, std::vector<double>& bc_va
 void
 Transport_PK::IdentifyUpwindCells()
 {
-  const auto& flowrate = S_->Get<CV_t>(vol_flowrate_key_);
+  const auto& flowrate = S_->Get<CV_t>(flowrate_key_);
   flowrate.ScatterMasterToGhosted("face");
 
   const auto& flowrate_f = *flowrate.ViewComponent("face", true);

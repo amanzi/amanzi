@@ -31,7 +31,7 @@ Transport_PK::FunctionalTimeDerivative_MUSCL_(double t,
                                               CompositeVector& func,
                                               bool scale)
 {
-  auto flowrate = S_->Get<CompositeVector>(vol_flowrate_key_).ViewComponent("face", true);
+  auto flowrate = S_->Get<CompositeVector>(flowrate_key_).ViewComponent("face", true);
 
   // distribute vector
   component.ScatterMasterToGhosted("cell");
@@ -74,7 +74,7 @@ Transport_PK::FunctionalTimeDerivative_MUSCL_(double t,
   int c1, c2;
   double u, u1, u2, umin, umax, upwind_tcc, tcc_flux;
 
-  const auto& flux_map = S_->Get<CompositeVector>(vol_flowrate_key_).Map().Map("face", true);
+  const auto& flux_map = S_->Get<CompositeVector>(flowrate_key_).Map().Map("face", true);
 
   func.PutScalar(0.0);
   if (mesh_->getSpaceDimension() == mesh_->getManifoldDimension()) {
@@ -226,7 +226,7 @@ Transport_PK::FunctionalTimeDerivative_FCT_(double t,
                                             const CompositeVector& component,
                                             CompositeVector& func)
 {
-  auto flowrate = S_->Get<CompositeVector>(vol_flowrate_key_).ViewComponent("face", true);
+  auto flowrate = S_->Get<CompositeVector>(flowrate_key_).ViewComponent("face", true);
 
   S_->GetEvaluator(wc_key_).Update(*S_, "transport");
   auto weight1 = S_->Get<CompositeVector>(wc_key_).ViewComponent("cell", true);
@@ -305,7 +305,7 @@ Transport_PK::FunctionalTimeDerivative_FCT_(double t,
   }
 
   // boundary fluxes
-  const auto& flux_map = S_->Get<CompositeVector>(vol_flowrate_key_).Map().Map("face", true);
+  const auto& flux_map = S_->Get<CompositeVector>(flowrate_key_).Map().Map("face", true);
 
   for (int m = 0; m < bcs_.size(); m++) {
     std::vector<int>& tcc_index = bcs_[m]->tcc_index();

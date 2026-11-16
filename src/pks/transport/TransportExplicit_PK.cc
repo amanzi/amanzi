@@ -356,8 +356,8 @@ TransportExplicit_PK::AdvanceDonorUpwind(double dt_cycle)
     for (int i = 0; i < num_advect; i++) tcc_next[i][c] = tcc_prev[i][c] * vol_wc;
   }
 
-  auto flowrate = *S_->Get<CompositeVector>(vol_flowrate_key_).ViewComponent("face", true);
-  const auto& flux_map = S_->Get<CompositeVector>(vol_flowrate_key_).Map().Map("face", true);
+  auto flowrate = *S_->Get<CompositeVector>(flowrate_key_).ViewComponent("face", true);
+  const auto& flux_map = S_->Get<CompositeVector>(flowrate_key_).Map().Map("face", true);
 
   // advance all components at once
   for (int f = 0; f < nfaces_wghost; f++) { // loop over master and slave faces
@@ -574,7 +574,7 @@ TransportExplicit_PK::AdvanceDonorUpwindManifold(double dt_cycle)
 void
 TransportExplicit_PK::DudtOld_(double t, const Epetra_Vector& component, Epetra_Vector& f_component)
 {
-  auto flowrate = S_->Get<CompositeVector>(vol_flowrate_key_).ViewComponent("face", true);
+  auto flowrate = S_->Get<CompositeVector>(flowrate_key_).ViewComponent("face", true);
 
   // transport routines need an RCP pointer
   Teuchos::RCP<const Epetra_Vector> component_rcp(&component, false);

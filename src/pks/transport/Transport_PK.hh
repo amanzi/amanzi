@@ -407,7 +407,12 @@ class Transport_PK : public PK_Physical {
 
   // names of state fields
   Key tcc_key_;
+  Key tcc_frac_key_;        // mole fraction variable [mol/mol_water]
+  Key tcc_primary_key_;     // points to primary variable (tcc or tcc_frac)
   Key vol_flowrate_key_, aperture_key_;
+  Key molar_flow_rate_key_; // molar flow rate [mol/s]
+  Key flowrate_key_;        // points to flow rate to use (vol or molar)
+  Key molar_density_liquid_key_; // molar density [mol/m^3]
   Key porosity_key_, transport_porosity_key_, permeability_key_;
   Key saturation_liquid_key_, tortuosity_key_;
   Key wc_key_, prev_wc_key_;
@@ -438,6 +443,7 @@ class Transport_PK : public PK_Physical {
   // physical models and assumptions
   ModelAssumptions assumptions_;
   bool subcycling_;
+  bool use_constant_molar_density_; // backward compatibility flag
   int dim;
 
   Teuchos::RCP<AmanziChemistry::Chemistry_PK> chem_pk_;
