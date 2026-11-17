@@ -45,6 +45,7 @@ Array<Real>
 DiffDomRelSrc::operator() (Real time) const
 {
   BoxLib::Abort("Must evaluate DiffDomRelSrc over time interval");
+  return Array<Real>();
 };
 
 Real

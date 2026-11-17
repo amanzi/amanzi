@@ -40,8 +40,6 @@ merge2D(Teuchos::RCP<Mesh>& mesh1,
   auto mstk1 = mesh1_fw->getMSTK();
   auto mstk2 = mesh2_fw->getMSTK();
 
-  int nnodes1 = MESH_Num_Vertices(mstk1);
-
   // add nodes of mstk2 to mstk1
   int idv(0);
   double xyz[3];
@@ -77,7 +75,6 @@ merge2D(Teuchos::RCP<Mesh>& mesh1,
   // add face of mstk2 to mstk1
   int idf(0);
   MFace_ptr f2 = nullptr;
-  MAttrib_ptr atr_f = MAttrib_New(mstk2, "face", POINTER, MFACE);
 
   int dirs[10];
   MFace_ptr edges[10];

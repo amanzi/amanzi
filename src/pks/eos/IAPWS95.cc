@@ -279,7 +279,7 @@ IAPWS95::PopulatePropertiesFromEntropy1(double p, double h)
   double shh = a[5];
 
   double T = 1.0 / sh;
-  double Tp = -sph / (sh * sh);
+  // double Tp = -sph / (sh * sh);
   double Th = -shh / (sh * sh);
 
   // dh = T ds + 1000 v dp, because p is in MPa and h is in kJ/kg.
@@ -348,8 +348,8 @@ IAPWS95::PopulatePropertiesFromEntropy2(double p, double h, const SaturationStat
   double xp = -(sat.hl_p + x * dh_dp) / dh;
 
   double T = sat.Tsat;
-  double Tp = sat.Tsat_p;
-  double Th = 0.0;
+  // double Tp = sat.Tsat_p;
+  // double Th = 0.0;
 
   // volume and its derivatives
   double v = vl + x * dv;
@@ -360,12 +360,12 @@ IAPWS95::PopulatePropertiesFromEntropy2(double p, double h, const SaturationStat
   double rhoh = -vh / (v * v);
 
   double s = sl + x * (sv - sl);
-  double sh = 1.0 / T;
-  double sp = -1000.0 * v / T;
+  // double sh = 1.0 / T;
+  // double sp = -1000.0 * v / T;
 
-  double shh = 0.0;
-  double sph = -Tp / (T * T);
-  double spp = 1000.0 * (-vp / T + v * Tp / (T * T));
+  // double shh = 0.0;
+  // double sph = -Tp / (T * T);
+  // double spp = 1000.0 * (-vp / T + v * Tp / (T * T));
 
   prop.p = p;
   prop.T = T;

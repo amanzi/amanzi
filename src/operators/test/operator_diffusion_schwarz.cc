@@ -115,7 +115,6 @@ interpolate_fluxes(const Mesh& mesh1, const Mesh& mesh2, const Epetra_MultiVecto
     mesh2.getSetEntitiesAndVolumeFractions(rgn2, Entity_kind::FACE, Parallel_kind::OWNED);
 
   int nblock1 = block1.size();
-  int nblock2 = block2.size();
   double s;
 
   for (int n = 0; n < nblock1; ++n) {
@@ -236,7 +235,6 @@ RunTest(int n1, int n2, double gap)
   auto sol2 = Teuchos::rcp(new CompositeVector(*cvs2));
   sol2->PutScalar(0.0);
 
-  auto& sol1_f = *sol1->ViewComponent("face");
   auto& sol2_f = *sol2->ViewComponent("face");
   auto& flux1_f = *flux1->ViewComponent("face");
 

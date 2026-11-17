@@ -58,8 +58,8 @@ class CompositeVectorFunction final {
 
   Teuchos::RCP<const MeshFunction> func_;
   CompositeVectorSpecList cv_spec_list_;
-  std::string spatial_dist_method_;
   bool dot_with_normal_;
+  std::string spatial_dist_method_;
 };
 
 } // namespace Functions

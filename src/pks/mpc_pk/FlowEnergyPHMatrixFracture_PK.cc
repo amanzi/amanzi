@@ -428,10 +428,7 @@ FlowEnergyPHMatrixFracture_PK::InitializeFlowCoupling_()
   fi.InitMatrixFaceToFractureCell(Teuchos::rcpFromRef(mmap), Teuchos::rcpFromRef(gmap));
 
   const auto& kn_flow = *S_->Get<CV_t>("fracture-diffusion_to_matrix").ViewComponent("cell");
-  double gravity = norm(S_->Get<AmanziGeometry::Point>("gravity"));
 
-  double molar_mass = S_->Get<double>("const_fluid_molar_mass");
-  double scale = (sub_pks_[0]->name() == "darcy") ? 1.0 : 1.0 / molar_mass;
   fi.SetValues(kn_flow, 1.0);
   
   // -- operators

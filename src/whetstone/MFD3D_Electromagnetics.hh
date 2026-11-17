@@ -40,6 +40,8 @@ namespace WhetStone {
 
 class MFD3D_Electromagnetics : public DeRham_Edge {
  public:
+  MFD3D_Electromagnetics(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : DeRham_Edge(mesh) {};
   MFD3D_Electromagnetics(const Teuchos::ParameterList& plist,
                          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : DeRham_Edge(mesh) {};
@@ -81,6 +83,14 @@ class MFD3D_Electromagnetics : public DeRham_Edge {
   // boundary and surface methods
   int L2consistencyBoundary(int f, const Tensor& K, DenseMatrix& R, DenseMatrix& Mf);
   int MassMatrixBoundary(int f, const Tensor& K, DenseMatrix& M);
+
+  // projectors
+  //   we return linear polynomial instead of constant vector polynomial
+  virtual void L2Cell(int c,
+                      const std::vector<Polynomial>& ve,
+                      const std::vector<Polynomial>& vf,
+                      const Polynomial* moments,
+                      Polynomial& vc) override;
 
  private:
   int H1consistency2D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);

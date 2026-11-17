@@ -222,12 +222,9 @@ UpdateThermoCouplingFluxes_H(
 
   int np(0), dir, shift;
   AmanziMesh::Entity_ID_List cells;
-  const auto& flux = *S->Get<CompositeVector>("molar_flow_rate").ViewComponent("face", true);
-  const auto& mmap = flux.Map();
 
   for (int c = 0; c < ncells_owned_f; ++c) {
     int f = mesh_fracture->getEntityParent(AmanziMesh::Entity_kind::CELL, c);
-    int first = mmap.FirstPointInElement(f);
 
     const auto& cells = mesh_matrix->getFaceCells(f);
     int ncells = cells.size();

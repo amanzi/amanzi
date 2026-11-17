@@ -112,7 +112,6 @@ EnergyPressureTemperature_PK::FunctionalResidual(double t_old,
     const auto& stability_c = *S_->Get<CV_t>(L_scheme_stab_key_).ViewComponent("cell");
     const auto& u_prev_c = *S_->Get<CV_t>(L_scheme_prev_key_).ViewComponent("cell");
     const auto& u_new_c = *u_new->Data()->ViewComponent("cell");
-    const auto& u_old_c = *u_old->Data()->ViewComponent("cell");
 
     double delta(0.0), gnorm(0.0), factor, udiff;
     for (int c = 0; c < ncells_owned; ++c) {

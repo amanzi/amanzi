@@ -71,10 +71,6 @@ SUITE(OPERATOR_STOKES)
       mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     int nnodes =
       mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
-    int nfaces_wghost =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
-    int nnodes_wghost =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
     // populate diffusion coefficient using an analytic solution
     AnalyticElasticity02 ana(mesh);

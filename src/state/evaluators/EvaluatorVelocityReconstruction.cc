@@ -66,7 +66,6 @@ EvaluatorVelocityReconstruction::Evaluate_(const State& S,
     for (int n = 0; n != nfaces; ++n) { // populate least-square matrix
       int f = faces[n];
       const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
-      double area = mesh_->getFaceArea(f);
 
       for (int i = 0; i != d; ++i) {
         rhs[i] += normal[i] * flux[0][f];

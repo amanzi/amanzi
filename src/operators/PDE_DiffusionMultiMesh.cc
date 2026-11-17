@@ -103,7 +103,7 @@ PDE_DiffusionMultiMesh::Init(const Teuchos::RCP<State>& S)
 
       interface_weights_.push_back(data);
       interface_meshes_.push_back({ names[k], names[1 - k] });
-      interface_conductance_.push_back(std::move(factory.Create(tmp)));
+      interface_conductance_.push_back(factory.Create(tmp));
     }
   }
   int ninterfaces = interface_weights_.size();
@@ -555,7 +555,6 @@ PDE_DiffusionMultiMesh::meshToMeshMapConvexHull_(const AmanziMesh::Mesh& mesh1,
   int nblock1 = block1.size();
 
   const auto& block2 = mesh2.getSetEntities(rgn2, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
-  int nblock2 = block2.size();
 
   // construct a kd-tree index:
   std::vector<Amanzi::AmanziGeometry::Point> points;

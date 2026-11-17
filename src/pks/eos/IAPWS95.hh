@@ -17,6 +17,7 @@
 #ifndef AMANZI_IAPWS95_HH_
 #define AMANZI_IAPWS95_HH_
 
+#include <array>
 #include <cstdint>
 #include <tuple>
 

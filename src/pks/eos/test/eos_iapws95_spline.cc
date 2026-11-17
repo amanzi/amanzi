@@ -40,6 +40,8 @@ void WriteHelmholtzPlotData(IAPWS95_RaggedSplineRhoT& spline,
   out << "# rho T spline_phi exact_phi error\n";
 
   std::array<double, 6> err_l2{}, err_abs{}, err_rel{}, err{};
+  std::array<double, 6> err_rho_max{}, err_T_max{};
+
   for (int j = 0; j < nT; ++j) {
     double T = T_min + (T_max - T_min) * (double)j / (nT - 1);
 
@@ -49,16 +51,21 @@ void WriteHelmholtzPlotData(IAPWS95_RaggedSplineRhoT& spline,
       if (spline.IsPhysical(rho, T)) {
         const auto& spline_value = spline.ResidualPart(rho, T);
         const auto& exact_value = eos95.ResidualPart(rho, T);
-        std::array<double, 6> error;
 
         for (int k = 0; k < 6; ++k) {
-          err[k] = spline_value[k] - exact_value[k];
+          double tmp1 = spline_value[k] - exact_value[k];
+          double tmp2 = std::fabs(tmp1 / std::max(1e-14, std::fabs(exact_value[k])));
+          if (std::fabs(tmp2) > err_rel[k]) {
+            err_rho_max[k] = rho;
+            err_T_max[k] = T;
+          }
+          err[k] = tmp1;
           err_l2[k] += err[k] * err[k];
           err_abs[k] = std::max(err_abs[k], std::fabs(err[k]));
           err_rel[k] = std::max(err_rel[k], std::fabs(err[k] / std::max(1e-14, std::fabs(exact_value[k]))));
         }
 
-        out << rho << " " << T << " " << exact_value[0] << " " << spline_value[0] << " " << err[0] << "\n";
+        out << rho << " " << T << " " << exact_value[3] << " " << spline_value[3] << " " << err[3] << "\n";
       } else {
         // Point is outside the ragged physical domain.
         // NaN preserves the rectangular plotting structure.
@@ -74,10 +81,10 @@ void WriteHelmholtzPlotData(IAPWS95_RaggedSplineRhoT& spline,
 
   std::cout << "\nWrote plotting data to " << filename << '\n';
   std::cout << "Spline resolutions: " << spline.GetMesh().x_lines.size() << " " << spline.GetMesh().y_lines.size() << std::endl;
-  std::cout << "Error:  mean       absolute     relative\n";
+  std::cout << "Error:  mean       max        relative_max  rho_rel_max  T_rel_max\n";
   for (int k = 0; k < 6; ++k) {
     err_l2[k] = std::sqrt(err_l2[k] / nrho / nT);
-    printf("%3d %12.8f %12.8f %12.8f\n", k, err_l2[k], err_abs[k], err_rel[k]); 
+    printf("%3d %12.8f %12.8f %12.8f %12.8f %12.8f\n", k, err_l2[k], err_abs[k], err_rel[k], err_rho_max[k], err_T_max[k]); 
   }
 }
 
@@ -244,7 +251,7 @@ TEST(EOS_IAPWS95_SPLINE_RHO_T)
   std::ofstream out("field.dat");
   out << std::setprecision(17);
 
-  int nT(301), nrho(301);
+  int nT(301), nrho(301), nphysical(0);
   const double nan = std::numeric_limits<double>::quiet_NaN();
 
   for (int j = 0; j < nT; ++j) {
@@ -253,6 +260,7 @@ TEST(EOS_IAPWS95_SPLINE_RHO_T)
       double rho = rho_min + (rho_max - rho_min) * (double)i / (nrho - 1);
 
       if (spline.IsPhysical(rho, T)) {
+        nphysical++;
         double delta = rho / eos95.RHOC;
         double tau = eos95.TC / T;
         const auto& exact0 = eos95.IdealGasPart(rho, T);
@@ -298,5 +306,6 @@ TEST(EOS_IAPWS95_SPLINE_RHO_T)
   WriteSaturationPlotData(spline, "phase_boundary.dat");
   WriteSpinodalPlotData(spline, "spinodal_boundary.dat");
   WriteSamplesData(samples, "samples.dat");
+  std::cout << "number of state evaluations: " << nphysical << std::endl;
 }
 

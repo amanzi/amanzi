@@ -31,8 +31,6 @@
 
 namespace Amanzi {
 
-static constexpr double units = CommonDefs::ENTHALPY_FACTOR;
-
 using CV_t = CompositeVector;
 using CVS_t = CompositeVectorSpace;
 
@@ -384,7 +382,6 @@ FlowEnergyPH_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, passwd);
   S_->GetEvaluator(viscosity_liquid_key_).Update(*S_, passwd);
 
-  const auto& rho = S_->Get<CV_t>(mol_density_liquid_key_, Tags::DEFAULT);
   const auto& mu = S_->Get<CV_t>(viscosity_liquid_key_, Tags::DEFAULT);
   auto flux = S_->GetPtr<CompositeVector>(mol_flowrate_key_, Tags::DEFAULT);
 

@@ -68,7 +68,7 @@ class PK_Physical_Default : public PK_Physical {
                       const Teuchos::RCP<Teuchos::ParameterList>& glist,
                       const Teuchos::RCP<State>& S,
                       const Teuchos::RCP<TreeVector>& soln)
-    : PK_Physical(pk_tree, glist, S, soln), PK(pk_tree, glist, S, soln) {};
+    : PK(pk_tree, glist, S, soln), PK_Physical(pk_tree, glist, S, soln) {};
 
   // Default implementations of PK methods.
   virtual void parseParameterList() override;

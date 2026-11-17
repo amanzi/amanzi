@@ -41,7 +41,6 @@ TEST(HELMHOLTZ_IAPWS95_SPLINE_ENERGY_CONVEXITY)
 
   eos_spline.InitializeSharedData();
 
-  int n = 100;
   double eps(2e-6);
   double drho(2.2), dT(2.2), Tl, Tr, der;
 

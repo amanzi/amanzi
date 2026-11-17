@@ -180,8 +180,8 @@ struct AlquimiaSubstate {
       temperature(nullptr),
       tcc_old(nullptr),
       tcc_new(nullptr),
-      total_sorbed_new(nullptr),
       total_sorbed_old(nullptr),
+      total_sorbed_new(nullptr),
       mineral_volume_fraction_old(nullptr),
       mineral_volume_fraction_new(nullptr),
       mineral_specific_surface_area_old(nullptr),
@@ -258,6 +258,8 @@ class Alquimia_PK : public Chemistry_PK {
   void ParseChemicalConditionRegions_(const Teuchos::ParameterList& param_list,
                                       std::map<std::string, std::string>& conditions);
 
+  void CommitStep(double t_old, double t_new, const Tag& tag) override;
+
 
  private:
   // Amanzi variable names:
@@ -303,7 +305,6 @@ class Alquimia_PK : public Chemistry_PK {
   int number_ion_exchange_sites_;
   std::vector<std::string> ion_exchange_site_names_;
 
-  int number_isotherm_species_;
   int number_aux_data_;
 
   std::map<std::string, Key> aux_out_names_;
@@ -314,7 +315,6 @@ class Alquimia_PK : public Chemistry_PK {
   // Alquimia data structures
   AlquimiaBeaker beaker_;
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;
-  bool chem_initialized_;
 
 
   // Mapping of region names to geochemical condition names. A region is identified
