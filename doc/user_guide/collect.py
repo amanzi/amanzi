@@ -362,11 +362,12 @@ sections = {}
 #  Table of Contents (Top Level)
 #
 toc_user_guide = {
-  'index_list' : [ 'background', 'quickstart', 'capabilities', 'input' ],
+  'index_list' : [ 'background', 'quickstart', 'capabilities', 'input', 'containers' ],
   'background'   : { 'index_entry' : 'background/index.rst' },
   'quickstart'   : { 'index_entry' : 'background/getting_started.rst'},
   'capabilities' : { 'index_entry' : 'capabilities/index.rst' },
   'input'        : { 'index_entry' : 'input/index.rst'  },
+  'containers'   : { 'index_entry' : 'containers/index.rst' },
 }
 
 if ( opts.install or opts.full_guide ):
