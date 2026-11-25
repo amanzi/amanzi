@@ -13,6 +13,9 @@
   A region defined by a line segment.
 */
 
+#include <algorithm>
+#include <cmath>
+#include <limits>
 #include <vector>
 
 #include "dbc.hh"
@@ -37,9 +40,7 @@ RegionLineSegment::RegionLineSegment(const std::string& name,
     p0_(p0),
     p1_(p1)
 {
-  set_manifold_dimension(3);
-  //line_points_.clear();
-  //line_frac_.clear();
+  set_manifold_dimension(p0.dim());
 
   Errors::Message msg;
   if (p0_.dim() != p1_.dim()) {
@@ -66,6 +67,37 @@ RegionLineSegment::inside(const Point& p) const
   Exceptions::amanzi_throw(mesg);
   return false;
 }
+
+
+namespace {
+
+// Distance from point p to the segment [a, b].
+double
+DistanceToSegment(const Point& p, const Point& a, const Point& b)
+{
+  Point ab = b - a;
+  double len2 = ab * ab;
+  double s = (len2 > 0.0) ? std::min(1.0, std::max(0.0, ((p - a) * ab) / len2)) : 0.0;
+  return norm(p - (a + s * ab));
+}
+
+// Is point p (lying in the plane of the polygon) within a relative tolerance of
+// the polygon boundary? Point-in-polygon test is not reliable on the boundary.
+bool
+IsNearPolygonBoundary(const Point& p, const std::vector<Point>& polygon)
+{
+  int n = polygon.size();
+  double h = 0.0, dist = std::numeric_limits<double>::max();
+  for (int i = 0; i < n; i++) {
+    const Point& a = polygon[i];
+    const Point& b = polygon[(i + 1) % n];
+    h = std::max(h, norm(b - a));
+    dist = std::min(dist, DistanceToSegment(p, a, b));
+  }
+  return dist <= 1e-10 * h;
+}
+
+} // namespace
 
 
 // -------------------------------------------------------------------
@@ -98,8 +130,11 @@ RegionLineSegment::IntersectFaces_(const std::vector<Point>& polytope,
     std::vector<Point> plane(faces[i].size());
     for (int j = 0; j < plane.size(); j++) plane[j] = polytope[faces[i][j]];
     double t = PlaneLineIntersection(plane, line);
+    if (std::isnan(t)) continue; // line is parallel to the face plane
 
     v1 = p0_ + t * (p1_ - p0_);
+    bool near_boundary = IsNearPolygonBoundary(v1, plane);
+
     double diff_x = 0., diff_y = 0.;
     for (int j = 0; j < plane.size(); j++) {
       diff_x += fabs(plane[j].x() - v1.x());
@@ -122,7 +157,7 @@ RegionLineSegment::IntersectFaces_(const std::vector<Point>& polytope,
       vp = v1;
     }
 
-    if (point_in_polygon(vp, plane)) {
+    if (near_boundary || point_in_polygon(vp, plane)) {
       if (std::fabs(t) < eps) t = 0;
       tau[num_line_int] = t;
       num_line_int++;
@@ -134,8 +169,8 @@ RegionLineSegment::IntersectFaces_(const std::vector<Point>& polytope,
   }
 
   // A line passing through an edge or a vertex hits several faces at the same
-  // point. Remove duplicates, but only if there are more than two hits.
-  if (num_line_int > 2) {
+  // point. Remove duplicates.
+  if (num_line_int > 1) {
     int n = 0;
     for (int i = 0; i < num_line_int; i++) {
       bool found = false;
@@ -150,7 +185,7 @@ RegionLineSegment::IntersectFaces_(const std::vector<Point>& polytope,
     num_line_int = n;
   }
 
-  if (num_int > 2) {
+  if (num_int > 1) {
     int n = 0;
     for (int i = 0; i < num_int; i++) {
       bool found = false;
@@ -164,6 +199,51 @@ RegionLineSegment::IntersectFaces_(const std::vector<Point>& polytope,
     }
     num_int = n;
   }
+}
+
+
+// -------------------------------------------------------------------
+// Clips the segment by a convex polygon with ordered vertices (cw or ccw).
+// Returns false if the intersection is empty. Otherwise, the intersection
+// is the sub-segment p0_ + t * (p1_ - p0_), t in [t_in, t_out] in [0, 1].
+// -------------------------------------------------------------------
+bool
+RegionLineSegment::ClipPolygon_(const std::vector<Point>& polygon, double& t_in, double& t_out) const
+{
+  int n = polygon.size();
+  Point d = p1_ - p0_;
+  double dnorm = norm(d);
+
+  // orientation from the signed area
+  double area = 0.0;
+  for (int i = 0; i < n; i++) {
+    const Point& a = polygon[i];
+    const Point& b = polygon[(i + 1) % n];
+    area += a[0] * b[1] - a[1] * b[0];
+  }
+  double orient = (area >= 0.0) ? 1.0 : -1.0;
+
+  t_in = 0.0;
+  t_out = 1.0;
+  for (int i = 0; i < n; i++) {
+    const Point& a = polygon[i];
+    Point e = polygon[(i + 1) % n] - a;
+    Point w = p0_ - a;
+
+    // signed distance (scaled) to the edge: s(t) = s0 + t * sd >= 0 is inside
+    double s0 = orient * (e[0] * w[1] - e[1] * w[0]);
+    double sd = orient * (e[0] * d[1] - e[1] * d[0]);
+
+    if (std::fabs(sd) < 1e-12 * norm(e) * dnorm) {
+      if (s0 < 0.0) return false;
+    } else {
+      double t = -s0 / sd;
+      if (sd > 0.0) t_in = std::max(t_in, t);
+      else t_out = std::min(t_out, t);
+      if (t_in > t_out) return false;
+    }
+  }
+  return true;
 }
 
 
@@ -213,6 +293,12 @@ RegionLineSegment::intersect(const std::vector<Point>& polytope,
     }
   }
 
+  // convex polygon with ordered vertices; faces are not used
+  if ((mdim == 2) && (sdim == 2)) {
+    double t_in, t_out;
+    if (ClipPolygon_(polytope, t_in, t_out)) return (t_out - t_in) * norm(p1_ - p0_);
+  }
+
   return 0.;
 }
 
@@ -250,6 +336,16 @@ RegionLineSegment::ComputeInterLinePoints(const std::vector<Point>& polytope,
       Errors::Message mesg(
         "More than two intersection points in RegionLineSegment intersect function");
       Exceptions::amanzi_throw(mesg);
+    }
+  }
+
+  // convex polygon with ordered vertices; faces are not used
+  if ((mdim == 2) && (sdim == 2)) {
+    double t_in, t_out;
+    if (ClipPolygon_(polytope, t_in, t_out)) {
+      res_point = p0_ + 0.5 * (t_in + t_out) * (p1_ - p0_);
+    } else {
+      res_point = 0.5 * (p1_ + p0_);
     }
   }
 }

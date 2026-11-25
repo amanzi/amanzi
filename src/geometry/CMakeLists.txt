@@ -77,6 +77,13 @@ if (BUILD_TESTS)
 			  test/test_cylinder_region.cc
                    LINK_LIBS geometry ${UnitTest_LIBRARIES})
 
+   # Test: test intersection of a line segment with a polytope
+   add_amanzi_test(geometry_line_segment geometry_line_segment
+                   KIND unit
+                   SOURCE test/Main.cc
+                          test/geometry_line_segment.cc
+                   LINK_LIBS geometry ${UnitTest_LIBRARIES})
+
    # Test: test geometric model creation
    add_amanzi_test(geometry_geometric_model geometry_geometric_model
                    KIND unit

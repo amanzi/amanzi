@@ -60,7 +60,8 @@ class RegionLineSegment : public Region {
   // Return value is 1 if the line segment intersects a polytope,
   // a 0 if not.
   //
-  // Polyhedron with counter clockwise ordered faces (wrt normals)
+  // Polyhedron with counter clockwise ordered faces (wrt normals).
+  // In 2D, polytope is a convex polygon with ordered vertices and faces is empty.
   double intersect(const std::vector<Point>& polytope,
                    const std::vector<std::vector<int>>& faces) const;
 
@@ -69,6 +70,8 @@ class RegionLineSegment : public Region {
                               Point& res_point) const;
 
  protected:
+  bool ClipPolygon_(const std::vector<Point>& polygon, double& t_in, double& t_out) const;
+
   void IntersectFaces_(const std::vector<Point>& polytope,
                        const std::vector<std::vector<int>>& faces,
                        std::vector<Point>& inter_pnts,
