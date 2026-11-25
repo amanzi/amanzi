@@ -69,6 +69,105 @@ RegionLineSegment::inside(const Point& p) const
 
 
 // -------------------------------------------------------------------
+// Intersects the line with all faces of the polyhedron. Output:
+//  - inter_pnts: intersection points that belong to the segment,
+//  - tau: parameters of all intersections with the (infinite) line,
+//  - num_int, num_line_int: number of the above, respectively.
+// Both arrays are sized to the number of faces.
+// -------------------------------------------------------------------
+void
+RegionLineSegment::IntersectFaces_(const std::vector<Point>& polytope,
+                                   const std::vector<std::vector<int>>& faces,
+                                   std::vector<Point>& inter_pnts,
+                                   std::vector<double>& tau,
+                                   int& num_int,
+                                   int& num_line_int) const
+{
+  double eps = 1e-12;
+  std::vector<Point> line(2);
+  line[0] = p0_;
+  line[1] = p1_;
+
+  inter_pnts.assign(faces.size(), Point(p0_.dim()));
+  tau.assign(faces.size(), 0.0);
+  num_int = 0;
+  num_line_int = 0;
+
+  Point v1(p0_.dim()), vp(p0_.dim());
+  for (int i = 0; i < faces.size(); i++) {
+    std::vector<Point> plane(faces[i].size());
+    for (int j = 0; j < plane.size(); j++) plane[j] = polytope[faces[i][j]];
+    double t = PlaneLineIntersection(plane, line);
+
+    v1 = p0_ + t * (p1_ - p0_);
+    double diff_x = 0., diff_y = 0.;
+    for (int j = 0; j < plane.size(); j++) {
+      diff_x += fabs(plane[j].x() - v1.x());
+      diff_y += fabs(plane[j].y() - v1.y());
+    }
+    if (diff_x < eps) { // projection to plane y-z
+      vp[0] = v1[1];
+      vp[1] = v1[2];
+      for (int j = 0; j < plane.size(); j++) {
+        plane[j][0] = plane[j][1];
+        plane[j][1] = plane[j][2];
+      }
+    } else if (diff_y < eps) { //projection to plane x-z
+      vp[0] = v1[0];
+      vp[1] = v1[2];
+      for (int j = 0; j < plane.size(); j++) {
+        plane[j][1] = plane[j][2];
+      }
+    } else {
+      vp = v1;
+    }
+
+    if (point_in_polygon(vp, plane)) {
+      if (std::fabs(t) < eps) t = 0;
+      tau[num_line_int] = t;
+      num_line_int++;
+      if ((t >= 0) && (t <= 1)) {
+        inter_pnts[num_int] = v1;
+        num_int++;
+      }
+    }
+  }
+
+  // A line passing through an edge or a vertex hits several faces at the same
+  // point. Remove duplicates, but only if there are more than two hits.
+  if (num_line_int > 2) {
+    int n = 0;
+    for (int i = 0; i < num_line_int; i++) {
+      bool found = false;
+      for (int k = 0; k < n; k++) {
+        if (std::fabs(tau[i] - tau[k]) < eps) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) tau[n++] = tau[i];
+    }
+    num_line_int = n;
+  }
+
+  if (num_int > 2) {
+    int n = 0;
+    for (int i = 0; i < num_int; i++) {
+      bool found = false;
+      for (int k = 0; k < n; k++) {
+        if (norm(inter_pnts[i] - inter_pnts[k]) < eps) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) inter_pnts[n++] = inter_pnts[i];
+    }
+    num_int = n;
+  }
+}
+
+
+// -------------------------------------------------------------------
 // Implementation of a virtual member function.
 // We have to analyze
 // -------------------------------------------------------------------
@@ -82,57 +181,11 @@ RegionLineSegment::intersect(const std::vector<Point>& polytope,
   sdim = polytope[0].dim();
 
   if ((mdim == 3) && (sdim == 3)) {
-    std::vector<Point> line(2);
-    bool intersct = false;
-    double eps = 1e-12;
-    line[0] = p0_;
-    line[1] = p1_;
-    std::vector<Point> inter_pnts(2);
-    Point v1(p0_.dim()), vp(p0_.dim());
-    double tau[2] = { 0., 0. };
-    int num_int = 0;
-    int num_line_int = 0;
-    for (int i = 0; i < faces.size(); i++) {
-      intersct = false;
-      std::vector<Point> plane(faces[i].size());
-      for (int j = 0; j < plane.size() ; j++) plane[j] = polytope[faces[i][j]];
-      double t = PlaneLineIntersection(plane, line);
+    std::vector<Point> inter_pnts;
+    std::vector<double> tau;
+    int num_int, num_line_int;
+    IntersectFaces_(polytope, faces, inter_pnts, tau, num_int, num_line_int);
 
-      v1 = p0_ + t * (p1_ - p0_);
-      double diff_x = 0., diff_y = 0.;
-      for (int j = 0; j < plane.size(); j++) {
-        diff_x += fabs(plane[j].x() - v1.x());
-        diff_y += fabs(plane[j].y() - v1.y());
-      }
-      if (diff_x < eps) { // projection to plane y-z
-        vp[0] = v1[1];
-        vp[1] = v1[2];
-        for (int j = 0; j < plane.size(); j++) {
-          plane[j][0] = plane[j][1];
-          plane[j][1] = plane[j][2];
-        }
-      } else if (diff_y < eps) { //projection to plane x-z
-        vp[0] = v1[0];
-        vp[1] = v1[2];
-        for (int j = 0; j < plane.size(); j++) {
-          plane[j][1] = plane[j][2];
-        }
-      } else {
-        vp = v1;
-      }
-
-      intersct = point_in_polygon(vp, plane);
-
-      if (intersct) {
-        if (std::fabs(t) < eps) t = 0;
-        tau[num_line_int] = t;
-        num_line_int++;
-        if ((t >= 0) && (t <= 1)) {
-          inter_pnts[num_int] = v1;
-          num_int++;
-        }
-      }
-    }
     double len;
     if (num_int == 0) {
       if (num_line_int == 2) {
@@ -145,10 +198,8 @@ RegionLineSegment::intersect(const std::vector<Point>& polytope,
     } else if (num_int == 1) {
       len = 0.;
       if ((tau[0] < 0) || (tau[1] < 0)) {
-        // v1 = 0.5*(p0_ + inter_pnts[0]);
         len = norm(p0_ - inter_pnts[0]);
       } else if ((tau[0] >= 0) && (tau[1] >= 0)) {
-        //v1 = 0.5*(p1_ + inter_pnts[0]);
         len = norm(p1_ - inter_pnts[0]);
       }
       return len;
@@ -172,71 +223,19 @@ RegionLineSegment::ComputeInterLinePoints(const std::vector<Point>& polytope,
                                           Point& res_point) const
 {
   int mdim, sdim;
-  double eps = 1e-12;
 
   mdim = get_manifold_dimension();
   sdim = polytope[0].dim();
 
   if ((mdim == 3) && (sdim == 3)) {
-    std::vector<Point> line(2);
-    bool intersct = false;
-    line[0] = p0_;
-    line[1] = p1_;
-    std::vector<Point> inter_pnts(2);
-    Point v1(p0_.dim()), vp(p0_.dim());
-    int num_int = 0;
-    double tau[2] = { 0., 0. };
-    int num_line_int = 0;
-
-
-    for (int i = 0; i < faces.size(); i++) {
-      intersct = false;
-      std::vector<Point> plane(faces[i].size());
-      for (int j = 0; j < plane.size() ; j++) plane[j] = polytope[faces[i][j]];
-      double t = PlaneLineIntersection(plane, line);
-      //if ((t<0)||(t>1)) continue;
-
-      v1 = p0_ + t * (p1_ - p0_);
-      double diff_x = 0., diff_y = 0.;
-      for (int j = 0; j < plane.size(); j++) {
-        diff_x += fabs(plane[j].x() - v1.x());
-        diff_y += fabs(plane[j].y() - v1.y());
-      }
-      if (diff_x < eps) { // projection to plane y-z
-        vp[0] = v1[1];
-        vp[1] = v1[2];
-        for (int j = 0; j < plane.size(); j++) {
-          plane[j][0] = plane[j][1];
-          plane[j][1] = plane[j][2];
-        }
-      } else if (diff_y < eps) { //projection to plane x-z
-        vp[0] = v1[0];
-        vp[1] = v1[2];
-        for (int j = 0; j < plane.size(); j++) {
-          plane[j][1] = plane[j][2];
-        }
-      } else {
-        vp = v1;
-      }
-
-      intersct = point_in_polygon(vp, plane);
-
-      if (intersct) {
-        if (std::fabs(t) < eps) t = 0;
-        tau[num_line_int] = t;
-        num_line_int++;
-        if ((t >= 0) && (t <= 1)) {
-          inter_pnts[num_int] = v1;
-          num_int++;
-        }
-      }
-    }
+    std::vector<Point> inter_pnts;
+    std::vector<double> tau;
+    int num_int, num_line_int;
+    IntersectFaces_(polytope, faces, inter_pnts, tau, num_int, num_line_int);
 
     if (num_int == 0) {
       res_point = 0.5 * (p1_ + p0_);
       return;
-      //Errors::Message mesg("No intersection points in RegionLineSegment");
-      //Exceptions::amanzi_throw(mesg);
     } else if (num_int == 1) {
       if ((tau[0] < 0) || (tau[1] < 0)) {
         res_point = 0.5 * (p0_ + inter_pnts[0]);

@@ -69,6 +69,14 @@ class RegionLineSegment : public Region {
                               Point& res_point) const;
 
  protected:
+  void IntersectFaces_(const std::vector<Point>& polytope,
+                       const std::vector<std::vector<int>>& faces,
+                       std::vector<Point>& inter_pnts,
+                       std::vector<double>& tau,
+                       int& num_int,
+                       int& num_line_int) const;
+
+ protected:
   const Point p0_, p1_; // two end points of the line.
   //std::vector<Point> line_points_;
   //std::vector<double> line_frac_;
