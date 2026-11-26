@@ -33,9 +33,9 @@ namespace Operators {
 ReconstructionCellCochain::ReconstructionCellCochain(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
   : d_(mesh->getSpaceDimension()), mesh_(mesh)
 {
+  int nu = d_ + d_ * d_;
   CompositeVectorSpace cvs;
-  cvs.SetMesh(mesh_)->SetGhosted(true)->SetComponent(
-    "cell", AmanziMesh::Entity_kind::CELL, d_ + d_ * d_);
+  cvs.SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::Entity_kind::CELL, nu);
   data_ = Teuchos::rcp(new CompositeVector(cvs, true));
   data_c_ = data_->ViewComponent("cell", true);
 }
@@ -56,9 +56,11 @@ ReconstructionCellCochain::Compute(const CompositeVector& flux)
 
   int ncells_owned = mesh_->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
   int nu = d_ + d_ * d_;
+  int nk = nu + 4;
 
   std::set<AmanziMesh::Entity_ID> cells;
-  WhetStone::DenseVector row(nu);
+  WhetStone::DenseMatrix K(nk, nk);
+  WhetStone::DenseVector row(nu), rhs(nk);
 
   for (int c = 0; c < ncells_owned; ++c) {
     const auto& xc = mesh_->getCellCentroid(c);
@@ -66,7 +68,7 @@ ReconstructionCellCochain::Compute(const CompositeVector& flux)
 
     const auto& own_faces = mesh_->getCellFaces(c);
     int nown = own_faces.size();
-    int nk = nu + nown;
+    nk = nu + nown;
 
     getCellAllAdjCells(*mesh_, c, cells);
     cells.insert(c);
@@ -76,8 +78,8 @@ ReconstructionCellCochain::Compute(const CompositeVector& flux)
       for (int f : mesh_->getCellFaces(c1)) faces.insert(f);
     }
 
-    WhetStone::DenseMatrix K(nk, nk);
-    WhetStone::DenseVector rhs(nk);
+    K.Reshape(nk, nk);
+    rhs.Reshape(nk);
     K.PutScalar(0.0);
     rhs.PutScalar(0.0);
 
@@ -88,7 +90,9 @@ ReconstructionCellCochain::Compute(const CompositeVector& flux)
 
       for (int i = 0; i < d_; ++i) {
         row(i) = normal[i] / s;
-        for (int j = 0; j < d_; ++j) row(d_ + i * d_ + j) = row(i) * (xf[j] - xc[j]) / h;
+        for (int j = 0; j < d_; ++j) {
+          row(d_ + i * d_ + j) = row(i) * (xf[j] - xc[j]) / h;
+        }
       }
       double b = flux_f[0][f] / s;
 

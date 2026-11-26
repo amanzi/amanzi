@@ -60,6 +60,8 @@ CreateIAPWS95(Teuchos::ParameterList& plist)
     Teuchos::ParameterList plist;
     auto spline = Teuchos::rcp(new IAPWS95_RaggedSplinePH(plist, opt));
     spline->InitializeSharedData();
+    std::cout << "Use spline-based EOS, resolution: " << spline->GetMesh().x_lines.size() 
+              << " " << spline->GetMesh().y_lines.size() << std::endl;
 
     return spline;
   }

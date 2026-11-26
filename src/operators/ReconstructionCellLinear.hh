@@ -43,11 +43,14 @@ class ReconstructionCellLinear : public Reconstruction {
   ReconstructionCellLinear() {};
 
   ReconstructionCellLinear(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
-    : Reconstruction(mesh), dim(mesh->getSpaceDimension()) {};
+    : Reconstruction(mesh, Teuchos::null), dim(mesh->getSpaceDimension()) {};
 
+  // create a reconstruction object from external data
+  //   typical usage is for data extrapolation and gradient limiting
   ReconstructionCellLinear(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
+                           Teuchos::RCP<const Epetra_MultiVector> field,
                            Teuchos::RCP<CompositeVector>& gradient)
-    : Reconstruction(mesh),
+    : Reconstruction(mesh, field),
       dim(mesh->getSpaceDimension()),
       gradient_(gradient),
       gradient_c_(gradient->ViewComponent("cell")) {};

@@ -308,8 +308,8 @@ RemapDG_Helper::ApplyLimiter(double t, CompositeVector& x)
     }
 
     // -- limit gradient and save it to solution
-    //    Reconstruction object does nothing but keeping poiter to gradient
-    auto lifting = Teuchos::rcp(new ReconstructionCellLinear(mesh0_, grad));
+    //    Reconstruction object from external data
+    auto lifting = Teuchos::rcp(new ReconstructionCellLinear(mesh0_, Teuchos::null, grad));
     limiter_->ApplyLimiter(ids, x.ViewComponent("cell", true), 0, lifting, bc_model, bc_value);
 
     for (int n = 0; n < ids.size(); ++n) {

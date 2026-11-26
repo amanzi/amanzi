@@ -137,7 +137,7 @@ Deform3D(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
 
 static AmanziGeometry::Point deform1(const AmanziGeometry::Point& xv, double t)
 {
-  const double a = (t < 0.5) ? t / 5 : (1 - t) / 5;
+  double a = (t < 0.5) ? t / 5 : (1 - t) / 5;
 
   AmanziGeometry::Point yv(xv);
   yv[0] += a * std::sin(2 * M_PI * xv[0]) * std::sin(2 * M_PI * xv[1]);
@@ -184,7 +184,7 @@ TestRemap(std::function<AmanziGeometry::Point(AmanziGeometry::Point)> fun_u,
 
   // initialize I/O
   Teuchos::ParameterList iolist;
-  iolist.get<std::string>("file name base", "plot");
+  iolist.get<std::string>("file name base", "plot2");
   OutputXDMF io(iolist, mesh0, true, true);
 
   // create and initialize cell-based fields
@@ -321,5 +321,5 @@ TEST(REMAP_2_COCHAINS) {
   l2_err = TestRemap(fun1_u, fun1_v, high, 8, 4);
   CHECK_CLOSE(0.0, l2_err, 1e-12);
 
-  // TestRemap(tornado_u, tornado_v, high, 12, 4);
+  // TestRemap(tornado_u, tornado_v, high, 8, 4);
 }

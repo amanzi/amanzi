@@ -24,10 +24,12 @@
 
 // Amanzi
 #include "dbc.hh"
+#include "LimiterCell.hh"
 #include "MFD3D_Diffusion.hh"
 #include "MFD3D_Electromagnetics.hh"
 #include "Point.hh"
 #include "ReconstructionCellCochain.hh"
+#include "ReconstructionCellLinear.hh"
 
 #include "RemapCochains.hh"
 
@@ -143,7 +145,8 @@ void RemapCochains::LowOrder<2>(const CompositeVector& in, CompositeVector& out)
     const AmanziGeometry::Point& tau = mesh0_->getEdgeVector(e);
     const AmanziGeometry::Point& xe = mesh0_->getEdgeCentroid(e);
 
-    xa = 0.25 * (a0 + a1 + b0 + b1);
+    // direction from the edge to the swept region (upwind side)
+    xa = 0.25 * (a0 + a1 + b0 + b1) - xe;
     xa = xa - (xa * tau) / L22(tau) * tau;
     xprobe = xe + eps * xa;
 
@@ -190,8 +193,26 @@ void RemapCochains::HighOrder<2>(const CompositeVector& in, CompositeVector& out
   auto& out_f = *out.ViewComponent("face");
 
   // patch-based linear reconstruction that is exact for linear fields
-  ReconstructionCellCochain recon(mesh0_);
-  recon.Compute(in);
+  ReconstructionCellCochain lifting(mesh0_);
+  lifting.Compute(in);
+
+  // component-wise limiter
+/*
+  auto& data = *lifting.data()->ViewComponent("cell", true);
+  for (int i = 0; i < d_; ++i) {
+    int n = (i + 1) * d_;
+    auto field = Teuchos::rcp(new Epetra_MultiVector(View, data, i, 1));
+    auto gradient = lifting.data()->GetVector({ n, n + 1, n + 2 });
+
+    auto liftcomp = Teuchos::rcp(new ReconstructionCellLinear(mesh0_, field, gradient));
+
+    Teuchos::ParameterList plist;
+    auto limiter = Teuchos::rcp(new Operators::LimiterCell(mesh0_));
+    limiter->Init(plist);
+    limiter->ApplyLimiter(field, 0, liftcomp);
+  }
+  lifting.data()->ScatterMasterToGhosted("cell");
+*/
 
   // compute swept areas and donor cells 
   double eps = 1e-8;
@@ -215,7 +236,8 @@ void RemapCochains::HighOrder<2>(const CompositeVector& in, CompositeVector& out
     const AmanziGeometry::Point& tau = mesh0_->getEdgeVector(e);
     const AmanziGeometry::Point& xe = mesh0_->getEdgeCentroid(e);
 
-    xa = 0.25 * (a0 + a1 + b0 + b1);
+    // direction from the edge to the swept region (upwind side)
+    xa = 0.25 * (a0 + a1 + b0 + b1) - xe;
     xa = xa - (xa * tau) / L22(tau) * tau;
     xprobe = xe + eps * xa;
 
@@ -244,7 +266,7 @@ void RemapCochains::HighOrder<2>(const CompositeVector& in, CompositeVector& out
       // exact integration of linear fields over the bilinear swept surface
       double flux(0.0);
       for (const auto& [p, w] : getSweptEdgeQuadrature(e)) {
-        flux += recon.getValue(c, p) * w;
+        flux += lifting.getValue(c, p) * w;
       }
       sum -= flux * dirs[n];
     }

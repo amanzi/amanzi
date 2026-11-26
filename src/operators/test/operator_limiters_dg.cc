@@ -149,8 +149,8 @@ RunTest(std::string filename, std::string basis, double& l2norm)
     }
     Kokkos::resize(ids, ids_count);
 
-    // Apply limiter
-    auto lifting = Teuchos::rcp(new ReconstructionCellLinear(mesh, grad));
+    // Apply limiter using manually creatied reconstruction obejct
+    auto lifting = Teuchos::rcp(new ReconstructionCellLinear(mesh, Teuchos::null, grad));
     LimiterCell limiter(mesh);
     limiter.Init(plist);
     limiter.ApplyLimiter(ids, field_c, 0, lifting, bc_model, bc_value);

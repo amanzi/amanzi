@@ -697,7 +697,8 @@ AdvectionFn<Analytic>::ApplyLimiter(std::string& name, CompositeVector& u)
 
     grad->ScatterMasterToGhosted("cell");
 
-    auto lifting = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_, grad));
+    // create reconstruction object form external data
+    auto lifting = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_, Teuchos::null, grad));
     limiter.ApplyLimiter(u.ViewComponent("cell", true), 0, lifting, bc_model, bc_value);
     const auto& factor = *limiter.limiter();
     for (int c = 0; c < ncells_owned; ++c)

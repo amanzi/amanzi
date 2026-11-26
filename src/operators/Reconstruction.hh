@@ -90,8 +90,9 @@ namespace Operators {
 class Reconstruction {
  public:
   Reconstruction() {};
-  Reconstruction(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
-    : mesh_(mesh), field_(Teuchos::null), component_(0), weight_(WeightType::WT_CONSTANT) {};
+  Reconstruction(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
+                 Teuchos::RCP<const Epetra_MultiVector> field)
+    : mesh_(mesh), field_(field), component_(0), weight_(WeightType::WT_CONSTANT) {};
   virtual ~Reconstruction() = default;
 
   // main members

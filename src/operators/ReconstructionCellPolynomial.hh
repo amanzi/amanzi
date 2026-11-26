@@ -39,7 +39,7 @@ class ReconstructionCellPolynomial : public Reconstruction {
  public:
   ReconstructionCellPolynomial() {};
   ReconstructionCellPolynomial(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
-    : Reconstruction(mesh), poly_(Teuchos::null) {};
+    : Reconstruction(mesh, Teuchos::null), poly_(Teuchos::null) {};
   ~ReconstructionCellPolynomial() {};
 
   // save pointer to the already distributed field.

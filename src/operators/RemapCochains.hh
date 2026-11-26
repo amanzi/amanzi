@@ -49,7 +49,7 @@ class RemapCochains {
   AmanziGeometry::Point getSweptEdgeCentroid(int e) const;
   std::vector<std::pair<AmanziGeometry::Point, AmanziGeometry::Point>>
   getSweptEdgeQuadrature(int e) const;
-  AmanziGeometry::Point getSweptFaceCentroid(int f) const { return AmanziGeometry::Point(3); }
+  // AmanziGeometry::Point getSweptFaceCentroid(int f) const { return AmanziGeometry::Point(3); }
 
   // reconstruction
   Teuchos::RCP<CompositeVector>
