@@ -149,6 +149,7 @@ IAPWS::ThermalConductivityZetaFunction_(double rhor) const
       return 1.0 / zeta;
     }
   }
+  return 0.0;  // to silence compiler warnings
 }
 
 

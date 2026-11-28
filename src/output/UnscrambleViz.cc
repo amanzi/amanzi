@@ -243,9 +243,9 @@ main(int argc, char* argv[])
     if (cdims[1] != 3) {
       // write a warning to the screen, but keep going
     }
-    float nodes[cdims[0]][cdims[1]];
+    std::vector<float> nodes(cdims[0] * cdims[1]);  // row-major
     std::cout << "  E>> read dims: " << cdims[0] << " x " << cdims[1] << std::endl;
-    status = H5Dread(dataset_id, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, nodes);
+    status = H5Dread(dataset_id, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, nodes.data());
     status = H5Dclose(dataset_id);
 
     std::cout << "E>> read mixedelements" << std::endl;
@@ -267,9 +267,9 @@ main(int argc, char* argv[])
     std::cout << "  E>> working node: ";
     for (int i = 0; i < num_nodes; i++) {
       std::cout << "  " << i;
-      mapnodes[nodemap[i]][0] = nodes[i][0];
-      mapnodes[nodemap[i]][1] = nodes[i][1];
-      mapnodes[nodemap[i]][2] = nodes[i][2];
+      mapnodes[nodemap[i]][0] = nodes[cdims[1] * i + 0];
+      mapnodes[nodemap[i]][1] = nodes[cdims[1] * i + 1];
+      mapnodes[nodemap[i]][2] = nodes[cdims[1] * i + 2];
     }
     std::cout << std::endl;
 

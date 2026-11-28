@@ -1447,8 +1447,8 @@ HDF5_MPI::readDatasetReal(double** data, int nloc, const std::string& varname)
   }
 
   // root will read all data
-  int globaldims[ndims], localdims[ndims];
-  parallelIO_get_dataset_dims(globaldims, data_file_, h5path, &IOgroup_);
+  std::vector<int> globaldims(ndims), localdims(ndims);
+  parallelIO_get_dataset_dims(globaldims.data(), data_file_, h5path, &IOgroup_);
   localdims[0] = nloc;
   localdims[1] = globaldims[1];
 
@@ -1457,8 +1457,8 @@ HDF5_MPI::readDatasetReal(double** data, int nloc, const std::string& varname)
   parallelIO_read_dataset(*data,
                           PIO_DOUBLE,
                           ndims,
-                          globaldims,
-                          localdims,
+                          globaldims.data(),
+                          localdims.data(),
                           data_file_,
                           h5path,
                           &IOgroup_,
