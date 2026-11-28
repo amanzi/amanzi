@@ -113,7 +113,9 @@ template<class Vector, class VectorSpace>
 class SolverNKA : public Solver<Vector, VectorSpace> {
  public:
   SolverNKA(Teuchos::ParameterList& plist)
-    : plist_(plist) {};
+    : plist_(plist),
+      pc_lag_(0),
+      pc_updates_(0) {};
 
   SolverNKA(Teuchos::ParameterList& plist,
             const Teuchos::RCP<SolverFnBase<Vector>>& fn,
